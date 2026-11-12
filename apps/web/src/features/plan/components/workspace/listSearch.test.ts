@@ -3,7 +3,8 @@ import { useTabSearch } from "../../lib/tabSearch";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import { listSearchOf, nearSearch } from "./listSearch";
 
-const vm = (over: Partial<PlanWorkspaceModel>) => ({ view: "search", nearOpen: false, ...over }) as PlanWorkspaceModel;
+const vm = (cards: Partial<PlanWorkspaceModel["cards"]>) =>
+  ({ view: { view: "search" }, cards: { nearOpen: false, ...cards } }) as PlanWorkspaceModel;
 
 describe("the one search scoped to a list", () => {
   it("leaves the sheet's field the search's while Nearest is open: Nearest's is at its card's top", () => {

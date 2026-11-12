@@ -23,52 +23,29 @@ const RouteLegCard = lazy(() => import("../RouteLegCard"));
  *  approach, the tips and the first flight's. */
 export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
   const dryPlaying = usePastFlight((p) => p.hex === DRY_RUN && p.playing);
+  const { panelOpen } = vm.view;
+  const { crossings, routed, setRoute } = vm.route;
+  const { course, s, selected } = vm.plan;
+  const { heldPoint, holdPoint, nearOpen, selectPlaceOnChart } = vm.cards;
   const {
-    closeLeg,
-    closeLesson,
-    course,
-    crossings,
     directTo,
-    dryRunning,
     fitAircraft,
     flownPatterns,
-    flying,
-    fuelStopPins,
-    heldPoint,
-    holdPoint,
-    lessonOpen,
-    lineKey,
     mapDirects,
-    mapLegs,
     mapProcedures,
-    nearOpen,
-    openLeg,
-    nearestPoints,
     openFix,
-    openNavLogCard,
-    panelOpen,
     patternFocus,
-    pickPoint,
-    pickStopField,
-    pickWay,
-    placePin,
     procedureFocus,
-    routeRows,
-    routed,
-    s,
-    selectCandidate,
-    selectPlaceOnChart,
-    selected,
-    selectedPoint,
     setCrossing,
-    setLegAt,
     setOpenFixAt,
-    setRoute,
     showFix,
-    startPin,
-    stopFieldPins,
-    wayLines,
-  } = vm;
+  } = vm.picks;
+  const { nearestPoints, placePin, startPin } = vm.map;
+  const { fuelStopPins } = vm.stops;
+  const { lineKey, pickWay, wayLines } = vm.routeList;
+  const { closeLesson, lessonOpen, openNavLogCard, pickStopField, stopFieldPins } = vm.fpl;
+  const { dryRunning, flying } = vm.flight;
+  const { closeLeg, mapLegs, openLeg, pickPoint, routeRows, selectCandidate, selectedPoint, setLegAt } = vm.leg;
   // Each card's chunk asked for at its first open, then kept.
   const [fixSeen, setFixSeen] = useState(false);
   if (openFix && !fixSeen) setFixSeen(true);

@@ -53,59 +53,50 @@ export default function PlanSidebar({
   /** The one search's view model (useOneSearch). */
   model: OneSearchModel;
 }) {
+  const { opened, stripsDrawn, view } = vm.view;
+  const { addStop, depart, planned, routePoints, routed } = vm.route;
+  const { course, s } = vm.plan;
   const {
-    addFromPill,
-    addStop,
     aircraftFavoritesOpen,
     aircraftOpen,
     aircraftRecentsOpen,
-    aircraftTyped,
     airportRecentsOpen,
     approachesOf,
-    askFor,
     cardUp,
     closeFlight,
     closeList,
-    closeNearest,
     closePlace,
-    closeSaved,
-    course,
-    depart,
-    dropIntoRoute,
-    favorites,
     favoritesOpen,
     flight,
-    flyHere,
     heldPoint,
-    home,
-    keepFuelStops,
-    measuredFrom,
-    moveFavoriteAirport,
     nearFrom,
     nearOpen,
     openList,
-    opened,
     past,
-    pickPlace,
     place,
-    planned,
-    query,
-    routePoints,
     routeRecentsOpen,
-    routed,
-    s,
-    savedOpen,
     selectFlight,
     selectPast,
     selectPlace,
     setApproachesOf,
-    setHomeAirport,
     setNearFrom,
-    stripsDrawn,
-    suggestedAt,
-    view,
+  } = vm.cards;
+  const { flyHere, measuredFrom } = vm.map;
+  const { keepFuelStops, suggestedAt } = vm.stops;
+  const { dropIntoRoute } = vm.routeList;
+  const { closeNearest, closeSaved, savedOpen } = vm.fpl;
+  const {
+    addFromPill,
+    aircraftTyped,
+    askFor,
+    favorites,
+    home,
+    moveFavoriteAirport,
+    pickPlace,
+    query,
+    setHomeAirport,
     toggleFavoriteAirport,
-  } = vm;
+  } = vm.search;
   usePrefetchAircraftTab();
   useEffect(() => {
     const later = window.setTimeout(searchHome.prefetch, 1500);

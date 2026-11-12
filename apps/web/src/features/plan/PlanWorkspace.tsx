@@ -58,84 +58,79 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   // The one search over the sheet (the owner's one-search design,
   // 2026-11-09): its field the sheet's first row, its results the body's.
   const search = useOneSearch(vm);
+  const { view, pickPage } = vm.view;
+  const {
+    altitudeFt,
+    altitudeNearest,
+    crossings,
+    depart,
+    directParam,
+    flightRules,
+    flyAltitude,
+    ground,
+    holds,
+    insertStopAfter,
+    planned,
+    removeStop,
+    routeEdit,
+    routePoints,
+    routed,
+    setLoad,
+    setPointAltitude,
+  } = vm.route;
   const {
     aircraft,
     aircraftChoices,
     aircraftValue,
-    altitudeAt,
-    altitudeFt,
-    altitudeNearest,
-    autoPicked,
-    briefShown,
-    cardOpen,
     changeAircraft,
     changeDepart,
     course,
-    crossings,
-    depart,
-    directParam,
     directToPoint,
-    fileFlightPlan,
-    fileable,
+    pickTail,
+    s,
+    selected,
+    setGround,
+    setHold,
+  } = vm.plan;
+  const { cardOpen, flight, heldPoint, place, selectPlace, setApproachesOf } = vm.cards;
+  const {
+    autoPicked,
     filedProcedures,
-    flight,
-    flightRules,
-    flightToSave,
-    flyAltitude,
-    flying,
-    fuelHidden,
-    ground,
-    heldPoint,
-    holdAsk,
-    holds,
-    insertStopAfter,
-    landedStops,
-    landings,
-    listEdit,
-    metarColour,
     noApproaches,
-    openNavLogCard,
     pickPattern,
     pickProcedures,
-    pickTail,
     pickedPatterns,
     pickedProcedures,
     pickedTakeoffs,
-    place,
-    planned,
     preselectPattern,
     preselectTakeoff,
     previewProcedure,
     procedureAirports,
     proceduresAt,
-    removeStop,
-    routeEdit,
-    routeLine,
-    routePoints,
     routeProcedures,
-    routeRows,
-    routed,
     runwayFitInputs,
-    s,
-    selectPlace,
-    selected,
-    setApproachesOf,
-    setGround,
-    setHold,
-    setLoad,
-    setPointAltitude,
     setProceduresShown,
     setTakeoff,
     showFix,
-    showFuelStops,
+  } = vm.picks;
+  const { fuelHidden, showFuelStops, tankFigures } = vm.stops;
+  const { holdAsk, listEdit, routeLine } = vm.routeList;
+  const { briefShown, openNavLogCard } = vm.fpl;
+  const { flying } = vm.flight;
+  const { routeRows } = vm.leg;
+  const {
+    altitudeAt,
+    fileFlightPlan,
+    fileable,
+    flightToSave,
+    landedStops,
+    landings,
+    metarColour,
     stale,
-    view,
-    pickPage,
-    tankFigures,
     tightLeg,
     unflyable,
     unflyableBrief,
-  } = vm;
+  } = vm.brief;
   // Each tab's part of the briefing; the Brief's narrative under its Go /
   // No-Go. Made once for the same plan (useCallback, useMemo), and each
   // part drawn again only when its plan changes (FlightBriefingView's
@@ -420,7 +415,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
       onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
       onNavLog={card === undefined && routed && course ? openNavLogCard : undefined}
-      onClear={card === undefined ? vm.clearRoute : undefined}
+      onClear={card === undefined ? vm.routeList.clearRoute : undefined}
     />
   );
 
@@ -447,7 +442,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // The one search's Autocomplete round the whole panel, so its field
         // (the first row) and its list (the body) are one combobox.
         around: (panel) => (
-          <CommandRoot value={vm.query} onValueChange={search.setTyped} autoHighlight="always">
+          <CommandRoot value={vm.search.query} onValueChange={search.setTyped} autoHighlight="always">
             {panel}
           </CommandRoot>
         ),
@@ -459,7 +454,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         toEdge: !!place,
         flying,
         // The one search, the first page's first row, and at rest its pill (MapPanel).
-        bar: <OneSearchField model={search} inputRef={vm.searchInput} list={listSearchOf(vm)} />,
+        bar: <OneSearchField model={search} inputRef={vm.search.searchInput} list={listSearchOf(vm)} />,
         // FPL's alone ("Fpl can show calculations but other tabs should show something else").
         // FPL's figures pinned at the sheet's foot at every height, the pill's
         // too, growing as it comes up, at the owner's asks ("While dragging fpl
@@ -476,7 +471,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // At the pill on FPL they are the pill's one row (MapPanel), the
         // route's row from half up (the owner, 2026-11-11, the canvas's b).
         // FPL's page's own (SheetParts); under the Profile, its foot (PlanPage).
-        foot: !place && !heldPoint && !flight && !briefShown && !vm.profileShown ? routed && <FlightFoot vm={vm} /> : undefined,
+        foot: !place && !heldPoint && !flight && !briefShown && !vm.fpl.profileShown ? routed && <FlightFoot vm={vm} /> : undefined,
         // The route as one box of pills, in place of the two airport fields,
         // the top row to itself, at the pilot's ask: its close and its
         // Procedures beside it went to the chips' row (Approaches) and the

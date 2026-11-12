@@ -22,7 +22,11 @@ const WORDED = "lg:pointer-fine:w-auto lg:pointer-fine:gap-1 lg:pointer-fine:px-
 const WORD = cn("hidden font-medium lg:pointer-fine:inline", TEXT.detail);
 
 export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWorkspaceModel; flightInputs: ReactNode; share: ReactNode }) {
-  const { altitudeMark, briefMark, changeLocalMin, clearRoute, hasPoints, localMin, openBrief, openProfile, profileReady, routed, s } = vm;
+  const { hasPoints, localMin, routed } = vm.route;
+  const { changeLocalMin, s } = vm.plan;
+  const { clearRoute } = vm.routeList;
+  const { openBrief, openProfile, profileReady } = vm.fpl;
+  const { altitudeMark, briefMark } = vm.brief;
   // "AI brief" only where Claude writes some of it (lib/subscription): off,
   // the Brief is the engine's alone and is called just that.
   const brief = useClaudeOn() ? "AI brief" : "Brief";
