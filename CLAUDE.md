@@ -158,6 +158,7 @@ without it).
 | `ios` (`apps/ios/`) | `xcodegen`, then `scripts/dev/xcodebuild.sh test` (xcodebuild with the shared caches) on the newest iPhone simulator (docs/NATIVE.md) | the build and unit tests on the iPhone / and `CardSmokeTests` / the full suites on the iPhone, iPad and iPhone Duo |
 | `android` (`apps/android/`) | `engine/bindings/ffi/build-android.sh`, then `./gradlew testDebugUnitTest lintDebug assembleDebug` (docs/NATIVE-ANDROID.md) | unit tests and lint / plus the instrumented tests on an emulator |
 | `site` (`apps/site/`) | `python3 apps/site/build.py && python3 apps/site/check.py` | all |
+| `sim` (`tools/msfs-agent/`, `infra/sim-trial/`) | the agent's `dotnet build`, `dotnet format --verify-no-changes` and `dotnet test` (Docker), `cfn-lint` on the template, `shellcheck` on its scripts | none: the trial's kit, checked on the Mac |
 | `arch` (any source file) | `scripts/ci/file_sizes.py --base origin/main` (no new or grown file over 400 lines), `scripts/build/toolchain.sh --check`, `scripts/ci/brand_guard.py` (no raw style value outside `design/tokens.json`), `scripts/ci/dead_python.sh`; CI adds `scripts/ci/rules_boundary.py` (no aviation figure outside the engine) | all |
 
 - **Python outside check.sh** wants `pip install -r requirements-dev.txt`

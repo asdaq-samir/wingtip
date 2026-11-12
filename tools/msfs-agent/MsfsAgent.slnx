@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Replay.Core/Replay.Core.csproj" />
+  <Project Path="Replay.Core.Tests/Replay.Core.Tests.csproj" />
+  <Project Path="Replay.Agent/Replay.Agent.csproj" />
+</Solution>

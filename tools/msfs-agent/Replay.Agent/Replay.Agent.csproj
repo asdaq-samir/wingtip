@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The agent: SimConnect in, OBS out. It runs on the trial's Windows
+       instance, built there against the MSFS 2024 SDK's managed SimConnect
+       (Microsoft.FlightSimulator.SimConnect.dll, which the SDK's licence
+       keeps out of this repository). Where the SDK is not found (the
+       Mac, check.sh's container) it builds without it, so the rest is
+       still compiled and linted, and only dry runs work. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Wingtip.Replay.Agent</RootNamespace>
+    <AssemblyName>wingtip-replay</AssemblyName>
+    <!-- The SDK's managed lib folder; MSFS 2024's installer sets
+         MSFS2024_SDK to the SDK's root. -->
+    <SimConnectDir Condition="'$(SimConnectDir)' == '' and '$(MSFS2024_SDK)' != ''">$(MSFS2024_SDK)\SimConnect SDK\lib\managed</SimConnectDir>
+    <HasSimConnect Condition="Exists('$(SimConnectDir)\Microsoft.FlightSimulator.SimConnect.dll')">true</HasSimConnect>
+    <DefineConstants Condition="'$(HasSimConnect)' == 'true'">$(DefineConstants);SIMCONNECT</DefineConstants>
+    <PlatformTarget Condition="'$(HasSimConnect)' == 'true'">x64</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="obs-websocket-dotnet" />
+    <PackageReference Include="System.CommandLine" />
+    <ProjectReference Include="../Replay.Core/Replay.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(HasSimConnect)' == 'true'">
+    <Reference Include="Microsoft.FlightSimulator.SimConnect">
+      <HintPath>$(SimConnectDir)\Microsoft.FlightSimulator.SimConnect.dll</HintPath>
+    </Reference>
+    <!-- The native SimConnect.dll the managed one calls, beside the exe. -->
+    <None Include="$(SimConnectDir)\..\SimConnect.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(SimConnectDir)\..\SimConnect.dll')" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(HasSimConnect)' != 'true'">
+    <Compile Remove="SimConnectSim.cs" />
+  </ItemGroup>
+</Project>

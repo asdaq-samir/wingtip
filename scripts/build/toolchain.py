@@ -78,6 +78,7 @@ PLACES = [
     (["scripts/dev/format.sh"], r'^KTLINT_SUM="(\S+) ', "ktlint", "exact", "set KTLINT_SUM to {v} and its release's sha256"),
     (["scripts/build/shared-cache.sh"], r'^SCCACHE_SUMS="(\S+) ', "sccache", "exact", "set SCCACHE_SUMS to {v} and its releases' sha256s"),
     (["apps/web/package.json"], r'"prettier": "([^"]+)"', "prettier", "exact", "npm install -D -E prettier@{v}, in apps/web"),
+    (["tools/msfs-agent/global.json"], r'"version": "([^"]+)"', "dotnet", "exact", None),
     ([".devcontainer/devcontainer.json"], r'features/node:1": \{ "version": "([^"]+)"', "nodejs", "exact", None),
     ([".devcontainer/devcontainer.json"], r'features/python:1": \{ "version": "([^"]+)"', "python", "exact", None),
     ([".devcontainer/devcontainer.json"], r'features/rust:1": \{ "version": "([^"]+)"', "rust", "exact", None),

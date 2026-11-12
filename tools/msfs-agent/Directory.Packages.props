@@ -1,0 +1,14 @@
+<Project>
+  <!-- One version of each package for every project here. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- obs-websocket's own .NET client (MIT), listed by the obs-websocket
+         project; 5.7.0 speaks protocol 5.7, which OBS Studio 33 carries. -->
+    <PackageVersion Include="obs-websocket-dotnet" Version="5.7.0" />
+    <!-- .NET's own command-line parser. -->
+    <PackageVersion Include="System.CommandLine" Version="3.0.0" />
+    <PackageVersion Include="xunit.v3" Version="4.0.3" />
+  </ItemGroup>
+</Project>

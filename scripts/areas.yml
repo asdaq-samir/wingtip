@@ -201,6 +201,12 @@ areas:
       - apps/web/public/privacy.html
       - apps/web/public/terms.html
       - apps/web/public/support.html
+  sim:
+    ci: sim
+    check: the replay agent's build, format check and tests (dotnet, in Docker), cfn-lint on the trial's template, shellcheck on its scripts (the MSFS trial, infra/sim-trial and tools/msfs-agent)
+    paths:
+      - tools/msfs-agent/**
+      - infra/sim-trial/**
   arch:
     ci: arch
     check: scripts/ci/file_sizes.py --base origin/main (no new or grown source file over 400 lines), scripts/build/toolchain.sh --check (every version .tool-versions'), scripts/ci/brand_guard.py (no raw style value outside design/tokens.json), scripts/ci/shared_parts_guard.py (no card head, section title or close drawn by hand), then scripts/ci/dead_python.sh (vulture)
