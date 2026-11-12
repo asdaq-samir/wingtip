@@ -6,6 +6,7 @@ import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.AirspaceVolumes
+import app.wingtipmaps.android.design.generated.WingtipMap
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.approachScene
 import app.wingtipmaps.android.ui.A11y
@@ -68,10 +69,11 @@ object Map3dLayer {
     private const val DEM_MAX_ZOOM = 13f
 
     /** The tilt 3D opens at, for the ground to read as ground at once (the
-     *  web's OPEN_PITCH); MapLibre Native's most is 60 (MapLibreConstants.
-     *  MAXIMUM_PITCH), the web's 75 being GL JS's. */
-    private const val OPEN_PITCH = 50.0
-    private const val MAX_PITCH = 60.0
+     *  tokens' map.pitch-open); MapLibre Native's most is 60
+     *  (MapLibreConstants.MAXIMUM_PITCH, the tokens' map.pitch-flat-max),
+     *  the web's 75 (pitch-max) being GL JS's. */
+    private const val OPEN_PITCH = WingtipMap.PITCH_OPEN.toDouble()
+    private const val MAX_PITCH = WingtipMap.PITCH_FLAT_MAX.toDouble()
 
     /** How long the map takes to tilt into 3D and back (the web's TILT_MS). */
     private const val TILT_MS = 600

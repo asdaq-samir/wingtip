@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.map.flow
 
+import app.wingtipmaps.android.design.generated.WingtipColors.Weather
+import app.wingtipmaps.android.design.generated.WingtipFlow
 import app.wingtipmaps.android.engine.generated.EngineContract
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -36,7 +38,7 @@ class FlowLooksTest {
     fun rainIsClearUnderTheEnginesLeastAndColouredFromIt() {
         val rain = Ramp(looks.getValue(FlowKind.PRECIP).ramp)
         assertEquals(0, rain.colour(5.0) ushr 24)
-        assertEquals(160, rain.colour(10.0) ushr 24)
+        assertEquals(WingtipFlow.ALPHA_RAIN[1], rain.colour(10.0) ushr 24)
         // Its words, the engine's, at the middles of their bands.
         assertEquals(listOf("Light", "Moderate", "Heavy", "Extreme"), looks.getValue(FlowKind.PRECIP).ticks.map { it.label })
     }
@@ -55,7 +57,20 @@ class FlowLooksTest {
     fun icingIsClearAtNone() {
         val icing = Ramp(looks.getValue(FlowKind.ICING).ramp)
         assertEquals(0, icing.colour(0.0) ushr 24)
-        assertEquals(210, icing.colour(3.0) ushr 24)
+        assertEquals(WingtipFlow.ALPHA_ICING, icing.colour(3.0) ushr 24)
+    }
+
+    @Test
+    fun theRampsAndCoversAreTheDesignTokens() {
+        // design/tokens.json's flow group, as the web's flowLook reads it:
+        // the wind calm nearly clear in its calm colour, the temperature solid.
+        val wind = looks.getValue(FlowKind.WIND)
+        assertEquals(Ramp.tone(Weather.FLOW_WIND_CALM_HEX, WingtipFlow.RAMP_WIND[0].alpha), wind.ramp[0].argb)
+        assertEquals(WingtipFlow.RAMP_WIND.map { it.at }, wind.ramp.map { it.at })
+        assertEquals(WingtipFlow.COVER_TINT, wind.opacity)
+        assertEquals(WingtipFlow.COVER_SOLID, looks.getValue(FlowKind.TEMP).opacity)
+        assertEquals(WingtipFlow.COVER_HAZARD, looks.getValue(FlowKind.TURB).opacity)
+        assertEquals(WingtipFlow.RAMP_TEMP.size, looks.getValue(FlowKind.TEMP).ramp.size)
     }
 
     @Test

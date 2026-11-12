@@ -319,4 +319,26 @@ class EngineFixturesTest {
         }
         done()
     }
+
+    /** Each case's input as the rule's members. */
+    private fun JsonObject.input() = getValue("input").jsonObject.entries.map { it.key to it.value }.toTypedArray()
+
+    @Test
+    fun modelWeatherIsReadAtAPointThroughTheBridge() {
+        // FlowGrid's two rules: the four pixels round a point, then between them.
+        val f = fixture("flowSample.json")
+        assertTrue(f.cases("cells").isNotEmpty() && f.cases("samples").isNotEmpty())
+        for (c in f.cases("cells")) check(ask("flow_cell", *c.input()), c["answer"], "flow_cell ${c["about"]}")
+        for (c in f.cases("samples")) check(ask("flow_sample", *c.input()), c["answer"], "flow_sample ${c["about"]}")
+        done()
+    }
+
+    @Test
+    fun anAirspaceVolumesSpanComesThroughTheBridge() {
+        // AirspaceVolumes3d's heights, as the web's and the engine's own tests hold them.
+        val all = fixture("airspaceVolumeSpan.json").cases("cases")
+        assertTrue(all.isNotEmpty())
+        for (c in all) check(ask("airspace_volume_span", *c.input()), c["answer"], "airspace_volume_span ${c["about"]}")
+        done()
+    }
 }

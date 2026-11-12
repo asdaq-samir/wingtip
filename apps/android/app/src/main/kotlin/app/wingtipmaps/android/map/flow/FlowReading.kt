@@ -3,6 +3,7 @@ package app.wingtipmaps.android.map.flow
 import android.content.Context
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.capeCategory
 import app.wingtipmaps.android.engine.generated.icingSeverity
 import app.wingtipmaps.android.engine.generated.precipIntensity
@@ -39,7 +40,7 @@ object FlowReading {
     /** The reading in words, or the failure of the engine rule behind it,
      *  which the bar shows as its problem with no reading (as the web's
      *  callEngine throws). */
-    fun words(context: Context, field: FlowKind, read: FlowGrid.Reading, top: Double?): Result<String> = runCatching {
+    fun words(context: Context, field: FlowKind, read: EngineContract.FlowSampleAnswer, top: Double?): Result<String> = runCatching {
         val v = read.value
         val none = context.getString(R.string.flow_none)
         fun word(rule: Result<String?>) = wordOrNone(rule, none).getOrThrow()
