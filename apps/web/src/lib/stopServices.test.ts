@@ -17,6 +17,7 @@ const services = (over: Partial<AirportServices>): AirportServices => ({
   ident: "KHYS",
   fuel_types: [],
   fuel_notes: [],
+  fuel_remarks: [],
   tie_down: false,
   hangar: false,
   oxygen: false,

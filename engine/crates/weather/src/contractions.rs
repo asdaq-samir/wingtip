@@ -97,6 +97,58 @@ pub fn lighting_written(word: &str) -> Option<&'static str> {
     lookup(LIGHTING, word).or_else(|| written(word))
 }
 
+/// An airport's other remarks' own contractions (remarks_read: its fuel's,
+/// its FBO's, its courtesy car's), a line each as TABLE, read before it.
+/// The remarks are the Chart Supplement's text, so its General Information
+/// "Abbreviations" (NE volume, 3 SEP 2026) come first, then FAA Order JO
+/// 7340.2R's decode (chapter 2, section 1), to which it defers. A
+/// contraction to which either gives two meanings has no line here, and
+/// one TABLE writes out but the Chart Supplement means otherwise by has a
+/// line of no words: both kept as written, never guessed.
+const REMARKS: &str = concat!(
+    // The Chart Supplement's Abbreviations, each of one meaning; its
+    // "abbreviations presented are intended to represent grammatical
+    // variations of the basic form", so "hr" is hours as well. Its days
+    // are "Mon Monday" and so on, NASR's remarks all capitals (its "MON
+    // Minimum Operational Network" is no fuel's or FBO's word).
+    "AFLD:airfield\n", "ARPT:airport\n", "AVN:aviation\n", "BLDG:building\n", "BUS:business\n", "COML:commercial\n", "EXP:expect\n",
+    "FAC:facility\n", "FLD:field\n", "FONE:telephone\n", "FR:from\n", "GAL:gallons\n", "GOVT:government\n", "HGR:hangar\n",
+    "HOL:holiday\n", "LCL:local\n", "LCTD:located\n", "LTD:limited\n", "MGR:manager\n", "MIL:military\n", "NGT:night\n",
+    "O/R:on request\n", "OT:other times\n", "PERMS:permission\n", "PRK:park\n", "PVT:private\n", "RQR:require\n", "REQ:request\n",
+    "SKED:schedule\n", "UNSKED:unscheduled\n", "THRU:through\n", "TIL:until\n", "TRAN:transient\n", "TRML:terminal\n",
+    "UNAVBL:unavailable\n", "WKD:weekday\n", "WKEND:weekend\n", "ARNG:arrange\n", "APVL:approval\n", "COORD:coordinate\n",
+    "EQPT:equipment\n", "ENG:engine\n", "MGMT:management\n", "PN:prior notice\n", "HRS:hours\n", "SVCS:services\n", "MON:Monday\n",
+    "TUE:Tuesday\n", "WED:Wednesday\n", "THU:Thursday\n", "FRI:Friday\n", "SAT:Saturday\n", "SUN:Sunday\n",
+    // The Chart Supplement's where TABLE's NOTAM meaning is not its: "act
+    // activity", "dur during".
+    "ACT:activity\n", "DUR:during\n",
+    // JO 7340.2R's decode, each of one meaning there and none other in the
+    // Chart Supplement.
+    "CUST:customs\n", "TSNT:transient\n", "CLNC:clearance\n", "AFT:after\n", "AMGR:airport manager\n", "ATND:attend\n",
+    "UNATNDD:unattended\n", "DURG:during\n", "DRG:during\n", "DLVY:delivery\n", "OTR:other\n", "OVNGT:overnight\n", "PRKG:parking\n",
+    "PRVD:provide\n", "RFL:refuel\n", "OFC:office\n", "PSNL:personnel\n", "CDN:coordination\n", "ADVN:advance\n", "CIV:civil\n",
+    "ADNL:additional\n", "WKDAY:weekday\n", "EXCP:except\n", "HNGR:hangar\n", "PSGR:passenger\n", "PAX:passenger\n", "TRNG:training\n",
+    // Their past tenses as NASR writes them (UNATNDD's -D, 7340.2R).
+    "ATNDD:attended\n", "PRVDD:provided\n", "ARNGD:arranged\n", "RQRD:required\n",
+    // Two words read as one where the one alone is not of one meaning:
+    // 7340.2R's CLR "clears, or cleared to, or clearance", before CUST
+    // (KPWK's "TSNT UTILIZE FBO AFT CLR CUST"); the Chart Supplement's
+    // "crs course", where 49 fields' remarks write a courtesy car "CRS CAR".
+    "CLR CUST:clearing customs\n", "CRS CAR:courtesy car\n", "CRS CARS:courtesy cars\n",
+    // Kept as written: the Chart Supplement's "opr operate, operator,
+    // operational" and "AP Area Planning", "FM Fan Marker, Frequency
+    // Modulation", "cl class"; 7340.2R's OPN "open" and "operation", CLR;
+    // and AUTO, the legend's "automatic" but in a fuel's remark the
+    // automobile's fuel ("AUTO FUEL AVBL", MOGAS), never automatic fuel.
+    "OPR:\n", "OPN:\n", "CLR:\n", "AP:\n", "FM:\n", "CL:\n", "AUTO:\n",
+);
+
+/// A word of an airport's remarks written out: its own contractions first,
+/// then the one table's. Some("") where it is kept as written.
+pub fn remarks_written(word: &str) -> Option<&'static str> {
+    lookup(REMARKS, word).or_else(|| written(word))
+}
+
 /// The codes a pilot reads as written: the navaids and their parts, the
 /// approach lights and approaches by their names on the chart (AIM 2-1,
 /// 5-4-5), the services by their names in the Chart Supplement, and the

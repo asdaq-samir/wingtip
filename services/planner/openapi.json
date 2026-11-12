@@ -1612,6 +1612,14 @@
             "title": "Fuel Notes",
             "type": "array"
           },
+          "fuel_remarks": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Fuel Remarks",
+            "type": "array"
+          },
           "fuel_types": {
             "default": [],
             "items": {

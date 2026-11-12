@@ -143,13 +143,15 @@ def test_the_wordings_of_a_runways_turf(remark, ends, turf):
 
 
 def test_an_airports_fuel_and_courtesy_car_remarks_in_plain_english(remarks_csv):
+    # In words by the engine (remarks_read), the fuel's as sent beside them.
     assert remarks.service_notes("K78") == {
         "fuel": ["24 hour self serve fuel."],
+        "fuel_as_written": ["24 HOUR SELF SERVE FUEL."],
         "ground": ["Courtesy car available."],
         "courtesy_car": True,
     }
     # The FAA's own remark on a fuel type, whatever its words.
     assert remarks.service_notes("GCK")["fuel"] == ["For military fuel call 620-275-5055."]
-    assert remarks.service_notes("RFD") == {"fuel": [], "ground": [], "courtesy_car": False}
+    assert remarks.service_notes("RFD") == {"fuel": [], "fuel_as_written": [], "ground": [], "courtesy_car": False}
     # The attendance remarks' own contractions, in words.
     assert remarks.service_notes("RPD")["fuel"] == ["Airport attended other hours on request through FBO."]

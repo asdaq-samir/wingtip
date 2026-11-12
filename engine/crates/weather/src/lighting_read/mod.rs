@@ -20,15 +20,17 @@
 //!
 //! Each sentence is read by parse; one it cannot read in full is a note,
 //! its contractions written out (crate::contractions) and any word it does
-//! not know kept as written, never guessed.
+//! not know kept as written, never guessed, by remarks_read's sentence
+//! reader.
 
-mod lexicon;
+pub(crate) mod lexicon;
 mod parse;
 #[cfg(test)]
 mod tests;
 
 use crate::contractions::{is_code, lighting_written};
 use crate::json::{self, Value};
+use crate::remarks_read::{said, sentences};
 pub use parse::System;
 
 /// A field's lights read.
@@ -40,36 +42,16 @@ pub struct LightingRead {
     pub standard_keying: bool,
 }
 
-/// The sentences of a remark, a stop between each; a stop between figures
-/// (122.8) is a frequency's.
-fn sentences(text: &str) -> Vec<String> {
-    let text = text.replace('—', " - ").replace('–', "-");
-    let chars: Vec<char> = text.chars().collect();
-    let mut out = Vec::new();
-    let mut cur = String::new();
-    for (k, &c) in chars.iter().enumerate() {
-        let decimal = k > 0 && chars[k - 1].is_ascii_digit() && chars.get(k + 1).is_some_and(char::is_ascii_digit);
-        if c == '.' && !decimal {
-            out.push(std::mem::take(&mut cur));
-        } else {
-            cur.push(c);
-        }
-    }
-    out.push(cur);
-    out.into_iter().map(|s| s.split_whitespace().collect::<Vec<_>>().join(" ")).filter(|s| !s.is_empty()).collect()
-}
-
 /// The short words of plain English a remark uses, set in lower case
 /// (any other of three letters or fewer is a code or an ident).
 const PLAIN_SHORT: &str = "AND TO FOR ON AT OF THE IS ARE OR BY IN ALL LOW OFF";
 
 /// A sentence not read, in words: each contraction written out, a code,
-/// a figure and an ident as written, a longer word in lower case.
+/// a figure and an ident as written, a longer word in lower case (the
+/// sentence reader remarks_read's too).
 fn words(sentence: &str) -> String {
-    let mut out: Vec<String> = Vec::new();
-    for word in sentence.split_whitespace() {
-        let core = word.trim_end_matches([',', ';', ':']);
-        let tail = &word[core.len()..];
+    said(sentence, |w, i| {
+        let core = w[i];
         let said = if let Some(span) = lexicon::schedule(core) {
             span
         } else if let Some(full) = lighting_written(core) {
@@ -83,13 +65,8 @@ fn words(sentence: &str) -> String {
         } else {
             core.to_ascii_lowercase()
         };
-        out.push(said + tail);
-    }
-    let mut text = out.join(" ");
-    if let Some(first) = text.get(..1) {
-        text = first.to_ascii_uppercase() + &text[1..];
-    }
-    text + "."
+        (said, 1)
+    })
 }
 
 /// How a system is turned on, in a pilot's words: "Key the mic on CTAF

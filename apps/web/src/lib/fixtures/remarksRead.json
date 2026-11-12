@@ -1,0 +1,27 @@
+{
+  "_note": "remarks_read: an airport's fuel, FBO and courtesy-car remarks (NASR APT_RMK.csv, 2026-10-29) in words, each word worked by hand from the Chart Supplement's Abbreviations (NE, 3 SEP 2026) and JO 7340.2R's decode (engine/crates/weather/src/remarks_read).",
+  "cases": [
+    {
+      "about": "KPWK, Chicago Executive: customs by prior permission, transient airplanes clearing customs before the FBO",
+      "remarks": ["CUST CLNC 2 HR PPR - 847-894-7292. TSNT UTILIZE FBO AFT CLR CUST. FBO CBP USER FEE."],
+      "lines": [
+        "Customs clearance 2 hours prior permission required - 847-894-7292. Transient utilize FBO after clearing customs. FBO CBP user fee."
+      ]
+    },
+    {
+      "about": "KOSH and KDPA: the fuels' codes and a telephone number kept, a figure run into its unit",
+      "remarks": ["A+ AND 100LL AVBL FOR FEE AFTER HRS, 920-236-7827.", "100LL SELF SER AVBL 24HR WITH CREDIT CARD."],
+      "lines": ["A+ and 100LL available for fee after hours, 920-236-7827.", "100LL self service available 24 hours with credit card."]
+    },
+    {
+      "about": "KHYS: OPN, open or operation in JO 7340.2R, kept as written",
+      "remarks": ["FOR FBO HRS OF OPN CTC (785) 628-8881. FOR AFT HRS FUEL CTC FBO."],
+      "lines": ["For FBO hours of OPN contact (785) 628-8881. For after hours fuel contact FBO."]
+    },
+    {
+      "about": "KRPD: attended other hours on request, and a courtesy car",
+      "remarks": ["ARPT ATNDD OTR HRS O/R THRU FBO.", "CRS CAR AVBL."],
+      "lines": ["Airport attended other hours on request through FBO.", "Courtesy car available."]
+    }
+  ]
+}

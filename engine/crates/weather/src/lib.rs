@@ -11,6 +11,9 @@
 //! - lighting_read: a field's Chart Supplement lighting remarks as the
 //!   systems they name and how each is turned on (AIM 2-1, 2-1-8), by the
 //!   same table of contractions with the remarks' own;
+//! - remarks_read: an airport's other remarks (its fuel's, its FBO's, its
+//!   courtesy car's) in words, by the same tables, and the sentence reader
+//!   lighting_read's notes are said by;
 //! - notam_subject: what one NOTAM addresses on an airport's card -- the
 //!   field, a runway, a light, an approach, a frequency, the fuel -- with
 //!   its badge's word (JO 7930.2's keywords and conditions);
@@ -35,6 +38,7 @@ pub mod notam_rank;
 pub mod notam_read;
 pub mod notam_subject;
 pub mod ready;
+pub mod remarks_read;
 pub mod rvr;
 pub mod sky;
 pub mod taf;

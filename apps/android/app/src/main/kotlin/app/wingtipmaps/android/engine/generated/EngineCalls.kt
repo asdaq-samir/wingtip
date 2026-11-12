@@ -1633,6 +1633,12 @@ fun Engine.registeredProfile(manufacturer: String? = null, model: String? = null
     rule("registered_profile", EngineContract.RegisteredProfileInput(manufacturer = manufacturer, model = model, year = year))
 
 /**
+ * An airport's remarks in words (the Chart Supplement's, NASR APT_RMK.csv): its fuel's, its FBO's and its courtesy car's, each a line. Each contraction of one meaning written out, by the Chart Supplement's General Information Abbreviations first (CUST customs, TSNT transient, avbl available, hr hour, O/R on request, thru through) and FAA Order JO 7340.2R's decode after it, to which it defers; a code (FBO, CBP, CTAF, 100LL, Jet A), a figure, a time and a telephone number kept as written; a contraction of more than one meaning (OPR, OPN, FM) and any word not known kept as written, never guessed; the rest in sentence case. A remark with any lower case is someone's own writing, as sent.
+ */
+fun Engine.remarksRead(remarks: List<String>): Result<EngineContract.RemarksReadAnswer> =
+    rule("remarks_read", EngineContract.RemarksReadInput(remarks = remarks))
+
+/**
  * The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).
  */
 fun Engine.reserveMin(ifr: Boolean? = null, night: Boolean? = null): Result<Double> =

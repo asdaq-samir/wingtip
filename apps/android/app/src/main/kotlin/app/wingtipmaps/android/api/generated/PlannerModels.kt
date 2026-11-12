@@ -551,6 +551,9 @@ data class AirportServices (
     @SerialName("fuel_notes")
     val fuelNotes: List<String>? = null,
 
+    @SerialName("fuel_remarks")
+    val fuelRemarks: List<String>? = null,
+
     @SerialName("fuel_types")
     val fuelTypes: List<String>? = null,
 

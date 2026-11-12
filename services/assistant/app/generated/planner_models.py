@@ -3787,6 +3787,7 @@ class AirportServices(BaseModel):
         list[NearbyPlace] | None, Field(title='Food', validate_default=True)
     ] = []
     fuel_notes: Annotated[list[str] | None, Field(title='Fuel Notes')] = []
+    fuel_remarks: Annotated[list[str] | None, Field(title='Fuel Remarks')] = []
     fuel_types: Annotated[list[str] | None, Field(title='Fuel Types')] = []
     ground_notes: Annotated[list[str] | None, Field(title='Ground Notes')] = []
     hangar: Annotated[bool | None, Field(title='Hangar')] = False

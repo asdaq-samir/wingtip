@@ -354,7 +354,7 @@ struct APIAirportServices: Codable, Equatable, Sendable {
     var cars: [APINearbyPlace]?
     var courtesyCar: Bool?
     var food: [APINearbyPlace]?
-    var fuelNotes, fuelTypes, groundNotes: [String]?
+    var fuelNotes, fuelRemarks, fuelTypes, groundNotes: [String]?
     var hangar: Bool?
     var ident: String
     var landingFee: Bool?

@@ -529,6 +529,7 @@ def airport_services(ident: str, response: Response) -> dict:
         "ident": place["ident"],
         **faa_data.airport_services(place["ident"], altitude.DEFAULT_FAA_CACHE_DIR),
         "fuel_notes": notes["fuel"],
+        "fuel_remarks": notes.get("fuel_as_written", []),
         "courtesy_car": notes["courtesy_car"],
         "ground_notes": notes["ground"],
         **near,

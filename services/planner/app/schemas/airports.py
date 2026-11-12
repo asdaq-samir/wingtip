@@ -420,8 +420,10 @@ class AirportServices(BaseModel):
 
     ident: str
     fuel_types: list[str] = []
-    #: The remarks on its fuel and FBO's hours, in plain English.
+    #: The remarks on its fuel and FBO's hours in words (the engine's
+    #: remarks_read), and as sent (NASR APT_RMK), in the same order.
     fuel_notes: list[str] = []
+    fuel_remarks: list[str] = []
     landing_fee: bool | None = None
     tie_down: bool = False
     hangar: bool = False
@@ -429,7 +431,7 @@ class AirportServices(BaseModel):
     powerplant_repair: Literal["major", "minor"] | None = None
     oxygen: bool = False
     courtesy_car: bool = False
-    #: The remarks offering the courtesy car, in plain English.
+    #: The remarks offering the courtesy car, in words (remarks_read).
     ground_notes: list[str] = []
     food: list[NearbyPlace] = []
     lodging: list[NearbyPlace] = []

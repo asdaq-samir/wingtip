@@ -124,10 +124,11 @@ export function StopServices({
     .replace(/^./, (c) => c.toUpperCase());
   // Its fuel first among what is on the field (the owner, 2026-11-11:
   // "Fuel should move to on the field section"), from its Chart Supplement
-  // entry, the remarks in plain English as the planner gives them
-  // (wingtip.remarks.service_notes: self-serve, its hours, the FBO's)
-  // folded under it, so a field's paragraph of them (Duluth's) does not
-  // stand between the fuel and the rest.
+  // entry, the remarks in words as the planner gives them (the engine's
+  // remarks_read: self-serve, its hours, the FBO's; the owner, 2026-11-11,
+  // "Decode fuel remarks too") and as sent under As Written, as the card's
+  // Lights have them, folded under it, so a field's paragraph of them
+  // (Duluth's) does not stand between the fuel and the rest.
   const field = [
     <ListRow
       key="fuel"
@@ -147,8 +148,29 @@ export function StopServices({
         <CollapsibleTrigger render={<ListRow title="Fuel remarks" chevron data-testid="services-fuel-remarks" />} />
         <CollapsibleContent>
           {s.fuel_notes.map((note) => (
-            <ListRow key={note} title={<span className={cn("text-muted-foreground", TEXT.detail)}>{note}</span>} />
+            <ListRow
+              key={note}
+              title={<span className={cn("text-muted-foreground", TEXT.detail)}>{note}</span>}
+              data-testid="services-fuel-note"
+            />
           ))}
+          {s.fuel_remarks.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger render={<ListRow title="As Written" chevron data-testid="services-fuel-sent" />} />
+              <CollapsibleContent>
+                <ListRow
+                  title={
+                    <span
+                      className={cn("font-mono break-words whitespace-pre-wrap text-muted-foreground", TEXT.detail)}
+                      data-testid="services-fuel-raw"
+                    >
+                      {s.fuel_remarks.join("\n")}
+                    </span>
+                  }
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </CollapsibleContent>
       </Collapsible>
     ),

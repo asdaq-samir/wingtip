@@ -9229,6 +9229,22 @@ object EngineContract {
     )
 
     @Serializable
+    data class RemarksReadAnswer(
+        /**
+         * Each remark in words, in their order: "Customs clearance 2 hours prior permission required - 847-894-7292. Transient utilize FBO after clearing customs. FBO CBP user fee."
+         */
+        val lines: List<String>,
+    )
+
+    @Serializable
+    data class RemarksReadInput(
+        /**
+         * The remarks as sent: "CUST CLNC 2 HR PPR - 847-894-7292. TSNT UTILIZE FBO AFT CLR CUST. FBO CBP USER FEE."
+         */
+        val remarks: List<String>,
+    )
+
+    @Serializable
     data class ReserveMinInput(
         val ifr: Boolean? = null,
         val night: Boolean? = null,

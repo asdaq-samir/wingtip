@@ -9200,6 +9200,16 @@ enum EngineContract {
         var year: Double?
     }
 
+    struct RemarksReadAnswer: Codable, Equatable, Sendable {
+        /// Each remark in words, in their order: "Customs clearance 2 hours prior permission required - 847-894-7292. Transient utilize FBO after clearing customs. FBO CBP user fee."
+        var lines: [String]
+    }
+
+    struct RemarksReadInput: Codable, Equatable, Sendable {
+        /// The remarks as sent: "CUST CLNC 2 HR PPR - 847-894-7292. TSNT UTILIZE FBO AFT CLR CUST. FBO CBP USER FEE."
+        var remarks: [String]
+    }
+
     struct ReserveMinInput: Codable, Equatable, Sendable {
         var ifr: Bool?
         var night: Bool?

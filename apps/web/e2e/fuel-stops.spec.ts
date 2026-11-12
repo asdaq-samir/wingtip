@@ -114,7 +114,9 @@ test("a suggested fuel stop can be taken out of the route box and put back, or a
 const SERVICES = {
   ident: "KRPD",
   fuel_types: ["100LL", "A"],
-  fuel_notes: ["24 hour self serve fuel."],
+  // The remarks in words, as the engine reads them (remarks_read), and as sent.
+  fuel_notes: ["24 hours self service fuel available with credit card."],
+  fuel_remarks: ["24 HR SELF SVC FUEL AVBL WITH CREDIT CARD."],
   landing_fee: false,
   tie_down: true,
   hangar: true,
@@ -166,10 +168,15 @@ test("the airport's Info says its fuel in its details, and what is on the field 
   // Fuel first in On the field (the owner, 2026-11-11), its remarks folded under it.
   const services = card.getByTestId("place-services");
   await expect(services.getByTestId("services-fuel")).toContainText("100LL, Jet A");
-  await expect(services).not.toContainText("24 hour self serve fuel.");
+  await expect(services).not.toContainText("24 hours self service fuel");
   await inSheet(page, services.getByTestId("services-fuel-remarks"));
   await services.getByTestId("services-fuel-remarks").click();
-  await expect(services).toContainText("24 hour self serve fuel.");
+  // In words (the owner, 2026-11-11: "Decode fuel remarks too"), as sent
+  // under As Written, as the card's Lights.
+  await expect(services.getByTestId("services-fuel-note")).toHaveText("24 hours self service fuel available with credit card.");
+  await expect(services.getByTestId("services-fuel-raw")).toBeHidden();
+  await services.getByTestId("services-fuel-sent").click();
+  await expect(services.getByTestId("services-fuel-raw")).toHaveText("24 HR SELF SVC FUEL AVBL WITH CREDIT CARD.");
   await expect(services.getByTestId("services-courtesy-car")).toBeVisible();
   await expect(services.getByTestId("services-food")).toContainText(/Runway Diner.*4 min walk/);
   await expect(services.getByTestId("services-food")).toHaveAttribute("href", "tel:+17155550100");
