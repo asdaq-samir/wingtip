@@ -13,6 +13,7 @@ import time
 from datetime import datetime, timezone
 
 import numpy as np
+from shapely import STRtree
 from shapely.geometry import LineString, Point, box, shape
 from shapely.ops import nearest_points
 
@@ -78,22 +79,65 @@ def fetched_at() -> float | None:
     return record.fetched_at if record else None
 
 
+def _record():
+    weather_store.mark_asked()
+    record = weather_store.read("tfrs")
+    if record is None:
+        raise TfrUnavailable("tfr.faa.gov has not been read yet")
+    return record
+
+
+def _keeps(record):
+    """Which of the record's TFRs all_tfrs keeps: a list held through an
+    outage may name TFRs that have since expired, which the site's own list
+    would no longer carry, and those are left out. One issued since cannot
+    be known; the map says how old the list is."""
+    held = time.time() - record.fetched_at >= SHAPES_TTL_S
+    now = datetime.now(timezone.utc)
+    return lambda t: not (held and _ended(t, now))
+
+
 def all_tfrs() -> list:
     """Every TFR in force or to come, one per NOTAM: {"notam_id", "title",
     "kind", "state", "geometry" (GeoJSON, a MultiPolygon of its areas)}
     and its detail ({"effective", "expires", "rule", "purpose",
     "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref"}, where its file
     could be read). TfrUnavailable where the service has stored none."""
-    weather_store.mark_asked()
-    record = weather_store.read("tfrs")
-    if record is None:
-        raise TfrUnavailable("tfr.faa.gov has not been read yet")
-    # A list held through an outage may name TFRs that have since expired,
-    # which the site's own list would no longer carry: those are left out.
-    # One issued since cannot be known; the map says how old the list is.
-    held = time.time() - record.fetched_at >= SHAPES_TTL_S
-    now = datetime.now(timezone.utc)
-    return [dict(t) for t in record.data if not (held and _ended(t, now))]
+    record = _record()
+    return list(map(dict, filter(_keeps(record), record.data)))
+
+
+# The record's shapes, parsed once per copy the service writes (every few
+# minutes) rather than at every ask: (record, [shape or None a TFR], their
+# STRtree, which skips the Nones and keeps the list's positions).
+_SHAPES: dict = {}
+
+
+def _shapes(record) -> tuple[list, STRtree]:
+    held = _SHAPES.get("held")
+    if held is not None and held[0] is record:
+        return held[1], held[2]
+    geometries = []
+    for t in record.data:
+        try:
+            geometries.append(shape(t["geometry"]))
+        except (KeyError, TypeError, ValueError):
+            geometries.append(None)
+    tree = STRtree(geometries)
+    _SHAPES["held"] = (record, geometries, tree)
+    return geometries, tree
+
+
+def with_shapes(near=None, predicate: str | None = None) -> list[tuple[dict, object]]:
+    """all_tfrs' TFRs that have a shape, each with it (shapely's), in their
+    order: those whose shape's box meets `near` (a shapely geometry) where
+    it is given, or with `predicate` those `near` stands in that relation
+    to (STRtree.query's: "within", the point inside the shape)."""
+    record = _record()
+    geometries, tree = _shapes(record)
+    kept = _keeps(record)
+    found = range(len(geometries)) if near is None else sorted(tree.query(near, predicate=predicate).tolist())
+    return [(dict(record.data[i]), geometries[i]) for i in found if geometries[i] is not None and kept(record.data[i])]
 
 
 def in_force(tfr: dict, start: datetime, end: datetime) -> bool:
@@ -117,14 +161,8 @@ def along_route(path: list, start: datetime, end: datetime, near_nm: float = NEA
     south, west, north, east = corridor_bbox((lats.min(), lons.min()), (lats.max(), lons.max()), near_nm)
     now = datetime.now(timezone.utc)
     found = []
-    for tfr in all_tfrs():
-        try:
-            geometry = shape(tfr["geometry"])
-        except (KeyError, TypeError, ValueError):
-            continue
+    for tfr, geometry in with_shapes(box(west, south, east, north)):
         g_west, g_south, g_east, g_north = geometry.bounds
-        if g_east < west or g_west > east or g_north < south or g_south > north:
-            continue
         # The route within the TFR's own box, padded the same way: what
         # lies outside it is further than near_nm, and is not projected.
         reach = corridor_bbox((g_south, g_west), (g_north, g_east), near_nm)
@@ -160,14 +198,7 @@ def near_point(lat: float, lon: float, start: datetime, end: datetime, near_nm: 
     south, west, north, east = box_around(lat, lon, near_nm)
     now = datetime.now(timezone.utc)
     found = []
-    for tfr in all_tfrs():
-        try:
-            geometry = shape(tfr["geometry"])
-        except (KeyError, TypeError, ValueError):
-            continue
-        g_west, g_south, g_east, g_north = geometry.bounds
-        if g_east < west or g_west > east or g_north < south or g_south > north:
-            continue
+    for tfr, geometry in with_shapes(box(west, south, east, north)):
         if shape_distance_nm(point, geometry, (lat, lon)) <= near_nm and in_force(tfr, start, end):
             edge = nearest_points(geometry, point)[0]
             found.append(
@@ -179,14 +210,5 @@ def near_point(lat: float, lon: float, start: datetime, end: datetime, near_nm: 
 def at_point(lat: float, lon: float) -> list:
     """The TFRs in force or to come over a point: each of all_tfrs()'s,
     with "active_now"."""
-    point = Point(lon, lat)
     now = datetime.now(timezone.utc)
-    found = []
-    for tfr in all_tfrs():
-        try:
-            geometry = shape(tfr["geometry"])
-        except (KeyError, TypeError, ValueError):
-            continue
-        if geometry.contains(point):
-            found.append({**tfr, "active_now": in_force(tfr, now, now)})
-    return found
+    return [{**tfr, "active_now": in_force(tfr, now, now)} for tfr, _ in with_shapes(Point(lon, lat), "within")]

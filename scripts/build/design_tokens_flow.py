@@ -4,7 +4,8 @@ platform's own terms, for design_tokens.py.
 design/tokens.json's `map` group is single numbers (pitches in degrees,
 zooms); its `flow` group is ramps (stops of value, a color.weather name
 and an opacity in 255ths), the opacities of the fields the engine's
-bands shape, and the covers. Each function takes the tree and the
+bands shape, the covers, and the scales (a legend's ticks, a ramp's
+headroom: numbers or lists of them, in the field's unit). Each function takes the tree and the
 generator's camelCase, and returns the text one generated file appends.
 """
 
@@ -39,6 +40,10 @@ def _num(v):
     return "%g" % v
 
 
+def _nums(v):
+    return "[%s]" % ", ".join(map(_num, v)) if isinstance(v, list) else _num(v)
+
+
 def ts(tree):
     m, f = _tokens(tree["map"]), _tokens(tree["flow"])
     out = [
@@ -57,6 +62,12 @@ def ts(tree):
             "%s: %s" % (_rest(k), "number[]" if isinstance(t["$value"], list) else "number") for k, t in f.items() if _kind(k) == "alpha"
         ),
         "  cover: { %s };" % "; ".join("%s: number" % _rest(k) for k in f if _kind(k) == "cover"),
+        "  scale: { %s };"
+        % "; ".join(
+            "%s: %s" % (_camel(_rest(k)), "number[]" if isinstance(t["$value"], list) else "number")
+            for k, t in f.items()
+            if _kind(k) == "scale"
+        ),
         "} = {",
         "  ramp: {",
     ]
@@ -68,6 +79,8 @@ def ts(tree):
     out += ["    %s: %s," % (_rest(k), t["$value"]) for k, t in f.items() if _kind(k) == "alpha"]
     out += ["  },", "  cover: {"]
     out += ["    %s: %s," % (_rest(k), _num(t["$value"])) for k, t in f.items() if _kind(k) == "cover"]
+    out += ["  },", "  scale: {"]
+    out += ["    %s: %s," % (_camel(_rest(k)), _nums(t["$value"])) for k, t in f.items() if _kind(k) == "scale"]
     return "\n".join(out + ["  },", "};"])
 
 
@@ -92,6 +105,8 @@ def swift(tree):
             out.append("    static let %s: [Stop] = [%s]" % (name, stops))
         elif _kind(k) == "alpha":
             out.append("    static let %s: %s = %s" % (name, "[UInt8]" if isinstance(v, list) else "UInt8", v))
+        elif _kind(k) == "scale":
+            out.append("    static let %s: %s = %s" % (name, "[Double]" if isinstance(v, list) else "Double", _nums(v)))
         else:
             out.append("    static let %s: CGFloat = %s" % (name, _num(v)))
     return "\n".join(out + ["}"])
@@ -121,6 +136,11 @@ def kotlin(tree):
             out.append("    val %s = listOf(%s)" % (up(k), stops))
         elif _kind(k) == "alpha":
             out.append("    val %s = %s" % (up(k), "listOf(%s)" % ", ".join(map(str, v)) if isinstance(v, list) else v))
+        elif _kind(k) == "scale":
+            if isinstance(v, list):
+                out.append("    val %s = listOf(%s)" % (up(k), ", ".join(str(float(n)) for n in v)))
+            else:
+                out.append("    const val %s = %s" % (up(k), float(v)))
         else:
             out.append("    const val %s = %sf" % (up(k), _num(v)))
     return "\n".join(out + ["}"])

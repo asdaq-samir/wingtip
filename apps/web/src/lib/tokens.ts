@@ -258,6 +258,7 @@ export const FLOW: {
   ramp: Record<"wind" | "streak" | "cloud" | "temp" | "vis" | "frzlvl" | "tops", FlowStop[]>;
   alpha: { rain: number[]; ceiling: number[]; cape: number[]; icing: number; turb: number; block: number };
   cover: { tint: number; wash: number; hazard: number; solid: number };
+  scale: { windTicks: number[]; rainHeadroom: number };
 } = {
   ramp: {
     wind: [[0, [58, 109, 176, 40]], [25, [74, 98, 196, 140]], [50, [106, 79, 198, 190]], [75, [154, 63, 180, 220]]],
@@ -281,6 +282,10 @@ export const FLOW: {
     wash: 0.75,
     hazard: 0.8,
     solid: 0.9,
+  },
+  scale: {
+    windTicks: [0, 25, 50, 75],
+    rainHeadroom: 15,
   },
 };
 

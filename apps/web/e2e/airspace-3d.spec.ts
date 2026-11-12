@@ -8,7 +8,8 @@ import { beforeTheRoute, grabberTo, settle, slow } from "./helpers";
  * ceilings (the planner's /api/airspace/volumes), each area named once at
  * its top. The container has no GPU to look at, so the map's own element
  * says what is drawn: its data-layers (the names' layer) and
- * data-airspace-3d, the volumes standing.
+ * data-airspace3d, the volumes standing (AirspaceVolumesGl's
+ * dataset.airspace3d: a digit takes no dash, so not data-airspace-3d).
  */
 const map = (page: Page) => page.getByTestId("gl-map");
 
@@ -60,7 +61,7 @@ test("in 3D the airspace stands between its floors and ceilings, and flat again 
   await expect(map(page)).toHaveAttribute("data-terrain", "3d", { timeout: slow(20_000) });
   await expect.poll(() => map(page).getAttribute("data-layers"), { timeout: slow(20_000) }).toContain("airspace-3d-labels");
   await expect
-    .poll(async () => Number((await map(page).getAttribute("data-airspace-3d")) ?? 0), { timeout: slow(60_000) })
+    .poll(async () => Number((await map(page).getAttribute("data-airspace3d")) ?? 0), { timeout: slow(60_000) })
     .toBeGreaterThan(0);
 
   await beforeTheRoute(page, async () => {
@@ -70,5 +71,5 @@ test("in 3D the airspace stands between its floors and ceilings, and flat again 
   await page.goto("/app/plan?dep=KDPA&dest=KPWK");
   await settle(page);
   await expect.poll(() => map(page).getAttribute("data-layers")).not.toContain("airspace-3d-labels");
-  await expect(map(page)).not.toHaveAttribute("data-airspace-3d");
+  await expect(map(page)).not.toHaveAttribute("data-airspace3d");
 });

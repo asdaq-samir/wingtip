@@ -37,7 +37,7 @@ ROOT = Path(__file__).resolve().parents[2]
 BASELINE = ROOT / "scripts/ci/simplicity_baseline.json"
 # Tests, fixtures and what a generator writes, as the audit leaves them out.
 SKIP = re.compile(
-    r"(\.test\.|\.spec\.|/e2e/|/tests?/|tests_wingtip/|Tests?/|androidTest/|/fixtures/|/[Gg]enerated/|\.d\.ts$"
+    r"(\.test\.|\.spec\.|/e2e/|/tests?/|tests_wingtip/|Tests?/|androidTest/|/fixtures/|/[Gg]enerated/|apps/ios/WingtipAPI/|\.d\.ts$"
     r"|lib/engine/contract\.ts$|planner_client\.py$|planner_models\.py$)"
 )
 

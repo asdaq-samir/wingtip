@@ -15,11 +15,14 @@ another -- three separate blocking round trips to aviationweather.gov,
 summed instead of overlapped, was the whole reason this page felt slow to
 open even though no single piece actually is."""
 
+import hashlib
+import threading
 import time
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request, Response
+from pydantic import TypeAdapter
 from wingtip import data_cycles, tfr, weather
 from wingtip import icing_forecast
 
@@ -29,7 +32,7 @@ from ..feeds import watch as feeds_watch
 from ..route_briefing import read_fixes, read_numbers
 from ..schemas.common import Briefing
 from ..schemas.briefing import Alternates, IcingForecast, MapLayerAges, Tfrs
-from ..gateway import PUBLIC
+from ..gateway import PUBLIC, gateway
 
 router = APIRouter()
 
@@ -60,16 +63,53 @@ def map_layer_ages() -> MapLayerAges:
     }
 
 
-@router.get("/api/tfrs", openapi_extra=PUBLIC)
-def tfrs() -> Tfrs:
+# /api/tfrs' answer as FastAPI would write it (its response model's
+# validate and dump_json), encoded once per list rather than at every ask:
+# the shapes are the bulk of it and change every few minutes at most.
+_TFRS = TypeAdapter(Tfrs)
+_TFRS_HELD: dict = {}
+_TFRS_LOCK = threading.Lock()
+#: A minute: the map asks again as it is drawn, and the weather service
+#: reads tfr.faa.gov every few minutes (wingtip.tfr.SHAPES_TTL_S).
+TFRS_CACHE = "public, max-age=60"
+
+
+def _tfrs_body(found: list, fetched_at: float | None) -> tuple[bytes, str]:
+    """The answer's bytes and their ETag, kept by the copy of the list they
+    were made from (when it was fetched) and the TFRs kept of it: a copy is
+    written once and never changed (wingtip.weather_store), so the same key
+    is the same bytes. None for a list with no copy behind it: made again."""
+    key = None if fetched_at is None else (fetched_at, tuple(t.get("notam_id") for t in found))
+    with _TFRS_LOCK:
+        held = _TFRS_HELD.get("held")
+    if key is not None and held is not None and held[0] == key:
+        return held[1], held[2]
+    body = _TFRS.dump_json(_TFRS.validate_python({"tfrs": found}, from_attributes=True), by_alias=True)
+    etag = f'"{hashlib.blake2b(body, digest_size=16).hexdigest()}"'
+    if key is not None:
+        with _TFRS_LOCK:
+            _TFRS_HELD["held"] = (key, body, etag)
+    return body, etag
+
+
+@router.get("/api/tfrs", response_model=Tfrs, openapi_extra=gateway("public", cache=True, headers=("ETag",)))
+def tfrs(request: Request) -> Response:
     """Every temporary flight restriction in force or to come, for the
     map: each NOTAM's areas, when, how high and why (wingtip.tfr). A 502 when
     tfr.faa.gov does not answer, for the map to say so rather than draw
     a sky with none."""
+    # Kept a minute (TFRS_CACHE), with an ETag: a 304 for the list held.
+    fetched_at = tfr.fetched_at()
     try:
-        return {"tfrs": tfr.all_tfrs()}
+        found = tfr.all_tfrs()
     except tfr.TfrUnavailable as err:
         raise HTTPException(502, "tfr.faa.gov did not answer, so the map has no TFRs on it.") from err
+    # A copy written between the two reads is not kept by the older's key.
+    body, etag = _tfrs_body(found, fetched_at if tfr.fetched_at() == fetched_at else None)
+    headers = {"ETag": etag, "Cache-Control": TFRS_CACHE}
+    if etag in request.headers.get("if-none-match", ""):
+        return Response(status_code=304, headers=headers)
+    return Response(body, media_type="application/json", headers=headers)
 
 
 @router.get("/api/briefing", openapi_extra=PUBLIC)

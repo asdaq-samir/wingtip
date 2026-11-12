@@ -17,8 +17,7 @@ from itertools import pairwise
 from .engine import ask as engine
 from .geo import distance_nm
 from .magnetic import magnetic_variation_deg
-from .weather import temperature_at_altitude, wind_at_altitude
-from .winds_aloft import later
+from .winds_aloft import air_at, later
 
 # 14 CFR 91.151(a): VFR needs fuel to the destination plus 30 minutes at
 # normal cruise by day, 45 at night -- the engine's figures
@@ -44,13 +43,15 @@ def engine_fix(f: dict) -> dict:
     return {"name": f.get("name"), "category": f.get("category"), "lat": float(f["lat"]), "lon": float(f["lon"])}
 
 
-def _air(lat: float, lon: float, altitude_ft: float, fcst_hr: str | None) -> dict:
-    """The air at one altitude over a point: the wind (None where none is
-    known, a no-wind estimate then, not a calm) and the temperature (None
-    where none is, a standard day then)."""
-    oat_c = temperature_at_altitude(lat, lon, altitude_ft, fcst_hr)
-    wind = wind_at_altitude(lat, lon, altitude_ft, fcst_hr)
-    return {"altitude_ft": altitude_ft, "wind": wind, "oat_c": None if oat_c is None else float(oat_c)}
+def _air(lat: float, lon: float, altitudes: list, fcst_hr: str | None) -> list[dict]:
+    """The air at each of a leg's altitudes over a point, asked at once
+    (winds_aloft.air_at: one engine call a leg, not one an altitude): the
+    wind (None where none is known, a no-wind estimate then, not a calm)
+    and the temperature (None where none is, a standard day then)."""
+    return [
+        {"altitude_ft": ft, "wind": a["wind"], "oat_c": None if a["temp_c"] is None else float(a["temp_c"])}
+        for ft, a in zip(altitudes, air_at(lat, lon, altitudes, fcst_hr))
+    ]
 
 
 def leg_air(fix_list: list, altitudes: list, fcst_hr: str | None = None, tas_kt: float | None = None) -> list:
@@ -68,7 +69,7 @@ def leg_air(fix_list: list, altitudes: list, fcst_hr: str | None = None, tas_kt:
         leg_nm = float(distance_nm(a["lat"], a["lon"], b["lat"], b["lon"]))
         when = later(fcst_hr, (flown_nm + leg_nm / 2) / tas_kt * 3600 if tas_kt else 0.0)
         flown_nm += leg_nm
-        out.append({"variation_deg": float(magnetic_variation_deg(lat, lon)), "at": [_air(lat, lon, ft, when) for ft in at]})
+        out.append({"variation_deg": float(magnetic_variation_deg(lat, lon)), "at": _air(lat, lon, at, when)})
     return out
 
 

@@ -50,43 +50,76 @@ export function useNavLogs(
     [paywalled],
   );
 
+  // What the Nav Log under the route and the Nav Log card both show.
+  const shared = useMemo(
+    () => ({
+      totals: s.totals,
+      nav: s.nav,
+      legs: s.legs,
+      descriptionError: s.descriptionError,
+      depart,
+      dep: planned.dep,
+      dest: planned.dest,
+      ends: course,
+      selected: s.logSelected,
+      descriptions: s.descriptions,
+      onSaveDescription: s.saveDescription,
+      onGenerateDescriptions: s.generateDescriptions,
+      descriptionsLoading,
+      descriptionsPaywall,
+      descriptionsHidden,
+      selectedPoint,
+      onSelectPoint: selectPointAt,
+      onDeselectPoint: deselectPoint,
+      dryRun: dryRunning,
+      aircraftLabel: aircraft.label,
+      marks,
+      tabContent,
+      local: s.local,
+      metarColourOf: metarColour,
+    }),
+    [
+      s.totals,
+      s.descriptionError,
+      s.nav,
+      s.legs,
+      depart,
+      planned.dep,
+      planned.dest,
+      course,
+      s.logSelected,
+      s.descriptions,
+      s.saveDescription,
+      s.generateDescriptions,
+      descriptionsLoading,
+      descriptionsPaywall,
+      descriptionsHidden,
+      selectedPoint,
+      selectPointAt,
+      deselectPoint,
+      dryRunning,
+      aircraft.label,
+      marks,
+      tabContent,
+      s.local,
+      metarColour,
+    ],
+  );
+
   const navLog = useMemo(
     () => (
       <Suspense fallback={<div className="min-h-0 flex-1" />}>
         <NavLogView
-          totals={s.totals}
-          nav={s.nav}
-          legs={s.legs}
-          descriptionError={s.descriptionError}
-          depart={depart}
-          dep={planned.dep}
-          dest={planned.dest}
-          ends={course}
-          selected={s.logSelected}
-          descriptions={s.descriptions}
-          onSaveDescription={s.saveDescription}
-          onGenerateDescriptions={s.generateDescriptions}
-          descriptionsLoading={descriptionsLoading}
-          descriptionsPaywall={descriptionsPaywall}
-          descriptionsHidden={descriptionsHidden}
-          selectedPoint={selectedPoint}
-          onSelectPoint={selectPointAt}
-          onDeselectPoint={deselectPoint}
+          {...shared}
           // In sight all the way up, the Brief not over it: a row picked is
           // brought into sight as it comes back.
           drawerOpen={drawerOpen && !briefShown}
-          dryRun={dryRunning}
           // Route Cards with one end only: its card is the end's own (RouteEnds),
           // not again under it as the list's row (the owner's screenshot,
           // 2026-11-05: C81 typed as the departure, there twice).
           route={routeEdit === "plan" && !(planned.dep && planned.dest) ? undefined : routeList}
-          aircraftLabel={aircraft.label}
-          marks={marks}
-          tabContent={tabContent}
           notice={<BriefingNotices briefing={s.briefing} />}
 
-          local={s.local}
-          metarColourOf={metarColour}
         >
           {/* Out of the tabs, drawing nothing: the risk assessment and the
           Go / No-Go's findings published once, for Save and the tabs' marks;
@@ -114,36 +147,20 @@ export function useNavLogs(
       </Suspense>
     ),
     [
+      shared,
       s.totals,
-      s.descriptionError,
       s.nav,
       s.legs,
       depart,
       planned.dep,
       planned.dest,
       course,
-      s.logSelected,
-      s.descriptions,
-      s.saveDescription,
-      s.generateDescriptions,
-      descriptionsLoading,
-      descriptionsPaywall,
-      descriptionsHidden,
-      selectedPoint,
-      selectPointAt,
-      deselectPoint,
-      drawerOpen,
-      aircraft.label,
-      marks,
-      tabContent,
       s.briefing,
-      s.local,
       landedStops,
       s.narrative.text,
       unflyableBrief,
       kneeboard,
-      metarColour,
-      dryRunning,
+      drawerOpen,
       briefShown,
       routeList,
       routeEdit,
@@ -156,27 +173,9 @@ export function useNavLogs(
     () => (
       <Suspense fallback={<div className="min-h-0 flex-1" />}>
         <NavLogView
-          totals={s.totals}
-          nav={s.nav}
-          legs={s.legs}
-          descriptionError={s.descriptionError}
-          depart={depart}
-          dep={planned.dep}
-          dest={planned.dest}
-          ends={course}
-          selected={s.logSelected}
-          descriptions={s.descriptions}
-          onSaveDescription={s.saveDescription}
-          onGenerateDescriptions={s.generateDescriptions}
-          descriptionsLoading={descriptionsLoading}
-          descriptionsPaywall={descriptionsPaywall}
-          descriptionsHidden={descriptionsHidden}
-          selectedPoint={selectedPoint}
-          onSelectPoint={selectPointAt}
-          onDeselectPoint={deselectPoint}
+          {...shared}
           // A row picked is brought into sight while the card is open.
           drawerOpen={navLogShown}
-          dryRun={dryRunning}
           cardHead={
             <CardHead
               // Its own name, and at its smallest size too the totals under
@@ -195,43 +194,19 @@ export function useNavLogs(
               closeTestId="navlog-close"
             />
           }
-          aircraftLabel={aircraft.label}
-          marks={marks}
-          tabContent={tabContent}
-          local={s.local}
-          metarColourOf={metarColour}
         />
       </Suspense>
     ),
     [
+      shared,
       estimate,
       s.totals,
-      s.descriptionError,
-      s.nav,
-      s.legs,
-      depart,
-      planned.dep,
+      s.local,
       planned.dest,
-      course,
-      s.logSelected,
-      s.descriptions,
-      s.saveDescription,
-      s.generateDescriptions,
-      descriptionsLoading,
-      descriptionsPaywall,
-      descriptionsHidden,
-      selectedPoint,
-      selectPointAt,
-      deselectPoint,
+      depart,
       navLogShown,
-      dryRunning,
       briefLine,
       closeNavLogCard,
-      aircraft.label,
-      marks,
-      tabContent,
-      s.local,
-      metarColour,
     ],
   );
   return { navLog, navLogCard };

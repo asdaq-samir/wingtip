@@ -115,7 +115,7 @@ def test_what_is_ahead_of_own_ship(monkeypatch):
         ],
     )
     monkeypatch.setattr(sua, "areas_in", lambda bbox: [])
-    monkeypatch.setattr(tfr, "all_tfrs", lambda: [])
+    monkeypatch.setattr(tfr, "with_shapes", lambda near=None, predicate=None: [])
     monkeypatch.setattr("wingtip.faa_data.ensure_nasr_file", lambda name, cache_dir: "DOF.DAT")
     monkeypatch.setattr(
         "wingtip.faa_data.load_obstacles",

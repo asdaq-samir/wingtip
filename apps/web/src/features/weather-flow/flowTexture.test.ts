@@ -32,11 +32,27 @@ describe("valueAt", () => {
   it("reads a wind under a knot as calm, with no direction (the fixture's half-knot case)", () => {
     const half = fixture.samples.find((s) => s.about.startsWith("Calm: half a knot"))!;
     const calm = { data: new Uint8ClampedArray([128, 127.5, 0, 255]), width: 1, height: 1 } as unknown as TextureData;
-    const small = { bounds: [0, 0, 1, 1], fields: { wind: { unscale: half.input.unscale, vector: true, unit: "kt" } } } as unknown as FlowLayer;
+    const small = {
+      bounds: [0, 0, 1, 1],
+      fields: { wind: { unscale: half.input.unscale, vector: true, unit: "kt" } },
+    } as unknown as FlowLayer;
     const read = valueAt(small, "wind", calm, [0.5, 0.5])!;
     expect(read.calm).toBe(true);
     expect(read.direction).toBeUndefined();
     expect(half.answer).toMatchObject({ calm: true, from_deg: null });
+  });
+
+  it("reads the ceiling's picture as the ceiling: its top none, the rest rounded to 50 ft (the fixture's cases)", () => {
+    const top = fixture.samples.find((s) => s.about.startsWith("The ceiling's picture at its top"))!;
+    const mvfr = fixture.samples.find((s) => s.about.startsWith("A ceiling read between 3,000"))!;
+    // A 2 by 1 ceiling picture: the top byte in the west pixel, 3,000 ft's in the east.
+    const ceiling = {
+      bounds: [0, 0, 2, 1],
+      fields: { ceiling: { unscale: top.input.unscale, vector: false, unit: "ft" } },
+    } as unknown as FlowLayer;
+    const picture = { data: new Uint8ClampedArray([255, 0, 0, 255, 60, 0, 0, 255]), width: 2, height: 1 } as unknown as TextureData;
+    expect(valueAt(ceiling, "ceiling", picture, [0.5, 0.5])).toMatchObject({ value: top.answer!.value, noCeiling: true });
+    expect(valueAt(ceiling, "ceiling", picture, [1.5, 0.5])).toMatchObject({ value: mvfr.answer!.value, noCeiling: false });
   });
 
   it("reads nothing off the picture or before it loads", () => {

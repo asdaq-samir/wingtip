@@ -73,13 +73,12 @@ from .settings import get_settings
 # Nothing else in the process configured logging, so every log.info() in
 # this codebase -- this file's own, and every one already written in
 # wingtip/weather.py and wingtip/charts.py before this -- was going nowhere:
-# Python's root logger defaults to WARNING, and uvicorn's own
-# --log-level only reaches its own uvicorn.access/uvicorn.error
-# loggers, not a plain logging.getLogger(__name__) anywhere else in the
-# process. Found while adding the timing lines in wingtip.altitude and
-# app.routers.classb (2026-09-23) and running one
-# live to see it -- nothing appeared. LOG_LEVEL, not a hardcoded INFO,
-# so a noisy deploy can be turned back down without a code change.
+# Python's root logger defaults to WARNING, and uvicorn's own --log-level
+# only reaches its own uvicorn.access/uvicorn.error loggers, not a plain
+# logging.getLogger(__name__) anywhere else in the process. Found while
+# adding the timing lines in wingtip.altitude and app.routers.classb
+# (2026-09-23) and running one live to see it -- nothing appeared.
+# LOG_LEVEL, not a hardcoded INFO, so a noisy deploy can be turned down.
 # The environment is read and checked here at the latest (wingtip.config
 # reads it on import): a malformed value -- a word where a number goes --
 # stops the planner at boot with SettingsError naming the variable,

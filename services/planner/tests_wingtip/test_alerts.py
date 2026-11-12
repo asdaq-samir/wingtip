@@ -5,6 +5,7 @@ special-use areas, TFRs, ground and obstacles stubbed. Own ship is at 42 N
 longitude a mile there. The engine's own cases are the shared fixture
 apps/web/src/lib/fixtures/ahead.json (engine/facade/tests/ahead.rs)."""
 
+import time
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -12,7 +13,7 @@ import pytest
 import requests
 from shapely.geometry import box
 
-from wingtip import airports, airspace, alerts, elevation, faa_data, sua, tfr
+from wingtip import airports, airspace, alerts, elevation, faa_data, sua, tfr, weather_store
 
 LAT, LON = 42.0, -88.0
 NOW = datetime(2026, 10, 10, 18, 0, tzinfo=timezone.utc)
@@ -72,7 +73,9 @@ def ahead(monkeypatch):
     }
     monkeypatch.setattr(airspace, "load_controlled_airspace", lambda shp, bbox: world["volumes"])
     monkeypatch.setattr(sua, "areas_in", lambda bbox: world["areas"])
-    monkeypatch.setattr(tfr, "all_tfrs", lambda: world["tfrs"])
+    # The TFRs as the weather service stores them, read through
+    # tfr.with_shapes: its parsed shapes and its box.
+    monkeypatch.setattr(tfr, "_record", lambda: weather_store.Record(fetched_at=time.time(), until=None, data=world["tfrs"], meta={}))
     monkeypatch.setattr(elevation, "ground_m", lambda lat, lon: world["ground_ft"](lat, lon) / 3.28084)
     monkeypatch.setattr(faa_data, "ensure_nasr_file", lambda name, cache_dir: "DOF.DAT")
     monkeypatch.setattr(faa_data, "load_obstacles", lambda path, bbox, min_agl_ft=0: world["obstacles"])
@@ -295,6 +298,6 @@ def test_what_cannot_be_read_is_said(ahead, monkeypatch):
         raise requests.ConnectionError("no tiles")
 
     monkeypatch.setattr(sua, "areas_in", sua_down)
-    monkeypatch.setattr(tfr, "all_tfrs", tfr_down)
+    monkeypatch.setattr(tfr, "_record", tfr_down)
     monkeypatch.setattr(elevation, "ground_m", no_tiles)
     assert ahead()["unavailable"] == ["special-use airspace", "TFRs", "terrain"]

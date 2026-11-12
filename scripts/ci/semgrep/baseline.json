@@ -6,10 +6,8 @@
   "tools/xplane-driver/wingtip_replay/track.py": 1
  },
  "hex-colour-parsed-by-hand": {
-  "apps/web/src/features/weather-flow/FlowGl.tsx": 3,
   "apps/web/src/features/weather-flow/aviationLooks.ts": 3,
-  "apps/web/src/features/weather-flow/flowLook.ts": 3,
-  "apps/web/src/lib/scoreScale.ts": 1
+  "apps/web/src/features/weather-flow/flowLook.ts": 3
  },
  "hex-colour-parsed-by-hand-other": {
   "apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/flow/FlowColour.kt": 1
@@ -20,27 +18,14 @@
   "apps/web/src/features/weather-flow/FlowPins.tsx": 1,
   "apps/web/src/lib/map/gl/htmlMarker.ts": 1
  },
- "mercator-outside-tile-maths": {
-  "apps/web/src/features/plan/map/terrain/clearance.ts": 2,
-  "apps/web/src/lib/map/gl/useCloseImagery.ts": 1
- },
  "mercator-outside-tile-maths-phones": {
-  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/flow/FlowGrid.kt": 2,
+  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/flow/FlowColour.kt": 2,
   "apps/android/app/src/main/kotlin/app/wingtipmaps/android/offline/KeptLoopTiles.kt": 1,
   "apps/ios/Wingtip/ModelWeather/FlowPaint.swift": 2,
   "apps/ios/Wingtip/Offline/OfflineStore.swift": 1
  },
- "mercator-outside-tile-maths-python": {
-  "services/planner/wingtip/ground_grid.py": 2,
-  "services/planner/wingtip/terrain_detour.py": 1,
-  "services/planner/wingtip/terrain_fine.py": 2
- },
  "planner-http-by-hand-java": {
-  "services/gateway/src/main/java/app/wingtipmaps/gateway/monitoring/UptimeWatch.java": 1,
-  "services/gateway/src/main/java/app/wingtipmaps/gateway/service/AccountService.java": 1,
-  "services/gateway/src/main/java/app/wingtipmaps/gateway/service/ChangeLines.java": 1,
-  "services/gateway/src/main/java/app/wingtipmaps/gateway/service/CheckpointNotesClient.java": 1,
-  "services/gateway/src/main/java/app/wingtipmaps/gateway/service/CrashDraftMail.java": 2
+  "services/gateway/src/main/java/app/wingtipmaps/gateway/monitoring/UptimeWatch.java": 1
  },
  "planner-http-by-hand-phones": {
   "apps/android/app/src/main/kotlin/app/wingtipmaps/android/Charts.kt": 1,
@@ -50,9 +35,6 @@
   "apps/ios/Wingtip/Diagnostics/DiagnosticsReporter.swift": 1
  },
  "planner-http-by-hand-python": {
-  "services/planner/app/mcp/airport_tools.py": 4,
-  "services/planner/app/mcp/flight_tools.py": 2,
-  "services/planner/app/mcp/weather_tools.py": 2,
   "services/planner/app/routers/offline.py": 1
  },
  "planner-http-by-hand-web": {
@@ -67,22 +49,8 @@
   "apps/ios/Wingtip/OwnShip.swift": 2,
   "apps/ios/Wingtip/Views/ChartOverlays.swift": 1,
   "apps/web/src/components/ZoomBanner.tsx": 1,
-  "apps/web/src/features/plan/map/terrain/clearance.ts": 1,
-  "apps/web/src/features/plan/map/terrain/geometry.ts": 2,
-  "apps/web/src/features/replay/camera/cameraPose.ts": 1,
-  "apps/web/src/lib/map/position/ownShip.ts": 2,
-  "apps/web/src/lib/replay/simExport/gpx.ts": 1,
-  "apps/web/src/lib/replay/simExport/kml.ts": 1,
-  "apps/web/src/lib/replay/simExport/skyDolly.ts": 2,
-  "services/jobs/charts/overlays.py": 1,
-  "services/planner/app/routers/studio.py": 1,
-  "services/planner/wingtip/congested.py": 1,
+  "apps/web/src/lib/map/position/ownShip.ts": 1,
   "services/planner/wingtip/elevation.py": 1,
-  "services/planner/wingtip/terrain_detour.py": 1,
-  "services/weather/app/flow_aloft.py": 1,
-  "services/weather/app/flow_dafs.py": 1,
-  "services/weather/app/flow_grid.py": 2,
-  "services/weather/app/gfs.py": 1,
   "tools/msfs-agent/Replay.Core/Geo.cs": 1,
   "tools/xplane-driver/wingtip_replay/player.py": 1
  }

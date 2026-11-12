@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router";
+import { ENDS_KEYS } from "../lib/address";
 import { capabilitiesQuery, pilotQuery } from "../lib/queryClient";
 
 /** The route the two pages share -- dep, dest, altitude -- carried
@@ -7,7 +8,7 @@ import { capabilitiesQuery, pilotQuery } from "../lib/queryClient";
 export function routeSearch(search: string): string {
   const params = new URLSearchParams(search);
   const kept = new URLSearchParams();
-  for (const key of ["dep", "dest", "altitude_ft"]) {
+  for (const key of [...ENDS_KEYS, "altitude_ft"]) {
     const value = params.get(key);
     if (value) kept.set(key, value);
   }

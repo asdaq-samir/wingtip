@@ -21,11 +21,10 @@
 // - Enums and consts are plain strings: an answer the engine adds a word
 //   to must not fail to decode on a phone built before it.
 // - Tuples are arrays of their one type.
-// - A member left untyped ({}), or a union of two shapes, is
-//   OpenAPIRuntime's OpenAPIValueContainer on the iPhone, as the servers'
-//   generated clients' are, and kotlinx's JsonElement on Android;
-//   a union of objects told apart by a const member ("kind") is one struct
-//   of every shape's members (taggedUnion).
+// - A member left untyped ({}), or a union of two shapes, is OpenAPIRuntime's
+//   OpenAPIValueContainer on the iPhone (as the servers' clients') and
+//   kotlinx's JsonElement on Android; a union of objects told apart by a
+//   const member ("kind") is one struct of every shape's members (taggedUnion).
 // - Keys are written as the rule names them (snake case mostly, camel
 //   case where the gateway's are): Swift's CodingKeys and Kotlin's
 //   @SerialName carry them, and Engine's coders apply no strategy.

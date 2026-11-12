@@ -107,10 +107,12 @@ fn ahead_json(
 /// The engine's one way in, as the web app and the phones ask it: a rule
 /// by name (wingtip_engine::call), its input and answer JSON text. A name
 /// not known or input not of the rule's shape is a ValueError with the
-/// engine's words.
+/// engine's words. The engine touches no Python object, so the call lets go
+/// of the GIL while it runs: a long rule (route options, a nav log) then
+/// holds up none of the planner's other threads, its tiles among them.
 #[pyfunction]
-fn call(name: &str, input: &str) -> PyResult<String> {
-    wingtip_engine::call::call(name, input).map_err(PyValueError::new_err)
+fn call(py: Python<'_>, name: &str, input: &str) -> PyResult<String> {
+    py.detach(|| wingtip_engine::call::call(name, input)).map_err(PyValueError::new_err)
 }
 
 #[pymodule]

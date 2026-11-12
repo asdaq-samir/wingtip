@@ -106,10 +106,27 @@ def temperatures_aloft(lat: float, lon: float, fcst_hr: str = "06") -> list:
     temp_c)] from the lowest level up -- the GFS's 925 hPa, about 2,500 ft
     (services/weather/app/gfs.py), each at its own height. Empty where no
     station is found or it reports no temperature."""
-    levels = _levels_near(lat, lon, fcst_hr)
+    return _profile(_levels_near(lat, lon, fcst_hr))
+
+
+def _profile(levels: dict | None) -> list:
     if levels is None:
         return []
     return sorted((float(alt), v["temp_c"]) for alt, v in levels.items() if v["temp_c"] is not None)
+
+
+def air_at(lat: float, lon: float, altitudes: list, fcst_hr: str = "06") -> list[dict]:
+    """The wind (wind_at_altitude) and the temperature (temperatures_aloft
+    read at the altitude, weather.temperature_at) at each of `altitudes`,
+    [{"wind", "temp_c"}]: the nearest station found once for them all,
+    not twice an altitude, the figures each the same."""
+    if not altitudes:
+        return []
+    levels = _levels_near(lat, lon, fcst_hr)
+    profile = _profile(levels)
+    return [
+        {"wind": None if levels is None else wind_in_levels(levels, ft), "temp_c": weather.temperature_at(profile, ft)} for ft in altitudes
+    ]
 
 
 def wind_at_altitude(lat: float, lon: float, altitude_ft: float, fcst_hr: str = "06") -> dict | None:

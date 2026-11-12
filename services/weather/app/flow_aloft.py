@@ -32,7 +32,7 @@ from datetime import datetime
 
 import gribberish
 import numpy as np
-from wingtip.units import M_PER_FT, MS_TO_KT
+from wingtip.units import K_AT_0C, M_PER_FT, MS_TO_KT
 
 from . import flow_grid
 
@@ -95,7 +95,7 @@ def read_columns(body: bytes) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         if lats.size > 1 and lats[0] < lats[-1]:
             values = values[::-1]
         if meta.var_abbrev == "TMP":
-            values = values - 273.15
+            values = values - K_AT_0C
         elif meta.var_abbrev in ("UGRD", "VGRD"):
             values = values * MS_TO_KT
         found.setdefault(meta.var_abbrev, {})[float(meta.level_value) / 100.0] = values

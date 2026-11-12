@@ -1,16 +1,16 @@
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
 import { mapLevel } from "../../lib/format/figures";
+import { rgbOf } from "../../lib/rgb";
 import { FLOW, WEATHER } from "../../lib/tokens";
 import type { FieldLook } from "./flowLook";
 
 type Stop = FieldLook["ramp"][number];
 
-const tone = (hex: string, alpha: number): [number, number, number, number] => [
-  parseInt(hex.slice(1, 3), 16),
-  parseInt(hex.slice(3, 5), 16),
-  parseInt(hex.slice(5, 7), 16),
-  alpha,
-];
+/** A token's colour at an opacity in 255ths, as weatherlayers-gl takes a
+ *  stop: the one the Model Weather looks (flowLook too) build stops with. */
+export function tone(hex: string, alpha: number): [number, number, number, number] {
+  return [...rgbOf(hex), alpha];
+}
 
 /** Which weight class's turbulence thresholds the map says its words by:
  *  AWC's "Light (< 15,500 lbs)" row (aviationweather.gov GFA help), the

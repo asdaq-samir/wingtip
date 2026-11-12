@@ -3,7 +3,8 @@ import { Pause, Play } from "lucide-react";
 import { cn } from "cn";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { Toggle } from "./ui/toggle";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { PickItems } from "./MenuPick";
 import { Button } from "./ui/button";
 import { TEXT } from "../lib/text";
 import { playbackKey } from "./playbackKeys";
@@ -140,21 +141,7 @@ export function SpeedMenu<T extends string | number>({
       >
         {label}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuRadioGroup
-          value={String(value)}
-          onValueChange={(v: string) => {
-            const picked = choices.find((c) => String(c.value) === v);
-            if (picked) onPick(picked.value);
-          }}
-        >
-          {choices.map((c) => (
-            <DropdownMenuRadioItem key={c.value} value={String(c.value)} data-testid={`${testId}-${c.value}`}>
-              {c.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
+      <PickItems value={value} choices={choices} onPick={onPick} testId={testId} />
     </DropdownMenu>
   );
 }
