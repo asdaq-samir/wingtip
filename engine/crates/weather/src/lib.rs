@@ -30,6 +30,8 @@
 //! - model_weather: the map's model weather in a pilot's words -- the
 //!   precipitation's intensity (AIM 7-1-12), the sky's cover (AIM 7-1-28),
 //!   the ceiling's bands (AIM 7-1-7) and CAPE's categories (NWS);
+//! - flow_sample: Model Weather's reading of a field's picture at a point,
+//!   the wind from its parts;
 //! - aloft_grid: the wind and temperature a leg flies in, read from the
 //!   winds-aloft grid by level and by hour;
 //! - aviation_grids: the Aviation Weather Center's grids by level -- the
@@ -42,6 +44,7 @@ pub mod aloft_grid;
 pub mod aviation_grids;
 pub mod contractions;
 pub mod cycles;
+pub mod flow_sample;
 pub mod forecast;
 pub mod lighting_read;
 pub mod metar;

@@ -211,6 +211,10 @@
                       "type": "number",
                       "description": "Estimated flap handle, 0 up to 1 full."
                     },
+                    "throttle": {
+                      "type": "number",
+                      "description": "Estimated thrust levers, 0 idle to 1 full: forward for the takeoff roll and the takeoff, 0.9 climbing, 0.6 level, 0.3 descending, 0.1 on the ground otherwise, the landing's roll-out included. For the picture and the sound only."
+                    },
                     "lights": {
                       "title": "SimLights",
                       "type": "object",
@@ -261,6 +265,7 @@
                     "ground",
                     "gear_down",
                     "flaps",
+                    "throttle",
                     "lights"
                   ],
                   "additionalProperties": false

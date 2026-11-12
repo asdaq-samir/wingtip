@@ -17,6 +17,11 @@
 //! - On the ground after it has flown: full flaps through the roll-out,
 //!   up once it slows to a taxi.
 //!
+//! The thrust levers, for the picture and the sound only (no power is
+//! known from ADS-B): forward for the takeoff roll and the takeoff, most of
+//! the way in a climb, back in a descent and on the ground, the landing's
+//! roll-out included. Design figures, THROTTLE below.
+//!
 //! The lights by AIM 4-3-24 and 14 CFR 91.209: position (navigation),
 //! anticollision (beacon) and logo lights on throughout ("Prior to
 //! commencing taxi, it is recommended to turn on navigation, position,
@@ -50,6 +55,25 @@ pub const DESCENDING_FPM: f64 = 300.0;
 pub const MOVING_KT: f64 = 3.0;
 /// AIM 4-3-24: landing lights on "when operating below 10,000 feet".
 pub const LIGHTS_BELOW_FT: f64 = 10_000.0;
+/// A climb at least this steep, ft/min, is flown with climb power: a
+/// design figure, DESCENDING_FPM's other side, so a level cruise's
+/// wavering reads cruise power.
+pub const CLIMBING_FPM: f64 = 300.0;
+
+/// The thrust levers' estimated positions, 0 idle to 1 full (module note):
+/// design figures for the picture and the sound, not any airplane's.
+pub mod throttle {
+    /// The takeoff roll and the takeoff, until the gear comes up.
+    pub const TAKEOFF: f64 = 1.0;
+    /// Climbing at CLIMBING_FPM or more.
+    pub const CLIMB: f64 = 0.9;
+    /// Level, between CLIMBING_FPM and DESCENDING_FPM.
+    pub const CRUISE: f64 = 0.6;
+    /// Descending at DESCENDING_FPM or more, and on an approach.
+    pub const DESCENT: f64 = 0.3;
+    /// On the ground but the takeoff roll: taxiing, stopped, rolling out.
+    pub const GROUND: f64 = 0.1;
+}
 
 /// The configuration of one frame, all estimated.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -57,6 +81,8 @@ pub struct Config {
     pub gear_down: bool,
     /// The flap handle, 0 up to 1 full.
     pub flaps: f64,
+    /// The thrust levers, 0 idle to 1 full.
+    pub throttle: f64,
     pub nav: bool,
     pub beacon: bool,
     pub strobe: bool,
@@ -115,11 +141,21 @@ pub fn configure(frames: &[Frame]) -> Vec<Config> {
                 Some(Phase::Approach) => (true, 1.0),
                 _ => (false, 0.0),
             };
-            flown |= !ground;
             let rolling = ground && gs >= RUNWAY_KT;
+            let throttle = match phase {
+                Some(Phase::Ground) if rolling && !flown => throttle::TAKEOFF,
+                Some(Phase::Ground) => throttle::GROUND,
+                Some(Phase::Takeoff { .. }) => throttle::TAKEOFF,
+                Some(Phase::Approach) => throttle::DESCENT,
+                _ if vs >= CLIMBING_FPM => throttle::CLIMB,
+                _ if vs <= -DESCENDING_FPM => throttle::DESCENT,
+                _ => throttle::CRUISE,
+            };
+            flown |= !ground;
             Config {
                 gear_down,
                 flaps,
+                throttle,
                 nav: true,
                 beacon: true,
                 strobe: !ground || rolling,
@@ -135,9 +171,10 @@ pub fn configure(frames: &[Frame]) -> Vec<Config> {
 pub fn write(out: &mut String, c: &Config) {
     let flag = |b: bool| if b { "true" } else { "false" };
     out.push_str(&format!(
-        ",\"gear_down\":{},\"flaps\":{},\"lights\":{{\"nav\":{},\"beacon\":{},\"strobe\":{},\"landing\":{},\"taxi\":{},\"logo\":{}}}",
+        ",\"gear_down\":{},\"flaps\":{},\"throttle\":{:?},\"lights\":{{\"nav\":{},\"beacon\":{},\"strobe\":{},\"landing\":{},\"taxi\":{},\"logo\":{}}}",
         flag(c.gear_down),
         if c.flaps == 0.0 { "0".to_owned() } else { format!("{:?}", c.flaps) },
+        c.throttle,
         flag(c.nav),
         flag(c.beacon),
         flag(c.strobe),
@@ -216,6 +253,17 @@ mod tests {
         high[101].alt_ft = 9_999.0;
         let c = configure(&high);
         assert!(!c[100].landing && c[101].landing);
+    }
+
+    #[test]
+    fn the_throttle_is_forward_for_the_takeoff_and_back_for_the_roll_out() {
+        let c = configure(&flight());
+        assert_eq!(c[5].throttle, throttle::GROUND, "taxiing out");
+        assert_eq!(c[20].throttle, throttle::TAKEOFF, "the takeoff roll");
+        assert_eq!(c[100].throttle, throttle::CLIMB);
+        assert_eq!(c[230].throttle, throttle::DESCENT);
+        // The landing's roll-out is as fast as the takeoff's, but not at full power.
+        assert_eq!(c[310].throttle, throttle::GROUND);
     }
 
     #[test]
