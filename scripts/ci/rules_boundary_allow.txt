@@ -71,3 +71,6 @@ apps/web/src/features/plan/map/terrain/airspaceHeights.ts 1
 # of each public-use airport (and where the ground rises steeply). A storage
 # bound for which tiles are built, not a figure a pilot is told or planned with.
 services/planner/wingtip/terrain_fine.py 1
+# Android's 3D airspace volumes, the same drawing bound as the web's: an area with no top (UNL)
+# is drawn up to the floor of Class A (14 CFR 71.33); the card writes it unlimited.
+apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/AirspaceVolumes3d.kt 1
