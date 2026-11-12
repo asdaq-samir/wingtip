@@ -1,9 +1,11 @@
 package app.wingtipmaps.gateway;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 /**
  * Entry point for the gateway -- the public-facing route-planning API. See
@@ -14,6 +16,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * title/description (served at /v3/api-docs).
  */
 @SpringBootApplication
+// On the application itself, so a @WebMvcTest slice binds them too.
+@EnableConfigurationProperties(AppProperties.class)
 @OpenAPIDefinition(
         info =
                 @Info(

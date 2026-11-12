@@ -56,13 +56,13 @@ spring:
       redirects: dont-follow
     serviceclient:
       planner:
-        base-url: ${planner-service.base-url}
+        base-url: ${app.planner.base-url}
         read-timeout: 20s
       briefing:
-        base-url: ${planner-service.base-url}
+        base-url: ${app.planner.base-url}
         read-timeout: 2m
       assistant:
-        base-url: ${assistant-service.base-url}
+        base-url: ${app.assistant.base-url}
         read-timeout: 2m
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/wingtip}
@@ -106,19 +106,6 @@ spring:
 # SecurityConfig registers no oauth2Login and the pilot-scoped
 # endpoints answer 401 -- closed, not open. The magic-link flow above
 # is independent of this profile entirely.
-
-# The Python planner: chart vision, course, checkpoints and nav log.
-# Reached only through this service, which is what lets it publish no port
-# of its own.
-planner-service:
-  base-url: ${PLANNER_SERVICE_URL:http://localhost:8084}
-
-# The assistant service: every Claude call (the assistant, the narrative,
-# the words, the checkpoint notes, the mock oral), reached as the planner
-# is, at the same /api/planner/... addresses (PlannerProxyController
-# picks which by path).
-assistant-service:
-  base-url: ${ASSISTANT_SERVICE_URL:http://localhost:8085}
 
 server:
   port: 8080
@@ -203,11 +190,23 @@ management:
     mail:
       enabled: false
 
-# Where the front-end bundle is served from -- see WebMvcConfig. The
-# Docker image sets APP_STATIC_LOCATION to a directory beside the jar
-# (front-end changes rebuild the bundle without rebuilding the jar); a
-# local `mvn package` after `vite build` finds it on the classpath.
+# This app's own settings, bound and checked at start (AppProperties).
 app:
+  # The Python planner: chart vision, course, checkpoints and nav log.
+  # Reached only through this service, which is what lets it publish no
+  # port of its own.
+  planner:
+    base-url: ${PLANNER_SERVICE_URL:http://localhost:8084}
+  # The assistant service: every Claude call (the assistant, the narrative,
+  # the words, the checkpoint notes, the mock oral), reached as the planner
+  # is, at the same /api/planner/... addresses (PlannerProxyController
+  # picks which by path).
+  assistant:
+    base-url: ${ASSISTANT_SERVICE_URL:http://localhost:8085}
+  # Where the front-end bundle is served from -- see WebMvcConfig. The
+  # Docker image sets APP_STATIC_LOCATION to a directory beside the jar
+  # (front-end changes rebuild the bundle without rebuilding the jar); a
+  # local `mvn package` after `vite build` finds it on the classpath.
   static-location: ${APP_STATIC_LOCATION:classpath:/static/app/}
   # A second, HTTPS port for a phone on the same Wi-Fi
   # (HttpsConnectorConfig) -- only when the keystore is named and the
@@ -223,10 +222,36 @@ app:
   # only the compose network reaches it. 0 opens none.
   internal:
     port: ${APP_INTERNAL_PORT:8081}
-  # Whether Sign in with Apple from the iOS app must carry its nonce
-  # (AppleNonce, docs/NATIVE.md): off until the app sends one.
+  # Sign in with Apple (OAuthClientsConfig, AppleRevocation): the web's
+  # team, key and Services ID and the .p8 key's PEM, its line breaks kept;
+  # whether the iOS app's sign-in must carry its nonce (AppleNonce,
+  # docs/NATIVE.md: off until the app sends one); and where a deleted
+  # pilot's grant is revoked.
   apple:
+    team-id: ${APPLE_TEAM_ID:}
+    key-id: ${APPLE_KEY_ID:}
+    services-id: ${APPLE_SERVICES_ID:}
+    private-key: ${APPLE_PRIVATE_KEY:}
     require-nonce: ${APP_APPLE_REQUIRE_NONCE:false}
+    revoke-url: https://appleid.apple.com/auth/revoke
+  # Sign in with Google (OAuthClientsConfig).
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+  # The apps whose links open in them (AppSiteAssociationController,
+  # AssetLinksController) and whose sign-in this app takes
+  # (AppleNativeSignInController): the iOS bundle id; the Android package
+  # and its signing certificates' SHA-256s, comma-separated.
+  ios:
+    bundle-id: ${APP_IOS_BUNDLE_ID:}
+  android:
+    package-name: ${APP_ANDROID_PACKAGE:}
+    cert-sha256: ${APP_ANDROID_CERT_SHA256:}
+  # Where mail goes out (spring.mail's host, blank where none is set up)
+  # and who it is from (Mailer).
+  mail:
+    host: ${spring.mail.host:}
+    from: ${MAIL_FROM:no-reply@wingtipmaps.app}
   # HSTS on by default (right behind that load balancer); off locally,
   # where a browser must not learn to upgrade the plain port.
   hsts: ${APP_HSTS:true}

@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.security.SessionSignIn;
 import app.wingtipmaps.gateway.security.SignInLanding;
@@ -18,7 +19,6 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -68,11 +68,13 @@ public class AppleNativeSignInController {
     private final boolean requireNonce;
 
     @Autowired
-    public AppleNativeSignInController(
-            PilotService pilots,
-            @Value("${APP_IOS_BUNDLE_ID:}") String bundleId,
-            @Value("${app.apple.require-nonce:false}") boolean requireNonce) {
-        this(pilots, bundleId.isBlank() ? null : appleTokens(bundleId.trim()), requireNonce);
+    public AppleNativeSignInController(PilotService pilots, AppProperties app) {
+        this(
+                pilots,
+                app.ios().bundleId().isBlank()
+                        ? null
+                        : appleTokens(app.ios().bundleId().trim()),
+                app.apple().requireNonce());
     }
 
     AppleNativeSignInController(PilotService pilots, JwtDecoder decoder) {

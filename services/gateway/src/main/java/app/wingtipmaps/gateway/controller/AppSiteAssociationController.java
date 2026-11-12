@@ -1,9 +1,10 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.util.List;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,8 +27,12 @@ public class AppSiteAssociationController {
 
     private final String appId;
 
-    public AppSiteAssociationController(
-            @Value("${APPLE_TEAM_ID:}") String teamId, @Value("${APP_IOS_BUNDLE_ID:}") String bundleId) {
+    @Autowired
+    public AppSiteAssociationController(AppProperties app) {
+        this(app.apple().teamId(), app.ios().bundleId());
+    }
+
+    public AppSiteAssociationController(String teamId, String bundleId) {
         this.appId = teamId.isBlank() || bundleId.isBlank() ? null : teamId.trim() + "." + bundleId.trim();
     }
 

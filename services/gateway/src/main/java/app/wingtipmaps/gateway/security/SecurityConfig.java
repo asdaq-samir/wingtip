@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.security;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.controller.UpstreamRoutes;
 import app.wingtipmaps.gateway.service.PilotService;
 import jakarta.servlet.Filter;
@@ -7,7 +8,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -90,13 +90,12 @@ public class SecurityConfig {
 
     private final SignInOptions signIn;
 
-    SecurityConfig(
-            Optional<ClientRegistrationRepository> clientRegistrations,
-            @Value("${spring.mail.host:}") String mailHost,
-            @Value("${app.chart-tiles-origin:}") String chartTilesOrigin,
-            @Value("${app.hsts:true}") boolean hsts,
-            @Value("${app.open-writes:false}") boolean openWrites,
-            @Value("${app.public-base-url:}") String publicBaseUrl) {
+    SecurityConfig(Optional<ClientRegistrationRepository> clientRegistrations, AppProperties app) {
+        String mailHost = app.mail().host();
+        String chartTilesOrigin = app.chartTilesOrigin();
+        boolean hsts = app.hsts();
+        boolean openWrites = app.openWrites();
+        String publicBaseUrl = app.publicBaseUrl();
         this.hsts = hsts;
         this.httpsHost =
                 publicBaseUrl.startsWith("https://") ? URI.create(publicBaseUrl).getHost() : null;

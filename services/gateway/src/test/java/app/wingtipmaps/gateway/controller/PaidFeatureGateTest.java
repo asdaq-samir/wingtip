@@ -42,8 +42,8 @@ import org.springframework.test.web.servlet.ResultActions;
         properties = {
             // A deployment that sells the subscription, whose gate these are.
             "app.subscription.enabled=true",
-            "planner-service.base-url=http://127.0.0.1:9",
-            "assistant-service.base-url=http://127.0.0.1:9",
+            "app.planner.base-url=http://127.0.0.1:9",
+            "app.assistant.base-url=http://127.0.0.1:9",
         })
 class PaidFeatureGateTest {
 

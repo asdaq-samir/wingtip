@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.MagicLink;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.repository.MagicLinkRepository;
@@ -17,7 +18,6 @@ import java.util.Base64;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -76,10 +76,11 @@ public class DeleteAccountController {
             PilotRepository pilots,
             AccountService accounts,
             Mailer mailer,
-            @Value("${app.public-base-url:}") String publicBaseUrl,
-            @Value("${app.magic-link.per-address-per-hour:5}") int perAddressPerHour,
-            @Value("${app.magic-link.per-client-per-hour:20}") int perClientPerHour,
-            @Value("${app.magic-link.account-per-client-per-hour:30}") int linkChecksPerClientPerHour) {
+            AppProperties app) {
+        String publicBaseUrl = app.publicBaseUrl();
+        int perAddressPerHour = app.magicLink().perAddressPerHour();
+        int perClientPerHour = app.magicLink().perClientPerHour();
+        int linkChecksPerClientPerHour = app.magicLink().accountPerClientPerHour();
         this.links = links;
         this.pilots = pilots;
         this.accounts = accounts;

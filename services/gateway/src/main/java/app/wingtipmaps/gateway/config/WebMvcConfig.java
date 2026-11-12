@@ -2,7 +2,6 @@ package app.wingtipmaps.gateway.config;
 
 import java.io.IOException;
 import java.time.Duration;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.MimeMappings;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.server.servlet.ConfigurableServletWebServerFactory;
@@ -42,7 +41,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     private final String staticLocation;
 
-    public WebMvcConfig(@Value("${app.static-location:classpath:/static/app/}") String staticLocation) {
+    public WebMvcConfig(AppProperties app) {
+        String staticLocation = app.staticLocation();
         this.staticLocation = staticLocation;
     }
 

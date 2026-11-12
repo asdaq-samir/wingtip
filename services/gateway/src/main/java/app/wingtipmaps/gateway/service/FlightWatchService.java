@@ -2,6 +2,7 @@ package app.wingtipmaps.gateway.service;
 
 import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
 import app.wingtipmaps.gateway.assistant.model.AssistantSentence;
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.FlightWatch;
 import app.wingtipmaps.gateway.domain.Pilot;
@@ -22,7 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -87,15 +88,28 @@ public class FlightWatchService {
     /** Boot's own, for the changes kept with a watch. */
     private final JsonMapper json;
 
+    @Autowired
     public FlightWatchService(
             FlightWatchRepository watches,
             FlightRepository flights,
             PilotRepository pilots,
             PlannerClient planner,
             ChangeLines lines,
-            @Value("${app.claude-features:OFF}") SubscriptionService.ClaudeFeatures claude,
+            AppProperties app,
             Mailer mail,
-            @Value("${app.public-base-url:}") String publicBaseUrl,
+            JsonMapper json) {
+        this(watches, flights, pilots, planner, lines, app.claudeFeatures(), mail, app.publicBaseUrl(), json);
+    }
+
+    public FlightWatchService(
+            FlightWatchRepository watches,
+            FlightRepository flights,
+            PilotRepository pilots,
+            PlannerClient planner,
+            ChangeLines lines,
+            SubscriptionService.ClaudeFeatures claude,
+            Mailer mail,
+            String publicBaseUrl,
             JsonMapper json) {
         this.watches = watches;
         this.flights = flights;

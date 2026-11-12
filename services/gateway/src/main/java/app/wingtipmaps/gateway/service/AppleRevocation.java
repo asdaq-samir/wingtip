@@ -1,9 +1,10 @@
 package app.wingtipmaps.gateway.service;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -35,10 +36,14 @@ public class AppleRevocation {
     /** Boot's RestClient: its waits are spring.http.clients' (application.yml). */
     private final RestClient http;
 
+    @Autowired
     public AppleRevocation(
-            Optional<ClientRegistrationRepository> registrations,
-            RestClient.Builder http,
-            @Value("${apple.revoke-url:https://appleid.apple.com/auth/revoke}") String revokeUrl) {
+            Optional<ClientRegistrationRepository> registrations, RestClient.Builder http, AppProperties app) {
+        this(registrations, http, app.apple().revokeUrl());
+    }
+
+    public AppleRevocation(
+            Optional<ClientRegistrationRepository> registrations, RestClient.Builder http, String revokeUrl) {
         this.registrations = registrations;
         this.http = http.build();
         this.revokeUrl = revokeUrl;

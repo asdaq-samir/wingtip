@@ -1,9 +1,10 @@
 package app.wingtipmaps.gateway.security;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -36,10 +37,15 @@ public class ReviewSignIn {
     private final String email;
     private final byte[] code;
 
-    public ReviewSignIn(
-            @Value("${app.review-sign-in.enabled:false}") boolean enabled,
-            @Value("${app.review-sign-in.email:}") String email,
-            @Value("${app.review-sign-in.code:}") String code) {
+    @Autowired
+    public ReviewSignIn(AppProperties app) {
+        this(
+                app.reviewSignIn().enabled(),
+                app.reviewSignIn().email(),
+                app.reviewSignIn().code());
+    }
+
+    public ReviewSignIn(boolean enabled, String email, String code) {
         if (enabled && (email.isBlank() || code.length() < SHORTEST_CODE)) {
             throw new IllegalStateException("REVIEW_SIGN_IN is on: REVIEW_SIGN_IN_EMAIL must be set and "
                     + "REVIEW_SIGN_IN_CODE at least " + SHORTEST_CODE + " characters");

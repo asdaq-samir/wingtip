@@ -1,11 +1,12 @@
 package app.wingtipmaps.gateway.service;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
 import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -34,11 +35,12 @@ public class CrashDraftMail {
     private final Set<String> to;
     private final String studioUrl;
 
-    public CrashDraftMail(
-            PlannerClient planner,
-            Mailer mail,
-            @Value("${app.developer-emails:}") String developerEmails,
-            @Value("${app.public-base-url:}") String publicBaseUrl) {
+    @Autowired
+    public CrashDraftMail(PlannerClient planner, Mailer mail, AppProperties app) {
+        this(planner, mail, app.developerEmails(), app.publicBaseUrl());
+    }
+
+    public CrashDraftMail(PlannerClient planner, Mailer mail, String developerEmails, String publicBaseUrl) {
         this.planner = planner;
         this.mail = mail;
         this.to = Typed.addresses(developerEmails);

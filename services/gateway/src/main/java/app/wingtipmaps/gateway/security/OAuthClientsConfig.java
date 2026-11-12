@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.security;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.ECDSASigner;
@@ -11,7 +12,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ssl.pem.PemContent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -62,13 +62,13 @@ public class OAuthClientsConfig {
     private final String appleServicesId;
     private final String applePrivateKeyPem;
 
-    OAuthClientsConfig(
-            @Value("${GOOGLE_CLIENT_ID:}") String googleClientId,
-            @Value("${GOOGLE_CLIENT_SECRET:}") String googleClientSecret,
-            @Value("${APPLE_TEAM_ID:}") String appleTeamId,
-            @Value("${APPLE_KEY_ID:}") String appleKeyId,
-            @Value("${APPLE_SERVICES_ID:}") String appleServicesId,
-            @Value("${APPLE_PRIVATE_KEY:}") String applePrivateKeyPem) {
+    OAuthClientsConfig(AppProperties app) {
+        String googleClientId = app.google().clientId();
+        String googleClientSecret = app.google().clientSecret();
+        String appleTeamId = app.apple().teamId();
+        String appleKeyId = app.apple().keyId();
+        String appleServicesId = app.apple().servicesId();
+        String applePrivateKeyPem = app.apple().privateKey();
         this.googleClientId = googleClientId;
         this.googleClientSecret = googleClientSecret;
         this.appleTeamId = appleTeamId;

@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.monitoring;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.planner.model.PlannerFeedHealth;
 import app.wingtipmaps.gateway.planner.model.PlannerFeedState;
 import app.wingtipmaps.gateway.service.SubscriptionService;
@@ -11,7 +12,8 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.server.autoconfigure.ServerProperties;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -57,16 +59,31 @@ public class UptimeWatch {
     /** The planner has already waited out a feed's stale minutes. */
     private final Outages feeds = new Outages(Duration.ZERO);
 
+    @Autowired
+    public UptimeWatch(
+            HealthProbe probe, AlertMail alerts, JsonMapper json, AppProperties app, ServerProperties server) {
+        this(
+                probe,
+                alerts,
+                json,
+                app.planner().baseUrl(),
+                app.assistant().baseUrl(),
+                app.claudeFeatures(),
+                app.monitoring().weatherUrl(),
+                server.getPort(),
+                app.monitoring().downAfter());
+    }
+
     public UptimeWatch(
             HealthProbe probe,
             AlertMail alerts,
             JsonMapper json,
-            @Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl,
-            @Value("${assistant-service.base-url:http://assistant:8000}") String assistantBaseUrl,
-            @Value("${app.claude-features:OFF}") SubscriptionService.ClaudeFeatures claude,
-            @Value("${app.monitoring.weather-url:}") String weatherUrl,
-            @Value("${server.port:8080}") int port,
-            @Value("${app.monitoring.down-after:PT5M}") Duration downAfter) {
+            String plannerBaseUrl,
+            String assistantBaseUrl,
+            SubscriptionService.ClaudeFeatures claude,
+            String weatherUrl,
+            int port,
+            Duration downAfter) {
         this.probe = probe;
         this.alerts = alerts;
         this.json = json;

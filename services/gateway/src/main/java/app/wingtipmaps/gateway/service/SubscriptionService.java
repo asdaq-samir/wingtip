@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.service;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.PaidFeature;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.Subscription;
@@ -23,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.Authentication;
@@ -107,38 +107,27 @@ public class SubscriptionService {
 
     @Autowired
     public SubscriptionService(
-            SubscriptionRepository subscriptions,
-            PilotService pilots,
-            SignInOptions signIn,
-            @Value("${app.subscription.trial-days:30}") int trialDays,
-            @Value("${app.subscription.caps.narrative:60}") int narrativeCap,
-            @Value("${app.subscription.caps.checkpoint-notes:60}") int notesCap,
-            @Value("${app.subscription.caps.oral:60}") int oralCap,
-            @Value("${app.subscription.caps.assistant:100}") int assistantCap,
-            @Value("${app.subscription.caps.words:1000}") int wordsCap,
-            @Value("${app.subscription.comped-emails:}") String compedEmails,
-            @Value("${app.subscription.enabled:false}") boolean sold,
-            @Value("${app.claude-features:OFF}") ClaudeFeatures claude) {
+            SubscriptionRepository subscriptions, PilotService pilots, SignInOptions signIn, AppProperties app) {
         this(
                 subscriptions,
                 pilots,
                 signIn,
                 Clock.systemUTC(),
-                trialDays,
+                app.subscription().trialDays(),
                 Map.of(
                         PaidFeature.NARRATIVE,
-                        narrativeCap,
+                        app.subscription().caps().narrative(),
                         PaidFeature.CHECKPOINT_NOTES,
-                        notesCap,
+                        app.subscription().caps().checkpointNotes(),
                         PaidFeature.ORAL,
-                        oralCap,
+                        app.subscription().caps().oral(),
                         PaidFeature.ASSISTANT,
-                        assistantCap,
+                        app.subscription().caps().assistant(),
                         PaidFeature.WORDS,
-                        wordsCap),
-                compedEmails,
-                sold,
-                claude);
+                        app.subscription().caps().words()),
+                app.subscription().compedEmails(),
+                app.subscription().enabled(),
+                app.claudeFeatures());
     }
 
     /** A deployment that sells the subscription, as the tests mostly ask about. */

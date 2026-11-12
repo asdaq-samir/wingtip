@@ -184,13 +184,14 @@ match your entities, which is convenient right up to the moment it drops
 a column in production. Flyway owns the schema; Hibernate is only allowed
 to check that it matches and refuse to start if not.
 
-**The proxy's base URL is externalised.** `planner-service.base-url`
-reads `${PLANNER_SERVICE_URL}`, which is the Compose hostname
+**Settings are one record.** application.yml's `app` block is bound to
+`AppProperties` and checked at start (`@Validated`), so a class takes the
+record, not a value by name. `app.planner.base-url` reads
+`${PLANNER_SERVICE_URL}`, which is the Compose hostname
 (`http://planner:8000`) both locally and on the AWS server, which runs the
-same Compose services (`infra/docker-compose.prod.yml`). Note the
-env var name must match `application.yml` exactly — Spring's relaxed
-binding does *not* map `PLANNER_SERVICE_BASE_URL` onto a property with a
-hyphen in it.
+same Compose services (`infra/docker-compose.prod.yml`); the proxy, the
+HTTP interface clients (`spring.http.serviceclient`) and the monitor all
+read that one key.
 
 **The paperwork is one list, read by the apps and the reminder emails
 alike.** `PaperworkService` gathers what falls due for a pilot -- the
