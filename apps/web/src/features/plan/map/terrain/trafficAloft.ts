@@ -31,7 +31,3 @@ export function standAtM(altitudeFt: number | null | undefined, groundM: number)
   if (altitudeFt == null) return groundM;
   return Math.max(groundM, altitudeFt * M_PER_FT);
 }
-
-/** The picture an airplane's mark wears (TrafficAloftGl's images): its
- *  colour's, an arrow where it reports a track, else a dot. */
-export const trafficPicture = (near: boolean, hasTrack: boolean) => `traffic3d|${near ? "near" : "far"}|${hasTrack ? "arrow" : "dot"}`;

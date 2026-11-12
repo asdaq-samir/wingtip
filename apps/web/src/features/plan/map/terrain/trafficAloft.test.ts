@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { standAtM, trafficPicture } from "./trafficAloft";
+import { standAtM } from "./trafficAloft";
 
 describe("traffic stood at its height", () => {
   test("an airplane stands at its reported height, never under the ground", () => {
@@ -9,10 +9,5 @@ describe("traffic stood at its height", () => {
     // high-pressure day, a geometric height on the runway) stands on it.
     expect(standAtM(500, 300)).toBe(300);
     expect(standAtM(null, 300)).toBe(300);
-  });
-
-  test("its mark is its colour's arrow, or a dot with no track", () => {
-    expect(trafficPicture(true, true)).toBe("traffic3d|near|arrow");
-    expect(trafficPicture(false, false)).toBe("traffic3d|far|dot");
   });
 });
