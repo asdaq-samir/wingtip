@@ -62,6 +62,10 @@ export const FT_PER_NM = 6076.12;
 /** Metres in a nautical mile, the international one. */
 export const M_PER_NM = 1852;
 
+/** Metres in a foot, the international one (exactly 0.3048 m): the one
+ *  place the web turns feet to metres, which five files once wrote each. */
+export const M_PER_FT = 0.3048;
+
 /** Where a great circle from `a` on a true bearing reaches `nm` out. */
 export function destination(a: LatLon, bearing: number, nm: number): LatLon {
   const d = nm / EARTH_NM,

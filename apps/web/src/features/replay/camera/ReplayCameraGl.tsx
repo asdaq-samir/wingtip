@@ -20,11 +20,6 @@ const CAMERA_MAX_ZOOM = 18;
  * camera itself. Own ship's following is let go while it runs and given back
  * after. In a gap the camera holds where it was: the airplane is not
  * known to have been anywhere.
- *
- * TODO(claude/studio): the pilot's view (PilotCamera, the dry run's) to
- * take its pose from poseOf("cockpit") -- the same figures, kept in step
- * by hand till then -- once the 3D agents' branches have landed; it keeps
- * its ground colours of its own.
  */
 export default function ReplayCameraGl() {
   const { map } = useGlMap();

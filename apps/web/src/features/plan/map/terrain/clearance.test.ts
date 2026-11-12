@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { callEngine } from "../../../../lib/engine/engine";
 import webRules from "../../../../lib/fixtures/webRules.json";
 import { coursePieces, corridorBounds, heightsOverPlan, OUTSIDE_M, terrariumHeights, terrariumPixels } from "./clearance";
-import { M_PER_FT } from "./geometry";
+import { M_PER_FT } from "../../../../lib/geo";
 
 /** Tile 12/1000/1500's middle and edges (it is some 3.9 nm across at 43 N). */
 const TILE = { z: 12, x: 1000, y: 1500 };
