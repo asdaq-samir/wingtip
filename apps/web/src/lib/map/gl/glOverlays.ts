@@ -112,9 +112,9 @@ const SUA_PICTURES: Picture[] = (Object.keys(SUA_INK) as (keyof typeof SUA_INK)[
 
 let drawn: Promise<Map<string, DrawnImage>> | null = null;
 /** Every picture the overlay layers wear, drawn once a page at the
- *  screen's density, for the map to take in its own `styleimagemissing`
- *  as a tile first asks for one (synchronously, so no symbol is laid out
- *  without its picture). */
+ *  screen's density, for the map to take in its missing-image resolver
+ *  as a tile first asks for one (MapLibre waits on it, so no symbol is
+ *  laid out without its picture). */
 export function overlayPictures(): Promise<Map<string, DrawnImage>> {
   drawn ??= Promise.all(
     [...airportPictures(), ...stationPictures(), ...NAVAID_PICTURES, ...AIRSPACE_TAB_PICTURES, ...SUA_PICTURES].map(([id, svg, stretch]) =>
