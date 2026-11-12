@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { SetURLSearchParams } from "react-router";
+import type { Address, SetAddress } from "../../../lib/address";
 import type { PanelState } from "../../../lib/mapChrome";
 import { useRadioActions } from "../../../lib/atcRadio";
 import { lessonOf } from "../../../lib/lessonLink";
@@ -10,7 +10,6 @@ import { stopsAlongQuery, stopsNearQuery } from "../../../lib/queryClient";
 import { kindsOf, type StopKind } from "../../../lib/stopKinds";
 import { useStopsAlong } from "../lib/stopsAlong";
 import { setCard, useSheetCards } from "../../../lib/sheetCards";
-import { patched } from "../../../lib/useSearchParamsNow";
 import type { ProceduresAt } from "../components/ProceduresRoute";
 import { riseToSee } from "./panelNow";
 import type { PlannedRoute } from "./planAddress";
@@ -40,8 +39,8 @@ export function useFplCards({
   briefOpen,
   setViewPick,
   setPanel,
-  searchParams,
-  setSearchParams,
+  address,
+  setAddress,
   setProceduresShown,
 }: {
   view: PanelView;
@@ -58,8 +57,8 @@ export function useFplCards({
   briefOpen: boolean;
   setViewPick: (view: PanelView) => void;
   setPanel: (state: PanelState) => void;
-  searchParams: URLSearchParams;
-  setSearchParams: SetURLSearchParams;
+  address: Address;
+  setAddress: SetAddress;
   setProceduresShown: (at: ProceduresAt) => void;
 }) {
   // The Nav Log's card, from the route's menu, where FPL shows the route in
@@ -131,54 +130,34 @@ export function useFplCards({
     [stopsShown, stopsFound, stopKind, fuelStopPins],
   );
   // FPL's saved flights in full, a card over it (SAVED's title).
-  const savedOpen = searchParams.get("saved") === "1";
+  const savedOpen = address.saved;
   // An approach set by their instructor, open over the map until closed.
-  const lessonOpen = lessonOf(searchParams.get("lesson"));
+  const lessonOpen = lessonOf(address.lesson);
   const closeLesson = useCallback(() => {
-    setSearchParams((prev) => patched(prev, { lesson: null }), { replace: true });
-  }, [setSearchParams]);
+    void setAddress({ lesson: null });
+  }, [setAddress]);
   // Each written in place of the address's last, as every panel change is
   // (lib/backNavigation): they pushed onto the history, the browser's Back stepping
   // through Saved and Nearest alone of the lists.
   const openSaved = useCallback(() => {
-    setSearchParams(
-      (prev) => {
-        return patched(prev, { saved: "1" });
-      },
-      { replace: true },
-    );
+    void setAddress({ saved: true });
     riseToSee(setPanel);
-  }, [setSearchParams, setPanel]);
+  }, [setAddress, setPanel]);
   // And back from it to FPL's start, its own Back (FlightsPanel's head).
   const closeSaved = useCallback(() => {
-    setSearchParams(
-      (prev) => {
-        return patched(prev, { saved: null });
-      },
-      { replace: true },
-    );
-  }, [setSearchParams]);
+    void setAddress({ saved: null });
+  }, [setAddress]);
   // The Brief, from the chips' Brief: its own card, opened at the height
   // FPL is at, half from the pill and all the way up staying so (CardStack,
   // the owner's "Brief opens in half card when clicked on full fpl tab");
   // FPL under it stays as it was.
   const openBrief = useCallback(() => {
     setStopsOpen(false);
-    setSearchParams(
-      (prev) => {
-        return patched(prev, { brief: "1" });
-      },
-      { replace: true },
-    );
-  }, [setSearchParams, setStopsOpen]);
+    void setAddress({ brief: true });
+  }, [setAddress, setStopsOpen]);
   const closeBrief = useCallback(() => {
-    setSearchParams(
-      (prev) => {
-        return patched(prev, { brief: null });
-      },
-      { replace: true },
-    );
-  }, [setSearchParams]);
+    void setAddress({ brief: null });
+  }, [setAddress]);
   // The Nav Log from the route's menu, a card over FPL as the Brief is,
   // opening by the card rule (CardStack), the sheet under it left as it is.
   const openNavLogCard = useCallback(() => {
@@ -211,10 +190,8 @@ export function useFplCards({
     setStopsFrom(view);
     setNavLogOpen(false);
     setProfileOpen(false);
-    setSearchParams((prev) => (prev.get("brief") || prev.get("place") ? patched(prev, { brief: null, place: null }) : prev), {
-      replace: true,
-    });
-  }, [setStopsOpen, setSearchParams, view]);
+    void setAddress({ brief: null, place: null });
+  }, [setStopsOpen, setAddress, view]);
   // Find Nearby's tile (the Airport tab): the Stops round the pilot, that
   // kind picked.
   const setStopKind = usePreferences((p) => p.setStopKind);
@@ -245,34 +222,19 @@ export function useFplCards({
   // The legs asked for from the Brief: FPL in its place, the sheet at the
   // size the pilot left it (half from the pill).
   const showLegs = useCallback(() => {
-    setSearchParams(
-      (prev) => {
-        return patched(prev, { brief: null });
-      },
-      { replace: true },
-    );
+    void setAddress({ brief: null });
     riseToSee(setPanel);
-  }, [setSearchParams, setPanel]);
+  }, [setAddress, setPanel]);
   // The strip's title opens the list in full, over Airport: its card all
   // the way up (NearestCard's `opens`).
   const openNearest = useCallback(() => {
-    setSearchParams(
-      (prev) => {
-        return patched(prev, { near: "1" });
-      },
-      { replace: true },
-    );
-  }, [setSearchParams]);
+    void setAddress({ near: true });
+  }, [setAddress]);
   // And its Back, to Airport's start: the list and the place it was from
   // put away.
   const closeNearest = useCallback(() => {
-    setSearchParams(
-      (prev) => {
-        return patched(prev, { near: null, nearAt: null, nearName: null });
-      },
-      { replace: true },
-    );
-  }, [setSearchParams]);
+    void setAddress({ near: null, nearAt: null, nearName: null });
+  }, [setAddress]);
   // The microphone's own commands (components/pilotCommand, RadioLayer): the
   // Nearest list over Airport, and an approach's page in the procedures
   // sheet, whose lists are the route's fields' alone.
@@ -293,7 +255,7 @@ export function useFplCards({
     return () => useRadioActions.setState({ nearest: null, showProcedure: null });
   }, [setViewPick, openNearest, planned.dep, plannedStops, planned.dest, setProceduresShown]);
   // A screen asked for by name, by a link or from inside the app.
-  useOpenScreen({ routed, searchParams, setSearchParams, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest });
+  useOpenScreen({ routed, address, setAddress, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest });
   return {
     briefShown,
     navLogShown,

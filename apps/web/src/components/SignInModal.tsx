@@ -5,7 +5,7 @@ import { cn } from "cn";
 import AppleLogo from "./icons/AppleLogo";
 import GoogleLogo from "./icons/GoogleLogo";
 import { Button, buttonVariants } from "./ui/button";
-import SheetDialog from "./SheetDialog";
+import SheetDialog from "./SheetDialogBody";
 import { Input } from "./ui/input";
 import { Spinner } from "./ui/spinner";
 import { ApiError, api } from "../lib/api/client";

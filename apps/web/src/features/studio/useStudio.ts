@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router";
 import { describeError } from "../../lib/api/client";
 import { TrackError } from "../../lib/track";
 import { useShownOverlay } from "../../lib/map/sources/useShownOverlay";
@@ -10,6 +9,8 @@ import { importTrackFile } from "./importTrack";
 import { studioGroundQuery, studioTrackQuery, studioWatchedQuery, type StudioTrack } from "./studioApi";
 import { useDrafts } from "./useDrafts";
 import { useStudioHistory } from "./useStudioHistory";
+import { ADDRESS_CLEARED } from "../../lib/address";
+import { useStudioAddress } from "./studioAddress";
 
 /** The ground asked for at most this many points along a track. */
 const GROUND_POINTS = 200;
@@ -49,9 +50,9 @@ export function utcToday(): string {
  * on Plan, and the replay's clock is read where a second redraws it.
  */
 export function useStudio() {
-  const [params, setParams] = useSearchParams();
-  const q = params.get("q") ?? "";
-  const day = params.get("day") ?? "";
+  const [address, setAddress] = useStudioAddress();
+  const q = address.q ?? "";
+  const day = address.day ?? "";
   const asked = useQuery(studioTrackQuery(q, day));
   const watched = useQuery(studioWatchedQuery);
   const drafts = useDrafts();
@@ -144,14 +145,15 @@ export function useStudio() {
     /** The open crash draft's id at ?render=1, once its own airplane's
      *  track is the one loaded (its `q`, useDrafts): the render script's film of it
      *  (useRenderEntry, scripts/dev/studio-render.mjs). */
-    renderDraft: params.get("render") === "1" && !file && drafts.draft && fromDay && q === drafts.draft.n_number ? drafts.draft.id : null,
+    renderDraft: address.render === "1" && !file && drafts.draft && fromDay && q === drafts.draft.n_number ? drafts.draft.id : null,
     watched: watched.data ?? [],
     /** The crash drafts (useDrafts), the one open among them. */
     drafts,
     /** An airplane's day, by N-number or ICAO address. */
     load: (tail: string, utcDay: string) => {
       setFile(null);
-      setParams({ q: tail.trim().toUpperCase(), day: utcDay }, { replace: true });
+      // The address this airplane's day alone, as a link to it would be.
+      void setAddress({ ...ADDRESS_CLEARED, draft: null, render: null, q: tail.trim().toUpperCase() || null, day: utcDay || null });
     },
     /** A KML, GPX or CSV track file. */
     importFile: async (picked: File) => {

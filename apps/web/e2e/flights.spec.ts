@@ -178,7 +178,7 @@ test("opening a saved flight puts its route in the header, and Load plans that r
   await expect(page).toHaveURL(/dep=KMSP/);
   await expect(page).toHaveURL(/altitude_ft=5500/);
   // And at the altitudes the pilot set at its points: Duluth's pattern.
-  await expect(page).toHaveURL(/altitudes=KDLH%3A2400/);
+  await expect(page).toHaveURL(/altitudes=KDLH(%3A|:)2400/);
 });
 
 test("a saved flight opened from FPL's Saved opens its page, and Open on the map plans it", async ({ page }) => {

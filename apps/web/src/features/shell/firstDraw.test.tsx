@@ -67,13 +67,20 @@ async function drawAt(address: string, before?: () => Promise<void>) {
   const { RouterProvider } = await import("react-router/dom");
   const { QueryClientProvider } = await import("@tanstack/react-query");
   const { queryClient } = await import("../../lib/queryClient");
+  const { NuqsTestingAdapter } = await import("nuqs/adapters/testing");
   const { default: MapPage } = await import("./MapPage");
   const router = createMemoryRouter([{ path: "/plan", element: createElement(MapPage, { mode: "pilot" }) }], { initialEntries: [address] });
+  // The address's keys as the page reads them (lib/address), from the same address.
+  const searchParams = address.split("?")[1] ?? "";
   // In an awaited act: a part that waits for the engine suspends, and
   // React's retry once it is there is flushed inside one.
   await library.act(async () => {
     unmount = library.render(
-      createElement(QueryClientProvider, { client: queryClient }, createElement(RouterProvider, { router })),
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(NuqsTestingAdapter, { searchParams, hasMemory: true, children: createElement(RouterProvider, { router }) }),
+      ),
     ).unmount;
   });
   return { ...library, engine };

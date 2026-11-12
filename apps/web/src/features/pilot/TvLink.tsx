@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useLocation, useNavigate } from "react-router";
+import { useQueryState } from "nuqs";
 import SheetDialog from "../../components/SheetDialog";
 import { Button } from "../../components/ui/button";
 import { ApiError, api } from "../../lib/api/client";
@@ -37,18 +37,13 @@ export default function TvLink() {
     setShort(code.length < TV_CODE_LENGTH);
     if (code.length === TV_CODE_LENGTH) approve.mutate(tvCode(code));
   };
-  // Off the address at once, so a reload does not open the box again:
-  // React Router's navigate, replacing, the rest of the address kept.
-  const navigate = useNavigate();
-  const location = useLocation();
-  const marked = open && new URLSearchParams(location.search).has("tv-link");
+  // Off the address at once, so a reload does not open the box again, the
+  // rest of the address kept: its one key, the TV's link's own.
+  const [tvLink, setTvLink] = useQueryState("tv-link");
+  const marked = open && tvLink !== null;
   useEffect(() => {
-    if (!marked) return;
-    const params = new URLSearchParams(location.search);
-    params.delete("tv-link");
-    const rest = params.toString();
-    void navigate({ pathname: location.pathname, search: rest ? `?${rest}` : "", hash: location.hash }, { replace: true });
-  }, [marked, location, navigate]);
+    if (marked) void setTvLink(null);
+  }, [marked, setTvLink]);
   if (!open) return null;
   const close = () => setOpen(false);
   return (

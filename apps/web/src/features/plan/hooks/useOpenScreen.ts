@@ -1,11 +1,10 @@
 import { useEffect } from "react";
-import type { SetURLSearchParams } from "react-router";
+import type { Address, SetAddress } from "../../../lib/address";
 import { useWantedPage } from "../../../components/wantedPage";
 import { openEmergency } from "../../../lib/emergencyStore";
 import { useConsoleOpen, type PanelState } from "../../../lib/mapChrome";
 import { SCREEN_LINK, screenOf, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { stale, takeScreen, useWanted, wantScreen } from "../../../lib/navigation/wanted";
-import { patched } from "../../../lib/useSearchParamsNow";
 import { tailOf } from "../../../lib/aircraftChoice";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
 import { usePreferences } from "../../../lib/preferences";
@@ -40,8 +39,8 @@ const OVER_ROUTE = new Set<ScreenId>(["brief", "navlog", "profile"]);
  */
 export function useOpenScreen({
   routed,
-  searchParams,
-  setSearchParams,
+  address,
+  setAddress,
   setViewPick,
   setPanel,
   openBrief,
@@ -50,8 +49,8 @@ export function useOpenScreen({
   openNearest,
 }: {
   routed: boolean;
-  searchParams: URLSearchParams;
-  setSearchParams: SetURLSearchParams;
+  address: Address;
+  setAddress: SetAddress;
   setViewPick: (view: PanelView) => void;
   setPanel: (state: PanelState) => void;
   openBrief: () => void;
@@ -61,13 +60,13 @@ export function useOpenScreen({
 }) {
   // The link's own word, taken off the address so a reload or Back does
   // not open the screen again.
-  const linked = searchParams.get(SCREEN_LINK.key);
+  const linked = address[SCREEN_LINK.key];
   useEffect(() => {
     if (linked === null) return;
     const screen = screenOf(linked);
     if (screen) wantScreen(screen);
-    setSearchParams((prev) => patched(prev, { [SCREEN_LINK.key]: null }), { replace: true });
-  }, [linked, setSearchParams]);
+    void setAddress({ [SCREEN_LINK.key]: null });
+  }, [linked, setAddress]);
 
   const wanted = useWanted((s) => s.screen);
   useEffect(() => {
@@ -104,7 +103,7 @@ export function useOpenScreen({
           openAirplaneProfile(tail);
           return;
         }
-        setSearchParams((prev) => patched(prev, { aircraft: "1" }), { replace: true });
+        void setAddress({ aircraft: true });
         riseToSee(setPanel);
         return;
       }
@@ -118,7 +117,7 @@ export function useOpenScreen({
         else openProfileCard();
         return;
       case "favorites":
-        setSearchParams((prev) => patched(prev, { list: "favorites" }), { replace: true });
+        void setAddress({ list: "favorites" });
         riseToSee(setPanel);
         return;
       case "nearest":
@@ -145,5 +144,5 @@ export function useOpenScreen({
       default:
         screen satisfies never;
     }
-  }, [wanted, routed, setSearchParams, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest]);
+  }, [wanted, routed, setAddress, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest]);
 }
