@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 # (its generator is checked instead), and the planner's hashed detection.py.
 SKIP = re.compile(
     r"(\.test\.|\.spec\.|/e2e/|/tests?/|tests_wingtip/|/test_[^/]*\.py$|Tests?/|UITests/|androidTest/|/fixtures/"
-    r"|/[Gg]enerated/|\.d\.ts$|lib/engine/contract\.ts$|lib/engine/pkg/|node_modules/|/dist/|/build/"
+    r"|/[Gg]enerated/|apps/ios/WingtipAPI/|\.d\.ts$|lib/engine/contract\.ts$|lib/engine/pkg/|node_modules/|/dist/|/build/"
     r"|services/planner/app/detection\.py$|planner_client\.py$|planner_models\.py$)"
 )
 # Where the code these guards read lives (CLAUDE.md: apps/, services/,

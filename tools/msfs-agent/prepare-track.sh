@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # A Studio track made ready for the simulator replay agent, on the Mac:
 #
-#   [RATE_HZ=10] tools/msfs-agent/prepare-track.sh N901TQ 2026-11-11 [23:40 23:59:59] > track.json
+#   [RATE_HZ=2] tools/msfs-agent/prepare-track.sh N901TQ 2026-11-11 [23:40 23:59:59] > track.json
 #
 # The airplane's UTC day as the planner's /api/studio/track gives it (the
 # Studio's own track store), cut to the flight between the two UTC times,
@@ -22,7 +22,12 @@ set -euo pipefail
 
 planner=${PLANNER_URL:-http://127.0.0.1:8084}
 container=${PLANNER_CONTAINER:-wingtip-planner-1}
-rate=${RATE_HZ:-10}
+# The frame rate has one home, the web's FRAME_HZ (the exports X-Plane and Sky
+# Dolly replay row by row); RATE_HZ overrides it for a smaller file.
+home=$(cd "$(dirname "$0")/../.." && pwd)/apps/web/src/lib/replay/simExport/flight.ts
+frame_hz=$(sed -n 's/^export const FRAME_HZ = \([0-9][0-9]*\);.*/\1/p' "$home")
+[ -n "$frame_hz" ] || { echo "prepare-track: no FRAME_HZ in $home" >&2; exit 1; }
+rate=${RATE_HZ:-$frame_hz}
 [ $# -ge 2 ] || { sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 64; }
 who=$1 day=$2 from=${3:-00:00} to=${4:-23:59:59}
 

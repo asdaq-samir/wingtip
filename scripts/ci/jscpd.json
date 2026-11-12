@@ -16,6 +16,7 @@
     "**/node_modules/**",
     "**/generated/**",
     "**/Generated/**",
+    "**/apps/ios/WingtipAPI/**",
     "**/*.test.*",
     "**/*.spec.*",
     "**/tests/**",
