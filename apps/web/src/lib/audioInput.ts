@@ -13,7 +13,7 @@
  * route: a capture held on the chosen input by its exact id is what makes
  * WebKit ask iOS for it (setPreferredInput), and the held track's name is
  * the only word the page gets of what is live, and of a change or a drop.
- * Where the recognizer takes a track (lib/listen's takesTrack: Chrome and
+ * Where the recognizer takes a track (lib/speechLocal's takesTrack: Chrome and
  * Edge, Firefox 160, on the desktop) it hears exactly this one.
  *
  * Holds are counted -- the Radio card's picker while it is open, and each
@@ -21,8 +21,7 @@
  * held for nothing. Nothing heard is sent anywhere or saved: the level is
  * a number for the bars, gone as it is drawn.
  *
- * Imported by lib/atcListening, features/plan/lib/atis and the card's ListenThrough, all
- * chunks of their own, never by lib/listen, which the first load carries.
+ * Imported by lib/atcListening, features/plan/lib/atis and the card's ListenThrough, all chunks of their own.
  * Every browser call is feature-tested and caught; where nothing can be
  * picked -- Chrome for Android, whose recognizer opens the microphone itself and whose
  * inputs are only "Bluetooth headset" and "Default" -- all of it does
@@ -30,7 +29,8 @@
  */
 import { create } from "zustand";
 import { inputLevel, useAtcRadio, type HeardInput } from "./atcRadio";
-import { noMicrophone, takesTrack } from "./listen";
+import { noMicrophone } from "./listen";
+import { takesTrack } from "./speechLocal";
 import { usePreferences } from "./preferences";
 
 /** One input, as enumerateDevices lists it once the page may see names. */

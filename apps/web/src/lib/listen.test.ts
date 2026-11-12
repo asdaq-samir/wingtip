@@ -9,8 +9,8 @@
  * started where the browser cannot promise that (lib/speechLocal).
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { NEEDS_CONNECTION, listen, noMicrophone, takesTrack } from "./listen";
-import { checkSpeech, forgetSpeechCheck } from "./speechLocal";
+import { NEEDS_CONNECTION, listen, noMicrophone } from "./listen";
+import { checkSpeech, forgetSpeechCheck, takesTrack } from "./speechLocal";
 
 class Recognizer {
   static made: Recognizer[] = [];

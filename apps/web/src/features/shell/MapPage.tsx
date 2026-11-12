@@ -1,10 +1,10 @@
-import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { showError } from "../../lib/problems";
 import { useAddress } from "../../lib/address";
 import { Shown } from "../../lib/shown";
 import DevGuard from "../../components/DevGuard";
 import MapPanel from "../../components/MapPanel";
-import { ConsoleInPanelContext, useConsoleOpen, MapInsetsContext, NO_INSETS, type MapInsets, type PanelState } from "../../lib/mapChrome";
+import { ConsoleInPanelContext, useConsoleOpen, insetVars, setMapInsets, type PanelState } from "../../lib/mapChrome";
 import RouteForm from "../../components/RouteForm";
 import { EngineGate } from "../../lib/engine/engineGate";
 import { useNavEdge } from "../../hooks/use-nav-edge";
@@ -118,24 +118,6 @@ export default function MapPage({ mode }: { mode: Mode }) {
     [mode, briefingInAddress, setAddress],
   );
 
-  // What the panel covers of the map at rest, for the map to fit a
-  // route clear of it and lift its chart credit above it. Kept when it
-  // has not changed, so a measurement that comes out the same does not
-  // render the page again.
-  const [insets, setInsets] = useState<MapInsets>(NO_INSETS);
-  const changeInsets = useCallback((next: MapInsets) => {
-    setInsets((prev) =>
-      prev.top === next.top &&
-      prev.bottom === next.bottom &&
-      prev.left === next.left &&
-      prev.out === next.out &&
-      prev.up === next.up &&
-      prev.card === next.card
-        ? prev
-        : next,
-    );
-  }, []);
-
   // The console, the account page: opened from the account button
   // beside the search (AccountButton), on both pages, a layer of the map's
   // panel itself (below), as
@@ -187,13 +169,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
   if (layerDrawn && !setupDrawn) setSetupDrawn(true);
   const consoleLayerOf = (pieces: WorkspacePieces) => (
     <ConsoleInPanelContext.Provider value={consoleInPanel}>
-      <ConsoleLayer
-        label={consoleLabel}
-        edge={edge}
-        onClose={closeConsole}
-        finalFocus={consoleButton}
-        shown={consoleLayer}
-      >
+      <ConsoleLayer label={consoleLabel} edge={edge} onClose={closeConsole} finalFocus={consoleButton} shown={consoleLayer}>
         <Shown.Provider value={consoleLayer}>
           <AfterTheSheet>{pieces.console}</AfterTheSheet>
         </Shown.Provider>
@@ -281,18 +257,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
               their own (MapControls' 1000); contained here, the map is one flat layer under
               the panel and the sheets. The insets as variables, for the
               chart credit (index.css). */}
-                <main
-                  id="content"
-                  className="absolute inset-0 isolate print:hidden"
-                  style={
-                    {
-                      "--map-inset-top": `${insets.top}px`,
-                      "--map-inset-bottom": `${insets.bottom}px`,
-                      "--map-inset-left": `${insets.left}px`,
-                    } as CSSProperties
-                  }
-                >
-                  <MapInsetsContext.Provider value={insets}>{pieces.map}</MapInsetsContext.Provider>
+                <main id="content" ref={insetVars} className="absolute inset-0 isolate print:hidden">
+                  {pieces.map}
                 </main>
                 {(pieces.around ?? ((panelNode: ReactNode) => panelNode))(
                   <MapPanel
@@ -300,7 +266,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
                     controls={pieces.alone || consoleLayer ? undefined : pieces.controls}
                     state={panel}
                     onStateChange={setPanel}
-                    onInsetsChange={changeInsets}
+                    onInsetsChange={setMapInsets}
                     // The pill: the workspace's own (a card's summary, the route's
                     // one line), or else the top row itself -- the same element, so
                     // a search bar typed into keeps its focus as the sheet comes up.

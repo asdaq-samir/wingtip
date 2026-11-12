@@ -9,7 +9,7 @@
  * audioInput's, which this store names and meters.
  */
 import { create } from "zustand";
-import { takesTrack } from "./listen";
+import { takesTrack } from "./speechLocal";
 import type { TypedProcedure } from "./procedures";
 
 export interface Transmission {
@@ -112,7 +112,7 @@ export function lostWords(input: HeardInput): string {
 
 /**
  * The outside input the recognizer is known to hear, by its name: only
- * where it is handed the held track (lib/listen's takesTrack: Chrome and
+ * where it is handed the held track (lib/speechLocal's takesTrack: Chrome and
  * Edge, Firefox 160, on the desktop). Safari's recognizer records the
  * route's input in a process of its own, and that it follows the input
  * held here is read from WebKit's code, not yet seen on a phone (the

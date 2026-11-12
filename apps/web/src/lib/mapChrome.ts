@@ -40,8 +40,40 @@ export interface MapInsets {
    *  the map with it. */
   card?: boolean;
 }
-export const NO_INSETS: MapInsets = { top: 0, bottom: 0, left: 0, out: false, up: false };
-export const MapInsetsContext = createContext<MapInsets>(NO_INSETS);
+const NO_INSETS: MapInsets = { top: 0, bottom: 0, left: 0, out: false, up: false };
+
+/** The page's insets, in a store of their own rather than MapPage's state:
+ *  a change (the sheet settling, a card coming) is read by the map's own
+ *  parts (GlMapShell, useGlFit) and written to the page's CSS variables
+ *  (insetVars), where as MapPage's state it drew the whole page again. */
+export const useMapInsets = create<MapInsets>(() => NO_INSETS);
+
+/** The panel's measurement (MapPanel's onInsetsChange), kept when it has
+ *  not changed, so one that comes out the same tells nobody. */
+export function setMapInsets(next: MapInsets) {
+  const prev = useMapInsets.getState();
+  const same =
+    prev.top === next.top &&
+    prev.bottom === next.bottom &&
+    prev.left === next.left &&
+    prev.out === next.out &&
+    prev.up === next.up &&
+    prev.card === next.card;
+  if (!same) useMapInsets.setState(next, true);
+}
+
+/** The insets as the map's element's CSS variables, for the chart credit
+ *  (index.css): a ref, written now and at each change, never by a render. */
+export function insetVars(el: HTMLElement | null) {
+  if (!el) return;
+  const write = (insets: MapInsets) => {
+    el.style.setProperty("--map-inset-top", `${insets.top}px`);
+    el.style.setProperty("--map-inset-bottom", `${insets.bottom}px`);
+    el.style.setProperty("--map-inset-left", `${insets.left}px`);
+  };
+  write(useMapInsets.getState());
+  return useMapInsets.subscribe(write);
+}
 
 /** The console's close where it is a layer of the map's panel rather
  *  than a sheet of its own -- on a phone (MapPage) -- for its header to

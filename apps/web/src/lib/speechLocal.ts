@@ -51,6 +51,25 @@ export function recognitionClass(): RecognitionClass | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
+/**
+ * Whether the browser's recognizer hears the track it is handed
+ * (start(track)): Chrome and Edge 135+ on Windows, Mac and Linux, and
+ * Firefox 160 on the desktop, each with the unprefixed SpeechRecognition
+ * (MDN's compat data, start's audioTrack). Safari names its recognizer
+ * webkitSpeechRecognition alone and declares only start() (WebKit's
+ * SpeechRecognition.idl), and Chrome for Android has no such start
+ * (Chromium's MediaStreamTrackWebSpeech is desktop only): both record
+ * whatever input is the default, given a track or not.
+ */
+export function takesTrack(): boolean {
+  // ChromeOS too has the unprefixed recognizer without the track: Chromium's
+  // MediaStreamTrackWebSpeech flag is stable on Linux, Mac and Windows
+  // only (runtime_enabled_features.json5), and start(track) falls back to
+  // start() under WebIDL elsewhere.
+  if (typeof window === "undefined" || /Android|CrOS/.test(navigator.userAgent)) return false;
+  return typeof (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition === "function";
+}
+
 const useSpeechHere = create<{ state: SpeechHere }>(() => ({ state: "checking" }));
 
 let asked: Promise<SpeechHere> | null = null;

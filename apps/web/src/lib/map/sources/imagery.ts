@@ -22,3 +22,8 @@ export const USGS_CREDIT = "Imagery USGS The National Map";
  *  States and a fringe across its borders; the Bahamas and the open sea
  *  have none at any level (each a 404, checked 2026-11-12). */
 export const USGS_COVER_ZOOM = 13;
+
+/** Google's Map Tiles API: a session for a kind of map, then its tiles
+ *  (googleSession). Here, beside the USGS's, so that the first load's
+ *  preconnect to it (lib/preloads) does not bring the session's store. */
+export const GOOGLE = "https://tile.googleapis.com";

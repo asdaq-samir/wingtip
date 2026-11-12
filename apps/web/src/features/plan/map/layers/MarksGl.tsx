@@ -87,24 +87,25 @@ const AHEAD_INK = { warning: CHART.warning, caution: CHART.caution } as const;
 
 export function AheadGl() {
   const ahead = useAhead();
-  const fix = useOwnShip((s) => s.fix);
+  // The fix only where a line is drawn to an alert outside it, else
+  // whether there is one: the rings stand still while the airplane moves,
+  // and were sent to the map's worker again at every fix.
+  const lined = !!ahead?.alerts.some((a) => !a.inside);
+  const fix = useOwnShip((s) => (lined ? s.fix : null));
+  const hasFix = useOwnShip((s) => s.fix !== null);
   const runs = useMemo<GlRun[] | null>(
     () =>
       ahead && fix
-        ? ahead.alerts.flatMap((a) => [
-            ...(!a.inside
-              ? [
-                  {
-                    points: [
-                      [fix.lat, fix.lon],
-                      [a.lat, a.lon],
-                    ] as [number, number][],
-                    colour: AHEAD_INK[a.level],
-                    width: 2,
-                  },
-                ]
-              : []),
-          ])
+        ? ahead.alerts
+            .filter((a) => !a.inside)
+            .map((a) => ({
+              points: [
+                [fix.lat, fix.lon],
+                [a.lat, a.lon],
+              ] as [number, number][],
+              colour: AHEAD_INK[a.level],
+              width: 2,
+            }))
         : null,
     [ahead, fix],
   );
@@ -112,7 +113,7 @@ export function AheadGl() {
   useGlLayer("top", { [AHEAD]: { type: "geojson", data: EMPTY } }, [AHEAD_RINGS]);
   const rings = useMemo<GeoJSON.FeatureCollection | null>(
     () =>
-      ahead && fix
+      ahead && hasFix
         ? {
             type: "FeatureCollection",
             features: ahead.alerts.map((a) => ({
@@ -122,7 +123,7 @@ export function AheadGl() {
             })),
           }
         : null,
-    [ahead, fix],
+    [ahead, hasFix],
   );
   useGlData(AHEAD, rings);
   // The rings drawn, by level, for the browser tests.

@@ -1,9 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { googleMapsQuery } from "../../queryClient";
 import { keptStore } from "../../storage";
-
-/** Google's Map Tiles API: a session for a kind of map, then its tiles. */
-export const GOOGLE = "https://tile.googleapis.com";
+import { GOOGLE } from "./imagery";
 
 /**
  * The site's origin, and only that, as the Referer of every request to

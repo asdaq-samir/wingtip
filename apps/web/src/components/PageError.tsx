@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { useRouteError } from "react-router";
+import { Component, useEffect, type ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "./ui/button";
 import { reportOf, sendReport } from "../lib/errorReports";
@@ -18,11 +17,10 @@ const WORDS = {
  * phone could not fetch, after a deploy or with no signal (main.tsx's
  * vite:preloadError reloads once first where a newer build is served,
  * lib/chunkRecovery) -- said plainly with which it was and the way on,
- * where the router's own error screen, a developer's, took the map's
- * place. Reported as a render error is.
+ * where React's blank page took the map's place. Reported as a render
+ * error is.
  */
-export default function PageError() {
-  const error = useRouteError();
+function PageError({ error }: { error: unknown }) {
   const failure = useChunkFailure((s) => s.failure);
   const words = WORDS[failure ?? (globalThis.navigator?.onLine === false ? "offline" : "failed")];
   useEffect(() => {
@@ -37,4 +35,20 @@ export default function PageError() {
       </Button>
     </main>
   );
+}
+
+/**
+ * A page's error boundary, PageError in its place when it throws. React's
+ * own class API (getDerivedStateFromError): a boundary has no hook form.
+ */
+export class PageErrorBoundary extends Component<{ children: ReactNode }, { error: unknown; failed: boolean }> {
+  state = { error: null as unknown, failed: false };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error, failed: true };
+  }
+
+  render() {
+    return this.state.failed ? <PageError error={this.state.error} /> : this.props.children;
+  }
 }

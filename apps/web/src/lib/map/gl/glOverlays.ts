@@ -161,9 +161,7 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }): S
       // Out at a few states, a mark keeps some 80 px from the next; closer in, its own: every field at a field's own scale.
       "icon-padding": ["step", ["zoom"], 27, glZoom(7), 2],
       "symbol-sort-key": ["get", "rank"],
-      // The open card's field's ident left out: the ring's own layer
-      // writes it larger (AirportsGl's SELECTED_IDENT).
-      "text-field": ["case", ["==", ["get", "ident"], ["global-state", SELECTED_AIRPORT]], "", ["get", "ident"]],
+      "text-field": ["get", "ident"],
       "text-font": GL_FONT_BOLD,
       "text-size": ["interpolate", ["linear"], ["zoom"], glZoom(AIRPORTS_FARTHEST_ZOOM), 10, glZoom(10), 12, glZoom(13), 13],
       "text-anchor": "left",
@@ -172,7 +170,7 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }): S
       "text-optional": true,
       "text-padding": 1,
     },
-    paint: { "text-color": ["case", TOWERED, TOWERED_BLUE, UNTOWERED_MAGENTA], ...LABEL_HALO },
+    paint: { "text-color": ["case", TOWERED, TOWERED_BLUE, UNTOWERED_MAGENTA], ...LABEL_HALO, "text-opacity": SELECTED_HIDDEN },
   };
 }
 
@@ -358,6 +356,8 @@ export function addOverlays(map: MlMap, tiles: OverlayTiles, origin?: string) {
 const ROUTE_AIRPORTS = "routeAirports";
 const ROUTE_WAYPOINTS = "routeWaypoints";
 const SELECTED_AIRPORT = "selectedAirport";
+// The open card's ident hidden in paint (AirportsGl writes it larger): a tap repaints, not a re-layout of every tile.
+const SELECTED_HIDDEN: ExpressionSpecification = ["case", ["==", ["get", "ident"], ["global-state", SELECTED_AIRPORT]], 0, 1];
 const SHOW_MILITARY = "showMilitary";
 const SHOW_PRIVATE = "showPrivate";
 
