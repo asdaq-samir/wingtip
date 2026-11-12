@@ -100,7 +100,7 @@ struct AirportPlaceHead: View {
                 .accessibilityAddTraits(.isHeader)
                 // The UI tests' sign the card is up (WingtipUITests/FlowTests).
                 .accessibilityIdentifier("airport-card-head")
-                .siriSees(SiriSaw.airport(place.ident))
+                .appEntityIdentifier(SiriSaw.airport(place.ident))
             // What it is and where, a tap from Apple's Maps, as Maps'
             // subtitle opens the place's whereabouts.
             Link(destination: AirportCard.mapsLink(place)) {

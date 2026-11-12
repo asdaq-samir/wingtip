@@ -123,7 +123,7 @@ struct FieldNotamRow: View {
             }
             .foregroundStyle(inactive ? .secondary : .primary)
         }
-        .siriSees(SiriSaw.notam(notam.id))
+        .appEntityIdentifier(SiriSaw.notam(notam.id))
         .accessibilityElement(children: .combine)
     }
 }
@@ -222,22 +222,12 @@ struct FieldNotamPage: View {
         .listStyle(.insetGrouped)
         .navigationTitle(notams.heading(notam))
         .navigationBarTitleDisplayMode(.inline)
-        .modifier(NavigationSubtitle(text: number))
+        .navigationSubtitle(number)
         .toolbar {
             ToolbarItem(placement: .pinnedTrailing) {
                 ShareLink(item: notam.raw) { Label("Share", systemImage: WingtipIcon.share) }
             }
         }
-    }
-}
-
-/// The page's second line under its title, where iOS has one (iOS 26);
-/// before it the page's first row says it.
-private struct NavigationSubtitle: ViewModifier {
-    let text: String
-
-    func body(content: Content) -> some View {
-        if #available(iOS 26, *) { content.navigationSubtitle(text) } else { content }
     }
 }
 

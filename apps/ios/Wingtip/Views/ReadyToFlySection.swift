@@ -199,7 +199,7 @@ struct NotamsSection: View {
             Text([notam.field, notam.keyword].compactMap { $0 }.joined(separator: " · ")).font(WingtipType.row.weight(.semibold))
             Text(notam.raw).font(WingtipType.note.monospaced()).foregroundStyle(.secondary)
         }
-        .siriSees(SiriSaw.notam(notam.id))
+        .appEntityIdentifier(SiriSaw.notam(notam.id))
         .accessibilityElement(children: .combine)
     }
 }

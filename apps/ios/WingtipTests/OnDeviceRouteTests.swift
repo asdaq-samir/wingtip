@@ -1,9 +1,7 @@
 import Foundation
+import FoundationModels
 import Testing
 @testable import Wingtip
-#if canImport(FoundationModels)
-import FoundationModels
-#endif
 
 /// Which way a question goes (AskRouter), the Foundation Models tools'
 /// wiring to the engine, and the Brief's glance from the model's guided
@@ -83,9 +81,7 @@ struct OnDeviceRouteTests {
 
     // MARK: The tools, as the model calls them
 
-    #if canImport(FoundationModels)
     @Test func theToolsCallTheEngineAndLogWhatTheyHandOver() async throws {
-        guard #available(iOS 26, *) else { return }
         let facts = try OnDeviceAskTests.facts()
         let log = FigureLog()
         let wind = RunwayWindTool(facts: facts, log: log)
@@ -99,7 +95,6 @@ struct OnDeviceRouteTests {
         #expect(log.figures.map(\.id) == ["wind:KMSN:36", "metar:KMSN", "taf:KMSN", "density:KMSN"])
         #expect(OnDeviceTools.all(facts, log: log).map(\.name) == ["fieldWeather", "runwayWind", "fuel", "glide", "nearestFields"])
     }
-    #endif
 
     // MARK: The Brief's glance
 
@@ -116,13 +111,11 @@ struct OnDeviceRouteTests {
         }
     }
 
-    #if canImport(FoundationModels)
     /// The model's guided output, as JSON it could give, parsed into the
     /// @Generable shape and held to the findings: the action on a finding
     /// not acted on, the second on one finding and the one quoting a
     /// number of its own are dropped.
     @Test func theGuidedGlanceIsParsedAndHeldToTheFindings() throws {
-        guard #available(iOS 26, *) else { return }
         let a = try Self.answer()
         let json = """
         {"finding":"\(a.line.finding)","verdict":"Not as loaded.","actions":[
@@ -141,7 +134,6 @@ struct OnDeviceRouteTests {
         #expect(!summary.actions.contains { $0.key == "fuel" })
         #expect(!summary.actions.contains { $0.words.contains("50 lb") || $0.words.contains("3 hours") })
     }
-    #endif
 
     @Test func aGlanceWithTheWrongVerdictIsTheEngines() async throws {
         let a = try Self.answer()

@@ -79,7 +79,7 @@ struct ClearanceCompareSection: View {
         Section {
             Label {
                 difference.same ? Text(difference.words)
-                    : Text("Differs from what you filed: ").bold() + Text(difference.words)
+                    : Text("\(Text("Differs from what you filed: ").bold())\(difference.words)")
             } icon: {
                 Image(systemName: difference.same ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                     .foregroundStyle(difference.same ? WingtipInk.go : WingtipInk.caution)

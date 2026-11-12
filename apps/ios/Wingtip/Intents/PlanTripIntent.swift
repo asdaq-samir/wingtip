@@ -20,7 +20,6 @@ struct PlanTripIntent: CommandIntent {
     static let title: LocalizedStringResource = "Plan a Trip"
     static let description = IntentDescription("Plans a route to an airport, from your route's departure or the field nearest you, and briefs it for the time you say.")
     static let openAppWhenRun: Bool = true
-    @Dependency private var commands: AppCommands
 
     @Parameter(title: "Airport", requestValueDialog: "Where to?")
     var airport: AirportEntity
@@ -46,7 +45,6 @@ struct PlanTripIntent: CommandIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let ident = airport.id
         let when = departure
-        await handOver(to: commands)
         guard let when else { return .result(dialog: "Planning a trip to \(ident).") }
         let said = when.formatted(.dateTime.weekday(.wide).hour().minute())
         return .result(dialog: IntentDialog(full: "Planning a trip to \(ident), leaving \(said). The Brief opens on that hour.", supporting: "\(ident), \(said)"))

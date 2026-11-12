@@ -134,7 +134,7 @@ struct PlanView: View {
                 }
             }
         }
-        .siriSees(SiriSaw.flight(plan))
+        .appEntityIdentifier(SiriSaw.flight(plan))
         // Leaving the page puts the keyboard away (the web's sheet audit,
         // 2026-11-12: focus left on a page put away kept the keyboard up).
         .onChange(of: nav.sheetPage) { _, _ in focused = nil }

@@ -211,7 +211,7 @@ struct BriefView: View {
                 }
             }
         }
-        .siriSees(SiriSaw.flight(plan))
+        .appEntityIdentifier(SiriSaw.flight(plan))
         .navigationTitle("Brief")
         .navigationBarMinimizesOnScroll()
         // The flight started from the Brief's foot (its Live Activity).

@@ -58,7 +58,7 @@ struct DiagramOwnShipView: View {
                     Text(note(diagram))
                         .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
                         .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.xs)
-                        .floatingGlass(in: Capsule(), material: .thinMaterial)
+                        .floatingGlass(in: Capsule())
                         .padding(.bottom, WingtipSpace.sm)
                 }
             }

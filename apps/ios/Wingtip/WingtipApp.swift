@@ -14,13 +14,10 @@ struct WingtipApp: App {
     @State private var dryRun = DryRun()
     @State private var traffic = Traffic()
     @State private var verdict = Verdict()
-    /// Where every card and page opens (Navigator), and what an intent
-    /// leaves before iOS 26 (AppCommands): one each for the app, the
-    /// views given them in the environment, the intents by App Intents'
-    /// dependencies.
+    /// Where every card and page opens (Navigator): one for the app, the
+    /// views given it in the environment.
     @State private var nav = Navigator()
     @State private var inFlight = InFlight()
-    @State private var commands: AppCommands
     @Environment(\.scenePhase) private var scenePhase
     /// iOS's hand-over of the chart downloads finished in the background.
     @UIApplicationDelegateAdaptor(OfflineAppDelegate.self) private var offlineDelegate
@@ -31,11 +28,6 @@ struct WingtipApp: App {
         // (Metrics), so the figures the owner steers speed by come from
         // real flights rather than a simulator.
         Metrics.shared.start()
-        let commands = AppCommands()
-        _commands = State(initialValue: commands)
-        let dependencies = AppDependencyManager.shared
-        dependencies.add(dependency: commands)
-        dependencies.add(dependency: AppOpener(commands: commands))
     }
 
     var body: some Scene {
@@ -50,7 +42,6 @@ struct WingtipApp: App {
                 .modifier(LinkSignInPrompt(session: session))
                 .modifier(AppModels(session: session, charts: charts, plan: plan, ownShip: ownShip, dryRun: dryRun,
                                     traffic: traffic, verdict: verdict, nav: nav, inFlight: inFlight))
-                .environment(commands)
                 .task { ownShip.start() }
                 .task { await session.refresh() }
                 // The deletes an earlier launch held behind their Undo and

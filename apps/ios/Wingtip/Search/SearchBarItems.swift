@@ -25,10 +25,8 @@ struct SearchBarItems: ToolbarContent {
         // The account its own round glass, apart from the microphone's, as
         // Maps' avatar is (the owner's decision, 2026-11-10;
         // docs/design/ios.md §1): the system's fixed spacer splits the
-        // bar's glass between them on iOS 26.
-        if #available(iOS 26.0, *) {
-            ToolbarSpacer(.fixed, placement: .topBarTrailing)
-        }
+        // bar's glass between them.
+        ToolbarSpacer(.fixed, placement: .topBarTrailing)
         ToolbarItem(placement: .topBarTrailing) { AccountButton(open: open) }
     }
 }

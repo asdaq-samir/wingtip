@@ -1,9 +1,7 @@
 import Foundation
+import FoundationModels
 import OpenAPIRuntime
 import os
-#if canImport(FoundationModels)
-import FoundationModels
-#endif
 
 /// The briefing and the Go / No-Go in a few plain sentences, each
 /// resting on figures the pilot can read raw. The figures are always the
@@ -166,12 +164,10 @@ extension PlannerWords {
 
 // MARK: - The words on this iPhone
 
-#if canImport(FoundationModels)
 /// What the on-device model fills in: the sentences, each with the ids of
 /// the figures it rests on. The ids are guided to be the ones given and
 /// checked after (Words.checked), since a guide is advice to the model,
 /// not a proof.
-@available(iOS 26, *)
 @Generable
 struct WordsAnswer {
     @Generable
@@ -185,35 +181,28 @@ struct WordsAnswer {
     @Guide(description: "The sentences, the most important first; no more than eight.")
     var sentences: [Sentence]
 }
-#endif
 
-/// Apple's on-device model (FoundationModels, iOS 26 and Apple
-/// Intelligence on): the words with no signal, from the figures the
-/// phone assembled, which are the engine's and the planner's own. Not
-/// built where the SDK has no FoundationModels, and refused in words on
-/// an older iOS, a phone without Apple Intelligence, or while the model
-/// is still downloading.
+/// Apple's on-device model (FoundationModels, with Apple Intelligence
+/// on): the words with no signal, from the figures the phone assembled,
+/// which are the engine's and the planner's own. Refused in words on a
+/// phone without Apple Intelligence, or while the model is still
+/// downloading.
 struct OnDeviceWords: WordsProvider {
     static let model = "apple-on-device"
 
     /// Why the model cannot answer here, else nil.
     static var unavailableWhy: String? {
-        #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
-            switch SystemLanguageModel.default.availability {
-            case .available:
-                return nil
-            case .unavailable(let reason):
-                switch reason {
-                case .deviceNotEligible: return "This iPhone cannot run Apple's on-device model."
-                case .appleIntelligenceNotEnabled: return "Apple Intelligence is off in Settings."
-                case .modelNotReady: return "Apple's on-device model is still downloading."
-                @unknown default: return "Apple's on-device model is not available."
-                }
+        switch SystemLanguageModel.default.availability {
+        case .available:
+            return nil
+        case .unavailable(let reason):
+            switch reason {
+            case .deviceNotEligible: return "This iPhone cannot run Apple's on-device model."
+            case .appleIntelligenceNotEnabled: return "Apple Intelligence is off in Settings."
+            case .modelNotReady: return "Apple's on-device model is still downloading."
+            @unknown default: return "Apple's on-device model is not available."
             }
         }
-        #endif
-        return "Words on this iPhone need iOS 26."
     }
 
     /// What each kind of words is asked to say, as the planner asks its
@@ -265,19 +254,14 @@ struct OnDeviceWords: WordsProvider {
     func words(_ ask: WordsAsk) async throws -> Words {
         if let why = AppleModels.unavailableWhy { throw WordsUnavailable(why: why) }
         if ask.figures.isEmpty { return Words.checked([], sources: [], model: Self.model) }
-        #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
-            return try await AppleModels.attempt(usable: { !$0.sentences.isEmpty }) { place in
-                let session = AppleModels.session(place, instructions: Self.instructions(ask.kind))
-                let response = try await session.respond(to: Self.prompt(ask.figures), generating: WordsAnswer.self)
-                let sentences = response.content.sentences.map { WordsSentence(sources: $0.sources, text: $0.text) }
-                // A sentence quoting a number none of its figures holds is
-                // dropped as well as one citing a figure not given (NumberGuard).
-                return NumberGuard.kept(Words.checked(sentences, sources: ask.figures, model: place.model, most: 8))
-            }.value
-        }
-        #endif
-        throw WordsUnavailable(why: "Words on this iPhone need iOS 26.")
+        return try await AppleModels.attempt(usable: { !$0.sentences.isEmpty }) { place in
+            let session = AppleModels.session(place, instructions: Self.instructions(ask.kind))
+            let response = try await session.respond(to: Self.prompt(ask.figures), generating: WordsAnswer.self)
+            let sentences = response.content.sentences.map { WordsSentence(sources: $0.sources, text: $0.text) }
+            // A sentence quoting a number none of its figures holds is
+            // dropped as well as one citing a figure not given (NumberGuard).
+            return NumberGuard.kept(Words.checked(sentences, sources: ask.figures, model: place.model, most: 8))
+        }.value
     }
 }
 
@@ -285,7 +269,7 @@ struct OnDeviceWords: WordsProvider {
 
 /// Where the words come from, in order: the planner first; this iPhone
 /// when the planner fails or cannot be reached; and no words, with why
-/// in plain language, when neither can (an older iOS, the model not
+/// in plain language, when neither can (no Apple Intelligence, the model not
 /// ready, no signal and no planner). Never a figure of its own: the
 /// figures are on the screen already, and the words rest on them.
 /// While the server's Claude features are off (ServerFeatures, the

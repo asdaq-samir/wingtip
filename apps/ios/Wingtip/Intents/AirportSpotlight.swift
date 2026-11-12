@@ -46,7 +46,6 @@ struct OpenAirportIntent: OpenIntent, CommandIntent {
 
     @Parameter(title: "Airport")
     var target: AirportEntity
-    @Dependency private var commands: AppCommands
 
     /// What the app is left to do for the field: its card.
     static func command(_ target: AirportEntity) -> AppCommand { .weather(ident: target.id) }
@@ -54,7 +53,6 @@ struct OpenAirportIntent: OpenIntent, CommandIntent {
     func appCommand() -> AppCommand? { Self.command(target) }
 
     func perform() async throws -> some IntentResult {
-        await handOver(to: commands)
         return .result()
     }
 }

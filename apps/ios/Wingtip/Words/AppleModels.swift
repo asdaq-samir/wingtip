@@ -1,7 +1,5 @@
 import Foundation
-#if canImport(FoundationModels)
 import FoundationModels
-#endif
 
 /// Where Apple's model answers: on this iPhone, or on Apple's Private
 /// Cloud Compute (iOS 27's PrivateCloudComputeLanguageModel, WWDC26
@@ -41,7 +39,6 @@ enum AppleModels {
     /// Why Private Cloud Compute cannot answer here, else nil.
     static var cloudUnavailableWhy: String? {
         guard cloudEnabled else { return "Apple's Private Cloud Compute is not set up for this app." }
-        #if canImport(FoundationModels)
         if #available(iOS 27, *) {
             let model = PrivateCloudComputeLanguageModel()
             switch model.availability {
@@ -55,7 +52,6 @@ enum AppleModels {
                 }
             }
         }
-        #endif
         return "Apple's Private Cloud Compute needs iOS 27."
     }
 
@@ -73,9 +69,7 @@ enum AppleModels {
         places.isEmpty ? (OnDeviceWords.unavailableWhy ?? cloudUnavailableWhy) : nil
     }
 
-    #if canImport(FoundationModels)
     /// A session on the model at `place`.
-    @available(iOS 26, *)
     static func session(_ place: ModelPlace, tools: [any Tool] = [], instructions: String) -> LanguageModelSession {
         if place == .cloud, #available(iOS 27, *) {
             return LanguageModelSession(model: PrivateCloudComputeLanguageModel(), tools: tools, instructions: instructions)
@@ -89,7 +83,6 @@ enum AppleModels {
         place == .cloud ? PrivateCloudComputeLanguageModel().capabilities.contains(.vision)
             : SystemLanguageModel.default.capabilities.contains(.vision)
     }
-    #endif
 
     /// `body` asked at each place in turn, until one answers with what
     /// `usable` keeps; else the last answer had, else the last error.

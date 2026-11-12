@@ -53,8 +53,7 @@ struct MapButtons: View {
             }
         }
         .buttonStyle(.plain)
-        // Liquid Glass on iOS 26, as Maps' own buttons are; the material
-        // on iOS 18 (Design/Glass.swift).
+        // Liquid Glass, as Maps' own buttons are (Design/Glass.swift).
         .floatingGlass(in: Capsule(), interactive: true)
         .glassGroup(spacing: WingtipSpace.md)
     }

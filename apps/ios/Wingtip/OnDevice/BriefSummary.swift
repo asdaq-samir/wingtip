@@ -1,7 +1,5 @@
 import Foundation
-#if canImport(FoundationModels)
 import FoundationModels
-#endif
 
 /// The Brief at a glance when the planner's words cannot be had: the
 /// verdict and at most three things to act on (docs/decisions/0012, the
@@ -73,9 +71,7 @@ struct BriefGlanceDraft: Equatable, Sendable {
     let actions: [Action]
 }
 
-#if canImport(FoundationModels)
 /// The guided shape Apple's model fills in for the Brief's glance.
-@available(iOS 26, *)
 @Generable
 struct BriefGlanceAnswer {
     @Generable
@@ -97,7 +93,6 @@ struct BriefGlanceAnswer {
         BriefGlanceDraft(finding: finding, verdict: verdict, actions: actions.map { .init(finding: $0.finding, text: $0.text) })
     }
 }
-#endif
 
 /// The model behind the glance: Apple's, or a fake in a test.
 protocol BriefGlanceModel: Sendable {
@@ -122,16 +117,11 @@ struct AppleBriefGlanceModel: BriefGlanceModel {
     }
 
     func draft(_ answer: GoNoGoAnswer) async throws -> BriefGlanceDraft {
-        #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
-            // The phone's model, else Apple's Private Cloud Compute (AppleModels).
-            return try await AppleModels.attempt { place in
-                try await AppleModels.session(place, instructions: Self.instructions)
-                    .respond(to: Self.prompt(answer), generating: BriefGlanceAnswer.self).content.draft
-            }.value
-        }
-        #endif
-        throw AskRefused(why: "Words on this iPhone need iOS 26.")
+        // The phone's model, else Apple's Private Cloud Compute (AppleModels).
+        return try await AppleModels.attempt { place in
+            try await AppleModels.session(place, instructions: Self.instructions)
+                .respond(to: Self.prompt(answer), generating: BriefGlanceAnswer.self).content.draft
+        }.value
     }
 }
 

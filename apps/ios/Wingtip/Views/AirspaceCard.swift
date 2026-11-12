@@ -208,8 +208,7 @@ struct BandRow: View {
                 .overlay(RoundedRectangle(cornerRadius: WingtipRadius.badge).strokeBorder(ink.colour, style: StrokeStyle(lineWidth: 2, dash: ink.dashed ? [3, 2] : [])))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: WingtipSpace.xs) {
-                Text("Class \(band.airspaceClass)").fontWeight(.semibold)
-                    + Text(band.name.map { " · " + AirportWords.shortAirspaceName($0) } ?? "").foregroundStyle(.secondary)
+                Text("\(Text("Class \(band.airspaceClass)").fontWeight(.semibold))\(Text(band.name.map { " · " + AirportWords.shortAirspaceName($0) } ?? "").foregroundStyle(.secondary))")
                 Text(AirportWords.bandRange(band, ground: ground)).fontWeight(.semibold).monospacedDigit()
                 ForEach(Array(Self.rules(band).enumerated()), id: \.offset) { _, rule in
                     Label(rule.text, systemImage: rule.symbol).font(.subheadline).foregroundStyle(.secondary)

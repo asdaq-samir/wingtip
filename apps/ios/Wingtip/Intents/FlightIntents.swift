@@ -24,12 +24,10 @@ struct KeepForAirIntent: CommandIntent {
     static let title: LocalizedStringResource = "Keep for the Air"
     static let description = IntentDescription("Keeps your route's charts, briefing, NOTAMs, airport cards and plates on this iPhone for flying with no signal.")
     static let openAppWhenRun: Bool = true
-    @Dependency private var commands: AppCommands
 
     func appCommand() -> AppCommand? { .keepForAir }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        await handOver(to: commands)
         return .result(dialog: "Keeping your flight for the air.")
     }
 }
@@ -42,14 +40,12 @@ struct LogFlightIntent: CommandIntent {
     static let title: LocalizedStringResource = "Log This Flight"
     static let description = IntentDescription("Opens the entry drafted from the flight you just flew, for you to check and log.")
     static let openAppWhenRun: Bool = true
-    @Dependency private var commands: AppCommands
 
     /// The flight's entry is up already where one ended; else the logbook.
     func appCommand() -> AppCommand? { AutoLogbook.shared.isOpen ? nil : .open(.logbook) }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let ended = await MainActor.run { AutoLogbook.shared.isOpen }
-        await handOver(to: commands)
         return .result(dialog: ended ? "Here's the entry from your flight; check it and log it."
             : "No flight has ended on this iPhone yet. Here's your logbook.")
     }
@@ -119,7 +115,6 @@ struct OpenWingtipIntent: CommandIntent {
     static let title: LocalizedStringResource = "Open Wingtip Maps"
     static let openAppWhenRun: Bool = true
     static let isDiscoverable: Bool = false
-    @Dependency private var commands: AppCommands
 
     @Parameter(title: "Direct To")
     var directTo: String?
@@ -133,7 +128,6 @@ struct OpenWingtipIntent: CommandIntent {
     func appCommand() -> AppCommand? { directTo.map { .directTo(place: $0) } ?? .nearest }
 
     func perform() async throws -> some IntentResult {
-        await handOver(to: commands)
         return .result()
     }
 }

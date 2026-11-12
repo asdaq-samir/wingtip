@@ -63,15 +63,12 @@ struct FlyAirplaneIntent: CommandIntent {
     @Parameter(title: "Airplane", requestValueDialog: "Which airplane?")
     var airplane: AirplaneEntity
 
-    @Dependency private var commands: AppCommands
-
     static var parameterSummary: some ParameterSummary { Summary("Fly \(\.$airplane)") }
 
     func appCommand() -> AppCommand? { .fly(tail: airplane.id) }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let tail = airplane.id
-        await handOver(to: commands)
         return .result(dialog: IntentDialog(full: "Planning with \(tail).", supporting: "\(tail)"))
     }
 }
@@ -119,12 +116,10 @@ struct OpenLogbookEntryIntent: OpenIntent, CommandIntent {
 
     @Parameter(title: "Entry")
     var target: LogbookEntryEntity
-    @Dependency private var commands: AppCommands
 
     func appCommand() -> AppCommand? { .open(.logbook) }
 
     func perform() async throws -> some IntentResult {
-        await handOver(to: commands)
         return .result()
     }
 }

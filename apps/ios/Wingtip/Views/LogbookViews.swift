@@ -87,7 +87,7 @@ struct LogbookView: View {
                                 // Tapped, the flight opens in its row to change (Edit);
                                 // its N-number, a tap of its own, opens the airplane's profile.
                                 LogbookRow(entry: e) { if flights.editingID == e.id { flights.cancelEdit() } else { flights.edit(e) } }
-                                    .siriSees(SiriSaw.logbookEntry(e.id))
+                                    .appEntityIdentifier(SiriSaw.logbookEntry(e.id))
                                     .contextMenu {
                                         Button("Edit", systemImage: "pencil") { flights.edit(e) }
                                         Button("Delete", systemImage: "trash", role: .destructive) { delete(e) }

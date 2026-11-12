@@ -96,7 +96,7 @@ struct SavedFile: Sendable {
 
     /// The file written to the temporary folder, for the share sheet's
     /// Save to Files, AirDrop and Mail where iOS 27's exporter is not
-    /// there (iOS 18 to 26; SaveFileLink).
+    /// there (iOS 26; SaveFileLink).
     func temporaryURL() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appending(path: name)
         try data.write(to: url, options: .atomic)

@@ -145,7 +145,7 @@ final class MapExtrasState: NSObject {
         // The airports, checkpoints and traffic in view in VoiceOver's rotor,
         // and to Siri as what is on the screen (View Annotations).
         map.accessibilityCustomRotors = MapRotors.rotors(for: map)
-        if #available(iOS 18.4, *) { ChartMapSiri.attach(to: map) }
+        ChartMapSiri.attach(to: map)
         // The held finger for VoiceOver, which cannot hold a point: the
         // same ask, of the map's centre (Apple's HIG: every gesture has an
         // accessible way to do the same).

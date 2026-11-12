@@ -12,9 +12,9 @@ import VisualIntelligence
 /// recognition) and every ident it holds found as Siri's own query finds
 /// one (AirportEntityQuery), so a tap on a result opens the field's card
 /// (OpenAirportIntent). The picture never leaves the phone; only the
-/// idents read from it are looked up.
+/// idents read from it are looked up. The simulator's SDK has no
+/// VisualIntelligence, so it is built for the phone only.
 #if canImport(VisualIntelligence)
-@available(iOS 26, *)
 struct AirportVisualQuery: IntentValueQuery {
     /// At most this many idents read from one picture are looked up.
     static let most = 6

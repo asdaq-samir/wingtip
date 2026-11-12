@@ -111,9 +111,6 @@ struct RootView: View {
                         .environment(\.sheetAtPill, detent == RootView.pill)
                         .presentationDetents([RootView.pill, .half, .large], selection: $detent)
                         .presentationBackgroundInteraction(.enabled(upThrough: .half))
-                        // The system's Liquid Glass sheet and its own corners
-                        // on iOS 26; the material on iOS 18 (Design/Glass.swift).
-                        .sheetGlass()
                         .interactiveDismissDisabled()
                         // The system sheet settles at its detents with its own
                         // feel; no tap of ours is added to a stock part (the
@@ -324,5 +321,4 @@ struct RootView: View {
     RootView()
         .modifier(AppModels(session: Session(), charts: Charts(), plan: Plan(), ownShip: OwnShip(), dryRun: DryRun(),
                             traffic: Traffic(), verdict: Verdict(), nav: Navigator(), inFlight: InFlight()))
-        .environment(AppCommands())
 }

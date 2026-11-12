@@ -40,7 +40,7 @@ struct EmergencyFieldsSection: View {
                     VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                         Button { model.pickedIdent = field.ident } label: { row(field, picked: field.ident == model.picked?.ident) }
                             .buttonStyle(.plain)
-                            .siriSees(SiriSaw.airport(field.ident))
+                            .appEntityIdentifier(SiriSaw.airport(field.ident))
                             .accessibilityAddTraits(field.ident == model.picked?.ident ? .isSelected : [])
                         // The row's one primary action, full width and large.
                         Button { directTo(field.ident) } label: {
@@ -108,7 +108,7 @@ struct EmergencyFieldsSection: View {
                 .symbolSwap()
                 .foregroundStyle(picked ? accent : Color.secondary)
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                (Text(field.ident).fontWeight(.semibold) + Text(" \(field.name)")).font(.title3).foregroundStyle(Color.primary)
+                Text("\(Text(field.ident).fontWeight(.semibold)) \(field.name)").font(.title3).foregroundStyle(Color.primary)
                 ForEach(Array(field.reasons.enumerated()), id: \.offset) { i, reason in
                     let lead = i == 0 && field.reach != "unknown"
                     Text(reason.text).font(.body)

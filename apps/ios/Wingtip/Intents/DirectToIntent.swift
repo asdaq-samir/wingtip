@@ -9,7 +9,6 @@ struct DirectToIntent: CommandIntent {
     static let title: LocalizedStringResource = "Direct to an Airport"
     static let description = IntentDescription("Flies your route direct to an airport from where the airplane is.")
     static let openAppWhenRun: Bool = true
-    @Dependency private var commands: AppCommands
 
     @Parameter(title: "Airport", requestValueDialog: "Direct to which airport?")
     var airport: AirportEntity
@@ -21,7 +20,6 @@ struct DirectToIntent: CommandIntent {
     func appCommand() -> AppCommand? { .directTo(place: airport.id) }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        await handOver(to: commands)
         return .result(dialog: "Direct to \(airport.id).")
     }
 }
@@ -35,7 +33,6 @@ struct DirectToPlaceIntent: CommandIntent {
     static let title: LocalizedStringResource = "Direct to a Fix"
     static let description = IntentDescription("Flies your route direct to a navaid, a fix or a field said by name from where the airplane is.")
     static let openAppWhenRun: Bool = true
-    @Dependency private var commands: AppCommands
 
     @Parameter(title: "Place", requestValueDialog: "Direct to where?")
     var place: String
@@ -50,7 +47,6 @@ struct DirectToPlaceIntent: CommandIntent {
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         guard !said.isEmpty else { return .result(dialog: "Say where to go direct to.") }
-        await handOver(to: commands)
         return .result(dialog: "Direct to \(said).")
     }
 }

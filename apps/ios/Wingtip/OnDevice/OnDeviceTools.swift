@@ -1,5 +1,4 @@
 import Foundation
-#if canImport(FoundationModels)
 import FoundationModels
 
 /// The tools Apple's on-device model calls to answer a question in the
@@ -9,7 +8,6 @@ import FoundationModels
 /// What the model is handed is logged (FigureLog), and the answer's
 /// sentences may cite only those (OnDeviceAsk). Five, not more: the
 /// on-device model's context is small, and each tool's schema is in it.
-@available(iOS 26, *)
 enum OnDeviceTools {
     static func all(_ facts: OnDeviceFacts, log: FigureLog) -> [any Tool] {
         [
@@ -32,7 +30,6 @@ enum OnDeviceTools {
     }
 }
 
-@available(iOS 26, *)
 struct FieldWeatherTool: Tool {
     let name = "fieldWeather"
     let description = "The METAR and TAF this iPhone holds for an airport on the route, as sent, and its density altitude."
@@ -55,7 +52,6 @@ struct FieldWeatherTool: Tool {
     }
 }
 
-@available(iOS 26, *)
 struct RunwayWindTool: Tool {
     let name = "runwayWind"
     let description = "The reported wind's headwind and crosswind on an airport's runways, from the METAR this iPhone holds."
@@ -75,7 +71,6 @@ struct RunwayWindTool: Tool {
     }
 }
 
-@available(iOS 26, *)
 struct FuelTool: Tool {
     let name = "fuel"
     let description = "The plan's fuel, the fuel the plan leaves at the destination from here, and the endurance of the fuel on board."
@@ -93,7 +88,6 @@ struct FuelTool: Tool {
     }
 }
 
-@available(iOS 26, *)
 struct GlideTool: Tool {
     let name = "glide"
     let description = "How far the airplane glides in still air from its GPS altitude."
@@ -111,7 +105,6 @@ struct GlideTool: Tool {
     }
 }
 
-@available(iOS 26, *)
 struct NearestFieldsTool: Tool {
     let name = "nearestFields"
     let description = "The airports nearest the airplane, with their distance and course, from the FAA data kept on this iPhone."
@@ -129,4 +122,3 @@ struct NearestFieldsTool: Tool {
         OnDeviceTools.run(name, log: log) { try FlightFigures.nearest(facts: facts, pins: pins) }
     }
 }
-#endif

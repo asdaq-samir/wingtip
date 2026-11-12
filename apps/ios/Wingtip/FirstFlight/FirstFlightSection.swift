@@ -55,7 +55,7 @@ struct FirstFlightSection: View {
                 .disabled(!model.ready)
                 .accessibilityIdentifier("first-flight-plan")
                 // The three steps, the first the one this card does.
-                (Text("Step 1 of 3 · Route").bold().foregroundStyle(.primary) + Text(" · Nav Log · Brief"))
+                Text("\(Text("Step 1 of 3 · Route").bold().foregroundStyle(.primary)) · Nav Log · Brief")
                     .font(WingtipType.note)
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Step 1 of 3, Route; then the nav log and the brief")

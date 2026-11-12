@@ -1,5 +1,4 @@
 import Foundation
-#if canImport(FoundationModels)
 import FoundationModels
 
 /// The shapes Apple's on-device model fills in when it reads a photographed
@@ -29,7 +28,6 @@ struct ClearanceDraft: Codable {
 }
 
 /// A clearance given as text: as the controller said it.
-@available(iOS 26, *)
 @Generable
 struct ClearanceTextDraft {
     @Guide(description: "The clearance as the controller said it, in words, figures as digits, the places as written, nothing added.")
@@ -173,4 +171,3 @@ struct HandbookPageDraft: Codable {
     var fuel: FuelDraft?
     var page: PageNotes
 }
-#endif

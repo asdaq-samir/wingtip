@@ -172,15 +172,12 @@ struct AddApproachIntent: CommandIntent {
     @Parameter(title: "Approach", requestValueDialog: "Which approach?")
     var approach: ApproachEntity
 
-    @Dependency private var commands: AppCommands
-
     static var parameterSummary: some ParameterSummary { Summary("Add \(\.$approach) to the route") }
 
     func appCommand() -> AppCommand? { .approach(approach.pick) }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let pick = approach.pick
-        await handOver(to: commands)
         return .result(dialog: "Added the \(pick.name) at \(pick.ident).")
     }
 }

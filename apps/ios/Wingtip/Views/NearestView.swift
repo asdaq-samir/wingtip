@@ -34,7 +34,7 @@ struct NearestView: View {
                 ForEach(fields) { field in
                     NavigationLink(value: SheetPage.airport(field.ident)) { NearestRow(field: field) }
 
-                        .siriSees(SiriSaw.airport(field.ident))
+                        .appEntityIdentifier(SiriSaw.airport(field.ident))
                         .swipeActions(edge: .leading) {
                             Button("Divert") { divert(field.ident) }.tint(WingtipInk.caution)
                         }

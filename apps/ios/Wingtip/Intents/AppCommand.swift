@@ -1,5 +1,4 @@
 import AppIntents
-import Observation
 import SwiftUI
 
 /// What Siri, a Shortcut, a link or a tap elsewhere in the app asks the
@@ -60,40 +59,12 @@ extension EnvironmentValues {
 }
 
 /// An intent that opens the app on a command (Siri, Shortcuts,
-/// Spotlight, the Control Center controls). On iOS 26 and later the
-/// system hands the intent to the scene itself (TargetContentProvidingIntent,
-/// the root view's `onAppIntentExecution`, before `perform`), so the app
-/// is on the screen to do it; `perform` then only says what it did.
+/// Spotlight, the Control Center controls). The system hands the intent
+/// to the scene itself (TargetContentProvidingIntent, the root view's
+/// `onAppIntentExecution`, before `perform`), so the app is on the screen
+/// to do it; `perform` then only says what it did.
 protocol CommandIntent: AppIntent {
     /// What the app does for the intent, nil for nothing; read once, on
     /// the main actor, as the app is opened.
     @MainActor func appCommand() -> AppCommand?
-}
-
-extension CommandIntent {
-    /// Before iOS 26 no scene is handed the intent, so `perform` leaves
-    /// its command with the app for the root view to take once it is on
-    /// the screen (AppCommands).
-    func handOver(to commands: AppCommands) async {
-        if #available(iOS 26, *) { return }
-        await MainActor.run { commands.waiting = appCommand() }
-    }
-}
-
-/// The command an intent left before iOS 26, which hands the scene no
-/// intent: kept until the root view is on the screen to take it (an
-/// intent runs before the scene it opens has drawn). One at a time; the
-/// last asked wins, as the pilot's last word to Siri does. Given to the
-/// intents by App Intents' own dependencies (AppDependencyManager,
-/// WingtipApp). To go once the app's oldest iOS is 26.
-@MainActor
-@Observable
-final class AppCommands {
-    var waiting: AppCommand?
-
-    /// The command, and none left: taken once by the root view.
-    func take() -> AppCommand? {
-        defer { waiting = nil }
-        return waiting
-    }
 }
