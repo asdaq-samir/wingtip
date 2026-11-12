@@ -53,13 +53,13 @@ class FlowGridTest {
         val cell = EngineContract.FlowCellAnswer(listOf(0, 1, 2, 3), 0.0, 0.0)
         val none = EngineContract.FlowSampleAnswer(12750.0, null, false, noCeiling = true)
         val bounds = listOf(0.0, 0.0, 2.0, 2.0)
-        val ceiling = FlowGrid.decode(IntArray(4) { pixel(255, 0) }, 2, 2, bounds, listOf(0.0, 12750.0), vector = false, ceiling = true)
+        val ceiling = FlowGrid.decode(IntArray(4) { pixel(255, 0) }, 2, 2, bounds, listOf(0.0, 12750.0), vector = false, field = "ceiling")
         val asked = Asked(cell, Result.success(none))
         assertEquals(none, ceiling.valueAt(1.0, 1.0, asked).getOrThrow())
-        assertEquals(true, asked.sampleIn!!.ceiling)
+        assertEquals("ceiling", asked.sampleIn!!.field)
         val other = Asked(cell, Result.success(none))
         FlowGrid.decode(IntArray(4) { pixel(255, 0) }, 2, 2, bounds, listOf(0.0, 12750.0), vector = false).valueAt(1.0, 1.0, other)
-        assertEquals(false, other.sampleIn!!.ceiling)
+        assertEquals(null, other.sampleIn!!.field)
     }
 
     @Test

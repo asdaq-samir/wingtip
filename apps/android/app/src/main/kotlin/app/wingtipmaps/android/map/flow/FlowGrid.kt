@@ -37,9 +37,11 @@ class FlowGrid(
     private val argb: IntArray,
     /** The field's [least, most]. */
     private val unscale: List<Double>,
-    /** The ceiling's picture, which the engine reads rounded to its step,
-     *  its top no ceiling (flow_sample's no_ceiling). */
-    private val ceiling: Boolean = false,
+    /** The field the picture is, by its file's name ("ceiling", "vis",
+     *  "temp" ...), which flow_sample reads its own way: the ceiling and the
+     *  visibility as the lowest round the point, never better than the data
+     *  holds, the ceiling's top as none (its no_ceiling); null reads between. */
+    private val field: String? = null,
 ) {
     init {
         require(argb.size == width * height) { "The picture is ${argb.size} pixels, not $width by $height." }
@@ -56,7 +58,7 @@ class FlowGrid(
     object EngineRules : Rules {
         override fun cell(input: EngineContract.FlowCellInput) = Engine.flowCell(input.bounds, input.width, input.height, input.lat, input.lon)
 
-        override fun sample(input: EngineContract.FlowSampleInput) = Engine.flowSample(input.pixels, input.fx, input.fy, input.unscale, input.vector, input.ceiling)
+        override fun sample(input: EngineContract.FlowSampleInput) = Engine.flowSample(input.pixels, input.fx, input.fy, input.unscale, input.vector, input.ceiling, input.field)
     }
 
     private val low = unscale[0]
@@ -82,7 +84,7 @@ class FlowGrid(
      *  never none. */
     fun valueAt(lat: Double, lon: Double, rules: Rules = EngineRules): Result<EngineContract.FlowSampleAnswer?> =
         rules.cell(EngineContract.FlowCellInput(listOf(west, south, east, north), width, height, lat, lon)).mapCatching { cell ->
-            cell?.let { rules.sample(EngineContract.FlowSampleInput(it.pixels.map(::bytes), it.fx, it.fy, unscale, vector, ceiling)).getOrThrow() }
+            cell?.let { rules.sample(EngineContract.FlowSampleInput(it.pixels.map(::bytes), it.fx, it.fy, unscale, vector, field = field)).getOrThrow() }
         }
 
     companion object {
@@ -99,10 +101,9 @@ class FlowGrid(
          * A field's picture: `argb` the PNG's pixels as Android hands them
          * (Bitmap.getPixels, one ARGB int a pixel, decoded without
          * premultiplying), `bounds` the layer's [west, south, east, north],
-         * `unscale` the field's [least, most], `ceiling` whether it is the
-         * ceiling's.
+         * `unscale` the field's [least, most], `field` the picture's name.
          */
-        fun decode(argb: IntArray, width: Int, height: Int, bounds: List<Double>, unscale: List<Double>, vector: Boolean, ceiling: Boolean = false): FlowGrid =
-            FlowGrid(width, height, bounds[0], bounds[1], bounds[2], bounds[3], vector, argb, unscale, ceiling)
+        fun decode(argb: IntArray, width: Int, height: Int, bounds: List<Double>, unscale: List<Double>, vector: Boolean, field: String? = null): FlowGrid =
+            FlowGrid(width, height, bounds[0], bounds[1], bounds[2], bounds[3], vector, argb, unscale, field)
     }
 }

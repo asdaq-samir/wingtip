@@ -55,7 +55,7 @@ struct FlowFixturesTests {
         #expect(!f.samples.isEmpty)
         for c in f.samples {
             let got = try Engine.flowSample(pixels: c.input.pixels, fx: c.input.fx, fy: c.input.fy, unscale: c.input.unscale, vector: c.input.vector,
-                                            ceiling: c.input.ceiling)
+                                            ceiling: c.input.ceiling, field: c.input.field)
             #expect((got == nil) == (c.answer == nil), "\(c.about)")
             #expect(got?.noCeiling == c.answer?.noCeiling, "\(c.about)")
             #expect(roughly(got?.value, c.answer?.value, within: 1e-6), "\(c.about)")
@@ -76,9 +76,9 @@ struct FlowFixturesTests {
     @Test func theCeilingsTopIsWrittenNone() throws {
         // The fixture's top-of-ceiling case: the engine's no_ceiling, so the badge says None.
         let f = try fixture("flowSample", as: FlowSampleFixture.self)
-        let c = try #require(f.samples.first { $0.input.ceiling == true && $0.answer?.noCeiling == true })
+        let c = try #require(f.samples.first { $0.answer?.noCeiling == true })
         let got = try #require(try Engine.flowSample(pixels: c.input.pixels, fx: c.input.fx, fy: c.input.fy, unscale: c.input.unscale,
-                                                     vector: c.input.vector, ceiling: true))
+                                                     vector: c.input.vector, ceiling: c.input.ceiling, field: c.input.field))
         #expect(try FlowReading.of(.ceiling, value: got.value, unit: "ft", noCeiling: got.noCeiling).figure == "None")
     }
 

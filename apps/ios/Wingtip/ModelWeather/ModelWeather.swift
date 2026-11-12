@@ -211,7 +211,7 @@ final class ModelWeather {
             try await Data(collecting: $0.flowPicture(path: .init(frame: frame.id, field: String(file)), query: .init(v: version)).ok.body.png, upTo: 32 << 20)
         }) else { return nil }
         let bounds = file == "world" ? (layer.worldBounds ?? layer.bounds) : layer.bounds
-        let grid = await Task.detached { FlowGrid.decode(png: data, field: spec, bounds: bounds, ceiling: name == FlowFieldKind.ceiling.rawValue) }.value
+        let grid = await Task.detached { FlowGrid.decode(png: data, field: spec, bounds: bounds, name: name) }.value
         if let grid {
             // The hours of one field at one level are kept; another's let go.
             if grids.count > 24 { grids.removeAll() }

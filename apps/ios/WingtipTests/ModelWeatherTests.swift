@@ -149,7 +149,7 @@ import UniformTypeIdentifiers
 
     @Test func theCeilingsGridAsksTheEngineForTheCeiling() throws {
         // A ceiling picture at its top, full red: the engine says none.
-        let top = FlowGrid(rgba: [255, 0, 0, 255].repeated(4), width: 2, height: 2, unscale: [0, 12_750], vector: false, bounds: Self.box, ceiling: true)
+        let top = FlowGrid(rgba: [255, 0, 0, 255].repeated(4), width: 2, height: 2, unscale: [0, 12_750], vector: false, bounds: Self.box, field: "ceiling")
         #expect(try #require(try top.reading(lat: 0.5, lon: 0)).noCeiling)
         // The same picture as any other field is a figure.
         let scalar = FlowGrid(rgba: [255, 0, 0, 255].repeated(4), width: 2, height: 2, unscale: [0, 12_750], vector: false, bounds: Self.box)
