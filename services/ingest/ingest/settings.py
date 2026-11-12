@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     swim_host_sfdps: str | None = None
     swim_vpn_sfdps: str | None = None
     swim_queue_sfdps: str | None = None
+    #: Whether the history thread runs (ingest.history): the day's NOTAM and
+    #: TFR archive and the NTSB's database (HISTORY=0 on a test stack).
+    history: bool = True
     #: How often ingest writes its beat and each feed's state to the store, s.
     beat_every_s: float = 10.0
     #: How old ingest's last beat may be and the health check still pass, s.

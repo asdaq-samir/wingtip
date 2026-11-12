@@ -6,6 +6,8 @@
   TFMS's flight plans into wingtip.filed_routes'.
 - The followed airplanes asked of adsb.fi each half minute
   (wingtip.traffic.follow_forever), their tracks recorded in the live store.
+- The Studio's history (ingest.history): each hour the day's NOTAMs and
+  TFRs archived, and each month the NTSB's database read.
 
 The planner's own traffic, the map's region asked of adsb.lol and an open
 card's airplane, is asked as a pilot asks and stays there; what is read
@@ -25,7 +27,7 @@ import time
 from wingtip import traffic, tracing
 from wingtip.traffic import store
 
-from . import swim
+from . import history, swim
 from .settings import get_settings
 
 log = logging.getLogger("ingest")
@@ -45,6 +47,8 @@ def run(stop: threading.Event) -> None:
     feeds = swim.start(stop)
     log.info("SWIM feeds: %s", ", ".join(feeds) or "none set up")
     threading.Thread(target=traffic.follow_forever, args=(stop,), name="adsb-follow", daemon=True).start()
+    if get_settings().history:
+        threading.Thread(target=history.run, args=(stop,), name="history", daemon=True).start()
     every = get_settings().beat_every_s
     while not stop.is_set():
         try:

@@ -3553,6 +3553,23 @@ struct APINoteToWrite: Codable, Equatable, Sendable {
     var name, saved: String?
 }
 
+/// One NTSB case of the airplane (wingtip.history.ntsb), its texts
+/// verbatim: where and when (the local date), its phase of flight and
+/// highest injury in the NTSB's words, its probable cause once the final
+/// report is out, and its narrative (the final report's, else the
+/// preliminary's factual one).
+// MARK: - APINtsbEvent
+struct APINtsbEvent: Codable, Equatable, Sendable {
+    var carolUrl: String
+    var city, country: String?
+    var date: String
+    var docketUrl: String?
+    var evId: String
+    var highestInjury, narrative, narrativeKind: String?
+    var ntsbNo: String
+    var phase, probableCause, state: String?
+}
+
 /// The obstacles in a box, tallest first; `more` where some were left
 /// out past the most a map is given at once.
 // MARK: - APIObstacles
@@ -4601,6 +4618,38 @@ struct APIStudioGroundAsk: Codable, Equatable, Sendable {
     var points: [[Double]]
 }
 
+/// The NOTAMs and TFRs in force at a moment inside a box, from the day's
+/// archive kept here (wingtip.history.notam_archive); `archived` False
+/// where no archive covers that UTC day.
+// MARK: - APIStudioNotams
+struct APIStudioNotams: Codable, Equatable, Sendable {
+    var archived: Bool
+    var day: String
+    var notams: [APIStudioNotam]
+    var tfrs: [APIStudioTfr]
+}
+
+/// A NOTAM in force then, as sent, at its field's position (None for
+/// one at no field).
+// MARK: - APIStudioNotam
+struct APIStudioNotam: Codable, Equatable, Sendable {
+    var end: String?
+    var id: String
+    var lat, lon: Double?
+    var start: String?
+    var text: String
+}
+
+/// A TFR in force then: its NOTAM's id, title, times and text, and its
+/// areas (GeoJSON MultiPolygon, rounded to about 11 m).
+// MARK: - APIStudioTfr
+struct APIStudioTfr: Codable, Equatable, Sendable {
+    var end: String?
+    var geometry: [String: JSONValue]?
+    var id, name: String
+    var start, text: String?
+}
+
 /// An airplane's reports on a UTC day, for the Studio's replay
 /// (wingtip.traffic.day_tracks), with where they came from, which the
 /// Studio shows (ODbL 1.0 asks for it).
@@ -4634,6 +4683,48 @@ struct APIStudioWatched: Codable, Equatable, Sendable {
     var days: [String]
     var hex: String
     var registration: String?
+}
+
+/// The weather as it was over a replayed flight
+/// (wingtip.history.weather_then): the METARs of the stations near its
+/// track from an hour before to an hour after, the TAFs in force over it,
+/// and the radar's frames, with where they came from.
+// MARK: - APIStudioWeather
+struct APIStudioWeather: Codable, Equatable, Sendable {
+    var credit: String
+    var metars: [APIStudioMetar]
+    var radar: [APIStudioRadarFrame]
+    var source: String
+    var tafs: [APIStudioTaf]
+}
+
+/// A station's METAR, as it sent it (IEM's archive).
+// MARK: - APIStudioMetar
+struct APIStudioMetar: Codable, Equatable, Sendable {
+    var lat, lon: Double
+    var raw, station, time: String
+}
+
+/// The NEXRAD composite at one five-minute mosaic: its time and its
+/// XYZ tile template on IEM's tile cache.
+// MARK: - APIStudioRadarFrame
+struct APIStudioRadarFrame: Codable, Equatable, Sendable {
+    var tiles, valid: String
+}
+
+/// A station's TAF, as the NWS issued it (IEM's archive).
+// MARK: - APIStudioTaf
+struct APIStudioTaf: Codable, Equatable, Sendable {
+    var issued, raw, station: String
+}
+
+/// A replayed flight's span (s since 1970, UTC) and points along its
+/// track, [lat, lon] each, for the weather as it was.
+// MARK: - APIStudioWeatherAsk
+struct APIStudioWeatherAsk: Codable, Equatable, Sendable {
+    var end: Double
+    var points: [[Double]]
+    var start: Double
 }
 
 // MARK: - APITfrs

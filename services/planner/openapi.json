@@ -14720,6 +14720,138 @@
         "title": "NotesToWrite",
         "type": "object"
       },
+      "NtsbEvent": {
+        "description": "One NTSB case of the airplane (wingtip.history.ntsb), its texts\nverbatim: where and when (the local date), its phase of flight and\nhighest injury in the NTSB's words, its probable cause once the final\nreport is out, and its narrative (the final report's, else the\npreliminary's factual one).",
+        "properties": {
+          "carol_url": {
+            "title": "Carol Url",
+            "type": "string"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "docket_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Docket Url"
+          },
+          "ev_id": {
+            "title": "Ev Id",
+            "type": "string"
+          },
+          "highest_injury": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Injury"
+          },
+          "narrative": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Narrative"
+          },
+          "narrative_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "final",
+                  "preliminary"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Narrative Kind"
+          },
+          "ntsb_no": {
+            "title": "Ntsb No",
+            "type": "string"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase"
+          },
+          "probable_cause": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Probable Cause"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          }
+        },
+        "required": [
+          "ntsb_no",
+          "ev_id",
+          "date",
+          "carol_url"
+        ],
+        "title": "NtsbEvent",
+        "type": "object"
+      },
       "Obstacle": {
         "description": "One obstacle of the FAA's Digital Obstacle File (DOF.DAT): where it\nstands, its height above the ground and its top above the sea in feet,\nthe FAA's word for what it is (TOWER, BLDG, WINDMILL ...) and whether\nit is lit.",
         "properties": {
@@ -20732,6 +20864,157 @@
         "title": "StudioGroundAsk",
         "type": "object"
       },
+      "StudioMetar": {
+        "description": "A station's METAR, as it sent it (IEM's archive).",
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "raw": {
+            "title": "Raw",
+            "type": "string"
+          },
+          "station": {
+            "title": "Station",
+            "type": "string"
+          },
+          "time": {
+            "title": "Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "station",
+          "lat",
+          "lon",
+          "time",
+          "raw"
+        ],
+        "title": "StudioMetar",
+        "type": "object"
+      },
+      "StudioNotam": {
+        "description": "A NOTAM in force then, as sent, at its field's position (None for\none at no field).",
+        "properties": {
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lat": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lat"
+          },
+          "lon": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lon"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ],
+        "title": "StudioNotam",
+        "type": "object"
+      },
+      "StudioNotams": {
+        "description": "The NOTAMs and TFRs in force at a moment inside a box, from the day's\narchive kept here (wingtip.history.notam_archive); `archived` False\nwhere no archive covers that UTC day.",
+        "properties": {
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "day": {
+            "title": "Day",
+            "type": "string"
+          },
+          "notams": {
+            "items": {
+              "$ref": "#/components/schemas/StudioNotam"
+            },
+            "title": "Notams",
+            "type": "array"
+          },
+          "tfrs": {
+            "items": {
+              "$ref": "#/components/schemas/StudioTfr"
+            },
+            "title": "Tfrs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "archived",
+          "day",
+          "notams",
+          "tfrs"
+        ],
+        "title": "StudioNotams",
+        "type": "object"
+      },
+      "StudioRadarFrame": {
+        "description": "The NEXRAD composite at one five-minute mosaic: its time and its\nXYZ tile template on IEM's tile cache.",
+        "properties": {
+          "tiles": {
+            "title": "Tiles",
+            "type": "string"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "valid",
+          "tiles"
+        ],
+        "title": "StudioRadarFrame",
+        "type": "object"
+      },
       "StudioReport": {
         "description": "One report of the day: when (s since 1970), where, its altitude\n(ft; the transponder's pressure altitude for adsb.lol's day, see\n`altitude`; None on the ground), ground speed (kt), track (degrees\ntrue) and whether it was on the ground.",
         "properties": {
@@ -20792,6 +21075,94 @@
           "lon"
         ],
         "title": "StudioReport",
+        "type": "object"
+      },
+      "StudioTaf": {
+        "description": "A station's TAF, as the NWS issued it (IEM's archive).",
+        "properties": {
+          "issued": {
+            "title": "Issued",
+            "type": "string"
+          },
+          "raw": {
+            "title": "Raw",
+            "type": "string"
+          },
+          "station": {
+            "title": "Station",
+            "type": "string"
+          }
+        },
+        "required": [
+          "station",
+          "issued",
+          "raw"
+        ],
+        "title": "StudioTaf",
+        "type": "object"
+      },
+      "StudioTfr": {
+        "description": "A TFR in force then: its NOTAM's id, title, times and text, and its\nareas (GeoJSON MultiPolygon, rounded to about 11 m).",
+        "properties": {
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "StudioTfr",
         "type": "object"
       },
       "StudioTrack": {
@@ -20893,6 +21264,87 @@
           "days"
         ],
         "title": "StudioWatched",
+        "type": "object"
+      },
+      "StudioWeather": {
+        "description": "The weather as it was over a replayed flight\n(wingtip.history.weather_then): the METARs of the stations near its\ntrack from an hour before to an hour after, the TAFs in force over it,\nand the radar's frames, with where they came from.",
+        "properties": {
+          "credit": {
+            "title": "Credit",
+            "type": "string"
+          },
+          "metars": {
+            "items": {
+              "$ref": "#/components/schemas/StudioMetar"
+            },
+            "title": "Metars",
+            "type": "array"
+          },
+          "radar": {
+            "items": {
+              "$ref": "#/components/schemas/StudioRadarFrame"
+            },
+            "title": "Radar",
+            "type": "array"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "tafs": {
+            "items": {
+              "$ref": "#/components/schemas/StudioTaf"
+            },
+            "title": "Tafs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "metars",
+          "tafs",
+          "radar",
+          "source",
+          "credit"
+        ],
+        "title": "StudioWeather",
+        "type": "object"
+      },
+      "StudioWeatherAsk": {
+        "description": "A replayed flight's span (s since 1970, UTC) and points along its\ntrack, [lat, lon] each, for the weather as it was.",
+        "properties": {
+          "end": {
+            "title": "End",
+            "type": "number"
+          },
+          "points": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "maxItems": 200,
+            "title": "Points",
+            "type": "array"
+          },
+          "start": {
+            "title": "Start",
+            "type": "number"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "points"
+        ],
+        "title": "StudioWeatherAsk",
         "type": "object"
       },
       "TerminalChart": {
@@ -29807,6 +30259,158 @@
         }
       }
     },
+    "/api/studio/notams": {
+      "get": {
+        "description": "The NOTAMs and TFRs in force at `at` inside the box, from that UTC\nday's archive (wingtip.history.notam_archive); `archived` false where\nnone was kept that day.",
+        "operationId": "studio_notams_api_studio_notams_get",
+        "parameters": [
+          {
+            "description": "The moment, s since 1970",
+            "in": "query",
+            "name": "at",
+            "required": true,
+            "schema": {
+              "description": "The moment, s since 1970",
+              "title": "At",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lat_min",
+            "required": true,
+            "schema": {
+              "maximum": 90,
+              "minimum": -90,
+              "title": "Lat Min",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lat_max",
+            "required": true,
+            "schema": {
+              "maximum": 90,
+              "minimum": -90,
+              "title": "Lat Max",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lon_min",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "title": "Lon Min",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lon_max",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "title": "Lon Max",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudioNotams"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Studio Notams",
+        "x-gateway": {
+          "access": "developer"
+        }
+      }
+    },
+    "/api/studio/ntsb": {
+      "get": {
+        "description": "The NTSB's cases of the airplane dated within a day either side\n(wingtip.history.ntsb); none where there are none, or the store is not\nbuilt yet.",
+        "operationId": "studio_ntsb_api_studio_ntsb_get",
+        "parameters": [
+          {
+            "description": "The registration, N-number or other",
+            "in": "query",
+            "name": "registration",
+            "required": true,
+            "schema": {
+              "description": "The registration, N-number or other",
+              "maxLength": 12,
+              "minLength": 2,
+              "title": "Registration",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The UTC day of the flight",
+            "in": "query",
+            "name": "day",
+            "required": true,
+            "schema": {
+              "description": "The UTC day of the flight",
+              "format": "date",
+              "title": "Day",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NtsbEvent"
+                  },
+                  "title": "Response Studio Ntsb Api Studio Ntsb Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Studio Ntsb",
+        "x-gateway": {
+          "access": "developer"
+        }
+      }
+    },
     "/api/studio/track": {
       "get": {
         "description": "The airplane's reports on a UTC day (wingtip.traffic.day_tracks): a\npast day from the store, fetched from adsb.lol's history once where it\nis not there yet; today's from its recent trace. A 404 for a name the\nregistry does not know, a 422 for a day to come, a 503 where adsb.lol\ncannot be read now.",
@@ -29887,6 +30491,48 @@
           }
         },
         "summary": "Studio Watched",
+        "x-gateway": {
+          "access": "developer"
+        }
+      }
+    },
+    "/api/studio/weather": {
+      "post": {
+        "description": "The METARs, TAFs and radar frames over a replayed flight\n(wingtip.history.weather_then): a 422 for a span that ends before it\nstarts or is longer than two days, a 503 where IEM cannot be read now.",
+        "operationId": "studio_weather_api_studio_weather_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudioWeatherAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudioWeather"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Studio Weather",
         "x-gateway": {
           "access": "developer"
         }

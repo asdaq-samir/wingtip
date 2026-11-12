@@ -161,12 +161,14 @@ export default defineConfig({
         // Not kept ahead for every pilot, at the first load and after each
         // deploy: Inter's non-Latin subsets (170 KB), fetched by the browser
         // only for a glyph they hold, the developer's pages (77 KB), and the
-        // page reader's 15 MB (tesseract/), kept by tesseract.js itself.
-        // Asked for when needed, as any request.
+        // page reader's 15 MB (tesseract/), kept by tesseract.js itself,
+        // and the Studio's speech to words (its worker and ONNX Runtime's
+        // 27 MB, features/replay/captions). Asked for when needed.
         globIgnores: [
           "**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2",
           "**/{DevPanel,TrainWorkspace}-*.js",
           "tesseract/**",
+          "**/{ort-wasm-*,transcribe.worker-*}",
         ],
         runtimeCaching: [
           {

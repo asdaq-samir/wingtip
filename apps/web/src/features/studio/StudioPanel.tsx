@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { FileUp } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -15,8 +15,9 @@ import { utcToday, type Studio } from "./useStudio";
  * and kept); one of the airplanes watched here, on a day it has reports;
  * or a KML, GPX or CSV file. What went wrong is said here, under the
  * field, where the track would have come from (lib/problems' rule).
+ * Under a loaded track, the Studio's `tools` (StudioTools).
  */
-export function StudioPanel({ studio }: { studio: Studio }) {
+export function StudioPanel({ studio, tools }: { studio: Studio; tools?: ReactNode }) {
   const [tail, setTail] = useState(studio.q);
   const [day, setDay] = useState(studio.day || utcToday());
   const picker = useRef<HTMLInputElement>(null);
@@ -61,6 +62,8 @@ export function StudioPanel({ studio }: { studio: Studio }) {
           {track.credit && <span data-testid="studio-credit"> · {track.credit}</span>}
         </p>
       )}
+
+      {track && tools}
 
       {studio.watched.length > 0 && (
         <ListGroup title="Watched here">

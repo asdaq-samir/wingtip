@@ -5,7 +5,9 @@ import { StudioBar } from "./StudioBar";
 import { StudioMap } from "./StudioMap";
 import { StudioOverlay } from "./StudioOverlay";
 import { StudioPanel } from "./StudioPanel";
+import { StudioTools } from "./StudioTools";
 import { useStudio } from "./useStudio";
+import { useStudioHistory } from "./useStudioHistory";
 
 type PilotChunk = Awaited<ReturnType<typeof loadPilotPanel>>;
 
@@ -18,21 +20,13 @@ type PilotChunk = Awaited<ReturnType<typeof loadPilotPanel>>;
  * developer's for now (the owner's pick, 2026-11-12: "You only for now"),
  * offered and guarded as Dev is (use-dev-mode, DevGuard).
  *
- * Seams left for what comes next, each a place in features/replay or here:
- * - video export: a recorder over the map's canvas and the overlay, driven
- *   by the replay clock's own steps (usePastFlight) rather than the
- *   screen's frames, so a frame is never dropped;
- * - radio and captions: LiveATC's archive or the NTSB docket's transcript
- *   on the same clock, a track beside the timeline (ReplayTimeline's
- *   children);
- * - the weather and NOTAMs as they were: the weather store's frames for
- *   the track's hours (features/weather-flow's timeline, asked by time);
- * - NTSB links: the docket by registration and day (StudioPanel);
- * - keyframes: camera picks at moments, a list in the camera store
- *   (features/replay/camera) the camera reads by the clock.
+ * Beside the replay: the weather, the NTSB's events and the NOTAMs as
+ * they were (useStudioHistory, StudioHistory), and the video's parts --
+ * keyframes, the radio, captions, the export (features/replay, StudioTools).
  */
 export default function StudioWorkspace({ panel, setPanel, children }: WorkspaceProps) {
   const studio = useStudio();
+  const history = useStudioHistory(studio.track, studio.registration, studio.utcDay);
   const [pilot, setPilot] = useState<PilotChunk | null>(null);
   useEffect(() => {
     void loadPilotPanel().then(setPilot);
@@ -40,11 +34,16 @@ export default function StudioWorkspace({ panel, setPanel, children }: Workspace
   return children({
     map: (
       <div className="relative h-full w-full">
-        <StudioMap track={studio.track} />
+        <StudioMap track={studio.track} radar={history.radar?.tiles ?? null} />
         {studio.track && <StudioOverlay track={studio.track} ground={studio.ground} />}
       </div>
     ),
-    sidebar: <StudioPanel studio={studio} />,
+    sidebar: (
+      <StudioPanel
+        studio={studio}
+        tools={studio.track && <StudioTools track={studio.track} ground={studio.ground} history={history} callsign={studio.registration} />}
+      />
+    ),
     head: null,
     bar: (
       <StudioBar

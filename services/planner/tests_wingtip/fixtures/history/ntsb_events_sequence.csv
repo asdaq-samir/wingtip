@@ -1,0 +1,16 @@
+ev_id,Aircraft_Key,Occurrence_No,Occurrence_Code,Occurrence_Description,phase_no,eventsoe_no,Defining_ev
+20260317202660,1,5,100030,Prior to flight Preflight or dispatch event,100,030,0
+20260317202660,1,4,400192,Enroute Fuel exhaustion,400,192,1
+20260317202660,1,2,550092,Landing Hard landing,550,092,0
+20261023204059,1,1,404342,Enroute-descent Loss of engine power (partial),404,342,1
+20080210X00161,1,1,100040,Prior to flight Aircraft maintenance event,100,040,0
+20080205X00136,1,1,100340,Prior to flight Powerplant sys/comp malf/fail,100,340,1
+20080219X00209,1,1,400401,Enroute VFR encounter with IMC,400,401,1
+20080219X00209,1,2,400120,Enroute Controlled flight into terr/obj (CFIT),400,120,0
+20080107X00026,1,1,550250,Landing Midair collision,550,250,1
+20080109X00036,1,2,550300,Landing Runway excursion,550,300,0
+20080129X00115,1,3,404241,Enroute-descent Aerodynamic stall/spin,404,241,0
+20080220X00214,1,1,404362,Enroute-descent Clear air turbulence encounter,404,362,1
+20261013203988,1,1,450341,Maneuvering Loss of engine power (total),450,341,1
+20080326X00389,1,3,301230,Takeoff-rejected takeoff Loss of control on ground,301,230,1
+20080326X00389,1,4,301300,Takeoff-rejected takeoff Runway excursion,301,300,0

@@ -7,6 +7,6 @@ import { lazy } from "react";
  *  turned on, and lazy here rather than at its caller: one module
  *  imported both ways is put on the first load all the same, and the
  *  bundler's warning of it fails the build (vite-plugins/strictBuild). */
-export { WeatherLoopGl } from "./WeatherLoopGl";
+export { RadarFrameGl, WeatherLoopGl } from "./WeatherLoopGl";
 export { LoopSettingsRows } from "./LoopSettingsRows";
 export const LoopBar = lazy(() => import("./LoopBar").then((m) => ({ default: m.LoopBar })));

@@ -216,6 +216,16 @@ def since() -> float | None:
     return row[0] if row else None
 
 
+def every() -> list[dict]:
+    """Every NOTAM kept, ended ones included (a day after their end), each
+    {"id", "location", "icao_location", "starts", "ends", "text", "raw"}:
+    what the day's archive keeps (wingtip.history.notam_archive)."""
+    with _LOCK:
+        rows = _connection().execute("SELECT id, location, icao_location, starts, ends, text, raw FROM notams").fetchall()
+    keys = ("id", "location", "icao_location", "starts", "ends", "text", "raw")
+    return [dict(zip(keys, r)) for r in rows]
+
+
 def _places(field: str) -> set[str]:
     """A field's identifiers as NOTAMs give them: the domestic location
     drops the K of a contiguous-states ICAO one (KBJC is BJC)."""
