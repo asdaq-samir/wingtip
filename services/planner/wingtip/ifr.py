@@ -67,19 +67,12 @@ def _tiles_over(bbox: tuple, z: int) -> list[tuple[int, int]]:
 
 def _from_course_nm(lat, lon, a: tuple, b: tuple):
     """Each point's distance from the course a to b (a segment: its ends
-    rounded, as "within 4 nm of the course" takes the ends too), in nm,
-    on a flat plane about the segment's middle."""
-    lat0 = (a[0] + b[0]) / 2
-    k = math.cos(math.radians(lat0)) * 60.0
-
-    def plane(p_lat, p_lon):
-        return (np.asarray(p_lon) - a[1]) * k, (np.asarray(p_lat) - a[0]) * 60.0
-
-    px, py = plane(lat, lon)
-    bx, by = plane(b[0], b[1])
-    length2 = float(bx * bx + by * by)
-    t = np.clip((px * bx + py * by) / length2, 0.0, 1.0) if length2 else np.zeros_like(px)
-    return np.hypot(px - t * bx, py - t * by)
+    rounded, as "within 4 nm of the course" takes the ends too), in nm:
+    off the great circle abeam, and from the nearer end past either end
+    (the engine's cross- and along-track, as geo.along_path_nm holds them
+    to a leg)."""
+    cross, along = geo.track_distances_nm(np.asarray(lat, dtype=float), np.asarray(lon, dtype=float), a, b)
+    return np.hypot(cross, along - np.clip(along, 0.0, geo.distance_nm(*a, *b)))
 
 
 def _pieces(a: tuple, b: tuple) -> list[tuple[tuple, tuple]]:

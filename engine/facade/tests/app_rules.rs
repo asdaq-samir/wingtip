@@ -116,6 +116,18 @@ fn the_spheres_figures() {
         let input = json!({ "lat1": case["lat1"], "lon1": case["lon1"], "lat2": case["lat2"], "lon2": case["lon2"] });
         close(&ask("bearing_deg", input), &case["deg"], "bearing_deg");
     }
+    // The same legs at once (great_circles, the planner's corridors and
+    // the web's trails): each row the one-at-a-time answer.
+    for (list, key, figure) in [("distance", "nm", "distance_nm"), ("bearing", "deg", "bearing_deg")] {
+        let cases = sphere[list].as_array().unwrap();
+        let column = |k: &str| Value::Array(cases.iter().map(|c| c[k].clone()).collect());
+        let got =
+            ask("great_circles", json!({ "lat1": column("lat1"), "lon1": column("lon1"), "lat2": column("lat2"), "lon2": column("lon2") }));
+        assert_eq!(got[figure].as_array().unwrap().len(), cases.len());
+        for (row, case) in got[figure].as_array().unwrap().iter().zip(cases) {
+            close(row, &case[key], figure);
+        }
+    }
     let cases = sphere["destination"].as_array().unwrap();
     let points: Vec<Value> =
         cases.iter().map(|c| json!({ "lat": c["lat"], "lon": c["lon"], "bearing_deg": c["bearing_deg"], "nm": c["nm"] })).collect();

@@ -658,8 +658,8 @@ def great_circle_pixels(start: tuple, end: tuple, zoom: int = DEFAULT_ZOOM) -> n
     is measured against the great circle everywhere else in this project,
     so the raster walk has to use it too.
 
-    PROJ's intermediate points (geo.great_circle_points), which it
-    gives in one vectorised call: a long route is tens of thousands of
+    The engine's points along the great circle (geo.great_circle_points),
+    in one crossing for all of them: a long route is tens of thousands of
     samples.
     """
     # Below a microradian (~6 m) there is no course to walk.

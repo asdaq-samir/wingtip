@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { angleBetween, bearingDeg, bestStopIndex, deg, distanceNm, normalizeDeg, rad, signedTurn } from "./geo";
+import sphere from "./fixtures/sphere.json";
+import { angleBetween, bearingDeg, bestStopIndex, deg, destination, distanceNm, legsNm, normalizeDeg, rad, signedTurn } from "./geo";
 
 describe("geo", () => {
   it("turns degrees to radians and back", () => {
@@ -23,6 +24,25 @@ describe("geo", () => {
     expect(bearingDeg(campbell, duluth)).toBeLessThan(335);
     expect(bearingDeg(duluth, campbell)).toBeGreaterThan(135);
     expect(bearingDeg(duluth, campbell)).toBeLessThan(150);
+  });
+
+  it("answers the shared cases, the engine's sphere every app asks", () => {
+    for (const c of sphere.distance) expect(distanceNm({ lat: c.lat1, lon: c.lon1 }, { lat: c.lat2, lon: c.lon2 })).toBeCloseTo(c.nm, 9);
+    for (const c of sphere.bearing) expect(bearingDeg({ lat: c.lat1, lon: c.lon1 }, { lat: c.lat2, lon: c.lon2 })).toBeCloseTo(c.deg, 9);
+    for (const c of sphere.destination) {
+      const to = destination({ lat: c.lat, lon: c.lon }, c.bearing_deg, c.nm);
+      expect(to.lat).toBeCloseTo(c.to.lat, 9);
+      expect(to.lon).toBeCloseTo(c.to.lon, 9);
+    }
+  });
+
+  it("measures a trail's legs at once, each as one leg alone", () => {
+    const madison = { lat: 43.1399, lon: -89.3375 };
+    const legs = legsNm([campbell, madison, duluth]);
+    expect(legs).toHaveLength(2);
+    expect(legs[0]).toBeCloseTo(distanceNm(campbell, madison), 9);
+    expect(legs[1]).toBeCloseTo(distanceNm(madison, duluth), 9);
+    expect(legsNm([campbell])).toEqual([]);
   });
 
   it("is zero to itself", () => {

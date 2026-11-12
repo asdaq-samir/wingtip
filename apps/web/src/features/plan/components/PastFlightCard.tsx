@@ -10,7 +10,7 @@ import { RowBadge } from "../../../components/RowBadge";
 import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../../lib/api/types";
 import { clockTime } from "../../../lib/format";
 import { compassPoint } from "../../../lib/compass";
-import { distanceNm } from "../../../lib/geo";
+import { legsNm } from "../../../lib/geo";
 import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight } from "../map/pastFlight";
 import { usePreferences } from "../../../lib/preferences";
 import { CameraMenu, ReplayTimeline, setReplayCamera } from "../../replay";
@@ -71,7 +71,7 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
 
 /** Off and on, how long, how high, how far over the ground and how fast. */
 function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFlightPoint[] }) {
-  const flown = useMemo(() => points.slice(1).reduce((nm, p, i) => nm + distanceNm(points[i]!, p), 0), [points]);
+  const flown = useMemo(() => legsNm(points).reduce((sum, nm) => sum + nm, 0), [points]);
   const hours = (flight.on - flight.off) / 3600;
   const value = (text: string) => <span className="font-semibold text-foreground tabular-nums">{text}</span>;
   return (

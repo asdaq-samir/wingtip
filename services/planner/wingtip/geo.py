@@ -1,33 +1,27 @@
 """Great-circle navigation helpers.
 
-A sphere, the same approximation flight computers use and plenty
-accurate for spacing VFR checkpoints. The distance and forward-azimuth
-solutions are PROJ's, through pyproj, rather than this project's own:
-one `Geod` configured as a sphere whose radius is given in nautical
-miles, so PROJ works in the unit the answers are wanted in and nothing
-here converts.
+A sphere of 3,440.065 nm, the same approximation flight computers use
+and plenty accurate for spacing VFR checkpoints. Its figures --
+distance, initial course, cross- and along-track, a point a course and
+distance out -- are the engine's (engine/crates/core/src/geo.rs), asked
+through wingtip_native as the web and the phones ask them, so a figure
+is worked out in one place (the owner, 2026-11-12: the geo maths moves
+into the engine). What stays here is not a figure: Web Mercator's tile
+grid, a KD-tree's "who is near whom", and the flat projection
+shape_distance_nm measures shapes on.
 
-Two things follow from PROJ doing it, and both matter.
+The engine is asked a whole array at a time. Every function below takes
+scalars or arrays interchangeably, and the callers that work a whole
+corridor at once (wingtip.pipeline's corridor filter, wingtip.osm's
+crossing finder, wingtip.ml_features' clutter measure) pass arrays: one
+crossing into the engine for all of them (wingtip_native.geo_many,
+numpy's buffers read and written in place), since a call a point, or
+JSON text for a corridor, would cost more than the sums. A scalar takes
+wingtip_native.geo_one, a few hundred times a nav log.
 
-It is fast, scalar and in bulk. A single call costs about a microsecond
--- less than the hand-written haversine that used to be here -- and an
-array of points costs about 0.6 microseconds each, in C, with no Python
-loop. Every function below therefore takes scalars or arrays
-interchangeably, and the callers that work a whole corridor at a time
-(wingtip.pipeline's corridor filter, wingtip.osm's crossing finder,
-wingtip.ml_features' clutter measure) pass arrays. An earlier version of this
-module went through an object-per-call library and made those callers
-fifty times more expensive; this is the fix, and it leaves them faster
-than they were before either change.
-
-And it is somebody else's implementation, which is the point of not
-hand-rolling the formulas. The two that PROJ does not provide --
-cross-track and along-track distance, which are the standard spherical
-identities on top of an azimuth and a distance -- are written here, and
-services/planner/tests_wingtip/test_geo.py pins every function in this file against pygeodesy's
-independent implementations. pygeodesy is a test dependency only
-(requirements-dev-wingtip.txt): it guards the maths without shipping in any
-service image.
+services/planner/tests_wingtip/test_geo.py pins every function here
+against pygeodesy's independent implementations and pyproj's Geod on the
+same sphere; both are test dependencies only (requirements-dev-wingtip.txt).
 
 Sign convention for cross-track: positive is right of course, negative
 is left. Along-track is negative behind the route start.
@@ -36,72 +30,64 @@ is left. Along-track is negative behind the route start.
 import math
 
 import numpy as np
-from pyproj import Geod
+import wingtip_native
 from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import connected_components
 from scipy.spatial import KDTree
 
 from .units import NM_PER_DEG_LAT
 
+#: The engine's sphere (wingtip_core::geo::EARTH_RADIUS_NM), for the
+#: KD-tree's chords and the flat projection below.
 EARTH_RADIUS_NM = 3440.065
-
-# A sphere (f=0), sized in nautical miles, so inv() returns nautical
-# miles directly. PROJ treats `a` as whatever unit it is given.
-_GEOD = Geod(a=EARTH_RADIUS_NM, f=0.0)
 
 # isinstance against a tuple, not np.ndim: the scalar path is the one
 # the nav log takes a few hundred times per plan, and np.ndim on a
-# plain float costs more than the PROJ call it is guarding.
+# plain float costs more than the engine call it is guarding.
 _NUMBER = (int, float, np.integer, np.floating)
 
 
-def _inv(lat1, lon1, lat2, lon2):
-    """(forward azimuth in degrees [0, 360), distance in nm) from point
-    one to point two.
+def _figure(name: str, *values):
+    """The engine's figure `name` (wingtip_core::geo_many: "inverse",
+    "track", "destination") as its two answers.
 
-    Scalars in, scalars out, on PROJ's own scalar path -- about a
-    microsecond. Otherwise every argument is broadcast to one shape,
-    since PROJ requires all four arrays the same length and the usual
-    call here is one route start against a whole corridor of points.
+    Scalars in, floats out, one row. Otherwise every argument is
+    broadcast to one shape -- the usual call is one route start against
+    a whole corridor of points -- and the engine fills two arrays of it
+    in place.
     """
-    if isinstance(lat1, _NUMBER) and isinstance(lon1, _NUMBER) and isinstance(lat2, _NUMBER) and isinstance(lon2, _NUMBER):
-        azimuth, _, distance = _GEOD.inv(lon1, lat1, lon2, lat2)
-        return azimuth % 360.0, distance
-
-    shape = np.broadcast_shapes(np.shape(lat1), np.shape(lon1), np.shape(lat2), np.shape(lon2))
-    # broadcast_to gives a read-only view and PROJ wants writable,
-    # contiguous buffers, so this copies rather than views.
-    lon1, lat1, lon2, lat2 = (np.ascontiguousarray(np.broadcast_to(np.asarray(v, dtype=float), shape)) for v in (lon1, lat1, lon2, lat2))
-    azimuth, _, distance = _GEOD.inv(lon1, lat1, lon2, lat2)
-    return np.mod(azimuth, 360.0), distance
+    if all(isinstance(v, _NUMBER) for v in values):
+        return wingtip_native.geo_one(name, values)
+    shape = np.broadcast_shapes(*(np.shape(v) for v in values))
+    # broadcast_to gives a read-only view the engine would read with
+    # strides of 0, so this copies into one contiguous column each.
+    columns = [np.ascontiguousarray(np.broadcast_to(np.asarray(v, dtype=float), shape)).reshape(-1) for v in values]
+    first, second = np.empty(columns[0].size), np.empty(columns[0].size)
+    wingtip_native.geo_many(name, columns, first, second)
+    return first.reshape(shape), second.reshape(shape)
 
 
 def _plain(value):
-    """A numpy 0-d result back to a plain float. Everything downstream --
-    a nav log serialised to JSON, a Pydantic response model -- is
-    happier with a float than with a numpy scalar, and an array result
-    passes through untouched."""
+    """A numpy 0-d result back to a plain float, for a nav log
+    serialised to JSON; an array result passes through untouched."""
     return float(value) if isinstance(value, _NUMBER) else value
 
 
 def distance_nm(lat1, lon1, lat2, lon2):
     """Great-circle distance between two points, in nautical miles."""
-    return _inv(lat1, lon1, lat2, lon2)[1]
+    return _figure("inverse", lat1, lon1, lat2, lon2)[0]
 
 
 def bearing_deg(lat1, lon1, lat2, lon2):
     """Initial great-circle bearing from point 1 to point 2, in degrees
     [0, 360).
 
-    Zero for two points that coincide. The bearing between a point and
-    itself is undefined and PROJ answers 180, which would give a
-    zero-length leg of a nav log a due-south course; zero is what this
-    project has always reported and what wingtip.navlog's callers expect.
+    Zero for two points that coincide, as the engine answers: the
+    bearing between a point and itself is undefined, and zero is what
+    this project has always reported and what wingtip.navlog's callers
+    expect.
     """
-    azimuth, distance = _inv(lat1, lon1, lat2, lon2)
-    if isinstance(distance, _NUMBER):
-        return 0.0 if distance == 0.0 else azimuth
-    return np.where(distance == 0.0, 0.0, azimuth)
+    return _figure("inverse", lat1, lon1, lat2, lon2)[1]
 
 
 def angle_between(a: float, b: float) -> float:
@@ -111,30 +97,15 @@ def angle_between(a: float, b: float) -> float:
 
 
 def _track(lat, lon, route_start, route_end):
-    """(cross-track, along-track) in nautical miles, both signed.
-
-    The standard spherical identities, given the bearing and distance
-    from the route's start to the point and to the route's end:
-
-        xtd = asin(sin(d13/R) * sin(t13 - t12)) * R
-        atd = acos(cos(d13/R) / cos(xtd/R)) * R, signed by cos(t13 - t12)
+    """(cross-track, along-track) in nautical miles, both signed: the
+    engine's track_nm, the standard spherical identities.
 
     The sign on the along-track is what makes a point behind the
     departure read negative, which wingtip.pipeline's corridor filter
     depends on -- it bounds along-track at -MARGIN_NM, a bound an
     unsigned value could never cross.
     """
-    start_lat, start_lon = route_start
-    end_lat, end_lon = route_end
-    bearing_to_point, distance_to_point = _inv(start_lat, start_lon, lat, lon)
-    bearing_to_end, _ = _inv(start_lat, start_lon, end_lat, end_lon)
-
-    angular = distance_to_point / EARTH_RADIUS_NM
-    offset = np.radians(bearing_to_point - bearing_to_end)
-    cross = np.arcsin(np.clip(np.sin(angular) * np.sin(offset), -1.0, 1.0)) * EARTH_RADIUS_NM
-    ratio = np.cos(angular) / np.cos(cross / EARTH_RADIUS_NM)
-    along = np.arccos(np.clip(ratio, -1.0, 1.0)) * EARTH_RADIUS_NM * np.sign(np.cos(offset))
-    return _plain(cross), _plain(along)
+    return _figure("track", lat, lon, route_start[0], route_start[1], route_end[0], route_end[1])
 
 
 def cross_track_distance_nm(lat, lon, route_start: tuple, route_end: tuple):
@@ -152,8 +123,7 @@ def along_track_distance_nm(lat, lon, route_start: tuple, route_end: tuple):
 
 
 def track_distances_nm(lat, lon, route_start: tuple, route_end: tuple):
-    """Both at once, for the callers that want both -- they share the
-    two azimuth solutions, so asking separately does the work twice."""
+    """Both at once, for the callers that want both."""
     return _track(lat, lon, route_start, route_end)
 
 
@@ -179,18 +149,17 @@ def destination_point(lat: float, lon: float, bearing: float, distance_nm_: floa
     """Point reached from (lat, lon) travelling `bearing` degrees for
     `distance_nm_` nautical miles along a great circle.
     """
-    lon2, lat2, _ = _GEOD.fwd(lon, lat, bearing, distance_nm_)
-    return lat2, lon2
+    return _figure("destination", lat, lon, bearing, distance_nm_)
 
 
 def great_circle_points(start: tuple, end: tuple, count: int) -> tuple:
     """`count` points (at least two) evenly along the great circle from
-    start to end, both ends included, as (lats, lons) arrays: PROJ's own
-    intermediate points. Two points that coincide give `count` of it."""
-    got = _GEOD.inv_intermediate(
-        start[1], start[0], end[1], end[0], npts=max(2, count), initial_idx=0, terminus_idx=0, return_back_azimuth=False
-    )
-    return np.asarray(got.lats), np.asarray(got.lons)
+    start to end, both ends included, as (lats, lons) arrays: each the
+    engine's destination from the start on its initial course, as PROJ's
+    intermediate points were. Two points that coincide give `count` of it."""
+    distance, course = _figure("inverse", start[0], start[1], end[0], end[1])
+    steps = np.linspace(0.0, distance, max(2, count))
+    return _figure("destination", start[0], start[1], course, steps)
 
 
 def path_points(path: list, step_nm: float) -> tuple:
@@ -218,7 +187,7 @@ def shape_distance_nm(geometry, other, centre: tuple) -> float:
     import shapely
     from pyproj import Proj
 
-    # The sphere's radius in nautical miles, as _GEOD has it, so the
+    # The engine's sphere, its radius in nautical miles, so the
     # projection's units, and the distance, are nautical miles.
     aeqd = Proj(proj="aeqd", lat_0=centre[0], lon_0=centre[1], R=EARTH_RADIUS_NM)
 
@@ -311,13 +280,13 @@ def _arc_nm(chord: np.ndarray) -> np.ndarray:
 def nearest(lat, lon, to_lat, to_lon) -> np.ndarray:
     """For each point, the index of the nearest of the `to` points, the
     first of them where two are as near: what np.argmin of distance_nm
-    from every point to every one gives, without PROJ asked every pair.
-    The unit vectors' dot products rank them (the nearer, the larger, on
-    the sphere); PROJ is asked only between those within rounding of the
-    nearest, so it still decides, and a tie still goes to the first. Route
-    options asked PROJ for each cell's distance to every winds-aloft
-    station and each sample of the way to every field: over half their
-    second (2026-11-02)."""
+    from every point to every one gives, without the engine asked every
+    pair. The unit vectors' dot products rank them (the nearer, the
+    larger, on the sphere); the engine is asked only between those within
+    rounding of the nearest, so it still decides, and a tie still goes to
+    the first. Route options asked for each cell's distance to every
+    winds-aloft station and each sample of the way to every field: over
+    half their second (2026-11-02)."""
     lat, lon = np.asarray(lat, dtype=float).reshape(-1), np.asarray(lon, dtype=float).reshape(-1)
     to_lat, to_lon = np.asarray(to_lat, dtype=float).reshape(-1), np.asarray(to_lon, dtype=float).reshape(-1)
     cosine = _unit_sphere(lat, lon) @ _unit_sphere(to_lat, to_lon).T

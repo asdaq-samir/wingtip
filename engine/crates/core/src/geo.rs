@@ -1,9 +1,9 @@
-//! Distances as wingtip.geo has them: great circles on a sphere of 3,440.065
-//! nm, the approximation flight computers use (wingtip.geo's own docstring),
-//! which PROJ works out for the planner and this for the phones. The
-//! central angle by the atan2 form of Vincenty's formula for a sphere,
-//! well-conditioned at every distance, so the two agree to a few
-//! micrometres.
+//! Distances as every app has them: great circles on a sphere of 3,440.065
+//! nm, the approximation flight computers use, worked out here for the
+//! planner (wingtip.geo, through geo_many), the web and the phones alike.
+//! The central angle by the atan2 form of Vincenty's formula for a sphere,
+//! well-conditioned at every distance, so it agrees with PROJ's geodesic
+//! on the same sphere to a few micrometres.
 //!
 //! The FAA's data (NASR, the CIFP, the DOF) are on WGS-84, an ellipsoid;
 //! the sphere, 3,440.065 nm (6,371.0 km, the mean radius), is a stated

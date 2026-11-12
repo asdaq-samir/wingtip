@@ -79,7 +79,7 @@ pub use wingtip_brief::{alternates, fields, gonogo, passengers, runway};
 pub use wingtip_brief::icing_forecast;
 pub use wingtip_procedures::figures;
 // A procedure's legs drawn: arcs, holds, procedure turns (#482 phase 4b).
-pub use wingtip_core::{base64, geo, grid, sort, sums, time, wmm, xml};
+pub use wingtip_core::{base64, geo, geo_many, grid, sort, sums, time, wmm, xml};
 pub use wingtip_flight::{filing, flight, limits, performance, sun};
 pub use wingtip_procedures::paths;
 // The in-flight copilot (copilot_watch).

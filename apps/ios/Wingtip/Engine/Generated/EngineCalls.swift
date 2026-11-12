@@ -845,6 +845,11 @@ extension Engine {
         try Self.rule("gonogo_with_alternate", EngineContract.GonogoWithAlternateInput(items: items, found: found))
     }
 
+    /// distance_nm and bearing_deg over many legs at once, columns in and columns out: row i is the great circle from (lat1[i], lon1[i]) to (lat2[i], lon2[i]) on the same sphere of 3,440.065 nm (wingtip.geo), its distance in nm and its initial course in degrees true 0 to 360, 0 for two points that coincide. The lists are all as long as each other, so a corridor of points, a route's legs or a map's stops cross into the engine once.
+    static func greatCircles(lat1: [Double], lon1: [Double], lat2: [Double], lon2: [Double]) throws -> EngineContract.GreatCirclesAnswer {
+        try Self.rule("great_circles", EngineContract.GreatCirclesInput(lat1: lat1, lon1: lon1, lat2: lat2, lon2: lon2))
+    }
+
     /// The nav log's ground speed once the heading holds the course: the airspeed's share along it less the wind's.
     static func groundspeedKt(trueCourseDeg: Double, windFromDeg: Double, windKt: Double, tasKt: Double, wcaDeg: Double) throws -> Double {
         try Self.rule("groundspeed_kt", EngineContract.GroundspeedKtInput(trueCourseDeg: trueCourseDeg, windFromDeg: windFromDeg, windKt: windKt, tasKt: tasKt, wcaDeg: wcaDeg))

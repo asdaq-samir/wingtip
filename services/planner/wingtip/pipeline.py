@@ -227,8 +227,8 @@ def collect(dep_ident: str = "C81", dest_ident: str = "KDLH", out_path: Path | N
     def add_route_distances(df):
         df = df.copy()
         # The whole corridor in one call rather than a row at a time:
-        # both distances come out of the same pair of azimuth solutions,
-        # and PROJ does the arithmetic for every candidate at once.
+        # the engine works both distances for every candidate in one
+        # crossing (geo.track_distances_nm).
         cross, along = geo.track_distances_nm(df["lat"].to_numpy(), df["lon"].to_numpy(), route_start, route_end)
         df["cross_track_nm"] = cross
         df["along_track_nm"] = along
