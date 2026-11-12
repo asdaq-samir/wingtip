@@ -6,7 +6,6 @@ data -- all backed by OurAirports' free, no-API-key-required dataset
 import bisect
 import gzip
 import json
-import math
 import os
 import threading
 from functools import lru_cache
@@ -283,13 +282,16 @@ def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: fl
     return us
 
 
-def _nearness(lat: float, lon: float, near: list[tuple[float, float]]) -> float:
-    """How far a field is from the nearest of `near`, as a sort key: the
-    squared degrees, the longitude's shrunk by the latitude's cosine --
-    an order, not a distance; 0 with nothing to be near."""
-    if not near or lat != lat or lon != lon:
-        return 0.0
-    return min((lat - a) ** 2 + ((lon - b) * math.cos(math.radians(a))) ** 2 for a, b in near)
+def _nearness_nm(lats, lons, near: list[tuple[float, float]]) -> np.ndarray:
+    """How far each field is from the nearest of `near`, nm along the
+    great circle (geo.distance_nm, every field against every point at
+    once), as a sort key; 0 with nothing to be near, or no position."""
+    lats, lons = np.asarray(lats, dtype=float), np.asarray(lons, dtype=float)
+    if not near or not lats.size:
+        return np.zeros(lats.shape)
+    to = np.asarray(near, dtype=float)
+    nm = geo.distance_nm(lats[:, None], lons[:, None], to[None, :, 0], to[None, :, 1]).min(axis=1)
+    return np.where(np.isfinite(nm), nm, 0.0)
 
 
 def search_airports(
@@ -328,7 +330,7 @@ def search_airports(
     matches = pd.concat([df[exact].assign(_rank=0), df[ident_hit].assign(_rank=1), df[word_hit].assign(_rank=2)])
     matches = matches.assign(
         _named=~matches["_name_upper"].str.startswith(query),
-        _near=[_nearness(a, b, near or []) for a, b in zip(matches["latitude_deg"], matches["longitude_deg"])],
+        _near=_nearness_nm(matches["latitude_deg"], matches["longitude_deg"], near or []),
     )
     matches = matches.sort_values(["_rank", "_size_rank", "_named", "_near", "_display_ident"]).head(limit)
     return _rows(df, [df.index.get_loc(i) for i in matches.index])
@@ -447,17 +449,11 @@ def _indexed_matches(index: dict, query: str, limit: int, near: list[tuple[float
     exact = index["exact"].get(query, set())
     ident = prefixed(index["idents"]) - exact
     word = prefixed(index["words"]) - exact - ident
+    ranks = [(rank, row) for rank, rows in enumerate((exact, ident, word)) for row in rows]
+    nearness = _nearness_nm([index["lat"][row] for _, row in ranks], [index["lon"][row] for _, row in ranks], near or [])
     ranked = [
-        (
-            rank,
-            index["size"][row],
-            not index["names"][row].startswith(query),
-            _nearness(index["lat"][row], index["lon"][row], near or []),
-            index["display"][row],
-            row,
-        )
-        for rank, rows in enumerate((exact, ident, word))
-        for row in rows
+        (rank, index["size"][row], not index["names"][row].startswith(query), float(nm), index["display"][row], row)
+        for (rank, row), nm in zip(ranks, nearness)
     ]
     return [row for *_, row in sorted(ranked)[:limit]]
 

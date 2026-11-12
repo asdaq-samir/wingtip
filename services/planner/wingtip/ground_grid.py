@@ -36,6 +36,7 @@ from pathlib import Path
 import numpy as np
 import requests
 
+from . import geo
 from .elevation import terrarium_m
 from .units import M_TO_FT
 
@@ -79,23 +80,6 @@ HIGHEST_GROUND_FT = 14505
 
 _HELD: dict = {}
 _HELD_LOCK = threading.Lock()
-
-
-def _tile_x(lon):
-    return (np.asarray(lon) + 180.0) / 360.0 * 2**ZOOM
-
-
-def _tile_y(lat):
-    lat = np.radians(np.asarray(lat))
-    return (1.0 - np.arcsinh(np.tan(lat)) / np.pi) / 2.0 * 2**ZOOM
-
-
-def _lon_of(x):
-    return np.asarray(x) / 2**ZOOM * 360.0 - 180.0
-
-
-def _lat_of(y):
-    return np.degrees(np.arctan(np.sinh(np.pi * (1.0 - 2.0 * np.asarray(y) / 2**ZOOM))))
 
 
 #: How long "not built" is believed before the files are looked for again,
@@ -148,26 +132,13 @@ def line_points(start: tuple, end: tuple) -> tuple[np.ndarray, np.ndarray, np.nd
     """Points along the line from start to end close enough that every
     cell it crosses holds one -- a third of a cell apart -- and how far
     along each is, nm: (lats, lons, along_nm)."""
-    from . import geo
-
     total = float(geo.distance_nm(start[0], start[1], end[0], end[1]))
     span = max(abs(end[0] - start[0]), abs(end[1] - start[1]))
     n = max(2, int(math.ceil(span * PER_DEG * 3)) + 1)
-    t = np.linspace(0.0, 1.0, n)
     # Along the great circle, not the straight line on the chart: the
     # same path wingtip.terrain's samples and the course line take.
-    a = np.radians(start)
-    b = np.radians(end)
-    va = np.array([np.cos(a[0]) * np.cos(a[1]), np.cos(a[0]) * np.sin(a[1]), np.sin(a[0])])
-    vb = np.array([np.cos(b[0]) * np.cos(b[1]), np.cos(b[0]) * np.sin(b[1]), np.sin(b[0])])
-    omega = math.acos(min(1.0, max(-1.0, float(va @ vb))))
-    if omega < 1e-12:
-        v = np.outer(np.ones_like(t), va)
-    else:
-        v = (np.outer(np.sin((1 - t) * omega), va) + np.outer(np.sin(t * omega), vb)) / math.sin(omega)
-    lats = np.degrees(np.arctan2(v[:, 2], np.hypot(v[:, 0], v[:, 1])))
-    lons = np.degrees(np.arctan2(v[:, 1], v[:, 0]))
-    return lats, lons, t * total
+    lats, lons = geo.great_circle_points(start, end, n)
+    return lats, lons, np.linspace(0.0, total, n)
 
 
 # --- The build ---
@@ -200,8 +171,8 @@ def _into(high: np.ndarray, low: np.ndarray, x: int, y: int, heights: np.ndarray
     size = heights.shape[0]
     px = x + (np.arange(size) + 0.5) / size
     py = y + (np.arange(size) + 0.5) / size
-    lons = _lon_of(px)
-    lats = _lat_of(py)
+    lats, _ = geo.tile_lat_lon(0.0, py, ZOOM)
+    _, lons = geo.tile_lat_lon(px, 0.0, ZOOM)
     cols = np.floor((lons - WEST) * PER_DEG).astype(int)
     rows = np.floor((lats - SOUTH) * PER_DEG).astype(int)
     keep_c = (cols >= 0) & (cols < COLS)
@@ -236,8 +207,8 @@ def build(workers: int = 12) -> None:
         high = np.full((ROWS, COLS), NONE, dtype=np.int16)
         low = np.full((ROWS, COLS), NONE, dtype=np.int16)
     done = set(json.loads(DONE_PATH.read_text())) if DONE_PATH.exists() else set()
-    x0, x1 = int(_tile_x(WEST)), int(_tile_x(EAST))
-    y0, y1 = int(_tile_y(NORTH)), int(_tile_y(SOUTH))
+    x0, y0 = (int(v) for v in geo.tile_xy(NORTH, WEST, ZOOM))
+    x1, y1 = (int(v) for v in geo.tile_xy(SOUTH, EAST, ZOOM))
     session = requests.Session()
     session.mount("https://", requests.adapters.HTTPAdapter(pool_connections=1, pool_maxsize=workers))
     with ThreadPoolExecutor(workers) as pool:

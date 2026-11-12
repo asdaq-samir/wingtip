@@ -84,21 +84,16 @@ def _from_course_nm(lat, lon, a: tuple, b: tuple):
 
 def _pieces(a: tuple, b: tuple) -> list[tuple[tuple, tuple]]:
     """The course a to b in pieces of at most PIECE_NM, along its great circle."""
-    total = geo.distance_nm(*a, *b)
-    count = max(1, math.ceil(total / PIECE_NM))
-    bearing = geo.bearing_deg(*a, *b)
-    points = [a] + [geo.destination_point(*a, bearing, total * i / count) for i in range(1, count)] + [b]
+    count = max(1, math.ceil(geo.distance_nm(*a, *b) / PIECE_NM))
+    lats, lons = geo.great_circle_points(a, b, count + 1)
+    points = [a] + list(zip(lats[1:-1].tolist(), lons[1:-1].tolist())) + [b]
     return list(zip(points, points[1:]))
 
 
 def _tiles_beside(piece: tuple) -> list[tuple[int, int]]:
     """The tiles that hold the ground within OBSTACLE_RADIUS_NM of a piece."""
-    (a, b) = piece
-    reach_lat = (OBSTACLE_RADIUS_NM + 1) / 60.0
-    reach_lon = reach_lat / max(0.2, math.cos(math.radians(max(abs(a[0]), abs(b[0])))))
-    return _tiles_over(
-        (min(a[0], b[0]) - reach_lat, min(a[1], b[1]) - reach_lon, max(a[0], b[0]) + reach_lat, max(a[1], b[1]) + reach_lon), TILE_ZOOM
-    )
+    # A mile past the radius, its longitude's at the box's poleward edge.
+    return _tiles_over(geo.corridor_bbox(*piece, OBSTACLE_RADIUS_NM + 1), TILE_ZOOM)
 
 
 def _highest_ground_ft(pieces: list, heights: dict) -> float:
@@ -147,7 +142,6 @@ def floor_profile(fixes: list, faa_cache_dir=DEFAULT_FAA_CACHE_DIR) -> list[dict
     the rounding are the engine's."""
     legs = list(zip(fixes, fixes[1:]))
     leg_pieces = [_pieces(a, b) for a, b in legs]
-    reach_deg = (OBSTACLE_RADIUS_NM + 1) / 60.0
     wanted = sorted({tile for pieces in leg_pieces for piece in pieces for tile in _tiles_beside(piece)})
     with ThreadPoolExecutor(max_workers=min(TILE_WORKERS, max(1, len(wanted)))) as pool:
         heights = dict(zip(wanted, pool.map(_tile, wanted)))
@@ -156,9 +150,9 @@ def floor_profile(fixes: list, faa_cache_dir=DEFAULT_FAA_CACHE_DIR) -> list[dict
     lons = [p[1] for p in fixes]
     # A degree of longitude is cos(latitude) of a degree of latitude: twice
     # the reach fell short of 91.177(a)(2)'s 4 nm above about 66 N (the
-    # aviation check, 2026-10-27), so it is scaled at the box's poleward edge.
-    lon_reach = reach_deg / max(0.05, math.cos(math.radians(min(89.0, max(abs(v) for v in lats) + reach_deg))))
-    bbox = (min(lats) - reach_deg, min(lons) - lon_reach, max(lats) + reach_deg, max(lons) + lon_reach)
+    # aviation check, 2026-10-27), so corridor_bbox scales it at the box's
+    # poleward edge.
+    bbox = geo.corridor_bbox((min(lats), min(lons)), (max(lats), max(lons)), OBSTACLE_RADIUS_NM + 1)
     obstacles = faa_data.load_obstacles(faa_data.ensure_nasr_file("DOF.DAT", faa_cache_dir), bbox, min_agl_ft=0)
     obstacle_lat = obstacles["lat"].to_numpy(dtype=float)
     obstacle_lon = obstacles["lon"].to_numpy(dtype=float)
