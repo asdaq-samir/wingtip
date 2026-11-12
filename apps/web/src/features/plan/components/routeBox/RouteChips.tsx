@@ -108,19 +108,22 @@ export function ProcedureChip({
 }) {
   const Glyph = PROCEDURE_GLYPH[procedure.kind];
   return (
-    <button
-      type="button"
+    // The stock Button, plain, as words in the approaches' indigo: no fill,
+    // 28 tall as the pills are, a finger's 44 by its pseudo-element.
+    <Button
+      variant="ghost"
+      size="xs"
       onClick={onOpen}
       data-testid="route-procedure"
       aria-label={`${procedure.spoken}: the route's procedures`}
       className={cn(
         before ? "relative mr-1" : "relative ml-1",
-        "inline-flex h-7 shrink-0 after:absolute after:-inset-y-2 after:inset-x-0 after:content-[''] items-center gap-1 rounded-full px-1 font-semibold whitespace-nowrap text-procedure outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "h-7 gap-1 rounded-full px-1 font-semibold text-procedure after:absolute after:-inset-y-2 after:inset-x-0 after:content-[''] hover:bg-transparent hover:text-procedure native:text-procedure",
         TEXT.note,
       )}
     >
       <Glyph className="size-3.5 shrink-0" aria-hidden="true" />
       {procedure.label}
-    </button>
+    </Button>
   );
 }

@@ -142,8 +142,7 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   await settle(page);
   await openPanel(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
-  // In that order, each a token of the one field the route is typed in,
-  // and no cross on any pill.
+  // In that order, each a token of the route's field, no cross on any pill.
   const order = await lines.evaluate((el) =>
     [...el.querySelectorAll("[role=group], [data-testid=route-type], [data-testid=route-arrow]")].map(
       (n) => n.getAttribute("data-testid") ?? "",
@@ -232,7 +231,6 @@ test("Return after an ident typed key by key takes the first suggestion", async 
   await expect(page.getByTestId("route-suggestions").getByRole("option").first()).toBeVisible({ timeout: slow(10_000) });
   await field.press("Enter");
   await expect(page).toHaveURL(/[?&]dep=KUGN(&|$)/);
-  // Nothing left typed: KUGN went in as the route's first point.
   await expect(field).toHaveAttribute("data-typed", "");
 });
 

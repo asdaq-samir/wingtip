@@ -1,14 +1,12 @@
-import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
-import { TokenFieldValue } from "react-aria-components";
-import { setTokenFieldSelection } from "react-aria-components/TokenField";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { Detour } from "../../../lib/api/types";
 import { frdOf, identOf, isPosition, MAX_STOPS, stopOf } from "../../../lib/identSchema";
-import { prefersReducedMotion } from "../../../lib/motion";
 import { usePreferences, type RecentAirport } from "../../../lib/preferences";
 import type { TypedProcedure } from "../../../lib/procedures";
 import { useAirportSearch } from "../../../lib/useAirportSearch";
 import { pointsOf, readTyped, roleAt, routeOf, withoutPoint, withTyped, type RouteParts } from "../components/routeBox/routeEdit";
-import { caretBefore, endedWords, removedPoint, routeValue, samePoints, takeTyped, tokensOf, typedOf, type RouteValue } from "../components/routeBox/routeTokens";
+import { endedWords, removedPoint, routeValue, samePoints, takeTyped, tokensOf, typedOf, type RouteValue } from "../components/routeBox/routeTokens";
+import { useRouteCaret } from "./useRouteCaret";
 import { useStopAsked } from "./useStopAsked";
 
 /**
@@ -78,8 +76,7 @@ export function useRouteBox({
   const slide = useRef<HTMLDivElement>(null);
   const slideRow = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
-  // The value now, for the field's blur, which acts once a tap elsewhere
-  // has had its say.
+  // The value now, for the field's blur, which acts after a tap elsewhere.
   const valueNow = useRef(value);
   useEffect(() => {
     valueNow.current = value;
@@ -157,30 +154,6 @@ export function useRouteBox({
     setValue(routeValue(route ? pointsOf(route) : points, typed.text, typed.at, next, true));
   };
 
-  // The caret before point `at` (null: after the last), the field taken:
-  // within a tap's own handler, as iOS brings the keyboard up for no
-  // other focus.
-  const focusAt = (at: number | null) => {
-    const el = field.current;
-    if (!el) return;
-    el.focus();
-    setTokenFieldSelection(el, new TokenFieldValue.SelectedRange(caretBefore(valueNow.current, at)), true);
-  };
-  // With no departure yet, the caret goes before the first point: half a
-  // route reads "Departure -> KDLH", the departure still to be typed.
-  const startAt = !hasDep && points.length ? 0 : null;
-  // Taken by Tab or from elsewhere, not by a press (which puts the caret
-  // where it pressed): the caret where the box types next, as a field's
-  // focus puts it after its words. An editable element puts it at its
-  // start, and TokenField has no option for it (react-spectrum #10671).
-  const pressed = useRef(false);
-  const onFocus = () => {
-    setFocused(true);
-    const byPress = pressed.current;
-    pressed.current = false;
-    if (!byPress && field.current) setTokenFieldSelection(field.current, new TokenFieldValue.SelectedRange(caretBefore(valueNow.current, startAt)), true);
-  };
-
   const typed = typedOf(value);
   const text = typed.text.trim().toUpperCase();
   // The airports and waypoints that answer what is typed, under the box;
@@ -194,9 +167,8 @@ export function useRouteBox({
   const offering = text ? rows.length > 0 || !!ownPoint : adding && !!via?.length;
   const open = offering && dismissed !== text;
 
-  // One picked from the suggestions: in where it was typed, the typing
-  // kept in the field for the next; an airport among the recents, as the
-  // search bar's.
+  // One picked from the suggestions: in where it was typed, the field kept
+  // for the next; an airport among the recents, as the search bar's.
   const pick = (ident: string, airport?: RecentAirport) => {
     if (airport) usePreferences.getState().addRecentAirport(airport);
     put([ident], typed.at, routeValue(tokensOf(value), "", typed.at, value));
@@ -250,7 +222,7 @@ export function useRouteBox({
   // What was typed goes in when the box is left -- unless a suggestion
   // took the tap, which empties it first.
   const onBlur = () => {
-    pressed.current = false;
+    unpress();
     window.setTimeout(() => {
       setFocused(false);
       if (document.activeElement === field.current) return;
@@ -259,91 +231,28 @@ export function useRouteBox({
     }, 200);
   };
 
-  // A tap on the box's empty room -- not a pill, an arrow or the field --
-  // puts the caret after the last point, as a tap past a text field's
-  // words puts it at their end, at the pilot's ask: what was typed among
-  // the points put in first, as a tap away from it would. Pressed, the
-  // field keeps the focus, the keyboard staying up.
-  const isRoom = (e: MouseEvent<HTMLDivElement>) =>
-    e.target === e.currentTarget || e.target === slide.current || e.target === slideRow.current;
-  // A finger's 44 points round each pill, as iOS gives a control: the
-  // pills are 28 tall in a row that clips them (it slides sideways), so
-  // their own ::after could not reach, and a tap 8 points over or under
-  // one landed on the box, which started typing a new destination (the
-  // FPL audit's A18). A tap on the box's room, or the footer's, within
-  // 22 points of a pill's middle and across it is that pill's.
-  const pillNear = (e: MouseEvent<HTMLDivElement>): HTMLElement | null => {
-    for (const pill of slide.current?.querySelectorAll<HTMLElement>("[data-point]") ?? []) {
-      const r = pill.getBoundingClientRect();
-      if (e.clientX >= r.left && e.clientX <= r.right && Math.abs(e.clientY - (r.top + r.height / 2)) <= 22) return pill;
-    }
-    return null;
-  };
-  const toEnd = (e: MouseEvent<HTMLDivElement>) => {
-    const footerRoom = (e.target as HTMLElement).dataset.testid === "route-box-footer";
-    if (!isRoom(e) && !footerRoom) return;
-    const near = pillNear(e);
-    if (near) {
-      near.querySelector<HTMLElement>("button")?.click();
-      return;
-    }
-    if (!isRoom(e)) return;
-    if (typed.at === null || (typed.at === 0 && !hasDep)) {
-      focusAt(typed.at);
-      return;
-    }
-    commit();
-    onAddingChange(false);
-    focusAt(null);
-  };
-
-  // A tap in the field past its last point and what is typed: the caret
-  // after them, as a tap past a field's words puts it. WebKit put it before
-  // the first point, the field's own element hit there, not a word.
-  const onFieldClick = (e: MouseEvent<HTMLDivElement>) => {
-    const el = field.current;
-    if (!el || e.target !== el) return;
-    const words = document.createRange();
-    words.selectNodeContents(el);
-    const right = Math.max(...[...words.getClientRects()].map((r) => r.right));
-    if (e.clientX >= right) setTokenFieldSelection(el, new TokenFieldValue.SelectedRange(caretBefore(valueNow.current, null)), true);
-  };
+  const { focusAt, onFocus, onPress, unpress, isRoom, toEnd, onFieldClick } = useRouteCaret({
+    field,
+    slide,
+    slideRow,
+    valueNow,
+    points,
+    hasDep,
+    typedAt: typed.at,
+    focused,
+    setFocused,
+    commit,
+    adding,
+    onAddingChange,
+    addAt,
+    via,
+    opened: !!onDone,
+  });
 
   // An arrow between two points: the one search asked for a stop there
   // (useStopAsked); the caret there where none is drawn.
   const { oneSearch, askAt } = useStopAsked({ points, hasDep, hasDest, isEnd, change });
   const arrowAt = (before: number) => (oneSearch ? askAt(before) : focusAt(before));
-
-  // Asked for from a problem -- on the flight the Class B stops, FPL's
-  // Add a Stop, or before the destination: the caret where the stop goes.
-  const asked = addAt !== null ? addAt : via?.length ? via[0]!.stop_index + 1 : Math.max(points.length - 1, 0);
-  const askedNow = useEffectEvent(() => focusAt(asked));
-  useEffect(() => {
-    if (adding) askedNow();
-  }, [adding]);
-  // Opened from its folded line, the same: in the tap's own commit, so iOS
-  // brings the keyboard up (it does for no focus after the tap).
-  const opened = !!onDone;
-  const openedNow = useEffectEvent(() => focusAt(startAt));
-  useLayoutEffect(() => {
-    if (opened) openedNow();
-  }, [opened]);
-  // Idents, typed in capitals, not words for the keyboard to correct; its
-  // Return says Done. TokenInput passes no such props, so they are the
-  // element's own.
-  useLayoutEffect(() => {
-    field.current?.setAttribute("autocapitalize", "characters");
-    field.current?.setAttribute("enterkeyhint", "done");
-  }, []);
-  // The field taken, and each point typed into it: the row slid to its
-  // end, where the caret and the new point are. Not as it opens -- a route
-  // arrives a point at a time as it loads, which slid it there -- where it
-  // shows the route from its departure.
-  const pointCount = points.length;
-  useEffect(() => {
-    const el = slide.current;
-    if (el && focused && typed.at === null) el.scrollTo({ left: el.scrollWidth, behavior: prefersReducedMotion() ? "auto" : "smooth" });
-  }, [pointCount, focused, typed.at]);
 
   // Folded again: what is typed put in first, as leaving the box does,
   // and not again as the field's blur comes after the box has gone.
@@ -369,9 +278,7 @@ export function useRouteBox({
     onKeyDown,
     onFocus,
     onFieldClick,
-    onPress: () => {
-      pressed.current = true;
-    },
+    onPress,
     onBlur,
     focused,
     typed,

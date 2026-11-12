@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "cn";
 import type { FuelStopSuggestion } from "../../../../lib/api/types";
+import { Button } from "../../../../components/ui/button";
 import { identOf } from "../../../../lib/identSchema";
 import type { AirspaceClass } from "../../../../lib/preferences";
 import { sameField } from "../../../../lib/procedures";
@@ -90,21 +91,23 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
       {/* Before the first point an arrow only with no departure yet: the
           departure is typed there. */}
       {(i > 0 || !hasDep) && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-xs"
           disabled={box.full && !(i === 0 && !hasDep)}
           onClick={() => box.arrowAt(i)}
           data-testid="route-arrow"
           aria-label={i === 0 ? "Add the departure" : `Add a stop between ${points[i - 1]} and ${point}`}
-          // A point's width from the pill before it, as the box's row spaced
-          // every pill and arrow (gap-x-px).
+          // The stock Button at the arrow's own size, in the grey, tinted under
+          // a pointer; a point's width from the pill before it, as the box's
+          // row spaced every pill and arrow (gap-x-px).
           className={cn(
-            "grid h-5 w-4 shrink-0 place-items-center rounded-full text-muted-foreground outline-none hover:text-tint focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40",
+            "h-5 w-4 rounded-full text-muted-foreground hover:bg-transparent hover:text-tint native:text-muted-foreground disabled:opacity-40",
             i > 0 && "ml-px",
           )}
         >
           <ArrowRight className="size-3" />
-        </button>
+        </Button>
       )}
       {procs
         .filter((p) => p.kind !== "departure")
