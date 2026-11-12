@@ -84,8 +84,13 @@ integration branch"):
   owner's word for that piece (the hook refuses phone edits and merges
   until its topic is in `~/.config/wingtip/phones-approved`).
 - **Enforced (decision 0037):** `.claude/hooks/guard.py` refuses every
-  long test until the live stack runs the current `claude/integration`;
-  a brief never asks an agent to verify before pushing.
+  long test until the live stack runs the current `claude/integration`,
+  and while any requested change is still in flight (the owner,
+  2026-11-12: whoever asked, the owner, an audit or a bug fix): a
+  `claude/<topic>` branch or worktree changed in the last day and not yet
+  merged. A validation under way stops its tests when new changes are
+  asked for, keeps its fixes, and runs again once they merge. A brief
+  never asks an agent to verify before pushing.
 - **Then one validation pass**, `scripts/dev/validate-wave.sh` on
   `claude/integration`: every area's checks, `@smoke` and the browser
   specs the wave touched, never the full browser suite, which is CI's
