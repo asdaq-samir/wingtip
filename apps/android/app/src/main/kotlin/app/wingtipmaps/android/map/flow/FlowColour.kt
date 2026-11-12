@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.map.flow
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import kotlin.math.atan
 import kotlin.math.ln
 import kotlin.math.roundToInt
@@ -36,8 +38,9 @@ class Ramp(val stops: List<Stop>) {
     companion object {
         const val CLEAR = 0
 
-        /** A colour token ("#rrggbb") at an alpha in 255ths, the web's tone(). */
-        fun tone(hex: String, alpha: Int): Int = (alpha.coerceIn(0, 255) shl 24) or (hex.removePrefix("#").toInt(16) and 0xffffff)
+        /** A colour token at an alpha in 255ths, the web's tone(): the
+         *  token's own colour (WingtipColors), never its hex parsed again. */
+        fun tone(colour: Color, alpha: Int): Int = (alpha.coerceIn(0, 255) shl 24) or (colour.toArgb() and 0xffffff)
 
         private fun blend(a: Int, b: Int, t: Double): Int {
             fun ch(shift: Int) = ((a ushr shift and 0xff) + ((b ushr shift and 0xff) - (a ushr shift and 0xff)) * t).roundToInt().coerceIn(0, 255)

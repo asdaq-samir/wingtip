@@ -65,7 +65,7 @@ class FlowLooksTest {
         // design/tokens.json's flow group, as the web's flowLook reads it:
         // the wind calm nearly clear in its calm colour, the temperature solid.
         val wind = looks.getValue(FlowKind.WIND)
-        assertEquals(Ramp.tone(Weather.FLOW_WIND_CALM_HEX, WingtipFlow.RAMP_WIND[0].alpha), wind.ramp[0].argb)
+        assertEquals(Ramp.tone(Weather.FlowWindCalm, WingtipFlow.RAMP_WIND[0].alpha), wind.ramp[0].argb)
         assertEquals(WingtipFlow.RAMP_WIND.map { it.at }, wind.ramp.map { it.at })
         assertEquals(WingtipFlow.COVER_TINT, wind.opacity)
         assertEquals(WingtipFlow.COVER_SOLID, looks.getValue(FlowKind.TEMP).opacity)

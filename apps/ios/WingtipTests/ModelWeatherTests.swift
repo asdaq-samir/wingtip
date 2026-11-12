@@ -140,19 +140,30 @@ import UniformTypeIdentifiers
     }
 
     @Test func theBadgeSaysTheCeilingsTopAsNone() throws {
-        let reading = try FlowReading.of(.ceiling, value: 12_750, unit: "ft", top: 12_750)
+        // The engine's no_ceiling at the picture's top, and its figure
+        // already rounded to the picture's 50 ft (flowSample.json).
+        let reading = try FlowReading.of(.ceiling, value: 12_750, unit: "ft", noCeiling: true)
         #expect(reading.figure == "None")
-        #expect(try FlowReading.of(.ceiling, value: 1_020, unit: "ft", top: 12_750).figure == "1,000")
+        #expect(try FlowReading.of(.ceiling, value: 3_000, unit: "ft").figure == "3,000")
+    }
+
+    @Test func theCeilingsGridAsksTheEngineForTheCeiling() throws {
+        // A ceiling picture at its top, full red: the engine says none.
+        let top = FlowGrid(rgba: [255, 0, 0, 255].repeated(4), width: 2, height: 2, unscale: [0, 12_750], vector: false, bounds: Self.box, field: "ceiling")
+        #expect(try #require(try top.reading(lat: 0.5, lon: 0)).noCeiling)
+        // The same picture as any other field is a figure.
+        let scalar = FlowGrid(rgba: [255, 0, 0, 255].repeated(4), width: 2, height: 2, unscale: [0, 12_750], vector: false, bounds: Self.box)
+        #expect(try !#require(try scalar.reading(lat: 0.5, lon: 0)).noCeiling)
     }
 
     @Test func aFailedRuleIsNoReadingNeverNoHazard() throws {
         // The engine's nil is none: turbulence under light's band.
-        #expect(try FlowReading.of(.turb, value: 0, unit: "", top: nil).figure == "None")
+        #expect(try FlowReading.of(.turb, value: 0, unit: "").figure == "None")
         // A rule that fails (a value the engine cannot be asked, here
         // not a number) throws, so the model shows no reading and its
         // problem, never "None" for turbulence, icing or precipitation.
         for field in [FlowFieldKind.turb, .icing, .precip] {
-            #expect(throws: (any Error).self) { try FlowReading.of(field, value: .nan, unit: "", top: nil) }
+            #expect(throws: (any Error).self) { try FlowReading.of(field, value: .nan, unit: "") }
         }
     }
 

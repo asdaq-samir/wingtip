@@ -36,16 +36,6 @@ enum IntentLookups {
         value == value.rounded() ? String(Int(value)) : String(value)
     }
 
-    /// A whole number with its thousands grouped, as the web's grouped
-    /// writes one ("3,000").
-    static func grouped(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        formatter.locale = Locale(identifier: "en_US")
-        return formatter.string(from: NSNumber(value: value.rounded())) ?? String(Int(value.rounded()))
-    }
-
     /// A field's METAR as a briefer says it over the phone: the figures in
     /// the order the report has them, the flight category last, spelled
     /// letter by letter so it is heard as letters.
@@ -68,7 +58,7 @@ enum IntentLookups {
             }
             parts.append("visibility \(said) mile\(sm > 1 ? "s" : "")")
         }
-        parts.append(m.ceilingFt.map { "ceiling \(grouped($0)) feet" } ?? "no ceiling")
+        parts.append(m.ceilingFt.map { "ceiling \(Format.grouped($0)) feet" } ?? "no ceiling")
         if let temp = m.tempC {
             parts.append("temperature \(plain(temp))" + (m.dewpointC.map { ", dew point \(plain($0))" } ?? ""))
         }

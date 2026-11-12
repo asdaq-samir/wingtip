@@ -23,15 +23,21 @@ struct FlowGrid: Sendable {
     private let rgba: [UInt8]
     private let unscale: [Double]
     private let vector: Bool
+    /// The field the picture is, by its file's name ("ceiling", "vis",
+    /// "temp" ...), which flow_sample reads its own way: the ceiling and the
+    /// visibility as the lowest round the point, never better than the data
+    /// holds, the ceiling's top as none (its no_ceiling); nil reads between.
+    private let field: String?
 
     /// The grid from a picture's RGBA bytes (4 a pixel, rows packed).
-    init(rgba: [UInt8], width: Int, height: Int, unscale: [Double], vector: Bool, bounds: [Double]) {
+    init(rgba: [UInt8], width: Int, height: Int, unscale: [Double], vector: Bool, bounds: [Double], field: String? = nil) {
         self.width = width
         self.height = height
         self.bounds = bounds
         self.rgba = rgba
         self.unscale = unscale
         self.vector = vector
+        self.field = field
         let low = unscale.first ?? 0, high = unscale.count > 1 ? unscale[1] : 1
         let step = (high - low) / 255
         var values = [Float?](repeating: nil, count: width * height)
@@ -54,7 +60,7 @@ struct FlowGrid: Sendable {
             guard i >= 0, i * 4 + 3 < rgba.count else { throw OffThePicture(index: i) }
             return [Double(rgba[i * 4]), Double(rgba[i * 4 + 1]), Double(rgba[i * 4 + 3])]
         }
-        return try Engine.flowSample(pixels: pixels, fx: cell.fx, fy: cell.fy, unscale: unscale, vector: vector)
+        return try Engine.flowSample(pixels: pixels, fx: cell.fx, fy: cell.fy, unscale: unscale, vector: vector, field: field)
     }
 
     /// A pixel the engine named that the picture's bytes do not hold (a
@@ -67,12 +73,12 @@ struct FlowGrid: Sendable {
     /// The grid from the PNG the planner serves, read straight from its
     /// bytes: drawn into a context it would be colour-managed, and the
     /// channels are numbers, not colours.
-    static func decode(png: Data, field: APIFlowField, bounds: [Double]) -> FlowGrid? {
+    static func decode(png: Data, field: APIFlowField, bounds: [Double], name: String? = nil) -> FlowGrid? {
         guard let source = CGImageSourceCreateWithData(png as CFData, nil),
               let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
               let rgba = rgbaBytes(of: image)
         else { return nil }
-        return FlowGrid(rgba: rgba, width: image.width, height: image.height, unscale: field.unscale, vector: field.vector, bounds: bounds)
+        return FlowGrid(rgba: rgba, width: image.width, height: image.height, unscale: field.unscale, vector: field.vector, bounds: bounds, field: name)
     }
 
     /// A picture's pixels as RGBA bytes: its own bytes where ImageIO kept
