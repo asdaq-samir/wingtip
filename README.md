@@ -127,6 +127,7 @@ ml/          the notebooks and their image
 infra/       AWS CloudFormation, the server's compose file, CI's, local HTTPS, sim-trial/ (MSFS on EC2)
 tools/       msfs-agent/ (the MSFS 2024 replay agent for infra/sim-trial)
 scripts/     build/ (WebAssembly, the phones' models), ci/, dev/ (checks, go-live, tidy)
+tools/       xplane-driver/ (the X-Plane 12 trial's replay plugin, docs/XPLANE-TRIAL.md)
 data/        fetched and made data (mostly gitignored); stock aircraft profiles
 docs/        the docs below, and the architecture diagrams
 ```

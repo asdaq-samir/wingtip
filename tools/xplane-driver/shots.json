@@ -1,0 +1,17 @@
+{
+  "flight": "sample.fdr",
+  "source": "drive",
+  "clock": "fixed",
+  "fps": 30,
+  "record": true,
+  "autostart": false,
+  "quit_when_done": false,
+  "shots": [
+    { "kind": "chase", "from_s": 0, "to_s": 30, "distance_m": 40, "height_m": 8, "lag_s": 1.5 },
+    { "kind": "flyby", "from_s": 30, "to_s": 50, "lead_s": 8, "side_m": 70, "height_m": 10 },
+    { "kind": "cockpit", "from_s": 50, "to_s": 80 },
+    { "kind": "chase", "from_s": 300, "to_s": 400, "distance_m": 45, "height_m": 10, "lag_s": 2 },
+    { "kind": "tower", "from_s": 400, "to_s": 500, "lat": 47.6456, "lon": -122.3343, "alt_ft": 60, "frame_m": 80 },
+    { "kind": "chase", "from_s": 500, "to_s": 560, "distance_m": 30, "height_m": 5, "lag_s": 1.5 }
+  ]
+}

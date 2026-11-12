@@ -51,6 +51,7 @@ Each fact lives in one doc; the others link to it.
 | [legal/](legal/privacy.md) | The privacy policy, terms, credits and support pages |
 | [store/listing.md](store/listing.md) | The App Store and Google Play listings and review notes; [store/privacy-labels.md](store/privacy-labels.md) the stores' privacy answers, [store/preview-video.md](store/preview-video.md) the App Preview's plan |
 | [SIM-EXPORT.md](SIM-EXPORT.md) | The Studio's "Export for simulator": each file, what is estimated, and how to replay it in MSFS (FlightControlReplay, Sky Dolly), X-Plane 12 and Google Earth |
+| [XPLANE-TRIAL.md](XPLANE-TRIAL.md) | The X-Plane 12 trial on the Mac: the demo, the replay plugin (tools/xplane-driver), the steps with times, what to judge, AutoOrtho |
 | [GOOGLE-MAPS.md](GOOGLE-MAPS.md) | The map's imagery under the chart: the USGS's, and Google's with the owner's key |
 | [TV.md](TV.md) | The TV apps (parked): the site's remote-control mode and the deleted Tizen and webOS shells |
 | [brand/](brand) | The mark and the brand's files |

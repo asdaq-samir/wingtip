@@ -553,6 +553,8 @@ jobs:
                 - tools/msfs-agent/**
                 - infra/sim-trial/**
               arch:
+                - tools/xplane-driver/**
+                - scripts/dev/xplane-trial.sh
                 - '**/*.ts'
                 - '**/*.tsx'
                 - '**/*.py'
