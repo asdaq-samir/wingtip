@@ -1,12 +1,11 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.SubscriptionDto;
-import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.SubscriptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,22 +22,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class SubscriptionController {
 
     private final SubscriptionService subscriptions;
-    private final PilotService pilots;
 
-    public SubscriptionController(SubscriptionService subscriptions, PilotService pilots) {
+    public SubscriptionController(SubscriptionService subscriptions) {
         this.subscriptions = subscriptions;
-        this.pilots = pilots;
     }
 
     @Operation(summary = "The pilot's subscription, with this month's uses against each cap")
     @GetMapping
-    public ResponseEntity<SubscriptionDto> get(Authentication authentication) {
+    public ResponseEntity<SubscriptionDto> get(Pilot pilot) {
         // None sold here: nothing to say of one.
         if (!subscriptions.sold()) {
             return ResponseEntity.notFound().build();
         }
-        return PilotResponses.withPilot(
-                pilots, authentication, pilot -> ResponseEntity.ok(subscriptions.status(pilot)));
+        return ResponseEntity.ok(subscriptions.status(pilot));
     }
 
     @Operation(
@@ -46,11 +42,10 @@ public class SubscriptionController {
             description = "Once an account: 409 once it has been started, even after it ended. On the website; "
                     + "in the iOS and Android apps the free month is the store's introductory offer.")
     @PostMapping("/trial")
-    public ResponseEntity<SubscriptionDto> startTrial(Authentication authentication) {
+    public ResponseEntity<SubscriptionDto> startTrial(Pilot pilot) {
         if (!subscriptions.sold()) {
             return ResponseEntity.notFound().build();
         }
-        return PilotResponses.withPilot(
-                pilots, authentication, pilot -> ResponseEntity.ok(subscriptions.startTrial(pilot)));
+        return ResponseEntity.ok(subscriptions.startTrial(pilot));
     }
 }

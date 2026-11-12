@@ -71,12 +71,8 @@ public class PilotController {
         @ApiResponse(responseCode = "401", description = "No session")
     })
     @PutMapping("/contact")
-    public ResponseEntity<PilotDto> setContact(
-            Authentication authentication, @Valid @RequestBody PilotContactRequest request) {
-        return PilotResponses.withPilot(
-                pilots,
-                authentication,
-                pilot -> ResponseEntity.ok(toDto(pilots.setContact(pilot, request.phone(), request.homeBase()))));
+    public ResponseEntity<PilotDto> setContact(Pilot pilot, @Valid @RequestBody PilotContactRequest request) {
+        return ResponseEntity.ok(toDto(pilots.setContact(pilot, request.phone(), request.homeBase())));
     }
 
     @Operation(
@@ -91,21 +87,19 @@ public class PilotController {
     })
     @DeleteMapping
     public ResponseEntity<?> delete(
-            Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
-        return PilotResponses.<Object>withPilot(pilots, authentication, pilot -> {
-            try {
-                accounts.delete(pilot);
-            } catch (AccountNotDeletedException failed) {
-                log.warn("account {} not deleted: {}", pilot.getId(), failed.getMessage());
-                return ResponseEntity.of(
-                                ProblemDetail.forStatusAndDetail(
-                                        HttpStatus.BAD_GATEWAY,
-                                        "Your account was not deleted: the planner did not answer. Nothing was removed; try again shortly."))
-                        .build();
-            }
-            new SecurityContextLogoutHandler().logout(request, response, authentication);
-            return ResponseEntity.noContent().build();
-        });
+            Authentication authentication, Pilot pilot, HttpServletRequest request, HttpServletResponse response) {
+        try {
+            accounts.delete(pilot);
+        } catch (AccountNotDeletedException failed) {
+            log.warn("account {} not deleted: {}", pilot.getId(), failed.getMessage());
+            return ResponseEntity.of(
+                            ProblemDetail.forStatusAndDetail(
+                                    HttpStatus.BAD_GATEWAY,
+                                    "Your account was not deleted: the planner did not answer. Nothing was removed; try again shortly."))
+                    .build();
+        }
+        new SecurityContextLogoutHandler().logout(request, response, authentication);
+        return ResponseEntity.noContent().build();
     }
 
     private static PilotDto toDto(Pilot pilot) {
