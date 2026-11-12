@@ -34,11 +34,15 @@ struct MapSettingsView: View {
                     .onChange(of: platesOn) { _, on in if on { HiddenPlates.shared.showAll() } }
                 Toggle("Military Fields", isOn: $militaryOn)
                 Toggle("Private Fields", isOn: $privateOn)
+                // Flat as the chart is printed, or MapKit's 3D (RaisedMapView).
+                TerrainPicker()
                 // Each field's weather on its mark: the halo, the dot or
                 // the station model, the wind arrows and the ↓.
                 AirportWeatherRows()
                 // The radar and satellite loop and its speed (WeatherLoop).
                 WeatherLoopRows()
+                // The model weather's field and its level (ModelWeather).
+                ModelWeatherRows()
                 // How old each weather layer's data is.
                 LayerAgesRows()
             }

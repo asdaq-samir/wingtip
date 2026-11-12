@@ -81,6 +81,8 @@ final class FlightMapLayer: NSObject {
     private var weatherLoop: WeatherLoopLayer?
     /// The advisory areas the dry run's forecast run is in (ForecastRun).
     private var forecastAreas: ForecastRunMapLayer?
+    /// The model weather's field, its G-AIRMETs and the value tapped (ModelWeatherLayer).
+    private var modelWeather: ModelWeatherLayer?
 
     func attach(_ map: MKMapView) {
         self.map = map
@@ -91,6 +93,8 @@ final class FlightMapLayer: NSObject {
         if let weatherLoop { MainActor.assumeIsolated { weatherLoop.attach(map) } }
         forecastAreas = MainActor.assumeIsolated { ForecastRunMapLayer() }
         if let forecastAreas { MainActor.assumeIsolated { forecastAreas.attach(map) } }
+        modelWeather = MainActor.assumeIsolated { ModelWeatherLayer() }
+        if let modelWeather { MainActor.assumeIsolated { modelWeather.attach(map) } }
     }
 
     func update(_ map: MKMapView, _ next: FlightLayer) {
@@ -168,6 +172,8 @@ final class FlightMapLayer: NSObject {
         if let nexrad, let renderer = MainActor.assumeIsolated({ nexrad.renderer(for: overlay) }) { return renderer }
         if let weatherLoop, let renderer = MainActor.assumeIsolated({ weatherLoop.renderer(for: overlay) }) { return renderer }
         if let forecastAreas, let renderer = MainActor.assumeIsolated({ forecastAreas.renderer(for: overlay) }) { return renderer }
+        if let modelWeather, let renderer = MainActor.assumeIsolated({ modelWeather.renderer(for: overlay) }) { return renderer }
+        if let renderer = MainActor.assumeIsolated({ ApproachLines.renderer(for: overlay) }) { return renderer }
         if let ring = overlay as? GlidePolyline {
             // Dashed in the tint, as the web app's ring: what the airplane
             // reaches in still air, not a boundary to fly by.
@@ -205,6 +211,7 @@ final class FlightMapLayer: NSObject {
     }
 
     func view(for annotation: any MKAnnotation, on map: MKMapView) -> MKAnnotationView? {
+        if let modelWeather, let view = MainActor.assumeIsolated({ modelWeather.view(for: annotation, on: map) }) { return view }
         guard annotation is TrackedRing else { return nil }
         return map.dequeueReusableAnnotationView(withIdentifier: TrackedRingView.reuse, for: annotation)
     }

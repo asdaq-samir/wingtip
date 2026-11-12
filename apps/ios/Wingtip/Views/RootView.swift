@@ -269,6 +269,10 @@ struct RootView: View {
                     InstrumentsBar()
                     // The radar or satellite loop's bar while one is on.
                     WeatherLoopBar()
+                    // The model weather's timeline while it is on, and under it
+                    // its close, field menu and legend at the left (ModelWeather).
+                    ModelWeatherBar()
+                    ModelWeatherLegend()
                 }
                 // Clear of the map's buttons down the right where they stand
                 // at the top (the iPad's): a button and the gutters round it.
