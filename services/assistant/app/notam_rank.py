@@ -146,7 +146,7 @@ def _material(ranked: list[RankedNotam], coverage_since: str | None) -> str:
 
 def _lines(ranked: list[RankedNotam], coverage_since: str | None) -> NotamLines:
     try:
-        with tracing.claude_call("notam-rank", WORDS_MODEL) as used:
+        with tracing.feature("notam-rank"):
             response = anthropic.Anthropic().messages.parse(
                 model=WORDS_MODEL,
                 max_tokens=WORDS_MAX_TOKENS,
@@ -155,7 +155,6 @@ def _lines(ranked: list[RankedNotam], coverage_since: str | None) -> NotamLines:
                 output_format=NotamLines,
                 output_config={"effort": WORDS_EFFORT},
             )
-            used.add(response)
     except anthropic.AnthropicError as err:
         raise LookupError(str(err)) from err
     if response.stop_reason == "max_tokens" or response.parsed_output is None:

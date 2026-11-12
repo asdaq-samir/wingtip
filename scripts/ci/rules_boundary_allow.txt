@@ -71,3 +71,9 @@ services/planner/wingtip/terrain_fine.py 1
 # Appendix C) among wingtip.units' conversions: a unit's definition, which
 # glmp and the weather service's grids read a visibility in metres with.
 services/planner/wingtip/units.py 1
+
+# Cited lists of numbers, scanned since 2026-11-12 (the simplicity audit's
+# finding 7). The "VFR at…" menu's hours ahead: the choices a menu offers,
+# kept within a TAF's 24 hours (FAA-H-8083-28B 27.4.1); what the weather
+# then means for the flight is the engine's.
+apps/web/src/features/plan/lib/searchFilters.ts 1

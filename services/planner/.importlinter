@@ -44,3 +44,24 @@ ignore_imports =
 # reaches the routers through it, as it should: only a direct import from
 # one counts.
 allow_indirect_imports = True
+
+# The crash pipeline is the jobs' (services/jobs/crash) and the planner
+# only reads what it leaves in the shared store, for the Studio's routers
+# (the simplicity audit of 2026-11-12, finding 8: the pipeline was
+# scheduled from three services). app.main starting crash_leads' loop is
+# today's exception, for batch D to take out; an ignore line that no longer
+# matches fails, so the list only shrinks.
+[importlinter:contract:crash-pipeline-is-the-jobs]
+name = the planner schedules no crash pipeline, and only the Studio reads its store
+type = forbidden
+source_modules =
+    app
+forbidden_modules =
+    app.crash_leads
+    wingtip.crash_drafts
+    wingtip.history.ntsb
+ignore_imports =
+    app.main -> app.crash_leads
+    app.routers.studio_drafts -> wingtip.crash_drafts
+    app.routers.studio_history -> wingtip.history.ntsb
+unmatched_ignore_imports_alerting = error

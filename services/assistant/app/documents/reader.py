@@ -35,7 +35,7 @@ def read(kind: Kind, image_b64: str, media_type: str) -> BaseModel:
     s = get_settings()
     shape = SHAPES[kind]
     try:
-        with tracing.claude_call("documents", s.documents_model) as used:
+        with tracing.feature("documents"):
             response = anthropic.Anthropic().messages.parse(
                 model=s.documents_model,
                 max_tokens=MAX_TOKENS,
@@ -52,7 +52,6 @@ def read(kind: Kind, image_b64: str, media_type: str) -> BaseModel:
                 output_format=shape,
                 output_config={"effort": s.documents_effort},
             )
-            used.add(response)
     except anthropic.AnthropicError as err:
         raise ReaderUnavailable(str(err)) from err
     if response.stop_reason == "refusal":

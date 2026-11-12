@@ -580,6 +580,10 @@ jobs:
                 - README.md
                 - docs/*.md
                 - .claude/skills/checks/SKILL.md
+                - '**/*.mjs'
+                - '**/*.cs'
+                - '**/*.kts'
+                - scripts/ci/**
               # END generated
       - name: What this run builds and tests
         id: plan
@@ -1336,6 +1340,8 @@ jobs:
           SITE: ${{ needs.changes.outputs.site }}
           WEB: ${{ needs.changes.outputs.test-web }}
           ENGINE: ${{ needs.changes.outputs.test-engine }}
+          IOS: ${{ needs.changes.outputs.ios }}
+          ANDROID: ${{ needs.changes.outputs.android }}
           FLIGHT: ${{ needs.engine-wheel.result == 'success' }}
         run: scripts/ci/guards.sh
       - if: github.event_name != 'pull_request' && steps.cargo.outputs.cache-primary-key != '' && steps.cargo.outputs.cache-hit != 'true'

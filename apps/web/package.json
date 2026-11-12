@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit",
     "prelint": "npm run types",
     "lint": "eslint . --max-warnings 0",
+    "layers": "depcruise src --config .dependency-cruiser.cjs --output-type err",
     "format": "prettier --write --log-level warn . ../../scripts/build/*.mjs",
     "format:check": "prettier --check --log-level warn . ../../scripts/build/*.mjs"
   },
@@ -83,6 +84,7 @@
     "@vitest/eslint-plugin": "1.6.28",
     "babel-plugin-react-compiler": "^1.0.0",
     "culori": "^4.0.2",
+    "dependency-cruiser": "18.8.0-beta-2",
     "eslint": "^10.14.0",
     "eslint-plugin-jsx-a11y-x": "^0.2.0",
     "eslint-plugin-react-hooks": "^7.1.1",

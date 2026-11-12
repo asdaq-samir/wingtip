@@ -29,14 +29,16 @@ uv pip install --system -q -r "$dir/$req"
 
 cd "$dir"
 case "$leg" in
-  # The planner's import contracts (.importlinter), for app and wingtip
-  # alike: the one leg that runs them.
+  # The import contracts (.importlinter): the planner's, for app and
+  # wingtip alike; ingest's and the jobs', with wingtip beside them.
   planner) lint-imports ;;
+  ingest) PYTHONPATH=../planner lint-imports ;;
   # The assistant's client and tools are generated
   # (scripts/build/assistant_client.py) and checked.
   assistant) python ../../scripts/build/assistant_client.py --check ;;
   # tippecanoe, for the overlay tiles' archive tests; skipped without it.
   jobs)
+    PYTHONPATH=../planner lint-imports || exit 1
     (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends tippecanoe > /dev/null) \
       || echo "::warning title=No tippecanoe::the overlay tiles' archive tests are skipped"
     ;;

@@ -9,7 +9,35 @@ import testingLibrary from "eslint-plugin-testing-library";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import boundaries from "./eslint/boundaries.js";
+
+// The bans, each saying which stock part to use.
+const STOCK_BANS = [
+  {
+    selector: "JSXOpeningElement[name.name='button']",
+    message: "A raw <button>: use components/ui's Button (stock, with its own states and focus; decision 0016).",
+  },
+  {
+    selector: "JSXOpeningElement[name.name='details']",
+    message: "A raw <details>: use components/ui's Collapsible or Accordion (decision 0016).",
+  },
+  {
+    selector: "JSXAttribute[name.name='role'][value.value='alert']",
+    message: 'A hand-set role="alert": show the problem where it happens with lib/problems and components/ui\'s Alert.',
+  },
+];
+// The hand-built parts the simplicity audit of 2026-11-12 kept, each where
+// no stock part does the job: the route box (RouteBox.tsx, an editable row
+// of route pills with inline arrows no combobox draws), the map's control
+// group (MapControls.tsx, one glass group of ghost buttons over the map,
+// Apple Maps' own), the listening pill (RadioLayer.tsx, the mic that widens
+// into live words, the owner's pick of 2026-11-09) and the scale bar
+// (ZoomBanner.tsx, drawn to the map's zoom).
+const HAND_BUILT_KEPT = [
+  "src/features/plan/components/RouteBox.tsx",
+  "src/components/MapControls.tsx",
+  "src/components/RadioLayer.tsx",
+  "src/components/ZoomBanner.tsx",
+];
 
 export default defineConfig(
   // No warnings (the owner's rule): a disable comment that disables
@@ -49,10 +77,22 @@ export default defineConfig(
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
     },
   },
-  // The layers: lib/ and hooks/ under components/, under the features, and
-  // a feature reached by another only through its index.ts
-  // (eslint/boundaries.js, apps/web/README.md's "Project layout").
-  { files: ["src/**/*.{ts,tsx}"], plugins: { boundaries }, rules: { "boundaries/layers": "error" } },
+  // The layers (lib/ and hooks/ under components/, under the features, a
+  // feature reached only through its index.ts) are dependency-cruiser's,
+  // .dependency-cruiser.cjs.
+  //
+  // Stock components over hand-rolled ones (decision 0016; CLAUDE.md,
+  // "Simplicity rules"): a control is components/ui's Button, a disclosure
+  // its Collapsible or Accordion, a problem lib/problems' Alert, each with
+  // the platform's own states, focus and announcements. Today's hand-built
+  // ones are held in eslint-suppressions.json (ESLint's bulk suppressions:
+  // an unused one fails the lint, so the list only shrinks;
+  // `npx eslint --prune-suppressions` drops them). Never add to it to pass.
+  {
+    files: ["src/**/*.tsx"],
+    ignores: ["src/components/ui/**", "src/**/*.test.tsx", ...HAND_BUILT_KEPT],
+    rules: { "no-restricted-syntax": ["error", ...STOCK_BANS] },
+  },
   { files: ["e2e/**/*.ts", "**/*.test.ts", "**/*.test.tsx"], languageOptions: { globals: globals.node } },
   // The usual causes of a flaky test, caught as it is written (docs/CI.md,
   // "Flaky tests"). Vitest's own plugin (@vitest/eslint-plugin, which
