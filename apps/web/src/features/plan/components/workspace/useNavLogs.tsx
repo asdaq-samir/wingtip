@@ -17,31 +17,14 @@ export function useNavLogs(
   vm: PlanWorkspaceModel,
   { tabContent, routeList, kneeboard }: { tabContent: (part: BriefingPart) => ReactNode; routeList: ReactNode; kneeboard: ReactNode },
 ) {
-  const {
-    aircraft,
-    briefLine,
-    briefShown,
-    closeNavLogCard,
-    course,
-    depart,
-    descriptionsHidden,
-    descriptionsLoading,
-    deselectPoint,
-    drawerOpen,
-    dryRunning,
-    estimate,
-    landedStops,
-    marks,
-    metarColour,
-    navLogShown,
-    paywalled,
-    planned,
-    routeEdit,
-    s,
-    selectPointAt,
-    selectedPoint,
-    unflyableBrief,
-  } = vm;
+  const { drawerOpen } = vm.view;
+  const { depart, planned, routeEdit } = vm.route;
+  const { aircraft, course, s } = vm.plan;
+  const { briefShown, closeNavLogCard, navLogShown } = vm.fpl;
+  const { dryRunning } = vm.flight;
+  const { deselectPoint, selectPointAt, selectedPoint } = vm.leg;
+  const { briefLine, descriptionsHidden, descriptionsLoading, estimate, landedStops, marks, metarColour, paywalled, unflyableBrief } =
+    vm.brief;
   const descriptionsPaywall = useMemo(
     () =>
       paywalled ? (

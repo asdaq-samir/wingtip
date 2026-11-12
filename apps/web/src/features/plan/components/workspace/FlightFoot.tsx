@@ -12,7 +12,11 @@ import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
  *  dry run's while it plays, else a Direct to's strip and the flight's
  *  line, and in flight Done flying. */
 export default function FlightFoot({ vm }: { vm: PlanWorkspaceModel }) {
-  const { depart, directParam, directToPoint, doneFlying, dryRunning, estimate, firstFuelStop, flying, planned, s } = vm;
+  const { depart, directParam, planned } = vm.route;
+  const { directToPoint, s } = vm.plan;
+  const { firstFuelStop } = vm.stops;
+  const { doneFlying, dryRunning, flying } = vm.flight;
+  const { estimate } = vm.brief;
   // In flight, the one way out of flying mode (useFlyingMode): a small
   // Done flying at the figures' foot, as the canvas has the line there;
   // the tabs come back on the ground by themselves.

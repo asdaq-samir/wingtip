@@ -29,21 +29,11 @@ const AskSection = lazy(() => import("../ask/AskCard"));
  * legal links and the copyright (SheetFooter).
  */
 export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
-  const {
-    home,
-    favorites,
-    selectPlace,
-    addFromPill,
-    askFor,
-    pickPlace,
-    openList,
-    openNearest,
-    findNearby,
-    nearStrip,
-    nearOrigin,
-    selectFlight,
-    pickView,
-  } = vm;
+  const { pickView } = vm.view;
+  const { selectPlace, openList, selectFlight } = vm.cards;
+  const { nearOrigin } = vm.map;
+  const { openNearest, findNearby } = vm.fpl;
+  const { home, favorites, addFromPill, askFor, pickPlace, nearStrip } = vm.search;
   const asked = useAsk((s) => s.turns.length > 0 || s.busy);
   return (
     <TabPage testId="search-home">

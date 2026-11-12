@@ -22,12 +22,15 @@ type ListSearch = ComponentProps<typeof SearchField>;
  * scoped field, in sight where the pilot is.
  */
 export function listSearchOf(vm: PlanWorkspaceModel): ListSearch | null {
-  return vm.view === "traffic" ? aircraftSearch(vm) : null;
+  return vm.view.view === "traffic" ? aircraftSearch(vm) : null;
 }
 
 /** The traffic's: an airplane by its callsign, registration or address. */
 function aircraftSearch(vm: PlanWorkspaceModel): ListSearch {
-  const { aircraftInput, aircraftTyped, listAway, pickingFavorite, pickingMine, pickView, routed } = vm;
+  const { pickView } = vm.view;
+  const { routed } = vm.route;
+  const { listAway } = vm.cards;
+  const { aircraftInput, aircraftTyped, pickingFavorite, pickingMine } = vm.search;
   return {
     value: aircraftTyped,
     onChange: (aircraft) => useTabSearch.setState({ aircraft }),

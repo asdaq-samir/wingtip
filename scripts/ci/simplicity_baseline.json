@@ -4,7 +4,7 @@
  "android_root_screen_lines": 381,
  "android_map_pane_lines": 320,
  "android_map_pane_state_lines": 61,
- "web_plan_workspace_lines": 1192,
+ "web_plan_workspace_lines": 76,
  "android_composables_calling_engine": 8,
  "ios_views_calling_engine": 2,
  "ios_try_engine_default": 8,

@@ -50,42 +50,29 @@ export default function PlanPage({
   briefContents: ComponentProps<typeof BriefCard>["contents"];
   briefNotice: ReactNode;
 }) {
+  const { stripsDrawn } = vm.view;
+  const { flightRules, hasPoints, planned, routeKey, routed, setFlightRules } = vm.route;
+  const { course, s } = vm.plan;
+  const { cardUp, openList, selectPlace } = vm.cards;
+  const { depAlone } = vm.map;
+  const { addStopField } = vm.stops;
   const {
-    addStopField,
     briefHere,
-    briefLine,
-    cardUp,
     closeBrief,
     closeProfileCard,
     closeStops,
-    course,
-    depAlone,
-    dryRunning,
-    flightRules,
-    goMissed,
-    goMissedNow,
-    hasPoints,
-    marks,
     navLogShown,
-    openList,
     openSaved,
-    planned,
-    profileCautions,
     profileShown,
-    routeKey,
-    routed,
-    s,
-    selectPlace,
-    setFlightRules,
     setStopsScope,
     showLegs,
-    stopDryRun,
     stopsAt,
     stopsShown,
     stopsRoute,
     stopsScope,
-    stripsDrawn,
-  } = vm;
+  } = vm.fpl;
+  const { dryRunning, goMissed, goMissedNow, stopDryRun } = vm.flight;
+  const { briefLine, marks, profileCautions } = vm.brief;
   // Each card drawn from its first opening on, then kept (CardLayer).
   const navLogDrawn = useOpenedOnce(navLogShown);
   const profileDrawn = useOpenedOnce(profileShown);

@@ -17,7 +17,9 @@ import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
  * is the side view's query, fetched once for both.
  */
 export default function ProfileLine({ vm }: { vm: PlanWorkspaceModel }) {
-  const { planned, s, dryRunning } = vm;
+  const { planned } = vm.route;
+  const { s } = vm.plan;
+  const { dryRunning } = vm.flight;
   const cruise = s.nav?.altitude_ft ?? null;
   const { data: profile } = useQuery(routeProfileQuery(planned.dep, `${planned.dest}`, planned.stops));
   // A dry run playing: where it is, in this line, since the Profile's card

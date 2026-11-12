@@ -195,7 +195,8 @@ src/
     ui/                      shadcn/ui primitives (components.json), stock unless a comment says why not
   hooks/                   Hooks with no feature of their own (viewport, shortcuts, the plan's history)
   lib/                     Only what two or more features (or components/ and a feature) use
-    api/client.ts             Every network call, one function per endpoint
+    api/client.ts             Every network call, one function per endpoint, as one `api` of the modules beside it:
+                               planner{Route,Airports,Map,Dev}, assistantCalls, gateway{Pilot,Records}; http, errors
     api/types.ts               API request/response shapes, re-exported from schema.d.ts and gateway-schema.d.ts
     engine/                    The Rust engine as WebAssembly: callEngine, and contract.ts generated from its schema
     fixtures/                  The cases the web, the engine and the phones are all tested against
