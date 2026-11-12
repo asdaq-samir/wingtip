@@ -90,9 +90,8 @@ struct ChartMap: UIViewRepresentable {
         map.register(TrafficMarkView.self, forAnnotationViewWithReuseIdentifier: TrafficMarkView.reuse)
         context.coordinator.extras.attach(to: map)
         context.coordinator.overlays.attach(to: map)
-        // Apple's map is under the chart and shows close in, where the
-        // chart fades (ChartFade): muted, with no points of interest or
-        // traffic, so the FAA's runways read over its roads.
+        // Apple's map is under the chart and the USGS imagery (CloseImagery), and shows close
+        // in only where the USGS has none: muted, with no points of interest or traffic.
         let config = MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)
         config.pointOfInterestFilter = .excludingAll
         config.showsTraffic = false
@@ -149,9 +148,9 @@ struct ChartMap: UIViewRepresentable {
             let overlay = ChartTileOverlay(template: template, minZoom: minZoom, maxZoom: maxZoom, lift: lift)
             let coordinator = context.coordinator
             overlay.onTile = { coordinator.chartTile() }
-            // Under everything else drawn over Apple's map: the airspace, the
-            // runways, the course.
+            // Under everything else drawn over Apple's map but the imagery under it close in.
             map.insertOverlay(overlay, at: 0, level: .aboveLabels)
+            CloseImagery.shared.place(on: map, under: overlay)
             context.coordinator.overlay = overlay
         }
         if context.coordinator.checkpointsShown != checkpoints {
@@ -351,10 +350,11 @@ struct ChartMap: UIViewRepresentable {
             if let chart = overlay as? ChartTileOverlay {
                 let renderer = ChartTileRenderer(chart: chart)
                 renderer.shade = shade
-                renderer.alpha = ChartFade.alpha(zoom: Self.zoom(of: mapView))
+                renderer.alpha = ChartFade.alpha(zoom: Self.zoom(of: mapView), last: chart.maxZoom)
                 tiles = renderer
                 return renderer
             }
+            if let imagery = overlay as? CloseImageryOverlay { return MainActor.assumeIsolated { CloseImagery.shared.renderer(imagery, zoom: Self.zoom(of: mapView)) } }
             if let tiles = overlay as? MKTileOverlay { return MKTileOverlayRenderer(tileOverlay: tiles) }
             if let renderer = MainActor.assumeIsolated({ extras.plates.renderer(for: overlay) }) { return renderer }
             if let edge = overlay as? CourseEdgePolyline {
@@ -554,7 +554,7 @@ struct ChartMap: UIViewRepresentable {
         func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {
             MainActor.assumeIsolated {
                 let zoom = Self.zoom(of: mapView)
-                tiles?.alpha = ChartFade.alpha(zoom: zoom)
+                CloseImagery.shared.fade(chart: tiles, last: overlay?.maxZoom, zoom: zoom)
                 // The chart's loads of tiles gone out of view stopped.
                 if mapView.visibleMapRect.width > 0 {
                     tiles?.keep(visible: mapView.visibleMapRect, zoomScale: MKZoomScale(Double(mapView.bounds.width) / mapView.visibleMapRect.width))
@@ -677,8 +677,6 @@ struct ChartMap: UIViewRepresentable {
             }
         }
 
-        /// The marks changed, not every mark drawn again: the ones gone
-        /// out of view removed, the new ones added, the rest left be.
         @MainActor
         /// The fields in the view as the planner gave them, and which of
         /// them Setup draws.
@@ -711,6 +709,7 @@ struct ChartMap: UIViewRepresentable {
             showFields(on: map)
         }
 
+        /// The marks changed, not every mark drawn again: the ones gone out of view removed, the new ones added, the rest left be.
         private func show(_ fields: [AirportAnnotation], on map: MKMapView) {
             let fresh = Dictionary(fields.map { ($0.ident, $0) }, uniquingKeysWith: { a, _ in a })
             let gone = shown.filter { fresh[$0.key] == nil }.map(\.value)

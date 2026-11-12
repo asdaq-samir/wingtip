@@ -9,6 +9,7 @@
 //!   as the planner's in-view endpoints answer them;
 //! - ahead: the alerts ahead of the airplane from the phone's packs;
 //! - spoken: the places a clearance names, found in the phone's packs;
+//! - view_marks, sua_tab: the special-use areas, their tabs and the fixes in view;
 //! - drills: the oral's flash cards (91.125, 91.155) and 91.155 by name.
 
 pub mod ahead;
@@ -18,6 +19,7 @@ pub mod pack;
 pub mod pack_query;
 pub mod rules;
 pub mod spoken;
+pub mod sua_tab;
 pub mod view;
 pub mod view_marks;
 

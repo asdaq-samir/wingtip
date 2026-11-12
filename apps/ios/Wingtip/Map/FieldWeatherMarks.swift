@@ -1,13 +1,13 @@
 import Foundation
 
 /// Each field's weather mark put together from what the planner sent and
-/// what the engine says of it, through wt_call: the arrow and its red
-/// (wind_arrow, on the field's least crosswind, least_crosswind, which the
-/// planner works out with the same engine for each field in view), the
-/// barb (wind_barb), calm (wind_calm), and the ↓ (weather_worse, a route
-/// field's METAR now against its TAF for the flight's time there). The
-/// words are the report's figures as the app writes them; no figure is
-/// worked out here.
+/// what the engine says of it, through wt_call: the barb (wind_barb, calm
+/// among its answers), whether it is drawn zoomed out and red (wind_arrow,
+/// on the field's least crosswind, least_crosswind, which the planner
+/// works out with the same engine for each field in view), and the ↓
+/// (weather_worse, a route field's METAR now against its TAF for the
+/// flight's time there). The words are the report's figures as the app
+/// writes them; no figure is worked out here.
 enum FieldWeatherMarks {
     /// A field's report as the mark takes it: the planner's in-view answer
     /// for the field (FieldWeatherFeed), its METAR's figures as read.
@@ -91,34 +91,32 @@ enum FieldWeatherMarks {
 
     /// The mark for `report`: `demonstratedKt` the picked airplane's
     /// maximum demonstrated crosswind, nil with none picked or no figure
-    /// (never red then); `worse` whether the ↓ shows. Where the engine
-    /// cannot read the wind (logged by Engine.rule) it is not drawn as calm
-    /// or as a barb it might not be: the arrow and its figures still show,
-    /// never red, and VoiceOver says the wind couldn't be worked out.
+    /// (never red then); `worse` whether the ↓ shows. Calm is the barb's
+    /// own answer (wind_barb: under 3 kt, as the NWS's barb table rounds
+    /// 0-2 kt to calm), so a 1 or 2 kt wind is a ring, not a bare staff.
+    /// Where the engine cannot read the wind (logged by Engine.rule) no
+    /// barb is drawn that it might not be, and VoiceOver says the wind
+    /// couldn't be worked out.
     static func mark(_ report: Report, demonstratedKt: Double?, worse: Bool) -> FieldWeatherMark {
         let speed = report.windSpeedKt
-        let calm = try? Engine.windCalm(speedKt: speed)
         let arrow = try? Engine.windArrow(speedKt: speed, gustKt: report.windGustKt, crosswindKt: report.crosswindKt, demonstratedKt: demonstratedKt)
-        let barb = speed.map { kt in Result { try Engine.windBarb(speedKt: kt) } }
-        let unknown = speed != nil && (calm == nil || arrow == nil || (try? barb?.get()) == nil)
-        let shown = arrow?.shown ?? (unknown && speed.map { $0 > 0 } == true)
+        let barb = speed.flatMap { kt in try? Engine.windBarb(speedKt: kt) }
+        let unknown = speed != nil && (arrow == nil || barb == nil)
+        let calm = barb?.calm == true
         return FieldWeatherMark(
             category: report.category,
-            windFromDeg: report.windDirTrueDeg, windKt: speed, gustKt: report.windGustKt, calm: calm == true,
-            feathers: (try? barb?.get()).map { Feathers(flags: $0.flags, barbs: $0.barbs, halfBarbs: $0.halfBarbs) },
-            arrow: shown && report.windDirTrueDeg != nil, arrowRed: arrow?.over == true,
-            windLabel: windLabel(dirTrueDeg: report.windDirTrueDeg, speedKt: speed, gustKt: report.windGustKt),
+            windFromDeg: report.windDirTrueDeg, windKt: speed, gustKt: report.windGustKt, calm: calm,
+            feathers: barb.map { Feathers(flags: $0.flags, barbs: $0.barbs, halfBarbs: $0.halfBarbs) },
+            far: arrow?.shown == true && barb != nil, over: arrow?.over == true,
+            variable: barb != nil && !calm && report.windDirTrueDeg == nil ? variableLabel(speed) : nil,
             visibilityLine: report.visibilityLine, ceilingLine: report.ceilingLine, worse: worse,
-            spoken: spoken(report, calm: calm == true, red: arrow?.over == true, worse: worse, windUnknown: unknown))
+            spoken: spoken(report, calm: calm, red: arrow?.over == true, worse: worse, windUnknown: unknown))
     }
 
-    /// The arrow's words as a METAR has them, tens of degrees and knots:
-    /// "18G26" for 18 gusting 26, "12" steady.
-    static func windLabel(dirTrueDeg: Double?, speedKt: Double?, gustKt: Double?) -> String? {
-        guard let speedKt else { return nil }
-        let steady = Int(speedKt.rounded())
-        guard let gustKt, gustKt > speedKt else { return "\(steady)" }
-        return "\(steady)G\(Int(gustKt.rounded()))"
+    /// A variable wind, which no barb can point, as the METAR writes it:
+    /// "VRB05". Its gust is left to the field's card, as the barb's is.
+    static func variableLabel(_ speedKt: Double?) -> String? {
+        speedKt.map { String(format: "VRB%02d", Int($0.rounded())) }
     }
 
     /// What VoiceOver says after the ident: "IFR, wind 220 at 18 gusting

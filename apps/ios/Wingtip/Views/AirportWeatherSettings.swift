@@ -21,7 +21,8 @@ enum AirportWeatherStyle: String, CaseIterable, Identifiable, Sendable {
     }
 
     /// The keys of the four settings and their first values: Halo, and
-    /// every switch on (the spec's defaults).
+    /// every switch on (the spec's defaults). The barbs' switch keeps the
+    /// key the arrows' had, as the web keeps its stored key.
     enum Keys {
         static let style = "map.airportWeather"
         static let stationClose = "map.airportWeather.stationClose"
@@ -34,7 +35,7 @@ enum AirportWeatherStyle: String, CaseIterable, Identifiable, Sendable {
 struct AirportWeatherChoice: Equatable, Sendable {
     var style: AirportWeatherStyle = .halo
     var stationClose = true
-    var windArrows = true
+    var windBarbs = true
     var worse = true
 
     /// The station model drawn: at every zoom with Station, from the zoom
@@ -55,7 +56,7 @@ struct AirportWeatherChoice: Equatable, Sendable {
 struct AirportWeatherRows: View {
     @AppStorage(AirportWeatherStyle.Keys.style) private var style = AirportWeatherStyle.halo.rawValue
     @AppStorage(AirportWeatherStyle.Keys.stationClose) private var stationClose = true
-    @AppStorage(AirportWeatherStyle.Keys.windArrows) private var windArrows = true
+    @AppStorage(AirportWeatherStyle.Keys.windArrows) private var windBarbs = true
     @AppStorage(AirportWeatherStyle.Keys.worse) private var worse = true
 
     var body: some View {
@@ -69,7 +70,7 @@ struct AirportWeatherRows: View {
         }
         Toggle("Station Model When Zoomed In", isOn: $stationClose)
             .disabled(style == AirportWeatherStyle.off.rawValue || style == AirportWeatherStyle.station.rawValue)
-        Toggle("Wind Arrows", isOn: $windArrows)
+        Toggle("Wind Barbs", isOn: $windBarbs)
             .disabled(style == AirportWeatherStyle.off.rawValue)
         Toggle("Getting Worse by Arrival", isOn: $worse)
             .disabled(style == AirportWeatherStyle.off.rawValue)
