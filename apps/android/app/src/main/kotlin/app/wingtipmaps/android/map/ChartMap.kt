@@ -23,7 +23,6 @@ import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.route.RouteLegs
 import app.wingtipmaps.android.route.RoutePoint
 import app.wingtipmaps.android.tiles.TileTemplate
@@ -62,8 +61,8 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  * @param routePoints the route's points, where the line is cut into its
  *   legs (RouteLegs), so a tap on it picks a leg; `selectedLeg` the one
  *   cased in green while its Route Leg sheet is open.
- * @param ownShip the airplane's fix (OwnShip), drawn as the blue dot;
- *   null for none, or own ship off.
+ * @param ownShip the airplane's fix and whose it is (OwnShipMark), drawn
+ *   by MapLibre's LocationComponent (OwnShipPuck); grey while off.
  * @param trail the path flown (OwnTrail), drawn under the route.
  * @param glide the still-air glide ring about own ship (InFlight, the
  *   engine's glide_ring), its outline as latitude and longitude pairs,
@@ -72,8 +71,9 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  * @param plates the approach plates laid on the chart and their tags (PlateLayer).
  * @param emergency the emergency assistant's line to the field picked
  *   (EmergencyLayer); null while it is shut.
- * @param follow whether the map keeps the airplane in the middle; a
- *   drag of the map ends it (`onDragged`), as Apple Maps lets go.
+ * @param follow whether the map keeps the airplane in the middle (the
+ *   component's tracking); a drag of the map ends it (`onDragged`), as
+ *   Apple Maps lets go.
  * @param overlays the cycle's overlay tiles, in the first style with
  *   the chart; null for the chart alone.
  * @param layers Setup's switches: which overlays are drawn, and the
@@ -110,7 +110,7 @@ fun ChartMap(
     night: Boolean = false,
     bottomInset: Int = 0,
     opensAt: Pair<Double, Double>? = null,
-    ownShip: OwnShip.Fix? = null,
+    ownShip: OwnShipMark = OwnShipMark(),
     trail: List<PathPoint> = emptyList(),
     glide: List<List<Double>> = emptyList(),
     emergency: EmergencyLine? = null,
@@ -195,8 +195,10 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private val latest = Runnable { reveal() }
     /** What the map last drew over the chart, drawn again when the style is set anew (a cycle
      *  change), which drops every source and layer added since. */
-    private var lastFix: OwnShip.Fix? = null
+    private var lastMark = OwnShipMark()
     private var lastFollow = false
+    /** Own ship, MapLibre's LocationComponent, once the map is open. */
+    private var puck: OwnShipPuck? = null
     private var lastTrail: List<PathPoint> = emptyList()
     private var lastLayers = MapLayers()
     private var lastTerminal: Charts.Companion.Terminal? = null
@@ -271,9 +273,11 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 trail(style, lastTrail)
                 GlideLayer.draw(style, lastGlide, GLIDE, ROUTE)
                 SelectedAirportLayer.draw(style, lastSelected)
-                ownShip(map, style, lastFix, lastFollow)
                 plates.draw(style)
-                EmergencyLayer.draw(style, lastEmergency, below = OWN_SHIP)
+                EmergencyLayer.draw(style, lastEmergency, below = OwnShipPuck.under(style))
+                // After what goes under it, so its layers are over them.
+                puck?.activate(style)
+                puck?.show(lastMark, lastFollow, app.wingtipmaps.android.ui.A11y.reducedMotion(view.context))
                 drawTraffic()
             }
         }
@@ -394,7 +398,11 @@ private class MapHolder(val view: MapView, private val density: Float) {
         leftInset = left
         if (destroyed || !opened) return
         view.getMapAsync { map ->
-            CameraUpdateFactory.paddingTo(0.0, 0.0, 0.0, px.toDouble()).let { if (app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)) map.moveCamera(it) else map.easeCamera(it, INSET_MS) }
+            val reduced = app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)
+            // While following, the component's tracking takes the padding.
+            if (puck?.inset(doubleArrayOf(0.0, 0.0, 0.0, px.toDouble()), if (reduced) 0L else INSET_MS.toLong()) != true) {
+                CameraUpdateFactory.paddingTo(0.0, 0.0, 0.0, px.toDouble()).let { if (reduced) map.moveCamera(it) else map.easeCamera(it, INSET_MS) }
+            }
             credits(map, px)
         }
     }
@@ -431,11 +439,11 @@ private class MapHolder(val view: MapView, private val density: Float) {
         view.getMapAsync { map -> map.getStyle { style -> RouteLegLayer.select(style, leg) } }
     }
 
-    fun ownShip(fix: OwnShip.Fix?, follow: Boolean) {
-        lastFix = fix
+    fun ownShip(mark: OwnShipMark, follow: Boolean) {
+        lastMark = mark
         lastFollow = follow
         if (destroyed) return
-        view.getMapAsync { map -> map.getStyle { style -> ownShip(map, style, fix, follow) } }
+        view.getMapAsync { puck?.show(mark, follow, app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)) }
     }
 
     fun trail(points: List<PathPoint>) {
@@ -447,7 +455,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     fun emergency(line: EmergencyLine?) {
         lastEmergency = line
         if (destroyed) return
-        view.getMapAsync { map -> map.getStyle { style -> EmergencyLayer.draw(style, line, below = OWN_SHIP) } }
+        view.getMapAsync { map -> map.getStyle { style -> EmergencyLayer.draw(style, line, below = OwnShipPuck.under(style)) } }
     }
 
     fun glide(ring: List<List<Double>>) {
@@ -465,7 +473,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     /** The plates drawn, and the map brought to one newly put on it. */
     fun plates(shown: PlatesShown) {
         val new = plates.set(shown)
-        if (!destroyed && new != null) view.getMapAsync { it.animateCamera(PlateLayer.fit(new, density), FOLLOW_MS) }
+        if (!destroyed && new != null) view.getMapAsync { it.animateCamera(PlateLayer.fit(new, density), OwnShipPuck.FOLLOW_MS) }
         redraw(plates::draw)
     }
 
@@ -479,7 +487,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
      *  its padding as it is now, so the place is in the middle of what
      *  the sheet leaves, under the loading mark. A drag by the pilot ends
      *  following, as Apple Maps lets go of the position when the map is
-     *  moved by hand. North up, no turn, no tilt, but in 3D (Map3dLayer). A tap
+     *  moved by hand: the component's tracking says so once it follows, the
+     *  gesture itself while it waits for a first fix. North up, no turn, no tilt, but in 3D (Map3dLayer). A tap
      *  opens the card of what is under it; each rest tells the view. */
     private fun open(map: MapLibreMap) {
         if (opened) return
@@ -494,8 +503,9 @@ private class MapHolder(val view: MapView, private val density: Float) {
             .zoom(MapStyle.glZoom(if (at != null) LEAFLET_OPEN_ZOOM else LEAFLET_COUNTRY_ZOOM))
             .padding(0.0, 0.0, 0.0, bottomInset.toDouble())
             .build()
+        puck = OwnShipPuck(map, view.context) { onDragged() }
         map.addOnCameraMoveStartedListener { reason ->
-            if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) onDragged()
+            if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE && puck?.tracking != true) onDragged()
         }
         map.addOnCameraIdleListener {
             val box = map.projection.visibleRegion.latLngBounds
@@ -554,40 +564,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
             seen["${vor.ident}-${vor.lat}"] = vor
         }
         return seen.values.toList()
-    }
-
-    /** The airplane as an airplane, turned to its track, in the brand's
-     *  tint with a white casing so it reads on the chart's every colour
-     *  (OverlayPictures.ownShip); the tint's dot where the phone gives no
-     *  track, a shape of its own rather than a colour (the UI audit's
-     *  #12). The
-     *  map brought to it while following, at the sectional's scale the
-     *  first time and then only moved, so a pinch the pilot made is kept. */
-    private fun ownShip(map: MapLibreMap, style: Style, fix: OwnShip.Fix?, follow: Boolean) {
-        val geoJson = pointJson(fix)
-        val source = style.getSourceAs<GeoJsonSource>(OWN_SHIP)
-        if (source != null) {
-            source.setGeoJson(geoJson)
-        } else {
-            style.addSource(GeoJsonSource(OWN_SHIP, geoJson))
-            val layer = org.maplibre.android.style.layers.SymbolLayer(OWN_SHIP, OWN_SHIP).withProperties(
-                PropertyFactory.iconImage(
-                    Expression.switchCase(Expression.has("track"), Expression.literal(MapStyle.OWN_SHIP_ICON), Expression.literal(MapStyle.OWN_SHIP_DOT)),
-                ),
-                PropertyFactory.iconRotate(Expression.coalesce(Expression.get("track"), Expression.literal(0))),
-                PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
-                PropertyFactory.iconAllowOverlap(true),
-                PropertyFactory.iconIgnorePlacement(true),
-            )
-            // Under the traffic, which is drawn over everything.
-            below(style, layer, MapStyle.TRAFFIC_TREND)
-        }
-        if (follow && fix != null) {
-            val at = LatLng(fix.lat, fix.lon)
-            val update = if (map.cameraPosition.zoom < FOLLOW_ZOOM) CameraUpdateFactory.newLatLngZoom(at, FOLLOW_ZOOM)
-            else CameraUpdateFactory.newLatLng(at)
-            if (app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)) map.moveCamera(update) else map.animateCamera(update, FOLLOW_MS)
-        }
     }
 
     private fun below(style: Style, layer: Layer, id: String) {
@@ -663,7 +639,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
         const val ROUTE_EDGE = "route-edge"
         /** The chart's magenta, the web's COURSE_MAGENTA. */
         val COURSE_MAGENTA = Color.rgb(0xe6, 0x00, 0xe6)
-        const val OWN_SHIP = "own-ship"
         const val TRAIL = "trail"
         /** A finger's reach round a mark, and round a line, dp (the web's
          *  TAP.mark and TAP.line). */
@@ -672,11 +647,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
         /** How often each airplane is carried on between answers. */
         const val CARRY_MS = 1_000L
         const val GLIDE = "glide-ring"
-        /** The sectional's own scale, where the airplane's surroundings
-         *  read: the web app's zoom on a position (lib/map). */
-        const val FOLLOW_ZOOM = 9.0
-        /** Shorter than a fix's second, so the dot never lags the map. */
-        const val FOLLOW_MS = 300
         /** The sheet's own settle, so the map's middle moves with it. */
         const val INSET_MS = 300
         /** The latest the map is shown after its style is set, the web's

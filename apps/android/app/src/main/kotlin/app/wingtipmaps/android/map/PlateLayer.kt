@@ -119,7 +119,7 @@ class PlateLayer(private val density: Float) {
             PropertyFactory.iconAllowOverlap(true),
             PropertyFactory.iconIgnorePlacement(true),
         )
-        val over = listOf("own-ship", MapStyle.TRAFFIC_TREND).firstOrNull { style.getLayer(it) != null }
+        val over = OwnShipPuck.under(style).takeIf { style.getLayer(it) != null }
         if (over != null) style.addLayerBelow(symbols, over) else style.addLayer(symbols)
     }
 
