@@ -62,6 +62,13 @@ export function WeatherLoopGl() {
   );
 }
 
+/** One radar mosaic at a moment, as the loop draws its frames: a
+ *  replay's weather as it was (the Studio's), its tiles IEM's for that
+ *  time (wingtip.weather_loop's RADAR_TILES). */
+export function RadarFrameGl({ url }: { url: string }) {
+  return <Tiles id="wx-then-radar" url={url} max={RADAR_MAX} credit={RADAR_CREDIT} opacity={RADAR_OPACITY} />;
+}
+
 /** One frame's layers: the satellite's under the radar's. */
 function FrameGl({ frame, shown }: { frame: LoopFrame; shown: boolean }) {
   return (

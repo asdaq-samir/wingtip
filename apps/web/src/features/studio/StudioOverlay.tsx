@@ -1,8 +1,11 @@
 import { cn } from "cn";
 import { GLASS } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
-import { CameraMenu, DataBlock, ReplayTimeline, STUDIO_SPEEDS, type ReplayTrack } from "../replay";
+import { lazy, Suspense } from "react";
+import { CameraMenu, DataBlock, loadStudioParts, ReplayTimeline, STUDIO_SPEEDS, type ReplayTrack } from "../replay";
 import { StudioProfile } from "./StudioProfile";
+
+const CaptionLine = lazy(() => loadStudioParts().then((m) => ({ default: m.CaptionLine })));
 
 /**
  * What the Studio lays over its map, the shared replay parts: the data
@@ -27,6 +30,9 @@ export function StudioOverlay({ track, ground }: { track: ReplayTrack; ground: {
             <span className={cn("truncate font-semibold", TEXT.note)}>{track.label}</span>
             {track.credit && <span className={cn("shrink-0 text-muted-foreground", TEXT.caption)}>{track.credit}</span>}
           </div>
+          <Suspense fallback={null}>
+            <CaptionLine className="self-center" />
+          </Suspense>
           <StudioProfile track={track} ground={ground} className="h-20" />
           <ReplayTimeline label="Replay" speeds={STUDIO_SPEEDS} gaps={track.gaps} testId="studio-timeline">
             <CameraMenu testId="studio-camera" />

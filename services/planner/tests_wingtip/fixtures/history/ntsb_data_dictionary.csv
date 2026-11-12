@@ -1,0 +1,9 @@
+Table,Column,ct_name,code_iaids,meaning
+aircraft,phase_flt_spec,ct_phase_flt_spec,500,Standing
+aircraft,phase_flt_spec,ct_phase_flt_spec,570,Landing
+aircraft,phase_flt_spec,ct_phase_flt_spec,571,Landing - flare/touchdown
+events,ev_highest_injury,ct_inj_ix,FATL,Fatal
+events,ev_highest_injury,ct_inj_ix,MINR,Minor
+events,ev_highest_injury,ct_inj_ix,NONE,None
+events,ev_highest_injury,ct_inj_ix,SERS,Serious
+events,ev_highest_injury,ct_inj_ix,UNK,Unknown

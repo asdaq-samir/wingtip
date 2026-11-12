@@ -5952,6 +5952,47 @@ data class NoteToWrite (
 )
 
 /**
+ * One NTSB case of the airplane (wingtip.history.ntsb), its texts
+ * verbatim: where and when (the local date), its phase of flight and
+ * highest injury in the NTSB's words, its probable cause once the final
+ * report is out, and its narrative (the final report's, else the
+ * preliminary's factual one).
+ */
+@Serializable
+data class NtsbEvent (
+    @SerialName("carol_url")
+    val carolUrl: String,
+
+    val city: String? = null,
+    val country: String? = null,
+    val date: String,
+
+    @SerialName("docket_url")
+    val docketUrl: String? = null,
+
+    @SerialName("ev_id")
+    val evId: String,
+
+    @SerialName("highest_injury")
+    val highestInjury: String? = null,
+
+    val narrative: String? = null,
+
+    @SerialName("narrative_kind")
+    val narrativeKind: String? = null,
+
+    @SerialName("ntsb_no")
+    val ntsbNo: String,
+
+    val phase: String? = null,
+
+    @SerialName("probable_cause")
+    val probableCause: String? = null,
+
+    val state: String? = null
+)
+
+/**
  * The obstacles in a box, tallest first; `more` where some were left
  * out past the most a map is given at once.
  */
@@ -7573,6 +7614,47 @@ data class StudioGroundAsk (
 )
 
 /**
+ * The NOTAMs and TFRs in force at a moment inside a box, from the day's
+ * archive kept here (wingtip.history.notam_archive); `archived` False
+ * where no archive covers that UTC day.
+ */
+@Serializable
+data class StudioNotams (
+    val archived: Boolean,
+    val day: String,
+    val notams: List<StudioNotam>,
+    val tfrs: List<StudioTfr>
+)
+
+/**
+ * A NOTAM in force then, as sent, at its field's position (None for
+ * one at no field).
+ */
+@Serializable
+data class StudioNotam (
+    val end: String? = null,
+    val id: String,
+    val lat: Double? = null,
+    val lon: Double? = null,
+    val start: String? = null,
+    val text: String
+)
+
+/**
+ * A TFR in force then: its NOTAM's id, title, times and text, and its
+ * areas (GeoJSON MultiPolygon, rounded to about 11 m).
+ */
+@Serializable
+data class StudioTfr (
+    val end: String? = null,
+    val geometry: JsonObject? = null,
+    val id: String,
+    val name: String,
+    val start: String? = null,
+    val text: String? = null
+)
+
+/**
  * An airplane's reports on a UTC day, for the Studio's replay
  * (wingtip.traffic.day_tracks), with where they came from, which the
  * Studio shows (ODbL 1.0 asks for it).
@@ -7628,6 +7710,64 @@ data class StudioWatched (
     val days: List<String>,
     val hex: String,
     val registration: String? = null
+)
+
+/**
+ * The weather as it was over a replayed flight
+ * (wingtip.history.weather_then): the METARs of the stations near its
+ * track from an hour before to an hour after, the TAFs in force over it,
+ * and the radar's frames, with where they came from.
+ */
+@Serializable
+data class StudioWeather (
+    val credit: String,
+    val metars: List<StudioMetar>,
+    val radar: List<StudioRadarFrame>,
+    val source: String,
+    val tafs: List<StudioTaf>
+)
+
+/**
+ * A station's METAR, as it sent it (IEM's archive).
+ */
+@Serializable
+data class StudioMetar (
+    val lat: Double,
+    val lon: Double,
+    val raw: String,
+    val station: String,
+    val time: String
+)
+
+/**
+ * The NEXRAD composite at one five-minute mosaic: its time and its
+ * XYZ tile template on IEM's tile cache.
+ */
+@Serializable
+data class StudioRadarFrame (
+    val tiles: String,
+    val valid: String
+)
+
+/**
+ * A station's TAF, as the NWS issued it (IEM's archive).
+ */
+@Serializable
+data class StudioTaf (
+    val issued: String,
+    val raw: String,
+    val station: String
+)
+
+/**
+ * A replayed flight's span (s since 1970, UTC) and points along its
+ * track, [lat, lon] each, for the weather as it was.
+ */
+@Serializable
+data class StudioWeatherAsk (
+    val end: Double,
+    val points: List<List<Double>>,
+    val start: Double
 )
 
 @Serializable

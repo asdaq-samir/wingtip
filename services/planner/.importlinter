@@ -30,6 +30,11 @@ name = no router imports another
 type = independence
 modules =
     app.routers.*
+# A router that carries another's routes on its own (as app.main is at its
+# size): an include, not a use of its work.
+ignore_imports =
+    app.routers.weather_loop -> app.routers.weather_flow
+    app.routers.studio -> app.routers.studio_history
 
 [importlinter:contract:nothing-imports-routers]
 name = only app.main imports the routers

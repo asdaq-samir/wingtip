@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router";
 import { describeError } from "../../lib/api/client";
 import { TrackError } from "../../lib/track";
 import { clearPastFlight } from "../../lib/replay/clock";
-import { loadReplay, readyTrack, setReplayCamera, type ReplayTrack } from "../replay";
+import { dropAudio, loadReplay, readyTrack, resetReplayCamera, setReplayCamera, type ReplayTrack } from "../replay";
 import { importTrackFile } from "./importTrack";
 import { studioGroundQuery, studioTrackQuery, studioWatchedQuery, type StudioTrack } from "./studioApi";
 
@@ -66,7 +66,8 @@ export function useStudio() {
   useEffect(
     () => () => {
       clearPastFlight();
-      setReplayCamera(null);
+      resetReplayCamera();
+      dropAudio();
     },
     [],
   );
@@ -91,6 +92,10 @@ export function useStudio() {
     ground,
     problem,
     loading: asked.isFetching,
+    /** The airplane's N-number and UTC day, where the track is a day's
+     *  from the store (for the NTSB's events); null for a file's. */
+    registration: file ? null : (asked.data?.registration ?? null),
+    utcDay: file ? null : (asked.data?.day ?? null),
     watched: watched.data ?? [],
     /** An airplane's day, by N-number or ICAO address. */
     load: (tail: string, utcDay: string) => {

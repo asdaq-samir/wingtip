@@ -11,8 +11,13 @@ from wingtip.traffic import day_tracks
 
 from ..gateway import DEVELOPER
 from ..schemas.studio import StudioGround, StudioGroundAsk, StudioTrack, StudioWatched
+from . import studio_history
 
 router = APIRouter()
+# The day's weather, the NTSB's record and the archived NOTAMs, the
+# Studio's too, on this router rather than another line in app.main
+# (which is at its size).
+router.include_router(studio_history.router)
 
 
 @router.get("/api/studio/track", response_model=StudioTrack, openapi_extra=DEVELOPER)
