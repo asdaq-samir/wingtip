@@ -153,7 +153,10 @@ signed-in desktop, 4K first, then 1440p. The track is
 `tools/msfs-agent/fixtures/n901tq-2026-11-11-sedona.json`: N901TQ, a PA-28,
 two circuits at Sedona from 23:40 UTC on 2026-11-11 (sunset light), 19
 minutes, with one gap of 119 s over the first landing's roll, which the
-replay cuts rather than bridges. Each run takes the flight's own time. Any
+replay cuts rather than bridges; its frames, the engine's sim_flight (the
+path, and the heading, pitch and bank it estimates), are 2 a second to keep
+the file small, and the agent eases between them. Each run takes the
+flight's own time. Any
 other Studio track works:
 `tools/msfs-agent/prepare-track.sh <N-number> <day> [from to]` with the
 stack up, then `run --track <file>`. `--shots chase:45,flyby:14,...`

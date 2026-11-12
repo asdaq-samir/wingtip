@@ -5,13 +5,13 @@ namespace Wingtip.Replay.Tests;
 /// <summary>The trial's track: N901TQ, a PA-28, two circuits at Sedona
 /// (KSEZ) on 2026-11-11 from 23:40 UTC, adsb.lol's (ODbL 1.0) through the
 /// Studio's export and the engine's replay_track, with one gap of 119 s
-/// over the first landing's roll.</summary>
+/// over the first landing's roll, and sim_flight's frames at 2 a second
+/// (prepare-track.sh with RATE_HZ=2, to keep the file small).</summary>
 public sealed class TrackTests
 {
     static readonly ReadyTrack Sedona = ReadyTrack.Read(Path.Combine(AppContext.BaseDirectory, "fixtures", "n901tq-2026-11-11-sedona.json"));
 
-    static IReadOnlyList<FlightPath> Paths(ReadyTrack track, Heights heights) =>
-        [.. track.Runs().Select(run => new FlightPath(run, r => heights.FtMsl(r, run)))];
+    static IReadOnlyList<FlightPath> Paths(ReadyTrack track, Heights heights) => FlightPath.Of(track, heights.FtMsl);
 
     [Fact]
     public void The_fixture_is_read_with_its_source_and_licence()
@@ -53,6 +53,22 @@ public sealed class TrackTests
     }
 
     [Fact]
+    public void Each_run_has_the_engines_frames_and_none_crosses_the_gap()
+    {
+        var paths = Paths(Sedona, new Heights([]));
+        Assert.Equal(Sedona.Runs().Count, paths.Count);
+        var gap = Sedona.Gaps[0];
+        Assert.True(paths[0].End <= gap.From && paths[1].Start >= gap.To);
+    }
+
+    [Fact]
+    public void A_track_without_the_engines_frames_is_refused()
+    {
+        var json = """{"hex":"a","day":"2026-11-11","altitude":"pressure","source":"s","license":"l","gaps":[],"points":[{"t":1,"lat":0,"lon":0,"along_nm":0,"gap":false,"ground":false},{"t":2,"lat":0,"lon":0,"along_nm":0,"gap":false,"ground":false}]}""";
+        Assert.Throws<InvalidDataException>(() => ReadyTrack.Parse(json));
+    }
+
+    [Fact]
     public void A_report_out_of_order_is_refused()
     {
         var json = """{"hex":"a","day":"2026-11-11","altitude":"pressure","source":"s","license":"l","gaps":[],"points":[{"t":2,"lat":0,"lon":0,"along_nm":0,"gap":false,"ground":false},{"t":1,"lat":0,"lon":0,"along_nm":0,"gap":false,"ground":false}]}""";
@@ -69,9 +85,14 @@ public sealed class TrackTests
         var heights = new Heights(anchors.Select(a => (a, 4830.0)));
         Assert.InRange(heights.OffsetFt, 250, 400);
         var paths = Paths(Sedona, heights);
-        var landing = paths[^1].At(paths[^1].End)!;
-        Assert.True(landing.Ground);
-        Assert.Equal(4830, landing.AltFt, 3);
+        // The run ends on the runway; sim_flight's last frame is its last
+        // whole step before that report, still in the flare, so it is just
+        // above the field rather than on it.
+        Assert.True(paths[^1].Reports[^1].Ground);
+        Assert.InRange(paths[^1].At(paths[^1].End)!.AltFt, 4830 - 60, 4830 + 60);
+        // On the ground between two ground reports, the field's height.
+        var rolling = paths.SelectMany(p => Enumerable.Range(0, (int)(p.End - p.Start)).Select(i => p.At(p.Start + i)!)).First(a => a.Ground);
+        Assert.Equal(4830, rolling.AltFt, 3);
         // Every airborne moment is above the field, less the 25 ft of a
         // transponder's step (DO-260B) and the 10 s average around it.
         foreach (var path in paths)

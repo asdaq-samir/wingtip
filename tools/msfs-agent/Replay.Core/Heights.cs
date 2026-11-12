@@ -1,7 +1,7 @@
 namespace Wingtip.Replay;
 
 /// <summary>
-/// Where the airplane goes up and down in the simulator. The reports carry
+/// Where the airplane goes up and down in the simulator. The frames carry
 /// the transponder's pressure altitude (DO-260B, readsb's alt_baro, as the
 /// Studio export says in <c>altitude: "pressure"</c>), which is the height
 /// above the 29.92 inHg level, not above the sea: on the Sedona fixture's
@@ -55,18 +55,17 @@ public sealed class Heights
     }
 
     /// <summary>
-    /// A report's height in the simulator, ft above its sea: an airborne
-    /// report's moved by <see cref="OffsetFt"/>; a ground report's the
-    /// ground measured nearest it, or, where none was, the nearest airborne
-    /// report's in time, moved.
+    /// A frame's height in the simulator, ft above its sea: an airborne
+    /// frame's moved by <see cref="OffsetFt"/>; a ground frame's the ground
+    /// measured nearest it, or, where none was, its own moved (sim_flight
+    /// gives a ground frame its neighbours' height where it knows no
+    /// ground).
     /// </summary>
-    public double FtMsl(Report r, IReadOnlyList<Report> run)
+    public double FtMsl(Frame f)
     {
-        if (!r.Ground && r.AltFt is { } alt) return alt + OffsetFt;
-        if (_measured.Length > 0)
-            return _measured.MinBy(m => Geo.DistanceM(r.Lat, r.Lon, m.At.Lat, m.At.Lon)).GroundFt;
-        var air = run.Where(p => !p.Ground && p.AltFt is not null).MinBy(p => Math.Abs(p.T - r.T));
-        return air is null ? 0 : air.AltFt!.Value + OffsetFt;
+        if (f.Ground && _measured.Length > 0)
+            return _measured.MinBy(m => Geo.DistanceM(f.Lat, f.Lon, m.At.Lat, m.At.Lon)).GroundFt;
+        return f.AltFt + OffsetFt;
     }
 
     static double Median(double[] sorted) =>
