@@ -74,9 +74,7 @@ public class SecurityConfig {
     private static final String OVERLAY_IMAGES =
             "https://basemap.nationalmap.gov https://tile.googleapis.com " + WEATHER_TILES;
     private static final String OVERLAY_CONNECT = "https://tile.googleapis.com " + WEATHER_TILES;
-    // An airplane's photo on its card (apps/web/src/features/plan/lib/planePhoto.ts): asked of
-    // Planespotters.net's API by the browser, as its terms have an app's
-    // pages do, and its thumbnail shown from Planespotters' own server.
+    // An airplane's photo (planePhoto.ts): Planespotters' API and image server, per its terms.
     private static final String PHOTO_IMAGES = "https://t.plnspttrs.net";
     private static final String PHOTO_CONNECT = "https://api.planespotters.net";
 
@@ -342,7 +340,9 @@ public class SecurityConfig {
                                 // this origin's own files, the page reader's
                                 // engine (web features/plan/lib/readPage); no script eval.
                                 + "script-src 'self' 'wasm-unsafe-eval'; "
-                                + "connect-src 'self' " + OVERLAY_CONNECT + " " + PHOTO_CONNECT + "; "
+                                + "connect-src 'self' " + OVERLAY_CONNECT + " " + PHOTO_CONNECT + " "
+                                + ModelHosts.CONNECT
+                                + "; "
                                 + "object-src 'none'; "
                                 + "base-uri 'self'; "
                                 + "frame-ancestors 'none'")));
