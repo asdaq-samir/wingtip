@@ -7,10 +7,10 @@ import SwiftUI
 /// Captions sit over what is under them. A tap on the captions opens the
 /// radio's sheet with the whole log.
 struct RadioOverlay: View {
+    @Environment(ClearanceListener.self) private var listener
     @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
-    private var listener: ClearanceListener { ClearanceListener.shared }
 
     var body: some View {
         VStack(spacing: WingtipSpace.sm) {
@@ -64,14 +64,14 @@ struct RadioOverlay: View {
 /// read it first), Fly the altitude. Nothing is done until it is tapped;
 /// ✕ puts it away.
 struct RadioCallBanner: View {
+    @Environment(AtcCopilot.self) private var atc
+    @Environment(ClearanceListener.self) private var listener
     @Environment(\.lookAccent) private var accent
     let call: ClearanceListener.Transmission
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @State private var problem: String?
     @State private var busy = false
-
-    private var listener: ClearanceListener { ClearanceListener.shared }
 
     var body: some View {
         // A call the engine cannot read shows as heard, with nothing read
@@ -93,7 +93,7 @@ struct RadioCallBanner: View {
             }
             // The ATC copilot's reading of it, where it is on: each item
             // the engine read (atc_call), and the readback checked.
-            if let card = AtcCopilot.shared.card(for: call.id) {
+            if let card = atc.card(for: call.id) {
                 AtcCardRows(card: card, tail: plan.tail)
             }
             ScrollView(.horizontal, showsIndicators: false) {

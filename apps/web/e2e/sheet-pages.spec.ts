@@ -38,8 +38,7 @@ test("Search to FPL and back, by a swipe and by the grabber's bars, the sheet's 
   await swipe(page, "left");
   await expectPage(page, 1);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
-  // FPL with no route: its empty route box, nothing between it and the
-  // flights saved (96463ab51: no "Plan a flight").
+  // FPL with no route: its empty route box, no "Plan a flight" (96463ab51).
   await expect(sideDrawer(page).getByTestId("route-box")).toBeVisible();
   await expect(sideDrawer(page).getByText("Plan a flight")).toHaveCount(0);
 
@@ -219,6 +218,45 @@ test("a sideways drag on the Nearest row is the row's, the page stays on Search"
   await page.mouse.move(box.x + box.width * 0.1, box.y + box.height / 2, { steps: 12 });
   await page.mouse.up();
   await expectPage(page, 0);
+});
+
+test("a finger pulled on past the Nearest row's end turns the page, and not before it", async ({ page }) => {
+  // The owner, 2026-11-11: "At the end of the scroll, it should swipe"
+  // (SheetPager's hand-off: a pull of 48 px past a sideways list's end
+  // turns the page once). The touches are made by hand: Playwright's mouse
+  // is not a touch, and the hand-off listens for touches.
+  await page.context().grantPermissions(["geolocation"]);
+  await page.context().setGeolocation({ latitude: 43.98, longitude: -88.56 });
+  await page.goto("/app/plan");
+  await settle(page);
+  await grabberTo(page, "half");
+  await expectPage(page, 0);
+  const row = sideDrawer(page).getByTestId("pill-section-nearest").getByTestId("nearest-strip");
+  await expect(row).toBeVisible();
+  const pull = (dxs: number[]) =>
+    row.evaluate((el, steps) => {
+      const at = el.getBoundingClientRect();
+      const point = (x: number) => new Touch({ identifier: 1, target: el, clientX: x, clientY: at.top + at.height / 2 });
+      let x = at.left + at.width * 0.8;
+      const send = (type: string, touches: Touch[]) =>
+        el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches, targetTouches: touches, changedTouches: touches }));
+      send("touchstart", [point(x)]);
+      for (const dx of steps) {
+        x += dx;
+        send("touchmove", [point(x)]);
+      }
+      send("touchend", []);
+    }, dxs);
+  // A row with something still to scroll to hands nothing on.
+  await row.evaluate((el) => (el.scrollLeft = 0));
+  await pull([-30, -30, -30]);
+  await expectPage(page, 0);
+  // At its end, a short pull is the row's bounce, and a long one the page's.
+  await row.evaluate((el) => (el.scrollLeft = el.scrollWidth));
+  await pull([-20]);
+  await expectPage(page, 0);
+  await pull([-30, -30]);
+  await expectPage(page, 1);
 });
 
 test.describe("cards over the pages", () => {

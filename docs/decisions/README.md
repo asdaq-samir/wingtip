@@ -44,3 +44,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0036 | [Wingtip reaches Claude and ChatGPT as the pilot's own connector](0036-mcp-connector.md) | 2026-11-10 | Accepted |
 | 0037 | [The order of a wave is enforced, not remembered](0037-order-enforced.md) | 2026-11-11 | Accepted |
 | 0038 | [Web first; the phones on the owner's word](0038-web-first.md) | 2026-11-11 | Accepted |
+| 0039 | [The crash pipeline's schedule and the MCP tools' source, weighed against their alternatives](0039-crash-and-mcp-boundaries.md) | 2026-11-12 | Proposed |

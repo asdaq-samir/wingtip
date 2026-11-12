@@ -62,7 +62,7 @@ import gribberish
 import numpy as np
 from PIL import Image
 from wingtip.engine import ask
-from wingtip.units import M_PER_FT, M_PER_SM, MS_TO_KT
+from wingtip.units import K_AT_0C, M_PER_FT, M_PER_SM, MS_TO_KT
 
 #: The output grid: the GFS 0.25-degree points from 5 to 75 N, 180 to 50 W
 #: (the filter's box), north row first as a picture is.
@@ -285,7 +285,7 @@ def in_units(grid: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     if "cloud" in grid:
         out["cloud"] = grid["cloud"]
     if "temp" in grid:
-        out["temp"] = grid["temp"] - 273.15
+        out["temp"] = grid["temp"] - K_AT_0C
     if "vis" in grid:
         out["vis"] = grid["vis"] / M_PER_SM
     if "ceiling" in grid:

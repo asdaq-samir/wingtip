@@ -8,10 +8,10 @@ import SwiftUI
 /// and the FAA's record. Seconds-old internet data from adsb.lol's
 /// receivers: for knowing what is about, not for avoiding it.
 struct AirplaneCard: View {
+    @Environment(Tracking.self) private var tracking
     let hex: String
     @Environment(\.undoManager) private var undoManager
     @State private var model = AirplaneCardModel()
-    private var tracking: Tracking { Tracking.shared }
 
     private var plane: TrafficAircraft? { tracking.hex == hex.lowercased() ? tracking.latest : nil }
     private var detail: FlightDetail? { model.detail }
@@ -255,6 +255,8 @@ struct PastFlightRow: View {
 /// colours, and its profile, height and ground speed against time, as
 /// FlightAware's graph of a flight (the web app's PastFlightChart).
 struct PastFlightCard: View {
+    @Environment(Replay.self) private var replay
+    @Environment(Tracking.self) private var tracking
     let hex: String
     let flight: PastFlightSummary
     @State private var points: [PastFlightPoint] = []
@@ -280,14 +282,14 @@ struct PastFlightCard: View {
         .task(id: flight.id) {
             do {
                 points = try await Planner.pastFlight(hex, id: flight.id).points
-                Tracking.shared.past = points.map { PathPoint(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: $0.altFt) }
+                tracking.past = points.map { PathPoint(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: $0.altFt) }
             } catch {
                 problem = "Its track could not be had."
             }
         }
         .onDisappear {
-            Tracking.shared.past = []
-            Replay.shared.clear(replayKey)
+            tracking.past = []
+            replay.clear(replayKey)
         }
     }
 

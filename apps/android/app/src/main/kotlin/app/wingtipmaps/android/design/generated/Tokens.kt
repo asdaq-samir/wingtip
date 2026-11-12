@@ -1173,6 +1173,8 @@ object WingtipFlow {
     const val COVER_WASH = 0.75f
     const val COVER_HAZARD = 0.8f
     const val COVER_SOLID = 0.9f
+    val SCALE_WIND_TICKS = listOf(0.0, 25.0, 50.0, 75.0)
+    const val SCALE_RAIN_HEADROOM = 15.0
 }
 
 object WingtipSize {

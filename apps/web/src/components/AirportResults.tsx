@@ -132,14 +132,24 @@ export function AirportRow({
       className="min-h-13 gap-3 rounded-lg px-2 py-2"
       data-testid={testId ?? "airport-result"}
     >
-      {/* Its magenta as fill and stroke, not the text colour: a row's
-          highlight recolours its icons' text, and the diamond went black. */}
+      <AirportRowFace airport={airport} waypoint={waypoint} recent={recent} />
+    </CommandItem>
+  );
+}
+
+/** What an airport's row shows, whatever list it is in (AirportRow here,
+ *  the route box's suggestions): the icon and the two lines. Its magenta
+ *  is fill and stroke, not the text colour: a row's highlight recolours
+ *  its icons' text, and the diamond went black. */
+export function AirportRowFace({ airport, recent = false, waypoint = false }: { airport: RecentAirport; recent?: boolean; waypoint?: boolean }) {
+  return (
+    <>
       {waypoint ? (
-        <Diamond className="size-5 fill-(--airspace-magenta-text) stroke-(color:--airspace-magenta-text)" />
+        <Diamond aria-hidden="true" className="size-5 shrink-0 fill-(--airspace-magenta-text) stroke-(color:--airspace-magenta-text)" />
       ) : recent ? (
-        <History className="size-5 text-muted-foreground" />
+        <History aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
       ) : (
-        <Search className="size-5 text-muted-foreground" />
+        <Search aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
       )}
       <span className="min-w-0 flex-1">
         <span className={cn("block truncate", TEXT.row)}>
@@ -147,6 +157,6 @@ export function AirportRow({
         </span>
         {airport.municipality && <span className={cn("block truncate text-muted-foreground", TEXT.detail)}>{airport.municipality}</span>}
       </span>
-    </CommandItem>
+    </>
   );
 }

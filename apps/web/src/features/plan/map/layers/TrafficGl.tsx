@@ -218,7 +218,8 @@ function Traffic() {
   const heard = useTracking((s) => !!s.hex && s.latest?.plane.hex === s.hex);
   useEffect(() => {
     if (!hex || !follow) return;
-    if (useOwnShip.getState().follow) useOwnShip.getState().setFollow(false);
+    const ownShip = useOwnShip.getState();
+    if (ownShip.follow && ownShip.enabled) ownShip.setFollow(false);
     const latest = useTracking.getState().latest;
     if (!heard || !latest) return;
     map.flyTo({ center: [latest.plane.lon, latest.plane.lat], zoom: Math.max(map.getZoom(), glZoom(9)), duration: 800 });

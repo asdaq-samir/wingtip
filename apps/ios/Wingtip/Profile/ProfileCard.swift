@@ -10,6 +10,9 @@ import SwiftUI
 /// full height, so the slider never fights the sheet's drag. The state is
 /// ProfileModel's; every figure the engine's (ProfileRules).
 struct ProfileCard: View {
+    @Environment(ReadyToFly.self) private var ready
+    @Environment(FlightUI.self) private var flightUI
+    @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @Environment(DryRun.self) private var dryRun
     @State private var model = ProfileModel()
@@ -17,7 +20,7 @@ struct ProfileCard: View {
     /// The side view's height, growing with the pilot's text size.
     @ScaledMetric(relativeTo: .body) private var chartHeight = 220.0
 
-    private var flight: InFlight { .shared }
+    @Environment(InFlight.self) private var flight
     private var airplaneFt: Double? { flight.underway ? flight.fix?.altitudeFt : nil }
 
     private var advisor: Result<[ProfileRules.AdvisorRow], any Error> {
@@ -75,7 +78,7 @@ struct ProfileCard: View {
                     // Ready to fly over the start, once per flight, where
                     // something is missing; "Fly anyway" goes on with it.
                     Task {
-                        await ReadyToFly.shared.beforeStart {
+                        await ready.beforeStart {
                             if let course = plan.course { dryRun.start(course: course, checkpoints: plan.checkpoints, legs: plan.legs) }
                         }
                     }
@@ -85,19 +88,19 @@ struct ProfileCard: View {
         }
         // Full height wherever it is opened, a card's page included.
         .onAppear {
-            if Navigator.shared.card != nil { Navigator.shared.cardDetent = .large }
+            if nav.card != nil { nav.cardDetent = .large }
             takeAltitudeAt()
         }
         // A stop's "Set Altitude…" opens its popover here (RoutePointMenu).
-        .onChange(of: FlightUI.shared.altitudeAt) { _, _ in takeAltitudeAt() }
+        .onChange(of: flightUI.altitudeAt) { _, _ in takeAltitudeAt() }
         .onChange(of: plan.altitudeFt) { _, _ in model.previewFt = nil }
     }
 
     /// The point a stop's menu asked the altitude of, its popover put up
     /// and the ask cleared.
     private func takeAltitudeAt() {
-        guard let ident = FlightUI.shared.altitudeAt else { return }
-        FlightUI.shared.altitudeAt = nil
+        guard let ident = flightUI.altitudeAt else { return }
+        flightUI.altitudeAt = nil
         model.waypoint = ident
     }
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Map as GlMap } from "maplibre-gl";
 import { cn } from "cn";
+import { M_PER_NM } from "../lib/geo";
 import { GLASS } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 
@@ -8,9 +9,6 @@ import { TEXT } from "../lib/text";
 const LINGER_MS = 1500;
 /** The scale bar's longest, in CSS px. */
 const BAR_MOST = 96;
-/** The international nautical mile, exactly, which the US adopted in 1954
- *  and the FAA's charts and this app's distances are in. */
-const METRES_PER_NM = 1852;
 /** The bar's lengths, in nm: the largest that fits BAR_MOST is drawn. */
 const NICE_NM = [0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
 
@@ -19,7 +17,7 @@ function scaleOf(map: GlMap) {
   const { clientWidth: w, clientHeight: h } = map.getContainer();
   const a = map.unproject([w / 2, h / 2]),
     b = map.unproject([w / 2 + BAR_MOST, h / 2]);
-  const nmPerPx = a.distanceTo(b) / METRES_PER_NM / BAR_MOST;
+  const nmPerPx = a.distanceTo(b) / M_PER_NM / BAR_MOST;
   const nm = [...NICE_NM].reverse().find((n) => n / nmPerPx <= BAR_MOST) ?? 0.25;
   return { nm, px: Math.round(nm / nmPerPx) };
 }

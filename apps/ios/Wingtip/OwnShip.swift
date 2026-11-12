@@ -32,9 +32,9 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
 
     private let manager = CLLocationManager()
     private var asking: Task<Void, Never>?
-    /// The ahead question's place on the app's clock (Ticker), while the
-    /// position is being read.
-    private var aheadEvery: Ticker.Registration?
+    /// The ahead question asked again (Repeating), while the position is
+    /// being read.
+    private var aheadEvery: Task<Void, Never>?
     /// How often what is ahead is asked while moving, s; the planner looks
     /// five minutes along the track (wingtip.alerts), so twice this with the
     /// app put away still leaves minutes.
@@ -62,7 +62,7 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         // Fly (askLocation). Until then the updates simply bring nothing.
         manager.startUpdatingLocation()
         if aheadEvery == nil {
-            aheadEvery = Ticker.shared.every(Self.aheadEveryS) { [weak self] in self?.askAhead() }
+            aheadEvery = Task { [weak self] in await Repeating.every(Self.aheadEveryS) { self?.askAhead() } }
         }
     }
 
@@ -113,7 +113,7 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     }
 
     /// What is ahead, asked of the latest fix every ten seconds while the
-    /// airplane is at flying speed (the clock's, Ticker): the planner looks
+    /// airplane is at flying speed (Repeating): the planner looks
     /// five minutes along the track (wingtip.alerts). Flying speed is the
     /// engine's `underway` (Flight.underway), the speed the engine's own
     /// look ahead starts at, so a taxiing airplane asks nothing it would

@@ -10,9 +10,10 @@ struct NearestAirportsIntent: AppIntent {
     static let title: LocalizedStringResource = "Nearest Airports"
     static let description = IntentDescription("Opens the airports nearest you, nearest first.")
     static let openAppWhenRun: Bool = true
+    @Dependency private var opener: AppOpener
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        await AppOpener.open(.nearest)
+        await opener.open(.nearest)
         return .result(dialog: "Showing the nearest airports.")
     }
 }
@@ -26,9 +27,10 @@ struct EmergencyIntent: AppIntent {
     static let title: LocalizedStringResource = "Emergency Assistant"
     static let description = IntentDescription("Opens the emergency assistant: the best fields within a glide, the checklist and the MAYDAY.")
     static let openAppWhenRun: Bool = true
+    @Dependency private var opener: AppOpener
 
     func perform() async throws -> some IntentResult {
-        await AppOpener.open(.emergency)
+        await opener.open(.emergency)
         return .result()
     }
 }

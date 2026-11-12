@@ -42,9 +42,9 @@ sum_of() { # FILE ALGO
 # FILES: what to lint, one a line: the changed ones of this kind, or all.
 files() { # PATTERN
   if [ -n "$base" ] && ! $write; then
-    { git diff --name-only --diff-filter=AMR "$base"; git ls-files --others --exclude-standard; } | grep -E "$1" | grep -vE '(Tests?/|/test/|androidTest/|/[Gg]enerated/)' | sort -u
+    { git diff --name-only --diff-filter=AMR "$base"; git ls-files --others --exclude-standard; } | grep -E "$1" | grep -vE '(Tests?/|/test/|androidTest/|/[Gg]enerated/|apps/ios/WingtipAPI/)' | sort -u
   else
-    git ls-files | grep -E "$1" | grep -vE '(Tests?/|/test/|androidTest/|/[Gg]enerated/)'
+    git ls-files | grep -E "$1" | grep -vE '(Tests?/|/test/|androidTest/|/[Gg]enerated/|apps/ios/WingtipAPI/)'
   fi
 }
 

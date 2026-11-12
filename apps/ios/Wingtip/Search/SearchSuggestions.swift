@@ -23,7 +23,7 @@ struct SearchSuggestions: View {
     let model: OneSearchModel
     let pick: (SearchPick) -> Void
     @Environment(Plan.self) private var plan
-    private var airplanes: Airplanes { .shared }
+    @Environment(Airplanes.self) private var airplanes
 
     var body: some View {
         if model.query.isEmpty { BrowseSections(nearest: model.nearest, pick: pick) } else { results }

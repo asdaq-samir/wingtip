@@ -8,6 +8,13 @@ import UIKit
 /// 2026-11-09, in the tabs' place). The system's own sheet, so the drag,
 /// the detents and the glass are iOS's, not a copy.
 struct RootView: View {
+    @Environment(SheetEdge.self) var sheetEdge
+    @Environment(Replay.self) var replay
+    @Environment(Emergency.self) var emergency
+    @Environment(AirportShelf.self) var shelf
+    @Environment(Tracking.self) var tracking
+    @Environment(InFlight.self) var inFlight
+    @Environment(Navigator.self) var nav
     @Environment(Charts.self) var charts
     @Environment(Session.self) var session
     @Environment(Plan.self) var plan
@@ -25,7 +32,6 @@ struct RootView: View {
     /// restored scene lands where the pilot left it. A launch argument's
     /// screen (`-screen airport`, for CI's pictures and the UI tests) wins.
     @SceneStorage("pages") private var scenePages: String?
-    var nav: Navigator { .shared }
     /// The one search, the sheet's (OneSearchModel): kept here, so a link,
     /// Siri and the map can bring it up.
     @State var search = OneSearchModel()
@@ -49,10 +55,6 @@ struct RootView: View {
     /// whole map's update again each frame.
     @State private var sheetHeight: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// What Siri or a Shortcut asked for (the App Intents), done here once
-    /// the app is on the screen: the owner's ask, 2026-11-03, Siri and
-    /// Shortcuts through App Intents.
-    @State private var pending = PendingCommand.shared
     // Setup's map switches (MapExtrasInput.Keys).
     @AppStorage(MapExtrasInput.Keys.waypoints) private var waypointsOn = false
     @AppStorage(MapExtrasInput.Keys.classB) private var classBOn = false
@@ -65,17 +67,16 @@ struct RootView: View {
     /// What the map draws of the airplane tracked and the flights flown,
     /// and its taps for them: an airplane's card, a point pressed.
     private var flightLayer: FlightLayer {
-        let tracking = Tracking.shared
         return FlightLayer(
             trackedHex: tracking.hex, tracked: tracking.latest, follow: tracking.follow,
             path: tracking.path, past: tracking.past, flown: tracking.flown,
-            glide: InFlight.shared.glide?.coordinates ?? [],
-            emergency: Emergency.shared.line(from: dryRun.fix ?? ownShip.fix),
+            glide: inFlight.glide?.coordinates ?? [],
+            emergency: emergency.line(from: dryRun.fix ?? ownShip.fix),
             onTraffic: { plane in
-                Tracking.shared.track(plane.hex, plane: plane)
-                Navigator.shared.open(.traffic(plane.hex.lowercased()))
+                tracking.track(plane.hex, plane: plane)
+                nav.open(.traffic(plane.hex.lowercased()))
             },
-            onDragged: { Tracking.shared.follow = false })
+            onDragged: { tracking.follow = false })
     }
 
     /// The sheet's lowest size, the pill: the page dots and the page's
@@ -105,7 +106,7 @@ struct RootView: View {
                             if !mapShown { sheetHeight = height }
                             // The map's buttons ride its top (MapButtonsDock),
                             // read there alone, so this body is not run again.
-                            SheetEdge.shared.plan = height
+                            sheetEdge.plan = height
                         }
                         .environment(\.sheetAtPill, detent == RootView.pill)
                         .presentationDetents([RootView.pill, .half, .large], selection: $detent)
@@ -160,6 +161,10 @@ struct RootView: View {
         .modifier(FeelHost())
         // ⌘F, ⌘B and ⌘L with a hardware keyboard (KeyboardShortcuts).
         .modifier(KeyboardShortcuts(search: { search.presented = true }, open: { openScreen($0) }))
+        // A link's, Siri's or a Shortcut's ask (the owner's, 2026-11-03:
+        // Siri and Shortcuts through App Intents), and a card's own.
+        .modifier(CommandHost { await apply($0, then: $1) })
+        .environment(\.appCommand, AppCommandAction { command, then in Task { await apply(command, then: then) } })
     }
 
     /// A field or a point opened from the map: its card over the plan,
@@ -198,7 +203,7 @@ struct RootView: View {
             course: plan.course, checkpoints: plan.checkpoints,
             procedurePaths: plan.legs.compactMap { $0.procedure?.path.compactMap { $0.count == 2 ? CLLocationCoordinate2D(latitude: $0[0], longitude: $0[1]) : nil } },
             // A flown track's replay, else the dry run: the same airplane.
-            simulated: Replay.shared.fix ?? dryRun.fix,
+            simulated: replay.fix ?? dryRun.fix,
             traffic: traffic.on ? traffic.planes : [],
             ownFt: (dryRun.fix ?? ownShip.fix)?.altitudeFt,
             onRegion: { centre, radius in traffic.mapCentre = centre; traffic.mapRadiusNm = radius },
@@ -214,7 +219,7 @@ struct RootView: View {
                 hiddenPlates: HiddenPlates.shared.keys,
                 plateLook: PlateLook(opacity: plateOpacity, inverted: plateInverted, annotations: plateAnnotations),
                 // A plate's page tapped: its card, half way up, as a field's.
-                onPlate: { key in Navigator.shared.open(.plate(key)) },
+                onPlate: { key in nav.open(.plate(key)) },
                 // A finger held on the chart: the airspace there, half way
                 // up, as a field's card opens.
                 onHold: { at in open(AirportRoute.airspace(lat: at.latitude, lon: at.longitude).text) },
@@ -230,7 +235,7 @@ struct RootView: View {
             routeLegs: RouteLegInput(
                 legs: plan.course != nil ? RouteLegModel.mapLegs(plan) : [],
                 selected: { if case .leg(let index) = nav.top { return index }; return nil }(),
-                onSelect: { index in Navigator.shared.open(.leg(index)) }),
+                onSelect: { index in nav.open(.leg(index)) }),
             // The route's fields worse by the flight's time there, and the
             // airplane's demonstrated crosswind for the wind barbs' red.
             fieldWeather: FieldWeatherInput(
@@ -298,36 +303,8 @@ struct RootView: View {
                 }
                 .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
             }
-            // About own ship's real fix, never the dry run's: the traffic near
-            // it is told in a notification (Traffic.tellNear).
-            .task { await traffic.run { [ownShip] in ownShip.fix } }
-            // The airplane tracked, its reports from the map's answers and its
-            // own; the watches set; the alerts ahead said aloud where asked.
-            .task { await Tracking.shared.run() }
-            // The in-flight copilot looks again every few seconds while flying
-            // with a route (Copilot): own ship's fix or the dry run's.
-            .task {
-                while !Task.isCancelled {
-                    await Copilot.shared.look(fix: dryRun.fix ?? ownShip.fix, flying: InFlight.shared.underway, plan: plan,
-                                              ahead: ownShip.ahead, minimums: verdict.minimums)
-                    try? await Task.sleep(for: .seconds(3))
-                }
-            }
-            .onChange(of: traffic.planes) { _, planes in Tracking.shared.heard(planes) }
-            .onChange(of: ownShip.ahead) { _, alerts in SpokenAlerts.shared.hear(alerts) }
-            // The ATC copilot: each settled transmission read, the radio listened to while flying where turned on.
-            .onChange(of: ClearanceListener.shared.heard) { _, heard in AtcCopilot.shared.observe(heard, tail: plan.tail) }
-            .task(id: "\(InFlight.shared.underway)|\(plan.tail ?? "")|\(AtcCopilot.shared.mode.rawValue)") {
-                await AtcCopilot.shared.follow(flying: InFlight.shared.underway, tail: plan.tail)
-            }
-            .modifier(AutoLogbookHost()) // The flight logged from its track once landed and at rest.
-            .modifier(AirplaneHost()) // The airplanes' figures in step with the sign-in (Airplane/).
-            // Each fix, own ship's or the dry run's airplane, asked of the
-            // engine once for the instruments, the strip and the glide ring
-            // (InFlight); again when the route changes under it.
-            .onChange(of: dryRun.fix ?? ownShip.fix, initial: true) { _, fix in InFlight.shared.took(fix, plan: plan) }
-            .onChange(of: plan.course) { _, _ in InFlight.shared.took(dryRun.fix ?? ownShip.fix, plan: plan) }
-            .onChange(of: ownShip.groundFt) { _, ft in InFlight.shared.terrainFt = ft }
+            // The flight's own work while the map is up (FlightLoops).
+            .modifier(FlightLoops())
             // The window's UndoManager for the route's history: shake to undo
             // and the Edit menu (PlanHistory).
             .onAppear { plan.undoManager = undoManager }
@@ -340,19 +317,12 @@ struct RootView: View {
             // A field's mark held: its card's preview and the plan's three.
             .onAppear { AirportMarkMenu.shared.input = markPreview }
             .onChange(of: plan.idents) { _, _ in AirportSpotlight.refresh() }
-            // Siri's or a Shortcut's ask, taken as it comes and as the app
-            // opens with one waiting (the intents run before this has drawn).
-            .task(id: pending.command) { await apply(pending.take()) }
     }
 }
 
 #Preview("RootView") {
     RootView()
-        .environment(Session())
-        .environment(Charts())
-        .environment(Plan())
-        .environment(OwnShip())
-        .environment(DryRun())
-        .environment(Traffic())
-        .environment(Verdict())
+        .modifier(AppModels(session: Session(), charts: Charts(), plan: Plan(), ownShip: OwnShip(), dryRun: DryRun(),
+                            traffic: Traffic(), verdict: Verdict(), nav: Navigator(), inFlight: InFlight()))
+        .environment(AppCommands())
 }

@@ -32,6 +32,7 @@ final class SheetEdge {
 /// the system sheet's own height is read and the stack set over it. Beside
 /// the iPad's sidebar there is no sheet: they stay at the top right.
 struct MapButtonsDock: View {
+    @Environment(SheetEdge.self) private var sheetEdge
     let overSheet: Bool
     @Binding var following: Bool
     let routeAway: Bool
@@ -43,7 +44,7 @@ struct MapButtonsDock: View {
         if overSheet {
             GeometryReader { screen in
                 let full = screen.size.height
-                let covered = SheetEdge.shared.covered
+                let covered = sheetEdge.covered
                 // Past 60% of the screen the sheet is on its way to full
                 // (half is 45%, Detents.swift), and the buttons give way.
                 let shown = covered < full * 0.6

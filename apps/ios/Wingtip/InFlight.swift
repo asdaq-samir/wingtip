@@ -17,8 +17,6 @@ import Observation
 @MainActor
 @Observable
 final class InFlight {
-    static let shared = InFlight()
-
     /// The airplane against its route, as `in_flight` answers it (the
     /// engine's contract, Engine/Generated).
     typealias Progress = EngineContract.InFlightAnswer

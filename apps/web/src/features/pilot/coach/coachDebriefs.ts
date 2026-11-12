@@ -10,11 +10,11 @@
  */
 import { api } from "../../../lib/api/client";
 import type { Flight, FlightSummary, ProcedureDrawing } from "../../../lib/api/types";
-import { callEngine } from "../../../lib/engine/engine";
 import { localDay } from "../../../lib/format";
 import { procedureQuery, proceduresQuery, queryClient } from "../../../lib/queryClient";
 import { findApproaches, type ApproachDebrief } from "../../../components/approachDebriefModel";
 import type { TrackPoint } from "../../../lib/track";
+import { debriefOf } from "../debrief";
 import type { CoachDebrief } from "./coachApi";
 
 /** The newest flights looked at: a few weeks' flying, and each one asks
@@ -26,26 +26,10 @@ const RECENT_MS = 183 * 86_400_000;
 /** A field's approaches drawn at most: the CIFP lists a dozen at a big one. */
 const MOST_APPROACHES = 6;
 
-const enginePoints = (points: TrackPoint[]) => points.map((p) => ({ t: p.t, lat: p.lat, lon: p.lon, alt_ft: p.altFt }));
-
 /** The flight's debrief as the engine gives it, trimmed; null where the
  *  track never flew. `patterns` are its fields' pattern altitudes. */
 function flightDebrief(flight: Flight, points: TrackPoint[], patterns: Record<string, number>, flownOn: string): CoachDebrief | null {
-  const { debrief: d } = callEngine("debrief", {
-    checkpoints: flight.checkpoints.map((c) => ({
-      sequence_no: c.sequenceNo,
-      name: c.name,
-      category: c.category,
-      lat: c.lat,
-      lon: c.lon,
-      along_track_nm: c.alongTrackNm,
-      true_course_deg: c.trueCourseDeg,
-      ete_min: c.eteMin,
-      altitude_ft: c.altitudeFt,
-    })),
-    points: enginePoints(points),
-    patterns,
-  });
+  const { debrief: d } = debriefOf(flight, points, patterns);
   if (!d) return null;
   return {
     kind: "flight",

@@ -5,6 +5,7 @@ import SwiftUI
 /// on the page saved with the button at the top. Its state is the
 /// model's (SavedFlightsModel).
 struct FlightsView: View {
+    @Environment(Navigator.self) private var nav
     @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
@@ -25,7 +26,7 @@ struct FlightsView: View {
                     Button {
                         plan.open(flight)
                         // The flight on the plan, its card put away.
-                        Navigator.shared.showPlan()
+                        nav.showPlan()
                     } label: {
                         SavedFlightRow(flight: flight)
                     }
@@ -100,7 +101,7 @@ struct FlightsView: View {
     }
 
     private func flownTrack(_ flight: SavedFlight) -> some View {
-        Button { Navigator.shared.push(.flown(flight.id, SavedFlightsModel.route(flight))) } label: {
+        Button { nav.push(.flown(flight.id, SavedFlightsModel.route(flight))) } label: {
             Label("Flown Track", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
         }
     }

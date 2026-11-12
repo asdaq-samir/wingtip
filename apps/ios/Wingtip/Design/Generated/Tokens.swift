@@ -967,6 +967,8 @@ enum WingtipFlow {
     static let coverWash: CGFloat = 0.75
     static let coverHazard: CGFloat = 0.8
     static let coverSolid: CGFloat = 0.9
+    static let scaleWindTicks: [Double] = [0, 25, 50, 75]
+    static let scaleRainHeadroom: Double = 15
 }
 
 enum WingtipSize {

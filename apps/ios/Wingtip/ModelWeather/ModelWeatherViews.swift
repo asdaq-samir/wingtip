@@ -5,10 +5,10 @@ import SwiftUI
 /// FlowSettingsRow and the legend's level menu). Menus, as discrete
 /// settings are here.
 struct ModelWeatherRows: View {
-    @State private var model = ModelWeather.shared
+    @Environment(ModelWeather.self) private var model
 
     var body: some View {
-        Picker("Model Weather", selection: $model.field) {
+        Picker("Model Weather", selection: Bindable(model).field) {
             ForEach(FlowFieldKind.allCases) { Text($0.label).tag($0) }
         }
         .pickerStyle(.menu)
@@ -19,7 +19,7 @@ struct ModelWeatherRows: View {
 /// The level menu (Surface, FL030 ... FL300, Max), as AWC's own picker's
 /// levels are a list; only where the field has more than one.
 struct ModelWeatherLevelPicker: View {
-    @State private var model = ModelWeather.shared
+    @Environment(ModelWeather.self) private var model
 
     var body: some View {
         let levels = FlowLevels.levels(model.layer, model.field)
@@ -38,7 +38,7 @@ struct ModelWeatherLevelPicker: View {
 /// how far ahead; on the precipitation 1h | 12h, the hour past or the
 /// forecast; and the hours on a slider, the one place a slider is right.
 struct ModelWeatherBar: View {
-    @State private var model = ModelWeather.shared
+    @Environment(ModelWeather.self) private var model
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -67,7 +67,7 @@ struct ModelWeatherBar: View {
                     heading
                     Spacer(minLength: 0)
                     if model.field == .precip {
-                        Picker("Precipitation span", selection: $model.span) {
+                        Picker("Precipitation span", selection: Bindable(model).span) {
                             ForEach(ModelWeather.Span.allCases) { Text($0.rawValue).tag($0) }
                         }
                         .pickerStyle(.segmented)
@@ -145,7 +145,7 @@ struct ModelWeatherBar: View {
 /// its unit, the ramp as a slim bar with its marks (knots, degrees, or the
 /// bands' words, the engine's), and whose the picture is ("AWC winds, 12Z").
 struct ModelWeatherLegend: View {
-    @State private var model = ModelWeather.shared
+    @Environment(ModelWeather.self) private var model
 
     var body: some View {
         if model.field != .off {
@@ -159,7 +159,7 @@ struct ModelWeatherLegend: View {
                     .accessibilityLabel("Turn off model weather")
                     .floatingGlass(in: Circle())
                     Menu {
-                        Picker("Weather on the map", selection: $model.field) {
+                        Picker("Weather on the map", selection: Bindable(model).field) {
                             ForEach(FlowFieldKind.allCases.filter { $0 != .off }) { Text($0.label).tag($0) }
                         }
                         ModelWeatherLevelPicker()

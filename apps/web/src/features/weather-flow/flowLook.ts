@@ -2,7 +2,7 @@ import type { FlowField } from "../../lib/map/sources/weatherLayers";
 import { callEngine } from "../../lib/engine/engine";
 import type { EngineAnswer } from "../../lib/engine/engine";
 import { FLOW, MAP, WEATHER } from "../../lib/tokens";
-import { aviationLooks } from "./aviationLooks";
+import { aviationLooks, tone } from "./aviationLooks";
 
 /** A field that is on: the store's choices but Off. */
 export type ShownField = Exclude<FlowField, "off">;
@@ -68,18 +68,11 @@ export const FIELDS: { value: ShownField; label: string }[] = (Object.keys(NAMES
  *  2026-11-12); the others are a colour field alone. */
 export const hasStreaks = (field: ShownField) => field === "wind" || field === "gust";
 
-const tone = (hex: string, alpha: number): [number, number, number, number] => [
-  parseInt(hex.slice(1, 3), 16),
-  parseInt(hex.slice(3, 5), 16),
-  parseInt(hex.slice(5, 7), 16),
-  alpha,
-];
-
 /** The wind's field and the gusts': one hue deepening with speed, the
  *  map tinted rather than a rainbow, as Apple Weather's wind map is (the
  *  owner's screenshot, 2026-11-11); calm nearly clear. */
 const WIND_RAMP = FLOW.ramp.wind;
-const KNOT_TICKS = [0, 25, 50, 75].map((at) => ({ at, label: String(at) }));
+const KNOT_TICKS = FLOW.scale.windTicks.map((at) => ({ at, label: String(at) }));
 
 type Bands = EngineAnswer<"model_weather_bands">;
 type Band = Bands["cape"][number];
@@ -115,7 +108,7 @@ function looks(bands: Bands): Record<ShownField, FieldLook> {
   // magenta to yellow, its ramp (the owner's screenshot, 2026-11-11). The
   // top a step past extreme's floor, where the brightest returns are.
   const least = bands.precip.least_dbz;
-  const top = extreme!.from + 15;
+  const top = extreme!.from + FLOW.scale.rainHeadroom;
   const a = FLOW.alpha.rain;
   const rain: Stop[] = [
     [least - 0.1, tone(WEATHER.flowRainLight, a[0]!)],

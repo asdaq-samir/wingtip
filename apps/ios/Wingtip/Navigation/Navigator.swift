@@ -9,12 +9,11 @@ import SwiftUI
 /// stack, with Back. On the iPhone the card is a sheet the plan's sheet
 /// presents (CardHost), so there is one presenter and one card at a time;
 /// on the iPad the inspector holds it beside the map (SplitLayout) and the
-/// other pages stay in the sidebar's stack.
+/// other pages stay in the sidebar's stack. One for the app, handed down
+/// the views in the environment (WingtipApp).
 @MainActor
 @Observable
 final class Navigator {
-    static let shared = Navigator()
-
     /// The card up, by the page at its root.
     struct Card: Identifiable, Hashable {
         let page: SheetPage

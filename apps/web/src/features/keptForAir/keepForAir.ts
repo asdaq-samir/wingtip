@@ -1,4 +1,5 @@
 import type { ChartLayer, Course } from "../../lib/api/types";
+import { loadAddress } from "../../lib/address";
 import { keep } from "../../lib/map/route/keepRoute";
 import { queryClient } from "../../lib/queryClient";
 import { keepRouteAnswers } from "./keepAnswers";
@@ -7,7 +8,7 @@ import { keepOverlayArchive } from "./keepOverlays";
 /** The alternate filed, from the address (as Ready to fly reads it). */
 function alternateNow(): string | null {
   try {
-    return new URLSearchParams(window.location.search).get("alternate") || null;
+    return loadAddress(window.location.search).alternate || null;
   } catch {
     return null;
   }

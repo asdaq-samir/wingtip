@@ -10,6 +10,7 @@ import SwiftUI
 /// verdict: of the canvas's looks the owner kept the chart's ink and the
 /// glass cockpit alone (2026-11-04).
 struct StripHead: View {
+    @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @Environment(Verdict.self) private var verdict
     @Environment(\.chartInk) private var ink
@@ -85,7 +86,7 @@ struct StripHead: View {
             // owner, 2026-11-09); in the chart's magenta, as the route is.
             Group {
                 if let tail = plan.tail {
-                    Button { Navigator.shared.push(.tail(ProfileAsk(tail: tail))) } label: { lineText }
+                    Button { nav.push(.tail(ProfileAsk(tail: tail))) } label: { lineText }
                         .buttonStyle(.plain)
                         .accessibilityHint("Opens \(tail)'s profile")
                 } else {

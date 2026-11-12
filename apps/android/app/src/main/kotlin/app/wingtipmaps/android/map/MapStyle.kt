@@ -630,11 +630,6 @@ object MapStyle {
      *  app's tappable blue, not iOS's systemBlue. */
     val TINT = hex(WingtipPalettes.Light.tint)
 
-    /** Own ship's pictures (OverlayPictures.ownShip): the airplane, and
-     *  the dot with no track. */
-    const val OWN_SHIP_ICON = "own-ship"
-    const val OWN_SHIP_DOT = "own-ship|dot"
-
     /** A colour as the "#rrggbb" a style takes. */
     fun hex(colour: androidx.compose.ui.graphics.Color): String =
         String.format(java.util.Locale.US, "#%06x", colour.toArgb() and 0xFFFFFF)

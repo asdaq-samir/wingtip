@@ -19,6 +19,7 @@ import SwiftUI
 /// no track (11.17.2.2), and gone once the fix is older than three
 /// seconds or worse than 30 m (11.17.2.3, 11.17.2.4's 30 m), never frozen.
 struct DiagramOwnShipView: View {
+    @Environment(InFlight.self) private var inFlight
     let ident: String
     let url: String
     @Environment(\.dismiss) private var dismiss
@@ -35,7 +36,7 @@ struct DiagramOwnShipView: View {
                     // Drawn again each second, so a fix that stops coming
                     // takes the airplane off rather than freezing it.
                     TimelineView(.periodic(from: .now, by: 1)) { context in
-                        page(diagram, fix: drawn(InFlight.shared.fix, now: context.date))
+                        page(diagram, fix: drawn(inFlight.fix, now: context.date))
                     }
                 } else if let problem {
                     ContentUnavailableView {
@@ -77,7 +78,7 @@ struct DiagramOwnShipView: View {
         let aid = "FAA · Planning aid, not for navigation"
         if let problem = diagram.problem { return "\(problem) \(aid)" }
         guard diagram.graticule != nil else { return "This diagram has no latitude and longitude marks to place the airplane by. \(aid)" }
-        let usable = Result { try DiagramPage.usable(InFlight.shared.fix, now: Date()) }
+        let usable = Result { try DiagramPage.usable(inFlight.fix, now: Date()) }
         if case .failure = usable { return "Your fix couldn't be checked for age and accuracy, so the airplane isn't drawn. \(aid)" }
         guard let fix = try? usable.get() else { return "Finding your position… \(aid)" }
         switch Result(catching: { try diagram.place(fix) }) {

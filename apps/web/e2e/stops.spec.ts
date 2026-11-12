@@ -118,13 +118,13 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   await settle(page);
   await openPanel(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
-  // In that order, and no cross on any pill.
+  // In that order, each a token of the route's field, no cross on any pill.
   const order = await lines.evaluate((el) =>
     [...el.querySelectorAll("[role=group], [data-testid=route-type], [data-testid=route-arrow]")].map(
       (n) => n.getAttribute("data-testid") ?? "",
     ),
   );
-  expect(order).toEqual(["route-dep", "route-arrow", "stop", "route-arrow", "stop", "route-arrow", "route-dest", "route-type"]);
+  expect(order).toEqual(["route-type", "route-dep", "route-arrow", "stop", "route-arrow", "stop", "route-arrow", "route-dest"]);
   expect(await lines.getByRole("button", { name: /^Remove/ }).count()).toBe(0);
 
   // What is typed after the last point is the new destination, the old
@@ -162,7 +162,7 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]dest=/);
   await expect(page).toHaveURL(/[?&]dep=KRYV(&|$)/);
-  await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("placeholder", "Destination");
+  await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("data-placeholder", "Destination");
   // And the last: no route, the plan's box empty to type another in.
   await lines.getByRole("group", { name: "Departure KRYV" }).focus();
   await page.keyboard.press("Delete");
@@ -186,12 +186,12 @@ test("a cleared route's box takes the departure first, then asks for the destina
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/[?&]dep=/);
   const field = sideDrawer(page).getByTestId("route-type");
-  await expect(field).toHaveAttribute("placeholder", "Route");
+  await expect(field).toHaveAttribute("data-placeholder", "Route");
   await field.fill("KMSN");
   await field.press("Enter");
   await expect(page).toHaveURL(/[?&]dep=KMSN(&|$)/);
   await expect(page).not.toHaveURL(/[?&]dest=/);
-  await expect(field).toHaveAttribute("placeholder", "Destination");
+  await expect(field).toHaveAttribute("data-placeholder", "Destination");
 });
 
 // Typed a key at a time, as a phone's keyboard sends it, the suggestions
@@ -207,7 +207,7 @@ test("Return after an ident typed key by key takes the first suggestion", async 
   await expect(page.getByTestId("route-suggestions").getByRole("option").first()).toBeVisible({ timeout: slow(10_000) });
   await field.press("Enter");
   await expect(page).toHaveURL(/[?&]dep=KUGN(&|$)/);
-  await expect(field).toHaveValue("");
+  await expect(field).toHaveAttribute("data-typed", "");
 });
 
 test("a link with a stop opens on the route through it", { tag: "@smoke" }, async ({ page }) => {
@@ -526,7 +526,7 @@ test("the route's box is round, one line tall for a short route and the panel's 
   // No "Add stop" after the destination, at the pilot's ask: a reader is
   // told what typing there does.
   const end = sideDrawer(page).getByTestId("route-type");
-  await expect(end).toHaveAttribute("placeholder", "");
+  await expect(end).toHaveAttribute("data-placeholder", "");
   await expect(end).toHaveAccessibleName("Add stop, the new destination");
 
   // A tap on the box's empty room past the destination's pill, short of the
@@ -734,7 +734,7 @@ test("an airport's card adds it as the route's next stop; a card of the route's 
   await expect(page).not.toHaveURL(/[?&]dest=/);
   // The route's box, at the pill's size.
   await controlsInSight(page);
-  await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("placeholder", "Destination");
+  await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("data-placeholder", "Destination");
 });
 
 test("a VFR waypoint on the chart is a magenta triangle with its ident, and its card adds it as a stop", async ({ page }) => {

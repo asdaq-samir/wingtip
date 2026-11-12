@@ -31,15 +31,15 @@ extension RootView {
             nav.sheetPage = .search
             search.presented = true
         case .favorites:
-            AirportShelf.shared.show(.favorites)
+            shelf.show(.favorites)
             show(screen)
         case .ask: ask(nil)
-        case .emergency: Emergency.shared.open = .link
+        case .emergency: emergency.open = .link
         case .airplane, .setup, .brief, .profile, .flights, .navlog, .nearest, .passengers, .checklists, .airplanes,
              .logbook, .coach, .minimums, .guide, .downloads, .about:
             show(screen)
         // A shared flight's preview opens from its link's keys
-        // (PendingCommand.sharedFlight); the name alone names no flight.
+        // (AppCommand.sharedFlight); the name alone names no flight.
         case .shared: break
         }
     }
