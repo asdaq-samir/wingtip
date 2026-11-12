@@ -1,7 +1,8 @@
 import { ExternalLink } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup } from "../../components/GroupedList";
-import { buttonVariants } from "../../components/ui/button";
+import { Button, buttonVariants } from "../../components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { TEXT } from "../../lib/text";
 import type { StudioHistory } from "./useStudioHistory";
 
@@ -23,12 +24,16 @@ export function WeatherThen({ history }: { history: StudioHistory }) {
         <Raw key={m.station}>{m.raw}</Raw>
       ))}
       {weather.tafs.length > 0 && (
-        <details>
-          <summary className={cn("cursor-pointer text-primary", TEXT.note)}>TAFs over the flight ({weather.tafs.length})</summary>
-          {weather.tafs.map((t) => (
-            <Raw key={`${t.station}${t.issued}`}>{t.raw}</Raw>
-          ))}
-        </details>
+        <Collapsible>
+          <CollapsibleTrigger render={<Button variant="link" size="inline" className={TEXT.note} />}>
+            TAFs over the flight ({weather.tafs.length})
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            {weather.tafs.map((t) => (
+              <Raw key={`${t.station}${t.issued}`}>{t.raw}</Raw>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
       )}
       <p className={cn("text-muted-foreground", TEXT.caption)}>
         {radar ? `Radar on the map: the ${radar.valid.slice(11, 16)}Z mosaic. ` : ""}
@@ -66,12 +71,14 @@ export function NtsbEvents({ history }: { history: StudioHistory }) {
             </>
           )}
           {e.narrative && (
-            <details>
-              <summary className={cn("cursor-pointer text-primary", TEXT.note)}>
+            <Collapsible>
+              <CollapsibleTrigger render={<Button variant="link" size="inline" className={TEXT.note} />}>
                 {e.narrative_kind === "final" ? "The NTSB's narrative" : "The NTSB's preliminary narrative"}
-              </summary>
-              <blockquote className={cn("border-l-2 border-border pl-3 whitespace-pre-wrap", TEXT.note)}>{e.narrative}</blockquote>
-            </details>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <blockquote className={cn("border-l-2 border-border pl-3 whitespace-pre-wrap", TEXT.note)}>{e.narrative}</blockquote>
+              </CollapsibleContent>
+            </Collapsible>
           )}
           <div className="flex flex-wrap gap-2">
             <a className={buttonVariants({ variant: "outline", size: "sm" })} href={e.carol_url} target="_blank" rel="noreferrer">
