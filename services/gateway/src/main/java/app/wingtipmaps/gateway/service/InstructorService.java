@@ -101,7 +101,6 @@ public class InstructorService {
             Mailer mail,
             PlannerClient planner,
             AppProperties app) {
-        String publicBaseUrl = app.publicBaseUrl();
         this.pilots = pilots;
         this.links = links;
         this.signed = signed;
@@ -112,7 +111,7 @@ public class InstructorService {
         this.lessons = lessons;
         this.mail = mail;
         this.planner = planner;
-        this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
+        this.publicBaseUrl = app.publicBaseUrl().replaceAll("/+$", "");
     }
 
     // ---- The student's side
