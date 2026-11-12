@@ -22,6 +22,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -60,9 +61,10 @@ enum class CardAction(@StringRes val label: Int, val icon: ImageVector) {
 /** Each kind of card's actions, in order (the web's CARD_ACTIONS); the
  *  first is the filled one. */
 enum class CardKind(val actions: List<CardAction>) {
-    /** Fly Here, Depart From and Add as Stop at the top (the owner's one
-     *  search, 2026-11-09), then Call and Address. */
-    AIRPORT(listOf(CardAction.FLY_HERE, CardAction.DEPART_FROM, CardAction.ADD_STOP, CardAction.CALL, CardAction.ADDRESS)),
+    /** Fly Here, Add as Stop and Call, then the Favorite tile (the owner,
+     *  2026-11-11: "fly here, add stop, call and address ... no need for
+     *  other buttons", then Favorite in Address's place). */
+    AIRPORT(listOf(CardAction.FLY_HERE, CardAction.ADD_STOP, CardAction.CALL)),
 
     /** A point on the map: the airspace card's. */
     POINT(listOf(CardAction.DIRECT_TO, CardAction.ADD_TO_ROUTE, CardAction.HOLD_HERE)),
@@ -89,8 +91,16 @@ fun CardActionRow(kind: CardKind, can: (CardAction) -> Boolean, onAction: (CardA
 
 /** One button of a card's group: its word, its glyph where it has one,
  *  whether it is the card's one filled action, whether it can be done
- *  now, and what it does. */
-class GroupAction(val label: String, val icon: ImageVector?, val filled: Boolean = false, val enabled: Boolean = true, val onClick: () -> Unit)
+ *  now, whether it is a toggle and on (`checked`; the Favorite tile), and
+ *  what it does. */
+class GroupAction(
+    val label: String,
+    val icon: ImageVector?,
+    val filled: Boolean = false,
+    val enabled: Boolean = true,
+    val checked: Boolean? = null,
+    val onClick: () -> Unit,
+)
 
 /**
  * A card's row of actions as Material's button group: each a labelled
@@ -123,7 +133,11 @@ fun CardButtonGroup(items: List<GroupAction>, modifier: Modifier = Modifier) {
                     }
                     val pad = ButtonDefaults.ButtonWithIconContentPadding
                     val press = Modifier.animateWidth(source, compressionLimit = pad.calculateEndPadding(LocalLayoutDirection.current))
-                    if (item.filled) {
+                    if (item.checked != null) {
+                        // A toggle, Material 3 Expressive's ToggleButton:
+                        // its own checked colours and shape morph.
+                        ToggleButton(checked = item.checked, onCheckedChange = { item.onClick() }, enabled = item.enabled, contentPadding = pad, interactionSource = source, modifier = press, content = content)
+                    } else if (item.filled) {
                         Button(onClick = item.onClick, enabled = item.enabled, shapes = ButtonDefaults.shapes(), contentPadding = pad, interactionSource = source, modifier = press, content = content)
                     } else {
                         FilledTonalButton(onClick = item.onClick, enabled = item.enabled, shapes = ButtonDefaults.shapes(), contentPadding = pad, interactionSource = source, modifier = press, content = content)

@@ -8,7 +8,9 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.airportNotams
 import app.wingtipmaps.android.api.airportPhotos
+import app.wingtipmaps.android.api.airportServices
 import app.wingtipmaps.android.api.generated.AirportPhotos
+import app.wingtipmaps.android.api.generated.AirportServices
 import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.offline.KeptForAir
 import kotlinx.coroutines.CancellationException
@@ -35,7 +37,8 @@ class AirportModel : ViewModel() {
          *  the air; null when it is the network's own. */
         val keptAtMs: Long? = null,
         /** The field's own NOTAMs and the TFRs within 5 nm of it, the
-         *  engine's ranking, for the card's NOTAMs and its alert card;
+         *  engine's ranking, for the card's NOTAMs and the badges on what
+         *  they address;
          *  null until fetched. */
         val notams: NotamsRanked? = null,
         val notamsProblem: String? = null,
@@ -47,6 +50,9 @@ class AirportModel : ViewModel() {
         val photos: AirportPhotos? = null,
         /** The pictures were asked, so none means none: the chart then. */
         val photosAsked: Boolean = false,
+        /** What the field offers on the ground, for its Fuel rows; null
+         *  until fetched, or where it could not be (the rows do without). */
+        val services: AirportServices? = null,
     )
 
     /** A departure field's ident and place, the distance's start. */
@@ -93,10 +99,11 @@ class AirportModel : ViewModel() {
                 val had = KeptForAir.had(KeptForAir.AIRPORTS, ident.trim().uppercase(), AirportPlace.serializer()) { Planner.place(ident.trim().uppercase()) }
                 val place = had.value
                 _state.update {
-                    it.copy(place = place, keptAtMs = had.fetchedAtMs.takeIf { had.kept }, suggestions = emptyList(), query = place.ident, problem = null, loading = false, notams = it.notams.takeIf { _ -> it.place?.ident == place.ident }, photos = it.photos.takeIf { _ -> it.place?.ident == place.ident }, photosAsked = it.photosAsked && it.place?.ident == place.ident)
+                    it.copy(place = place, keptAtMs = had.fetchedAtMs.takeIf { had.kept }, suggestions = emptyList(), query = place.ident, problem = null, loading = false, notams = it.notams.takeIf { _ -> it.place?.ident == place.ident }, services = it.services.takeIf { _ -> it.place?.ident == place.ident }, photos = it.photos.takeIf { _ -> it.place?.ident == place.ident }, photosAsked = it.photosAsked && it.place?.ident == place.ident)
                 }
-                // Asked with the card, not the tab: the alert card first on
-                // it reads them too.
+                // Asked with the card, not the tab: the badges on its
+                // runways, lights and frequencies read them too.
+                launch { loadServices(place.ident) }
                 loadNotams(place.ident)
             } catch (e: CancellationException) {
                 throw e
@@ -114,6 +121,18 @@ class AirportModel : ViewModel() {
             val photos = runCatching { Planner.airportPhotos(ident) }.getOrNull()
             _state.update { if (it.place?.ident == ident) it.copy(photos = photos, photosAsked = true) else it }
         }
+    }
+
+    /** The field's services, for its Fuel rows; none where they cannot be had. */
+    private suspend fun loadServices(ident: String) {
+        val services = try {
+            Planner.airportServices(ident)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            return
+        }
+        _state.update { if (it.place?.ident == ident) it.copy(services = services) else it }
     }
 
     /**
