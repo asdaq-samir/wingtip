@@ -481,6 +481,7 @@ jobs:
                 - services/planner/app/generated/**
                 - engine/contract/**
                 - scripts/build/assistant*
+                - scripts/build/planner_calls.py
               test-weather:
                 - services/weather/**
                 - services/planner/wingtip/**

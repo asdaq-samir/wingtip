@@ -35,3 +35,12 @@ swiftformat 0.64.6
 ktlint 1.8.0
 palantir-java-format 2.103.0
 prettier 3.9.10
+# The release binary scripts/build/tool.sh fetches to install the tools
+# below (mise cannot install itself); its sums are in that script.
+mise 2026.11.7
+# Installed by mise through scripts/build/tool.sh, at these versions, on the
+# Mac, in the pre-push hook and in CI (ci.yml's guards job).
+shellcheck 0.11.0
+actionlint 1.7.12
+zizmor 1.32.0
+lychee 0.24.2

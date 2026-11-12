@@ -19,8 +19,8 @@
 # Generated files and services/planner/app/detection.py (hashed, CLAUDE.md)
 # are left out by each tool's own settings. Where a tool is missing it is
 # fetched: Prettier through npx (Docker's node, as the Mac has none),
-# ruff through uvx or pipx, SwiftFormat and ktlint as their release
-# binaries, checked against the sums below, into ~/.cache/wingtip-format.
+# ruff through uvx or pipx, SwiftFormat and ktlint through mise
+# (scripts/build/tool.sh, at .tool-versions' versions).
 # palantir-java-format's version is the pom's (Spotless), Prettier's
 # apps/web/package.json's; scripts/build/toolchain.sh --check holds both,
 # and the sums' versions, to .tool-versions.
@@ -35,17 +35,8 @@ PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HO
 
 tool() { "$here/scripts/build/toolchain.sh" get "$1"; }
 RUFF=$(tool ruff)
-SWIFTFORMAT=$(tool swiftformat)
-KTLINT=$(tool ktlint)
-# Each release binary's sum, beside the version it is the sum of: a bump in
-# .tool-versions changes it here too, or --check says so.
-SWIFTFORMAT_SUM="0.64.6 70e6b2057647fb1c54d620ebbb6649274de56534c57f91f67461a129ebaaba3e"
-KTLINT_SUM="1.8.0 a3fd620207d5c40da6ca789b95e7f823c54e854b7fade7f613e91096a3706d75"
-SWIFTFORMAT_SHA256=${SWIFTFORMAT_SUM#* }
-KTLINT_SHA256=${KTLINT_SUM#* }
 # Prettier's, the one apps/web/package.json pins and CI's npm ci installs.
 PRETTIER=$(tool prettier)
-CACHE=${XDG_CACHE_HOME:-$HOME/.cache}/wingtip-format
 
 check=""
 docker_ok=1
@@ -63,31 +54,6 @@ named=${#langs[@]}
 [ "$named" -gt 0 ] || langs=(web python rust swift kotlin java)
 
 note() { echo "format: $*" >&2; }
-sha256() {
-  if command -v shasum >/dev/null; then shasum -a 256 "$1" | cut -d' ' -f1; else sha256sum "$1" | cut -d' ' -f1; fi
-}
-
-# A release binary at its pinned version, fetched once and checked against
-# its sum; prints its path.
-fetch() {
-  local name=$1 version=$2 sum=$3 url=$4 dir=$CACHE/$1-$2 tmp
-  if [ ! -x "$dir/$name" ]; then
-    mkdir -p "$dir" && tmp=$(mktemp -d) || return 1
-    curl -fsSL -o "$tmp/download" "$url" || { rm -rf "$tmp"; return 1; }
-    if [ "$(sha256 "$tmp/download")" != "$sum" ]; then
-      note "$name $version: the download's sum is not the pinned one; not used"
-      rm -rf "$tmp"
-      return 1
-    fi
-    case "$url" in
-      *.zip) (cd "$tmp" && unzip -q download && mv "$name" "$dir/$name") ;;
-      *) mv "$tmp/download" "$dir/$name" ;;
-    esac
-    chmod +x "$dir/$name"
-    rm -rf "$tmp"
-  fi
-  echo "$dir/$name"
-}
 
 docker_up() { [ -n "$docker_ok" ] && command -v docker >/dev/null && docker info >/dev/null 2>&1; }
 
@@ -132,18 +98,12 @@ run_rust() {
 }
 
 run_swift() {
-  local sf=""
-  if command -v swiftformat >/dev/null && [ "$(swiftformat --version 2>/dev/null)" = "$SWIFTFORMAT" ]; then sf=swiftformat
-  elif [ "$(uname -s)" = Darwin ]; then
-    sf=$(fetch swiftformat "$SWIFTFORMAT" "$SWIFTFORMAT_SHA256" \
-      "https://github.com/nicklockwood/SwiftFormat/releases/download/$SWIFTFORMAT/swiftformat.zip") || sf=""
-  fi
-  [ -n "$sf" ] || { note "swift: skipped, no SwiftFormat $SWIFTFORMAT here"; return 3; }
-  "$sf" "$here/apps/ios" --quiet ${check:+--lint}
+  "$here/scripts/build/tool.sh" --have swiftformat || { note "swift: skipped, no SwiftFormat $(tool swiftformat) here"; return 3; }
+  "$here/scripts/build/tool.sh" swiftformat "$here/apps/ios" --quiet ${check:+--lint}
 }
 
 run_kotlin() {
-  local kt="" jbr
+  local jbr
   # A Java for ktlint: JAVA_HOME's, else the PATH's, else .tool-versions'
   # JDK, the one the Android build runs on (check.sh's pick).
   local java
@@ -156,14 +116,10 @@ run_kotlin() {
     note "kotlin: skipped, ktlint needs a Java here"
     return 3
   fi
-  if command -v ktlint >/dev/null && [ "$(ktlint --version 2>/dev/null)" = "ktlint version $KTLINT" ]; then kt=ktlint
-  else
-    kt=$(fetch ktlint "$KTLINT" "$KTLINT_SHA256" "https://github.com/pinterest/ktlint/releases/download/$KTLINT/ktlint") || kt=""
-  fi
-  [ -n "$kt" ] || { note "kotlin: skipped, no ktlint $KTLINT here"; return 3; }
+  "$here/scripts/build/tool.sh" --have ktlint || { note "kotlin: skipped, no ktlint $(tool ktlint) here"; return 3; }
   local mode=(--format)
   [ -z "$check" ] || mode=()
-  (cd "$here/apps/android" && "$kt" --relative "${mode[@]+"${mode[@]}"}" '**/*.kt' '**/*.kts' '!**/generated/**' '!**/build/**')
+  (cd "$here/apps/android" && "$here/scripts/build/tool.sh" ktlint --relative "${mode[@]+"${mode[@]}"}" '**/*.kt' '**/*.kts' '!**/generated/**' '!**/build/**')
 }
 
 run_java() {
