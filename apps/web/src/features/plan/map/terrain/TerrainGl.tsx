@@ -11,6 +11,7 @@ import ObstaclesGl from "./ObstaclesGl";
 import PilotCamera from "./PilotCamera";
 import SkyGl from "./SkyGl";
 import TrafficAloftGl from "./TrafficAloftGl";
+import { ReplayCameraGl } from "../../../replay";
 import type { TerrainMode } from "./useTerrainView";
 
 /** How long the map takes to tilt into 3D and back (MapLibre makes it
@@ -104,6 +105,8 @@ export default function TerrainGl({
       {field && <ApproachGl key={field} ident={field} picked={procedures} />}
       <TrafficAloftGl />
       {pilot && <PilotCamera />}
+      {/* A replay's camera (features/replay), the pilot's view taking it while on. */}
+      {!pilot && <ReplayCameraGl />}
     </>
   );
 }

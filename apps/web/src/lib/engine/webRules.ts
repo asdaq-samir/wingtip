@@ -174,6 +174,7 @@ export const WEB_RULES = [
   "readback_check",
   "ready_to_fly",
   "registered_profile",
+  "replay_track",
   "route_position",
   "runway_calm",
   "runway_crosswind",

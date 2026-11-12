@@ -47,25 +47,42 @@ export function routeSearch(search: string): string {
  * page -- signed out from the developer console, or a session that
  * ended -- whom DevGuard takes to the map.
  */
+export type AppMode = "pilot" | "developer" | "studio";
+
+/** The page a mode is, by its address. */
+export function modeOf(pathname: string): AppMode {
+  return pathname.startsWith("/dev") ? "developer" : pathname.startsWith("/studio") ? "studio" : "pilot";
+}
+
 export function useDevMode() {
   const { data: pilot, isSuccess: pilotKnown } = useQuery(pilotQuery);
   const { data: capabilities } = useQuery(capabilitiesQuery);
   const { pathname, search, state } = useLocation();
   const navigate = useNavigate();
-  const on = pathname.startsWith("/dev");
-  const flip = () => {
-    if (on) {
-      // No state at all (Dev opened directly, a bookmark or a fresh
-      // tab) falls back to the map, with Dev's own route.
+  const mode = modeOf(pathname);
+  const on = mode === "developer";
+  // The Studio (features/studio) is offered and refused as Dev is: the
+  // developer's for now, at the owner's pick (2026-11-12, "You only for
+  // now"). Its address keeps its own track (`q`, `day`); the route comes
+  // and goes as it does to Dev.
+  const go = (next: AppMode) => {
+    if (next === mode) return;
+    if (next === "pilot") {
+      // No state at all (opened directly, a bookmark or a fresh tab)
+      // falls back to the map, with the page's own route.
       const from = (state as { from?: string } | null)?.from;
       void navigate(from ?? `/plan${routeSearch(search)}`);
-    } else {
-      void navigate(`/dev${routeSearch(search)}`, { state: { from: pathname + search } });
+      return;
     }
+    // Where Plan was is remembered on the way to either, and carried
+    // between them, for the way back.
+    const from = mode === "pilot" ? pathname + search : ((state as { from?: string } | null)?.from ?? undefined);
+    void navigate(`/${next === "developer" ? "dev" : "studio"}${routeSearch(search)}`, { state: { from } });
   };
+  const flip = () => go(on ? "pilot" : "developer");
   // Undefined while either query is in flight: the switch appears when
   // the answer does, rather than flashing in and out.
   const allowed = pilot?.developer === true || capabilities?.access === "OPEN";
-  const refused = on && pilotKnown && capabilities !== undefined && !allowed;
-  return { on, flip, allowed, refused, navigate, search };
+  const refused = mode !== "pilot" && pilotKnown && capabilities !== undefined && !allowed;
+  return { on, mode, go, flip, allowed, refused, navigate, search };
 }

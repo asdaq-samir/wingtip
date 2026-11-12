@@ -65,6 +65,7 @@ from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
 from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words, plates
+from .routers import studio
 from .routers import engine as engine_router, forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
 from .schemas.common import Index
 from .settings import get_settings
@@ -109,8 +110,7 @@ FAA_DATA_AUTO_REFRESH = get_settings().faa_data_auto_refresh
 CYCLE_PACK = get_settings().cycle_pack
 # Set once the reference data below is loaded: the health probe reports
 # it, so a test run against a fresh stack can wait for a planner that
-# answers at full speed rather than one still parsing airspace under
-# its first requests.
+# answers at full speed rather than one still parsing airspace under its first requests.
 WARM = threading.Event()
 
 
@@ -267,8 +267,7 @@ def _warm_reference_data() -> None:
     # day; a card before it is in shows no registration. Its own switch
     # (REGISTRY_REFRESH), not the charts': the server draws no charts
     # (CHARTS_AUTO_REFRESH=0 there too), and gated on that, it never read
-    # the registry at all. Off on a test stack, which downloads nothing it
-    # need not.
+    # the registry at all. Off on a test stack, which downloads nothing it need not.
     if REGISTRY_REFRESH:
         try:
             registry.refresh()
@@ -442,6 +441,7 @@ for module in (
     coach,
     mcp,
     plates,
+    studio,
 ):
     app.include_router(module.router)
 

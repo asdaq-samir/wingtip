@@ -9512,6 +9512,81 @@ enum EngineContract {
         var remarks: [String]
     }
 
+    struct ReplayTrackAnswer: Codable, Equatable, Sendable {
+        var points: [EngineContract.ReplayTrackAnswerPointsItem]
+        var gaps: [EngineContract.ReplayTrackAnswerGapsItem]
+        var lengthNm: Double
+
+        enum CodingKeys: String, CodingKey {
+            case points
+            case gaps
+            case lengthNm = "length_nm"
+        }
+    }
+
+    struct ReplayTrackAnswerGapsItem: Codable, Equatable, Sendable {
+        var from: Double
+        var to: Double
+    }
+
+    struct ReplayTrackAnswerPointsItem: Codable, Equatable, Sendable {
+        var t: Double
+        var lat: Double
+        var lon: Double
+        var altFt: Double?
+        var gsKt: Double?
+        var trackDeg: Double?
+        var vsFpm: Double?
+        var alongNm: Double
+        var gap: Bool
+        var ground: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case t
+            case lat
+            case lon
+            case altFt = "alt_ft"
+            case gsKt = "gs_kt"
+            case trackDeg = "track_deg"
+            case vsFpm = "vs_fpm"
+            case alongNm = "along_nm"
+            case gap
+            case ground
+        }
+    }
+
+    struct ReplayTrackInput: Codable, Equatable, Sendable {
+        var points: [EngineContract.ReplayTrackInputPointsItem]
+        var gapS: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case points
+            case gapS = "gap_s"
+        }
+    }
+
+    struct ReplayTrackInputPointsItem: Codable, Equatable, Sendable {
+        /// s since 1970
+        var t: Double
+        var lat: Double
+        var lon: Double
+        /// Pressure altitude, ft; null on the ground or not sent
+        var altFt: Double?
+        var gsKt: Double?
+        var trackDeg: Double?
+        var ground: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case t
+            case lat
+            case lon
+            case altFt = "alt_ft"
+            case gsKt = "gs_kt"
+            case trackDeg = "track_deg"
+            case ground
+        }
+    }
+
     struct ReserveMinInput: Codable, Equatable, Sendable {
         var ifr: Bool?
         var night: Bool?

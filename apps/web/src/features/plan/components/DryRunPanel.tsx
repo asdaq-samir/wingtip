@@ -10,6 +10,7 @@ import { Slider } from "../../../components/ui/slider";
 import { PlaybackButton, PlaybackToggle, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../../components/PlaybackBar";
 import { playbackKey } from "../../../components/playbackKeys";
 import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlight } from "../map/pastFlight";
+import { toggleReplay } from "../../replay";
 import { routeProfileQuery } from "../../../lib/queryClient";
 import { TEXT } from "../../../lib/text";
 import { altFt, feet } from "../../../lib/format";
@@ -68,8 +69,13 @@ export function DryRunControls({
   // at the owner's ask ("just show a go missed button when on the final of
   // the approach").
   const onFinal = !!run.final && !missed && !!onMissed && second !== null && second >= run.final.from && second < run.final.to;
-  // Play or pause, from the toggle, Space on the bar, or Space on the chart.
-  const toggle = () => (usePastFlight.getState().playing ? pausePastFlight() : playPastFlight());
+  // Play or pause, from the toggle, Space on the bar, or Space on the
+  // chart: the map's one replay clock's, as every replay's (features/replay).
+  // TODO(claude/studio): the scrubber over the chart and the speed menu to
+  // be ReplayTimeline's once it takes miles along the course as its x, and
+  // the pilot's view a camera of features/replay/camera (ReplayCameraGl's
+  // TODO), so the dry run offers Chase, Orbit and Tower as the Studio does.
+  const toggle = toggleReplay;
   // The run seen from the pilot's seat over the 3D ground, or the chart
   // from above (features/plan/map/terrain's PilotCamera): a toggle among the
   // run's own controls, put back to the chart as the run is put away.

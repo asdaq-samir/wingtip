@@ -7539,6 +7539,78 @@ data class StopField (
     val training: List<NearbyPlace>? = null
 )
 
+/**
+ * The ground's height under each point asked, ft MSL, in order: the
+ * elevation tiles (USGS 3DEP and SRTM, wingtip.elevation).
+ */
+@Serializable
+data class StudioGround (
+    @SerialName("ground_ft")
+    val groundFt: List<Double>
+)
+
+/**
+ * Points along a replayed track, [lat, lon] each, for the ground
+ * under them: the Studio's profile strip.
+ */
+@Serializable
+data class StudioGroundAsk (
+    val points: List<List<Double>>
+)
+
+/**
+ * An airplane's reports on a UTC day, for the Studio's replay
+ * (wingtip.traffic.day_tracks), with where they came from, which the
+ * Studio shows (ODbL 1.0 asks for it).
+ */
+@Serializable
+data class StudioTrack (
+    val altitude: String,
+    val day: String,
+    val hex: String,
+    val license: String,
+    val points: List<StudioReport>,
+    val registration: String? = null,
+    val source: String,
+    val type: String? = null
+)
+
+/**
+ * One report of the day: when (s since 1970), where, its altitude
+ * (ft; the transponder's pressure altitude for adsb.lol's day, see
+ * `altitude`; None on the ground), ground speed (kt), track (degrees
+ * true) and whether it was on the ground.
+ */
+@Serializable
+data class StudioReport (
+    @SerialName("alt_ft")
+    val altFt: Double? = null,
+
+    val ground: Boolean? = null,
+
+    @SerialName("gs_kt")
+    val gsKt: Double? = null,
+
+    val lat: Double,
+    val lon: Double,
+    val t: Double,
+
+    @SerialName("track_deg")
+    val trackDeg: Double? = null
+)
+
+/**
+ * An airplane followed here (its card opened), whose reports are
+ * recorded (wingtip.traffic.recorded): one the Studio can replay without
+ * asking adsb.lol.
+ */
+@Serializable
+data class StudioWatched (
+    val days: List<String>,
+    val hex: String,
+    val registration: String? = null
+)
+
 @Serializable
 data class Tfrs (
     val tfrs: List<Tfr>

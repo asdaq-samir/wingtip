@@ -20687,6 +20687,214 @@
         "title": "StopFields",
         "type": "object"
       },
+      "StudioGround": {
+        "description": "The ground's height under each point asked, ft MSL, in order: the\nelevation tiles (USGS 3DEP and SRTM, wingtip.elevation).",
+        "properties": {
+          "ground_ft": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Ground Ft",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ground_ft"
+        ],
+        "title": "StudioGround",
+        "type": "object"
+      },
+      "StudioGroundAsk": {
+        "description": "Points along a replayed track, [lat, lon] each, for the ground\nunder them: the Studio's profile strip.",
+        "properties": {
+          "points": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "maxItems": 400,
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "points"
+        ],
+        "title": "StudioGroundAsk",
+        "type": "object"
+      },
+      "StudioReport": {
+        "description": "One report of the day: when (s since 1970), where, its altitude\n(ft; the transponder's pressure altitude for adsb.lol's day, see\n`altitude`; None on the ground), ground speed (kt), track (degrees\ntrue) and whether it was on the ground.",
+        "properties": {
+          "alt_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alt Ft"
+          },
+          "ground": {
+            "default": false,
+            "title": "Ground",
+            "type": "boolean"
+          },
+          "gs_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gs Kt"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "t": {
+            "title": "T",
+            "type": "number"
+          },
+          "track_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Deg"
+          }
+        },
+        "required": [
+          "t",
+          "lat",
+          "lon"
+        ],
+        "title": "StudioReport",
+        "type": "object"
+      },
+      "StudioTrack": {
+        "description": "An airplane's reports on a UTC day, for the Studio's replay\n(wingtip.traffic.day_tracks), with where they came from, which the\nStudio shows (ODbL 1.0 asks for it).",
+        "properties": {
+          "altitude": {
+            "enum": [
+              "pressure",
+              "reported"
+            ],
+            "title": "Altitude",
+            "type": "string"
+          },
+          "day": {
+            "title": "Day",
+            "type": "string"
+          },
+          "hex": {
+            "title": "Hex",
+            "type": "string"
+          },
+          "license": {
+            "title": "License",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/StudioReport"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "registration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          }
+        },
+        "required": [
+          "hex",
+          "day",
+          "points",
+          "altitude",
+          "source",
+          "license"
+        ],
+        "title": "StudioTrack",
+        "type": "object"
+      },
+      "StudioWatched": {
+        "description": "An airplane followed here (its card opened), whose reports are\nrecorded (wingtip.traffic.recorded): one the Studio can replay without\nasking adsb.lol.",
+        "properties": {
+          "days": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "hex": {
+            "title": "Hex",
+            "type": "string"
+          },
+          "registration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration"
+          }
+        },
+        "required": [
+          "hex",
+          "days"
+        ],
+        "title": "StudioWatched",
+        "type": "object"
+      },
       "TerminalChart": {
         "description": "One of a field's charts in the d-TPP (wingtip.publications): `kind` the\nFAA's chart code -- APD the airport diagram, HOT its hot spots, LAH\nland and hold short, IAP an approach, DP and ODP a departure, STR an\narrival, MIN the takeoff or alternate minimums -- `name` its title as\nthe FAA prints it, `url` its PDF.",
         "properties": {
@@ -29554,6 +29762,133 @@
         "summary": "Stops Near",
         "x-gateway": {
           "access": "public"
+        }
+      }
+    },
+    "/api/studio/ground": {
+      "post": {
+        "description": "The ground under a replayed track's points, ft MSL, for its profile\nstrip (wingtip.elevation: the elevation tiles, then USGS's EPQS).",
+        "operationId": "studio_ground_api_studio_ground_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudioGroundAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudioGround"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Studio Ground",
+        "x-gateway": {
+          "access": "developer"
+        }
+      }
+    },
+    "/api/studio/track": {
+      "get": {
+        "description": "The airplane's reports on a UTC day (wingtip.traffic.day_tracks): a\npast day from the store, fetched from adsb.lol's history once where it\nis not there yet; today's from its recent trace. A 404 for a name the\nregistry does not know, a 422 for a day to come, a 503 where adsb.lol\ncannot be read now.",
+        "operationId": "studio_track_api_studio_track_get",
+        "parameters": [
+          {
+            "description": "N-number or ICAO address",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "N-number or ICAO address",
+              "maxLength": 12,
+              "minLength": 2,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The UTC day",
+            "in": "query",
+            "name": "day",
+            "required": true,
+            "schema": {
+              "description": "The UTC day",
+              "format": "date",
+              "title": "Day",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudioTrack"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Studio Track",
+        "x-gateway": {
+          "access": "developer"
+        }
+      }
+    },
+    "/api/studio/watched": {
+      "get": {
+        "description": "The airplanes followed here, with the UTC days their recorded\nreports fall on, newest first (wingtip.traffic.day_tracks.watched_days).",
+        "operationId": "studio_watched_api_studio_watched_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StudioWatched"
+                  },
+                  "title": "Response Studio Watched Api Studio Watched Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Studio Watched",
+        "x-gateway": {
+          "access": "developer"
         }
       }
     },

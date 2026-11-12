@@ -14,7 +14,10 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { useConfirm } from "../../components/useConfirm";
-import { useDevMode } from "../../hooks/use-dev-mode";
+import { useDevMode, type AppMode } from "../../hooks/use-dev-mode";
+
+/** Each page as the menu names it. */
+const MODE_NAMES: Record<AppMode, string> = { pilot: "Pilot", developer: "Developer", studio: "Studio" };
 import { pilotQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
 import { useDeleteAccount } from "./useDeleteAccount";
@@ -22,7 +25,7 @@ import { useExportAccount } from "./useExportAccount";
 import { useLogout } from "./useLogout";
 
 /**
- * The mode menu alone -- Pilot or Developer, a copy of the account's
+ * The mode menu alone -- Pilot, Developer or Studio, a copy of the account's
  * data, signing out, deleting the account -- where the address is set apart from it: at the right of
  * Setup's Account title, the address under that title, at the owner's
  * ask ("Email doesn't need to be in the table, it can be under account").
@@ -56,7 +59,7 @@ export function AccountMenu() {
             />
           }
         >
-          {devMode.on ? "Developer" : "Pilot"}
+          {MODE_NAMES[devMode.mode]}
           <ChevronDown className="text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-44">
@@ -76,14 +79,14 @@ export function AccountMenu() {
               <DropdownMenuSeparator />
             </>
           )}
-          <DropdownMenuRadioGroup
-            value={devMode.on ? "developer" : "pilot"}
-            onValueChange={(v) => {
-              if ((v === "developer") !== devMode.on) devMode.flip();
-            }}
-          >
+          <DropdownMenuRadioGroup value={devMode.mode} onValueChange={(v) => devMode.go(v as AppMode)}>
             <DropdownMenuRadioItem value="pilot">Pilot</DropdownMenuRadioItem>
             {devMode.allowed && <DropdownMenuRadioItem value="developer">Developer</DropdownMenuRadioItem>}
+            {devMode.allowed && (
+              <DropdownMenuRadioItem value="studio" data-testid="mode-studio">
+                Studio
+              </DropdownMenuRadioItem>
+            )}
           </DropdownMenuRadioGroup>
           {pilot && (
             <>

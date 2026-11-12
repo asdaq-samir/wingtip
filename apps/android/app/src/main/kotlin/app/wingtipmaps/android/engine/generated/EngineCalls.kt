@@ -1711,6 +1711,12 @@ fun Engine.remarksRead(remarks: List<String>): Result<EngineContract.RemarksRead
     rule("remarks_read", EngineContract.RemarksReadInput(remarks = remarks))
 
 /**
+ * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude averaged over 10 s each side (a transponder's 25 ft steps, DO-260B) and the position over 2 s; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
+ */
+fun Engine.replayTrack(points: List<EngineContract.ReplayTrackInputPointsItem>, gapS: Double? = null): Result<EngineContract.ReplayTrackAnswer> =
+    rule("replay_track", EngineContract.ReplayTrackInput(points = points, gapS = gapS))
+
+/**
  * The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).
  */
 fun Engine.reserveMin(ifr: Boolean? = null, night: Boolean? = null): Result<Double> =

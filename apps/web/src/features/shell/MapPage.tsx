@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { showError } from "../../lib/problems";
 import { patched, useSearchParamsNow } from "../../lib/useSearchParamsNow";
 import { Shown } from "../../lib/shown";
@@ -15,51 +15,17 @@ import { EmergencyHost } from "../emergency";
 import { AirplaneProfileHost } from "../airplane";
 import { AutoLogbookHost } from "../logbook-auto";
 import { SharedFlightHost } from "../shared-flight";
-import { BootMap, PlanWorkspace } from "../plan";
-import { loadTrainWorkspace } from "../chart-labels";
+import { BootMap } from "../plan";
+import { MODES, type Mode } from "./modes";
 import { isDesktopNow, useIsDesktop } from "../../hooks/use-desktop";
 import { useShortcuts } from "../../hooks/use-shortcuts";
 import ConsoleLayer from "./ConsoleLayer";
 import type { WorkspacePieces } from "./workspace";
 
-/** Setup's pill (the switches, the account), with the console's code
- *  rather than the page's first load: asked for once the page has drawn,
- *  with the settings (below), and drawn straight from the chunk then
- *  (fromChunk) -- under lazy() alone the first tap on Setup waited on it,
- *  an empty pill for a moment, at the owner's notice ("why is setup tab
- *  slow to load"). */
-
-/** The training workspace on its own chunk. It carries the developer's console -- charts, tables, the model
- *  registry -- and a pilot loading the planner has no use for any of it; eagerly imported here it was about half
- *  of the page's JavaScript, parsed on every visit. React's own `lazy`, resolved while the `Suspense` below shows
- *  the empty shell. */
-const TrainWorkspace = lazy(loadTrainWorkspace);
-
-type Mode = "pilot" | "dev";
-
-/** What differs between the two pages: the words, the workspace, and
- *  the route to start on when the address names none (the planner
- *  asks the server for a collected one instead). */
-const MODES = {
-  pilot: {
-    title: "Plan a route — Wingtip Maps",
-    panel: "Flight Planning",
-    console: "Pilot",
-    Workspace: PlanWorkspace,
-    route: ["", ""] as const,
-  },
-  dev: {
-    title: "Dev — Wingtip Maps",
-    panel: "Model Training",
-    console: "Developer",
-    Workspace: TrainWorkspace,
-    route: ["C81", "KDLH"] as const,
-  },
-};
-
 /**
- * The one page, in two modes: the pilot's planner and the developer's
- * training workspace are the same shell around a different workspace --
+ * The one page, in three modes: the pilot's planner, the developer's
+ * training workspace and the Studio's replays are the same shell around a
+ * different workspace --
  * the chart filling the screen, the map's buttons floating over it, and
  * one panel over it the way Maps on an iPhone has one (MapPanel): the
  * route form and the console's button always in sight, and under them
@@ -265,7 +231,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
     // the engine waits on its own (lib/engine/engineGate). The developer's
     // workspace asks it as it renders, so waits for it whole.
     <Suspense fallback={<BootMapPage />}>
-      <EngineGate fallback={<BootMapPage />} when={mode === "dev"}>
+      <EngineGate fallback={<BootMapPage />} when={mode !== "pilot"}>
         <Workspace dep={dep} dest={dest} panel={panel} setPanel={setPanel}>
           {(pieces) => {
             // The route's row built once a render, the same element as the top

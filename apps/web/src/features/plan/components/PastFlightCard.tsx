@@ -1,19 +1,19 @@
 import { Suspense, lazy, memo, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table";
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
-import { Gauge, MoveVertical, Pause, Play, PlaneLanding, PlaneTakeoff, Route, Square, Timer } from "lucide-react";
+import { Gauge, MoveVertical, PlaneLanding, PlaneTakeoff, Route, Timer } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { CardHead } from "../../../components/CardHead";
 import { SheetCard } from "../../../components/SheetCard";
-import RoundButton from "../../../components/RoundButton";
 import { RowBadge } from "../../../components/RowBadge";
-import Segmented from "../../../components/Segmented";
 import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../../lib/api/types";
 import { clockTime } from "../../../lib/format";
 import { compassPoint } from "../../../lib/compass";
 import { distanceNm } from "../../../lib/geo";
-import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, stopPastFlight, usePastFlight } from "../map/pastFlight";
+import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight } from "../map/pastFlight";
+import { usePreferences } from "../../../lib/preferences";
+import { CameraMenu, ReplayTimeline, setReplayCamera } from "../../replay";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
 import { altFt, bearing, grouped } from "../../../lib/format";
@@ -143,43 +143,24 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
   );
 }
 
-const SPEED_OPTIONS = REPLAY_SPEEDS.map((n) => ({ value: String(n), label: `${n}×` }));
-
-/** The replay's controls: play or pause, stop, and how fast. */
+/** The replay's controls: the timeline every replay plays on
+ *  (features/replay's ReplayTimeline) -- play or pause, stop, how fast,
+ *  and its time scrubbed in Zulu and local -- with the camera's menu
+ *  where the map is in 3D (features/replay/camera), the Studio's own. */
 function Replay() {
   const points = usePastFlight((s) => s.points);
-  const playing = usePastFlight((s) => s.playing);
-  const speed = usePastFlight((s) => s.speed);
-  const started = usePastFlight((s) => s.at !== null);
+  const threeD = usePreferences((s) => s.terrain === "3d");
+  // The camera let go with the card: the map the pilot's again.
+  useEffect(() => () => setReplayCamera(null), []);
   return (
     // No title over it: the card's name says what is replayed, and the
     // room is the graph's at the half sheet.
     <ListGroup>
-      <ListRow
-        title={
-          <span className="flex items-center gap-2">
-            <RoundButton
-              label={playing ? "Pause" : "Play"}
-              onClick={playing ? pausePastFlight : playPastFlight}
-              disabled={!points.length}
-              data-testid="replay-play"
-            >
-              {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
-            </RoundButton>
-            <RoundButton label="Stop" onClick={stopPastFlight} disabled={!started} data-testid="replay-stop">
-              <Square className="size-5" />
-            </RoundButton>
-          </span>
-        }
-      >
-        <Segmented
-          label="Replay speed"
-          value={String(speed)}
-          onChange={(v) => usePastFlight.setState({ speed: Number(v) })}
-          options={SPEED_OPTIONS}
-          testId="replay-speed"
-        />
-      </ListRow>
+      <div className="px-3 py-2">
+        <ReplayTimeline label="Replay" speeds={REPLAY_SPEEDS} onStop={stopPastFlight} testId="replay">
+          {threeD && <CameraMenu testId="replay-camera" />}
+        </ReplayTimeline>
+      </div>
       {points.length > 1 && <ReplayChart points={points} />}
     </ListGroup>
   );
