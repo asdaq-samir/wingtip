@@ -9173,6 +9173,168 @@
         "title": "FlowAtAirports",
         "type": "object"
       },
+      "FlowField": {
+        "description": "How a field's PNG holds it: its unit, the values its channel's 0\nand 255 stand for (a 255th a step between), and whether it is the\nwind, its east part in red and its north part in green.",
+        "properties": {
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "unscale": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Unscale",
+            "type": "array"
+          },
+          "vector": {
+            "title": "Vector",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "unit",
+          "unscale",
+          "vector"
+        ],
+        "title": "FlowField",
+        "type": "object"
+      },
+      "FlowFrame": {
+        "description": "One hour of the flow layer's timeline (wingtip.weather_flow): its\nid (YYYYMMDDHH, the PNGs' address), when it is valid, ISO UTC, the\nmodels that made it (\"HRRR and GFS\" over the lower 48 and the GFS\nbeyond, or the GFS alone) with each one's run and forecast hour,\nwhether its hour has come (`past`), the fields it has, and for a past\nhour the radar mosaic made by then, XYZ tiles, None with none.",
+        "properties": {
+          "fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "gfs_forecast_hour": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gfs Forecast Hour"
+          },
+          "gfs_run": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gfs Run"
+          },
+          "hrrr_forecast_hour": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hrrr Forecast Hour"
+          },
+          "hrrr_run": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hrrr Run"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "past": {
+            "title": "Past",
+            "type": "boolean"
+          },
+          "radar_tiles": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radar Tiles"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "valid",
+          "model",
+          "past",
+          "fields"
+        ],
+        "title": "FlowFrame",
+        "type": "object"
+      },
+      "FlowLayer": {
+        "description": "The flow layer's timeline, oldest frame first; the pictures' box,\n[west, south, east, north] degrees; each field's encoding; when the\nweather service fetched it, UNIX seconds; and the credit.",
+        "properties": {
+          "bounds": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Bounds",
+            "type": "array"
+          },
+          "credit": {
+            "title": "Credit",
+            "type": "string"
+          },
+          "fetched_at": {
+            "title": "Fetched At",
+            "type": "number"
+          },
+          "fields": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FlowField"
+            },
+            "title": "Fields",
+            "type": "object"
+          },
+          "frames": {
+            "items": {
+              "$ref": "#/components/schemas/FlowFrame"
+            },
+            "title": "Frames",
+            "type": "array"
+          }
+        },
+        "required": [
+          "frames",
+          "bounds",
+          "fields",
+          "fetched_at",
+          "credit"
+        ],
+        "title": "FlowLayer",
+        "type": "object"
+      },
       "FlowProgram": {
         "description": "A traffic management program or restriction at an airport\n(wingtip.flow): a program (`program`: ground stop, ground delay program,\nairspace flow program) from a Command Center advisory, with its delays\nin minutes and its words as sent; or a restriction (`restriction`\ntrue: miles or minutes in trail, `kind` ARRIVAL or DEPARTURE). Times\nare UNIX s.",
         "properties": {
@@ -29799,6 +29961,85 @@
           }
         },
         "summary": "Waypoints In View",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
+    "/api/weather/flow": {
+      "get": {
+        "description": "The timeline's frames, oldest first: the last hour, now and every\nsecond hour to twelve ahead, each with its models' runs, its fields and\n(an hour past) the radar mosaic. A 404 where the weather service holds\nnone yet, or none recent enough to show.",
+        "operationId": "flow_layer_api_weather_flow_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlowLayer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Flow Layer",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
+    "/api/weather/flow/{frame}/{field}.png": {
+      "get": {
+        "description": "One frame's picture of a field, a PNG of the layer's grid (FlowLayer's\nbounds and the field's encoding); a 404 for a frame no longer held.",
+        "operationId": "flow_picture_api_weather_flow__frame___field__png_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "frame",
+            "required": true,
+            "schema": {
+              "pattern": "^\\d{10}$",
+              "title": "Frame",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "field",
+            "required": true,
+            "schema": {
+              "enum": [
+                "wind",
+                "gust",
+                "precip",
+                "cloud",
+                "temp",
+                "vis"
+              ],
+              "title": "Field",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/png": {}
+            },
+            "description": "The field's picture"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Flow Picture",
         "x-gateway": {
           "access": "public"
         }

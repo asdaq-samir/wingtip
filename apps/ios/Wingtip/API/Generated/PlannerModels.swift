@@ -2092,6 +2092,47 @@ struct APIFlowProgram: Codable, Equatable, Sendable {
     var text, title, value: String?
 }
 
+/// The flow layer's timeline, oldest frame first; the pictures' box,
+/// [west, south, east, north] degrees; each field's encoding; when the
+/// weather service fetched it, UNIX seconds; and the credit.
+// MARK: - APIFlowLayer
+struct APIFlowLayer: Codable, Equatable, Sendable {
+    var bounds: [Double]
+    var credit: String
+    var fetchedAt: Double
+    var fields: [String: APIFlowField]
+    var frames: [APIFlowFrame]
+}
+
+/// How a field's PNG holds it: its unit, the values its channel's 0
+/// and 255 stand for (a 255th a step between), and whether it is the
+/// wind, its east part in red and its north part in green.
+// MARK: - APIFlowField
+struct APIFlowField: Codable, Equatable, Sendable {
+    var unit: String
+    var unscale: [Double]
+    var vector: Bool
+}
+
+/// One hour of the flow layer's timeline (wingtip.weather_flow): its
+/// id (YYYYMMDDHH, the PNGs' address), when it is valid, ISO UTC, the
+/// models that made it ("HRRR and GFS" over the lower 48 and the GFS
+/// beyond, or the GFS alone) with each one's run and forecast hour,
+/// whether its hour has come (`past`), the fields it has, and for a past
+/// hour the radar mosaic made by then, XYZ tiles, None with none.
+// MARK: - APIFlowFrame
+struct APIFlowFrame: Codable, Equatable, Sendable {
+    var fields: [String]
+    var gfsForecastHour: Int?
+    var gfsRun: String?
+    var hrrrForecastHour: Int?
+    var hrrrRun: String?
+    var id, model: String
+    var past: Bool
+    var radarTiles: String?
+    var valid: String
+}
+
 /// The dry run against the forecast, and the products that could not be had.
 // MARK: - APIForecastRun
 struct APIForecastRun: Codable, Equatable, Sendable {

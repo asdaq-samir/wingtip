@@ -3441,6 +3441,69 @@ data class FlowProgram (
 )
 
 /**
+ * The flow layer's timeline, oldest frame first; the pictures' box,
+ * [west, south, east, north] degrees; each field's encoding; when the
+ * weather service fetched it, UNIX seconds; and the credit.
+ */
+@Serializable
+data class FlowLayer (
+    val bounds: List<Double>,
+    val credit: String,
+
+    @SerialName("fetched_at")
+    val fetchedAt: Double,
+
+    val fields: Map<String, FlowField>,
+    val frames: List<FlowFrame>
+)
+
+/**
+ * How a field's PNG holds it: its unit, the values its channel's 0
+ * and 255 stand for (a 255th a step between), and whether it is the
+ * wind, its east part in red and its north part in green.
+ */
+@Serializable
+data class FlowField (
+    val unit: String,
+    val unscale: List<Double>,
+    val vector: Boolean
+)
+
+/**
+ * One hour of the flow layer's timeline (wingtip.weather_flow): its
+ * id (YYYYMMDDHH, the PNGs' address), when it is valid, ISO UTC, the
+ * models that made it ("HRRR and GFS" over the lower 48 and the GFS
+ * beyond, or the GFS alone) with each one's run and forecast hour,
+ * whether its hour has come (`past`), the fields it has, and for a past
+ * hour the radar mosaic made by then, XYZ tiles, None with none.
+ */
+@Serializable
+data class FlowFrame (
+    val fields: List<String>,
+
+    @SerialName("gfs_forecast_hour")
+    val gfsForecastHour: Int? = null,
+
+    @SerialName("gfs_run")
+    val gfsRun: String? = null,
+
+    @SerialName("hrrr_forecast_hour")
+    val hrrrForecastHour: Int? = null,
+
+    @SerialName("hrrr_run")
+    val hrrrRun: String? = null,
+
+    val id: String,
+    val model: String,
+    val past: Boolean,
+
+    @SerialName("radar_tiles")
+    val radarTiles: String? = null,
+
+    val valid: String
+)
+
+/**
  * The dry run against the forecast, and the products that could not be had.
  */
 @Serializable

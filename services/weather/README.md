@@ -28,6 +28,7 @@ and at the second otherwise (`app/settings.py`, `WEATHER_*_EVERY_S`).
 | `tfrs` | tfr.faa.gov's shapes and each NOTAM's XNOTAM detail | 10 min | 30 min | no limit; ended TFRs left out of a list older than 10 min |
 | `radar` | IEM's record of when the NEXRAD mosaic was made | 2 min | 15 min | no limit |
 | `satellite` | the times of nowCOAST's GOES East and West infrared and visible pictures (its WMS capabilities), the last three hours | 5 min | 30 min | no limit |
+| `flow` | the map's flow layer (`app.flow`): the GFS 0.25 degree from 5 to 75 N, 180 to 50 W, the HRRR's cell means over it where it covers, for the last hour, now and every even hour to 12 ahead; wind, gust, precipitation, cloud, 2 m temperature and visibility, a PNG each (`.png` beside the record, 55-130 KB). A frame already held from the same runs is not fetched again: about 2.2 MB a new GFS hour, 10.5 MB a new HRRR hour (`WEATHER_FLOW_HRRR_AHEAD_H`, 0 by default: the HRRR for the last hour and now) | 15 min | 3 h | an hour past its newest frame |
 
 A failed fetch leaves the stored copy in place and writes
 `<name>.attempt.json` beside it, which the pilot's Status page reads as

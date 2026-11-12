@@ -53,6 +53,15 @@ class Settings(BaseSettings):
     #: When each GOES picture was taken (nowCOAST's capabilities).
     satellite_every_s: float = 300.0
     satellite_idle_every_s: float = 1800.0
+    #: The map's flow layer (app.flow): the HRRR runs hourly, so looked for
+    #: four times an hour while planning; a frame already held is not
+    #: downloaded again. Every three hours otherwise.
+    flow_every_s: float = 900.0
+    flow_idle_every_s: float = 10800.0
+    #: How far ahead the flow layer's frames take the HRRR, hours: 0 is
+    #: the last hour and now (two HRRR files, about 21 MB an hour); 12
+    #: the whole timeline (eight, about 84 MB an hour). The GFS beyond.
+    flow_hrrr_ahead_h: int = 0
 
 
 class SettingsError(ValueError):

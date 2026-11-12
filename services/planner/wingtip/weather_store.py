@@ -14,7 +14,8 @@ a reader sees the old copy or the new one and never half of either:
 Beside it `<name>.attempt.json` says when the service last tried for a
 newer copy and whether that failed, for the Status page and the
 service's health; a grid too large for JSON (GLMP's) is a .npy array
-beside its record, opened by the planner without reading it all in
+beside its record, and a picture made whole (the flow layer's PNGs,
+write_blob) a file of its own, opened by the planner without reading it all in
 (np.load's mmap_mode). And `asked`, a file the planner touches at most
 once a minute as it reads, tells the service someone is planning: it
 fetches at its full pace then, and slowly otherwise (services/weather's
@@ -119,6 +120,34 @@ def remove_arrays(prefix: str, keep: set[str]) -> None:
         return
     for path in folder.glob(f"{prefix}*.npy"):
         if path.stem not in keep:
+            path.unlink(missing_ok=True)
+
+
+def write_blob(name: str, body: bytes, suffix: str) -> Path:
+    """A file the service made whole (the flow layer's PNGs), beside the
+    records, for the planner to send as it is."""
+    path = _path(name, suffix)
+    _write_atomic(path, body)
+    return path
+
+
+def blob_path(name: str, suffix: str) -> Path | None:
+    """Where a file written by write_blob is; None where there is none."""
+    path = _path(name, suffix)
+    return path if path.is_file() else None
+
+
+def blob_exists(name: str, suffix: str) -> bool:
+    return blob_path(name, suffix) is not None
+
+
+def remove_blobs(prefix: str, keep: set[str], suffix: str) -> None:
+    """Every file of `suffix` whose name starts with `prefix` but those in `keep`."""
+    folder = store_dir()
+    if not folder.is_dir():
+        return
+    for path in folder.glob(f"{prefix}*{suffix}"):
+        if path.name[: -len(suffix)] not in keep:
             path.unlink(missing_ok=True)
 
 
