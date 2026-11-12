@@ -1249,6 +1249,99 @@ enum EngineContract {
         var deg: Double
     }
 
+    struct ApproachSceneAnswer: Codable, Equatable, Sendable {
+        var centrelines: [EngineContract.ApproachSceneAnswerCentrelinesItem]
+        var glidepaths: [EngineContract.ApproachSceneAnswerGlidepathsItem]
+        /// The approach's line at its altitudes, transition and final.
+        var path: [[JSONValue]]?
+        var ring: EngineContract.ApproachSceneAnswerRing?
+    }
+
+    struct ApproachSceneAnswerCentrelinesItem: Codable, Equatable, Sendable {
+        var end: String
+        var points: [[JSONValue]]
+    }
+
+    struct ApproachSceneAnswerGlidepathsItem: Codable, Equatable, Sendable {
+        var end: String
+        var deg: Double
+        /// The height it crosses the threshold at, ft MSL.
+        var crossFt: Double
+        /// The threshold crossing height, ft above the threshold, where known.
+        var tchFt: Double?
+        /// The approach's own figures, or the standard 3.00 degrees and 40 ft.
+        var source: String
+        var points: [[JSONValue]]
+
+        enum CodingKeys: String, CodingKey {
+            case end
+            case deg
+            case crossFt = "cross_ft"
+            case tchFt = "tch_ft"
+            case source
+            case points
+        }
+    }
+
+    /// The pattern's ring: its altitude, ft MSL, and as far round the field as it is drawn, nm; the apps draw the circle.
+    struct ApproachSceneAnswerRing: Codable, Equatable, Sendable {
+        var ft: Double
+        var radiusNm: Double
+        /// [lat, lon], the field's place.
+        var center: [JSONValue]
+
+        enum CodingKeys: String, CodingKey {
+            case ft
+            case radiusNm = "radius_nm"
+            case center
+        }
+    }
+
+    struct ApproachSceneInput: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+        /// The field's elevation, ft MSL (NASR): the highest point of its usable runways.
+        var elevationFt: Double?
+        /// The traffic pattern altitude, ft MSL, as the planner gives it (pattern_altitude).
+        var patternFt: Double?
+        var runways: [EngineContract.ApproachSceneInputRunwaysItem]
+        /// The approach picked at the field, as the planner draws it with its CIFP figures (`approach`).
+        var drawing: EngineContract.ProcedureDrawing?
+
+        enum CodingKeys: String, CodingKey {
+            case lat
+            case lon
+            case elevationFt = "elevation_ft"
+            case patternFt = "pattern_ft"
+            case runways
+            case drawing
+        }
+    }
+
+    struct ApproachSceneInputRunwaysItem: Codable, Equatable, Sendable {
+        var lengthFt: Double?
+        var runwayEnds: [EngineContract.ApproachSceneInputRunwaysItemRunwayEndsItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case lengthFt = "length_ft"
+            case runwayEnds = "runway_ends"
+        }
+    }
+
+    struct ApproachSceneInputRunwaysItemRunwayEndsItem: Codable, Equatable, Sendable {
+        var ident: String
+        var lat: Double?
+        var lon: Double?
+        var headingTrueDeg: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case lat
+            case lon
+            case headingTrueDeg = "heading_true_deg"
+        }
+    }
+
     struct ApproachTransitionInput: Codable, Equatable, Sendable {
         var drawings: [EngineContract.ProcedureDrawing]?
         var points: [EngineContract.TrackPoint]?

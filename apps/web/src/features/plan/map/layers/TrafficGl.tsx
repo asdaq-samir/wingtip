@@ -159,6 +159,9 @@ function Traffic() {
         const icon = trafficIcon(plane.track_deg ?? null, TRAFFIC_COLOURS.far, 0, false);
         const marker = iconMarker(icon, { interactive: true }).setLngLat([plane.lon, plane.lat]);
         const tag = iconMarker(trafficTag(TRAFFIC_COLOURS.far, "", null, false)).setLngLat([plane.lon, plane.lat]);
+        // Hidden while the 3D view stands the traffic at its heights
+        // (terrain/TrafficAloftGl, index.css's data-traffic-aloft).
+        both({ marker, tag } as Target, (m) => (m.getElement().dataset.trafficGround = ""));
         marker.getElement().addEventListener("click", (e) => {
           e.stopPropagation();
           useTracking.getState().pick?.(hexOf, targets.current.get(hexOf)?.plane);

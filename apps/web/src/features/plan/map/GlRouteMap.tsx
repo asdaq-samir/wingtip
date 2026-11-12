@@ -190,7 +190,13 @@ function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void })
     <>
       {terrain.mode !== "flat" && (
         <Suspense fallback={null}>
-          <TerrainGl mode={terrain.mode} pilot={terrain.pilot} aloft={course ? (p.aloft ?? null) : null} />
+          <TerrainGl
+            mode={terrain.mode}
+            pilot={terrain.pilot}
+            aloft={course ? (p.aloft ?? null) : null}
+            field={p.place?.ident ?? course?.destination.ident ?? null}
+            procedures={p.procedures}
+          />
         </Suspense>
       )}
       {loop && <WeatherLoopGl />}

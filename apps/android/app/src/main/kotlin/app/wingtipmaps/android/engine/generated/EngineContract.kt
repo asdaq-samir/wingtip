@@ -1241,6 +1241,96 @@ object EngineContract {
     )
 
     @Serializable
+    data class ApproachSceneAnswer(
+        val centrelines: List<EngineContract.ApproachSceneAnswerCentrelinesItem>,
+        val glidepaths: List<EngineContract.ApproachSceneAnswerGlidepathsItem>,
+        /**
+         * The approach's line at its altitudes, transition and final.
+         */
+        val path: List<List<JsonElement>>? = null,
+        val ring: EngineContract.ApproachSceneAnswerRing? = null,
+    )
+
+    @Serializable
+    data class ApproachSceneAnswerCentrelinesItem(
+        val end: String,
+        val points: List<List<JsonElement>>,
+    )
+
+    @Serializable
+    data class ApproachSceneAnswerGlidepathsItem(
+        val end: String,
+        val deg: Double,
+        /**
+         * The height it crosses the threshold at, ft MSL.
+         */
+        @SerialName("cross_ft")
+        val crossFt: Double,
+        /**
+         * The threshold crossing height, ft above the threshold, where known.
+         */
+        @SerialName("tch_ft")
+        val tchFt: Double? = null,
+        /**
+         * The approach's own figures, or the standard 3.00 degrees and 40 ft.
+         */
+        val source: String,
+        val points: List<List<JsonElement>>,
+    )
+
+    /**
+     * The pattern's ring: its altitude, ft MSL, and as far round the field as it is drawn, nm; the apps draw the circle.
+     */
+    @Serializable
+    data class ApproachSceneAnswerRing(
+        val ft: Double,
+        @SerialName("radius_nm")
+        val radiusNm: Double,
+        /**
+         * [lat, lon], the field's place.
+         */
+        val center: List<JsonElement>,
+    )
+
+    @Serializable
+    data class ApproachSceneInput(
+        val lat: Double,
+        val lon: Double,
+        /**
+         * The field's elevation, ft MSL (NASR): the highest point of its usable runways.
+         */
+        @SerialName("elevation_ft")
+        val elevationFt: Double? = null,
+        /**
+         * The traffic pattern altitude, ft MSL, as the planner gives it (pattern_altitude).
+         */
+        @SerialName("pattern_ft")
+        val patternFt: Double? = null,
+        val runways: List<EngineContract.ApproachSceneInputRunwaysItem>,
+        /**
+         * The approach picked at the field, as the planner draws it with its CIFP figures (`approach`).
+         */
+        val drawing: EngineContract.ProcedureDrawing? = null,
+    )
+
+    @Serializable
+    data class ApproachSceneInputRunwaysItem(
+        @SerialName("length_ft")
+        val lengthFt: Double? = null,
+        @SerialName("runway_ends")
+        val runwayEnds: List<EngineContract.ApproachSceneInputRunwaysItemRunwayEndsItem>? = null,
+    )
+
+    @Serializable
+    data class ApproachSceneInputRunwaysItemRunwayEndsItem(
+        val ident: String,
+        val lat: Double? = null,
+        val lon: Double? = null,
+        @SerialName("heading_true_deg")
+        val headingTrueDeg: Double? = null,
+    )
+
+    @Serializable
     data class ApproachTransitionInput(
         val drawings: List<EngineContract.ProcedureDrawing>? = null,
         val points: List<EngineContract.TrackPoint>? = null,
