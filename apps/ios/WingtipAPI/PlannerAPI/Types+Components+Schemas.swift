@@ -13280,6 +13280,8 @@ extension Components {
             public var coverageSince: Swift.String?
             /// - Remark: Generated from `#/components/schemas/NotamsRanked/notams`.
             public var notams: [Components.Schemas.RankedNotam]
+            /// - Remark: Generated from `#/components/schemas/NotamsRanked/time_zone`.
+            public var timeZone: Swift.String?
             /// - Remark: Generated from `#/components/schemas/NotamsRanked/top`.
             public var top: Swift.Int
             /// - Remark: Generated from `#/components/schemas/NotamsRanked/unchecked`.
@@ -13289,22 +13291,26 @@ extension Components {
             /// - Parameters:
             ///   - coverageSince:
             ///   - notams:
+            ///   - timeZone:
             ///   - top:
             ///   - unchecked:
             public init(
                 coverageSince: Swift.String? = nil,
                 notams: [Components.Schemas.RankedNotam],
+                timeZone: Swift.String? = nil,
                 top: Swift.Int,
                 unchecked: [Swift.String]? = nil
             ) {
                 self.coverageSince = coverageSince
                 self.notams = notams
+                self.timeZone = timeZone
                 self.top = top
                 self.unchecked = unchecked
             }
             public enum CodingKeys: String, CodingKey {
                 case coverageSince = "coverage_since"
                 case notams
+                case timeZone = "time_zone"
                 case top
                 case unchecked
             }

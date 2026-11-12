@@ -5869,6 +5869,7 @@ class NotamsRanked(BaseModel):
     )
     coverage_since: Annotated[str | None, Field(title='Coverage Since')] = None
     notams: Annotated[list[RankedNotam] | None, Field(title='Notams')] = None
+    time_zone: Annotated[str | None, Field(title='Time Zone')] = None
     top: Annotated[int | None, Field(title='Top')] = None
     unchecked: Annotated[list[str] | None, Field(title='Unchecked')] = []
 

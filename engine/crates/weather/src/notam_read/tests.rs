@@ -135,8 +135,8 @@ fn its_title_names_the_thing_its_subject_words_say() {
         ("!OSH 11/076 OSH SVC FUEL 100LL NOT AVBL 2511120000-2511202359", Some("Fuel 100LL")),
         ("!OSH 11/077 OSH AD AP JET A FUEL NOT AVBL 2511120000-2511202359", Some("Fuel Jet A")),
         ("!OSH 11/078 OSH COM TWR 120.75 U/S 2511120000-2511202359", Some("Tower 120.75")),
-        ("!OSH 11/079 OSH AD AP BCN U/S 2511120000-2511202359", Some("Aerodrome beacon")),
-        ("!OSH 11/082 OSH AD AP CLSD 2511120000-2511202359", Some("Aerodrome closed")),
+        ("!OSH 11/079 OSH AD AP BCN U/S 2511120000-2511202359", Some("Airport beacon")),
+        ("!OSH 11/082 OSH AD AP CLSD 2511120000-2511202359", Some("Airport closed")),
         ("A1234/25 NOTAMN Q) KZMP/QMRLC/IV/NBO/A/000/999/4359N08833W005 A) KOSH B) 2511120900 C) 2511121700 EST E) RWY 18/36 CLSD", Some("Runway 18/36")),
         // Nothing it knows: the heading is the title.
         ("!OSH 11/080 OSH AD AP WINDCONE FOR RWY 18 LGT U/S 2511120000-2511202359", None),

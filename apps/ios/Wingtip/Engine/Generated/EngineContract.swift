@@ -7828,8 +7828,6 @@ enum EngineContract {
         var what: String?
         /// The field and the place on it as the NOTAM gives it: "KORD, runway 06/24", "KORD, taxiway A2 between taxiway A and taxiway B", "KORD, 1.3 nm west of the field"; null where it says no more than the field.
         var `where`: String?
-        /// What it means to the pilot, only where that is a settled rule or a plain fact: a runway or the field closed, no landing or takeoff (CLSD, JO 7340.2), crossing or taxiing where EXC XNG or EXC TAX allows it; the glide slope out, a localizer approach to the LOC minimums, the localizer or the ILS out, no ILS or localizer approach (AIM 1-1-9); a PAPI or VASI out, no visual glide path guidance (AIM 2-1-2); approach lights out, visibility minimums may be higher (AIM 2-1-1, 1-1-9); an FDC approach NOTAM's minimums in place of the chart's (AIM 5-1-3) or the procedure not authorized; fuel not available; a frequency out of service; an obstacle's top; a TFR's limits to read (14 CFR 91.137-91.145, 91.103). Null otherwise, never guessed.
-        var why: String?
         /// Its words written out in sentence case, ending as a sentence ends.
         var words: String
         /// Its start of activity, ISO 8601 UTC, from its text.

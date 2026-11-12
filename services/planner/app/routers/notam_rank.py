@@ -10,7 +10,7 @@ it, ranked the same way, for the field's card."""
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
-from wingtip import airports, notam_rank
+from wingtip import airports, notam_rank, time_zone
 
 from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 from ..router_basics import load_route
@@ -52,9 +52,16 @@ def airport_notams(ident: str) -> NotamsRanked:
     a route's: the field read as a stop from an hour ago to three hours
     ahead (14 CFR 91.103 asks for the NOTAMs of every field a flight
     uses). With no flight there is no runway in use or cruise altitude to
-    weigh. `unchecked` names the TFRs when their list could not be had."""
+    weigh. `unchecked` names the TFRs when their list could not be had;
+    `time_zone` is the field's, for its NOTAMs' local times."""
     place = airports.find_place(ident)
     if place is None:
         raise HTTPException(404, f"No US airport goes by {ident.strip().upper()!r}.")
     found = notam_rank.at_field(place["ident"], place["lat"], place["lon"], datetime.now(timezone.utc))
-    return NotamsRanked(notams=found["ranked"], top=found["top"], coverage_since=notam_rank.coverage_since(), unchecked=found["unchecked"])
+    return NotamsRanked(
+        notams=found["ranked"],
+        top=found["top"],
+        coverage_since=notam_rank.coverage_since(),
+        unchecked=found["unchecked"],
+        time_zone=time_zone.at(place["lat"], place["lon"]),
+    )

@@ -150,6 +150,8 @@ def test_a_fields_card_gets_its_own_notams_and_the_tfrs_near_it(monkeypatch):
     assert only["id"] == "MSN 11/040" and only["field"] == "KMSN" and only["role"] == "stop"
     assert only["in_force"] is True and only["closed"] and only["raw"].startswith("!MSN 11/040")
     assert body["unchecked"] == []
+    # Madison's zone, for the card's local times beside the NOTAMs' UTC.
+    assert body["time_zone"] == "America/Chicago"
 
 
 def test_a_tfr_near_the_field_carries_what_the_card_reads_it_by(monkeypatch):

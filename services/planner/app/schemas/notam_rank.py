@@ -106,3 +106,8 @@ class NotamsRanked(BaseModel):
     top: int
     coverage_since: str | None = None
     unchecked: list[str] = []
+    #: The field's IANA time zone ("America/Chicago"), for its card to say
+    #: its NOTAMs' UTC times (JO 7930.2 3-3-2) in the field's own local
+    #: time beside them (wingtip.time_zone); None for a route's, and where
+    #: no zone is known.
+    time_zone: str | None = None

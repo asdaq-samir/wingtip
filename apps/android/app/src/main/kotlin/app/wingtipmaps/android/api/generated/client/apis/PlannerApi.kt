@@ -117,7 +117,7 @@ interface PlannerApi {
     /**
      * GET airport/{ident}/notams
      * Airport Notams
-     * One field&#39;s own NOTAMs (the FAA&#39;s feed, by any ident it goes by) and the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks a route&#39;s: the field read as a stop from an hour ago to three hours ahead (14 CFR 91.103 asks for the NOTAMs of every field a flight uses). With no flight there is no runway in use or cruise altitude to weigh. &#x60;unchecked&#x60; names the TFRs when their list could not be had.
+     * One field&#39;s own NOTAMs (the FAA&#39;s feed, by any ident it goes by) and the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks a route&#39;s: the field read as a stop from an hour ago to three hours ahead (14 CFR 91.103 asks for the NOTAMs of every field a flight uses). With no flight there is no runway in use or cruise altitude to weigh. &#x60;unchecked&#x60; names the TFRs when their list could not be had; &#x60;time_zone&#x60; is the field&#39;s, for its NOTAMs&#39; local times.
      * Responses:
      *  - 200: Successful Response
      *  - 404: No such field

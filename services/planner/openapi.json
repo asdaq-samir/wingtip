@@ -14560,6 +14560,17 @@
             "title": "Notams",
             "type": "array"
           },
+          "time_zone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Zone"
+          },
           "top": {
             "title": "Top",
             "type": "integer"
@@ -24492,7 +24503,7 @@
     },
     "/api/airport/{ident}/notams": {
       "get": {
-        "description": "One field's own NOTAMs (the FAA's feed, by any ident it goes by)\nand the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks\na route's: the field read as a stop from an hour ago to three hours\nahead (14 CFR 91.103 asks for the NOTAMs of every field a flight\nuses). With no flight there is no runway in use or cruise altitude to\nweigh. `unchecked` names the TFRs when their list could not be had.",
+        "description": "One field's own NOTAMs (the FAA's feed, by any ident it goes by)\nand the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks\na route's: the field read as a stop from an hour ago to three hours\nahead (14 CFR 91.103 asks for the NOTAMs of every field a flight\nuses). With no flight there is no runway in use or cruise altitude to\nweigh. `unchecked` names the TFRs when their list could not be had;\n`time_zone` is the field's, for its NOTAMs' local times.",
         "operationId": "airport_notams_api_airport__ident__notams_get",
         "parameters": [
           {
