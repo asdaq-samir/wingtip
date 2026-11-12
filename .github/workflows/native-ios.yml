@@ -73,6 +73,8 @@ jobs:
     timeout-minutes: ${{ (inputs.full || github.event_name == 'schedule') && 100 || 25 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       # Before anything builds: the engine's Apple targets link against its
       # SDK too, and iPhone Duo's own layout needs the iOS 27.1 SDK.
       - name: The Xcode .tool-versions names
@@ -195,12 +197,15 @@ jobs:
         # picture, not a check.
         if: env.FULL == 'true'
         continue-on-error: true
+        env:
+          IPHONE: ${{ steps.sim.outputs.iphone }}
+          IPAD: ${{ steps.sim.outputs.ipad }}
+          DUO: ${{ steps.sim.outputs.duo }}
         run: |
           app="$RUNNER_TEMP/derived/Build/Products/Debug-iphonesimulator/Wingtip.app"
           mkdir -p "$RUNNER_TEMP/screens"
-          pairs=("iphone:${{ steps.sim.outputs.iphone }}" "ipad:${{ steps.sim.outputs.ipad }}")
-          duo=${{ steps.sim.outputs.duo }}
-          [ -n "$duo" ] && pairs+=("iphone-duo:$duo")
+          pairs=("iphone:$IPHONE" "ipad:$IPAD")
+          [ -n "$DUO" ] && pairs+=("iphone-duo:$DUO")
           for pair in "${pairs[@]}"; do
             name=${pair%%:*}; id=${pair#*:}
             xcrun simctl boot "$id" 2>/dev/null || true
@@ -211,11 +216,10 @@ jobs:
             sleep 25
             xcrun simctl io "$id" screenshot "$RUNNER_TEMP/screens/$name.png"
           done
-          ipad=${{ steps.sim.outputs.ipad }}
-          xcrun simctl terminate "$ipad" "$WINGTIP_BUNDLE_ID" || true
-          xcrun simctl launch "$ipad" "$WINGTIP_BUNDLE_ID" -screen airport
+          xcrun simctl terminate "$IPAD" "$WINGTIP_BUNDLE_ID" || true
+          xcrun simctl launch "$IPAD" "$WINGTIP_BUNDLE_ID" -screen airport
           sleep 15
-          xcrun simctl io "$ipad" screenshot "$RUNNER_TEMP/screens/ipad-search.png"
+          xcrun simctl io "$IPAD" screenshot "$RUNNER_TEMP/screens/ipad-search.png"
       - name: The screens
         if: always() && env.FULL == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
@@ -246,6 +250,8 @@ jobs:
       KEY_P8: ${{ secrets.APP_STORE_KEY_P8 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - name: The Xcode .tool-versions names
         run: scripts/ci/select-xcode.sh
       # The test job kept it a moment ago.

@@ -1,0 +1,22 @@
+# zizmor's settings (scripts/ci/workflow_rules.py runs it over the workflows
+# at .tool-versions' version). Each exception says why; a finding fixed in the
+# workflow is not listed here.
+rules:
+  # workflow_run is how these follow a finished CI run. None checks out or
+  # runs the pull request's code: they act on main's own commit or on the
+  # run's logs, with the permissions each declares (docs/CI.md, "Rules").
+  dangerous-triggers:
+    ignore:
+      - ci-autofix.yml
+      - nightly-issue.yml
+      - promote.yml
+  # The checkout of a job that pushes keeps its credentials; the rest drop
+  # them (persist-credentials: false).
+  artipacked:
+    ignore:
+      - ci-autofix.yml
+      - claude-review.yml
+  # `uses: ./.github/...` is this commit's own file, the one thing a pin
+  # cannot make safer.
+  self-repository:
+    disable: true

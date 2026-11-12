@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # The phones' own linters, on the files a change touches (CLAUDE.md,
 # "Simplicity rules"): SwiftLint over the iPhone app's Swift, detekt over
-# Android's Kotlin, each at .tool-versions' version, its release fetched once
-# into ~/.cache/wingtip-lint and checked against its sum. Configs and the
+# Android's Kotlin, each at .tool-versions' version (SwiftLint installed by mise,
+# scripts/build/tool.sh; detekt's jar fetched once into ~/.cache/wingtip-lint
+# and checked against its sum, as mise has no detekt build to run). Configs and the
 # baselines of today's findings (which only shrink) are in scripts/ci/phones/.
 # scripts/ci/guards.sh runs it when the change touches a phone.
 #
@@ -31,9 +32,7 @@ skip=3
 [ -z "${GITHUB_ACTIONS:-}" ] || skip=1
 version() { awk -v n="$1" '$1 == n { print $2 }' .tool-versions; }
 
-# The release's sums, as each project publishes them (GitHub's asset digest
-# for SwiftLint, Maven Central's .sha1 beside detekt's jar).
-SWIFTLINT_SUMS="0.65.1 linux_amd64=caeed6f4a679c35539ffaf124f6c4ab4a8416917f7d8796279dc52b74026059d linux_arm64=9ffa52f478e6d8eb485d37d14715ffac90abc81c58f3370d598bf75be05605f8 portable=c1e429b0599cf1b516f369a2d9ec04eaf0e436f3c12b637df8851fa52ff694d0"
+# Maven Central's .sha1 beside detekt's jar (mise has no detekt build to run).
 DETEKT_SHA1="2.0.0-alpha.6 543c524afee8f40330b4bf66e760cb141accb87a"
 
 sum_of() { # FILE ALGO
@@ -50,42 +49,19 @@ files() { # PATTERN
 }
 
 ios() {
-  local v asset want bin list
-  v=$(version swiftlint)
-  [ "$v" = "${SWIFTLINT_SUMS%% *}" ] || { echo "phone_lint: SWIFTLINT_SUMS is for ${SWIFTLINT_SUMS%% *}, .tool-versions says $v"; return 1; }
-  case "$(uname -s)-$(uname -m)" in
-    Linux-x86_64) asset=linux_amd64 ;;
-    Linux-aarch64 | Linux-arm64) asset=linux_arm64 ;;
-    Darwin-*) asset=portable ;;
-    *) echo "phone_lint: no SwiftLint build for $(uname -sm)"; return "$skip" ;;
-  esac
-  want=$(tr ' ' '\n' <<< "$SWIFTLINT_SUMS" | sed -n "s/^$asset=//p")
-  bin=$cache/swiftlint-$v-$asset/swiftlint
-  if [ ! -x "$bin" ]; then
-    local zip=$cache/swiftlint-$v-$asset.zip url
-    url=https://github.com/realm/SwiftLint/releases/download/$v/$([ $asset = portable ] && echo portable_swiftlint.zip || echo "swiftlint_$asset.zip")
-    mkdir -p "$cache" || return 1
-    curl -fsSL -o "$zip" "$url" || { echo "phone_lint: could not fetch SwiftLint $v"; return "$skip"; }
-    [ "$(sum_of "$zip" 256)" = "$want" ] || { echo "phone_lint: SwiftLint $v's sum does not match"; rm -f "$zip"; return 1; }
-    mkdir -p "${bin%/*}" || return 1
-    if command -v unzip > /dev/null; then unzip -qo "$zip" -d "${bin%/*}"; else python3 -m zipfile -e "$zip" "${bin%/*}"; fi || return 1
-    rm -f "$zip"
-    chmod +x "${bin%/*}"/swiftlint*
-  fi
-  # The Linux zip's static build needs no libxml2 on the runner.
-  bin=$(find "$cache/swiftlint-$v-$asset" -name swiftlint-static -type f | head -1)
-  [ -n "$bin" ] || bin=$(find "$cache/swiftlint-$v-$asset" -name swiftlint -type f | head -1)
-  "$bin" version > /dev/null 2>&1 || { echo "phone_lint: SwiftLint will not run here"; return "$skip"; }
+  local list
+  # SwiftLint at .tool-versions' version, installed by mise.
+  "$here/scripts/build/tool.sh" --have swiftlint || { echo "phone_lint: SwiftLint will not run here"; return "$skip"; }
   list=$(files '^apps/ios/.*\.swift$')
   [ -n "$list" ] || { echo "phone_lint: no Swift changed"; return 0; }
   if $write; then
     # shellcheck disable=SC2086  # one path a word: the repo's paths have no spaces
-    "$bin" lint --quiet --config "$cfg/swiftlint.yml" --write-baseline "$cfg/swiftlint-baseline.json" $list > /dev/null
+    "$here/scripts/build/tool.sh" swiftlint lint --quiet --config "$cfg/swiftlint.yml" --write-baseline "$cfg/swiftlint-baseline.json" $list > /dev/null
     echo "phone_lint: wrote scripts/ci/phones/swiftlint-baseline.json"
     return 0
   fi
   # shellcheck disable=SC2086
-  "$bin" lint --quiet --strict --config "$cfg/swiftlint.yml" --baseline "$cfg/swiftlint-baseline.json" $list
+  "$here/scripts/build/tool.sh" swiftlint lint --quiet --strict --config "$cfg/swiftlint.yml" --baseline "$cfg/swiftlint-baseline.json" $list
 }
 
 android() {

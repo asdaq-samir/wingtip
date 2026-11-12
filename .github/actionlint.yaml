@@ -1,0 +1,6 @@
+# actionlint (scripts/ci/workflow_rules.py runs it at .tool-versions's version).
+# ubuntu-26.04 is the runner image the workflows use (docs/CI.md); the
+# release's own label list is older than it.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04

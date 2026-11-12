@@ -282,6 +282,18 @@ gen "($src|^scripts/ci/(jscpd|changed))" \
 gen "($src|^scripts/ci/simplicity_|^apps/web/eslint-suppressions\.json$)" \
   "the simplicity ratchet" "bring the count back down; never raise the baseline" \
   python3 "$here/scripts/ci/simplicity_ratchet.py" --base origin/main
+# The stock linters of the scripts, the workflows and the Markdown's links
+# (shellcheck, actionlint and zizmor, lychee: scripts/build/tool.sh installs
+# them at .tool-versions' versions; one not here is left to CI).
+gen '(^scripts/.*\.sh$|^scripts/dev/hooks/|^\.shellcheckrc$)' \
+  "shellcheck over the scripts" "scripts/ci/shellcheck.sh says what to put right" \
+  "$here/scripts/ci/shellcheck.sh"
+gen '(^\.github/(workflows/|actionlint\.yaml$|zizmor\.yml$)|^scripts/ci/workflow_rules)' \
+  "the workflows' rules, actionlint and zizmor" "scripts/ci/workflow_rules.py says what to put right" \
+  python3 "$here/scripts/ci/workflow_rules.py"
+gen '(\.md$|^lychee\.toml$)' \
+  "the Markdown's links" "scripts/ci/check_links.sh names each broken one" \
+  "$here/scripts/ci/check_links.sh"
 gen '^(apps/ios/.*\.swift$|scripts/ci/phones/swiftlint)' \
   "SwiftLint" "scripts/ci/phones/swiftlint.yml says what each rule wants" \
   "$here/scripts/ci/phone_lint.sh" ios --base origin/main

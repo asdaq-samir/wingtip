@@ -5,6 +5,7 @@
 #
 #   scripts/build/tool.sh shellcheck -x scripts/dev/check.sh
 #   scripts/build/tool.sh --have actionlint   exit 0 when it can be had, else 3
+#   scripts/build/tool.sh --path shellcheck   its path (for a tool that runs another)
 #
 # The name is a mise tool and a .tool-versions line (shellcheck, actionlint,
 # zizmor, lychee, swiftformat, ktlint, ...); a copy on the PATH at that
@@ -51,11 +52,11 @@ mise_path() {
   echo "$dir/mise"
 }
 
-have_only=""
-if [ "${1:-}" = --have ]; then
-  have_only=1
-  shift
-fi
+have_only="" want_path=""
+case "${1:-}" in
+  --have) have_only=1; shift ;;
+  --path) want_path=1; shift ;;
+esac
 name=${1:?usage: tool.sh [--have] <tool> [args...]}
 shift
 version=$("$here/scripts/build/toolchain.sh" get "$name")
@@ -63,6 +64,7 @@ version=$("$here/scripts/build/toolchain.sh" get "$name")
 # A copy at the pinned version, wherever the PATH has it.
 if command -v "$name" > /dev/null && "$name" --version 2> /dev/null | grep -qF "$version"; then
   [ -z "$have_only" ] || exit 0
+  [ -z "$want_path" ] || { command -v "$name"; exit 0; }
   exec "$name" "$@"
 fi
 mise=$(mise_path) || exit 3
@@ -71,5 +73,8 @@ export MISE_DATA_DIR=${MISE_DATA_DIR:-$cache/mise-data} MISE_YES=1 MISE_QUIET=1
 if [ -n "$have_only" ]; then
   "$mise" --no-config exec "$name@$version" -- true > /dev/null 2>&1 && exit 0
   exit 3
+fi
+if [ -n "$want_path" ]; then
+  exec "$mise" --no-config exec "$name@$version" -- sh -c 'command -v "$0"' "$name"
 fi
 exec "$mise" --no-config exec "$name@$version" -- "$name" "$@"

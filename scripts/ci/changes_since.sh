@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # What ci.yml's changes job diffs against, written to $GITHUB_OUTPUT for
-# its paths filter (the job's opening comment says why):
+# its paths filter (the job's opening comment says why; a pull request that
+# is words only is the paths filter's own `every` rule, in ci.yml):
 #
-#   changes_since.sh docs-only    a pull request (REPO, PR) whose files are
-#                                 words only (docs, Markdown, skills,
-#                                 notebooks): only=true, no browser suite
 #   changes_since.sh last-green   a push since main's last green CI run
 #                                 (REPO, EVENT): sha=<it>; anything else,
 #                                 or a history it is not behind, all=true
@@ -13,13 +11,6 @@
 set -euo pipefail
 
 case "${1:-}" in
-  docs-only)
-    files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
-    if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -qvE '^(docs/|ml/notebooks/|\.claude/)|\.md$|^LICENSE$'; then
-      echo "only=true" >> "$GITHUB_OUTPUT"
-      echo "docs only: the browser suite is skipped"
-    fi
-    ;;
   last-green)
     sha=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""' || true)
     status=""
@@ -33,7 +24,7 @@ case "${1:-}" in
     fi
     ;;
   *)
-    echo "usage: changes_since.sh docs-only|last-green" >&2
+    echo "usage: changes_since.sh last-green" >&2
     exit 64
     ;;
 esac

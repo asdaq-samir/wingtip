@@ -65,10 +65,6 @@ if [ -z "$inner" ]; then
   echo "validate-wave: logs in $out" >&2
 fi
 
-compose() {
-  docker compose -p "$PROJECT" -f "$here/docker-compose.yml" "$@"
-}
-
 # The stack's images, every service a plain `up` starts, built from this
 # checkout under the wave's own project, so the owner's wingtip-* images
 # are never replaced.
@@ -246,13 +242,13 @@ for s in $steps; do
   if [ -f "$out/$s.exit" ]; then
     read -r code secs < "$out/$s.exit"
   else
-    code=? secs=-
+    code="?" secs="-"
   fi
   if [ "$code" = 0 ]; then res=pass; else res=FAIL; failed=1; fi
   printf '%-10s %-6s %8s\n' "$s" "$res" "$secs"
 done
 for s in $steps; do
-  read -r code _ < "$out/$s.exit" 2>/dev/null || code=?
+  read -r code _ < "$out/$s.exit" 2>/dev/null || code="?"
   [ "$code" = 0 ] && continue
   echo
   echo "== $s (exit $code): $out/$s.log"

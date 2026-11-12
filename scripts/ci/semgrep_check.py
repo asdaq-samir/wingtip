@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 import subprocess
 import sys
 from collections import Counter
@@ -39,28 +38,18 @@ MESSAGES: dict[str, str] = {}
 SUFFIXES = (".ts", ".tsx", ".js", ".mjs", ".py", ".swift", ".kt", ".java", ".cs")
 
 
-def version() -> str:
-    for line in (ROOT / ".tool-versions").read_text().splitlines():
-        if line.startswith("semgrep "):
-            return line.split()[1]
-    raise SystemExit(".tool-versions has no semgrep line")
-
-
 def command() -> list[str] | None:
-    want = version()
-    if shutil.which("semgrep"):
-        have = subprocess.run(["semgrep", "--version"], capture_output=True, text=True).stdout.strip()
-        if have == want:
-            return ["semgrep"]
-    if shutil.which("uvx"):
-        return ["uvx", "-q", f"semgrep@{want}"]
+    """Semgrep at .tool-versions' version, installed by mise (scripts/build/tool.sh)."""
+    tool = str(ROOT / "scripts/build/tool.sh")
+    if subprocess.run([tool, "--have", "semgrep"], capture_output=True).returncode == 0:
+        return [tool, "semgrep"]
     return None
 
 
 def scan(files: list[str]) -> Counter:
     cmd = command()
     if cmd is None:
-        print("semgrep: neither semgrep at .tool-versions' version nor uvx here")
+        print("semgrep: no semgrep at .tool-versions' version, and mise cannot install it here")
         sys.exit(1 if os.environ.get("GITHUB_ACTIONS") else 3)  # skipped on a Mac, a failure in CI
     found: Counter = Counter()  # (rule, path, line) -> findings
     # A few hundred paths a call keeps the command line within its limit.
