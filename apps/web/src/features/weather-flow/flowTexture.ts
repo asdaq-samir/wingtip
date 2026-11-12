@@ -1,19 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { ImageInterpolation, ImageType, getRasterPoints, loadTextureData, type TextureData } from "weatherlayers-gl";
-import type { ShownField } from "./flowLook";
 import { pictureUrl, type FlowFrame, type FlowLayer } from "./useWeatherFlow";
 
-/** A frame's picture of a field as a query: loaded once by weatherlayers-gl's
- *  own loader (its pixels, which the layers and the bubble read), kept
- *  while the frame's runs are the same. */
-export const pictureQuery = (frame: FlowFrame, field: ShownField | "wind") => ({
-  queryKey: ["weatherFlowPicture", frame.id, field, frame.gfs_run, frame.hrrr_run],
-  queryFn: () => loadTextureData(pictureUrl(frame, field), { cache: false }),
+/** A frame's picture of a file ("wind-060") as a query: loaded once by
+ *  weatherlayers-gl's own loader (its pixels, which the layers and the
+ *  bubble read), kept while its version, the run that made it, is the
+ *  same. */
+export const pictureQuery = (frame: FlowFrame, file: string) => ({
+  queryKey: ["weatherFlowPicture", frame.id, file, frame.versions?.[file] ?? null],
+  queryFn: () => loadTextureData(pictureUrl(frame, file), { cache: false }),
   staleTime: Infinity,
 });
 
 /** The picture of `field` for `frame`, once it has loaded. */
-export function useFlowTexture(frame: FlowFrame | null, field: ShownField | "wind", enabled = true) {
+export function useFlowTexture(frame: FlowFrame | null, field: string, enabled = true) {
   return useQuery({
     ...(frame
       ? pictureQuery(frame, field)
@@ -24,9 +24,10 @@ export function useFlowTexture(frame: FlowFrame | null, field: ShownField | "win
 }
 
 /** A picture's value at a point: weatherlayers-gl's own reading of it
- *  (its direction, for the wind, the one it blows from). */
-export function valueAt(layer: FlowLayer, field: ShownField | "wind", texture: TextureData | undefined, point: [number, number]) {
-  const spec = layer.fields[field];
+ *  (its direction, for the wind, the one it blows from). `file` is the
+ *  picture's name, its encoding its field's ("temp-060" is a "temp"). */
+export function valueAt(layer: FlowLayer, file: string, texture: TextureData | undefined, point: [number, number]) {
+  const spec = layer.fields[file.split("-")[0]!];
   if (!texture || !spec) return null;
   const read = getRasterPoints(
     {

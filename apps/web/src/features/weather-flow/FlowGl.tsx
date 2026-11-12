@@ -6,13 +6,16 @@ import type { IControl, Map as MlMap, RasterLayerSpecification } from "maplibre-
 import { GridLayer, GridStyle, ImageType, ParticleLayer, RasterLayer, type TextureData } from "weatherlayers-gl";
 import { useEngineWhen } from "../../lib/engine/useEngineReady";
 import { slotId, useGlLayer, useGlMap } from "../../lib/map/gl/glLayer";
+import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
 import { prefersReducedMotion } from "../../lib/motion";
 import { WEATHER } from "../../lib/tokens";
 import { FlowBar } from "./FlowBar";
+import { FlowAirmets } from "./FlowAirmets";
 import { FlowBubble } from "./FlowBubble";
 import { FlowHatch } from "./FlowHatch";
 import { FlowLegend } from "./FlowLegend";
 import { FlowPins } from "./FlowPins";
+import { fileOf, levelShown } from "./flowLevels";
 import { STREAK_RAMP, hasStreaks, lookOf, streaksAt, type ShownField } from "./flowLook";
 import { pictureQuery, useFlowTexture } from "./flowTexture";
 import { useWeatherFlow, type FlowFrame, type FlowLayer } from "./useWeatherFlow";
@@ -33,6 +36,10 @@ function useWholeZoom(map: MlMap): number {
   );
 }
 const RADAR_CREDIT = "Radar: NWS NEXRAD via Iowa Environmental Mesonet";
+/** At this zoom and out, the GFS's world wind streaks run past AWC's box,
+ *  across the oceans, as Apple Weather's do zoomed out (the owner,
+ *  2026-11-12); closer in, AWC's alone. */
+const WORLD_ZOOM = 4;
 
 /** Whether the page is in sight: nothing animates in a hidden tab. */
 function usePageShown() {
@@ -71,14 +78,22 @@ export default function FlowGl() {
   const field = flow.field === "off" ? "wind" : flow.field;
   const streaks = hasStreaks(field);
   const { frame, layer } = flow;
+  const picked = useWeatherLayers((s) => s.flowLevel);
+  // The level shown and the pictures it means: the field's at it, and the
+  // wind's streaks at the wind's level, the surface's under the gusts.
+  const level = levelShown(layer, field, picked);
+  const file = field === "gust" ? "gust" : fileOf(field, level);
+  const windFile = field === "wind" ? file : "wind";
   const radar = field === "precip" && frame?.past && frame.radar_tiles ? frame.radar_tiles : null;
-  const fieldTexture = useFlowTexture(frame, field, !radar);
-  const windTexture = useFlowTexture(frame, "wind", streaks);
+  const zoom = useWholeZoom(map);
+  const world = streaks && windFile === "wind" && zoom <= WORLD_ZOOM && !!layer?.world_bounds;
+  const fieldTexture = useFlowTexture(frame, file, !radar);
+  const windTexture = useFlowTexture(frame, windFile, streaks);
+  const worldTexture = useFlowTexture(frame, "world", world);
   const shown = usePageShown();
   const [reduced] = useState(prefersReducedMotion);
   const overlay = useMemo(() => new MapboxOverlay({ interleaved: true, layers: [] }), []);
   const phone = map.getContainer().clientWidth < 640;
-  const zoom = useWholeZoom(map);
 
   useEffect(() => {
     const control = overlay as unknown as IControl;
@@ -91,21 +106,23 @@ export default function FlowGl() {
   }, [map, overlay]);
 
   // The next hour's pictures fetched ahead, so play steps without a wait.
-  usePrefetchNext(flow.frames, flow.shown, field);
+  usePrefetchNext(flow.frames, flow.shown, streaks ? [file, windFile] : [file]);
 
   useEffect(() => {
     const wind = streaks ? windTexture : undefined;
-    overlay.setProps({ layers: layer ? layersOf(layer, field, fieldTexture, wind, { reduced, animate: shown, phone, zoom }) : [] });
-  }, [overlay, layer, field, fieldTexture, windTexture, streaks, reduced, shown, phone, zoom]);
+    const textures = { field: fieldTexture, wind, world: world ? worldTexture : undefined };
+    overlay.setProps({ layers: layer ? layersOf(layer, field, textures, { reduced, animate: shown, phone, zoom }) : [] });
+  }, [overlay, layer, field, fieldTexture, windTexture, worldTexture, world, streaks, reduced, shown, phone, zoom]);
 
   return (
     <>
       {radar && <RadarTiles key={radar} url={radar} />}
-      {layer?.bounds && <FlowHatch bounds={layer.bounds} />}
-      <FlowLegend field={field} frame={frame} radar={!!radar} />
+      {layer?.bounds && !world && <FlowHatch bounds={layer.bounds} />}
+      <FlowLegend field={field} file={file} level={level} layer={layer} frame={frame} radar={!!radar} world={world} />
       <FlowBar />
-      {layer && <FlowBubble field={field} layer={layer} frame={frame} />}
-      {layer && field === "temp" && <FlowPins layer={layer} frame={frame} />}
+      {frame && <FlowAirmets frame={frame} />}
+      {layer && <FlowBubble field={field} file={file} level={level} layer={layer} frame={frame} />}
+      {layer && field === "temp" && <FlowPins layer={layer} frame={frame} file={file} />}
     </>
   );
 }
@@ -129,29 +146,31 @@ function shimTransform(map: MlMap): () => void {
   };
 }
 
-function usePrefetchNext(frames: FlowFrame[], shown: number, field: ShownField) {
+function usePrefetchNext(frames: FlowFrame[], shown: number, files: string[]) {
   const client = useQueryClient();
   const next = frames[shown + 1];
+  const wanted = files.join(",");
   useEffect(() => {
     if (!next) return;
-    for (const f of new Set<ShownField | "wind">(hasStreaks(field) ? [field, "wind"] : [field])) {
+    for (const f of new Set(wanted.split(","))) {
       if (!next.fields.includes(f)) continue;
       void client.prefetchQuery(pictureQuery(next, f));
     }
-  }, [client, next, field]);
+  }, [client, next, wanted]);
 }
 
 function layersOf(
   layer: FlowLayer,
   field: ShownField,
-  fieldTexture: TextureData | undefined,
-  /** The wind's picture where the field has streaks (hasStreaks), else none. */
-  windTexture: TextureData | undefined,
+  /** The field's picture; the wind's where the field has streaks
+   *  (hasStreaks); the world's wind zoomed out (WORLD_ZOOM). */
+  textures: { field?: TextureData; wind?: TextureData; world?: TextureData },
   { reduced, animate, phone, zoom }: { reduced: boolean; animate: boolean; phone: boolean; zoom: number },
 ): Layer[] {
   const bounds = layer.bounds as [number, number, number, number];
   const spec = layer.fields[field];
   const wind = layer.fields.wind;
+  const { field: fieldTexture, wind: windTexture, world: worldTexture } = textures;
   // Into the map's style under its "areas" slot (lib/map/gl/glLayer's
   // SLOTS): over the chart and the radar, under the areas, the airspace,
   // the route and the marks. @deck.gl/mapbox's prop, which the layers'
@@ -172,12 +191,24 @@ function layersOf(
       }),
     );
   }
-  if (windTexture && wind) {
-    const common = { image: windTexture, imageType: ImageType.VECTOR, imageUnscale: wind.unscale as [number, number], bounds, ...place };
+  // The world's wind first, under AWC's: the weather service clears it
+  // inside the layer's box (app.flow_aloft), so the two never overlap.
+  const sources: { id: string; image: TextureData; bounds: [number, number, number, number] }[] = [];
+  if (worldTexture && wind && layer.world_bounds)
+    sources.push({ id: "world", image: worldTexture, bounds: layer.world_bounds as [number, number, number, number] });
+  if (windTexture && wind) sources.push({ id: "box", image: windTexture, bounds });
+  for (const source of sources) {
+    const common = {
+      image: source.image,
+      imageType: ImageType.VECTOR,
+      imageUnscale: wind!.unscale as [number, number],
+      bounds: source.bounds,
+      ...place,
+    };
     out.push(
       reduced
         ? new GridLayer({
-            id: "flow-arrows",
+            id: `flow-arrows-${source.id}`,
             ...common,
             style: GridStyle.ARROW,
             density: 0,
@@ -185,7 +216,7 @@ function layersOf(
             palette: STREAK_RAMP,
           })
         : new ParticleLayer({
-            id: "flow-streaks",
+            id: `flow-streaks-${source.id}`,
             ...common,
             numParticles: streaksAt(zoom, phone).count,
             maxAge: streaksAt(zoom, phone).age,

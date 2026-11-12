@@ -1,0 +1,39 @@
+{
+  "x-call": "wingtip_weather::aviation_grids::call",
+  "description": "AWC's icing severity category (0 to 4) in its words: None, Trace, Light, Moderate, Heavy (aviationweather.gov GFA help); null for any other value. Not a PIREP's severity (AWC: \"not synonymous\").",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "IcingSeverityInput",
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "category"
+      ]
+    },
+    "answer": {
+      "title": "IcingSeverityAnswer",
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "None",
+        "Trace",
+        "Light",
+        "Moderate",
+        "Heavy",
+        null
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

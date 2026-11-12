@@ -344,6 +344,45 @@ object WingtipColors {
         /** Ten miles, where the veil has gone. */
         val FlowVisHigh = Color(0xFFC9CCDC)
         const val FLOW_VIS_HIGH_HEX = "#c9ccdc"
+        /** AWC's icing severity (IFI), pale to deep blue as aviationweather.gov's Icing map shades it: trace. */
+        val FlowIcingTrace = Color(0xFF9FD3F5)
+        const val FLOW_ICING_TRACE_HEX = "#9fd3f5"
+        /** Light. */
+        val FlowIcingLight = Color(0xFF4FA3E8)
+        const val FLOW_ICING_LIGHT_HEX = "#4fa3e8"
+        /** Moderate. */
+        val FlowIcingModerate = Color(0xFF2A5FD6)
+        const val FLOW_ICING_MODERATE_HEX = "#2a5fd6"
+        /** Heavy. */
+        val FlowIcingHeavy = Color(0xFF5B2BB0)
+        const val FLOW_ICING_HEAVY_HEX = "#5b2bb0"
+        /** AWC's turbulence (GTG, EDR), green to amber to red to magenta as its Turbulence map shades it: light. */
+        val FlowTurbLight = Color(0xFFB9D86A)
+        const val FLOW_TURB_LIGHT_HEX = "#b9d86a"
+        /** Moderate. */
+        val FlowTurbModerate = Color(0xFFF0B429)
+        const val FLOW_TURB_MODERATE_HEX = "#f0b429"
+        /** Severe. */
+        val FlowTurbSevere = Color(0xFFD6402B)
+        const val FLOW_TURB_SEVERE_HEX = "#d6402b"
+        /** Extreme. */
+        val FlowTurbExtreme = Color(0xFFB0217E)
+        const val FLOW_TURB_EXTREME_HEX = "#b0217e"
+        /** The freezing level, ft MSL, blue where it is low (at the surface) to warm where it is high: the surface. */
+        val FlowFrzLow = Color(0xFF3A52C4)
+        const val FLOW_FRZ_LOW_HEX = "#3a52c4"
+        /** 8,000 ft. */
+        val FlowFrzMid = Color(0xFF42B8A6)
+        const val FLOW_FRZ_MID_HEX = "#42b8a6"
+        /** 16,000 ft and up. */
+        val FlowFrzHigh = Color(0xFFE2A63A)
+        const val FLOW_FRZ_HIGH_HEX = "#e2a63a"
+        /** AWC's cloud tops, ft MSL, grey-white deepening to slate as they rise: low tops. */
+        val FlowTopsLow = Color(0xFFD5DBE4)
+        const val FLOW_TOPS_LOW_HEX = "#d5dbe4"
+        /** FL400 and up. */
+        val FlowTopsHigh = Color(0xFF5A6478)
+        const val FLOW_TOPS_HIGH_HEX = "#5a6478"
         /** The thin diagonal lines over where the layer has no data, as Apple Weather hatches it. */
         val FlowHatch = Color(0xFF7B8494)
         const val FLOW_HATCH_HEX = "#7b8494"

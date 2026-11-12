@@ -11,11 +11,13 @@ export type WindsAt = "off" | "plan" | 3000 | 6000 | 9000 | 12000 | 18000;
 export type LoopKind = "off" | "radar" | "ir" | "visible" | "both";
 
 /** The flow layer's field (features/weather-flow): a colour field of the
- *  model's wind or gusts under the wind's streaks, or its precipitation,
- *  cloud, ceiling, thunderstorm energy (CAPE), temperature or visibility
- *  alone, Windy's and Apple Weather's map (the owner, 2026-11-11), or off
- *  -- off by default, so it never fights the chart. */
-export type FlowField = "off" | "wind" | "gust" | "precip" | "cloud" | "ceiling" | "cape" | "temp" | "vis";
+ *  wind or gusts under the wind's streaks, or the precipitation, cloud,
+ *  ceiling, thunderstorm energy (CAPE), temperature, visibility, and the
+ *  Aviation Weather Center's icing, turbulence, freezing level and cloud
+ *  tops alone, Windy's and Apple Weather's map (the owner, 2026-11-11 and
+ *  2026-11-12), or off -- off by default, so it never fights the chart. */
+export type FlowField =
+  "off" | "wind" | "gust" | "precip" | "cloud" | "ceiling" | "cape" | "temp" | "vis" | "icing" | "turb" | "frzlvl" | "tops";
 
 /** How fast the loop plays: a menu, as a discrete setting is (the owner,
  *  2026-09-30), not a slider. */
@@ -39,12 +41,25 @@ interface WeatherLayers {
   pireps: boolean;
   winds: WindsAt;
   flow: FlowField;
+  /** The flow layer's level, by AWC's name ("sfc", "060", "max"): the
+   *  wind's, the icing's or the turbulence's, whichever is shown (a field
+   *  without the level falls back to its first). */
+  flowLevel: string;
   set: (patch: Partial<Omit<WeatherLayers, "set">>) => void;
 }
 
 export const useWeatherLayers = create<WeatherLayers>()(
   persist(
-    (set) => ({ loop: "off", loopSpeed: "normal", areas: false, pireps: false, winds: "off", flow: "off", set: (patch) => set(patch) }),
+    (set) => ({
+      loop: "off",
+      loopSpeed: "normal",
+      areas: false,
+      pireps: false,
+      winds: "off",
+      flow: "off",
+      flowLevel: "sfc",
+      set: (patch) => set(patch),
+    }),
     { name: "wingtip.weatherLayers", partialize: ({ set: _set, ...kept }) => kept },
   ),
 );

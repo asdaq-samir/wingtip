@@ -16,15 +16,19 @@ seen.
 The GRIB2 records read, each as NOMADS' grib filter names it
 (filter_gfs_0p25.pl, filter_hrrr_2d.pl; NCEP's GRIB2 tables, 4.2):
 
-- UGRD, VGRD at 10 m above ground: the wind's east and north parts, m/s.
-  The HRRR's are along its Lambert grid, not east and north, and turned
-  here (_earth_relative).
-- GUST at the surface: the gust, m/s.
+- UGRD, VGRD at 10 m above ground: the wind's east and north parts, m/s,
+  read now only from the GFS's 1-degree world file (app.flow_aloft). The
+  HRRR's are along its Lambert grid, not east and north, and turned here
+  (_earth_relative).
 - PRATE at the surface: the precipitation rate, kg m-2 s-1 (mm/s of
   water). The HRRR's is instantaneous; the GFS's file has an instantaneous
   record and one averaged since the last bucket, and the instantaneous one
   is taken (_pick).
-- TCDC for the entire atmosphere: total cloud cover, percent.
+- GUST at the surface and TCDC for the entire atmosphere (the gust, m/s,
+  and total cloud cover, percent): only while AWC's are down
+  (FALLBACK_GROUPS).
+- HGT at the 0C isotherm (the GFS's only): the lowest freezing level,
+  geopotential metres MSL (freezing_level_ft).
 - TMP at 2 m above ground: the temperature, K.
 - VIS at the surface: visibility, m.
 - HGT at the cloud ceiling: the ceiling's height, geopotential metres
@@ -43,7 +47,10 @@ CAPE's categories, the ceiling's bands -- is the engine's
 (wingtip_weather::model_weather); the rate-to-reflectivity relation too,
 asked here by name (precip_dbz).
 
-This is model output, unedited, and every screen that shows it says so.
+The wind, the gusts and the cloud cover are the Aviation Weather
+Center's (app.flow_awc), the icing and turbulence its IFI and GTG
+(app.flow_dafs); these are what NOMADS still gives, where AWC publishes
+no grid of its own (the legend names each field's source).
 """
 
 from __future__ import annotations
@@ -96,14 +103,31 @@ FIELDS = {
     "gust": {"unit": "kt", "unscale": (0.0, 100.0), "vector": False},
     "precip": {"unit": "dBZ", "unscale": (0.0, 75.0), "vector": False},
     "cloud": {"unit": "%", "unscale": (0.0, 100.0), "vector": False},
-    "temp": {"unit": "°C", "unscale": (-50.0, 50.0), "vector": False},
+    # -75 to 52.5 C, half a degree a step: FL300's cold as well as the
+    # surface's heat, as the temperature is kept at every level.
+    "temp": {"unit": "°C", "unscale": (-75.0, 52.5), "vector": False},
     "vis": {"unit": "SM", "unscale": (0.0, 10.0), "vector": False},
     # The ceiling, ft above the ground: 50 ft a step to 12,750, well past
     # AIM 7-1-7's 3,000 ft; a ceiling over it, and none, at the top, clear.
     "ceiling": {"unit": "ft", "unscale": (0.0, 12_750.0), "vector": False},
     # Surface CAPE: 20 J/kg a step to 5,100, past the NWS's extreme (4,000).
     "cape": {"unit": "J/kg", "unscale": (0.0, 5_100.0), "vector": False},
+    # The lowest freezing level, ft MSL, 100 ft a step; 0 where it is at
+    # the surface (app.flow_grid.freezing_level_ft).
+    "frzlvl": {"unit": "ft", "unscale": (0.0, 25_500.0), "vector": False},
+    # AWC's GFA cloud tops, ft MSL, 200 ft a step to FL510 (app.flow_awc).
+    "tops": {"unit": "ft", "unscale": (0.0, 51_000.0), "vector": False},
+    # AWC's icing severity category, 0 none to 4 heavy (app.flow_dafs; the
+    # engine's icing_severity); a 50th a step, so each category is exact.
+    "icing": {"unit": "category", "unscale": (0.0, 5.1), "vector": False},
+    # AWC's turbulence, EDR (m^2/s^3)^1/3, 0.004 a step (app.flow_dafs).
+    "turb": {"unit": "EDR", "unscale": (0.0, 1.02), "vector": False},
 }
+
+#: The fields kept as the worst in a cell rather than its mean: a hazard
+#: somewhere in a 25 km cell is shown, not averaged away with the calm
+#: air round it (as the ceiling is kept as its lowest).
+WORST = ("icing", "turb")
 
 #: (GRIB2 variable, level type, level value) each field reads.
 RECORDS = {
@@ -112,6 +136,7 @@ RECORDS = {
     ("GUST", "ground or water surface", 0.0): "gust",
     ("PRATE", "ground or water surface", 0.0): "prate",
     ("TCDC", "entire atmosphere", 0.0): "cloud",
+    ("HGT", "level of 0oc isotherm", 0.0): "frzlvl",
     ("TMP", "specific height level above ground", 2.0): "temp",
     ("VIS", "ground or water surface", 0.0): "vis",
     ("CAPE", "ground or water surface", 0.0): "cape",
@@ -123,11 +148,14 @@ RECORDS = {
 #: nothing not read (one request for all took TMP at the surface and the
 #: ground's height every hour, 1.3 MB of the HRRR's 10.7; measured
 #: 2026-11-12). Their files are joined, GRIB2 being a run of messages.
-FILTER_GROUPS = (
-    (("UGRD", "VGRD", "TMP"), ("10_m_above_ground", "2_m_above_ground")),
-    (("GUST", "PRATE", "VIS", "CAPE"), ("surface",)),
-    (("TCDC", "HGT"), ("entire_atmosphere", "cloud_ceiling")),
-)
+FILTER_GROUPS = ((("TMP",), ("2_m_above_ground",)), (("PRATE", "VIS", "CAPE"), ("surface",)), (("HGT",), ("cloud_ceiling",)))
+#: The GFS's file also gives the freezing level: 0.3 MB an hour boxed,
+#: where the HRRR's would be 2.3 MB of its whole grid (measured
+#: 2026-11-12), for a field 25 km cells show as well.
+GFS_GROUPS = (*FILTER_GROUPS, (("HGT",), ("0C_isotherm",)))
+#: The surface wind, its gusts and the cloud cover, asked only while
+#: AWC's GFA is past its margin (app.flow's fallback).
+FALLBACK_GROUPS = ((("UGRD", "VGRD"), ("10_m_above_ground",)), (("GUST",), ("surface",)), (("TCDC",), ("entire_atmosphere",)))
 #: The ground's height, asked once a model (app.flow's terrain).
 TERRAIN_GROUPS = ((("HGT",), ("surface",)),)
 
@@ -152,8 +180,8 @@ def read(body: bytes) -> tuple[dict[str, np.ndarray], tuple[np.ndarray, np.ndarr
         found[name] = (instant, np.asarray(message.data(), dtype=np.float32).ravel())
         if where is None:
             where = _points(meta)
-    if where is None or ("terrain" not in found and ("u" not in found or "v" not in found)):
-        raise ValueError("no 10 m wind in the file")
+    if where is None:
+        raise ValueError("no record read in the file")
     return {name: values for name, (_, values) in found.items()}, where
 
 
@@ -201,7 +229,7 @@ def on_grid(values: dict[str, np.ndarray], where: tuple[np.ndarray, np.ndarray],
     somewhere in a 25 km cell is shown, not averaged away with the clear
     sky round it (infinity, none, in a mean would hide every ceiling)."""
     lats, lons = where
-    if hrrr:
+    if hrrr and "u" in values and "v" in values:
         u, v = _earth_relative(values["u"], values["v"], lons)
         values = {**values, "u": u, "v": v}
     cells = _cells(lats, lons)
@@ -217,6 +245,9 @@ def on_grid(values: dict[str, np.ndarray], where: tuple[np.ndarray, np.ndarray],
         if name == "ceiling":
             each = np.full(ROWS * COLS, np.nan)
             np.fmin.at(each, cells[good], field[good])
+        elif name.startswith(WORST):
+            each = np.full(ROWS * COLS, np.nan)
+            np.fmax.at(each, cells[good], field[good])
         else:
             each = np.bincount(cells[good], weights=field[good], minlength=ROWS * COLS) / np.maximum(n, 1)
         mean = np.where((n >= least) & (counts >= least), each, np.nan)
@@ -246,7 +277,9 @@ def precip_dbz(rate_mm_h: np.ndarray) -> np.ndarray:
 
 def in_units(grid: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     """The grid's records as the fields are kept (FIELDS' units)."""
-    out = {"u": grid["u"] * MS_TO_KT, "v": grid["v"] * MS_TO_KT}
+    out = {}
+    if "u" in grid and "v" in grid:
+        out["u"], out["v"] = grid["u"] * MS_TO_KT, grid["v"] * MS_TO_KT
     if "gust" in grid:
         out["gust"] = grid["gust"] * MS_TO_KT
     if "prate" in grid:
@@ -261,7 +294,61 @@ def in_units(grid: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         out["ceiling"] = grid["ceiling"]  # ft above the ground already (ceiling_agl_ft)
     if "cape" in grid:
         out["cape"] = grid["cape"]
+    if "frzlvl" in grid:
+        out["frzlvl"] = grid["frzlvl"]  # ft MSL already (freezing_level_ft)
     return out
+
+
+def freezing_level_ft(height_m: np.ndarray, terrain_m: np.ndarray | None) -> np.ndarray:
+    """The GFS's lowest freezing level, geopotential metres MSL, as feet
+    MSL, 0 where it is at the surface. NCEP's post-processor writes it
+    as "the first ... layer where the temperature is less than 273.16K",
+    moving "up from the surface", MSL, and "freezing height to surface
+    when T2m is below freezing" (UPP's FRZLVL.f, read 2026-11-12): the
+    G-AIRMET's "lowest freezing level above the ground or at the surface
+    as appropriate" (aviationweather.gov GFA help), its heights MSL (AIM
+    7-1-14). At the ground's height to within a metre is at the surface."""
+    feet = np.asarray(height_m, dtype=np.float64) * FT_PER_M
+    if terrain_m is None or terrain_m.size != height_m.size:
+        return feet
+    return np.where(height_m <= terrain_m + 1.0, 0.0, feet)
+
+
+def upsample(half: np.ndarray) -> np.ndarray:
+    """A grid at 0.5 degree over the box (HALF_ROWS x HALF_COLS, north
+    row first) on the output's 0.25: the points between two of its points
+    their mean, between four the mean of the four; NaN only where all of
+    them are."""
+    out = np.full((ROWS, COLS), np.nan, dtype=np.float32)
+    out[::2, ::2] = half
+
+    def mean(*parts):
+        stack = np.stack(parts)
+        n = np.sum(~np.isnan(stack), axis=0)
+        total = np.nansum(stack, axis=0)
+        return np.where(n > 0, total / np.maximum(n, 1), np.nan)
+
+    out[1::2, ::2] = mean(half[:-1, :], half[1:, :])
+    out[::2, 1::2] = mean(half[:, :-1], half[:, 1:])
+    out[1::2, 1::2] = mean(half[:-1, :-1], half[1:, :-1], half[:-1, 1:], half[1:, 1:])
+    return out
+
+
+#: The 0.5-degree grid AWC's and the GFS's coarser files are read on: the
+#: output's every other point.
+HALF_STEP_DEG = 0.5
+HALF_ROWS = (ROWS + 1) // 2
+HALF_COLS = (COLS + 1) // 2
+
+
+def png_values(base: str, values: np.ndarray) -> bytes:
+    """A scalar's PNG at `base`'s encoding (FIELDS)."""
+    return png(base, {base: values})
+
+
+def png_wind(u_kt: np.ndarray, v_kt: np.ndarray) -> bytes:
+    """A wind's PNG, east part in red, north in green (FIELDS["wind"])."""
+    return png("wind", {"u": u_kt, "v": v_kt})
 
 
 def _channel(values: np.ndarray, unscale: tuple[float, float]) -> np.ndarray:
@@ -276,6 +363,8 @@ def png(field: str, kept: dict[str, np.ndarray]) -> bytes | None:
     where the model gave nothing of it."""
     spec = FIELDS[field]
     if spec["vector"]:
+        if "u" not in kept or "v" not in kept:
+            return None
         u, v = kept["u"], kept["v"]
         red, green, missing = _channel(u, spec["unscale"]), _channel(v, spec["unscale"]), np.isnan(u) | np.isnan(v)
     else:

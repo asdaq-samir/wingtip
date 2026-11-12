@@ -843,9 +843,9 @@ export const api = {
 
   /** The weather the map draws in a box (vfr.weather_map): the SIGMETs and
    *  G-AIRMETs, the PIREPs, the winds aloft at `altitudeFt`, and when the
-   *  radar was made. */
-  weatherMap: (box: { south: number; west: number; north: number; east: number }, altitudeFt: number | null) =>
-    planner.GET("/api/weather/map", { params: { query: { ...box, altitude_ft: altitudeFt ?? undefined } } }).then(data<WeatherMap>),
+   *  radar was made; at `at` (UNIX seconds), now when none. */
+  weatherMap: (box: { south: number; west: number; north: number; east: number }, altitudeFt: number | null, at?: number) =>
+    planner.GET("/api/weather/map", { params: { query: { ...box, altitude_ft: altitudeFt ?? undefined, at } } }).then(data<WeatherMap>),
 
   /** The radar or satellite loop's frames (wingtip.weather_loop), oldest
    *  first, each with its tile templates. */

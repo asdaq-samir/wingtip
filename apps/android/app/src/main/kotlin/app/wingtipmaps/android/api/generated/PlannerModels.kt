@@ -3442,7 +3442,9 @@ data class FlowProgram (
 
 /**
  * The flow layer's timeline, oldest frame first; the pictures' box,
- * [west, south, east, north] degrees; each field's encoding; when the
+ * [west, south, east, north] degrees, and the world wind's ("world");
+ * each field's levels by AWC's names ("sfc", "060", "max"); each
+ * field's encoding; when the
  * weather service fetched it, UNIX seconds; and the credit.
  */
 @Serializable
@@ -3454,7 +3456,11 @@ data class FlowLayer (
     val fetchedAt: Double,
 
     val fields: Map<String, FlowField>,
-    val frames: List<FlowFrame>
+    val frames: List<FlowFrame>,
+    val levels: Map<String, List<String>>? = null,
+
+    @SerialName("world_bounds")
+    val worldBounds: List<Double>? = null
 )
 
 /**
@@ -3475,7 +3481,10 @@ data class FlowField (
  * models that made it ("HRRR and GFS" over the lower 48 and the GFS
  * beyond, or the GFS alone) with each one's run and forecast hour,
  * whether its hour has come (`past`), the fields it has, and for a past
- * hour the radar mosaic made by then, XYZ tiles, None with none.
+ * hour the radar mosaic made by then, XYZ tiles, None with none. A
+ * field is a name and, at a level, the level after a dash ("wind-060");
+ * `versions` gives each picture's version, its address's `v`, and
+ * `sources` where each came from.
  */
 @Serializable
 data class FlowFrame (
@@ -3500,7 +3509,24 @@ data class FlowFrame (
     @SerialName("radar_tiles")
     val radarTiles: String? = null,
 
-    val valid: String
+    val sources: Map<String, FlowSource>? = null,
+    val valid: String,
+    val versions: Map<String, String>? = null
+)
+
+/**
+ * Where a field's picture came from, as the legend says it: its
+ * source's name ("AWC winds", "NOAA GFS"), when the run that made it
+ * was made, ISO UTC, whether that is older than the source's cadence
+ * and a margin (`stale`), and whether NOAA's model stands in for AWC's
+ * while AWC's is unavailable (`fallback`).
+ */
+@Serializable
+data class FlowSource (
+    val fallback: Boolean,
+    val issued: String? = null,
+    val label: String,
+    val stale: Boolean
 )
 
 /**

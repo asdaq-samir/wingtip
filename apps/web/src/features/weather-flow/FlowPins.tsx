@@ -17,10 +17,10 @@ import type { FlowFrame, FlowLayer } from "./useWeatherFlow";
  * position as the page has it near (useOwnShipNear, a hundredth of a
  * degree), so a moving fix does not draw them again each second.
  */
-export function FlowPins({ layer, frame }: { layer: FlowLayer; frame: FlowFrame | null }) {
+export function FlowPins({ layer, frame, file = "temp" }: { layer: FlowLayer; frame: FlowFrame | null; file?: string }) {
   const own = useOwnShipNear();
   const favorites = usePreferences((s) => s.favoriteAirports);
-  const texture = useFlowTexture(frame, "temp");
+  const texture = useFlowTexture(frame, file);
   const points = useMemo(() => {
     const out: { key: string; at: [number, number] }[] = [];
     if (own) out.push({ key: "own", at: [own.lon, own.lat] });
@@ -30,7 +30,7 @@ export function FlowPins({ layer, frame }: { layer: FlowLayer; frame: FlowFrame 
   return (
     <>
       {points.map((p) => (
-        <Pin key={p.key} at={p.at} value={valueAt(layer, "temp", texture, p.at)?.value ?? null} />
+        <Pin key={p.key} at={p.at} value={valueAt(layer, file, texture, p.at)?.value ?? null} />
       ))}
     </>
   );

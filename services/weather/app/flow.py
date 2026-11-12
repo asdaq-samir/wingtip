@@ -1,38 +1,56 @@
-"""The model weather under the map's flow layer (the owner, 2026-11-11:
-"Can we overlay weather and wind like this?", Windy's and Apple
-Weather's wind map): the surface wind, its gusts, the precipitation, the
-cloud cover, the ceiling, the thunderstorm energy (CAPE), the
-temperature and the visibility, from the HRRR where it
-covers and the GFS beyond it (app.flow_grid), for a timeline of hours --
-the last hour, now, and every second hour on to twelve ahead -- each
-hour a small PNG per field in the weather store and one record ("flow")
-listing them, which the planner serves (wingtip.weather_flow).
+"""The weather under the map's flow layer (the owner, 2026-11-11: "Can
+we overlay weather and wind like this?", Windy's and Apple Weather's wind
+map), from the Aviation Weather Center wherever it publishes the field
+(the owner, 2026-11-12), for a timeline of hours -- the last hour, now,
+and every second hour on to twelve ahead -- each hour a small PNG per
+field and level in the weather store and one record ("flow") listing
+them, which the planner serves (wingtip.weather_flow).
 
-Sources, NOAA's NOMADS grib filter, each cut to the variables and levels
-the layer draws (flow_grid.FILTER_GROUPS, three requests a file):
+Each frame is made of parts, each its source's, fetched again only when
+its source has something newer:
 
-- GFS 0.25 degree (filter_gfs_0p25.pl, gfs.tHHz.pgrb2.0p25.fFFF), runs at
-  00, 06, 12 and 18Z, hourly forecast hours to 120; boxed to the grid,
-  about 2.6 MB an hour of forecast (2.3 MB before the ceiling and CAPE;
-  measured 2026-11-12).
-- HRRR CONUS (filter_hrrr_2d.pl, hrrr.tHHz.wrfsfcfFF.grib2), a run every
-  hour, forecast hours to 18 (48 at 00, 06, 12, 18Z), about 10.8 MB an
-  hour of forecast for the whole grid (10.7 MB before): the filter cannot
-  box a Lambert grid. Only the hours up to WEATHER_FLOW_HRRR_AHEAD_H ahead are taken
-  from it (now and the last hour by default), the rest from the GFS.
+- "awc" (app.flow_awc): AWC's GFA wind at the map's levels and its gusts,
+  its cloud cover and cloud tops; about 1.4 MB an hour.
+- "dafs" (app.flow_dafs): AWC's icing (IFI) and turbulence (GTG) by
+  level over the lower 48, from NOMADS; about 5.6 MB an hour, the
+  turbulence nearly all of it.
+- "nomads" (app.flow_nomads): what AWC publishes no grid of -- precipitation,
+  ceiling, temperature, visibility, CAPE and the freezing level -- from
+  NOAA's HRRR where it covers and the GFS beyond it, NOMADS' grib filter
+  (flow_grid.FILTER_GROUPS): the GFS 0.25 degree (filter_gfs_0p25.pl,
+  gfs.tHHz.pgrb2.0p25.fFFF; 00, 06, 12, 18Z, hourly to 120 h), boxed,
+  about 1.9 MB an hour; the HRRR CONUS (filter_hrrr_2d.pl,
+  hrrr.tHHz.wrfsfcfFF.grib2, hourly runs to 18 h), its whole grid as the
+  filter cannot box a Lambert grid, about 4.6 MB an hour, only for the
+  hours up to WEATHER_FLOW_HRRR_AHEAD_H ahead (now and the last hour by
+  default). (Before AWC's wind and cloud, 2.6 and 10.8 MB; measured
+  2026-11-12.)
+- "aloft" (app.flow_aloft): the GFS's temperature at the wind's levels
+  (about 2 MB) and its world wind (0.16 MB).
+
+When AWC's GFA part of a frame is older than AWC_MARGIN (its hourly
+cadence and two hours more), the frame falls back to NOMADS for what it
+also has -- the surface wind, gusts and cloud (the HRRR and GFS) and the
+wind at the levels (the GFS) -- and says which source each picture is
+from (the frame's "sources"), so the legend names it. AWC's cloud tops,
+icing and turbulence have no NOMADS twin: the last good copy is served,
+and the legend shows its time in the caution colour once past its own
+margin (wingtip.weather_flow). A source that fails is backed off and its
+part held (app.flow_parts), so the timeline is never emptied while any
+good copy is held.
 
 The ground's height under each model's points, which the ceiling is
 measured above, is the same every hour: fetched once a model (0.3 MB the
 GFS's, 2.2 MB the HRRR's) and kept in the store (_terrain).
 
-A frame already stored from the same runs and forecast hours is kept as
-it is, so a fetch downloads only the hours that are new: the timeline's
-forecast hours fall on even hours (FRAMES), so the next hour's timeline
-shares most of them with this one's.
+AWC's GFA and the IFI and GTG run a cycle every hour: a frame's part from
+them is kept until a cycle REFRESH_H newer has it, so an hour's fetch
+downloads about a third of the timeline's. The GFS's and HRRR's parts are
+kept while their runs are the newest (the timeline's forecast hours fall
+on even hours, FRAMES, so the next hour's timeline shares most of them).
 
 The record is served while its newest frame is within an hour of now:
-model guidance with no validity of its own, so this is the feed's
-health, as GLMP's is, not an aviation rule.
+the feed's health, as GLMP's is, not an aviation rule.
 """
 
 from __future__ import annotations
@@ -41,30 +59,22 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 
-import requests
 from wingtip import weather_store
-from wingtip.config import REQUEST_HEADERS as HEADERS
+from wingtip.engine import ask
 
-from . import flow_grid
-from .settings import get_settings
+from . import flow_aloft, flow_awc, flow_grid, flow_nomads, flow_parts
 
 log = logging.getLogger(__name__)
 
-GFS_URL = "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl"
-HRRR_URL = "https://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl"
-#: A GFS run is on NOMADS about three and a half hours after its hour
-#: (app.gfs); an HRRR run's first hours about 50 minutes after its own.
-GFS_POSTED_AFTER = timedelta(hours=4)
-HRRR_POSTED_AFTER = timedelta(minutes=55)
-#: The HRRR's every-hour runs go to 18 hours (NOAA GSL, HRRR v4).
-HRRR_LAST_STEP = 18
-RUNS_TRIED = 3
 #: The timeline: the hour before, now, then each even UTC hour to twelve ahead.
 AHEAD_H = 12
+#: How old AWC's GFA part may be before NOMADS takes its place: its hourly
+#: cycle and two hours more, as a late cycle is not an outage.
+AWC_MARGIN = timedelta(hours=3)
 
 
 class FlowUnavailable(RuntimeError):
-    """NOMADS gave no run of the model asked for."""
+    """No source gave any of the timeline."""
 
 
 def frame_times(now: datetime) -> list[datetime]:
@@ -76,171 +86,45 @@ def frame_times(now: datetime) -> list[datetime]:
     return [hour - timedelta(hours=1), hour, *ahead]
 
 
-def _gfs_run(now: datetime) -> datetime:
-    latest = (now - GFS_POSTED_AFTER).replace(minute=0, second=0, microsecond=0)
-    return latest - timedelta(hours=latest.hour % 6)
+def awc_fresh(part: dict | None, now: datetime) -> bool:
+    """Whether a frame's AWC part is within AWC_MARGIN of now."""
+    cycle = flow_parts.cycle_of((part or {}).get("key"))
+    return cycle is not None and now - cycle <= AWC_MARGIN
 
 
-def _hrrr_run(now: datetime) -> datetime:
-    return (now - HRRR_POSTED_AFTER).replace(minute=0, second=0, microsecond=0)
-
-
-def _download(url: str, params: dict) -> bytes | None:
-    try:
-        resp = requests.get(url, params=params, headers=HEADERS, timeout=60)
-    except requests.RequestException as err:
-        raise FlowUnavailable(f"NOMADS did not answer: {err}") from err
-    # A run not posted yet is a 404, or an HTML page saying so.
-    if resp.status_code == 404 or not resp.content.startswith(b"GRIB"):
+def _frame(valid: datetime, now: datetime, held: dict | None, latest_awc: datetime | None, levels: dict) -> dict | None:
+    """One hour's frame, each of its parts new where its source has a
+    newer run and held otherwise; NOMADS in AWC's place where AWC's part
+    is past its margin. None where it has no part at all."""
+    held_parts = (held or {}).get("parts") or {}
+    parts = {}
+    parts["awc"] = flow_parts.awc(valid, latest_awc, levels, held_parts.get("awc"))
+    fallback = not awc_fresh(parts["awc"], now)
+    parts["dafs"] = flow_parts.dafs(valid, now, levels, held_parts.get("dafs"))
+    parts["nomads"] = flow_parts.guarded(
+        "nomads", lambda: flow_nomads.part(valid, now, held_parts.get("nomads"), fallback), held_parts.get("nomads")
+    )
+    parts["aloft"] = flow_parts.aloft(valid, now, levels, held_parts.get("aloft"), fallback)
+    parts = {k: v for k, v in parts.items() if v}
+    if not parts:
         return None
-    if not resp.ok:
-        raise FlowUnavailable(f"NOMADS answered {resp.status_code}")
-    return resp.content
-
-
-def _grouped(url: str, params: dict, groups) -> bytes | None:
-    """A file's records, one request a group of variables and levels
-    (flow_grid.FILTER_GROUPS), joined; None where any is not posted yet."""
-    bodies = []
-    for names, levels in groups:
-        asked = {**{f"var_{v}": "on" for v in names}, **{f"lev_{lev}": "on" for lev in levels}}
-        body = _download(url, {**params, **asked})
-        if body is None:
-            return None
-        bodies.append(body)
-    return b"".join(bodies)
-
-
-def _gfs(run: datetime, step: int, groups=flow_grid.FILTER_GROUPS) -> bytes | None:
-    box = {"toplat": flow_grid.NORTH, "bottomlat": flow_grid.SOUTH, "leftlon": flow_grid.WEST, "rightlon": flow_grid.EAST}
-    params = {"dir": f"/gfs.{run:%Y%m%d}/{run:%H}/atmos", "file": f"gfs.t{run:%H}z.pgrb2.0p25.f{step:03d}", "subregion": "", **box}
-    return _grouped(GFS_URL, params, groups)
-
-
-def _hrrr(run: datetime, step: int, groups=flow_grid.FILTER_GROUPS) -> bytes | None:
-    params = {"dir": f"/hrrr.{run:%Y%m%d}/conus", "file": f"hrrr.t{run:%H}z.wrfsfcf{step:02d}.grib2"}
-    return _grouped(HRRR_URL, params, groups)
-
-
-def _terrain(model: str, source: dict, size: int):
-    """The ground's height under the model's points, m MSL, flat: the
-    store's, else fetched from the run at hand and kept. None where it
-    cannot be had, and the ceiling is then left out."""
-    name = f"flow-terrain-{model}"
-    try:
-        held = weather_store.read_array(name)
-        if held.size == size:
-            return held
-    except (OSError, ValueError):
-        pass
-    body = _GET[model](*_back(source), flow_grid.TERRAIN_GROUPS)
-    if body is None:
-        return None
-    values, _ = flow_grid.read(body)
-    terrain = values.get("terrain")
-    if terrain is None or terrain.size != size:
-        return None
-    weather_store.write_array(name, terrain)
-    return terrain
-
-
-def _model_grid(model: str, source: dict, body: bytes) -> dict:
-    """A model's file on the output grid, its ceiling made feet above the
-    ground under each point before the points are put in cells."""
-    values, where = flow_grid.read(body)
-    if "ceiling" in values:
-        terrain = _terrain(model, source, values["ceiling"].size)
-        ceiling = values.pop("ceiling")
-        if terrain is not None:
-            values["ceiling"] = flow_grid.ceiling_agl_ft(ceiling, terrain)
-    return flow_grid.on_grid(values, where, hrrr=model == "hrrr")
-
-
-def _tries(valid: datetime, now: datetime) -> dict[str, list[tuple[datetime, int]]]:
-    """The runs and forecast hours each model is tried at for a frame, the
-    latest run posted first and the ones before it after; no HRRR for an
-    hour past WEATHER_FLOW_HRRR_AHEAD_H."""
-    tries: dict[str, list[tuple[datetime, int]]] = {"hrrr": [], "gfs": []}
-    if valid <= now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=get_settings().flow_hrrr_ahead_h):
-        latest = _hrrr_run(now)
-        for n in range(RUNS_TRIED):
-            run = latest - timedelta(hours=n)
-            step = int((valid - run).total_seconds() // 3600)
-            if 0 <= step <= HRRR_LAST_STEP:
-                tries["hrrr"].append((run, step))
-    latest = _gfs_run(now)
-    for n in range(RUNS_TRIED):
-        run = latest - timedelta(hours=6 * n)
-        # Hour 0 has no precipitation rate or cloud cover of its own (the
-        # GFS's are averaged from it), so never it.
-        tries["gfs"].append((run, max(1, int((valid - run).total_seconds() // 3600))))
-    return tries
-
-
-#: (model, run, step) -> when NOMADS last said it was not posted yet: not
-#: asked again for NOT_UP_RETRY_S.
-_NOT_UP: dict = {}
-NOT_UP_RETRY_S = 300
-_GET = {"gfs": _gfs, "hrrr": _hrrr}
-
-
-def _first(model: str, tries: list[tuple[datetime, int]], held: dict | None) -> tuple[dict | None, bytes | None]:
-    """The newest run of `model` posted for a frame, as {"run",
-    "forecast_hour"}, and its file -- None for the file where the frame
-    held already came from that run, which is not downloaded again."""
-    for run, step in tries:
-        source = {"run": _iso(run), "forecast_hour": step}
-        if held == source:
-            return source, None
-        if time.time() - _NOT_UP.get((model, run, step), 0) < NOT_UP_RETRY_S:
-            continue
-        body = _GET[model](run, step)
-        if body is None:
-            _NOT_UP[(model, run, step)] = time.time()
-            continue
-        return source, body
-    return None, None
-
-
-def _frame(valid: datetime, now: datetime, held: dict | None) -> dict | None:
-    """One hour's frame: the GFS's grid, the HRRR's over it where taken,
-    each field's PNG stored; the frame held kept as it is where it came
-    from the same runs. None where NOMADS has no GFS for it."""
-    tries = _tries(valid, now)
-    held_key = (held or {}).get("key") or {}
-    if held and not all(weather_store.blob_exists(n, ".png") for n in held.get("files", {}).values()):
-        held, held_key = None, {}
-    gfs, gfs_body = _first("gfs", tries["gfs"], held_key.get("gfs"))
-    if gfs is None:
-        return None
-    hrrr, hrrr_body = _first("hrrr", tries["hrrr"], held_key.get("hrrr"))
-    key = {"gfs": gfs, "hrrr": hrrr}
-    if held and key == held_key:
-        return held
-    # One model new, the other as held: the held one's file again.
-    gfs_body = gfs_body or _GET["gfs"](*_back(gfs))
-    hrrr_body = hrrr_body or (_GET["hrrr"](*_back(hrrr)) if hrrr else None)
-    if gfs_body is None:
-        return None
-    grid = _model_grid("gfs", gfs, gfs_body)
-    if hrrr_body is not None:
-        grid = flow_grid.blend(grid, _model_grid("hrrr", hrrr, hrrr_body))
-    else:
-        key["hrrr"] = None
-    kept = flow_grid.in_units(grid)
-    files = {}
-    for field in flow_grid.FIELDS:
-        body = flow_grid.png(field, kept)
-        if body is None:
-            continue
-        name = f"flow-{valid:%Y%m%d%H}-{field}"
-        weather_store.write_blob(name, body, ".png")
-        files[field] = name
-    return {"valid": _iso(valid), "key": key, "files": files, "model": "HRRR and GFS" if key["hrrr"] else "GFS"}
-
-
-def _back(source: dict) -> tuple[datetime, int]:
-    return datetime.fromisoformat(source["run"].replace("Z", "+00:00")), int(source["forecast_hour"])
+    # Later parts' pictures over earlier ones': AWC's last while fresh,
+    # first (under NOMADS' fallback) while not.
+    order = ("dafs", "nomads", "aloft", "awc") if not fallback else ("awc", "dafs", "nomads", "aloft")
+    files, sources = {}, {}
+    for name in order:
+        for field, blob in (parts.get(name) or {}).get("files", {}).items():
+            files[field] = blob
+            sources[field] = name
+    nomads_key = (parts.get("nomads") or {}).get("key") or {}
+    return {
+        "valid": flow_nomads.iso(valid),
+        "parts": parts,
+        "key": nomads_key,
+        "files": files,
+        "sources": sources,
+        "model": "HRRR and GFS" if nomads_key.get("hrrr") else "GFS",
+    }
 
 
 def fetch(now: datetime | None = None) -> None:
@@ -250,30 +134,25 @@ def fetch(now: datetime | None = None) -> None:
     now = now or datetime.now(timezone.utc)
     held = weather_store.read("flow")
     held_frames = {f["valid"]: f for f in (held.data or {}).get("frames", [])} if held else {}
+    levels = ask("flow_levels")
+    latest_awc = None
+    if not flow_parts.backed_off("awc"):
+        latest_awc = flow_parts.guarded("awc", lambda: flow_awc.latest_cycle(now), None)
     frames = []
     for valid in frame_times(now):
-        try:
-            frame = _frame(valid, now, held_frames.get(_iso(valid)))
-        except FlowUnavailable:
-            raise
-        except (ValueError, RuntimeError, AttributeError) as err:
-            # One hour's file unreadable leaves the rest of the timeline.
-            log.warning("the %s frame could not be read: %s", _iso(valid), err)
-            frame = None
+        frame = _frame(valid, now, held_frames.get(flow_nomads.iso(valid)), latest_awc, levels)
         if frame is not None:
             frames.append(frame)
     if not frames:
-        raise FlowUnavailable("no GFS run on NOMADS for the timeline")
+        raise FlowUnavailable("no source had the timeline")
     names = {name for f in frames for name in f["files"].values()}
     record = {
         "frames": frames,
         "bounds": list(flow_grid.BOUNDS),
+        "world_bounds": list(flow_aloft.WORLD_BOUNDS),
+        "levels": {k: [lv["id"] for lv in levels[k]] for k in ("wind", "icing", "turbulence")},
         "fields": {k: {"unit": v["unit"], "unscale": list(v["unscale"]), "vector": v["vector"]} for k, v in flow_grid.FIELDS.items()},
     }
     newest = max(datetime.fromisoformat(f["valid"].replace("Z", "+00:00")) for f in frames)
     weather_store.write("flow", record, fetched_at=time.time(), until=(newest + timedelta(hours=1)).timestamp())
     weather_store.remove_blobs("flow-", names, ".png")
-
-
-def _iso(at: datetime) -> str:
-    return at.strftime("%Y-%m-%dT%H:%M:%SZ")

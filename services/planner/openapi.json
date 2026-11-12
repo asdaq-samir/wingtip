@@ -9201,7 +9201,7 @@
         "type": "object"
       },
       "FlowFrame": {
-        "description": "One hour of the flow layer's timeline (wingtip.weather_flow): its\nid (YYYYMMDDHH, the PNGs' address), when it is valid, ISO UTC, the\nmodels that made it (\"HRRR and GFS\" over the lower 48 and the GFS\nbeyond, or the GFS alone) with each one's run and forecast hour,\nwhether its hour has come (`past`), the fields it has, and for a past\nhour the radar mosaic made by then, XYZ tiles, None with none.",
+        "description": "One hour of the flow layer's timeline (wingtip.weather_flow): its\nid (YYYYMMDDHH, the PNGs' address), when it is valid, ISO UTC, the\nmodels that made it (\"HRRR and GFS\" over the lower 48 and the GFS\nbeyond, or the GFS alone) with each one's run and forecast hour,\nwhether its hour has come (`past`), the fields it has, and for a past\nhour the radar mosaic made by then, XYZ tiles, None with none. A\nfield is a name and, at a level, the level after a dash (\"wind-060\");\n`versions` gives each picture's version, its address's `v`, and\n`sources` where each came from.",
         "properties": {
           "fields": {
             "items": {
@@ -9277,9 +9277,25 @@
             ],
             "title": "Radar Tiles"
           },
+          "sources": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FlowSource"
+            },
+            "default": {},
+            "title": "Sources",
+            "type": "object"
+          },
           "valid": {
             "title": "Valid",
             "type": "string"
+          },
+          "versions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Versions",
+            "type": "object"
           }
         },
         "required": [
@@ -9293,7 +9309,7 @@
         "type": "object"
       },
       "FlowLayer": {
-        "description": "The flow layer's timeline, oldest frame first; the pictures' box,\n[west, south, east, north] degrees; each field's encoding; when the\nweather service fetched it, UNIX seconds; and the credit.",
+        "description": "The flow layer's timeline, oldest frame first; the pictures' box,\n[west, south, east, north] degrees, and the world wind's (\"world\");\neach field's levels by AWC's names (\"sfc\", \"060\", \"max\"); each\nfield's encoding; when the\nweather service fetched it, UNIX seconds; and the credit.",
         "properties": {
           "bounds": {
             "items": {
@@ -9323,6 +9339,31 @@
             },
             "title": "Frames",
             "type": "array"
+          },
+          "levels": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "default": {},
+            "title": "Levels",
+            "type": "object"
+          },
+          "world_bounds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "World Bounds"
           }
         },
         "required": [
@@ -9522,6 +9563,41 @@
           "heard"
         ],
         "title": "FlowProgram",
+        "type": "object"
+      },
+      "FlowSource": {
+        "description": "Where a field's picture came from, as the legend says it: its\nsource's name (\"AWC winds\", \"NOAA GFS\"), when the run that made it\nwas made, ISO UTC, whether that is older than the source's cadence\nand a margin (`stale`), and whether NOAA's model stands in for AWC's\nwhile AWC's is unavailable (`fallback`).",
+        "properties": {
+          "fallback": {
+            "title": "Fallback",
+            "type": "boolean"
+          },
+          "issued": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issued"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "stale",
+          "fallback"
+        ],
+        "title": "FlowSource",
         "type": "object"
       },
       "FlownSegment": {
@@ -30209,7 +30285,7 @@
     },
     "/api/weather/flow/{frame}/{field}.png": {
       "get": {
-        "description": "One frame's picture of a field, a PNG of the layer's grid (FlowLayer's\nbounds and the field's encoding); a 404 for a frame no longer held.",
+        "description": "One frame's picture of a field, a PNG of the layer's grid (FlowLayer's\nbounds and the field's encoding); a 404 for a frame no longer held.\nAsked for at its current version it is kept for good; otherwise not\nkept, as the next fetch may change it.",
         "operationId": "flow_picture_api_weather_flow__frame___field__png_get",
         "parameters": [
           {
@@ -30227,18 +30303,28 @@
             "name": "field",
             "required": true,
             "schema": {
-              "enum": [
-                "wind",
-                "gust",
-                "precip",
-                "cloud",
-                "ceiling",
-                "cape",
-                "temp",
-                "vis"
-              ],
+              "pattern": "^[a-z]+(-[a-z0-9]{3})?$",
               "title": "Field",
               "type": "string"
+            }
+          },
+          {
+            "description": "The picture's version, the frame's versions[field]",
+            "in": "query",
+            "name": "v",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[a-z0-9]{1,40}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The picture's version, the frame's versions[field]",
+              "title": "V"
             }
           }
         ],

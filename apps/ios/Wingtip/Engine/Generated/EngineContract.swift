@@ -1360,6 +1360,40 @@ enum EngineContract {
         }
     }
 
+    struct AviationGridBandsAnswer: Codable, Equatable, Sendable {
+        var icing: [EngineContract.AviationGridBandsAnswerIcingItem]
+        var turbulence: EngineContract.AviationGridBandsAnswerTurbulence
+    }
+
+    struct AviationGridBandsAnswerIcingItem: Codable, Equatable, Sendable {
+        var word: String
+        var from: Double
+    }
+
+    struct AviationGridBandsAnswerTurbulence: Codable, Equatable, Sendable {
+        var light: [EngineContract.AviationGridBandsAnswerTurbulenceLightItem]
+        var medium: [EngineContract.AviationGridBandsAnswerTurbulenceMediumItem]
+        var heavy: [EngineContract.AviationGridBandsAnswerTurbulenceHeavyItem]
+    }
+
+    struct AviationGridBandsAnswerTurbulenceHeavyItem: Codable, Equatable, Sendable {
+        var word: String
+        var from: Double
+    }
+
+    struct AviationGridBandsAnswerTurbulenceLightItem: Codable, Equatable, Sendable {
+        var word: String
+        var from: Double
+    }
+
+    struct AviationGridBandsAnswerTurbulenceMediumItem: Codable, Equatable, Sendable {
+        var word: String
+        var from: Double
+    }
+
+    struct AviationGridBandsInput: Codable, Equatable, Sendable {
+    }
+
     struct AwcAirsigmetsReadInput: Codable, Equatable, Sendable {
         var text: String
     }
@@ -3542,6 +3576,61 @@ enum EngineContract {
         }
     }
 
+    struct FlowLevelsAnswer: Codable, Equatable, Sendable {
+        var wind: [EngineContract.FlowLevelsAnswerWindItem]
+        var icing: [EngineContract.FlowLevelsAnswerIcingItem]
+        var turbulence: [EngineContract.FlowLevelsAnswerTurbulenceItem]
+        var temperatureHpa: [Double]
+        var flightLevelsFromFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case wind
+            case icing
+            case turbulence
+            case temperatureHpa = "temperature_hpa"
+            case flightLevelsFromFt = "flight_levels_from_ft"
+        }
+    }
+
+    struct FlowLevelsAnswerIcingItem: Codable, Equatable, Sendable {
+        var id: String
+        var ft: Double?
+        var isaHpa: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case ft
+            case isaHpa = "isa_hpa"
+        }
+    }
+
+    struct FlowLevelsAnswerTurbulenceItem: Codable, Equatable, Sendable {
+        var id: String
+        var ft: Double?
+        var isaHpa: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case ft
+            case isaHpa = "isa_hpa"
+        }
+    }
+
+    struct FlowLevelsAnswerWindItem: Codable, Equatable, Sendable {
+        var id: String
+        var ft: Double?
+        var isaHpa: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case ft
+            case isaHpa = "isa_hpa"
+        }
+    }
+
+    struct FlowLevelsInput: Codable, Equatable, Sendable {
+    }
+
     struct ForecastHourInput: Codable, Equatable, Sendable {
         var hoursAhead: Double?
 
@@ -3990,10 +4079,12 @@ enum EngineContract {
 
     struct GairmetHazardsAnswer: Codable, Equatable, Sendable {
         var hazards: [String: String]
+        var labels: [String: String]
         var snapshotS: Double
 
         enum CodingKeys: String, CodingKey {
             case hazards
+            case labels
             case snapshotS = "snapshot_s"
         }
     }
@@ -4012,6 +4103,21 @@ enum EngineContract {
     struct GairmetTitleInput: Codable, Equatable, Sendable {
         var hazard: String?
         var severity: String?
+    }
+
+    struct GfaCloudLayersAnswer: Codable, Equatable, Sendable {
+        var percent: [Double]
+        var topFt: [Double?]
+
+        enum CodingKeys: String, CodingKey {
+            case percent
+            case topFt = "top_ft"
+        }
+    }
+
+    struct GfaCloudLayersInput: Codable, Equatable, Sendable {
+        var layers: [String]
+        var covers: [String]
     }
 
     struct GlideRangeInput: Codable, Equatable, Sendable {
@@ -5482,6 +5588,10 @@ enum EngineContract {
             case values
             case sfcHgt = "sfc_hgt"
         }
+    }
+
+    struct IcingSeverityInput: Codable, Equatable, Sendable {
+        var category: Double
     }
 
     struct IfrAlternateCheck: Codable, Equatable, Sendable {
@@ -10849,6 +10959,16 @@ enum EngineContract {
     }
 
     struct TrafficReachInput: Codable, Equatable, Sendable {
+    }
+
+    struct TurbulenceCategoryInput: Codable, Equatable, Sendable {
+        var edr: Double
+        var weightClass: String
+
+        enum CodingKeys: String, CodingKey {
+            case edr
+            case weightClass = "weight_class"
+        }
     }
 
     struct UnderwayInput: Codable, Equatable, Sendable {

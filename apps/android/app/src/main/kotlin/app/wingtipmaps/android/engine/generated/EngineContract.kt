@@ -1323,6 +1323,49 @@ object EngineContract {
     )
 
     @Serializable
+    data class AviationGridBandsAnswer(
+        val icing: List<EngineContract.AviationGridBandsAnswerIcingItem>,
+        val turbulence: EngineContract.AviationGridBandsAnswerTurbulence,
+    )
+
+    @Serializable
+    data class AviationGridBandsAnswerIcingItem(
+        val word: String,
+        val from: Double,
+    )
+
+    @Serializable
+    data class AviationGridBandsAnswerTurbulence(
+        val light: List<EngineContract.AviationGridBandsAnswerTurbulenceLightItem>,
+        val medium: List<EngineContract.AviationGridBandsAnswerTurbulenceMediumItem>,
+        val heavy: List<EngineContract.AviationGridBandsAnswerTurbulenceHeavyItem>,
+    )
+
+    @Serializable
+    data class AviationGridBandsAnswerTurbulenceHeavyItem(
+        val word: String,
+        val from: Double,
+    )
+
+    @Serializable
+    data class AviationGridBandsAnswerTurbulenceLightItem(
+        val word: String,
+        val from: Double,
+    )
+
+    @Serializable
+    data class AviationGridBandsAnswerTurbulenceMediumItem(
+        val word: String,
+        val from: Double,
+    )
+
+    @Serializable
+    class AviationGridBandsInput {
+        override fun equals(other: Any?): Boolean = other is AviationGridBandsInput
+        override fun hashCode(): Int = 0
+    }
+
+    @Serializable
     data class AwcAirsigmetsReadInput(
         val text: String,
     )
@@ -3464,6 +3507,47 @@ object EngineContract {
     )
 
     @Serializable
+    data class FlowLevelsAnswer(
+        val wind: List<EngineContract.FlowLevelsAnswerWindItem>,
+        val icing: List<EngineContract.FlowLevelsAnswerIcingItem>,
+        val turbulence: List<EngineContract.FlowLevelsAnswerTurbulenceItem>,
+        @SerialName("temperature_hpa")
+        val temperatureHpa: List<Double>,
+        @SerialName("flight_levels_from_ft")
+        val flightLevelsFromFt: Double,
+    )
+
+    @Serializable
+    data class FlowLevelsAnswerIcingItem(
+        val id: String,
+        val ft: Double? = null,
+        @SerialName("isa_hpa")
+        val isaHpa: Double? = null,
+    )
+
+    @Serializable
+    data class FlowLevelsAnswerTurbulenceItem(
+        val id: String,
+        val ft: Double? = null,
+        @SerialName("isa_hpa")
+        val isaHpa: Double? = null,
+    )
+
+    @Serializable
+    data class FlowLevelsAnswerWindItem(
+        val id: String,
+        val ft: Double? = null,
+        @SerialName("isa_hpa")
+        val isaHpa: Double? = null,
+    )
+
+    @Serializable
+    class FlowLevelsInput {
+        override fun equals(other: Any?): Boolean = other is FlowLevelsInput
+        override fun hashCode(): Int = 0
+    }
+
+    @Serializable
     data class ForecastHourInput(
         @SerialName("hours_ahead")
         val hoursAhead: Double? = null,
@@ -3875,6 +3959,7 @@ object EngineContract {
     @Serializable
     data class GairmetHazardsAnswer(
         val hazards: Map<String, String>,
+        val labels: Map<String, String>,
         @SerialName("snapshot_s")
         val snapshotS: Double,
     )
@@ -3900,6 +3985,19 @@ object EngineContract {
     data class GairmetTitleInput(
         val hazard: String? = null,
         val severity: String? = null,
+    )
+
+    @Serializable
+    data class GfaCloudLayersAnswer(
+        val percent: List<Double>,
+        @SerialName("top_ft")
+        val topFt: List<Double?>,
+    )
+
+    @Serializable
+    data class GfaCloudLayersInput(
+        val layers: List<String>,
+        val covers: List<String>,
     )
 
     @Serializable
@@ -5440,6 +5538,11 @@ object EngineContract {
          */
         @SerialName("sfc_hgt")
         val sfcHgt: List<Double>? = null,
+    )
+
+    @Serializable
+    data class IcingSeverityInput(
+        val category: Double,
     )
 
     @Serializable
@@ -10773,6 +10876,13 @@ object EngineContract {
         override fun equals(other: Any?): Boolean = other is TrafficReachInput
         override fun hashCode(): Int = 0
     }
+
+    @Serializable
+    data class TurbulenceCategoryInput(
+        val edr: Double,
+        @SerialName("weight_class")
+        val weightClass: String,
+    )
 
     @Serializable
     data class UnderwayInput(

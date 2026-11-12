@@ -4,8 +4,10 @@ import MenuPick from "../../components/MenuPick";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
 import { GLASS } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
+import { levelName, levelsOf } from "./flowLevels";
 import { FIELDS, lookOf, rampGradient, tickPlace, type ShownField } from "./flowLook";
-import type { FlowFrame } from "./useWeatherFlow";
+import { sourceLine } from "./flowSource";
+import type { FlowFrame, FlowLayer } from "./useWeatherFlow";
 
 /**
  * The flow layer's controls and legend at the map's top left, as Apple
@@ -16,12 +18,32 @@ import type { FlowFrame } from "./useWeatherFlow";
  * map's own buttons keep their places); and under them a narrow card --
  * the field and its unit, a slim bar of the colour ramp with its marks
  * (knots, degrees, or for precipitation, the ceiling and CAPE their bands'
- * words, the engine's), and small, whose the picture is: the model's
- * forecast, which is not an observation, or for an hour past the radar's.
+ * words, the engine's), and small, whose the picture is (sourceLine). Where
+ * the field has levels, a menu of them beside the field's.
  */
-export function FlowLegend({ field, frame, radar }: { field: ShownField; frame: FlowFrame | null; radar: boolean }) {
+export function FlowLegend({
+  field,
+  file,
+  level,
+  layer,
+  frame,
+  radar,
+  world,
+}: {
+  field: ShownField;
+  /** The picture shown (flowLevels' fileOf). */
+  file: string;
+  level: string | null;
+  layer: FlowLayer | null;
+  frame: FlowFrame | null;
+  radar: boolean;
+  /** Whether the GFS's world wind is drawn too, zoomed out. */
+  world: boolean;
+}) {
   const set = useWeatherLayers((s) => s.set);
   const look = lookOf(field);
+  const levels = levelsOf(layer, field).map((value) => ({ value, label: levelName(value) }));
+  const source = sourceLine(frame, file, radar, world);
   return (
     <div className="pointer-events-none absolute top-[max(0.5rem,env(safe-area-inset-top))] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] z-[1000] flex flex-col items-start gap-2">
       <div className="pointer-events-auto flex items-center gap-2">
@@ -42,6 +64,14 @@ export function FlowLegend({ field, frame, radar }: { field: ShownField; frame: 
             testId="weather-flow-legend-field"
           />
         </span>
+        {level !== null && levels.length > 1 && (
+          // The level, a menu as AWC's own picker's levels are a list
+          // (Sfc, 060 ... Max; the owner's screenshot, 2026-11-12), not a
+          // slider: a discrete setting (the owner's rule).
+          <span className={cn(GLASS, "rounded-full p-1")}>
+            <MenuPick name="Level" value={level} choices={levels} onPick={(v) => set({ flowLevel: v })} testId="weather-flow-level" />
+          </span>
+        )}
       </div>
       <section
         aria-label={`${look.name} legend`}
@@ -63,8 +93,12 @@ export function FlowLegend({ field, frame, radar }: { field: ShownField; frame: 
             ))}
           </ol>
         </div>
-        <p className={cn("px-3 pb-2 text-muted-foreground", TEXT.caption)} data-testid="weather-flow-source">
-          {radar ? "Radar, observed" : `Model forecast, not an observation${frame ? ` (${frame.model})` : ""}`}
+        <p
+          className={cn("px-3 pb-2", source.stale ? "text-caution-ink" : "text-muted-foreground", TEXT.caption)}
+          data-testid="weather-flow-source"
+          data-stale={source.stale || undefined}
+        >
+          {source.text}
         </p>
       </section>
     </div>

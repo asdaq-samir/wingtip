@@ -6,6 +6,8 @@ import { cn } from "cn";
 import { callEngine } from "../../lib/engine/engine";
 import { useGlMap, useGlMiss } from "../../lib/map/gl/glLayer";
 import { TEXT } from "../../lib/text";
+import { aviationReading } from "./aviationLooks";
+import { fileOf } from "./flowLevels";
 import type { ShownField } from "./flowLook";
 import { useFlowTexture, valueAt } from "./flowTexture";
 import { usePlayer, type FlowFrame, type FlowLayer } from "./useWeatherFlow";
@@ -20,9 +22,25 @@ import { usePlayer, type FlowFrame, type FlowLayer } from "./useWeatherFlow";
  * engine's precip_intensity, AIM 7-1-12), with no rate and no unit (the
  * owner's pick, 2026-11-12); the ceiling its feet above the ground, or
  * none; CAPE its figure and the NWS's category (the engine's
- * cape_category); the others their value and unit.
+ * cape_category); the wind at a level its temperature there too; AWC's
+ * icing and turbulence their words (the engine's icing_severity and
+ * turbulence_category), the freezing level and the cloud tops their
+ * level; the others their value and unit.
  */
-export function FlowBubble({ field, layer, frame }: { field: ShownField; layer: FlowLayer; frame: FlowFrame | null }) {
+export function FlowBubble({
+  field,
+  file,
+  level,
+  layer,
+  frame,
+}: {
+  field: ShownField;
+  /** The picture shown (flowLevels' fileOf), the field at its level. */
+  file: string;
+  level: string | null;
+  layer: FlowLayer;
+  frame: FlowFrame | null;
+}) {
   const { map } = useGlMap();
   const point = usePlayer((s) => s.point);
   const set = usePlayer((s) => s.set);
@@ -46,11 +64,14 @@ export function FlowBubble({ field, layer, frame }: { field: ShownField; layer: 
   }, [map, marker, point]);
 
   const precip = field === "precip";
-  const texture = useFlowTexture(frame, field);
-  const temp = useFlowTexture(frame, "temp", precip);
+  // The wind at a level says the temperature there too (the owner,
+  // 2026-11-12); Max is no one level, so has none.
+  const windTemp = field === "wind" && level !== null && level !== "max" ? fileOf("temp", level) : null;
+  const texture = useFlowTexture(frame, file);
+  const temp = useFlowTexture(frame, windTemp ?? "temp", precip || windTemp !== null);
   const cloud = useFlowTexture(frame, "cloud", precip);
   if (!point) return null;
-  const read = valueAt(layer, field, texture, point);
+  const read = valueAt(layer, file, texture, point);
   let body: React.ReactNode = <span className={TEXT.caption}>–</span>;
   if (precip) {
     const t = valueAt(layer, "temp", temp, point);
@@ -84,8 +105,20 @@ export function FlowBubble({ field, layer, frame }: { field: ShownField; layer: 
           {said?.word && <span className={cn("font-semibold", TEXT.caption)}>{said.word}</span>}
         </span>
       );
+  } else if (read && (field === "icing" || field === "turb" || field === "frzlvl" || field === "tops")) {
+    const said = aviationReading(field, read.value);
+    body = <Said over={said.over} figure={said.figure} under={said.under} />;
   } else if (read) {
-    body = <Figure field={field} unit={layer.fields[field]?.unit ?? ""} read={read} top={layer.fields[field]?.unscale[1]} />;
+    const t = windTemp ? valueAt(layer, windTemp, temp, point) : null;
+    body = (
+      <Figure
+        field={field}
+        unit={layer.fields[field]?.unit ?? ""}
+        read={read}
+        top={layer.fields[field]?.unscale[1]}
+        temp={t ? t.value : null}
+      />
+    );
   }
   // The temperature a small pill with its figure alone, as the pilot's
   // position and favourites carry (FlowPins), and only where the pilot
@@ -119,11 +152,14 @@ function Figure({
   unit,
   read,
   top,
+  temp = null,
 }: {
   field: ShownField;
   unit: string;
   read: { value: number; direction?: number };
   top?: number;
+  /** The temperature at the wind's level, C, where it is known. */
+  temp?: number | null;
 }) {
   let over: string | null = null;
   let figure = String(Math.round(read.value));
@@ -138,10 +174,17 @@ function Figure({
     else [figure, under] = [(Math.round(read.value / 50) * 50).toLocaleString("en-US"), "ft agl"];
   }
   if (field === "cape") over = callEngine("cape_category", { j_kg: read.value });
+  if (field === "wind" && temp !== null) under = `${under} ${Math.round(temp)}°`;
+  return <Said over={over} figure={figure} under={under} />;
+}
+
+/** A badge's three lines: what it is, the figure, its unit. */
+function Said({ over, figure, under }: { over: string | null; figure: string; under: string }) {
   return (
     <span className="flex flex-col items-center gap-0.5 leading-none tabular-nums">
       {over !== null && <span className={cn("font-semibold opacity-60", TEXT.caption)}>{over}</span>}
-      <span className={cn("font-bold", TEXT.title)}>{figure}</span>
+      {/* A word ("Moderate", "FL060") smaller than a figure, so it fits the badge. */}
+      <span className={cn("font-bold", figure.length > 4 ? TEXT.detail : TEXT.title)}>{figure}</span>
       <span className={cn("font-semibold uppercase opacity-60", TEXT.caption)}>{under}</span>
     </span>
   );

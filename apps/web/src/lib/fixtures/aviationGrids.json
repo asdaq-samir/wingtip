@@ -1,0 +1,115 @@
+{
+  "why": "The Aviation Weather Center's grids in a pilot's words (engine/crates/weather/src/aviation_grids.rs), held by the engine (engine/facade/tests/aviation_grids.rs) and the web (features/weather-flow). Each case's expected answer is from aviationweather.gov's GFA help (read 2026-11-12): the icing's five categories, the GTG's EDR thresholds by weight class, and its cloud text's heights in hundreds of feet MSL.",
+  "cases": [
+    {
+      "why": "AWC's icing category 0 is none (aviationweather.gov GFA help: none, trace, light, moderate, heavy)",
+      "rule": "icing_severity",
+      "input": {
+        "category": 0
+      },
+      "expected": "None"
+    },
+    {
+      "why": "category 3 is moderate",
+      "rule": "icing_severity",
+      "input": {
+        "category": 3
+      },
+      "expected": "Moderate"
+    },
+    {
+      "why": "category 4 is heavy",
+      "rule": "icing_severity",
+      "input": {
+        "category": 4
+      },
+      "expected": "Heavy"
+    },
+    {
+      "why": "EDR 0.12 is under the light class's light (13 x 0.01): no word",
+      "rule": "turbulence_category",
+      "input": {
+        "edr": 0.12,
+        "weight_class": "light"
+      },
+      "expected": null
+    },
+    {
+      "why": "EDR 0.13 is light for a light airplane (GFA help: Light < 15,500 lb, 13)",
+      "rule": "turbulence_category",
+      "input": {
+        "edr": 0.13,
+        "weight_class": "light"
+      },
+      "expected": "Light"
+    },
+    {
+      "why": "EDR 0.16 is moderate for a light airplane (16)",
+      "rule": "turbulence_category",
+      "input": {
+        "edr": 0.16,
+        "weight_class": "light"
+      },
+      "expected": "Moderate"
+    },
+    {
+      "why": "EDR 0.36 is severe for a light airplane (36)",
+      "rule": "turbulence_category",
+      "input": {
+        "edr": 0.36,
+        "weight_class": "light"
+      },
+      "expected": "Severe"
+    },
+    {
+      "why": "EDR 0.36 is only moderate for a medium one (severe from 44)",
+      "rule": "turbulence_category",
+      "input": {
+        "edr": 0.36,
+        "weight_class": "medium"
+      },
+      "expected": "Moderate"
+    },
+    {
+      "why": "EDR 0.64 is extreme for a light airplane (64)",
+      "rule": "turbulence_category",
+      "input": {
+        "edr": 0.64,
+        "weight_class": "light"
+      },
+      "expected": "Extreme"
+    },
+    {
+      "why": "AWC's GFA text: OVC035 topped at 5,000 ft MSL is overcast, eight eighths",
+      "rule": "gfa_cloud_layers",
+      "input": {
+        "layers": [
+          "OVC035/TOP 050",
+          "SCT021/OVC040/TOP FL280/CI ABV",
+          "Cirrus",
+          "SCT050"
+        ],
+        "covers": [
+          "OVC",
+          "OVC",
+          "CLR",
+          "SCT"
+        ]
+      },
+      "expected": {
+        "percent": [
+          100.0,
+          100.0,
+          0.0,
+          50.0
+        ],
+        "top_ft": [
+          5000.0,
+          28000.0,
+          null,
+          null
+        ]
+      }
+    }
+  ]
+}

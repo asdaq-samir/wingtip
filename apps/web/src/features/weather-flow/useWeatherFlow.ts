@@ -5,19 +5,24 @@ import { data, planner } from "../../lib/api/client";
 import type { components } from "../../lib/api/schema";
 import { prefersReducedMotion } from "../../lib/motion";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
-import type { ShownField } from "./flowLook";
 
 export type FlowLayer = components["schemas"]["FlowLayer"];
 export type FlowFrame = components["schemas"]["FlowFrame"];
 
 /** How often the timeline is asked for again: the weather service looks
- *  for a new HRRR run four times an hour. */
+ *  for new AWC cycles and model runs four times an hour. */
 const REFRESH_MS = 10 * 60_000;
 /** How long each hour is shown while the timeline plays. */
 const FRAME_MS = 1200;
 
-/** A frame's picture of a field, as the planner serves it through the gateway. */
-export const pictureUrl = (frame: FlowFrame, field: ShownField | "wind") => `/api/planner/weather/flow/${frame.id}/${field}.png`;
+/** A frame's picture, by its file's name ("wind", "wind-060"; flowLevels'
+ *  fileOf), as the planner serves it through the gateway: at its version,
+ *  the run that made it, so the browser keeps it for good (the planner's
+ *  immutable pictures). */
+export const pictureUrl = (frame: FlowFrame, file: string) => {
+  const version = frame.versions?.[file];
+  return `/api/planner/weather/flow/${frame.id}/${file}.png${version ? `?v=${encodeURIComponent(version)}` : ""}`;
+};
 
 interface Player {
   /** The hour shown, an index into the frames; null follows now. */

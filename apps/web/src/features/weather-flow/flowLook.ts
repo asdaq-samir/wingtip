@@ -2,6 +2,7 @@ import type { FlowField } from "../../lib/map/sources/weatherLayers";
 import { callEngine } from "../../lib/engine/engine";
 import type { EngineAnswer } from "../../lib/engine/engine";
 import { WEATHER } from "../../lib/tokens";
+import { aviationLooks } from "./aviationLooks";
 
 /** A field that is on: the store's choices but Off. */
 export type ShownField = Exclude<FlowField, "off">;
@@ -38,8 +39,9 @@ export interface FieldLook {
 const COVER = { tint: 0.6, wash: 0.75, solid: 0.9 } as const;
 
 /** The menu's names, in its order (the owner's pick, 2026-11-12): the wind
- *  and what it carries first, then the sky, then the air. Known without
- *  the engine, so the Map menu's row needs none. */
+ *  and what it carries first, then the sky, then the air, then the
+ *  Aviation Weather Center's hazards aloft. Known without the engine, so
+ *  the Map menu's row needs none. */
 const NAMES: Record<ShownField, string> = {
   wind: "Wind",
   gust: "Gusts",
@@ -49,6 +51,10 @@ const NAMES: Record<ShownField, string> = {
   cape: "Thunderstorm energy",
   temp: "Temperature",
   vis: "Visibility",
+  icing: "Icing",
+  turb: "Turbulence",
+  frzlvl: "Freezing level",
+  tops: "Cloud tops",
 };
 
 /** The Map menu's and the legend's choices, Off first in the menu. */
@@ -192,6 +198,8 @@ function looks(bands: Bands): Record<ShownField, FieldLook> {
       "temp",
       "Temperature (°C)",
       [
+        // To -60, so the flight levels' cold is told apart too.
+        [-60, tone(WEATHER.flowTempFrigid, 235)],
         [-30, tone(WEATHER.flowTempFrigid, 235)],
         [-10, tone(WEATHER.flowTempCold, 235)],
         [0, tone(WEATHER.flowTempFreezing, 235)],
@@ -214,6 +222,7 @@ function looks(bands: Bands): Record<ShownField, FieldLook> {
       ],
       [0, 5, 10].map((at) => ({ at, label: String(at) })),
     ),
+    ...aviationLooks(callEngine("aviation_grid_bands", {})),
   };
 }
 
