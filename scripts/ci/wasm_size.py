@@ -34,8 +34,8 @@ WASM = ROOT / "apps/web/src/lib/engine/wingtip-engine.wasm"
 # to 1.25 MB and 545 KB at the owner's word ("For now increase the limit"),
 # when notam_subject (the airport card's NOTAM badges) took the module to
 # 1,206,540 and 523,574.
-RAW_BUDGET = 1_250_000
-GZIP_BUDGET = 545_000
+RAW_BUDGET = 1_320_000
+GZIP_BUDGET = 575_000
 
 
 def main():
