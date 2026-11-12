@@ -62,6 +62,26 @@
       }
     },
     {
+      "about": "A tower's light out (5-2-2) at KSJT as the feed sent it (2026-11-12): its survey's tenths said in whole feet, rounded up, the top a pilot clears (4-2-1: MSL unless AGL; 14 CFR 91.119)",
+      "text": "!SJT 11/073 SJT OBST TOWER LGT (ASR 1049326) 311207.00N1002759.60W (9.4NM S SJT) 2863.8FT (443.9FT AGL) U/S 2611080154-2703080154",
+      "answer": {
+        "form": "domestic",
+        "number": "11/073",
+        "location": "SJT",
+        "keyword": "OBST",
+        "heading": "Obstacle",
+        "title": "Obstacle: tower",
+        "what": "Tower light out of service",
+        "where": "9.4 nm south of the field, 2,864 ft MSL (444 ft above ground)",
+        "why": "Its top is 2,864 ft MSL: keep clear of it. Its light is out: it may be hard to see at night.",
+        "words": "Tower light (ASR 1049326) 31°12′07.00″N 100°27′59.60″W (9.4 nm south of SJT) 2863.8 ft MSL (443.9 ft above ground) out of service.",
+        "starts": "2026-11-08T01:54:00Z",
+        "ends": "2027-03-08T01:54:00Z",
+        "estimated": false,
+        "permanent": false
+      }
+    },
+    {
       "about": "A TFR (7-1-5): its place, its area and its altitudes",
       "text": "!FDC 5/2345 ZMP WI..AIRSPACE OSHKOSH, WI..TEMPORARY FLIGHT RESTRICTIONS WI AN AREA DEFINED AS 3NM RADIUS OF 435904N0883327W (OSH) SFC-3000FT. 2511151400-2511152200",
       "answer": {

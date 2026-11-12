@@ -13,13 +13,13 @@ import {
   useFieldNotams,
   numberOf,
   whatOf,
-  whenWords,
-  windowOf,
+  whereOf,
   type FieldNotam,
   type NotamReading,
   type FieldNotams,
 } from "./fieldNotams";
 import { timeLines } from "./notamTimes";
+import { TfrDetails } from "./TfrDetails";
 
 /** The NOTAMs section's test id. */
 const SECTION = "place-notams";
@@ -30,17 +30,15 @@ const SECTION = "place-notams";
  * its own line, the where only where the engine can say it (the owner,
  * 2026-11-11: "title(what), when, where ... on different lines"; then "Why
  * is not needed"). Where the engine has no what, the NOTAM's words written
- * out stand first.
+ * out stand first. A TFR's where is its levels and where it is from the
+ * field (tfr_read); its title's words, which said its dates again, are
+ * not a line (the owner, 2026-11-12: "dates are twice").
  */
-function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; clamp: boolean }) {
+function NotamLines({ n, read }: { n: FieldNotam; read: NotamReading }) {
   const times = timeLines(n, read);
+  const where = whereOf(n, read);
   return (
     <span className={cn("flex flex-col gap-0.5", n.in_force === false && "text-muted-foreground")}>
-      {n.kind === "tfr" && (
-        <span className={cn(clamp && "line-clamp-2")} data-testid="place-notam-words">
-          {read.words}
-        </span>
-      )}
       {times.length > 0 && (
         // Labelled, as ForeFlight's list gives them (notamTimes).
         <span className="grid grid-cols-[auto_1fr] gap-x-2 tabular-nums" data-testid="place-notam-when">
@@ -52,9 +50,9 @@ function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; cla
           ))}
         </span>
       )}
-      {read.where && (
+      {where && (
         <span className="text-muted-foreground" data-testid="place-notam-where">
-          {read.where}
+          {where}
         </span>
       )}
     </span>
@@ -63,16 +61,18 @@ function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; cla
 
 /**
  * One NOTAM in full, on a card of its own over the list: its what with
- * its Active or Inactive badge, its when and where as its row says them (NotamLines), its words with the
- * FAA's contractions written out where the what says them shorter, both
- * the engine's (notam_read); when it is in force in UTC, as the NOTAM gives
- * it, beside the device's own time; and its text as sent folded beneath,
- * never rewritten (raw reports as sent).
+ * its Active or Inactive badge, its when and where as its row says them
+ * (NotamLines), its words with the FAA's contractions written out where
+ * the what says them shorter, both the engine's (notam_read); a TFR's
+ * place, instructions and whom to call (TfrDetails); and its text as sent
+ * folded beneath, never rewritten (raw reports as sent). Its times are
+ * said once, on its Since and Ends lines: the UTC line that said them
+ * again is gone, the times as sent kept in its text (the owner,
+ * 2026-11-12: "dates are twice once in the title and then we decode
+ * them").
  */
 export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
   const read = readNotam(n, ident);
-  const when = windowOf(n, read);
-  const utc = whenWords(when, read);
   const ours = !!read.what && n.kind !== "tfr";
   return (
     <div className="flex flex-col gap-1 pb-6" data-testid="place-notam-full">
@@ -81,11 +81,10 @@ export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
         <NotamWhat what={whatOf(n, ident)} />
       </p>
       <p className={TEXT.prose}>
-        <NotamLines n={n} read={read} clamp={false} />
+        <NotamLines n={n} read={read} />
       </p>
       {ours && <p className={cn("text-muted-foreground", TEXT.note)}>{read.words}</p>}
-      {/* In UTC as the NOTAM gives it; the local times are the lines above. */}
-      {utc && <p className={cn("text-muted-foreground tabular-nums", TEXT.note)}>{utc}</p>}
+      {n.kind === "tfr" && <TfrDetails n={n} />}
       <Collapsible>
         <CollapsibleTrigger
           className={cn(
@@ -133,11 +132,11 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
               title={
                 // Its number only on its own card (the owner, 2026-11-11: "what's
                 // 11/439", then "Full card is fine").
-                <span className={cn(!read.what && "line-clamp-3")}>
+                <span className={cn(!read.what && n.kind !== "tfr" && "line-clamp-3")}>
                   <NotamWhat what={whatOf(n, ident)} />
                 </span>
               }
-              description={<NotamLines n={n} read={read} clamp />}
+              description={<NotamLines n={n} read={read} />}
               chevron
               onClick={() => setOpen(n)}
               data-testid="place-notam"

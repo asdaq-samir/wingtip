@@ -8,6 +8,8 @@ export type FieldNotams = components["schemas"]["NotamsRanked"];
 export type FieldNotam = FieldNotams["notams"][number];
 /** A NOTAM as the engine reads it for a pilot (notam_read). */
 export type NotamReading = EngineAnswer<"notam_read">;
+/** A TFR as the engine reads it for a pilot (tfr_read). */
+export type TfrReading = EngineAnswer<"tfr_read">;
 
 /**
  * A field's own NOTAMs (the FAA's feed, by any ident it goes by) and the
@@ -64,22 +66,50 @@ export function readNotam(n: FieldNotam, ident: string): NotamReading {
   return callEngine("notam_read", { text: n.raw, idents: identsOf(ident) });
 }
 
+/** A TFR read by the engine (tfr_read) from what tfr.faa.gov gives of it
+ *  (the planner's `tfr`): its kind as a heading, its kind and rule, how
+ *  high it reaches and where it is from the field, its place's name. */
+export function readTfr(n: FieldNotam): TfrReading {
+  const t = n.tfr;
+  return callEngine("tfr_read", {
+    kind: t?.kind,
+    rule: t?.rule,
+    title: t?.title,
+    floor_ft: t?.floor_ft,
+    floor_ref: t?.floor_ref,
+    ceiling_ft: t?.ceiling_ft,
+    ceiling_ref: t?.ceiling_ref,
+    over_field: t?.over_field,
+    field: t?.field,
+    edge: t?.edge,
+  });
+}
+
 /** A NOTAM's first line: what it is and its condition in our words
  *  ("Runway 04L/22R closed except taxiing"), the engine's (notam_read's
  *  what), else its words written out, said once, not under a title that
  *  repeats their start (the owner, 2026-11-11: "avoid redundant
- *  information"); "TFR" for a TFR, its words under it. */
+ *  information"); a TFR's kind and rule ("Security TFR, 14 CFR 99.7",
+ *  tfr_read). */
 export function whatOf(n: FieldNotam, ident: string): string {
-  if (n.kind === "tfr") return "TFR";
+  if (n.kind === "tfr") return readTfr(n).what;
   const read = readNotam(n, ident);
   return read.what ?? read.words;
 }
 
+/** Where it is, the engine's, only where that is not obvious: a NOTAM's
+ *  place off the field (notam_read), a TFR's levels and where it is from
+ *  the field (tfr_read). */
+export function whereOf(n: FieldNotam, read: NotamReading): string | null {
+  return n.kind === "tfr" ? readTfr(n).where : read.where;
+}
+
 /** The heading of a NOTAM's own card: what kind it is ("Runway",
- *  "Obstacle", the engine's heading; "TFR"), its first line under it
- *  saying which. */
+ *  "Obstacle", the engine's heading; a TFR's kind, "Security TFR"), its
+ *  first line under it saying which, so "TFR" is said once (the owner,
+ *  2026-11-12). */
 export function headingOf(n: FieldNotam, ident: string): string {
-  if (n.kind === "tfr") return "TFR";
+  if (n.kind === "tfr") return readTfr(n).heading;
   return readNotam(n, ident).heading ?? "NOTAM";
 }
 
@@ -95,31 +125,6 @@ export function numberOf(n: FieldNotam, ident: string): string {
 export function dateOf(iso: string | null | undefined): Date | null {
   const at = iso ? new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`) : null;
   return at && !Number.isNaN(at.getTime()) ? at : null;
-}
-
-/** "Nov 12 1432Z": a NOTAM's time in UTC with its day, as the FAA's
- *  NOTAMs give their times (AIM 5-1-3); a feed time with no zone is UTC. */
-export function zulu(iso: string): string {
-  const at = dateOf(iso);
-  if (!at) return iso;
-  const month = at.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
-  const hhmm = `${String(at.getUTCHours()).padStart(2, "0")}${String(at.getUTCMinutes()).padStart(2, "0")}Z`;
-  return `${month} ${at.getUTCDate()} ${hhmm}`;
-}
-
-/** When it is in force, in words: "In effect now, until Nov 12 1432Z",
- *  "From Nov 12 1200Z", or nothing where the feed gives no times. An end
- *  sent with EST is an estimate, and PERM is permanent (FAA JO 7930.2
- *  4-2-1), as the engine reads them from the text (notam_read). */
-export function whenWords(
-  n: Pick<FieldNotam, "in_force" | "starts" | "ends">,
-  read?: Pick<NotamReading, "estimated" | "permanent">,
-): string | null {
-  const est = read?.estimated ? " (estimated)" : "";
-  const until = n.ends ? `until ${zulu(n.ends)}${est}` : read?.permanent ? "permanent" : null;
-  if (n.in_force) return until ? `In effect now, ${until}` : "In effect now";
-  if (n.starts) return `From ${zulu(n.starts)}${until ? `${n.ends ? " " : ", "}${until}` : ""}`;
-  return until ? `In effect ${until}` : null;
 }
 
 /** The feed's times, or where it gave none the NOTAM's own (its

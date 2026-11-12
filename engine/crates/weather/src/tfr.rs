@@ -36,6 +36,23 @@ pub struct Detail {
     pub purpose: Option<String>,
     pub floor: Option<(f64, Reference)>,
     pub ceiling: Option<(f64, Reference)>,
+    /// Its operative instructions, a line each as sent (InstructionsGroup).
+    pub instructions: Vec<String>,
+    /// Its NOTAM's text as sent (txtDescrTraditional, else txtDescrUSNS).
+    pub text: Option<String>,
+    /// The FAA facility it is coordinated through, and who is in charge.
+    pub facility: Option<Contact>,
+    pub contact: Option<Contact>,
+}
+
+pub use crate::tfr_contact::Contact;
+
+/// The code of a rule as crate::tfr names it ("special security
+/// instructions (99.7)" is 99.7), or a code given as it is; None where it
+/// is none of RULES.
+pub fn rule_code(rule: &str) -> Option<&'static str> {
+    let r = rule.trim();
+    RULES.iter().find(|(code, name)| *name == r || *code == r).map(|(code, _)| *code)
 }
 
 /// An XNOTAM time (UTC with no zone, "2026-11-02T14:00:00") as ISO 8601
@@ -115,6 +132,13 @@ pub fn parse_detail(text: &str) -> Option<Detail> {
         purpose: notam.text_at(&["txtDescrPurpose"]).and_then(sentence),
         floor,
         ceiling,
+        instructions: root.iter_named("txtInstr").iter().map(|e| e.text.trim().to_owned()).filter(|t| !t.is_empty()).collect(),
+        text: ["txtDescrTraditional", "txtDescrUSNS"]
+            .iter()
+            .find_map(|k| notam.text_at(&[k]).map(str::trim).filter(|t| !t.is_empty()))
+            .map(str::to_owned),
+        facility: crate::tfr_contact::facility(notam),
+        contact: crate::tfr_contact::contact(notam),
     })
 }
 
@@ -140,6 +164,19 @@ pub fn to_json(d: &Detail) -> String {
     json::opt_number(&mut out, d.ceiling.map(|c| c.0));
     out.push_str(",\"ceiling_ref\":");
     json::opt_string(&mut out, reference(d.ceiling));
+    out.push_str(",\"instructions\":[");
+    for (i, line) in d.instructions.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        json::string(&mut out, line);
+    }
+    out.push_str("],\"text\":");
+    json::opt_string(&mut out, d.text.as_deref());
+    out.push_str(",\"facility\":");
+    crate::tfr_contact::to_json(&mut out, d.facility.as_ref());
+    out.push_str(",\"contact\":");
+    crate::tfr_contact::to_json(&mut out, d.contact.as_ref());
     out.push('}');
     out
 }

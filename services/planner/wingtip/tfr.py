@@ -14,6 +14,7 @@ import time
 from datetime import datetime, timezone
 
 from shapely.geometry import LineString, Point, shape
+from shapely.ops import nearest_points
 
 from . import weather_store
 from .engine import ask as engine
@@ -135,8 +136,10 @@ def along_route(path: list, start: datetime, end: datetime, near_nm: float = NEA
 def near_point(lat: float, lon: float, start: datetime, end: datetime, near_nm: float = NEAR_NM) -> list:
     """The TFRs within `near_nm` of a point (a field), in force at some
     time from `start` to `end`: each of all_tfrs()'s, with "crosses",
-    whether it covers the point, and "active_now", as along_route gives
-    them for a route."""
+    whether it covers the point, "active_now", as along_route gives
+    them for a route, and "edge", the point of its areas nearest the
+    field ({"lat", "lon"}), which the engine says how far and which way
+    (tfr_read)."""
     point = Point(lon, lat)
     buffer_deg = near_nm / _NM_PER_DEG / max(0.2, math.cos(math.radians(lat)))
     near = point.buffer(buffer_deg)
@@ -148,7 +151,10 @@ def near_point(lat: float, lon: float, start: datetime, end: datetime, near_nm: 
         except (KeyError, TypeError, ValueError):
             continue
         if near.intersects(geometry) and in_force(tfr, start, end):
-            found.append({**tfr, "crosses": geometry.contains(point), "active_now": in_force(tfr, now, now)})
+            edge = nearest_points(geometry, point)[0]
+            found.append(
+                {**tfr, "crosses": geometry.contains(point), "active_now": in_force(tfr, now, now), "edge": {"lat": edge.y, "lon": edge.x}}
+            )
     return found
 
 

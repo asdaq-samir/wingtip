@@ -6,9 +6,13 @@ The shapes are the site's GeoServer layer (TFR:V_TFR_LOC), one polygon
 per area of each NOTAM, with its title and kind ("HAZARDS", "SECURITY",
 "VIP", "SPACE OPERATIONS", "AIR SHOWS/SPORTS", "UAS PUBLIC GATHERING").
 What a pilot needs besides -- when it is in force, how high it reaches,
-why, under which rule -- is in each NOTAM's own XNOTAM file
-(detail_6_6654.xml), read once per NOTAM and modification, eight at a
-time, and read by the engine (wingtip_engine::tfr), the phones' same code.
+why, under which rule, its instructions, its NOTAM's text and whom it
+names to call -- is in each NOTAM's own XNOTAM file (detail_6_6654.xml),
+read by the engine (wingtip_engine::tfr, tfr_contact), the phones' same
+code. Each file is asked once per NOTAM and modification, one at a time
+with a pause between (DETAIL_PAUSE_S), so tfr.faa.gov is asked gently: a
+detail already in the stored list for the same modification is taken from
+it, a restart included, and only a new or changed TFR is fetched.
 
 A NOTAM's times in that file are UTC whatever time zone it names (the
 zone is the one its text gives the times in). Its areas' floors and
@@ -27,7 +31,6 @@ import json
 import logging
 import time
 import xml.etree.ElementTree as ET
-from concurrent.futures import ThreadPoolExecutor
 
 import requests
 import wingtip_native
@@ -48,6 +51,25 @@ DETAIL_URL = "https://tfr.faa.gov/download/detail_{}.xml"
 
 #: Each NOTAM's detail, by (id, modification): read once.
 _DETAILS: LRUCache = LRUCache(maxsize=1024)
+#: The pause between two detail files asked of tfr.faa.gov, s: the site is
+#: asked one file at a time, and only for a TFR new or changed.
+DETAIL_PAUSE_S = 0.5
+#: The detail's members, as parse_detail gives them: what a stored TFR
+#: carries over to the next fetch when its modification is the same.
+DETAIL_KEYS = (
+    "effective",
+    "expires",
+    "rule",
+    "purpose",
+    "floor_ft",
+    "floor_ref",
+    "ceiling_ft",
+    "ceiling_ref",
+    "instructions",
+    "text",
+    "facility",
+    "contact",
+)
 
 
 class TfrUnavailable(RuntimeError):
@@ -59,8 +81,11 @@ def parse_detail(xml_bytes: bytes) -> dict:
     "expires" (ISO UTC; None until further notice), "rule", "purpose",
     "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref"} -- the lowest
     floor and the highest ceiling over its areas, a flight level in feet
-    MSL. Read by the engine (wingtip_engine::tfr); a file that is not XML
-    raises ElementTree's ParseError."""
+    MSL -- and "instructions" (its lines as sent), "text" (its NOTAM as
+    sent), "facility" and "contact" ({"name", "phone", "frequency"}, the
+    facility it is coordinated through and its point of contact). Read by
+    the engine (wingtip_engine::tfr); a file that is not XML raises
+    ElementTree's ParseError."""
     try:
         got = json.loads(wingtip_native.call("tfr_detail_read", json.dumps({"text": xml_bytes.decode("utf-8-sig")})))
     except (UnicodeDecodeError, ValueError) as e:
@@ -82,6 +107,7 @@ def _detail(notam_id: str, modified: str) -> dict:
     hit = _DETAILS.get(key)
     if hit is not None:
         return hit
+    time.sleep(DETAIL_PAUSE_S)
     try:
         resp = requests.get(DETAIL_URL.format(notam_id.replace("/", "_")), headers=HEADERS, timeout=20)
         resp.raise_for_status()
@@ -105,8 +131,9 @@ def _shapes() -> list:
 
 def tfrs(features: list) -> list:
     """Every TFR in force or to come, one per NOTAM: {"notam_id", "title",
-    "kind", "state", "geometry" (GeoJSON, a MultiPolygon of its areas)}
-    and its detail (parse_detail)."""
+    "kind", "state", "modified" (the site's time of its last change),
+    "geometry" (GeoJSON, a MultiPolygon of its areas)} and its detail
+    (parse_detail)."""
     by_notam: dict = {}
     for feature in features:
         props = feature.get("properties") or {}
@@ -127,16 +154,24 @@ def tfrs(features: list) -> list:
         geometry = feature["geometry"]
         entry["polygons"].extend([geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"])
     entries = list(by_notam.values())
-    with ThreadPoolExecutor(max_workers=8) as pool:
-        details = list(pool.map(lambda e: _detail(e["notam_id"], e["modified"]), entries))
+    _keep_stored_details()
+    details = [_detail(e["notam_id"], e["modified"]) for e in entries]
     return [
-        {
-            **{k: v for k, v in e.items() if k not in ("polygons", "modified")},
-            "geometry": {"type": "MultiPolygon", "coordinates": e["polygons"]},
-            **detail,
-        }
+        {**{k: v for k, v in e.items() if k != "polygons"}, "geometry": {"type": "MultiPolygon", "coordinates": e["polygons"]}, **detail}
         for e, detail in zip(entries, details)
     ]
+
+
+def _keep_stored_details() -> None:
+    """The details the stored list already holds, by NOTAM and
+    modification, taken as read: a restart asks tfr.faa.gov again only for
+    what has changed since. One stored before the instructions were kept
+    is read again, once."""
+    record = weather_store.read("tfrs")
+    for t in record.data if record else []:
+        key = (t.get("notam_id"), t.get("modified"))
+        if key[0] and key[1] is not None and key not in _DETAILS and "instructions" in t:
+            _DETAILS[key] = {k: t[k] for k in DETAIL_KEYS if k in t}
 
 
 def fetch() -> None:

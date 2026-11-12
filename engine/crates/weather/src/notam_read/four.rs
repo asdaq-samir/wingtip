@@ -11,11 +11,12 @@
 //! where the consequence is a settled rule or a plain fact, its source
 //! beside it; anything else has none, never a guess.
 
-use super::body::{grouped, is_taxiway};
+use super::body::is_taxiway;
 use super::NotamRead;
 use crate::contractions::compass;
 use crate::notam_subject::parts::{condition, designations, is_fuel, lamp_of, Lamp};
 use crate::notam_subject::subject_of;
+use crate::ready::grouped;
 
 #[derive(Debug, Default, PartialEq)]
 pub struct Four {
@@ -111,10 +112,22 @@ fn taxiway(body: &[String], r: &NotamRead) -> Four {
     Four { what, place: None, why: None }
 }
 
-/// A figure with FT as the app writes it: "857.9FT" as "857.9 ft".
+/// An obstacle's height with FT as the app writes it, whole feet with
+/// their thousands grouped: "2863.8FT" as "2,864 ft". The FAA's obstacle
+/// NOTAMs give the top in feet MSL and then above the ground in brackets
+/// (JO 7930.2 5-2-2: "580FT (195FT AGL)"; 4-2-1: feet are MSL unless AGL
+/// is stated), from the obstacle's survey, often to a tenth. A tenth is no
+/// figure a pilot sets an altimeter to, so it is said in whole feet, and
+/// rounded UP: the pilot clears the top (14 CFR 91.119's clearances are
+/// from the obstacle), so the safe side is the higher figure, never the
+/// lower. A whole figure is said as it is.
 fn feet(w: &str) -> Option<String> {
     let n = w.strip_suffix("FT")?;
-    (!n.is_empty() && n.bytes().all(|b| b.is_ascii_digit() || b == b'.')).then(|| [grouped(n).as_str(), " ft"].concat())
+    if n.is_empty() || !n.bytes().all(|b| b.is_ascii_digit() || b == b'.') {
+        return None;
+    }
+    let top = n.parse::<f64>().ok().filter(|f| f.is_finite())?.ceil() as i64;
+    Some([grouped(top).as_str(), " ft"].concat())
 }
 
 /// An obstacle's NOTAM (OBST): its kind, its top MSL and above the ground

@@ -14,6 +14,8 @@
 //! - remarks_read: an airport's other remarks (its fuel's, its FBO's, its
 //!   courtesy car's) in words, by the same tables, and the sentence reader
 //!   lighting_read's notes are said by;
+//! - tfr_contact: who a TFR's NOTAM names to call, its coordination
+//!   facility and its point of contact, from its XNOTAM file;
 //! - notam_subject: what one NOTAM addresses on an airport's card -- the
 //!   field, a runway, a light, an approach, a frequency, the fuel -- with
 //!   its badge's word (JO 7930.2's keywords and conditions);
@@ -47,6 +49,7 @@ pub mod rvr;
 pub mod sky;
 pub mod taf;
 pub mod tfr;
+pub mod tfr_contact;
 pub mod validity;
 pub mod winds;
 pub mod worse;

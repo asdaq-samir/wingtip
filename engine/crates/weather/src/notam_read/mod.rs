@@ -28,6 +28,7 @@ mod body;
 mod four;
 #[cfg(test)]
 mod tests;
+pub mod tfr;
 mod title;
 
 use crate::contractions::{listed, lookup};
@@ -268,6 +269,23 @@ fn icao(text: &str, idents: &[String]) -> NotamRead {
     r
 }
 
+/// The words without "OBS AT 2611112003" where that time is its start
+/// of activity: a field condition report (FICON) gives the time it was
+/// observed, which the ICAO form's B) gives again, and the card says its
+/// times once, on lines of their own (the owner, 2026-11-12: "dates are
+/// twice once in the title and then we decode them"). An observation at
+/// another time is a fact of its own and stays.
+fn without_start_again(words: &str, starts: Option<&str>) -> String {
+    let Some(starts) = starts else { return words.to_owned() };
+    let Some(at) = words.find(" OBS at ") else { return words.to_owned() };
+    let rest = &words[at + 8..];
+    let digits = rest.bytes().take_while(u8::is_ascii_digit).count();
+    if digits != 10 || utc10(&rest[..10]).0.as_deref() != Some(starts) {
+        return words.to_owned();
+    }
+    [&words[..at], &rest[10..]].concat()
+}
+
 /// The NOTAM's text, as sent, read; `idents` are the field's, kept as
 /// written in its words.
 pub fn read(text: &str, idents: &[String]) -> NotamRead {
@@ -281,6 +299,7 @@ pub fn read(text: &str, idents: &[String]) -> NotamRead {
     // "(2024-AGL-13315-OE)", ends in one.
     let mut r =
         if !t.starts_with('!') && (item(t, b'Q').is_some() || item(t, b'E').is_some()) { icao(t, idents) } else { domestic(t, idents) };
+    r.words = without_start_again(&r.words, r.starts.as_deref());
     r.title = title::title(t);
     let four = four::four(t, &r, idents);
     (r.what, r.place, r.why) = (four.what, four.place, four.why);

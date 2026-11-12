@@ -83,10 +83,12 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   await expect(one.getByTestId("place-notam-where")).toHaveCount(0);
   // Said in our words, its own words are left to its full card.
   await expect(one.getByTestId("place-notam-words")).toHaveCount(0);
-  // A tap opens it in full on a card of its own: its window, as sent.
+  // A tap opens it in full on a card of its own: its times said once, on
+  // its Since and Ends lines (the owner, 2026-11-12: "dates are twice"),
+  // and as sent.
   await one.click();
   const full = page.getByTestId("place-notam-full");
-  await expect(full).toContainText("In effect now, until Nov 12 1432Z");
+  await expect(full).not.toContainText("In effect now");
   await full.getByRole("button", { name: "As Sent" }).click();
   await expect(full.locator("pre")).toHaveText(raw);
 });
@@ -196,4 +198,70 @@ test("a taxiway closed between runways puts no badge on a runway", async ({ page
   await expect(card(page).getByTestId("place-notams").getByTestId("place-notam-heading").first()).toHaveText(
     "Taxiway A closed between runway 09 and taxiway C",
   );
+});
+
+/**
+ * A TFR near the field says what it is and the rule it is under, how high
+ * it reaches and where it is from the field, and says "TFR" and its dates
+ * once (the owner, 2026-11-12, of KSJT's card: "TFR" twice, and "dates
+ * are twice once in the title and then we decode them"). Its own card has
+ * its place, the FAA's instructions and whom to call, the telephone a
+ * link the phone dials, and its NOTAM as sent.
+ */
+test("a TFR near the field is its kind, rule, levels and place, its instructions and whom to call", async ({ page }) => {
+  const text = "!FDC 6/2478 ZFW TX..AIRSPACE SAN ANGELO, TX..TEMPORARY FLIGHT RESTRICTIONS. 2611010700-2703140800";
+  await page.route(
+    (url) => url.pathname === "/api/planner/airport/KDLH/notams",
+    (route) =>
+      route.fulfill({
+        json: {
+          coverage_since: "2026-11-10T06:00:00Z",
+          top: 1,
+          unchecked: [],
+          notams: [
+            {
+              ...ranked(1, text),
+              id: "6/2478",
+              kind: "tfr",
+              starts: "2026-11-01T07:00:00Z",
+              ends: "2027-03-14T08:00:00Z",
+              tfr: {
+                kind: "Security",
+                rule: "special security instructions (99.7)",
+                title: "SAN ANGELO, TX, Sunday, November 1, 2026 through Sunday, March 14, 2027 Local",
+                floor_ft: 3500,
+                floor_ref: "MSL",
+                ceiling_ft: 18000,
+                ceiling_ref: "MSL",
+                instructions: ["1. AIRCRAFT MUST BE SQUAWKING THE DISCRETE CODE AT ALL TIMES WHILE IN THE TFR."],
+                text,
+                facility: { name: "Fort Worth ARTCC", phone: "817-858-7503", frequency: null },
+                contact: null,
+                over_field: true,
+                field: null,
+                edge: null,
+              },
+            },
+          ],
+        },
+      }),
+  );
+  await page.goto("/app/plan?place=KDLH");
+  await settle(page);
+  await card(page).getByRole("tab", { name: "Info" }).click();
+  const one = card(page).getByTestId("place-notams").getByTestId("place-notam");
+  await expect(one.getByTestId("place-notam-heading")).toHaveText("Security TFR, 14 CFR 99.7");
+  await expect(one.getByTestId("place-notam-where")).toHaveText("3,500 to 18,000 ft MSL, over the field");
+  await expect(one).not.toContainText("November");
+  await one.click();
+  const cardOf = page.getByTestId("place-notam-card");
+  await expect(cardOf.getByText("Security TFR", { exact: true })).toBeVisible();
+  await expect(cardOf).toContainText("NOTAM 6/2478");
+  const full = page.getByTestId("place-notam-full");
+  await expect(full.getByTestId("place-tfr-place")).toHaveText("San Angelo, TX");
+  await expect(full.getByTestId("place-tfr-instructions")).toContainText("squawking the discrete code");
+  await expect(full.getByTestId("place-tfr-facility-phone")).toHaveAttribute("href", "tel:+18178587503");
+  await expect(full).not.toContainText("In effect now");
+  await full.getByRole("button", { name: "TFR as Sent" }).click();
+  await expect(full.locator("pre")).toHaveText(text);
 });

@@ -3431,6 +3431,7 @@ struct APIRankedNotam: Codable, Equatable, Sendable {
     var runways: [String]
     var score: Int
     var starts: String?
+    var tfr: APITfrFacts?
     var tied, top: Bool
 }
 
@@ -3438,6 +3439,43 @@ struct APIRankedNotam: Codable, Equatable, Sendable {
 // MARK: - APINotamReason
 struct APINotamReason: Codable, Equatable, Sendable {
     var key, words: String
+}
+
+/// A TFR as tfr.faa.gov gives it, for the card to read (the engine's
+/// tfr_read) and show: its kind, rule, the list's title and its levels;
+/// its instructions, a line each, and its NOTAM's text, as sent; the
+/// facility it is coordinated through and its point of contact; and, on a
+/// field's card, whether its area takes the field in, the field and the
+/// nearest point of its areas.
+// MARK: - APITfrFacts
+struct APITfrFacts: Codable, Equatable, Sendable {
+    var ceilingFt: Double?
+    var ceilingRef: String?
+    var contact: APITfrContact?
+    var edge: APITfrPoint?
+    var facility: APITfrContact?
+    var field: APITfrPoint?
+    var floorFt: Double?
+    var floorRef: String?
+    var instructions: [String]?
+    var kind: String?
+    var overField: Bool?
+    var rule, text, title: String?
+}
+
+/// Whom a TFR's NOTAM names to call, as its XNOTAM file gives them:
+/// the name in the FAA's capitals, a telephone, a frequency.
+// MARK: - APITfrContact
+struct APITfrContact: Codable, Equatable, Sendable {
+    var frequency: String?
+    var name: String
+    var phone: String?
+}
+
+/// A point in degrees (WGS-84).
+// MARK: - APITfrPoint
+struct APITfrPoint: Codable, Equatable, Sendable {
+    var lat, lon: Double
 }
 
 /// The flight as the Brief has it: its route, when it leaves (UTC when

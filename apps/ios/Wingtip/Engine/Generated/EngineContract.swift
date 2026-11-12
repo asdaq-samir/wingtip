@@ -10510,8 +10510,105 @@ enum EngineContract {
         var lon: Double
     }
 
+    struct TfrDetailReadAnswer: Codable, Equatable, Sendable {
+        var effective: String?
+        var expires: String?
+        var rule: String?
+        var purpose: String?
+        var floorFt: Double?
+        var floorRef: String?
+        var ceilingFt: Double?
+        var ceilingRef: String?
+        /// Its operative instructions, a line each as sent.
+        var instructions: [String]
+        /// Its NOTAM's text as sent.
+        var text: String?
+        /// The FAA facility it is coordinated through (CDN FAC), its name written as a name with its kind kept ("Fort Worth ARTCC").
+        var facility: EngineContract.TfrDetailReadAnswerFacility?
+        /// Its point of contact, who is in charge inside it.
+        var contact: EngineContract.TfrDetailReadAnswerContact?
+
+        enum CodingKeys: String, CodingKey {
+            case effective
+            case expires
+            case rule
+            case purpose
+            case floorFt = "floor_ft"
+            case floorRef = "floor_ref"
+            case ceilingFt = "ceiling_ft"
+            case ceilingRef = "ceiling_ref"
+            case instructions
+            case text
+            case facility
+            case contact
+        }
+    }
+
+    /// Its point of contact, who is in charge inside it.
+    struct TfrDetailReadAnswerContact: Codable, Equatable, Sendable {
+        var name: String
+        var phone: String?
+        var frequency: String?
+    }
+
+    /// The FAA facility it is coordinated through (CDN FAC), its name written as a name with its kind kept ("Fort Worth ARTCC").
+    struct TfrDetailReadAnswerFacility: Codable, Equatable, Sendable {
+        var name: String
+        var phone: String?
+        var frequency: String?
+    }
+
     struct TfrDetailReadInput: Codable, Equatable, Sendable {
         var text: String
+    }
+
+    /// A point in degrees, WGS-84 (the field, or a TFR's nearest edge to it); null where not known.
+    struct TfrPoint: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+    }
+
+    struct TfrReadAnswer: Codable, Equatable, Sendable {
+        /// Its kind: "Security TFR", or "TFR".
+        var heading: String
+        /// Its kind and the rule it is under: "Security TFR, 14 CFR 99.7".
+        var what: String
+        /// "3,500 to 18,000 ft MSL, 4.8 nm east of the field"; null where neither is known.
+        var `where`: String?
+        /// Its place's name, its dates off: "San Angelo, TX".
+        var place: String?
+    }
+
+    struct TfrReadInput: Codable, Equatable, Sendable {
+        /// tfr.faa.gov's kind ("Security", "Hazards", "Vip", "Space Operations", "Air Shows/Sports", "Uas Public Gathering").
+        var kind: String?
+        /// The rule as tfr_detail_read names it ("special security instructions (99.7)") or its code.
+        var rule: String?
+        /// The list's title as sent ("SAN ANGELO, TX, Sunday, November 1, 2026 through ...").
+        var title: String?
+        var floorFt: Double?
+        /// MSL, AGL or SFC.
+        var floorRef: String?
+        var ceilingFt: Double?
+        /// MSL or AGL.
+        var ceilingRef: String?
+        /// Whether its area takes the field in.
+        var overField: Bool?
+        var field: EngineContract.TfrPoint?
+        var edge: EngineContract.TfrPoint?
+
+        enum CodingKeys: String, CodingKey {
+            case kind
+            case rule
+            case title
+            case floorFt = "floor_ft"
+            case floorRef = "floor_ref"
+            case ceilingFt = "ceiling_ft"
+            case ceilingRef = "ceiling_ref"
+            case overField = "over_field"
+            case field
+            case edge
+        }
     }
 
     struct ThinTrackInput: Codable, Equatable, Sendable {

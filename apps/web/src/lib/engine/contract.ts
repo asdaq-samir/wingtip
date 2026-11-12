@@ -852,7 +852,50 @@ export type SoloXcDeterminationsAnswer = SoloXcDetermination[];
 export type SquawkMeaningAnswer = "hijack" | "lost radio" | "emergency" | null;
 export type SuaAltitudesAnswer = string;
 export type TemperatureAtAnswer = number | null;
-export type TfrDetailReadAnswer = {} | null;
+export type TfrDetailReadAnswer = {
+  effective: string | null;
+  expires: string | null;
+  rule: string | null;
+  purpose: string | null;
+  floor_ft: number | null;
+  floor_ref: string | null;
+  ceiling_ft: number | null;
+  ceiling_ref: string | null;
+  /**
+   * Its operative instructions, a line each as sent.
+   */
+  instructions: string[];
+  /**
+   * Its NOTAM's text as sent.
+   */
+  text: string | null;
+  /**
+   * The FAA facility it is coordinated through (CDN FAC), its name written as a name with its kind kept ("Fort Worth ARTCC").
+   */
+  facility: {
+    name: string;
+    phone: string | null;
+    frequency: string | null;
+  } | null;
+  /**
+   * Its point of contact, who is in charge inside it.
+   */
+  contact: {
+    name: string;
+    phone: string | null;
+    frequency: string | null;
+  } | null;
+} | null;
+/**
+ * A point in degrees, WGS-84 (the field, or a TFR's nearest edge to it); null where not known.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "TfrPoint".
+ */
+export type TfrPoint = {
+  lat: number;
+  lon: number;
+} | null;
 export type ThinTrackAnswer = unknown[];
 export type TitleCaseAnswer = string | string[];
 export type TokensAnswer = HeardToken[];
@@ -3084,11 +3127,18 @@ export interface EngineContract {
     answer: TerrainWayStone[] | null;
   };
   /**
-   * A TFR's detail from the FAA's TFR XML: its NOTAM, times, altitudes and areas; null where it holds no NOTAM. Not XML is refused.
+   * A TFR's detail from the FAA's TFR XML (tfr.faa.gov's XNOTAM file): its times, the rule it is issued under, its purpose, its lowest floor and highest ceiling over its areas, its instructions and its NOTAM's text as sent, and who it names to call: the facility it is coordinated through and its point of contact, each with a telephone or frequency, from their own fields or, where the template left them empty, the sentence that calls one the coordination facility. Null where it holds no NOTAM. Not XML is refused.
    */
   tfr_detail_read: {
     input: TfrDetailReadInput;
     answer: TfrDetailReadAnswer;
+  };
+  /**
+   * A TFR read for a pilot, on the lines a NOTAM's row has, from what tfr.faa.gov gives of it: its kind as a heading ("Security TFR"), what it is with the rule it is issued under ("Security TFR, 14 CFR 99.7": 14 CFR 91.137-91.145, 99.7; 49 U.S.C. 44812), where it is (its floor to its ceiling in whole feet, rounded outward, each MSL or AGL as its XNOTAM gives it, the ground said as surface; and over the field, or how far its nearest edge is from the field and which way, to a tenth of a mile rounded down, on JO 7930.2 3-3-9's 16 points), and its place's name from the list's title, its dates off (the card says them once). A kind or rule it does not know is said as given, never guessed.
+   */
+  tfr_read: {
+    input: TfrReadInput;
+    answer: TfrReadAnswer;
   };
   /**
    * At most `most` (4,000 where not given) of `points`, even steps through, the first and last kept; each point as it came.
@@ -10943,6 +10993,54 @@ export interface TerrainWayStone {
 }
 export interface TfrDetailReadInput {
   text: string;
+}
+export interface TfrReadInput {
+  /**
+   * tfr.faa.gov's kind ("Security", "Hazards", "Vip", "Space Operations", "Air Shows/Sports", "Uas Public Gathering").
+   */
+  kind?: string | null;
+  /**
+   * The rule as tfr_detail_read names it ("special security instructions (99.7)") or its code.
+   */
+  rule?: string | null;
+  /**
+   * The list's title as sent ("SAN ANGELO, TX, Sunday, November 1, 2026 through ...").
+   */
+  title?: string | null;
+  floor_ft?: number | null;
+  /**
+   * MSL, AGL or SFC.
+   */
+  floor_ref?: string | null;
+  ceiling_ft?: number | null;
+  /**
+   * MSL or AGL.
+   */
+  ceiling_ref?: string | null;
+  /**
+   * Whether its area takes the field in.
+   */
+  over_field?: boolean | null;
+  field?: TfrPoint;
+  edge?: TfrPoint;
+}
+export interface TfrReadAnswer {
+  /**
+   * Its kind: "Security TFR", or "TFR".
+   */
+  heading: string;
+  /**
+   * Its kind and the rule it is under: "Security TFR, 14 CFR 99.7".
+   */
+  what: string;
+  /**
+   * "3,500 to 18,000 ft MSL, 4.8 nm east of the field"; null where neither is known.
+   */
+  where: string | null;
+  /**
+   * Its place's name, its dates off: "San Angelo, TX".
+   */
+  place: string | null;
 }
 export interface ThinTrackInput {
   points: unknown[];

@@ -182,6 +182,7 @@ export const WEB_RULES = [
   "strip_fuel",
   "sua_altitudes",
   "terrain_view_bands",
+  "tfr_read",
   "thin_track",
   "title_case",
   "tokens",

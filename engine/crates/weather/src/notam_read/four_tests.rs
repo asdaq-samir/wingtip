@@ -114,6 +114,35 @@ fn an_obstacle_its_height_and_where_it_is() {
 }
 
 #[test]
+fn an_obstacles_tenths_are_rounded_up_to_whole_feet() {
+    // KSJT's, as the FAA's feed sent it (2026-11-12): the survey's tenths,
+    // said in whole feet and up, the top a pilot clears (JO 7930.2 5-2-2,
+    // 4-2-1; 14 CFR 91.119). 2863.8 is 2,864, never 2,863.
+    let r = read(
+        "!SJT 11/073 SJT OBST TOWER LGT (ASR 1049326) 311207.00N1002759.60W (9.4NM S SJT) 2863.8FT (443.9FT AGL) U/S 2611080154-2703080154",
+        &["SJT".to_owned(), "KSJT".to_owned()],
+    );
+    assert_eq!(r.what.as_deref(), Some("Tower light out of service"));
+    assert_eq!(r.place.as_deref(), Some("9.4 nm south of the field, 2,864 ft MSL (444 ft above ground)"));
+    assert!(r.why.is_some_and(|w| w.starts_with("Its top is 2,864 ft MSL: keep clear of it.")));
+    // A tenth of zero stays the figure: 500.0 is 500, not 501.
+    let (_, place, _) = four("!ORD 10/267 ORD OBST TOWER LGT (ASR 1227546) 312811.00N1002707.00W (7.1NM NNE ORD) 2336.9FT (500.0FT AGL) U/S 2610182314-2702152314");
+    assert_eq!(place.as_deref(), Some("7.1 nm north-northeast of the field, 2,337 ft MSL (500 ft above ground)"));
+}
+
+#[test]
+fn a_field_conditions_observed_time_is_not_said_again_when_it_is_its_start() {
+    // KORD's FICON (2026-11-11): OBS AT is B)'s time, which the card says.
+    let text = "A3595/26 NOTAMN\nQ) KZAU/QMRXX////000/999/4158N08754W005\nA) KORD\nB) 2611112003\nC) 2611122003\nE) RWY 09R FICON 5/5/5 100 PCT WET OBS AT 2611112003.";
+    let r = read(text, &[]);
+    assert!(!r.words.contains("2611112003"), "{}", r.words);
+    assert!(r.words.ends_with("100 percent wet."), "{}", r.words);
+    // Observed at another time: a fact of its own, kept.
+    let other = text.replace("OBS AT 2611112003", "OBS AT 2611111950");
+    assert!(read(&other, &[]).words.contains("OBS at 2611111950"));
+}
+
+#[test]
 fn fuel_a_frequency_the_field_and_a_tfr() {
     assert_eq!(
         four("!ORD 11/061 ORD SVC FUEL 100LL NOT AVBL 2611101200-2611202359"),
