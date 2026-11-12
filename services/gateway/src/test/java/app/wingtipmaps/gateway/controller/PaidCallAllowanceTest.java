@@ -41,8 +41,8 @@ import org.springframework.test.web.servlet.ResultActions;
             "app.paid-calls.per-day=0",
             "app.paid-calls.assistant-per-day=0",
             "app.paid-calls.words-per-day=0",
-            "planner-service.base-url=http://127.0.0.1:9",
-            "assistant-service.base-url=http://127.0.0.1:9",
+            "app.planner.base-url=http://127.0.0.1:9",
+            "app.assistant.base-url=http://127.0.0.1:9",
         })
 class PaidCallAllowanceTest {
 

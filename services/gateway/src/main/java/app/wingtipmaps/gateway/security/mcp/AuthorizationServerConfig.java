@@ -1,12 +1,12 @@
 package app.wingtipmaps.gateway.security.mcp;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.service.PilotService;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -62,8 +62,9 @@ public class AuthorizationServerConfig {
             PilotService pilots,
             RegisteredClientRepository clients,
             OAuth2TokenGenerator<?> tokens,
-            @Value("${app.mcp.registrations-per-client-per-hour:10}") int registrationsPerHour)
+            AppProperties app)
             throws Exception {
+        int registrationsPerHour = app.mcp().registrationsPerClientPerHour();
         if (!settings.enabled()) {
             return ConnectorOff.chain(http);
         }

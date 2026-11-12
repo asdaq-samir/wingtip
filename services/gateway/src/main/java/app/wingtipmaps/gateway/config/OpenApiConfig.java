@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.config;
 
+import app.wingtipmaps.gateway.domain.Pilot;
 import io.swagger.v3.core.converter.ModelConverter;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.Schema;
@@ -14,6 +15,7 @@ import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.PropertyCustomizer;
+import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,6 +36,12 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class OpenApiConfig {
+
+    static {
+        // A handler's Pilot is the session's (CurrentPilot), never a
+        // parameter the caller sends.
+        SpringDocUtils.getConfig().addRequestWrapperToIgnore(Pilot.class);
+    }
 
     @Bean
     PropertyCustomizer nullableWhereDeclared() {

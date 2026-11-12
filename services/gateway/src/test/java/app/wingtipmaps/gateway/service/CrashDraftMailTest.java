@@ -2,8 +2,6 @@ package app.wingtipmaps.gateway.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -11,9 +9,11 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import tools.jackson.databind.json.JsonMapper;
 
 /** A ready crash draft is mailed to the developers once, with its link in
  *  the Studio, and the planner told; a planner that does not answer is no drafts. */
@@ -23,13 +23,11 @@ class CrashDraftMailTest {
             "[{\"id\":\"3f2a9c1b7d4e\",\"status\":\"ready\",\"aircraft\":\"Kitfox Supersport\","
                     + "\"city\":\"Estero\",\"state\":\"FL\",\"local_date\":\"2026-11-08\",\"track\":\"none\",\"sources\":[]}]";
 
-    private static final String ASKED = "/api/studio/drafts-to-notice";
-
     @Test
     void eachReadyDraftIsMailedWithItsLinkAndMarked() {
         PlannerClient planner = mock(PlannerClient.class);
-        when(planner.get(eq(ASKED), eq(PlannerStudioDraft[].class), anyString()))
-                .thenReturn(PlannerClient.DATES.readValue(DRAFTS, PlannerStudioDraft[].class));
+        when(planner.draftsToNotice())
+                .thenReturn(List.of(JsonMapper.shared().readValue(DRAFTS, PlannerStudioDraft[].class)));
         JavaMailSender sender = mock(JavaMailSender.class);
         CrashDraftMail drafts = new CrashDraftMail(
                 planner, new Mailer(sender, "no-reply@wingtipmaps.app"), "dev@example.com", "https://wingtip.test/");
@@ -43,7 +41,7 @@ class CrashDraftMailTest {
                 .contains("Preliminary");
         drafts.everyFewMinutes();
         verify(sender).send(any(SimpleMailMessage.class));
-        verify(planner).post(eq("/api/studio/drafts/3f2a9c1b7d4e/noticed"), eq(""), anyString());
+        verify(planner).noticed("3f2a9c1b7d4e");
     }
 
     @Test
@@ -58,7 +56,7 @@ class CrashDraftMailTest {
     @Test
     void aPlannerThatDoesNotAnswerIsNoDrafts() {
         PlannerClient planner = mock(PlannerClient.class);
-        when(planner.get(eq(ASKED), eq(PlannerStudioDraft[].class), anyString()))
+        when(planner.draftsToNotice())
                 .thenThrow(new PlannerUnavailableException("the planner could not be reached for the crash drafts"));
         CrashDraftMail drafts =
                 new CrashDraftMail(planner, new Mailer(mock(JavaMailSender.class), "x@y"), "dev@example.com", "");

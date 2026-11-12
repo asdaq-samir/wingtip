@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Each service by its health answer, each feed by the planner's alerting, the feeds not asked of a planner down. */
 class UptimeWatchTest {
@@ -36,6 +38,9 @@ class UptimeWatchTest {
         return new UptimeWatch(
                 probe,
                 null,
+                JsonMapper.builder()
+                        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                        .build(),
                 "http://planner:8000/",
                 "http://assistant:8000",
                 claude,

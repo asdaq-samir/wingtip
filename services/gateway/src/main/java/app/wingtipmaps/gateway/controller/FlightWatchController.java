@@ -1,12 +1,11 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.FlightWatchDto;
 import app.wingtipmaps.gateway.dto.WatchFlightRequest;
 import app.wingtipmaps.gateway.service.FlightWatchService;
-import app.wingtipmaps.gateway.service.PilotService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,29 +22,27 @@ import org.springframework.web.bind.annotation.RestController;
 public class FlightWatchController {
 
     private final FlightWatchService watches;
-    private final PilotService pilots;
 
-    public FlightWatchController(FlightWatchService watches, PilotService pilots) {
+    public FlightWatchController(FlightWatchService watches) {
         this.watches = watches;
-        this.pilots = pilots;
     }
 
     /** Watches the flight up to its departure, briefing it now as the
      *  baseline; the watch, with no changes yet. */
     @PostMapping
     public ResponseEntity<FlightWatchDto> watch(
-            Authentication authentication, @PathVariable Long id, @Valid @RequestBody WatchFlightRequest request) {
-        return PilotResponses.found(pilots, authentication, pilot -> watches.watch(pilot, id, request.departAt()));
+            Pilot pilot, @PathVariable Long id, @Valid @RequestBody WatchFlightRequest request) {
+        return ResponseEntity.of(watches.watch(pilot, id, request.departAt()));
     }
 
     /** The watch and the latest changes, for the app to show. */
     @GetMapping
-    public ResponseEntity<FlightWatchDto> get(Authentication authentication, @PathVariable Long id) {
-        return PilotResponses.found(pilots, authentication, pilot -> watches.watchOf(pilot, id));
+    public ResponseEntity<FlightWatchDto> get(Pilot pilot, @PathVariable Long id) {
+        return ResponseEntity.of(watches.watchOf(pilot, id));
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> unwatch(Authentication authentication, @PathVariable Long id) {
-        return PilotResponses.done(pilots, authentication, pilot -> watches.unwatch(pilot, id));
+    public ResponseEntity<Void> unwatch(Pilot pilot, @PathVariable Long id) {
+        return PilotResponses.done(watches.unwatch(pilot, id));
     }
 }

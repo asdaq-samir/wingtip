@@ -76,10 +76,11 @@ class MagicLinkThrottleTest {
 
     /** Through the filter `forward-headers-strategy: framework` installs,
      *  as the deployed app is -- which makes getRemoteAddr() the first
-     *  X-Forwarded-For entry. */
+     *  X-Forwarded-For entry. False: the balancer's X-Forwarded-* headers,
+     *  not the standard Forwarded one (Framework 7.1 makes it a choice). */
     private void askThrough(String email, String forwardedFor, int expected) throws Exception {
         MockMvc behindTheBalancer = MockMvcBuilders.webAppContextSetup(context)
-                .addFilters(new ForwardedHeaderFilter())
+                .addFilters(new ForwardedHeaderFilter(false))
                 .build();
         behindTheBalancer
                 .perform(post("/api/auth/magic-link")

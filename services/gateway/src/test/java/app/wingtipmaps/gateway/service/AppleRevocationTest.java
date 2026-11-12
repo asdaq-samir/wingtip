@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.web.client.RestClient;
 
 /** What Apple is sent when a deleted pilot's refresh token is revoked. */
 class AppleRevocationTest {
@@ -63,6 +64,7 @@ class AppleRevocationTest {
                                 .build()));
         return new AppleRevocation(
                 registrations.map(r -> r),
+                RestClient.builder(),
                 "http://127.0.0.1:" + apple.getAddress().getPort() + "/auth/revoke");
     }
 
@@ -71,9 +73,11 @@ class AppleRevocationTest {
         revocation(true).revoke("r.refresh+token");
 
         assertThat(asked)
-                .containsExactly("POST application/x-www-form-urlencoded "
-                        + "client_id=com.example.services&client_secret=signed.jwt.secret"
-                        + "&token=r.refresh%2Btoken&token_type_hint=refresh_token");
+                .singleElement()
+                .satisfies(sent -> assertThat(sent)
+                        .startsWith("POST application/x-www-form-urlencoded")
+                        .endsWith(" client_id=com.example.services&client_secret=signed.jwt.secret"
+                                + "&token=r.refresh%2Btoken&token_type_hint=refresh_token"));
     }
 
     @Test
