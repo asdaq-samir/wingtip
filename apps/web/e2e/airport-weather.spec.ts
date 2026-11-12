@@ -4,7 +4,7 @@ import { openMapSettings, settle } from "./helpers";
 /**
  * The Map card's Airport Weather (the owner's pick, 2026-11-10): Off,
  * Halo, Dot or Station, Halo to begin with, and three switches, all on
- * to begin with -- the station model when zoomed in, the wind arrows and
+ * to begin with -- the station model when zoomed in, the wind barbs and
  * the getting-worse badge. Off turns the switches off with it; the look is
  * kept across a reload, as the map's other settings are.
  */

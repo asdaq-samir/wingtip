@@ -17,7 +17,8 @@ export const AIRPORT_WEATHER_LOOKS: { value: AirportWeatherLook; label: string }
 /**
  * The Map card's "Airport weather" (components/AirportWeatherSettings):
  * the look, and three switches, all on unless turned off -- the station
- * model when zoomed in close, the wind arrows, and the getting-worse badge
+ * model when zoomed in close, the wind barbs farther out (windArrows, its
+ * name kept so a device keeps its choice), and the getting-worse badge
  * at the plan's fields. Kept on this device, as the map's other weather
  * settings are (lib/map/sources/weatherLayers).
  */

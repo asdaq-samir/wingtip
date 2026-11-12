@@ -3319,7 +3319,7 @@ export interface EngineContract {
     answer: WindAtAltitudeAnswer;
   };
   /**
-   * A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28B, 25.2.3.4.5).
+   * A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm, under 3 kt (FAA-H-8083-28B, 25.2.3.4.5; the NWS's wind barb table, weather.gov/hfo/windbarbinfo, 0-2 kt rounded to 0).
    */
   wind_barb: {
     input: WindBarbInput;

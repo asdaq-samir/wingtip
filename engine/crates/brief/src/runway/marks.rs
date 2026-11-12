@@ -108,15 +108,22 @@ pub struct Barb {
     pub half_barbs: u32,
 }
 
+/// Below this a wind is drawn calm, the circle with no stem: the NWS's
+/// table of station plots (weather.gov/hfo/windbarbinfo, "Wind Barbs")
+/// rounds an observed 0-2 kt to 0 kt and draws 3-7 kt as the 5 kt
+/// half-barb; an ASOS reports under 3 kt as calm (AIM 7-1-28's 00000KT)
+/// all the same, so the circle is what the station itself would say.
+pub const CALM_BELOW_KT: f64 = 3.0;
+
 /// The barb for a wind of `speed_kt`, to the nearest 5 kt (a half to the
-/// greater). Calm is a wind of nothing (AIM 7-1-28, 00000KT); a wind that
-/// rounds to nothing but is not calm keeps one half-barb, so a reported
-/// wind is never drawn as calm.
+/// greater), as the NWS's table rounds it (weather.gov/hfo/windbarbinfo:
+/// "rounded to the nearest 5 knots"; 3-7 kt is 5, 8-12 is 10, 48-52 is
+/// 50); under CALM_BELOW_KT the calm circle.
 pub fn wind_barb(speed_kt: f64) -> Barb {
-    if speed_kt <= 0.0 {
+    if speed_kt < CALM_BELOW_KT {
         return Barb { calm: true, flags: 0, barbs: 0, half_barbs: 0 };
     }
-    let fives = ((speed_kt / 5.0 + 0.5).floor() as u32).max(1);
+    let fives = (speed_kt / 5.0 + 0.5).floor() as u32;
     Barb { calm: false, flags: fives / 10, barbs: (fives % 10) / 2, half_barbs: fives % 2 }
 }
 
@@ -212,7 +219,14 @@ mod tests {
     #[test]
     fn barbs_add_to_the_wind_in_fives() {
         assert_eq!(wind_barb(0.0), Barb { calm: true, flags: 0, barbs: 0, half_barbs: 0 });
-        assert_eq!(wind_barb(2.0), Barb { calm: false, flags: 0, barbs: 0, half_barbs: 1 });
+        // The NWS table's edges: 0-2 kt is 0 (calm), 3-7 is 5, 8-12 is 10,
+        // 48-52 is a flag.
+        assert_eq!(wind_barb(2.0), Barb { calm: true, flags: 0, barbs: 0, half_barbs: 0 });
+        assert_eq!(wind_barb(3.0), Barb { calm: false, flags: 0, barbs: 0, half_barbs: 1 });
+        assert_eq!(wind_barb(7.0), Barb { calm: false, flags: 0, barbs: 0, half_barbs: 1 });
+        assert_eq!(wind_barb(8.0), Barb { calm: false, flags: 0, barbs: 1, half_barbs: 0 });
+        assert_eq!(wind_barb(47.0), Barb { calm: false, flags: 0, barbs: 4, half_barbs: 1 });
+        assert_eq!(wind_barb(48.0), Barb { calm: false, flags: 1, barbs: 0, half_barbs: 0 });
         assert_eq!(wind_barb(15.0), Barb { calm: false, flags: 0, barbs: 1, half_barbs: 1 });
         assert_eq!(wind_barb(12.0), Barb { calm: false, flags: 0, barbs: 1, half_barbs: 0 });
         assert_eq!(wind_barb(13.0), Barb { calm: false, flags: 0, barbs: 1, half_barbs: 1 });

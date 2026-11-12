@@ -38,7 +38,7 @@ export default function AirportWeatherSettings() {
         testId="airport-weather-station-close"
       />
       <SwitchRow
-        title="Wind Arrows"
+        title="Wind Barbs"
         on={!off && prefs.windArrows}
         disabled={off}
         onChange={(on) => prefs.set({ windArrows: on })}

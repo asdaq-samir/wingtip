@@ -64,7 +64,8 @@
   ],
   "windBarb": [
     { "why": "Calm is a circle.", "speed_kt": 0, "answer": { "calm": true, "flags": 0, "barbs": 0, "half_barbs": 0 } },
-    { "why": "2 kt keeps a half-barb, never drawn as calm.", "speed_kt": 2, "answer": { "calm": false, "flags": 0, "barbs": 0, "half_barbs": 1 } },
+    { "why": "2 kt rounds to 0, the circle (the NWS table: 0-2 kt is 0).", "speed_kt": 2, "answer": { "calm": true, "flags": 0, "barbs": 0, "half_barbs": 0 } },
+    { "why": "3 kt is 5, a half-barb alone (the NWS table: 3-7 kt is 5).", "speed_kt": 3, "answer": { "calm": false, "flags": 0, "barbs": 0, "half_barbs": 1 } },
     { "why": "12 kt is 10, one barb.", "speed_kt": 12, "answer": { "calm": false, "flags": 0, "barbs": 1, "half_barbs": 0 } },
     { "why": "18 kt is 20, two barbs.", "speed_kt": 18, "answer": { "calm": false, "flags": 0, "barbs": 2, "half_barbs": 0 } },
     { "why": "65 kt: a flag, a barb and a half-barb.", "speed_kt": 65, "answer": { "calm": false, "flags": 1, "barbs": 1, "half_barbs": 1 } }

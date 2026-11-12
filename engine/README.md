@@ -307,7 +307,8 @@ Then the callers switch to the name and the old copy is deleted.
   gusting, and whether it is red: past the picked airplane's maximum
   demonstrated crosswind, the POH's, never with no airplane or no
   figure) and `wind_barb` (the station model's flags, barbs and
-  half-barbs, FAA-H-8083-28A 25.2.3.4.5), held to the shared fixture
+  half-barbs, FAA-H-8083-28B 25.2.3.4.5; calm under 3 kt, the NWS's
+  table), held to the shared fixture
   `airportWeatherMarks.json`.
 - What the weather does to a flight after the planning is the engine's
   too (`crates/weather`): `weather_worse` (a field's category worse than
