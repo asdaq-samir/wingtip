@@ -34,7 +34,6 @@ import csv
 import logging
 import threading
 import time
-from importlib import import_module
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -58,12 +57,16 @@ from wingtip import (
 from wingtip import airspace_at, congested, cycle_pack, data_cycles, traffic as traffic_store
 from wingtip import airports as airport_table
 
-from . import chart_model, chart_refresh, errors, openapi_document, tracing
+from . import chart_model, chart_refresh, errors, mcp, openapi_document, tracing
 from .chart_cycle import check as chart_cycle
 from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
 from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
+from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
+from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words, plates
+from .routers import studio, studio_drafts, studio_history, weather_flow
+from .routers import engine as engine_router, forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
 from .schemas.common import Index
 from .settings import get_settings
 
@@ -399,21 +402,17 @@ def index() -> Index:
     return Index(service="planner", ui="served by the gateway at /app", warm=WARM.is_set())
 
 
-# Every router, named once, here and not inside another (.importlinter's
+# Every router, here and not inside another (.importlinter's
 # routers-independent), in the order their paths are matched and the
 # OpenAPI document lists them; a few to a line, as main is at its size.
-# Each is a module with a `router`, imported by its name so a router added
-# is added in one place.
 ROUTERS = (
-    "routers.plan routers.chart routers.briefing routers.notes routers.devml routers.system routers.classb routers.devservices"
-    " routers.airports routers.airspace routers.traffic routers.basemaps"
-    " routers.route_options routers.gonogo routers.figures routers.clearance routers.packs routers.words routers.weather_map"
-    " routers.weather_flow routers.weather_loop routers.forecast_run"
-    " routers.pilot routers.live routers.feeds routers.terrain routers.window routers.emergency routers.copilot routers.engine"
-    " routers.logbook_draft routers.notam_rank routers.offline routers.coach"
-    " mcp routers.plates routers.studio_history routers.studio routers.studio_drafts"
-).split()
-for name in ROUTERS:
-    app.include_router(import_module(f".{name}", __package__).router)
+    (plan, chart, briefing, notes, devml, system, classb, devservices, airports, airspace_router, traffic, basemaps),
+    (route_options, gonogo, figures, clearance, packs, words, weather_map, weather_flow, weather_loop, forecast_run),
+    (pilot, live, feeds, terrain, window, emergency, copilot, engine_router, logbook_draft, notam_rank, offline, coach),
+    (mcp, plates, studio_history, studio, studio_drafts),
+)
+for group in ROUTERS:
+    for module in group:
+        app.include_router(module.router)
 
 app.openapi = openapi_document.with_streams(app)
