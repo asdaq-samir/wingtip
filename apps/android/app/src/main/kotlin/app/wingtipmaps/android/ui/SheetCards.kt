@@ -30,6 +30,7 @@ import app.wingtipmaps.android.offline.DownloadsScreen
 import app.wingtipmaps.android.plates.PlateCard
 import app.wingtipmaps.android.plates.PlatePick
 import app.wingtipmaps.android.route.RouteLegCard
+import app.wingtipmaps.android.search.SearchControl
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 
@@ -53,10 +54,11 @@ internal fun SheetCard(
     ownShipOn: Boolean,
     assistant: AssistantClient,
     airports: AirportModel,
+    search: SearchControl,
     showPlan: () -> Unit,
 ) {
     val exit = remember(sheet) { CardExit(back = sheet::back, close = sheet::closeAll) }
-    Box(Modifier.fillMaxSize().testTag(page.testId)) { Card(page, sheet, plan, session, ownShip, ownShipOn, assistant, airports, showPlan, exit) }
+    Box(Modifier.fillMaxSize().testTag(page.testId)) { Card(page, sheet, plan, session, ownShip, ownShipOn, assistant, airports, search, showPlan, exit) }
 }
 
 @Composable
@@ -69,6 +71,7 @@ private fun Card(
     ownShipOn: Boolean,
     assistant: AssistantClient,
     airports: AirportModel,
+    search: SearchControl,
     showPlan: () -> Unit,
     exit: CardExit,
 ) {
@@ -83,7 +86,14 @@ private fun Card(
         SheetPage.Brief -> BriefPage(plan, session, exit, onSetRoute = showPlan)
         SheetPage.Nearest -> NearestPage(ownShip, plan, exit, onOpen = { sheet.push(SheetPage.Airport(it)) })
         SheetPage.Ask -> Page(stringResource(R.string.ask), exit) { AskScreen(plan = plan, session = session, ownShip = ownShip, client = assistant) }
-        SheetPage.Settings -> Page(stringResource(R.string.settings), exit) { SetupScreen(session, onMapSettings = { sheet.push(SheetPage.MapSettings) }) }
+        SheetPage.Settings -> Page(stringResource(R.string.settings), exit) {
+            // The one search is under the cards: they close for it, and
+            // Settings comes back with the field picked.
+            SetupScreen(session, onMapSettings = { sheet.push(SheetPage.MapSettings) }) { onPicked ->
+                sheet.closeAll()
+                search.pickAirport(R.string.home_airport_pick) { ident -> onPicked(ident); sheet.show(SheetPage.Settings) }
+            }
+        }
         SheetPage.Logbook -> LogbookScreen(exit, onCoach = { sheet.push(SheetPage.Coach) })
         SheetPage.Coach -> CoachScreen(exit)
         SheetPage.Downloads -> Page(stringResource(R.string.offline_downloads), exit) { DownloadsScreen() }

@@ -10,6 +10,7 @@ import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.flight.OwnTrail
 import app.wingtipmaps.android.logbook.FlightRecorder
 import app.wingtipmaps.android.pilot.MinimumsStore
+import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.KeptPlan
 import app.wingtipmaps.android.records.Records
 import app.wingtipmaps.android.widget.FlightSnapshot
@@ -68,6 +69,8 @@ class PhoneWipe(private val parts: List<Pair<String, suspend () -> Unit>>) {
                     "last position" to { OwnShip.of(app).forgetLastPosition() },
                     "own airplanes" to { OwnAirplanes.of(app).forget() },
                     "minimums" to { MinimumsStore.of(app).forget() },
+                    // The pilot's home airport, as the web's forgetPilot drops it.
+                    "home airport" to { FlightChoices.of(app).setHome(null) },
                     "widget" to {
                         if (FlightSnapshot.write(app, null)) NextFlightWidget().updateAll(app)
                     },

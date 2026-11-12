@@ -56,9 +56,11 @@ import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.ready.ReadyToFlyHost
+import app.wingtipmaps.android.route.RouteHome
 import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.route.RouteToolbar
 import app.wingtipmaps.android.route.RouteUndoSnackbar
+import app.wingtipmaps.android.route.hasPoints
 import app.wingtipmaps.android.search.OneSearch
 import app.wingtipmaps.android.search.rememberSearchControl
 import app.wingtipmaps.android.share.SharedFlightHost
@@ -249,7 +251,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         }
     }
     val cardView: @Composable (SheetPage) -> Unit = { page ->
-        SheetCard(page, pages, plan, session, ownShip.ownShip, ownShip.on, assistant, airports, showPlan)
+        SheetCard(page, pages, plan, session, ownShip.ownShip, ownShip.on, assistant, airports, search, showPlan)
     }
     // The phone's sheet (neither the strip, the wide panes nor the fold).
     val sheetLayout = !stripLayout && !wide && fold == null
@@ -270,11 +272,12 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             },
             // The FPL page, with a route or none: with none its ✕ goes back
             // one level, to the Search page (the web's empty box's Close),
+            // or to the card of the field a cleared route was flown to,
             // and its stops' rows ask the one search where from and to;
             // no "Plan a Flight" of its own (the owner, 2026-11-11).
             plan = {
                 PlanPage(
-                    plan, onClose = pages::closePlan, onField = { pages.push(SheetPage.Airport(it)) },
+                    plan, onClose = { pages.closePlan(); RouteHome.shared.backTo(planState.hasPoints)?.let(openField) }, onField = { pages.push(SheetPage.Airport(it)) },
                     onLeg = { pages.push(SheetPage.Leg(it)) }, onFind = search::open, onAddStop = search::addStop,
                     onAddStopAfter = search::addStopAfter,
                 )

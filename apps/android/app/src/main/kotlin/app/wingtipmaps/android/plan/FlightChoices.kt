@@ -40,9 +40,10 @@ class FlightChoices(private val prefs: SharedPreferences) {
     private val _tail = MutableStateFlow(prefs.getString(TAIL, null))
     val tail: StateFlow<String?> = _tail.asStateFlow()
 
-    /** The pilot's home airport, given in the welcome: where a route
-     *  starts when the pilot names only where to (StripModel.route),
-     *  after the account's home base. None until given. */
+    /** The pilot's home airport on this phone, set in Setup and taken
+     *  from the account's home base at sign-in (HomeAirport): where a
+     *  route starts when the pilot names only where to (StripModel.route,
+     *  the first flight's Plan It). None until given. */
     private val _home = MutableStateFlow(prefs.getString(HOME, null))
     val home: StateFlow<String?> = _home.asStateFlow()
 

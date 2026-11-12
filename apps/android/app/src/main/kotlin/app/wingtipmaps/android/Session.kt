@@ -12,6 +12,9 @@ import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.deleteAccount
+import app.wingtipmaps.android.api.setContact
+import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.plan.HomeAirport
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -66,6 +69,9 @@ class Session(app: Application) : AndroidViewModel(app) {
     private suspend fun load() {
         try {
             _pilot.value = Gateway.me()
+            // The account's home base is the pilot's home airport on every
+            // device they sign in on (HomeAirport): this phone takes it.
+            HomeAirport.mirrored(_pilot.value?.homeBase, null)?.let { FlightChoices.of(getApplication()).setHome(it) }
             _problem.value = null
             _checkFailed.value = false
         } catch (e: CancellationException) {
@@ -178,6 +184,30 @@ class Session(app: Application) : AndroidViewModel(app) {
             runCatching { Gateway.signOut() }
             forget(wipe)
             ClaudeGate.refresh(developer = false)
+        }
+    }
+
+    /** Why the home airport did not reach the account, shown under its row. */
+    private val _homeProblem = MutableStateFlow<String?>(null)
+    val homeProblem: StateFlow<String?> = _homeProblem.asStateFlow()
+
+    /** Setup's Home Airport, picked or cleared (null): kept on this phone,
+     *  and signed in, the account's home base too (PUT /api/me/contact,
+     *  the phone number sent back as it is), so it follows the pilot to
+     *  the web and the iPhone. */
+    fun setHomeAirport(ident: String?) {
+        val home = HomeAirport.mirrored(ident, null)
+        FlightChoices.of(getApplication()).setHome(home)
+        _homeProblem.value = null
+        val pilot = _pilot.value ?: return
+        viewModelScope.launch {
+            try {
+                _pilot.value = Gateway.setContact(pilot.phone, home)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _homeProblem.value = Problems.say(getApplication<Application>().getString(R.string.home_airport_unsaved), e)
+            }
         }
     }
 

@@ -70,6 +70,7 @@ import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.FlightRules
 import app.wingtipmaps.android.ready.ReadyToFlyRow
 import app.wingtipmaps.android.route.LegWords
+import app.wingtipmaps.android.route.RouteMenu
 import app.wingtipmaps.android.route.RoutePointMenu
 import app.wingtipmaps.android.share.ShareRouteButton
 import app.wingtipmaps.android.strip.StripData
@@ -90,7 +91,8 @@ import kotlinx.coroutines.launch
  * written by Format; a leg's cruise altitude is FL-045 as the cruise
  * controls write it (decision 0009).
  *
- * @param onClose back to what the search shows with nothing typed.
+ * @param onClose back one level: the search, or with the route cleared
+ *   the card of the field it was flown to (RouteHome).
  * @param onField a field of the route's card.
  * @param onLeg a leg's card, by its number from the departure.
  * @param onAddStopAfter the search opened for a stop after a point.
@@ -118,7 +120,8 @@ fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onLeg: 
     // scrolls, ✕ always in view (the scrolling rule, 2026-11-10); no ←, as
     // the plan sits under the search.
     val title = if (state.dep.isEmpty() && state.dest.isEmpty()) stringResource(R.string.plan) else StripData.routeName(state.dep, state.dest, state.stops)
-    CardPage(title = title, exit = CardExit.one(onClose), showBack = false) { padding ->
+    // The route's ••• before the ✕: Clear Route (RouteMenu).
+    CardPage(title = title, exit = CardExit.one(onClose), showBack = false, actions = { RouteMenu(plan) }) { padding ->
         LazyColumn(state = list, modifier = Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             item(key = "head") { Box(pad) { PlanHead(state, tail) } }
             item(key = "doors") { Box(pad) { PlanButtons(state.routed, onBrief = { ScreenRequests.ask(Screen.BRIEF) }, onNavLog = { toLegs() }) } }

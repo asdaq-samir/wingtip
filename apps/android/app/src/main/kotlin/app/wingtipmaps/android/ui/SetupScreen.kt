@@ -64,14 +64,14 @@ import app.wingtipmaps.android.strip.StripData
  * theme), the account -- signed in, the pilot's address and Sign Out;
  * signed out, an address and the emailed link, which opens the app and
  * signs it in (Session.open) -- what falls due, the pilot's minimums,
- * the Map Settings card and the copilots. The server the build talks to is
+ * the home airport, the Map Settings card and the copilots. The server the build talks to is
  * shown, for a tester with more than one. Each section under one
  * SectionTitle. The Logbook and Coach (signed in), Downloads, the
  * passenger briefing and About are rows that open their pages
  * (SettingsPages), each in one place.
  */
 @Composable
-fun SetupScreen(session: Session, onMapSettings: () -> Unit) {
+fun SetupScreen(session: Session, onMapSettings: () -> Unit, pickAirport: (onPicked: (String) -> Unit) -> Unit) {
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val loaded by session.loaded.collectAsStateWithLifecycle()
     val problem by session.problem.collectAsStateWithLifecycle()
@@ -130,6 +130,9 @@ fun SetupScreen(session: Session, onMapSettings: () -> Unit) {
         if (signedIn != null) ExportRow()
         // The Logbook and its Coach are the account's.
         if (signedIn != null) PilotPageRows()
+        // The pilot's home airport, the account's where signed in: where a
+        // route starts when the phone does not know where it is.
+        HomeAirportRows(session, pickAirport)
         // The pilot's own minimums, kept on this phone (no sign-in), as
         // the web keeps them with the pilot's own things.
         SectionTitle(stringResource(R.string.personal_minimums))

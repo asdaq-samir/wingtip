@@ -31,7 +31,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  *
  * Plan It plans to the destination from where the pilot is -- own ship's
  * fix, else the phone's position read once, the nearest field to it (the
- * planner's nearest) -- else from the home airport kept on this phone;
+ * planner's nearest) -- else from the pilot's home airport (HomeAirport);
  * with neither, it asks where from (`needsFrom`). Then the route is
  * planned as the plan's own fields plan one, the card is done with for
  * good (FirstFlightMemory) and `onPlanned` opens the nav log.

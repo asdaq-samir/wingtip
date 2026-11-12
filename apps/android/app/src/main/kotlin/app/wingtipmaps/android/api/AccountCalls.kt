@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.api
 
+import app.wingtipmaps.android.api.generated.gateway.PilotContactRequest
 import java.time.LocalDate
 
 // The pilot's own account, as the web's Setup has it: everything the
@@ -14,6 +15,13 @@ import java.time.LocalDate
 suspend fun Gateway.deleteAccount() {
     send("DELETE", "/api/me")
 }
+
+/** The pilot's telephone number and home base, both at once (PUT
+ *  /api/me/contact, the iPhone's Gateway.setContact): null is none, so a
+ *  change to one carries the other as the account has it. The answer is
+ *  the pilot with them. */
+suspend fun Gateway.setContact(phone: String?, homeBase: String?): Pilot =
+    json.decodeFromString(send("PUT", "/api/me/contact", json = json.encodeToString(PilotContactRequest(homeBase = homeBase, phone = phone))))
 
 /** The pilot's data as the gateway wrote it, and the name it gave the file. */
 class AccountExport(val fileName: String, val bytes: ByteArray)

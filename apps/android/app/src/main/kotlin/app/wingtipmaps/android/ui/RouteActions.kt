@@ -13,6 +13,7 @@ import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.route.RouteHome
 import app.wingtipmaps.android.route.departFrom
 
 /**
@@ -46,6 +47,7 @@ class RouteActions(
         when (action) {
             CardAction.FLY_HERE -> {
                 plan.flyHere(place.ident, from.orEmpty())
+                RouteHome.shared.flewTo(place.ident)
                 haptics?.tap(WingtipHaptic.DIRECT_TO)
             }
             CardAction.DEPART_FROM -> plan.departFrom(place.ident)
