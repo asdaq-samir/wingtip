@@ -31,10 +31,12 @@ export function useFlowTexture(frame: FlowFrame | null, field: string, enabled =
  *  picture here: its own reading takes the bounds as the outer pixels'
  *  middles, half a pixel off the weather service's (flow_grid BOUNDS, the
  *  pixels' outer edges), and averages none where a pixel has none in a
- *  way the phones did not. `file` is the picture's name, its encoding its
+ *  way the phones did not. The ceiling's picture is read as the
+ *  ceiling, rounded to its 50 ft step, its top no ceiling (`noCeiling`). `file` is the picture's name, its encoding its
  *  field's ("temp-060" is a "temp"). */
 export function valueAt(layer: FlowLayer, file: string, texture: TextureData | undefined, point: [number, number]) {
-  const spec = layer.fields[file.split("-")[0]!];
+  const field = file.split("-")[0]!;
+  const spec = layer.fields[field];
   if (!texture || !spec) return null;
   const { data, width, height } = texture;
   const cell = callEngine("flow_cell", { bounds: layer.bounds, width, height, lat: point[1], lon: point[0] });
@@ -48,6 +50,7 @@ export function valueAt(layer: FlowLayer, file: string, texture: TextureData | u
     fy: cell.fy,
     unscale: spec.unscale,
     vector: spec.vector,
+    ceiling: field === "ceiling",
   });
-  return read && { value: read.value, direction: read.from_deg ?? undefined, calm: read.calm };
+  return read && { value: read.value, direction: read.from_deg ?? undefined, calm: read.calm, noCeiling: read.no_ceiling };
 }

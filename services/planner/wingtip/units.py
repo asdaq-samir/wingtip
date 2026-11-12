@@ -30,6 +30,11 @@ NM_PER_SM = M_PER_SM / M_PER_NM
 #: (NIST Handbook 44, Appendix C). The model grids give wind in m/s.
 MS_TO_KT = 3600.0 / M_PER_NM
 
+#: Kelvins at 0 degrees Celsius: a Celsius temperature is the kelvin one
+#: less 273.15 (NIST SP 811 4.2.1.1). The GFS's and the HRRR's GRIB2 TMP is
+#: in kelvins; the pilot reads degrees Celsius.
+K_AT_0C = 273.15
+
 #: Nautical miles in a degree of latitude, taken as 60: the nautical mile
 #: began as a minute of latitude, and on WGS 84 a degree is 59.7 nm at the
 #: equator and 60.3 nm at the pole. For a box a search is cut by before the

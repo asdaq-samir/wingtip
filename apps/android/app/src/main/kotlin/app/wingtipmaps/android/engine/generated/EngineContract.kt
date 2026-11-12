@@ -3720,6 +3720,11 @@ object EngineContract {
          * A wind under 1 kt, which has no direction (FMH-1 Table 5-1, 5.5.2); false for a scalar.
          */
         val calm: Boolean,
+        /**
+         * The ceiling's picture read at its top: a ceiling over it or none, either no ceiling (AIM 7-1-7); false for any other field.
+         */
+        @SerialName("no_ceiling")
+        val noCeiling: Boolean,
     )
 
     @Serializable
@@ -3735,6 +3740,10 @@ object EngineContract {
          */
         val unscale: List<Double>,
         val vector: Boolean,
+        /**
+         * The picture is the ceiling's, feet above the ground (14 CFR 1.1), whose top is no ceiling; false or absent for any other field.
+         */
+        val ceiling: Boolean? = null,
     )
 
     @Serializable

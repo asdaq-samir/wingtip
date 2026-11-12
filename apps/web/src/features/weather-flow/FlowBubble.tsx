@@ -110,15 +110,7 @@ export function FlowBubble({
     body = <Said over={said.over} figure={said.figure} under={said.under} />;
   } else if (read) {
     const t = windTemp ? valueAt(layer, windTemp, temp, point) : null;
-    body = (
-      <Figure
-        field={field}
-        unit={layer.fields[field]?.unit ?? ""}
-        read={read}
-        top={layer.fields[field]?.unscale[1]}
-        temp={t ? t.value : null}
-      />
-    );
+    body = <Figure field={field} unit={layer.fields[field]?.unit ?? ""} read={read} temp={t ? t.value : null} />;
   }
   // The temperature a small pill with its figure alone, as the pilot's
   // position and favourites carry (FlowPins), and only where the pilot
@@ -140,24 +132,16 @@ export function FlowBubble({
   );
 }
 
-/** The ceiling's picture holds 50 ft a step to its top (the weather
- *  service's flow_grid), where a ceiling over it and none are both kept:
- *  either is no ceiling a category turns on (AIM 7-1-7's highest bound is
- *  3,000 ft), so it reads as none. */
-const nearTop = (value: number, top: number | undefined) => top !== undefined && value >= top - 25;
-
 /** A value's figure in the badge: what it is above, the figure, below. */
 function Figure({
   field,
   unit,
   read,
-  top,
   temp = null,
 }: {
   field: ShownField;
   unit: string;
-  read: { value: number; direction?: number; calm?: boolean };
-  top?: number;
+  read: { value: number; direction?: number; calm?: boolean; noCeiling?: boolean };
   /** The temperature at the wind's level, C, where it is known. */
   temp?: number | null;
 }) {
@@ -169,10 +153,9 @@ function Figure({
   // compass_point, JO 7930.2 3-3-9's), above its speed, as Apple Weather's
   // badge says it ("NNW").
   if (field === "wind" && read.direction !== undefined && !read.calm) over = callEngine("compass_point", { bearing_deg: read.direction });
-  if (field === "ceiling") {
-    if (nearTop(read.value, top)) [figure, under] = ["None", "ceiling"];
-    else [figure, under] = [(Math.round(read.value / 50) * 50).toLocaleString("en-US"), "ft agl"];
-  }
+  // The engine reads the ceiling rounded to its picture's 50 ft, and its
+  // top as none (flow_sample's no_ceiling, AIM 7-1-7).
+  if (field === "ceiling") [figure, under] = read.noCeiling ? ["None", "ceiling"] : [read.value.toLocaleString("en-US"), "ft agl"];
   if (field === "cape") over = callEngine("cape_category", { j_kg: read.value });
   // A wind under a knot is calm and has no direction (FMH-1 Table 5-1,
   // 5.5.2): the word alone, in place of a speed and a unit.
