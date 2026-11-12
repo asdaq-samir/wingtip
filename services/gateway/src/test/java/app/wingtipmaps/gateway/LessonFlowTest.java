@@ -197,7 +197,7 @@ class LessonFlowTest {
         assertThatThrownBy(() -> lessons.assign(p[1], student, ils09(), NOW))
                 .isInstanceOfSatisfying(
                         InstructorRefusedException.class,
-                        r -> assertThat(r.status).isEqualTo(HttpStatus.CONFLICT));
+                        r -> assertThat(r.getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
         // Their instructor reads it among the student's record.
         assertThat(training.trainingFor(p[1], student, List.of(), TODAY).lessons())
                 .singleElement()

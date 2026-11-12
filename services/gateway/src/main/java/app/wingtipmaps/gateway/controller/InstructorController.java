@@ -11,14 +11,11 @@ import app.wingtipmaps.gateway.dto.TrainingDto;
 import app.wingtipmaps.gateway.service.InstructorService;
 import app.wingtipmaps.gateway.service.LessonService;
 import app.wingtipmaps.gateway.service.LogbookService;
-import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.TrainingService;
 import jakarta.validation.Valid;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.function.Function;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,64 +39,50 @@ public class InstructorController {
     private final LessonService lessons;
     private final TrainingService training;
     private final LogbookService logbook;
-    private final PilotService pilots;
 
     public InstructorController(
-            InstructorService instructors,
-            LessonService lessons,
-            TrainingService training,
-            LogbookService logbook,
-            PilotService pilots) {
+            InstructorService instructors, LessonService lessons, TrainingService training, LogbookService logbook) {
         this.instructors = instructors;
         this.lessons = lessons;
         this.training = training;
         this.logbook = logbook;
-        this.pilots = pilots;
     }
 
     @GetMapping
-    public ResponseEntity<InstructorDto> get(Authentication authentication) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> ResponseEntity.ok(page(pilot)));
+    public ResponseEntity<InstructorDto> get(Pilot pilot) {
+        return ResponseEntity.ok(page(pilot));
     }
 
     /** Their certificate as endorsements print it, and their name. */
     @PutMapping
-    public ResponseEntity<InstructorDto> set(
-            Authentication authentication, @Valid @RequestBody InstructorRequest request) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> {
-            instructors.setInstructor(pilot, request);
-            return ResponseEntity.ok(page(pilot));
-        });
+    public ResponseEntity<InstructorDto> set(Pilot pilot, @Valid @RequestBody InstructorRequest request) {
+        instructors.setInstructor(pilot, request);
+        return ResponseEntity.ok(page(pilot));
     }
 
     /** No longer an instructor: what they signed stays signed. */
     @DeleteMapping
-    public ResponseEntity<InstructorDto> stop(Authentication authentication) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> {
-            instructors.stopInstructing(pilot);
-            return ResponseEntity.ok(page(pilot));
-        });
+    public ResponseEntity<InstructorDto> stop(Pilot pilot) {
+        instructors.stopInstructing(pilot);
+        return ResponseEntity.ok(page(pilot));
     }
 
     /** A student's ask taken, where it was made of this pilot's address. */
     @PostMapping("/students/{linkId}/accept")
-    public ResponseEntity<InstructorDto> accept(Authentication authentication, @PathVariable Long linkId) {
-        return changed(authentication, pilot -> instructors.accept(pilot, linkId, Instant.now()));
+    public ResponseEntity<InstructorDto> accept(Pilot pilot, @PathVariable Long linkId) {
+        return changed(pilot, instructors.accept(pilot, linkId, Instant.now()));
     }
 
     /** An ask turned down, or a student given up. */
     @DeleteMapping("/students/{linkId}")
-    public ResponseEntity<InstructorDto> leave(Authentication authentication, @PathVariable Long linkId) {
-        return changed(authentication, pilot -> instructors.leave(pilot, linkId));
+    public ResponseEntity<InstructorDto> leave(Pilot pilot, @PathVariable Long linkId) {
+        return changed(pilot, instructors.leave(pilot, linkId));
     }
 
     /** One student's record, as their instructor reads it. */
     @GetMapping("/students/{studentId}/training")
-    public ResponseEntity<TrainingDto> student(Authentication authentication, @PathVariable Long studentId) {
-        return PilotResponses.found(
-                pilots,
-                authentication,
-                pilot -> instructors.student(pilot, studentId).map(student -> recordOf(pilot, student)));
+    public ResponseEntity<TrainingDto> student(Pilot pilot, @PathVariable Long studentId) {
+        return ResponseEntity.of(instructors.student(pilot, studentId).map(student -> recordOf(pilot, student)));
     }
 
     /** An endorsement signed for one of their students: 400 a field
@@ -109,73 +92,58 @@ public class InstructorController {
      *  the screens having warned: the app never refuses on it. */
     @PostMapping("/students/{studentId}/endorsements")
     public ResponseEntity<TrainingDto> sign(
-            Authentication authentication, @PathVariable Long studentId, @Valid @RequestBody SignRequest request) {
-        return PilotResponses.found(
-                pilots,
-                authentication,
-                pilot -> instructors.student(pilot, studentId).map(student -> {
-                    instructors.sign(pilot, student, request, Instant.now());
-                    return recordOf(pilot, student);
-                }));
+            Pilot pilot, @PathVariable Long studentId, @Valid @RequestBody SignRequest request) {
+        return ResponseEntity.of(instructors.student(pilot, studentId).map(student -> {
+            instructors.sign(pilot, student, request, Instant.now());
+            return recordOf(pilot, student);
+        }));
     }
 
     /** An approach set as a lesson for one of their students, who is
      *  emailed: 409 the same one set them already and not yet quizzed. */
     @PostMapping("/students/{studentId}/lessons")
     public ResponseEntity<TrainingDto> assignLesson(
-            Authentication authentication,
-            @PathVariable Long studentId,
-            @Valid @RequestBody AssignLessonRequest request) {
-        return PilotResponses.found(
-                pilots,
-                authentication,
-                pilot -> instructors.student(pilot, studentId).map(student -> {
-                    lessons.assign(pilot, student, request, Instant.now());
-                    return recordOf(pilot, student);
-                }));
+            Pilot pilot, @PathVariable Long studentId, @Valid @RequestBody AssignLessonRequest request) {
+        return ResponseEntity.of(instructors.student(pilot, studentId).map(student -> {
+            lessons.assign(pilot, student, request, Instant.now());
+            return recordOf(pilot, student);
+        }));
     }
 
     /** A lesson they set taken back. */
     @DeleteMapping("/students/{studentId}/lessons/{id}")
-    public ResponseEntity<TrainingDto> removeLesson(
-            Authentication authentication, @PathVariable Long studentId, @PathVariable Long id) {
-        return PilotResponses.found(
-                pilots,
-                authentication,
-                pilot -> instructors
-                        .student(pilot, studentId)
-                        .filter(student -> lessons.remove(pilot, studentId, id))
-                        .map(student -> recordOf(pilot, student)));
+    public ResponseEntity<TrainingDto> removeLesson(Pilot pilot, @PathVariable Long studentId, @PathVariable Long id) {
+        return ResponseEntity.of(instructors
+                .student(pilot, studentId)
+                .filter(student -> lessons.remove(pilot, studentId, id))
+                .map(student -> recordOf(pilot, student)));
     }
 
     /** The track of a flight the student put to them, for its approach to
      *  be debriefed against a lesson's: 404 for any other flight. */
     @GetMapping("/students/{studentId}/flights/{flightId}/track")
     public ResponseEntity<TrackDto> reviewedTrack(
-            Authentication authentication, @PathVariable Long studentId, @PathVariable Long flightId) {
-        return PilotResponses.found(pilots, authentication, pilot -> lessons.reviewedTrack(pilot, studentId, flightId));
+            Pilot pilot, @PathVariable Long studentId, @PathVariable Long flightId) {
+        return ResponseEntity.of(lessons.reviewedTrack(pilot, studentId, flightId));
     }
 
     /** One they signed, voided for a correction. */
     @PostMapping("/endorsements/{id}/void")
-    public ResponseEntity<InstructorDto> voidEndorsement(Authentication authentication, @PathVariable Long id) {
-        return changed(authentication, pilot -> instructors.voidEndorsement(pilot, id, Instant.now()));
+    public ResponseEntity<InstructorDto> voidEndorsement(Pilot pilot, @PathVariable Long id) {
+        return changed(pilot, instructors.voidEndorsement(pilot, id, Instant.now()));
     }
 
     /** A solo cross-country turned down, and why. */
     @PostMapping("/reviews/{id}/decline")
     public ResponseEntity<InstructorDto> decline(
-            Authentication authentication, @PathVariable Long id, @Valid @RequestBody DeclineRequest request) {
-        return changed(authentication, pilot -> instructors.decline(pilot, id, request.note(), Instant.now()));
+            Pilot pilot, @PathVariable Long id, @Valid @RequestBody DeclineRequest request) {
+        return changed(pilot, instructors.decline(pilot, id, request.note(), Instant.now()));
     }
 
-    private ResponseEntity<InstructorDto> changed(Authentication authentication, Function<Pilot, Boolean> change) {
-        return PilotResponses.withPilot(
-                pilots,
-                authentication,
-                pilot -> change.apply(pilot)
-                        ? ResponseEntity.ok(page(pilot))
-                        : ResponseEntity.notFound().build());
+    private ResponseEntity<InstructorDto> changed(Pilot pilot, boolean changed) {
+        return changed
+                ? ResponseEntity.ok(page(pilot))
+                : ResponseEntity.notFound().build();
     }
 
     private InstructorDto page(Pilot pilot) {

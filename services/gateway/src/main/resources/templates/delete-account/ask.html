@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{page :: head('Delete Account')}"></head>
+<body>
+<h1>Delete your Wingtip Maps account</h1>
+<p>Enter the email address you sign in to Wingtip Maps with. We email it a link; open it and press Delete Account.
+  You don't need the app.</p>
+<p th:replace="~{page :: what-goes}"></p>
+<p class="muted" role="status" th:if="${!#strings.isEmpty(notice)}" th:text="${notice}"></p>
+<form method="post" th:action="@{/delete-account}">
+  <label for="email">Email</label>
+  <input id="email" type="email" name="email" required autocomplete="email">
+  <button class="button" type="submit">Email Me a Deletion Link</button>
+</form>
+<p class="muted">Signed in to Wingtip Maps on a phone or the web? Setup, then Delete Account, does the same without
+  an email.</p>
+</body>
+</html>

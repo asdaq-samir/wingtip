@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /** A pilot's own flights -- their use of a route, the aircraft they
  *  flew it in, and the nav log they filed. Scoped by pilot the same
@@ -27,17 +27,20 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class FlightService {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
     private static final TypeReference<List<TrackPointDto>> POINTS = new TypeReference<>() {};
 
     private final FlightRepository flights;
     private final AircraftRepository aircraft;
     private final FlightTrackRepository tracks;
+    /** Boot's own, for a track's points kept as JSON. */
+    private final JsonMapper json;
 
-    public FlightService(FlightRepository flights, AircraftRepository aircraft, FlightTrackRepository tracks) {
+    public FlightService(
+            FlightRepository flights, AircraftRepository aircraft, FlightTrackRepository tracks, JsonMapper json) {
         this.flights = flights;
         this.aircraft = aircraft;
         this.tracks = tracks;
+        this.json = json;
     }
 
     public List<Flight> list(Pilot pilot) {
@@ -122,7 +125,7 @@ public class FlightService {
     public Optional<TrackDto> trackOf(Long flightId) {
         return tracks.findById(flightId).map(t -> {
             try {
-                return new TrackDto(t.getSource(), JSON.readValue(t.getPoints(), POINTS));
+                return new TrackDto(t.getSource(), json.readValue(t.getPoints(), POINTS));
             } catch (JacksonException e) {
                 throw new IllegalStateException("Flight " + flightId + "'s saved track is not JSON", e);
             }
@@ -142,7 +145,7 @@ public class FlightService {
                 .map(f -> {
                     String points;
                     try {
-                        points = JSON.writeValueAsString(track.points());
+                        points = json.writeValueAsString(track.points());
                     } catch (JacksonException e) {
                         throw new IllegalStateException("A track's points would not write as JSON", e);
                     }

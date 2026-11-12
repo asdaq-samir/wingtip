@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.security;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.controller.UpstreamRoutes;
 import app.wingtipmaps.gateway.service.PilotService;
 import jakarta.servlet.Filter;
@@ -7,7 +8,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,9 +26,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfFilter;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.savedrequest.NullRequestCache;
@@ -93,13 +90,12 @@ public class SecurityConfig {
 
     private final SignInOptions signIn;
 
-    SecurityConfig(
-            Optional<ClientRegistrationRepository> clientRegistrations,
-            @Value("${spring.mail.host:}") String mailHost,
-            @Value("${app.chart-tiles-origin:}") String chartTilesOrigin,
-            @Value("${app.hsts:true}") boolean hsts,
-            @Value("${app.open-writes:false}") boolean openWrites,
-            @Value("${app.public-base-url:}") String publicBaseUrl) {
+    SecurityConfig(Optional<ClientRegistrationRepository> clientRegistrations, AppProperties app) {
+        String mailHost = app.mail().host();
+        String chartTilesOrigin = app.chartTilesOrigin();
+        boolean hsts = app.hsts();
+        boolean openWrites = app.openWrites();
+        String publicBaseUrl = app.publicBaseUrl();
         this.hsts = hsts;
         this.httpsHost =
                 publicBaseUrl.startsWith("https://") ? URI.create(publicBaseUrl).getHost() : null;
@@ -266,9 +262,11 @@ public class SecurityConfig {
                 // front end can echo them back in a header. Session
                 // authentication means the browser attaches credentials
                 // automatically, which is exactly the condition CSRF
-                // exploits, so this stays on.
-                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                // exploits, so this stays on. Spring Security 7's own
+                // single-page setup: the XSRF-TOKEN cookie written on every
+                // request (no filter of ours forcing it any more), the
+                // header read as sent and a form's field as masked.
+                .csrf(csrf -> csrf.spa()
                         // sendBeacon carries no header, and a forged report only adds a row the
                         // owner reads (DiagnosticsController) or a sample to the speed trend; the
                         // lab run has no session to forge, only its token (SpeedController).
@@ -279,11 +277,6 @@ public class SecurityConfig {
                         // planner marks so (x-gateway's csrf: false).
                         .ignoringRequestMatchers("/api/diagnostics", "/api/speed/field", "/api/speed/lab")
                         .ignoringRequestMatchers(UpstreamRoutes.shipped().csrfExempt()))
-                // The handler above resolves the token lazily and nothing
-                // server-rendered ever forces it, so without this filter
-                // the XSRF-TOKEN cookie is never written and every POST
-                // or DELETE fails CSRF validation. See CsrfCookieFilter.
-                .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
 
                 // An API answers an unauthenticated call with 401. The
                 // default is a 302 to a login page, which a fetch() sees

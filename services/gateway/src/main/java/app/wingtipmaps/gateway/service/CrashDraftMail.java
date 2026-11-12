@@ -1,11 +1,12 @@
 package app.wingtipmaps.gateway.service;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
 import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -34,11 +35,12 @@ public class CrashDraftMail {
     private final Set<String> to;
     private final String studioUrl;
 
-    public CrashDraftMail(
-            PlannerClient planner,
-            Mailer mail,
-            @Value("${app.developer-emails:}") String developerEmails,
-            @Value("${app.public-base-url:}") String publicBaseUrl) {
+    @Autowired
+    public CrashDraftMail(PlannerClient planner, Mailer mail, AppProperties app) {
+        this(planner, mail, app.developerEmails(), app.publicBaseUrl());
+    }
+
+    public CrashDraftMail(PlannerClient planner, Mailer mail, String developerEmails, String publicBaseUrl) {
         this.planner = planner;
         this.mail = mail;
         this.to = Typed.addresses(developerEmails);
@@ -65,9 +67,9 @@ public class CrashDraftMail {
     /** The ready drafts nobody has been mailed about; none where the planner does not say. */
     List<PlannerStudioDraft> ready() {
         try {
-            return List.of(planner.get("/api/studio/drafts-to-notice", PlannerStudioDraft[].class, "the crash drafts"));
+            return planner.draftsToNotice();
         } catch (PlannerUnavailableException e) {
-            log.info("the planner's crash drafts not read: {}", e.getMessage());
+            log.info("the planner's crash drafts not read: {}", e.getBody().getDetail());
             return List.of();
         }
     }
@@ -99,9 +101,9 @@ public class CrashDraftMail {
 
     private void noticed(String id) {
         try {
-            planner.post("/api/studio/drafts/" + id + "/noticed", "", "the crash draft's notice");
+            planner.noticed(id);
         } catch (PlannerUnavailableException e) {
-            log.warn("crash draft {} mailed, not marked: {}", id, e.getMessage());
+            log.warn("crash draft {} mailed, not marked: {}", id, e.getBody().getDetail());
         }
     }
 }

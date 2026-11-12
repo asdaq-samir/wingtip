@@ -7,8 +7,6 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.savedrequest.NullRequestCache;
 
@@ -30,8 +28,7 @@ public class DeleteAccountSecurityConfig {
     SecurityFilterChain deleteAccountChain(HttpSecurity http) throws Exception {
         http.securityMatcher("/delete-account", "/delete-account/confirm")
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
-                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+                .csrf(csrf -> csrf.spa())
                 .requestCache(cache -> cache.requestCache(new NullRequestCache()))
                 .headers(headers -> headers.frameOptions(frame -> frame.deny())
                         .referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.NO_REFERRER))

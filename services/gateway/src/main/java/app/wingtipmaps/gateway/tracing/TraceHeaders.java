@@ -10,14 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * What every request this app makes of the planner or the assistant
- * carries so the trace goes on through it: the W3C {@code traceparent}
- * of the request being served (where management.tracing is on) and the
- * page's request id ({@link RequestIdFilter}). The JDK's HttpClient,
- * which every upstream call here uses, is not one Micrometer
- * instruments, so the headers are put on each request here, the one
- * place that knows how: StreamingProxy, PlannerClient and AccountService
- * all ask it.
+ * What every request the browser's proxy (StreamingProxy) makes of the
+ * planner or the assistant carries so the trace goes on through it: the
+ * W3C {@code traceparent} of the request being served (where
+ * management.tracing is on) and the page's request id
+ * ({@link RequestIdFilter}). The proxy pipes through the JDK's HttpClient
+ * itself, which Micrometer does not instrument, so the headers are put on
+ * here; the RestClients Boot makes (UpstreamClients) are traced by Boot.
  *
  * <p>With tracing off there is no current context, and a request with no
  * request id in hand goes out as it was built.

@@ -9,8 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.savedrequest.NullRequestCache;
@@ -52,9 +50,7 @@ public class ConnectorSecurityConfig {
                         .authenticated()
                         .anyRequest()
                         .permitAll())
-                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                        .ignoringRequestMatchers("/mcp", "/.well-known/**", "/internal/mcp/**"))
+                .csrf(csrf -> csrf.spa().ignoringRequestMatchers("/mcp", "/.well-known/**", "/internal/mcp/**"))
                 .requestCache(cache -> cache.requestCache(new NullRequestCache()))
                 .exceptionHandling(handling ->
                         handling.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))

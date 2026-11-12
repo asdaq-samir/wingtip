@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Locale;
 import org.apache.catalina.connector.Connector;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -39,8 +38,8 @@ public class InternalPortConfig {
     static final String PREFIX = "/internal/";
 
     @Bean
-    WebServerFactoryCustomizer<TomcatServletWebServerFactory> internalConnector(
-            @Value("${app.internal.port:8081}") int port) {
+    WebServerFactoryCustomizer<TomcatServletWebServerFactory> internalConnector(AppProperties app) {
+        int port = app.internal().port();
         return factory -> {
             if (port <= 0) {
                 return;
@@ -54,7 +53,8 @@ public class InternalPortConfig {
     /** Ahead of everything else, Spring Security included: a request is
      *  answered 404 before any of the app's rules read it. */
     @Bean
-    OnlyOnItsPort internalOnlyOnItsPort(@Value("${app.internal.port:8081}") int port) {
+    OnlyOnItsPort internalOnlyOnItsPort(AppProperties app) {
+        int port = app.internal().port();
         return new OnlyOnItsPort(port);
     }
 
