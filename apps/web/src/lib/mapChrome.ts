@@ -118,29 +118,6 @@ export const PILL_RADIUS = 24;
  *  from the far one. */
 export const SHEET_MARGIN = 8;
 
-/** A control's own pane of glass, as iOS 26 draws its buttons over
- *  content, clear as the tab up's was, at the owner's ask ("Can
- *  we try clear instead of tint", 2026-10-23, after the tinted "2"):
- *  nearly the sheet's own tone, so it reads by its light and its edge as
- *  the tab does -- a sheen at its top, bright there and clearing to almost
- *  nothing at its foot, a white rim, a hairline and a soft shade round it.
- *  The first clear glass was whiter all the way down and
- *  read as white chips on the near-white sheet. Lit along its top edge
- *  alone, as iOS's glass is, in the dark (the owner's "Yes", 2026-10-22:
- *  a light ring round every button outlined the screen) and in the light
- *  as in the dark (the owner's "make it light one similar to dark",
- *  2026-10-23: the ring and a harder shadow made raised white chips). The
- *  words and glyph in
- *  the text's colour. Theme utilities rather than one of index.css's own,
- *  so `cn` drops a variant's fill, border and shadow for these (the
- *  Select's outline, a Button's). */
-export const GLASS_BUTTON =
-  // Since the style audit (2026-10-26): iOS's grey fill, flat, as Apple's
-  // Maps on the web draws its secondary buttons -- no sheen, rim or shade.
-  // The app's one neutral fill, the text's colour at 8% -- the same grey
-  // as its tiles, chips and selected rows (bg-foreground/8), in either theme.
-  "border-0 bg-foreground/8 text-foreground shadow-none " + "hover:bg-foreground/12 hover:text-foreground aria-expanded:bg-foreground/12";
-
 /** The same glass tinted the blue on a toggle's chip once it is picked
  *  (data-pressed) -- a field's runway (ProceduresRoute) -- as iOS 26's
  *  prominent glass is for the one choice that sets something: the tint
@@ -167,11 +144,6 @@ export const ADD_CAPSULE =
 /** A star filled in iOS's yellow, as a starred thing is everywhere on
  *  iOS: the airport card's star, a round button by its close. */
 export const FAVORITE_STAR_ON = "fill-(--brand-taxiway-yellow) text-(--brand-taxiway-yellow)";
-
-/** A round button on the panel -- the console's, the route's close -- as
- *  Maps' are on iOS 26: a circle of that glass, its glyph bold in the
- *  text's colour (the pilot's pick, after a grey disc). */
-export const ROUND_BUTTON = `rounded-full ${GLASS_BUTTON}`;
 
 /** Whether the map panel is between sizes (MapPanel): dragged, or on its
  *  way to a size. A card shown at the pill's size as its

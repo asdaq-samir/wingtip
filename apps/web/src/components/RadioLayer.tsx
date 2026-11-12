@@ -366,13 +366,12 @@ function ReadbackLine({ cleared, said }: { cleared: string; said: string }) {
   );
 }
 
+const WORDS = "h-auto min-w-0 flex-1 justify-start px-0 py-1 text-left font-normal whitespace-normal text-foreground";
 /**
- * Comms assist grown into a pill (pick A, 2026-11-02), its circle widened
- * (MapControls): the radio's level, "Listening to the radio…", then
- * "Heard: " and the words -- never the mic's look (features/voice, the
- * owner's split of 2026-11-10); at a pause or a second tap, its chips
- * (CallActions) and ✕. The Radio card, a tap on the words away.
- */
+ * Comms assist grown into a pill (pick A, 2026-11-02), its circle widened (MapControls): the radio's level,
+ * "Listening to the radio…", then "Heard: " and the words -- never the mic's look (features/voice, the owner's
+ * split of 2026-11-10); at a pause or a second tap, its chips (CallActions) and ✕, stock Buttons all. The Radio
+ * card, a tap on the words away: a ghost Button, its words wrapping in the text's colour. */
 export function RadioPill() {
   const pill = useAtcRadio((s) => s.pill)!;
   const input = useAtcRadio((s) => s.input);
@@ -400,9 +399,9 @@ export function RadioPill() {
   return (
     <div className="min-w-0 py-1 px-1" data-testid="radio-pill">
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className={cn("min-w-0 flex-1 py-1 text-left outline-none focus-visible:underline", TEXT.detail)}
+        <Button
+          variant="ghost"
+          className={cn(WORDS, TEXT.detail)}
           aria-label="Open the radio's log"
           data-testid="radio-pill-text"
           onClick={() => useAtcRadio.setState({ cardOpen: true, cardText: pill.text || null })}
@@ -413,7 +412,7 @@ export function RadioPill() {
           >
             {pill.text ? `Heard: ${pill.text}` : pill.error || lost || waiting}
           </span>
-        </button>
+        </Button>
         {!pill.listening && <CloseButton label="Put away" onClick={away} data-testid="radio-pill-close" />}
       </div>
       {/* A readback heard: how it matched, in place of the chips. */}

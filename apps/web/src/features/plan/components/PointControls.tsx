@@ -14,7 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "cn";
-import { GLASS_BUTTON } from "../../../lib/mapChrome";
+import { GLASS_BUTTON } from "../../../components/ui/button";
 import RoundButton from "../../../components/RoundButton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../../../components/ui/dropdown-menu";
 import { DROPDOWN, useAfterMenu, type MenuKit } from "./pointMenu";

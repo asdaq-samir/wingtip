@@ -10,7 +10,7 @@ const DayCalendar = lazy(() => import("../../../../components/ui/calendar").then
 const TimeField = lazy(() => import("../../../../components/ui/date-field").then((m) => ({ default: m.TimeField })));
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../../components/ResponsivePopover";
 import { cn } from "cn";
-import { CHIP_TEXT, GLASS_BUTTON } from "../../../../lib/mapChrome";
+import { CHIP_TEXT } from "../../../../lib/mapChrome";
 import { TEXT } from "../../../../lib/text";
 
 interface Props {
@@ -114,9 +114,9 @@ export default function DepartPicker({
             // A chip of glass, as Maps' filter chips are: the time in the
             // text's colour, not a button's tint, at a note's 13 (TEXT), as
             // the airplane beside it (FlightInputs).
-            variant="outline"
+            variant="glass"
             size="sm"
-            className={cn("rounded-full px-2.5 font-normal pointer-coarse:px-1.5", GLASS_BUTTON, CHIP_TEXT)}
+            className={cn("rounded-full px-2.5 font-normal pointer-coarse:px-1.5", CHIP_TEXT)}
             aria-label={`${label} date`}
             data-testid={testId}
           >

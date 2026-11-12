@@ -10,6 +10,11 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button";
 // colour, and an outlined, grey or plain button read as words. In the
 // Native look (native:) they are shadcn's stock words again: the
 // foreground on an outlined or plain one, secondary-foreground on a grey.
+/** The glass variant's classes, for a control that is not a Button but
+ *  wears its look (a Toggle, a Select's trigger, a chip's own button). */
+const GLASS_BUTTON =
+  "border-0 bg-foreground/8 text-foreground shadow-none hover:bg-foreground/12 hover:text-foreground aria-expanded:bg-foreground/12";
+
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm pointer-coarse:text-(length:--type-row) font-medium whitespace-nowrap transition-all outline-none select-none cursor-pointer focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring active:not-aria-[haspopup]:translate-y-px pointer-coarse:active:opacity-60 pointer-coarse:active:duration-0 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
@@ -27,6 +32,12 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive-ink hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive dark:bg-destructive/10 dark:hover:bg-destructive/20 dark:focus-visible:ring-destructive",
         link: "text-tint underline-offset-4 hover:underline",
+        // The app's own: a pane of the grey glass over the map and on the
+        // sheet, as Maps' round buttons are on iOS 26 (GLASS_BUTTON, the
+        // style audit of 2026-10-26) -- the text's colour at 8%, 12% under
+        // a pointer or with its menu out, flat, its glyph in the text's
+        // colour. Only theme tokens, so each look changes it there.
+        glass: GLASS_BUTTON,
       },
       size: {
         default:
@@ -63,4 +74,4 @@ function Button({
   );
 }
 
-export { Button, buttonVariants };
+export { Button, buttonVariants, GLASS_BUTTON };

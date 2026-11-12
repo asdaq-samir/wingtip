@@ -263,18 +263,20 @@ export function PlaceNotamsSection({ ident }: { ident: string }) {
         expanded={long ? all : undefined}
         right={count}
       >
-        {all ? (
-          // Every one, under its kind (Runway, Taxiway, Obstacle ...), the
-          // kinds in the order their first NOTAM ranks, as ForeFlight heads
-          // its list's groups (the owner's screenshots, 2026-11-11).
-          kindsOf(shown, ident).map(([kind, group]) => (
-            <div key={kind} className="flex flex-col gap-1" data-testid="place-notams-kind">
-              <span className={cn("px-1 text-muted-foreground", TEXT.note)}>{kind}</span>
-              <NotamRows notams={group} ident={ident} state={null} />
-            </div>
-          ))
-        ) : (
-          <NotamRows notams={shown} ident={ident} state={<NotamsState data={data} isError={isError} />} />
+        {/* Opened, every one in the stock Collapsible's content, under its
+            kind (Runway, Taxiway, Obstacle ...), the kinds in the order
+            their first NOTAM ranks, as ForeFlight heads its list's groups
+            (the owner's screenshots, 2026-11-11). */}
+        {!(all && long) && <NotamRows notams={shown} ident={ident} state={<NotamsState data={data} isError={isError} />} />}
+        {long && (
+          <CollapsibleContent className="flex flex-col gap-2">
+            {kindsOf(shown, ident).map(([kind, group]) => (
+              <div key={kind} className="flex flex-col gap-1" data-testid="place-notams-kind">
+                <span className={cn("px-1 text-muted-foreground", TEXT.note)}>{kind}</span>
+                <NotamRows notams={group} ident={ident} state={null} />
+              </div>
+            ))}
+          </CollapsibleContent>
         )}
         <Unchecked data={data} />
       </PillSection>

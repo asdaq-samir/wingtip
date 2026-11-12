@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { Toggle } from "@base-ui/react/toggle";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { ROUND_BUTTON } from "../lib/mapChrome";
+import { GLASS_BUTTON } from "./ui/button";
 import { TEXT } from "../lib/text";
 import { playbackKey } from "./playbackKeys";
 
@@ -77,7 +77,8 @@ export function PlaybackToggle({
           aria-label={label}
           className={cn(
             "inline-flex size-9 shrink-0 items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-            ROUND_BUTTON,
+            "rounded-full",
+            GLASS_BUTTON,
             pressed && "bg-tint text-white hover:bg-tint/90 hover:text-white",
           )}
         />
@@ -137,7 +138,8 @@ export function SpeedMenu<T extends string | number>({
             data-testid={testId}
             className={cn(
               "inline-flex h-9 shrink-0 items-center justify-center px-2 font-semibold tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              ROUND_BUTTON,
+              "rounded-full",
+              GLASS_BUTTON,
               TEXT.note,
             )}
           />

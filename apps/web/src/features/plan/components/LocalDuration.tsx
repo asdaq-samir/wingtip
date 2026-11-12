@@ -1,6 +1,7 @@
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "cn";
-import { CHIP_TEXT, GLASS_BUTTON } from "../../../lib/mapChrome";
+import { CHIP_TEXT } from "../../../lib/mapChrome";
+import { GLASS_BUTTON } from "../../../components/ui/button";
 import PullDown from "../../../components/PullDown";
 import { duration } from "../../../lib/format";
 
