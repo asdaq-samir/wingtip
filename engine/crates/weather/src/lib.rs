@@ -34,6 +34,9 @@
 //!   the wind from its parts;
 //! - aloft_grid: the wind and temperature a leg flies in, read from the
 //!   winds-aloft grid by level and by hour;
+//! - model_levels: the GFS's levels at a station in the winds aloft's
+//!   feet, knots and degrees Celsius, the wind from its parts;
+//! - gairmet_window: the time a G-AIRMET snapshot stands for (AIM 7-1-6);
 //! - aviation_grids: the Aviation Weather Center's grids by level -- the
 //!   levels, AWC's icing categories, its turbulence thresholds by weight
 //!   class and its GFA cloud text;
@@ -46,8 +49,10 @@ pub mod contractions;
 pub mod cycles;
 pub mod flow_sample;
 pub mod forecast;
+pub mod gairmet_window;
 pub mod lighting_read;
 pub mod metar;
+pub mod model_levels;
 pub mod model_weather;
 pub mod notam;
 pub mod notam_rank;
@@ -66,4 +71,4 @@ pub mod worse;
 
 // The modules below this crate by the names they had when the engine was
 // one crate, so the code reads them as crate::json and so on.
-use wingtip_core::{geo, json, sort, time, xml};
+use wingtip_core::{geo, json, sort, text, time, xml};

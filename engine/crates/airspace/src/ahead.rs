@@ -18,7 +18,7 @@
 //! tiles point by point, so the phone's ground can stand some hundreds of
 //! feet higher on a ridge and alert sooner, never later.
 
-use crate::geo::destination;
+use crate::geo::{self, destination};
 use crate::json::{self, Value};
 use crate::{pack::Pack, sort::StableSort, sua_tab};
 
@@ -413,7 +413,7 @@ type Polygons = Vec<Vec<Vec<(f64, f64)>>>;
 /// Whether polygons hold a point: inside an odd number of one polygon's
 /// rings (its outline and not a hole), by the even-odd rule.
 fn polygons_hold(shape: &Polygons, x: f64, y: f64) -> bool {
-    shape.iter().any(|rings| rings.iter().filter(|r| r.len() >= 3 && ring_holds(r, x, y)).count() % 2 == 1)
+    shape.iter().any(|rings| rings.iter().filter(|r| r.len() >= 3 && geo::ring_holds(r, x, y)).count() % 2 == 1)
 }
 
 /// The phone's kept TFRs, one a tab-separated line: its NOTAM, title,
@@ -450,20 +450,6 @@ fn tfrs_of(text: &str) -> Vec<Tfr> {
             })
         })
         .collect()
-}
-
-/// Whether a ring holds a point, by the even-odd rule.
-fn ring_holds(ring: &[(f64, f64)], x: f64, y: f64) -> bool {
-    let mut inside = false;
-    let mut j = ring.len() - 1;
-    for i in 0..ring.len() {
-        let ((xi, yi), (xj, yj)) = (ring[i], ring[j]);
-        if (yi > y) != (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi {
-            inside = !inside;
-        }
-        j = i;
-    }
-    inside
 }
 
 /// The TFRs in force over the look-ahead that the track goes into, or is

@@ -54,6 +54,7 @@
 //! GEOS's InteriorPointArea (shapely's representative_point) finds it;
 //! on the simplified ring it can differ from the planner's by a little.
 
+use crate::geo;
 use crate::json::{self, Value};
 use crate::{pack::Pack, sort::StableSort};
 
@@ -160,19 +161,6 @@ fn signed_area(ring: &[Pt]) -> f64 {
     area
 }
 
-/// Whether the ring holds the point, by crossings.
-fn ring_holds(ring: &[Pt], p: Pt) -> bool {
-    let mut inside = false;
-    let mut prev = *ring.last().unwrap();
-    for &cur in ring {
-        if (cur.1 > p.1) != (prev.1 > p.1) && p.0 < (prev.0 - cur.0) * (p.1 - cur.1) / (prev.1 - cur.1) + cur.0 {
-            inside = !inside;
-        }
-        prev = cur;
-    }
-    inside
-}
-
 /// A polygon as the planner draws it: its shell and its holes.
 pub(crate) struct Polygon {
     pub(crate) shell: Vec<Pt>,
@@ -200,7 +188,7 @@ pub(crate) fn oriented(polygons: Vec<Vec<Vec<Pt>>>) -> Vec<Polygon> {
             }
         }
         for hole in holes {
-            match shells.iter_mut().find(|s| ring_holds(&s.shell, hole[0])) {
+            match shells.iter_mut().find(|s| geo::ring_holds(&s.shell, hole[0].0, hole[0].1)) {
                 Some(shell) => shell.holes.push(hole.into_iter().rev().collect()),
                 None => orphans.push(Polygon { shell: hole, holes: Vec::new() }),
             }
@@ -247,7 +235,9 @@ pub(crate) fn reaches(polygons: &[Polygon], view: Bbox) -> bool {
         }
     }
     let corners = [(view[0], view[1]), (view[0], view[3]), (view[2], view[1]), (view[2], view[3])];
-    corners.iter().any(|&c| polygons.iter().any(|p| ring_holds(&p.shell, c) && !p.holes.iter().any(|h| ring_holds(h, c))))
+    corners
+        .iter()
+        .any(|&c| polygons.iter().any(|p| geo::ring_holds(&p.shell, c.0, c.1) && !p.holes.iter().any(|h| geo::ring_holds(h, c.0, c.1))))
 }
 
 /// A point's distance from a segment, as GEOS's Distance::pointToSegment.

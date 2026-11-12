@@ -202,20 +202,7 @@ pub fn weather(grid: &mut Grid, tafs: &[Report], metars: &[Report], leave_s: f64
 
 /// Python's f"{int(x):,}": the whole number with commas.
 fn thousands(x: f64) -> String {
-    let n = x.trunc() as i64;
-    let digits = n.unsigned_abs().to_string();
-    let mut out = String::new();
-    for (i, ch) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i).is_multiple_of(3) {
-            out.push(',');
-        }
-        out.push(ch);
-    }
-    if n < 0 {
-        format!("-{out}")
-    } else {
-        out
-    }
+    wingtip_core::text::grouped_int(x.trunc() as i64)
 }
 
 fn field_weather(grid: &mut Grid, r: &Report, min_ceiling_ft: f64, min_visibility_sm: f64, how: &str) {

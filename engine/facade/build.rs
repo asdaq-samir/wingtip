@@ -7,9 +7,10 @@
 //! exactly when the contract has it, and adding a rule adds a file rather
 //! than a line to a shared list.
 //!
-//! No JSON reader: the engine builds with nothing from outside the
-//! workspace (README.md), and the two members it reads are plain strings
-//! written by the contract's own tooling.
+//! The files are read with serde_json, a build-dependency only: it runs
+//! on the host and is in none of the engine's builds (README.md), where
+//! a search of the text for a member would take one in a description or
+//! a nested schema for it.
 
 // The build script runs on the host and is not in the WebAssembly, so the
 // slices' own sorts are fine here (engine/clippy.toml).
@@ -18,12 +19,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// The string member `key` of a contract file's text, or None.
-fn member(text: &str, key: &str) -> Option<String> {
-    let at = text.find(&format!("\"{key}\""))?;
-    let rest = &text[at + key.len() + 2..];
-    let rest = rest.trim_start().strip_prefix(':')?.trim_start().strip_prefix('"')?;
-    Some(rest[..rest.find('"')?].to_owned())
+/// The top-level string member `key` of a contract file, or None.
+fn member(file: &serde_json::Value, key: &str) -> Option<String> {
+    file.get(key)?.as_str().map(str::to_owned)
 }
 
 fn json_files(dir: &Path) -> Vec<PathBuf> {
@@ -64,14 +62,15 @@ fn main() {
         for path in json_files(&dir) {
             println!("cargo:rerun-if-changed={}", path.display());
             let name = path.file_stem().unwrap().to_str().unwrap().to_owned();
-            let text = fs::read_to_string(&path).unwrap();
-            let call = member(&text, "x-call").unwrap_or_else(|| panic!("{}: no \"x-call\"", path.display()));
+            let file: serde_json::Value =
+                serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap_or_else(|e| panic!("{}: not JSON: {e}", path.display()));
+            let call = member(&file, "x-call").unwrap_or_else(|| panic!("{}: no \"x-call\"", path.display()));
             assert!(
                 call.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == ':'),
                 "{}: \"x-call\" is not a Rust path",
                 path.display()
             );
-            if let Some(feature) = member(&text, "x-feature") {
+            if let Some(feature) = member(&file, "x-feature") {
                 let var = format!("CARGO_FEATURE_{}", feature.to_uppercase().replace('-', "_"));
                 if std::env::var_os(var).is_none() {
                     continue;

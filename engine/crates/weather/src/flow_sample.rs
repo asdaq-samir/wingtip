@@ -60,12 +60,24 @@ pub fn cell(bounds: [f64; 4], width: usize, height: usize, lat: f64, lon: f64) -
 /// A pixel's red, green and alpha bytes.
 pub type Pixel = [f64; 3];
 
+/// A wind under this, knots, is calm: FMH-1 (FCM-H1-2019) Table 5-1,
+/// "Estimating Wind Speed", gives "<1" knot as "Calm; smoke rises
+/// vertically", and 5.5.2: "When no motion of air is detected, the wind
+/// shall be reported as calm", coded "00000KT" (12.6.5 d), no direction.
+/// The wind field is in knots (app.flow_grid's "wind", -100 to 100 kt a
+/// part), a 255th of 200 kt a step, so a calm's parts read about 0.4 kt
+/// from a direction that is only the bytes' rounding: under a knot the
+/// reading says calm and gives no direction, as a report would.
+pub const CALM_BELOW_KT: f64 = 1.0;
+
 /// A reading: the value (the wind's speed) in the field's unit, and for
-/// the wind the direction it blows from, degrees true (None for a calm).
+/// the wind the direction it blows from, degrees true, and whether it is
+/// calm (CALM_BELOW_KT), when it has no direction.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Reading {
     pub value: f64,
     pub from_deg: Option<f64>,
+    pub calm: bool,
 }
 
 /// The value read from a cell's four pixels (module note), or None where
@@ -80,12 +92,14 @@ pub fn sample(pixels: [Pixel; 4], fx: f64, fy: f64, unscale: [f64; 2], vector: b
         unscale[0] + byte * (unscale[1] - unscale[0]) / 255.0
     };
     if !vector {
-        return Some(Reading { value: channel(0), from_deg: None });
+        return Some(Reading { value: channel(0), from_deg: None, calm: false });
     }
     let (east, north) = (channel(0), channel(1));
-    // From where the parts carry the air, turned round.
-    let from_deg = (east != 0.0 || north != 0.0).then(|| (-east).atan2(-north).to_degrees().rem_euclid(360.0));
-    Some(Reading { value: east.hypot(north), from_deg })
+    let speed = east.hypot(north);
+    let calm = speed < CALM_BELOW_KT;
+    // From where the parts carry the air, turned round; none for a calm.
+    let from_deg = (!calm).then(|| (-east).atan2(-north).to_degrees().rem_euclid(360.0));
+    Some(Reading { value: speed, from_deg, calm })
 }
 
 fn number(name: &str, v: &Value, key: &str) -> Result<f64, String> {
@@ -112,8 +126,8 @@ fn size(name: &str, v: &Value, key: &str) -> Result<usize, String> {
 
 /// `flow_cell`: `{"bounds", "width", "height", "lat", "lon"}` to
 /// `{"pixels", "fx", "fy"}` or null; `flow_sample`: `{"pixels": [[r, g,
-/// a] x 4], "fx", "fy", "unscale", "vector"}` to `{"value", "from_deg"}`
-/// or null.
+/// a] x 4], "fx", "fy", "unscale", "vector"}` to `{"value", "from_deg",
+/// "calm"}` or null.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     match name {
@@ -145,7 +159,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             json::number(&mut out, r.value);
             out.push_str(",\"from_deg\":");
             json::opt_number(&mut out, r.from_deg);
-            out.push('}');
+            out.push_str(if r.calm { ",\"calm\":true}" } else { ",\"calm\":false}" });
         }
         _ => return Err(format!("{name}: not a flow rule")),
     }
@@ -179,13 +193,24 @@ mod tests {
         // average of the speeds reads 50.
         let (west, east) = ([255.0, 127.5, 255.0], [0.0, 127.5, 255.0]);
         let r = sample([west, east, west, east], 0.5, 0.0, [-50.0, 50.0], true).unwrap();
-        assert!(r.value.abs() < 1e-9 && r.from_deg.is_none());
+        assert!(r.value.abs() < 1e-9 && r.from_deg.is_none() && r.calm);
         // A wind from the west, 50 kt: blowing east.
         let r = sample([west; 4], 0.3, 0.6, [-50.0, 50.0], true).unwrap();
-        assert!((r.value - 50.0).abs() < 1e-9 && (r.from_deg.unwrap() - 270.0).abs() < 1e-9);
+        assert!((r.value - 50.0).abs() < 1e-9 && (r.from_deg.unwrap() - 270.0).abs() < 1e-9 && !r.calm);
         // From the north: the north part negative.
         let r = sample([[127.5, 0.0, 255.0]; 4], 0.0, 0.0, [-50.0, 50.0], true).unwrap();
         assert!(r.from_deg.unwrap().abs() < 1e-9);
+    }
+
+    #[test]
+    fn under_a_knot_is_calm_with_no_direction() {
+        // The weather service's wind picture, -100 to 100 kt a part: byte
+        // 128 is 0.39 kt, the nearest a calm's parts come to nothing.
+        let r = sample([[128.0, 128.0, 255.0]; 4], 0.0, 0.0, [-100.0, 100.0], true).unwrap();
+        assert!(r.value > 0.5 && r.value < CALM_BELOW_KT && r.calm && r.from_deg.is_none(), "{r:?}");
+        // A knot is not calm (FMH-1 Table 5-1: 1-3 kt, smoke drifts).
+        let r = sample([[127.5, 127.5 - 255.0 / 200.0, 255.0]; 4], 0.0, 0.0, [-100.0, 100.0], true).unwrap();
+        assert!((r.value - 1.0).abs() < 1e-9 && !r.calm && r.from_deg.unwrap().abs() < 1e-9, "{r:?}");
     }
 
     #[test]
@@ -206,7 +231,7 @@ mod tests {
         let s =
             json::parse(r#"{"pixels":[[0,0,255],[255,0,255],[0,0,255],[255,0,255]],"fx":0.25,"fy":0.5,"unscale":[0,100],"vector":false}"#)
                 .unwrap();
-        assert_eq!(call("flow_sample", &s).unwrap(), r#"{"value":25.0,"from_deg":null}"#);
+        assert_eq!(call("flow_sample", &s).unwrap(), r#"{"value":25.0,"from_deg":null,"calm":false}"#);
         assert!(call("flow_sample", &json::parse(r#"{"pixels":[]}"#).unwrap()).is_err());
     }
 }

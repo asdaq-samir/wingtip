@@ -3784,10 +3784,13 @@ enum EngineContract {
     struct FlowSampleAnswer: Codable, Equatable, Sendable {
         var value: Double
         var fromDeg: Double?
+        /// A wind under 1 kt, which has no direction (FMH-1 Table 5-1, 5.5.2); false for a scalar.
+        var calm: Bool
 
         enum CodingKeys: String, CodingKey {
             case value
             case fromDeg = "from_deg"
+            case calm
         }
     }
 
@@ -4273,6 +4276,21 @@ enum EngineContract {
     struct GairmetTitleInput: Codable, Equatable, Sendable {
         var hazard: String?
         var severity: String?
+    }
+
+    struct GairmetWindowAnswer: Codable, Equatable, Sendable {
+        var validFrom: Double
+        var validTo: Double
+
+        enum CodingKeys: String, CodingKey {
+            case validFrom = "valid_from"
+            case validTo = "valid_to"
+        }
+    }
+
+    struct GairmetWindowInput: Codable, Equatable, Sendable {
+        /// The snapshot's valid time, UNIX seconds.
+        var valid: Double
     }
 
     struct GfaCloudLayersAnswer: Codable, Equatable, Sendable {
@@ -6958,6 +6976,38 @@ enum EngineContract {
     }
 
     struct ModelWeatherBandsInput: Codable, Equatable, Sendable {
+    }
+
+    struct ModelWindLevelsAnswerItem: Codable, Equatable, Sendable {
+        var altitudeFt: Double
+        var windDirTrueDeg: Double
+        var windSpeedKt: Double
+        var tempC: Double
+
+        enum CodingKeys: String, CodingKey {
+            case altitudeFt = "altitude_ft"
+            case windDirTrueDeg = "wind_dir_true_deg"
+            case windSpeedKt = "wind_speed_kt"
+            case tempC = "temp_c"
+        }
+    }
+
+    struct ModelWindLevelsInput: Codable, Equatable, Sendable {
+        var levels: [EngineContract.ModelWindLevelsInputLevelsItem]
+    }
+
+    struct ModelWindLevelsInputLevelsItem: Codable, Equatable, Sendable {
+        var heightM: Double?
+        var tempK: Double?
+        var uMS: Double?
+        var vMS: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case heightM = "height_m"
+            case tempK = "temp_k"
+            case uMS = "u_m_s"
+            case vMS = "v_m_s"
+        }
     }
 
     struct MorseInput: Codable, Equatable, Sendable {
@@ -11503,6 +11553,25 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case speedKt = "speed_kt"
         }
+    }
+
+    struct VelocityTrackAnswerItem: Codable, Equatable, Sendable {
+        var trackDeg: Double?
+        var speed: Double
+
+        enum CodingKeys: String, CodingKey {
+            case trackDeg = "track_deg"
+            case speed
+        }
+    }
+
+    struct VelocityTrackInput: Codable, Equatable, Sendable {
+        var velocities: [EngineContract.VelocityTrackInputVelocitiesItem]
+    }
+
+    struct VelocityTrackInputVelocitiesItem: Codable, Equatable, Sendable {
+        var east: Double
+        var north: Double
     }
 
     /// The web's VerdictInput: each tab's say, and the risk assessment's level and line (null while the briefing is awaited).

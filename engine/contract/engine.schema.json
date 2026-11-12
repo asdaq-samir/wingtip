@@ -9206,7 +9206,7 @@
       "additionalProperties": false
     },
     "flow_sample": {
-      "description": "A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes): read between them linearly, as weatherlayers-gl's LINEAR reading does, each byte a 255th of `unscale` [least, most] a step. For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true, null for a calm) come from those parts, the vector average, so the same point reads the same wind on every app. Null where a pixel the point is read from has no value (alpha 0).",
+      "description": "A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes): read between them linearly, as weatherlayers-gl's LINEAR reading does, each byte a 255th of `unscale` [least, most] a step. For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true) come from those parts, the vector average, so the same point reads the same wind on every app. A wind under 1 kt is calm (`calm` true, `from_deg` null): FMH-1 (FCM-H1-2019) Table 5-1 gives under a knot as \"Calm; smoke rises vertically\", reported as calm with no direction, 00000KT (5.5.2, 12.6.5 d), so the apps write \"Calm\" rather than a direction the picture's rounding made up. `calm` is false for a scalar field. Null where a pixel the point is read from has no value (alpha 0).",
       "type": "object",
       "properties": {
         "input": {
@@ -9262,11 +9262,16 @@
                     "number",
                     "null"
                   ]
+                },
+                "calm": {
+                  "type": "boolean",
+                  "description": "A wind under 1 kt, which has no direction (FMH-1 Table 5-1, 5.5.2); false for a scalar."
                 }
               },
               "required": [
                 "value",
-                "from_deg"
+                "from_deg",
+                "calm"
               ],
               "additionalProperties": false
             },
@@ -10508,6 +10513,47 @@
         "answer": {
           "title": "GairmetTitleAnswer",
           "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "gairmet_window": {
+      "description": "The time a G-AIRMET snapshot stands for: three hours either side of its valid time (UNIX seconds). AIM 7-1-6: G-AIRMETs are \"valid at discrete times no more than 3 hours apart\", and \"the user should assume the hazardous weather condition is occurring between the snap shots unless informed otherwise\" (a hazard at 03 and none at 00 or 06 exists from 0001 to 0559), so a snapshot stands for the whole gap either side, erring toward telling of the hazard.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GairmetWindowInput",
+          "type": "object",
+          "properties": {
+            "valid": {
+              "type": "number",
+              "description": "The snapshot's valid time, UNIX seconds."
+            }
+          },
+          "required": [
+            "valid"
+          ]
+        },
+        "answer": {
+          "title": "GairmetWindowAnswer",
+          "type": "object",
+          "properties": {
+            "valid_from": {
+              "type": "number"
+            },
+            "valid_to": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "valid_from",
+            "valid_to"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -16869,6 +16915,92 @@
             "cape"
           ],
           "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "model_wind_levels": {
+      "description": "The GFS's pressure levels at a station (the weather service's model winds, from NOMADS' GRIB2 HGT, TMP, UGRD and VGRD) in the units the winds aloft are kept in, as the FB's columns were (FAA-H-8083-28B 27.2.1.1.1): the geopotential height in feet by the international foot (0.3048 m, NIST SP 811 B.9), the temperature in degrees Celsius (kelvin less 273.15, NIST SP 811 4.2.1.1), and the wind's east and north parts in metres a second turned into knots (1,852 m a nautical mile, NIST SP 811 B.9) and the direction it blows from, degrees true (360 for no wind at all), and its speed. Unrounded, in the levels' order; a level with any figure missing is left out.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ModelWindLevelsInput",
+          "type": "object",
+          "properties": {
+            "levels": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "height_m": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "temp_k": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "u_m_s": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "v_m_s": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "height_m",
+                  "temp_k",
+                  "u_m_s",
+                  "v_m_s"
+                ]
+              }
+            }
+          },
+          "required": [
+            "levels"
+          ]
+        },
+        "answer": {
+          "title": "ModelWindLevelsAnswer",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "altitude_ft": {
+                "type": "number"
+              },
+              "wind_dir_true_deg": {
+                "type": "number"
+              },
+              "wind_speed_kt": {
+                "type": "number"
+              },
+              "temp_c": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "altitude_ft",
+              "wind_dir_true_deg",
+              "wind_speed_kt",
+              "temp_c"
+            ],
+            "additionalProperties": false
+          }
         }
       },
       "required": [
@@ -26851,6 +26983,67 @@
       ],
       "additionalProperties": false
     },
+    "velocity_track": {
+      "description": "Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "VelocityTrackInput",
+          "type": "object",
+          "properties": {
+            "velocities": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "east": {
+                    "type": "number"
+                  },
+                  "north": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "east",
+                  "north"
+                ]
+              }
+            }
+          },
+          "required": [
+            "velocities"
+          ]
+        },
+        "answer": {
+          "title": "VelocityTrackAnswer",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "track_deg": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "speed": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "track_deg",
+              "speed"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "vertical_speed": {
       "description": "The vertical speed in feet a minute from GPS altitudes: the least-squares slope of the last 10 seconds of samples; null with fewer than three of them or under 2 seconds.",
       "type": "object",
@@ -28467,6 +28660,7 @@
     "fuel_stops",
     "gairmet_hazards",
     "gairmet_title",
+    "gairmet_window",
     "gairmets_along_route",
     "gfa_cloud_layers",
     "glide_range",
@@ -28539,6 +28733,7 @@
     "mayday_call",
     "mode_c_veil",
     "model_weather_bands",
+    "model_wind_levels",
     "morse",
     "n_number",
     "navaid_hours",
@@ -28665,6 +28860,7 @@
     "traffic_reach",
     "turbulence_category",
     "underway",
+    "velocity_track",
     "vertical_speed",
     "vfr_altitudes",
     "vfr_basic_minimums",

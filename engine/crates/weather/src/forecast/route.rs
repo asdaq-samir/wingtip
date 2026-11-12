@@ -168,20 +168,7 @@ pub fn tafs_along_route(tafs: &[Value], a: (f64, f64), b: (f64, f64), corridor_n
 
 /// A whole number of feet with thousands commas, "1,200" (Python's ",.0f").
 pub(crate) fn feet(v: f64) -> String {
-    let n = v.round() as i64;
-    let digits = n.unsigned_abs().to_string();
-    let mut out = String::new();
-    for (i, c) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i).is_multiple_of(3) {
-            out.push(',');
-        }
-        out.push(c);
-    }
-    if n < 0 {
-        format!("-{out}")
-    } else {
-        out
-    }
+    crate::text::grouped_int(v.round() as i64)
 }
 
 /// A visibility as Python's "g" writes it: "3", "1.5", "0.25".
