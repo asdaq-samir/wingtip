@@ -71,9 +71,13 @@ public class SecurityConfig {
     // connect-src too, as MapLibre fetches a raster tile to read its caching headers.
     private static final String WEATHER_TILES = "https://mesonet.agron.iastate.edu https://nowcoast.noaa.gov";
 
-    private static final String OVERLAY_IMAGES =
+    // The USGS's imagery and hydrography (web lib/map/sources/imagery, BaseGl) are MapLibre raster
+    // tiles, fetched, so connect-src needs their host as img-src does: without it every tile was
+    // refused and the close-in imagery and the land and water never drew.
+    private static final String OVERLAY_TILES =
             "https://basemap.nationalmap.gov https://tile.googleapis.com " + WEATHER_TILES;
-    private static final String OVERLAY_CONNECT = "https://tile.googleapis.com " + WEATHER_TILES;
+    private static final String OVERLAY_IMAGES = OVERLAY_TILES;
+    private static final String OVERLAY_CONNECT = OVERLAY_TILES;
     // An airplane's photo (planePhoto.ts): Planespotters' API and image server, per its terms.
     private static final String PHOTO_IMAGES = "https://t.plnspttrs.net";
     private static final String PHOTO_CONNECT = "https://api.planespotters.net";
