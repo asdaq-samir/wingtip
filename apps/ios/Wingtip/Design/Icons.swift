@@ -25,6 +25,8 @@ enum WingtipIcon {
     static let call = "phone"
     static let address = "mappin"
     static let copy = "doc.on.doc"
+    /// A Favorite: the star, filled while the thing is one.
+    static let favorite = "star"
     static let send = "paperplane"
 
     // The one search's rows and the airport card's (the one-search

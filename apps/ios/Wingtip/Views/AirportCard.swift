@@ -22,12 +22,10 @@ struct AirportCard: View {
     @State private var problem: String?
     @State private var notFound = false
     @State private var photos: AirportPhotos?
-    /// The field's own NOTAMs and the TFRs over it, for the alert card
-    /// and the tile's count; nil until fetched or where they can't be.
-    @State private var notams: APINotamsRanked?
-    /// Where the NOTAMs couldn't be had, said where their alerts go: no
-    /// closure shown must not read as none.
-    @State private var notamsProblem: String?
+    /// The field's own NOTAMs and the TFRs near it, read by the engine and
+    /// marked on what they address (FieldNotams), for the Info tab's list,
+    /// the badges and the tile's count.
+    @State private var notams = FieldNotams()
     @State private var tab: CardTab = .info
     @State private var shown: ShownPicture?
     /// Scrolled past the head: its name in the bar and the section picker
@@ -59,11 +57,9 @@ struct AirportCard: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
-                AirportAlertCard(ident: place.ident, notams: notams)
-                if let notamsProblem { Section { ProblemLine(notamsProblem) } }
                 AirportReadyCard(ident: place.ident)
                 Section {
-                    AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab, notams: notams)
+                    AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab, notams: notams.ranked)
                 }
                 Section {
                     sectionPicker
@@ -118,25 +114,22 @@ struct AirportCard: View {
             }
         }
         .environment(live)
+        .environment(notams)
+        .navigationDestination(item: $notams.opened) { NotamsOnPage(notams: notams, open: $0) }
+        .onChange(of: place) { _, fresh in notams.attach(fresh) }
         .fullScreenCover(item: $shown) { PictureViewer(picture: $0) }
-        .refreshable { async let field: Void = load(); await live.loadDatis(ident); await live.loadRvr(ident, minimumSm: verdict.minimums.visibilitySm); await field } // pulled: the field's weather, the ATIS and the RVR again
+        .refreshable { async let field: Void = load(); async let notices: Void = notams.load(ident, force: true); await live.loadDatis(ident); await live.loadRvr(ident, minimumSm: verdict.minimums.visibilitySm); await field; await notices } // pulled: the field's weather, the ATIS and the RVR again
         // The live reports, asked again while the card is open; the RVR
         // judged against the pilot's own visibility minimum.
         .task(id: "\(ident)|\(verdict.minimums.visibilitySm ?? -1)") { await live.watch(ident, minimumSm: verdict.minimums.visibilitySm) }
         .task(id: ident) {
             // The pictures are the card's look, not a figure: none where they can't be had.
             async let pictures = try? Planner.photos(ident)
-            async let notices = Self.notices(ident)
+            async let notices: Void = notams.load(ident)
             await load()
             photos = await pictures
-            switch await notices {
-            case .success(let fresh):
-                notams = fresh
-                notamsProblem = nil
-            case .failure(let error):
-                notams = nil
-                notamsProblem = "Its NOTAMs couldn't be had, so closures and TFRs aren't shown: \(error.localizedDescription)"
-            }
+            await notices
+            notams.attach(place)
             // The weather a report's freshness: asked again every five
             // minutes while the card is open, as the web app's is.
             while !Task.isCancelled {
@@ -145,11 +138,6 @@ struct AirportCard: View {
                 if let fresh = try? await KeptForAir.answer(.airports, key: ident, fetch: { try await Planner.place(ident) }) { place = fresh.value }
             }
         }
-    }
-
-    /// The field's NOTAMs, kept for the air, or why they couldn't be had.
-    private static func notices(_ ident: String) async -> Result<APINotamsRanked, any Error> {
-        do { return .success(try await KeptForAir.answer(.notams, key: KeptForAir.fieldNotamsKey(ident)) { try await Planner.notams(ident) }.value) } catch { return .failure(error) }
     }
 
     private func load() async {
@@ -349,24 +337,24 @@ private enum PreviewData {
 #Preview("AirportPlaceHead") {
     @Previewable @State var shown: ShownPicture? = nil
     List { AirportPlaceHead(place: PreviewData.place, photos: nil, shown: $shown).listRowInsets(EdgeInsets()) }
-        .environment(Plan()).environment(OwnShip()).environment(Charts())
+        .environment(Plan()).environment(OwnShip()).environment(Charts()).environment(FieldNotams())
 }
 
 #Preview("AirportInfoTab") {
-    List { AirportInfoTab(place: PreviewData.place) }.environment(AirportLive())
+    List { AirportInfoTab(place: PreviewData.place) }.environment(AirportLive()).environment(FieldNotams())
 }
 
 #Preview("AirportWeatherTab") {
-    List { AirportWeatherTab(place: PreviewData.place) }.environment(AirportLive())
+    List { AirportWeatherTab(place: PreviewData.place) }.environment(AirportLive()).environment(FieldNotams())
 }
 
 #Preview("AirportRunwaysTab") {
-    List { AirportRunwaysTab(place: PreviewData.place) }.environment(AirportLive())
+    List { AirportRunwaysTab(place: PreviewData.place) }.environment(AirportLive()).environment(FieldNotams())
 }
 
 #Preview("AirportChartsTab") {
     @Previewable @State var shown: ShownPicture? = nil
-    List { AirportChartsTab(place: PreviewData.place, shown: $shown) }
+    List { AirportChartsTab(place: PreviewData.place, shown: $shown) }.environment(FieldNotams())
 }
 
 /// The bar's title hidden while the card's own head shows the name, and

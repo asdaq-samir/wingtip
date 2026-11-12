@@ -4,7 +4,9 @@ import UIKit
 /// The airport card's parts under its head (AirportPlaceHead), as Maps'
 /// place card has them (the owner's screenshot, 2026-11-09): the card for
 /// the plan through this field, the row of picture tiles, and the
-/// floating glass toolbar at its foot.
+/// floating glass toolbar at its foot. The red alert cards that stood
+/// under the head are gone, as on the web, where the owner turned that
+/// pattern down: a NOTAM's badge sits on the thing it addresses instead.
 
 /// Ready to fly, where the field is on the plan: the engine's verdict's
 /// line (the Go / No-Go the Brief holds), a tap from the Brief.
@@ -23,38 +25,6 @@ struct AirportReadyCard: View {
                     }
                 }
                 .accessibilityHint("Opens the Brief")
-            }
-        }
-    }
-}
-
-/// The live card under the head, as Maps puts its cards first: the
-/// field's NOTAMs that close it or a runway, and the TFRs over it, from
-/// its own list (/api/airport/{ident}/notams, the engine's ranking). Each
-/// line opens the list; none shows where none is in force or coming.
-struct AirportAlertCard: View {
-    let ident: String
-    let notams: APINotamsRanked?
-
-    var body: some View {
-        let alerts = (notams?.notams ?? []).filter { $0.closed || $0.kind == "tfr" }.prefix(3)
-        if !alerts.isEmpty {
-            Section {
-                ForEach(Array(alerts), id: \.id) { notam in
-                    NavigationLink(value: SheetPage.notams(.field(ident))) {
-                        Label {
-                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                                Text(NotamFilter.summary(notam)).font(.body).lineLimit(3)
-                                let when = NotamFilter.when(notam)
-                                if !when.isEmpty { Text(when).font(.subheadline.monospacedDigit()).foregroundStyle(.secondary) }
-                            }
-                        } icon: {
-                            Image(systemName: notam.kind == "tfr" ? "exclamationmark.octagon.fill" : "xmark.octagon.fill")
-                                .foregroundStyle(WingtipInk.caution)
-                        }
-                    }
-                    .accessibilityHint("Opens \(ident)'s NOTAMs")
-                }
             }
         }
     }
@@ -158,15 +128,13 @@ struct AirportTiles: View {
 
 /// The card's foot, the system's floating glass toolbar (iOS 26 and
 /// later; the bar before): Add to Plan's menu (Fly Here, Depart From, Add
-/// as Stop), Favorite, Share, and ••• with Call and Directions.
+/// as Stop), Share, and ••• with Directions and Copy. Call and Favorite are
+/// the head's action tiles, as the web's (AirportPlaceHead).
 struct AirportCardToolbar: ToolbarContent {
     let place: AirportPlace
     let plan: Plan
     let fix: OwnShip.Fix?
     let done: () -> Void
-    @Environment(\.undoManager) private var undoManager
-    private var shelf: AirportShelf { .shared }
-
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: .bottomBar) {
             Menu {
@@ -183,17 +151,10 @@ struct AirportCardToolbar: ToolbarContent {
             } label: {
                 Label("Add to Plan", systemImage: "plus")
             }
-            let kept = shelf.isFavorite(place.ident)
-            Button { shelf.toggleFavorite(KeptAirport(place), undo: undoManager) } label: {
-                Label(kept ? "Remove from Favorites" : "Add to Favorites", systemImage: kept ? "star.fill" : "star")
-            }
             ShareLink(item: URL(string: "https://\(Config.host)/app/plan?place=\(place.ident)")!, subject: Text(place.name)) {
                 Label("Share", systemImage: WingtipIcon.share)
             }
             Menu {
-                if let phone = place.phone, let call = URL(string: "tel:" + phone.filter { !$0.isWhitespace }) {
-                    Link(destination: call) { Label("Call \(phone)", systemImage: CardAction.call.systemImage) }
-                }
                 Link(destination: AirportCard.mapsLink(place)) { Label("Directions in Maps", systemImage: CardAction.address.systemImage) }
                 Button { UIPasteboard.general.string = place.ident } label: { Label("Copy \(place.ident)", systemImage: WingtipIcon.copy) }
             } label: {
