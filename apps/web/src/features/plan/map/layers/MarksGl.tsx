@@ -1,81 +1,11 @@
 import type { CircleLayerSpecification } from "maplibre-gl";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
-import type { ChartInfo } from "../../../../lib/api/types";
-import { usePreferences } from "../../../../lib/preferences";
-import { classBQuery } from "../../../../lib/queryClient";
+import { useMemo } from "react";
 import { useAhead } from "../../../../lib/map/position/ahead";
-import { colourOf } from "../../../../lib/map/marks/flightCategory";
-import { fieldMarkPicture } from "../../../../lib/map/marks/markPictures";
 import { useOwnShip } from "../../../../lib/map/position/ownShip";
-import { chartPair, sheetAt } from "../../../../lib/map/sources/tiles";
-import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../../lib/map/gl/glLayer";
-import { glZoom } from "../../../../lib/map/gl/glStyle";
-import { labelledLayer } from "../../../../lib/map/gl/markLayers";
+import { EMPTY, useGlData, useGlLayer } from "../../../../lib/map/gl/glLayer";
 import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
-import { useGlSymbols, type GlSymbol } from "../../../../lib/map/gl/useGlSymbols";
 import { useGlLines, type GlRun } from "../../../../lib/map/gl/useGlLines";
 import { CHART } from "../../../../lib/tokens";
-
-const CLASS_B = "class-b-fields";
-/** Each field's mark and its ident on the chart's halo. */
-const CLASS_B_LAYERS = [labelledLayer(CLASS_B, CLASS_B)];
-
-/**
- * The Class B fields' weather, as marks over the chart, at
- * the settings' Class B Weather: a tap the field's card; a hover shows the
- * terminal sheet over it while the pointer is there.
- */
-export function ClassBGl({
-  chart,
-  route,
-  onPreview,
-  onSelectPlace,
-}: {
-  chart: ChartInfo;
-  route: string[];
-  onPreview: (on: boolean) => void;
-  onSelectPlace?: (ident: string) => void;
-}) {
-  const { map } = useGlMap();
-  const show = usePreferences((s) => s.classB);
-  const base = usePreferences((s) => s.base);
-  const { overlay } = chartPair(chart.chart_layers, base);
-  const overlayFromZoom = overlay?.min_zoom ?? 10;
-  const { data } = useQuery({ ...classBQuery, enabled: show });
-  const marks = useMemo<GlSymbol[]>(
-    () =>
-      show && data
-        ? data
-            .filter((a) => !route.includes(a.ident))
-            .map((a) => {
-              const sheet = sheetAt(overlay, a.lat, a.lon);
-              return {
-                key: a.ident,
-                lat: a.lat,
-                lon: a.lon,
-                text: a.ident,
-                picture: fieldMarkPicture("B", colourOf(a.flight_category)),
-                props: { title: `${a.ident} · ${a.name} · ${a.flight_category ?? "no report"}`, weather: colourOf(a.flight_category) },
-                onHover: (on: boolean) => onPreview(on && !!sheet),
-                onTap: () => {
-                  onPreview(false);
-                  if (onSelectPlace) onSelectPlace(a.ident);
-                  else map.flyTo({ center: [a.lon, a.lat], zoom: Math.max(map.getZoom(), glZoom(overlayFromZoom)), duration: 600 });
-                },
-              };
-            })
-        : [],
-    [show, data, route, overlay, overlayFromZoom, onPreview, onSelectPlace, map],
-  );
-  useGlSymbols(CLASS_B, CLASS_B_LAYERS, marks);
-  // Every field given, in sight or not, for the browser tests (the probe
-  // has only those drawn in the view): their idents and weather colours.
-  useEffect(() => {
-    map.getContainer().dataset.classBFields = JSON.stringify(marks.map((m) => ({ ident: m.text, weather: m.props?.weather })));
-  }, [map, marks]);
-  return null;
-}
 
 /**
  * What is ahead of own ship in the air (lib/map/position/ahead): each
