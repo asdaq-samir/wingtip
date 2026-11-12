@@ -1,6 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 import { placeName } from "../../lib/radio";
 import { SearchNear } from "../../../../lib/useAirportSearch";
+import { coverCard, useSheetCards } from "../../../../lib/sheetCards";
 import { RouteLine, RouteEnds, RouteSplit } from "../../routePanelParts";
 // The search, on a chunk of its own: the first screen draws it.
 import { RouteBox } from "../../routeBoxChunk";
@@ -43,6 +44,11 @@ export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; co
     waypointStops,
     wholeRoute,
   } = vm;
+  // A stop asked for from a card (the profile's no-legal-altitude problem,
+  // its Add a Stop): asked of the box once the card has gone. Under it the
+  // sheet's head is inert (SheetParts, while a card is up), and the box's
+  // focus as it was asked went nowhere (plans.spec, "no legal altitude").
+  const covered = useSheetCards((c) => !!coverCard(c.stack));
   return routeFolded ? (
     <div className="flex min-w-0 flex-1 flex-col gap-2.5" data-testid="route-folded">
       {/* In the Plan, the owner's pick of the canvas's option 3 as
@@ -120,7 +126,7 @@ export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; co
             onAltitudeChange={setPointAltitude}
             onChange={setRoute}
             onTypedProcedures={typeProcedures}
-            adding={!!addingStop}
+            adding={!!addingStop && !covered}
             onAddingChange={addingChange}
             via={addingStop === "via" ? s.unflyable?.detours : undefined}
             procedures={routeProcedures}

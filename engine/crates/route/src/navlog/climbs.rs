@@ -242,10 +242,16 @@ pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
         if leg.has("tod") || gs == 0.0 || !leg.has("ete_min") || from_ft <= to_ft || level_at - at < 0.05 {
             continue;
         }
-        let rest_min = (ends[i] - at) / gs * 60.0;
+        // What is flown after the top of descent: the rest of the leg's
+        // line at its ground speed, and what is flown at the leg's end
+        // beyond its line (flown_at_end), its procedure and a hold there.
+        let (end_min, end_gal) = flown_at_end(leg)?;
+        let rest_min = (ends[i] - at) / gs * 60.0 + end_min;
         let at_fix = &fixes[i];
         let (lat, lon) = destination(at_fix.num("lat")?, at_fix.num("lon")?, leg.num("true_course_deg")?, at - starts[i]);
-        let fuel = leg.opt("fuel_gal")?.map(|f| py_round((f - rest_min / 60.0 * leg.num("fuel_burn_gph").unwrap_or(f64::NAN)).max(0.0), 2));
+        let fuel = leg
+            .opt("fuel_gal")?
+            .map(|f| py_round((f - (ends[i] - at) / gs * leg.num("fuel_burn_gph").unwrap_or(f64::NAN) - end_gal).max(0.0), 2));
         let ete = leg.num("ete_min")?;
         // The ground speed's share of three to one, or what is left where
         // the descent starts late, to the nearest 50 fpm.
@@ -274,6 +280,40 @@ pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
         }
     }
     Ok(out)
+}
+
+/// The minutes and gallons a leg flies beyond its own line, counted at
+/// its end and so after any top of descent on it: a procedure's miles more
+/// (`procedure`'s `more_min`, `more_gal`: the planner's with_procedures,
+/// a traffic pattern's entry and legs to land, AIM 4-3-3 and AC 90-66C, an
+/// arrival or an approach, or the pattern out of the field), and a hold at
+/// the leg's end (`hold` with `at_end`, hold_on_leg). The planner adds them
+/// to the leg's `ete_min` and `fuel_gal` before the descent is placed, so
+/// a top of descent worked back from the leg's total took them into the
+/// minutes and gallons flown to it, about 2 to 3 minutes a pattern early
+/// (navlog-fit.spec, 2026-11-12). A departure's pattern is flown at the
+/// leg's start, but its minutes are counted at the end too, as a top of
+/// climb's are (with_climbs places the climb before the procedure is
+/// added) and as the apps show a procedure's miles on the row that ends
+/// the leg: the leg's time to its end is exact either way, and a top of
+/// descent on a leg that also departs by a pattern -- a flight of one leg
+/// -- is put that many minutes sooner than flown, never later.
+fn flown_at_end(leg: &Obj) -> R<(f64, f64)> {
+    let mut minutes = 0.0;
+    let mut gallons = 0.0;
+    if let Some(p @ Value::Object(_)) = leg.get("procedure") {
+        let p = Obj::read("navlog", p)?;
+        minutes += p.opt("more_min")?.unwrap_or(0.0);
+        gallons += p.opt("more_gal")?.unwrap_or(0.0);
+    }
+    if let Some(h @ Value::Object(_)) = leg.get("hold") {
+        let h = Obj::read("navlog", h)?;
+        if h.truthy("at_end") {
+            minutes += h.opt("minutes")?.unwrap_or(0.0);
+            gallons += h.opt("gal")?.unwrap_or(0.0);
+        }
+    }
+    Ok((minutes, gallons))
 }
 
 /// Minutes a climb from `from_ft` to `to_ft` costs over cruising level:

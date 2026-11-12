@@ -6,6 +6,7 @@ import { cn } from "cn";
 import { Badge } from "../../../components/ui/badge";
 import { ListPageHead } from "../../../components/Favorites";
 import { SheetCard } from "../../../components/SheetCard";
+import { SearchField } from "../../../components/PanelCapsule";
 import { closeTopCard } from "../../../lib/openCards";
 import { useCardSize } from "../../../lib/sheetCards";
 import QueryState from "../../../components/QueryState";
@@ -25,6 +26,7 @@ import { nearestQuery } from "../../../lib/queryClient";
 import { inkOn } from "../../../lib/scoreScale";
 import { TEXT } from "../../../lib/text";
 import { useTabSearch } from "../lib/tabSearch";
+import { nearSearch } from "./workspace/listSearch";
 import { useDebounced } from "../../../lib/useDebounced";
 import { altFt } from "../../../lib/format";
 import { FINDING_TONE } from "../../../lib/findings";
@@ -42,17 +44,17 @@ const TYPING_MS = 250;
 /**
  * Where Nearest is from: the pilot's position until a place is typed --
  * a town, a street address, an airport -- at the pilot's ask, as Maps'
- * search asks where. Typed in Nearest's field, in the panel's head
- * (PlanWorkspace, features/plan/lib/tabSearch), which reads "Current position" until
- * then; what answers comes up here, at the top of the list, and the
- * field's clear goes back to the position.
+ * search asks where. Typed in Nearest's field, the one search scoped to
+ * where from, at the card's top (NearField), which reads "Current
+ * position" until then; what answers comes up here, at the top of the
+ * list, and the field's clear goes back to the position.
  */
 function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: NearFrom | null) => void }) {
   const typed = useTabSearch((s) => s.near);
   // The field shows the place picked, as it did when it was this card's.
-  // Not emptied as the card first comes up with no place: the field is in
-  // the panel's head, there before the card, and what was typed into it
-  // in that moment was wiped (nearest.spec's smoke test, on a fast stack).
+  // Not emptied as the card first comes up with no place: what was typed
+  // into the field in that moment was wiped (nearest.spec's smoke test,
+  // on a fast stack).
   const shownFrom = useRef<string | null | undefined>(undefined);
   useEffect(() => {
     const label = from?.label ?? null;
@@ -123,6 +125,20 @@ function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: N
           />
         )}
       </ListGroup>
+    </div>
+  );
+}
+
+/**
+ * Where from, the one search scoped to Nearest (listSearch's nearSearch),
+ * at the card's top under its name: the card is a drawer over the sheet,
+ * so the sheet's own first row is out of reach while Nearest is open.
+ */
+function NearField() {
+  const typed = useTabSearch((s) => s.near);
+  return (
+    <div className="pb-3">
+      <SearchField {...nearSearch(typed)} />
     </div>
   );
 }
@@ -291,6 +307,7 @@ export default function NearestCard({
     // its own drawer to the pill, the list kept (lowerOnMap).
     <SheetCard head={false} testId="nearest-card" cardId={cardId} dismiss={lowerOnMap}>
       <ListPageHead title="Nearest" backLabel="Back to the search" onBack={onBack} testId="nearest-page" />
+      <NearField />
       <NearAnswers from={from} onFrom={onFrom} />
       <div className="pt-1">
         {!origin ? (

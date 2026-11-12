@@ -1,0 +1,66 @@
+{
+  "about": "A top of descent on a leg that flies more than its line at its end (the engine's navlog_with_descents): the planner adds a procedure's miles more (a traffic pattern to land, AIM 4-3-3 and AC 90-66C 11.2-11.3; an arrival or an approach) and a hold at the destination to the leg's ete_min and fuel_gal before the descent is placed, and those are flown after the top of descent, so its minutes and gallons are the line's to it alone. A hold at a stop is flown at the leg's start, before it. One 60 nm leg at 100 kt over the ground, 8 gal/h, 5,500 ft down to a 1,500 ft pattern: 4,000 ft at three to one (333 ft a nm, AIM 2-1-2's 3 degree path) is 12 nm, finished where the 45-degree entry begins, 1.7236 nm out, so the top is 60 - 13.7236 = 46.2764 nm along (46.3), 46.2764 x 0.6 = 27.77 min (27.8) and 46.2764 / 100 x 8 = 3.70 gal. Each case's ete_min and fuel_gal are the line's 36 min and 4.8 gal plus what it adds. Worked by hand, not from the code. Engine: engine/facade/tests/tod_after_leg_end.rs. Not the web's: the planner's nav log asks this rule.",
+  "cases": [
+    {
+      "name": "No procedure: the top of descent's minutes are its miles at the ground speed",
+      "procedure": null,
+      "hold": null,
+      "ete_min": 36.0,
+      "fuel_gal": 4.8,
+      "tod": {
+        "along_nm": 46.3,
+        "ete_min": 27.8,
+        "fuel_gal": 3.7
+      }
+    },
+    {
+      "name": "A pattern to land, 3.0 nm more, 1.8 min and 0.24 gal at the leg's end: after the top of descent",
+      "procedure": {
+        "landing": true,
+        "more_nm": 3.0,
+        "more_min": 1.8,
+        "more_gal": 0.24
+      },
+      "hold": null,
+      "ete_min": 37.8,
+      "fuel_gal": 5.04,
+      "tod": {
+        "along_nm": 46.3,
+        "ete_min": 27.8,
+        "fuel_gal": 3.7
+      }
+    },
+    {
+      "name": "A hold at the destination, 4.0 min and 0.53 gal at the leg's end: after the top of descent",
+      "procedure": null,
+      "hold": {
+        "at_end": true,
+        "minutes": 4.0,
+        "gal": 0.53
+      },
+      "ete_min": 40.0,
+      "fuel_gal": 5.33,
+      "tod": {
+        "along_nm": 46.3,
+        "ete_min": 27.8,
+        "fuel_gal": 3.7
+      }
+    },
+    {
+      "name": "A hold at the leg's start (a stop's, at_end false): before the top of descent",
+      "procedure": null,
+      "hold": {
+        "at_end": false,
+        "minutes": 4.0,
+        "gal": 0.53
+      },
+      "ete_min": 40.0,
+      "fuel_gal": 5.33,
+      "tod": {
+        "along_nm": 46.3,
+        "ete_min": 31.8,
+        "fuel_gal": 4.23
+      }
+    }
+  ]
+}

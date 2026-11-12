@@ -392,6 +392,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     flyAirplane,
     focus,
     cancel,
+    letGo: done, // A card's Fly Here or Add Stop: the route set, the search let go with it, as the top hit's are.
   };
 }
 
