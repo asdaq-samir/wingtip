@@ -15,7 +15,7 @@ import {
   slow,
 } from "./helpers";
 import { pickAirplane } from "./startState";
-import { fillTime } from "./ariaFields";
+import { departTime, fillTime } from "./ariaFields";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -70,7 +70,7 @@ test(
     await popover.getByTestId("altitude-set").click();
     await expect(page).toHaveURL(/[?&](altitude_ft|altitude_choice)=/, { timeout: slow(10000) });
     await closeCard(page, "profile-close");
-    await expect(popover).toHaveCount(0);
+    await expect(popover).toBeHidden(); // kept, closed, between openings (CardLayer's `open`)
 
     // An altitude typed beside the airplane, three figures of hundreds of
     // feet: the whole log at it. Cleared first, as a pilot types over it: the
@@ -148,7 +148,7 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   await day.click();
   await expect(page).toHaveURL(/[?&]depart=/);
   // The time under the calendar, and Done.
-  await fillTime(page.getByTestId("depart-time"), "15:00");
+  await fillTime(await departTime(page), "15:00");
   await page.getByTestId("depart-done").click();
   await expect(calendar).toHaveCount(0);
   await expect(page.getByTestId("depart-date")).toContainText("15:00");
@@ -488,7 +488,7 @@ test("plan page: an altitude of the pilot's own that breaks a rule is flown as s
   await openProfile(page);
   const cautions = page.getByTestId("own-altitude-cautions");
   await expect(cautions).toContainText("5,500 ft C81 → KDLH");
-  await expect(cautions).toContainText("Westbound above");
+  await expect(cautions).toContainText("flies even thousands plus 500: fly 4,500 or 6,500 ft"); // one line (b4693a549)
   await expect(cautions).toContainText("(14 CFR 91.159)");
 });
 

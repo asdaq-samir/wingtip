@@ -106,16 +106,26 @@ export async function grabberTo(page: Page, state: "peek" | "half" | "full") {
   await settled(panel);
 }
 
-/** A row of the sheet's in sight before it is tapped. Half way the sheet's
- *  body is cut off at its edge, as Apple Maps' is, and a row under that
- *  edge is reached by pulling the sheet up, not by scrolling (the owner,
- *  2026-11-05); a click there landed on the map. All the way up when it
- *  is under the edge, then scrolled to, as a pilot's finger would. */
+/** The sheet half way when it rests at the pill, as a pilot pulls it up to
+ *  type: typing leaves the sheet where it is (5db1f8b10, the owner:
+ *  "Whenever I try to type on search bar it takes the card to full
+ *  screen"), and at the pill what the search shows is under its edge. */
+export async function sheetUpToType(page: Page) {
+  if ((await sideDrawer(page).getAttribute("data-panel")) === "peek") await grabberTo(page, "half");
+}
+
+/** A row of the sheet's, or of a card's over it, in sight before it is
+ *  tapped. Half way the sheet's body is cut off at its edge, as Apple
+ *  Maps' is, and a row under that edge is reached by pulling the sheet up,
+ *  not by scrolling (the owner, 2026-11-05); a click there landed on the
+ *  map. A card opens half way too (6d7eba6d7), its rows under the edge
+ *  alike. All the way up when it is under the edge, then scrolled to, as a
+ *  pilot's finger would. */
 export async function inSheet(page: Page, locator: Locator) {
-  const panel = sideDrawer(page);
+  const panel = frontSheet(page);
   await locator.waitFor();
   const under = await locator.evaluate((el) => {
-    const sheet = el.closest("[data-slot=map-panel]");
+    const sheet = el.closest("[data-sheet-card], [data-slot=map-panel]");
     if (!sheet || sheet.getAttribute("data-panel") === "full") return false;
     const box = sheet.getBoundingClientRect();
     // A bottom sheet's edge is the screen's foot; a top sheet's, its own;
@@ -185,6 +195,7 @@ async function panelFull(page: Page) {
  *  gone all the way up) opens the account page (Setup) itself. At the pill,
  *  where the developer's page rests, the page is under the pill's edge. */
 export async function openConsole(page: Page) {
+  await showPage(page, 0); // the account button is the Search page's (SheetPager)
   await showTabs(page);
   if (!(await page.getByTestId("account-button").isVisible())) await grabberTo(page, "half");
   await page.getByTestId("account-button").click();
@@ -228,32 +239,15 @@ export async function beforeTheRoute(page: Page, change: () => Promise<void>) {
   await expect(page.getByTestId("map-settings")).toHaveCount(0);
 }
 
-/** The console all the way out. On a phone it is a layer of the map's
- *  panel (MapPage), opened half way with the rest of its tab out of a
- *  click's reach: its grabber brings the panel all the way, as a finger's
- *  drag does. Elsewhere it has one height, and this does nothing. */
+/** The console all the way out. On a phone it is a card of its own over
+ *  the map's sheet (ConsoleLayer's CardLayer, the stock Drawer's nested
+ *  drawer), opened half way as every card is (e7bb15ec8): its grabber
+ *  brings it all the way, as a finger's drag does. From `md` up the side
+ *  panel has one height, and this does nothing. */
 export async function expandConsole(page: Page) {
-  const sheet = page.getByTestId("console-sheet");
-  if ((await sheet.getAttribute("data-detent")) !== "medium") return;
-  if (await sheet.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))) {
-    await grabberTo(page, "full");
-    await expect(sheet).toHaveAttribute("data-detent", "large");
-    await sideDrawer(page).evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))));
-    return;
-  }
-  // Once it has slid in.
-  await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
-  const box = (await sheet.boundingBox())!;
-  const away = (await sheet.getAttribute("data-edge")) === "top" ? 1 : -1;
-  const x = box.x + box.width / 2,
-    y = box.y + 20;
-  await page.mouse.move(x, y);
-  await page.mouse.down();
-  await page.mouse.move(x, y + away * 100, { steps: 5 });
-  await page.mouse.move(x, y + away * 400, { steps: 10 });
-  await page.mouse.up();
-  await expect(sheet).toHaveAttribute("data-detent", "large");
-  await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+  if (page.viewportSize()!.width >= 768) return;
+  await expect(page.getByTestId("console-sheet")).toBeVisible();
+  await grabberTo(page, "full");
 }
 
 /** The console's title, a menu of roles -- Pilot, Developer for whoever
@@ -300,7 +294,11 @@ export async function library(scope: Page | Locator, section: "Airplanes" | "Fli
   const back = scope.getByRole("button", { name: "Back to Setup", exact: true });
   await expect(list.or(back)).toBeVisible();
   if (!(await list.isVisible())) await back.click();
-  await list.getByRole("button", { name: new RegExp(`^${section}`) }).click();
+  // Setup opens half way, as every card does (e7bb15ec8): a row under its
+  // edge is reached by pulling it up.
+  const row = list.getByRole("button", { name: new RegExp(`^${section}`) });
+  await inSheet("page" in scope ? scope.page() : scope, row); // Setup opens half way
+  await row.click();
 }
 
 /** At rest: only its head in sight. */
@@ -699,7 +697,10 @@ export async function consolePage(scope: Page | Locator, name: "Account" | "Guid
   // Back to the page's list from a page open on it, by its close.
   const back = scope.getByRole("button", { name: "Back to Setup", exact: true });
   if (await back.isVisible()) await back.click();
-  if (name !== "Account") await setup.getByRole("button", { name: new RegExp(`^${name}`) }).click();
+  if (name === "Account") return;
+  const row = setup.getByRole("button", { name: new RegExp(`^${name}`) });
+  await inSheet("page" in scope ? scope.page() : scope, row);
+  await row.click();
 }
 
 /** A strip set to show one of its lists -- the flights' Saved or Recents, the traffic's Favorites,
@@ -713,9 +714,10 @@ export async function stripShows(page: Page, menu: "fpl-strip-shows" | "aircraft
 export async function airportSearch(page: Page) {
   const search = page.getByTestId("search-airports");
   await showPage(page, 0); // the field is the Search page's (SheetPager)
-  if (await search.isVisible()) return search;
-  await showTabs(page);
+  if (!(await search.isVisible())) await showTabs(page);
   await expect(search).toBeVisible();
+  // Its results in sight when typed in: typing leaves the sheet where it is.
+  await sheetUpToType(page);
   return search;
 }
 

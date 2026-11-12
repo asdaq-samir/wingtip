@@ -147,7 +147,8 @@ test("a checkpoint tapped on the chart opens its card in the sheet; one opened o
   await expect(head).toContainText("nm along");
   const name = head.getByRole("heading", { level: 2 });
   await expect(name).toBeVisible();
-  const checkpoint = panel.getByRole("region", { name: (await name.innerText()).trim(), exact: true });
+  const named = (await name.innerText()).trim();
+  const checkpoint = panel.getByRole("region", { name: named, exact: true });
   await expect(checkpoint).toBeVisible();
   await expect(head).not.toHaveAttribute("data-panel", "peek");
   // Not a popup over the chart.
@@ -161,7 +162,18 @@ test("a checkpoint tapped on the chart opens its card in the sheet; one opened o
   await page.locator("[data-map-controls]").getByTestId("map-settings-button").click();
   const map = panel.getByRole("region", { name: "Map", exact: true });
   await expect(map).toBeVisible();
-  await expect(checkpoint).toBeHidden();
+  // The cards are the stock Drawer's nested drawers (CardStack): the one
+  // under stays drawn behind the top one, its top showing over it as Apple
+  // Maps stacks them, so what a finger finds on the Map's card is the
+  // Map's, and the checkpoint's is kept under it.
+  const onTop = (region: typeof map) =>
+    region.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, Math.min(r.top + 40, innerHeight - 4));
+      return !!hit && el.contains(hit);
+    });
+  await expect.poll(() => onTop(map)).toBe(true);
+  await expect(checkpoint).toHaveCount(1);
   await closeCard(page, "sheet-card-close");
   await expect(map).toHaveCount(0);
   await expect(checkpoint).toBeVisible();

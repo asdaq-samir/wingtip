@@ -38,7 +38,10 @@ test("Search to FPL and back, by a swipe and by the grabber's bars, the sheet's 
   await swipe(page, "left");
   await expectPage(page, 1);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
-  await expect(sideDrawer(page).getByText("Plan a flight")).toBeVisible();
+  // FPL with no route: its empty route box, nothing between it and the
+  // flights saved (96463ab51: no "Plan a flight").
+  await expect(sideDrawer(page).getByTestId("route-box")).toBeVisible();
+  await expect(sideDrawer(page).getByText("Plan a flight")).toHaveCount(0);
 
   // And back, by the swipe and then by the bars.
   await swipe(page, "right");
@@ -78,27 +81,51 @@ test("a swipe shows the page's name in the grabber's capsule, then it folds back
   // Nothing on the first draw: only a change opens it.
   await expect(capsuleOf(0)).toHaveCSS("opacity", "0");
   await expect(capsule).toHaveCSS("opacity", "0");
+  // Each capsule's opening as it happens, with where it hangs then: it is
+  // open about a second (SheetGrabber's HOLD_MS), shorter than a loaded
+  // runner's round of assertions after the swipe, so it is caught at the
+  // moment it opens rather than looked for after.
+  await page.evaluate(() => {
+    const seen: { side: string | null; text: string; x: number; bar: number }[] = [];
+    (window as unknown as { capsules: typeof seen }).capsules = seen;
+    new MutationObserver((records) => {
+      for (const r of records) {
+        const el = r.target as HTMLElement;
+        if (el.dataset.testid !== "grabber-capsule" || !el.hasAttribute("data-open")) continue;
+        const left = document.querySelector('[data-page-bar="0"] span')!.getBoundingClientRect();
+        seen.push({ side: el.dataset.side ?? null, text: el.textContent ?? "", x: el.getBoundingClientRect().x, bar: left.x + left.width });
+      }
+    }).observe(document.body, { attributes: true, attributeFilter: ["data-open"], subtree: true });
+  });
+  const opened = () =>
+    page.evaluate(() => (window as unknown as { capsules: { side: string | null; text: string; x: number; bar: number }[] }).capsules);
+  // The last to open: as a drag starts the pager is still nearest the page
+  // it leaves (usePageHeading), so that page's capsule may show for a frame
+  // before the one it is heading to.
+  const last = async () => {
+    const all = await opened();
+    const c = all[all.length - 1];
+    return c ? `${c.side}:${c.text}` : null;
+  };
   await swipe(page, "left");
   await expectPage(page, 1);
-  await expect(capsule).toHaveText("FPL");
-  await expect(capsule).toHaveCSS("opacity", "1");
-  await expect(capsule).toHaveAttribute("data-open", "");
+  // FPL's own capsule opened, on its own side, and Search's shut.
+  await expect.poll(last).toBe("1:FPL");
   await expect(capsuleOf(0)).not.toHaveAttribute("data-open");
   // On FPL's own side: it starts at the right bar, and Search's bar stays.
-  const [cap, left] = [(await capsule.boundingBox())!, (await bar(page, 0).locator("span").boundingBox())!];
-  expect(cap.x, "FPL's capsule starts right of Search's bar").toBeGreaterThanOrEqual(left.x + left.width);
+  const first = (await opened()).find((c) => c.side === "1");
+  expect(first!.x, "FPL's capsule starts right of Search's bar").toBeGreaterThanOrEqual(first!.bar);
   await expect(bar(page, 0).locator("span")).toHaveCSS("opacity", "1");
   // It never takes a tap: the bars under it keep theirs.
   await expect(capsule).toHaveCSS("pointer-events", "none");
   await expect(capsule).toHaveAttribute("aria-hidden", "true");
   // About a second later it has folded and gone, the bars back.
   await expect(capsule).toHaveCSS("opacity", "0", { timeout: 3000 });
+  await expect(capsule).not.toHaveAttribute("data-open");
   await expect(bar(page, 1).locator("span")).toHaveCSS("opacity", "1");
   // Back to Search: Search's own capsule, from its own bar; FPL's stays folded.
   await swipe(page, "right");
-  await expect(capsuleOf(0)).toHaveText("Search");
-  await expect(capsuleOf(0)).toHaveAttribute("data-open", "");
-  await expect(capsule).not.toHaveAttribute("data-open");
+  await expect.poll(last).toBe("0:Search");
   await expect(capsuleOf(0)).toHaveCSS("opacity", "0", { timeout: 3000 });
 });
 
@@ -182,11 +209,9 @@ test("a sideways drag on the Nearest row is the row's, the page stays on Search"
   await settle(page);
   await grabberTo(page, "half");
   await expectPage(page, 0);
-  const row = sideDrawer(page)
-    .getByTestId("pill-section-nearest")
-    .locator("*")
-    .filter({ has: page.locator("button") })
-    .first();
+  // The strip of fields itself (NearestStrip's PillStrip): the section's
+  // title is a button now too, its row of its own (the "see all" heading).
+  const row = sideDrawer(page).getByTestId("pill-section-nearest").getByTestId("nearest-strip");
   await expect(row).toBeVisible();
   const box = (await row.boundingBox())!;
   await page.mouse.move(box.x + box.width * 0.8, box.y + box.height / 2);

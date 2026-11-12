@@ -86,7 +86,15 @@ for (const row of CARDS) {
             const found: string[] = [];
             for (let at = y; at < innerHeight; at += 6) {
               const hit = document.elementFromPoint(innerWidth / 3, at);
-              if (hit?.closest(`[data-testid="${card}"]`) && !hit.closest("[data-sheet-head]")) found.push(`${Math.round(at)}`);
+              // The card's drawer itself or its scroller is the empty room
+              // under the title row (the pill's fixed 4.75rem, sheet/insets),
+              // not its body; what of the body is hidden there (AT_PILL) a
+              // point never finds.
+              const room = !!hit?.matches(`[data-testid="${card}"], [data-sheet-card], [data-sheet-scroll]`);
+              if (hit?.closest(`[data-testid="${card}"]`) && !hit.closest("[data-sheet-head]") && !room)
+                found.push(
+                  `${Math.round(at)} ${hit.tagName.toLowerCase()}${hit.getAttribute("data-testid") ? `#${hit.getAttribute("data-testid")}` : ""}`,
+                );
             }
             return found;
           },

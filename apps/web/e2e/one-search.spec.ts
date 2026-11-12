@@ -8,11 +8,13 @@ import {
   grabberTo,
   searchAirports,
   settle,
+  sheetUpToType,
   showSearch,
   showTabs,
   sideDrawer,
   slow,
 } from "./helpers";
+import { showPage } from "./oneSearch";
 
 /**
  * The one search (the owner's approved design, 2026-11-09), where the FPL,
@@ -47,13 +49,15 @@ test(
     await expect(sideDrawer(page).getByRole("tablist", { name: "Tabs" })).toHaveCount(0);
     await expect(sideDrawer(page).getByLabel(/^(\S+, )?Departure$/)).toContainText("C81");
 
-    // Focused: the search's own page, the flight first, Cancel beside the
-    // field in the account button's place, as iOS's search fields have it.
+    // Focused: the search's own page, its home list (Favorites, Recents),
+    // with no flight on it since the saved flights went to FPL (3eb6e1417),
+    // Cancel beside the field in the account button's place, as iOS's
+    // search fields have it.
     const search = await airportSearch(page);
     await search.click();
     const home = sideDrawer(page).getByTestId("search-home");
     await expect(home).toBeVisible();
-    await expect(home.getByTestId("flight-summary-route")).toContainText("C81");
+    await expect(home.getByTestId("flight-summary-route")).toHaveCount(0);
     await expect(home.getByTestId("pill-section-favorites")).toBeVisible();
     await expect(row.getByTestId("one-search-cancel")).toBeVisible();
     await expect(row.getByTestId("account-button")).toHaveCount(0);
@@ -82,19 +86,29 @@ test(
     await expect(page).toHaveURL(/[?&]stops=KOSH(&|$)/);
     await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
     await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
+    // The plan up (FPL, the sheet's second page), and the search, its own
+    // page now (SheetPager), let go: back on it, the account button in
+    // Cancel's place.
+    await expect(sideDrawer(page).getByTestId("sheet-pager")).toHaveAttribute("data-page", "1");
+    await showPage(page, 0);
     await expect(row.getByTestId("account-button")).toBeVisible();
   },
 );
 
-test("with no route the sheet opens on the search's own page, and Plan a Flight is the plan's empty box", async ({ page }) => {
+test("with no route the sheet opens on the search's own page, and the plan's empty box is FPL's", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "half");
   const home = sideDrawer(page).getByTestId("search-home");
   await expect(home).toBeVisible();
-  await expect(home.getByTestId("flight-summary-new")).toHaveText(/Plan a Flight/);
+  // No Plan a Flight on the search's page (3eb6e1417, the owner: "We can
+  // remove plan button and saved from search"): the plan is FPL's page.
+  await expect(home.getByTestId("flight-summary-new")).toHaveCount(0);
   await emptyPlan(page);
-  await expect(home).toBeHidden();
+  // FPL's page up: the search's is beside it in the pager (SheetPager),
+  // drawn, out of sight.
+  await expect(sideDrawer(page).getByTestId("sheet-pager")).toHaveAttribute("data-page", "1");
+  await expect(home).not.toBeInViewport();
 });
 
 test("the account button opens the account page itself, no menu first, and its close puts it away", async ({ page }) => {
@@ -106,6 +120,9 @@ test("the account button opens the account page itself, no menu first, and its c
   await expect(page.getByRole("menu")).toHaveCount(0);
   const account = page.getByTestId("console-sheet");
   await expect(account.getByTestId("setup-page")).toBeVisible();
+  // Half way as every card opens (e7bb15ec8): About, at Settings' foot, is
+  // under its edge, reached by pulling the card up.
+  await grabberTo(page, "full");
   await consolePage(account, "About");
   await expect(page.getByTestId("about-build")).toBeVisible();
   // One ✕ in sight on a page: its own, back to Settings; then Settings' own.
@@ -150,6 +167,7 @@ test("the top hit's Fly Here plans the route to it from the result, with no card
   await page.goto("/app/plan?dep=C81");
   await settle(page);
   const search = await airportSearch(page);
+  await sheetUpToType(page); // typing leaves the sheet where it is (5db1f8b10)
   await search.fill("KDLH");
   const top = sideDrawer(page).getByTestId("one-search-results").getByRole("group", { name: "Top Hit" });
   await expect(top.getByTestId("airport-result")).toContainText("KDLH", { timeout: slow(10_000) });
@@ -169,16 +187,21 @@ test("focused and typed in, the search leaves the sheet at its size; the suggest
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
-  await showTabs(page);
+  // Half way, where a pilot reads the results: at the pill they are under
+  // its edge, and typing leaves the sheet where it is.
+  await grabberTo(page, "half");
   const size = await sideDrawer(page).getAttribute("data-panel");
-  expect(size).not.toBe("full");
+  expect(size).toBe("half");
   const search = await airportSearch(page);
   await search.click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", size!);
   await search.fill("a");
   await expect(searchAirports(page).first()).toBeVisible({ timeout: slow(10_000) });
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", size!);
+  // All the way up by the grabber's keys (helpers' grabberTo focuses it),
+  // then the field focused again, as the finger that dragged it up types on.
   await grabberTo(page, "full");
+  await search.focus();
   const scroll = (top: number) =>
     page.getByTestId("one-search-results").evaluate((el, y) => {
       let at: HTMLElement | null = el;

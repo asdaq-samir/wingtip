@@ -1,4 +1,5 @@
-import type { Locator } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
+import { inSheet } from "./helpers";
 
 /**
  * React Aria's date and time fields (components/ui/date-field) are boxes
@@ -27,4 +28,14 @@ export async function fillTime(field: Locator, hhmm: string) {
   await field.page().keyboard.type(hour);
   await field.locator('[data-type="minute"]').click();
   await field.page().keyboard.type(minute);
+}
+
+/** The departure's time field, the picker's card pulled up to it: the
+ *  picker is a card on a phone (ResponsivePopover's SheetCard), opened
+ *  half way as every card is, the time under its edge with the calendar
+ *  over it. */
+export async function departTime(page: Page) {
+  const field = page.getByTestId("depart-time");
+  await inSheet(page, field);
+  return field;
 }

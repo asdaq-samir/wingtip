@@ -5,6 +5,7 @@ import {
   closeSidebarWithTheStockKey,
   expectDrawerClosed,
   grabberTo,
+  sheetUpToType,
   mapStill,
   openPanel,
   searchAirports,
@@ -14,7 +15,9 @@ import {
   slow,
 } from "./helpers";
 import { fromRest } from "./startState";
+import { ownHomeBase } from "./oneSearch";
 import { courseBox } from "./mapProbes";
+import { middleOfMap, shipAt } from "./ownShipProbes";
 
 /**
  * The map and the sheet move together, as in Maps: opened fresh, the map
@@ -56,27 +59,6 @@ async function fittedClearOf(page: Page, panel: Locator) {
     expect(Math.max(line.width / free.w, line.height / free.h)).toBeGreaterThan(0.35);
   }).toPass({ timeout: slow(10_000) });
   return courseBox(page);
-}
-
-/** Own ship's marker, on screen. */
-const shipAt = async (page: Page) => {
-  const box = (await page
-    .locator(".maplibregl-marker")
-    .filter({ has: page.locator("[data-own-ship]") })
-    .last()
-    .boundingBox())!;
-  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-};
-
-/** The middle of what the panel leaves of the map: above a phone's
- *  sheet, beside a desktop's card out, under it at rest. */
-async function middleOfMap(page: Page) {
-  const viewport = page.viewportSize()!;
-  const sheet = (await sideDrawer(page).boundingBox())!;
-  if (viewport.width < 768) return { x: viewport.width / 2, y: sheet.y / 2 };
-  return (await sideDrawer(page).getAttribute("data-panel")) !== "peek"
-    ? { x: (sheet.x + sheet.width + viewport.width) / 2, y: viewport.height / 2 }
-    : { x: viewport.width / 2, y: (sheet.y + sheet.height + viewport.height) / 2 };
 }
 
 /** Own ship in the middle of what the panel leaves, give or take the
@@ -282,10 +264,13 @@ test("opened fresh where the position was given before, it is asked for again as
 });
 
 test("a route entered is fitted above the half sheet, and only slid with the sheet as it goes down and up", async ({ page }) => {
-  // Home from a link, so Fly Here has somewhere to fly from.
+  // Home from a link, so Fly Here has somewhere to fly from; this page's
+  // own, not the shared account's.
+  await ownHomeBase(page);
   await page.goto("/app/plan?home=C81");
   await expect(page).not.toHaveURL(/[?&]home=/, { timeout: slow(10_000) });
   const search = await airportSearch(page);
+  await sheetUpToType(page); // typing leaves the sheet where it is (5db1f8b10)
   await search.click();
   await search.fill("KDLH");
   await searchAirports(page).filter({ hasText: "KDLH" }).first().click();
@@ -407,6 +392,7 @@ test("an airport's card keeps its field in sight: the next position the GPS give
 
   // A field far from the position, from the search: the map goes to it.
   const search = await airportSearch(page);
+  await sheetUpToType(page); // typing leaves the sheet where it is (5db1f8b10)
   await search.click();
   await search.fill("KDLH");
   await searchAirports(page).filter({ hasText: "KDLH" }).first().click();

@@ -32,7 +32,11 @@ test("plan page: a route from an airport to itself is a local flight: the field'
   await page.goto("/app/plan?dep=C81&dest=C81");
   await grabberTo(page, "full");
   await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText("1h", { timeout: slow(30000) });
-  await expect(sideDrawer(page).locator('[data-slot="section-summary"] dt').nth(1)).toHaveText("Aloft");
+  // Its name as shown, "Aloft", and in full words to a screen reader
+  // (FlightLine's dt: the shorthand hidden from it, the said words beside).
+  const aloft = sideDrawer(page).locator('[data-slot="section-summary"] dt').nth(1);
+  await expect(aloft.locator("[aria-hidden]")).toHaveText("Aloft");
+  await expect(aloft.locator(".sr-only")).toHaveText("Time aloft, one hour");
   // Its fuel required among the figures.
   await expect(page.getByTestId("navlog-fuel")).toHaveText(/^\d+\.\d\s?gal$/, { timeout: slow(30000) });
 
@@ -52,7 +56,10 @@ test("plan page: every popup the map opens dismisses the same way", async ({ pag
   // it, swallowing their clicks. `MapPopup` gives all of them one
   // dismissal, and this is the test that says so.
   // Class B on from the start, from the search bar's settings.
-  await beforeTheRoute(page, () => page.getByTestId("class-b-toggle").click());
+  await beforeTheRoute(page, async () => {
+    await grabberTo(page, "full");
+    await page.getByTestId("class-b-toggle").click();
+  });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expect(page.locator("[data-chart-zoom]")).toBeAttached();
@@ -162,6 +169,7 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   // checkpoints on the map, none asked for, and the nav log from the
   // departure to the destination alone, as the pilot asked.
   await beforeTheRoute(page, async () => {
+    await grabberTo(page, "full");
     const toggle = page.getByTestId("waypoints-toggle");
     await expect(toggle).toHaveAttribute("aria-checked", "true");
     await toggle.click();

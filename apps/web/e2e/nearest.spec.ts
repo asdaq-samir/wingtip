@@ -82,11 +82,15 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   await expect(sideDrawer(page).getByTestId("pill-section-nearest-more")).toBeVisible();
   await sideDrawer(page).getByTestId("pill-section-nearest-more").click();
   await expect(card).toBeVisible();
-  // Back to the route by the search's Cancel: the plan under it.
+  // Back to the route: the list is a card over the sheet, the Drawer's own
+  // nested drawer (sheet/CardStack), its ✕ first, then the search's Cancel
+  // and FPL, the plan under it.
+  await card.getByTestId("nearest-page-close").click();
   await showPlan(page);
   await expect(card).toHaveCount(0);
-  // All the way up still: the route's nav log.
-  await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
+  // The sheet where it was left, half way (the card rule's 11: nothing
+  // raises or lowers it), the route's nav log on FPL.
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   await expect(sideDrawer(page).getByTestId("navlog-scroller")).toBeVisible();
 });
 

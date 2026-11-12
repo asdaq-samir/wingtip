@@ -84,7 +84,10 @@ for (const row of CARDS) {
       await open(page, row);
       await grabberTo(page, "half");
       const before = await scrollOf(page, row.card);
-      await drag(page, await bodyPoint(page, row), 0, -160);
+      // Past the middle between half (23rem) and all the way up (sheet/insets'
+      // snaps), so where it settles is the drag's and not its speed: 160 was
+      // a fling on a quiet machine and short of the middle on a busy one.
+      await drag(page, await bodyPoint(page, row), 0, -300);
       await expect(panel(page)).toHaveAttribute("data-panel", "full");
       await settled(panel(page));
       // Not scrolled: at the top (0), or with nothing to scroll (-1) -- a body
@@ -97,7 +100,8 @@ for (const row of CARDS) {
       await open(page, row);
       await grabberTo(page, "full");
       await scrollOf(page, row.card, 0);
-      await drag(page, await bodyPoint(page, row), 0, 200);
+      // Past the middle down to half, as above, whatever the drag's speed.
+      await drag(page, await bodyPoint(page, row), 0, 300);
       await expect(panel(page)).not.toHaveAttribute("data-panel", "full");
     });
 
