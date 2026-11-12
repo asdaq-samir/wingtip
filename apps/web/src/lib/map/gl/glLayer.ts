@@ -31,6 +31,27 @@ export interface GlTap {
   /** Lower first. */
   rank: number;
   onTap: (feature: MapGeoJSONFeature, event: MapMouseEvent) => void;
+  /** Instead of the style's `layers`, a finder of its own: deck.gl's
+   *  picking (lib/map/gl/deckLayers useDeckTap). */
+  find?: (point: { x: number; y: number }) => MapGeoJSONFeature | null;
+}
+
+/** What a tap finds under the finger, within its reach: the nearest
+ *  feature of its layers, or what its own finder picks. */
+export function tapHit(map: MlMap, tap: GlTap, point: { x: number; y: number }): MapGeoJSONFeature | null {
+  if (tap.find) return tap.find(point);
+  const layers = tap.layers.filter((l) => map.getLayer(l));
+  if (!layers.length) return null;
+  const r = tap.reach;
+  return (
+    map.queryRenderedFeatures(
+      [
+        [point.x - r, point.y - r],
+        [point.x + r, point.y + r],
+      ],
+      { layers },
+    )[0] ?? null
+  );
 }
 
 export interface GlMapApi {

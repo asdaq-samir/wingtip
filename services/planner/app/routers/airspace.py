@@ -1,18 +1,19 @@
 """What airspace is over a point the pilot holds a finger on (the map's
 Airspace card): the classes from the ground up, the Mode C veil, the
-special-use areas and the TFRs there; and what is ahead of own ship in
-the air (the map's alerts)."""
+special-use areas and the TFRs there; what is ahead of own ship in the
+air (the map's alerts); and the volumes in view, whole, for the 3D map."""
 
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
-from fastapi import APIRouter, Query
-from wingtip import airports, airspace, airspace_at, alerts, altitude, elevation, fixes, sua, tfr
+from fastapi import APIRouter, Query, Response
+from wingtip import airports, airspace, airspace_at, airspace_volumes, alerts, altitude, elevation, fixes, sua, tfr
 from wingtip.units import M_TO_FT
 
-from ..schemas.airspace import AirspaceAt, AlertsAhead, PointOffFix
-from ..gateway import PUBLIC
+from ..router_basics import SHARED_CACHE
+from ..schemas.airspace import AirspaceAt, AirspaceVolumes, AlertsAhead, PointOffFix
+from ..gateway import PUBLIC, SHARED
 
 log = logging.getLogger(__name__)
 
@@ -108,3 +109,24 @@ def airspace_ahead(
         faa_cache_dir=altitude.DEFAULT_FAA_CACHE_DIR,
     )
     return AlertsAhead(**found)
+
+
+@router.get("/api/airspace/volumes", response_model=AirspaceVolumes, openapi_extra=SHARED)
+def airspace_volumes_in(
+    response: Response,
+    south: float = Query(ge=-90, le=90),
+    west: float = Query(ge=-180, le=180),
+    north: float = Query(ge=-90, le=90),
+    east: float = Query(ge=-180, le=180),
+    classes: str = Query(default="B,C,D,E", description="The classes wanted, as 'B,C'"),
+    special_use: bool = True,
+) -> dict:
+    """The Class B, C and D, the surface Class E and the special use areas
+    meeting the box, each polygon whole as the FAA draws it, for the 3D
+    map to stand up (wingtip.airspace_volumes): from the cycle pack the
+    shared store holds, the same for every pilot, so kept for an hour at
+    most (SHARED_CACHE). A state's width at most; at a far zoom the map
+    asks only for Class B and the special use areas."""
+    response.headers["Cache-Control"] = SHARED_CACHE
+    wanted = tuple(c for c in (x.strip().upper() for x in classes.split(",")) if c in airspace_volumes.CLASSES)
+    return airspace_volumes.volumes_in((west, south, east, north), wanted, special_use)

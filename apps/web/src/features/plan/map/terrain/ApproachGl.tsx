@@ -1,24 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
+import { PathLayer } from "@deck.gl/layers";
 import { useEffect, useMemo } from "react";
 import type { ProcedureDrawing } from "../../../../lib/api/types";
+import { deckColour, deckSlot, useDeckLayers } from "../../../../lib/map/gl/deckLayers";
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../../lib/map/gl/glLayer";
 import { airportQuery } from "../../../../lib/queryClient";
 import { CHART } from "../../../../lib/tokens";
+import { curtainLayer } from "./curtain";
 import { aloft, approachScene, centrelineFeatures, pickedApproach, ringPoints } from "./approachScene";
-import { DEM } from "./dem";
-import { aloftFeatures, aloftPieces } from "./geometry";
-import { setExtrusionData, useExtrusion } from "./useExtrusion";
+import { aloftPath, curtainWalls } from "./geometry";
 
-/** The bands in the air, metres: the glidepath and the approach a little
- *  narrower than the route's 150 m (AloftGl), the ring narrower again, so
- *  the runway's way in reads under the route's own magenta; each 20 m
- *  deep. Their pieces a quarter mile long, the ring's a tenth, so the
- *  glidepath's curve over the earth and the ring's round show. */
+/** The lines in the air, metres across: the glidepath and the approach a
+ *  little narrower than the route's 150 m (AloftGl), the ring narrower
+ *  again, so the runway's way in reads under the route's own magenta. */
 const GLIDE_M = 60;
 const PATH_M = 90;
 const RING_M = 45;
-const DEEP_M = 20;
-const WALL_M = 15;
 
 /**
  * The way in to a field in 3D (TerrainGl mounts it for the route's
@@ -26,7 +23,8 @@ const WALL_M = 15;
  * centreline dashed on the ground, the glidepath to its threshold in the
  * air, the approach picked there at its altitudes with a curtain down to
  * its ground track (as AloftGl hangs the route's), and a ring at the
- * pattern's altitude. Every figure is the engine's (approachScene).
+ * pattern's altitude. Every figure is the engine's (approachScene); the
+ * lines in the air are deck.gl's PathLayer at metres above the sea.
  */
 export default function ApproachGl({ ident, picked }: { ident: string; picked: ProcedureDrawing[] }) {
   const { map } = useGlMap();
@@ -47,59 +45,34 @@ export default function ApproachGl({ ident, picked }: { ident: string; picked: P
   ]);
   useGlData("approach-centreline", scene ? centrelineFeatures(scene) : null);
 
-  useExtrusion(map, "approach-curtain", {
-    type: "fill-extrusion",
-    paint: {
-      "fill-extrusion-color": CHART.procedure,
-      "fill-extrusion-opacity": 0.2,
-      "fill-extrusion-base": 0,
-      "fill-extrusion-height": ["get", "top"],
-    },
-  });
-  useExtrusion(map, "approach-aloft", {
-    type: "fill-extrusion",
-    paint: {
-      "fill-extrusion-color": ["get", "colour"],
-      "fill-extrusion-opacity": 0.9,
-      "fill-extrusion-base": ["get", "bottom"],
-      "fill-extrusion-height": ["get", "top"],
-    },
-  });
-
-  const parts = useMemo(() => {
-    if (!scene) return null;
+  const layers = useMemo(() => {
+    if (!scene) return [];
     const path = scene.path ? aloft(scene.path) : [];
-    return {
-      bands: [
-        ...scene.glidepaths.map((g) => ({ pieces: aloftPieces(aloft(g.points), GLIDE_M, 0.25), colour: CHART.glidepath })),
-        { pieces: aloftPieces(path, PATH_M, 0.25), colour: CHART.procedure },
-        { pieces: aloftPieces(ringPoints(scene), RING_M, 0.1), colour: CHART.pattern },
-      ],
-      wall: aloftPieces(path, WALL_M, 0.25),
-    };
+    const lines = [
+      ...scene.glidepaths.map((g) => ({ path: aloftPath(aloft(g.points)), colour: CHART.glidepath, width: GLIDE_M })),
+      ...(path.length > 1 ? [{ path: aloftPath(path), colour: CHART.procedure, width: PATH_M }] : []),
+      ...(scene.ring ? [{ path: aloftPath(ringPoints(scene)), colour: CHART.pattern, width: RING_M }] : []),
+    ];
+    return [
+      curtainLayer("approach-curtain", curtainWalls(path), CHART.procedure, 0.2),
+      new PathLayer<(typeof lines)[number]>({
+        id: "approach-aloft",
+        data: lines,
+        getPath: (l) => l.path as never,
+        getColor: (l) => deckColour(l.colour, 0.9),
+        getWidth: (l) => l.width,
+        widthUnits: "meters",
+        widthMinPixels: 2,
+        jointRounded: true,
+        ...deckSlot("route"),
+      }),
+    ];
   }, [scene]);
+  useDeckLayers("approach-aloft", layers);
 
+  // For the browser tests: what is drawn, and whose figures.
   useEffect(() => {
-    if (!parts || !scene) return;
-    let timer = 0;
-    const lift = () => {
-      const ground = (mid: [number, number]) => map.queryTerrainElevation(mid);
-      const features = parts.bands.flatMap((b) =>
-        aloftFeatures(b.pieces, ground, DEEP_M).features.map((f) => ({ ...f, properties: { ...f.properties, colour: b.colour } })),
-      );
-      setExtrusionData(map, "approach-aloft", { type: "FeatureCollection", features });
-      setExtrusionData(map, "approach-curtain", aloftFeatures(parts.wall, ground, null));
-    };
-    lift();
-    // Again as the terrain's finer tiles come in, a quarter second after
-    // the last (AloftGl's way).
-    const came = (e: { sourceId?: string; tile?: unknown }) => {
-      if (e.sourceId !== DEM || !e.tile) return;
-      window.clearTimeout(timer);
-      timer = window.setTimeout(lift, 250);
-    };
-    map.on("sourcedata", came);
-    // For the browser tests: what is drawn, and whose figures.
+    if (!scene) return;
     const el = map.getContainer();
     el.dataset.approachScene = [
       ident,
@@ -108,10 +81,8 @@ export default function ApproachGl({ ident, picked }: { ident: string; picked: P
       `ring=${scene.ring?.ft ?? ""}`,
     ].join(" ");
     return () => {
-      window.clearTimeout(timer);
-      map.off("sourcedata", came);
       delete el.dataset.approachScene;
     };
-  }, [map, parts, scene, ident]);
+  }, [map, scene, ident]);
   return null;
 }

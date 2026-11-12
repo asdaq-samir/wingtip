@@ -4,7 +4,7 @@ import { RowBadge } from "../../../../components/RowBadge";
 import { faaWords, suaAltitudes } from "../../../../lib/advisories";
 import { MapCard } from "../../../../lib/map/cards/MapCard";
 import { TEXT } from "../../../../lib/text";
-import type { SuaTileArea } from "./tileVolumes";
+import type { SuaArea } from "./airspaceVolumes";
 
 /**
  * The card a tap on a special use area's volume opens in 3D: its name and
@@ -13,7 +13,7 @@ import type { SuaTileArea } from "./tileVolumes";
  * the held point's card (features/plan/components/AirspaceCard) says of
  * the same area, in the area's own ink.
  */
-export function SuaVolumeCard({ area, colour }: { area: SuaTileArea; colour: string }) {
+export function SuaVolumeCard({ area, colour }: { area: SuaArea; colour: string }) {
   const name = faaWords(area.name);
   const kind = area.kind ? area.kind[0]!.toUpperCase() + area.kind.slice(1) : "Special use airspace";
   const rows: [string, string][] = [["Altitudes", suaAltitudes(area)]];

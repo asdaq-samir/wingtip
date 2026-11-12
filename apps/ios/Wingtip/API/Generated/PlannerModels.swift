@@ -527,6 +527,18 @@ struct APITfrHere: Codable, Equatable, Sendable {
     var purpose, rule, state, title: String?
 }
 
+/// The volumes in a box as GeoJSON (wingtip.airspace_volumes): each
+/// feature a Class B, C, D or surface E volume (`layer` "airspace") or a
+/// special use area (`layer` "special_use"), with the fields of the
+/// cycle's overlay tiles' layer of that name and `label`, the point its
+/// name is written at; `cycle`, the pack's, None before one is built.
+// MARK: - APIAirspaceVolumes
+struct APIAirspaceVolumes: Codable, Equatable, Sendable {
+    var cycle: String?
+    var features: [[String: JSONValue]]
+    var type: String?
+}
+
 /// What is ahead of the airplane, warnings first, then the soonest;
 /// `unavailable` names what could not be read (special-use airspace,
 /// TFRs, terrain, obstacles), said rather than shown as nothing there.

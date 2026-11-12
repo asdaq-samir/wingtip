@@ -70,20 +70,7 @@ const INSIDE_EM = 1.35;
  *  Low's 500 ft) and keeps no "to but not including", so its figures are
  *  not written. */
 export function specialUseLabelLayer(font: string[], labelPoints = true): SymbolLayerSpecification {
-  const tab = {
-    "text-font": font,
-    "text-size": ["interpolate", ["linear"], ["zoom"], glZoom(8), 11, glZoom(12), 13] as never,
-    "text-line-height": 1.15,
-    "icon-image": ["case", restricted, suaTab("restricted"), suaTab("moa")] as never,
-    "icon-text-fit": "both" as const,
-    "icon-text-fit-padding": [2, 6, 2, 6] as [number, number, number, number],
-    "text-padding": 4,
-    "text-allow-overlap": false,
-    "icon-allow-overlap": false,
-    // A restricted area's tab before a MOA's it lies in, as its line is
-    // drawn over the MOA's (specialUseLayers).
-    "symbol-sort-key": ["case", restricted, 0, 1] as never,
-  };
+  const tab = suaTabLayout(font);
   const common = {
     id: "sua-labels",
     type: "symbol" as const,
@@ -122,5 +109,24 @@ export function specialUseLabelLayer(font: string[], labelPoints = true): Symbol
       // 1, above where it is -1.
       "text-offset": ["case", ["==", ["get", "side"], 1], ["literal", [0, INSIDE_EM]], ["literal", [0, -INSIDE_EM]]] as never,
     },
+  };
+}
+
+/** A tab's look, its text and picture: the chart's tabs and the 3D
+ *  view's (features/plan/map/terrain/AirspaceVolumesGl). */
+export function suaTabLayout(font: string[]) {
+  return {
+    "text-font": font,
+    "text-size": ["interpolate", ["linear"], ["zoom"], glZoom(8), 11, glZoom(12), 13] as never,
+    "text-line-height": 1.15,
+    "icon-image": ["case", restricted, suaTab("restricted"), suaTab("moa")] as never,
+    "icon-text-fit": "both" as const,
+    "icon-text-fit-padding": [2, 6, 2, 6] as [number, number, number, number],
+    "text-padding": 4,
+    "text-allow-overlap": false,
+    "icon-allow-overlap": false,
+    // A restricted area's tab before a MOA's it lies in, as its line is
+    // drawn over the MOA's (specialUseLayers).
+    "symbol-sort-key": ["case", restricted, 0, 1] as never,
   };
 }
