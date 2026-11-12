@@ -3721,7 +3721,7 @@ object EngineContract {
          */
         val calm: Boolean,
         /**
-         * The ceiling's picture read at its top: a ceiling over it or none, either no ceiling (AIM 7-1-7); false for any other field.
+         * The ceiling's picture at its top at every pixel read: a ceiling over it or none, either no ceiling (AIM 7-1-7); false for any other field.
          */
         @SerialName("no_ceiling")
         val noCeiling: Boolean,
@@ -3741,9 +3741,13 @@ object EngineContract {
         val unscale: List<Double>,
         val vector: Boolean,
         /**
-         * The picture is the ceiling's, feet above the ground (14 CFR 1.1), whose top is no ceiling; false or absent for any other field.
+         * The picture is the ceiling's, feet above the ground (14 CFR 1.1), whose top is no ceiling; false or absent for any other field. The same as `field` "ceiling".
          */
         val ceiling: Boolean? = null,
+        /**
+         * The field the picture is, as app.flow_grid names it (its file's name: "ceiling", "vis", "temp" and the rest), so the engine reads each its own way: the ceiling and the visibility as the lowest round the point, the rest between. Absent reads between.
+         */
+        val field: String? = null,
     )
 
     @Serializable
