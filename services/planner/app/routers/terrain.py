@@ -28,7 +28,10 @@ def terrain_tile(z: int, x: int, y: int) -> Response:
     the AWS Terrain Tiles (USGS 3DEP, SRTM and, offshore, ETOPO1) the
     planner reads its terrain floors from, their voids filled and the sea
     floor the sea's surface, so the map's relief and 3D ground are the
-    ground the altitudes were planned over. Zooms 0 to 12."""
+    ground the altitudes were planned over. Zooms 0 to 13: 13 built ahead
+    round the public-use airports and over steep ground, from USGS 3DEP's
+    1/3 arc-second (wingtip.terrain_fine), and elsewhere its zoom-12
+    parent drawn larger, never fetched on the request."""
     try:
         png = terrain_view.tile_png(z, x, y)
     except terrain_view.NoSuchTile as err:

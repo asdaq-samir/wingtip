@@ -3,6 +3,7 @@ import { slotId, useGlMap } from "../../../../lib/map/gl/glLayer";
 import AloftGl from "./AloftGl";
 import ApproachGl from "./ApproachGl";
 import type { ProcedureDrawing } from "../../../../lib/api/types";
+import ClearanceGl from "./ClearanceGl";
 import { DEM, EXAGGERATION, FLAT_MAX_PITCH, HILLSHADE, HILLSHADE_LAYER, MAX_PITCH, OPEN_PITCH, SV_TINT, demSource } from "./dem";
 import type { AloftPoint } from "./geometry";
 import ObstaclesGl from "./ObstaclesGl";
@@ -97,6 +98,7 @@ export default function TerrainGl({
       <SkyGl />
       <ObstaclesGl />
       {aloft && aloft.length > 1 && <AloftGl points={aloft} />}
+      {aloft && aloft.length > 1 && !pilot && <ClearanceGl points={aloft} />}
       {field && <ApproachGl key={field} ident={field} picked={procedures} />}
       <TrafficAloftGl />
       {pilot && <PilotCamera />}

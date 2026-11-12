@@ -84,6 +84,7 @@ export const WEB_RULES = [
   "filed_zzzz",
   "fix_radial_distance",
   "flight_category",
+  "floor_corridor_nm",
   "flow_levels",
   "frd_read",
   "frd_write",

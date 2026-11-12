@@ -721,6 +721,12 @@ fun Engine.floorCaution(segment: Map<String, JsonElement>, altitudeFt: Double): 
     rule("floor_caution", EngineContract.FloorCautionInput(segment = segment, altitudeFt = altitudeFt))
 
 /**
+ * How far either side of the course the VFR floor counts the ground's obstacles: 5 nm, wider than 14 CFR 91.119(b)'s 2,000 ft and 91.177(a)(2)'s 4 nm, so the floor tolerates the airplane off its line. The 3D map colours the ground against the plan within it.
+ */
+fun Engine.floorCorridorNm(): Result<Double> =
+    rule("floor_corridor_nm", EngineContract.FloorCorridorNmInput())
+
+/**
  * The map's model weather levels by field, as the Aviation Weather Center names them ("060" is 6,000 ft MSL, "180" FL180; "sfc" the surface, "max" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).
  */
 fun Engine.flowLevels(): Result<EngineContract.FlowLevelsAnswer> =

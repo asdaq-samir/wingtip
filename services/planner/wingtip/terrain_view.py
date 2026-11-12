@@ -4,12 +4,14 @@ lib/map/gl/terrain): the terrain tiles the planner reads its floors from
 Digital Obstacle File in the view, for the obstacles stood up over that
 ground. app.routers.terrain serves them."""
 
-from . import elevation, faa_data, terrain
+from . import elevation, faa_data, terrain, terrain_fine
 
-#: The finest terrain tile served: the planner's own (TERRAIN_TILE_ZOOM,
-#: about 38 m a pixel). The map asks no finer than zoom 11 and draws
-#: closer in from it.
-MAX_ZOOM = elevation.TERRAIN_TILE_ZOOM
+#: The finest terrain tile served: one finer than the planner's own
+#: (TERRAIN_TILE_ZOOM, about 38 m a pixel), the zoom-13 tiles built ahead
+#: round the airports and over steep ground (wingtip.terrain_fine), some
+#: 15 m a pixel at 40 N -- USGS 3DEP's 1/3 arc-second, about 10 m, is what
+#: they are drawn from. The map draws closer in from them.
+MAX_ZOOM = terrain_fine.FINE_ZOOM
 
 #: The obstacles' least height by default: 14 CFR 77.9(a)'s 200 ft above
 #: the ground, past which construction is noticed to the FAA, and
@@ -32,10 +34,14 @@ class BoxTooWide(ValueError):
 
 def tile_png(z: int, x: int, y: int) -> bytes:
     """One {z}/{x}/{y} terrain tile as a terrarium PNG, cleaned
-    (elevation.terrain_tile_png). Raises NoSuchTile off the grid, and
-    requests.RequestException where it cannot be fetched."""
+    (elevation.terrain_tile_png); at zoom 13 the one built ahead, else its
+    parent's drawn larger, never fetched (terrain_fine.fine_tile_png).
+    Raises NoSuchTile off the grid, and requests.RequestException where
+    it cannot be fetched."""
     if not (0 <= z <= MAX_ZOOM) or not (0 <= x < 2**z) or not (0 <= y < 2**z):
         raise NoSuchTile(f"terrain tiles exist for zoom 0-{MAX_ZOOM}")
+    if z == terrain_fine.FINE_ZOOM:
+        return terrain_fine.fine_tile_png(x, y)
     return elevation.terrain_tile_png(z, x, y)
 
 

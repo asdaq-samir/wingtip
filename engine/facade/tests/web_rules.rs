@@ -81,6 +81,7 @@ fn the_lists_and_figures_the_apps_kept() {
         assert_eq!(got["caution_from_ft"].as_f64(), case["caution_from_ft"].as_f64(), "{case}");
         assert_eq!(got["warning_from_ft"].as_f64(), case["warning_from_ft"].as_f64(), "{case}");
     }
+    assert_eq!(ask("floor_corridor_nm", json!({})).as_f64(), f["floorCorridorNm"].as_f64());
     let reach = ask("traffic_reach", json!({}));
     assert_eq!(reach["around_nm"].as_f64(), f["trafficReach"]["around_nm"].as_f64());
     assert_eq!(reach["relation_nm"].as_f64(), f["trafficReach"]["relation_nm"].as_f64());

@@ -29520,7 +29520,7 @@
     },
     "/api/terrain-tile/{z}/{x}/{y}.png": {
       "get": {
-        "description": "The ground's heights for one {z}/{x}/{y} tile as a terrarium PNG:\nthe AWS Terrain Tiles (USGS 3DEP, SRTM and, offshore, ETOPO1) the\nplanner reads its terrain floors from, their voids filled and the sea\nfloor the sea's surface, so the map's relief and 3D ground are the\nground the altitudes were planned over. Zooms 0 to 12.",
+        "description": "The ground's heights for one {z}/{x}/{y} tile as a terrarium PNG:\nthe AWS Terrain Tiles (USGS 3DEP, SRTM and, offshore, ETOPO1) the\nplanner reads its terrain floors from, their voids filled and the sea\nfloor the sea's surface, so the map's relief and 3D ground are the\nground the altitudes were planned over. Zooms 0 to 13: 13 built ahead\nround the public-use airports and over steep ground, from USGS 3DEP's\n1/3 arc-second (wingtip.terrain_fine), and elsewhere its zoom-12\nparent drawn larger, never fetched on the request.",
         "operationId": "terrain_tile_api_terrain_tile__z___x___y__png_get",
         "parameters": [
           {

@@ -3669,6 +3669,9 @@ enum EngineContract {
         }
     }
 
+    struct FloorCorridorNmInput: Codable, Equatable, Sendable {
+    }
+
     struct FlowLevelsAnswer: Codable, Equatable, Sendable {
         var wind: [EngineContract.FlowLevelsAnswerWindItem]
         var icing: [EngineContract.FlowLevelsAnswerIcingItem]

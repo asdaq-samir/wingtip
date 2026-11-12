@@ -36,6 +36,8 @@ fn the_profile_rules_answer_in_the_contracts_shapes() {
         }),
     );
     assert_eq!(clearance["words"], "3,500 ft, an obstacle within 300 ft near KXYZ");
+    // The corridor the 3D map colours the ground in, the VFR floor's.
+    assert_eq!(ask(&v, "floor_corridor_nm", json!({})).as_f64(), Some(5.0));
     let rows = ask(
         &v,
         "altitude_advisor",

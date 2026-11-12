@@ -3597,6 +3597,12 @@ object EngineContract {
     )
 
     @Serializable
+    class FloorCorridorNmInput {
+        override fun equals(other: Any?): Boolean = other is FloorCorridorNmInput
+        override fun hashCode(): Int = 0
+    }
+
+    @Serializable
     data class FlowLevelsAnswer(
         val wind: List<EngineContract.FlowLevelsAnswerWindItem>,
         val icing: List<EngineContract.FlowLevelsAnswerIcingItem>,
