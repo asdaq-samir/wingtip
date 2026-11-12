@@ -319,7 +319,9 @@ function writeSwift() {
     calls.push("");
     calls.push(swiftDoc(r.description, "    ").trimEnd());
     calls.push(`    static func ${swiftId(camel(r.rule))}(${params.join(", ")}) throws -> ${swiftType(r.answerType)} {`);
-    calls.push(`        try rule(${JSON.stringify(r.rule)}, EngineContract.${r.inputStruct}(${args.join(", ")}))`);
+    // Self.rule: a rule whose input has a field named `rule` (tfr_read) would
+    // otherwise hide the helper behind its own parameter.
+    calls.push(`        try Self.rule(${JSON.stringify(r.rule)}, EngineContract.${r.inputStruct}(${args.join(", ")}))`);
     calls.push("    }");
   }
   calls.push("}", "");
