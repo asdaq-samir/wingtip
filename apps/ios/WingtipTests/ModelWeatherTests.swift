@@ -111,10 +111,35 @@ import UniformTypeIdentifiers
         #expect(bytes[(height - 1) * width * 4 + 3] == 0)
     }
 
-    @Test func theBadgeSaysTheCeilingsTopAsNone() {
-        let reading = FlowReading.of(.ceiling, value: 12_750, unit: "ft", top: 12_750)
+    @Test func theWindBetweenPixelsIsItsPartsMixedNotItsSpeeds() {
+        // 20 kt from the west in the west column, 20 kt from the east in
+        // the east one: half way between, the parts cancel to calm (the
+        // web's and Android's reading), where the speeds' mean said 20 kt.
+        let toEast = UInt8(((20.0 + 100) / 200 * 255).rounded())
+        let toWest = UInt8(((-20.0 + 100) / 200 * 255).rounded())
+        let calm = UInt8(((0.0 + 100) / 200 * 255).rounded())
+        let bytes = [toEast, calm, 0, 255, toWest, calm, 0, 255].repeated(2)
+        let grid = FlowGrid(rgba: bytes, width: 2, height: 2, unscale: [-100, 100], vector: true, bounds: Self.box)
+        #expect(abs(grid.value(lat: 0.5, lon: -0.5)! - 20) < 1)
+        // Calm but for the 0.39 kt north part the eight bits give "calm".
+        #expect(grid.value(lat: 0.5, lon: 0)! < 1)
+    }
+
+    @Test func theBadgeSaysTheCeilingsTopAsNone() throws {
+        let reading = try FlowReading.of(.ceiling, value: 12_750, unit: "ft", top: 12_750)
         #expect(reading.figure == "None")
-        #expect(FlowReading.of(.ceiling, value: 1_020, unit: "ft", top: 12_750).figure == "1,000")
+        #expect(try FlowReading.of(.ceiling, value: 1_020, unit: "ft", top: 12_750).figure == "1,000")
+    }
+
+    @Test func aFailedRuleIsNoReadingNeverNoHazard() throws {
+        // The engine's nil is none: turbulence under light's band.
+        #expect(try FlowReading.of(.turb, value: 0, unit: "", top: nil).figure == "None")
+        // A rule that fails (a value the engine cannot be asked, here
+        // not a number) throws, so the model shows no reading and its
+        // problem, never "None" for turbulence, icing or precipitation.
+        for field in [FlowFieldKind.turb, .icing, .precip] {
+            #expect(throws: (any Error).self) { try FlowReading.of(field, value: .nan, unit: "", top: nil) }
+        }
     }
 
     private static func png(_ bytes: [UInt8], width: Int, height: Int) throws -> Data {

@@ -17,10 +17,10 @@ struct FlowGrid: Sendable {
     let height: Int
     /// The values, row by row from the north, nil where there is none.
     /// For the wind each is the speed, kt; `east` and `north` keep its
-    /// parts for where it blows from.
+    /// parts, nil where there is none, which a point is read from.
     let values: [Float?]
-    let east: [Float]?
-    let north: [Float]?
+    let east: [Float?]?
+    let north: [Float?]?
     /// [west, south, east, north], degrees.
     let bounds: [Double]
 
@@ -33,8 +33,8 @@ struct FlowGrid: Sendable {
         let step = (high - low) / 255
         let count = width * height
         var values = [Float?](repeating: nil, count: count)
-        var east: [Float]? = vector ? [Float](repeating: 0, count: count) : nil
-        var north: [Float]? = vector ? [Float](repeating: 0, count: count) : nil
+        var east: [Float?]? = vector ? [Float?](repeating: nil, count: count) : nil
+        var north: [Float?]? = vector ? [Float?](repeating: nil, count: count) : nil
         for i in 0..<min(count, rgba.count / 4) {
             guard rgba[i * 4 + 3] > 0 else { continue }
             let red = Float(low + Double(rgba[i * 4]) * step)
@@ -102,19 +102,30 @@ struct FlowGrid: Sendable {
 
     /// The value at a point, between the four pixels round it as the web's
     /// reading has it (weatherlayers-gl's linear interpolation), the
-    /// nearest where one of them has none; nil outside the grid.
+    /// nearest where one of them has none; nil outside the grid. The
+    /// wind's speed is that of its parts read there, as the web and
+    /// Android read it: the four speeds' mean would be too fast where the
+    /// wind turns between pixels (two 20 kt winds from opposite sides are
+    /// calm between them, not 20 kt).
     func value(lat: Double, lon: Double) -> Double? {
-        sample(values, lat: lat, lon: lon)
+        guard let parts = parts(lat: lat, lon: lon) else { return sample(values, lat: lat, lon: lon) }
+        return (parts.u * parts.u + parts.v * parts.v).squareRoot()
+    }
+
+    /// The wind's east and north parts at a point, kt; nil for a field
+    /// with none, or off the grid.
+    private func parts(lat: Double, lon: Double) -> (u: Double, v: Double)? {
+        guard let east, let north,
+              let u = sample(east, lat: lat, lon: lon),
+              let v = sample(north, lat: lat, lon: lon)
+        else { return nil }
+        return (u, v)
     }
 
     /// Where the wind blows from, degrees true, at a point: its parts read
     /// as the speed is, turned round.
     func fromDeg(lat: Double, lon: Double) -> Double? {
-        guard let east, let north,
-              let u = sample(east.map { Optional($0) }, lat: lat, lon: lon),
-              let v = sample(north.map { Optional($0) }, lat: lat, lon: lon),
-              u != 0 || v != 0
-        else { return nil }
+        guard let (u, v) = parts(lat: lat, lon: lon), u != 0 || v != 0 else { return nil }
         let toward = atan2(u, v) * 180 / .pi
         return (toward + 180).truncatingRemainder(dividingBy: 360)
     }
