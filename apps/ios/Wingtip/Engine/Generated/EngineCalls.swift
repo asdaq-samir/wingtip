@@ -1549,6 +1549,11 @@ extension Engine {
         try Self.rule("solo_xc_determinations", EngineContract.SoloXcDeterminationsInput())
     }
 
+    /// The tab ForeFlight writes on a special-use area's boundary, its words: the area's name cut to nine characters after the type's letter ("M-BRADY NOR*"), and its floor and ceiling as figures with their references (SFC, AGL, MSL, FL, UNL), from the FAA's special use airspace data (ADDS: each limit's VAL in feet, a flight level times 100, its CODE SFC, MSL, STD or UNLTD and its DESC TI, TNI or ANI). Written as the FAA's CIFP writes the same areas: a ceiling "to but not including" FL180 is 17,999 ft MSL, as Class A begins at 18,000 ft MSL (14 CFR 71.33); another ceiling TNI a foot under its figure, a floor ANI a foot over it; SFC above 0 is that height AGL. Null for a piece the FAA cuts out of its area (EXCLUSION 1), or where a limit has no figure.
+    static func specialUseTab(name: String, type: String? = nil, floor: EngineContract.SpecialUseTabLimit? = nil, ceiling: EngineContract.SpecialUseTabLimit? = nil, excluded: Bool? = nil) throws -> EngineContract.SpecialUseTabAnswer? {
+        try Self.rule("special_use_tab", EngineContract.SpecialUseTabInput(name: name, type: type, floor: floor, ceiling: ceiling, excluded: excluded))
+    }
+
     /// What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.
     static func squawkMeaning(squawk: String? = nil) throws -> String? {
         try Self.rule("squawk_meaning", EngineContract.SquawkMeaningInput(squawk: squawk))

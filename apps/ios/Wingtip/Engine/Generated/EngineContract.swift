@@ -10799,6 +10799,37 @@ enum EngineContract {
     struct SoloXcDeterminationsInput: Codable, Equatable, Sendable {
     }
 
+    struct SpecialUseTabAnswer: Codable, Equatable, Sendable {
+        var name: String
+        var floorFt: Double?
+        var floorRef: String
+        var ceilingFt: Double?
+        var ceilingRef: String
+
+        enum CodingKeys: String, CodingKey {
+            case name
+            case floorFt = "floor_ft"
+            case floorRef = "floor_ref"
+            case ceilingFt = "ceiling_ft"
+            case ceilingRef = "ceiling_ref"
+        }
+    }
+
+    struct SpecialUseTabInput: Codable, Equatable, Sendable {
+        var name: String
+        var type: String?
+        var floor: EngineContract.SpecialUseTabLimit?
+        var ceiling: EngineContract.SpecialUseTabLimit?
+        var excluded: Bool?
+    }
+
+    /// One limit of a special-use area as the FAA's data gives it: its figure in feet (a flight level times 100), its CODE (SFC, MSL, STD, UNLTD) and its DESC (TI, TNI to but not including, ANI above but not including).
+    struct SpecialUseTabLimit: Codable, Equatable, Sendable {
+        var ft: Double?
+        var code: String?
+        var desc: String?
+    }
+
     struct SquawkMeaningInput: Codable, Equatable, Sendable {
         var squawk: String?
     }

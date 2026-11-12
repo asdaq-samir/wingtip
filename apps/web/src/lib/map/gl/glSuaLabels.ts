@@ -37,8 +37,8 @@ export const SUA_TAB_PICTURES: [id: string, svg: () => string, stretch?: Stretch
 /** A figure of the tab's as ForeFlight writes it: whole feet, no comma. */
 const feet = (field: string) => ["to-string", ["round", ["get", field]]];
 /** A limit in the tab's words, from the tiles' figure and its reference
- *  (services/jobs/charts/sua_labels.py `limit`, which turns the FAA's
- *  "to but not including" FL180 into 17999 as the FAA's CIFP does): the
+ *  (the engine's special_use_tab, which turns the FAA's "to but not
+ *  including" FL180 into 17999 as the FAA's CIFP does): the
  *  surface "SFC", above the ground "500AGL", a flight level "FL230", no
  *  ceiling "UNL", else feet MSL, "7000". */
 const limitText = (ft: string, ref: string) => [

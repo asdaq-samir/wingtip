@@ -87,7 +87,7 @@ _CACHE: TTLCache = TTLCache(maxsize=4, ttl=SERVE_HELD_S)
 #: Not before this (UNIX seconds) is the service asked again after a failure.
 _RETRY_AT = 0.0
 #: The day's areas kept on disk too, (fetched_at, [(properties, WKB,
-#: bounds)]): a restart within the day reads them back in under a second,
+#: bounds)], FIELDS): a restart within the day reads them back in under a second,
 #: where the download and building the shapes from GeoJSON was half a
 #: minute and 3 CPU-seconds of every planner start (2026-11-01).
 _DISK = Path(__file__).resolve().parents[3] / "data" / "raw" / "sua" / "special_use.v1.pkl"
@@ -98,8 +98,10 @@ _FETCH_LOCK = threading.Lock()
 PAGE = 2000
 #: UPPER_DESC and LOWER_DESC ("TNI" to, "ANI" above, but not including)
 #: and EXCLUSION (1: a piece cut out of its area) for the map's tabs
-#: (services/jobs/charts/sua_labels.py).
-_FIELDS = (
+#: (the engine's special_use_tab). Areas kept with other fields -- on
+#: disk, in the cycle pack, whose `sources` name them, and so the phones'
+#: packs -- are read again with these.
+FIELDS = (
     "NAME,TYPE_CODE,UPPER_VAL,UPPER_UOM,UPPER_CODE,UPPER_DESC,LOWER_VAL,LOWER_UOM,LOWER_CODE,LOWER_DESC,EXCLUSION,"
     "TIMESOFUSE,GMTOFFSET,DST_CODE,CONT_AGENT"
 )
@@ -173,7 +175,7 @@ def _download() -> list:
         params = {
             "where": "1=1",
             "outSR": "4326",
-            "outFields": _FIELDS,
+            "outFields": FIELDS,
             "returnGeometry": "true",
             "f": "geojson",
             "resultOffset": offset,
@@ -236,7 +238,7 @@ def _read_disk(max_age_s: float = HOLD_S) -> tuple[float, list] | None:
     from . import cycle_pack
 
     packed = cycle_pack.current()
-    if packed is not None and "sua.attr" in packed.sections:
+    if packed is not None and "sua.attr" in packed.sections and (packed.meta.get("sources") or {}).get("sua") == FIELDS:
         fetched_at = packed.meta.get("sua_fetched_at") or 0.0
         newer = _DISK.exists() and _DISK.stat().st_mtime > packed.built_at
         if 0 <= time.time() - fetched_at < max_age_s and not newer:
@@ -246,17 +248,23 @@ def _read_disk(max_age_s: float = HOLD_S) -> tuple[float, list] | None:
             ]
     try:
         with _DISK.open("rb") as f:
-            fetched_at, properties, wkb, bounds = pickle.load(f)
-    except Exception:  # noqa: BLE001 -- missing or damaged: downloaded again
+            fetched_at, properties, wkb, bounds, fields = pickle.load(f)
+    except Exception:  # noqa: BLE001 -- missing, damaged or of before FIELDS: downloaded again
         return None
-    if not 0 <= time.time() - fetched_at < max_age_s:
+    if not 0 <= time.time() - fetched_at < max_age_s or fields != FIELDS:
         return None
     shapes = shapely.from_wkb(wkb)
     return fetched_at, [({"properties": p}, g, tuple(b)) for p, g, b in zip(properties, shapes, bounds)]
 
 
 def _write_disk(fetched_at: float, held: list) -> None:
-    payload = (fetched_at, [f.get("properties") for f, _, _ in held], shapely.to_wkb([g for _, g, _ in held]), [b for _, _, b in held])
+    payload = (
+        fetched_at,
+        [f.get("properties") for f, _, _ in held],
+        shapely.to_wkb([g for _, g, _ in held]),
+        [b for _, _, b in held],
+        FIELDS,
+    )
     part = _DISK.with_suffix(".part")
     try:
         _DISK.parent.mkdir(parents=True, exist_ok=True)
@@ -329,7 +337,11 @@ def along_route(route_start: tuple, route_end: tuple, fixes: list | None = None)
 
 
 def _area(props: dict) -> dict:
-    """One area's description, from the feature service's fields."""
+    """One area's description, from the feature service's fields; the
+    limits' DESC (TI, TNI "to but not including", ANI "above but not
+    including") and whether the FAA cuts the piece out of its area
+    (EXCLUSION 1), which the engine's special_use_tab reads (in the phones'
+    packs too), None and False from areas read before FIELDS held them."""
     type_code = props.get("TYPE_CODE") or ""
     return {
         "name": props.get("NAME") or "(unnamed)",
@@ -339,10 +351,19 @@ def _area(props: dict) -> dict:
         "floor_ref": props.get("LOWER_CODE"),
         "ceiling_ft": _height_ft(props.get("UPPER_VAL"), props.get("UPPER_UOM"), props.get("UPPER_CODE")),
         "ceiling_ref": props.get("UPPER_CODE"),
+        "floor_desc": _text(props.get("LOWER_DESC")),
+        "ceiling_desc": _text(props.get("UPPER_DESC")),
+        "excluded": _text(props.get("EXCLUSION")) == "1",
         "times_of_use": props.get("TIMESOFUSE"),
         "time_zone": time_zone(props.get("GMTOFFSET"), props.get("DST_CODE")),
         "controlling_agency": props.get("CONT_AGENT"),
     }
+
+
+def _text(value) -> str | None:
+    """A field's text trimmed and upper case; None where it is empty."""
+    text = "" if value is None else str(value).strip().upper()
+    return text or None
 
 
 def time_zone(gmt_offset, dst_code) -> str | None:

@@ -57,11 +57,14 @@ fn point(out: &mut String, p: Pt) {
 /// MOA it lies in; an area two packs hold, once. `tab` is ForeFlight's tab
 /// on its boundary (crate::sua_tab), `{"name", "floor_ft", "floor_ref",
 /// "ceiling_ft", "ceiling_ref", "at": [lat, lon], "angle", "side"}`, null
-/// where its limits have no figure to write or the pack keeps no codes.
+/// where its limits have no figure to write, the pack keeps no codes, or
+/// the piece is one the FAA cuts out of its area (EXCLUSION). A pack
+/// written before the FAA's DESC was kept writes its limits as coded
+/// (FL180 where the area stops below it).
 pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east: f64) -> String {
     let view: Bbox = [west, south, east, north];
     let tolerance = tolerance_for(south, north);
-    let mut found: Vec<(bool, String, String)> = Vec::new();
+    let mut found: Vec<(bool, String, String, bool)> = Vec::new();
     let mut out: Vec<(bool, String)> = Vec::new();
     for p in packs {
         let (Some(layer), Some(alt), Some(names), Some(rec)) =
@@ -78,7 +81,12 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
                 continue;
             }
             let (Some(wkb), Some(name)) = (layer.wkb(i), text_at(names, r, 16)) else { continue };
-            if found.iter().any(|(_, k, n)| *k == kind && n == name) {
+            // What the pack keeps of the area besides (wingtip.sua `_area`):
+            // a piece cut out of an area has the area's name, and is told
+            // apart by it, so it neither hides the area nor has its tab.
+            let codes = described.and_then(|d| text_at(d, r, 8)).and_then(|t| json::parse(t).ok());
+            let excluded = matches!(codes.as_ref().and_then(|c| c.get("excluded")), Some(json::Value::Bool(true)));
+            if found.iter().any(|(_, k, n, x)| *k == kind && n == name && *x == excluded) {
                 continue;
             }
             let Some(polygons) = rings_of(wkb).map(oriented) else { continue };
@@ -99,7 +107,7 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
             if rings.is_empty() {
                 continue;
             }
-            found.push((restricted, kind.clone(), name.to_owned()));
+            found.push((restricted, kind.clone(), name.to_owned(), excluded));
             let mut o = String::from("{\"type\":");
             json::string(&mut o, &kind);
             o.push_str(",\"name\":");
@@ -125,10 +133,12 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
             o.push_str("],\"label\":");
             point(&mut o, (round5(label.0), round5(label.1)));
             o.push_str(",\"tab\":");
-            let codes = described.and_then(|d| text_at(d, r, 8)).and_then(|t| json::parse(t).ok());
-            let code = |key: &str| codes.as_ref().and_then(|c| c.get(key)).and_then(|v| v.as_str().map(str::to_owned));
+            let code = |key: &str| codes.as_ref().and_then(|c| c.get(key)).and_then(json::Value::as_str);
             if codes.is_some() {
-                tab(&mut o, &polygons, name, &kind, (f64_at(a, 8), code("floor_ref")), (f64_at(a, 16), code("ceiling_ref")));
+                let floor = sua_tab::Limit { ft: f64_at(a, 8).filter(|v| !v.is_nan()), code: code("floor_ref"), desc: code("floor_desc") };
+                let ceiling =
+                    sua_tab::Limit { ft: f64_at(a, 16).filter(|v| !v.is_nan()), code: code("ceiling_ref"), desc: code("ceiling_desc") };
+                tab(&mut o, &polygons, name, &kind, floor, ceiling, excluded);
             } else {
                 o.push_str("null");
             }
@@ -144,26 +154,13 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
 }
 
 /// An area's tab (crate::sua_tab), or null.
-fn tab(
-    o: &mut String, polygons: &[Polygon], name: &str, kind: &str, floor: (Option<f64>, Option<String>),
-    ceiling: (Option<f64>, Option<String>),
-) {
-    let (floor_ft, floor_ref) = sua_tab::limit(floor.0.filter(|v| !v.is_nan()), floor.1.as_deref());
-    let (ceiling_ft, ceiling_ref) = sua_tab::limit(ceiling.0.filter(|v| !v.is_nan()), ceiling.1.as_deref());
-    let (Some(floor_ref), Some(ceiling_ref), Some((at, angle, side))) = (floor_ref, ceiling_ref, sua_tab::edge_place(polygons)) else {
+fn tab(o: &mut String, polygons: &[Polygon], name: &str, kind: &str, floor: sua_tab::Limit, ceiling: sua_tab::Limit, excluded: bool) {
+    let (Some(t), Some((at, angle, side))) = (sua_tab::tab(name, kind, floor, ceiling, excluded), sua_tab::edge_place(polygons)) else {
         o.push_str("null");
         return;
     };
-    o.push_str("{\"name\":");
-    json::string(o, &sua_tab::label_name(name, kind));
-    o.push_str(",\"floor_ft\":");
-    json::opt_number(o, floor_ft);
-    o.push_str(",\"floor_ref\":");
-    json::string(o, floor_ref);
-    o.push_str(",\"ceiling_ft\":");
-    json::opt_number(o, ceiling_ft);
-    o.push_str(",\"ceiling_ref\":");
-    json::string(o, ceiling_ref);
+    o.push('{');
+    sua_tab::write_words(o, &t);
     o.push_str(",\"at\":");
     point(o, (round5(at.0), round5(at.1)));
     o.push_str(",\"angle\":");
@@ -245,14 +242,20 @@ mod tests {
 
     /// A phone pack of two areas, R-1 inside the MOA "Ash", and three fixes.
     fn pack() -> Vec<u8> {
+        pack_of(b"", [(0, 0), (0, 0)])
+    }
+
+    /// The same, each area's codes (`sua.json`, wingtip.sua `_area`) the
+    /// span of `described` given.
+    fn pack_of(described: &[u8], spans: [(u32, u32); 2]) -> Vec<u8> {
         let (r, moa) = (square(-88.0, 42.0), square(-88.5, 41.5));
         let mut wkb = r.clone();
         wkb.extend_from_slice(&moa);
         let off: Vec<u8> = [0u64, r.len() as u64, (r.len() + moa.len()) as u64].iter().flat_map(|v| v.to_le_bytes()).collect();
         let names = b"R-1Ash".to_vec();
-        let rec = |name: (u32, u32)| -> Vec<u8> {
+        let rec = |blob: (u32, u32), name: (u32, u32)| -> Vec<u8> {
             let mut b = f64::NAN.to_le_bytes().to_vec();
-            for v in [0u32, 0, name.0, name.1] {
+            for v in [blob.0, blob.1, name.0, name.1] {
                 b.extend_from_slice(&v.to_le_bytes());
             }
             b
@@ -267,15 +270,18 @@ mod tests {
             b
         };
         let fixes = br#"{"columns":["FIX_ID","LAT_DECIMAL","LONG_DECIMAL","FIX_USE_CODE","CHARTS"],"rows":[["CHERL","42.5","-87.5","RP","ENROUTE LOW,IAP"],["VPBNG","42.4","-87.9","VFR","SECTIONAL"],["ZZZAP","42.3","-87.7","WP","IAP"]]}"#.to_vec();
-        let sections: Vec<(&str, Vec<u8>)> = vec![
+        let mut sections: Vec<(&str, Vec<u8>)> = vec![
             ("sua.box", le(&[-88.0, 42.0, -87.0, 43.0, -88.5, 41.5, -87.5, 42.5])),
             ("sua.off", off),
             ("sua.wkb", wkb),
-            ("sua.rec", [rec((0, 3)), rec((3, 3))].concat()),
+            ("sua.rec", [rec(spans[0], (0, 3)), rec(spans[1], (3, 3))].concat()),
             ("sua.names", names),
             ("sua.alt", [alt(b"R", 0.0, 9000.0), alt(b"MOA", 500.0, f64::NAN)].concat()),
             ("fixes", fixes),
         ];
+        if !described.is_empty() {
+            sections.push(("sua.json", described.to_vec()));
+        }
         let start = HEADER + ENTRY * sections.len();
         let (mut table, mut body) = (Vec::new(), Vec::new());
         for (name, data) in &sections {
@@ -317,6 +323,27 @@ mod tests {
         assert_eq!((at(0), at(1)), (vec![42.0, -88.0], vec![42.0, -87.0]));
         // Out of the box: none.
         assert_eq!(special_use_in_view(&packs, 30.0, -100.0, 31.0, -99.0), "{\"areas\":[]}");
+    }
+
+    #[test]
+    fn a_tab_writes_to_but_not_including_and_an_excluded_piece_has_none() {
+        // R-1 SFC to 9,000 MSL "to but not including" (ADDS' UPPER_DESC
+        // TNI): 8999, as the FAA's CIFP writes it. "Ash" a piece the FAA
+        // cuts out of its area (EXCLUSION 1): drawn, with no tab.
+        let r = br#"{"floor_ref":"SFC","floor_desc":null,"ceiling_ref":"MSL","ceiling_desc":"TNI","excluded":false}"#;
+        let ash = br#"{"floor_ref":"SFC","ceiling_ref":"UNLTD","excluded":true}"#;
+        let described = [r.as_slice(), ash.as_slice()].concat();
+        let spans = [(0, r.len() as u32), (r.len() as u32, ash.len() as u32)];
+        let bytes = pack_of(&described, spans);
+        let packs = [Pack::read(&bytes).unwrap()];
+        let got = json::parse(&special_use_in_view(&packs, 41.0, -89.0, 43.0, -87.0)).unwrap();
+        let areas = got.get("areas").and_then(|a| a.as_array()).unwrap();
+        assert!(matches!(areas[0].get("tab"), Some(json::Value::Null)));
+        let tab = areas[1].get("tab").unwrap();
+        let word = |k: &str| tab.get(k).and_then(|v| v.as_str()).unwrap();
+        let figure = |k: &str| tab.get(k).and_then(|v| v.as_f64());
+        assert_eq!((word("name"), word("floor_ref"), word("ceiling_ref")), ("R-1", "SFC", "MSL"));
+        assert_eq!((figure("floor_ft"), figure("ceiling_ft")), (Some(0.0), Some(8999.0)));
     }
 
     #[test]
