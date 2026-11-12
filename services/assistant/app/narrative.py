@@ -30,7 +30,6 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from . import tracing
 from .schemas import NarrativeDelta, NarrativeDone, NarrativeError
 from .gateway import gateway
 from .settings import get_settings
@@ -284,21 +283,16 @@ def stream(request: NarrativeRequest) -> Iterator[str]:
     would take it as whole."""
     parts: list[str] = []
     try:
-        with (
-            tracing.claude_call("narrative", NARRATIVE_MODEL, current=False) as used,
-            _client().messages.stream(
-                model=NARRATIVE_MODEL,
-                max_tokens=NARRATIVE_MAX_TOKENS,
-                output_config={"effort": NARRATIVE_EFFORT},
-                messages=[{"role": "user", "content": prompt_for(request)}],
-            ) as said,
-        ):
+        with _client().messages.stream(
+            model=NARRATIVE_MODEL,
+            max_tokens=NARRATIVE_MAX_TOKENS,
+            output_config={"effort": NARRATIVE_EFFORT},
+            messages=[{"role": "user", "content": prompt_for(request)}],
+        ) as said:
             for text in said.text_stream:
                 parts.append(text)
                 yield _line(NarrativeDelta(text=text))
-            final = said.get_final_message()
-            used.add(final)
-            stop_reason = final.stop_reason
+            stop_reason = said.get_final_message().stop_reason
     except anthropic.AnthropicError as err:
         # No key, a refused one, no network, a limit: the reason is the
         # log's (CodeQL's py/stack-trace-exposure), the pilot's is plain.
