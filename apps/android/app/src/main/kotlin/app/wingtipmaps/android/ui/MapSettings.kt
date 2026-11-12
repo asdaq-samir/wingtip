@@ -21,6 +21,8 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.map.MapLayersStore
+import app.wingtipmaps.android.map.ModelWeatherRow
+import app.wingtipmaps.android.map.TerrainRow
 import app.wingtipmaps.android.map.WeatherLoopRows
 import app.wingtipmaps.android.plates.PlateCardModel
 import app.wingtipmaps.android.receiver.ReceiverSettingRows
@@ -46,8 +48,12 @@ fun MapSettingsRows() {
     ) {
         // The radar and satellite loop and its speed (map/WeatherLoop).
         WeatherLoopRows()
+        // The model weather's field (map/flow), with the loop as weather.
+        ModelWeatherRow()
         // What the map draws and the traffic over it, one group.
         MapLayerRows()
+        // The ground: Off, Relief or 3D (Map3dLayer).
+        TerrainRow()
         // Each reporting field's weather: halo, dot or station model.
         AirportWeatherRows()
         // Off unless kept on; on by itself in an emergency (GlideRing).

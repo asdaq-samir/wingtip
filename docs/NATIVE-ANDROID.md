@@ -53,8 +53,9 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     route, own ship and the path flown), `MapStyle` (the first style as
     JSON: the chart and the overlay tiles' layers, the web's
     `glStyle.ts` and `glOverlays.ts`), `OverlayPictures` (the symbols'
-    pictures, drawn with Canvas) and `MapLoading` (Material's loading
-    indicator until the map is drawn);
+    pictures, drawn with Canvas), `MapLoading` (Material's loading
+    indicator until the map is drawn), `Map3dLayer` (Terrain: the relief
+    and the 3D view) and `map/flow` (Model Weather);
   - `ui/`: Material 3 screens, one composable and one ViewModel per
     screen. `RootScreen` (the map, `MapPane`, under the docked sheet, whose
     first row is the one search, Material's `SearchBar`, with its mic and
@@ -257,6 +258,64 @@ and `glOverlays.ts`):
   a step a second between answers; own ship's own transponder left off
   (the engine's `own_ship_hex`). A tap opens its card, with Track, which
   rings it on the map.
+- **Terrain and 3D** (`Map3dLayer`, `MapTerrain`, the web's
+  `features/plan/map/terrain`): Map Settings' Terrain is a segmented
+  choice, Off, Relief or 3D. Relief shades the planner's terrain tiles
+  (`/api/terrain-tile`, terrarium, to {z} 13, a `RasterDemSource`) over
+  the chart with a `HillshadeLayer`, lit from the north-west as the
+  web's. 3D adds the relief, lets the map tilt (to 60 degrees, opening at
+  50) and turn, and stands up the Class B, C, D and surface E and the
+  special use areas in view as see-through `FillExtrusionLayer`s, one a
+  kind, from the planner's whole polygons (`/api/airspace/volumes`,
+  `AirspaceVolumes3d`), and drapes the way in to the open card's field or
+  the route's destination (the engine's `approach_scene`,
+  `ApproachScene3d`: the centrelines dashed, the glidepaths, the
+  approach's line and the pattern's ring). Flat and north up again after.
+- **What MapLibre Native can't do yet** (13.7.1, the newest stable on
+  2026-11-12; the `-globe` pre-releases add only the globe): no 3D
+  terrain (no `terrain` in the style or `setTerrain`; MapLibre's
+  `feature/terrain-3d` branch is a prototype), so the ground is not
+  raised and the volumes stand on a sea-level map, MSL figures as they
+  are, and a volume whose floor or top is above the ground (AGL, or SFC
+  with a figure) is left out, as the web leaves one out until its ground
+  is in; no `sky` or fog; no `raster-color`; no `line-z-offset`, so the
+  route and the approach are draped, not drawn at their altitudes; no
+  `symbol-height-offset`, so the traffic keeps its 2D marks and "+12"
+  tags on the ground and the special use areas' names stay the chart's
+  tabs; a maximum pitch of 60 (GL JS's 75); `fill-extrusion-opacity` is a
+  layer's alone, so each kind is its own layer, and an extrusion layer
+  draws its own nearest walls over its farther ones (the web's
+  `depthWriteEnabled: false` has no counterpart), so two volumes of one
+  kind are not seen through each other. It does draw `hillshade` and
+  `color-relief`, but the terrain clearance tint needs each terrain tile
+  rewritten against the plan (the web's `addProtocol`), which MapLibre
+  Native has no hook for; it is not drawn. The volumes' taps open nothing
+  of their own: their lines on the chart open the card as before.
+- **Model Weather** (`map/flow`, the web's `features/weather-flow`): Map
+  Settings' Weather has Model Weather, a menu of the web's twelve fields.
+  `ModelWeather` holds the planner's timeline (`/api/weather/flow`, every
+  ten minutes), the hour shown, play (once through, stopping on the last,
+  never with animations off, paused in the background), the wind level
+  and the precipitation's 1h | 12h span. `ModelWeatherLayer` fetches the
+  hour's picture at its version, decodes it (`FlowGrid`: red the value
+  between the field's `unscale`, the wind's east part in red and north in
+  green, alpha 0 none), colours it on the phone by the field's ramp
+  (`FlowLooks`, from the engine's `model_weather_bands` and
+  `aviation_grid_bands` and the tokens' `color.weather.flow-*`) into a
+  picture of the Web Mercator plane (`Painted`: the grid is equal-degree,
+  and MapLibre's `ImageSource` stretches between corners on the Mercator
+  plane), and lays it under the route at the field's cover; the radar's
+  mosaic in its place on the 1h span for an hour past; and the hour's
+  G-AIRMETs, dashed, with the engine's `gairmet_hazards` labels.
+  `ModelWeatherBar` is Material 3 Expressive's floating toolbar (Play,
+  the hour's `Slider`, the 1h | 12h `SegmentedButton`), a legend `Card`
+  (unit, ramp, marks, the level's `ExposedDropdownMenu`, "AWC winds,
+  12Z"), and the value where a tap found nothing else (`FlowReading`,
+  its words the engine's). No streaks. Unlike the web's bubble, the
+  reading is a card under the legend rather than a badge on the map, the
+  precipitation's reading has no temperature or sky glyph, and the wind
+  at a level no temperature; the world wind's picture beyond the grid is
+  not drawn.
 
 ## Downloads: the chart with no signal
 
