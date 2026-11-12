@@ -65,7 +65,7 @@ from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
 from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words, plates
-from .routers import studio, studio_drafts
+from .routers import studio, studio_drafts, studio_history, weather_flow
 from .routers import engine as engine_router, forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
 from .schemas.common import Index
 from .settings import get_settings
@@ -404,45 +404,17 @@ def index() -> Index:
     return Index(service="planner", ui="served by the gateway at /app", warm=WARM.is_set())
 
 
-for module in (
-    plan,
-    chart,
-    briefing,
-    notes,
-    devml,
-    system,
-    classb,
-    devservices,
-    airports,
-    airspace_router,
-    traffic,
-    basemaps,
-    route_options,
-    gonogo,
-    figures,
-    clearance,
-    packs,
-    words,
-    weather_map,
-    weather_loop,
-    forecast_run,
-    pilot,
-    live,
-    feeds,
-    terrain,
-    window,
-    emergency,
-    copilot,
-    engine_router,
-    logbook_draft,
-    notam_rank,
-    offline,
-    coach,
-    mcp,
-    plates,
-    studio,
-    studio_drafts,
-):
-    app.include_router(module.router)
+# Every router, here and not inside another (.importlinter's
+# routers-independent), in the order their paths are matched and the
+# OpenAPI document lists them; a few to a line, as main is at its size.
+ROUTERS = (
+    (plan, chart, briefing, notes, devml, system, classb, devservices, airports, airspace_router, traffic, basemaps),
+    (route_options, gonogo, figures, clearance, packs, words, weather_map, weather_flow, weather_loop, forecast_run),
+    (pilot, live, feeds, terrain, window, emergency, copilot, engine_router, logbook_draft, notam_rank, offline, coach),
+    (mcp, plates, studio_history, studio, studio_drafts),
+)
+for group in ROUTERS:
+    for module in group:
+        app.include_router(module.router)
 
 app.openapi = openapi_document.with_streams(app)
