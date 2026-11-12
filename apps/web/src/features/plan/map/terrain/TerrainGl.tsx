@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { slotId, useGlMap } from "../../../../lib/map/gl/glLayer";
+import AirspaceVolumesGl from "./AirspaceVolumesGl";
 import AloftGl from "./AloftGl";
 import ApproachGl from "./ApproachGl";
 import type { ProcedureDrawing } from "../../../../lib/api/types";
@@ -97,6 +98,7 @@ export default function TerrainGl({
     <>
       <SkyGl />
       <ObstaclesGl />
+      <AirspaceVolumesGl />
       {aloft && aloft.length > 1 && <AloftGl points={aloft} />}
       {aloft && aloft.length > 1 && !pilot && <ClearanceGl points={aloft} />}
       {field && <ApproachGl key={field} ident={field} picked={procedures} />}

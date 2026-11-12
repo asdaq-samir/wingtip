@@ -63,3 +63,7 @@ services/planner/wingtip/profile.py 1
 services/planner/wingtip/datis.py 1
 services/planner/wingtip/procedure_paths.py 1
 services/planner/wingtip/procedures.py 1
+# The 3D map's airspace volumes: where a special use area or TFR with no
+# top (UNL) is drawn to, the floor of Class A (14 CFR 71.33). A drawing
+# bound; the card writes it unlimited, and Class A is never drawn.
+apps/web/src/features/plan/map/terrain/airspaceHeights.ts 1
