@@ -5,18 +5,14 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.ECPrivateKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ssl.pem.PemContent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -187,12 +183,13 @@ public class OAuthClientsConfig {
         }
     }
 
-    private ECPrivateKey parseApplePrivateKey() throws NoSuchAlgorithmException, InvalidKeySpecException {
-        String base64 = applePrivateKeyPem
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replaceAll("\\s", "");
-        byte[] der = Base64.getDecoder().decode(base64);
-        return (ECPrivateKey) KeyFactory.getInstance("EC").generatePrivate(new PKCS8EncodedKeySpec(der));
+    /** The .p8 key Apple gives, PKCS#8 PEM with its line breaks, read by
+     *  Boot's own PEM reader. */
+    private ECPrivateKey parseApplePrivateKey() {
+        PemContent pem = PemContent.of(applePrivateKeyPem);
+        if (pem == null || !(pem.getPrivateKey() instanceof ECPrivateKey key)) {
+            throw new IllegalArgumentException("APPLE_PRIVATE_KEY is not an EC private key in PEM");
+        }
+        return key;
     }
 }

@@ -1,4 +1,12 @@
 spring:
+  # Each request, each streamed answer piped from the planner and each
+  # scheduled job on a virtual thread (JDK 25, where a thread waiting in
+  # synchronized no longer pins its carrier): a nav log or a detection
+  # stream holds its thread for minutes while it waits on the planner,
+  # and no longer holds one of Tomcat's 200 to do it.
+  threads:
+    virtual:
+      enabled: true
   mvc:
     async:
       # PlannerProxyController's streamed responses (detect/stream,

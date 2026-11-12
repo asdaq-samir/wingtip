@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{page :: head('Connect')}"></head>
+<body>
+<h1>You are signed in</h1>
+<p>Continue to choose what your AI app may do.</p>
+<a class="button" th:href="${authorizeUrl}">Continue</a>
+</body>
+</html>
