@@ -84,7 +84,6 @@ struct OneSearch: ViewModifier {
             .task(id: ownShip.fix.map { "\(($0.coordinate.latitude * 60).rounded()),\(($0.coordinate.longitude * 60).rounded())" }) {
                 await model.findNearest(ownShip.fix)
             }
-            .accessibilityIdentifier("one-search")
     }
 
     private func pick(_ picked: SearchPick) {

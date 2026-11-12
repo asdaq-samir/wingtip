@@ -143,7 +143,11 @@ struct RootView: View {
                 // A card as a scene keeps it (`-card @KOSH`, `-card +map`),
                 // for the card rule's UI tests (CardRuleTests).
                 nav.open(page)
-            } else {
+            } else if !arguments.contains("-fresh") {
+                // A fresh launch (the UI tests', CI's pictures') starts
+                // clean: the card the last launch kept came back over a
+                // screen the build does not know (`-screen search`), so
+                // one test's KOSH card sat under the next test's sheet.
                 nav.restore(SheetPage.restore(scenePages))
             }
         }

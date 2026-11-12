@@ -7,7 +7,7 @@ import XCTest
 /// lands on FPL (twice to the same field too) and the empty box's close
 /// then goes back to that card, a card opened over Search closes back to
 /// Search, and an up or down drag still sizes the sheet on either page.
-/// Offline: Fly Here sets the destination whatever the planner answers.
+/// Offline, but for Fly Here, whose card needs the planner (PlannerHost).
 final class SheetCarouselTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -60,7 +60,10 @@ final class SheetCarouselTests: XCTestCase {
     }
 
     @MainActor
-    func testFlyHereLandsOnFplEvenToTheSameFieldAgain() throws {
+    func testFlyHereLandsOnFplEvenToTheSameFieldAgain() async throws {
+        // The field's card, and so its Fly Here, is the planner's answer:
+        // with no planner the card shows only that it could not be had.
+        try await PlannerHost.skipWithoutAddress()
         let app = CardTests.launch(["-card", "@KOSH"], size: [])
         let dots = dots(app)
         for time in ["first", "second"] {

@@ -9,8 +9,12 @@ import XCTest
 final class PlateMapTests: XCTestCase {
     private static let planner: TimeInterval = 120
 
-    override func setUp() {
+    /// The procedures and the plate are the planner's, so with no planner
+    /// to ask this is skipped as FlowTests are (PlannerHost), not failed.
+    override func setUp() async throws {
+        try await super.setUp()
         continueAfterFailure = false
+        try await PlannerHost.skipWithoutAddress()
     }
 
     @MainActor

@@ -34,6 +34,12 @@ struct SheetPager<Search: View, Fpl: View>: View {
             fpl().tag(PlanPage.fpl)
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
+        // A container of its own, so the identifier names the pager while
+        // the pages' elements keep theirs. (The one search's modifier,
+        // applied over this view in PlanSheet, set "one-search" on it too,
+        // which nothing asked for and which hid "sheet-pager" from the UI
+        // tests; it is gone.)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("sheet-pager")
     }
 }

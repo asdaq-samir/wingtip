@@ -62,7 +62,12 @@ struct RouteEndsRow: View {
     /// the look's own colour on the tint (glassProminentButton).
     private var planButton: some View {
         Button { focused.wrappedValue = nil; plan.plan() } label: {
-            Text("Plan").frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : nil)
+            // Its whole height and as many lines as it needs at every size,
+            // over the glass button's one line: the empty route box (FPL
+            // with no route, since the welcome went) put it before the
+            // largest text's audit, which found its word clipped.
+            Text("Plan").lineLimit(nil).frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : nil)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .glassProminentButton()
         // ⌘Return plans from an iPad's keyboard; Return in a field
