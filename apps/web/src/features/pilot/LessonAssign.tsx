@@ -14,6 +14,7 @@ import { said } from "../../lib/endorsements";
 import { procedureQuery, proceduresQuery } from "../../lib/queryClient";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
+import { FieldError } from "../../components/ui/field";
 
 // Its own chunk, as on a flight's page: drawn only where a track came.
 const ApproachDebriefs = lazy(() => import("../../components/ApproachDebrief"));
@@ -138,9 +139,9 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
             Fetching its approaches…
           </p>
         ) : list.error ? (
-          <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+          <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
             Its approaches could not be had ({list.error.message}).
-          </p>
+          </FieldError>
         ) : approaches.length === 0 ? (
           <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>No instrument approaches at {ident}</p>
         ) : (
@@ -174,9 +175,9 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
             Fetching its fixes…
           </p>
         ) : drawing.error ? (
-          <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+          <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
             Its fixes could not be had ({drawing.error.message}).
-          </p>
+          </FieldError>
         ) : (
           // A note at a fix, shown to the student on the lesson's brief and
           // as it is flown there ("Your instructor: …").
@@ -195,11 +196,7 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
         />
         <ListRow title="Cancel" onClick={onCancel} />
       </ListGroup>
-      {assign.error && (
-        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
-          {assign.error.message}
-        </p>
-      )}
+      {assign.error && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{assign.error.message}</FieldError>}
     </div>
   );
 }
@@ -271,11 +268,7 @@ function LessonDetail({ lesson, studentId, onDone }: { lesson: ApproachLesson; s
         />
         <ListRow title="Done" onClick={() => onDone()} data-testid="lesson-done" />
       </ListGroup>
-      {remove.error && (
-        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
-          {remove.error.message}
-        </p>
-      )}
+      {remove.error && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{remove.error.message}</FieldError>}
     </div>
   );
 }
@@ -309,9 +302,9 @@ function LessonDebrief({ lesson, studentId }: { lesson: ApproachLesson; studentI
         </ListGroup>
       </ListChoices>
       {track.error ? (
-        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+        <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
           Its track could not be fetched ({track.error.message}).
-        </p>
+        </FieldError>
       ) : track.data ? (
         <Suspense fallback={null}>
           <ApproachDebriefs

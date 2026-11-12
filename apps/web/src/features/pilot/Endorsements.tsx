@@ -13,6 +13,7 @@ import { lapseWarning, said, signatureLine } from "../../lib/endorsements";
 import { localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
+import { FieldError } from "../../components/ui/field";
 
 /** "Good to 11 Jan 2027", or in red once it has run out. */
 export function GoodTo({ until }: { until: string | null | undefined }) {
@@ -205,9 +206,9 @@ export function SignForm({
         <ListRow title="Cancel" onClick={onCancel} />
       </ListGroup>
       {sign.error && (
-        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="sign-problem">
+        <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="sign-problem">
           {sign.error.message}
-        </p>
+        </FieldError>
       )}
     </div>
   );

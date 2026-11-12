@@ -1,5 +1,6 @@
-import { useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { FileTrigger } from "react-aria-components";
+import { Pressable } from "react-aria/Pressable";
 import { Camera } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "./ui/button";
@@ -8,6 +9,7 @@ import { readPage } from "../lib/documentPhoto";
 import { FINDING_TONE } from "../lib/findings";
 import { TEXT } from "../lib/text";
 import { useClaudeOn } from "../lib/subscription";
+import { FieldError } from "./ui/field";
 
 /**
  * The clearance card's "From a Photo": a clearance or ATIS copied down on
@@ -23,43 +25,39 @@ export default function ClearancePhoto(props: { onRead: (said: string) => void }
 }
 
 function ReadClearancePhoto({ onRead }: { onRead: (said: string) => void }) {
-  const input = useRef<HTMLInputElement>(null);
   const reading = useMutation({ mutationFn: (photo: Blob) => readPage("clearance", photo) });
   const note = reading.data?.clearance;
   return (
     <div className="flex flex-col gap-2" data-testid="clearance-photo">
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
+      {/* React Aria's FileTrigger: the hidden file input, opened by the button. */}
+      <FileTrigger
+        acceptedFileTypes={["image/*"]}
+        defaultCamera="environment"
         data-testid="clearance-photo-file"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
+        onSelect={(files) => {
+          const f = files?.[0];
           if (f) reading.mutate(f);
-          e.target.value = "";
         }}
-      />
-      <Button
-        variant="ghost"
-        size="sm"
-        className="self-start text-tint"
-        onClick={() => input.current?.click()}
-        disabled={reading.isPending}
-        data-testid="clearance-photo-take"
       >
-        {reading.isPending ? <Spinner aria-hidden /> : <Camera aria-hidden="true" />} From a Photo
-      </Button>
+        <Pressable isDisabled={reading.isPending}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="self-start text-tint"
+            disabled={reading.isPending}
+            data-testid="clearance-photo-take"
+          >
+            {reading.isPending ? <Spinner aria-hidden /> : <Camera aria-hidden="true" />} From a Photo
+          </Button>
+        </Pressable>
+      </FileTrigger>
       {reading.isPending && (
         <p role="status" className={cn("text-muted-foreground", TEXT.detail)}>
           Reading the note…
         </p>
       )}
       {reading.error && (
-        <p role="alert" className={cn(FINDING_TONE.stop, TEXT.detail)}>
-          The note could not be read: {reading.error.message}
-        </p>
+        <FieldError className={cn(FINDING_TONE.stop, TEXT.detail)}>The note could not be read: {reading.error.message}</FieldError>
       )}
       {reading.data?.unreadable && (
         <p role="alert" className={cn(FINDING_TONE.caution, TEXT.detail)}>

@@ -9,6 +9,7 @@ import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 import { HOUR_FINDING, HOUR_WORD, bestLine, clock, dayOf, hourFigures, hourLabel } from "./hourWords";
 import { useDepartureWindow } from "./useDepartureWindow";
+import { FieldError } from "../../components/ui/field";
 
 /** Each hour's tile's tint, as the Brief's verdict is tinted: the colour
  *  beside a mark of its own shape, never the colour alone. */
@@ -41,9 +42,9 @@ export default function DepartureWindowStrip() {
         </p>
       ) : m.error ? (
         // Where it happened, not a toast (lib/problems).
-        <p className={cn(TEXT.detail, "text-muted-foreground")} role="alert" data-testid="departure-window-error">
+        <FieldError className={cn(TEXT.detail, "text-muted-foreground")} data-testid="departure-window-error">
           Hours unavailable: {describeError(m.error, "the planner did not answer")}
-        </p>
+        </FieldError>
       ) : m.pending ? (
         <div className="flex gap-2" aria-busy="true" data-testid="departure-window-pending">
           {Array.from({ length: 6 }, (_, i) => (

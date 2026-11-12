@@ -7,6 +7,7 @@ import { ApiError, api } from "../../lib/api/client";
 import { pilotQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
 import { TV_CODE_LENGTH, fromTvAddress, tvCode } from "./tvCode";
+import { FieldError } from "../../components/ui/field";
 
 // Loaded when it is drawn: the sign-in sheet out of the first load.
 const SignInModal = lazy(() => import("../../components/SignInModal"));
@@ -91,14 +92,14 @@ export default function TvLink() {
             />
           </Suspense>
           {short && (
-            <p role="alert" className={`text-destructive-ink ${TEXT.prose}`} data-testid="tv-link-short">
+            <FieldError className={`text-destructive-ink ${TEXT.prose}`} data-testid="tv-link-short">
               Enter all {TV_CODE_LENGTH} characters the TV shows.
-            </p>
+            </FieldError>
           )}
           {approve.isError && (
-            <p role="alert" className={`text-destructive ${TEXT.prose}`} data-testid="tv-link-error">
+            <FieldError className={`text-destructive ${TEXT.prose}`} data-testid="tv-link-error">
               {approve.error instanceof ApiError ? approve.error.message : "Couldn't reach the server. Try again."}
-            </p>
+            </FieldError>
           )}
           <Button type="submit" disabled={approve.isPending} aria-busy={approve.isPending} data-testid="tv-link-approve">
             Sign in the TV

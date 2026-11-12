@@ -8,6 +8,7 @@ import type { NeedsFigure } from "../../lib/airplane/figures";
 import { useAskFigure } from "../../lib/airplane/useAskFigure";
 import { requestAirplanePick } from "../../lib/pickAirplane";
 import { TEXT } from "../../lib/text";
+import { FieldError } from "../ui/field";
 
 /**
  * Where an airplane figure is needed and the airplane has none, the one ask
@@ -80,11 +81,7 @@ export function AskFigure({
           />
           <span className="text-muted-foreground">{words.unit}</span>
         </span>
-        {vm.problem && (
-          <p className={cn("text-destructive-ink", TEXT.detail)} role="alert">
-            {vm.problem}
-          </p>
-        )}
+        {vm.problem && <FieldError className={cn("text-destructive-ink", TEXT.detail)}>{vm.problem}</FieldError>}
         <span className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <Button type="submit" size="sm" disabled={vm.saving || vm.typed == null} data-testid="ask-save">
             {vm.saving ? "Saving…" : "Save"}

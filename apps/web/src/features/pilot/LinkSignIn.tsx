@@ -5,6 +5,7 @@ import SheetDialog from "../../components/SheetDialog";
 import { ApiError, api } from "../../lib/api/client";
 import { TEXT } from "../../lib/text";
 import { linkAccount } from "./linkAccount";
+import { FieldError } from "../../components/ui/field";
 
 /** The token an emailed sign-in link brought, from the address's
  *  fragment (`#signin=…`), where the link's redirect put it
@@ -73,11 +74,11 @@ export default function LinkSignIn() {
       action={{ label: "Sign in", onClick: () => finish.mutate(token), disabled: finish.isPending || spent || account.isPending }}
     >
       {(finish.isError || spent) && (
-        <p role="alert" className={`text-destructive ${TEXT.prose}`}>
+        <FieldError className={`text-destructive ${TEXT.prose}`}>
           {spent
             ? "This link has expired or was already used. Ask for a new one from the pilot console."
             : "Couldn't sign in just now. Try again."}
-        </p>
+        </FieldError>
       )}
     </SheetDialog>
   );

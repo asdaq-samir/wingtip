@@ -1,16 +1,17 @@
 import { useEffect } from "react";
-import { PICK_AIRPLANE_EVENT } from "../../../lib/pickAirplane";
+import { useAirplanePick } from "../../../lib/pickAirplane";
 import type { PanelView } from "./usePanelView";
 
-/** Answers lib/pickAirplane's ask: FPL picked, then its airplane field
- *  (FlightInputs' InlineField, "aircraft-select") focused once drawn. */
+/** Answers lib/pickAirplane's ask: FPL picked, at once, as the ask is
+ *  made; the airplane field (FlightInputs) then focuses itself once drawn. */
 export function usePickAirplaneRequest(pickView: (view: PanelView) => void): void {
-  useEffect(() => {
-    const open = () => {
-      pickView("plan");
-      requestAnimationFrame(() => document.querySelector<HTMLInputElement>('[data-testid="aircraft-select"] input')?.focus());
-    };
-    window.addEventListener(PICK_AIRPLANE_EVENT, open);
-    return () => window.removeEventListener(PICK_AIRPLANE_EVENT, open);
-  }, [pickView]);
+  useEffect(
+    () =>
+      // Each ask, asked again while one waits too (the store's state is new
+      // at every set).
+      useAirplanePick.subscribe((now) => {
+        if (now.pending) pickView("plan");
+      }),
+    [pickView],
+  );
 }

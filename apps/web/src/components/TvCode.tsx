@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api/client";
 import { TEXT } from "../lib/text";
+import { FieldError } from "./ui/field";
 
 /**
  * Signing in on a TV, at the owner's ask (#207): the emailed link opens on
@@ -54,11 +55,7 @@ export default function TvCode() {
       <p className="font-mono text-4xl font-bold tracking-widest tabular-nums" data-testid="tv-code" aria-live="polite">
         {code?.userCode ?? "····-····"}
       </p>
-      {failed && (
-        <p role="alert" className={`text-destructive ${TEXT.prose}`}>
-          Couldn't get a code. Check the TV's connection.
-        </p>
-      )}
+      {failed && <FieldError className={`text-destructive ${TEXT.prose}`}>Couldn't get a code. Check the TV's connection.</FieldError>}
     </div>
   );
 }

@@ -1,4 +1,6 @@
-import { useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { FileTrigger } from "react-aria-components";
+import { Pressable } from "react-aria/Pressable";
 import { Camera } from "lucide-react";
 import { cn } from "cn";
 import SheetDialog from "../../components/SheetDialog";
@@ -8,6 +10,7 @@ import { FINDING_TONE } from "../../lib/findings";
 import { FLAG_FINDING, type FlagLevel } from "../../lib/documentPhoto";
 import { TEXT } from "../../lib/text";
 import type { DocumentPhoto } from "./useDocumentPhoto";
+import { FieldError } from "../../components/ui/field";
 
 /** A check's flags under what it is about: "wrong" in the stop's tone,
  *  "check" in the caution's; the pilot reads them against the page. */
@@ -50,7 +53,6 @@ export default function PhotoSheet({
   children?: ReactNode;
   testId: string;
 }) {
-  const input = useRef<HTMLInputElement>(null);
   const answer = photo.answer;
   return (
     <SheetDialog
@@ -63,22 +65,22 @@ export default function PhotoSheet({
       description="Every figure is checked, and only what you confirm is kept."
     >
       {choose}
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
+      {/* React Aria's FileTrigger: the hidden file input, opened by the button. */}
+      <FileTrigger
+        acceptedFileTypes={["image/*"]}
+        defaultCamera="environment"
         data-testid={`${testId}-file`}
-        onChange={(e) => {
-          const f = e.target.files?.[0];
+        onSelect={(files) => {
+          const f = files?.[0];
           if (f) photo.read(f);
-          e.target.value = "";
         }}
-      />
-      <Button variant="outline" onClick={() => input.current?.click()} disabled={photo.reading} data-testid={`${testId}-take`}>
-        <Camera aria-hidden="true" /> {answer ? "Another Photo" : "Take or Choose a Photo"}
-      </Button>
+      >
+        <Pressable isDisabled={photo.reading}>
+          <Button variant="outline" disabled={photo.reading} data-testid={`${testId}-take`}>
+            <Camera aria-hidden="true" /> {answer ? "Another Photo" : "Take or Choose a Photo"}
+          </Button>
+        </Pressable>
+      </FileTrigger>
       {photo.reading && (
         <>
           <p role="status" className={cn("text-muted-foreground", TEXT.prose)}>
@@ -88,9 +90,7 @@ export default function PhotoSheet({
         </>
       )}
       {photo.readError && (
-        <p role="alert" className={cn(FINDING_TONE.stop, TEXT.prose)}>
-          The page could not be read: {photo.readError.message}
-        </p>
+        <FieldError className={cn(FINDING_TONE.stop, TEXT.prose)}>The page could not be read: {photo.readError.message}</FieldError>
       )}
       {answer?.unreadable && (
         <p role="alert" className={cn(FINDING_TONE.caution, TEXT.prose)}>

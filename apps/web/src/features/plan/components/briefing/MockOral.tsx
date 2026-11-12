@@ -14,6 +14,7 @@ import { TEXT } from "../../../../lib/text";
 import { useAcsTable } from "../../../../lib/useAcsTable";
 import { FINDING_TONE } from "../../../../lib/findings";
 import { Spinner } from "../../../../components/ui/spinner";
+import { FieldError } from "../../../../components/ui/field";
 
 const VERDICT: Record<OralGrade["verdict"], { words: string; tone: "up" | "checking" | "down" }> = {
   satisfactory: { words: "Satisfactory", tone: "up" },
@@ -170,11 +171,7 @@ export default function MockOral({ plan }: { plan: string }) {
         </Button>
       )}
 
-      {problem && (
-        <p className={cn(FINDING_TONE.stop, TEXT.prose)} role="alert">
-          {problem.message}
-        </p>
-      )}
+      {problem && <FieldError className={cn(FINDING_TONE.stop, TEXT.prose)}>{problem.message}</FieldError>}
     </div>
   );
 }

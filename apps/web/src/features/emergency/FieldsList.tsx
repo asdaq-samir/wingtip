@@ -7,7 +7,7 @@ import QueryState from "../../components/QueryState";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 import { spokenDistance, spokenHeadingMagnetic, spokenHeadingTrue, threeFigures } from "../../lib/format";
-import { announce } from "../../lib/announce";
+import { announce } from "@react-aria/live-announcer";
 import type { EmergencyModel } from "./useEmergency";
 
 /**

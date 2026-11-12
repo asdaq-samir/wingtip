@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api/client";
-import { announce } from "../../lib/announce";
+import { announce } from "@react-aria/live-announcer";
 import { useFlying } from "../../lib/mapChrome";
 import { useCopilotFlight } from "../../lib/copilot/flight";
 import { copilotVoice } from "../../lib/copilot/voice";

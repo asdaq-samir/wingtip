@@ -1,5 +1,7 @@
 // The debrief's tolerances and marks are the engine's (debrief.rs), the very ones the planner and the phones give.
-import { Suspense, lazy, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, lazy, useMemo, useState, type ReactNode } from "react";
+import { FileTrigger } from "react-aria-components";
+import { Pressable } from "react-aria/Pressable";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Upload, X } from "lucide-react";
 import { cn } from "cn";
@@ -22,6 +24,7 @@ import { ReviewAskForm, type ReviewAsk } from "../../components/ReviewAsk";
 import { FINDING_TONE } from "../../lib/findings";
 import { airportQuery, trainingQuery } from "../../lib/queryClient";
 import { proceduresOf, sameField } from "../../lib/procedures";
+import { FieldError } from "../../components/ui/field";
 
 // Its own chunk: the approach's debrief is drawn only where a track came
 // down a final, and asks for the field's procedures as it is.
@@ -217,8 +220,6 @@ type Track = { source: string; points: TrackPoint[] };
  * can be forgotten.
  */
 function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string }) {
-  const inputId = useId();
-  const input = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const [local, setLocal] = useState<Track | null>(() => keptTrack(flight.id));
   const [problem, setProblem] = useState<string | null>(null);
@@ -295,12 +296,23 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
             data-testid="debrief-source"
           />
         )}
-        <ListRow
-          title={track ? "Import another track" : "Import a track"}
-          media={<Upload className="size-5" aria-hidden />}
-          onClick={() => input.current?.click()}
-          data-testid="debrief-import"
-        />
+        {/* React Aria's FileTrigger: the hidden file input, opened by the row. */}
+        <FileTrigger
+          acceptedFileTypes={[".gpx", ".kml", "application/gpx+xml", "application/vnd.google-earth.kml+xml"]}
+          data-testid="debrief-file"
+          onSelect={(files) => {
+            const file = files?.[0];
+            if (file) void read(file);
+          }}
+        >
+          <Pressable>
+            <ListRow
+              title={track ? "Import another track" : "Import a track"}
+              media={<Upload className="size-5" aria-hidden />}
+              data-testid="debrief-import"
+            />
+          </Pressable>
+        </FileTrigger>
         {track && !onAccount && (
           <ListRow title="Save to your account" onClick={() => save.mutate(track)} disabled={save.isPending} data-testid="debrief-save" />
         )}
@@ -334,23 +346,10 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
           </ConsoleClose>
         )}
       </ListGroup>
-      <input
-        ref={input}
-        id={inputId}
-        type="file"
-        className="hidden"
-        accept=".gpx,.kml,application/gpx+xml,application/vnd.google-earth.kml+xml"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (file) void read(file);
-        }}
-        data-testid="debrief-file"
-      />
       {(problem || save.error || unsave.error) && (
-        <p className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} role="alert" data-testid="debrief-problem">
+        <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="debrief-problem">
           {problem ?? (save.error ?? unsave.error)?.message}
-        </p>
+        </FieldError>
       )}
       {track && !result && (
         <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>No flight in this track: it never went faster than taxiing.</p>
@@ -417,9 +416,9 @@ function InstructorReview({ summary }: { summary: FlightSummary }) {
         />
       )}
       {ask.error && (
-        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="review-problem">
+        <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="review-problem">
           {ask.error.message}
-        </p>
+        </FieldError>
       )}
     </>
   );

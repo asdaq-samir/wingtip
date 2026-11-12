@@ -6,6 +6,7 @@ import { useRadioActions } from "../../lib/atcRadio";
 import { usePointActions } from "../../lib/map/cards/pointActions";
 import { TEXT } from "../../lib/text";
 import type { EmergencyModel } from "./useEmergency";
+import { FieldError } from "../../components/ui/field";
 
 /**
  * Direct To the field picked -- the engine's best until the pilot picks
@@ -47,9 +48,9 @@ export default function DirectToField({ vm }: { vm: EmergencyModel }) {
         {ACTION.directTo.label} {picked.ident}
       </Button>
       {why && (
-        <p className={cn("text-destructive-ink", TEXT.note)} role="alert" data-testid="emergency-direct-to-why">
+        <FieldError className={cn("text-destructive-ink", TEXT.note)} data-testid="emergency-direct-to-why">
           {why}
-        </p>
+        </FieldError>
       )}
     </div>
   );

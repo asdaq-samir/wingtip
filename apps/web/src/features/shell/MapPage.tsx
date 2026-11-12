@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { showError } from "../../lib/problems";
 import { patched, useSearchParamsNow } from "../../lib/useSearchParamsNow";
 import { Shown } from "../../lib/shown";
@@ -153,14 +153,21 @@ export default function MapPage({ mode }: { mode: Mode }) {
   const consoleOpen = useConsoleOpen((s) => s.open);
   const setConsoleOpen = useConsoleOpen((s) => s.setOpen);
   // The sheet is drawn once, with no trigger of its own: its button is the
-  // account button (`data-console-button`), given the focus back on closing.
-  const consoleButton = () => document.querySelector<HTMLElement>("[data-console-button]");
-  // The layer put away: the one under it shows at the height the panel
-  // is, and the focus goes back to the account button it was opened from.
+  // account button (`data-console-button`), given the focus back as its
+  // own close puts it away (Base UI's finalFocus, ConsoleLayer's: given as
+  // the drawer closes, once the search's row is back over the panel's
+  // head). Put away by a card opened over it (usePanelView), the focus is
+  // that card's.
+  const closedByClose = useRef(false);
+  const consoleButton = useCallback(() => {
+    const back = closedByClose.current;
+    closedByClose.current = false;
+    return back && document.querySelector<HTMLElement>("[data-console-button]");
+  }, []);
+  // The layer put away: the one under it shows at the height the panel is.
   const closeConsole = useCallback(() => {
+    closedByClose.current = true;
     setConsoleOpen(false);
-    // Once the search's row is back over the panel's head.
-    window.setTimeout(() => consoleButton()?.focus({ preventScroll: true }));
   }, [setConsoleOpen]);
   const consoleInPanel = useMemo(() => ({ close: closeConsole }), [closeConsole]);
   // Setup, the console, as a layer of the panel on every screen and both
@@ -190,6 +197,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
         detent={panel === "full" ? "large" : "medium"}
         edge={edge}
         onClose={closeConsole}
+        finalFocus={consoleButton}
         shown={consoleLayer}
       >
         <Shown.Provider value={consoleLayer}>

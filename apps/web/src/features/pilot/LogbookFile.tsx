@@ -1,4 +1,6 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
+import { FileTrigger } from "react-aria-components";
+import { Pressable } from "react-aria/Pressable";
 import { useMutation } from "@tanstack/react-query";
 import { FileDown, FileUp } from "lucide-react";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -40,7 +42,6 @@ const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
  * ForeFlight's column names (features/pilot/logbookCsv).
  */
 export default function LogbookFile({ entries, onImported }: { entries: LogbookEntry[] | undefined; onImported: () => void }) {
-  const fileInput = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>({ kind: "idle" });
   const [done, setDone] = useState<string | null>(null);
 
@@ -94,18 +95,6 @@ export default function LogbookFile({ entries, onImported }: { entries: LogbookE
     // spreadsheet's by its columns, or this logbook's own. What an import
     // brought in, said in a row.
     <ListGroup title="File">
-      <input
-        ref={fileInput}
-        type="file"
-        accept=".csv,text/csv"
-        className="hidden"
-        data-testid="logbook-import-file"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (file) void open(file);
-        }}
-      />
       {done && <ListRow muted title={<>{done}</>} data-testid="logbook-imported" />}
       {step.kind === "columns" && <ColumnRows step={step} onStep={setStep} />}
       {step.kind === "preview" && (
@@ -119,13 +108,24 @@ export default function LogbookFile({ entries, onImported }: { entries: LogbookE
       )}
       {step.kind === "idle" && (
         <>
-          <ListRow
-            title="Import a logbook"
-            description="ForeFlight, MyFlightbook or any CSV"
-            media={<FileUp className="size-5" />}
-            onClick={() => fileInput.current?.click()}
-            data-testid="logbook-import"
-          />
+          {/* React Aria's FileTrigger: the hidden file input, opened by the row. */}
+          <FileTrigger
+            acceptedFileTypes={[".csv", "text/csv"]}
+            data-testid="logbook-import-file"
+            onSelect={(files) => {
+              const file = files?.[0];
+              if (file) void open(file);
+            }}
+          >
+            <Pressable>
+              <ListRow
+                title="Import a logbook"
+                description="ForeFlight, MyFlightbook or any CSV"
+                media={<FileUp className="size-5" />}
+                data-testid="logbook-import"
+              />
+            </Pressable>
+          </FileTrigger>
           <ListRow
             title="Export as CSV"
             media={<FileDown className="size-5" />}

@@ -13,6 +13,7 @@ import { useAsk, type AskTurn } from "../../../../lib/ask/useAsk";
 import { useClaudeOn } from "../../../../lib/subscription";
 import { TripPlanner } from "../../../tripPlanner";
 import { useVoice, VoiceButton } from "../../../voice";
+import { FieldError } from "../../../../components/ui/field";
 
 /** One question and its answer: the question at the right as a message
  *  of the pilot's own, the answer at the left as prose with its figures
@@ -80,9 +81,9 @@ function Turn({ turn }: { turn: AskTurn }) {
         </div>
       )}
       {turn.error && (
-        <p className={cn("text-destructive-ink", TEXT.note)} role="alert" data-testid="ask-problem">
+        <FieldError className={cn("text-destructive-ink", TEXT.note)} data-testid="ask-problem">
           {turn.error}
-        </p>
+        </FieldError>
       )}
     </div>
   );
@@ -190,8 +191,16 @@ function AskConversation() {
       {/* The field row as the canvas's Ask screen (7) draws it: a round
           48-point field, the microphone a round white button with the
           tint's glyph beside it, and Send a round filled one; each its
-          own 44-point area, so gap-2 is room enough. */}
-      <div className="flex items-center gap-2" data-composer="">
+          own 44-point area, so gap-2 is room enough. A form, so Enter
+          (and the keyboard's Send) sends it as the browser submits one. */}
+      <form
+        className="flex items-center gap-2"
+        data-composer=""
+        onSubmit={(e) => {
+          e.preventDefault();
+          send();
+        }}
+      >
         <Input
           ref={field}
           value={voice.listening ? voice.words : text}
@@ -203,12 +212,6 @@ function AskConversation() {
           data-testid="ask-field"
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-              e.preventDefault();
-              send();
-            }
-          }}
           className={cn("h-12 rounded-full border-0 px-4", PANEL_FIELD)}
         />
         {voice.offered && (
@@ -231,19 +234,19 @@ function AskConversation() {
             variant="default"
             size="icon-lg"
             className="size-12 shrink-0 rounded-full"
-            onClick={send}
+            type="submit"
             disabled={!text.trim()}
             data-testid="ask-send"
           >
             <ArrowUp className="size-5" />
           </IconButton>
         )}
-      </div>
+      </form>
       {/* Why the mic heard nothing, under the field it was for. */}
       {voice.error && (
-        <p role="alert" className={cn("text-destructive-ink", TEXT.note)} data-testid="ask-voice-problem">
+        <FieldError className={cn("text-destructive-ink", TEXT.note)} data-testid="ask-voice-problem">
           {voice.error}
-        </p>
+        </FieldError>
       )}
     </PillSection>
   );

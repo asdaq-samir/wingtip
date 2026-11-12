@@ -30,6 +30,7 @@ import { keepingAvailable } from "../lib/map/route/keepRoute";
 import SearchHint from "./SearchHint";
 import { CHART } from "../lib/tokens";
 import { clearanceWords } from "../lib/map/terrainClearanceWords";
+import { FieldError } from "./ui/field";
 
 /**
  * The map's settings, the whole of the map's own button's card
@@ -123,9 +124,9 @@ export default function MapSettings({ weather }: { weather?: ReactNode }) {
         {overlay.startsWith("google") && googleSession.isError && (
           // Where it happens: a key restricted to another site, the Map Tiles
           // API off or no quota leave Google's map blank otherwise.
-          <p role="alert" className={cn("text-destructive-ink", TEXT.note)} data-testid="google-problem">
+          <FieldError className={cn("text-destructive-ink", TEXT.note)} data-testid="google-problem">
             Google's map didn't load. Check that this site and the Map Tiles API are allowed for the key.
-          </p>
+          </FieldError>
         )}
       </div>
       <ListGroup title="On the Map">

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Tabs } from "@base-ui/react/tabs";
+import { announce } from "@react-aria/live-announcer";
 import { cn } from "cn";
 import type { PanelState } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
@@ -136,10 +137,9 @@ export function SheetGrabber({
   const page = pages?.at ?? 0;
   const capsule = useCapsule(page);
   // A page picked by a swipe or by the app moves no focus, so the Tabs say
-  // nothing of it: the polite live region says its name. A bar picked from
-  // the keyboard is said by its own focus, so not again here.
+  // nothing of it: React Aria's announcer says its name, politely. A bar
+  // picked from the keyboard is said by its own focus, so not again here.
   const list = useRef<HTMLDivElement>(null);
-  const live = useRef<HTMLSpanElement>(null);
   // Whether the pressed bar was the page up before the press: the Tabs
   // pick a bar as it takes the focus, which a press gives it before its
   // click, so by the click the other page's bar was up too and sized the
@@ -148,9 +148,10 @@ export function SheetGrabber({
   const pressedUp = useRef<boolean | null>(null);
   const said = useRef(page);
   useEffect(() => {
-    if (said.current === page || !pages || !live.current) return;
+    if (said.current === page || !pages) return;
     said.current = page;
-    live.current.textContent = list.current?.contains(document.activeElement) ? "" : (pages.names[page] ?? "");
+    const name = pages.names[page];
+    if (name && !list.current?.contains(document.activeElement)) announce(name, "polite");
   }, [page, pages]);
   if (!pages)
     return (
@@ -188,7 +189,6 @@ export function SheetGrabber({
       <span id={hint} className="sr-only">
         {`${label}. The page up's bar sizes the sheet; Up and Down arrows too.`}
       </span>
-      <span ref={live} aria-live="polite" className="sr-only" />
       {/* Each page's name, grown out of its bar; the bars already say it. */}
       {names.map((name, i) => (
         <span

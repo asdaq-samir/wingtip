@@ -6,6 +6,7 @@ import { TEXT } from "../../../../lib/text";
 import { mayUse, useEntitlement, usesLeft } from "../../../../lib/subscription";
 import PaidPrompt from "../../../../components/PaidPrompt";
 import type { Narrative } from "../../hooks/useNarrative";
+import { FieldError } from "../../../../components/ui/field";
 
 /**
  * The Brief tab's narrative, under its Go / No-Go: the flight told in
@@ -62,9 +63,7 @@ export default function BriefNarrative({
             </p>
           )}
           {narrative.error && (
-            <p className="text-destructive" role="alert">
-              Narrative unavailable: {narrative.error}
-            </p>
+            <FieldError className={cn("text-destructive", TEXT.prose)}>Narrative unavailable: {narrative.error}</FieldError>
           )}
           {narrative.text && <p className="whitespace-pre-wrap">{narrative.text}</p>}
           {/* What is left of the month's briefings, under the text. */}

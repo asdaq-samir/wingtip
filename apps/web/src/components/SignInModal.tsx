@@ -15,6 +15,7 @@ import { TEXT } from "../lib/text";
 import { tvPlatform } from "../lib/tv";
 import TvCode from "./TvCode";
 import { Separator } from "./ui/separator";
+import { FieldError } from "./ui/field";
 
 /**
  * Three ways in, the standard shape every "sign in" prompt (Auth.js,
@@ -180,9 +181,9 @@ export default function SignInModal({
                 </Button>
               </div>
               {linkFailure && (
-                <p className={`text-destructive ${TEXT.prose}`} role="alert" data-testid="sign-in-error">
+                <FieldError className={`text-destructive ${TEXT.prose}`} data-testid="sign-in-error">
                   {linkFailure}
-                </p>
+                </FieldError>
               )}
             </form>
           )}

@@ -11,6 +11,7 @@ import AirportPreview from "../preview/AirportPreview";
 import type { AirplaneHit, DoHit, OneSearchModel } from "../../hooks/useOneSearch";
 import { useVoiceInput } from "../../../voice";
 import { AirportIcon, Matched, QuickAction, ResultGroup, ResultRow, RoundIcon, RowLine } from "./ResultRows";
+import { FieldError } from "../../../../components/ui/field";
 
 /** A Do row's glyph: the arrow for Direct To, the Brief's, Nearest's, the
  *  emergency's in red, the traffic's, a screen's. */
@@ -206,14 +207,14 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
     // more put the list 32 in (the sheet audit's F-P1).
     <div className="flex flex-col gap-2 pt-2 pb-4" data-testid="one-search-results">
       {problem && (
-        <p role="alert" className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-problem">
+        <FieldError className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-problem">
           {problem}
-        </p>
+        </FieldError>
       )}
       {unheard && (
-        <p role="alert" className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-voice-problem">
+        <FieldError className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-voice-problem">
           {unheard}
-        </p>
+        </FieldError>
       )}
       <CommandList
         className={cn("max-h-none overflow-hidden rounded-2xl bg-card p-0", none && "bg-transparent", !answered && "opacity-60")}

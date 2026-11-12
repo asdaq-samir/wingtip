@@ -11,6 +11,7 @@ import { NumberField } from "../../../components/ui/number-field";
 import type { LogbookEntryRequest } from "../../../lib/api/types";
 import { TEXT } from "../../../lib/text";
 import { entryProblems } from "./entryChecks";
+import { FieldError } from "../../../components/ui/field";
 
 /**
  * One entry's form: a paper logbook's columns. In the plus's popover for a
@@ -190,9 +191,9 @@ export default function EntryForm({
       </div>
       {field("remarks", "Remarks")}
       {problem && (
-        <p role="alert" className={cn("text-destructive", TEXT.note)} data-testid="logbook-problem">
+        <FieldError className={cn("text-destructive", TEXT.note)} data-testid="logbook-problem">
           {problem}
-        </p>
+        </FieldError>
       )}
       <div className="flex justify-end gap-2 pt-1">
         {onCancel && (

@@ -118,10 +118,10 @@ test("in the air, what is ahead is said over the map, a warning first, and drawn
   await expect(title).toContainText("Chicago Class B", { timeout: slow(15_000) });
   await expect(title).toContainText("In 2 min · 4.2 nm · 1 more");
   // A warning is said at once to a screen reader, once, through the
-  // page's assertive live region (lib/announce), not the banner's
+  // page's assertive live region (React Aria's announcer, lib/announce), not the banner's
   // countdown read again at every change.
   await expect(banner(page).getByRole("region", { name: "Alerts ahead" })).toBeVisible();
-  await expect(page.locator('[data-announcer="assertive"]')).toContainText("Chicago Class B");
+  await expect(page.locator('[data-live-announcer] [aria-live="assertive"]')).toContainText("Chicago Class B");
   // Asked from the GPS's own track, speed and height.
   const ask = asks[0]!.searchParams;
   expect([ask.get("track"), ask.get("gs"), ask.get("alt")]).toEqual(["90", "120", "3000"]);

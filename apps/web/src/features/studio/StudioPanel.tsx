@@ -1,5 +1,7 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { FileUp } from "lucide-react";
+import { FileTrigger } from "react-aria-components";
+import { Pressable } from "react-aria/Pressable";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
@@ -22,7 +24,6 @@ import { utcToday, type Studio } from "./useStudio";
 export function StudioPanel({ studio, tools }: { studio: Studio; tools?: ReactNode }) {
   const [tail, setTail] = useState(studio.q);
   const [day, setDay] = useState(studio.day || utcToday());
-  const picker = useRef<HTMLInputElement>(null);
   const track = studio.track;
   return (
     <div className="flex flex-col gap-5 px-4 pb-6" data-testid="studio-panel">
@@ -88,22 +89,22 @@ export function StudioPanel({ studio, tools }: { studio: Studio; tools?: ReactNo
       )}
 
       <div className="flex flex-col gap-1.5">
-        <input
-          ref={picker}
-          type="file"
-          accept=".kml,.gpx,.csv,application/vnd.google-earth.kml+xml,application/gpx+xml,text/csv"
-          className="hidden"
-          onChange={(e) => {
-            const picked = e.target.files?.[0];
-            if (picked) void studio.importFile(picked);
-            e.target.value = "";
-          }}
+        {/* React Aria's FileTrigger: the hidden file input, opened by the button. */}
+        <FileTrigger
+          acceptedFileTypes={[".kml", ".gpx", ".csv", "application/vnd.google-earth.kml+xml", "application/gpx+xml", "text/csv"]}
           data-testid="studio-file"
-        />
-        <Button variant="outline" onClick={() => picker.current?.click()} data-testid="studio-import">
-          <FileUp aria-hidden />
-          Import a track file
-        </Button>
+          onSelect={(files) => {
+            const picked = files?.[0];
+            if (picked) void studio.importFile(picked);
+          }}
+        >
+          <Pressable>
+            <Button variant="outline" data-testid="studio-import">
+              <FileUp aria-hidden />
+              Import a track file
+            </Button>
+          </Pressable>
+        </FileTrigger>
         <p className={cn("text-muted-foreground", TEXT.note)}>KML or GPX (GPS altitude), or CSV with time and position columns.</p>
       </div>
     </div>

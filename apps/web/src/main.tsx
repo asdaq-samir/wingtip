@@ -17,7 +17,6 @@ import ErrorAlert from "./components/ErrorAlert";
 import PageError from "./components/PageError";
 import { registerSW } from "virtual:pwa-register";
 import { followDynamicType } from "./features/shell/dynamicType";
-import { prepareAnnouncer } from "./lib/announce";
 import { keepAddressThroughReload, startFresh } from "./features/shell/freshLoad";
 import { takeNewBuildsWhenAway } from "./features/shell/newBuild";
 import { recoverChunk, useChunkFailure } from "./lib/chunkRecovery";
@@ -59,10 +58,6 @@ const engineLoaded = loadEngine();
 // The reader's text size from the iPhone's Settings, before the first
 // render, so the page is never drawn at the wrong size first.
 followDynamicType();
-
-// The screen reader's two live regions (lib/announce), in the page before
-// any alert is said into them, so the first one is heard.
-prepareAnnouncer();
 
 // On a Samsung or LG TV (the TV shells, in git history; lib/tv), the page made for its remote and
 // its distance, before the first render.
