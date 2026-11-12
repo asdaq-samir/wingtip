@@ -2909,6 +2909,120 @@
       ],
       "additionalProperties": false
     },
+    "aviation_grid_bands": {
+      "description": "The Aviation Weather Center's words for its icing and turbulence grids (aviationweather.gov GFA help, read 2026-11-12): icing severity by category, 0 none, 1 trace, 2 light, 3 moderate, 4 heavy; turbulence by EDR, (m^2/s^3)^1/3, from each word's threshold in the weight class's row: light (< 15,500 lb) 0.13, 0.16, 0.36, 0.64; medium 0.15, 0.20, 0.44, 0.79; heavy 0.17, 0.24, 0.54, 0.96.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AviationGridBandsInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "AviationGridBandsAnswer",
+          "type": "object",
+          "properties": {
+            "icing": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "word": {
+                    "type": "string"
+                  },
+                  "from": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "word",
+                  "from"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "turbulence": {
+              "type": "object",
+              "properties": {
+                "light": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "word": {
+                        "type": "string"
+                      },
+                      "from": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "word",
+                      "from"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "medium": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "word": {
+                        "type": "string"
+                      },
+                      "from": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "word",
+                      "from"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "heavy": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "word": {
+                        "type": "string"
+                      },
+                      "from": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "word",
+                      "from"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "light",
+                "medium",
+                "heavy"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "icing",
+            "turbulence"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "awc_airsigmets_read": {
       "description": "The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].",
       "type": "object",
@@ -8509,6 +8623,132 @@
       ],
       "additionalProperties": false
     },
+    "flow_levels": {
+      "description": "The map's model weather levels by field, as the Aviation Weather Center names them (\"060\" is 6,000 ft MSL, \"180\" FL180; \"sfc\" the surface, \"max\" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FlowLevelsInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "FlowLevelsAnswer",
+          "type": "object",
+          "properties": {
+            "wind": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "isa_hpa": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "ft",
+                  "isa_hpa"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "icing": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "isa_hpa": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "ft",
+                  "isa_hpa"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "turbulence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "isa_hpa": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "ft",
+                  "isa_hpa"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "temperature_hpa": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "flight_levels_from_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "wind",
+            "icing",
+            "turbulence",
+            "temperature_hpa",
+            "flight_levels_from_ft"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "forecast_hour": {
       "description": "The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).",
       "type": "object",
@@ -9669,7 +9909,7 @@
       "additionalProperties": false
     },
     "gairmet_hazards": {
-      "description": "The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (FAA-H-8083-28B 26.3.1.1).",
+      "description": "The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (FAA-H-8083-28B 26.3.1.1); and each hazard's short label on the map's outline, as AWC's map labels it (SfcWind, IFR, Mtn Obsc, Turb, LLWS, Ice).",
       "type": "object",
       "properties": {
         "input": {
@@ -9687,12 +9927,19 @@
                 "type": "string"
               }
             },
+            "labels": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
             "snapshot_s": {
               "type": "number"
             }
           },
           "required": [
             "hazards",
+            "labels",
             "snapshot_s"
           ]
         }
@@ -9783,6 +10030,65 @@
           "items": {
             "type": "object"
           }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "gfa_cloud_layers": {
+      "description": "AWC's GFA cloud text and cover at points (aviationweather.gov's cloud layers: \"OVC035/TOP 050\", \"SCT021/OVC040/TOP FL280/CI ABV\", \"Cirrus\", \"SKC\"; heights hundreds of feet MSL; cover CLR, FEW, SCT, BKN, OVC for clouds below FL180) as each point's cover in percent, the most of its band's eighths (AIM 7-1-28: FEW 2/8, SCT 4/8, BKN 6/8, OVC 8/8, so cloud_cover reads the same cover back), and its highest top, ft MSL, null where the text gives none.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GfaCloudLayersInput",
+          "type": "object",
+          "properties": {
+            "layers": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "covers": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "layers",
+            "covers"
+          ]
+        },
+        "answer": {
+          "title": "GfaCloudLayersAnswer",
+          "type": "object",
+          "properties": {
+            "percent": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "top_ft": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "required": [
+            "percent",
+            "top_ft"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -13096,6 +13402,44 @@
             "line"
           ],
           "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "icing_severity": {
+      "description": "AWC's icing severity category (0 to 4) in its words: None, Trace, Light, Moderate, Heavy (aviationweather.gov GFA help); null for any other value. Not a PIREP's severity (AWC: \"not synonymous\").",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IcingSeverityInput",
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "category"
+          ]
+        },
+        "answer": {
+          "title": "IcingSeverityAnswer",
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "None",
+            "Trace",
+            "Light",
+            "Moderate",
+            "Heavy",
+            null
+          ]
         }
       },
       "required": [
@@ -25093,6 +25437,52 @@
       ],
       "additionalProperties": false
     },
+    "turbulence_category": {
+      "description": "An EDR, (m^2/s^3)^1/3, as AWC's turbulence word for an aircraft weight class (light < 15,500 lb, medium, heavy; aviationweather.gov GFA help's thresholds): the highest it reaches of Light, Moderate, Severe, Extreme; null under light's.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TurbulenceCategoryInput",
+          "type": "object",
+          "properties": {
+            "edr": {
+              "type": "number"
+            },
+            "weight_class": {
+              "type": "string",
+              "enum": [
+                "light",
+                "medium",
+                "heavy"
+              ]
+            }
+          },
+          "required": [
+            "edr",
+            "weight_class"
+          ]
+        },
+        "answer": {
+          "title": "TurbulenceCategoryAnswer",
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "Light",
+            "Moderate",
+            "Severe",
+            "Extreme",
+            null
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "underway": {
       "description": "Whether own ship moves at flying speed.",
       "type": "object",
@@ -26532,6 +26922,7 @@
     "approach_transition",
     "arrival_circuit",
     "atc_call",
+    "aviation_grid_bands",
     "awc_airsigmets_read",
     "awc_gairmets_read",
     "awc_metars_read",
@@ -26611,6 +27002,7 @@
     "fix_radial_distance",
     "flight_category",
     "floor_caution",
+    "flow_levels",
     "forecast_hour",
     "forecast_run",
     "frd_near",
@@ -26626,6 +27018,7 @@
     "gairmet_hazards",
     "gairmet_title",
     "gairmets_along_route",
+    "gfa_cloud_layers",
     "glide_range",
     "glide_reaches",
     "glide_ring",
@@ -26668,6 +27061,7 @@
     "holding_leg_minutes",
     "holds_read",
     "icing_forecast_route",
+    "icing_severity",
     "ifr_alternate_check",
     "ifr_alternate_destination",
     "ifr_alternate_window",
@@ -26815,6 +27209,7 @@
     "traffic_matches",
     "traffic_pattern",
     "traffic_reach",
+    "turbulence_category",
     "underway",
     "vertical_speed",
     "vfr_altitudes",

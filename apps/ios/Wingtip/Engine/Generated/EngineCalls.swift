@@ -194,6 +194,11 @@ extension Engine {
         try rule("atc_call", EngineContract.AtcCallInput(text: text, tail: tail, prior: prior))
     }
 
+    /// The Aviation Weather Center's words for its icing and turbulence grids (aviationweather.gov GFA help, read 2026-11-12): icing severity by category, 0 none, 1 trace, 2 light, 3 moderate, 4 heavy; turbulence by EDR, (m^2/s^3)^1/3, from each word's threshold in the weight class's row: light (< 15,500 lb) 0.13, 0.16, 0.36, 0.64; medium 0.15, 0.20, 0.44, 0.79; heavy 0.17, 0.24, 0.54, 0.96.
+    static func aviationGridBands() throws -> EngineContract.AviationGridBandsAnswer {
+        try rule("aviation_grid_bands", EngineContract.AviationGridBandsInput())
+    }
+
     /// The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
     static func awcAirsigmetsRead(text: String) throws -> [[String: JSONValue]] {
         try rule("awc_airsigmets_read", EngineContract.AwcAirsigmetsReadInput(text: text))
@@ -589,6 +594,11 @@ extension Engine {
         try rule("floor_caution", EngineContract.FloorCautionInput(segment: segment, altitudeFt: altitudeFt))
     }
 
+    /// The map's model weather levels by field, as the Aviation Weather Center names them ("060" is 6,000 ft MSL, "180" FL180; "sfc" the surface, "max" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).
+    static func flowLevels() throws -> EngineContract.FlowLevelsAnswer {
+        try rule("flow_levels", EngineContract.FlowLevelsInput())
+    }
+
     /// The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).
     static func forecastHour(hoursAhead: Double? = nil) throws -> String {
         try rule("forecast_hour", EngineContract.ForecastHourInput(hoursAhead: hoursAhead))
@@ -649,7 +659,7 @@ extension Engine {
         try rule("fuel_stops", EngineContract.FuelStopsInput(start: start, end: end, fuelPerNm: fuelPerNm, minPerNm: minPerNm, usableGal: usableGal, taxiGal: taxiGal, reserveGal: reserveGal, groundMin: groundMin, skip: skip, fields: fields))
     }
 
-    /// The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (FAA-H-8083-28B 26.3.1.1).
+    /// The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (FAA-H-8083-28B 26.3.1.1); and each hazard's short label on the map's outline, as AWC's map labels it (SfcWind, IFR, Mtn Obsc, Turb, LLWS, Ice).
     static func gairmetHazards() throws -> EngineContract.GairmetHazardsAnswer {
         try rule("gairmet_hazards", EngineContract.GairmetHazardsInput())
     }
@@ -662,6 +672,11 @@ extension Engine {
     /// The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (FAA-H-8083-28B 26.3.1.1).
     static func gairmetsAlongRoute(advisories: [[String: JSONValue]], path: [[Double]], start: Double, end: Double) throws -> [[String: JSONValue]] {
         try rule("gairmets_along_route", EngineContract.GairmetsAlongRouteInput(advisories: advisories, path: path, start: start, end: end))
+    }
+
+    /// AWC's GFA cloud text and cover at points (aviationweather.gov's cloud layers: "OVC035/TOP 050", "SCT021/OVC040/TOP FL280/CI ABV", "Cirrus", "SKC"; heights hundreds of feet MSL; cover CLR, FEW, SCT, BKN, OVC for clouds below FL180) as each point's cover in percent, the most of its band's eighths (AIM 7-1-28: FEW 2/8, SCT 4/8, BKN 6/8, OVC 8/8, so cloud_cover reads the same cover back), and its highest top, ft MSL, null where the text gives none.
+    static func gfaCloudLayers(layers: [String], covers: [String]) throws -> EngineContract.GfaCloudLayersAnswer {
+        try rule("gfa_cloud_layers", EngineContract.GfaCloudLayersInput(layers: layers, covers: covers))
     }
 
     /// Still-air glide range, nm, at the picked airplane's own glide ratio (glide_ratio: feet forward for each foot down, its POH's Section 3 maximum glide, as its profile gives it), or null on the ground, with no height, or with no glide ratio: no airplane, or none in its profile, has no glide worked out.
@@ -872,6 +887,11 @@ extension Engine {
     /// Forecast icing on an IFR route (#216; AIM 7-1-4, 7-1-19): from the AWC's icing cross-section along each leg (its GFA's, from CIP and FIP), the worst severity at the altitude flown (the levels either side of it), the share of the leg in icing there, the layer icing is forecast in, the worst on the route and the Go / No-Go's line; a leg with no section is unchecked.
     static func icingForecastRoute(levelsFt: [Double], legs: [EngineContract.IcingForecastRouteInputLegsItem]) throws -> EngineContract.IcingForecastRouteAnswer {
         try rule("icing_forecast_route", EngineContract.IcingForecastRouteInput(levelsFt: levelsFt, legs: legs))
+    }
+
+    /// AWC's icing severity category (0 to 4) in its words: None, Trace, Light, Moderate, Heavy (aviationweather.gov GFA help); null for any other value. Not a PIREP's severity (AWC: "not synonymous").
+    static func icingSeverity(category: Double) throws -> String? {
+        try rule("icing_severity", EngineContract.IcingSeverityInput(category: category))
     }
 
     /// Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility).
@@ -1607,6 +1627,11 @@ extension Engine {
     /// How far round an airport its traffic is asked for, nm: around_nm, about the field (its pattern and one joining it, past 91.117(b)'s 4 nm), and relation_nm, the reach of an airplane inbound or departing, the figures field_relation judges by.
     static func trafficReach() throws -> EngineContract.TrafficReachAnswer {
         try rule("traffic_reach", EngineContract.TrafficReachInput())
+    }
+
+    /// An EDR, (m^2/s^3)^1/3, as AWC's turbulence word for an aircraft weight class (light < 15,500 lb, medium, heavy; aviationweather.gov GFA help's thresholds): the highest it reaches of Light, Moderate, Severe, Extreme; null under light's.
+    static func turbulenceCategory(edr: Double, weightClass: String) throws -> String? {
+        try rule("turbulence_category", EngineContract.TurbulenceCategoryInput(edr: edr, weightClass: weightClass))
     }
 
     /// Whether own ship moves at flying speed.

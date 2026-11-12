@@ -982,6 +982,15 @@ def waypoints_in_view(*, south: float, west: float, north: float, east: float, l
     return _WAYPOINTS_IN_VIEW.validate_python(found)
 
 
+_FLOW_LAYER = _Answer(m.FlowLayer)
+
+
+def flow_layer() -> m.FlowLayer:
+    """GET /api/weather/flow: Flow Layer"""
+    found = _send('GET', '/api/weather/flow', query={}, body=None, headers={})
+    return _FLOW_LAYER.validate_python(found)
+
+
 _WEATHER_LOOP_FRAMES = _Answer(m.WeatherLoop)
 
 

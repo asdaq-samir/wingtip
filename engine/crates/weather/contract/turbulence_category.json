@@ -1,0 +1,47 @@
+{
+  "x-call": "wingtip_weather::aviation_grids::call",
+  "description": "An EDR, (m^2/s^3)^1/3, as AWC's turbulence word for an aircraft weight class (light < 15,500 lb, medium, heavy; aviationweather.gov GFA help's thresholds): the highest it reaches of Light, Moderate, Severe, Extreme; null under light's.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TurbulenceCategoryInput",
+      "type": "object",
+      "properties": {
+        "edr": {
+          "type": "number"
+        },
+        "weight_class": {
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        }
+      },
+      "required": [
+        "edr",
+        "weight_class"
+      ]
+    },
+    "answer": {
+      "title": "TurbulenceCategoryAnswer",
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "Light",
+        "Moderate",
+        "Severe",
+        "Extreme",
+        null
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

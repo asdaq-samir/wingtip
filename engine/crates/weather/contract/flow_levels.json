@@ -1,0 +1,127 @@
+{
+  "x-call": "wingtip_weather::aviation_grids::call",
+  "description": "The map's model weather levels by field, as the Aviation Weather Center names them (\"060\" is 6,000 ft MSL, \"180\" FL180; \"sfc\" the surface, \"max\" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FlowLevelsInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "title": "FlowLevelsAnswer",
+      "type": "object",
+      "properties": {
+        "wind": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "isa_hpa": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "ft",
+              "isa_hpa"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "icing": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "isa_hpa": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "ft",
+              "isa_hpa"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "turbulence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "isa_hpa": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "ft",
+              "isa_hpa"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "temperature_hpa": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "flight_levels_from_ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "wind",
+        "icing",
+        "turbulence",
+        "temperature_hpa",
+        "flight_levels_from_ft"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

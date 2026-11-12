@@ -1,22 +1,21 @@
 """The flow layer's model weather (app.flow, app.flow_grid): the
 timeline's hours, the HRRR's wind turned to east and north, the models
 put on one grid, each field's PNG, and a frame already held not fetched
-again. NOMADS is stubbed."""
+again. NOMADS and AWC are stubbed (app.flow's parts: test_flow_parts)."""
 
 from datetime import datetime, timezone
 
 import numpy as np
 import pytest
-from wingtip import weather_store
 
-from app import flow, flow_grid
+from app import flow, flow_grid, flow_nomads
 
 NOW = datetime(2026, 11, 12, 1, 40, tzinfo=timezone.utc)
 
 
 @pytest.fixture(autouse=True)
 def _nothing_not_up(monkeypatch):
-    monkeypatch.setattr(flow, "_NOT_UP", {})
+    monkeypatch.setattr(flow_nomads, "NOT_UP", {})
 
 
 def test_the_timeline_is_the_last_hour_now_and_even_hours_to_twelve_ahead():
@@ -74,6 +73,35 @@ def test_units_are_knots_degrees_celsius_statute_miles_and_reflectivity():
     assert kept["temp"][0, 0] == pytest.approx(0.0, abs=1e-4)
     assert kept["vis"][0, 0] == pytest.approx(1.0)
     assert kept["precip"][0, 0] == 0.0
+    # With no wind in the file (AWC's now), the rest is still kept.
+    assert "u" not in flow_grid.in_units({"temp": one * 273.15})
+
+
+def test_the_freezing_level_is_feet_msl_and_at_the_surface_zero():
+    # UPP's FRZLVL: MSL, and the surface's height where 2 m is below
+    # freezing. 1,524 m over 300 m ground is 5,000 ft MSL; at the ground, 0.
+    feet = flow_grid.freezing_level_ft(np.array([1524.0, 300.0, 300.5]), np.array([300.0, 300.0, 300.0]))
+    assert feet[0] == pytest.approx(5000.0, abs=0.1)
+    assert feet[1] == 0.0 and feet[2] == 0.0
+
+
+def test_a_half_degree_grid_is_spread_to_the_quarter_by_its_neighbours_means():
+    half = np.full((flow_grid.HALF_ROWS, flow_grid.HALF_COLS), np.nan, dtype=np.float32)
+    half[10, 10], half[10, 11], half[11, 10], half[11, 11] = 0.0, 2.0, 4.0, 6.0
+    out = flow_grid.upsample(half)
+    assert out[20, 20] == 0.0 and out[20, 21] == 1.0 and out[21, 20] == 2.0 and out[21, 21] == 3.0
+    # Beside a point with nothing, the one point there is.
+    assert out[20, 19] == 0.0 and np.isnan(out[0, 0])
+
+
+def test_icing_and_turbulence_keep_a_cells_worst():
+    n = flow_grid.HRRR_LEAST_POINTS
+    where = np.full(n, 40.0), np.full(n, -100.0)
+    icing = np.zeros(n)
+    icing[5] = 3.0
+    grid = flow_grid.on_grid({"icing-060": icing, "turb-max": np.full(n, 0.1)}, where, hrrr=True)
+    row, col = int(round((flow_grid.NORTH - 40.0) / 0.25)), int(round((-100.0 - flow_grid.WEST) / 0.25))
+    assert grid["icing-060"][row, col] == 3.0 and grid["turb-max"][row, col] == pytest.approx(0.1)
 
 
 def test_a_rate_is_the_reflectivity_the_wsr88ds_z_r_relation_gives():
@@ -125,10 +153,12 @@ def test_each_request_asks_only_what_is_read(monkeypatch):
         asked.append(sorted(k for k in params if k.startswith(("var_", "lev_"))))
         return type("R", (), {"status_code": 200, "ok": True, "content": b"GRIB" + str(len(asked)).encode()})()
 
-    monkeypatch.setattr(flow.requests, "get", answer)
-    body = flow._hrrr(NOW, 1)
+    monkeypatch.setattr(flow_nomads.requests, "get", answer)
+    body = flow_nomads.hrrr(NOW, 1)
     assert body == b"GRIB1GRIB2GRIB3"
-    assert ["lev_surface", "var_CAPE", "var_GUST", "var_PRATE", "var_VIS"] in asked
+    assert ["lev_surface", "var_CAPE", "var_PRATE", "var_VIS"] in asked
+    # AWC gives the wind, gusts and cloud: NOMADS is not asked for them.
+    assert not any("var_UGRD" in a or "var_GUST" in a or "var_TCDC" in a for a in asked)
     assert all("var_HGT" not in a or "lev_surface" not in a for a in asked)
 
 
@@ -139,18 +169,7 @@ def test_a_fields_png_holds_its_value_scaled_and_no_data_clear():
 
     kept = {"temp": np.array([[0.0, np.nan]], dtype=np.float32), "u": np.zeros((1, 2)), "v": np.zeros((1, 2))}
     pixels = np.asarray(Image.open(BytesIO(flow_grid.png("temp", kept))))
-    assert pixels[0, 0, 0] == 128 and pixels[0, 0, 3] == 255  # 0 C halfway from -50 to 50
+    assert pixels[0, 0, 0] == 150 and pixels[0, 0, 3] == 255  # 0 C, 75 half-degrees up from -75
     assert pixels[0, 1, 3] == 0
     assert flow_grid.png("vis", kept) is None
-
-
-def test_a_frame_held_from_the_same_runs_is_not_downloaded_again(monkeypatch):
-    asked = []
-    monkeypatch.setattr(flow, "_GET", {"gfs": lambda r, s: asked.append(("gfs", r, s)), "hrrr": lambda r, s: asked.append(("hrrr", r, s))})
-    valid = flow.frame_times(NOW)[3]
-    tries = flow._tries(valid, NOW)
-    run, step = tries["gfs"][0]
-    weather_store.write_blob("flow-x-wind", b"png", ".png")
-    held = {"key": {"gfs": {"run": flow._iso(run), "forecast_hour": step}, "hrrr": None}, "files": {"wind": "flow-x-wind"}}
-    assert flow._frame(valid, NOW, held) is held
-    assert asked == []
+    assert flow_grid.png("wind", {"temp": kept["temp"]}) is None

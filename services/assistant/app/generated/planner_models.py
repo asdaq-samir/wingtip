@@ -1425,6 +1425,15 @@ class FlightDeparted(BaseModel):
     name: Annotated[str | None, Field(title='Name')] = None
 
 
+class FlowField(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    unit: Annotated[str | None, Field(title='Unit')] = None
+    unscale: Annotated[list[float] | None, Field(title='Unscale')] = None
+    vector: Annotated[bool | None, Field(title='Vector')] = None
+
+
 class FlowProgram(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -1447,6 +1456,16 @@ class FlowProgram(BaseModel):
     text: Annotated[str | None, Field(title='Text')] = None
     title: Annotated[str | None, Field(title='Title')] = None
     value: Annotated[str | None, Field(title='Value')] = None
+
+
+class FlowSource(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    fallback: Annotated[bool | None, Field(title='Fallback')] = None
+    issued: Annotated[str | None, Field(title='Issued')] = None
+    label: Annotated[str | None, Field(title='Label')] = None
+    stale: Annotated[bool | None, Field(title='Stale')] = None
 
 
 class FlownSegment(BaseModel):
@@ -2694,30 +2713,6 @@ class PyramidProgress(BaseModel):
     zooms: Annotated[list[int] | None, Field(title='Zooms')] = None
 
 
-class RankedNotam(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
-    closed: Annotated[bool | None, Field(title='Closed')] = None
-    ends: Annotated[str | None, Field(title='Ends')] = None
-    field: Annotated[str | None, Field(title='Field')] = None
-    high_ft: Annotated[float | None, Field(title='High Ft')] = None
-    id: Annotated[str | None, Field(title='Id')] = None
-    in_force: Annotated[bool | None, Field(title='In Force')] = None
-    keyword: Annotated[str | None, Field(title='Keyword')] = None
-    kind: Annotated[Literal['notam', 'tfr'] | None, Field(title='Kind')] = None
-    low_ft: Annotated[float | None, Field(title='Low Ft')] = None
-    rank: Annotated[int | None, Field(title='Rank')] = None
-    raw: Annotated[str | None, Field(title='Raw')] = None
-    reasons: Annotated[list[NotamReason] | None, Field(title='Reasons')] = None
-    role: Annotated[str | None, Field(title='Role')] = None
-    runways: Annotated[list[str] | None, Field(title='Runways')] = None
-    score: Annotated[int | None, Field(title='Score')] = None
-    starts: Annotated[str | None, Field(title='Starts')] = None
-    tied: Annotated[bool | None, Field(title='Tied')] = None
-    top: Annotated[bool | None, Field(title='Top')] = None
-
-
 class RecentError(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -3304,6 +3299,15 @@ class Tfr(BaseModel):
     title: Annotated[str | None, Field(title='Title')] = None
 
 
+class TfrContact(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    frequency: Annotated[str | None, Field(title='Frequency')] = None
+    name: Annotated[str | None, Field(title='Name')] = None
+    phone: Annotated[str | None, Field(title='Phone')] = None
+
+
 class TfrHere(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -3323,6 +3327,14 @@ class TfrHere(BaseModel):
     rule: Annotated[str | None, Field(title='Rule')] = None
     state: Annotated[str | None, Field(title='State')] = None
     title: Annotated[str | None, Field(title='Title')] = None
+
+
+class TfrPoint(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
 
 
 class Tfrs(BaseModel):
@@ -4267,6 +4279,39 @@ class FlowAtAirports(BaseModel):
     programs: Annotated[list[FlowProgram] | None, Field(title='Programs')] = None
 
 
+class FlowFrame(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    fields: Annotated[list[str] | None, Field(title='Fields')] = None
+    gfs_forecast_hour: Annotated[int | None, Field(title='Gfs Forecast Hour')] = None
+    gfs_run: Annotated[str | None, Field(title='Gfs Run')] = None
+    hrrr_forecast_hour: Annotated[int | None, Field(title='Hrrr Forecast Hour')] = None
+    hrrr_run: Annotated[str | None, Field(title='Hrrr Run')] = None
+    id: Annotated[str | None, Field(title='Id')] = None
+    model: Annotated[str | None, Field(title='Model')] = None
+    past: Annotated[bool | None, Field(title='Past')] = None
+    radar_tiles: Annotated[str | None, Field(title='Radar Tiles')] = None
+    sources: Annotated[
+        dict[str, FlowSource] | None, Field(title='Sources', validate_default=True)
+    ] = {}
+    valid: Annotated[str | None, Field(title='Valid')] = None
+    versions: Annotated[dict[str, str] | None, Field(title='Versions')] = {}
+
+
+class FlowLayer(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    bounds: Annotated[list[float] | None, Field(title='Bounds')] = None
+    credit: Annotated[str | None, Field(title='Credit')] = None
+    fetched_at: Annotated[float | None, Field(title='Fetched At')] = None
+    fields: Annotated[dict[str, FlowField] | None, Field(title='Fields')] = None
+    frames: Annotated[list[FlowFrame] | None, Field(title='Frames')] = None
+    levels: Annotated[dict[str, list[str]] | None, Field(title='Levels')] = {}
+    world_bounds: Annotated[list[float] | None, Field(title='World Bounds')] = None
+
+
 class Forecast(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -4606,16 +4651,6 @@ class NextCycle(BaseModel):
     updated_at: Annotated[str | None, Field(title='Updated At')] = None
 
 
-class NotamsRanked(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
-    coverage_since: Annotated[str | None, Field(title='Coverage Since')] = None
-    notams: Annotated[list[RankedNotam] | None, Field(title='Notams')] = None
-    top: Annotated[int | None, Field(title='Top')] = None
-    unchecked: Annotated[list[str] | None, Field(title='Unchecked')] = []
-
-
 class OfflineCatalog(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -4847,6 +4882,26 @@ class Runway(BaseModel):
     ] = []
     width_ft: Annotated[int | None, Field(title='Width Ft')] = None
     wind: RunwayWind | None = None
+
+
+class TfrFacts(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    ceiling_ft: Annotated[float | None, Field(title='Ceiling Ft')] = None
+    ceiling_ref: Annotated[str | None, Field(title='Ceiling Ref')] = None
+    contact: TfrContact | None = None
+    edge: TfrPoint | None = None
+    facility: TfrContact | None = None
+    field: TfrPoint | None = None
+    floor_ft: Annotated[float | None, Field(title='Floor Ft')] = None
+    floor_ref: Annotated[str | None, Field(title='Floor Ref')] = None
+    instructions: Annotated[list[str] | None, Field(title='Instructions')] = []
+    kind: Annotated[str | None, Field(title='Kind')] = None
+    over_field: Annotated[bool | None, Field(title='Over Field')] = None
+    rule: Annotated[str | None, Field(title='Rule')] = None
+    text: Annotated[str | None, Field(title='Text')] = None
+    title: Annotated[str | None, Field(title='Title')] = None
 
 
 class Traffic(BaseModel):
@@ -5426,6 +5481,31 @@ class NavLogAltitude(BaseModel):
     type: Annotated[Literal['altitude'], Field(title='Type')] = 'altitude'
 
 
+class RankedNotam(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    closed: Annotated[bool | None, Field(title='Closed')] = None
+    ends: Annotated[str | None, Field(title='Ends')] = None
+    field: Annotated[str | None, Field(title='Field')] = None
+    high_ft: Annotated[float | None, Field(title='High Ft')] = None
+    id: Annotated[str | None, Field(title='Id')] = None
+    in_force: Annotated[bool | None, Field(title='In Force')] = None
+    keyword: Annotated[str | None, Field(title='Keyword')] = None
+    kind: Annotated[Literal['notam', 'tfr'] | None, Field(title='Kind')] = None
+    low_ft: Annotated[float | None, Field(title='Low Ft')] = None
+    rank: Annotated[int | None, Field(title='Rank')] = None
+    raw: Annotated[str | None, Field(title='Raw')] = None
+    reasons: Annotated[list[NotamReason] | None, Field(title='Reasons')] = None
+    role: Annotated[str | None, Field(title='Role')] = None
+    runways: Annotated[list[str] | None, Field(title='Runways')] = None
+    score: Annotated[int | None, Field(title='Score')] = None
+    starts: Annotated[str | None, Field(title='Starts')] = None
+    tfr: TfrFacts | None = None
+    tied: Annotated[bool | None, Field(title='Tied')] = None
+    top: Annotated[bool | None, Field(title='Top')] = None
+
+
 class RiskAsk(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -5486,6 +5566,16 @@ class CopilotAround(BaseModel):
     fields: Annotated[list[CopilotField] | None, Field(title='Fields')] = None
     itws: Annotated[list[CopilotItws] | None, Field(title='Itws')] = None
     unavailable: Annotated[list[str] | None, Field(title='Unavailable')] = None
+
+
+class NotamsRanked(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    coverage_since: Annotated[str | None, Field(title='Coverage Since')] = None
+    notams: Annotated[list[RankedNotam] | None, Field(title='Notams')] = None
+    top: Annotated[int | None, Field(title='Top')] = None
+    unchecked: Annotated[list[str] | None, Field(title='Unchecked')] = []
 
 
 class HopTotals(BaseModel):

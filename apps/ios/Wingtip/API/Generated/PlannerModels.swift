@@ -2093,7 +2093,9 @@ struct APIFlowProgram: Codable, Equatable, Sendable {
 }
 
 /// The flow layer's timeline, oldest frame first; the pictures' box,
-/// [west, south, east, north] degrees; each field's encoding; when the
+/// [west, south, east, north] degrees, and the world wind's ("world");
+/// each field's levels by AWC's names ("sfc", "060", "max"); each
+/// field's encoding; when the
 /// weather service fetched it, UNIX seconds; and the credit.
 // MARK: - APIFlowLayer
 struct APIFlowLayer: Codable, Equatable, Sendable {
@@ -2102,6 +2104,8 @@ struct APIFlowLayer: Codable, Equatable, Sendable {
     var fetchedAt: Double
     var fields: [String: APIFlowField]
     var frames: [APIFlowFrame]
+    var levels: [String: [String]]?
+    var worldBounds: [Double]?
 }
 
 /// How a field's PNG holds it: its unit, the values its channel's 0
@@ -2119,7 +2123,10 @@ struct APIFlowField: Codable, Equatable, Sendable {
 /// models that made it ("HRRR and GFS" over the lower 48 and the GFS
 /// beyond, or the GFS alone) with each one's run and forecast hour,
 /// whether its hour has come (`past`), the fields it has, and for a past
-/// hour the radar mosaic made by then, XYZ tiles, None with none.
+/// hour the radar mosaic made by then, XYZ tiles, None with none. A
+/// field is a name and, at a level, the level after a dash ("wind-060");
+/// `versions` gives each picture's version, its address's `v`, and
+/// `sources` where each came from.
 // MARK: - APIFlowFrame
 struct APIFlowFrame: Codable, Equatable, Sendable {
     var fields: [String]
@@ -2130,7 +2137,22 @@ struct APIFlowFrame: Codable, Equatable, Sendable {
     var id, model: String
     var past: Bool
     var radarTiles: String?
+    var sources: [String: APIFlowSource]?
     var valid: String
+    var versions: [String: String]?
+}
+
+/// Where a field's picture came from, as the legend says it: its
+/// source's name ("AWC winds", "NOAA GFS"), when the run that made it
+/// was made, ISO UTC, whether that is older than the source's cadence
+/// and a margin (`stale`), and whether NOAA's model stands in for AWC's
+/// while AWC's is unavailable (`fallback`).
+// MARK: - APIFlowSource
+struct APIFlowSource: Codable, Equatable, Sendable {
+    var fallback: Bool
+    var issued: String?
+    var label: String
+    var stale: Bool
 }
 
 /// The dry run against the forecast, and the products that could not be had.

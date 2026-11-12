@@ -32,7 +32,8 @@ function titleOf(field: ShownField, span: Span, frames: FlowFrame[]): string {
  * sheet, as Apple Weather's map has its own (the owner's screenshots,
  * 2026-11-12): Play at its left, which steps through the hours once; the
  * title and the hour's day and date on this device's clock, and under them
- * the hour in Zulu as reports give it, "Forecast +4 h" for an hour to come; on
+ * the hour in Zulu as reports give it, "Forecast +4 h" for an hour to come
+ * ("Forecast" for one past, "Observed" for the radar's); on
  * the precipitation a segmented 1h | 12h, the hour past or the forecast;
  * and the track (FlowTrack), its hours under it. The same playback parts
  * as the radar loop's (components/PlaybackBar).
@@ -50,7 +51,11 @@ export function FlowBar() {
       : !flow.frames.length
         ? "No model weather yet"
         : null;
-  const ahead = frame && !frame.past ? `Forecast ${hourName(flow.frames, flow.shown)}` : null;
+  // What the hour shown is, so a pilot knows which (the owner, 2026-11-12):
+  // the radar's mosaic for an hour past on the precipitation, observed;
+  // every other picture a forecast, an hour to come said as how far ahead.
+  const observed = flow.field === "precip" && !!frame?.past && !!frame.radar_tiles;
+  const ahead = !frame ? null : observed ? "Observed" : frame.past ? "Forecast" : `Forecast ${hourName(flow.frames, flow.shown)}`;
   return (
     <div className="pointer-events-none absolute right-[calc(max(0.5rem,env(safe-area-inset-right))+3.25rem)] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+0.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)] z-[1000] flex justify-center">
       <PlaybackToolbar

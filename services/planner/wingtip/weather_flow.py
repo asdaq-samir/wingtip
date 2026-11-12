@@ -5,7 +5,7 @@ and runs made it, and a PNG per field -- and, for the hours already
 past, the radar mosaic made by then, which the precipitation field
 shows in place of the model's (wingtip.weather_loop's tiles).
 
-Read only from the weather store; nothing here asks NOMADS.
+Read only from the weather store; nothing here asks AWC or NOMADS.
 """
 
 from __future__ import annotations
@@ -21,9 +21,64 @@ from . import weather_loop, weather_store
 FRAME_ID = re.compile(r"^\d{10}$")
 
 CREDIT = (
-    "Model forecast, not an observation: NOAA HRRR over the lower 48, NOAA GFS beyond, via NOMADS. "
-    "Radar: NWS NEXRAD composite via the Iowa Environmental Mesonet. Not for navigation."
+    "Aviation Weather Center (aviationweather.gov): GFA winds and clouds, IFI icing, GTG turbulence. "
+    "NOAA HRRR and GFS via NOMADS for precipitation, ceiling, temperature, visibility, CAPE and freezing level. "
+    "Radar: NWS NEXRAD composite via the Iowa Environmental Mesonet."
 )
+
+#: Each source's name on the legend, by the frame's part and the field.
+LABELS = {
+    "awc": lambda field: "AWC clouds" if field in ("cloud", "tops") else "AWC winds",
+    "dafs": lambda field: "AWC icing" if field.startswith("icing") else "AWC turbulence",
+    "aloft": lambda field: "NOAA GFS",
+}
+#: How old a part's run may be before the legend shows its time in the
+#: caution colour, seconds: the source's cadence and a margin -- the GFA,
+#: IFI and GTG a cycle every hour, two hours more (as app.flow's
+#: AWC_MARGIN); the GFS every six hours, posted about four after, two more.
+#: The feed's health, not an aviation rule.
+STALE_AFTER_S = {"awc": 3 * 3600, "dafs": 3 * 3600, "nomads": 12 * 3600, "aloft": 12 * 3600}
+#: The fields NOMADS gives only in AWC's place (app.flow's fallback).
+FALLBACK_FIELDS = ("wind", "gust", "cloud")
+
+
+def _issued(part_name: str, key: dict, field: str) -> str | None:
+    """When the run a part's picture came from was made, ISO UTC."""
+    if part_name == "awc":
+        return key.get("cycle")
+    if part_name == "dafs":
+        return (key.get("icing" if field.startswith("icing") else "turbulence") or {}).get("cycle")
+    if part_name == "nomads":
+        return (key.get("gfs") or {}).get("run")
+    return key.get("run")
+
+
+def _sources(frame: dict, now: float) -> dict[str, dict]:
+    """Each field's source as the legend says it: {"label", "issued",
+    "stale", "fallback"}."""
+    out = {}
+    parts = frame.get("parts") or {}
+    for field, part_name in (frame.get("sources") or {}).items():
+        key = (parts.get(part_name) or {}).get("key") or {}
+        issued = _issued(part_name, key, field)
+        fallback = part_name in ("nomads", "aloft") and (field in FALLBACK_FIELDS or field.startswith("wind-"))
+        if part_name == "nomads":
+            label = "NOAA HRRR and GFS" if key.get("hrrr") else "NOAA GFS"
+        else:
+            label = LABELS[part_name](field)
+        out[field] = {
+            "label": label,
+            "issued": issued,
+            "stale": issued is None or now - _epoch(issued) > STALE_AFTER_S[part_name],
+            "fallback": fallback,
+        }
+    return out
+
+
+def _version(blob: str) -> str:
+    """The run tag a picture's blob name ends with (the weather service's
+    app.flow_store): its address changes only when its picture does."""
+    return blob.rsplit("-", 1)[-1]
 
 
 def _epoch(iso: str) -> float:
@@ -73,20 +128,25 @@ def layer(now: float | None = None) -> dict | None:
                 "hrrr_forecast_hour": hrrr.get("forecast_hour"),
                 "past": past,
                 "fields": sorted(f.get("files", {})),
+                "versions": {field: _version(blob) for field, blob in f.get("files", {}).items()},
+                "sources": _sources(f, now),
                 "radar_tiles": radar,
             }
         )
     return {
         "frames": frames,
         "bounds": data.get("bounds"),
+        "world_bounds": data.get("world_bounds"),
+        "levels": data.get("levels") or {},
         "fields": data.get("fields", {}),
         "fetched_at": record.fetched_at,
         "credit": CREDIT,
     }
 
 
-def picture(frame_id: str, field: str) -> Path | None:
-    """A frame's PNG of `field`, where the record lists it; None otherwise."""
+def picture(frame_id: str, field: str) -> tuple[Path, str] | None:
+    """A frame's PNG of `field` and its version (_version), where the
+    record lists it; None otherwise."""
     if not FRAME_ID.match(frame_id):
         return None
     record = weather_store.read("flow")
@@ -95,5 +155,5 @@ def picture(frame_id: str, field: str) -> Path | None:
     for f in (record.data or {}).get("frames", []):
         if _frame_id(f["valid"]) == frame_id:
             name = f.get("files", {}).get(field)
-            return weather_store.blob_path(name, ".png") if name else None
+            return (weather_store.blob_path(name, ".png"), _version(name)) if name else None
     return None

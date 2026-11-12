@@ -30,6 +30,7 @@ approach_profile
 approach_quiz
 approach_transition
 atc_call
+aviation_grid_bands
 best_fields
 call_pattern
 cape_category
@@ -80,12 +81,14 @@ filed_wake
 filed_zzzz
 fix_radial_distance
 flight_category
+flow_levels
 frd_read
 frd_write
 frequency_line
 fuel_estimate
 fuel_in_tanks
 fuel_names
+gairmet_hazards
 gairmet_title
 glide_range
 glide_reaches
@@ -120,6 +123,7 @@ hold_write
 holding
 holding_leg_minutes
 holds_read
+icing_severity
 in_emergency
 kept_age
 kneeboard_radio
@@ -191,6 +195,7 @@ traffic_marks
 traffic_matches
 traffic_pattern
 traffic_reach
+turbulence_category
 underway
 vfr_basic_minimums
 vor_check_limit_deg

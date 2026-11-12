@@ -12,6 +12,10 @@ describe("the flow layer's legends", () => {
       "Thunderstorm energy",
       "Temperature",
       "Visibility",
+      "Icing",
+      "Turbulence",
+      "Freezing level",
+      "Cloud tops",
     ]);
   });
 
@@ -69,5 +73,15 @@ describe("the flow layer's legends", () => {
       expect(count).toBeGreaterThanOrEqual(3500);
     }
     expect(streaksAt(8, true).count).toBe(6000);
+  });
+
+  it("bands AWC's icing by its categories and its turbulence by a light airplane's EDR, clear under the least", () => {
+    const icing = lookOf("icing");
+    expect(icing.ticks.map((t) => t.label)).toEqual(["Trace", "Light", "Moderate", "Heavy"]);
+    // Category 0, none, is clear; 1, trace, is drawn.
+    expect(icing.ramp[0]![1][3]).toBe(0);
+    const turb = lookOf("turb");
+    expect(turb.ticks.map((t) => t.label)).toEqual(["Light", "Moderate", "Severe", "Extreme"]);
+    expect(turb.title).toContain("15,500 lb");
   });
 });

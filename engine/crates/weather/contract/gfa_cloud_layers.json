@@ -1,0 +1,60 @@
+{
+  "x-call": "wingtip_weather::aviation_grids::call",
+  "description": "AWC's GFA cloud text and cover at points (aviationweather.gov's cloud layers: \"OVC035/TOP 050\", \"SCT021/OVC040/TOP FL280/CI ABV\", \"Cirrus\", \"SKC\"; heights hundreds of feet MSL; cover CLR, FEW, SCT, BKN, OVC for clouds below FL180) as each point's cover in percent, the most of its band's eighths (AIM 7-1-28: FEW 2/8, SCT 4/8, BKN 6/8, OVC 8/8, so cloud_cover reads the same cover back), and its highest top, ft MSL, null where the text gives none.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GfaCloudLayersInput",
+      "type": "object",
+      "properties": {
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "covers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "layers",
+        "covers"
+      ]
+    },
+    "answer": {
+      "title": "GfaCloudLayersAnswer",
+      "type": "object",
+      "properties": {
+        "percent": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "top_ft": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      },
+      "required": [
+        "percent",
+        "top_ft"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

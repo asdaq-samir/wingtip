@@ -175,6 +175,15 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 out.push(':');
                 json::string(&mut out, words);
             }
+            out.push_str("},\"labels\":{");
+            for (i, (words, label)) in crate::aviation_grids::GAIRMET_LABELS.iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                json::string(&mut out, words);
+                out.push(':');
+                json::string(&mut out, label);
+            }
             out.push_str(&format!("}},\"snapshot_s\":{}}}", awc::GAIRMET_SNAPSHOT_S));
         }
         "taf_window" => {

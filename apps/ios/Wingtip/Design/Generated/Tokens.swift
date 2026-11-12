@@ -223,6 +223,32 @@ enum WingtipColor {
         static let flowVisLow = rgb(0x4B4D7A)
         /// Ten miles, where the veil has gone.
         static let flowVisHigh = rgb(0xC9CCDC)
+        /// AWC's icing severity (IFI), pale to deep blue as aviationweather.gov's Icing map shades it: trace.
+        static let flowIcingTrace = rgb(0x9FD3F5)
+        /// Light.
+        static let flowIcingLight = rgb(0x4FA3E8)
+        /// Moderate.
+        static let flowIcingModerate = rgb(0x2A5FD6)
+        /// Heavy.
+        static let flowIcingHeavy = rgb(0x5B2BB0)
+        /// AWC's turbulence (GTG, EDR), green to amber to red to magenta as its Turbulence map shades it: light.
+        static let flowTurbLight = rgb(0xB9D86A)
+        /// Moderate.
+        static let flowTurbModerate = rgb(0xF0B429)
+        /// Severe.
+        static let flowTurbSevere = rgb(0xD6402B)
+        /// Extreme.
+        static let flowTurbExtreme = rgb(0xB0217E)
+        /// The freezing level, ft MSL, blue where it is low (at the surface) to warm where it is high: the surface.
+        static let flowFrzLow = rgb(0x3A52C4)
+        /// 8,000 ft.
+        static let flowFrzMid = rgb(0x42B8A6)
+        /// 16,000 ft and up.
+        static let flowFrzHigh = rgb(0xE2A63A)
+        /// AWC's cloud tops, ft MSL, grey-white deepening to slate as they rise: low tops.
+        static let flowTopsLow = rgb(0xD5DBE4)
+        /// FL400 and up.
+        static let flowTopsHigh = rgb(0x5A6478)
         /// The thin diagonal lines over where the layer has no data, as Apple Weather hatches it.
         static let flowHatch = rgb(0x7B8494)
     }
