@@ -54,12 +54,7 @@ export function withoutPoint(shape: RouteShape, i: number): RouteParts | null {
   const list = points.filter((_, j) => j !== i);
   const role = roleAt(shape, i);
   if (list.length === 1 && role !== "stop") return routeOf(list, role === "dest", role === "dep", isEnd);
-  return routeOf(
-    list,
-    hasDep && (role !== "dep" || isEnd(list[0] ?? "")),
-    hasDest && (role !== "dest" || isEnd(list.at(-1) ?? "")),
-    isEnd,
-  );
+  return routeOf(list, hasDep && (role !== "dep" || isEnd(list[0] ?? "")), hasDest && (role !== "dest" || isEnd(list.at(-1) ?? "")), isEnd);
 }
 
 /**

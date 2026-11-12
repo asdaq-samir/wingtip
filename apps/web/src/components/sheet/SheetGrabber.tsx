@@ -232,9 +232,12 @@ export function SheetGrabber({
                 RING,
                 // Two 16-point bars four apart: the grabber's 36 in all.
                 i === 0 ? "justify-end pr-0.5" : "justify-start pl-0.5",
-                // 44 tall off the sheet's edge, meeting the other's in the middle.
-                "after:absolute after:inset-x-0! after:content-['']",
-                at === "top" ? "after:-top-5! after:bottom-0!" : "after:top-0! after:-bottom-5!",
+                // 44 tall off the sheet's edge, meeting the other's in the
+                // middle: its own height from the bar's inner end, not
+                // offsets from a bar the box's padding makes 19 or 20
+                // tall, which came to 40 (sheet-pages.spec).
+                "after:absolute after:inset-x-0! after:h-11! after:content-['']",
+                at === "top" ? "after:top-auto! after:bottom-0!" : "after:top-0! after:bottom-auto!",
               )}
             >
               <span

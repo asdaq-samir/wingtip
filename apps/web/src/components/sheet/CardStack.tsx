@@ -3,7 +3,7 @@ import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
 import { closeTopCard } from "../../lib/openCards";
-import { cardOpening, coverCard, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
+import { cardOpening, coverCard, dropCard, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
 import { AT_PILL, sizeAt, snapsOf } from "./insets";
 import { UNDER_INDICATOR } from "./SheetDrawer";
 import { cardSettled, sheetTopRef, useRidingCard } from "./sheetTopSlot";
@@ -84,7 +84,7 @@ export function CardStack(p: StackProps & { host: HTMLElement | null }) {
   const stack = useSheetCards((s) => s.stack);
   const riding = useRidingCard();
   if (!p.host) return null;
-  const top = [...stack].reverse().find((entry) => entry.shown)?.id;
+  const top = [...stack].reverse().find((entry) => entry.state === "open")?.id;
   const cover = coverCard(stack)?.id;
   return stack.map((entry) => (
     <CardDrawer
@@ -115,7 +115,7 @@ function CardDrawer({
   // Its own snap point, kept in its entry: set as it opens, from then on
   // the pilot's or the card's (useCardSize).
   const at = entry.at ?? cardOpening(entry);
-  const unset = entry.at === undefined && entry.shown;
+  const unset = entry.at === undefined && entry.state === "open";
   useLayoutEffect(() => {
     if (unset) setCard(id, { at });
   }, [unset, id, at]);
@@ -133,7 +133,7 @@ function CardDrawer({
     <Drawer.Root
       // Mounted closed, opened once its size is set (the layout effect
       // above, before the first paint): so it rises from the foot (SLIDE).
-      open={entry.shown && entry.at !== undefined}
+      open={entry.state === "open" && entry.at !== undefined}
       modal={false}
       swipeDirection={fromBottom ? "down" : "up"}
       snapPoints={onPhone ? snaps.points : undefined}
@@ -141,7 +141,10 @@ function CardDrawer({
       snapPoint={onPhone ? snaps.at[at] : undefined}
       onSnapPointChange={snapped}
       // The map's buttons move onto it once it has finished coming up (sheetTopSlot).
-      onOpenChangeComplete={(open) => cardSettled(id, open)}
+      onOpenChangeComplete={(open) => {
+        cardSettled(id, open);
+        if (!open && entry.state === "leaving") dropCard(id);
+      }}
       onOpenChange={(open, details) => {
         if (open) return;
         // The card on top alone hears it: two cards open are two drawers
@@ -204,7 +207,8 @@ function CardDrawer({
                 onPhone &&
                   "[transform:translateY(calc(var(--drawer-snap-point-offset)-var(--sheet-base,0px)+var(--drawer-swipe-movement-y)))] [--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)]",
                 onPhone && p.ready && EASE,
-                onPhone && SLIDE[fromBottom ? "bottom" : "top"],
+                // Gone with its content: closed at once, an empty card never slid down.
+                onPhone && (entry.state === "leaving" ? "transition-none" : SLIDE[fromBottom ? "bottom" : "top"]),
                 // A top sheet's card clear of the status bar.
                 onPhone && !fromBottom && "pt-[env(safe-area-inset-top)]",
                 onPhone && fromBottom && UNDER_INDICATOR,

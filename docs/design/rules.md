@@ -116,6 +116,8 @@ Compose. Nothing here is built by hand where a stock part does it.
     Saved, Favorites, a link), and a card put away leaves it where it is. Cards keep their own
     opening sizes (2, and the Detents row below): each card's drawer is
     its own, the sheet under it untouched.
+12. **A flight's figures and its way out sit at the foot of the card in sight**, never on a sheet under it: the dry run's figures and Done flying are the Profile card's foot while it is up, the native pattern of Apple Maps' navigation card with its arrival figures and End (the owner, 2026-11-12: "Just do it the native way").
+13. **Every thing's card is laid out alike**, the native pattern of Apple Maps' place card: its name, the short line under it (an airport's town, an airplane's type), then its row of action tiles (`CardAction`), then its content (the owner, 2026-11-12: "Just do it the native way").
 
 | | Web | iPhone (Apple Maps' way) | Android (Google Maps' way) |
 |---|---|---|---|
@@ -313,7 +315,9 @@ and the one search is still the only field.
 
 Tests: [`e2e/sheet-pages.spec.ts`](../../apps/web/e2e/sheet-pages.spec.ts)
 (`@smoke`: Search to FPL and back by a swipe and by the grabber's bars;
-the capsule naming the page after a swipe, then gone).
+the capsule naming the page after a swipe, then gone) and, for the cards
+over the pages, [`e2e/sheet-pages-cards.spec.ts`](../../apps/web/e2e/sheet-pages-cards.spec.ts)
+(`@smoke`: Fly Here from an airport's card lands on FPL, live).
 
 ## 5. Airport weather marks (the owner, 2026-11-10)
 

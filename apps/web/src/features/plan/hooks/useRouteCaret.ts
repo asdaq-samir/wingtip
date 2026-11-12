@@ -66,7 +66,8 @@ export function useRouteCaret({
     setFocused(true);
     const byPress = pressed.current;
     pressed.current = false;
-    if (!byPress && field.current) setTokenFieldSelection(field.current, new TokenFieldValue.SelectedRange(caretBefore(valueNow.current, startAt)), true);
+    if (!byPress && field.current)
+      setTokenFieldSelection(field.current, new TokenFieldValue.SelectedRange(caretBefore(valueNow.current, startAt)), true);
   };
 
   // A tap on the box's empty room -- not a pill, an arrow or the field --

@@ -56,7 +56,11 @@ export default function RouteSuggestions({
               id={`via-${d.ident}`}
               waypoint
               testId="picker-suggestion"
-              airport={{ ident: d.ident, name: d.kind, municipality: [`+${Math.round(d.added_nm)} nm`, d.description].filter(Boolean).join(" · ") }}
+              airport={{
+                ident: d.ident,
+                name: d.kind,
+                municipality: [`+${Math.round(d.added_nm)} nm`, d.description].filter(Boolean).join(" · "),
+              }}
               onAction={() => onPick(d.ident)}
             />
           ))}
@@ -64,7 +68,13 @@ export default function RouteSuggestions({
       )}
       {ownPoint && (
         <Group heading="Your point">
-          <Row id="own" waypoint testId="route-own-point" airport={{ ident: ownPoint, name: frdWords(ownPoint) }} onAction={() => onPick(ownPoint)} />
+          <Row
+            id="own"
+            waypoint
+            testId="route-own-point"
+            airport={{ ident: ownPoint, name: frdWords(ownPoint) }}
+            onAction={() => onPick(ownPoint)}
+          />
         </Group>
       )}
       {fields.length > 0 && (

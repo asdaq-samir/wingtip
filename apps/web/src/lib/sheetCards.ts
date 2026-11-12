@@ -28,6 +28,8 @@ export type CardFrame = {
   finalFocus?: Drawer.Popup.Props["finalFocus"];
 };
 
+export type CardState = "open" | "kept" | "leaving";
+
 export type CardEntry = {
   id: string;
   /** Its name. */
@@ -37,8 +39,11 @@ export type CardEntry = {
   /** Its own drawer's snap point, set as it opens and then by the pilot's
    *  drag or the card itself (useCardSize). */
   at?: PanelState;
-  /** Open, or kept closed under a page put away (lib/shown). */
-  shown: boolean;
+  /** Open; kept closed under a page put away (lib/shown) or between its
+   *  openings; or leaving, its caller gone: its drawer closes by Base UI's
+   *  own close (its focus handed back, its parent told), then the entry
+   *  goes (CardStack). */
+  state: CardState;
   frame: CardFrame;
   /** The drawer's scroller, where the content is put. */
   slot: HTMLElement | null;
@@ -61,7 +66,7 @@ const REACH: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 export function coverCard(stack: CardEntry[], among: (entry: CardEntry) => boolean = () => true): CardEntry | null {
   let cover: CardEntry | null = null;
   for (const entry of stack) {
-    if (!entry.shown || !among(entry)) continue;
+    if (entry.state !== "open" || !among(entry)) continue;
     if (!cover || REACH[entry.at ?? cardOpening(entry)] >= REACH[cover.at ?? cardOpening(cover)]) cover = entry;
   }
   return cover;
@@ -86,6 +91,11 @@ export function setCard(id: string, change: Partial<CardEntry>) {
     stack[at] = { ...was, ...change };
     return { stack };
   });
+}
+
+/** A card's entry taken away, once its drawer has closed (CardStack). */
+export function dropCard(id: string) {
+  useSheetCards.setState((s) => ({ stack: s.stack.filter((entry) => entry.id !== id || entry.state !== "leaving") }));
 }
 
 /** The head's place for a card whose content draws its own name there --

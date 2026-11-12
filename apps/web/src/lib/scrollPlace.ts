@@ -4,16 +4,29 @@ import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
  * Going back returns to where you were, opening something new starts at
  * the top (the one scrolling rule, the owner 2026-11-10): as something is
  * opened in place of a list (`away`), the list's scroller (the nearest one
- * round `anchor`) is kept where it was and put at its top; as it closes,
- * the list's place is put back.
+ * round `anchor`) is put at its top; as it closes, the list's place is put
+ * back. The place is noted as the list scrolls, while it is the one shown:
+ * read once the page had taken the list's place, the scroller had already
+ * been cut to the shorter page's height, and Settings came back at the top
+ * or part way (the browser runs, 2026-11-12).
  */
 export function useScrollPlace(anchor: RefObject<HTMLElement | null>, away: boolean) {
+  const place = useRef(0);
   const kept = useRef<number | null>(null);
   useEffect(() => {
+    const scroller = away ? null : anchor.current?.closest<HTMLElement>(".overflow-y-auto");
+    if (!scroller) return;
+    const note = () => {
+      place.current = scroller.scrollTop;
+    };
+    scroller.addEventListener("scroll", note, { passive: true });
+    return () => scroller.removeEventListener("scroll", note);
+  }, [anchor, away]);
+  useLayoutEffect(() => {
     const scroller = anchor.current?.closest<HTMLElement>(".overflow-y-auto");
     if (!scroller) return;
     if (away) {
-      kept.current ??= scroller.scrollTop;
+      kept.current ??= place.current;
       scroller.scrollTo({ top: 0 });
     } else if (kept.current !== null) {
       scroller.scrollTop = kept.current;

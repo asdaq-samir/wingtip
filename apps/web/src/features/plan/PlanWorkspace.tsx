@@ -475,8 +475,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // body's room half way, and grew with the sheet under a finger.
         // At the pill on FPL they are the pill's one row (MapPanel), the
         // route's row from half up (the owner, 2026-11-11, the canvas's b).
-        // FPL's page's own (SheetParts), so they slide in and out with it.
-        foot: !place && !heldPoint && !flight && !briefShown ? routed && <FlightFoot vm={vm} /> : undefined,
+        // FPL's page's own (SheetParts); under the Profile, its foot (PlanPage).
+        foot: !place && !heldPoint && !flight && !briefShown && !vm.profileShown ? routed && <FlightFoot vm={vm} /> : undefined,
         // The route as one box of pills, in place of the two airport fields,
         // the top row to itself, at the pilot's ask: its close and its
         // Procedures beside it went to the chips' row (Approaches) and the

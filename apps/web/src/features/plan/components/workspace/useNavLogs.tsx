@@ -119,7 +119,6 @@ export function useNavLogs(
           // 2026-11-05: C81 typed as the departure, there twice).
           route={routeEdit === "plan" && !(planned.dep && planned.dest) ? undefined : routeList}
           notice={<BriefingNotices briefing={s.briefing} />}
-
         >
           {/* Out of the tabs, drawing nothing: the risk assessment and the
           Go / No-Go's findings published once, for Save and the tabs' marks;
@@ -197,17 +196,7 @@ export function useNavLogs(
         />
       </Suspense>
     ),
-    [
-      shared,
-      estimate,
-      s.totals,
-      s.local,
-      planned.dest,
-      depart,
-      navLogShown,
-      briefLine,
-      closeNavLogCard,
-    ],
+    [shared, estimate, s.totals, s.local, planned.dest, depart, navLogShown, briefLine, closeNavLogCard],
   );
   return { navLog, navLogCard };
 }

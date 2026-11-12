@@ -5,7 +5,8 @@ import { usePreferences, type RecentAirport } from "../../../lib/preferences";
 import type { TypedProcedure } from "../../../lib/procedures";
 import { useAirportSearch } from "../../../lib/useAirportSearch";
 import { pointsOf, readTyped, roleAt, routeOf, withoutPoint, withTyped, type RouteParts } from "../components/routeBox/routeEdit";
-import { endedWords, removedPoint, routeValue, samePoints, takeTyped, tokensOf, typedOf, type RouteValue } from "../components/routeBox/routeTokens";
+import { endedWords, removedPoint, routeValue, samePoints, takeTyped, tokensOf, typedOf } from "../components/routeBox/routeTokens";
+import type { RouteValue } from "../components/routeBox/routeTokens";
 import { useRouteCaret } from "./useRouteCaret";
 import { useStopAsked } from "./useStopAsked";
 

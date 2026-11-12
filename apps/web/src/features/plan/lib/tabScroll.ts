@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 /**
  * A card's tabs and the card's scroll, as Apple Maps' place card has them
@@ -13,14 +13,19 @@ import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
  *    pinned, the room under it blank, rather than the card jumping back to
  *    its top (Runways, in the same recording).
  * The card's scroller is the sheet's one scroller round its tab bar
- * (`bar`, SheetParts' data-sheet-scroll), whose parent (the Tabs root)
- * holds the panels.
+ * (SheetParts' data-sheet-scroll), whose parent (the Tabs root) holds the
+ * panels. The bar is the element handed to the returned setter, followed as it
+ * comes and goes: a card's content waits for the engine (SheetCard's
+ * EngineGate), so the bar is drawn after the card that calls this, and a
+ * listener set up as the card mounted found no bar and was never added --
+ * no tab kept its place (the browser runs, 2026-11-12).
  */
-export function useTabScroll(bar: RefObject<HTMLElement | null>, tab: string) {
+export function useTabScroll(tab: string) {
+  const [bar, setBar] = useState<HTMLElement | null>(null);
   const places = useRef(new Map<string, number>());
   const shown = useRef(tab);
   useEffect(() => {
-    const scroller = bar.current?.closest<HTMLElement>(".overflow-y-auto");
+    const scroller = bar?.closest<HTMLElement>(".overflow-y-auto");
     if (!scroller) return;
     const keep = () => places.current.set(shown.current, scroller.scrollTop);
     scroller.addEventListener("scroll", keep, { passive: true });
@@ -29,8 +34,9 @@ export function useTabScroll(bar: RefObject<HTMLElement | null>, tab: string) {
   useLayoutEffect(() => {
     const was = shown.current;
     shown.current = tab;
-    if (bar.current) placeTab(bar.current, was === tab ? undefined : (places.current.get(tab) ?? null));
+    if (bar) placeTab(bar, was === tab ? undefined : (places.current.get(tab) ?? null));
   }, [tab, bar]);
+  return [bar, setBar] as const;
 }
 
 /** Fits the Tabs root round `tabs` for its bar to stay pinned, and, on a

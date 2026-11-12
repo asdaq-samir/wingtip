@@ -42,7 +42,7 @@ export function useRidingCard(): string | null {
  */
 export function useCardMoving(): boolean {
   const up = useSheetTop((s) => s.up);
-  return useSheetCards((s) => s.stack.some((entry) => entry.shown !== up.includes(entry.id)));
+  return useSheetCards((s) => s.stack.some((entry) => (entry.state === "open") !== up.includes(entry.id)));
 }
 
 /** The one container the riding buttons are drawn in, moved from slot to

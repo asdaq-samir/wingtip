@@ -167,7 +167,8 @@ export default function RouteBox({
     onDirectTo,
     change: (list: string[]) => void change(list),
     remove,
-    editAltitude: (ident: string) => setEditing({ ident, waypoint: waypoints.has(ident), altitude: altitudeAt(ident, waypoints.has(ident)) }),
+    editAltitude: (ident: string) =>
+      setEditing({ ident, waypoint: waypoints.has(ident), altitude: altitudeAt(ident, waypoints.has(ident)) }),
     arrowAt,
   };
   return (

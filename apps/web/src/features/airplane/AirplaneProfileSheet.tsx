@@ -2,6 +2,8 @@ import { cn } from "cn";
 import { FileTrigger } from "react-aria-components";
 import { Pressable } from "react-aria/Pressable";
 import { SheetCard } from "../../components/SheetCard";
+import { CardAction } from "../../components/CardAction";
+import { ACTION } from "../../lib/cardActions";
 import { LINK } from "../../components/airplane/link";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
@@ -126,6 +128,8 @@ export default function AirplaneProfileSheet() {
   return (
     <SheetCard
       title={vm.tail}
+      // Its type under its name, as the airport card has its town there.
+      description={vm.type ?? "Type not known"}
       onClose={vm.close}
       testId="airplane-profile"
       // On the figure it was opened for, where it was one.
@@ -136,11 +140,20 @@ export default function AirplaneProfileSheet() {
       }}
     >
       <div className="flex flex-col gap-5">
-        {/* First, as the one-search design has it (2026-11-09): this
-            airplane the plan's, and the plan shown. */}
-        <Button type="button" className="h-11 w-full" disabled={vm.flying} onClick={vm.fly} data-testid="fly-this-airplane">
-          {vm.flying ? "Flying This Airplane" : "Fly This Airplane"}
-        </Button>
+        {/* Laid out as the airport card is, Apple Maps' place card: the
+            name and the line under it, then the action row of tiles (the
+            owner, 2026-11-12: "Just do it the native way"). Its one action,
+            this airplane the plan's and the plan shown, the row's width. */}
+        <div className="grid gap-2" data-testid="airplane-actions">
+          <CardAction
+            icon={<ACTION.flyHere.icon />}
+            label={vm.flying ? "Flying This Airplane" : "Fly This Airplane"}
+            filled
+            disabled={vm.flying}
+            onClick={vm.fly}
+            testId="fly-this-airplane"
+          />
+        </div>
         <ListGroup>
           <ListRow title="Registration" value={vm.tail} />
           <ListRow title="Type" value={vm.type ?? "Not known"} data-testid="airplane-profile-type" />

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState, useEffectEvent } from "react";
+import { lazy, Suspense, useEffect, useId, useMemo, useState, useEffectEvent } from "react";
 import { usePrefetchQuery, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
 import { useKeptAirport } from "../../../lib/preferences";
@@ -178,7 +178,6 @@ export default function PlaceCard({
   // of a mile from a fix a hundredth of a degree old would be wrong), read
   // as the words, so the card is drawn again only when they change.
   const distance = useOwnShip((o) => (place ? distanceOf(place, o.enabled && o.fix ? { point: o.fix, name: null } : from) : null));
-  const tabsRef = useRef<HTMLDivElement>(null);
   // Fly Here tapped: the tile says so at once, a frame before the route
   // is drawn (PlanWorkspace's flyHere), which is a moment of a phone's --
   // the tap looked lost under it, at the pilot's ask for no lag. The card
@@ -187,7 +186,7 @@ export default function PlaceCard({
 
   // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the card opens on its approaches; each tab its own place in the scroll (useTabScroll).
   const [tab, setPicked] = useCardTab<CardTab>(`place:${ident}`, "radio", startOn ? "diagrams" : null);
-  useTabScroll(tabsRef, tab);
+  const [tabBar, setTabBar] = useTabScroll(tab);
   // Opened on its approaches (the route's Approaches): at half as every
   // card opens (the owner, 2026-11-11), Charts open on the approaches once
   // the answer is in; the pilot swipes up for the plates. The card may
@@ -200,7 +199,7 @@ export default function PlaceCard({
     if (startOn !== "approaches" || !placeIn) return;
     setPicked("diagrams");
     const look = requestAnimationFrame(() => {
-      tabsRef.current
+      tabBar
         ?.closest('[data-testid="place-card"]')
         ?.querySelector('[data-chart-group="Approaches"]')
         // Smooth only where motion is welcome: CSS's Reduce Motion rule
@@ -209,7 +208,7 @@ export default function PlaceCard({
       started();
     });
     return () => cancelAnimationFrame(look);
-  }, [startOn, placeIn, setPicked]);
+  }, [startOn, placeIn, setPicked, tabBar]);
   // The runways, sketched or the FAA's diagram cropped to them, a page of
   // the pictures: a tap shows it full screen -- the FAA's diagram, or for
   // a field the FAA draws none for the sketch (SketchViewer).
@@ -532,7 +531,7 @@ export default function PlaceCard({
           {/* Pinned directly under the card's head (PINNED_BELOW, plain CSS), frosted as it is, edge to edge, the
               control at the card's margins: on the control itself the -mx-4 kept its 100% width, so it began at
               the sheet's edge and stopped 32 short of the other, the content showing through (the owner's KORD). */}
-          <div ref={tabsRef} className={cn("frost-head sticky z-10 -mx-4 mt-3 scroll-mt-28 px-4 py-1", PINNED_BELOW)}>
+          <div ref={setTabBar} className={cn("frost-head sticky z-10 -mx-4 mt-3 scroll-mt-28 px-4 py-1", PINNED_BELOW)}>
             <CardTabBar tabs={CARD_TABS} value={tab} onPick={setPicked} activateOnFocus testIdPrefix="place-tab" disabled={!place} />
           </div>
           <CardTabPanel value="radio" className="space-y-0">

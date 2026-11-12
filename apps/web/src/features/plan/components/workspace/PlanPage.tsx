@@ -1,4 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
+import FlightFoot from "./FlightFoot";
 import { cn } from "cn";
 import { routeName } from "../../../../lib/identSchema";
 import type { FlightRules } from "../../../../lib/preferences";
@@ -119,7 +120,14 @@ export default function PlanPage({
       )}
       {navLogDrawn && routed && (
         <CardLayer open={navLogShown}>
-          <div className="flex min-h-0 flex-1 flex-col print:hidden" data-testid="navlog-card">
+          {/* Its room over its head the grabber's, as every card's (SheetCard).
+              The head is the whole log's own child (NavLogView): in a box of
+              its own it stuck only within it and scrolled away, the title and
+              ✕ gone and nothing of the card left at the pill. */}
+          <div
+            className="flex min-h-0 flex-1 flex-col pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
+            data-testid="navlog-card"
+          >
             {navLogCard}
           </div>
         </CardLayer>
@@ -154,6 +162,16 @@ export default function PlanPage({
               </Waits>
             ) : (
               <ProfileSideView vm={vm} />
+            )}
+            {/* The flight's figures and its way out -- the dry run's figures,
+                Done flying -- at the foot of the card in sight, not left on
+                FPL's foot under it: the native pattern, as Apple Maps'
+                navigation card carries its arrival figures and End (the
+                owner, 2026-11-12: "Just do it the native way"). */}
+            {profileShown && (
+              <div className="shrink-0 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <FlightFoot vm={vm} />
+              </div>
             )}
           </ProfileCard>
         </CardLayer>

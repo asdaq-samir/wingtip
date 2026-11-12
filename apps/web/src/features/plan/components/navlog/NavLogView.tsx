@@ -933,10 +933,10 @@ export default function NavLogView({
             className="@container pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))]"
             data-testid={cardHead ? "navlog-card-scroller" : "navlog-scroller"}
           >
-            {cardHead && <div className="pt-[var(--corner-inset,0.75rem)] pb-2">{cardHead}</div>}
+            {cardHead}
             <section
               aria-label={local ? "Local Flight" : route ? "Route" : "Nav Log"}
-              className={TEXT.prose}
+              className={cn(TEXT.prose, cardHead && "pt-2")}
               data-testid={cardHead ? "navlog-sheet" : undefined}
             >
               {legsSection}

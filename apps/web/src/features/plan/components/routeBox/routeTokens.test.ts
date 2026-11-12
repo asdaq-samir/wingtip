@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { TokenFieldValue } from "react-aria-components";
-import { caretBefore, endedWords, removedPoint, routeValue, samePoints, takeTyped, tokensOf, typedOf, type RouteValue } from "./routeTokens";
+import {
+  caretBefore,
+  endedWords,
+  removedPoint,
+  routeValue,
+  samePoints,
+  takeTyped,
+  tokensOf,
+  typedOf,
+  type RouteValue,
+} from "./routeTokens";
 
 /** A value with text typed in at a segment's place, the caret after it. */
 function typing(value: RouteValue, index: number, text: string): RouteValue {

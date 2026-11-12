@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from "react";
-import { setCard, useSheetCards, type CardFrame } from "../../lib/sheetCards";
+import { setCard, useSheetCards, type CardFrame, type CardState } from "../../lib/sheetCards";
 import { useShown } from "../../lib/shown";
 
 /**
@@ -24,13 +24,14 @@ export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: 
     latest.current = frame;
   });
   const { fullScreen, title, testId, label, labelledBy } = frame;
-  const opened = useRef({ fullScreen, shown });
+  const state: CardState = shown ? "open" : "kept";
+  const opened = useRef({ fullScreen, state });
   useLayoutEffect(() => {
-    const { fullScreen, shown } = opened.current;
+    const { fullScreen, state } = opened.current;
     const entry = {
       id,
       fullScreen,
-      shown,
+      state,
       slot: null,
       frame: {
         dismiss: latest.current.dismiss && ((details) => latest.current.dismiss?.(details)),
@@ -38,10 +39,21 @@ export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: 
         finalFocus: latest.current.finalFocus,
       } satisfies CardFrame,
     };
-    useSheetCards.setState((s) => ({ stack: [...s.stack, entry] }));
-    return () => useSheetCards.setState((s) => ({ stack: s.stack.filter((e) => e.id !== id) }));
+    // One opened again while its last drawer still closes takes its place.
+    useSheetCards.setState((s) => ({ stack: [...s.stack.filter((e) => e.id !== id), entry] }));
+    // Its caller gone (the Map card's close, an airplane's edit cancelled):
+    // its drawer is closed, not taken off the page open, so Base UI's close
+    // runs -- the focus handed back (finalFocus), the sheet told no card is
+    // up over it, its focus manager's marks and Escape put back -- and the
+    // entry goes once that close is done (CardStack's onOpenChangeComplete).
+    // Taken off open, Escape after an airplane's edit cancelled no longer
+    // closed Setup under it, and the focus was left on nothing.
+    return () =>
+      useSheetCards.setState((s) => ({
+        stack: s.stack.flatMap((e) => (e.id !== id ? [e] : e.at === undefined ? [] : [{ ...e, state: "leaving" as const }])),
+      }));
   }, [id]);
-  useLayoutEffect(() => setCard(id, { shown }), [id, shown]);
+  useLayoutEffect(() => setCard(id, { state }), [id, state]);
   // Opened again by the pilot, it opens by the card rule's 2 as a new card
   // does (CardStack's cardOpening), not at the size it was put away at;
   // kept closed under a card over it, it comes back as it was.
