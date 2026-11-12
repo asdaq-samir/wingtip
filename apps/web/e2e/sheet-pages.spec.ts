@@ -38,8 +38,7 @@ test("Search to FPL and back, by a swipe and by the grabber's bars, the sheet's 
   await swipe(page, "left");
   await expectPage(page, 1);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
-  // FPL with no route: its empty route box, nothing between it and the
-  // flights saved (96463ab51: no "Plan a flight").
+  // FPL with no route: its empty route box, no "Plan a flight" (96463ab51).
   await expect(sideDrawer(page).getByTestId("route-box")).toBeVisible();
   await expect(sideDrawer(page).getByText("Plan a flight")).toHaveCount(0);
 
