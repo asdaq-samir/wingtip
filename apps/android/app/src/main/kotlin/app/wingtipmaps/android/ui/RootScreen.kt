@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
@@ -66,15 +69,21 @@ import app.wingtipmaps.android.ui.sheet.MapSheet
 import app.wingtipmaps.android.ui.sheet.halfWindow
 import app.wingtipmaps.android.ui.sheet.rememberMapSheetState
 import app.wingtipmaps.android.welcome.WelcomeHost
+import app.wingtipmaps.android.welcome.WelcomeModel
 import app.wingtipmaps.android.widget.NextFlightFeed
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
  * The map under the docked sheet, as Google Maps has it on Android and the
  * card rule of 2026-11-10 lays it out: the sheet's first row the one
  * search with its microphone and the account button (OneSearch), and
- * under it what the search shows with nothing typed or the plan; a thing's
+ * under it what the search shows with nothing typed, the plan a sideways
+ * swipe away on the carousel's second page (SheetCarousel); a thing's
  * card or a page -- a field, an airplane, a fix, a leg, the Brief,
  * Settings -- takes the search's place with its name and ← (CardPage) and
  * fills the sheet below, on the sheet's own stack (SheetNav, SheetCard),
@@ -93,6 +102,7 @@ import kotlinx.coroutines.launch
  * @param pending a link opened in the app (MainActivity); `onHandled`
  *   once it has been taken.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val plan: Plan = viewModel()
@@ -142,6 +152,14 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         }
     }
     val openField: (String) -> Unit = { ident -> pages.show(SheetPage.Airport(ident)) }
+    // The carousel (SheetCarousel): a route made or opened from anywhere
+    // brings the FPL page, clearing it leaves the page as it is, and the
+    // one search asked for from the plan (Add a Stop) brings the Search
+    // page, where its field is.
+    LaunchedEffect(plan, stripLayout) {
+        if (!stripLayout) plan.state.map { it.routed }.distinctUntilChanged().drop(1).filter { it }.collect { pages.toPlanPage() }
+    }
+    LaunchedEffect(search) { snapshotFlow { search.asked }.drop(1).collect { pages.closePlan() } }
 
     val link by pending.collectAsStateWithLifecycle()
     val shared: SharedFlightModel = viewModel()
@@ -233,7 +251,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     var searchRowPx by remember { mutableIntStateOf(0) }
     val pagesView: @Composable (Modifier, Boolean, @Composable () -> Unit) -> Unit = { modifier, backEnabled, head ->
         SheetPagesHost(
-            pages, backEnabled, modifier, head = head,
+            pages, backEnabled, modifier, head = head, carousel = !stripLayout,
             // The strip's field and timeline are its Home and its plan. At
             // the peek only the search shows, so what lies under it (the
             // flight's card, under the gesture bar) is kept from TalkBack.
@@ -244,11 +262,16 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                 }
             },
             plan = {
-                PlanPage(
-                    plan, onClose = pages::closePlan, onField = { pages.push(SheetPage.Airport(it)) },
-                    onLeg = { pages.push(SheetPage.Leg(it)) }, onFind = search::open, onAddStop = search::addStop,
-                    onAddStopAfter = search::addStopAfter,
-                )
+                if (planState.dep.isEmpty() && planState.dest.isEmpty() && planState.stops.isEmpty()) {
+                    val sample = WelcomeModel.SAMPLE
+                    PlanEmpty(onSearch = search::open, onSample = { plan.plan(sample.dep, sample.dest, sample.stops) })
+                } else {
+                    PlanPage(
+                        plan, onClose = pages::closePlan, onField = { pages.push(SheetPage.Airport(it)) },
+                        onLeg = { pages.push(SheetPage.Leg(it)) }, onFind = search::open, onAddStop = search::addStop,
+                        onAddStopAfter = search::addStopAfter,
+                    )
+                }
             },
             card = cardView,
         )
@@ -302,7 +325,10 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         // every font scale (the sheet audit's S-1).
         val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val searchHeight = with(LocalDensity.current) { searchRowPx.toDp() }.takeIf { it > 0.dp } ?: WingtipSize.TapTarget
-        val peek = if (pages.covered) halfWindow() else SheetHandle + searchHeight + WingtipSpace.Sm + navigationBar
+        // At the peek, the carousel's dots and the first row of its page in
+        // view: the search's, or the plan's bar.
+        val firstRow = if (pages.planShown) TopAppBarDefaults.TopAppBarExpandedHeight else searchHeight + WingtipSpace.Sm
+        val peek = if (pages.covered) halfWindow() else SheetHandle + SheetDotsHeight + firstRow + navigationBar
         // The map's buttons ride the sheet's top at the right, just above
         // the search (the owner, 2026-11-11), the position button nearest it.
         MapSheet(

@@ -36,13 +36,15 @@ import app.wingtipmaps.android.search.SearchPick
 import app.wingtipmaps.android.search.nothingTyped
 
 /**
- * The docked sheet's pages in Navigation Compose's NavHost: Home and the
- * plan under the one search, and every card and page over it (CardRoute,
- * SheetCard), with Material's shared axis between them, which the
- * NavHost seeks with the predictive back gesture (SharedAxisX). The
- * search's row (`head`) is part of Home and the plan, not over the
- * NavHost, so Back from a card shows them coming in with their search, as
- * they will be once it is released.
+ * The docked sheet's pages in Navigation Compose's NavHost: the carousel
+ * (SheetCarousel) of the one search's page and the plan's, and every card
+ * and page over it (CardRoute, SheetCard), with Material's shared axis
+ * between them, which the NavHost seeks with the predictive back gesture
+ * (SharedAxisX). The search's row (`head`) is part of the Search page,
+ * not over the NavHost, so Back from a card shows it coming in with its
+ * search, as it will be once it is released. With no `carousel` (the
+ * strip layout, whose field and timeline are its search and its plan)
+ * Home is the Search page alone.
  * `backEnabled` false hands Back to what comes first (the expanded sheet
  * lowering under the search, MapSheet; a card in the wide layout's detail
  * pane) through a child of the system's navigation event dispatcher,
@@ -59,6 +61,7 @@ internal fun SheetPagesHost(
     backEnabled: Boolean,
     modifier: Modifier,
     head: @Composable () -> Unit = {},
+    carousel: Boolean = true,
     home: @Composable () -> Unit,
     plan: @Composable () -> Unit,
     card: @Composable (SheetPage) -> Unit,
@@ -74,8 +77,11 @@ internal fun SheetPagesHost(
             popEnterTransition = { SharedAxisX.enter(shift, forward = false) },
             popExitTransition = { SharedAxisX.exit(shift, forward = false) },
         ) {
-            composable<SheetPage.Home> { CompositionLocalProvider(LocalViewModelStoreOwner provides models) { UnderSearch(head, home) } }
-            composable<SheetPage.Plan> { CompositionLocalProvider(LocalViewModelStoreOwner provides models) { UnderSearch(head, plan) } }
+            composable<SheetPage.Home> {
+                CompositionLocalProvider(LocalViewModelStoreOwner provides models) {
+                    if (carousel) SheetCarousel(sheet.pager, search = { UnderSearch(head, home) }, plan = plan) else UnderSearch(head, home)
+                }
+            }
             composable<CardRoute> { entry ->
                 val page = remember(entry) { SheetPage.of(entry.toRoute<CardRoute>().key) }
                 CompositionLocalProvider(LocalViewModelStoreOwner provides models) { card(page) }

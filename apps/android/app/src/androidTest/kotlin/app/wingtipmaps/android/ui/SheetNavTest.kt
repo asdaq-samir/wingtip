@@ -16,7 +16,8 @@ import org.junit.runner.RunWith
  * The sheet's stack (SheetNav) on a real NavHost: a card shown from the
  * map or the search takes the place of the cards there, one opened from
  * inside a card goes on top of it, Back steps down one level and ✕
- * closes them all, back to the search and the plan under it.
+ * closes them all, back to the carousel at the page it was on (the plan
+ * is its second page, SheetCarousel, and its ✕ the Search page).
  */
 @RunWith(AndroidJUnit4::class)
 class SheetNavTest {

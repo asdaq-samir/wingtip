@@ -479,6 +479,39 @@ placement wins, and the difference is noted.
   (rules.md section 7).
 - **Test**: `androidTest/.../ui/MapButtonsOnSheetTest`.
 
+#### The sheet's carousel: Search and FPL (the owner, 2026-11-11)
+
+- **What**: the sheet has two pages side by side, Search (the one
+  search and what it shows with nothing typed) and FPL (the plan), a
+  sideways swipe apart, with two page dots under the stock drag handle
+  (rules.md records the decision). The FPL page has no field of its
+  own: Add a Stop and Find bring the Search page and open its field.
+  With no route the FPL page says "Plan a Flight", with Search (the one
+  search, opened) and Open Sample Flight, the welcome's Madison to
+  Oshkosh. A route made or opened from anywhere brings the FPL page;
+  clearing it leaves the page as it is. A card opens over both pages,
+  and ✕ or Back comes back to the page it was opened from. At the peek
+  the sheet shows the dots and the page's first row: the search's, or
+  the plan's bar.
+- **Stock parts and wiring**: Compose foundation's `HorizontalPager`
+  (`ui/SheetCarousel`) as the NavHost's Home destination, its
+  `PagerState` held by `SheetNav` so it outlives the cards over it and a
+  rotation; both pages stay composed (`beyondViewportPageCount = 1`), so
+  each keeps its own scroll and the one search still takes an ask made
+  from the plan. The pager takes only a sideways drag; an upward or
+  downward one stays with `BottomSheetScaffold` and the page's list
+  through the stock nested scrolling. Material 3 1.5.0-rc01 has no page
+  indicator for a phone (only Wear's `HorizontalPageIndicator`), so the
+  dots are the pager's state drawn in the theme's colours: each a
+  `selectable` tab, 48 dp a side with an 8 dp dot (nothing grows), read
+  as "Page 1 of 2, Search". The strip layout, whose field and timeline
+  are its search and plan, has no carousel.
+- **Deep links**: `fpl` opens the FPL page; `search` is
+  `TODO(claude/carousel-web)` until that branch's screens.json entry is
+  generated.
+- **Test**: `androidTest/.../ui/SheetCarouselTest`, and `SheetNavTest`
+  for the stack over the carousel.
+
 ### 3.2 The airport card and the airplane card
 
 - **Follow**: Google Maps' place sheet. Its documented parts are the
