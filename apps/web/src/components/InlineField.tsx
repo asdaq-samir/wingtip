@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { ComponentPropsWithRef, ReactNode } from "react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
 
@@ -51,7 +51,7 @@ export function InlineField({
   placeholderClassName?: string;
   /** Keeps its width in a row too narrow for everything. */
   shrink?: boolean;
-  input: Omit<InputHTMLAttributes<HTMLInputElement>, "className" | "placeholder"> & { "data-testid"?: string };
+  input: Omit<ComponentPropsWithRef<"input">, "className" | "placeholder"> & { "data-testid"?: string };
   inputClassName?: string;
   /** At its end, shown when it has something to open. */
   button?: ReactNode;

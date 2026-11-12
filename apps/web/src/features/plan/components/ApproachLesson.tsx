@@ -30,6 +30,7 @@ import { TEXT, TEXT_POINTS } from "../../../lib/text";
 import SectionTitle from "../../../components/SectionTitle";
 import { altFt } from "../../../lib/format";
 import { CHART } from "../../../lib/tokens";
+import { FieldError } from "../../../components/ui/field";
 
 /** The lesson's one safety line, its subtitle: the plate, not this, is
  *  what is flown (CLAUDE.md's safety principle, kept off the pilot's
@@ -144,9 +145,7 @@ export default function ApproachLesson({
           </p>
         )}
         {error ? (
-          <p className={cn(FINDING_TONE.stop, TEXT.prose)} role="alert">
-            The approach could not be had: {error.message}
-          </p>
+          <FieldError className={cn(FINDING_TONE.stop, TEXT.prose)}>The approach could not be had: {error.message}</FieldError>
         ) : isPending || !input ? (
           <div role="status" className="flex flex-col gap-2 py-1">
             <span className="sr-only">Fetching the approach…</span>
@@ -179,9 +178,9 @@ function Lesson({ input, from }: { input: LessonInput; from?: FromInstructor }) 
         testId="approach-lesson-steps"
       />
       {from?.problem && (
-        <p role="alert" className={cn(FINDING_TONE.stop, TEXT.note)} data-testid="approach-lesson-problem">
+        <FieldError className={cn(FINDING_TONE.stop, TEXT.note)} data-testid="approach-lesson-problem">
           {from.problem}
-        </p>
+        </FieldError>
       )}
       {page === "brief" && (
         <BriefPage

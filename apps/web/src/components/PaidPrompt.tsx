@@ -9,6 +9,7 @@ import { api, describeError } from "../lib/api/client";
 import type { PaidFeature } from "../lib/api/types";
 import { PRICE, subscriptionQuery, useEntitlement, useSold } from "../lib/subscription";
 import { TEXT } from "../lib/text";
+import { FieldError } from "./ui/field";
 
 /** Only for a pilot signed out, so not in the planner's first load. */
 const SignInModal = lazy(() => import("./SignInModal"));
@@ -96,11 +97,7 @@ export default function PaidPrompt({
         <Button onClick={() => start.mutate()} disabled={start.isPending} data-testid="start-trial">
           {start.isPending && <Spinner />}Start Free Month
         </Button>
-        {start.isError && (
-          <p role="alert" className={cn("text-destructive", TEXT.note)}>
-            {describeError(start.error)}
-          </p>
-        )}
+        {start.isError && <FieldError className={cn("text-destructive", TEXT.note)}>{describeError(start.error)}</FieldError>}
       </div>
     ) : (
       <p className={cn("text-muted-foreground", TEXT.note)}>Subscribing is coming.</p>

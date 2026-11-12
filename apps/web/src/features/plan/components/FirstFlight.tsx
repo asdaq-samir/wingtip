@@ -10,6 +10,7 @@ import type { RecentAirport } from "../../../lib/preferences";
 import { useFirstFlight } from "../hooks/useFirstFlight";
 import { OnSheetTop } from "../../../components/sheet/sheetTop";
 import type { RouteParts } from "./RouteBox";
+import { FieldError } from "../../../components/ui/field";
 
 /**
  * "Your first flight": a card over the map, above the sheet's pill, the
@@ -108,9 +109,9 @@ export default function FirstFlight({
               />
             )}
             {problem && (
-              <p role="alert" className={cn("text-destructive", TEXT.detail)} data-testid="first-flight-problem">
+              <FieldError className={cn("text-destructive", TEXT.detail)} data-testid="first-flight-problem">
                 {problem}
-              </p>
+              </FieldError>
             )}
           </CardContent>
           <CardFooter className="flex-col items-stretch gap-3 px-4">

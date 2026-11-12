@@ -23,6 +23,7 @@ export default function ConsoleLayer({
   detent,
   edge,
   onClose,
+  finalFocus,
   shown,
   children,
 }: {
@@ -30,6 +31,8 @@ export default function ConsoleLayer({
   detent: "medium" | "large";
   edge: "top" | "bottom";
   onClose: () => void;
+  /** Where the focus goes as it is put away: the button it was opened from. */
+  finalFocus: () => HTMLElement | null | false;
   /** Setup the tab up: put away it is kept, hidden. */
   shown: boolean;
   children: ReactNode;
@@ -52,7 +55,7 @@ export default function ConsoleLayer({
     // sheet's body round it is at rest under Setup (MapPanel's `still`).
     <Shown.Provider value={shown}>
       {/* At half as it opens, as every card does, from the account button or a link. */}
-      <CardLayer dismiss={dismiss}>
+      <CardLayer dismiss={dismiss} finalFocus={finalFocus}>
         <section
           aria-label={label}
           // Named for the suite only while it is up: put away it is there,

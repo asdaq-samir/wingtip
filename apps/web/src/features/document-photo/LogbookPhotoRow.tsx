@@ -8,6 +8,7 @@ import LogbookReview from "./LogbookReview";
 import PhotoSheet from "./PhotoSheet";
 import { useDocumentPhoto } from "./useDocumentPhoto";
 import { useClaudeOn } from "../../lib/subscription";
+import { FieldError } from "../../components/ui/field";
 
 /**
  * The logbook's "Add from a Photo": a paper logbook page photographed,
@@ -57,9 +58,7 @@ function ReadLogbookPhoto() {
       >
         <LogbookReview photo={photo} />
         {photo.logError && (
-          <p role="alert" className={cn(FINDING_TONE.stop, TEXT.prose)}>
-            It could not be logged: {photo.logError.message}
-          </p>
+          <FieldError className={cn(FINDING_TONE.stop, TEXT.prose)}>It could not be logged: {photo.logError.message}</FieldError>
         )}
       </PhotoSheet>
     </>

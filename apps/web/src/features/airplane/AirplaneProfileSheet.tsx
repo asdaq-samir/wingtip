@@ -1,5 +1,6 @@
-import { useRef } from "react";
 import { cn } from "cn";
+import { FileTrigger } from "react-aria-components";
+import { Pressable } from "react-aria/Pressable";
 import { SheetCard } from "../../components/SheetCard";
 import { LINK } from "../../components/airplane/link";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -10,6 +11,7 @@ import { TEXT } from "../../lib/text";
 import { figureFormat, sourceWords } from "./profileModel";
 import { EnduranceSection } from "./EnduranceSection";
 import { useAirplaneProfile, type AirplaneProfileModel } from "./useAirplaneProfile";
+import { FieldError } from "../../components/ui/field";
 
 /** One figure: its name and where it comes from, its field (typed in place,
  *  kept as the pilot's when it changes), and Reset to book figure where
@@ -62,11 +64,7 @@ function FigureRow({ vm, row }: { vm: AirplaneProfileModel; row: AirplaneProfile
           <span className="w-10 text-muted-foreground">{words.unit}</span>
         </span>
       </ListRow>
-      {problem && (
-        <p className={cn("px-4 pb-2 text-destructive-ink", TEXT.detail)} role="alert">
-          {problem}
-        </p>
-      )}
+      {problem && <FieldError className={cn("px-4 pb-2 text-destructive-ink", TEXT.detail)}>{problem}</FieldError>}
     </div>
   );
 }
@@ -75,27 +73,26 @@ function FigureRow({ vm, row }: { vm: AirplaneProfileModel; row: AirplaneProfile
  *  the figures found filled in, the page's words to check them by, and
  *  Save to keep them all. */
 function PhotoRead({ vm }: { vm: AirplaneProfileModel }) {
-  const input = useRef<HTMLInputElement>(null);
   const { busy, words, problem, read } = vm.photo;
   const pending = words.length > 0 && Object.keys(vm.drafts).length > 0;
   return (
     <div className="flex flex-col gap-2">
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
+      {/* React Aria's FileTrigger: the hidden file input, opened by the row. */}
+      <FileTrigger
+        acceptedFileTypes={["image/*"]}
+        defaultCamera="environment"
         data-testid="profile-photo-input"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
+        onSelect={(files) => {
+          const file = files?.[0];
           if (file) void read(file);
         }}
-      />
-      <ListGroup>
-        <ListRow title={busy ? "Reading the page…" : "Read from a Photo"} disabled={busy} onClick={() => input.current?.click()} />
-      </ListGroup>
+      >
+        <ListGroup>
+          <Pressable isDisabled={busy}>
+            <ListRow title={busy ? "Reading the page…" : "Read from a Photo"} disabled={busy} />
+          </Pressable>
+        </ListGroup>
+      </FileTrigger>
       <div className={cn("space-y-0.5 px-1", TEXT.detail)} role="status" data-testid="profile-photo-read">
         {problem && <p className="text-destructive-ink">{problem}</p>}
         {words.length > 0 && <p className="font-semibold">Read from the page: check each against it before saving.</p>}

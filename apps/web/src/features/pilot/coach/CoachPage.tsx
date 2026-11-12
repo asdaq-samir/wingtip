@@ -1,12 +1,14 @@
 import { cn } from "cn";
 import { ListChoices, ListGroup, ListRow } from "../../../components/GroupedList";
 import { Button } from "../../../components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
 import { said } from "../../../lib/endorsements";
 import { FINDING_TONE, type Finding } from "../../../lib/findings";
 import { TEXT } from "../../../lib/text";
 import type { CoachDue, CoachSession, CoachWords, ProficiencyPlan } from "./coachApi";
 import { CERTIFICATES, useCoach, type Certificate } from "./useCoach";
 import { coachStep } from "./coachStep";
+import { FieldError } from "../../../components/ui/field";
 
 /**
  * The Logbook's Coach: a pilot's own proficiency plan. On the pilot's
@@ -30,11 +32,7 @@ export default function CoachPage() {
       <p className={cn("px-1 text-muted-foreground", TEXT.note)} role="status" data-testid="coach-status">
         {coachStep(c)}
       </p>
-      {c.problem && (
-        <p className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} role="alert">
-          {c.problem.message}
-        </p>
-      )}
+      {c.problem && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{c.problem.message}</FieldError>}
       {c.plan && <Plan plan={c.plan} words={c.words} wording={c.wording} />}
       <ListGroup title="Your Certificate">
         <ListChoices value={c.certificate} onChange={(v) => c.choose(v as Certificate)} label="Your certificate">
@@ -115,11 +113,11 @@ function Plan({ plan, words, wording }: { plan: ProficiencyPlan; words: CoachWor
       {plan.weak_areas.length > 0 && (
         <ListGroup title="From Your Debriefs">
           {plan.weak_areas.map((w) => (
-            <details key={w.key} className="px-1 py-1" data-testid="coach-weak">
-              <summary className={cn("cursor-pointer", TEXT.row)}>
-                {w.label} · {w.evidence.length} · ACS {w.acs.join(", ")}
-              </summary>
-              <ul className={cn("mt-1 space-y-1 text-muted-foreground", TEXT.detail)}>
+            // Base UI's Collapsible, its trigger the list's own row with its
+            // chevron, as the stop's services fold theirs (StopServices).
+            <Collapsible key={w.key} data-testid="coach-weak">
+              <CollapsibleTrigger render={<ListRow title={`${w.label} · ${w.evidence.length} · ACS ${w.acs.join(", ")}`} chevron />} />
+              <CollapsibleContent render={<ul className={cn("space-y-1 px-4 pb-2 text-muted-foreground", TEXT.detail)} />}>
                 {plan.evidence
                   .filter((e) => w.evidence.includes(e.id))
                   .map((e) => (
@@ -127,8 +125,8 @@ function Plan({ plan, words, wording }: { plan: ProficiencyPlan; words: CoachWor
                       {said(e.flown_on)} at {e.procedure ? `${e.place}, ${e.procedure}` : e.place}: {e.text}
                     </li>
                   ))}
-              </ul>
-            </details>
+              </CollapsibleContent>
+            </Collapsible>
           ))}
         </ListGroup>
       )}

@@ -12,6 +12,7 @@ import type { TripLeg } from "../../lib/api/types";
 import { clockTime, duration, feet, gal, nm } from "../../lib/format";
 import { TEXT } from "../../lib/text";
 import { useTripPlanner } from "./useTripPlanner";
+import { FieldError } from "../../components/ui/field";
 
 /** A chip's 44-point area round its 32 (CLAUDE.md's hit areas). */
 const AREA = "relative after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']";
@@ -119,9 +120,9 @@ export default function TripPlanner({ onClose }: { onClose: () => void }) {
         </div>
       )}
       {state.error && (
-        <p className={cn("text-destructive-ink", TEXT.note)} role="alert" data-testid="trip-problem">
+        <FieldError className={cn("text-destructive-ink", TEXT.note)} data-testid="trip-problem">
           {state.error}
-        </p>
+        </FieldError>
       )}
       <div className="flex items-center gap-2">
         <Input

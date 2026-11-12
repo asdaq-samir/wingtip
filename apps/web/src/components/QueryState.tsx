@@ -4,6 +4,7 @@ import { ListRow } from "./GroupedList";
 import { FINDING_TONE } from "../lib/findings";
 import { TEXT } from "../lib/text";
 import { NO_CONNECTION, noConnection } from "../lib/problems";
+import { FieldError } from "./ui/field";
 
 /** What a query says of itself (TanStack Query's own flags). */
 interface Asked {
@@ -68,9 +69,7 @@ export default function QueryState({
         }
       />
     ) : (
-      <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.note)}>
-        {words}
-      </p>
+      <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.note)}>{words}</FieldError>
     );
   }
   // While it comes: the shape of what is coming, its words for a screen

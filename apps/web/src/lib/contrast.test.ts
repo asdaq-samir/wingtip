@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { contrast, over, parseColour, tokensOf, type Linear } from "./contrast";
+import { wcagContrast as contrast, type Color } from "culori";
+import { over, parseColour, tokensOf } from "./contrast";
 
 const css = readFileSync(new URL("../styles/tokens.css", import.meta.url), "utf8");
 
-const colour = (v: string): Linear => {
+const colour = (v: string): Color => {
   const c = parseColour(v);
   if (!c) throw new Error(`not a colour: ${v}`);
   return c;
@@ -34,7 +35,7 @@ describe("the night theme's tokens (styles/tokens.css .dark)", () => {
   const dark = tokensOf(css, ".dark");
   const light = tokensOf(css, ":root");
   // A token that names another (the ring is the tint's) read as that one.
-  const t = (name: string): Linear => {
+  const t = (name: string): Color => {
     const value = dark[name] ?? light[name] ?? "";
     const named = /^var\((--[\w-]+)\)$/.exec(value)?.[1];
     return named ? t(named) : colour(value);

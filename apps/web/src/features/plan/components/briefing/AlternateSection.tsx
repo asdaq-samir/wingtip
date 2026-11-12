@@ -6,6 +6,8 @@ import type { AlternateCheck } from "../../../../lib/api/types";
 import { patched, useSearchParamsNow } from "../../../../lib/useSearchParamsNow";
 import { ceilingAndVisibility } from "../../format";
 import { useAlternate, type AlternateWhere } from "../../hooks/useAlternate";
+import { FieldError } from "../../../../components/ui/field";
+import { TEXT } from "../../../../lib/text";
 
 function standing(check: AlternateCheck): string {
   return check.good === true
@@ -37,9 +39,7 @@ export default function AlternateSection(where: AlternateWhere) {
             Fetching the destination&apos;s forecast…
           </p>
         ) : error ? (
-          <p className="text-destructive" role="alert">
-            The alternate could not be checked: {describeError(error)}
-          </p>
+          <FieldError className={cn("text-destructive", TEXT.prose)}>The alternate could not be checked: {describeError(error)}</FieldError>
         ) : (
           data && (
             <>

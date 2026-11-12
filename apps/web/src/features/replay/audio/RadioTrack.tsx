@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useWavesurfer } from "@wavesurfer/react";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { AudioLines, Trash2 } from "lucide-react";
+import { FileTrigger } from "react-aria-components";
+import { Pressable } from "react-aria/Pressable";
 import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "../../../components/ui/field";
@@ -27,7 +29,6 @@ export function RadioTrack() {
   const { url, sync, problem, file } = useReplayAudio();
   const captions = useCaptions((s) => s.captions);
   const box = useRef<HTMLDivElement>(null);
-  const picker = useRef<HTMLInputElement>(null);
   const regions = useMemo(() => RegionsPlugin.create(), []);
   const plugins = useMemo(() => [regions], [regions]);
   const { wavesurfer, currentTime } = useWavesurfer({
@@ -87,23 +88,23 @@ export function RadioTrack() {
   const at = usePastFlight((s) => s.at);
   return (
     <div className="flex flex-col gap-3" data-testid="studio-radio">
-      <input
-        ref={picker}
-        type="file"
-        accept="audio/*,.mp3,.m4a,.wav,.ogg"
-        className="hidden"
-        onChange={(e) => {
-          const picked = e.target.files?.[0];
-          if (picked) void pickAudio(picked);
-          e.target.value = "";
-        }}
-        data-testid="studio-radio-file"
-      />
       <div className="flex gap-2">
-        <Button variant="outline" className="flex-1" onClick={() => picker.current?.click()} data-testid="studio-radio-pick">
-          <AudioLines aria-hidden />
-          {file ? "Another recording" : "Add a recording"}
-        </Button>
+        {/* React Aria's FileTrigger: the hidden file input, opened by the button. */}
+        <FileTrigger
+          acceptedFileTypes={["audio/*", ".mp3", ".m4a", ".wav", ".ogg"]}
+          data-testid="studio-radio-file"
+          onSelect={(files) => {
+            const picked = files?.[0];
+            if (picked) void pickAudio(picked);
+          }}
+        >
+          <Pressable>
+            <Button variant="outline" className="flex-1" data-testid="studio-radio-pick">
+              <AudioLines aria-hidden />
+              {file ? "Another recording" : "Add a recording"}
+            </Button>
+          </Pressable>
+        </FileTrigger>
         {file && (
           <Button variant="outline" size="icon" aria-label="Remove the recording" onClick={dropAudio}>
             <Trash2 aria-hidden />

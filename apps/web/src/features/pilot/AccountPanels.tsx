@@ -38,6 +38,7 @@ import { daysBetween, daysWords, dueFinding } from "./paperwork";
 import { callEngine } from "../../lib/engine/engine";
 import DueItemsGroup from "./DueItemsGroup";
 import { VorCheckGroup } from "./VorCheckGroup";
+import { FieldError } from "../../components/ui/field";
 
 /** A form field as the request carries it: blank is null. */
 const orNull = (value: string) => (value.trim() ? Number(value) : null);
@@ -594,12 +595,11 @@ export function AircraftPanel() {
               }
             >
               <form id={formElementId} className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-                {/* What the gateway refused of the last save, over the
-                  fields typed as they were. */}
+                {/* What the gateway refused of the last save, over the fields typed as they were. */}
                 {errors.root?.server && (
-                  <p role="alert" className={cn("px-1 text-destructive", TEXT.note)} data-testid="aircraft-problem">
+                  <FieldError className={cn("px-1 text-destructive", TEXT.note)} data-testid="aircraft-problem">
                     {errors.root.server.message}
-                  </p>
+                  </FieldError>
                 )}
                 {/* What the airplane is, then its speeds and fuel burns --
                   climb and cruise, a row each under the group's heading

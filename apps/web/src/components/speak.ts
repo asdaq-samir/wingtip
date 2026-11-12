@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent } from "react";
 import type { AheadAlert } from "../lib/api/types";
 import { usePreferences } from "../lib/preferences";
 import { say } from "../lib/speech";
-import { announce } from "../lib/announce";
+import { announce } from "@react-aria/live-announcer";
 import { alertTitle, alertWhen, type Ahead } from "../lib/map/position/ahead";
 import { grouped } from "../lib/format";
 

@@ -24,12 +24,15 @@ import { useCardFrame } from "./useCardFrame";
 export function CardLayer({
   label,
   dismiss,
+  finalFocus,
   cardId,
   open,
   children,
 }: {
   label?: string;
   dismiss?: CardFrame["dismiss"];
+  /** Where the focus goes as it closes (Base UI's); left where it is by default. */
+  finalFocus?: CardFrame["finalFocus"];
   cardId?: string;
   open?: boolean;
   children: ReactNode;
@@ -37,7 +40,7 @@ export function CardLayer({
   const fallback = useId();
   const id = cardId ?? fallback;
   const shown = useShown() && open !== false;
-  const slot = useCardFrame({ label, dismiss, open }, id);
+  const slot = useCardFrame({ label, dismiss, finalFocus, open }, id);
   return slot
     ? createPortal(
         <Shown.Provider value={shown}>

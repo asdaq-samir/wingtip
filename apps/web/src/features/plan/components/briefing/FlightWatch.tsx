@@ -13,6 +13,7 @@ import { TEXT } from "../../../../lib/text";
 import SourceChips from "../../../../components/SourceChips";
 import DepartPicker from "../navlog/DepartPicker";
 import { planOf, SAVE_FLIGHT, useSaveRequest } from "./saveFlightRequest";
+import { FieldError } from "../../../../components/ui/field";
 
 /** How often the watch is read while the Brief is open: the gateway
  *  checks on its own clock, and the Brief shows what it found. */
@@ -137,9 +138,9 @@ export default function FlightWatch() {
         />
       </div>
       {problem && (
-        <p className={cn("px-1 text-destructive-ink", TEXT.note)} role="alert" data-testid="flight-watch-problem">
+        <FieldError className={cn("px-1 text-destructive-ink", TEXT.note)} data-testid="flight-watch-problem">
           {describeError(problem, "The watch could not be set")}
-        </p>
+        </FieldError>
       )}
       {watch.data &&
         (watch.data.changes.length > 0 ? (

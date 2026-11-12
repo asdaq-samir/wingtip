@@ -16,6 +16,7 @@ import { PROCEDURE_STALE_MS, type ProcedureKind } from "../../hooks/useProcedure
 import { Chips, NONE } from "./PatternChips";
 import { CHIP } from "../routeListStyle";
 import { KIND_TITLE } from "./procedureWords";
+import { FieldError } from "../../../../components/ui/field";
 
 // The procedures sheet's pages (ProceduresRoute): a kind's list, and one
 // procedure's own page.
@@ -47,11 +48,7 @@ export function ProcedurePicker({
   onOpen: (procedure: ProcedureSummary) => void;
 }) {
   if (failed)
-    return (
-      <p role="alert" className="px-1 text-muted-foreground">
-        The FAA's procedures could not be had
-      </p>
-    );
+    return <FieldError className={cn("px-1 text-muted-foreground", TEXT.prose)}>The FAA's procedures could not be had</FieldError>;
   if (!list)
     return (
       <p role="status" className="px-1 text-muted-foreground">

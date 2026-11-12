@@ -6,6 +6,7 @@ import type { PaidFeature } from "../../lib/api/types";
 import { PRICE, standing, subscriptionQuery } from "../../lib/subscription";
 import { TEXT } from "../../lib/text";
 import { FINDING_TONE } from "../../lib/findings";
+import { FieldError } from "../../components/ui/field";
 
 /** Each Claude-written feature's month, as the row names it. */
 const COUNTED: Record<PaidFeature, string> = {
@@ -36,11 +37,7 @@ export default function SubscriptionPanel() {
       </p>
     );
   if (error || !subscription) {
-    return (
-      <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
-        Your subscription could not be checked.
-      </p>
-    );
+    return <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>Your subscription could not be checked.</FieldError>;
   }
   return (
     <div className="space-y-4" data-testid="subscription-panel">

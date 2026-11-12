@@ -22,6 +22,7 @@ import ConsoleClose from "../../components/ConsoleClose";
 import { dueWords, lessonStatus } from "../../lib/assignedLessons";
 import { lessonHref } from "../../lib/lessonLink";
 import { localDay } from "../../lib/format";
+import { FieldError } from "../../components/ui/field";
 
 function amount(item: ExperienceItem): string {
   if (item.unit === "h") return `${item.have.toFixed(1)} of ${item.need} h`;
@@ -246,9 +247,9 @@ function Instructors({ training }: { training: Training }) {
         </ListGroup>
       )}
       {problem && (
-        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="instructor-problem">
+        <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="instructor-problem">
           {problem}
-        </p>
+        </FieldError>
       )}
     </>
   );
