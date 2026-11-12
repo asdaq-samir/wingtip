@@ -9,7 +9,7 @@ class StudioReport(BaseModel):
     """One report of the day: when (s since 1970), where, its altitude
     (ft; the transponder's pressure altitude for adsb.lol's day, see
     `altitude`; None on the ground), ground speed (kt), track (degrees
-    true) and whether it was on the ground."""
+    true), whether it was on the ground, and the altimeter setting."""
 
     t: float
     lat: float
@@ -18,6 +18,9 @@ class StudioReport(BaseModel):
     gs_kt: float | None = None
     track_deg: float | None = None
     ground: bool = False
+    #: The altimeter setting the crew had set, hPa, where the report
+    #: carries one (ADS-B version 2's barometric pressure setting).
+    qnh_hpa: float | None = None
 
 
 class StudioTrack(BaseModel):
@@ -28,6 +31,8 @@ class StudioTrack(BaseModel):
     hex: str
     registration: str | None = None
     type: str | None = None
+    #: The maker and model, as the FAA's registry has them.
+    model: str | None = None
     day: str
     points: list[StudioReport]
     #: "pressure": the transponder's own (adsb.lol); "reported": as heard

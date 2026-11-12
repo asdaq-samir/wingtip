@@ -169,6 +169,17 @@ pub fn decimal_year(year: i32, day_of_year: u32, days_in_year: u32) -> f64 {
     year as f64 + (day_of_year - 1) as f64 / days_in_year as f64
 }
 
+/// The model's decimal year of a Unix time, s: the UTC day's
+/// (decimal_year).
+pub fn year_at(t_s: f64) -> f64 {
+    use crate::time;
+    let day = (t_s / time::DAY_S as f64).floor() as i64;
+    let (year, _, _) = time::civil_from_days(day);
+    let start = time::days_from_civil(year, 1, 1);
+    let of_year = time::days_from_civil(year + 1, 1, 1) - start;
+    decimal_year(year as i32, (day - start + 1) as u32, of_year as u32)
+}
+
 /// The variation in degrees, east positive, at a point on the ellipsoid
 /// for a decimal year. A year outside the model's life is held at its
 /// nearest edge, as wingtip.magnetic holds it: the variation drifts a

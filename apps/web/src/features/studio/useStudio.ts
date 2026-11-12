@@ -21,6 +21,7 @@ function dayTrack(answer: StudioTrack): ReplayTrack | null {
     label: `${answer.registration ?? answer.hex.toUpperCase()} · ${DAY_NAME.format(new Date(`${answer.day}T00:00:00Z`))}`,
     altitude: answer.altitude,
     credit: answer.source === "adsb.lol" ? `adsb.lol, ${answer.license}` : answer.source,
+    aircraft: { tail: answer.registration ?? null, icaoType: answer.type ?? null, model: answer.model ?? null },
   });
 }
 

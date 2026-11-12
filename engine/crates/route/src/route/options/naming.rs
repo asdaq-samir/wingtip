@@ -10,7 +10,7 @@ use crate::geo;
 use crate::route::points::frd_ident;
 use wingtip_core::grid::Point;
 use wingtip_core::sort::StableSort;
-use wingtip_core::{time, wmm};
+use wingtip_core::wmm;
 
 /// How far from a turn a fix is looked for to turn at instead, nm, and
 /// how many minutes it may add: the planner's own figures, a fix a pilot
@@ -26,11 +26,7 @@ pub const RADIAL_KINDS: [&str; 4] = ["VORTAC", "VOR/DME", "VOR", "TACAN"];
 
 /// The World Magnetic Model's decimal year of a Unix time.
 pub fn decimal_year(t_s: f64) -> f64 {
-    let day = (t_s / time::DAY_S as f64).floor() as i64;
-    let (year, _, _) = time::civil_from_days(day);
-    let start = time::days_from_civil(year, 1, 1);
-    let of_year = time::days_from_civil(year + 1, 1, 1) - start;
-    wmm::decimal_year(year as i32, (day - start + 1) as u32, of_year as u32)
+    wmm::year_at(t_s)
 }
 
 /// An ident a route can take as a fix's: two to five letters or figures.
@@ -132,6 +128,7 @@ pub fn fix_for_turn<'a>(grid: &Grid, gs: &Vec<f64>, fixes: &'a [Fix], before: Po
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wingtip_core::time;
 
     fn fix(ident: &str, lat: f64, lon: f64, navaid: bool, kind: &str, mag_var: Option<f64>) -> Fix {
         Fix { ident: ident.into(), lat, lon, navaid, vfr: false, kind: kind.into(), mag_var }

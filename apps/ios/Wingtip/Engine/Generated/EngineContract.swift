@@ -10536,6 +10536,149 @@ enum EngineContract {
         }
     }
 
+    struct SimFlightAnswer: Codable, Equatable, Sendable {
+        var segments: [EngineContract.SimFlightAnswerSegmentsItem]
+    }
+
+    struct SimFlightAnswerSegmentsItem: Codable, Equatable, Sendable {
+        var rows: [EngineContract.SimFlightAnswerSegmentsItemRowsItem]
+        var msl: Bool
+        var settingHpa: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case rows
+            case msl
+            case settingHpa = "setting_hpa"
+        }
+    }
+
+    struct SimFlightAnswerSegmentsItemRowsItem: Codable, Equatable, Sendable {
+        var t: Double
+        var lat: Double
+        var lon: Double
+        /// Above sea level where the segment's `msl`, else pressure altitude.
+        var altFt: Double
+        var gsKt: Double
+        var vsFpm: Double
+        /// True; also the heading, as no wind is known.
+        var trackDeg: Double
+        var headingMagDeg: Double
+        /// Estimated, nose up positive.
+        var pitchDeg: Double
+        /// Estimated, right wing down positive.
+        var bankDeg: Double
+        var aglFt: Double?
+        var ground: Bool
+        /// Estimated.
+        var gearDown: Bool
+        /// Estimated flap handle, 0 up to 1 full.
+        var flaps: Double
+        /// Estimated.
+        var lights: EngineContract.SimFlightAnswerSegmentsItemRowsItemLights
+
+        enum CodingKeys: String, CodingKey {
+            case t
+            case lat
+            case lon
+            case altFt = "alt_ft"
+            case gsKt = "gs_kt"
+            case vsFpm = "vs_fpm"
+            case trackDeg = "track_deg"
+            case headingMagDeg = "heading_mag_deg"
+            case pitchDeg = "pitch_deg"
+            case bankDeg = "bank_deg"
+            case aglFt = "agl_ft"
+            case ground
+            case gearDown = "gear_down"
+            case flaps
+            case lights
+        }
+    }
+
+    /// Estimated.
+    struct SimFlightAnswerSegmentsItemRowsItemLights: Codable, Equatable, Sendable {
+        var nav: Bool
+        var beacon: Bool
+        var strobe: Bool
+        var landing: Bool
+        var taxi: Bool
+        var logo: Bool
+    }
+
+    struct SimFlightInput: Codable, Equatable, Sendable {
+        /// replay_track's points, in time order.
+        var points: [EngineContract.SimFlightInputPointsItem]
+        /// The altimeter settings the airplane sent (ADS-B's barometric pressure setting), each with its pressure altitude then; null on the ground.
+        var settings: [EngineContract.SimFlightInputSettingsItem]?
+        /// The ground's height under the track, ft MSL, by how far along it.
+        var ground: [EngineContract.SimFlightInputGroundItem]?
+        /// Whether `alt_ft` is pressure altitude (adsb.lol's) rather than above sea level.
+        var pressure: Bool?
+        /// Only the runs that meet [from, to], s since 1970.
+        var from: Double?
+        var to: Double?
+        var rateHz: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case points
+            case settings
+            case ground
+            case pressure
+            case from
+            case to
+            case rateHz = "rate_hz"
+        }
+    }
+
+    struct SimFlightInputGroundItem: Codable, Equatable, Sendable {
+        var alongNm: Double
+        var groundFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case alongNm = "along_nm"
+            case groundFt = "ground_ft"
+        }
+    }
+
+    struct SimFlightInputPointsItem: Codable, Equatable, Sendable {
+        /// s since 1970
+        var t: Double
+        var lat: Double
+        var lon: Double
+        var altFt: Double?
+        var gsKt: Double?
+        var trackDeg: Double?
+        var vsFpm: Double?
+        var alongNm: Double?
+        var gap: Bool?
+        var ground: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case t
+            case lat
+            case lon
+            case altFt = "alt_ft"
+            case gsKt = "gs_kt"
+            case trackDeg = "track_deg"
+            case vsFpm = "vs_fpm"
+            case alongNm = "along_nm"
+            case gap
+            case ground
+        }
+    }
+
+    struct SimFlightInputSettingsItem: Codable, Equatable, Sendable {
+        var t: Double
+        var hpa: Double
+        var altFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case t
+            case hpa
+            case altFt = "alt_ft"
+        }
+    }
+
     struct SoloStandingAnswer: Codable, Equatable, Sendable {
         var days: Int?
         var standing: String

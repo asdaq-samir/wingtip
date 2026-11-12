@@ -4607,6 +4607,7 @@ struct APIStudioGroundAsk: Codable, Equatable, Sendable {
 // MARK: - APIStudioTrack
 struct APIStudioTrack: Codable, Equatable, Sendable {
     var altitude, day, hex, license: String
+    var model: String?
     var points: [APIStudioReport]
     var registration: String?
     var source: String
@@ -4616,13 +4617,15 @@ struct APIStudioTrack: Codable, Equatable, Sendable {
 /// One report of the day: when (s since 1970), where, its altitude
 /// (ft; the transponder's pressure altitude for adsb.lol's day, see
 /// `altitude`; None on the ground), ground speed (kt), track (degrees
-/// true) and whether it was on the ground.
+/// true), whether it was on the ground, and the altimeter setting.
 // MARK: - APIStudioReport
 struct APIStudioReport: Codable, Equatable, Sendable {
     var altFt: Double?
     var ground: Bool?
     var gsKt: Double?
-    var lat, lon, t: Double
+    var lat, lon: Double
+    var qnhHpa: Double?
+    var t: Double
     var trackDeg: Double?
 }
 

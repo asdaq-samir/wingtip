@@ -2966,7 +2966,7 @@ export interface EngineContract {
     answer: RemarksReadAnswer;
   };
   /**
-   * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude averaged over 10 s each side (a transponder's 25 ft steps, DO-260B) and the position over 2 s; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
+   * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those within 10 s each side, at the report's own time (a transponder's 25 ft steps, DO-260B) and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
    */
   replay_track: {
     input: ReplayTrackInput;
@@ -3111,6 +3111,13 @@ export interface EngineContract {
   sigmets_along_route: {
     input: SigmetsAlongRouteInput;
     answer: SigmetsAlongRouteAnswer;
+  };
+  /**
+   * A recorded flight made ready (replay_track) made ready for a flight simulator's replay: each run of reports between two gaps its own segment, nothing drawn across a gap; the path between reports a cubic Hermite spline through each report with its sent velocity as the slope (de Boor 1978, ch. IV), the height the same with the vertical speed, `rate_hz` frames a second (10 where not given, at most 60); pressure altitude set on the airplane's own altimeter setting where it sent one below 18,000 ft (14 CFR 91.121(a)(1); FAA-H-8083-25C ch. 11), else left as sent and the segment's `msl` false; on the ground, the ground's height. Estimated, as ADS-B sends none of them: bank from the turn, tan(bank) = V x turn rate / g (FAA-H-8083-25C ch. 5), pitch the flight path angle, each and the heading averaged over 2.5 s each side so the airplane rolls in before the heading moves (FAA-H-8083-15B ch. 7, a lead of half the bank); heading the track (no wind known), and magnetic by the WMM; gear and flaps by phase (FAA-H-8083-3C ch. 6, retracted once climbing; down below 1,000 ft above the ground descending, AC 120-108); lights by AIM 4-3-24 and 14 CFR 91.209.
+   */
+  sim_flight: {
+    input: SimFlightInput;
+    answer: SimFlightAnswer;
   };
   /**
    * A student's 61.87(n) solo endorsement on the instructor's list: the days to its last good day and its standing, caution within 7 days (the owner's choice).
@@ -11034,6 +11041,108 @@ export interface SigmetsAlongRouteInput {
   to: [number, number];
   corridor_nm?: number | null;
   now: number;
+}
+export interface SimFlightInput {
+  /**
+   * replay_track's points, in time order.
+   */
+  points: SimSample[];
+  /**
+   * The altimeter settings the airplane sent (ADS-B's barometric pressure setting), each with its pressure altitude then; null on the ground.
+   */
+  settings?: SimSetting[];
+  /**
+   * The ground's height under the track, ft MSL, by how far along it.
+   */
+  ground?: SimGround[];
+  /**
+   * Whether `alt_ft` is pressure altitude (adsb.lol's) rather than above sea level.
+   */
+  pressure?: boolean | null;
+  /**
+   * Only the runs that meet [from, to], s since 1970.
+   */
+  from?: number | null;
+  to?: number | null;
+  rate_hz?: number | null;
+}
+export interface SimSample {
+  /**
+   * s since 1970
+   */
+  t: number;
+  lat: number;
+  lon: number;
+  alt_ft?: number | null;
+  gs_kt?: number | null;
+  track_deg?: number | null;
+  vs_fpm?: number | null;
+  along_nm?: number;
+  gap?: boolean;
+  ground?: boolean;
+}
+export interface SimSetting {
+  t: number;
+  hpa: number;
+  alt_ft?: number | null;
+}
+export interface SimGround {
+  along_nm: number;
+  ground_ft: number;
+}
+export interface SimFlightAnswer {
+  segments: SimSegment[];
+}
+export interface SimSegment {
+  rows: SimRow[];
+  msl: boolean;
+  setting_hpa: number | null;
+}
+export interface SimRow {
+  t: number;
+  lat: number;
+  lon: number;
+  /**
+   * Above sea level where the segment's `msl`, else pressure altitude.
+   */
+  alt_ft: number;
+  gs_kt: number;
+  vs_fpm: number;
+  /**
+   * True; also the heading, as no wind is known.
+   */
+  track_deg: number;
+  heading_mag_deg: number;
+  /**
+   * Estimated, nose up positive.
+   */
+  pitch_deg: number;
+  /**
+   * Estimated, right wing down positive.
+   */
+  bank_deg: number;
+  agl_ft: number | null;
+  ground: boolean;
+  /**
+   * Estimated.
+   */
+  gear_down: boolean;
+  /**
+   * Estimated flap handle, 0 up to 1 full.
+   */
+  flaps: number;
+  lights: SimLights;
+}
+/**
+ * Estimated.
+ */
+export interface SimLights {
+  nav: boolean;
+  beacon: boolean;
+  strobe: boolean;
+  landing: boolean;
+  taxi: boolean;
+  logo: boolean;
 }
 export interface SoloStandingInput {
   /**

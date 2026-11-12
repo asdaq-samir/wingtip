@@ -18,6 +18,9 @@
 //!   keeping (lib/track);
 //! - replay: a recorded flight made ready to replay -- its gaps, its
 //!   height smoothed, its vertical speed (features/replay);
+//! - sim: a replay made ready for a flight simulator -- a smooth path at
+//!   a steady frame rate, its altitude above sea level, and its attitude,
+//!   gear, flaps and lights estimated (sim_config; lib/replay/simExport);
 //! - along: where a real airplane is along the route, whether it is on
 //!   it, and the fuel the plan has burnt by there (the phones' strips);
 //! - instruments: a flight under way against its route -- the next
@@ -45,6 +48,9 @@ pub mod glide;
 pub mod instruments;
 pub mod profile;
 pub mod replay;
+pub mod sim;
+pub mod sim_config;
+mod sim_json;
 pub mod terrain_view;
 pub mod track;
 pub mod traffic;
@@ -105,6 +111,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "read_track" => track::read_rule(v),
         "thin_track" => track::thin_rule(v),
         "replay_track" => replay::replay_rule(v),
+        "sim_flight" => sim_json::sim_flight_rule(v),
         "route_position" => along::position_rule(v),
         "in_flight" => instruments::in_flight_rule(v),
         "vertical_speed" => instruments::vertical_speed_rule(v),

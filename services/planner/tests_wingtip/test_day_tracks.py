@@ -21,7 +21,7 @@ TRACE = {
     "trace": [
         [3600.0, 29.97, -95.35, "ground", 12.0, 152.0, 0, None, None, "adsb_icao", None],
         [3700.0, 29.98, -95.36, 1200, 161.9, 152.0, 0, 1500, None, "adsb_icao", 1275],
-        [3720.0, 29.99, -95.37, 1700, 170.0, 150.0, 0, 1500, None, "adsb_icao", 1775],
+        [3720.0, 29.99, -95.37, 1700, 170.0, 150.0, 0, 1500, {"nav_qnh": 1022.4}, "adsb_icao", 1775],
         # The next UTC day's, which is not this day's.
         [86400.0 + 10, 30.5, -95.0, 5000, 200.0, 150.0, 0, 0, None, "adsb_icao", 5100],
     ],
@@ -47,6 +47,7 @@ def _store_of_its_own(tmp_path, monkeypatch):
     day_tracks.reset()
     monkeypatch.setattr(day_tracks, "_store_path", lambda: tmp_path / "day_tracks.sqlite")
     monkeypatch.setattr(day_tracks, "resolve", lambda q: ("a0b7d8", "N14511"))
+    monkeypatch.setattr(day_tracks.registry, "lookup", lambda **k: {"manufacturer": "Airbus S A S", "model": "A321-271NX"})
     yield
     day_tracks.reset()
 
@@ -68,6 +69,8 @@ def test_a_past_day_is_fetched_once_and_then_read_from_the_store(monkeypatch):
     assert [p["alt_ft"] for p in first["points"]] == [None, 1200.0, 1700.0]
     assert first["points"][0]["ground"] is True
     assert first["altitude"] == "pressure"
+    # The crew's altimeter setting where the report carries it.
+    assert [p["qnh_hpa"] for p in first["points"]] == [None, None, 1022.4]
 
 
 def test_a_day_with_no_trace_is_kept_as_none_and_a_refusal_is_not_kept(monkeypatch):
