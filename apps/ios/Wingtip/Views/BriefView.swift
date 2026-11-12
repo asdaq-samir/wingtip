@@ -9,6 +9,8 @@ import SwiftUI
 /// web app's lib/verdict on the planner), so no judgment is made on the
 /// phone: each finding opens where the Brief says it.
 struct BriefView: View {
+    @Environment(BriefAsk.self) private var briefAsk
+    @Environment(\.appCommand) private var appCommand
     @Environment(Plan.self) private var plan
     @Environment(Verdict.self) private var verdict
     @Environment(Session.self) private var session
@@ -160,7 +162,7 @@ struct BriefView: View {
                     }
                     // Under IFR, the destination's and the alternate's check
                     // (91.169), after the forecast, as the web's Brief has it.
-                    AlternateSection(pickAirplane: { PendingCommand.shared.command = .open(.airplane) })
+                    AlternateSection(pickAirplane: { appCommand(.open(.airplane)) })
                     let stations = briefing.metars.keys.sorted()
                     if !stations.isEmpty {
                         Section("METARs") {
@@ -240,7 +242,7 @@ struct BriefView: View {
             guard session.signedIn, plan.routed else { return }
             await window.refresh(asking: Result { try DepartureWindow.ask(verdict.ask(for: plan), airplane: plan.airplaneChosen) })
             // The hour said to Siri with the ask ("tomorrow at 9"), picked.
-            if let when = BriefAsk.shared.takeDepart() { window.pick(nearest: when) }
+            if let when = briefAsk.takeDepart() { window.pick(nearest: when) }
         }
         // The words for the briefing on the page, written again when it
         // changes; the figures stay as they are while they are written.

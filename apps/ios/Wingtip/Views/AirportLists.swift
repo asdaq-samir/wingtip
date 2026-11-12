@@ -28,7 +28,7 @@ struct AirportListView: View {
     @Environment(\.undoManager) private var undoManager
     let shows: AirportShelf.Shows
     let nearest: [NearestAirport]
-    private var shelf: AirportShelf { .shared }
+    @Environment(AirportShelf.self) private var shelf
 
     var body: some View {
         // Nearest is the one list (NearestView), wherever it is opened.

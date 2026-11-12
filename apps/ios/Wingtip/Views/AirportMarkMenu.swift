@@ -48,10 +48,8 @@ extension RootView {
     /// as Stop, each setting the plan as the card's own buttons do.
     var markPreview: AirportMarkPreview {
         AirportMarkPreview(
-            card: { [plan, ownShip, verdict, session, charts, dryRun, traffic] ident in
-                let host = UIHostingController(rootView: AirportCardPreview(ident: ident)
-                    .environment(plan).environment(ownShip).environment(verdict).environment(session)
-                    .environment(charts).environment(dryRun).environment(traffic))
+            card: { [models] ident in
+                let host = UIHostingController(rootView: AirportCardPreview(ident: ident).modifier(models))
                 host.preferredContentSize = CGSize(width: 360, height: 480)
                 return host
             },

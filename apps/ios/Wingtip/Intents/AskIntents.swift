@@ -164,7 +164,7 @@ struct BriefApproachIntent: AppIntent {
 
 /// "Add this approach to my route": the approach put on the route at its
 /// field and the Brief opened, as the procedures row picks one.
-struct AddApproachIntent: AppIntent {
+struct AddApproachIntent: CommandIntent {
     static let title: LocalizedStringResource = "Add an Approach to the Route"
     static let description = IntentDescription("Puts an approach on your route at its airport and opens the Brief.")
     static let openAppWhenRun: Bool = true
@@ -172,11 +172,15 @@ struct AddApproachIntent: AppIntent {
     @Parameter(title: "Approach", requestValueDialog: "Which approach?")
     var approach: ApproachEntity
 
+    @Dependency private var commands: AppCommands
+
     static var parameterSummary: some ParameterSummary { Summary("Add \(\.$approach) to the route") }
+
+    func appCommand() -> AppCommand? { .approach(approach.pick) }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let pick = approach.pick
-        await MainActor.run { PendingCommand.shared.command = .approach(pick) }
+        await handOver(to: commands)
         return .result(dialog: "Added the \(pick.name) at \(pick.ident).")
     }
 }

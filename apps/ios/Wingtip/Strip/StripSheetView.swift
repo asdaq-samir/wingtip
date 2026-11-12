@@ -17,6 +17,11 @@ import SwiftUI
 /// is answered on the strip itself (StripAnswerCard); why not is said
 /// under the field (lib/problems' rule: where it happens, never a toast).
 struct StripSheetView: View {
+    @Environment(Emergency.self) private var emergency
+    @Environment(AirportShelf.self) private var shelf
+    @Environment(ClearanceListener.self) private var listener
+    @Environment(InFlight.self) private var inFlight
+    @Environment(Navigator.self) private var nav
     @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
@@ -32,7 +37,6 @@ struct StripSheetView: View {
     let search: OneSearchModel
     @State private var path: [StripPage] = []
     @State private var client = AssistantClient()
-    private var listener: ClearanceListener { ClearanceListener.shared }
 
     /// The pages the stack opens over the strip.
     enum StripPage: Hashable {
@@ -65,7 +69,7 @@ struct StripSheetView: View {
     /// FiguresStrip counts it (the engine's `in_flight`, InFlight): a dry
     /// run's airplane counts as flying.
     private var flyingFix: OwnShip.Fix? {
-        InFlight.shared.onRoute ? InFlight.shared.fix : nil
+        inFlight.onRoute ? inFlight.fix : nil
     }
 
     private var points: [StripPoint] {
@@ -164,7 +168,7 @@ struct StripSheetView: View {
                 case .practice, .training, .contact, .leg, .flight: _ = open(.setup)
                 // A thing's card over the strip, as over the plan (Navigator).
                 case .traffic, .tail, .hold, .flown, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged:
-                    Navigator.shared.open(page)
+                    nav.open(page)
                 }
             },
             screen: { openScreen($0) },
@@ -181,7 +185,7 @@ struct StripSheetView: View {
         }
         switch screen {
         case .airport, .ask: search.presented = true
-        case .emergency: Emergency.shared.open = .link
+        case .emergency: emergency.open = .link
         default: path = []
         }
     }
@@ -292,12 +296,12 @@ struct StripSheetView: View {
             guard routed else { return "Plan a route first: a field, a town or two idents." }
             path.append(.brief); up()
         case .nearest:
-            AirportShelf.shared.show(.nearest)
+            shelf.show(.nearest)
             path.append(.list(.nearest)); up()
         case .fuel, .food, .stops:
             // The fuel, food and rest stops are the web app's for now; the
             // nearest fields, which have the fuel, are here.
-            AirportShelf.shared.show(.nearest)
+            shelf.show(.nearest)
             path.append(.list(.nearest)); up()
             return "Stops with fuel and food are on the website for now; these are the nearest fields."
         case .routes:
@@ -330,15 +334,15 @@ struct StripSheetView: View {
         case .saved, .recentRoutes:
             path.append(.flights); up()
         case .favorites:
-            AirportShelf.shared.show(.favorites)
+            shelf.show(.favorites)
             path.append(.list(.favorites)); up()
         case .recents:
-            AirportShelf.shared.show(.recents)
+            shelf.show(.recents)
             path.append(.list(.recents)); up()
         case .map:
             return "The map's switches are in Settings, under the account button."
         case .emergency:
-            Emergency.shared.open = .voice
+            emergency.open = .voice
         }
         return nil
     }

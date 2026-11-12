@@ -39,6 +39,7 @@ extension View {
 /// iOS 18 to 27 draw them (SwiftUI's SearchFieldPlacement and
 /// searchSuggestions, unchanged in the iOS 27.2 SDK).
 struct OneSearch: ViewModifier {
+    @Environment(Navigator.self) private var nav
     @Bindable var model: OneSearchModel
     let host: SearchHost
     /// The owner's one-row header (2026-11-10): the field in the bar's
@@ -48,7 +49,7 @@ struct OneSearch: ViewModifier {
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(Session.self) private var session
-    private var voice: VoiceInput { .shared }
+    @Environment(VoiceInput.self) private var voice
 
     private var runner: FieldRunner {
         FieldRunner(plan: plan, ownShip: ownShip, session: session, open: host.field,
@@ -92,7 +93,7 @@ struct OneSearch: ViewModifier {
         case .airport(let route): host.card(route)
         case .plan: host.showPlan()
         case .directTo(let ident): runner.directTo(ident)
-        case .airplane(let tail): Navigator.shared.open(.tail(ProfileAsk(tail: tail.uppercased())))
+        case .airplane(let tail): nav.open(.tail(ProfileAsk(tail: tail.uppercased())))
         case .types: host.page(.screen(.airplane))
         case .action(let action):
             switch action {

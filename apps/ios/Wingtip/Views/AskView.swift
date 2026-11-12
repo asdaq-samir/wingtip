@@ -13,6 +13,9 @@ import SwiftUI
 /// "Ask: …", with Plan, OwnShip, Session and Verdict in the environment as
 /// the root puts them.
 struct AskView: View {
+    @Environment(ServerFeatures.self) private var features
+    @Environment(VoiceInput.self) private var voice
+    @Environment(InFlight.self) private var inFlight
     @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
@@ -29,7 +32,6 @@ struct AskView: View {
     /// Why the microphone could not be used, under the field.
     @State private var micProblem: String?
     @FocusState private var typing: Bool
-    private var voice: VoiceInput { VoiceInput.shared }
     /// The question the one search sent ("Ask: …"), asked as the sheet
     /// opens; nil opened from the map's sparkle or a link.
     var first: String?
@@ -111,7 +113,7 @@ struct AskView: View {
             // The first chip, as on the web: the trip planner, which is
             // Claude's (the assistant's) with no free path, so not offered
             // while the server's Claude features are off (ServerFeatures).
-            if ServerFeatures.shared.claudeOn {
+            if features.claudeOn {
                 Button { trip = TripPlanner() } label: {
                     HStack {
                         Text("Plan a trip…")
@@ -195,7 +197,7 @@ struct AskView: View {
         guard !words.isEmpty else { return }
         question = ""
         micProblem = nil
-        client.ask(words, context: context, facts: .make(plan: plan, ownShip: ownShip))
+        client.ask(words, context: context, facts: .make(plan: plan, ownShip: ownShip, inFlight: inFlight))
     }
 
     /// One question said: the route's idents are given the recognizer as

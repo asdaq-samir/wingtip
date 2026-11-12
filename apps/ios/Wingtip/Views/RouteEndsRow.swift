@@ -9,6 +9,7 @@ import SwiftUI
 /// an ident is never cut short), where side by side the fields had 76
 /// points and showed "KM…" and Plan broke over two lines.
 struct RouteEndsRow: View {
+    @Environment(ClearanceListener.self) private var listener
     @Environment(Plan.self) private var plan
     @Environment(\.dynamicTypeSize) private var typeSize
     var focused: FocusState<PlanView.Field?>.Binding
@@ -42,19 +43,19 @@ struct RouteEndsRow: View {
     /// radio's waves its mark; where speech cannot be recognised on the
     /// iPhone, the same sheet, the clearance typed.
     private var radio: some View {
-        let voice = ClearanceListener.shared.canListen
+        let voice = listener.canListen
         return Button {
             focused.wrappedValue = nil
-            ClearanceListener.shared.sheetText = nil
-            ClearanceListener.shared.sheetShown = true
+            listener.sheetText = nil
+            listener.sheetShown = true
         } label: {
             Image(systemName: !voice ? "text.bubble" : WingtipIcon.radio)
-                .symbolOnAir(ClearanceListener.shared.listening).symbolSwap()
+                .symbolOnAir(listener.listening).symbolSwap()
                 // The 44-point hit area round the glyph, which does not grow.
                 .hitArea()
         }
         .buttonStyle(.borderless)
-        .accessibilityLabel(!voice ? "Enter a clearance" : ClearanceListener.shared.listening ? "Listening to the radio" : "Listen to the radio")
+        .accessibilityLabel(!voice ? "Enter a clearance" : listener.listening ? "Listening to the radio" : "Listen to the radio")
         .accessibilityIdentifier("radio")
     }
 

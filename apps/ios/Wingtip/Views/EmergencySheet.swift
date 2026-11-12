@@ -25,7 +25,7 @@ struct EmergencySheet: View {
         _checklist = State(initialValue: ChecklistModel(airplane: airplane, kind: .emergency))
     }
 
-    private var model: Emergency { .shared }
+    @Environment(Emergency.self) private var model
     private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
     /// The airplane's profile for its glide, none with none picked (the
     /// web's useEmergency): never a type assumed. An own airplane of no

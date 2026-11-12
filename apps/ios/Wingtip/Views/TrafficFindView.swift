@@ -6,6 +6,8 @@ import SwiftUI
 /// anything is typed, the Favorites and the Recents. A tap opens its card
 /// and tracks it.
 struct TrafficFindView: View {
+    @Environment(Tracking.self) private var tracking
+    @Environment(Navigator.self) private var nav
     @Environment(Traffic.self) private var traffic
     @Environment(OwnShip.self) private var ownShip
     @State private var typed = ""
@@ -13,7 +15,6 @@ struct TrafficFindView: View {
     @State private var asked = ""
     @State private var failed = false
     @State private var searching: Task<Void, Never>?
-    private var tracking: Tracking { Tracking.shared }
 
     /// adsb.lol answers one request every few seconds from the planner's
     /// address: a search it could not be asked for yet is asked again,
@@ -153,7 +154,7 @@ struct TrafficFindView: View {
 
     private func open(_ hex: String, plane: TrafficAircraft?) {
         tracking.track(hex, plane: plane)
-        Navigator.shared.open(.traffic(hex.lowercased()))
+        nav.open(.traffic(hex.lowercased()))
     }
 }
 

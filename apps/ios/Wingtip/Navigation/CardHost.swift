@@ -17,10 +17,12 @@ extension View {
 /// over its search: the system sheet, half way for a thing and full for a
 /// page, the map live above it at half height, its close at the right.
 private struct CardHost: ViewModifier {
+    @Environment(SheetEdge.self) private var sheetEdge
+    @Environment(Navigator.self) private var nav
     let search: OneSearchModel
 
     func body(content: Content) -> some View {
-        @Bindable var nav = Navigator.shared
+        @Bindable var nav = self.nav
         content
             .sheet(item: $nav.presented) { card in
                 CardStack(card: card, search: search)
@@ -31,8 +33,8 @@ private struct CardHost: ViewModifier {
                     .environment(\.cardExpanded, nav.cardDetent == .large)
                     // The map's buttons ride the card's top while it is up,
                     // as they ride the plan's (MapButtonsDock).
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { SheetEdge.shared.card = $0 }
-                    .onDisappear { SheetEdge.shared.card = nil }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { sheetEdge.card = $0 }
+                    .onDisappear { sheetEdge.card = nil }
                     .modifier(TopHosts(active: true))
             }
             .modifier(TopHosts(active: nav.card == nil))
@@ -43,11 +45,12 @@ private struct CardHost: ViewModifier {
 /// own stack with Back (the owner's card rule, 2026-11-10). The iPhone's
 /// sheet and the iPad's inspector both draw this.
 struct CardStack: View {
+    @Environment(Navigator.self) private var nav
     let card: Navigator.Card
     let search: OneSearchModel
 
     var body: some View {
-        @Bindable var nav = Navigator.shared
+        @Bindable var nav = self.nav
         NavigationStack(path: $nav.cardPath) {
             SheetPageView(page: card.page, nearest: search.nearest)
                 .toolbar {
@@ -63,7 +66,7 @@ struct CardStack: View {
         // Airplane): the card put away and the plan shown.
         .environment(\.showPlan, {
             search.close()
-            Navigator.shared.showPlan()
+            nav.showPlan()
         })
     }
 }
@@ -76,11 +79,12 @@ extension SheetPage {
 /// The alerts that ask and the emergency assistant, hung on the top of
 /// the stack (CardHost): the plan's sheet with no card up, else the card.
 struct TopHosts: ViewModifier {
+    @Environment(Emergency.self) private var emergency
     let active: Bool
     @Environment(Plan.self) private var plan
 
     func body(content: Content) -> some View {
-        @Bindable var emergency = Emergency.shared
+        @Bindable var emergency = self.emergency
         content
             // What the app is, once at first launch (PlanningAidNotice).
             .modifier(PlanningAidAlert(active: active))
@@ -106,13 +110,16 @@ struct TopHosts: ViewModifier {
 /// its model asks and closes when its model is done; put away by the
 /// pilot, Navigator tells the model (Navigator.left).
 struct CardTriggers: ViewModifier {
-    private var nav: Navigator { .shared }
+    @Environment(SharedFlightModel.self) private var sharedFlight
+    @Environment(AutoLogbook.self) private var logbook
+    @Environment(ClearanceListener.self) private var listener
+    @Environment(Navigator.self) private var nav
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: SharedFlightModel.shared.showing, initial: true) { _, up in follow(.sharedFlight, up) }
-            .onChange(of: AutoLogbook.shared.isOpen, initial: true) { _, up in follow(.flightLogged, up) }
-            .onChange(of: ClearanceListener.shared.sheetShown, initial: true) { _, up in follow(.clearance, up) }
+            .onChange(of: sharedFlight.showing, initial: true) { _, up in follow(.sharedFlight, up) }
+            .onChange(of: logbook.isOpen, initial: true) { _, up in follow(.flightLogged, up) }
+            .onChange(of: listener.sheetShown, initial: true) { _, up in follow(.clearance, up) }
     }
 
     /// The card up while its model asks, put away once it is done.

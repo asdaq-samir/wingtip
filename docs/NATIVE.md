@@ -193,8 +193,12 @@ owner, 2026-11-03):
   their card (`OpenAirportIntent`). The airport
   is an App Entity (`AirportEntity`: the kept route's, the Favorites and
   the Recents suggested, the planner's search behind them), so "Plan a
-  trip to KLAS in Wingtip Maps" goes in one breath. An intent that needs
-  the app sets `PendingCommand`, which `RootView` applies (`RootView+Commands.swift`).
+  trip to KLAS in Wingtip Maps" goes in one breath. An intent that opens
+  the app names its `AppCommand` (`CommandIntent`); on iOS 26 and later
+  the system hands the intent to the scene (`TargetContentProvidingIntent`,
+  `onAppIntentExecution` in `Intents/IntentScenes.swift`), before it the
+  command waits in `AppCommands` until the scene is up; `RootView`
+  applies it (`RootView+Commands.swift`).
 - **Home Screen widgets** (`WingtipWidgets/FlightWidgets.swift`,
   `Wingtip/WidgetFeed.swift`, `Wingtip/Shared/WidgetSnapshot.swift`): the
   next flight's route, figures, Go / No-Go and departure weather on the
@@ -203,7 +207,7 @@ owner, 2026-11-03):
   never asks the planner and never spends its redraw budget idly.
 - **Universal links and files** (`Wingtip/Intents/Links.swift`): a route,
   a field or an airplane shared from the site (`/app/plan?dep=…&dest=…`,
-  `?place=`, `?flight=`) opens in the app as a `PendingCommand`, and a GPX
+  `?place=`, `?flight=`) opens in the app as an `AppCommand` (`.onOpenURL`, `CommandHost`), and a GPX
   or KML track from Files or Mail is flown again on the map (the document
   types in project.yml). The sign-in link stays `Session.open`'s.
 - **A Live Activity** (`Wingtip/Activity/`, `WingtipWidgets/FlightActivityWidget.swift`,

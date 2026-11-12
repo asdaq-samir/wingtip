@@ -12,11 +12,12 @@ import SwiftUI
 /// TipKit: a TipView or popover tip holds a title, a message and buttons,
 /// never a text field, and Plan It needs the destination typed in place.
 struct FirstFlightSection: View {
+    @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(Session.self) private var session
     @FocusState private var focused: Field?
-    private var model: FirstFlightModel { .shared }
+    @Environment(FirstFlightModel.self) private var model
 
     enum Field { case dest, from }
 
@@ -43,7 +44,7 @@ struct FirstFlightSection: View {
                         await model.planIt(plan: plan, fix: ownShip.fix, home: session.pilot?.homeBase) {
                             // The nav log over FPL, which the route made
                             // turns to (PlanSheet).
-                            Navigator.shared.open(.screen(.navlog))
+                            nav.open(.screen(.navlog))
                         }
                     }
                 } label: {
@@ -76,7 +77,7 @@ struct FirstFlightSection: View {
                 .textCase(nil)
             }
             // Leaving the page puts the keyboard away.
-            .onChange(of: Navigator.shared.sheetPage) { _, _ in focused = nil }
+            .onChange(of: nav.sheetPage) { _, _ in focused = nil }
         }
     }
 

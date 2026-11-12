@@ -1,3 +1,4 @@
+import AppIntents
 import SwiftUI
 import WidgetKit
 
@@ -15,6 +16,11 @@ import WidgetKit
 /// currency widgets ask the gateway themselves (WidgetFetch).
 @main
 struct WingtipWidgetsBundle: WidgetBundle {
+    init() {
+        // The intents shared with the app ask for an opener (OpenControls).
+        AppDependencyManager.shared.add(dependency: AppOpener())
+    }
+
     var body: some Widget {
         FlightWidget()
         AirportWeatherWidget()

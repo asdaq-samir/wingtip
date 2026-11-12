@@ -69,7 +69,7 @@ extension OnDeviceFacts {
     /// The facts as the app has them: the plan on the page, own ship and
     /// the engine's in-flight answer.
     @MainActor
-    static func make(plan: Plan, ownShip: OwnShip, inFlight: InFlight = .shared) -> OnDeviceFacts {
+    static func make(plan: Plan, ownShip: OwnShip, inFlight: InFlight) -> OnDeviceFacts {
         var facts = OnDeviceFacts(dep: plan.dep.uppercased(), dest: plan.dest.uppercased(), stops: plan.stops.map { $0.uppercased() })
         facts.aircraft = plan.airplaneChosen ? plan.aircraft : nil
         facts.figures = plan.figures

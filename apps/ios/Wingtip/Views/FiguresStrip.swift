@@ -7,6 +7,8 @@ import SwiftUI
 /// way has burnt, red where the tanks do not hold it and its reserve (14
 /// CFR 91.151, 91.167).
 struct FiguresStrip: View {
+    @Environment(InFlight.self) private var inFlight
+    @Environment(\.appCommand) private var appCommand
     @Environment(Plan.self) private var plan
 
     /// In the air on the route -- moving, within 3 nm of the line (the
@@ -14,7 +16,7 @@ struct FiguresStrip: View {
     /// the airplane is, as the web app's do in a dry run: what is left to
     /// the destination at the groundspeed now, and the fuel still required.
     private var flying: (leftNm: Double, minutes: Double?, fuelGal: Double?)? {
-        guard let progress = InFlight.shared.progress, progress.onRoute else { return nil }
+        guard let progress = inFlight.progress, progress.onRoute else { return nil }
         let required = (try? StripFuel.of(plan.totals, burntGal: progress.burntGal))?.requiredGal
         return (progress.destination?.distanceNm ?? progress.leftNm, progress.destination?.eteMin, required)
     }
@@ -24,7 +26,7 @@ struct FiguresStrip: View {
         // you see, docs/navigation.md), as the web's distance does: a
         // stock Button, plain so the strip keeps its own look.
         if plan.routed {
-            Button { PendingCommand.shared.command = .open(.navlog) } label: { figures.contentShape(Rectangle()) }
+            Button { appCommand(.open(.navlog)) } label: { figures.contentShape(Rectangle()) }
                 .buttonStyle(.plain)
                 .accessibilityHint("Opens the nav log")
         } else {

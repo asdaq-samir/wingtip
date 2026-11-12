@@ -9,6 +9,7 @@ import SwiftUI
 /// arrow's other face fits the course again; tapped then, the arrow
 /// comes back to bring the map to the position.
 struct MapButtons: View {
+    @Environment(Navigator.self) private var nav
     @Environment(\.lookAccent) private var accent
     @Environment(OwnShip.self) private var ownShip
     @Binding var following: Bool
@@ -29,7 +30,7 @@ struct MapButtons: View {
         VStack(spacing: 0) {
             // The Map card, as Maps' map button opens Choose Map: the
             // layers, the weather and the alerts (MapSettingsView).
-            Button { Navigator.shared.open(.mapSettings) } label: { glyph("map") }
+            Button { nav.open(.mapSettings) } label: { glyph("map") }
                 .accessibilityLabel("Map Settings")
                 .accessibilityIdentifier("map-settings")
                 .foregroundStyle(accent)

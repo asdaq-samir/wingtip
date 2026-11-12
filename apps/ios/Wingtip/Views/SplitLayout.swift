@@ -44,6 +44,7 @@ extension EnvironmentValues {
 /// screen, the second-level card in the system inspector, and the
 /// flight's figures along the foot of the map.
 struct SplitLayout<Map: View>: View {
+    @Environment(Navigator.self) private var nav
     let map: Map
     let search: OneSearchModel
     let openScreen: (Screen) -> Void
@@ -82,18 +83,18 @@ struct SplitLayout<Map: View>: View {
         // Airplane): the card put away and the plan in the sidebar shown.
         .environment(\.showPlan, {
             search.close()
-            Navigator.shared.showPlan()
+            nav.showPlan()
         })
     }
 
     private var inspectorShown: Binding<Bool> {
-        Binding(get: { Navigator.shared.card != nil }, set: { shown in if !shown { Navigator.shared.close() } })
+        Binding(get: { nav.card != nil }, set: { shown in if !shown { nav.close() } })
     }
 
     /// The card, the same one the iPhone's sheet draws (CardStack), a new
     /// one for each thing opened.
     @ViewBuilder private var inspector: some View {
-        if let card = Navigator.shared.card {
+        if let card = nav.card {
             CardStack(card: card, search: search).id(card)
         }
     }

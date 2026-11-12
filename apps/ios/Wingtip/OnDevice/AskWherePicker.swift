@@ -9,8 +9,8 @@ import SwiftUI
 /// Not there while the server's Claude features are off (ServerFeatures):
 /// every answer is this iPhone's then, so there is nothing to pick.
 struct AskWherePicker: View {
+    @Environment(ServerFeatures.self) private var features
     @AppStorage(AskWhere.key) private var pick: AskWhere = .automatic
-    private let features = ServerFeatures.shared
 
     var body: some View {
         if features.claudeOn { menu }

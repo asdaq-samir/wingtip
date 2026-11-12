@@ -30,11 +30,12 @@ final class KeptShown {
 /// to read, never a stop: the answer stays on the screen (warn, never
 /// limit). Nothing while the answer is fresh from the planner.
 struct KeptAgeLine: View {
+    @Environment(KeptShown.self) private var keptShown
     let kind: KeptForAir.Kind
     let key: String
 
     var body: some View {
-        if let at = KeptShown.shared.at(kind, key: key) {
+        if let at = keptShown.at(kind, key: key) {
             TimelineView(.everyMinute) { context in
                 if let age = try? Engine.keptAge(now: context.date.timeIntervalSince1970, fetchedAt: at.timeIntervalSince1970, kind: kind.rawValue) {
                     KeptAgeWords(age: age)

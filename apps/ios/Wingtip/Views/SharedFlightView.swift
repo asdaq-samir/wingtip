@@ -4,6 +4,7 @@ import SwiftUI
 /// altitude, departure time, airplane type and rules, and a saved flight's
 /// nav log as filed; Use This Plan or Not Now.
 struct SharedFlightView: View {
+    @Environment(\.appCommand) private var appCommand
     @Environment(Plan.self) private var route
     let model: SharedFlightModel
 
@@ -37,7 +38,7 @@ struct SharedFlightView: View {
             }
             if !model.gone {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Use This Plan") { model.use(on: route) }.disabled(model.plan == nil)
+                    Button("Use This Plan") { if let command = model.use(on: route) { appCommand(command, then: .navlog) } }.disabled(model.plan == nil)
                 }
             }
         }

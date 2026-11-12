@@ -37,19 +37,19 @@ extension PlanSheet {
             return "Share is at the plan's bar's left."
         case .file:
             guard routed, plan.totals != nil else { return "A flight plan needs a route from an airport, its nav log in." }
-            Navigator.shared.open(.flight("file"))
+            nav.open(.flight("file"))
         case .clearance, .radio:
             showPlan()
-            ClearanceListener.shared.sheetText = nil
-            ClearanceListener.shared.sheetShown = true
+            listener.sheetText = nil
+            listener.sheetShown = true
         case .instructor:
-            Navigator.shared.open(.instructing)
+            nav.open(.instructing)
         case .recents:
-            AirportShelf.shared.show(.recents)
-            Navigator.shared.open(.airport(AirportRoute.list(.recents).text))
+            shelf.show(.recents)
+            nav.open(.airport(AirportRoute.list(.recents).text))
         case .map:
             // The Map card, the map's own button's (MapSettingsView).
-            Navigator.shared.open(.mapSettings)
+            nav.open(.mapSettings)
         case .airplane, .logbook, .setup, .nearest, .saved, .recentRoutes, .favorites, .emergency:
             if let screen = SearchActions.screen(word) { openScreen(screen) }
         }
