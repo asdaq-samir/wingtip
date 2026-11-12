@@ -29,6 +29,16 @@ describe("valueAt", () => {
     expect(valueAt(layer, "wind-060", texture, [1, 0.5])!.value).toBeLessThan(1);
   });
 
+  it("reads a wind under a knot as calm, with no direction (the fixture's half-knot case)", () => {
+    const half = fixture.samples.find((s) => s.about.startsWith("Calm: half a knot"))!;
+    const calm = { data: new Uint8ClampedArray([128, 127.5, 0, 255]), width: 1, height: 1 } as unknown as TextureData;
+    const small = { bounds: [0, 0, 1, 1], fields: { wind: { unscale: half.input.unscale, vector: true, unit: "kt" } } } as unknown as FlowLayer;
+    const read = valueAt(small, "wind", calm, [0.5, 0.5])!;
+    expect(read.calm).toBe(true);
+    expect(read.direction).toBeUndefined();
+    expect(half.answer).toMatchObject({ calm: true, from_deg: null });
+  });
+
   it("reads nothing off the picture or before it loads", () => {
     expect(valueAt(layer, "wind-060", texture, [3, 0.5])).toBeNull();
     expect(valueAt(layer, "wind-060", undefined, [0.5, 0.5])).toBeNull();

@@ -61,6 +61,16 @@ struct FlowFixturesTests {
         }
     }
 
+    @Test func aWindUnderAKnotIsWrittenCalmWithNoDirection() throws {
+        // The fixture's half-knot case: calm, no direction, so no point above the word.
+        let f = try fixture("flowSample", as: FlowSampleFixture.self)
+        let c = try #require(f.samples.first { $0.about.hasPrefix("Calm: half a knot") })
+        let got = try #require(try Engine.flowSample(pixels: c.input.pixels, fx: c.input.fx, fy: c.input.fy, unscale: c.input.unscale, vector: c.input.vector))
+        #expect(got.calm && got.fromDeg == nil)
+        let said = try FlowReading.of(.wind, value: got.value, unit: "kt", top: nil, fromDeg: got.fromDeg, calm: got.calm)
+        #expect(said.figure == "Calm" && said.over == nil)
+    }
+
     @Test func aGridReadsAPointAsTheTwoRulesTogether() throws {
         // The first cell's picture, 4 x 2: its four pixels round the point
         // 0 and 100 of 0..100 in red, west and east. Read at the cell's
