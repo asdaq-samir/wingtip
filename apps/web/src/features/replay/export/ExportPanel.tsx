@@ -18,6 +18,7 @@ import { speedName } from "../useReplay";
 import type { OverlayScene } from "./drawOverlay";
 import { DEFAULT_CHOICE, outputSize, type ExportChoice } from "./exportOptions";
 import { useExporting } from "./exportStore";
+import { useRenderEntry } from "./useRenderEntry";
 import { useVideoExport } from "./useVideoExport";
 
 /** A segmented control of a few choices (decision 0017: menus or
@@ -59,16 +60,20 @@ function Segmented<T extends string | number>({
  * credits and the reconstruction's disclaimer burned in (on unless
  * switched off), and the progress with a Cancel while it renders. Says
  * what is left out: Google's imagery, which its terms keep out of any
- * export, and the radio at any speed but 1x.
+ * export, and the radio at any speed but 1x. With `render` (a crash
+ * draft's film, at ?render=1), the same export is open to the render
+ * script by a preset's name (useRenderEntry).
  */
 export function ExportPanel({
   track,
   scene,
   credits,
+  render = null,
 }: {
   track: ReplayTrack;
   scene: Omit<OverlayScene, "track" | "captions" | "credit" | "disclaimer">;
   credits: string[];
+  render?: { draftId: string } | null;
 }) {
   const [choice, setChoice] = useState<ExportChoice>(DEFAULT_CHOICE);
   const pick = (change: Partial<ExportChoice>) => setChoice((c) => ({ ...c, ...change }));
@@ -82,6 +87,7 @@ export function ExportPanel({
   const hasAudio = useReplayAudio((s) => !!s.buffer && !!s.sync);
   const { running, done, problem, made } = useExporting();
   const video = useVideoExport();
+  useRenderEntry(render, track, (job) => video.start({ ...job, scene }), credits);
   const size = outputSize(choice.resolution, choice.aspect);
   const frames = frameCount({ start: from, end: to, speed, fps: choice.fps });
   const seconds = Math.round(frames / choice.fps);

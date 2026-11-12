@@ -3,12 +3,13 @@ entry point):
 
 - `poll` (the default): one run of stages 1 to 3 (docs/STUDIO-PIPELINE.md).
   The FAA's statements page is read once (statements.py) and the
-  preliminary notices dropped in data/raw/faa_prelim (notices.py), and the
-  NTSB's records once claude/studio-2's reader lands (ntsb.py), into leads
-  (wingtip.crash_drafts); each lead still waiting is checked (identity.py:
-  the engine's occurrence_identity over the registry and the ADS-B track);
-  and each ready draft without a kit is given one (kit.py). A source that
-  cannot be read is said in the log and the rest go on.
+  preliminary notices dropped in data/raw/faa_prelim (notices.py), into
+  leads (wingtip.crash_drafts); each lead still waiting is checked
+  (identity.py: the engine's occurrence_identity over the registry and the
+  ADS-B track); each ready draft without a kit is given one (kit.py); and
+  each kit is filled with what the history has come to hold since (the
+  weather then, the NOTAMs then, the NTSB's record: then.py). A source
+  that cannot be read is said in the log and the rest go on.
 - `parse-check`: the statements page read and parsed, its crashes printed,
   nothing written: a look at whether the FAA has changed the page.
 
@@ -109,11 +110,23 @@ def make_kits(checked: list[dict]) -> int:
     return made
 
 
+def fill_kits() -> int:
+    """Stage 3 again: each made kit of a draft not set aside given the
+    history's parts it lacks (kit.fill), the NTSB's record among them,
+    which comes a week or more after the event; how many parts."""
+    added = 0
+    for lead in crash_drafts.drafts("ready") + crash_drafts.drafts("rendered"):
+        if lead["kit_at"]:
+            added += len(kit.fill(lead))
+    return added
+
+
 def poll() -> int:
     seen = read_sources()
     checked = check_identities()
     made = make_kits(checked)
-    log.info("crash leads: %d events read, %d leads checked, %d kits made", seen, len(checked), made)
+    filled = fill_kits()
+    log.info("crash leads: %d events read, %d leads checked, %d kits made, %d kit parts added", seen, len(checked), made, filled)
     return 0
 
 

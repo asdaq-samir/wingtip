@@ -41,7 +41,17 @@ export default function StudioWorkspace({ panel, setPanel, children }: Workspace
     sidebar: (
       <StudioPanel
         studio={studio}
-        tools={studio.track && <StudioTools track={studio.track} ground={studio.ground} history={history} callsign={studio.registration} />}
+        tools={
+          studio.track && (
+            <StudioTools
+              track={studio.track}
+              ground={studio.ground}
+              history={history}
+              callsign={studio.registration}
+              renderDraft={studio.renderDraft}
+            />
+          )
+        }
       />
     ),
     head: null,

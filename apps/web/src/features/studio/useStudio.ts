@@ -98,6 +98,10 @@ export function useStudio() {
      *  from the store (for the NTSB's events); null for a file's. */
     registration: file ? null : (asked.data?.registration ?? null),
     utcDay: file ? null : (asked.data?.day ?? null),
+    /** The open crash draft's id at ?render=1, once its own airplane's
+     *  track is the one loaded (its `q`, useDrafts): the render script's film of it
+     *  (useRenderEntry, scripts/dev/studio-render.mjs). */
+    renderDraft: params.get("render") === "1" && !file && drafts.draft && fromDay && q === drafts.draft.n_number ? drafts.draft.id : null,
     watched: watched.data ?? [],
     /** The crash drafts (useDrafts), the one open among them. */
     drafts,

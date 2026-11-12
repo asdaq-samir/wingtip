@@ -11,9 +11,12 @@ one JSON file a part:
 - ``tfrs.json``: the TFRs within 30 nm of the place in the event's window,
   from the weather store's list (wingtip.tfr), only where the event was
   within the day: the store keeps today's list, not the past's;
-- the weather then and the NTSB's record: TODO(claude/studio-2), whose
-  IEM reader (wingtip/history/iem.py) and NTSB reader
-  (services/ingest/ingest/ntsb.py) give them.
+- ``weather.json``, ``notams.json`` and ``ntsb.json``: the METARs and
+  TAFs of the fields near the place over the event's hour, the NOTAMs and
+  TFRs in force at its moment, and the NTSB's case, from the history
+  wingtip.history keeps (then.py); each given when it can be whole, which
+  for the NTSB's case is a week or more on, so a made kit is filled again
+  on each run (fill) until all three are in.
 
 The captions are facts only (docs/STUDIO-PIPELINE.md, "The rules"): the
 FAA's or the NTSB's words quoted as they wrote them, "Preliminary" said,
@@ -30,7 +33,7 @@ import time
 
 from wingtip import crash_drafts, tfr
 
-from . import ntsb
+from . import then
 
 log = logging.getLogger(__name__)
 
@@ -40,8 +43,20 @@ TFR_NEAR_NM = 30.0
 _SOURCE_NAMES = {"faa_statement": "FAA statement", "faa_notice": "FAA preliminary notice", "ntsb": "NTSB"}
 
 
-def captions(lead: dict) -> dict:
-    """The film's words, from the lead's facts and its sources' own words."""
+def _ntsb_quotes(record: dict | None) -> list[dict]:
+    """The NTSB's narrative of each case, as it wrote it, its kind said
+    ("preliminary" until the final report): never its probable cause,
+    which the captions leave to the NTSB's own report (the rules)."""
+    return [
+        {"source": f"NTSB ({c['narrative_kind']} report {c['ntsb_no']})", "words": c["narrative"], "url": c.get("carol_url")}
+        for c in (record or {}).get("cases") or []
+        if c.get("narrative")
+    ]
+
+
+def captions(lead: dict, record: dict | None = None) -> dict:
+    """The film's words, from the lead's facts, its sources' own words and
+    the NTSB's record where there is one."""
     day = dt.date.fromisoformat(lead["local_date"])
     place = ", ".join(p for p in (lead.get("city"), lead.get("state")) if p)
     title = " · ".join(p for p in (lead.get("aircraft") or "Aircraft", place, f"{day:%B} {day.day}, {day.year}") if p)
@@ -49,8 +64,10 @@ def captions(lead: dict) -> dict:
         {"source": _SOURCE_NAMES.get(s.get("source"), s.get("source")), "words": s["text"], "url": s.get("url")}
         for s in lead.get("sources") or []
         if s.get("text")
-    ]
-    credits = sorted({q["source"] for q in quotes if q["source"]})
+    ] + _ntsb_quotes(record)
+    credits = sorted({q["source"] for q in quotes if q["source"] and not q["source"].startswith("NTSB (")})
+    if record:
+        credits.append(record["credit"])
     if lead.get("track") == "adsb":
         credits.append("ADS-B: adsb.lol, ODbL 1.0")
     return {
@@ -68,16 +85,35 @@ def _write(folder, name: str, data) -> None:
     part.replace(folder / f"{name}.json")
 
 
+def _lead_part(lead: dict, record: dict | None) -> dict:
+    facts = {
+        k: lead.get(k)
+        for k in ("id", "n_number", "hex", "local_date", "local_time", "city", "state", "lat", "lon", "place", "aircraft", "fatal", "track")
+    }
+    return {**facts, "identity": lead.get("identity"), "sources": lead.get("sources"), "captions": captions(lead, record)}
+
+
+def fill(lead: dict, now: float | None = None) -> list[str]:
+    """The history's parts a made kit lacks, written where they can be
+    given now (then.parts), the captions written again with the NTSB's
+    words once its record is in; the names of those written."""
+    now = now if now is not None else time.time()
+    folder = crash_drafts.kit_dir(lead["id"])
+    have = {p.stem for p in folder.glob("*.json")} if folder.is_dir() else set()
+    added = then.parts(lead, have, now)
+    for name, data in added.items():
+        _write(folder, name, data)
+    if "ntsb" in added:
+        _write(folder, "lead", _lead_part(lead, added["ntsb"]))
+    return sorted(added)
+
+
 def make(lead: dict, track: dict | None = None, now: float | None = None) -> dict:
     """The kit of a ready draft, written; the draft as it is now."""
     now = now if now is not None else time.time()
     folder = crash_drafts.kit_dir(lead["id"])
     folder.mkdir(parents=True, exist_ok=True)
-    facts = {
-        k: lead.get(k)
-        for k in ("id", "n_number", "hex", "local_date", "local_time", "city", "state", "lat", "lon", "place", "aircraft", "fatal", "track")
-    }
-    _write(folder, "lead", {**facts, "identity": lead.get("identity"), "sources": lead.get("sources"), "captions": captions(lead)})
+    _write(folder, "lead", _lead_part(lead, None))
     if track is not None:
         _write(folder, "track", track)
     window = (lead.get("identity") or {}).get("window")
@@ -88,7 +124,5 @@ def make(lead: dict, track: dict | None = None, now: float | None = None) -> dic
             _write(folder, "tfrs", {"taken_at": now, "tfrs": near})
         except tfr.TfrUnavailable as err:
             log.info("draft %s: no TFR list in the store (%s)", lead["id"], err)
-    record = ntsb.record(lead.get("n_number") or "", lead["local_date"])
-    if record is not None:
-        _write(folder, "ntsb", record)
+    fill(lead, now)
     return crash_drafts.update(lead["id"], kit_at=now)

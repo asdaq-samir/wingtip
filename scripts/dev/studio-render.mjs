@@ -23,20 +23,24 @@
 //   WINGTIP_URL          the gateway the Studio is opened at (https://localhost:8443)
 //   PLANNER_URL          the planner on loopback, for the list of drafts (http://127.0.0.1:8084)
 //   STUDIO_RENDER_OUT    where the films are saved (~/Movies/Wingtip Studio)
-//   STUDIO_RENDER_PRESET the export's preset ("vertical-1080")
+//   STUDIO_RENDER_PRESET the export's presets, comma-separated ("draft-1080p,draft-1080p-layers")
 //
-// TODO(claude/studio-2): the export (MapLibre's setNow on the replay clock,
-// encoded with mediabunny) is that branch's. This drives it through one
-// seam, which the Studio's render route must expose:
+// The export is the Studio's own (features/replay/export: MapLibre's
+// setNow frame by frame, encoded with mediabunny), opened to this script
+// through one entry (useRenderEntry):
 //
 //   window.__studioExport({ draftId, preset }): Promise<{ filename: string }>
-//     resolves once the film is whole, after handing it to the browser as
-//     a download named `filename` (an <a download> of the encoded Blob);
-//     rejects with a message saying why where it cannot be made.
+//     makes the preset's video of the draft's whole track and hands it to
+//     the browser as a download named `filename`; rejects with the reason
+//     where it cannot be made.
 //
 // Opened at /app/studio?draft=<id>&render=1, the Studio loads the draft's
-// track and captions (useDrafts) and its export panel sets
-// window.__studioExport once the map is ready.
+// track (useDrafts) and the weather then, and its export panel sets
+// window.__studioExport once the map is ready. Each preset of
+// STUDIO_RENDER_PRESET is made in turn ("draft-1080p", the finished 16:9
+// film; "draft-1080p-layers", its layers zip), then the draft is marked
+// rendered. A draft of the place alone ("No ADS-B track") has no film to
+// make and is left for a person.
 
 import { createRequire } from "node:module";
 import { mkdirSync } from "node:fs";
@@ -51,7 +55,10 @@ const { chromium } = require("@playwright/test");
 const WINGTIP_URL = (process.env.WINGTIP_URL ?? "https://localhost:8443").replace(/\/+$/, "");
 const PLANNER_URL = (process.env.PLANNER_URL ?? "http://127.0.0.1:8084").replace(/\/+$/, "");
 const OUT = process.env.STUDIO_RENDER_OUT ?? join(homedir(), "Movies", "Wingtip Studio");
-const PRESET = process.env.STUDIO_RENDER_PRESET ?? "vertical-1080";
+const PRESETS = (process.env.STUDIO_RENDER_PRESET ?? "draft-1080p,draft-1080p-layers")
+  .split(",")
+  .map((p) => p.trim())
+  .filter(Boolean);
 const PROFILE = join(homedir(), "Library", "Application Support", "Wingtip", "studio-render");
 // How long a film may take to make, and the page to be ready.
 const EXPORT_TIMEOUT_MS = 20 * 60_000;
@@ -67,7 +74,8 @@ function browser(headless) {
     args: ["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"],
     acceptDownloads: true,
     ignoreHTTPSErrors: true,
-    viewport: { width: 1080, height: 1920 },
+    // The presets' 16:9; the export lays the map out at the video's own size.
+    viewport: { width: 1920, height: 1080 },
     deviceScaleFactor: 1,
   });
 }
@@ -85,7 +93,10 @@ async function renderer(page) {
 async function readyDrafts() {
   const resp = await fetch(`${PLANNER_URL}/api/studio/drafts`);
   if (!resp.ok) throw new Error(`the planner's drafts: HTTP ${resp.status}`);
-  return (await resp.json()).filter((d) => d.status === "ready" && d.kit_at);
+  const ready = (await resp.json()).filter((d) => d.status === "ready" && d.kit_at);
+  for (const d of ready.filter((d) => d.track !== "adsb"))
+    console.log(`studio-render: ${d.id} has no ADS-B track; no film, left for a person`);
+  return ready.filter((d) => d.track === "adsb");
 }
 
 async function render() {
@@ -108,19 +119,32 @@ async function render() {
       try {
         await page.waitForFunction(() => typeof window.__studioExport === "function", null, { timeout: READY_TIMEOUT_MS });
       } catch {
-        console.error("studio-render: the Studio has no export yet (window.__studioExport, claude/studio-2); nothing filmed");
-        return 1;
+        console.error(`studio-render: ${draft.id}: the Studio's export did not open (its track, the map or the sign-in); skipped`);
+        continue;
       }
-      const downloaded = page.waitForEvent("download", { timeout: EXPORT_TIMEOUT_MS });
-      const made = await page.evaluate(({ draftId, preset }) => window.__studioExport({ draftId, preset }), {
-        draftId: draft.id,
-        preset: PRESET,
-      });
-      const file = await downloaded;
-      const path = join(OUT, made?.filename ?? file.suggestedFilename());
-      await file.saveAs(path);
+      const saved = [];
+      try {
+        for (const preset of PRESETS) {
+          const downloaded = page.waitForEvent("download", { timeout: EXPORT_TIMEOUT_MS });
+          // Its rejection is the export's, said below, not an unhandled one.
+          downloaded.catch(() => {});
+          const made = await page.evaluate(({ draftId, preset }) => window.__studioExport({ draftId, preset }), {
+            draftId: draft.id,
+            preset,
+          });
+          const file = await downloaded;
+          const path = join(OUT, `${draft.id}-${made?.filename ?? file.suggestedFilename()}`);
+          await file.saveAs(path);
+          saved.push(path);
+        }
+      } catch (err) {
+        console.error(`studio-render: ${draft.id}: ${err instanceof Error ? err.message : String(err)}; not marked rendered`);
+        continue;
+      }
       await page.evaluate((id) => window.__studioDraftRendered?.(id), draft.id);
-      console.log(`studio-render: ${draft.id} (${draft.aircraft ?? "aircraft"}, ${draft.city}, ${draft.state}) -> ${path} on ${gpu}`);
+      console.log(
+        `studio-render: ${draft.id} (${draft.aircraft ?? "aircraft"}, ${draft.city}, ${draft.state}) -> ${saved.join(", ")} on ${gpu}`,
+      );
     }
     return 0;
   } finally {
