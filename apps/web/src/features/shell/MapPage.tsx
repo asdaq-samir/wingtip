@@ -187,13 +187,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
   if (layerDrawn && !setupDrawn) setSetupDrawn(true);
   const consoleLayerOf = (pieces: WorkspacePieces) => (
     <ConsoleInPanelContext.Provider value={consoleInPanel}>
-      <ConsoleLayer
-        label={consoleLabel}
-        edge={edge}
-        onClose={closeConsole}
-        finalFocus={consoleButton}
-        shown={consoleLayer}
-      >
+      <ConsoleLayer label={consoleLabel} edge={edge} onClose={closeConsole} finalFocus={consoleButton} shown={consoleLayer}>
         <Shown.Provider value={consoleLayer}>
           <AfterTheSheet>{pieces.console}</AfterTheSheet>
         </Shown.Provider>

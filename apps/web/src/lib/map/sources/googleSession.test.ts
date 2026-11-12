@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { GOOGLE, googleReferrer } from "./googleSession";
+import { googleReferrer } from "./googleSession";
+import { GOOGLE } from "./imagery";
 
 describe("googleReferrer", () => {
   it("sends the site's origin to Google, which the key's restriction checks", () => {

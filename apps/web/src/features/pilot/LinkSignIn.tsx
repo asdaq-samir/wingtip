@@ -7,13 +7,6 @@ import { TEXT } from "../../lib/text";
 import { linkAccount } from "./linkAccount";
 import { FieldError } from "../../components/ui/field";
 
-/** The token an emailed sign-in link brought, from the address's
- *  fragment (`#signin=…`), where the link's redirect put it
- *  (MagicLinkController#confirm). */
-function linkToken(): string | null {
-  return new URLSearchParams(window.location.hash.slice(1)).get("signin");
-}
-
 /**
  * The last step of an emailed-link sign-in, in the app's own dialog
  * over the planner rather than on a bare server page: a sheet from the
@@ -31,18 +24,16 @@ function linkToken(): string | null {
  * mailed to the pilot so that what they save lands where the sender reads
  * it, shows an address that is not theirs (the security audit's L1).
  */
-export default function LinkSignIn() {
-  const [token] = useState(linkToken);
+export default function LinkSignIn({ token }: { token: string }) {
   // The token taken off the address by the router (React Router's
   // navigate, replacing), so a reload or a shared link does not ask again:
   // the query as the browser has it, which nuqs writes without the router.
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const [open, setOpen] = useState(token !== null);
+  const [open, setOpen] = useState(true);
   const account = useQuery({
     queryKey: ["linkAccount", token],
-    queryFn: () => linkAccount(token ?? ""),
-    enabled: token !== null,
+    queryFn: () => linkAccount(token),
     retry: false,
     staleTime: Infinity,
     meta: { silent: true },
@@ -52,8 +43,6 @@ export default function LinkSignIn() {
     onSuccess: (landing) => window.location.assign(landing),
     meta: { silent: true },
   });
-  if (token === null) return null;
-
   const spent = (finish.error instanceof ApiError && finish.error.status === 400) || account.data === null;
   const close = () => {
     setOpen(false);

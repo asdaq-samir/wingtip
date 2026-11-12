@@ -1,5 +1,3 @@
-import { closeTopmost } from "./backNavigation";
-
 /**
  * The TV apps (the TV shells, in git history: Samsung's Tizen and LG's webOS): the site in the
  * TV's own web engine, opened by each app's page with `?tv=` and its
@@ -8,7 +6,7 @@ import { closeTopmost } from "./backNavigation";
  * so the platform is kept for the visit; a TV's own browser is known by
  * its agent.
  */
-type TvPlatform = "tizen" | "webos";
+export type TvPlatform = "tizen" | "webos";
 
 const KEY = "wingtip.tv";
 
@@ -39,113 +37,3 @@ export const isBack = (event: KeyboardEvent) =>
 export const zoomInKey = (event: KeyboardEvent) =>
   event.key === "Enter" || event.key === "PageUp" || event.key === "ChannelUp" || event.keyCode === 427;
 export const zoomOutKey = (event: KeyboardEvent) => event.key === "PageDown" || event.key === "ChannelDown" || event.keyCode === 428;
-
-/** Whether the remote is on the map: focus on MapLibre's container or
- *  anything in it (its zoom buttons, a marker). */
-function onMap(): boolean {
-  const active = document.activeElement;
-  return active instanceof HTMLElement && active.closest(".maplibregl-map") !== null;
-}
-
-const DIRECTIONS: Record<string, "left" | "up" | "right" | "down"> = {
-  ArrowLeft: "left",
-  ArrowUp: "up",
-  ArrowRight: "right",
-  ArrowDown: "down",
-};
-
-/** An arrow moving the focus, as the polyfill's own handler does: not
- *  one a control took first (a menu, a slider, the map), and in a field
- *  only from its ends, its caret moving inside it. */
-export function arrow(event: KeyboardEvent) {
-  const direction = DIRECTIONS[event.key];
-  if (!direction || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-  const field = document.activeElement;
-  if (field instanceof HTMLTextAreaElement) return;
-  if (field instanceof HTMLInputElement && field.selectionStart !== null) {
-    const { selectionStart: at, selectionEnd: end, value } = field;
-    if (direction === "left" && (at !== 0 || end !== 0)) return;
-    if (direction === "right" && (at !== value.length || end !== value.length)) return;
-  }
-  event.preventDefault();
-  (window as { navigate?: (direction: string) => void }).navigate?.(direction);
-}
-
-/** The app put away: Samsung's own exit where the runtime gives it, else
- *  the window closed, which a TV's runtime takes as leaving the app (webOS
- *  6 and later ask first; the shell does not load LG's webOSTV.js, so
- *  there is no platformBack to call). */
-export function leave(platform: TvPlatform) {
-  const tizen = (window as { tizen?: { application?: { getCurrentApplication?: () => { exit: () => void } } } }).tizen;
-  if (platform === "tizen" && tizen?.application?.getCurrentApplication) tizen.application.getCurrentApplication().exit();
-  else window.close();
-}
-
-/** Samsung sends a page only a few keys; the channel keys zoom the map
- *  only once the app asks for them (tizen.tvinputdevice.registerKey, with
- *  the key's name from Samsung's TV input device guide). */
-function registerChannelKeys(platform: TvPlatform) {
-  if (platform !== "tizen") return;
-  const input = (window as { tizen?: { tvinputdevice?: { registerKey?: (name: string) => void } } }).tizen?.tvinputdevice;
-  for (const name of ["ChannelUp", "ChannelDown"]) {
-    try {
-      input?.registerKey?.(name);
-    } catch {
-      // A key this TV does not have: OK and the + and - buttons still zoom.
-    }
-  }
-}
-
-/**
- * The page made for a TV, before the first render: the page drawn as at
- * 1280 by 720, half again as large on a 1920 screen to be read from the
- * sofa (LG's app asks the same of webOS in its appinfo.json); the
- * remote's arrows moving from control to control by where they are on
- * the screen (the W3C's spatial navigation, by its polyfill); its Back
- * closing what is open, as Escape does (lib/backNavigation), then leaving the app.
- * On the map the arrows pan it and OK and a channel up and down zoom it
- * (GlMapShell), and Back takes the remote off it.
- */
-export function startTv(platform: TvPlatform) {
-  document.documentElement.dataset.tv = platform;
-  registerChannelKeys(platform);
-  const viewport = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
-  if (viewport) viewport.content = "width=1280, initial-scale=1, user-scalable=no";
-  void import("spatial-navigation-polyfill").then(() => {
-    // The polyfill starts hearing the arrows at the page's load; brought
-    // in after it -- a chunk of its own, loaded only on a TV -- it never
-    // would: the arrows are taken to its navigate() here instead.
-    const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
-    if (!navigation || navigation.loadEventStart > 0) window.addEventListener("keydown", arrow);
-  });
-  // The remote on the panel's first control as the page comes up, not on
-  // nothing: the arrows' first move from nothing chose the map, the
-  // largest thing there, where they pan it rather than move on.
-  const started = Date.now();
-  const timer = window.setInterval(() => {
-    const first = document.querySelector<HTMLElement>('[data-slot="map-panel"] button:not([disabled])');
-    if (document.activeElement && document.activeElement !== document.body) window.clearInterval(timer);
-    else if (first) {
-      first.focus();
-      window.clearInterval(timer);
-    } else if (Date.now() - started > 15_000) window.clearInterval(timer);
-  }, 250);
-  // Capture: ahead of the page's own Escape handling, which a Back is not.
-  window.addEventListener(
-    "keydown",
-    (event) => {
-      if (!isBack(event)) return;
-      event.preventDefault();
-      // Off the map first, to the panel's first control (or the page's), so
-      // the arrows move between controls again.
-      if (onMap()) {
-        const next = document.querySelector<HTMLElement>('[data-slot="map-panel"] button, [data-slot="map-panel"] input');
-        const outside = [...document.querySelectorAll<HTMLElement>("button")].find((button) => !button.closest(".maplibregl-map"));
-        (next ?? outside ?? document.body).focus();
-        return;
-      }
-      if (!closeTopmost()) leave(platform);
-    },
-    true,
-  );
-}

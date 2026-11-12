@@ -1,6 +1,7 @@
 import { AttributionControl } from "maplibre-gl";
 import { useEffect, useState } from "react";
-import { GOOGLE, GOOGLE_REFERRER_POLICY } from "../sources/googleSession";
+import { GOOGLE_REFERRER_POLICY } from "../sources/googleSession";
+import { GOOGLE } from "../sources/imagery";
 import { useGlMap } from "./glLayer";
 
 /** Google's credit on the map itself while its tiles are drawn, in words

@@ -38,32 +38,13 @@ interface WebRecognition {
   onresult: ((event: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
-  /** With a track where the browser takes one (takesTrack); Safari's
+  /** With a track where the browser takes one (lib/speechLocal's takesTrack); Safari's
    *  declares start() alone, so under WebIDL the extra argument is
    *  ignored there without an error. */
   start(track?: MediaStreamTrack): void;
   stop(): void;
 }
 type WebRecognitionClass = new () => WebRecognition;
-
-/**
- * Whether the browser's recognizer hears the track it is handed
- * (start(track)): Chrome and Edge 135+ on Windows, Mac and Linux, and
- * Firefox 160 on the desktop, each with the unprefixed SpeechRecognition
- * (MDN's compat data, start's audioTrack). Safari names its recognizer
- * webkitSpeechRecognition alone and declares only start() (WebKit's
- * SpeechRecognition.idl), and Chrome for Android has no such start
- * (Chromium's MediaStreamTrackWebSpeech is desktop only): both record
- * whatever input is the default, given a track or not.
- */
-export function takesTrack(): boolean {
-  // ChromeOS too has the unprefixed recognizer without the track: Chromium's
-  // MediaStreamTrackWebSpeech flag is stable on Linux, Mac and Windows
-  // only (runtime_enabled_features.json5), and start(track) falls back to
-  // start() under WebIDL elsewhere.
-  if (typeof window === "undefined" || /Android|CrOS/.test(navigator.userAgent)) return false;
-  return typeof (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition === "function";
-}
 
 /** No microphone could be had, and what to try, by where. A Bluetooth
  *  panel or headset may simply have gone. Safari on iOS 26.3 to 26.6
