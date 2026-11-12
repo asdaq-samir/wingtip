@@ -70,6 +70,9 @@ other imports work out a coarser attitude of their own.
 
 ## X-Plane 12: FDR
 
+The X-Plane trial (XPLANE-TRIAL.md) replays this file with scripted
+cameras and X-Plane's own recorder.
+
 1. Export **X-Plane 12: Flight data recorder (FDR)**.
 2. Open the file in a text editor and change the `ACFT` line to the
    airplane you want to fly. The file names one that ships with X-Plane: a

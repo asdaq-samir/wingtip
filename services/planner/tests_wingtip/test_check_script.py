@@ -100,7 +100,7 @@ def test_check_sh_lists_the_areas_the_file_names():
     names = subprocess.run(
         ["python3", str(ROOT / "scripts" / "areas.py"), "names"], capture_output=True, text=True, check=True
     ).stdout.split()
-    assert names == "web py planner ingest assistant weather jobs engine java ios android site arch".split()
+    assert names == "web py planner ingest assistant weather jobs engine java ios android site xplane arch".split()
     for name in names:
         # every area has a branch in check.sh's run_area
         assert f"\n    {name})" in SCRIPT.read_text(), name

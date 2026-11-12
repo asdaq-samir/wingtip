@@ -6,7 +6,7 @@
 #
 #   scripts/dev/check.sh <area>...       an area of scripts/areas.yml (the table of areas, their
 #                                    paths and checks): web py planner ingest assistant
-#                                    weather jobs engine java ios android site arch
+#                                    weather jobs engine java ios android site xplane arch
 #   scripts/dev/check.sh all-changed     the areas `git diff origin/main...` and
 #                                    the uncommitted files touch, in parallel
 #   scripts/dev/check.sh --areas         reads paths on stdin, prints their areas
@@ -316,6 +316,14 @@ run_area() {
       # The website: built, then its pages, links and hosts checked (seconds).
       python3 "$here/apps/site/build.py"
       python3 "$here/apps/site/check.py"
+      ;;
+    xplane)
+      # The X-Plane trial's plugin (tools/xplane-driver): its plain parts,
+      # and the player against a stub of XPPython3 (seconds). The planner's
+      # wingtip image has the ruff and pytest it needs.
+      tag=$(py_image services/planner requirements-dev-wingtip.txt "$PYTHON" "")
+      docker run --rm -v "$here:/repo" -w /repo/tools/xplane-driver "$tag" \
+        sh -c 'ruff check . && pytest tests -q -p no:cacheprovider'
       ;;
     arch)
       # No new or grown source file over 400 lines (seconds); the allow-list

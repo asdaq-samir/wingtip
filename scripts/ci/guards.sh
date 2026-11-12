@@ -73,7 +73,8 @@ ruff_check() {
     (cd services/ingest && "${ruff[@]}" check ingest tests) &&
     (cd services/assistant && "${ruff[@]}" check app tests) &&
     (cd services/weather && "${ruff[@]}" check app tests) &&
-    (cd services/jobs && "${ruff[@]}" check charts)
+    (cd services/jobs && "${ruff[@]}" check charts) &&
+    (cd tools/xplane-driver && "${ruff[@]}" check .)
 }
 
 file_sizes() {

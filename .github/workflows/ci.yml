@@ -550,6 +550,8 @@ jobs:
                 - apps/web/public/terms.html
                 - apps/web/public/support.html
               arch:
+                - tools/xplane-driver/**
+                - scripts/dev/xplane-trial.sh
                 - '**/*.ts'
                 - '**/*.tsx'
                 - '**/*.py'
