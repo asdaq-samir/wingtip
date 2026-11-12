@@ -328,12 +328,17 @@ At each airport the chart already shows, from the map's own
   halo too.
 - **Station model from zoom 10 in** (the matching span on the iPhone):
   the engine's `wind_barb` (5, 10 and 50 kt barbs and flags, a ring for
-  calm), and two lines beside the field, the visibility with its weather
+  calm, 0 to 2 kt calm), and two lines beside the field, the visibility with its weather
   ("2 SM BR") and the lowest ceiling ("OVC 008"), from the METAR as the
   planner decodes it. The halo stays.
-- **Wind arrow at any zoom**, the way the wind blows with "18G26", only
-  where the engine's `wind_arrow` gives one (10 kt or more, or gusting).
-  It is red only when the field's `least_crosswind` exceeds the picked
+- **Wind barb farther out** (the owner, 2026-11-12: barbs as the
+  Aviation Weather Center's map draws them, in place of arrows): the same
+  `wind_barb`, only where the engine's `wind_arrow` gives one (10 kt or
+  more, or gusting); none below zoom 6, drawn at 0.6 of its size there and
+  full size by zoom 9, the barbs giving way to one another rather than
+  overlapping. A variable wind, which no barb can point, is written under
+  the field ("VRB05"); gusts are left to the field's card, as a barb shows
+  none. It is red only when the field's `least_crosswind` exceeds the picked
   airplane's maximum demonstrated crosswind from its profile; with no
   airplane, or no figure, it is never red, and nothing assumes a 172
   (decision [0011](../decisions/0011-no-assumed-airplane.md)).
@@ -345,7 +350,7 @@ At each airport the chart already shows, from the map's own
   Weather, Off / Halo / Dot / Station (Dot is ForeFlight's filled dot in
   place of the symbol; Station draws the station model wherever it fits),
   and three switches, all on to begin with: Station Model When Zoomed In,
-  Wind Arrows, Getting Worse by Arrival.
+  Wind Barbs, Getting Worse by Arrival.
 - **Access:** brand tokens only; a screen reader says the category and
   wind ("KJVL, IFR, wind 220 at 18 gusting 26").
 
@@ -357,7 +362,7 @@ At each airport the chart already shows, from the map's own
 
 Every app's tests read the shared fixture
 [`apps/web/src/lib/fixtures/airportWeatherMarks.json`](../../apps/web/src/lib/fixtures/airportWeatherMarks.json):
-arrow shown or not, red or not, ↓ shown or not.
+barb shown or not, red or not, ↓ shown or not.
 
 ## 6. Altitude in the profile (the owner, 2026-11-10)
 
