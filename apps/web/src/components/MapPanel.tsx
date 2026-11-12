@@ -7,7 +7,7 @@ import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useSafeArea } from "../hooks/use-viewport";
 import { GLASS_SHEET, MATERIAL, PILL_RADIUS, type MapInsets, type PanelState } from "../lib/mapChrome";
-import { topCard, useSheetCards } from "../lib/sheetCards";
+import { coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
 import { FLOAT_PX, insetsOf, sizeAt, snapsOf } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
@@ -99,8 +99,10 @@ export default function MapPanel(props: Props) {
   const fromBottom = useNavEdge() === "bottom";
   const safe = useSafeArea();
   const bottomSheet = onPhone && fromBottom;
-  const topEntry = useSheetCards((s) => topCard(s.stack));
-  const cardsUp = !!topEntry;
+  // The card that covers the map most (coverCard): the top card can sit
+  // lower than the one under it.
+  const coverEntry = useSheetCards((s) => coverCard(s.stack));
+  const cardsUp = !!coverEntry;
   // The map's buttons ride the sheet's top until a card has finished coming up (sheetTopSlot).
   const ridingCard = useRidingCard();
   // Where the cards over it are put: inside its popup (CardStack).
@@ -118,10 +120,11 @@ export default function MapPanel(props: Props) {
 
   // The sheet's own size is the page's (MapPanel's state, its setPanel); a
   // card over it sizes its own drawer (CardStack, useCardSize). What is in
-  // sight is the top card's, else the sheet's: read for the map's room and
-  // the rules over the map, and for the side panel, which a card covers.
+  // sight is the highest card's, else the sheet's: read for the map's room
+  // and the rules over the map (all the way up, its buttons give way,
+  // index.css), and for the side panel, which a card covers.
   const ask = props.onStateChange;
-  const front: PanelState = topEntry ? (topEntry.at ?? "half") : props.state;
+  const front: PanelState = coverEntry ? (coverEntry.at ?? "half") : props.state;
   const size = onPhone ? props.state : front;
   const ready = useDrawn();
   const hasPill = !!bar || !!compact;

@@ -9,7 +9,7 @@ const offsetOf = (popup: HTMLElement) => popup.style.getPropertyValue("--drawer-
 /**
  * How much of the map the panel in sight covers, px, read from what the
  * stock Drawer has done rather than worked out beside it: on a phone the
- * front popup's height (the top card's, else the sheet's) less the
+ * front popup's height (the card that covers the map most, else the sheet's) less the
  * Drawer's own snap offset, half's height all the way up (what shows once
  * it comes down), and under a bottom sheet the room its viewport leaves
  * over the home indicator; from `md` up the side panel's own height, its
@@ -24,7 +24,7 @@ export function useSheetCover(sheet: HTMLElement | null, front: PanelState, onPh
     let last = "";
     const read = (always: boolean) => {
       if (!onPhone) return setCover(Math.round(sheet.offsetHeight));
-      const cards = sheet.querySelectorAll<HTMLElement>("[data-sheet-card][data-top]");
+      const cards = sheet.querySelectorAll<HTMLElement>("[data-sheet-card][data-cover]");
       const popup = cards[cards.length - 1] ?? sheet;
       const offset = offsetOf(popup);
       const key = `${cards.length}|${offset}|${popup.dataset.panel ?? ""}`;
@@ -38,7 +38,7 @@ export function useSheetCover(sheet: HTMLElement | null, front: PanelState, onPh
     };
     read(true);
     const changes = new MutationObserver(() => read(false));
-    changes.observe(sheet, { subtree: true, attributes: true, attributeFilter: ["style", "data-panel", "data-top"] });
+    changes.observe(sheet, { subtree: true, attributes: true, attributeFilter: ["style", "data-panel", "data-cover"] });
     const resize = new ResizeObserver(() => read(true));
     resize.observe(sheet);
     return () => {

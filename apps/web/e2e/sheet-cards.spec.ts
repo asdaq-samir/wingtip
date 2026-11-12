@@ -172,3 +172,82 @@ test("a checkpoint tapped on the chart opens its card in the sheet; one opened o
   await tapTheChart(page);
   await expect(checkpoint).toHaveCount(0);
 });
+
+// The owner's iPhone, 2026-11-12: KSJT's card all the way up and a NOTAM's
+// card over it at half, the map's buttons drawn over the airport card's
+// NOTAM rows at the NOTAM card's top. They follow the card that covers the
+// map most (coverCard), not the last one opened: all the way up they give
+// way, as Apple Maps' do at its large detent; with the card under at half
+// and the one on top lowered to its pill, they ride the card under.
+test("a card opened over a higher one leaves the map's buttons with the higher", async ({ page }) => {
+  test.skip(page.viewportSize()!.width >= 768, "a phone's cards and their heights");
+  const raw = "!DLH 11/101 DLH OBST TOWER LGT (ASN 2026-AGL-1) 465000N0921200W (1.2NM SE DLH) 1600FT (210FT AGL) U/S 2611101200-2611202359";
+  await page.route(
+    (url) => url.pathname === "/api/planner/airport/KDLH/notams",
+    (route) =>
+      route.fulfill({
+        json: {
+          coverage_since: "2026-11-10T06:00:00Z",
+          top: 1,
+          unchecked: [],
+          notams: [
+            {
+              id: "11/101",
+              kind: "notam",
+              closed: false,
+              raw,
+              rank: 1,
+              score: 99,
+              top: true,
+              tied: false,
+              in_force: true,
+              starts: "2026-11-10T12:00:00Z",
+              ends: "2026-11-20T23:59:00Z",
+              reasons: [],
+              runways: [],
+              field: "KDLH",
+              keyword: null,
+              role: null,
+              low_ft: null,
+              high_ft: null,
+            },
+          ],
+        },
+      }),
+  );
+  await page.goto("/app/plan?place=KDLH");
+  await settle(page);
+  const place = sideDrawer(page).getByTestId("place-card");
+  // Its drawer's popup, where the buttons ride (the card draws its own head).
+  const placeDrawer = sideDrawer(page)
+    .locator("[data-sheet-card]")
+    .filter({ has: page.getByTestId("place-card") });
+  await place.getByRole("tab", { name: "Info" }).click();
+  await grabberTo(page, "full");
+  const controls = page.locator("[data-map-controls]");
+  const radio = page.locator("[data-map-food]");
+
+  // All the way up, a NOTAM's card over it at half: the buttons give way.
+  await place.getByTestId("place-notam").first().click();
+  const notam = sideDrawer(page).getByTestId("place-notam-card");
+  await expect(notam).toHaveAttribute("data-panel", "half");
+  await settled(notam);
+  await expect(page.locator("body")).toHaveAttribute("data-map-panel", "full");
+  await expect(placeDrawer.locator("[data-map-controls]")).toHaveCount(1);
+  await expect(controls).toHaveCSS("opacity", "0");
+  await expect(radio).toHaveCSS("opacity", "0");
+
+  // The airport's card at half, the NOTAM's over it lowered to its pill:
+  // the buttons over the airport card's top, in sight.
+  await notam.getByTestId("sheet-card-close").click();
+  await expect(notam).toHaveCount(0);
+  await grabberTo(page, "half");
+  await place.getByTestId("place-notam").first().click();
+  await expect(notam).toHaveAttribute("data-panel", "half");
+  await settled(notam);
+  await expect(notam.locator("[data-map-controls]")).toHaveCount(1);
+  await grabberTo(page, "peek");
+  await expect(page.locator("body")).toHaveAttribute("data-map-panel", "half");
+  await expect(placeDrawer.locator("[data-map-controls]")).toHaveCount(1);
+  await expect(controls).toHaveCSS("opacity", "1");
+});

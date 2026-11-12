@@ -3,7 +3,7 @@ import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
 import { closeTopCard } from "../../lib/openCards";
-import { cardOpening, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
+import { cardOpening, coverCard, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
 import { sizeAt, snapsOf } from "./insets";
 import { UNDER_INDICATOR } from "./SheetDrawer";
 import { cardSettled, sheetTopRef, useRidingCard } from "./sheetTopSlot";
@@ -76,18 +76,28 @@ export function CardStack(p: StackProps & { host: HTMLElement | null }) {
   const riding = useRidingCard();
   if (!p.host) return null;
   const top = [...stack].reverse().find((entry) => entry.shown)?.id;
+  const cover = coverCard(stack)?.id;
   return stack.map((entry) => (
-    <CardDrawer key={entry.id} entry={entry} top={entry.id === top} riding={entry.id === riding} {...p} host={p.host!} />
+    <CardDrawer
+      key={entry.id}
+      entry={entry}
+      top={entry.id === top}
+      cover={entry.id === cover}
+      riding={entry.id === riding}
+      {...p}
+      host={p.host!}
+    />
   ));
 }
 
 function CardDrawer({
   entry,
   top,
+  cover,
   riding,
   host,
   ...p
-}: StackProps & { entry: CardEntry; top: boolean; riding: boolean; host: HTMLElement }) {
+}: StackProps & { entry: CardEntry; top: boolean; cover: boolean; riding: boolean; host: HTMLElement }) {
   const { id, frame } = entry;
   const slot = useCallback((node: HTMLElement | null) => setCard(id, { slot: node }), [id]);
   const { onPhone, fromBottom } = p;
@@ -163,8 +173,9 @@ function CardDrawer({
               data-testid={frame.testId}
               data-sheet-card=""
               data-panel={at}
-              // The card in sight, for what it covers of the map (useSheetCover).
-              data-top={top || undefined}
+              // The card that covers the map most, not always the top one,
+              // for what it covers of the map (useSheetCover, coverCard).
+              data-cover={cover || undefined}
               // The side panel's card does not swipe: no sizes to swipe between.
               data-base-ui-swipe-ignore={onPhone ? undefined : ""}
               // Its corners the sheet's: drawn outside the sheet's clip, so it can stand over it.

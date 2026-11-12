@@ -50,6 +50,26 @@ export const useSheetCards = create<{ stack: CardEntry[] }>(() => ({ stack: [] }
 /** The top card: null with none open. */
 export const topCard = (stack: CardEntry[]): CardEntry | null => [...stack].reverse().find((entry) => entry.shown) ?? null;
 
+const REACH: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
+
+/**
+ * The card that covers the map most: of those open, the one at the
+ * highest size, the last opened of those as high. A card on top can sit
+ * lower than the one under it -- a NOTAM's card at half over its airport's
+ * all the way up -- and the map shows only above the higher of the two, so
+ * the map's buttons, its room and the rules over it follow that one (the
+ * owner's iPhone, 2026-11-12: the buttons drawn over the airport card's
+ * NOTAM rows, at the lower card's top). `among` narrows it (the cards up).
+ */
+export function coverCard(stack: CardEntry[], among: (entry: CardEntry) => boolean = () => true): CardEntry | null {
+  let cover: CardEntry | null = null;
+  for (const entry of stack) {
+    if (!entry.shown || !among(entry)) continue;
+    if (!cover || REACH[entry.at ?? cardOpening(entry)] >= REACH[cover.at ?? cardOpening(cover)]) cover = entry;
+  }
+  return cover;
+}
+
 /** The size a card opens at (CardStack): half, every card, whatever it
  *  covers and wherever it is opened from, then where the pilot drags it,
  *  as Apple Maps opens its cards at the medium detent (the owner,
