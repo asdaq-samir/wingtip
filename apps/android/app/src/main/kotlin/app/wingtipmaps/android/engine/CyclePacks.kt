@@ -25,9 +25,10 @@ import java.nio.channels.FileChannel
  * write_phone), so the airspace over a point, what is ahead and the
  * map's fields are answered with no connection: kept along a route with
  * its chart, and fetched again for the regions kept when the FAA's cycle
- * turns. The twin of the iOS app's CyclePacks.swift. Under filesDir, not
- * cacheDir: Android may clear the cache when space is short, as it may
- * the chart's tiles, and the packs are small. Each pack is memory-mapped
+ * turns or a pack is rebuilt within it. The twin of the iOS app's
+ * CyclePacks.swift. Under filesDir, not cacheDir: Android may clear the
+ * cache when space is short, as it may the chart's tiles, and the packs
+ * are small. Each pack is memory-mapped
  * once and handed to the engine's readers (Packs) as a direct buffer,
  * never copied.
  */
@@ -68,11 +69,15 @@ class CyclePacks(private val root: File) {
 
     /** The packs of these regions fetched where the phone has not got them
      *  for the planner's cycle, and the regions already kept fetched again
-     *  where the cycle has turned. The phone moves to the new cycle, and
-     *  the older one is removed, only once every region it wants of the
-     *  new one is on disk: a pack that failed to come leaves the old
-     *  cycle's packs in use, so a pilot is never left with no airspace
-     *  for the air because one fetch failed. Quiet where the planner
+     *  where the cycle has turned or where a pack's contents have changed
+     *  within it (its crc32 in the list is not the one in the header of the
+     *  pack on disk: a pack rebuilt with more of the FAA's fields, as the
+     *  special-use areas' limits were on 2026-11-12, keeps its cycle's
+     *  name). The phone moves to the new cycle, and the older one is
+     *  removed, only once every region it wants of the new one is on
+     *  disk: a pack that failed to come leaves the old cycle's packs in
+     *  use, so a pilot is never left with no airspace for the air because
+     *  one fetch failed. Quiet where the planner
      *  cannot be reached: the next keep tries again, and finds the packs
      *  already fetched in the new cycle's folder. */
     suspend fun keep(wanted: Set<String>) = keeping.withLock { keepOne(wanted) }
@@ -92,16 +97,16 @@ class CyclePacks(private val root: File) {
         val fresh = runCatching { Gateway.json.decodeFromString<CyclePackIndex>(listing) }.getOrNull() ?: return
         val kept = index
         val names = wanted.toMutableSet()
-        if (kept != null && kept.cycle != fresh.cycle) names += keptRegions(kept.cycle)
+        if (kept != null) names += keptRegions(kept.cycle)
         val listed = fresh.regions.associateBy { it.name }
         withContext(Dispatchers.IO) {
             File(root, fresh.cycle).mkdirs()
             var whole = true
             for (name in names.sorted()) {
-                if (name !in listed) continue
+                val region = listed[name] ?: continue
                 val file = path(fresh.cycle, name)
-                if (file.isFile) continue
-                val bytes = fetchPack(fresh.cycle, name)
+                if (crc32(file) == region.crc32) continue
+                val bytes = fetchPack(fresh.cycle, name, region.crc32)
                 if (bytes == null) {
                     whole = false
                     continue
@@ -117,7 +122,12 @@ class CyclePacks(private val root: File) {
                     whole = false
                     continue
                 }
-                if (!writeWhole(file, bytes)) whole = false
+                // A pack rebuilt within the cycle replaces the one mapped:
+                // the old mapping stays whole for whoever holds it, and
+                // the next read maps the new file.
+                synchronized(lock) {
+                    if (writeWhole(file, bytes)) mapped.remove(file.path) else whole = false
+                }
             }
             // The same cycle, or none kept before: what came is used as it
             // is, with nothing older to fall back on. A new cycle only when
@@ -142,15 +152,19 @@ class CyclePacks(private val root: File) {
         return written
     }
 
-    /** The packs kept again for a new cycle where the phone has any. */
+    /** The packs kept again for a new cycle, or changed within it, where
+     *  the phone has any. */
     suspend fun refresh() {
         val kept = index ?: return
         if (keptRegions(kept.cycle).isEmpty()) return
         keep(emptySet())
     }
 
-    private suspend fun fetchPack(cycle: String, region: String): ByteArray? {
-        val request = Planner.get("/api/cycle-pack/$cycle/$region.pack")
+    /** The crc32 in the address: the pack is kept as long as its cycle by
+     *  the phone's cache and the edge's, which a pack rebuilt within the
+     *  cycle would otherwise be answered from. */
+    private suspend fun fetchPack(cycle: String, region: String, crc32: Long): ByteArray? {
+        val request = Planner.get("/api/cycle-pack/$cycle/$region.pack", mapOf("crc32" to crc32.toString()))
         return runCatching {
             Gateway.streaming.newCall(request).await().use { response ->
                 if (response.code != 200) null else response.body.bytes()
@@ -199,6 +213,20 @@ class CyclePacks(private val root: File) {
     }
 
     companion object {
+        /** The crc32 a pack on disk was written with: its header's, at byte
+         *  36, little-endian (wingtip.cycle_pack's write_phone, which lists
+         *  the same figure in /api/cycle-packs). Null where there is no
+         *  whole header. */
+        fun crc32(file: File): Long? =
+            runCatching {
+                RandomAccessFile(file, "r").use { f ->
+                    if (f.length() < 40) return@use null
+                    f.seek(36)
+                    val b = ByteArray(4).also { f.readFully(it) }
+                    ByteBuffer.wrap(b).order(java.nio.ByteOrder.LITTLE_ENDIAN).int.toLong() and 0xFFFF_FFFFL
+                }
+            }.getOrNull()
+
         @Volatile
         private var shared: CyclePacks? = null
 
