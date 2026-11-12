@@ -9,6 +9,7 @@ struct AirportChartsTab: View {
     @Binding var shown: ShownPicture?
     /// The diagram with the airplane on it (DiagramOwnShipView), open.
     @State private var ownShipDiagram = false
+    @Environment(FieldNotams.self) private var notams
 
     /// The groups by the FAA's chart codes (wingtip.publications); the
     /// airport's own -- hot spots, land and hold short -- go with its
@@ -78,11 +79,27 @@ struct AirportChartsTab: View {
         }
     }
 
+    /// A chart's row, opening the plate; an approach a NOTAM in force
+    /// addresses (notam_subject: its ILS's part out, an FDC NOTAM's
+    /// minimums) has the NOTAM's badge after it, a tap of its own opening
+    /// that NOTAM, as the row's tap is the plate's.
+    @ViewBuilder
     private func chartRow(_ chart: TerminalChart) -> some View {
         let symbol = chart.kind == "IAP" ? "airplane.arrival" : chart.kind == "DP" || chart.kind == "ODP" ? "airplane.departure"
             : chart.kind == "STR" ? "point.topleft.down.to.point.bottomright.curvepath" : "doc.richtext"
-        return row(chart.name, symbol, colour: chart.kind == "IAP" || chart.kind == "DP" || chart.kind == "ODP" || chart.kind == "STR" ? Badge.approach : Badge.chart) {
+        let plate = row(chart.name, symbol, colour: chart.kind == "IAP" || chart.kind == "DP" || chart.kind == "ODP" || chart.kind == "STR" ? Badge.approach : Badge.chart) {
             shown = .faaChart(chart.name, url: chart.url, airport: place.ident)
+        }
+        if let mark = notams.marks.approach[chart.url] {
+            HStack(spacing: WingtipSpace.sm) {
+                plate.buttonStyle(.borderless)
+                Button { notams.opened = mark.open } label: { NotamMarkBadge(mark: mark) }
+                    .buttonStyle(.borderless)
+                    .hitArea()
+                    .accessibilityHint("Opens its NOTAM")
+            }
+        } else {
+            plate
         }
     }
 

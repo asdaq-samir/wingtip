@@ -14,8 +14,11 @@ import Foundation
 /// - Add to Route: the point a turn on the way, where it bends the route
 ///   least; not a landing.
 /// - Hold Here: a hold at the point (AIM 5-3-8).
+/// - Favorite: the field in the Favorites or out, the airport card's last
+///   tile, so the card's head holds Share and its close alone (the owner,
+///   2026-11-11).
 enum CardAction: String, CaseIterable, Sendable {
-    case flyHere, departFrom, directTo, addStop, addToRoute, holdHere, call, address, copy
+    case flyHere, departFrom, directTo, addStop, addToRoute, holdHere, call, address, copy, favorite
 
     var title: String {
         switch self {
@@ -28,6 +31,7 @@ enum CardAction: String, CaseIterable, Sendable {
         case .call: "Call"
         case .address: "Address"
         case .copy: "Copy"
+        case .favorite: "Favorite"
         }
     }
 
@@ -41,6 +45,7 @@ enum CardAction: String, CaseIterable, Sendable {
         case .call: WingtipIcon.call
         case .address: WingtipIcon.address
         case .copy: WingtipIcon.copy
+        case .favorite: WingtipIcon.favorite
         }
     }
 }
@@ -55,7 +60,7 @@ enum CardKind: Sendable {
 
     var actions: [CardAction] {
         switch self {
-        case .airport: [.flyHere, .departFrom, .addStop, .call, .address]
+        case .airport: [.flyHere, .addStop, .call, .favorite]
         case .point: [.directTo, .addToRoute, .holdHere]
         case .navaid: [.directTo, .addToRoute, .copy]
         }
