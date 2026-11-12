@@ -2,13 +2,21 @@
 obstacles the map's relief and 3D view draw (app.routers.terrain)."""
 
 import pandas as pd
+import pytest
 import requests
 from fastapi.testclient import TestClient
-from wingtip import elevation, faa_data, terrain_fine
+from wingtip import elevation, faa_data, terrain_fine, terrain_view
 
 from app.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _cleaned_tiles_of_its_own(monkeypatch, tmp_path):
+    """Each test's cleaned tiles kept in a folder of its own, never the
+    planner's data folder (wingtip.terrain_view._cleaned_dir)."""
+    monkeypatch.setattr(terrain_view, "_cleaned_dir", lambda: tmp_path / "cleaned")
 
 
 def test_a_terrain_tile_is_a_png_kept_a_month(monkeypatch):
@@ -18,6 +26,15 @@ def test_a_terrain_tile_is_a_png_kept_a_month(monkeypatch):
     assert got.headers["content-type"] == "image/png"
     assert got.content == b"\x89PNG tile"
     assert "max-age=2592000" in got.headers["cache-control"]
+
+
+def test_a_terrain_tile_is_cleaned_once_and_then_read_as_written(monkeypatch, tmp_path):
+    made = []
+    monkeypatch.setattr(elevation, "terrain_tile_png", lambda z, x, y: made.append((z, x, y)) or b"\x89PNG once")
+    assert client.get("/api/terrain-tile/11/509/758.png").content == b"\x89PNG once"
+    assert client.get("/api/terrain-tile/11/509/758.png").content == b"\x89PNG once"
+    assert made == [(11, 509, 758)]
+    assert (tmp_path / "cleaned" / "11" / "509" / "758.png").read_bytes() == b"\x89PNG once"
 
 
 def test_no_terrain_tile_past_the_built_zoom_or_off_the_grid(monkeypatch):

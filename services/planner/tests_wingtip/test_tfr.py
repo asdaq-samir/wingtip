@@ -95,3 +95,50 @@ def test_a_list_kept_through_an_outage_leaves_out_the_ended(monkeypatch):
     monkeypatch.setattr(tfr.time, "time", lambda: T0 + tfr.SHAPES_TTL_S + 60)
     assert [t["notam_id"] for t in tfr.all_tfrs()] == ["6/3"]
     assert tfr.fetched_at() == T0 and tfr.failing()
+
+
+def _every_tfr_scanned(lat: float, lon: float, near_nm: float, start, end) -> tuple[list, list]:
+    """at_point and near_point as they were before the shapes were held
+    and indexed: every TFR parsed and tried at each ask."""
+    from shapely.geometry import Point, shape
+    from shapely.ops import nearest_points
+
+    from wingtip.geo import box_around, shape_distance_nm
+
+    point, now = Point(lon, lat), datetime.now(timezone.utc)
+    south, west, north, east = box_around(lat, lon, near_nm)
+    at, near = [], []
+    for t in tfr.all_tfrs():
+        if "geometry" not in t:
+            continue
+        geometry = shape(t["geometry"])
+        if geometry.contains(point):
+            at.append({**t, "active_now": tfr.in_force(t, now, now)})
+        g_west, g_south, g_east, g_north = geometry.bounds
+        if g_east < west or g_west > east or g_north < south or g_south > north:
+            continue
+        if shape_distance_nm(point, geometry, (lat, lon)) <= near_nm and tfr.in_force(t, start, end):
+            edge = nearest_points(geometry, point)[0]
+            near.append(
+                {**t, "crosses": geometry.contains(point), "active_now": tfr.in_force(t, now, now), "edge": {"lat": edge.y, "lon": edge.x}}
+            )
+    return at, near
+
+
+def test_the_held_and_indexed_shapes_answer_as_a_scan_of_them_all():
+    # A grid of overlapping squares, a few with no shape at all, asked at
+    # points in them, between them, on an edge and far off: the same
+    # TFRs, in the same order, as every one parsed and tried.
+    times = {"effective": "2026-10-06T23:00:00Z", "expires": "2026-10-07T01:00:00Z"}
+    found = [
+        _tfr(f"6/{i}{j}", f"T{i}{j}", "Security", _square(42.0 + 0.07 * i, -88.0 + 0.07 * j, half=0.05), **times)
+        for i in range(6)
+        for j in range(6)
+    ]
+    del found[7]["geometry"]
+    weather_store.write("tfrs", found, fetched_at=datetime.now(timezone.utc).timestamp(), until=None)
+    start = datetime(2026, 10, 6, 22, 30, tzinfo=timezone.utc)
+    for lat, lon in [(42.0, -88.0), (42.2, -87.8), (42.035, -87.965), (42.05, -88.0), (41.5, -88.5), (45.0, -80.0)]:
+        at, near = _every_tfr_scanned(lat, lon, tfr.NEAR_NM, start, start + timedelta(hours=2))
+        assert tfr.at_point(lat, lon) == at
+        assert tfr.near_point(lat, lon, start, start + timedelta(hours=2)) == near

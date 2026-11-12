@@ -191,14 +191,20 @@ def _air(lat: float, lon: float, altitudes: list[float], key: str) -> list[dict]
     return ask("wind_aloft_at", hours=hours, at_s=at_s, altitudes=[float(a) for a in altitudes])
 
 
-def _air_at(lat: float, lon: float, altitude_ft: float, key: str) -> dict:
-    held_key = (round(lat, 4), round(lon, 4), float(altitude_ft), key)
-    held = _HELD["air"].get(held_key)
-    if held is None:
+def air_at(lat: float, lon: float, altitudes: list[float], key: str | None = None) -> list[dict]:
+    """The air at each of `altitudes`, [{"wind", "temp_c"}] as wind_at_altitude and temperature_at_altitude give
+    them: a nav log leg's, the grid's in one engine call (wind_aloft_at reads each altitude on its own)."""
+    key = _resolved(key)
+    if not is_grid(key):
+        return winds_stations.air_at(lat, lon, altitudes, key)
+    keys = [(round(lat, 4), round(lon, 4), float(ft), key) for ft in altitudes]
+    held = {k: _HELD["air"].get(k) for k in keys}
+    if missing := [k for k, v in held.items() if v is None]:
         if len(_HELD["air"]) > _AIR_KEPT:
             _HELD["air"].clear()
-        held = _HELD["air"][held_key] = _air(lat, lon, [altitude_ft], key)[0]
-    return held
+        held.update(zip(missing, _air(lat, lon, [k[2] for k in missing], key)))
+        _HELD["air"].update(held)
+    return [held[k] for k in keys]
 
 
 def wind_at_altitude(lat: float, lon: float, altitude_ft: float, key: str | None = None) -> dict | None:
@@ -207,7 +213,7 @@ def wind_at_altitude(lat: float, lon: float, altitude_ft: float, key: str | None
     key = _resolved(key)
     if not is_grid(key):
         return winds_stations.wind_at_altitude(lat, lon, altitude_ft, key)
-    return _air_at(lat, lon, altitude_ft, key)["wind"]
+    return air_at(lat, lon, [altitude_ft], key)[0]["wind"]
 
 
 def temperature_at_altitude(lat: float, lon: float, altitude_ft: float, key: str | None = None) -> float | None:
@@ -216,7 +222,7 @@ def temperature_at_altitude(lat: float, lon: float, altitude_ft: float, key: str
     key = _resolved(key)
     if not is_grid(key):
         return weather.temperature_at(winds_stations.temperatures_aloft(lat, lon, key), altitude_ft)
-    return _air_at(lat, lon, altitude_ft, key)["temp_c"]
+    return air_at(lat, lon, [altitude_ft], key)[0]["temp_c"]
 
 
 def temperatures_aloft(lat: float, lon: float, key: str | None = None) -> list:

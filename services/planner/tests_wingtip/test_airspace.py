@@ -217,7 +217,7 @@ def test_an_airports_own_class_is_the_most_restrictive_reaching_the_surface_ther
         {**_airspace(0.0, field), "class": "C"},
         {**_airspace(3000.0, field), "class": "B"},
     ]
-    monkeypatch.setattr(airspace, "load_controlled_airspace", lambda shp_path, bbox: polygons)
+    monkeypatch.setattr(airspace, "_load_all_controlled_airspace", lambda shp_path: polygons)
     e_field = Point(field.x + 1, field.y)
     surface_e = _airspace(0.0, e_field)["geometry"]
     monkeypatch.setattr(airspace, "_load_surface_e", lambda shp_path: [(surface_e, surface_e.bounds)])

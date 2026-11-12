@@ -206,6 +206,8 @@ class _Table:
         everything = [*fixes.values(), *(navaid for found in navaids.values() for navaid in found)]
         for fix in everything:
             self.cells.setdefault(_cell(fix["lat"], fix["lon"]), []).append(fix)
+        # And the VFR waypoints' alone, for the map's (within's vfr): a tenth of the fixes.
+        self.vfr_cells = {cell: vfr for cell, found in self.cells.items() if (vfr := [f for f in found if f["vfr"]])}
 
 
 def _current(table: _Table | None) -> bool:
@@ -278,11 +280,11 @@ def search_fixes(query: str, limit: int = 5) -> list[dict]:
     return sorted(hits, key=lambda fix: (fix["ident"] != query, not fix["vfr"], fix["ident"]))[:limit]
 
 
-def within(south: float, west: float, north: float, east: float) -> list[dict]:
+def within(south: float, west: float, north: float, east: float, vfr: bool = False) -> list[dict]:
     """Every fix inside the box, for a route to be bent through one
-    (wingtip.airspace.detour_waypoint) and the map's VFR waypoints -- every
-    navaid of an ident too, wherever each is."""
-    cells = _table().cells
+    (wingtip.airspace.detour_waypoint) -- every navaid of an ident too,
+    wherever each is; with `vfr`, the map's VFR waypoints alone."""
+    cells = _table().vfr_cells if vfr else _table().cells
     (bottom, left), (top, right) = _cell(south, west), _cell(north, east)
     return [
         fix

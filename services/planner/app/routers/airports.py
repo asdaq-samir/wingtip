@@ -28,7 +28,6 @@ from wingtip import (
     faa_data,
     field_facts,
     field_forecast,
-    fixes,
     fuelstops,
     geo,
     geocode,
@@ -36,11 +35,11 @@ from wingtip import (
     map_weather,
     nearby,
     pattern,
-    places,
     procedures,
     publications,
     remarks,
     runway_wind,
+    vfr_waypoints,
     weather,
 )
 
@@ -358,13 +357,7 @@ def waypoints_in_view(
     they are not on a VFR chart."""
     if south > north or west > east:
         raise HTTPException(422, "The box's south is above its north, or its west east of its east.")
-    found = sorted((f for f in fixes.within(south, west, north, east) if f["vfr"]), key=lambda f: f["ident"])
-    return {
-        "waypoints": [
-            {"ident": f["ident"], "lat": f["lat"], "lon": f["lon"], "description": places.describe(f["lat"], f["lon"])}
-            for f in found[:limit]
-        ]
-    }
+    return {"waypoints": vfr_waypoints.in_view(south, west, north, east, limit)}
 
 
 def _notes(ident: str) -> dict:

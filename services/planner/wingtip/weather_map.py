@@ -105,38 +105,64 @@ def pireps_in(box: tuple, now: float | None = None) -> list[dict]:
         return []
 
 
+# Each FD station's wind and temperature at an altitude, worked once per
+# forecast record held: (fcst_hr, altitude_ft) -> (stations, airports, {its
+# row: its entry, or None for no wind}). The same for every view of the
+# map until the record changes, so a pan works out only the stations it
+# has not seen and reads the rest from here.
+_WINDS: dict = {}
+_WINDS_KEPT = 64
+
+
+def _worked(stations, airports_df, altitude_ft: float, fcst_hr: str) -> dict:
+    held = _WINDS.get((fcst_hr, altitude_ft))
+    if held is None or held[0] is not stations or held[1] is not airports_df:
+        if len(_WINDS) >= _WINDS_KEPT:
+            _WINDS.clear()
+        held = _WINDS[(fcst_hr, altitude_ft)] = (stations, airports_df, {})
+    return held[2]
+
+
+def _entry(code, lat: float, lon: float, altitude_ft: float, fcst_hr: str) -> dict | None:
+    wind = weather.wind_at_altitude(lat, lon, altitude_ft, fcst_hr)
+    if wind is None:
+        return None
+    temp = weather.temperature_at(weather.temperatures_aloft(lat, lon, fcst_hr), altitude_ft)
+    return {
+        "ident": str(code),
+        "lat": round(lat, 4),
+        "lon": round(lon, 4),
+        "dir_true_deg": round(wind["wind_dir_true_deg"]),
+        "speed_kt": round(wind["wind_speed_kt"]),
+        "temp_c": None if temp is None else round(temp),
+    }
+
+
 def winds_in(box: tuple, altitude_ft: float, fcst_hr: str) -> dict | None:
     """The FD stations' forecast wind and temperature at `altitude_ft` in
     `box`, each where the station is (wingtip.weather.wind_at_altitude's own
-    interpolation between the altitudes the product gives), and the
-    period the product is for; None where it cannot be had."""
+    interpolation between the altitudes the product gives; each station's
+    worked once per record and altitude, _worked), and the period the
+    product is for; None where it cannot be had."""
     from . import airports
 
     try:
         stations = winds_stations.fd_stations(fcst_hr)
     except weather.WeatherServiceError:
         return None
-    codes, lats, lons = winds_stations.station_rows(set(stations), airports.load_airports())
+    airports_df = airports.load_airports()
+    worked = _worked(stations, airports_df, altitude_ft, fcst_hr)
+    codes, lats, lons = winds_stations.station_rows(set(stations), airports_df)
     south, west, north, east = box
     out = []
-    for code, lat_r, lon_r in zip(codes, lats, lons):
+    for row, (code, lat_r, lon_r) in enumerate(zip(codes, lats, lons)):
         lat, lon = math.degrees(lat_r), math.degrees(lon_r)
         if not (south <= lat <= north and west <= lon <= east):
             continue
-        wind = weather.wind_at_altitude(lat, lon, altitude_ft, fcst_hr)
-        if wind is None:
-            continue
-        temp = weather.temperature_at(weather.temperatures_aloft(lat, lon, fcst_hr), altitude_ft)
-        out.append(
-            {
-                "ident": str(code),
-                "lat": round(lat, 4),
-                "lon": round(lon, 4),
-                "dir_true_deg": round(wind["wind_dir_true_deg"]),
-                "speed_kt": round(wind["wind_speed_kt"]),
-                "temp_c": None if temp is None else round(temp),
-            }
-        )
+        if row not in worked:
+            worked[row] = _entry(code, lat, lon, altitude_ft, fcst_hr)
+        if worked[row] is not None:
+            out.append(dict(worked[row]))
     return {"altitude_ft": altitude_ft, "period": getattr(stations, "period", None), "stations": out}
 
 
