@@ -1,14 +1,15 @@
 import SwiftUI
 
-/// The plan, the sheet's main content and the root of its one stack
-/// (PlanSheet), right under the one search with no title bar of its own
-/// (the owner's one-row header, 2026-11-10, as Apple Maps): with a route,
-/// its card (RouteCard: the route, Ready to Fly, the figures, Brief, Nav
-/// Log, Airplane and the route's •••), then the route -- its ends, its
-/// Routes, the airplane and the altitude (RouteBoxRow) -- the stops and
-/// "Add a Stop", the route's own edits and the procedures, in FPL's
-/// order. With none, the route's ends over Favorites, Recents, Find
-/// Nearby and Nearest (BrowseSections).
+/// The plan, the sheet's FPL page (PlanSheet, SheetPager), with no bar
+/// of its own so its first row is the route's: with a route, its card
+/// (RouteCard: the route, Ready to Fly, the figures, Brief, Nav Log,
+/// Airplane and the route's •••), then the route -- its ends, its Routes,
+/// the airplane and the altitude (RouteBoxRow) -- the stops and "Add a
+/// Stop", the route's own edits and the procedures, in FPL's order. With
+/// none, the route box empty, its close a level back (the web's, the
+/// owner's 2026-11-11 "We don't need plan a flight either"), under the
+/// first flight's card the first time; Favorites, Recents and Nearest are
+/// the Search page's.
 struct PlanView: View {
     @Environment(Plan.self) private var plan
     @Environment(Charts.self) private var charts
@@ -21,18 +22,16 @@ struct PlanView: View {
     let open: (Screen) -> Void
     /// "Add a Stop": the search, whose airport card has Add as Stop.
     let addStop: () -> Void
-    /// Before a route, the search's nothing-typed sections in the plan
-    /// itself (BrowseSections): the fields nearest the airplane, and where
-    /// a row's pick goes.
-    var nearest: [NearestAirport] = []
-    var browse: (SearchPick) -> Void = { _ in }
 
     enum Field { case dep, dest }
 
     var body: some View {
         @Bindable var plan = plan
         List {
-            if plan.routed { RouteCard(open: open) }
+            if plan.routed {
+                RouteCard(open: open)
+            }
+            FirstFlightSection()
             Section {
                 RouteEndsRow(focused: $focused)
                 if plan.routed && plan.course != nil && RouteLine.shows(plan.routes, picked: plan.pickedChip, problem: plan.routesProblem) {
@@ -57,12 +56,28 @@ struct PlanView: View {
                 if plan.routed {
                     RouteBoxRow(open: open)
                 }
-            }
-            if !plan.routed {
-                // Favorites, Recents, Find Nearby and Nearest under the
-                // route's ends until there is a route, as the search shows
-                // them with nothing typed (docs/design/rules.md §4).
-                BrowseSections(nearest: nearest, pick: browse)
+            } header: {
+                if !plan.routeState.hasPoints {
+                    // The box empty -- cleared, or never filled -- its close
+                    // a level back, where the route's ••• is with a route
+                    // (the web's route box, 2026-11-12): to the field's card
+                    // it was flown to from, else to Search.
+                    HStack {
+                        Spacer()
+                        // The close glyph in glass, as a card's close is
+                        // drawn in its bar (CloseButton's role-close in a
+                        // list header drew the word "Close" alone).
+                        Button {
+                            focused = nil
+                            Navigator.shared.closeEmptyRoute()
+                        } label: {
+                            Label("Close", systemImage: WingtipIcon.close).labelStyle(.iconOnly)
+                        }
+                        .glassButton()
+                        .buttonBorderShape(.circle)
+                        .accessibilityIdentifier("route-close")
+                    }
+                }
             }
             if plan.routed {
                 // The stops in order, each a swipe from going and all
@@ -117,10 +132,9 @@ struct PlanView: View {
             }
         }
         .siriSees(SiriSaw.flight(plan))
-        // The name for VoiceOver and Back; the bar shows the search in its
-        // place (OneSearch's one row).
-        .navigationTitle("Flight Plan")
-        .navigationBarTitleDisplayMode(.inline)
+        // Leaving the page puts the keyboard away (the web's sheet audit,
+        // 2026-11-12: focus left on a page put away kept the keyboard up).
+        .onChange(of: Navigator.shared.sheetPage) { _, _ in focused = nil }
     }
 }
 

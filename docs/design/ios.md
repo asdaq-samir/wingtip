@@ -150,7 +150,8 @@ view without dismissing the sheet").
 - **Code.** `presentationDetents([pill, .half, .large], selection: $detent)`,
   with `presentationBackgroundInteraction(.enabled(upThrough: .half))`
   and a grabber (`presentationDragIndicator(.visible)`).
-  - `pill` is `.height(132)` today (`RootView.pill`).
+  - `pill` is `.height(132)` for the page's first row plus the page
+    dots' 28-point row (`RootView.pill`, `PageDots.row`).
   - **Half height (owner decision 2026-11-10).** `.half` is
     `.fraction(0.45)` (`Navigation/Detents.swift`), 45% of the screen as
     Maps' half covers it, in place of the stock `.medium`'s 53.5% (the
@@ -163,6 +164,35 @@ view without dismissing the sheet").
     (`sheetAtPill`, PlanSheet).
   - The HIG asks for a grabber on a resizable sheet. Tapping it cycles
     through the detents, and VoiceOver reads it ([HIG Sheets][hig-sheets]).
+- **Two pages, Search and FPL (owner decision 2026-11-11, the
+  carousel; docs/design/rules.md).** The sheet's content is SwiftUI's own
+  pager, `TabView` with `.tabViewStyle(.page(indexDisplayMode: .never))`
+  (`SheetPager`), so the swipe is the system's: sideways it turns the
+  page and never moves the sheet; up and down stays the sheet's drag and
+  each page's List keeps its own scroll.
+  - **Search** is the one search in the bar (field, microphone, account)
+    over Favorites, Recents, Find Nearby and Nearest (`BrowseSections`).
+  - **FPL** is the plan (`PlanView`) with the bar hidden, so its first
+    row is the route's own; with no route, the route box empty (the
+    owner, 2026-11-11: "We don't need plan a flight either"), its glass
+    close a level back: to the field's card Fly Here came from, else to
+    Search (`Navigator.closeEmptyRoute`, the web's clearRoute). The
+    figures strip is the foot on FPL alone.
+  - Fly Here (to the same field again too), Depart From, Add as Stop and
+    the map's Direct To land on FPL; a card opened over Search (Find
+    Nearby's Stops) closes back to Search; leaving Search puts the search
+    and its keyboard away.
+  - **The dots** are UIKit's stock `UIPageControl` under the grabber
+    (`PageDots`; SwiftUI has no page control of its own in the iOS 27.2
+    SDK, only TabView's dots at its foot): a tap moves the page, and
+    VoiceOver hears "Page 1 of 2, Search". Their row is 28 points and
+    the control's frame 44, reaching into the grabber's strip and the
+    bar's margin, so nothing grows for the hit area.
+  - The page is `Navigator.sheetPage`: every "show the plan" (a route
+    made, Fly Here, a link, a saved flight, `-screen fpl`) turns it to
+    FPL, the search coming up (Add a Stop, ⌘F, the microphone) turns it
+    to Search, and clearing the route leaves it. A card opens over both
+    pages and its close comes back to the one it was opened on.
 - **Content changes with the detent.** The owner checked Apple Maps on
   2026-11-09:
   - A place card shows its header photo only at the large detent.
@@ -1407,7 +1437,7 @@ people take an explicit action to save", [HIG File management][hig-files]).
 
 ---
 
-## 14. The welcome / first run
+## 14. The first run
 
 **Follow:**
 
@@ -1425,20 +1455,22 @@ puts up one stock alert, "A Planning Aid, Not for Navigation", with the
 planning-aid words and the listing's not-for-navigation paragraph and
 one button, I Understand (`Navigation/PlanningAidNotice`). It is the
 pilot-safety position the terms take and what App Review 5.1.5 looks for
-in a moving-map app, so it is said before anything else, once; the
-welcome card comes after it, and About keeps the words.
+in a moving-map app, so it is said before anything else, once, and
+About keeps the words.
 
 **Structure.**
 
 1. **The launch screen** is the brand's ground (`color.brand.launch`,
    or `launch-night`) with the mark only.
-2. **The map** opens at once on the chart. The sheet is at medium, with
-   one welcome card in place of the tab content:
-   - the title "Plan your first flight"
-   - one line
-   - one filled button, **Search an Airport**, which focuses the one
-     search
-   - "Not Now" below, plain
+2. **The map** opens at once on the chart, the sheet at medium. With
+   no route, the first time, "Your First Flight" is the first section of
+   both pages (`FirstFlightSection`, the web's FirstFlight card; the
+   owner, 2026-11-11: "We don't need the welcome"): one line, a
+   Destination field with the planner's airport search under it, Plan
+   It, the three steps (Route, Nav Log, Brief) and Not Now. A List
+   Section, not TipKit: a tip holds no text field. Planned, it is gone
+   for good and the nav log opens over FPL; Setup > Guide > Show First
+   Flight Again brings it back.
 3. **Asks come only when needed.**
    - Location is asked the first time the pilot taps the position
      button or a "Nearest" figure.

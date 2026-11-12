@@ -17,6 +17,7 @@ struct NavLogPage: View {
             if width == .regular, !plan.legs.isEmpty {
                 VStack(spacing: 0) {
                     totals.padding(.vertical, WingtipSpace.md)
+                    plannedLine.padding(.horizontal, WingtipSpace.lg).padding(.bottom, WingtipSpace.sm)
                     NavLogTable(legs: plan.legs)
                 }
             } else {
@@ -44,6 +45,8 @@ struct NavLogPage: View {
             } else {
                 Section {
                     totals.listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
+                } footer: {
+                    plannedLine
                 }
                 if let leg = plan.totals?.alternate { AlternateLegRow(leg: leg) }
                 Section("Profile") {
@@ -73,6 +76,36 @@ struct NavLogPage: View {
                 }
             }
         }
+    }
+
+    /// When the plan was made and whose winds aloft it flies, for when
+    /// (Self.plannedWords), under the totals as the web's nav log says it.
+    @ViewBuilder private var plannedLine: some View {
+        if let words = Self.plannedWords(plan.totals) {
+            Text(words)
+                .font(WingtipType.note)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("navlog-planned")
+        }
+    }
+
+    /// When a plan was made and the winds-aloft forecast it flies, as paper
+    /// says them and as the web's nav log does (plannedWords): "Planned
+    /// 1212Z · AWC winds, 12Z · for use 1200–1400Z", the winds named by the
+    /// planner (`winds.label`, wingtip.winds_aloft) and their "for use"
+    /// window its own (FAA Order JO 7110.10 TBL 9-3-1 for the GFS's FB
+    /// stations); "Planned 1212Z · winds for use …" with no name; nil where
+    /// the totals do not say when.
+    static func plannedWords(_ totals: Totals?) -> String? {
+        guard let at = AirportWords.date(totals?.plannedAt) else { return nil }
+        let planned = "Planned \(Format.zulu(at))"
+        guard let winds = totals?.winds, let from = AirportWords.date(winds.useFrom), let to = AirportWords.date(winds.useTo) else {
+            return planned
+        }
+        let forUse = "for use \(Format.zulu(from).prefix(4))–\(Format.zulu(to))"
+        if let label = winds.label, !label.isEmpty { return "\(planned) · \(label) · \(forUse)" }
+        return "\(planned) · \(winds.modelled == true ? "modelled winds" : "winds") \(forUse)"
     }
 
     /// The route's totals as the planner gave them: distance, time, fuel

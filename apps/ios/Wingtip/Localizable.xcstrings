@@ -10,6 +10,9 @@
     " · %@" : {
 
     },
+    " · Nav Log · Brief" : {
+
+    },
     " → " : {
 
     },
@@ -2697,6 +2700,16 @@
     "Over %@°" : {
 
     },
+    "Page %lld of %lld, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Page %1$lld of %2$lld, %3$@"
+          }
+        }
+      }
+    },
     "Passenger Briefing" : {
 
     },
@@ -2784,7 +2797,7 @@
     "Plan" : {
 
     },
-    "Plan Your First Flight" : {
+    "Plan It" : {
 
     },
     "Plan a Trip" : {
@@ -3134,16 +3147,7 @@
     "Search airports, airplanes, or ask" : {
 
     },
-    "Search an Airport" : {
-
-    },
-    "Search for an airport to fly to or from; the chart, the weather and the route follow." : {
-
-    },
     "Section" : {
-
-    },
-    "See a Sample Flight" : {
 
     },
     "See the Airplane's Figures" : {
@@ -3225,9 +3229,6 @@
 
     },
     "Show Nearest" : {
-
-    },
-    "Show Welcome Again" : {
 
     },
     "Show earlier flights" : {
@@ -3388,6 +3389,12 @@
 
     },
     "Steady" : {
+
+    },
+    "Step 1 of 3 · Route" : {
+
+    },
+    "Step 1 of 3, Route; then the nav log and the brief" : {
 
     },
     "Stop" : {
@@ -3892,6 +3899,9 @@
     "Where to?" : {
 
     },
+    "Where to? Wingtip plans from where you are: the route, the checkpoints you'll see from the air, the nav log and a weather brief." : {
+
+    },
     "Where you are%@, the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind." : {
 
     },
@@ -4017,6 +4027,9 @@
 
     },
     "Your Estimates" : {
+
+    },
+    "Your First Flight" : {
 
     },
     "Your Flight" : {

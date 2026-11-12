@@ -40,9 +40,9 @@ enum SheetPage: Hashable {
     case plate(String)
     /// The clearance heard or typed into the route.
     case clearance
-    /// The first launch's welcome, a flight another pilot sent, and the
-    /// flight just ended to log: each a card of its own.
-    case welcome, sharedFlight, flightLogged
+    /// A flight another pilot sent, and the flight just ended to log:
+    /// each a card of its own.
+    case sharedFlight, flightLogged
 
     /// The field or point whose card this is, for the map's ring.
     var airportRoute: String? {
@@ -58,7 +58,7 @@ enum SheetPage: Hashable {
         switch self {
         case .airport(let text): RootLayout.inspects(AirportRoute(text))
         case .screen(let screen): [.brief, .profile, .flights].contains(screen)
-        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .welcome, .sharedFlight, .flightLogged: true
+        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged: true
         case .flight, .notams, .practice, .training, .instructing, .contact: false
         }
     }
@@ -69,7 +69,7 @@ enum SheetPage: Hashable {
         switch self {
         case .screen(let screen): ![.nearest, .favorites].contains(screen)
         case .flight, .notams, .practice, .training, .instructing, .contact, .ask, .clearance: true
-        case .airport, .leg, .traffic, .tail, .hold, .flown, .mapSettings, .plate, .welcome, .sharedFlight, .flightLogged: false
+        case .airport, .leg, .traffic, .tail, .hold, .flown, .mapSettings, .plate, .sharedFlight, .flightLogged: false
         }
     }
 
@@ -78,7 +78,7 @@ enum SheetPage: Hashable {
     /// Sheets puts Cancel where the close would be.
     var ownClose: Bool {
         switch self {
-        case .hold, .clearance, .welcome, .sharedFlight, .flightLogged: true
+        case .hold, .clearance, .sharedFlight, .flightLogged: true
         default: false
         }
     }
@@ -110,7 +110,6 @@ enum SheetPage: Hashable {
         case .mapSettings: "card-map"
         case .plate: "card-plate"
         case .clearance: "card-clearance"
-        case .welcome: "card-welcome"
         case .sharedFlight: "card-shared"
         case .flightLogged: "card-logged"
         }
@@ -131,7 +130,7 @@ enum SheetPage: Hashable {
         case .plate(let key): "+plate:" + key
         case .notams(.route): "+notams"
         case .notams(.field(let ident)): "+notams:" + ident
-        case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .welcome, .sharedFlight, .flightLogged: nil
+        case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .sharedFlight, .flightLogged: nil
         }
     }
 
@@ -218,10 +217,6 @@ struct SheetPageView: View {
         case .mapSettings: MapSettingsView()
         case .plate(let key): PlateCard(key: key).id(key)
         case .clearance: ClearanceSheet()
-        case .welcome:
-            ScrollView { WelcomeView(model: .shared) }
-                .scrollBounceBehavior(.basedOnSize)
-                .toolbar(.hidden, for: .navigationBar)
         case .sharedFlight: SharedFlightView(model: .shared)
         case .flightLogged: FlightLoggedCard()
         }

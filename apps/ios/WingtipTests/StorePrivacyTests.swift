@@ -73,9 +73,9 @@ struct StorePrivacyTests {
         // An app launched as a pilot launches it: no test host around it.
         let app: [String: String] = [:]
         #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: [], environment: app))
-        // The UI tests' and the store pictures' launches, as the welcome's.
+        // The UI tests' and the store pictures' launches, as the first flight's.
         #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh"], environment: app))
-        #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh", "-welcome"], environment: app))
+        #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh", "-planningAid"], environment: app))
         // The app hosting the unit tests shows no alert over their windows.
         #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: [], environment: ["XCTestConfigurationFilePath": "/x"]))
         defaults.set(true, forKey: PlanningAidNotice.acceptedKey)

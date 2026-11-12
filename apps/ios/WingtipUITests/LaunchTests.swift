@@ -31,7 +31,8 @@ final class LaunchTests: XCTestCase {
     @MainActor
     func testTheAccountButtonOpensSettings() throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-layout", "plan", "-screen", "fpl"]
+        // The Search page, the account button's (the FPL page has no bar).
+        app.launchArguments += ["-layout", "plan", "-screen", "search"]
         app.launch()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 30), "the app did not come to the foreground")
         let account = app.buttons["account-button"]

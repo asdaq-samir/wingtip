@@ -14,7 +14,7 @@ final class MapButtonsTests: XCTestCase {
     @MainActor
     func testTheMapsButtonsRideTheSheetsTop() throws {
         for size in CardTests.sizes {
-            let app = CardTests.launch(["-screen", "fpl"], size: size.arguments)
+            let app = CardTests.launch(["-screen", "search"], size: size.arguments)
             let map = app.buttons["map-settings"]
             let search = app.searchFields[CardTests.searchPrompt]
             XCTAssertTrue(map.waitForExistence(timeout: 20), "no map button at \(size.name)")

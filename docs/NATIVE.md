@@ -527,8 +527,8 @@ Tests: `OfflineFieldsTests`, `FlightExtrasTests` (Direct To put back),
   the position read on in the background while flying (location).
 - **The first launch** puts up one stock alert, "A Planning Aid, Not for
   Navigation", with About's planning-aid words and the listing's
-  not-for-navigation paragraph, accepted once (`PlanningAidNotice`); the
-  welcome comes after it. The UI tests' launch arguments skip it.
+  not-for-navigation paragraph, accepted once (`PlanningAidNotice`). The
+  UI tests' launch arguments skip it (`-planningAid` asks for it).
 - **Push in the App Store build.** `project.yml` keeps `aps-environment`
   development, which the archive's development signing needs; the App
   Store export re-signs with the distribution profile, whose value,

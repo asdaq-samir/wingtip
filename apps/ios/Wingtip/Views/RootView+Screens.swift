@@ -18,13 +18,17 @@ extension RootView {
         }
         switch screen {
         case .fpl:
-            // The plan, the sheet's root.
+            // The plan, the sheet's FPL page (Navigator.showPlan).
             showPlan()
             if detent == RootView.pill { detent = .half }
         case .airport:
             // What the Airport tab was: the search, up with its Favorites,
             // Recents and Nearest.
+            // TODO(claude/carousel-web): design/screens.json's "search"
+            // screen, once its generated Screen case is merged, opens the
+            // Search page here too.
             nav.showPlan()
+            nav.sheetPage = .search
             search.presented = true
         case .favorites:
             AirportShelf.shared.show(.favorites)

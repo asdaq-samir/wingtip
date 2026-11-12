@@ -53,8 +53,6 @@ struct SetupView: View {
             Section {
                 NavigationLink { MinimumsView() } label: { SettingsLabel("Personal Minimums", systemImage: "cloud.sun", colour: WingtipColor.Badge.weather) }
                 NavigationLink { PilotGuideView() } label: { SettingsLabel("Guide", systemImage: "questionmark.circle", colour: WingtipColor.Badge.rule) }
-                // The first launch's welcome, shown again from here alone.
-                Button("Show Welcome Again") { WelcomeModel.shared.again() }
             }
             // How the app looks, in one titled group (the iOS sheet audit,
             // 2026-11-10, found a group with no title and a "Look" group of
