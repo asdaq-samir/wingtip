@@ -19,6 +19,14 @@ const press = (key: string, target: Element = document.body) => {
   target.dispatchEvent(event);
   return event;
 };
+/** A shortcut as it is pressed: with Alt held, read by its physical key
+ *  (lib/shortcutKeys), as Option-F on a Mac types ƒ. */
+const alt = (key: string, target: Element = document.body) => {
+  const code = key === "/" ? "Slash" : `Key${key.toUpperCase()}`;
+  const event = new KeyboardEvent("keydown", { key, code, altKey: true, bubbles: true, cancelable: true });
+  target.dispatchEvent(event);
+  return event;
+};
 
 describe("a desktop's shortcuts", () => {
   beforeEach(() => {
@@ -29,14 +37,15 @@ describe("a desktop's shortcuts", () => {
   });
   afterEach(() => document.removeEventListener("keydown", onShortcut));
 
-  it("/ goes to the search field", () => {
-    expect(press("/").defaultPrevented).toBe(true);
+  it("Alt+/ goes to the search field, and a bare / does not", () => {
+    expect(press("/").defaultPrevented).toBe(false);
+    expect(alt("/").defaultPrevented).toBe(true);
     expect(document.activeElement?.getAttribute("type")).toBe("search");
   });
 
   it("/ asks the one search for itself where no field is in sight", () => {
     document.querySelector("input")!.remove();
-    expect(press("/").defaultPrevented).toBe(true);
+    expect(alt("/").defaultPrevented).toBe(true);
     expect(useSearchAsk.getState().ask?.mode).toBe("all");
     takeSearchAsk();
   });
@@ -55,7 +64,7 @@ describe("a desktop's shortcuts", () => {
   it("leaves a key typed in a field, and one already used, alone", () => {
     const field = document.getElementById("field")!;
     field.focus();
-    expect(press("/", field).defaultPrevented).toBe(false);
+    expect(alt("/", field).defaultPrevented).toBe(false);
     expect(press("2", field).defaultPrevented).toBe(false);
     const used = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
     used.preventDefault();
@@ -65,21 +74,21 @@ describe("a desktop's shortcuts", () => {
     expect(back).not.toHaveBeenCalled();
   });
 
-  it("B opens the Brief, N Nearest and D the search for Direct To", () => {
-    expect(press("b").defaultPrevented).toBe(true);
+  it("Alt+B opens the Brief, Alt+N Nearest and Alt+D the search for Direct To", () => {
+    expect(alt("b").defaultPrevented).toBe(true);
     expect(useWanted.getState().screen).toBe("brief");
-    press("N");
+    alt("N");
     expect(useWanted.getState().screen).toBe("nearest");
-    press("d");
+    alt("d");
     expect(useSearchAsk.getState().ask?.mode).toBe("direct");
     takeSearchAsk();
     const field = document.getElementById("field")!;
     field.focus();
-    expect(press("b", field).defaultPrevented).toBe(false);
+    expect(alt("b", field).defaultPrevented).toBe(false);
   });
 
   it("knows ⌘K and Ctrl K for the search, and not K alone", () => {
-    const key = (init: KeyboardEventInit) => new KeyboardEvent("keydown", { key: "k", ...init });
+    const key = (init: KeyboardEventInit) => new KeyboardEvent("keydown", { key: "k", code: "KeyK", ...init });
     expect(isSearchKey(key({ metaKey: true }))).toBe(true);
     expect(isSearchKey(key({ ctrlKey: true }))).toBe(true);
     expect(isSearchKey(key({}))).toBe(false);

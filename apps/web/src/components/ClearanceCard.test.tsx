@@ -19,6 +19,13 @@ vi.mock("../lib/api/client", async (importOriginal) => ({
   api: { clearancePlaces: vi.fn() },
 }));
 vi.mock("../lib/atcListening", () => ({ listenOnce: vi.fn(), startRadio: vi.fn(), stopRadio: vi.fn() }));
+// A menu closes itself when its trigger goes out of sight (PullDownMenu's
+// onAnchorHidden, Floating UI's hide middleware). jsdom lays nothing out:
+// every box is 0 by 0 in a 0 by 0 page, so the trigger always reads
+// clipped and the Listen through menu closed whenever that check landed
+// before the tap on a choice (one run in three, alone; never with it off,
+// eight of eight). Out of sight is a browser's to measure, not jsdom's.
+vi.mock("./ui/anchorHidden", () => ({ anchorHiddenRender: () => undefined }));
 // The input picker's module (lib/audioInput) as a stand-in: Find Inputs
 // lists an iPhone's microphone and a GMA 350c's Bluetooth link.
 vi.mock("../lib/audioInput", async () => {

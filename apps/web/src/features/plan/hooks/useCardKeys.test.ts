@@ -10,6 +10,14 @@ const press = (key: string, target: Element = document.body) => {
   target.dispatchEvent(event);
   return event;
 };
+/** A shortcut as it is pressed: with Alt held, read by its physical key
+ *  (lib/shortcutKeys), as Option-F on a Mac types ƒ. */
+const alt = (key: string, target: Element = document.body) => {
+  const code = key === "/" ? "Slash" : `Key${key.toUpperCase()}`;
+  const event = new KeyboardEvent("keydown", { key, code, altKey: true, bubbles: true, cancelable: true });
+  target.dispatchEvent(event);
+  return event;
+};
 
 describe("the airport card's letters on a desktop", () => {
   afterEach(() => {
@@ -17,17 +25,18 @@ describe("the airport card's letters on a desktop", () => {
     takeSearchAsk();
   });
 
-  it("F and S run Fly Here and Add Stop, and D stays the page's Direct To", () => {
+  it("Alt+F and Alt+S run Fly Here and Add Stop, and Alt+D stays the page's Direct To", () => {
     const fly = vi.fn(),
       stop = vi.fn();
     document.addEventListener("keydown", onShortcut);
     const { unmount } = renderHook(() => useCardKeys(true, { F: fly, S: stop }));
-    expect(press("f").defaultPrevented).toBe(true);
-    press("s");
+    expect(press("f").defaultPrevented).toBe(false);
+    expect(alt("f").defaultPrevented).toBe(true);
+    alt("s");
     expect([fly, stop].map((f) => f.mock.calls.length)).toEqual([1, 1]);
     // The card has no D since Depart From left it (the owner, 2026-11-11):
     // the page's Direct To hears it.
-    press("d");
+    alt("d");
     expect(useSearchAsk.getState().ask).not.toBeNull();
     unmount();
     document.removeEventListener("keydown", onShortcut);
@@ -38,9 +47,9 @@ describe("the airport card's letters on a desktop", () => {
     document.body.innerHTML = "<input id='field' />";
     const field = document.getElementById("field")!;
     const { rerender, unmount } = renderHook(({ on }) => useCardKeys(on, { F: fly }), { initialProps: { on: true } });
-    expect(press("f", field).defaultPrevented).toBe(false);
+    expect(alt("f", field).defaultPrevented).toBe(false);
     rerender({ on: false });
-    press("f");
+    alt("f");
     expect(fly).not.toHaveBeenCalled();
     unmount();
   });

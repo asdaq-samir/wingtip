@@ -103,7 +103,10 @@ describe("captions", () => {
 
   it("makes lines of the heard words at each pause, on the replay's clock", () => {
     const lines = linesOf(words, T);
-    expect(lines.map((l) => [l.from - T, l.to - T, l.text])).toEqual([
+    // To the millisecond, as SRT writes them: T is some 1.8e9 seconds, so
+    // T + 4.4 - T is 4.4 only to about a ten-millionth in a double.
+    const ms = (t: number) => Math.round((t - T) * 1000) / 1000;
+    expect(lines.map((l) => [ms(l.from), ms(l.to), l.text])).toEqual([
       [1, 2, "Wingtip five one"],
       [4, 4.4, "Roger"],
     ]);

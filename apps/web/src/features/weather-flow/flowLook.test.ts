@@ -50,7 +50,9 @@ describe("the flow layer's legends", () => {
     const look = lookOf("temp");
     expect(look.ticks.map((t) => t.label)).toEqual(["-30", "-15", "0", "15", "30", "45"]);
     const places = look.ticks.map((t) => tickPlace(look.bar, t.at));
-    places.slice(1).forEach((p, i) => expect(places[i]! - p).toBeCloseTo(0.2));
+    // The bar runs -60 to 45 since the flight levels' cold has its own
+    // colour (the AWC rework), so 15 degrees is 15/105 of it.
+    places.slice(1).forEach((p, i) => expect(places[i]! - p).toBeCloseTo(15 / 105));
   });
 
   it("lays the temperature nearly solid and the wind as a light tint, so the chart under the wind still reads", () => {
