@@ -17,7 +17,8 @@ public sealed record Options(
 /// <summary>
 /// One replay, start to end: the track read and cut at its gaps, the
 /// simulator's ground measured where the airplane touched it, the shots
-/// laid out, then each run flown a frame at a time with the cameras cut on
+/// laid out, then each run flown on the engine's frames (sim_flight), a
+/// simulator frame at a time with the cameras cut on
 /// the shot list's times, the recording paused over each gap. Every step
 /// is logged.
 /// </summary>
@@ -35,24 +36,30 @@ public static class Runner
     {
         var track = ReadyTrack.Read(o.Track);
         var runs = track.Runs();
-        log.Step("track.read", new { track.Registration, track.Type, track.Day, track.Altitude, reports = track.Points.Count, runs = runs.Count, gaps = track.Gaps, track.Source, track.License });
+        log.Step("track.read", new { track.Registration, track.Type, track.Day, track.Altitude, reports = track.Points.Count, runs = runs.Count, segments = track.Segments.Count, gaps = track.Gaps, track.Source, track.License });
         if (runs.Count == 0) throw new InvalidDataException("No run of two reports or more between the gaps.");
 
         sim.Freeze(true);
         var anchors = Heights.Anchors(runs);
+        // The frames' own heights at the anchors: pressure altitude, or the
+        // engine's altitude set on the airplane's altimeter setting where it
+        // sent one, which is what the offset moves.
+        var framed = FlightPath.Of(track, f => f.AltFt);
         var measured = new List<(Report, double)>();
         foreach (var a in anchors)
         {
             sim.Place(new Pose(a.T, a.Lat, a.Lon, a.AltFt!.Value + ProbeAboveFt, a.TrackDeg ?? 0, 0, 0, 0, false));
             var ground = await sim.GroundFtAsync(a.Lat, a.Lon, cancel);
-            measured.Add((a, ground));
-            log.Step("ground.measured", new { a.T, a.Lat, a.Lon, reportedFt = a.AltFt, groundFt = ground });
+            var frameFt = framed.Select(p => p.At(a.T)).FirstOrDefault(p => p is not null)?.AltFt ?? a.AltFt;
+            measured.Add((a with { AltFt = frameFt }, ground));
+            log.Step("ground.measured", new { a.T, a.Lat, a.Lon, reportedFt = a.AltFt, frameFt, groundFt = ground });
         }
         var wheels = await sim.WheelHeightFtAsync(cancel);
         var heights = new Heights(measured.Select(m => (m.Item1, m.Item2 + wheels)), o.OffsetFt);
         log.Step("heights", new { heights.OffsetFt, wheelsFt = wheels, anchors = anchors.Count, given = o.OffsetFt is not null });
 
-        var paths = runs.Select(run => new FlightPath(run, r => heights.FtMsl(r, run))).ToList();
+        var paths = FlightPath.Of(track, heights.FtMsl);
+        if (paths.Count == 0) throw new InvalidDataException("No run has the engine's frames: run the export through prepare-track.sh again.");
         var shots = ShotList.Plan(paths, o.Shots);
         var (towerLat, towerLon) = o.Tower ?? ShotList.TowerSpot(anchors.Count > 0 ? anchors[^1] : runs[0][0]);
         var tower = (towerLat, towerLon, await sim.GroundFtAsync(towerLat, towerLon, cancel) + TowerAboveFt);

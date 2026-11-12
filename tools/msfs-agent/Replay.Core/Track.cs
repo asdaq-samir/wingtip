@@ -27,9 +27,33 @@ public sealed record Report(
 public sealed record GapSpan(double From, double To);
 
 /// <summary>
+/// One frame of the engine's sim_flight (engine/crates/route/contract/
+/// sim_flight.json, its SimRow, the fields the agent reads): when, where,
+/// the altitude (ft, above the sea where its segment's <c>msl</c>, else
+/// pressure altitude), ground speed (kt), track (degrees true, the
+/// heading too, as no wind is known), and the pitch and bank the engine
+/// estimated (degrees, nose up and right wing down positive), and whether
+/// it is on the ground.
+/// </summary>
+public sealed record Frame(
+    double T,
+    double Lat,
+    double Lon,
+    double AltFt,
+    double GsKt,
+    double TrackDeg,
+    double PitchDeg,
+    double BankDeg,
+    bool Ground);
+
+/// <summary>One run between two gaps as sim_flight's frames.</summary>
+public sealed record FrameRun(bool Msl, IReadOnlyList<Frame> Rows);
+
+/// <summary>
 /// A flight as tools/msfs-agent/prepare-track.sh writes it: the Studio
 /// export's own fields (who, which day, what the altitude is, where it came
-/// from and under what licence) and the engine's ready reports and gaps.
+/// from and under what licence), the engine's ready reports and gaps, and
+/// sim_flight's frames, one segment a run.
 /// </summary>
 public sealed record ReadyTrack(
     string Hex,
@@ -40,7 +64,8 @@ public sealed record ReadyTrack(
     string Source,
     string License,
     IReadOnlyList<Report> Points,
-    IReadOnlyList<GapSpan> Gaps)
+    IReadOnlyList<GapSpan> Gaps,
+    IReadOnlyList<FrameRun> Segments)
 {
     static readonly JsonSerializerOptions Json = new()
     {
@@ -62,6 +87,8 @@ public sealed record ReadyTrack(
                 throw new InvalidDataException(
                     $"Report {i} is not after the one before it: run the export through prepare-track.sh, which makes it ready.");
         }
+        if (track.Segments is null || track.Segments.Count == 0)
+            throw new InvalidDataException("The track has no frames: run the export through prepare-track.sh, which asks the engine for them.");
         return track with { Gaps = track.Gaps ?? [] };
     }
 

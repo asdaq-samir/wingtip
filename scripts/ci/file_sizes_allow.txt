@@ -113,7 +113,7 @@ services/ingest/ingest/swim.py 493
 services/jobs/charts/overlays.py 728
 services/jobs/charts/tests/test_overlays.py 795
 services/planner/app/landmarks.py 464
-services/planner/app/main.py 448
+services/planner/app/main.py 420
 services/planner/app/routers/airports.py 805
 services/planner/app/routers/plan.py 483
 services/planner/app/routers/words.py 608

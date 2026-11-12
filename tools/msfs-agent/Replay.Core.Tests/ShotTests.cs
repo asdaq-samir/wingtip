@@ -6,11 +6,7 @@ public sealed class ShotTests
 {
     static readonly ReadyTrack Sedona = ReadyTrack.Read(Path.Combine(AppContext.BaseDirectory, "fixtures", "n901tq-2026-11-11-sedona.json"));
 
-    static IReadOnlyList<FlightPath> Paths()
-    {
-        var heights = new Heights([]);
-        return [.. Sedona.Runs().Select(run => new FlightPath(run, r => heights.FtMsl(r, run)))];
-    }
+    static IReadOnlyList<FlightPath> Paths() => FlightPath.Of(Sedona, new Heights([]).FtMsl);
 
     [Fact]
     public void Each_run_is_covered_end_to_end_and_no_shot_crosses_a_gap()

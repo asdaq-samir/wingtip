@@ -312,12 +312,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
-        run: |
-          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
-          if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -qvE '^(docs/|ml/notebooks/|\.claude/)|\.md$|^LICENSE$'; then
-            echo "only=true" >> "$GITHUB_OUTPUT"
-            echo "docs only: the browser suite is skipped"
-          fi
+        run: scripts/ci/changes_since.sh docs-only
       - name: The last green commit on main
         id: base
         if: github.event_name != 'pull_request'
@@ -325,17 +320,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
-        run: |
-          sha=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""' || true)
-          status=""
-          [ -n "$sha" ] && status=$(gh api "repos/$REPO/compare/$sha...$GITHUB_SHA" --jq .status || true)
-          if [ "$EVENT" = push ] && { [ "$status" = ahead ] || [ "$status" = identical ]; }; then
-            echo "sha=$sha" >> "$GITHUB_OUTPUT"
-            echo "since the last green commit, ${sha:0:7}"
-          else
-            echo "all=true" >> "$GITHUB_OUTPUT"
-            echo "everything: event $EVENT, last green ${sha:0:7}, compare '$status'"
-          fi
+        run: scripts/ci/changes_since.sh last-green
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
         id: filter
         with:
@@ -355,6 +340,7 @@ jobs:
                 - services/planner/pytest_guards.py
                 - scripts/areas.yml
                 - scripts/areas.py
+                - scripts/ci/changes_since.sh
                 - scripts/dev/format.sh
               deps:
                 - apps/web/package-lock.json

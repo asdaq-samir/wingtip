@@ -89,17 +89,22 @@ def test_with_two_offsets_the_moment_is_the_tracks_report_nearest_the_place(chic
     assert then.moment(crash_drafts.update(chicago["id"], identity=None)) is None
 
 
-def test_the_weather_is_the_fields_reports_over_the_events_hour(chicago, recorded_iem):
+@pytest.mark.usefixtures("recorded_iem")
+def test_the_weather_is_the_fields_reports_over_the_events_hour(chicago):
     found = then.weather(chicago, AT, LATER)
     times = [m["time"] for m in found["metars"]]
     # From an hour before the hour's start (the METAR in force then) to an hour after the moment.
     assert times[0] == "2026-11-10T00:51:00Z" and times[-1] == "2026-11-10T02:53:00Z"
     assert found["metars"][0]["raw"].startswith("KORD 100051Z")
-    assert {t["station"] for t in found["tafs"]} == {"KORD", "KMDW"}
+    # The TAFs in force over the hour: the day before is not recorded, and
+    # the recorded day's first (KORD's and KMDW's AMD at 0256Z) came after
+    # the moment, so none is (weather_then.tafs).
+    assert found["tafs"] == []
     assert found["credit"] == iem.CREDIT and found["at"] == AT
 
 
-def test_the_weather_waits_for_the_hour_after_and_for_iem(chicago, recorded_iem, monkeypatch):
+@pytest.mark.usefixtures("recorded_iem")
+def test_the_weather_waits_for_the_hour_after_and_for_iem(chicago, monkeypatch):
     assert then.weather(chicago, AT, AT + 600) is None
 
     def refused(*a, **k):
@@ -143,7 +148,8 @@ def test_the_ntsb_case_is_the_one_on_the_events_local_date_as_written():
     assert ntsb.record("", "2026-10-22") is None
 
 
-def test_fill_writes_what_can_be_given_and_quotes_the_ntsb_in_the_captions(chicago, recorded_iem):
+@pytest.mark.usefixtures("recorded_iem")
+def test_fill_writes_what_can_be_given_and_quotes_the_ntsb_in_the_captions(chicago):
     tracked = crash_drafts.update(chicago["id"], n_number="N5393W", local_date="2026-10-22")
     kit.make(tracked, None, now=1.0)
     folder = crash_drafts.kit_dir(tracked["id"])
@@ -157,7 +163,8 @@ def test_fill_writes_what_can_be_given_and_quotes_the_ntsb_in_the_captions(chica
     assert kit.fill(tracked, now=2.0) == []
 
 
-def test_fill_adds_the_weather_and_notams_on_a_later_run(chicago, recorded_iem):
+@pytest.mark.usefixtures("recorded_iem")
+def test_fill_adds_the_weather_and_notams_on_a_later_run(chicago):
     kit.make(chicago, None, now=AT + 600)
     folder = crash_drafts.kit_dir(chicago["id"])
     assert not (folder / "weather.json").exists() and not (folder / "notams.json").exists()

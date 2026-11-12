@@ -351,5 +351,5 @@ def test_an_icao_notam_is_listed_at_the_place_its_own_a_item_names():
     assert [n["id"] for n in notams.at_fields(["KSHV"], now=NOW)] == ["KSHV A0917/26"]
     # Heard again, its location is the feed's.
     notams.heard(feed, now=NOW)
-    [kept] = notams.at_fields(["SHV"], now=NOW)
+    [kept] = notams.at_fields(["KSHV"], now=NOW)
     assert kept["location"] == "SHV"

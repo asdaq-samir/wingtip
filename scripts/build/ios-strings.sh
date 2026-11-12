@@ -41,14 +41,17 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-# Xcode's own DerivedData folder for this project: the one whose info.plist
-# names this checkout's project (its name ends in a hash of the path).
+# The newest DerivedData folder whose info.plist names this checkout's
+# project: Xcode's own (Wingtip-<hash of the path>), or the one
+# scripts/dev/xcodebuild.sh built in (a turn's, wingtip-turn-<n>, which
+# names the worktree that built in it last, or a worktree's own,
+# wingtip-check-<name>).
 if [ -z "$derived" ]; then
-  for d in "$HOME"/Library/Developer/Xcode/DerivedData/Wingtip-*; do
+  for d in "$HOME"/Library/Developer/Xcode/DerivedData/{Wingtip,wingtip-turn,wingtip-check}-*; do
     [ -f "$d/info.plist" ] || continue
-    if [ "$(plutil -extract WorkspacePath raw "$d/info.plist" 2>/dev/null)" = "$project" ]; then
+    [ "$(plutil -extract WorkspacePath raw "$d/info.plist" 2>/dev/null)" = "$project" ] || continue
+    if [ -z "$derived" ] || [ "$d/Build/Intermediates.noindex" -nt "$derived/Build/Intermediates.noindex" ]; then
       derived=$d
-      break
     fi
   done
 fi
@@ -71,6 +74,11 @@ for path in sorted(p for p in sys.stdin.buffer.read().decode().split("\0") if p)
         source = json.load(open(path)).get("source", "")
     except (OSError, ValueError):
         continue
+    # scripts/dev/xcodebuild.sh maps the project folder out of the
+    # compiler'"'"'s paths (SWIFT_ENABLE_PROJECT_PREFIX_MAPPING, for its shared
+    # compilation cache): "/^src/Wingtip/X.swift" is apps/ios/Wingtip/X.swift.
+    if source.startswith("/^src/"):
+        source = os.path.join(sys.argv[1], source[len("/^src/"):])
     # One per source and kind: a Swift file can have two, its own strings
     # and, for an AppShortcutsProvider, the Siri phrases the App Intents
     # tool extracts (ExtractedAppShortcutsMetadata.stringsdata).
@@ -78,7 +86,7 @@ for path in sorted(p for p in sys.stdin.buffer.read().decode().split("\0") if p)
     if source and os.path.exists(source) and key not in seen:
         seen.add(key)
         print(path)
-' > "$list"
+' "$here/apps/ios" > "$list"
 if [ ! -s "$list" ]; then
   echo "ios-strings: no $config .stringsdata in $intermediates: is SWIFT_EMIT_LOC_STRINGS on, and was the build $config?" >&2
   exit 1

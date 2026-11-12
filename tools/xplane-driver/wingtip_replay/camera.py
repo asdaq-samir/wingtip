@@ -56,7 +56,9 @@ def forward(heading: float) -> tuple[float, float]:
 def look_at(cam: tuple[float, float, float], target: tuple[float, float, float]) -> tuple[float, float]:
     """The camera's heading and pitch looking from `cam` at `target`."""
     dx, dy, dz = (target[i] - cam[i] for i in range(3))
-    heading = math.degrees(math.atan2(dx, -dz)) % 360.0
+    # Shifted before the modulo: a bearing a hair west of north (-1e-15 deg,
+    # from a sine's rounding) is 360.0 after `% 360`, outside [0, 360).
+    heading = (math.degrees(math.atan2(dx, -dz)) + 360.0) % 360.0
     pitch = math.degrees(math.atan2(dy, math.hypot(dx, dz)))
     return heading, pitch
 
