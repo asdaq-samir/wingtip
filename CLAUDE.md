@@ -63,7 +63,7 @@ Hard rules, checked as you write (the edit-time hook), at the push and in
   module: `wingtip/units.py`, the web's `lib/geo.ts`, `Format/Units.swift`,
   `format/Units.kt`. Semgrep (`scripts/ci/semgrep/`).
 - **Map maths**: Mercator and tiles only in `lib/map/tileMath.ts` or
-  `wingtip.geo`; hex-to-RGB only in `deckColour`. Semgrep.
+  `wingtip.geo`; hex-to-RGB only in `rgbOf` (`lib/rgb.ts`). Semgrep.
 - **The planner only through the generated clients**: the web's `lib/api/`,
   `planner_client.py`, `PlannerClient`, the phones' API folders; no `/api/`
   path typed elsewhere. Semgrep, ArchUnit, detekt.

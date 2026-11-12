@@ -21,7 +21,6 @@ or-true | native-ios.yml | test > "$RUNNER_TEMP/xcodebuild.log" 2>&1 || true
 
 # The run blocks longer than 15 lines when the guard came in (2026-11-10):
 # workflow | job | step | lines. Each is to move into a script.
-long | ci.yml | changes | What this run builds and tests | 19
 long | ci.yml | e2e | Wait for the stack, the page and a warm planner | 21
 long | ci.yml | e2e | The planner's data, as annotations | 34
 long | ci.yml | e2e-images | The keys nothing has been built for yet | 30
