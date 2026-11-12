@@ -116,14 +116,16 @@ final class KeepForAir {
         }
         if cards == plan.idents.count { kinds.append(KeptForAir.Kind.airports.rawValue) }
         for path in pictures {
-            if let data = try? await Planner.picture(path) { KeptForAir.writePicture(data, path: path) }
-            files.append(KeptForAir.file("pictures", path, ext: "img"))
+            // Kept by the address the pictures' loader asks (KeptPictureLoader).
+            let address = Planner.address(of: path).absoluteString
+            if let data = try? await Planner.picture(path) { KeptForAir.writePicture(data, path: address) }
+            files.append(KeptForAir.file("pictures", address, ext: "img"))
         }
         // The weather loop's frames, of the loop picked (the radar where
         // none is), and the newest radar frame's tiles along the route.
         let loop = WeatherLoop.shared.kind == .off ? LoopKind.radar : WeatherLoop.shared.kind
         if let frames = try? await KeptForAir.answer(.weatherLoop, key: loop.rawValue, fetch: {
-            try await Planner.fetch(APIWeatherLoop.self, "/api/weather/loop", ["kind": loop.rawValue])
+            try await Planner.call { try await $0.weatherLoopFrames(query: .init(kind: loop.rawValue)).ok.body.json }
         }).value {
             kinds.append(KeptForAir.Kind.weatherLoop.rawValue)
             files.append(KeptForAir.file(KeptForAir.Kind.weatherLoop.rawValue, loop.rawValue))

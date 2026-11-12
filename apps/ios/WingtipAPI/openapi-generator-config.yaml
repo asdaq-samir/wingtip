@@ -1,0 +1,15 @@
+# swift-openapi-generator's settings for the iPhone's three API modules
+# (PlannerAPI, GatewayAPI, AssistantAPI), written by
+# scripts/build/api-models-apps.sh from the servers' OpenAPI documents.
+generate: [types, client]
+# Public, as each is a module of its own the app imports.
+accessModifier: public
+# camelCase names ("flightCategory" for flight_category), as the app's are.
+namingStrategy: idiomatic
+# The keys Swift takes only in backticks, named as the app always has,
+# and "type", which Swift takes as it is but the generator escapes.
+nameOverrides:
+  class: airspaceClass
+  private: isPrivate
+  operator: operatorName
+  type: type

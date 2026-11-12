@@ -52,9 +52,10 @@ final class ForecastIcing {
         asking = true
         defer { asking = false }
         do {
-            answer = try await Planner.fetch(IcingForecastAnswer.self, "/api/icing/route", [
-                "fixes": query.fixes, "alt_ft": query.altFt, "leg_min": query.legMin, "ground_min": query.groundMin,
-            ])
+            answer = try await Planner.call {
+                try await $0.icingOnTheRoute(query: .init(fixes: query.fixes, altFt: query.altFt, legMin: query.legMin, groundMin: query.groundMin))
+                    .ok.body.json
+            }
             problem = nil
         } catch {
             guard !Task.isCancelled else { return }

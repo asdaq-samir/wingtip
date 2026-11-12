@@ -2,10 +2,15 @@ package app.wingtipmaps.android.logbook
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.LogbookDraft
 import app.wingtipmaps.android.api.generated.LogbookDraftAsk
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.TimeZone
+import kotlin.time.Clock
 
 /**
  * "Flight Logged"'s view model, the flight logged with no typing (the
@@ -25,15 +31,24 @@ import java.util.TimeZone
  * never saved unasked. Logged, the currency is asked again, as the
  * gateway works it out from the logbook.
  */
+@HiltViewModel(assistedFactory = LogbookDraftModel.Factory::class)
 class LogbookDraftModel(
     private val flight: RecordedFlight,
     private val rules: DraftRules = EngineDraft,
     private val source: LogbookSource = ServerLogbook,
-    private val utcOffsetMin: () -> Double = { TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 60_000.0 },
+    private val utcOffsetMin: () -> Double = { TimeZone.getDefault().getOffset(AppClock.nowMs()) / 60_000.0 },
 ) : ViewModel() {
-    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
-    // constructor once the sources and seams it is given are injectable
-    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
+    /** Hilt's, the recorded flight handed in by its host: the engine's
+     *  rules, the gateway's logbook and the phone's offset from UTC now. */
+    @AssistedInject
+    constructor(@Assisted flight: RecordedFlight, rules: DraftRules, source: LogbookSource, clock: Clock) :
+        this(flight, rules, source, { TimeZone.getDefault().getOffset(clock.now().toEpochMilliseconds()) / 60_000.0 })
+
+    @AssistedFactory
+    interface Factory {
+        fun create(flight: RecordedFlight): LogbookDraftModel
+    }
+
     data class Logged(val entry: LogbookEntryDto, val currency: List<String>)
 
     data class State(

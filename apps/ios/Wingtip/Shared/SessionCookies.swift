@@ -1,10 +1,10 @@
 import Foundation
 import os
-import Security
+import Valet
 
 /// The gateway's cookies -- the 30-day session among them -- kept in the
-/// Keychain, readable after the phone's first unlock and never leaving it
-/// (kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly: no backup, no other
+/// Keychain through Valet, readable after the phone's first unlock and
+/// never leaving it (afterFirstUnlockThisDeviceOnly: no backup, no other
 /// device), where they were a file in the App Group's container with the
 /// default Data Protection (the security audit of 2026-11-10, L9). The
 /// app and its widgets each hold them in memory (`jar`), read from the
@@ -71,15 +71,20 @@ enum SessionCookies {
 
     // MARK: The Keychain
 
-    /// One Keychain item, written only when its bytes change.
+    /// One Keychain item, through Square's Valet, written only when its
+    /// bytes change. Valet updates an item that is there (SecItemUpdate)
+    /// and adds one that is not, where the hand-written write deleted the
+    /// item and added it again, losing the session to a failure between
+    /// the two.
     final class Vault: Sendable {
         static let shared = Vault(service: SessionCookies.service, account: SessionCookies.account, group: WidgetSnapshot.suite)
 
-        let service: String
         let account: String
-        /// The App Group as the access group the widgets share; nil, the
-        /// app's own (a build signed without the group, such as a test's).
-        let group: String?
+        /// The App Group's Keychain, which the widgets share, where the
+        /// build is entitled to it; then the app's own (a build signed
+        /// without the group, such as a test's). Readable after the
+        /// phone's first unlock, and never leaving it.
+        private let valets: [Valet]
         private let written = OSAllocatedUnfairLock<Data??>(initialState: nil)
         /// Set where the item could not be read for a reason other than
         /// its absence (the phone not yet unlocked since it started): the
@@ -88,39 +93,32 @@ enum SessionCookies {
         private let unread = OSAllocatedUnfairLock(initialState: false)
 
         init(service: String, account: String, group: String?) {
-            self.service = service
             self.account = account
-            self.group = group
+            let identifier = Identifier(nonEmpty: service)
+            let own = identifier.map { Valet.valet(with: $0, accessibility: .afterFirstUnlockThisDeviceOnly) }
+            // "group.app.wingtipmaps" is the App Group's prefix and its name.
+            let shared = group.flatMap { SharedGroupIdentifier(groupPrefix: "group", nonEmptyGroup: String($0.dropFirst("group.".count))) }
+                .map { Valet.sharedGroupValet(with: $0, identifier: identifier, accessibility: .afterFirstUnlockThisDeviceOnly) }
+            valets = [shared, own].compactMap { $0 }
         }
 
         /// Whether the last read failed other than for want of the item.
         var isUnread: Bool { unread.withLock { $0 } }
 
-        private func query(_ group: String?) -> [String: Any] {
-            var query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
-                                        kSecAttrService as String: service, kSecAttrAccount as String: account]
-            if let group { query[kSecAttrAccessGroup as String] = group }
-            return query
-        }
-
-        /// The access group to use: the App Group where the build is
-        /// entitled to it, else the app's own.
-        private func usable(_ status: OSStatus) -> Bool { status != errSecMissingEntitlement }
-
         func read() -> Data? {
-            for group in [group, nil] {
-                var ask = query(group)
-                ask[kSecReturnData as String] = true
-                ask[kSecMatchLimit as String] = kSecMatchLimitOne
-                var out: CFTypeRef?
-                let status = SecItemCopyMatching(ask as CFDictionary, &out)
-                if status == errSecSuccess, let data = out as? Data {
+            for valet in valets {
+                do {
+                    let data = try valet.object(forKey: account)
                     written.withLock { $0 = .some(data) }
                     unread.withLock { $0 = false }
                     return data
-                }
-                if usable(status) {
-                    unread.withLock { $0 = status != errSecItemNotFound }
+                } catch .missingEntitlement {
+                    continue
+                } catch .itemNotFound {
+                    unread.withLock { $0 = false }
+                    return nil
+                } catch {
+                    unread.withLock { $0 = true }
                     return nil
                 }
             }
@@ -136,16 +134,14 @@ enum SessionCookies {
                 return false
             }
             guard !same else { return }
-            for group in [group, nil] {
-                let status = SecItemDelete(query(group) as CFDictionary)
-                guard usable(status) else { continue }
-                guard let data else { return }
-                var add = query(group)
-                add[kSecValueData as String] = data
-                add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-                let added = SecItemAdd(add as CFDictionary, nil)
-                if usable(added) {
-                    if added != errSecSuccess { written.withLock { $0 = nil } }
+            for valet in valets {
+                do {
+                    if let data { try valet.setObject(data, forKey: account) } else { try valet.removeObject(forKey: account) }
+                    return
+                } catch .missingEntitlement {
+                    continue
+                } catch {
+                    written.withLock { $0 = nil }
                     return
                 }
             }

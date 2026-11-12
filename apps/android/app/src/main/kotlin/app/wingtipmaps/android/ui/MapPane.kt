@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -35,6 +34,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
@@ -85,7 +85,6 @@ import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.route.RoutePoints
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -133,13 +132,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // Each mark greyed once its METAR is older than the engine's freshness
     // (WeatherAge), looked at again each minute.
     val heardAt by mapWeather.heardAtMs.collectAsStateWithLifecycle()
-    var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(60_000L)
-            nowMs = System.currentTimeMillis()
-        }
-    }
+    val nowMs by AppClock.ticking(60_000L)
     val freshMin = remember(nowMs / 3_600_000L) { WeatherAge.freshMin(nowMs) }
     val stale = remember(heardAt, nowMs, freshMin) { WeatherAge.stale(heardAt, nowMs, freshMin) }
     val weather = remember(categories, airportWeather.mode, stale) { AirportWeatherMarks.pips(categories, airportWeather.mode, stale) }
@@ -151,7 +144,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val heardAtMs by traffic.heardAtMs.collectAsStateWithLifecycle()
     val tracked by remember { Tracking.of(context) }.hex.collectAsStateWithLifecycle()
     val targets = remember(planes, marks, heardAtMs) {
-        val heard = heardAtMs ?: System.currentTimeMillis()
+        val heard = heardAtMs ?: AppClock.nowMs()
         planes.mapIndexed { i, p -> TrafficDrawing.Target(p, marks.getOrNull(i), heard - ((p.seenS ?: 0.0) * 1000).toLong()) }
     }
     // The cockpit's ADS-B receiver, listened for from the first map on

@@ -3,8 +3,8 @@ import Foundation
 // The planner's and the gateway's answers the in-flight, traffic and
 // route-editing screens read, generated from their OpenAPI documents
 // (Generated/, scripts/build/api-models-apps.sh): the names the app uses
-// are typealiases here, with what the app adds as extensions. The
-// planner's are read in its snake case through Planner.snakeCase.
+// are typealiases here, with what the app adds as extensions. Each type
+// names its server's own keys.
 
 /// A point of an airplane's track today (TrailPoint): when, s since 1970,
 /// where, and its height, none on the ground.
@@ -43,22 +43,13 @@ typealias FlightRoute = APIFlightRoute
 typealias ProcedureFix = APIProcedureFix
 typealias ProcedureDrawing = APIProcedureDrawing
 
-extension PastFlightSummary: Identifiable, Hashable {
+extension PastFlightSummary: @retroactive Identifiable {
     /// Back where it left from: a local flight.
     var local: Bool { !inAir && origin != nil && origin?.ident == destination?.ident }
-
-    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
 
-extension PastFlightField: Hashable {
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(ident)
-        hasher.combine(name)
-    }
-}
-
-extension ProcedureFix: Identifiable {
-    var id: String { ident }
+extension ProcedureFix: @retroactive Identifiable {
+    public var id: String { ident }
 
     /// The chart's altitude in words, as an approach chart sets it (the
     /// FAA's Aeronautical Chart User's Guide: a minimum altitude
@@ -110,37 +101,43 @@ typealias SavedTrack = GWTrackDto
 
 extension Planner {
     static func flight(_ hex: String) async throws -> FlightDetail {
-        try await fetch(FlightDetail.self, "/api/traffic/flight/\(hex)")
+        try await call { try await $0.trafficFlight(path: .init(hexId: hex)).ok.body.json }
     }
 
     static func flightStatus(_ hex: String) async throws -> FlightStatus {
-        try await fetch(FlightStatus.self, "/api/traffic/flight/\(hex)/status")
+        try await call { try await $0.trafficStatus(path: .init(hexId: hex)).ok.body.json }
     }
 
     /// Ten flights, newest first; with `until` and `before`, the ten before.
     static func pastFlights(_ hex: String, until: String? = nil, before: Double? = nil) async throws -> PastFlights {
-        try await fetch(PastFlights.self, "/api/traffic/flight/\(hex)/history", ["until": until, "before": before.map { String(Int($0)) }])
+        try await call { try await $0.trafficHistory(path: .init(hexId: hex), query: .init(until: until, before: before?.rounded(.down))).ok.body.json }
     }
 
     static func pastFlight(_ hex: String, id: Int) async throws -> PastFlight {
-        try await fetch(PastFlight.self, "/api/traffic/flight/\(hex)/history/\(id)")
+        try await call { try await $0.trafficPastFlight(path: .init(hexId: hex, flightId: id)).ok.body.json }
     }
 
     static func based(_ hexes: [String]) async throws -> AircraftBases {
-        try await fetch(AircraftBases.self, "/api/traffic/based", ["hex": hexes.prefix(60).joined(separator: ",")])
+        try await call { try await $0.trafficBased(query: .init(hex: hexes.prefix(60).joined(separator: ","))).ok.body.json }
     }
 
     static func findTraffic(_ q: String) async throws -> TrafficFound {
-        try await fetch(TrafficFound.self, "/api/traffic/find", ["q": q])
+        try await call { try await $0.trafficFind(query: .init(q: q)).ok.body.json }
     }
 
-    /// A flight number's route; nil for one that is not an airline's.
+    /// A flight number's route; nil for one that is not an airline's,
+    /// which the planner answers with a bare null the generated type
+    /// cannot be read from.
     static func flightRoute(callsign: String, lat: Double?, lon: Double?) async throws -> FlightRoute? {
-        try await fetch(FlightRoute?.self, "/api/traffic/route", ["callsign": callsign, "lat": lat.map { String($0) }, "lon": lon.map { String($0) }])
+        do {
+            return try await call { try await $0.trafficRoute(query: .init(callsign: callsign, lat: lat, lon: lon)).ok.body.json }
+        } catch is DecodingError {
+            return nil
+        }
     }
 
     static func procedure(_ ident: String, id: String, transition: String?) async throws -> ProcedureDrawing {
-        try await fetch(ProcedureDrawing.self, "/api/airport/\(ident)/procedures/\(id)", ["transition": transition])
+        try await call { try await $0.airportProcedure(path: .init(ident: ident, procedure: id), query: .init(transition: transition)).ok.body.json }
     }
 
     /// One "how to spot it" line per checkpoint, as they are written: each
@@ -150,8 +147,8 @@ extension Planner {
     static func describeCheckpoints(dep: String, dest: String, stops: [String],
                                     claudeOn: Bool = ServerFeatures.claudeOnNow) -> AsyncThrowingStream<NoteLine, any Error> {
         guard claudeOn else { return AsyncThrowingStream { $0.finish() } }
-        let ask = APIGenerateNotesRequest(departureIdent: dep, destinationIdent: dest, stops: stops)
-        return lines({ try await request("POST", "/api/checkpoint-notes/generate", json: ask, csrf: true) }) {
+        let ask = ASGenerateNotesRequest(departureIdent: dep, destinationIdent: dest, stops: stops)
+        return lines({ try await Planner.ask { try await $0.describeCheckpoints(body: .json(ask)).ok.body.applicationXNdjson } }) {
             try snakeCase.decode(NoteLine.self, from: $0)
         }
     }
@@ -159,41 +156,47 @@ extension Planner {
     /// A pilot's own note on a checkpoint, saved.
     static func saveNote(dep: String, dest: String, stops: [String], lat: Double, lon: Double, text: String) async throws {
         let note = APICheckpointNoteRequest(departureIdent: dep, description: text, destinationIdent: dest, lat: lat, lon: lon, stops: stops)
-        _ = try await data(for: request("POST", "/api/checkpoint-notes", json: note, csrf: true), ok: 200...299)
+        _ = try await call { try await $0.saveCheckpointNote(body: .json(note)) }
     }
 
     /// Every note of the pilot's own forgotten; how many.
     static func forgetNotes() async throws -> Int {
-        try snakeCase.decode(APIPilotNotesForgotten.self, from: try await data(for: request("DELETE", "/api/checkpoint-notes/mine", json: nil, csrf: true))).removed
+        try await call { try await $0.forgetPilotsNotes().ok.body.json.removed }
     }
 }
 
 extension Gateway {
     /// Flight Service's state; nil where it cannot be asked (signed out).
     static func flightService() async throws -> FlightServiceStatus? {
-        try await read(FlightServiceStatus.self, "/api/flight-service")
+        try await read { try await $0.status().ok.body.json }
     }
 
     /// Filed, Flight Service's reference for it.
     static func file(_ plan: FlightPlanFilingRequest) async throws -> String {
-        try await send(GWFlightPlanFiled.self, "POST", "/api/flight-service/flight-plans", json: plan).reference
+        try await call { try await $0.file(body: .json(plan)).ok.body.json.reference }
     }
 
     /// Flight Service's standard briefing for the flight, as its text.
     static func standardBriefing(_ plan: FlightPlanFilingRequest) async throws -> String {
-        String(decoding: try await send("POST", "/api/flight-service/briefings", json: plan), as: UTF8.self)
+        let body = try await call { try await $0.brief(body: .json(plan)).ok.body.any }
+        return try await String(collecting: body, upTo: 1 << 20)
     }
 
     /// A saved flight's flown track; nil where none is kept.
     static func track(_ flight: Int) async throws -> SavedTrack? {
-        try await read(SavedTrack.self, "/api/flights/\(flight)/track", none: [204, 404])
+        try await read(none: [401, 403, 404]) {
+            switch try await $0.track(path: .init(id: flight)) {
+            case .ok(let ok): try ok.body.json
+            default: nil
+            }
+        }
     }
 
     static func saveTrack(_ flight: Int, _ track: SavedTrack) async throws {
-        try await send("PUT", "/api/flights/\(flight)/track", json: track)
+        _ = try await call(.upload) { try await $0.saveTrack(path: .init(id: flight), body: .json(track)) }
     }
 
     static func deleteTrack(_ flight: Int) async throws {
-        try await send("DELETE", "/api/flights/\(flight)/track")
+        _ = try await call { try await $0.deleteTrack(path: .init(id: flight)) }
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,7 +25,7 @@ fun NextFlightFeed(plan: Plan) {
     val context = LocalContext.current.applicationContext
     LaunchedEffect(state.planning, state.dep, state.dest, state.stops, state.totals, state.course, state.depart, state.aircraft, state.own) {
         if (state.planning) return@LaunchedEffect
-        val snapshot = FlightSnapshot.of(state, System.currentTimeMillis())
+        val snapshot = FlightSnapshot.of(state, AppClock.nowMs())
         val changed = withContext(Dispatchers.IO) { FlightSnapshot.write(context, snapshot) }
         if (changed) NextFlightWidget().updateAll(context)
     }

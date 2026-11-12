@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openMapSettings, settle } from "./helpers";
+import { inSheet, openMapSettings, settle } from "./helpers";
 
 /**
  * The Map card's Airport Weather (the owner's pick, 2026-11-10): Off,
@@ -13,6 +13,8 @@ test("the map's Airport Weather is a halo with its three switches on, kept acros
   await settle(page);
   await openMapSettings(page);
   const look = page.getByTestId("airport-weather-look");
+  // Under the Map card's edge at half, as the card opens: pulled up to it.
+  await inSheet(page, look);
   await expect(look.getByRole("button")).toHaveText(["Off", "Halo", "Dot", "Station"]);
   await expect(look.getByRole("button", { name: "Halo" })).toHaveAttribute("aria-pressed", "true");
   const switches = ["airport-weather-station-close", "airport-weather-arrows", "airport-weather-worse"];
@@ -34,6 +36,7 @@ test("the map's Airport Weather is a halo with its three switches on, kept acros
   await page.reload();
   await settle(page);
   await openMapSettings(page);
+  await inSheet(page, look);
   await expect(look.getByRole("button", { name: "Off" })).toHaveAttribute("aria-pressed", "true");
   await look.getByRole("button", { name: "Halo" }).click();
   for (const id of switches) await expect(page.getByTestId(id)).toHaveAttribute("aria-checked", "true");

@@ -23,11 +23,8 @@ import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -39,6 +36,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipRadius
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -50,7 +48,6 @@ import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 import app.wingtipmaps.android.ui.MenuSettingRow
 import app.wingtipmaps.android.ui.SettingsGroup
-import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
@@ -98,13 +95,7 @@ fun WeatherLoopBar(modifier: Modifier = Modifier) {
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(30_000)
-            now = System.currentTimeMillis()
-        }
-    }
+    val now by AppClock.ticking(30_000L)
     if (state.kind == LoopKind.OFF) return
     val name = state.kind.label
     val time = state.frame?.let { FrameTime.of(it, Instant.ofEpochMilli(now), state.oldAfterS) }

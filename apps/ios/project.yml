@@ -36,6 +36,44 @@ settings:
     # take their ids from, so the extension's stays the app's with its
     # suffix however CI names the app.
     WINGTIP_BUNDLE_ID: app.wingtipmaps.ios
+# The Swift packages the app builds on, each at the exact version named
+# here (the repo's one place for them; the owner's "use the latest
+# libraries", 2026-11-12). XcodeGen resolves them on the runner.
+packages:
+  # The servers' clients (scripts/build/api-models-apps.sh): the generated
+  # modules' runtime, its HTTP types, and its URLSession transport.
+  swift-openapi-runtime:
+    url: https://github.com/apple/swift-openapi-runtime
+    exactVersion: 1.13.4
+  swift-http-types:
+    url: https://github.com/apple/swift-http-types
+    exactVersion: 1.8.0
+  swift-openapi-urlsession:
+    url: https://github.com/apple/swift-openapi-urlsession
+    exactVersion: 1.4.0
+  # The gateway's session cookies in the Keychain (Shared/SessionCookies).
+  Valet:
+    url: https://github.com/square/Valet
+    exactVersion: 5.1.1
+  # Pictures from the planner, cached and kept for offline use
+  # (Views/PictureViewer): its release candidate, Swift 6.2 and iOS 16 up.
+  Nuke:
+    url: https://github.com/kean/Nuke
+    exactVersion: 14.0.0-rc.1
+targetTemplates:
+  ServerAPI:
+    type: framework.static
+    platform: iOS
+    dependencies:
+      - package: swift-openapi-runtime
+        product: OpenAPIRuntime
+      - package: swift-http-types
+        product: HTTPTypes
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: $(WINGTIP_BUNDLE_ID).$(TARGET_NAME)
+        SKIP_INSTALL: YES
 targets:
   Wingtip:
     type: application
@@ -53,6 +91,20 @@ targets:
       # phone's cycle packs, with no network. A static library, linked in.
       - framework: Frameworks/WingtipEngine.xcframework
         embed: false
+      # The servers' generated clients (WingtipAPI), linked in, and the
+      # packages the app calls them and its pictures and Keychain through.
+      - target: PlannerAPI
+      - target: GatewayAPI
+      - target: AssistantAPI
+      - package: swift-openapi-runtime
+        product: OpenAPIRuntime
+      - package: swift-http-types
+        product: HTTPTypes
+      - package: swift-openapi-urlsession
+        product: OpenAPIURLSession
+      - package: Valet
+      - package: Nuke
+        products: [Nuke, NukeUI]
       # The Live Activity's widget extension, embedded in the app.
       - target: WingtipWidgets
         embed: true
@@ -219,6 +271,20 @@ targets:
         # Native look's, and the brand looks set theirs at the root at run
         # time (Look.swift's lookTint: SwiftUI's tint and the window's).
         ENABLE_USER_SCRIPT_SANDBOXING: NO
+  # The servers' clients, one module a document, written by
+  # scripts/build/api-models-apps.sh with swift-openapi-generator from
+  # services/{planner,gateway,assistant}/openapi.json and committed. A
+  # module each, as each document has its own Client, Components and
+  # Operations; the app names their schemas by API/Generated's aliases.
+  PlannerAPI:
+    templates: [ServerAPI]
+    sources: [WingtipAPI/PlannerAPI]
+  GatewayAPI:
+    templates: [ServerAPI]
+    sources: [WingtipAPI/GatewayAPI]
+  AssistantAPI:
+    templates: [ServerAPI]
+    sources: [WingtipAPI/AssistantAPI]
   # The Live Activity (WingtipWidgets/WingtipWidgets.swift): a flight in
   # progress on the Lock Screen and in the Dynamic Island, drawn by this
   # extension from the attributes the app shares with it (Wingtip/Shared).
@@ -240,6 +306,9 @@ targets:
       # The gateway's host, for the weather and currency widgets' own asks
       # (WidgetFetch), read from this extension's Info.plist (WingtipHost).
       - path: Wingtip/Config.swift
+    # The Keychain the session's cookies are read from (SessionCookies).
+    dependencies:
+      - package: Valet
     entitlements:
       path: WingtipWidgets/WingtipWidgets.entitlements
       properties:

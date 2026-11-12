@@ -2,12 +2,14 @@ import { expect, type Page } from "@playwright/test";
 import {
   consolePage,
   grabberTo,
+  inSheet,
   openBrief,
   openConsole,
   openMapSettings,
   openNavLog,
   openPanel,
   openProfile,
+  sheetUpToType,
   showSearch,
   showTabs,
   sideDrawer,
@@ -102,7 +104,11 @@ export const CARDS: CardRow[] = [
           // Back on the search with "duluth" in it: cleared, its own page.
           await p.getByTestId("search-airports").fill("");
           await showSearch(p);
-          await sideDrawer(p).getByTestId("airport-recent").first().click();
+          // Recents is under the edge at half, past Find Nearby and
+          // Favorites: pulled up to it, as a finger would.
+          const recent = sideDrawer(p).getByTestId("airport-recent").first();
+          await inSheet(p, recent);
+          await recent.click();
         },
         back: "search-home",
       },
@@ -183,9 +189,11 @@ export const CARDS: CardRow[] = [
     close: "navlog-close",
     // Its totals: "65.3 nm · 35m · 9.0 gal".
     pillLine: /nm · .+ · .*gal/,
+    // With an airplane, for its time and fuel (nothing assumes one, the
+    // owner 2026-11-09: with none they read "—").
     entries: [
-      { name: "the plan", open: async (p) => (await go(p, ROUTE), void (await openNavLog(p))), back: "plan" },
-      { name: "link (open=navlog)", open: (p) => go(p, `${ROUTE}&open=navlog`), back: "plan" },
+      { name: "the plan", open: async (p) => (await pickAirplane(p), await go(p, ROUTE), void (await openNavLog(p))), back: "plan" },
+      { name: "link (open=navlog)", open: async (p) => (await pickAirplane(p), await go(p, `${ROUTE}&open=navlog`)), back: "plan" },
     ],
     not: { sideways: "its table scrolls sideways on purpose inside the card (nav-log-desk.spec)", position: "nothing opens inside it" },
   },
@@ -253,8 +261,12 @@ export const CARDS: CardRow[] = [
         open: async (p) => {
           await go(p, "/app/plan");
           await showTabs(p);
+          await sheetUpToType(p);
           await p.getByTestId("search-airports").fill("minimums");
-          await sideDrawer(p).getByTestId("search-do-screen-minimums").click();
+          // Its row may be under the half sheet's edge, past the results.
+          const row = sideDrawer(p).getByTestId("search-do-screen-minimums");
+          await inSheet(p, row);
+          await row.click();
           await expect(p.getByTestId("console-close")).toBeHidden();
         },
         back: "search",
@@ -274,8 +286,12 @@ export const CARDS: CardRow[] = [
         open: async (p) => {
           await go(p, "/app/plan");
           await showTabs(p);
+          await sheetUpToType(p);
           await p.getByTestId("search-airports").fill("emergency");
-          await sideDrawer(p).getByTestId("search-do-screen-emergency").click();
+          // Its row may be under the half sheet's edge, past the results.
+          const row = sideDrawer(p).getByTestId("search-do-screen-emergency");
+          await inSheet(p, row);
+          await row.click();
         },
         back: "search",
       },

@@ -13,6 +13,12 @@ export const bar = (page: Page, at: 0 | 1) => page.locator(`[data-page-bar="${at
 
 export async function expectPage(page: Page, at: 0 | 1) {
   await expect(pager(page)).toHaveAttribute("data-page", String(at));
+  // The split grabber is the sheet's alone, drawn with no card over it
+  // (MapPanel's `!cardsUp`): a card up brings its own plain grabber.
+  if (await page.locator("[data-sheet-card][data-open]").count()) {
+    await expect(bar(page, 0)).toHaveCount(0);
+    return;
+  }
   await expect(bar(page, at)).toHaveAttribute("aria-selected", "true");
   await expect(bar(page, at === 0 ? 1 : 0)).toHaveAttribute("aria-selected", "false");
 }
@@ -38,7 +44,9 @@ export async function openAirport(page: Page, ident: string, touch = false) {
   if (touch) await search.tap();
   else await search.click();
   await search.fill(ident);
-  const row = searchAirports(page).filter({ hasText: ident }).first();
+  // Its title: the top hit's middle is its quick actions (Fly Here, Depart
+  // From) under the title, and a tap there flew the route with no card.
+  const row = searchAirports(page).filter({ hasText: ident }).first().locator(".font-mono").first();
   if (touch) await row.tap({ timeout: slow(10_000) });
   else await row.click({ timeout: slow(10_000) });
   await expect(sideDrawer(page).getByTestId("place-card").getByTestId("place-name").last()).toHaveText(ident, { timeout: slow(10_000) });

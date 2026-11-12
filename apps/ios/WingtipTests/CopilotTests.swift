@@ -33,7 +33,7 @@ struct CopilotTests {
             }
         }
         let aroundData = try JSONSerialization.data(withJSONObject: ["areas": [], "at": 1_794_243_600, "fields": fields, "itws": [], "unavailable": []])
-        let around = try Planner.snakeCase.decode(APICopilotAround.self, from: aroundData)
+        let around = try Planner.json.decode(APICopilotAround.self, from: aroundData)
         let fix = OwnShip.Fix(coordinate: CLLocationCoordinate2D(latitude: 43.6, longitude: -88.4), altitudeFt: 3500, trackDeg: 340, groundspeedKt: 105,
                               accuracyM: 5, at: Date(timeIntervalSince1970: 1_794_243_600))
         let flight = Copilot.Flight(dest: "KOSH", line: [[42.6, -88.0], [43.9844, -88.557]], plannedGsKt: 110, tasKt: 110, burnGph: 9, fuelGal: 20)

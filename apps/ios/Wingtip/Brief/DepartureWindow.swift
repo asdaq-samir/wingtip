@@ -63,7 +63,7 @@ final class DepartureWindow {
         asking = true
         defer { asking = false }
         do {
-            answer = try await Planner.postRead(WindowAnswer.self, "/api/departure-window", ask)
+            answer = try await Planner.call { try await $0.departureWindow(body: .json(ask)).ok.body.json }
             problem = nil
         } catch {
             guard !Task.isCancelled else { return }

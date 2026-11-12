@@ -147,6 +147,9 @@ export default defineConfig({
       registerType: "prompt",
       manifest: MANIFEST,
       workbox: {
+        // The first worker claims its page: an uncontrolled page's keep for
+        // the air cached nothing. A new build still waits (no skipWaiting).
+        clientsClaim: true,
         navigateFallback: "/app/index.html",
         navigateFallbackAllowlist: [/^\/app\//],
         // The legal pages are files, not routes of the app: a miss in

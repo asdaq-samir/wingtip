@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { beforeTheRoute, closeProfile, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { beforeTheRoute, closeProfile, grabberTo, openPanel, openProfile, pressDryRunStart, settle, sideDrawer, slow } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -15,7 +15,10 @@ const map = (page: Page) => page.getByTestId("gl-map");
 const layers = (page: Page) => map(page).getAttribute("data-layers");
 
 async function pickTerrain(page: Page, name: "Flat" | "Shaded" | "3D") {
-  await beforeTheRoute(page, () => page.getByTestId("terrain-select").getByRole("button", { name }).click());
+  await beforeTheRoute(page, async () => {
+    await grabberTo(page, "full");
+    await page.getByTestId("terrain-select").getByRole("button", { name }).click();
+  });
 }
 
 test("the relief is shaded over the chart, and stood up in 3D with the route at its altitudes", async ({ page }) => {
@@ -27,6 +30,7 @@ test("the relief is shaded over the chart, and stood up in 3D with the route at 
 
   // In 3D the menu says what the ground's colours near a route are.
   await beforeTheRoute(page, async () => {
+    await grabberTo(page, "full");
     await page.getByTestId("terrain-select").getByRole("button", { name: "3D" }).click();
     await expect(page.getByTestId("map-settings")).toContainText("A view of the plan, not terrain clearance.");
   });

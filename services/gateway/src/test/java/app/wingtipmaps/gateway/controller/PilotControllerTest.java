@@ -122,7 +122,7 @@ class PilotControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(c[0]))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.details[0]").value(org.hamcrest.Matchers.startsWith(c[1] + ":")));
+                    .andExpect(jsonPath("$.errors[0]").value(org.hamcrest.Matchers.startsWith(c[1] + ":")));
         }
         verify(pilotService, never()).setContact(any(), any(), any());
     }

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openMapSettings, settle, slow } from "./helpers";
+import { grabberTo, openMapSettings, settle, slow } from "./helpers";
 
 /**
  * The radar and satellite loop (features/weather-loop, the owner's
@@ -49,6 +49,8 @@ async function stubLoop(page: Page) {
 
 async function turnOnRadar(page: Page) {
   await openMapSettings(page);
+  // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
+  await grabberTo(page, "full");
   await page.getByTestId("weather-loop").click();
   await page.getByTestId("weather-loop-radar").click();
   await expect(page.getByTestId("weather-loop-speed")).toBeVisible();
@@ -85,6 +87,7 @@ test("the radar loop is turned on from the Map menu, plays once loaded, and scru
 
   // Off again from the menu: the bar goes.
   await openMapSettings(page);
+  await grabberTo(page, "full");
   await page.getByTestId("weather-loop").click();
   await page.getByTestId("weather-loop-off").click();
   await page.keyboard.press("Escape");

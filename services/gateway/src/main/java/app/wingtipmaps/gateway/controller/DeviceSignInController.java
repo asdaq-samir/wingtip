@@ -1,7 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.domain.Pilot;
-import app.wingtipmaps.gateway.dto.ErrorResponse;
 import app.wingtipmaps.gateway.security.MagicLinkAuthenticationToken;
 import app.wingtipmaps.gateway.security.SessionSignIn;
 import app.wingtipmaps.gateway.security.SignInLanding;
@@ -33,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -146,8 +146,9 @@ public class DeviceSignInController {
     public ResponseEntity<?> start(HttpServletRequest request) {
         Instant now = clock.instant();
         if (!starts.allow("client:" + SlidingWindowLimiter.clientOf(request), 20, now)) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(new ErrorResponse("Too many codes asked for. Wait a few minutes."));
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.TOO_MANY_REQUESTS, "Too many codes asked for. Wait a few minutes."))
+                    .build();
         }
         forgetExpired(now);
         byte[] secret = new byte[32];
@@ -183,8 +184,9 @@ public class DeviceSignInController {
             @Valid @RequestBody Approval body, HttpServletRequest request, Authentication authentication) {
         Optional<Pilot> pilot = pilots.current(authentication);
         if (pilot.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponse("Sign in on this phone first."));
+            return ResponseEntity.of(
+                            ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Sign in on this phone first."))
+                    .build();
         }
         Instant now = clock.instant();
         // A pilot account costs an email address, so ten tries each is no
@@ -194,8 +196,9 @@ public class DeviceSignInController {
         if (!approvals.allow("pilot:" + pilot.get().getEmail(), TRIES_PER_PILOT, now)
                 || !approvals.allow("client:" + SlidingWindowLimiter.clientOf(request), TRIES_PER_PLACE, now)
                 || !approvals.allow("all", TRIES_IN_ALL, now)) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(new ErrorResponse("Too many tries. Wait a few minutes."));
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.TOO_MANY_REQUESTS, "Too many tries. Wait a few minutes."))
+                    .build();
         }
         String typed = body.userCode().toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
         String hash = byUser.get(typed);
@@ -213,8 +216,10 @@ public class DeviceSignInController {
             });
         }
         if (!approved.get()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse("No TV is showing that code now. Check it, or ask the TV for a new one."));
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.NOT_FOUND,
+                            "No TV is showing that code now. Check it, or ask the TV for a new one."))
+                    .build();
         }
         return ResponseEntity.noContent().build();
     }
@@ -242,8 +247,9 @@ public class DeviceSignInController {
         Instant now = clock.instant();
         if (pending == null || pending.expiresAt.isBefore(now)) {
             forget(hash);
-            return ResponseEntity.status(HttpStatus.GONE)
-                    .body(new ErrorResponse("This code has run out. Ask for a new one."));
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.GONE, "This code has run out. Ask for a new one."))
+                    .build();
         }
         String approvedEmail = pending.approvedEmail.get();
         if (approvedEmail == null) {
@@ -251,8 +257,9 @@ public class DeviceSignInController {
         }
         // Spent before the sign-in, so two asks at once cannot both sign in.
         if (byDevice.remove(hash) == null) {
-            return ResponseEntity.status(HttpStatus.GONE)
-                    .body(new ErrorResponse("This code has run out. Ask for a new one."));
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.GONE, "This code has run out. Ask for a new one."))
+                    .build();
         }
         byUser.remove(pending.userCode);
         Pilot pilot = pilots.fromVerifiedEmail(approvedEmail);

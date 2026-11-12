@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { firstRow, grabberTo, openBrief, panelTabs, settle, settled, sideDrawer } from "./helpers";
+import { firstRow, frontSheet, grabberTo, openBrief, panelTabs, settle, settled, sideDrawer } from "./helpers";
 
 /**
  * The map's panel is Base UI's stock Drawer on a phone (MapPanel): a
@@ -44,7 +44,10 @@ test("the panel follows a finger from its grabber out to the top, and down from 
   // The Brief's pages, half way as it opens: its tabs' bar and a page.
   await openBrief(page);
   const panel = sideDrawer(page);
-  await expect(panel).toHaveAttribute("data-panel", "half");
+  // The Brief is a card, the stock Drawer's nested drawer over the sheet
+  // (CardStack): its own size is its drawer's, the sheet's under it.
+  const brief = frontSheet(page);
+  await expect(brief).toHaveAttribute("data-panel", "half");
   const middleOf = async (locator: Locator) => {
     const box = (await locator.boundingBox())!;
     return { x: box.x + box.width / 2, y: box.y + Math.min(box.height / 2, 120) };
@@ -53,14 +56,19 @@ test("the panel follows a finger from its grabber out to the top, and down from 
   // Up from half by the grabber: the sheet comes all the way out. (A drag
   // up on a list in the body scrolls the list, the stock Drawer's rule.)
   await fingerDrag(page, await onGrabber(page), -400);
-  await expect(panel).toHaveAttribute("data-panel", "full");
+  await expect(brief).toHaveAttribute("data-panel", "full");
   await expect(panel.getByTestId("brief-glance")).toBeVisible();
   await expect(panelTabs(page)).toHaveCount(0);
 
   // A page of the Brief's, long enough to scroll: Preflight, by its card.
   await panel.getByTestId("brief-glance-preflight").click();
-  const tab = page.getByTestId("brief-scroller");
-  await expect(tab).toBeVisible();
+  await expect(page.getByTestId("brief-scroller")).toBeVisible();
+  // The card's own drawer scrolls it (CardStack's data-sheet-scroll, the
+  // one scroller a card has), not the page's box.
+  const tab = page
+    .locator("[data-sheet-scroll]")
+    .filter({ has: page.getByTestId("brief-scroller") })
+    .last();
   const middle = () => middleOf(tab);
 
   // Scrolled down, a drag down scrolls it back rather than taking the
@@ -70,14 +78,14 @@ test("the panel follows a finger from its grabber out to the top, and down from 
     el.scrollTop = 300;
   });
   await fingerDrag(page, await middle(), 120);
-  await expect(panel).toHaveAttribute("data-panel", "full");
+  await expect(brief).toHaveAttribute("data-panel", "full");
 
   // At its start, a drag down takes the sheet down, half way.
   await tab.evaluate((el) => {
     el.scrollTop = 0;
   });
   await fingerDrag(page, await middle(), 400);
-  await expect(panel).toHaveAttribute("data-panel", "half");
+  await expect(brief).toHaveAttribute("data-panel", "half");
 
   // And a mouse on the body leaves the sheet where it is: a drag across
   // it selects its words.
@@ -87,7 +95,7 @@ test("the panel follows a finger from its grabber out to the top, and down from 
   await page.mouse.down();
   await page.mouse.move(at.x, at.y - 200, { steps: 10 });
   await page.mouse.up();
-  await expect(panel).toHaveAttribute("data-panel", "full");
+  await expect(brief).toHaveAttribute("data-panel", "full");
 });
 
 test("a drag held still before it is let go sets the sheet down where it is, not on past it", async ({ page }) => {

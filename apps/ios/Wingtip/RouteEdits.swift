@@ -120,18 +120,16 @@ struct RouteExtras: Equatable, Sendable {
     /// written again only where one is flown direct, "KELD:I22::BXCMB"
     /// (PlanQuery.procedures: the fix after a fourth colon). Thrown where
     /// the engine cannot write a hold or a procedure.
-    func query(procedures: [ProcedurePick], rules: FlightRules = .saved()) throws -> [String: String?] {
-        var query: [String: String?] = [:]
-        if let altitudes = Self.pairs(altitudes) { query["altitudes"] = altitudes }
-        if let crossings = Self.pairs(crossings) { query["crossings"] = crossings }
+    func apply(to query: inout NavLogQuery, procedures: [ProcedurePick], rules: FlightRules = .saved()) throws {
+        if let altitudes = Self.pairs(altitudes) { query.altitudes = altitudes }
+        if let crossings = Self.pairs(crossings) { query.crossings = crossings }
         let started = starts.filter { altitudes[$0] != nil }.sorted()
-        if !started.isEmpty { query["altitude_starts"] = started.joined(separator: ",") }
-        if !holds.isEmpty { query["holds"] = try holds.map { try $0.text() }.joined(separator: ",") }
+        if !started.isEmpty { query.altitudeStarts = started.joined(separator: ",") }
+        if !holds.isEmpty { query.holds = try holds.map { try $0.text() }.joined(separator: ",") }
         if !procedureDirect.isEmpty, !procedures.isEmpty {
-            query["procedures"] = try ProcedurePick.text(procedures, direct: procedureDirect)
+            query.procedures = try ProcedurePick.text(procedures, direct: procedureDirect)
         }
-        if let alternate = filedAlternate(rules: rules) { query["alternate"] = alternate }
-        return query
+        if let alternate = filedAlternate(rules: rules) { query.alternate = alternate }
     }
 
     /// Where the airplane is, as a route's point (the web app's

@@ -17,7 +17,10 @@ test("a link opens a screen by its name, and the word leaves the address", { tag
   await page.goto("/app/plan?open=about");
   await settle(page);
   const sheet = page.getByTestId("console-sheet");
-  await expect(sheet.getByRole("button", { name: "Back to Setup", exact: true })).toBeVisible();
+  // About itself, opened straight from the map: its close goes back to the
+  // map it came from, one level (ConsolePages' direct page).
+  await expect(sheet.getByRole("heading", { name: "About", level: 3 })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Back to the map", exact: true })).toBeVisible();
   await expect(page).not.toHaveURL(/[?&]open=/);
 
   await page.goto("/app/plan?open=nearest");

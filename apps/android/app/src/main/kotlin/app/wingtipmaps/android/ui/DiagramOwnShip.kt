@@ -10,8 +10,6 @@ import androidx.annotation.RequiresExtension
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -30,8 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
@@ -52,6 +47,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipColors
@@ -67,12 +64,14 @@ import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.offline.KeptForAir
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import okhttp3.OkHttpClient
+import me.saket.telephoto.zoomable.ZoomSpec
+import me.saket.telephoto.zoomable.rememberZoomableState
+import me.saket.telephoto.zoomable.zoomable
 import okhttp3.Request
+import okhttp3.coroutines.executeAsync
 import java.io.File
 
 /**
@@ -102,20 +101,14 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
     val flight by InFlight.shared.state.collectAsStateWithLifecycle()
     // The clock, each second, so a fix that stops coming takes the
     // airplane off rather than freezing it.
-    var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(1000)
-            nowMs = System.currentTimeMillis()
-        }
-    }
+    val nowMs by AppClock.ticking()
     // A failed check is said under the page (DiagramPage.note), and the
     // airplane is not drawn on a fix the engine could not judge.
     val fixAsked = DiagramPage.usable(flight.fix, nowMs)
     val fix = fixAsked.getOrNull()
     LaunchedEffect(url) {
         try {
-            page = withContext(Dispatchers.IO) { DiagramPage.read(url, context.cacheDir) }
+            page = DiagramPage.read(url, context.cacheDir)
             if (page == null) problem = "The FAA's diagram for $ident could not be read."
         } catch (e: CancellationException) {
             throw e
@@ -152,28 +145,19 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
     }
 }
 
+/** The page and the airplane on it, zoomed and panned together by
+ *  telephoto's Modifier.zoomable (pinch, double tap, fling, up to eight
+ *  times, as the hand-made zoom allowed). */
 @Composable
 private fun DiagramWithOwnShip(page: DiagramPage, fix: OwnShip.Fix?) {
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    val transform = rememberTransformableState { _, zoom, pan, _ ->
-        scale = (scale * zoom).coerceIn(1f, 8f)
-        offset += pan
-    }
+    val zoom = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 8f))
     val at = fix?.let { page.place(it).getOrNull() }?.takeIf { it.onPage }
-    BoxWithConstraints(Modifier.fillMaxSize().transformable(transform), contentAlignment = Alignment.Center) {
+    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val k = minOf(constraints.maxWidth / page.width, constraints.maxHeight / page.height)
         val density = LocalDensity.current
         val w = with(density) { (page.width * k).toDp() }
         val h = with(density) { (page.height * k).toDp() }
-        Box(
-            Modifier.size(w, h).graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                translationX = offset.x
-                translationY = offset.y
-            },
-        ) {
+        Box(Modifier.size(w, h).zoomable(zoom)) {
             Image(page.image.asImageBitmap(), contentDescription = "Airport diagram", modifier = Modifier.fillMaxSize())
             if (at != null) {
                 val track = fix.trackDeg
@@ -223,8 +207,6 @@ class DiagramPage(
     }
 
     companion object {
-        private val http = OkHttpClient()
-
         /** The fix to draw now, null where it is stale or too coarse: the
          *  engine's `diagram_fix_usable` (AC 120-76D 11.17.2.3, three
          *  seconds; 11.17.2.4, 30 m). */
@@ -252,7 +234,9 @@ class DiagramPage(
          *  its first page drawn three times its size, and its labels placed:
          *  their words by the engine, where each is drawn by Android's
          *  PDF text, the fit by the engine. */
-        fun read(url: String, cache: File): DiagramPage? {
+        suspend fun read(url: String, cache: File): DiagramPage? = withContext(Dispatchers.IO) { render(url, cache) }
+
+        private suspend fun render(url: String, cache: File): DiagramPage? {
             // The one Keep for the Air kept (KeptForAir) first, so it opens
             // with no signal; else the cache's, fetched where it is not.
             val file = KeptForAir.current?.pdf(KeptForAir.AIRPORTS, url)?.takeIf { it.isFile } ?: File(cache, "diagram-${url.hashCode()}.pdf")
@@ -272,9 +256,10 @@ class DiagramPage(
             }
         }
 
-        /** The diagram's PDF from the FAA into `file`, whole or not at all. */
-        fun download(url: String, file: File) {
-            http.newCall(Request.Builder().url(url).build()).execute().use { response ->
+        /** The diagram's PDF from the FAA into `file`, whole or not at all,
+         *  through the app's one OkHttp client (its cache and limits). */
+        suspend fun download(url: String, file: File) {
+            Gateway.client.newCall(Request.Builder().url(url).build()).executeAsync().use { response ->
                 if (!response.isSuccessful) throw IllegalStateException("The FAA answered ${response.code}.")
                 file.parentFile?.mkdirs()
                 val part = File(file.path + ".part")

@@ -9,6 +9,9 @@ import { consoleSheet, noTips, openConsole, settle, showTabs } from "./helpers";
  * their deeper homes open. Signed out here: the checklists, the drills and
  * the assistant need no account; the Coach does, and says so.
  */
+// Signed out, as the comment above says: the suite's session is the
+// developer's, under which the Coach is open.
+test.use({ storageState: { cookies: [], origins: [] } });
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(noTips);
 });

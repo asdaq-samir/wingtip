@@ -6,6 +6,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.api.name
@@ -164,7 +165,7 @@ class Traffic private constructor(private val context: Context, private val tick
         val own = ownShipHex(heard.map { it.copy(seenS = (it.seenS ?: 0.0) + age) }, fix)
         internet = heard.filter { it.hex != own.getOrNull() }
         _source.value = answer.source
-        _heardAtMs.value = System.currentTimeMillis() - (age * 1000).toLong()
+        _heardAtMs.value = AppClock.nowMs() - (age * 1000).toLong()
         publish(fix, tell = true, ownProblem = fresh.exceptionOrNull() ?: own.exceptionOrNull())
     }
 
@@ -174,7 +175,7 @@ class Traffic private constructor(private val context: Context, private val tick
      *  age now; the screen dates every airplane from heardAtMs, the
      *  internet answer's time, so it is given against that time instead. */
     private fun publish(fix: OwnShip.Fix?, tell: Boolean, ownProblem: Throwable? = null) {
-        val nowMs = System.currentTimeMillis()
+        val nowMs = AppClock.nowMs()
         if (internet.isEmpty()) _heardAtMs.value = nowMs
         val since = (nowMs - (_heardAtMs.value ?: nowMs)) / 1000.0
         val relayed = internet.toHashSet()

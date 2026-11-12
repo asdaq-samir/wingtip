@@ -1,25 +1,34 @@
+import Nuke
+import NukeUI
 import SwiftUI
 import UIKit
 
-/// The planner's pictures kept for the session, so a card opened again,
-/// or the full-screen view of a thumbnail, does not ask a second time.
+/// The planner's pictures, through Nuke's pipeline: decoded off the main
+/// thread, kept in its memory cache for the session (a card opened again,
+/// or the full-screen view of a thumbnail, does not ask a second time) and
+/// on disk in the gateway's URLCache as the planner's Cache-Control says,
+/// each asked by KeptPictureLoader.
 enum PictureCache {
-    // NSCache is thread-safe (Apple's documentation: its objects may be
-    // added, removed and read from any thread without locking), and
-    // UIImage is immutable, so one shared cache read from any task is safe.
-    private nonisolated(unsafe) static let kept = NSCache<NSString, UIImage>()
+    static let pipeline = ImagePipeline {
+        $0.dataLoader = KeptPictureLoader()
+    }
 
+    /// A picture by the planner's path for it (Planner.address(of:)).
     static func image(_ path: String) async throws -> UIImage {
-        if let image = kept.object(forKey: path as NSString) { return image }
-        let data: Data
-        do { data = try await Planner.picture(path) } catch {
-            // A plate's page or a diagram Keep for the Air kept, with no signal.
-            guard KeptForAir.fallsBack(error), let onPhone = KeptForAir.picture(path) else { throw error }
-            data = onPhone
+        do {
+            return try await pipeline.image(for: Planner.address(of: path))
+        } catch {
+            throw error.cause
         }
-        guard let image = UIImage(data: data) else { throw Planner.Failure(status: 200, detail: "The picture could not be read.") }
-        kept.setObject(image, forKey: path as NSString)
-        return image
+    }
+
+    /// A picture's bytes as sent: what Keep for the Air keeps.
+    static func data(_ path: String) async throws -> Data {
+        do {
+            return try await pipeline.data(for: ImageRequest(url: Planner.address(of: path))).0
+        } catch {
+            throw error.cause
+        }
     }
 
     /// Several, in their order: a chart's few pages one after another.
@@ -30,32 +39,73 @@ enum PictureCache {
     }
 }
 
+extension ImagePipeline.Error {
+    /// The loader's own error (the planner's refusal, no connection), or
+    /// the picture could not be read.
+    var cause: any Error {
+        if case .dataLoadingFailed(let error) = self { return error }
+        return Planner.Failure(status: 200, detail: "The picture could not be read.")
+    }
+}
+
+/// Nuke's loader of the planner's pictures: through the gateway's session,
+/// so with the pilot's cookie and its cache, refused in the planner's own
+/// words; and with no signal, the picture Keep for the Air kept (a plate's
+/// page, a diagram), as its own answer.
+final class KeptPictureLoader: DataLoading {
+    func loadData(with request: URLRequest, didReceiveData: @escaping @Sendable (Data, URLResponse) -> Void,
+                  completion: @escaping @Sendable ((any Error)?) -> Void) -> any Cancellable {
+        var request = request
+        request.setValue("image/*", forHTTPHeaderField: "Accept")
+        let asked = request
+        return Loading(task: Task {
+            do {
+                let (data, response) = try await Gateway.session.data(for: asked)
+                let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                guard (200..<300).contains(status) else {
+                    Log.planner.error("\(asked.url?.path ?? "", privacy: .public) answered \(status)")
+                    throw Planner.Failure(status: status, detail: Planner.detail(of: data))
+                }
+                didReceiveData(data, response)
+                completion(nil)
+            } catch {
+                guard KeptForAir.fallsBack(error), let url = asked.url, let kept = KeptForAir.picture(url.absoluteString) else {
+                    completion(error)
+                    return
+                }
+                didReceiveData(kept, URLResponse(url: url, mimeType: nil, expectedContentLength: kept.count, textEncodingName: nil))
+                completion(nil)
+            }
+        })
+    }
+
+    private struct Loading: Cancellable {
+        let task: Task<Void, Never>
+        func cancel() { task.cancel() }
+    }
+}
+
 /// A picture of the planner's in a box, filled, a placeholder while it
-/// comes and a glyph where it could not be had.
+/// comes and a glyph where it could not be had: Nuke's LazyImage.
 struct RemotePicture: View {
     let path: String
     var fit = false
-    @State private var image: UIImage?
-    @State private var failed = false
 
     var body: some View {
-        ZStack {
-            if let image {
+        LazyImage(url: Planner.address(of: path)) { state in
+            if let image = state.image {
                 if fit {
-                    Image(uiImage: image).resizable().scaledToFit()
+                    image.resizable().scaledToFit()
                 } else {
-                    Image(uiImage: image).resizable().scaledToFill()
+                    image.resizable().scaledToFill()
                 }
-            } else if failed {
+            } else if state.error != nil {
                 Image(systemName: "photo").font(.title2).foregroundStyle(.secondary)
             } else {
                 ProgressView()
             }
         }
-        .task(id: path) {
-            failed = false
-            do { image = try await PictureCache.image(path) } catch { image = nil; failed = true }
-        }
+        .pipeline(PictureCache.pipeline)
     }
 }
 

@@ -236,7 +236,7 @@ class InstructorFlowTest {
         assertThatThrownBy(() -> instructors.sign(p[1], p[0], changed, NOW))
                 .isInstanceOfSatisfying(
                         InstructorRefusedException.class,
-                        r -> assertThat(r.status).isEqualTo(HttpStatus.CONFLICT));
+                        r -> assertThat(r.getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
     }
 
     /** 61.197(a) and (e): the privileges end with the date, but the app

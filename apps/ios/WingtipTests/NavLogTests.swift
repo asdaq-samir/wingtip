@@ -38,7 +38,7 @@ struct NavLogTests {
 
     @Test func theCourseLineBecomesCoordinates() throws {
         let json = #"{"departure":{"ident":"C81","name":"Campbell","lat":42.32,"lon":-88.07},"destination":{"ident":"KDLH","name":"Duluth","lat":46.84,"lon":-92.19},"distance_nm":323.5,"bearing_deg":325.0,"course_line":[[42.32,-88.07],[44.5,-90.0],[46.84,-92.19]],"chart_cycle":"09-03-2026","chart_layers":[],"min_zoom":5,"max_zoom":12}"#
-        let course = try Planner.snakeCase.decode(Course.self, from: Data(json.utf8))
+        let course = try Planner.json.decode(Course.self, from: Data(json.utf8))
         #expect(course.coordinates.count == 3 && course.coordinates[1].latitude == 44.5 && (course.stops ?? []).isEmpty)
     }
 
@@ -77,7 +77,7 @@ struct RouteEditTests {
 struct KeptTests {
     @Test func aPlanKeptComesBackAsItWas() throws {
         let file = FileManager.default.temporaryDirectory.appending(path: "kept-\(UUID().uuidString).json")
-        let course = try Planner.snakeCase.decode(Course.self, from: Data(#"{"departure":{"ident":"C81","name":"Campbell","lat":42.32,"lon":-88.07},"destination":{"ident":"KDLH","name":"Duluth","lat":46.84,"lon":-92.19},"distance_nm":323.5,"bearing_deg":325.0,"course_line":[[42.32,-88.07],[46.84,-92.19]],"chart_cycle":"09-03-2026","chart_layers":[],"min_zoom":5,"max_zoom":12}"#.utf8))
+        let course = try Planner.json.decode(Course.self, from: Data(#"{"departure":{"ident":"C81","name":"Campbell","lat":42.32,"lon":-88.07},"destination":{"ident":"KDLH","name":"Duluth","lat":46.84,"lon":-92.19},"distance_nm":323.5,"bearing_deg":325.0,"course_line":[[42.32,-88.07],[46.84,-92.19]],"chart_cycle":"09-03-2026","chart_layers":[],"min_zoom":5,"max_zoom":12}"#.utf8))
         let kept = Kept(dep: "C81", dest: "KDLH", stops: [], aircraft: "c172", course: course, totals: Totals.preview(distanceNm: 323.5, eteMin: 165), plannedAt: Date(timeIntervalSince1970: 1_800_000_000))
         kept.save(to: file)
         #expect(Kept.load(from: file) == kept)

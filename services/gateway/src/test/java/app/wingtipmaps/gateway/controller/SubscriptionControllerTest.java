@@ -88,7 +88,7 @@ class SubscriptionControllerTest {
                 .andExpect(jsonPath("$.until").value("2026-11-10T12:00:00Z"));
         mockMvc.perform(post("/api/subscription/trial").with(oidcLogin()).with(csrf()))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("Your free month has already been used."));
+                .andExpect(jsonPath("$.detail").value("Your free month has already been used."));
     }
 
     @Test

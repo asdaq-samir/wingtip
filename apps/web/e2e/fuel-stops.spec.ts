@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { inSheet, mapStill, openPanel, settle, sideDrawer, slow } from "./helpers";
 import { drawnMarks } from "./marks";
+import { noCheckpoints } from "./startState";
 
 /** KRPD's pin on the map's canvas, as its probe says (FuelStopsGl). */
 const pinned = async (page: Page) => (await drawnMarks(page, "fuel-stops")).filter((m) => m.title === "Suggested fuel stop KRPD").length;
@@ -138,6 +139,11 @@ const SERVICES = {
 // The owner's pick of the trip-stops canvas ("Ok do it", 2026-10-22): the
 // stop's card a tap on it, with its figures.
 test("a suggested stop's pin opens its card with its figures", async ({ page }) => {
+  // The route's checkpoints off, as a pilot has them at first: drawn on the
+  // map's canvas now, the route's marks take a tap before a stop's pin
+  // (useGlSymbols' ranks, TAP.rank.field), and one sat beside KRPD's
+  // ("River near Hunter" took the tap).
+  await noCheckpoints(page);
   await suggested(page);
   await page.route(
     (url) => url.pathname.endsWith("/airport/KRPD/services"),
@@ -170,10 +176,11 @@ test("the airport's Info says its fuel in its details, and what is on the field 
   await page.goto("/app/plan?place=KRPD");
   const card = page.getByTestId("place-card");
   await expect(card).toBeVisible({ timeout: slow(30_000) });
-  // Fuel first in On the field (the owner, 2026-11-11), its remarks folded under it.
+  // Fuel first in On the field (the owner, 2026-11-11), its remarks in
+  // words under it in sight and only the remarks as sent folded (e1c0cd7dd).
   const services = card.getByTestId("place-services");
   await expect(services.getByTestId("services-fuel")).toContainText("100LL, Jet A");
-  await expect(services).not.toContainText("24 hours self service fuel");
+  await expect(services).not.toContainText("24 HR SELF SVC FUEL");
   await inSheet(page, services.getByTestId("services-fuel"));
   // In words under Fuel, in sight (the owner, 2026-11-11: "Decode fuel
   // remarks too"), as sent under As Written, as the card's Lights.
@@ -181,6 +188,12 @@ test("the airport's Info says its fuel in its details, and what is on the field 
   await expect(services.getByTestId("services-fuel-raw")).toBeHidden();
   await services.getByTestId("services-fuel-sent").click();
   await expect(services.getByTestId("services-fuel-raw")).toHaveText("24 HR SELF SVC FUEL AVBL WITH CREDIT CARD.");
+  // The rest of On the field under its title, its first three rows Fuel,
+  // its remarks and As Written (FirstFew; 263bd810d gave the remarks a row).
+  await expect(services.getByTestId("services-courtesy-car")).toHaveCount(0);
+  const onTheField = services.getByRole("button", { name: /^On the field/ });
+  await inSheet(page, onTheField);
+  await onTheField.click();
   await expect(services.getByTestId("services-courtesy-car")).toBeVisible();
   await expect(services.getByTestId("services-food")).toContainText(/Runway Diner.*4 min walk/);
   await expect(services.getByTestId("services-food")).toHaveAttribute("href", "tel:+17155550100");

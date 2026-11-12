@@ -1,7 +1,8 @@
 package app.wingtipmaps.gateway.security.mcp;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -27,13 +28,24 @@ public class ConnectorSettings {
     private final String signingKey;
     private final String internalToken;
 
+    @Autowired
+    public ConnectorSettings(AppProperties app) {
+        this(
+                app.mcp().enabled(),
+                app.publicBaseUrl(),
+                app.mcp().resource(),
+                app.mcp().redirectUris(),
+                app.mcp().signingKey(),
+                app.mcp().internalToken());
+    }
+
     public ConnectorSettings(
-            @Value("${app.mcp.enabled:false}") boolean enabled,
-            @Value("${app.public-base-url:}") String publicBaseUrl,
-            @Value("${app.mcp.resource:}") String resource,
-            @Value("${app.mcp.redirect-uris:}") List<String> redirectUris,
-            @Value("${app.mcp.signing-key:}") String signingKey,
-            @Value("${app.mcp.internal-token:}") String internalToken) {
+            boolean enabled,
+            String publicBaseUrl,
+            String resource,
+            List<String> redirectUris,
+            String signingKey,
+            String internalToken) {
         // The issuer is the address pilots reach this app at, with no
         // trailing slash: RFC 8414's issuer is compared as a string, and
         // the planner checks a token's iss against it. Locally, without a

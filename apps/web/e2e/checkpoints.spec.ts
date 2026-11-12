@@ -39,7 +39,10 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
   await expect.poll(async () => table.locator('[role="row"][data-kind]').count(), { timeout: slow(15000) }).toBeGreaterThan(4);
   // And the legs: their tops of climb and descent are rows of their own,
   // put in as the legs arrive, and a row counted before them moves.
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  // FPL's figure strip has its fuel once they are in, under the Nav Log's
+  // card now (95f9e953b: a card of its own over FPL), so in the page, not
+  // in sight.
+  await expect(page.getByTestId("navlog-fuel")).toBeAttached({ timeout: slow(120000) });
   const selectedRow = table.locator('[role="row"][data-selected]');
   await expect(selectedRow).toHaveCount(0);
 

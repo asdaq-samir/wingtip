@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.ui
 
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -138,7 +139,7 @@ object FieldNotams {
      * end "(est.)", PERM "Permanent" (JO 7930.2 4-2-1). The times are the
      * planner's, else the NOTAM's own as the engine reads them.
      */
-    fun timeLines(n: RankedNotam, read: EngineContract.NotamReadAnswer?, now: Instant = Instant.now(), zone: ZoneId = ZoneId.systemDefault()): List<TimeLine> {
+    fun timeLines(n: RankedNotam, read: EngineContract.NotamReadAnswer?, now: Instant = AppClock.javaNow(), zone: ZoneId = ZoneId.systemDefault()): List<TimeLine> {
         val starts = instantOf(n.starts ?: read?.starts)
         val ends = instantOf(n.ends ?: read?.ends)
         val active = active(n)

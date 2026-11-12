@@ -179,6 +179,9 @@ test("the route's Profile, AI brief and ••• stay on the airplane and altit
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
+  // A route's link opens at rest, the pill (layout.spec): the route's
+  // line all the way up, where its buttons are.
+  await controlsInSight(page);
   for (const root of ["17.88px", "19.65px"]) {
     await page.evaluate((size) => {
       document.documentElement.style.fontSize = size;

@@ -37,7 +37,7 @@ struct AirplaneCard: View {
             Section {
                 VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                     Text(detail?.description.map(FlightWords.nameCase) ?? detail?.type ?? plane?.type ?? name).font(.title3.weight(.semibold))
-                    if let op = detail?.operator { Text(FlightWords.nameCase(op)).foregroundStyle(.secondary) }
+                    if let op = detail?.operatorName { Text(FlightWords.nameCase(op)).foregroundStyle(.secondary) }
                 }
                 HStack(spacing: WingtipSpace.md) {
                     Button { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } } label: {
@@ -95,7 +95,7 @@ struct AirplaneCard: View {
             }
             Section("Airplane") {
                 if let model = detail?.description { LabeledContent("Model", value: FlightWords.nameCase(model)) }
-                if let op = detail?.operator { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
+                if let op = detail?.operatorName { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
                 LabeledContent("Registration") { RegistrationText(detail?.registration ?? plane?.registration) }
                 LabeledContent("Type", value: [detail?.type ?? plane?.type, detail?.year].compactMap { $0 }.joined(separator: " · ").nonEmpty ?? "—")
                 LabeledContent("ICAO address", value: hex.uppercased())
@@ -336,7 +336,7 @@ private enum PreviewData {
     static let plane = TrafficAircraft(altitudeFt: 4500, callsign: "N3429J", hex: "a8c2e1", lat: 46.84, lon: -92.19, registration: "N3429J",
                                        speedKt: 112, squawk: "1200", trackDeg: 215, type: "P28A", verticalFpm: 0)
     static let faa = FAARecord(airworthiness: "Standard", airworthinessDate: "1998-04-02", city: "Duluth", engine: "Lycoming O-320", engineType: "Reciprocating", expires: "2028-06-30", horsepower: 150, manufacturer: "Piper", model: "PA-28-140", nNumber: "N3429J", owner: "Lake Superior Flying Club", ownerType: "Corporation", seats: 4, standing: "current", state: "MN", status: "Valid", year: 1968)
-    static let detail = FlightDetail(departed: FlightDeparted(at: 1_762_180_000, ident: "KDLH", name: "Duluth Intl"), description: "PIPER PA-28-140", faa: faa, hex: "a8c2e1", operator: "LAKE SUPERIOR FLYING CLUB", registration: "N3429J", type: "P28A", year: "1968")
+    static let detail = FlightDetail(departed: FlightDeparted(at: 1_762_180_000, ident: "KDLH", name: "Duluth Intl"), description: "PIPER PA-28-140", faa: faa, hex: "a8c2e1", operatorName: "LAKE SUPERIOR FLYING CLUB", registration: "N3429J", type: "P28A", year: "1968")
     static let route = FlightRoute(airports: [RouteAirport(ident: "KDLH", location: "Duluth", name: "Duluth Intl"),
                                               RouteAirport(ident: "KBRD", location: "Brainerd", name: "Brainerd Lakes Rgnl")], plausible: true)
     static let flight = PastFlightSummary(destination: PastFlightField(city: "Brainerd", ident: "KBRD", name: "Brainerd Lakes Rgnl", region: "US-MN"), id: 1, inAir: false, landed: true, maxAltFt: 5500, off: 1_762_000_000, on: 1_762_003_120, origin: PastFlightField(city: "Duluth", ident: "KDLH", name: "Duluth Intl", region: "US-MN"))

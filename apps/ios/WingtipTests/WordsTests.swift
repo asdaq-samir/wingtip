@@ -84,7 +84,7 @@ struct WordsTests {
     /// again on the phone.
     @Test func thePlannersAnswerReads() throws {
         let json = #"{"sentences":[{"text":"KMSN is VFR.","sources":["metar:KMSN"]},{"text":"Made up.","sources":["metar:KXYZ"]}],"sources":[{"id":"metar:KMSN","label":"KMSN METAR, VFR","text":"KMSN 031853Z ..."}],"model":"claude-haiku-5-5","unavailable":null}"#
-        let words = try Planner.snakeCase.decode(Words.self, from: Data(json.utf8))
+        let words = try Planner.json.decode(Words.self, from: Data(json.utf8))
         #expect(words.model == "claude-haiku-5-5" && words.unavailable == nil)
         let checked = Words.checked(words.sentences, sources: words.sources, model: words.model)
         #expect(checked.sentences.count == 1)
@@ -93,8 +93,8 @@ struct WordsTests {
     /// The figures the phone assembles carry the planner's ids, so a chip
     /// means the same whichever model wrote the sentence.
     @Test func theBriefingsFiguresCarryThePlannersIds() throws {
-        var briefing = Briefing(airports: [:], forecast: Forecast(minCeilingFt: nil, minVisibilitySm: nil, stations: []), hazards: [], metars: [:], weatherUnavailable: [])
-        briefing.metars = ["KMSN": Metar(flightCategory: "VFR", raw: "KMSN 031853Z 27008KT 10SM FEW045 12/03 A3012"), "KDLH": nil]
+        var briefing = Briefing(airports: .init(), forecast: Forecast(minCeilingFt: nil, minVisibilitySm: nil, stations: []), hazards: [], metars: .init(), weatherUnavailable: [])
+        briefing.metars.additionalProperties = ["KMSN": Metar(flightCategory: "VFR", raw: "KMSN 031853Z 27008KT 10SM FEW045 12/03 A3012"), "KDLH": nil]
         briefing.hazards = [Hazard(hazard: "CONVECTIVE", raw: "WSUS31 ...", type: "SIGMET")]
         briefing.gairmets = [GAirmet(altitudeHighFt: -1, dueTo: "clouds", hazard: "IFR", severity: nil)]
         briefing.tfrs = [RouteTfr(activeNow: false, alongTrackNm: 12, crosses: true, notamId: "6/1234", title: "Stadium")]
@@ -109,7 +109,7 @@ struct WordsTests {
     }
 
     @Test func theGoNoGosFiguresCarryThePlannersIds() throws {
-        let answer = try Planner.snakeCase.decode(GoNoGoAnswer.self, from: Data(GoNoGoTests.answer.utf8))
+        let answer = try Planner.json.decode(GoNoGoAnswer.self, from: Data(GoNoGoTests.answer.utf8))
         let ids = WordsFigures.risk(answer).map(\.id)
         #expect(ids.first == "verdict:line")
         #expect(ids.contains("finding:fuel") && ids.contains("risk:line") && ids.contains("risk:stress"))
@@ -120,7 +120,7 @@ struct WordsTests {
     /// POST /api/words/risk's body in the planner's snake case, the
     /// verdict as the document's RiskVerdict has it.
     @Test func theRiskAskEncodesForThePlanner() throws {
-        let answer = try Planner.snakeCase.decode(GoNoGoAnswer.self, from: Data(GoNoGoTests.answer.utf8))
+        let answer = try Planner.json.decode(GoNoGoAnswer.self, from: Data(GoNoGoTests.answer.utf8))
         let ask = try WordsAsk(kind: .risk, body: RiskWordsAsk(answer, pilot: ["personal minimums": "Ceiling: 2,000 ft"]), figures: WordsFigures.risk(answer))
         let body = try #require(JSONSerialization.jsonObject(with: ask.body) as? [String: Any])
         let verdict = try #require(body["verdict"] as? [String: Any])

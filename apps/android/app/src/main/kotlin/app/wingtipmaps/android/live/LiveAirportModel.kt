@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.generated.AirportRvr
 import app.wingtipmaps.android.api.generated.DigitalAtis
 import app.wingtipmaps.android.engine.generated.EngineContract
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * The airport card's live reports (the web's LiveAirportRows and
@@ -23,13 +25,11 @@ import kotlinx.coroutines.launch
  * RVR is made each minute (AIM 7-1-13). A report that fails says
  * nothing: the field may have none, and the card's METAR stands.
  */
-class LiveAirportModel(
-    private val source: LiveSource = PlannerLive,
-    private val rules: LiveRules = EngineLive,
+@HiltViewModel
+class LiveAirportModel @Inject constructor(
+    private val source: LiveSource,
+    private val rules: LiveRules,
 ) : ViewModel() {
-    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
-    // constructor once the sources and seams it is given are injectable
-    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     /** One broadcast as its group shows it. */
     data class Broadcast(val title: String, val glance: String?, val rows: List<LiveRow>, val text: String)
 

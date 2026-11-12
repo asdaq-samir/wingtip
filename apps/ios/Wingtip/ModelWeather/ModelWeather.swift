@@ -187,7 +187,7 @@ final class ModelWeather {
     private func fetchForever() async {
         while !Task.isCancelled {
             do {
-                let answer = try await Planner.fetch(APIFlowLayer.self, "/api/weather/flow")
+                let answer = try await Planner.call { try await $0.flowLayer().ok.body.json }
                 layer = answer
                 failed = false
                 paint()
@@ -202,11 +202,13 @@ final class ModelWeather {
 
     /// A frame's picture of a file as values, fetched once at its version.
     func grid(_ frame: APIFlowFrame, _ file: String) async -> FlowGrid? {
-        guard let layer, frame.fields.contains(file), let spec = layer.fields[String(file.split(separator: "-")[0])] else { return nil }
-        let version = frame.versions?[file]
+        guard let layer, frame.fields.contains(file), let spec = layer.fields.additionalProperties[String(file.split(separator: "-")[0])] else { return nil }
+        let version = frame.versions?.additionalProperties[file]
         let key = "\(frame.id)/\(file)/\(version ?? "")"
         if let kept = grids[key] { return kept }
-        guard let data = try? await Planner.data(for: Planner.get("/api/weather/flow/\(frame.id)/\(file).png", ["v": version])) else { return nil }
+        guard let data = try? await Planner.call(.usual, {
+            try await Data(collecting: $0.flowPicture(path: .init(frame: frame.id, field: String(file)), query: .init(v: version)).ok.body.png, upTo: 32 << 20)
+        }) else { return nil }
         let bounds = file == "world" ? (layer.worldBounds ?? layer.bounds) : layer.bounds
         let grid = await Task.detached { FlowGrid.decode(png: data, field: spec, bounds: bounds) }.value
         if let grid {
@@ -221,7 +223,7 @@ final class ModelWeather {
     /// reading kept up with it, and the next hour fetched ahead.
     private func paint() {
         guard field != .off, let frame, let look = FlowLooks.look(field) else { painted = nil; return }
-        let file = self.file, key = "\(frame.id)/\(file)/\(frame.versions?[file] ?? "")/\(field.rawValue)"
+        let file = self.file, key = "\(frame.id)/\(file)/\(frame.versions?.additionalProperties[file] ?? "")/\(field.rawValue)"
         askAirmets(frame)
         painting?.cancel()
         guard radarTiles == nil else { painted = nil; read(); return }
@@ -244,10 +246,10 @@ final class ModelWeather {
         airmetsAt = at
         let box = Self.conus
         Task {
-            let map = try? await Planner.fetch(APIWeatherMap.self, "/api/weather/map", [
-                "south": String(box.south), "west": String(box.west), "north": String(box.north), "east": String(box.east),
-                "at": String(Int(at)),
-            ])
+            let map = try? await Planner.call {
+                try await $0.weatherOnTheMap(query: .init(south: box.south, west: box.west, north: box.north, east: box.east, at: at.rounded(.towardZero)))
+                    .ok.body.json
+            }
             guard airmetsAt == at else { return }
             airmets = (map?.advisories ?? []).filter { $0.kind == "gairmet" }
         }
@@ -264,7 +266,7 @@ final class ModelWeather {
     private func read() {
         guard let point, let frame, let layer else { (reading, readingProblem) = (nil, nil); return }
         let field = self.field, file = self.file, level = self.level
-        let spec = layer.fields[field == .gust ? "gust" : field.rawValue]
+        let spec = layer.fields.additionalProperties[field == .gust ? "gust" : field.rawValue]
         // The temperature beside the precipitation, and beside the wind at a
         // level (Max is no one level, so has none).
         let tempFile: String? = field == .precip ? "temp" : (field == .wind && level != nil && level != "max" ? FlowLevels.file("temp", level) : nil)
@@ -279,7 +281,7 @@ final class ModelWeather {
                 }
                 let temp = try tempGrid?.reading(lat: point.latitude, lon: point.longitude)?.value
                 reading = try FlowReading.of(field, value: at.value, unit: spec?.unit ?? "", top: spec?.unscale.last,
-                                             fromDeg: at.fromDeg, tempC: temp)
+                                             fromDeg: at.fromDeg, calm: at.calm, tempC: temp)
                 readingProblem = nil
             } catch {
                 (reading, readingProblem) = (nil, "The \(field.label.lowercased()) there couldn't be worked out: \(error.localizedDescription)")

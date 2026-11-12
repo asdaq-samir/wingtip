@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.flight
 
 import android.content.Context
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.api.SavedTrack
@@ -38,7 +39,7 @@ class OwnTrail(
     // is kept: a track with a point too many beats one with a gap.
     private val underway: (speedKt: Double?) -> Boolean = { speed -> Engine.underway(speed).getOrDefault(true) },
     private val distance: Geo.Distance = Geo.engineDistance,
-    private val nowMs: () -> Long = System::currentTimeMillis,
+    private val nowMs: () -> Long = AppClock::nowMs,
 ) {
     private val _points = MutableStateFlow<List<PathPoint>>(emptyList())
     val points: StateFlow<List<PathPoint>> = _points.asStateFlow()

@@ -10,13 +10,11 @@ import app.wingtipmaps.gateway.dto.LogbookImportRequest;
 import app.wingtipmaps.gateway.dto.LogbookImportResult;
 import app.wingtipmaps.gateway.dto.RemindersDto;
 import app.wingtipmaps.gateway.service.LogbookService;
-import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,83 +38,63 @@ public class LogbookController {
 
     private final LogbookService logbook;
     private final PlannerClient planner;
-    private final PilotService pilots;
 
-    public LogbookController(LogbookService logbook, PlannerClient planner, PilotService pilots) {
+    public LogbookController(LogbookService logbook, PlannerClient planner) {
         this.logbook = logbook;
         this.planner = planner;
-        this.pilots = pilots;
     }
 
     @GetMapping
-    public ResponseEntity<List<LogbookEntryDto>> list(Authentication authentication) {
-        return PilotResponses.withPilot(
-                pilots,
-                authentication,
-                pilot -> ResponseEntity.ok(logbook.list(pilot).stream()
-                        .map(LogbookController::toDto)
-                        .toList()));
+    public ResponseEntity<List<LogbookEntryDto>> list(Pilot pilot) {
+        return ResponseEntity.ok(
+                logbook.list(pilot).stream().map(LogbookController::toDto).toList());
     }
 
     @PostMapping
-    public ResponseEntity<LogbookEntryDto> add(
-            Authentication authentication, @Valid @RequestBody LogbookEntryRequest request) {
-        return PilotResponses.withPilot(
-                pilots, authentication, pilot -> ResponseEntity.ok(toDto(logbook.add(pilot, request))));
+    public ResponseEntity<LogbookEntryDto> add(Pilot pilot, @Valid @RequestBody LogbookEntryRequest request) {
+        return ResponseEntity.ok(toDto(logbook.add(pilot, request)));
     }
 
     /** A logbook brought in from a file, its flights not already here added. */
     @PostMapping("/import")
     public ResponseEntity<LogbookImportResult> importAll(
-            Authentication authentication, @Valid @RequestBody LogbookImportRequest request) {
-        return PilotResponses.withPilot(
-                pilots, authentication, pilot -> ResponseEntity.ok(logbook.importAll(pilot, request.entries())));
+            Pilot pilot, @Valid @RequestBody LogbookImportRequest request) {
+        return ResponseEntity.ok(logbook.importAll(pilot, request.entries()));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<LogbookEntryDto> update(
-            Authentication authentication, @PathVariable Long id, @Valid @RequestBody LogbookEntryRequest request) {
-        return PilotResponses.found(
-                pilots,
-                authentication,
-                pilot -> logbook.update(pilot, id, request).map(LogbookController::toDto));
+            Pilot pilot, @PathVariable Long id, @Valid @RequestBody LogbookEntryRequest request) {
+        return ResponseEntity.of(logbook.update(pilot, id, request).map(LogbookController::toDto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(Authentication authentication, @PathVariable Long id) {
-        return PilotResponses.done(pilots, authentication, pilot -> logbook.delete(pilot, id));
+    public ResponseEntity<Void> delete(Pilot pilot, @PathVariable Long id) {
+        return PilotResponses.done(logbook.delete(pilot, id));
     }
 
     @GetMapping("/currency")
-    public ResponseEntity<CurrencyDto> currency(Authentication authentication) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> ResponseEntity.ok(currencyOf(pilot)));
+    public ResponseEntity<CurrencyDto> currency(Pilot pilot) {
+        return ResponseEntity.ok(currencyOf(pilot));
     }
 
     /** Whether the pilot is emailed before their currency runs out
      *  (ReminderService). */
     @GetMapping("/reminders")
-    public ResponseEntity<RemindersDto> reminders(Authentication authentication) {
-        return PilotResponses.withPilot(
-                pilots, authentication, pilot -> ResponseEntity.ok(new RemindersDto(pilot.isReminders())));
+    public ResponseEntity<RemindersDto> reminders(Pilot pilot) {
+        return ResponseEntity.ok(new RemindersDto(pilot.isReminders()));
     }
 
     @PutMapping("/reminders")
-    public ResponseEntity<RemindersDto> setReminders(Authentication authentication, @RequestBody RemindersDto request) {
-        return PilotResponses.withPilot(
-                pilots,
-                authentication,
-                pilot -> ResponseEntity.ok(new RemindersDto(
-                        logbook.setReminders(pilot, request.on()).isReminders())));
+    public ResponseEntity<RemindersDto> setReminders(Pilot pilot, @RequestBody RemindersDto request) {
+        return ResponseEntity.ok(
+                new RemindersDto(logbook.setReminders(pilot, request.on()).isReminders()));
     }
 
     @PutMapping("/currency")
-    public ResponseEntity<CurrencyDto> setCurrencyDates(
-            Authentication authentication, @RequestBody CurrencyDatesRequest request) {
-        return PilotResponses.withPilot(
-                pilots,
-                authentication,
-                pilot -> ResponseEntity.ok(currencyOf(logbook.setCurrencyDates(
-                        pilot, request.flightReviewOn(), request.medicalExpiresOn(), request.ipcOn()))));
+    public ResponseEntity<CurrencyDto> setCurrencyDates(Pilot pilot, @RequestBody CurrencyDatesRequest request) {
+        return ResponseEntity.ok(currencyOf(logbook.setCurrencyDates(
+                pilot, request.flightReviewOn(), request.medicalExpiresOn(), request.ipcOn())));
     }
 
     private CurrencyDto currencyOf(Pilot pilot) {

@@ -1,11 +1,11 @@
 package app.wingtipmaps.gateway.security.mcp;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -36,7 +36,8 @@ public class ConnectorHousekeeping {
     private final JdbcOperations jdbc;
     private final Duration unusedClient;
 
-    public ConnectorHousekeeping(JdbcOperations jdbc, @Value("${app.mcp.unused-client-days:1}") int unusedClientDays) {
+    public ConnectorHousekeeping(JdbcOperations jdbc, AppProperties app) {
+        int unusedClientDays = app.mcp().unusedClientDays();
         this.jdbc = jdbc;
         this.unusedClient = Duration.ofDays(unusedClientDays);
     }

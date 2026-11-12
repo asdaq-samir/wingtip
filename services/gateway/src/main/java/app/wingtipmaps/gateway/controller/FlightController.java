@@ -2,6 +2,7 @@ package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.PaidFeature;
+import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.FlightCheckpointDto;
 import app.wingtipmaps.gateway.dto.FlightDto;
 import app.wingtipmaps.gateway.dto.FlightShareDto;
@@ -12,7 +13,6 @@ import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.UpdateFlightRequest;
 import app.wingtipmaps.gateway.service.FlightService;
 import app.wingtipmaps.gateway.service.FlightShareService;
-import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.SubscriptionService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -36,17 +36,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class FlightController {
 
     private final FlightService flightService;
-    private final PilotService pilots;
     private final SubscriptionService subscriptions;
     private final FlightShareService shares;
 
-    public FlightController(
-            FlightService flightService,
-            PilotService pilots,
-            SubscriptionService subscriptions,
-            FlightShareService shares) {
+    public FlightController(FlightService flightService, SubscriptionService subscriptions, FlightShareService shares) {
         this.flightService = flightService;
-        this.pilots = pilots;
         this.subscriptions = subscriptions;
         this.shares = shares;
     }
@@ -54,54 +48,46 @@ public class FlightController {
     /** The pilot's flights, each with its link where it is shared, so the
      *  list's menu can say Share or Stop Sharing. */
     @GetMapping
-    public ResponseEntity<List<FlightSummaryDto>> list(Authentication authentication) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> {
-            List<Flight> theirs = flightService.list(pilot);
-            var shared = shares.sharesOf(theirs);
-            String origin = FlightShareController.origin();
-            return ResponseEntity.ok(theirs.stream()
-                    .map(f -> FlightSummaryDto.of(
-                            f, shared.containsKey(f.getId()) ? FlightShareDto.of(shared.get(f.getId()), origin) : null))
-                    .toList());
-        });
+    public ResponseEntity<List<FlightSummaryDto>> list(Pilot pilot) {
+        List<Flight> theirs = flightService.list(pilot);
+        var shared = shares.sharesOf(theirs);
+        String origin = FlightShareController.origin();
+        return ResponseEntity.ok(theirs.stream()
+                .map(f -> FlightSummaryDto.of(
+                        f, shared.containsKey(f.getId()) ? FlightShareDto.of(shared.get(f.getId()), origin) : null))
+                .toList());
     }
 
     @PostMapping
-    public ResponseEntity<FlightDto> save(
-            Authentication authentication, @Valid @RequestBody SaveFlightRequest request) {
-        return PilotResponses.withPilot(
-                pilots, authentication, pilot -> ResponseEntity.ok(toDto(flightService.save(pilot, request))));
+    public ResponseEntity<FlightDto> save(Pilot pilot, @Valid @RequestBody SaveFlightRequest request) {
+        return ResponseEntity.ok(toDto(flightService.save(pilot, request)));
     }
 
     /** One of the pilot's flights, with its nav log: what its debrief
      *  is read against. */
     @GetMapping("/{id}")
-    public ResponseEntity<FlightDto> get(Authentication authentication, @PathVariable Long id) {
-        return PilotResponses.found(
-                pilots, authentication, pilot -> flightService.get(pilot, id).map(FlightController::toDto));
+    public ResponseEntity<FlightDto> get(Pilot pilot, @PathVariable Long id) {
+        return ResponseEntity.of(flightService.get(pilot, id).map(FlightController::toDto));
     }
 
     /** Renames one of the pilot's flights or changes its notes, as edited
      *  in place on the saved-flights list; 404 where it is not theirs. */
     @PatchMapping("/{id}")
     public ResponseEntity<FlightSummaryDto> update(
-            Authentication authentication, @PathVariable Long id, @Valid @RequestBody UpdateFlightRequest request) {
-        return PilotResponses.found(
-                pilots,
-                authentication,
-                pilot -> flightService
-                        .update(pilot, id, request)
-                        .map(f -> FlightSummaryDto.of(
-                                f,
-                                shares.shareOf(f.getId())
-                                        .map(s -> FlightShareDto.of(s, FlightShareController.origin()))
-                                        .orElse(null))));
+            Pilot pilot, @PathVariable Long id, @Valid @RequestBody UpdateFlightRequest request) {
+        return ResponseEntity.of(flightService
+                .update(pilot, id, request)
+                .map(f -> FlightSummaryDto.of(
+                        f,
+                        shares.shareOf(f.getId())
+                                .map(s -> FlightShareDto.of(s, FlightShareController.origin()))
+                                .orElse(null))));
     }
 
     /** The flight's track, where the pilot saved one to their account. */
     @GetMapping("/{id}/track")
-    public ResponseEntity<TrackDto> track(Authentication authentication, @PathVariable Long id) {
-        return PilotResponses.found(pilots, authentication, pilot -> flightService.track(pilot, id));
+    public ResponseEntity<TrackDto> track(Pilot pilot, @PathVariable Long id) {
+        return ResponseEntity.of(flightService.track(pilot, id));
     }
 
     /** A track kept on the account for its debrief, a paid feature: the
@@ -110,22 +96,22 @@ public class FlightController {
      *  back, or deleting it, never is: what a pilot saved stays theirs. */
     @PutMapping("/{id}/track")
     public ResponseEntity<Void> saveTrack(
-            Authentication authentication, @PathVariable Long id, @Valid @RequestBody TrackDto track) {
+            Authentication authentication, Pilot pilot, @PathVariable Long id, @Valid @RequestBody TrackDto track) {
         var refused = subscriptions.refusal(authentication, PaidFeature.DEBRIEF);
         if (refused.isPresent()) {
             return ResponseEntity.status(refused.get().status()).build();
         }
-        return PilotResponses.done(pilots, authentication, pilot -> flightService.saveTrack(pilot, id, track));
+        return PilotResponses.done(flightService.saveTrack(pilot, id, track));
     }
 
     @DeleteMapping("/{id}/track")
-    public ResponseEntity<Void> deleteTrack(Authentication authentication, @PathVariable Long id) {
-        return PilotResponses.done(pilots, authentication, pilot -> flightService.deleteTrack(pilot, id));
+    public ResponseEntity<Void> deleteTrack(Pilot pilot, @PathVariable Long id) {
+        return PilotResponses.done(flightService.deleteTrack(pilot, id));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(Authentication authentication, @PathVariable Long id) {
-        return PilotResponses.done(pilots, authentication, pilot -> flightService.delete(pilot, id));
+    public ResponseEntity<Void> delete(Pilot pilot, @PathVariable Long id) {
+        return PilotResponses.done(flightService.delete(pilot, id));
     }
 
     private static RiskAssessmentDto riskOf(Flight f) {

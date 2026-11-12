@@ -145,7 +145,7 @@ abstract class AccountTestBase {
     @DynamicPropertySource
     static void plannerUrl(DynamicPropertyRegistry registry) {
         registry.add(
-                "planner-service.base-url",
+                "app.planner.base-url",
                 () -> "http://127.0.0.1:" + planner.getAddress().getPort());
     }
 

@@ -7,50 +7,42 @@ import app.wingtipmaps.gateway.dto.EndorsementFieldDto;
 import app.wingtipmaps.gateway.dto.EndorsementKindDto;
 import app.wingtipmaps.gateway.dto.ExperienceItemDto;
 import app.wingtipmaps.gateway.dto.ReviewCheckDto;
-import app.wingtipmaps.gateway.planner.model.PlannerCurrency;
 import app.wingtipmaps.gateway.planner.model.PlannerCurrencyAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFillAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFilled;
-import app.wingtipmaps.gateway.planner.model.PlannerEndorsementKind;
 import app.wingtipmaps.gateway.planner.model.PlannerEndorsements;
 import app.wingtipmaps.gateway.planner.model.PlannerEndorsementsAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerExperienceAsk;
-import app.wingtipmaps.gateway.planner.model.PlannerExperienceItem;
 import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerInspectionsAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerLogbookEntry;
+import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
 import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
+import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
 import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
-import app.wingtipmaps.gateway.tracing.TraceHeaders;
-import java.io.IOException;
+import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
+import app.wingtipmaps.gateway.upstream.AssistantApi;
+import app.wingtipmaps.gateway.upstream.BriefingApi;
+import app.wingtipmaps.gateway.upstream.PlannerApi;
 import java.math.BigDecimal;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import java.util.function.Supplier;
+import org.springframework.core.retry.RetryPolicy;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.stereotype.Component;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.cfg.DateTimeFeature;
-import tools.jackson.databind.json.JsonMapper;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
+import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.databind.util.RawValue;
 
@@ -60,63 +52,39 @@ import tools.jackson.databind.util.RawValue;
  * the flight watch's briefings and their changes in words (FlightWatchService,
  * ChangeLines), the engine's rules over a pilot's logbook and airplane, as
  * this app holds no aviation rule of its own (CLAUDE.md), a pilot's notes
- * (CheckpointNotesClient) and the Studio's drafts (CrashDraftMail), each
- * answer read into the planner's generated models. A briefing is carried as
- * the planner's JSON, never read here. Pinned to HTTP/1.1 for the reason
- * {@link app.wingtipmaps.gateway.controller.StreamingProxy} gives: the
- * planner is uvicorn, and a pooled connection that attempted an HTTP/2
- * upgrade corrupted the next request on it.
+ * (CheckpointNotesClient) and the Studio's drafts (CrashDraftMail). The
+ * asking is Spring's HTTP interfaces (PlannerApi, BriefingApi, AssistantApi,
+ * made by UpstreamClients); here each answer is made into this app's own,
+ * and any failure into a PlannerUnavailableException that says who and what.
  */
 @Component
 public class PlannerClient {
 
-    /** A briefing reads the weather along the route, tens of seconds when
-     *  aviationweather.gov is slow; the words are one Claude call. */
-    private static final Duration TIMEOUT = Duration.ofMinutes(2);
+    /**
+     * A rule is a pure answer from what is sent, so one that fails to reach
+     * the planner is sent once more: the pooled connection may be one the
+     * planner (uvicorn, 5 s keep-alive) closed while it sat idle, and the
+     * JDK does not resend a POST on its own. That failed every rule asked
+     * after a quiet minute -- a pilot's currency, a student's experience --
+     * with "could not be reached", several at once (the end-of-wave browser
+     * run, 2026-11-08). WingtipApplication also lets the JDK's pool drop a
+     * connection before uvicorn does. A timeout is not tried again.
+     */
+    private static final RetryTemplate AGAIN_ONCE = new RetryTemplate(RetryPolicy.builder()
+            .maxRetries(1)
+            .delay(Duration.ZERO)
+            .includes(ResourceAccessException.class)
+            .excludes(HttpTimeoutException.class)
+            .build());
 
-    /** Fields the planner adds later are ignored: a planner deployed after
-     *  this app was built from its OpenAPI document may say more. */
-    static final ObjectMapper JSON = JsonMapper.builder()
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .build();
+    private final PlannerApi planner;
+    private final BriefingApi briefings;
+    private final AssistantApi assistant;
 
-    /** The same, the planner's days ("2026-10-11") as LocalDate, for its asks and
-     *  answers as the types generated from its document (the pom, planner.model)
-     *  have them, so a field the planner renames fails the build where it is used. */
-    static final ObjectMapper DATES = JsonMapper.builder()
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
-            .build();
-
-    /** A rule from the logbook is the engine's work on a few hundred
-     *  entries, milliseconds; a planner that takes longer is not well. */
-    private static final Duration RULE_TIMEOUT = Duration.ofSeconds(20);
-
-    private final HttpClient http = newClient();
-
-    private static HttpClient newClient() {
-        return HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .connectTimeout(Duration.ofSeconds(10))
-                .followRedirects(HttpClient.Redirect.NEVER)
-                .build();
-    }
-
-    private final String plannerBaseUrl;
-    private final String assistantBaseUrl;
-    /** The trace's and the page's headers on each request (TraceHeaders). */
-    private TraceHeaders traceHeaders = TraceHeaders.NONE;
-
-    public PlannerClient(
-            @Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl,
-            @Value("${assistant-service.base-url:http://assistant:8000}") String assistantBaseUrl) {
-        this.plannerBaseUrl = plannerBaseUrl.replaceAll("/+$", "");
-        this.assistantBaseUrl = assistantBaseUrl.replaceAll("/+$", "");
-    }
-
-    @Autowired(required = false)
-    void setTraceHeaders(TraceHeaders traceHeaders) {
-        this.traceHeaders = traceHeaders;
+    public PlannerClient(PlannerApi planner, BriefingApi briefings, AssistantApi assistant) {
+        this.planner = planner;
+        this.briefings = briefings;
+        this.assistant = assistant;
     }
 
     /**
@@ -127,20 +95,11 @@ public class PlannerClient {
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public String briefing(String dep, String dest, List<String> stops, Instant depart, Double eteMin) {
-        StringBuilder query =
-                new StringBuilder("?dep=").append(encode(dep)).append("&dest=").append(encode(dest));
-        if (stops != null && !stops.isEmpty()) {
-            query.append("&stops=").append(encode(String.join(",", stops)));
-        }
-        query.append("&depart=").append(encode(DateTimeFormatter.ISO_INSTANT.format(depart)));
-        if (eteMin != null) {
-            query.append("&ete_min=").append(eteMin);
-        }
-        HttpRequest request = HttpRequest.newBuilder(URI.create(plannerBaseUrl + "/api/briefing" + query))
-                .GET()
-                .timeout(TIMEOUT)
-                .build();
-        return send(request, "the planner", "the briefing");
+        String joined = stops == null || stops.isEmpty() ? null : String.join(",", stops);
+        return ask(
+                "the planner",
+                "the briefing",
+                () -> briefings.briefing(dep, dest, joined, DateTimeFormatter.ISO_INSTANT.format(depart), eteMin));
     }
 
     /**
@@ -159,25 +118,41 @@ public class PlannerClient {
      *     or answers something that is not its answer
      */
     public AssistantChangesWords changes(String dep, String dest, List<String> stops, String then, String now) {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(assistantBaseUrl + "/api/words/changes"))
-                .POST(HttpRequest.BodyPublishers.ofString(
-                        changesAsk(dep, dest, stops, then, now), StandardCharsets.UTF_8))
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .timeout(TIMEOUT)
-                .build();
-        String answer = send(request, "the assistant", "the changes");
-        try {
-            return JSON.readValue(answer, AssistantChangesWords.class);
-        } catch (JacksonException notItsAnswer) {
-            throw new PlannerUnavailableException(
-                    "the assistant's answer to the changes was not its answer", notItsAnswer);
-        }
+        String body = changesAsk(dep, dest, stops, then, now);
+        return ask("the assistant", "the changes", () -> assistant.changes(body));
+    }
+
+    /** What changed between two briefings, as the planner lines it up (ChangeLines). */
+    PlannerWordsSources changeSources(String dep, String dest, List<String> stops, String then, String now) {
+        String body = changesAsk(dep, dest, stops, then, now);
+        return rule("the changes", () -> planner.changeSources(body), a -> a);
+    }
+
+    /** The checkpoint notes the pilot wrote for themselves (CheckpointNotesClient). */
+    PlannerPilotNotes notes(Long pilotId) {
+        return rule("the notes", () -> planner.notes(String.valueOf(pilotId)), a -> a);
+    }
+
+    /** The Studio's ready drafts nobody has been mailed about (CrashDraftMail). */
+    List<PlannerStudioDraft> draftsToNotice() {
+        return rule("the crash drafts", planner::draftsToNotice, a -> a);
+    }
+
+    /** A draft marked as mailed about (CrashDraftMail). */
+    void noticed(String id) {
+        rule(
+                "the crash draft's notice",
+                () -> {
+                    planner.noticed(id);
+                    return id;
+                },
+                a -> a);
     }
 
     /** The changes' ask, the assistant's and the planner's alike (ChangeLines):
      *  both briefings embedded as the JSON they already are, not as strings holding JSON. */
     static String changesAsk(String dep, String dest, List<String> stops, String then, String now) {
-        ObjectNode body = JSON.createObjectNode().put("dep", dep).put("dest", dest);
+        ObjectNode body = JsonNodeFactory.instance.objectNode().put("dep", dep).put("dest", dest);
         (stops == null ? List.<String>of() : stops).forEach(body.putArray("stops")::add);
         return body.putRawValue("then", new RawValue(then))
                 .putRawValue("now", new RawValue(now))
@@ -202,11 +177,9 @@ public class PlannerClient {
                 .flightReviewOn(flightReviewOn)
                 .medicalExpiresOn(medicalExpiresOn)
                 .ipcOn(ipcOn);
-        return answer(
-                "/api/pilot/currency",
-                ask,
-                PlannerCurrency.class,
+        return rule(
                 "the currency",
+                () -> planner.currency(ask),
                 c -> new CurrencyDto(
                         c.getDayPassengersUntil(),
                         c.getNightPassengersUntil(),
@@ -235,12 +208,11 @@ public class PlannerClient {
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public List<ExperienceItemDto> experience(List<LogbookEntry> entries, LocalDate today) {
-        return answer(
-                "/api/pilot/experience",
-                new PlannerExperienceAsk(entriesOf(entries), today),
-                PlannerExperienceItem[].class,
+        PlannerExperienceAsk ask = new PlannerExperienceAsk(entriesOf(entries), today);
+        return rule(
                 "the experience",
-                items -> Arrays.stream(items)
+                () -> planner.experience(ask),
+                items -> items.stream()
                         .map(i -> new ExperienceItemDto(
                                 i.getKey(),
                                 i.getRule(),
@@ -289,12 +261,8 @@ public class PlannerClient {
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public PlannerEndorsements endorsements(List<PlannerHeldEndorsement> held, LocalDate flightOn) {
-        return answer(
-                "/api/pilot/endorsements",
-                new PlannerEndorsementsAsk(held).flightOn(flightOn),
-                PlannerEndorsements.class,
-                "the endorsements",
-                e -> e);
+        PlannerEndorsementsAsk ask = new PlannerEndorsementsAsk(held).flightOn(flightOn);
+        return rule("the endorsements", () -> planner.endorsements(ask), e -> e);
     }
 
     /** One of 61.93(d)'s checks, as this app sends it on. */
@@ -311,19 +279,21 @@ public class PlannerClient {
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public List<EndorsementKindDto> endorsementKinds() {
-        return Arrays.stream(
-                        get("/api/pilot/endorsement-kinds", PlannerEndorsementKind[].class, "the endorsements' words"))
-                .map(k -> new EndorsementKindDto(
-                        k.getCode(),
-                        k.getParagraph(),
-                        k.getRule(),
-                        k.getLabel(),
-                        k.getTemplate(),
-                        k.getFields().stream()
-                                .map(f -> new EndorsementFieldDto(
-                                        f.getKey(), f.getLabel(), f.getExample(), f.getRequired()))
-                                .toList()))
-                .toList();
+        return rule(
+                "the endorsements' words",
+                planner::endorsementKinds,
+                kinds -> kinds.stream()
+                        .map(k -> new EndorsementKindDto(
+                                k.getCode(),
+                                k.getParagraph(),
+                                k.getRule(),
+                                k.getLabel(),
+                                k.getTemplate(),
+                                k.getFields().stream()
+                                        .map(f -> new EndorsementFieldDto(
+                                                f.getKey(), f.getLabel(), f.getExample(), f.getRequired()))
+                                        .toList()))
+                        .toList());
     }
 
     /** The endorsement of {@code code} in the catalogue, if there is one. */
@@ -345,8 +315,7 @@ public class PlannerClient {
         PlannerEndorsementFillAsk ask = new PlannerEndorsementFillAsk(code).student(student);
         (fields == null ? Map.<String, String>of() : fields)
                 .forEach((k, v) -> ask.putFieldsItem(k, v == null ? "" : v));
-        return answer(
-                "/api/pilot/endorsement-fill", ask, PlannerEndorsementFilled.class, "the endorsement's words", f -> f);
+        return rule("the endorsement's words", () -> planner.fill(ask), f -> f);
     }
 
     /**
@@ -379,7 +348,7 @@ public class PlannerClient {
             ask.vorCheck(new PlannerVorCheckAsk(
                     decimal(vorCheckErrorDeg), PlannerVorCheckAsk.KindEnum.fromValue(vorCheckKind), vorCheckOn));
         }
-        return answer("/api/aircraft/inspections", ask, PlannerInspections.class, "the inspections", i -> i);
+        return rule("the inspections", () -> planner.inspections(ask), i -> i);
     }
 
     /** A JSON number, which the generated types hold as BigDecimal (the
@@ -392,104 +361,32 @@ public class PlannerClient {
         return d == null ? null : BigDecimal.valueOf(d);
     }
 
-    /** The planner's {@code path} read, with any {@code headers} (name, value, ...),
-     *  into the generated {@code type} (CrashDraftMail, CheckpointNotesClient). */
-    <A> A get(String path, Class<A> type, String what, String... headers) {
-        HttpRequest.Builder request =
-                HttpRequest.newBuilder(URI.create(plannerBaseUrl + path)).timeout(RULE_TIMEOUT);
-        if (headers.length > 0) {
-            request.headers(headers);
-        }
-        return read(sendAgainOnce(request.build(), what), type, what, a -> a);
-    }
-
-    /** {@code json} posted to the planner's {@code path} as it is, never
-     *  parsed here (ChangeLines' briefings), its answer read into {@code type}. */
-    <A> A postJson(String path, String json, Class<A> type, String what) {
-        return read(post(path, json, what), type, what, a -> a);
-    }
-
-    /** {@code ask} sent to the planner's {@code path}, its answer read into
-     *  the generated {@code type} and made into what the caller keeps. */
-    private <A, T> T answer(String path, Object ask, Class<A> type, String what, Function<A, T> made) {
-        String body;
-        try {
-            body = DATES.writeValueAsString(ask);
-        } catch (JacksonException unwritable) {
-            throw new IllegalStateException("the ask for " + what + " could not be written", unwritable);
-        }
-        return read(post(path, body, what), type, what, made);
-    }
-
-    /**
-     * A rule asked of the planner by name. Each is a pure answer from what
-     * is sent, so one that fails to reach it is sent once more: the
-     * client's pooled connection may be one the planner (uvicorn, 5 s
-     * keep-alive) has already closed while it sat idle, and the JDK does
-     * not resend a POST on its own. That failed every rule asked after a
-     * quiet minute -- a pilot's currency, a student's experience -- with
-     * "could not be reached", several at once (the end-of-wave browser
-     * run, 2026-11-08). It is sent again on a client of its own, a new
-     * connection: the pool may hold several gone stale together, and a
-     * second one from it failed the same way. A timeout is not tried again.
-     */
-    String post(String path, String body, String what) {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(plannerBaseUrl + path))
-                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .timeout(RULE_TIMEOUT)
-                .build();
-        return sendAgainOnce(request, what);
-    }
-
-    private String sendAgainOnce(HttpRequest asked, String what) {
-        HttpRequest request = traceHeaders.traced(asked);
-        try {
-            return send(http, request, "the planner", what);
-        } catch (PlannerUnavailableException unreached) {
-            if (!(unreached.getCause() instanceof IOException)
-                    || unreached.getCause() instanceof HttpTimeoutException) {
-                throw unreached;
-            }
-            try (HttpClient fresh = newClient()) {
-                return send(fresh, request, "the planner", what);
-            }
-        }
-    }
-
-    /** A field the planner always sends that is missing is not its answer
-     *  either: the generated types box every value, so it shows as a
+    /** A rule asked of the planner (sent again once where it could not be
+     *  reached), its answer made into what the caller keeps. A field the
+     *  planner always sends that is missing is not its answer either: the
+     *  generated types box every value, so it shows as a
      *  NullPointerException where it is made into this app's own. */
-    private static <A, T> T read(String answer, Class<A> type, String what, Function<A, T> made) {
+    private static <A, T> T rule(String what, Supplier<A> call, Function<A, T> made) {
+        A answer = ask("the planner", what, () -> AGAIN_ONCE.invoke(call));
         try {
-            return made.apply(DATES.readValue(answer, type));
-        } catch (JacksonException | NullPointerException notItsAnswer) {
+            return made.apply(answer);
+        } catch (NullPointerException notItsAnswer) {
             throw new PlannerUnavailableException(
                     "the planner's answer to " + what + " was not its answer", notItsAnswer);
         }
     }
 
-    private String send(HttpRequest request, String who, String what) {
-        return send(http, traceHeaders.traced(request), who, what);
-    }
-
-    private static String send(HttpClient client, HttpRequest request, String who, String what) {
+    /** {@code call} made, its failure said as who could not answer what. */
+    private static <A> A ask(String who, String what, Supplier<A> call) {
         try {
-            HttpResponse<String> response =
-                    client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            if (response.statusCode() != 200) {
-                throw new PlannerUnavailableException(who + " answered " + response.statusCode() + " to " + what);
-            }
-            return response.body();
-        } catch (IOException failed) {
-            throw new PlannerUnavailableException(who + " could not be reached for " + what, failed);
-        } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            throw new PlannerUnavailableException("interrupted asking " + who + " for " + what, interrupted);
+            return call.get();
+        } catch (RestClientResponseException refused) {
+            throw new PlannerUnavailableException(
+                    who + " answered " + refused.getStatusCode().value() + " to " + what, refused);
+        } catch (ResourceAccessException unreached) {
+            throw new PlannerUnavailableException(who + " could not be reached for " + what, unreached);
+        } catch (RestClientException notItsAnswer) {
+            throw new PlannerUnavailableException(who + "'s answer to " + what + " was not its answer", notItsAnswer);
         }
-    }
-
-    private static String encode(String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 }

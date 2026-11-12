@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.LoadingRow
@@ -39,7 +40,6 @@ import app.wingtipmaps.android.strip.words
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
-import java.time.Instant
 
 /**
  * "When should I go?" in the Brief, under the verdict (the web's
@@ -55,7 +55,7 @@ fun DepartureWindowStrip(plan: Plan.State, signedIn: Boolean, model: DepartureWi
     val state by model.state.collectAsStateWithLifecycle()
     LaunchedEffect(plan.dep, plan.dest, plan.stops, plan.aircraft, signedIn) { model.ask(plan, signedIn) }
     if (!plan.routed) return
-    val now = Instant.now()
+    val now = AppClock.javaNow()
     val answer = state.answer
     val best = answer?.windows?.firstOrNull()
     SectionTitle(best?.let { HourWords.bestLine(it, now) } ?: stringResource(R.string.when_to_go))

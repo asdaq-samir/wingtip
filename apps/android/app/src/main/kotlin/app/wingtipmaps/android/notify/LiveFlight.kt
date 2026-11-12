@@ -13,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.MainActivity
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
@@ -52,7 +53,7 @@ object LiveFlight {
     private var last: FlightUpdate? = null
 
     /** The flight as it stands after a fix: posted where it is due. */
-    fun took(context: Context, state: InFlight.State, plan: Plan.State, nowMs: Long = System.currentTimeMillis()) {
+    fun took(context: Context, state: InFlight.State, plan: Plan.State, nowMs: Long = AppClock.nowMs()) {
         val update = FlightUpdate.of(
             progress = state.progress, underway = state.underway, dep = plan.dep, dest = plan.dest,
             airplaneChosen = plan.airplane, usableFuelGal = plan.totals?.usableFuelGal, nowMs = nowMs,

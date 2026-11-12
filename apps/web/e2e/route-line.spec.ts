@@ -120,7 +120,10 @@ test("FPL's route line folds to the way picked, As typed at first, and a chip ta
   // Folded to one row over the fields (the owner's K1, 2026-10-29): None,
   // the route as typed, planned at once, with its time; what it meets said.
   await expect(picked).toHaveText(/^As typed/, { timeout: slow(30_000) });
-  await expect(line.getByTestId("route-line-toggle")).toHaveAccessibleName(/As typed, the route as typed, .*crosses storms, 2 more/);
+  // What it shows first, then what it is (WCAG 2.5.3, Label in Name: RouteLine's label).
+  await expect(line.getByTestId("route-line-toggle")).toHaveAccessibleName(
+    /^As typed .*2 more, Routes: As typed, the route as typed, .*crosses storms/,
+  );
   // Over the route's fields, not among them.
   const lineBox = (await line.boundingBox())!,
     fields = (await sideDrawer(page).getByTestId("procedures").boundingBox())!;

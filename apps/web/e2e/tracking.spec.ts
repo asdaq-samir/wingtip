@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { closeCard, drawn, grabberTo, settle, showSearch, showTraffic, sideDrawer, slow, stripShows } from "./helpers";
+import { closeCard, drawn, grabberTo, inSheet, settle, showSearch, showTraffic, sideDrawer, slow, stripShows } from "./helpers";
+import { FAA } from "./faaRecord";
 
 /**
  * Tracking an airplane, as FlightAware and ForeFlight do, at the pilot's
@@ -38,35 +39,6 @@ const CESSNA = {
   vertical_fpm: 0,
   seen_s: 0.3,
   squawk: "1200",
-};
-const FAA = {
-  n_number: "N14511",
-  mode_s_hex: "a0b7d8",
-  serial: "11775",
-  manufacturer: "Airbus S A S",
-  model: "A321-271NX",
-  year: 2024,
-  aircraft_type: "Fixed wing multi engine",
-  engines: 2,
-  seats: 246,
-  engine: "IAE PW1133G-JM",
-  engine_type: "Turbo-fan",
-  horsepower: null,
-  thrust_lb: 33110,
-  owner: "United Airlines Inc",
-  owner_type: "Corporation",
-  co_owners: 0,
-  city: "Chicago",
-  state: "IL",
-  country: "US",
-  certificate_issued: "2024-04-05",
-  expires: "2031-04-30",
-  airworthiness: "Standard (transport)",
-  airworthiness_date: "2024-04-08",
-  kit: null,
-  fractional: false,
-  status: "Valid",
-  standing: "valid",
 };
 const ROUTE = {
   airports: [
@@ -445,7 +417,9 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   await expect(flight.getByTestId("past-flight-off")).toContainText("LCI");
   await expect(flight.getByTestId("past-flight-on")).toContainText("LWM");
   await expect(flight.getByTestId("past-flight-flown")).toContainText(/\d+ nm/);
-  await expect(page.locator("path.past-flight-path").first()).toBeAttached({ timeout: slow(10_000) });
+  // Drawn as MapLibre's own line layer (TracksGl's PastFlightGl, read
+  // through its probe), not the SVG path it was before the map was MapLibre.
+  await expect.poll(async () => (await drawn(page, "past-flight")).length, { timeout: slow(10_000) }).toBeGreaterThan(0);
   // All the way up, the controls and the whole graph, its time axis too,
   // in sight: the axis was cut off on the owner's phone.
   await grabberTo(page, "full");
@@ -477,7 +451,7 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   await closeCard(page, "past-flight-close");
   await expect(page).not.toHaveURL(/[?&]past=/);
   await expect(card.getByTestId("flight-earlier")).toBeVisible();
-  await expect(page.locator("path.past-flight-path")).toHaveCount(0);
+  await expect.poll(async () => (await drawn(page, "past-flight")).length).toBe(0);
 });
 
 test("an airplane's last flights found are listed, the ones before them on asking, and from a day picked", async ({ page }) => {
@@ -837,7 +811,9 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
   await expect(link).toHaveAttribute("target", "_blank");
   await expect(link).not.toHaveAttribute("rel", /nofollow/);
   // Lower in the card, under its details; the photo the strip's first.
-  await link.scrollIntoViewIfNeeded();
+  // At half a card's body does not scroll (index.css, the one scrolling
+  // rule): pulled up to it, as a finger would (inSheet).
+  await inSheet(page, link);
   await expect(photo).toBeInViewport({ ratio: 0.9 });
   // The stock carousel's own next page (PictureSlides), as a swipe is.
   await card

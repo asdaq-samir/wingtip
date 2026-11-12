@@ -11,23 +11,32 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
 - `apps/ios/project.yml`: the Xcode project, made by XcodeGen on the runner.
   Nothing under `apps/ios/` is a generated file; the project is never
   committed.
-- `apps/ios/Wingtip/API`: the planner's and the gateway's calls, the app's
-  own thin client (`Planner`, `Gateway`). The answers' shapes are
-  generated from the servers' OpenAPI documents, as the web's types are:
-  `scripts/build/api-models-apps.sh` runs quicktype (models only, plain
-  Codable, no runtime library) into `API/Generated` (the planner's types
-  prefixed `API`, the gateway's `GW`), committed, and CI fails when they
-  are not what the documents give, so a field a server renames fails the
-  build rather than a screen. `Models.swift` and its neighbours keep the
-  app's names as typealiases of them, with what the app adds as
-  extensions. To read a new answer, add its schema to the script's list,
-  run it, and alias it. (Apple's swift-openapi-generator was tried first,
-  24 October, and left out every property FastAPI gives as `anyOf`
-  string and null, so it was taken out again; quicktype reads those as
-  optionals.) Still by hand: the nav log's streamed lines (`NavLog.swift`),
-  AirportPin and AheadAlert (the engine writes them from the cycle packs
-  too), and the gateway's answers (their names and dates differ from the
-  app's models), each a switch of its own.
+- `apps/ios/Wingtip/API`: the planner's, the assistant's and the gateway's
+  calls, generated from their OpenAPI documents as the web's types are:
+  `scripts/build/api-models-apps.sh` runs Apple's swift-openapi-generator
+  (its version in `.tool-versions`) into `apps/ios/WingtipAPI`, one module a
+  document (`PlannerAPI`, `GatewayAPI`, `AssistantAPI`: each its `Client`,
+  its operations and its schemas), and names each schema in the app in
+  `API/Generated` (the planner's prefixed `API`, the gateway's `GW`, the
+  assistant's `AS`). All committed; `--check` and CI fail when they are not
+  what the documents give, so a field or a call a server renames fails the
+  build rather than a screen. The clients go through the swift-openapi
+  runtime's URLSession transport (`Servers.swift`): one session a wait
+  (the usual, a read the pilot waits on, a call made in the air bound as a
+  whole by `timeoutIntervalForResource`, an upload) over the one cookie
+  jar and cache, and middlewares for the planner's paths behind the
+  gateway's proxy, the CSRF token, the session's cookies and a refusal in
+  the server's own words. `Planner`, `Gateway` and their neighbours keep
+  the names the screens call, each a line over its generated operation,
+  and the app's names of the types as typealiases, with what the app adds
+  as extensions. The documents are fitted to the generator first
+  (`api-models-apps.mjs`'s `openapi`): FastAPI's `anyOf` with null is a
+  type that includes null (the generator skipped those properties when it
+  was first tried, 24 October), enums are strings, and operations are named
+  by their functions. Still by hand: Spring Security's `/logout` and the
+  data export's download, which the documents do not describe as the app
+  needs them, and the planner's pictures, which Nuke loads (`PictureViewer`,
+  with Keep for the Air's pictures as its data loader's answer offline).
 - `apps/ios/Wingtip`: the app. `Config` (the host), `Session` (who is signed
   in), `Charts` (which chart, from `/api/chart`, kept for offline),
   `Tiles` (the tile address, the store on disk, the MapKit overlay) and

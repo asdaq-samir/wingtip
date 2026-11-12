@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { beforeTheRoute, chartZoom, openMapSettings, sideDrawer, slow, tapNear } from "./helpers";
+import { beforeTheRoute, chartZoom, grabberTo, openMapSettings, sideDrawer, slow, tapNear } from "./helpers";
 import { markWith, tapMark } from "./marks";
 
 /**
@@ -88,13 +88,18 @@ async function mockClassB(page: Page) {
 
 async function showClassB(page: Page) {
   await openMapSettings(page);
+  // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
+  await grabberTo(page, "full");
   await page.getByTestId("class-b-toggle").click();
   await page.keyboard.press("Escape");
 }
 
 /** On, from the planner's search bar, before the route is loaded. */
 async function showClassBFirst(page: Page) {
-  await beforeTheRoute(page, () => page.getByTestId("class-b-toggle").click());
+  await beforeTheRoute(page, async () => {
+    await grabberTo(page, "full");
+    await page.getByTestId("class-b-toggle").click();
+  });
 }
 
 test("off until asked for: a route does not come covered in them", async ({ page }) => {
@@ -185,6 +190,7 @@ test("on an IFR base, the settings' TAC draws the IFR area chart at a Class B fi
   await mockClassB(page);
   await page.goto("/app/dev?dep=C81&dest=KDLH");
   await openMapSettings(page);
+  await grabberTo(page, "full");
   await page.getByTestId("base-chart-select").getByRole("button", { name: "IFR low" }).click();
   await page.getByTestId("class-b-toggle").click();
   await expect(page.getByTestId("map-settings").getByText("IFR Area Charts")).toBeVisible();

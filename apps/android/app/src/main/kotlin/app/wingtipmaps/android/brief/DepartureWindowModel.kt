@@ -2,6 +2,7 @@ package app.wingtipmaps.android.brief
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.FigureKey
@@ -10,6 +11,9 @@ import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.departureWindow
 import app.wingtipmaps.android.api.generated.DepartureWindow
 import app.wingtipmaps.android.api.generated.DepartureWindowAsk
+import app.wingtipmaps.android.api.generated.client.apis.PlannerApi
+import app.wingtipmaps.android.api.planned
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +21,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
+import javax.inject.Inject
+import kotlin.time.Clock
 
 /**
  * "When should I go?"'s view model (the web's useDepartureWindow): the
@@ -28,13 +33,14 @@ import java.time.LocalDate
  * weather, the airspace and the daylight alone. Signed in only: it is the
  * planner's heaviest ask. Kept ten minutes for a route.
  */
+@HiltViewModel
 class DepartureWindowModel(
     private val ask: suspend (DepartureWindowAsk) -> DepartureWindow = { Planner.departureWindow(it) },
-    private val now: () -> Long = System::currentTimeMillis,
+    private val now: () -> Long = AppClock::nowMs,
 ) : ViewModel() {
-    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
-    // constructor once the sources and seams it is given are injectable
-    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
+    /** Hilt's: the planner's departure window (POST /api/departure-window) and the app's clock. */
+    @Inject
+    constructor(planner: PlannerApi, clock: Clock) : this({ planner.departureWindow(it).planned() }, { clock.now().toEpochMilliseconds() })
     data class State(
         val route: String? = null,
         val answer: DepartureWindow? = null,
@@ -70,7 +76,7 @@ class DepartureWindowModel(
                 usableFuelGal = g[FigureKey.USABLE.key], climbTasKt = g[FigureKey.CLIMB_TAS.key], climbFuelBurnGph = g[FigureKey.CLIMB_BURN.key],
                 climbRateFpm = g[FigureKey.CLIMB_RATE.key], serviceCeilingFt = g[FigureKey.CEILING.key], taxiFuelGal = g[FigureKey.TAXI.key],
                 glideRatio = g[FigureKey.GLIDE.key],
-                hours = HOURS, day = LocalDate.now().toString(),
+                hours = HOURS, day = AppClock.today().toString(),
             )
             try {
                 val answer = ask(question)

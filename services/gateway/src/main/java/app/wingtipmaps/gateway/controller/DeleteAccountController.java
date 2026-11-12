@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.MagicLink;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.repository.MagicLinkRepository;
@@ -17,16 +18,15 @@ import java.util.Base64;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
-import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 /**
@@ -44,10 +44,11 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
  * anyone in. Asking always answers the same, known address or not, so the
  * page tells nobody who has an account. Opening the link deletes nothing:
  * a mail scanner that fetches it would otherwise delete the account; the
- * pilot presses Delete on the page it opens. Plain HTML pages, no script,
- * as /connect's are (ConnectPages); not in the API's document.
+ * pilot presses Delete on the page it opens. Thymeleaf's
+ * templates/delete-account, no script, as /connect's are; not in the
+ * API's document.
  */
-@RestController
+@Controller
 @Hidden
 public class DeleteAccountController {
 
@@ -75,10 +76,11 @@ public class DeleteAccountController {
             PilotRepository pilots,
             AccountService accounts,
             Mailer mailer,
-            @Value("${app.public-base-url:}") String publicBaseUrl,
-            @Value("${app.magic-link.per-address-per-hour:5}") int perAddressPerHour,
-            @Value("${app.magic-link.per-client-per-hour:20}") int perClientPerHour,
-            @Value("${app.magic-link.account-per-client-per-hour:30}") int linkChecksPerClientPerHour) {
+            AppProperties app) {
+        String publicBaseUrl = app.publicBaseUrl();
+        int perAddressPerHour = app.magicLink().perAddressPerHour();
+        int perClientPerHour = app.magicLink().perClientPerHour();
+        int linkChecksPerClientPerHour = app.magicLink().accountPerClientPerHour();
         this.links = links;
         this.pilots = pilots;
         this.accounts = accounts;
@@ -91,16 +93,16 @@ public class DeleteAccountController {
 
     /** The page that asks for the address. */
     @GetMapping("/delete-account")
-    public ResponseEntity<String> page(
-            HttpServletRequest request,
+    public String page(
             @RequestParam(required = false) String sent,
-            @RequestParam(required = false) String throttled) {
-        String notice = sent != null
-                ? "If an account uses that address, we emailed it a link. Open it within 15 minutes to delete the account."
-                : throttled != null ? "Too many links were asked for. Try again in an hour." : "";
-        CsrfToken csrf = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-        return ConnectPages.page(
-                "Delete Account", DeleteAccountPages.ask(csrf.getParameterName(), csrf.getToken(), notice));
+            @RequestParam(required = false) String throttled,
+            Model model) {
+        model.addAttribute(
+                "notice",
+                sent != null
+                        ? "If an account uses that address, we emailed it a link. Open it within 15 minutes to delete the account."
+                        : throttled != null ? "Too many links were asked for. Try again in an hour." : "");
+        return "delete-account/ask";
     }
 
     /** The address given: a link emailed where it has an account; the same answer either way. */
@@ -125,31 +127,30 @@ public class DeleteAccountController {
 
     /** Where the emailed link opens: the address it is for, and a Delete button. Uses nothing up. */
     @GetMapping("/delete-account/confirm")
-    public ResponseEntity<String> confirm(HttpServletRequest request, @RequestParam String token) {
+    public String confirm(HttpServletRequest request, @RequestParam String token, Model model) {
         if (tooMany(request)) {
-            return ConnectPages.page("Delete Account", DeleteAccountPages.expired());
+            return "delete-account/expired";
         }
         Optional<MagicLink> link = links.findByTokenHash(MagicLinkController.hash(PURPOSE + token))
                 .filter(l -> l.getConsumedAt() == null && l.getExpiresAt().isAfter(Instant.now()));
         if (link.isEmpty()) {
-            return ConnectPages.page("Delete Account", DeleteAccountPages.expired());
+            return "delete-account/expired";
         }
-        CsrfToken csrf = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-        return ConnectPages.page(
-                "Delete Account",
-                DeleteAccountPages.confirm(link.get().getEmail(), token, csrf.getParameterName(), csrf.getToken()));
+        model.addAttribute("email", link.get().getEmail());
+        model.addAttribute("token", token);
+        return "delete-account/confirm";
     }
 
     /** Delete pressed: the link used up, and the account deleted as Setup deletes it. */
     @PostMapping(value = "/delete-account/confirm", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<String> delete(HttpServletRequest request, @RequestParam String token) {
+    public String delete(HttpServletRequest request, @RequestParam String token) {
         if (tooMany(request)) {
-            return ConnectPages.page("Delete Account", DeleteAccountPages.expired());
+            return "delete-account/expired";
         }
         String hash = MagicLinkController.hash(PURPOSE + token);
         Optional<MagicLink> link = links.findByTokenHash(hash);
         if (link.isEmpty() || links.consumeIfUsable(hash, Instant.now()) == 0) {
-            return ConnectPages.page("Delete Account", DeleteAccountPages.expired());
+            return "delete-account/expired";
         }
         Optional<Pilot> pilot = pilots.findByEmail(link.get().getEmail());
         if (pilot.isPresent()) {
@@ -160,10 +161,10 @@ public class DeleteAccountController {
                         "account {} not deleted from the web page: {}",
                         pilot.get().getId(),
                         failed.getMessage());
-                return ConnectPages.page("Delete Account", DeleteAccountPages.notDeleted());
+                return "delete-account/not-deleted";
             }
         }
-        return ConnectPages.page("Account Deleted", DeleteAccountPages.deleted());
+        return "delete-account/deleted";
     }
 
     private void send(String to, String url) {

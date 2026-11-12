@@ -48,8 +48,7 @@ public class ChangeLines {
      *     refuses, or answers something that is not its answer
      */
     public AssistantChangesWords changes(String dep, String dest, List<String> stops, String then, String now) {
-        String ask = PlannerClient.changesAsk(dep, dest, stops, then, now);
-        return lines(planner.postJson("/api/words/changes/sources", ask, PlannerWordsSources.class, "the changes"));
+        return lines(planner.changeSources(dep, dest, stops, then, now));
     }
 
     /** The planner's WordsSources as the assistant's ChangesWords: a

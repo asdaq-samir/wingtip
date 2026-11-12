@@ -38,9 +38,10 @@ struct ProfileTests {
         var extras = RouteExtras()
         extras.altitudes = ["VPBNG": 6500, "KLVK": 4500]
         extras.starts = ["VPBNG", "GONE"]
-        let query = try extras.query(procedures: [])
-        #expect(query["altitudes"] == "KLVK:4500,VPBNG:6500")
-        #expect(query["altitude_starts"] == "VPBNG", "a start with no altitude of its own is not sent")
+        var query = NavLogQuery(dep: "C81", dest: "KLVK")
+        try extras.apply(to: &query, procedures: [])
+        #expect(query.altitudes == "KLVK:4500,VPBNG:6500")
+        #expect(query.altitudeStarts == "VPBNG", "a start with no altitude of its own is not sent")
     }
 
     @Test func theGroundIsColouredByHowCloseItComes() throws {
