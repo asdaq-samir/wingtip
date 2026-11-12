@@ -27,6 +27,21 @@ The GRIB2 records read, each as NOMADS' grib filter names it
 - TCDC for the entire atmosphere: total cloud cover, percent.
 - TMP at 2 m above ground: the temperature, K.
 - VIS at the surface: visibility, m.
+- HGT at the cloud ceiling: the ceiling's height, geopotential metres
+  above mean sea level (measured 2026-11-12: over high ground no ceiling
+  is under the ground's height, in either model). No ceiling is the GFS's
+  20,000 m and the HRRR's missing value; taken here as clear. A model's
+  ceiling is its own diagnosis from its cloud, not an observer's.
+- HGT at the surface: the ground's height, m MSL, for the ceiling above
+  it (14 CFR 1.1: "the height above the earth's surface"); the same every
+  hour, so fetched once a model (app.flow's terrain).
+- CAPE at the surface: the surface-based convective available potential
+  energy, J/kg.
+
+What these values mean -- precipitation's intensity, the sky's cover,
+CAPE's categories, the ceiling's bands -- is the engine's
+(wingtip_weather::model_weather); the rate-to-reflectivity relation too,
+asked here by name (precip_dbz).
 
 This is model output, unedited, and every screen that shows it says so.
 """
@@ -39,6 +54,7 @@ import math
 import gribberish
 import numpy as np
 from PIL import Image
+from wingtip.engine import ask
 
 #: The output grid: the GFS 0.25-degree points from 5 to 75 N, 180 to 50 W
 #: (the filter's box), north row first as a picture is.
@@ -65,6 +81,10 @@ HRRR_CONE = math.sin(math.radians(38.5))
 
 MS_TO_KT = 1.943844  # 1 kt = 1852 m per 3600 s (NIST Handbook 44, Appendix C)
 M_PER_SM = 1609.344  # the statute mile, exactly (NIST Handbook 44, Appendix C)
+FT_PER_M = 1 / 0.3048  # the international foot, exactly 0.3048 m (NIST Handbook 44, Appendix C)
+#: A ceiling at or over this many metres MSL is the GFS's "none" (it
+#: writes 20,000 m where there is no ceiling, measured 2026-11-12).
+NO_CEILING_M = 19_999.0
 
 #: Each field as the picture holds it: its unit, and the values channel 0
 #: and 255 stand for (weatherlayers-gl's imageUnscale), a step of a
@@ -78,20 +98,38 @@ FIELDS = {
     "cloud": {"unit": "%", "unscale": (0.0, 100.0), "vector": False},
     "temp": {"unit": "°C", "unscale": (-50.0, 50.0), "vector": False},
     "vis": {"unit": "SM", "unscale": (0.0, 10.0), "vector": False},
+    # The ceiling, ft above the ground: 50 ft a step to 12,750, well past
+    # AIM 7-1-7's 3,000 ft; a ceiling over it, and none, at the top, clear.
+    "ceiling": {"unit": "ft", "unscale": (0.0, 12_750.0), "vector": False},
+    # Surface CAPE: 20 J/kg a step to 5,100, past the NWS's extreme (4,000).
+    "cape": {"unit": "J/kg", "unscale": (0.0, 5_100.0), "vector": False},
 }
 
-#: (GRIB2 variable, level value) the filter is asked for and each field reads.
+#: (GRIB2 variable, level type, level value) each field reads.
 RECORDS = {
-    ("UGRD", 10.0): "u",
-    ("VGRD", 10.0): "v",
-    ("GUST", 0.0): "gust",
-    ("PRATE", 0.0): "prate",
-    ("TCDC", 0.0): "cloud",
-    ("TMP", 2.0): "temp",
-    ("VIS", 0.0): "vis",
+    ("UGRD", "specific height level above ground", 10.0): "u",
+    ("VGRD", "specific height level above ground", 10.0): "v",
+    ("GUST", "ground or water surface", 0.0): "gust",
+    ("PRATE", "ground or water surface", 0.0): "prate",
+    ("TCDC", "entire atmosphere", 0.0): "cloud",
+    ("TMP", "specific height level above ground", 2.0): "temp",
+    ("VIS", "ground or water surface", 0.0): "vis",
+    ("CAPE", "ground or water surface", 0.0): "cape",
+    ("HGT", "cloud ceiling", 0.0): "ceiling",
+    ("HGT", "ground or water surface", 0.0): "terrain",
 }
-FILTER_VARS = ("UGRD", "VGRD", "GUST", "PRATE", "TCDC", "TMP", "VIS")
-FILTER_LEVELS = ("10_m_above_ground", "surface", "entire_atmosphere", "2_m_above_ground")
+#: The filter's requests, each its variables at each of its levels: the
+#: filter takes every variable at every level asked, so grouped to ask
+#: nothing not read (one request for all took TMP at the surface and the
+#: ground's height every hour, 1.3 MB of the HRRR's 10.7; measured
+#: 2026-11-12). Their files are joined, GRIB2 being a run of messages.
+FILTER_GROUPS = (
+    (("UGRD", "VGRD", "TMP"), ("10_m_above_ground", "2_m_above_ground")),
+    (("GUST", "PRATE", "VIS", "CAPE"), ("surface",)),
+    (("TCDC", "HGT"), ("entire_atmosphere", "cloud_ceiling")),
+)
+#: The ground's height, asked once a model (app.flow's terrain).
+TERRAIN_GROUPS = ((("HGT",), ("surface",)),)
 
 
 def read(body: bytes) -> tuple[dict[str, np.ndarray], tuple[np.ndarray, np.ndarray]]:
@@ -105,7 +143,7 @@ def read(body: bytes) -> tuple[dict[str, np.ndarray], tuple[np.ndarray, np.ndarr
         message = gribberish.parse_grib_message(body, offset)
         meta = message.metadata
         offset += meta.message_size
-        name = RECORDS.get((meta.var_abbrev, float(meta.level_value)))
+        name = RECORDS.get((meta.var_abbrev, meta.level_type, float(meta.level_value)))
         if name is None:
             continue
         instant = meta.statistical_process is None
@@ -114,9 +152,20 @@ def read(body: bytes) -> tuple[dict[str, np.ndarray], tuple[np.ndarray, np.ndarr
         found[name] = (instant, np.asarray(message.data(), dtype=np.float32).ravel())
         if where is None:
             where = _points(meta)
-    if "u" not in found or "v" not in found or where is None:
+    if where is None or ("terrain" not in found and ("u" not in found or "v" not in found)):
         raise ValueError("no 10 m wind in the file")
     return {name: values for name, (_, values) in found.items()}, where
+
+
+def ceiling_agl_ft(ceiling_msl_m: np.ndarray, terrain_m: np.ndarray) -> np.ndarray:
+    """A model's ceiling, metres MSL, as feet above the ground under it
+    (14 CFR 1.1's ceiling is "the height above the earth's surface"):
+    infinity where there is none (the GFS's 20,000 m, the HRRR's missing
+    value), so it reads as clear; a ceiling the model puts under the
+    ground's height, at the ground."""
+    none = np.isnan(ceiling_msl_m) | (ceiling_msl_m >= NO_CEILING_M)
+    above = np.maximum(ceiling_msl_m - terrain_m, 0.0) * FT_PER_M
+    return np.where(none, np.inf, above)
 
 
 def _points(meta) -> tuple[np.ndarray, np.ndarray]:
@@ -147,7 +196,10 @@ def on_grid(values: dict[str, np.ndarray], where: tuple[np.ndarray, np.ndarray],
     """A model's records on the output grid, {name: ROWS x COLS, NaN where
     it has nothing}: each cell the mean of the points in it (the HRRR's,
     where at least HRRR_LEAST_POINTS fall in it) or the point on it (the
-    GFS's, whose points are the grid's)."""
+    GFS's, whose points are the grid's). The ceiling is the lowest in the
+    cell rather than its mean, toward the safer answer: a low ceiling
+    somewhere in a 25 km cell is shown, not averaged away with the clear
+    sky round it (infinity, none, in a mean would hide every ceiling)."""
     lats, lons = where
     if hrrr:
         u, v = _earth_relative(values["u"], values["v"], lons)
@@ -161,9 +213,13 @@ def on_grid(values: dict[str, np.ndarray], where: tuple[np.ndarray, np.ndarray],
     for name, field in values.items():
         field = field[keep].astype(np.float64)
         good = ~np.isnan(field)
-        sums = np.bincount(cells[good], weights=field[good], minlength=ROWS * COLS)
         n = np.bincount(cells[good], minlength=ROWS * COLS)
-        mean = np.where((n >= least) & (counts >= least), sums / np.maximum(n, 1), np.nan)
+        if name == "ceiling":
+            each = np.full(ROWS * COLS, np.nan)
+            np.fmin.at(each, cells[good], field[good])
+        else:
+            each = np.bincount(cells[good], weights=field[good], minlength=ROWS * COLS) / np.maximum(n, 1)
+        mean = np.where((n >= least) & (counts >= least), each, np.nan)
         out[name] = mean.reshape(ROWS, COLS).astype(np.float32)
     return out
 
@@ -177,13 +233,15 @@ def blend(gfs: dict[str, np.ndarray], hrrr: dict[str, np.ndarray] | None) -> dic
 
 def precip_dbz(rate_mm_h: np.ndarray) -> np.ndarray:
     """A precipitation rate as the reflectivity a radar would see for it,
-    dBZ, by the WSR-88D's default Z-R relation for rain, Z = 300 R^1.4
-    (NWS Radar Operations Center, WSR-88D precipitation processing; Fulton
-    et al. 1998, Weather and Forecasting 13): so a model's rate and the
-    radar's echo are read against the same intensity words. No rain, NaN."""
-    with np.errstate(divide="ignore", invalid="ignore"):
-        dbz = 10.0 * np.log10(300.0 * np.power(rate_mm_h, 1.4))
-    return np.where(rate_mm_h > 0, dbz, 0.0).astype(np.float32)
+    dBZ: the engine's precip_dbz (the WSR-88D's Z-R relation), so a model's
+    rate and the radar's echo are read against the same intensity words.
+    Only the cells where some falls are asked; none is 0, nothing NaN."""
+    rate = np.asarray(rate_mm_h, dtype=np.float64)
+    out = np.where(np.isnan(rate), np.nan, 0.0)
+    wet = np.isfinite(rate) & (rate > 0)
+    if wet.any():
+        out[wet] = ask("precip_dbz", rates_mm_h=np.round(rate[wet], 4).tolist())["dbz"]
+    return out.astype(np.float32)
 
 
 def in_units(grid: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
@@ -199,6 +257,10 @@ def in_units(grid: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         out["temp"] = grid["temp"] - 273.15
     if "vis" in grid:
         out["vis"] = grid["vis"] / M_PER_SM
+    if "ceiling" in grid:
+        out["ceiling"] = grid["ceiling"]  # ft above the ground already (ceiling_agl_ft)
+    if "cape" in grid:
+        out["cape"] = grid["cape"]
     return out
 
 

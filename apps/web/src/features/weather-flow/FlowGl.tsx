@@ -4,6 +4,7 @@ import { MapboxOverlay } from "@deck.gl/mapbox";
 import type { Layer } from "@deck.gl/core";
 import type { IControl, Map as MlMap, RasterLayerSpecification } from "maplibre-gl";
 import { GridLayer, GridStyle, ImageType, ParticleLayer, RasterLayer, type TextureData } from "weatherlayers-gl";
+import { useEngineWhen } from "../../lib/engine/useEngineReady";
 import { slotId, useGlLayer, useGlMap } from "../../lib/map/gl/glLayer";
 import { prefersReducedMotion } from "../../lib/motion";
 import { WEATHER } from "../../lib/tokens";
@@ -11,7 +12,7 @@ import { FlowBar } from "./FlowBar";
 import { FlowBubble } from "./FlowBubble";
 import { FlowHatch } from "./FlowHatch";
 import { FlowLegend } from "./FlowLegend";
-import { STREAK_RAMP, lookOf, type ShownField } from "./flowLook";
+import { STREAK_RAMP, hasStreaks, lookOf, type ShownField } from "./flowLook";
 import { pictureQuery, useFlowTexture } from "./flowTexture";
 import { useWeatherFlow, type FlowFrame, type FlowLayer } from "./useWeatherFlow";
 
@@ -41,8 +42,9 @@ function usePageShown() {
 /**
  * The flow layer (the owner, 2026-11-11: "Can we overlay weather and wind
  * like this?", Windy's map, then Apple Weather's wind and precipitation
- * maps as the look): the model weather's field as a colour wash and the
- * wind as thin streaks over it, drawn with weatherlayers-gl's RasterLayer
+ * maps as the look): the model weather's field as a colour wash and, on
+ * the wind and the gusts (hasStreaks), the wind as thin streaks over it,
+ * as Apple Weather's maps draw them, drawn with weatherlayers-gl's RasterLayer
  * and ParticleLayer on deck.gl, interleaved into the map's own style
  * under its areas, lines and marks (slot "areas"), so the airports, the
  * route and the airspace stay on top. A chunk of its own, loaded only
@@ -52,16 +54,19 @@ function usePageShown() {
  * nothing moves; in a hidden tab the streaks stop. For an hour already
  * past, the precipitation is the radar's mosaic, observed, in place of
  * the model's. With it, the legend (top left, its close and its field
- * menu), the timeline (above the sheet) and the value bubble.
+ * menu), the timeline (above the sheet) and the value bubble. The
+ * fields' bands and words are the engine's (flowLook), so it waits for it.
  */
 export default function FlowGl() {
+  useEngineWhen(true);
   const { map } = useGlMap();
   const flow = useWeatherFlow();
   const field = flow.field === "off" ? "wind" : flow.field;
+  const streaks = hasStreaks(field);
   const { frame, layer } = flow;
   const radar = field === "precip" && frame?.past && frame.radar_tiles ? frame.radar_tiles : null;
   const fieldTexture = useFlowTexture(frame, field, !radar);
-  const windTexture = useFlowTexture(frame, "wind");
+  const windTexture = useFlowTexture(frame, "wind", streaks);
   const shown = usePageShown();
   const [reduced] = useState(prefersReducedMotion);
   const overlay = useMemo(() => new MapboxOverlay({ interleaved: true, layers: [] }), []);
@@ -81,8 +86,9 @@ export default function FlowGl() {
   usePrefetchNext(flow.frames, flow.shown, field);
 
   useEffect(() => {
-    overlay.setProps({ layers: layer ? layersOf(layer, field, fieldTexture, windTexture, { reduced, animate: shown, phone }) : [] });
-  }, [overlay, layer, field, fieldTexture, windTexture, reduced, shown, phone]);
+    const wind = streaks ? windTexture : undefined;
+    overlay.setProps({ layers: layer ? layersOf(layer, field, fieldTexture, wind, { reduced, animate: shown, phone }) : [] });
+  }, [overlay, layer, field, fieldTexture, windTexture, streaks, reduced, shown, phone]);
 
   return (
     <>
@@ -119,7 +125,7 @@ function usePrefetchNext(frames: FlowFrame[], shown: number, field: ShownField) 
   const next = frames[shown + 1];
   useEffect(() => {
     if (!next) return;
-    for (const f of new Set<ShownField | "wind">([field, "wind"])) {
+    for (const f of new Set<ShownField | "wind">(hasStreaks(field) ? [field, "wind"] : [field])) {
       if (!next.fields.includes(f)) continue;
       void client.prefetchQuery(pictureQuery(next, f));
     }
@@ -130,6 +136,7 @@ function layersOf(
   layer: FlowLayer,
   field: ShownField,
   fieldTexture: TextureData | undefined,
+  /** The wind's picture where the field has streaks (hasStreaks), else none. */
   windTexture: TextureData | undefined,
   { reduced, animate, phone }: { reduced: boolean; animate: boolean; phone: boolean },
 ): Layer[] {

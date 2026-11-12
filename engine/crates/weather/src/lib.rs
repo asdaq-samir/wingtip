@@ -25,6 +25,9 @@
 //! - ready: ready to fly -- whether the device holds the charts, the
 //!   cycle packs, the weather and the NOTAMs the flight needs, and what to
 //!   fix while there is still a signal;
+//! - model_weather: the map's model weather in a pilot's words -- the
+//!   precipitation's intensity (AIM 7-1-12), the sky's cover (AIM 7-1-28),
+//!   the ceiling's bands (AIM 7-1-7) and CAPE's categories (NWS);
 //! - worse: what counts as a route's weather getting worse between two
 //!   readings of its briefing (AIM 7-1-6, 7-1-7).
 
@@ -33,6 +36,7 @@ pub mod cycles;
 pub mod forecast;
 pub mod lighting_read;
 pub mod metar;
+pub mod model_weather;
 pub mod notam;
 pub mod notam_rank;
 pub mod notam_read;

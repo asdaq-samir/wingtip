@@ -12,7 +12,8 @@ import type { FlowFrame } from "./useWeatherFlow";
  * Weather's is (the owner's screenshots, 2026-11-11): Close, which turns
  * the layer off; the field, a menu of the others (the layers button's
  * menu in Apple's); its unit; a slim bar of the colour ramp with its
- * marks -- knots, degrees, or for precipitation the intensity's words --
+ * marks -- knots, degrees, or for precipitation, the ceiling and CAPE
+ * their bands' words, the engine's --
  * and whose the picture is: the model's forecast, which is not an
  * observation, or for an hour past the radar's.
  */
@@ -40,13 +41,13 @@ export function FlowLegend({ field, frame, radar }: { field: ShownField; frame: 
       </div>
       <p className={cn("font-semibold", TEXT.note)}>{look.title}</p>
       <div className="flex h-32 gap-2">
-        <div className="w-2 rounded-full" style={{ background: rampGradient(look.ramp) }} aria-hidden="true" />
+        <div className="w-2 rounded-full" style={{ background: rampGradient(look.bar) }} aria-hidden="true" />
         <ol className="relative flex-1" aria-label={look.title}>
           {look.ticks.map((t) => (
             <li
               key={t.label}
               className={cn("absolute -translate-y-1/2 tabular-nums", TEXT.caption)}
-              style={{ top: `${tickPlace(look.ramp, t.at) * 100}%` }}
+              style={{ top: `${tickPlace(look.bar, t.at) * 100}%` }}
             >
               {t.label}
             </li>

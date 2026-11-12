@@ -77,8 +77,59 @@ def test_units_are_knots_degrees_celsius_statute_miles_and_reflectivity():
 
 
 def test_a_rate_is_the_reflectivity_the_wsr88ds_z_r_relation_gives():
-    # Z = 300 R^1.4: 10 mm/h is 10 log10(300 * 10^1.4) = 38.8 dBZ.
-    assert flow_grid.precip_dbz(np.array([10.0]))[0] == pytest.approx(38.77, abs=0.01)
+    # The engine's precip_dbz, Z = 300 R^1.4: 10 mm/h is 10 log10(300 *
+    # 10^1.4) = 38.8 dBZ; none falling is 0, and no value stays none.
+    dbz = flow_grid.precip_dbz(np.array([10.0, 0.0, np.nan]))
+    assert dbz[0] == pytest.approx(38.77, abs=0.01)
+    assert dbz[1] == 0.0 and np.isnan(dbz[2])
+
+
+def test_a_ceiling_is_feet_above_the_ground_and_none_is_clear():
+    # 14 CFR 1.1: "the height above the earth's surface". 1,000 m MSL over
+    # 700 m ground is 300 m, 984 ft; the GFS's 20,000 m and the HRRR's
+    # missing value are no ceiling, infinity, which the picture draws clear.
+    agl = flow_grid.ceiling_agl_ft(np.array([1000.0, 20000.0, np.nan, 500.0]), np.array([700.0, 0.0, 0.0, 600.0]))
+    assert agl[0] == pytest.approx(984.25, abs=0.01)
+    assert np.isinf(agl[1]) and np.isinf(agl[2])
+    assert agl[3] == 0.0
+
+
+def test_a_cells_ceiling_is_its_lowest_not_its_mean():
+    n = flow_grid.HRRR_LEAST_POINTS
+    where = np.full(n, 40.0), np.full(n, -100.0)
+    ceiling = np.full(n, np.inf)
+    ceiling[3] = 800.0
+    values = {"u": np.zeros(n), "v": np.zeros(n), "ceiling": ceiling}
+    grid = flow_grid.on_grid(values, where, hrrr=True)
+    row, col = int(round((flow_grid.NORTH - 40.0) / 0.25)), int(round((-100.0 - flow_grid.WEST) / 0.25))
+    assert grid["ceiling"][row, col] == 800.0
+    assert np.isnan(grid["ceiling"][0, 0])
+
+
+def test_no_ceiling_is_the_top_of_the_picture_and_clear_by_its_ramp():
+    from io import BytesIO
+
+    from PIL import Image
+
+    kept = {"ceiling": np.array([[np.inf, 500.0, np.nan]], dtype=np.float32)}
+    pixels = np.asarray(Image.open(BytesIO(flow_grid.png("ceiling", kept))))
+    assert pixels[0, 0, 0] == 255 and pixels[0, 0, 3] == 255
+    assert pixels[0, 1, 0] == 10  # 500 ft at 50 ft a step
+    assert pixels[0, 2, 3] == 0
+
+
+def test_each_request_asks_only_what_is_read(monkeypatch):
+    asked = []
+
+    def answer(url, params, **_):
+        asked.append(sorted(k for k in params if k.startswith(("var_", "lev_"))))
+        return type("R", (), {"status_code": 200, "ok": True, "content": b"GRIB" + str(len(asked)).encode()})()
+
+    monkeypatch.setattr(flow.requests, "get", answer)
+    body = flow._hrrr(NOW, 1)
+    assert body == b"GRIB1GRIB2GRIB3"
+    assert ["lev_surface", "var_CAPE", "var_GUST", "var_PRATE", "var_VIS"] in asked
+    assert all("var_HGT" not in a or "lev_surface" not in a for a in asked)
 
 
 def test_a_fields_png_holds_its_value_scaled_and_no_data_clear():

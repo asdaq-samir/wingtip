@@ -189,6 +189,22 @@ enum WingtipColor {
         static let flowRainExtremeTop = rgb(0xFFF4B8)
         /// Cloud cover, the same grey-white thicker with cover.
         static let flowCloud = rgb(0xEEF2F6)
+        /// The ceiling, by AIM 7-1-7's categories in the airport marks' own colours (category.lifr and the rest), strongest where it is lowest: under 500 ft.
+        static let flowCeilingLifr = rgb(0xA371F7)
+        /// 500 to under 1,000 ft.
+        static let flowCeilingIfr = rgb(0xB3261E)
+        /// 1,000 to 3,000 ft.
+        static let flowCeilingMvfr = rgb(0x1F6FEB)
+        /// Over 3,000 ft, fading to clear where there is none.
+        static let flowCeilingVfr = rgb(0x1A7F37)
+        /// Thunderstorm energy, surface CAPE, by the NWS's categories, yellow through orange and red to magenta as the SPC's mesoanalysis draws it: weak, from a few hundred J/kg.
+        static let flowCapeWeak = rgb(0xE8D44D)
+        /// Moderate, 1,000 J/kg.
+        static let flowCapeModerate = rgb(0xF08A24)
+        /// Strong, 2,500 J/kg.
+        static let flowCapeStrong = rgb(0xD62B2B)
+        /// Extreme, over 4,000 J/kg.
+        static let flowCapeExtreme = rgb(0xC02BB8)
         /// The 2 m temperature, violet through blue, teal, green and yellow to red (Apple Weather's temperature map): -30 C.
         static let flowTempFrigid = rgb(0x5A4FCF)
         /// -10 C.

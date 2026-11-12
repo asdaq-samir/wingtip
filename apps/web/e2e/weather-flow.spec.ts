@@ -13,7 +13,7 @@ import { openMapSettings, settle, slow } from "./helpers";
  */
 
 const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg==", "base64");
-const FIELDS = ["cloud", "gust", "precip", "temp", "vis", "wind"];
+const FIELDS = ["cape", "ceiling", "cloud", "gust", "precip", "temp", "vis", "wind"];
 
 /** The last hour, now and three forecast hours, as wingtip.weather_flow lists them. */
 function timeline() {
@@ -43,6 +43,8 @@ function timeline() {
       gust: scalar("kt", [0, 100]),
       precip: scalar("dBZ", [0, 75]),
       cloud: scalar("%", [0, 100]),
+      ceiling: scalar("ft", [0, 12750]),
+      cape: scalar("J/kg", [0, 5100]),
       temp: scalar("°C", [-50, 50]),
       vis: scalar("SM", [0, 10]),
     },
@@ -96,6 +98,17 @@ test("model weather is off by default, turned on from the Map menu, and its lege
   await page.getByTestId("weather-flow-legend-field-precip").click();
   await expect(legend).toContainText("Moderate");
   await expect.poll(() => asked.some((p) => p.endsWith("/precip.png"))).toBe(true);
+
+  // The ceiling in AIM 7-1-7's bands, CAPE in the NWS's categories.
+  await page.getByTestId("weather-flow-legend-field").click();
+  await page.getByTestId("weather-flow-legend-field-ceiling").click();
+  await expect(legend).toContainText("MVFR 1,000");
+  await page.getByTestId("weather-flow-legend-field").click();
+  await page.getByTestId("weather-flow-legend-field-cape").click();
+  await expect(legend).toContainText("Strong 2,500");
+  await expect.poll(() => asked.some((p) => p.endsWith("/cape.png"))).toBe(true);
+  await page.getByTestId("weather-flow-legend-field").click();
+  await page.getByTestId("weather-flow-legend-field-precip").click();
 
   // A forecast hour scrubbed to says so.
   await page.getByRole("slider", { name: "Precipitation hour" }).focus();

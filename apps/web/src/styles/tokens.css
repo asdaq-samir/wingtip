@@ -137,6 +137,14 @@
   --weather-flow-rain-extreme: #f6c445;
   --weather-flow-rain-extreme-top: #fff4b8;
   --weather-flow-cloud: #eef2f6;
+  --weather-flow-ceiling-lifr: #a371f7;
+  --weather-flow-ceiling-ifr: #b3261e;
+  --weather-flow-ceiling-mvfr: #1f6feb;
+  --weather-flow-ceiling-vfr: #1a7f37;
+  --weather-flow-cape-weak: #e8d44d;
+  --weather-flow-cape-moderate: #f08a24;
+  --weather-flow-cape-strong: #d62b2b;
+  --weather-flow-cape-extreme: #c02bb8;
   --weather-flow-temp-frigid: #5a4fcf;
   --weather-flow-temp-cold: #3e8ddb;
   --weather-flow-temp-freezing: #46c0b4;

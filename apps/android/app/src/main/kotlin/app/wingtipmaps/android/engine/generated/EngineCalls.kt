@@ -295,6 +295,12 @@ fun Engine.callPattern(tail: String): Result<String?> =
     rule("call_pattern", EngineContract.CallPatternInput(tail = tail))
 
 /**
+ * A surface CAPE's category (NWS, "Severe Weather Topics: CAPE"): weak under 1,000 J/kg, moderate 1,000 to 2,500, strong 2,500 to 4,000, extreme over 4,000. The energy a storm could draw on, not a forecast of storms.
+ */
+fun Engine.capeCategory(jKg: Double): Result<String> =
+    rule("cape_category", EngineContract.CapeCategoryInput(jKg = jKg))
+
+/**
  * A report's ceiling, ft above the ground: the lowest broken, overcast or obscured layer (14 CFR 1.1), an obscured sky's at its vertical visibility; null where there is none or it is not known (sky_ceiling tells them apart).
  */
 fun Engine.ceilingFt(layers: List<EngineContract.CeilingFtInputLayersItem>? = null, vertVisFt: Double? = null): Result<Double?> =
@@ -365,6 +371,12 @@ fun Engine.closestApproach(own: EngineContract.OwnShipFix, plane: EngineContract
  */
 fun Engine.cloudClearanceAtFt(altitudeFt: Double): Result<Double> =
     rule("cloud_clearance_at_ft", EngineContract.CloudClearanceAtFtInput(altitudeFt = altitudeFt))
+
+/**
+ * A cloud cover in percent as eighths of the sky, the nearest eighth (none only at 0, eight only at 100: WMO code table 2700), and its METAR contraction (AIM 7-1-28: SKC 0/8, FEW to 2/8, SCT 3/8-4/8, BKN 5/8-7/8, OVC 8/8).
+ */
+fun Engine.cloudCover(percent: Double): Result<EngineContract.CloudCoverAnswer> =
+    rule("cloud_cover", EngineContract.CloudCoverInput(percent = percent))
 
 /**
  * A bearing as one of the eight compass points.
@@ -1189,6 +1201,12 @@ fun Engine.modeCVeil(lat: Double, lon: Double, airports: List<EngineContract.Mod
     rule("mode_c_veil", EngineContract.ModeCVeilInput(lat = lat, lon = lon, airports = airports))
 
 /**
+ * The bands the map's model weather is coloured and labelled by: precipitation's intensity words by reflectivity, dBZ (AIM 7-1-12: light under 26, moderate 26 to 40, heavy over 40 to 50, extreme over 50; drawn from 10 dBZ, the app's least), the ceiling's by AIM 7-1-7's categories, ft above the ground (14 CFR 1.1), and CAPE's, J/kg (NWS: weak under 1,000, moderate to 2,500, strong to 4,000, extreme over).
+ */
+fun Engine.modelWeatherBands(): Result<EngineContract.ModelWeatherBandsAnswer> =
+    rule("model_weather_bands", EngineContract.ModelWeatherBandsInput())
+
+/**
  * A navaid's ident in Morse code (AIM 1-1-3), the letters two spaces apart.
  */
 fun Engine.morse(ident: String? = null): Result<String> =
@@ -1469,6 +1487,18 @@ fun Engine.planningFigures(): Result<EngineContract.PlanningFiguresAnswer> =
  */
 fun Engine.pointKind(text: String): Result<String?> =
     rule("point_kind", EngineContract.PointKindInput(text = text))
+
+/**
+ * Precipitation rates, mm/h, as the reflectivity a radar would see for each by the WSR-88D's default Z-R relation, Z = 300 R^1.4 (NWS), dBZ to the hundredth; 0 where none falls. So a model's rate and the radar's echo are read against the same intensity words.
+ */
+fun Engine.precipDbz(ratesMmH: List<Double>): Result<EngineContract.PrecipDbzAnswer> =
+    rule("precip_dbz", EngineContract.PrecipDbzInput(ratesMmH = ratesMmH))
+
+/**
+ * A precipitation reflectivity's intensity word, AIM 7-1-12's (light under 26 dBZ, moderate 26 to 40, heavy over 40 to 50, extreme over 50), none under 10 dBZ (the app's trace); and with the temperature at 2 m, whether it falls as snow (at or under 0 C) or rain, a simplification said only as a glyph.
+ */
+fun Engine.precipIntensity(dbz: Double, tempC: Double? = null): Result<EngineContract.PrecipIntensityAnswer> =
+    rule("precip_intensity", EngineContract.PrecipIntensityInput(dbz = dbz, tempC = tempC))
 
 /**
  * Pressure altitude from a field's elevation and its altimeter setting: the standard atmosphere's height of the setting above 29.92 "Hg, (1 - (setting/29.92)^(1/5.2558797)) x 145,442 ft (ICAO Doc 7488), FAA-H-8083-25C ch. 11 Figure 11-3's conversion factor to within 2 ft (30.10 "Hg: -165).

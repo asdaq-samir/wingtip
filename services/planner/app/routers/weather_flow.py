@@ -13,7 +13,7 @@ from ..schemas.weather_flow import FlowLayer
 
 router = APIRouter()
 
-Field = Literal["wind", "gust", "precip", "cloud", "temp", "vis"]
+Field = Literal["wind", "gust", "precip", "cloud", "ceiling", "cape", "temp", "vis"]
 
 
 @router.get("/api/weather/flow", response_model=FlowLayer, openapi_extra=PUBLIC)

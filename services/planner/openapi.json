@@ -30013,6 +30013,8 @@
                 "gust",
                 "precip",
                 "cloud",
+                "ceiling",
+                "cape",
                 "temp",
                 "vis"
               ],

@@ -3631,6 +3631,39 @@
       ],
       "additionalProperties": false
     },
+    "cape_category": {
+      "description": "A surface CAPE's category (NWS, \"Severe Weather Topics: CAPE\"): weak under 1,000 J/kg, moderate 1,000 to 2,500, strong 2,500 to 4,000, extreme over 4,000. The energy a storm could draw on, not a forecast of storms.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CapeCategoryInput",
+          "type": "object",
+          "properties": {
+            "j_kg": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "j_kg"
+          ]
+        },
+        "answer": {
+          "title": "CapeCategoryAnswer",
+          "type": "string",
+          "enum": [
+            "Weak",
+            "Moderate",
+            "Strong",
+            "Extreme"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "ceiling_ft": {
       "description": "A report's ceiling, ft above the ground: the lowest broken, overcast or obscured layer (14 CFR 1.1), an obscured sky's at its vertical visibility; null where there is none or it is not known (sky_ceiling tells them apart).",
       "type": "object",
@@ -4344,6 +4377,55 @@
         "answer": {
           "title": "CloudClearanceAtFtAnswer",
           "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "cloud_cover": {
+      "description": "A cloud cover in percent as eighths of the sky, the nearest eighth (none only at 0, eight only at 100: WMO code table 2700), and its METAR contraction (AIM 7-1-28: SKC 0/8, FEW to 2/8, SCT 3/8-4/8, BKN 5/8-7/8, OVC 8/8).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CloudCoverInput",
+          "type": "object",
+          "properties": {
+            "percent": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "percent"
+          ]
+        },
+        "answer": {
+          "title": "CloudCoverAnswer",
+          "type": "object",
+          "properties": {
+            "oktas": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 8
+            },
+            "cover": {
+              "type": "string",
+              "enum": [
+                "SKC",
+                "FEW",
+                "SCT",
+                "BKN",
+                "OVC"
+              ]
+            }
+          },
+          "required": [
+            "oktas",
+            "cover"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -15770,6 +15852,108 @@
       ],
       "additionalProperties": false
     },
+    "model_weather_bands": {
+      "description": "The bands the map's model weather is coloured and labelled by: precipitation's intensity words by reflectivity, dBZ (AIM 7-1-12: light under 26, moderate 26 to 40, heavy over 40 to 50, extreme over 50; drawn from 10 dBZ, the app's least), the ceiling's by AIM 7-1-7's categories, ft above the ground (14 CFR 1.1), and CAPE's, J/kg (NWS: weak under 1,000, moderate to 2,500, strong to 4,000, extreme over).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ModelWeatherBandsInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "ModelWeatherBandsAnswer",
+          "type": "object",
+          "properties": {
+            "precip": {
+              "type": "object",
+              "properties": {
+                "least_dbz": {
+                  "type": "number",
+                  "description": "Under it nothing is said to fall: the app's choice, a trace."
+                },
+                "bands": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "word": {
+                        "type": "string"
+                      },
+                      "from": {
+                        "type": "number",
+                        "description": "The band's least value, in the field's unit; the band runs to the next one's."
+                      }
+                    },
+                    "required": [
+                      "word",
+                      "from"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "least_dbz",
+                "bands"
+              ],
+              "additionalProperties": false
+            },
+            "ceiling": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "word": {
+                    "type": "string"
+                  },
+                  "from": {
+                    "type": "number",
+                    "description": "The band's least value, in the field's unit; the band runs to the next one's."
+                  }
+                },
+                "required": [
+                  "word",
+                  "from"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "cape": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "word": {
+                    "type": "string"
+                  },
+                  "from": {
+                    "type": "number",
+                    "description": "The band's least value, in the field's unit; the band runs to the next one's."
+                  }
+                },
+                "required": [
+                  "word",
+                  "from"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "precip",
+            "ceiling",
+            "cape"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "morse": {
       "description": "A navaid's ident in Morse code (AIM 1-1-3), the letters two spaces apart.",
       "type": "object",
@@ -19201,6 +19385,112 @@
             "own",
             null
           ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "precip_dbz": {
+      "description": "Precipitation rates, mm/h, as the reflectivity a radar would see for each by the WSR-88D's default Z-R relation, Z = 300 R^1.4 (NWS), dBZ to the hundredth; 0 where none falls. So a model's rate and the radar's echo are read against the same intensity words.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "PrecipDbzInput",
+          "type": "object",
+          "properties": {
+            "rates_mm_h": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "rates_mm_h"
+          ]
+        },
+        "answer": {
+          "title": "PrecipDbzAnswer",
+          "type": "object",
+          "properties": {
+            "dbz": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "dbz"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "precip_intensity": {
+      "description": "A precipitation reflectivity's intensity word, AIM 7-1-12's (light under 26 dBZ, moderate 26 to 40, heavy over 40 to 50, extreme over 50), none under 10 dBZ (the app's trace); and with the temperature at 2 m, whether it falls as snow (at or under 0 C) or rain, a simplification said only as a glyph.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "PrecipIntensityInput",
+          "type": "object",
+          "properties": {
+            "dbz": {
+              "type": "number"
+            },
+            "temp_c": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "dbz"
+          ]
+        },
+        "answer": {
+          "title": "PrecipIntensityAnswer",
+          "type": "object",
+          "properties": {
+            "word": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "Light",
+                "Moderate",
+                "Heavy",
+                "Extreme",
+                null
+              ]
+            },
+            "falls_as": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "rain",
+                "snow",
+                null
+              ]
+            }
+          },
+          "required": [
+            "word",
+            "falls_as"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -25922,6 +26212,7 @@
     "below_vfr_minimums",
     "best_fields",
     "call_pattern",
+    "cape_category",
     "ceiling_ft",
     "ceiling_visibility",
     "checklist_phases",
@@ -25934,6 +26225,7 @@
     "cleared_route",
     "closest_approach",
     "cloud_clearance_at_ft",
+    "cloud_cover",
     "compass_word",
     "congested_points",
     "copilot_watch",
@@ -26071,6 +26363,7 @@
     "magnetic_variation",
     "mayday_call",
     "mode_c_veil",
+    "model_weather_bands",
     "morse",
     "n_number",
     "navaid_hours",
@@ -26118,6 +26411,8 @@
     "plan_profile",
     "planning_figures",
     "point_kind",
+    "precip_dbz",
+    "precip_intensity",
     "pressure_altitude_ft",
     "procedure_arc",
     "procedure_climb_nm",

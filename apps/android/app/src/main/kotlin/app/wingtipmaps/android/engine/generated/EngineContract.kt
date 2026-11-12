@@ -1642,6 +1642,12 @@ object EngineContract {
     )
 
     @Serializable
+    data class CapeCategoryInput(
+        @SerialName("j_kg")
+        val jKg: Double,
+    )
+
+    @Serializable
     data class CeilingFtInput(
         val layers: List<EngineContract.CeilingFtInputLayersItem>? = null,
         @SerialName("vert_vis_ft")
@@ -1939,6 +1945,17 @@ object EngineContract {
     data class CloudClearanceAtFtInput(
         @SerialName("altitude_ft")
         val altitudeFt: Double,
+    )
+
+    @Serializable
+    data class CloudCoverAnswer(
+        val oktas: Int,
+        val cover: String,
+    )
+
+    @Serializable
+    data class CloudCoverInput(
+        val percent: Double,
     )
 
     /**
@@ -6573,6 +6590,56 @@ object EngineContract {
     )
 
     @Serializable
+    data class ModelWeatherBandsAnswer(
+        val precip: EngineContract.ModelWeatherBandsAnswerPrecip,
+        val ceiling: List<EngineContract.ModelWeatherBandsAnswerCeilingItem>,
+        val cape: List<EngineContract.ModelWeatherBandsAnswerCapeItem>,
+    )
+
+    @Serializable
+    data class ModelWeatherBandsAnswerCapeItem(
+        val word: String,
+        /**
+         * The band's least value, in the field's unit; the band runs to the next one's.
+         */
+        val from: Double,
+    )
+
+    @Serializable
+    data class ModelWeatherBandsAnswerCeilingItem(
+        val word: String,
+        /**
+         * The band's least value, in the field's unit; the band runs to the next one's.
+         */
+        val from: Double,
+    )
+
+    @Serializable
+    data class ModelWeatherBandsAnswerPrecip(
+        /**
+         * Under it nothing is said to fall: the app's choice, a trace.
+         */
+        @SerialName("least_dbz")
+        val leastDbz: Double,
+        val bands: List<EngineContract.ModelWeatherBandsAnswerPrecipBandsItem>,
+    )
+
+    @Serializable
+    data class ModelWeatherBandsAnswerPrecipBandsItem(
+        val word: String,
+        /**
+         * The band's least value, in the field's unit; the band runs to the next one's.
+         */
+        val from: Double,
+    )
+
+    @Serializable
+    class ModelWeatherBandsInput {
+        override fun equals(other: Any?): Boolean = other is ModelWeatherBandsInput
+        override fun hashCode(): Int = 0
+    }
+
+    @Serializable
     data class MorseInput(
         val ident: String? = null,
     )
@@ -8001,6 +8068,31 @@ object EngineContract {
          * Has an electronic glidepath by its name: an ILS or a GLS.
          */
         val precision: Boolean,
+    )
+
+    @Serializable
+    data class PrecipDbzAnswer(
+        val dbz: List<Double>,
+    )
+
+    @Serializable
+    data class PrecipDbzInput(
+        @SerialName("rates_mm_h")
+        val ratesMmH: List<Double>,
+    )
+
+    @Serializable
+    data class PrecipIntensityAnswer(
+        val word: String? = null,
+        @SerialName("falls_as")
+        val fallsAs: String? = null,
+    )
+
+    @Serializable
+    data class PrecipIntensityInput(
+        val dbz: Double,
+        @SerialName("temp_c")
+        val tempC: Double? = null,
     )
 
     @Serializable

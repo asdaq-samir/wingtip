@@ -293,6 +293,30 @@ object WingtipColors {
         /** Cloud cover, the same grey-white thicker with cover. */
         val FlowCloud = Color(0xFFEEF2F6)
         const val FLOW_CLOUD_HEX = "#eef2f6"
+        /** The ceiling, by AIM 7-1-7's categories in the airport marks' own colours (category.lifr and the rest), strongest where it is lowest: under 500 ft. */
+        val FlowCeilingLifr = Color(0xFFA371F7)
+        const val FLOW_CEILING_LIFR_HEX = "#a371f7"
+        /** 500 to under 1,000 ft. */
+        val FlowCeilingIfr = Color(0xFFB3261E)
+        const val FLOW_CEILING_IFR_HEX = "#b3261e"
+        /** 1,000 to 3,000 ft. */
+        val FlowCeilingMvfr = Color(0xFF1F6FEB)
+        const val FLOW_CEILING_MVFR_HEX = "#1f6feb"
+        /** Over 3,000 ft, fading to clear where there is none. */
+        val FlowCeilingVfr = Color(0xFF1A7F37)
+        const val FLOW_CEILING_VFR_HEX = "#1a7f37"
+        /** Thunderstorm energy, surface CAPE, by the NWS's categories, yellow through orange and red to magenta as the SPC's mesoanalysis draws it: weak, from a few hundred J/kg. */
+        val FlowCapeWeak = Color(0xFFE8D44D)
+        const val FLOW_CAPE_WEAK_HEX = "#e8d44d"
+        /** Moderate, 1,000 J/kg. */
+        val FlowCapeModerate = Color(0xFFF08A24)
+        const val FLOW_CAPE_MODERATE_HEX = "#f08a24"
+        /** Strong, 2,500 J/kg. */
+        val FlowCapeStrong = Color(0xFFD62B2B)
+        const val FLOW_CAPE_STRONG_HEX = "#d62b2b"
+        /** Extreme, over 4,000 J/kg. */
+        val FlowCapeExtreme = Color(0xFFC02BB8)
+        const val FLOW_CAPE_EXTREME_HEX = "#c02bb8"
         /** The 2 m temperature, violet through blue, teal, green and yellow to red (Apple Weather's temperature map): -30 C. */
         val FlowTempFrigid = Color(0xFF5A4FCF)
         const val FLOW_TEMP_FRIGID_HEX = "#5a4fcf"

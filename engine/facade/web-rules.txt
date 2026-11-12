@@ -32,6 +32,7 @@ approach_transition
 atc_call
 best_fields
 call_pattern
+cape_category
 ceiling_visibility
 checklist_phases
 checklist_read
@@ -40,6 +41,7 @@ checklist_write
 cleared_route
 closest_approach
 cloud_clearance_at_ft
+cloud_cover
 compass_word
 copilot_watch
 csv_rows
@@ -128,6 +130,7 @@ logbook_read_check
 lost_comms
 magnetic_variation
 mayday_call
+model_weather_bands
 morse
 n_number
 navaid_hours
@@ -147,6 +150,7 @@ place_words
 plan_profile
 planning_figures
 point_kind
+precip_intensity
 procedures_read
 procedures_write
 proficiency_plan

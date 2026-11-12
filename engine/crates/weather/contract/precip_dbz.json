@@ -1,0 +1,43 @@
+{
+  "x-call": "wingtip_weather::model_weather::call",
+  "description": "Precipitation rates, mm/h, as the reflectivity a radar would see for each by the WSR-88D's default Z-R relation, Z = 300 R^1.4 (NWS), dBZ to the hundredth; 0 where none falls. So a model's rate and the radar's echo are read against the same intensity words.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PrecipDbzInput",
+      "type": "object",
+      "properties": {
+        "rates_mm_h": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "rates_mm_h"
+      ]
+    },
+    "answer": {
+      "title": "PrecipDbzAnswer",
+      "type": "object",
+      "properties": {
+        "dbz": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "dbz"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

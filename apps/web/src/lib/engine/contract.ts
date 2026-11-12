@@ -149,6 +149,7 @@ export type BareFieldAnswer = string;
 export type BearingDegAnswer = number;
 export type BelowVfrMinimumsAnswer = boolean;
 export type CallPatternAnswer = string | null;
+export type CapeCategoryAnswer = "Weak" | "Moderate" | "Strong" | "Extreme";
 export type CeilingFtAnswer = number | null;
 export type ChecklistPhasesAnswer = string[];
 export type ChecklistSectionAnswer = number | null;
@@ -1263,6 +1264,13 @@ export interface EngineContract {
     answer: CallPatternAnswer;
   };
   /**
+   * A surface CAPE's category (NWS, "Severe Weather Topics: CAPE"): weak under 1,000 J/kg, moderate 1,000 to 2,500, strong 2,500 to 4,000, extreme over 4,000. The energy a storm could draw on, not a forecast of storms.
+   */
+  cape_category: {
+    input: CapeCategoryInput;
+    answer: CapeCategoryAnswer;
+  };
+  /**
    * A report's ceiling, ft above the ground: the lowest broken, overcast or obscured layer (14 CFR 1.1), an obscured sky's at its vertical visibility; null where there is none or it is not known (sky_ceiling tells them apart).
    */
   ceiling_ft: {
@@ -1345,6 +1353,13 @@ export interface EngineContract {
   cloud_clearance_at_ft: {
     input: CloudClearanceAtFtInput;
     answer: CloudClearanceAtFtAnswer;
+  };
+  /**
+   * A cloud cover in percent as eighths of the sky, the nearest eighth (none only at 0, eight only at 100: WMO code table 2700), and its METAR contraction (AIM 7-1-28: SKC 0/8, FEW to 2/8, SCT 3/8-4/8, BKN 5/8-7/8, OVC 8/8).
+   */
+  cloud_cover: {
+    input: CloudCoverInput;
+    answer: CloudCoverAnswer;
   };
   /**
    * A bearing as one of the eight compass points.
@@ -2306,6 +2321,13 @@ export interface EngineContract {
     answer: ModeCVeilAnswer;
   };
   /**
+   * The bands the map's model weather is coloured and labelled by: precipitation's intensity words by reflectivity, dBZ (AIM 7-1-12: light under 26, moderate 26 to 40, heavy over 40 to 50, extreme over 50; drawn from 10 dBZ, the app's least), the ceiling's by AIM 7-1-7's categories, ft above the ground (14 CFR 1.1), and CAPE's, J/kg (NWS: weak under 1,000, moderate to 2,500, strong to 4,000, extreme over).
+   */
+  model_weather_bands: {
+    input: ModelWeatherBandsInput;
+    answer: ModelWeatherBandsAnswer;
+  };
+  /**
    * A navaid's ident in Morse code (AIM 1-1-3), the letters two spaces apart.
    */
   morse: {
@@ -2633,6 +2655,20 @@ export interface EngineContract {
   point_kind: {
     input: PointKindInput;
     answer: PointKindAnswer;
+  };
+  /**
+   * Precipitation rates, mm/h, as the reflectivity a radar would see for each by the WSR-88D's default Z-R relation, Z = 300 R^1.4 (NWS), dBZ to the hundredth; 0 where none falls. So a model's rate and the radar's echo are read against the same intensity words.
+   */
+  precip_dbz: {
+    input: PrecipDbzInput;
+    answer: PrecipDbzAnswer;
+  };
+  /**
+   * A precipitation reflectivity's intensity word, AIM 7-1-12's (light under 26 dBZ, moderate 26 to 40, heavy over 40 to 50, extreme over 50), none under 10 dBZ (the app's trace); and with the temperature at 2 m, whether it falls as snow (at or under 0 C) or rain, a simplification said only as a glyph.
+   */
+  precip_intensity: {
+    input: PrecipIntensityInput;
+    answer: PrecipIntensityAnswer;
   };
   /**
    * Pressure altitude from a field's elevation and its altimeter setting: the standard atmosphere's height of the setting above 29.92 "Hg, (1 - (setting/29.92)^(1/5.2558797)) x 145,442 ft (ICAO Doc 7488), FAA-H-8083-25C ch. 11 Figure 11-3's conversion factor to within 2 ft (30.10 "Hg: -165).
@@ -4559,6 +4595,9 @@ export interface BestField {
 export interface CallPatternInput {
   tail: string;
 }
+export interface CapeCategoryInput {
+  j_kg: number;
+}
 export interface CeilingFtInput {
   layers?:
     | {
@@ -4789,6 +4828,13 @@ export interface TrafficPlane {
 }
 export interface CloudClearanceAtFtInput {
   altitude_ft: number;
+}
+export interface CloudCoverInput {
+  percent: number;
+}
+export interface CloudCoverAnswer {
+  oktas: number;
+  cover: "SKC" | "FEW" | "SCT" | "BKN" | "OVC";
 }
 export interface CompassWordInput {
   bearing_deg: number;
@@ -8025,6 +8071,36 @@ export interface ModeCVeilInput {
     lon?: number | null;
   }[];
 }
+export interface ModelWeatherBandsInput {}
+export interface ModelWeatherBandsAnswer {
+  precip: {
+    /**
+     * Under it nothing is said to fall: the app's choice, a trace.
+     */
+    least_dbz: number;
+    bands: {
+      word: string;
+      /**
+       * The band's least value, in the field's unit; the band runs to the next one's.
+       */
+      from: number;
+    }[];
+  };
+  ceiling: {
+    word: string;
+    /**
+     * The band's least value, in the field's unit; the band runs to the next one's.
+     */
+    from: number;
+  }[];
+  cape: {
+    word: string;
+    /**
+     * The band's least value, in the field's unit; the band runs to the next one's.
+     */
+    from: number;
+  }[];
+}
 export interface MorseInput {
   ident?: string | null;
 }
@@ -9084,6 +9160,20 @@ export interface PlanningFiguresAnswer {
 }
 export interface PointKindInput {
   text: string;
+}
+export interface PrecipDbzInput {
+  rates_mm_h: number[];
+}
+export interface PrecipDbzAnswer {
+  dbz: number[];
+}
+export interface PrecipIntensityInput {
+  dbz: number;
+  temp_c?: number | null;
+}
+export interface PrecipIntensityAnswer {
+  word: "Light" | "Moderate" | "Heavy" | "Extreme" | null;
+  falls_as: "rain" | "snow" | null;
 }
 export interface PressureAltitudeFtInput {
   elevation_ft: number;

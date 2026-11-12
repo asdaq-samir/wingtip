@@ -1689,6 +1689,14 @@ enum EngineContract {
         var tail: String
     }
 
+    struct CapeCategoryInput: Codable, Equatable, Sendable {
+        var jKg: Double
+
+        enum CodingKeys: String, CodingKey {
+            case jKg = "j_kg"
+        }
+    }
+
     struct CeilingFtInput: Codable, Equatable, Sendable {
         var layers: [EngineContract.CeilingFtInputLayersItem]?
         var vertVisFt: Double?
@@ -1998,6 +2006,15 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case altitudeFt = "altitude_ft"
         }
+    }
+
+    struct CloudCoverAnswer: Codable, Equatable, Sendable {
+        var oktas: Int
+        var cover: String
+    }
+
+    struct CloudCoverInput: Codable, Equatable, Sendable {
+        var percent: Double
     }
 
     /// One of the pilot's own debriefed flights, trimmed to what proficiency_plan reads.
@@ -6616,6 +6633,44 @@ enum EngineContract {
         var lon: Double?
     }
 
+    struct ModelWeatherBandsAnswer: Codable, Equatable, Sendable {
+        var precip: EngineContract.ModelWeatherBandsAnswerPrecip
+        var ceiling: [EngineContract.ModelWeatherBandsAnswerCeilingItem]
+        var cape: [EngineContract.ModelWeatherBandsAnswerCapeItem]
+    }
+
+    struct ModelWeatherBandsAnswerCapeItem: Codable, Equatable, Sendable {
+        var word: String
+        /// The band's least value, in the field's unit; the band runs to the next one's.
+        var from: Double
+    }
+
+    struct ModelWeatherBandsAnswerCeilingItem: Codable, Equatable, Sendable {
+        var word: String
+        /// The band's least value, in the field's unit; the band runs to the next one's.
+        var from: Double
+    }
+
+    struct ModelWeatherBandsAnswerPrecip: Codable, Equatable, Sendable {
+        /// Under it nothing is said to fall: the app's choice, a trace.
+        var leastDbz: Double
+        var bands: [EngineContract.ModelWeatherBandsAnswerPrecipBandsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case leastDbz = "least_dbz"
+            case bands
+        }
+    }
+
+    struct ModelWeatherBandsAnswerPrecipBandsItem: Codable, Equatable, Sendable {
+        var word: String
+        /// The band's least value, in the field's unit; the band runs to the next one's.
+        var from: Double
+    }
+
+    struct ModelWeatherBandsInput: Codable, Equatable, Sendable {
+    }
+
     struct MorseInput: Codable, Equatable, Sendable {
         var ident: String?
     }
@@ -8055,6 +8110,38 @@ enum EngineContract {
         var name: String
         /// Has an electronic glidepath by its name: an ILS or a GLS.
         var precision: Bool
+    }
+
+    struct PrecipDbzAnswer: Codable, Equatable, Sendable {
+        var dbz: [Double]
+    }
+
+    struct PrecipDbzInput: Codable, Equatable, Sendable {
+        var ratesMmH: [Double]
+
+        enum CodingKeys: String, CodingKey {
+            case ratesMmH = "rates_mm_h"
+        }
+    }
+
+    struct PrecipIntensityAnswer: Codable, Equatable, Sendable {
+        var word: String?
+        var fallsAs: String?
+
+        enum CodingKeys: String, CodingKey {
+            case word
+            case fallsAs = "falls_as"
+        }
+    }
+
+    struct PrecipIntensityInput: Codable, Equatable, Sendable {
+        var dbz: Double
+        var tempC: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case dbz
+            case tempC = "temp_c"
+        }
     }
 
     struct PressureAltitudeFtInput: Codable, Equatable, Sendable {

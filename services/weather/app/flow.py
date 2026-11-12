@@ -1,23 +1,29 @@
 """The model weather under the map's flow layer (the owner, 2026-11-11:
 "Can we overlay weather and wind like this?", Windy's and Apple
 Weather's wind map): the surface wind, its gusts, the precipitation, the
-cloud cover, the temperature and the visibility, from the HRRR where it
+cloud cover, the ceiling, the thunderstorm energy (CAPE), the
+temperature and the visibility, from the HRRR where it
 covers and the GFS beyond it (app.flow_grid), for a timeline of hours --
 the last hour, now, and every second hour on to twelve ahead -- each
 hour a small PNG per field in the weather store and one record ("flow")
 listing them, which the planner serves (wingtip.weather_flow).
 
 Sources, NOAA's NOMADS grib filter, each cut to the variables and levels
-the layer draws (flow_grid.FILTER_VARS, FILTER_LEVELS):
+the layer draws (flow_grid.FILTER_GROUPS, three requests a file):
 
 - GFS 0.25 degree (filter_gfs_0p25.pl, gfs.tHHz.pgrb2.0p25.fFFF), runs at
   00, 06, 12 and 18Z, hourly forecast hours to 120; boxed to the grid,
-  about 2.2 MB an hour of forecast (measured 2026-11-12).
+  about 2.6 MB an hour of forecast (2.3 MB before the ceiling and CAPE;
+  measured 2026-11-12).
 - HRRR CONUS (filter_hrrr_2d.pl, hrrr.tHHz.wrfsfcfFF.grib2), a run every
-  hour, forecast hours to 18 (48 at 00, 06, 12, 18Z), about 10.5 MB an
-  hour of forecast for the whole grid: the filter cannot box a Lambert
-  grid. Only the hours up to WEATHER_FLOW_HRRR_AHEAD_H ahead are taken
+  hour, forecast hours to 18 (48 at 00, 06, 12, 18Z), about 10.8 MB an
+  hour of forecast for the whole grid (10.7 MB before): the filter cannot
+  box a Lambert grid. Only the hours up to WEATHER_FLOW_HRRR_AHEAD_H ahead are taken
   from it (now and the last hour by default), the rest from the GFS.
+
+The ground's height under each model's points, which the ceiling is
+measured above, is the same every hour: fetched once a model (0.3 MB the
+GFS's, 2.2 MB the HRRR's) and kept in the store (_terrain).
 
 A frame already stored from the same runs and forecast hours is kept as
 it is, so a fetch downloads only the hours that are new: the timeline's
@@ -92,25 +98,62 @@ def _download(url: str, params: dict) -> bytes | None:
     return resp.content
 
 
-def _asked() -> dict:
-    return {**{f"var_{v}": "on" for v in flow_grid.FILTER_VARS}, **{f"lev_{lev}": "on" for lev in flow_grid.FILTER_LEVELS}}
+def _grouped(url: str, params: dict, groups) -> bytes | None:
+    """A file's records, one request a group of variables and levels
+    (flow_grid.FILTER_GROUPS), joined; None where any is not posted yet."""
+    bodies = []
+    for names, levels in groups:
+        asked = {**{f"var_{v}": "on" for v in names}, **{f"lev_{lev}": "on" for lev in levels}}
+        body = _download(url, {**params, **asked})
+        if body is None:
+            return None
+        bodies.append(body)
+    return b"".join(bodies)
 
 
-def _gfs(run: datetime, step: int) -> bytes | None:
+def _gfs(run: datetime, step: int, groups=flow_grid.FILTER_GROUPS) -> bytes | None:
     box = {"toplat": flow_grid.NORTH, "bottomlat": flow_grid.SOUTH, "leftlon": flow_grid.WEST, "rightlon": flow_grid.EAST}
-    params = {
-        "dir": f"/gfs.{run:%Y%m%d}/{run:%H}/atmos",
-        "file": f"gfs.t{run:%H}z.pgrb2.0p25.f{step:03d}",
-        **_asked(),
-        "subregion": "",
-        **box,
-    }
-    return _download(GFS_URL, params)
+    params = {"dir": f"/gfs.{run:%Y%m%d}/{run:%H}/atmos", "file": f"gfs.t{run:%H}z.pgrb2.0p25.f{step:03d}", "subregion": "", **box}
+    return _grouped(GFS_URL, params, groups)
 
 
-def _hrrr(run: datetime, step: int) -> bytes | None:
-    params = {"dir": f"/hrrr.{run:%Y%m%d}/conus", "file": f"hrrr.t{run:%H}z.wrfsfcf{step:02d}.grib2", **_asked()}
-    return _download(HRRR_URL, params)
+def _hrrr(run: datetime, step: int, groups=flow_grid.FILTER_GROUPS) -> bytes | None:
+    params = {"dir": f"/hrrr.{run:%Y%m%d}/conus", "file": f"hrrr.t{run:%H}z.wrfsfcf{step:02d}.grib2"}
+    return _grouped(HRRR_URL, params, groups)
+
+
+def _terrain(model: str, source: dict, size: int):
+    """The ground's height under the model's points, m MSL, flat: the
+    store's, else fetched from the run at hand and kept. None where it
+    cannot be had, and the ceiling is then left out."""
+    name = f"flow-terrain-{model}"
+    try:
+        held = weather_store.read_array(name)
+        if held.size == size:
+            return held
+    except (OSError, ValueError):
+        pass
+    body = _GET[model](*_back(source), flow_grid.TERRAIN_GROUPS)
+    if body is None:
+        return None
+    values, _ = flow_grid.read(body)
+    terrain = values.get("terrain")
+    if terrain is None or terrain.size != size:
+        return None
+    weather_store.write_array(name, terrain)
+    return terrain
+
+
+def _model_grid(model: str, source: dict, body: bytes) -> dict:
+    """A model's file on the output grid, its ceiling made feet above the
+    ground under each point before the points are put in cells."""
+    values, where = flow_grid.read(body)
+    if "ceiling" in values:
+        terrain = _terrain(model, source, values["ceiling"].size)
+        ceiling = values.pop("ceiling")
+        if terrain is not None:
+            values["ceiling"] = flow_grid.ceiling_agl_ft(ceiling, terrain)
+    return flow_grid.on_grid(values, where, hrrr=model == "hrrr")
 
 
 def _tries(valid: datetime, now: datetime) -> dict[str, list[tuple[datetime, int]]]:
@@ -179,9 +222,9 @@ def _frame(valid: datetime, now: datetime, held: dict | None) -> dict | None:
     hrrr_body = hrrr_body or (_GET["hrrr"](*_back(hrrr)) if hrrr else None)
     if gfs_body is None:
         return None
-    grid = flow_grid.on_grid(*flow_grid.read(gfs_body))
+    grid = _model_grid("gfs", gfs, gfs_body)
     if hrrr_body is not None:
-        grid = flow_grid.blend(grid, flow_grid.on_grid(*flow_grid.read(hrrr_body), hrrr=True))
+        grid = flow_grid.blend(grid, _model_grid("hrrr", hrrr, hrrr_body))
     else:
         key["hrrr"] = None
     kept = flow_grid.in_units(grid)

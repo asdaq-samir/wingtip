@@ -12,19 +12,12 @@ import {
   type TextureData,
 } from "weatherlayers-gl";
 import { cn } from "cn";
+import { callEngine } from "../../lib/engine/engine";
 import { useGlMap, useGlMiss } from "../../lib/map/gl/glLayer";
 import { TEXT } from "../../lib/text";
 import type { ShownField } from "./flowLook";
 import { useFlowTexture } from "./flowTexture";
 import { usePlayer, type FlowFrame, type FlowLayer } from "./useWeatherFlow";
-
-/** Under this reflectivity no precipitation is said: a trace (the legend's
- *  clear, flowLook's RAIN_RAMP). */
-const FALLING_DBZ = 10;
-/** Broken or more, five eighths of the sky (the Federal Meteorological
- *  Handbook No. 1, chapter 9, "Sky Condition", its reportable amounts:
- *  BKN 5/8 to 7/8): the glyph is a cloud. */
-const CLOUDY_PERCENT = 62.5;
 
 /** A picture's value at a point: weatherlayers-gl's own reading of it. */
 function valueAt(layer: FlowLayer, field: ShownField | "wind", texture: TextureData | undefined, point: [number, number]) {
@@ -53,8 +46,12 @@ function valueAt(layer: FlowLayer, field: ShownField | "wind", texture: TextureD
  * have (the owner's screenshots, 2026-11-11): where the map stood when the
  * layer came on, then wherever the pilot taps the chart (a tap that finds
  * nothing else). The wind: where it blows from, its speed, KT; the
- * precipitation: the temperature there with what is falling or how cloudy,
- * in a dark badge; the others their value and unit.
+ * precipitation, in a dark badge: the temperature there with what is
+ * falling or how cloudy, and the intensity's word, the legend's (the
+ * engine's precip_intensity, AIM 7-1-12), with no rate and no unit (the
+ * owner's pick, 2026-11-12); the ceiling its feet above the ground, or
+ * none; CAPE its figure and the NWS's category (the engine's
+ * cape_category); the others their value and unit.
  */
 export function FlowBubble({ field, layer, frame }: { field: ShownField; layer: FlowLayer; frame: FlowFrame | null }) {
   const { map } = useGlMap();
@@ -88,30 +85,22 @@ export function FlowBubble({ field, layer, frame }: { field: ShownField; layer: 
   if (precip) {
     const t = valueAt(layer, "temp", temp, point);
     const c = valueAt(layer, "cloud", cloud, point);
-    const falling = read && read.value >= FALLING_DBZ;
-    const Glyph = falling ? (t && t.value <= 0 ? Snowflake : CloudRain) : c && c.value >= CLOUDY_PERCENT ? Cloud : null;
-    if (t) {
+    const said = read ? callEngine("precip_intensity", { dbz: read.value, temp_c: t?.value ?? null }) : null;
+    const overcast = c ? ["BKN", "OVC"].includes(callEngine("cloud_cover", { percent: c.value }).cover) : false;
+    const Glyph = said?.falls_as === "snow" ? Snowflake : said?.falls_as === "rain" ? CloudRain : overcast ? Cloud : null;
+    if (t || said?.word)
       body = (
-        <span className="flex items-center gap-0.5 font-semibold tabular-nums">
-          {Math.round(t.value)}°{Glyph && <Glyph className="size-3.5" aria-hidden="true" />}
+        <span className="flex flex-col items-center leading-none tabular-nums">
+          {t && (
+            <span className="flex items-center gap-0.5 font-semibold">
+              {Math.round(t.value)}°{Glyph && <Glyph className="size-3.5" aria-hidden="true" />}
+            </span>
+          )}
+          {said?.word && <span className={cn("font-semibold", TEXT.caption)}>{said.word}</span>}
         </span>
       );
-    }
   } else if (read) {
-    const unit = layer.fields[field]?.unit ?? "";
-    const figure = field === "vis" ? read.value.toFixed(read.value < 3 ? 1 : 0) : String(Math.round(read.value));
-    const from = field === "wind" && read.direction !== undefined ? ((read.direction % 360) + 360) % 360 : null;
-    body = (
-      <span className="flex flex-col items-center leading-none tabular-nums">
-        {from !== null && (
-          <span className={cn("font-semibold", TEXT.caption)}>
-            {formatDirection(from, DirectionType.INWARD, DirectionFormat.CARDINAL3)}
-          </span>
-        )}
-        <span className="font-bold">{figure}</span>
-        <span className={cn("uppercase", TEXT.caption)}>{unit}</span>
-      </span>
-    );
+    body = <Figure field={field} unit={layer.fields[field]?.unit ?? ""} read={read} top={layer.fields[field]?.unscale[1]} />;
   }
   return createPortal(
     <div
@@ -124,5 +113,44 @@ export function FlowBubble({ field, layer, frame }: { field: ShownField; layer: 
       {body}
     </div>,
     el,
+  );
+}
+
+/** The ceiling's picture holds 50 ft a step to its top (the weather
+ *  service's flow_grid), where a ceiling over it and none are both kept:
+ *  either is no ceiling a category turns on (AIM 7-1-7's highest bound is
+ *  3,000 ft), so it reads as none. */
+const nearTop = (value: number, top: number | undefined) => top !== undefined && value >= top - 25;
+
+/** A value's figure in the badge: what it is above, the figure, below. */
+function Figure({
+  field,
+  unit,
+  read,
+  top,
+}: {
+  field: ShownField;
+  unit: string;
+  read: { value: number; direction?: number };
+  top?: number;
+}) {
+  let over: string | null = null;
+  let figure = String(Math.round(read.value));
+  let under = unit;
+  if (field === "vis") figure = read.value.toFixed(read.value < 3 ? 1 : 0);
+  if (field === "wind" && read.direction !== undefined) {
+    over = formatDirection(((read.direction % 360) + 360) % 360, DirectionType.INWARD, DirectionFormat.CARDINAL3);
+  }
+  if (field === "ceiling") {
+    if (nearTop(read.value, top)) [figure, under] = ["None", "ceiling"];
+    else [figure, under] = [(Math.round(read.value / 50) * 50).toLocaleString("en-US"), "ft agl"];
+  }
+  if (field === "cape") over = callEngine("cape_category", { j_kg: read.value });
+  return (
+    <span className="flex flex-col items-center leading-none tabular-nums">
+      {over !== null && <span className={cn("font-semibold", TEXT.caption)}>{over}</span>}
+      <span className="font-bold">{figure}</span>
+      <span className={cn("uppercase", TEXT.caption)}>{under}</span>
+    </span>
   );
 }

@@ -1,0 +1,103 @@
+{
+  "x-call": "wingtip_weather::model_weather::call",
+  "description": "The bands the map's model weather is coloured and labelled by: precipitation's intensity words by reflectivity, dBZ (AIM 7-1-12: light under 26, moderate 26 to 40, heavy over 40 to 50, extreme over 50; drawn from 10 dBZ, the app's least), the ceiling's by AIM 7-1-7's categories, ft above the ground (14 CFR 1.1), and CAPE's, J/kg (NWS: weak under 1,000, moderate to 2,500, strong to 4,000, extreme over).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ModelWeatherBandsInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "title": "ModelWeatherBandsAnswer",
+      "type": "object",
+      "properties": {
+        "precip": {
+          "type": "object",
+          "properties": {
+            "least_dbz": {
+              "type": "number",
+              "description": "Under it nothing is said to fall: the app's choice, a trace."
+            },
+            "bands": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "word": {
+                    "type": "string"
+                  },
+                  "from": {
+                    "type": "number",
+                    "description": "The band's least value, in the field's unit; the band runs to the next one's."
+                  }
+                },
+                "required": [
+                  "word",
+                  "from"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "least_dbz",
+            "bands"
+          ],
+          "additionalProperties": false
+        },
+        "ceiling": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "word": {
+                "type": "string"
+              },
+              "from": {
+                "type": "number",
+                "description": "The band's least value, in the field's unit; the band runs to the next one's."
+              }
+            },
+            "required": [
+              "word",
+              "from"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "cape": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "word": {
+                "type": "string"
+              },
+              "from": {
+                "type": "number",
+                "description": "The band's least value, in the field's unit; the band runs to the next one's."
+              }
+            },
+            "required": [
+              "word",
+              "from"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "precip",
+        "ceiling",
+        "cape"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

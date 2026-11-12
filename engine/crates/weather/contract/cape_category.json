@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_weather::model_weather::call",
+  "description": "A surface CAPE's category (NWS, \"Severe Weather Topics: CAPE\"): weak under 1,000 J/kg, moderate 1,000 to 2,500, strong 2,500 to 4,000, extreme over 4,000. The energy a storm could draw on, not a forecast of storms.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CapeCategoryInput",
+      "type": "object",
+      "properties": {
+        "j_kg": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "j_kg"
+      ]
+    },
+    "answer": {
+      "title": "CapeCategoryAnswer",
+      "type": "string",
+      "enum": [
+        "Weak",
+        "Moderate",
+        "Strong",
+        "Extreme"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}
