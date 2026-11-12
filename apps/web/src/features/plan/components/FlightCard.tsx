@@ -3,6 +3,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { BadgeCheck, ChartLine, Crosshair, Fan, IdCard, Plane, Route, UserRound } from "lucide-react";
 import { cn } from "cn";
 import { Badge } from "../../../components/ui/badge";
+import { Button } from "../../../components/ui/button";
 import { Progress } from "../../../components/ui/progress";
 import { SheetCard } from "../../../components/SheetCard";
 import { CardTitle } from "../../../components/CardTitle";
@@ -25,9 +26,8 @@ import { planePhotoQuery } from "../lib/planePhoto";
 import { airportQuery, flightQuery, routeQuery } from "../../../lib/queryClient";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
-import { altFt, bearing, grouped } from "../../../lib/format";
+import { altFt, bearing, clockTime, grouped } from "../../../lib/format";
 import { awayFrom, nmAway } from "../../../lib/useAway";
-import { clockTime } from "../../../lib/format";
 import AircraftAlertMenu from "./AircraftAlertMenu";
 import AirplaneSketch from "./AirplaneSketch";
 import { squawkMeaning } from "../lib/squawks";
@@ -130,16 +130,16 @@ function End({
   return (
     <span className={cn("flex min-w-0 flex-col", right && "items-end text-right")} data-testid={testId}>
       {onOpen ? (
-        <button
-          type="button"
+        <Button
+          variant="link"
+          size="inline"
           onClick={onOpen}
           aria-label={`${ident}'s card`}
           data-testid={openTestId}
-          // The tint, as everything tappable; its 44 points round it.
-          className="relative max-w-full text-tint outline-none after:absolute after:-inset-x-2 after:-inset-y-3 focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3"
         >
           {name}
-        </button>
+        </Button>
       ) : (
         <span className="text-foreground">{name}</span>
       )}

@@ -4,7 +4,7 @@ import { ArrowLeftRight, ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import RoundButton from "../../../components/RoundButton";
 import CloseButton from "../../../components/CloseButton";
-import { GLASS_BUTTON } from "../../../components/ui/button";
+import { Button } from "../../../components/ui/button";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { ListPicks, type ListPick } from "../../../components/ListPicks";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../components/ResponsivePopover";
@@ -186,24 +186,24 @@ export default function ProcedureMenu({
             <span className="sr-only">{label ?? SHORT[kind]}</span>
           </RoundButton>
         ) : (
-          <button
-            type="button"
+          // The stock Button's glass, a kind to add as one picked, at the
+          // owner's pick of the sketches ("B"): it was a dashed outline.
+          <Button
+            variant="glass"
             data-testid="procedure-kind"
             data-kind={kind}
             data-look={look}
             className={cn(
-              "relative flex min-w-0 shrink items-center gap-0.5 text-left font-semibold outline-none",
-              "after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-              // The buttons' glass, a kind to add as one picked, at the
-              // owner's pick of the sketches ("B"): it was a dashed outline.
-              GLASS_BUTTON,
-              look === "add" ? cn("h-8 rounded-full px-3", TEXT.detail) : cn("h-8 max-w-[10rem] rounded-full px-2.5", TEXT.detail),
+              "relative h-8 min-w-0 shrink justify-start gap-0.5 rounded-full text-left font-semibold",
+              "after:absolute after:-inset-1.5 after:content-['']",
+              look === "add" ? "px-3" : "max-w-[10rem] px-2.5",
+              TEXT.detail,
             )}
             aria-label={`${ident} ${TITLE[kind].toLowerCase()}: ${label ?? "none picked"}`}
           >
             {look === "add" ? <span className="truncate">+ {TITLE[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
             {look !== "add" && <ChevronDown className="size-4 shrink-0" aria-hidden />}
-          </button>
+          </Button>
         )}
       </ResponsivePopoverTrigger>
       <ResponsivePopoverContent

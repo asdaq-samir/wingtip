@@ -119,12 +119,21 @@ export function carriedOn(plane: TrafficAircraft, seconds: number): LatLon {
 
 /** How long its trend line is on the screen, points: TREND_S at its
  *  ground speed, at the map's scale there (Web Mercator's 156,543 m a
- *  point at zoom 0 on the equator), at most 160. */
-export function trendPx(speedKt: number | null | undefined, lat: number, zoom: number): number {
+ *  point at zoom 0 on the equator), at most `max` (160). */
+export function trendPx(speedKt: number | null | undefined, lat: number, zoom: number, max = 160): number {
   if (!speedKt) return 0;
   const metres = ((speedKt * TREND_S) / 3600) * M_PER_NM;
   const metresPerPoint = (156543.03392 * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
-  return Math.min(160, metres / metresPerPoint);
+  return Math.min(max, metres / metresPerPoint);
+}
+
+/** How far ahead its trend line reaches as the map draws it, seconds:
+ *  TREND_S, less where that would be more than trendPx's 160 points on
+ *  the screen; none with no speed. The line is drawn to where it will be
+ *  then (carriedOn), so it is as long as trendPx says. */
+export function trendSeconds(speedKt: number | null | undefined, lat: number, zoom: number): number {
+  const full = trendPx(speedKt, lat, zoom, Infinity);
+  return full > 0 ? (TREND_S * trendPx(speedKt, lat, zoom)) / full : 0;
 }
 
 /** A flown path's colour by its height, as FlightAware colours a track:

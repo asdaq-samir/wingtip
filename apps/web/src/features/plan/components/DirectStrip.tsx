@@ -1,5 +1,6 @@
 import { MoveUpRight } from "lucide-react";
 import { cn } from "cn";
+import { Button } from "../../../components/ui/button";
 import { TEXT } from "../../../lib/text";
 
 /** The route flown direct to a point (PlanWorkspace's directToPoint), said
@@ -21,14 +22,15 @@ export default function DirectStrip({ ident, onDevice = false, onCancel }: { ide
           </span>
         )}
       </span>
-      <button
-        type="button"
+      <Button
+        variant="link"
+        size="inline"
         onClick={onCancel}
         data-testid="direct-cancel"
-        className={cn("relative shrink-0 px-1 text-tint after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-['']", TEXT.row)}
+        className={cn("relative shrink-0 px-1 after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-['']", TEXT.row)}
       >
         Cancel
-      </button>
+      </Button>
     </div>
   );
 }

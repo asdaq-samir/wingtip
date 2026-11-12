@@ -97,18 +97,19 @@ export default function DepartPicker({
     <ResponsivePopover open={open} onOpenChange={setOpen}>
       <ResponsivePopoverTrigger asChild>
         {look === "time" ? (
-          <button
-            type="button"
+          <Button
+            variant="link"
+            size="inline"
             aria-label={`${label}, ${date ? shortWhen(date) : "now"}: change`}
             data-testid={testId}
             className={cn(
-              "relative flex shrink-0 items-center gap-0.5 font-semibold text-tint tabular-nums after:absolute after:-inset-2.5 after:content-['']",
+              "relative shrink-0 gap-0.5 font-semibold tabular-nums after:absolute after:-inset-2.5 after:content-['']",
               TEXT.detail,
             )}
           >
             {date ? shortWhen(date) : "Now"}
             <ChevronDown className="size-4" aria-hidden />
-          </button>
+          </Button>
         ) : (
           <Button
             // A chip of glass, as Maps' filter chips are: the time in the

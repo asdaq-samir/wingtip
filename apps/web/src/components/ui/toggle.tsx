@@ -1,12 +1,23 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "cn";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
+import { GLASS_BUTTON } from "./button";
 
 const toggleVariants = cva(
   "group/toggle inline-flex items-center justify-center gap-1 rounded-md text-sm font-medium whitespace-nowrap transition-[color,box-shadow] outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring pointer-coarse:active:opacity-60 pointer-coarse:active:duration-0 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-pressed:bg-muted dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
-      variant: { default: "bg-transparent", outline: "border border-input bg-transparent shadow-xs hover:bg-muted" },
+      variant: {
+        default: "bg-transparent",
+        outline: "border border-input bg-transparent shadow-xs hover:bg-muted",
+        // The app's own, as the Button's glass is (button.tsx): a pane of
+        // the grey glass in the text's colour, and on, filled in the
+        // tint with its glyph white, as Maps fills a map button that is
+        // on. On data-pressed, Base UI's own state attribute, so a look
+        // of its own for "on" (GLASS_PICKED, a chip picked) given after
+        // it takes its place.
+        glass: cn(GLASS_BUTTON, "data-pressed:bg-tint data-pressed:text-white hover:data-pressed:bg-tint/90 hover:data-pressed:text-white"),
+      },
       size: {
         default: "h-9 min-w-9 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         sm: "h-8 min-w-8 px-2.5 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5",

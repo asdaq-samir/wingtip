@@ -10,8 +10,9 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button";
 // colour, and an outlined, grey or plain button read as words. In the
 // Native look (native:) they are shadcn's stock words again: the
 // foreground on an outlined or plain one, secondary-foreground on a grey.
-/** The glass variant's classes, for a control that is not a Button but
- *  wears its look (a Toggle, a Select's trigger, a chip's own button). */
+/** The glass variant's classes: the Button's here and the Toggle's
+ *  (toggle.tsx, so a ToggleGroupItem's too), and nowhere else -- a
+ *  control in the glass is one of the two in that variant. */
 const GLASS_BUTTON =
   "border-0 bg-foreground/8 text-foreground shadow-none hover:bg-foreground/12 hover:text-foreground aria-expanded:bg-foreground/12";
 
@@ -49,6 +50,14 @@ const buttonVariants = cva(
         "icon-xs": "size-6 rounded-[min(var(--radius-md),8px)] in-data-[slot=button-group]:rounded-md [&_svg:not([class*='size-'])]:size-3",
         "icon-sm": "size-8 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-md",
         "icon-lg": "size-10",
+        // The app's own: words in a line of words, tapped as a link is (a
+        // strip's "Show my position", a figure that opens its sheet) -- no
+        // height, padding, gap or edge of its own, the text's size and
+        // weight where it sits (a TEXT size or font-semibold beside it says
+        // otherwise), wrapping and shrinking as words do. With the link
+        // variant: the tint, and the stock focus ring.
+        inline:
+          "h-auto rounded-sm border-0 p-0 text-[length:inherit] pointer-coarse:text-[length:inherit] font-[weight:inherit] whitespace-normal shrink",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

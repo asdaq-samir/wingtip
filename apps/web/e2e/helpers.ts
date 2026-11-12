@@ -577,10 +577,12 @@ export async function tapTheChart(page: Page) {
       const r = map.getBoundingClientRect();
       // Clear of every mark by more than a near miss (a 44-point target),
       // which a tap there would select: the markers', and those drawn on the
-      // canvas -- the airports, the VORs and fixes, the checkpoints -- each a
+      // canvas -- the airports, the VORs and fixes, the checkpoints, the traffic -- each a
       // mark's 26 across round where its probe says it is (useGlProbe).
       const marks = [...map.querySelectorAll(".maplibregl-marker")].map((m) => m.getBoundingClientRect());
-      for (const probe of map.querySelectorAll<HTMLElement>("[data-airport-marks], [data-navaid-marks], [data-checkpoint-marks]")) {
+      for (const probe of map.querySelectorAll<HTMLElement>(
+        "[data-airport-marks], [data-navaid-marks], [data-checkpoint-marks], [data-traffic-marks]",
+      )) {
         const name = probe.dataset.glProbe!;
         for (const m of JSON.parse(probe.getAttribute(`data-${name}`) ?? "[]") as { x: number; y: number }[]) {
           marks.push(new DOMRect(r.left + m.x - 13, r.top + m.y - 13, 26, 26));

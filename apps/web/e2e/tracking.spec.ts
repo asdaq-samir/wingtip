@@ -174,7 +174,7 @@ test("the traffic, from the one search's Do, finds an airplane by its callsign, 
   await expect(card.getByTestId("faa-engine")).toContainText("2 engines · Turbo-fan · 33,110 lb thrust");
   await expect(card.getByTestId("flight-follow")).toHaveAttribute("aria-pressed", "true");
   // Ringed on the map, its path behind it in its heights' colours.
-  await expect(page.locator("[data-traffic-tracked]")).toHaveCount(1);
+  await expect.poll(async () => (await drawn(page, "traffic-marks")).filter((m) => m.tracked).length).toBe(1);
   await expect.poll(async () => (await drawn(page, "tracked-path")).length).toBeGreaterThan(0);
   // Put away: the list again, as an airport's card over Nearest.
   await closeCard(page, "flight-close");
@@ -194,11 +194,12 @@ test("an airplane is found by its callsign, and a tap on one on the map tracks i
   // No field it took off from in its track: no Departed row.
   await expect(page.getByTestId("flight-name")).toHaveText("UAL2088");
   await expect(page.getByTestId("flight-departed")).toHaveCount(0);
-  // One tapped on the map: the Cessna, the second heard.
+  // One tapped on the map where its probe says it is: the Cessna, the second heard.
   await closeCard(page, "flight-close");
-  const hits = page.locator("[data-traffic-hit]");
-  await expect(hits).toHaveCount(2);
-  await hits.nth(1).dispatchEvent("click");
+  await expect.poll(async () => (await drawn(page, "traffic-marks")).length).toBe(2);
+  const cessna = (await drawn(page, "traffic-marks")).find((m) => m.hex === "a128b9") as { x: number; y: number };
+  const box = (await page.locator(".maplibregl-map").first().boundingBox())!;
+  await page.mouse.click(box.x + cessna.x, box.y + cessna.y);
   await expect(page).toHaveURL(/[?&]flight=a128b9/);
   await expect(page.getByTestId("flight-name")).toHaveText("N174HA");
 });

@@ -58,23 +58,25 @@ export default function FiltersPage() {
   return (
     <div className="flex flex-col gap-5 px-4 pb-6" data-testid="search-filters">
       <header className="grid grid-cols-[1fr_auto_1fr] items-center">
-        <button
-          type="button"
+        <Button
+          variant="link"
+          size="inline"
           onClick={cancel}
-          className={cn("relative justify-self-start text-tint after:absolute after:-inset-2", TEXT.row)}
+          className={cn("relative justify-self-start after:absolute after:-inset-2", TEXT.row)}
           data-testid="filters-cancel"
         >
           Cancel
-        </button>
+        </Button>
         <h2 className={cn("font-bold", TEXT.title)}>Filters</h2>
-        <button
-          type="button"
+        <Button
+          variant="link"
+          size="inline"
           onClick={apply}
-          className={cn("relative justify-self-end font-semibold text-tint after:absolute after:-inset-2", TEXT.row)}
+          className={cn("relative justify-self-end font-semibold after:absolute after:-inset-2", TEXT.row)}
           data-testid="filters-apply"
         >
           Apply
-        </button>
+        </Button>
       </header>
       <ListGroup>
         {sw("towered", "Towered")}
