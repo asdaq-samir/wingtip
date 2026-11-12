@@ -22,7 +22,7 @@ export function StudioMap({ track }: { track: ReplayTrack | null }) {
   return (
     <GlMapShell course={null} focus={null} focusZoom={12} place={null}>
       <LandWaterGl />
-      <ChartGl course={null} />
+      <ChartGl course={null} publicOnly />
       <OverlayGl />
       <AirspaceGl />
       <Suspense fallback={null}>
