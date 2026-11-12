@@ -7,12 +7,14 @@ import app.wingtipmaps.android.api.AheadAlert
 import app.wingtipmaps.android.api.generated.CopilotAround
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import kotlin.math.max
 
 /** One message of the copilot's, the engine's. */
@@ -27,13 +29,11 @@ typealias CopilotMessage = EngineContract.CopilotMessage
  * for it (Copilot: Spoken). Nothing is refused or held back from the
  * pilot: the engine warns, the pilot decides (decision 0008).
  */
-class CopilotModel(
-    private val source: CopilotSource = PlannerCopilot,
-    private val rules: CopilotRules = EngineCopilot,
+@HiltViewModel
+class CopilotModel @Inject constructor(
+    private val source: CopilotSource,
+    private val rules: CopilotRules,
 ) : ViewModel() {
-    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
-    // constructor once the sources and seams it is given are injectable
-    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     private val _message = MutableStateFlow<CopilotMessage?>(null)
     val message: StateFlow<CopilotMessage?> = _message.asStateFlow()
 

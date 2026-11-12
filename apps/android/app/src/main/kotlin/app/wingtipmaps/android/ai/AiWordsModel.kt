@@ -3,6 +3,7 @@ package app.wingtipmaps.android.ai
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.AssistantSource
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * One "In Plain Words" on a screen (AiWordsRow): whether it is offered,
@@ -17,13 +19,14 @@ import kotlinx.coroutines.launch
  * Words are asked for only on the pilot's tap, never on their own, and
  * are cleared when the sources they were made from change.
  */
+@HiltViewModel
 class AiWordsModel(
     private val say: suspend (AiTask, List<AssistantSource>) -> AiWords.Answer? = AiWords::say,
     private val offered: suspend () -> Boolean = AiWords::offered,
 ) : ViewModel() {
-    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
-    // constructor once the sources and seams it is given are injectable
-    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
+    /** Hilt's: the words on the phone or the server (AiWords). */
+    @Inject
+    constructor(words: AiWords) : this(words::say, words::offered)
     data class State(
         val offered: Boolean = false,
         val working: Boolean = false,

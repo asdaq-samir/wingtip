@@ -42,7 +42,7 @@ val Context.settings: DataStore<Preferences> by preferencesDataStore(name = "set
  * SharedPreferences' apply() did. This process is the files' only writer,
  * so the copy is the truth.
  */
-class Kept private constructor(private val store: DataStore<Preferences>) {
+class Kept internal constructor(private val store: DataStore<Preferences>) {
     private val values: MutableStateFlow<Preferences> by lazy {
         MutableStateFlow(runBlocking(Dispatchers.IO) { store.data.first() })
     }

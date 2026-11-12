@@ -9,12 +9,17 @@ import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.alternate
 import app.wingtipmaps.android.api.generated.AlternateCheck
 import app.wingtipmaps.android.api.generated.Alternates
+import app.wingtipmaps.android.api.generated.client.apis.PlannerApi
+import app.wingtipmaps.android.api.planned
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import kotlin.time.Clock
 
 /**
  * The Brief's Alternate under IFR (the web's useAlternate): the planner's
@@ -27,13 +32,17 @@ import kotlinx.coroutines.launch
  * Nothing is asked without an airplane: no ETA, and no stock airplane's
  * speed to reach an alternate at (decision 0011).
  */
+@HiltViewModel
 class AlternateModel(
     private val ask: suspend (dest: String, eta: String, tasKt: Double, filed: String?) -> Alternates = { d, e, t, f -> Planner.alternate(d, e, t, f) },
     private val nowMs: () -> Long = AppClock::nowMs,
 ) : ViewModel() {
-    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
-    // constructor once the sources and seams it is given are injectable
-    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
+    /** Hilt's: the planner's alternates (GET /api/alternate) and the app's clock. */
+    @Inject
+    constructor(planner: PlannerApi, clock: Clock) : this(
+        { d, e, t, f -> planner.alternate(d, e, t, f?.ifEmpty { null }).planned() },
+        { clock.now().toEpochMilliseconds() },
+    )
     /** What the plan gives the check: the destination, the nav log's time
      *  en route, when it leaves (null for now), the cruise, the one filed. */
     data class Where(val dest: String, val eteMin: Double?, val depart: String?, val tasKt: Double?, val filed: String?)

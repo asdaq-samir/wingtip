@@ -14,12 +14,15 @@ import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.readyToFly
 import app.wingtipmaps.android.offline.KeptForAir
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import kotlin.time.Clock
 
 /** The planner's weather and NOTAMs, as Ready to fly fetches them: a
  *  seam, so the model is tested with no network. */
@@ -57,14 +60,15 @@ object PlannerReadyWeather : ReadyWeather {
  * weather and the route's NOTAMs are fetched here, and kept with when
  * they came, since their age is a fact the engine weighs.
  */
+@HiltViewModel
 class ReadyToFlyModel(
     private val rule: (EngineContract.ReadyToFlyInput) -> Result<EngineContract.ReadyToFlyAnswer> = ::askEngine,
     private val weather: ReadyWeather = PlannerReadyWeather,
     private val nowMs: () -> Long = AppClock::nowMs,
 ) : ViewModel() {
-    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
-    // constructor once the sources and seams it is given are injectable
-    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
+    /** Hilt's: the engine's rule, the planner's weather and the app's clock. */
+    @Inject
+    constructor(weather: ReadyWeather, clock: Clock) : this(::askEngine, weather, { clock.now().toEpochMilliseconds() })
     data class State(
         val answer: EngineContract.ReadyToFlyAnswer? = null,
         /** The top NOTAMs as sent, once fetched, shown under their item. */

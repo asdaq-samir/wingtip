@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
@@ -65,7 +66,7 @@ import app.wingtipmaps.android.ui.sheet.CardPage
 @Composable
 fun CoachScreen(exit: CardExit) {
     val context = LocalContext.current
-    val model = viewModel { CoachModel(keeper = CertificatePreference.of(context)) }
+    val model = hiltViewModel<CoachModel, CoachModel.Factory> { it.create(CertificatePreference.of(context)) }
     val state by model.state.collectAsStateWithLifecycle()
     CardPage(title = stringResource(R.string.coach), exit = exit) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = WingtipSpace.Lg), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {

@@ -2,11 +2,13 @@ package app.wingtipmaps.android.live
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * The followed airplane's latest tower departure event, for its card (the
@@ -14,10 +16,8 @@ import kotlinx.coroutines.launch
  * its registration (/api/live/departures, STDDS's TDES), and said in one
  * line. Nothing where the tower sent none.
  */
-class DepartureModel(private val source: LiveSource = PlannerLive) : ViewModel() {
-    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
-    // constructor once the sources and seams it is given are injectable
-    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
+@HiltViewModel
+class DepartureModel @Inject constructor(private val source: LiveSource) : ViewModel() {
     private val _line = MutableStateFlow<String?>(null)
     val line: StateFlow<String?> = _line.asStateFlow()
     private var asked: String? = null

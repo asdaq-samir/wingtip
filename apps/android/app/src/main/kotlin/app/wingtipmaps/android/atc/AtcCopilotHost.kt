@@ -36,6 +36,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
@@ -70,7 +71,7 @@ fun AtcCopilotHost(plan: Plan, flying: Boolean, fix: OwnShip.Fix?) {
     val context = LocalContext.current
     val mode by remember(context) { AtcSetting.of(context) }.mode.collectAsStateWithLifecycle()
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
-    val model = viewModel { AtcCopilotModel(RadioListener.of(context)) }
+    val model = hiltViewModel<AtcCopilotModel, AtcCopilotModel.Factory> { it.create(RadioListener.of(context)) }
     var allowed by remember { mutableStateOf(micAllowed(context)) }
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { allowed = it }
     // Allowed from Setup meanwhile: read again as the flight or the mode changes.
