@@ -148,10 +148,10 @@ struct BriefApproachIntent: AppIntent {
         let a = approach
         let items: [EngineContract.ApproachBriefAnswerItem]
         do {
-            let data = try await Planner.data(for: Planner.get("/api/airport/\(a.field)/procedures/\(a.procedure)"))
+            let drawing = try await CoachApproaches.drawing(a.field, procedure: a.procedure)
             let frequencies = ((try? await Planner.place(a.field))?.frequencies ?? [])
                 .map { EngineContract.FieldFrequency(type: $0.type, description: $0.description, frequencyMhz: $0.frequencyMhz) }
-            items = try Engine.approachBrief(drawing: CoachApproaches.drawing(data), frequencies: frequencies)
+            items = try Engine.approachBrief(drawing: drawing, frequencies: frequencies)
         } catch {
             return .result(dialog: "The \(a.name) at \(a.field) couldn't be briefed: \(error.localizedDescription)", view: SiriLines(title: a.name, lines: []))
         }

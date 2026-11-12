@@ -1,8 +1,9 @@
 import Foundation
+import PlannerAPI
 
 // The planner's answers an airport's card and the map read beyond the
 // card itself, generated from services/planner/openapi.json
-// (Generated/PlannerModels.swift): the names the app uses are typealiases
+// (WingtipAPI/PlannerAPI): the names the app uses are typealiases
 // here, with what it adds as extensions.
 
 /// The nearest station's report, for a field with none of its own
@@ -17,8 +18,8 @@ typealias NearbyMetar = APINearbyMetar
 /// `name` its title as the FAA prints it, `url` its PDF.
 typealias TerminalChart = APITerminalChart
 
-extension TerminalChart: Identifiable {
-    var id: String { url }
+extension TerminalChart: @retroactive Identifiable {
+    public var id: String { url }
 }
 
 /// A runway's end (RunwayEnd): its true heading, and the side its traffic
@@ -35,8 +36,8 @@ typealias AirportPhotos = APIAirportPhotos
 /// Overture Maps via wingtip.nearby).
 typealias NearbyPlace = APINearbyPlace
 
-extension NearbyPlace: Identifiable {
-    var id: String { "\(name)-\(lat)-\(lon)" }
+extension NearbyPlace: @retroactive Identifiable {
+    public var id: String { "\(name)-\(lat)-\(lon)" }
 }
 
 /// What a field offers a pilot who lands there (AirportServices): from
@@ -55,8 +56,8 @@ typealias DayNightMinimums = APIDayNightMinimums
 /// its `class`, A to G, is airspaceClass.
 typealias AirspaceBand = APIAirspaceBand
 
-extension AirspaceBand: Identifiable {
-    var id: String { "\(floorFt)-\(airspaceClass)" }
+extension AirspaceBand: @retroactive Identifiable {
+    public var id: String { "\(floorFt)-\(airspaceClass)" }
 }
 
 /// A Class B's Mode C veil the point is in (ModeCVeil).
@@ -69,15 +70,15 @@ typealias PointOffFix = APIPointOffFix
 /// A special-use area over the point (SpecialUse), as the FAA's file has it.
 typealias SpecialUse = APISpecialUse
 
-extension SpecialUse: Identifiable {
-    var id: String { name }
+extension SpecialUse: @retroactive Identifiable {
+    public var id: String { name }
 }
 
 /// A TFR over the point now or to come (TfrHere).
 typealias TfrHere = APITfrHere
 
-extension TfrHere: Identifiable {
-    var id: String { notamId }
+extension TfrHere: @retroactive Identifiable {
+    public var id: String { notamId }
 }
 
 /// The airspace over a point the pilot held a finger on (AirspaceAt).
@@ -87,10 +88,8 @@ typealias AirspaceAt = APIAirspaceAt
 /// (PlaceFound, the Census geocoder through the planner).
 typealias PlaceFound = APIPlaceFound
 
-extension PlaceFound: Identifiable, Hashable {
-    var id: String { "\(label)-\(lat)-\(lon)" }
-
-    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+extension PlaceFound: @retroactive Identifiable {
+    public var id: String { "\(label)-\(lat)-\(lon)" }
 }
 
 /// A VFR waypoint in the map's view (WaypointPin).
@@ -127,53 +126,53 @@ extension Planner {
         return URL(string: Config.plannerPath(path), relativeTo: Config.gateway)?.absoluteURL ?? Config.gateway
     }
 
-    /// A picture's bytes, or the planner's answer why not.
+    /// A picture's bytes, or the planner's answer why not: the pictures'
+    /// own pipeline's (PictureCache), so a picture cached is not asked again.
     static func picture(_ path: String) async throws -> Data {
-        var request = URLRequest(url: address(of: path))
-        request.setValue("image/*", forHTTPHeaderField: "Accept")
-        return try await data(for: request)
+        try await PictureCache.data(path)
     }
 
     /// The field from the air and from the ground (/api/airport/{ident}/photos).
     static func photos(_ ident: String) async throws -> AirportPhotos {
-        try await fetch(AirportPhotos.self, "/api/airport/\(ident)/photos")
+        try await call { try await $0.airportPhotosOf(path: .init(ident: ident)).ok.body.json }
     }
 
     /// The field's own NOTAMs and the TFRs within 5 nm of it, the engine's
     /// ranking (/api/airport/{ident}/notams, notams_ranked).
     static func notams(_ ident: String) async throws -> APINotamsRanked {
-        try await fetch(APINotamsRanked.self, "/api/airport/\(ident)/notams")
+        try await call { try await $0.airportNotams(path: .init(ident: ident)).ok.body.json }
     }
 
     /// What the field offers on the ground (/api/airport/{ident}/services).
     static func services(_ ident: String) async throws -> AirportServices {
-        try await fetch(AirportServices.self, "/api/airport/\(ident)/services")
+        try await call { try await $0.airportServices(path: .init(ident: ident)).ok.body.json }
     }
 
     /// The airspace over a point, from the ground up (/api/airspace/at).
     static func airspaceAt(lat: Double, lon: Double) async throws -> AirspaceAt {
-        try await fetch(AirspaceAt.self, "/api/airspace/at", ["lat": String(format: "%.5f", lat), "lon": String(format: "%.5f", lon)])
+        // To five places (about a metre), so a point held twice is one cached answer.
+        let five = { (x: Double) in (x * 1e5).rounded() / 1e5 }
+        return try await call { try await $0.airspaceAtPoint(query: .init(lat: five(lat), lon: five(lon))).ok.body.json }
     }
 
     /// Towns, addresses and airports by what was typed (/api/places/search).
     static func places(_ q: String) async throws -> [PlaceFound] {
-        try await fetch(APIPlacesFound.self, "/api/places/search", ["q": q], timeout: read).places
+        try await call(.read) { try await $0.placesSearch(query: .init(q: q)).ok.body.json.places }
     }
 
     /// The VFR waypoints in a box (/api/waypoints/in-view).
     static func waypoints(south: Double, west: Double, north: Double, east: Double) async throws -> [WaypointPin] {
-        let box = ["south": String(south), "west": String(west), "north": String(north), "east": String(east)]
-        return try await fetch(APIWaypointsInView.self, "/api/waypoints/in-view", box).waypoints
+        try await call { try await $0.waypointsInView(query: .init(south: south, west: west, north: north, east: east)).ok.body.json.waypoints }
     }
 
     /// Every Class B airport and its weather now (/api/class-b).
     static func classB() async throws -> [ClassBAirport] {
-        try await fetch(APIClassBResponse.self, "/api/class-b").airports
+        try await call { try await $0.classBAirports().ok.body.json.airports }
     }
 
     /// Where an approach's plate lies on the chart (/api/airport/{ident}/procedures/{id}/plate).
     static func plate(_ ident: String, procedure: String) async throws -> PlateOverlay {
-        try await fetch(PlateOverlay.self, "/api/airport/\(ident)/procedures/\(procedure)/plate")
+        try await call { try await $0.airportProcedurePlate(path: .init(ident: ident, procedure: procedure)).ok.body.json }
     }
 
     /// The plate's plan view as a picture (/api/approach-plate/{cycle}/{ident}/{id}.png).
@@ -190,7 +189,7 @@ extension Planner {
     /// One of the FAA's charts as the planner draws its pages
     /// (/api/faa-chart): of a region's booklet, the field's pages alone.
     static func faaChart(url: String, airport: String) async throws -> [ChartPage] {
-        try await fetch(APIChartPages.self, "/api/faa-chart", ["url": url, "airport": airport]).pages
+        try await call { try await $0.faaChart(query: .init(url: url, airport: airport)).ok.body.json.pages }
     }
 
     /// The airport diagram for the cycle, whole or cropped to its runways

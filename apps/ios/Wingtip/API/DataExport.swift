@@ -10,8 +10,13 @@ enum DataExport {
     /// The export fetched with the pilot's session and written to a file
     /// in the temporary folder under the gateway's own name for it, to be
     /// shared from there; a refusal (401 signed out) in the gateway's words.
+    /// A download, kept byte for byte with the name its Content-Disposition
+    /// gives, neither of which the generated client hands back, so it is
+    /// asked of the session itself.
     static func fetch() async throws -> URL {
-        let (data, response) = try await Gateway.session.data(for: Gateway.request("GET", "/api/me/export"))
+        var request = URLRequest(url: Config.gateway.appending(path: "/api/me/export"))
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let (data, response) = try await Gateway.session.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard status == 200 else { throw GatewayRefusal(status: status, words: GatewayRefusal.words(in: data)) }
         let disposition = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Disposition")

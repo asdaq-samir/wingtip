@@ -60,7 +60,7 @@ struct FlowReading: Equatable, Sendable {
 /// flow_levels), and the pictures' names: the web's flowLevels.
 enum FlowLevels {
     static func levels(_ layer: APIFlowLayer?, _ field: FlowFieldKind) -> [String] {
-        let levels = layer?.levels ?? [:]
+        let levels = layer?.levels?.additionalProperties ?? [:]
         switch field {
         case .wind: return levels["wind"] ?? []
         case .temp: return (levels["wind"] ?? []).filter { $0 != "max" }

@@ -161,7 +161,7 @@ struct BriefView: View {
                     // Under IFR, the destination's and the alternate's check
                     // (91.169), after the forecast, as the web's Brief has it.
                     AlternateSection(pickAirplane: { PendingCommand.shared.command = .open(.airplane) })
-                    let stations = briefing.metars.keys.sorted()
+                    let stations = briefing.metars.additionalProperties.keys.sorted()
                     if !stations.isEmpty {
                         Section("METARs") {
                             KeptAgeLine(kind: .weather, key: ReadyToFly.flightKey(plan))
@@ -169,9 +169,9 @@ struct BriefView: View {
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     HStack {
                                         Text(ident).font(.headline)
-                                        if let category = briefing.metars[ident]??.flightCategory { Text(category).font(.footnote.weight(.semibold)).foregroundStyle(.secondary) }
+                                        if let category = briefing.metars.additionalProperties[ident]??.flightCategory { Text(category).font(.footnote.weight(.semibold)).foregroundStyle(.secondary) }
                                     }
-                                    if let raw = briefing.metars[ident]??.raw {
+                                    if let raw = briefing.metars.additionalProperties[ident]??.raw {
                                         Text(raw).font(.footnote.monospaced()).foregroundStyle(.secondary)
                                     } else {
                                         Text("No report").font(.footnote).foregroundStyle(.secondary)

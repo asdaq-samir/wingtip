@@ -2,6 +2,7 @@
 // do not edit. Change the engine's contract and run the script.
 
 import Foundation
+import OpenAPIRuntime
 
 /// The engine's inputs and answers by rule, as engine/contract/engine.schema.json
 /// types them; Engine's functions in EngineCalls.swift take and return them.
@@ -92,7 +93,7 @@ enum EngineContract {
 
     struct AirplaneFiguresAnswer: Codable, Equatable, Sendable {
         var figures: [EngineContract.AirplaneFiguresAnswerFiguresItem]
-        var profile: [String: JSONValue]?
+        var profile: [String: OpenAPIValueContainer]?
     }
 
     struct AirplaneFiguresAnswerFiguresItem: Codable, Equatable, Sendable {
@@ -107,11 +108,11 @@ enum EngineContract {
 
     struct AirplaneFiguresInput: Codable, Equatable, Sendable {
         /// The type's stock profile (the planner's /api/aircraft-profiles entry); null for a type with none.
-        var book: [String: JSONValue]?
+        var book: [String: OpenAPIValueContainer]?
         /// The figures its pilot confirmed off a photographed handbook page (handbook_figures' answer); null for none.
-        var handbook: [String: JSONValue]?
+        var handbook: [String: OpenAPIValueContainer]?
         /// The pilot's own figures by key (cruise_tas_kt, glide_ratio ...), a number or null each; null for none.
-        var own: [String: JSONValue]?
+        var own: [String: OpenAPIValueContainer]?
     }
 
     struct AirplaneNeedsAnswer: Codable, Equatable, Sendable {
@@ -121,7 +122,7 @@ enum EngineContract {
 
     struct AirplaneNeedsInput: Codable, Equatable, Sendable {
         /// The airplane (airplane_figures' profile); null for no airplane.
-        var profile: [String: JSONValue]?
+        var profile: [String: OpenAPIValueContainer]?
         var figure: String
     }
 
@@ -553,7 +554,7 @@ enum EngineContract {
     }
 
     struct AltitudeAnywayInput: Codable, Equatable, Sendable {
-        var selection: [String: JSONValue]
+        var selection: [String: OpenAPIValueContainer]
     }
 
     struct AltitudeChangeAnswer: Codable, Equatable, Sendable {
@@ -675,7 +676,7 @@ enum EngineContract {
         var obstacleClearanceFt: Double?
         var congested: Bool?
         var mountainous: Bool?
-        var airway: [String: JSONValue]?
+        var airway: [String: OpenAPIValueContainer]?
 
         enum CodingKeys: String, CodingKey {
             case fromNm = "from_nm"
@@ -899,8 +900,8 @@ enum EngineContract {
     }
 
     struct ApproachDebriefPlan: Codable, Equatable, Sendable {
-        var inbound: [[JSONValue]]
-        var missed: [[[JSONValue]]]
+        var inbound: [[OpenAPIValueContainer]]
+        var missed: [[[OpenAPIValueContainer]]]
         var fixes: [EngineContract.ApproachDebriefPlanFixesItem]
         var track: [EngineContract.ApproachDebriefPlanTrackItem]
     }
@@ -1089,7 +1090,7 @@ enum EngineContract {
     struct ApproachFixTagsAnswerFinal: Codable, Equatable, Sendable {
         var from: String
         var to: String
-        var points: [[JSONValue]]
+        var points: [[OpenAPIValueContainer]]
     }
 
     struct ApproachFixTagsInput: Codable, Equatable, Sendable {
@@ -1259,13 +1260,13 @@ enum EngineContract {
         var centrelines: [EngineContract.ApproachSceneAnswerCentrelinesItem]
         var glidepaths: [EngineContract.ApproachSceneAnswerGlidepathsItem]
         /// The approach's line at its altitudes, transition and final.
-        var path: [[JSONValue]]?
+        var path: [[OpenAPIValueContainer]]?
         var ring: EngineContract.ApproachSceneAnswerRing?
     }
 
     struct ApproachSceneAnswerCentrelinesItem: Codable, Equatable, Sendable {
         var end: String
-        var points: [[JSONValue]]
+        var points: [[OpenAPIValueContainer]]
     }
 
     struct ApproachSceneAnswerGlidepathsItem: Codable, Equatable, Sendable {
@@ -1277,7 +1278,7 @@ enum EngineContract {
         var tchFt: Double?
         /// The approach's own figures, or the standard 3.00 degrees and 40 ft.
         var source: String
-        var points: [[JSONValue]]
+        var points: [[OpenAPIValueContainer]]
 
         enum CodingKeys: String, CodingKey {
             case end
@@ -1294,7 +1295,7 @@ enum EngineContract {
         var ft: Double
         var radiusNm: Double
         /// [lat, lon], the field's place.
-        var center: [JSONValue]
+        var center: [OpenAPIValueContainer]
 
         enum CodingKeys: String, CodingKey {
             case ft
@@ -1366,7 +1367,7 @@ enum EngineContract {
     }
 
     struct ArrivalCircuitAnswer: Codable, Equatable, Sendable {
-        var points: [[JSONValue]]
+        var points: [[OpenAPIValueContainer]]
     }
 
     struct ArrivalCircuitInput: Codable, Equatable, Sendable {
@@ -2057,7 +2058,7 @@ enum EngineContract {
 
     struct Clearance: Codable, Equatable, Sendable {
         var limit: String?
-        var route: [JSONValue]
+        var route: [OpenAPIValueContainer]
         var asFiled: Bool
         var maintainFt: Int?
         var maintainLimit: String?
@@ -2705,7 +2706,7 @@ enum EngineContract {
     }
 
     struct DebriefMarkedAnswer: Codable, Equatable, Sendable {
-        var debrief: [String: JSONValue]
+        var debrief: [String: OpenAPIValueContainer]
         var tolerances: EngineContract.DebriefMarkedAnswerTolerances
     }
 
@@ -2729,7 +2730,7 @@ enum EngineContract {
 
     struct DebriefMarkedInput: Codable, Equatable, Sendable {
         /// The debrief's figures as `debrief` gives them, unmarked: legs, passes, patterns and the rest.
-        var debrief: [String: JSONValue]
+        var debrief: [String: OpenAPIValueContainer]
     }
 
     struct DensityAltitudeFtInput: Codable, Equatable, Sendable {
@@ -2747,7 +2748,7 @@ enum EngineContract {
     }
 
     struct DepartureCircuitAnswer: Codable, Equatable, Sendable {
-        var points: [[JSONValue]]
+        var points: [[OpenAPIValueContainer]]
         var exitDeg: Double
 
         enum CodingKeys: String, CodingKey {
@@ -2760,7 +2761,7 @@ enum EngineContract {
         var runway: EngineContract.CircuitRunwayIn
         var endIdent: String
         /// [lat, lon]
-        var toward: [JSONValue]
+        var toward: [OpenAPIValueContainer]
 
         enum CodingKeys: String, CodingKey {
             case runway
@@ -3208,7 +3209,7 @@ enum EngineContract {
         /// Seconds since 1970 at the start.
         var startS: Double
         /// The route's line, [lat, lon] points.
-        var line: [[JSONValue]]?
+        var line: [[OpenAPIValueContainer]]?
         var missed: Bool?
 
         enum CodingKeys: String, CodingKey {
@@ -3450,7 +3451,7 @@ enum EngineContract {
 
     struct FieldHoursInput: Codable, Equatable, Sendable {
         /// The field's report as the planner gives it.
-        var metar: [String: JSONValue]?
+        var metar: [String: OpenAPIValueContainer]?
         /// The TAF as sent.
         var taf: String?
         /// ms
@@ -3666,7 +3667,7 @@ enum EngineContract {
 
     struct FloorCautionInput: Codable, Equatable, Sendable {
         /// A selection's segment: floor_ft, highest_ft, highest_is_obstacle, obstacle_type, obstacle_clearance_ft, congested.
-        var segment: [String: JSONValue]
+        var segment: [String: OpenAPIValueContainer]
         var altitudeFt: Double
 
         enum CodingKeys: String, CodingKey {
@@ -3860,11 +3861,11 @@ enum EngineContract {
         var track: [EngineContract.ForecastRunInputTrackItem]
         var fields: [EngineContract.ForecastRunInputFieldsItem]?
         /// TAF stations as the weather store keeps them.
-        var tafs: [[String: JSONValue]]?
-        var sigmets: [[String: JSONValue]]?
-        var gairmets: [[String: JSONValue]]?
+        var tafs: [[String: OpenAPIValueContainer]]?
+        var sigmets: [[String: OpenAPIValueContainer]]?
+        var gairmets: [[String: OpenAPIValueContainer]]?
         /// SPC outlook areas: {label, valid_from, valid_to, coords}.
-        var outlooks: [[String: JSONValue]]?
+        var outlooks: [[String: OpenAPIValueContainer]]?
         var rules: String?
         var minimums: EngineContract.ForecastRunInputMinimums?
     }
@@ -3927,7 +3928,7 @@ enum EngineContract {
     struct ForecastRunInputTrackItemWindsItem: Codable, Equatable, Sendable {
         var useFrom: Double
         var useTo: Double
-        var levels: [String: [String: JSONValue]]
+        var levels: [String: [String: OpenAPIValueContainer]]
 
         enum CodingKeys: String, CodingKey {
             case useFrom = "use_from"
@@ -4195,7 +4196,7 @@ enum EngineContract {
     }
 
     struct GairmetsAlongRouteInput: Codable, Equatable, Sendable {
-        var advisories: [[String: JSONValue]]
+        var advisories: [[String: OpenAPIValueContainer]]
         /// The route flown, [[lat, lon], ...].
         var path: [[Double]]
         var start: Double
@@ -4621,7 +4622,7 @@ enum EngineContract {
         var fuelLbPerGal: Double?
         var startTaxiFuelLb: Double?
         /// The CG envelope's points, [arm in, weight lb].
-        var envelope: [[JSONValue]]?
+        var envelope: [[OpenAPIValueContainer]]?
 
         enum CodingKeys: String, CodingKey {
             case maxRampLb = "max_ramp_lb"
@@ -4703,9 +4704,9 @@ enum EngineContract {
 
     struct GonogoPicks: Codable, Equatable, Sendable {
         /// Field to end, as an object or [field, end] pairs.
-        var pattern: JSONValue?
+        var pattern: OpenAPIValueContainer?
         /// Field to end, as an object or [field, end] pairs.
-        var takeoff: JSONValue?
+        var takeoff: OpenAPIValueContainer?
     }
 
     struct GonogoRiskAnswer: Codable, Equatable, Sendable {
@@ -4740,7 +4741,7 @@ enum EngineContract {
         /// The day flown, yyyy-mm-dd.
         var day: String
         /// The self checks ticked, by key, true where ticked.
-        var ticked: [String: JSONValue]?
+        var ticked: [String: OpenAPIValueContainer]?
 
         enum CodingKeys: String, CodingKey {
             case vfrNotRecommended = "vfr_not_recommended"
@@ -4976,9 +4977,9 @@ enum EngineContract {
     struct GonogoSuaWhenInput: Codable, Equatable, Sendable {
         var timesOfUse: String?
         /// [day 0-6 (0 Sunday), minute of the day], UTC.
-        var utc: [JSONValue]
+        var utc: [OpenAPIValueContainer]
         /// The same in the area's own zone; null where not known.
-        var local: [JSONValue]?
+        var local: [OpenAPIValueContainer]?
 
         enum CodingKeys: String, CodingKey {
             case timesOfUse = "times_of_use"
@@ -5793,7 +5794,7 @@ enum EngineContract {
     }
 
     struct IfrAlternatesRankedInput: Codable, Equatable, Sendable {
-        var checks: [[String: JSONValue]]
+        var checks: [[String: OpenAPIValueContainer]]
         var limit: Double?
     }
 
@@ -5857,7 +5858,7 @@ enum EngineContract {
 
     struct InEmergencyInput: Codable, Equatable, Sendable {
         var squawk: String?
-        var emergency: JSONValue?
+        var emergency: OpenAPIValueContainer?
     }
 
     struct InFlightAnswer: Codable, Equatable, Sendable {
@@ -6137,7 +6138,7 @@ enum EngineContract {
     }
 
     struct LeastCrosswindInputRunwaysItem: Codable, Equatable, Sendable {
-        var endHeadings: [[JSONValue]]??
+        var endHeadings: [[OpenAPIValueContainer]]??
 
         enum CodingKeys: String, CodingKey {
             case endHeadings = "end_headings"
@@ -6291,7 +6292,7 @@ enum EngineContract {
     }
 
     struct LogbookCsvWriteInput: Codable, Equatable, Sendable {
-        var entries: [[String: JSONValue]]
+        var entries: [[String: OpenAPIValueContainer]]
     }
 
     /// The gateway's LogbookEntry, camelCase: the columns the currency and 61.109 rules read. A column missing or null is none of it.
@@ -6520,7 +6521,7 @@ enum EngineContract {
         var airHours: Double
         var touchAndGoes: Double
         var fromTrack: Bool
-        var flightId: JSONValue
+        var flightId: OpenAPIValueContainer
     }
 
     struct LogbookReadCheckInput: Codable, Equatable, Sendable {
@@ -7455,8 +7456,8 @@ enum EngineContract {
         var airport: EngineContract.NavLogRowAirport?
         var cp: EngineContract.NavLogRowCp?
         var point: EngineContract.NavLogRowPoint?
-        var leg: [String: JSONValue]?
-        var part: [String: JSONValue]?
+        var leg: [String: OpenAPIValueContainer]?
+        var part: [String: OpenAPIValueContainer]?
     }
 
     struct NavLogRowAirport: Codable, Equatable, Sendable {
@@ -7671,7 +7672,7 @@ enum EngineContract {
     }
 
     struct NoAltitudeInput: Codable, Equatable, Sendable {
-        var selection: [String: JSONValue]
+        var selection: [String: OpenAPIValueContainer]
         var between: [String]?
         var via: EngineContract.NoAltitudeInputVia?
         var `where`: String?
@@ -8036,12 +8037,12 @@ enum EngineContract {
 
     struct OwnAltitudeCautionInput: Codable, Equatable, Sendable {
         /// select_cruise_altitude's answer: its `rules` and `segments`.
-        var selection: [String: JSONValue]
+        var selection: [String: OpenAPIValueContainer]
         var legs: [EngineContract.OwnAltitudeCautionInputLegsItem]
         /// [from_ident, to_ident]
         var between: [String]
         /// The airplane: `supplemental_oxygen` or `pressurized` true takes 91.211's cautions away.
-        var profile: [String: JSONValue]?
+        var profile: [String: OpenAPIValueContainer]?
     }
 
     struct OwnAltitudeCautionInputLegsItem: Codable, Equatable, Sendable {
@@ -8321,7 +8322,7 @@ enum EngineContract {
     }
 
     struct PirepsAlongRouteInput: Codable, Equatable, Sendable {
-        var reports: [[String: JSONValue]]
+        var reports: [[String: OpenAPIValueContainer]]
         /// The route flown, [[lat, lon], ...].
         var path: [[Double]]
         var corridorNm: Double?
@@ -8336,7 +8337,7 @@ enum EngineContract {
     }
 
     struct PirepsInBoxInput: Codable, Equatable, Sendable {
-        var reports: [[String: JSONValue]]
+        var reports: [[String: OpenAPIValueContainer]]
         /// [south, west, north, east]
         var box: [Double]
         var now: Double
@@ -8563,7 +8564,7 @@ enum EngineContract {
     struct ProcedureDrawingLinesItem: Codable, Equatable, Sendable {
         /// "transition", "final", "missed", "common" or "runway".
         var role: String?
-        var points: [[JSONValue]]?
+        var points: [[OpenAPIValueContainer]]?
     }
 
     struct ProcedureHoldInput: Codable, Equatable, Sendable {
@@ -8872,7 +8873,7 @@ enum EngineContract {
     }
 
     struct ProhibitedCautionInput: Codable, Equatable, Sendable {
-        var selection: [String: JSONValue]
+        var selection: [String: OpenAPIValueContainer]
     }
 
     struct RadialOfAnswer: Codable, Equatable, Sendable {
@@ -10054,7 +10055,7 @@ enum EngineContract {
         var ident: String
         var lat: Double
         var lon: Double
-        var wx: JSONValue?
+        var wx: OpenAPIValueContainer?
         var ceilingFt: Double?
         var visibilitySm: Double?
         var ceilingUnknown: Bool?
@@ -10148,7 +10149,7 @@ enum EngineContract {
         var headwindKt: Double?
         var crosswindKt: Double
         var gustCrosswindKt: Double?
-        var inUse: JSONValue?
+        var inUse: OpenAPIValueContainer?
 
         enum CodingKeys: String, CodingKey {
             case end
@@ -10168,7 +10169,7 @@ enum EngineContract {
         var headwindKt: Double?
         var crosswindKt: Double
         var gustCrosswindKt: Double?
-        var inUse: JSONValue?
+        var inUse: OpenAPIValueContainer?
 
         enum CodingKeys: String, CodingKey {
             case end
@@ -10295,7 +10296,7 @@ enum EngineContract {
     }
 
     struct RunwayEndsTrafficInput: Codable, Equatable, Sendable {
-        var endHeadings: [[JSONValue]]??
+        var endHeadings: [[OpenAPIValueContainer]]??
         var variationDeg: Double
         /// Ends' keys flown with right traffic.
         var right: [String]?
@@ -10363,7 +10364,7 @@ enum EngineContract {
     }
 
     struct RunwayWithWindsInputRunwaysItem: Codable, Equatable, Sendable {
-        var endHeadings: [[JSONValue]]??
+        var endHeadings: [[OpenAPIValueContainer]]??
 
         enum CodingKeys: String, CodingKey {
             case endHeadings = "end_headings"
@@ -10489,7 +10490,7 @@ enum EngineContract {
         var rules: String?
         var classBCleared: Bool?
         /// vfr_floors' or ifr_floors' answer, a floor a leg.
-        var floors: [[String: JSONValue]]?
+        var floors: [[String: OpenAPIValueContainer]]?
         var airway: EngineContract.SelectCruiseAltitudeInputAirway?
         var airspaceCeilingsFt: [Double?]?
         /// Null on a leg: no airplane, no ceiling of its own.
@@ -10498,9 +10499,9 @@ enum EngineContract {
         var legVariationsDeg: [Double]?
         var stations: [EngineContract.SelectCruiseAltitudeInputStationsItem]?
         var minCeilingFt: Double?
-        var specialUse: [[String: JSONValue]]?
+        var specialUse: [[String: OpenAPIValueContainer]]?
         var freezing: EngineContract.SelectCruiseAltitudeInputFreezing?
-        var hazards: [[String: JSONValue]]?
+        var hazards: [[String: OpenAPIValueContainer]]?
         var weatherUnavailable: [String]?
 
         enum CodingKeys: String, CodingKey {
@@ -10626,7 +10627,7 @@ enum EngineContract {
     }
 
     struct SigmetsAlongRouteInput: Codable, Equatable, Sendable {
-        var advisories: [[String: JSONValue]]
+        var advisories: [[String: OpenAPIValueContainer]]
         /// [lat, lon], degrees.
         var from: [Double]
         /// [lat, lon], degrees.
@@ -10961,7 +10962,7 @@ enum EngineContract {
         var minCeilingFt: Double?
         var minVisibilitySm: Double?
         var ceilingUnknownAt: [String]
-        var stations: [[String: JSONValue]]
+        var stations: [[String: OpenAPIValueContainer]]
 
         enum CodingKeys: String, CodingKey {
             case minCeilingFt = "min_ceiling_ft"
@@ -10972,7 +10973,7 @@ enum EngineContract {
     }
 
     struct TafsAlongRouteInput: Codable, Equatable, Sendable {
-        var tafs: [[String: JSONValue]]
+        var tafs: [[String: OpenAPIValueContainer]]
         /// [lat, lon], degrees.
         var from: [Double]
         /// [lat, lon], degrees.
@@ -11200,7 +11201,7 @@ enum EngineContract {
     }
 
     struct ThinTrackInput: Codable, Equatable, Sendable {
-        var points: [JSONValue]
+        var points: [OpenAPIValueContainer]
         var most: Int?
     }
 
@@ -11322,7 +11323,7 @@ enum EngineContract {
         var altitudeFt: Double?
         var callsign: String?
         var squawk: String?
-        var emergency: JSONValue?
+        var emergency: OpenAPIValueContainer?
 
         enum CodingKeys: String, CodingKey {
             case category
@@ -11708,8 +11709,8 @@ enum EngineContract {
 
     struct VfrNotRecommendedReasonsInput: Codable, Equatable, Sendable {
         var idents: [String]?
-        var metars: [String: JSONValue]?
-        var forecast: [String: JSONValue]?
+        var metars: [String: OpenAPIValueContainer]?
+        var forecast: [String: OpenAPIValueContainer]?
     }
 
     struct VorCheckLimitDegInput: Codable, Equatable, Sendable {
@@ -11735,7 +11736,7 @@ enum EngineContract {
 
     struct WeatherHeldUntilInput: Codable, Equatable, Sendable {
         var product: String
-        var data: JSONValue?
+        var data: OpenAPIValueContainer?
         var fetched: Double
     }
 

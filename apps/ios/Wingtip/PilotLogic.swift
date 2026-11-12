@@ -110,7 +110,7 @@ enum Endorsing {
         let pairs = try Engine.endorsementsInForce(signed: signed.map { .init(code: $0.code, voided: $0.voided) })
         var out: [String: SignedEndorsement] = [:]
         for pair in pairs {
-            guard pair.count == 2, case .string(let code) = pair[0], case .number(let at) = pair[1],
+            guard pair.count == 2, let code = pair[0].value as? String, let at = pair[1].number,
                   signed.indices.contains(Int(at)) else { continue }
             out[code] = signed[Int(at)]
         }

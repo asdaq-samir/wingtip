@@ -75,8 +75,9 @@ final class Verdict {
         // record, where set, in place of its handbook's sample airplane's.
         ask.load = loads[plan.loadKey] ?? Self.ownEmpty(answer?.balance?.load, figures: figures)
         ask.ticked = ticked.sorted()
-        // The gateway's currency is the planner's PilotCurrency by name.
-        ask.currency = try currency.map { try Engine.recoded($0) }
+        // The gateway's currency is the planner's PilotCurrency by name,
+        // its camel case written in the planner's snake case.
+        ask.currency = try currency.map { try Engine.recoded($0, encoder: Planner.snakeEncoder) }
         ask.ownAirplane = records.first { $0.tailNumber == plan.tail }.map(OwnAirplaneAsk.init)
         // The rules the nav log was planned under, and under IFR the
         // alternate filed: the planner then checks the destination and the

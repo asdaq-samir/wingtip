@@ -105,10 +105,10 @@ struct MapLookTests {
 
     @Test func thePlannersAnswerSaysWhichFieldsAreTowered() throws {
         let json = #"{"ident":"KORD","name":"O'Hare","lat":41.98,"lon":-87.9,"kind":"large","flight_category":null,"military":null,"private":false,"towered":true,"airspace_class":"B","primary_of":"B"}"#
-        let pin = try Planner.snakeCase.decode(AirportPin.self, from: Data(json.utf8))
+        let pin = try Planner.json.decode(AirportPin.self, from: Data(json.utf8))
         #expect(pin.towered == true)
         let older = #"{"ident":"KORD","name":"O'Hare","lat":41.98,"lon":-87.9,"kind":"large"}"#
-        #expect(try Planner.snakeCase.decode(AirportPin.self, from: Data(older.utf8)).towered == nil)
+        #expect(try Planner.json.decode(AirportPin.self, from: Data(older.utf8)).towered == nil)
     }
 
     @Test func thePacksSayWhichFieldsAreToweredAsThePlannerDoes() throws {

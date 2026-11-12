@@ -10,7 +10,7 @@
 # multi-line collection but not in a call.
 --swift-version 6.2
 --language-mode 5
---exclude **/Generated
+--exclude **/Generated,**/WingtipAPI
 --rules blankLinesAtEndOfScope,blankLinesAtStartOfScope,braces,consecutiveBlankLines,consecutiveSpaces,duplicateImports,elseOnSameLine,indent,leadingDelimiters,linebreakAtEndOfFile,linebreaks,modifierOrder,redundantParens,semicolons,sortImports,spaceAroundBraces,spaceAroundBrackets,spaceAroundComments,spaceAroundGenerics,spaceAroundOperators,spaceAroundParens,spaceInsideBraces,spaceInsideBrackets,spaceInsideComments,spaceInsideGenerics,spaceInsideParens,trailingCommas,trailingSpace,wrapArguments
 --indent 4
 --ranges no-space

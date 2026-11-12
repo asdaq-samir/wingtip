@@ -82,7 +82,7 @@ final class Receiver {
         do {
             let heard: [EngineContract.HeardPlane] = try Engine.recoded(internet, encoder: Planner.snakeEncoder)
             let merged = try Engine.receiverTraffic(picture: picture, internet: heard, ownFt: ownFt, at: Date().timeIntervalSince1970)
-            return try Engine.recoded(merged, decoder: Planner.snakeCase)
+            return try Engine.recoded(merged)
         } catch {
             Log.map.error("the receiver's traffic could not be merged: \(error.localizedDescription, privacy: .public)")
             return internet

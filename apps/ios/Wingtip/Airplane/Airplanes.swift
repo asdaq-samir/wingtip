@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import OpenAPIRuntime
 
 /// What the app knows of airplanes' figures, for every screen at once: the
 /// types' book profiles (the planner's /api/aircraft-profiles, as sent)
@@ -12,7 +13,7 @@ final class Airplanes {
     static let shared = Airplanes()
 
     /// Each stock type's profile by its name, as the engine takes it.
-    private(set) var books: [String: [String: JSONValue]] = [:]
+    private(set) var books: [String: [String: OpenAPIValueContainer]] = [:]
     private(set) var booksLoaded = false
     /// The signed-in pilot's airplanes; none signed out.
     private(set) var records: [OwnAircraftRecord] = []
@@ -53,13 +54,13 @@ final class Airplanes {
     /// The record's photographed handbook page as airplane_figures takes it
     /// (handbook_figures' shape, `{"value"}` each): its usable fuel, the one
     /// planning figure the page keeps beside its tables.
-    static func handbook(_ figures: GWHandbookFigures?) -> [String: JSONValue]? {
-        guard let usable = figures?.usableFuelGal else { return nil }
-        return ["usableFuelGal": .object(["value": .number(usable)])]
+    static func handbook(_ figures: GWHandbookFigures?) -> [String: OpenAPIValueContainer]? {
+        guard let usable = figures?.usableFuelGal, let value = try? OpenAPIValueContainer(unvalidatedValue: ["value": usable]) else { return nil }
+        return ["usableFuelGal": value]
     }
 
     /// The engine's airplane_figures; nil where it refuses, which it logs.
-    static func answer(book: [String: JSONValue]?, handbook: [String: JSONValue]?, own: Figures?) -> EngineContract.AirplaneFiguresAnswer? {
+    static func answer(book: [String: OpenAPIValueContainer]?, handbook: [String: OpenAPIValueContainer]?, own: Figures?) -> EngineContract.AirplaneFiguresAnswer? {
         try? Engine.airplaneFigures(book: book, handbook: handbook, own: own?.engine)
     }
 
@@ -92,11 +93,12 @@ final class Airplanes {
 extension Planner {
     /// The stock profiles as sent (/api/aircraft-profiles), by name: the
     /// book figures airplane_figures takes, glide and loading included.
-    static func aircraftBooks() async throws -> [String: [String: JSONValue]] {
-        struct Answer: Decodable { let profiles: [[String: JSONValue]] }
-        var out: [String: [String: JSONValue]] = [:]
-        for profile in try await fetch(Answer.self, "/api/aircraft-profiles").profiles {
-            if case .string(let name)? = profile["name"] { out[name] = profile }
+    static func aircraftBooks() async throws -> [String: [String: OpenAPIValueContainer]] {
+        // The profiles as the engine reads them, every member as sent:
+        // the generated AircraftProfile written out again as JSON.
+        var out: [String: [String: OpenAPIValueContainer]] = [:]
+        for profile in try await aircraftProfiles() {
+            out[profile.name] = try Engine.recoded(profile, encoder: JSONEncoder(), decoder: JSONDecoder())
         }
         return out
     }

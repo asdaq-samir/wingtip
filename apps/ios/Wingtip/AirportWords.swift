@@ -174,7 +174,7 @@ enum AirportWords {
     /// (logged by Engine.rule): the FAA's own words, in capitals.
     static func faaWords(_ text: String?) -> String {
         guard let text, !text.isEmpty else { return "" }
-        if case .string(let words)? = try? Engine.faaWords(text: text) { return words }
+        if let words = (try? Engine.faaWords(text: text))?.value as? String { return words }
         return text
     }
 

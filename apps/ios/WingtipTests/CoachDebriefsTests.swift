@@ -13,7 +13,7 @@ struct CoachDebriefsTests {
           "patterns":[{"ident":"KMSN","alt_ft":2400,"off_ft":-300,"ok":false,"pattern_ft":2700}]},
          "tolerances":{"altitude_ft":200,"course_deg":10,"eta_min":3,"off_route_nm":1,"pattern_ft":100,"pattern_nm":1}}
         """#
-        let answer = try Planner.snakeCase.decode(DebriefAnswer.self, from: Data(json.utf8))
+        let answer = try Planner.json.decode(DebriefAnswer.self, from: Data(json.utf8))
         let d = try #require(CoachDebriefs.trimmed(answer, place: "C81-KMSN", flownOn: "2026-10-20"))
         #expect(d.kind == "flight" && d.place == "C81-KMSN" && d.flownOn == "2026-10-20")
         #expect(d.legs == [APICoachLeg(altitudeWithin: 0.4, courseWithin: 0.9, from: "C81", ok: false, to: "KMSN")])
@@ -21,7 +21,7 @@ struct CoachDebriefsTests {
     }
 
     @Test func aTrackThatNeverFlewIsNoDebrief() throws {
-        let answer = try Planner.snakeCase.decode(DebriefAnswer.self, from: Data(#"{"debrief":null,"tolerances":{"altitude_ft":200,"course_deg":10,"eta_min":3,"off_route_nm":1,"pattern_ft":100,"pattern_nm":1}}"#.utf8))
+        let answer = try Planner.json.decode(DebriefAnswer.self, from: Data(#"{"debrief":null,"tolerances":{"altitude_ft":200,"course_deg":10,"eta_min":3,"off_route_nm":1,"pattern_ft":100,"pattern_nm":1}}"#.utf8))
         #expect(CoachDebriefs.trimmed(answer, place: "C81-KMSN", flownOn: "2026-10-20") == nil)
     }
 

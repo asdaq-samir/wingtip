@@ -19,7 +19,7 @@ struct PlannerFiguresTests {
     """#
 
     @Test func theDebriefReadsWithEachMark() throws {
-        let answer = try Planner.snakeCase.decode(DebriefAnswer.self, from: Data(Self.debrief.utf8))
+        let answer = try Planner.json.decode(DebriefAnswer.self, from: Data(Self.debrief.utf8))
         let d = try #require(answer.debrief)
         #expect(d.legs.map(\.ok) == [true, false])
         #expect(d.legs[1].from == "Lake" && d.legs[1].worstAltFt == 300)
@@ -27,7 +27,7 @@ struct PlannerFiguresTests {
         #expect(d.patterns.first?.offFt == 400 && d.patterns.first?.ok == false)
         #expect(answer.tolerances.offRouteNm == 3 && answer.tolerances.patternFt == 100)
         // A track that never flew is an answer with no debrief.
-        let none = try Planner.snakeCase.decode(DebriefAnswer.self, from: Data(#"{"debrief":null,"tolerances":{"altitude_ft":200,"course_deg":15,"off_route_nm":3,"eta_min":5,"pattern_nm":1.5,"pattern_ft":100}}"#.utf8))
+        let none = try Planner.json.decode(DebriefAnswer.self, from: Data(#"{"debrief":null,"tolerances":{"altitude_ft":200,"course_deg":15,"off_route_nm":3,"eta_min":5,"pattern_nm":1.5,"pattern_ft":100}}"#.utf8))
         #expect(none.debrief == nil)
     }
 
@@ -37,8 +37,8 @@ struct PlannerFiguresTests {
          {"sequenceNo":0,"name":"A","category":"departure","lat":42,"lon":-88,"alongTrackNm":0,"legDistanceNm":null,"trueCourseDeg":null,"eteMin":null,"altitudeFt":null},
          {"sequenceNo":1,"name":"B","category":"destination","lat":43,"lon":-88,"alongTrackNm":60,"trueCourseDeg":0,"eteMin":36,"altitudeFt":3500}]}
         """#.utf8))
-        let ask = DebriefAsk(checkpoints: try flight.checkpoints.map { try Engine.recoded($0) },
-                             points: [try Engine.recoded(SavedTrackPoint(altFt: 700, lat: 42, lon: -88, t: 1791990120000))])
+        let ask = DebriefAsk(checkpoints: try flight.checkpoints.map { try Engine.recoded($0, encoder: Planner.snakeEncoder) },
+                             points: [try Engine.recoded(SavedTrackPoint(altFt: 700, lat: 42, lon: -88, t: 1791990120000), encoder: Planner.snakeEncoder)])
         let sent = try #require(try JSONSerialization.jsonObject(with: Planner.snakeEncoder.encode(ask)) as? [String: Any])
         let first = try #require((sent["checkpoints"] as? [[String: Any]])?.last)
         #expect(first["sequence_no"] as? Int == 1 && first["along_track_nm"] as? Double == 60 && first["true_course_deg"] as? Double == 0)
@@ -48,7 +48,7 @@ struct PlannerFiguresTests {
     }
 
     @Test func theDiversionReadsWithItsStepsAndChecks() throws {
-        let answer = try Planner.snakeCase.decode(DiversionAnswer.self, from: Data(#"""
+        let answer = try Planner.json.decode(DiversionAnswer.self, from: Data(#"""
         {"to":"KMSN","name":"Dane County Regional","altitude_ft":4500,"tas_kt":110,"fuel_burn_gph":8.5,"magnetic_variation_deg":-3,
          "wind":{"wind_dir_true_deg":270,"wind_speed_kt":20},
          "solved":{"tc":360,"distance_nm":18,"wca":-10.48,"th":349.52,"mh":352.52,"gs":108.2,"ete":9.98,"fuel":1.41},
@@ -60,7 +60,7 @@ struct PlannerFiguresTests {
         #expect(answer.solved?.mh == 352.52 && answer.wind?.windSpeedKt == 20)
         #expect(answer.steps.first?.value == "360°, 18.0 nm")
         #expect(answer.checks.map(\.reasonable) == [true, nil])
-        let stuck = try Planner.snakeCase.decode(DiversionAnswer.self, from: Data(#"""
+        let stuck = try Planner.json.decode(DiversionAnswer.self, from: Data(#"""
         {"to":"KMSN","name":"Dane County Regional","altitude_ft":4500,"tas_kt":50,"fuel_burn_gph":5,"magnetic_variation_deg":0,"wind":null,
          "solved":null,"steps":[],"problem":"The wind is too strong for a heading to KMSN to hold.","checks":[]}
         """#.utf8))

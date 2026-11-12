@@ -359,7 +359,7 @@ struct SignView: View {
                 Text(Endorsing.signatureLine(instructor, signedOn: signedOn)).font(.footnote.monospaced()).foregroundStyle(.secondary)
                 Button(signing ? "Signing…" : "Sign as \(instructor.fullName ?? "")") {
                     signing = true
-                    let request = SignRequest(code: kind.code, fields: fields, reviewId: reviewId, signedOn: signedOn, text: text)
+                    let request = SignRequest(code: kind.code, fields: .init(additionalProperties: fields), reviewId: reviewId, signedOn: signedOn, text: text)
                     Task {
                         do { let next = try await Gateway.sign(studentId, request); await onSigned(next); dismiss() }
                         catch { problem = error.localizedDescription }

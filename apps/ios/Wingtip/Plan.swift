@@ -289,8 +289,8 @@ final class Plan {
         let dep = dep.uppercased(), dest = dest.uppercased(), stops = stops.map { $0.uppercased() }, aircraft = plannerAircraft
         let own = ownAltitudeFt, legal = ownAltitudeLegal, choice = altitudeChoice, figures = figures
         let picks = procedures.filter { idents.contains($0.ident) }
-        let extra: [String: String?]
-        do { extra = try extras.query(procedures: picks) } catch {
+        var extra = NavLogQuery(dep: dep, dest: dest)
+        do { try extras.apply(to: &extra, procedures: picks) } catch {
             // A hold or a procedure the engine could not write is said, not
             // left out of a route planned without it.
             problem = NavLogError(advice: nil, brief: nil, detail: "Your holds and procedures couldn't be written for the planner: \(error.localizedDescription)", reasons: nil)

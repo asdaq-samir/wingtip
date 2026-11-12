@@ -123,6 +123,12 @@ jobs:
       # The API types, generated from services/planner/openapi.json --
       # test-planner proves that file matches the running app.
       - run: npm run types
+      # The iPhone's API generator (swift-openapi-generator), built once per
+      # version in .tool-versions by api-models-apps.sh.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.cache/wingtip/swift-openapi-generator
+          key: swift-openapi-generator-${{ hashFiles('.tool-versions') }}
       # The phones' API models and engine calls, generated and committed
       # (neither app's build has Node): a stale one fails here, not on a phone.
       - name: The phones' generated models and engine calls are the committed ones
@@ -130,7 +136,7 @@ jobs:
         run: |
           scripts/build/api-models-apps.sh
           scripts/build/engine-contract-apps.sh
-          generated="apps/ios/Wingtip/API/Generated apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated apps/ios/Wingtip/Engine/Generated apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated"
+          generated="apps/ios/Wingtip/API/Generated apps/ios/WingtipAPI apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated apps/ios/Wingtip/Engine/Generated apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated"
           if [ -n "$(git status --porcelain -- $generated)" ]; then
             git status --short -- $generated
             echo "::error title=Phone generated code out of date::the phones' generated API models or engine calls are not what the OpenAPI documents and the engine's contract give: run scripts/build/api-models-apps.sh and scripts/build/engine-contract-apps.sh and commit the files."

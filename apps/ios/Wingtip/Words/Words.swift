@@ -1,4 +1,5 @@
 import Foundation
+import OpenAPIRuntime
 import os
 #if canImport(FoundationModels)
 import FoundationModels
@@ -22,15 +23,7 @@ import FoundationModels
 /// Generated from the assistant's OpenAPI document, as the next two are.
 typealias WordsSource = ASSource
 
-extension WordsSource: Identifiable, Hashable {
-    /// Pushed by its value in a card's stack (Ask's report); equal as the
-    /// generated Equatable has it, by every field.
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-        hasher.combine(label)
-        hasher.combine(text)
-    }
-}
+extension WordsSource: @retroactive Identifiable {}
 
 /// One sentence and the ids of the figures it rests on (app.ai_words.Sentence).
 typealias WordsSentence = ASSentence
@@ -137,18 +130,6 @@ struct WordsUnavailable: Error, LocalizedError, Equatable {
 
 // MARK: - The planner's words
 
-extension Planner {
-    /// A planner POST that changes nothing, its body encoded already.
-    static func postRead<T: Decodable>(_ type: T.Type, _ path: String, body: Data) async throws -> T {
-        var request = URLRequest(url: Config.gateway.appending(path: Config.plannerPath(path)))
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = body
-        return try snakeCase.decode(T.self, from: try await data(for: request))
-    }
-}
-
 /// The planner's words (POST /api/words/{kind}, through the gateway's
 /// /api/planner proxy): the planner assembles the figures itself from
 /// the same ask the briefing and the Go / No-Go took, and answers with
@@ -157,11 +138,29 @@ extension Planner {
 /// facade asks the device instead (WordsFor.said).
 struct PlannerWords: WordsProvider {
     func words(_ ask: WordsAsk) async throws -> Words {
-        let words = try await Planner.postRead(Words.self, "/api/words/\(ask.kind.rawValue)", body: ask.body)
+        let words = try await Self.asked(ask)
         if words.sentences.isEmpty, words.unavailable != nil { return words }
         // Checked again on the phone: the planner checks its own, but the
         // chips open only what the answer carries.
         return Words.checked(words.sentences, sources: words.sources, model: words.model)
+    }
+}
+
+extension PlannerWords {
+    /// The assistant's answer for the ask's kind, through its generated
+    /// client: the body, encoded already, is the open object each words
+    /// endpoint takes, and each answer is read as the Words they share.
+    static func asked(_ ask: WordsAsk) async throws -> Words {
+        let body = try JSONDecoder().decode(OpenAPIObjectContainer.self, from: ask.body)
+        let answer: any Encodable = switch ask.kind {
+        case .weather: try await Planner.ask { try await $0.weatherWords(body: .json(.init(additionalProperties: body))).ok.body.json }
+        case .risk: try await Planner.ask { try await $0.riskWords(body: .json(.init(additionalProperties: body))).ok.body.json }
+        case .notams: try await Planner.ask { try await $0.notamWords(body: .json(.init(additionalProperties: body))).ok.body.json }
+        case .changes: try await Planner.ask { try await $0.changesWords(body: .json(.init(additionalProperties: body))).ok.body.json }
+        case .debrief: try await Planner.ask { try await $0.debriefWords(body: .json(.init(additionalProperties: body))).ok.body.json }
+        case .remark, .altitude: throw WordsUnavailable(why: "The planner has no words of this kind.")
+        }
+        return try Engine.recoded(answer, encoder: JSONEncoder(), decoder: Planner.json)
     }
 }
 
