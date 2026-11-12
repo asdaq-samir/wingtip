@@ -8,15 +8,16 @@ import SwiftUI
 /// from the top of the stack (AirplaneFigureAlerts), not the map under
 /// the plan's sheet, where an alert would never show.
 struct AirplaneHost: ViewModifier {
+    @Environment(Airplanes.self) private var airplanes
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
 
     func body(content: Content) -> some View {
         content
-            .task { await Airplanes.shared.loadBooks() }
+            .task { await airplanes.loadBooks() }
             .task(id: session.signedIn) {
-                await Airplanes.shared.loadRecords(signedIn: session.signedIn)
-                plan.took(records: Airplanes.shared.records)
+                await airplanes.loadRecords(signedIn: session.signedIn)
+                plan.took(records: airplanes.records)
                 if session.signedIn { FigureOffer.shared.offered = OwnFigureStore.tails() }
             }
     }
@@ -35,10 +36,11 @@ final class FigureOffer {
 /// The offer and its failure, two stock alerts, from the top of the
 /// stack (TopHosts).
 struct AirplaneFigureAlerts: ViewModifier {
+    @Environment(Airplanes.self) private var airplanes
     /// Whether this view is the top of the stack, the one that presents.
     let active: Bool
     @Environment(Plan.self) private var plan
-    private var offer: FigureOffer { .shared }
+    @Environment(FigureOffer.self) private var offer
 
     func body(content: Content) -> some View {
         let offered = offer.offered
@@ -68,7 +70,7 @@ struct AirplaneFigureAlerts: ViewModifier {
         offer.offered = [:]
         var failed: [String] = []
         for (tail, figures) in tails.sorted(by: { $0.key < $1.key }) {
-            let record = Airplanes.shared.record(tail)
+            let record = airplanes.record(tail)
             // Over the record's own, the device's where they differ.
             var merged = record.map(Figures.init) ?? Figures()
             for figure in OwnFigure.allCases { if let v = figures[figure] { merged[figure] = v } }
@@ -78,7 +80,7 @@ struct AirplaneFigureAlerts: ViewModifier {
             let stock = registered.flatMap { try? Registered.profile(manufacturer: $0.manufacturer, model: $0.model, year: $0.year) }
             let aircraft = plan.tail?.uppercased() == tail ? plan.aircraft : (stock ?? Plan.ownAirplane)
             do {
-                let (saved, kept) = try await Airplanes.shared.save(merged, tail: tail, aircraft: aircraft, type: nil, signedIn: true)
+                let (saved, kept) = try await airplanes.save(merged, tail: tail, aircraft: aircraft, type: nil, signedIn: true)
                 if case .device(let why) = kept { failed.append(why ?? tail) } else { OwnFigureStore.forget(tail) }
                 plan.took(saved, for: tail)
             } catch {

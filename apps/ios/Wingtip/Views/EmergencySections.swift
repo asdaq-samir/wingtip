@@ -11,7 +11,7 @@ struct EmergencyFieldsSection: View {
     let ownShipOff: Bool
     /// Direct To the field: each row's one filled action.
     var directTo: (String) -> Void = { _ in }
-    private var model: Emergency { .shared }
+    @Environment(Emergency.self) private var model
     /// Set once the GPS has given nothing for `waitS`: "Finding" no longer
     /// says what is happening, and the pilot is told what to do instead.
     @State private var noFixYet = false
@@ -150,7 +150,7 @@ struct EmergencyRadioSections: View {
     let mayday: Result<Emergency.Mayday, any Error>
     let phoneIdent: String?
     let phone: String?
-    private var model: Emergency { .shared }
+    @Environment(Emergency.self) private var model
 
     var body: some View {
         if case .success(let call) = mayday {

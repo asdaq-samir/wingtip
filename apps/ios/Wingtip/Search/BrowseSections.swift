@@ -12,8 +12,8 @@ struct BrowseSections: View {
     let nearest: [NearestAirport]
     let pick: (SearchPick) -> Void
     @Environment(Plan.self) private var plan
-    private var shelf: AirportShelf { .shared }
-    private var airplanes: Airplanes { .shared }
+    @Environment(AirportShelf.self) private var shelf
+    @Environment(Airplanes.self) private var airplanes
 
     var body: some View {
         if plan.routed {

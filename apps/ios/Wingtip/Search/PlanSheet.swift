@@ -11,7 +11,10 @@ import SwiftUI
 /// the iPad the same two pages in the sidebar, its pages pushed there and
 /// its things in the inspector.
 struct PlanSheet: View {
+    @Environment(Navigator.self) var nav
     @Environment(Plan.self) var plan
+    @Environment(ClearanceListener.self) var listener
+    @Environment(AirportShelf.self) var shelf
     @Environment(\.splitLayout) private var split
     @Environment(\.sheetAtPill) private var atPill
     let search: OneSearchModel
@@ -22,7 +25,7 @@ struct PlanSheet: View {
     let ask: (String?) -> Void
 
     var body: some View {
-        @Bindable var nav = Navigator.shared
+        @Bindable var nav = self.nav
         NavigationStack(path: stack) {
             SheetPager(page: $nav.sheetPage) {
                 List {
@@ -88,7 +91,7 @@ struct PlanSheet: View {
     /// sidebar back to its root.
     func showPlan() {
         search.close()
-        Navigator.shared.showPlan()
+        nav.showPlan()
     }
 
     /// The plan's stack as its rows push on it: a card on the iPhone (the
@@ -96,9 +99,8 @@ struct PlanSheet: View {
     /// stack and a thing in the inspector.
     private var stack: Binding<[SheetPage]> {
         Binding(
-            get: { Navigator.shared.planPath },
+            get: { nav.planPath },
             set: { next in
-                let nav = Navigator.shared
                 if next.count > nav.planPath.count, let last = next.last, !(split && !last.inspects) {
                     nav.open(last)
                 } else {
@@ -113,7 +115,7 @@ struct PlanSheet: View {
     private func browse(_ picked: SearchPick) {
         switch picked {
         case .airport(let route): host.card(route)
-        case .airplane(let tail): Navigator.shared.open(.tail(ProfileAsk(tail: tail.uppercased())))
+        case .airplane(let tail): nav.open(.tail(ProfileAsk(tail: tail.uppercased())))
         case .plan: showPlan()
         case .directTo, .types, .action: break
         }
@@ -121,9 +123,9 @@ struct PlanSheet: View {
 
     private var host: SearchHost {
         SearchHost(
-            card: { Navigator.shared.open(.airport($0)) },
+            card: { nav.open(.airport($0)) },
             showPlan: { showPlan() },
-            page: { page in if case .screen(let screen) = page { openScreen(screen) } else { Navigator.shared.open(page) } },
+            page: { page in if case .screen(let screen) = page { openScreen(screen) } else { nav.open(page) } },
             screen: { openScreen($0) },
             field: { word(for: $0) },
             ask: { ask($0) })

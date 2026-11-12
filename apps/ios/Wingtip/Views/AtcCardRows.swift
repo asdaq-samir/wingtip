@@ -5,6 +5,7 @@ import SwiftUI
 /// heard -- a tick where it matched, else each item missed or said
 /// differently -- and Read Back. Nothing is set from here.
 struct AtcCardRows: View {
+    @Environment(AtcCopilot.self) private var atc
     let card: AtcCopilot.Card
     let tail: String?
 
@@ -25,7 +26,7 @@ struct AtcCardRows: View {
                 Text("Read it back…").font(.footnote).foregroundStyle(.secondary)
             } else {
                 Button(card.readback == nil ? "Read Back" : "Read Back Again") {
-                    Task { await AtcCopilot.shared.readBack(card.id, tail: tail) }
+                    Task { await atc.readBack(card.id, tail: tail) }
                 }
                 .glassButton().buttonBorderShape(.capsule)
             }
@@ -38,26 +39,27 @@ struct AtcCardRows: View {
 /// Turned on with the microphone not yet asked for, why is said first and
 /// the system's question comes on Allow (PermissionAsk); Not Now leaves it off.
 struct AtcModePicker: View {
+    @Environment(AtcCopilot.self) private var atc
     @State private var askingMicrophone = false
 
     var body: some View {
-        Picker("ATC", selection: Binding(get: { AtcCopilot.shared.mode }, set: { pick($0) })) {
+        Picker("ATC", selection: Binding(get: { atc.mode }, set: { pick($0) })) {
             ForEach(AtcCopilot.Mode.allCases) { Text($0.label).tag($0) }
         }
         .pickerStyle(.segmented)
         .sheet(isPresented: $askingMicrophone) {
             PermissionAsk(permission: .microphone, allow: {
                 askingMicrophone = false
-                Task { if await ClearanceListener.allowed() { AtcCopilot.shared.mode = .flying } }
+                Task { if await ClearanceListener.allowed() { atc.mode = .flying } }
             }, notNow: { askingMicrophone = false })
                 .presentationDetents([.medium])
         }
     }
 
     private func pick(_ mode: AtcCopilot.Mode) {
-        guard mode == .flying else { AtcCopilot.shared.mode = mode; return }
+        guard mode == .flying else { atc.mode = mode; return }
         Task {
-            if await Permission.undecided(.microphone) { askingMicrophone = true } else { AtcCopilot.shared.mode = mode }
+            if await Permission.undecided(.microphone) { askingMicrophone = true } else { atc.mode = mode }
         }
     }
 }

@@ -6,6 +6,7 @@ import SwiftUI
 /// map's own button"). The one home of the map's switches and the alerts
 /// (docs/decisions/0014); Settings' Map row opens this same card.
 struct MapSettingsView: View {
+    @Environment(ClearanceListener.self) private var listener
     @Environment(Traffic.self) private var traffic
     @AppStorage(MapExtrasInput.Keys.waypoints) private var waypointsOn = false
     @AppStorage(MapExtrasInput.Keys.classB) private var classBOn = false
@@ -53,7 +54,7 @@ struct MapSettingsView: View {
                 // The ATC copilot: the radio listened to while flying,
                 // calls to us read into cards; off until turned on, and
                 // not offered where speech cannot be recognised on the iPhone.
-                if ClearanceListener.shared.canListen {
+                if listener.canListen {
                     LabeledContent("ATC") { AtcModePicker().fixedSize() }
                 }
             }

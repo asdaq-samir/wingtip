@@ -42,7 +42,8 @@ struct EmergencyControl: ControlWidget {
 }
 
 /// The extension's side of the intents that open the app: nothing, since
-/// iOS runs them in the app, whose AppOpener does the work.
-enum AppOpener {
-    static func open(_ what: AppOpening) async {}
+/// iOS runs them in the app, whose AppOpener does the work. Given to them
+/// as the app gives its own (AppDependencyManager, WingtipWidgetsBundle).
+final class AppOpener: Sendable {
+    func open(_ what: AppOpening) async {}
 }

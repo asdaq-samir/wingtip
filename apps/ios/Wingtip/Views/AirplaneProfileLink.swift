@@ -14,11 +14,12 @@ struct ProfileAsk: Identifiable, Hashable {
 /// The one profile card (AirplaneProfileView): pushed in the card it is
 /// in, with Back, or its own card from the plan (Navigator.push).
 struct TailButton<Label: View>: View {
+    @Environment(Navigator.self) private var nav
     let tail: String
     @ViewBuilder var label: () -> Label
 
     var body: some View {
-        Button { Navigator.shared.push(.tail(ProfileAsk(tail: tail.uppercased()))) } label: { label() }
+        Button { nav.push(.tail(ProfileAsk(tail: tail.uppercased()))) } label: { label() }
             .buttonStyle(.borderless)
             .contentShape(Rectangle().inset(by: -WingtipSpace.md))
             .accessibilityHint("Opens \(tail.uppercased())'s profile")

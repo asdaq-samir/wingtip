@@ -50,10 +50,10 @@ final class Receiver {
     /// Called after each read, for Traffic to merge the receiver's own.
     var onRead: (() -> Void)?
 
-    /// Listen and read once a second while the app runs (Ticker's clock,
+    /// Listen and read once a second while the app runs (Repeating,
     /// slower with the app put away).
     func run() async {
-        await Ticker.shared.run(every: 1) { [weak self] in self?.read() }
+        await Repeating.every(1) { [weak self] in self?.read() }
     }
 
     func read(now: Date = Date()) {

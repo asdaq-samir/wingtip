@@ -36,9 +36,10 @@ final class Feel {
 /// feel, which an app out of the box does not have, while a warning carries
 /// a safety meaning, as the caution colours do.
 struct FeelHost: ViewModifier {
+    @Environment(Copilot.self) private var copilot
     @Environment(OwnShip.self) private var ownShip
     @AppStorage(Look.key) private var look = Look.standard.rawValue
-    private var feel: Feel { .shared }
+    @Environment(Feel.self) private var feel
 
     func body(content: Content) -> some View {
         let brand = !(Look(rawValue: look) ?? .standard).isStock
@@ -54,7 +55,7 @@ struct FeelHost: ViewModifier {
             .onChange(of: ownShip.ahead.map(\.id)) { was, now in
                 if !Set(now).subtracting(was).isEmpty { Feel.tap(.warning) }
             }
-            .onChange(of: Copilot.shared.message?.title) { _, now in
+            .onChange(of: copilot.message?.title) { _, now in
                 if now != nil { Feel.tap(.warning) }
             }
     }

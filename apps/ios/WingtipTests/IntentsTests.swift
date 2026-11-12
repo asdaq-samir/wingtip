@@ -3,15 +3,15 @@ import AppIntents
 import XCTest
 
 /// Siri's and Shortcuts' intents: what each leaves for the app to do
-/// (PendingCommand, BriefAsk), the radio's switch, the airport as
+/// (AppCommand, BriefAsk), the radio's switch, the airport as
 /// Spotlight indexes it, and the shortcuts within Apple's ten.
 @MainActor
 final class IntentsTests: XCTestCase {
     private let oshkosh = AirportEntity(id: "kosh", name: "Wittman Rgnl", city: "Oshkosh")
 
-    // The app under test is on the screen and takes a command as soon as
-    // it is left (RootView), so what each intent leaves is read from the
-    // intent's own `command`, and the run itself only has to go through.
+    // What each intent asks of the app is read from the intent's own
+    // command (the scene's on iOS 26, CommandHost), and the run itself only
+    // has to go through.
     func testBriefMyFlightAsksForTheBriefOfARouteThere() async throws {
         XCTAssertEqual(BriefFlightIntent.command(oshkosh), .brief(ident: "KOSH"))
         let intent = BriefFlightIntent()
@@ -24,6 +24,20 @@ final class IntentsTests: XCTestCase {
         let intent = OpenAirportIntent()
         intent.target = oshkosh
         _ = try await intent.perform()
+    }
+
+    func testDirectToTheNearestOpensOnItsFieldElseTheList() {
+        XCTAssertEqual(OpenWingtipIntent(directTo: "KFCM").appCommand(), .directTo(place: "KFCM"))
+        XCTAssertEqual(OpenWingtipIntent(directTo: nil).appCommand(), .nearest)
+        XCTAssertEqual(NearestAirportsIntent().appCommand(), .nearest)
+        XCTAssertEqual(EmergencyIntent().appCommand(), .open(.emergency))
+    }
+
+    func testACommandLeftBeforeIOS26IsTakenOnce() {
+        let commands = AppCommands()
+        commands.waiting = .keepForAir
+        XCTAssertEqual(commands.take(), .keepForAir)
+        XCTAssertNil(commands.take())
     }
 
     func testTheBriefIsTakenOnce() {

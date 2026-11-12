@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// What Siri, a Shortcut or a link asked for (PendingCommand), done by the
-/// root view once it is on the screen: its own file, so the root view
+/// What Siri, a Shortcut, a link or a tap in a card asked for (AppCommand),
+/// done by the root view once it is on the screen (CommandHost): its own file, so the root view
 /// stays the map and its sheet.
 extension RootView {
     /// A route to the field, from the route's departure, else from the
@@ -15,10 +15,9 @@ extension RootView {
 
     /// Siri's or a Shortcut's command done in the app: a trip planned to
     /// the field, its Brief, direct to a place, the nearest airports, a
-    /// field's card.
-    func apply(_ command: PendingCommand.Command?) async {
-        guard let command else { return }
-        defer { if let next = PendingCommand.shared.takeThen() { openScreen(next) } }
+    /// field's card; then the screen a link or a card named after it.
+    func apply(_ command: AppCommand, then next: Screen? = nil) async {
+        defer { if let next { openScreen(next) } }
         switch command {
         case .planTo(let ident):
             await route(to: ident)
@@ -60,7 +59,7 @@ extension RootView {
             plan.plan()
         case .aircraft(let hex):
             // The airplane's card, tracked from its next report on.
-            Tracking.shared.track(hex)
+            tracking.track(hex)
             nav.open(.traffic(hex.lowercased()))
         case .open(let screen):
             openScreen(screen)
@@ -84,8 +83,8 @@ extension RootView {
             let reading = url.startAccessingSecurityScopedResource()
             defer { if reading { url.stopAccessingSecurityScopedResource() } }
             guard let data = try? Data(contentsOf: url), let points = try? GPXTrack.points(data), !points.isEmpty else { return }
-            Replay.shared.load(Replay.points(points), key: url.lastPathComponent)
-            Replay.shared.play()
+            replay.load(Replay.points(points), key: url.lastPathComponent)
+            replay.play()
             if detent != RootView.pill { detent = RootView.pill }
         }
     }

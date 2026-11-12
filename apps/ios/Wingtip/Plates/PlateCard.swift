@@ -7,6 +7,7 @@ import SwiftUI
 /// page is on a slider from clear to solid. The card rule's one card over
 /// the search, its close at the right (docs/design/rules.md).
 struct PlateCard: View {
+    @Environment(Navigator.self) private var nav
     let key: String
     @AppStorage(PlateLook.Keys.opacity) private var opacity = PlateLook.defaultOpacity
     @AppStorage(PlateLook.Keys.inverted) private var inverted = false
@@ -23,7 +24,7 @@ struct PlateCard: View {
                     Button {
                         // The plate off the map, its approach still on the route.
                         HiddenPlates.shared.hide(key)
-                        Navigator.shared.close()
+                        nav.close()
                     } label: {
                         Text("Hide Plate").frame(maxWidth: .infinity)
                     }

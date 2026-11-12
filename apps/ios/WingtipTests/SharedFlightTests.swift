@@ -49,11 +49,10 @@ struct SharedFlightTests {
     @Test func useThisPlanAsksForTheRouteAndItsNavLog() {
         let model = SharedFlightModel(calls: .init(fetch: { _ in nil }))
         let route = Plan()
-        let commands = PendingCommand()
         let defaults = UserDefaults(suiteName: "SharedFlightTests")!
         model.open(.plan(SharedPlan(dep: "KMSN", dest: "KOSH", stops: ["KJVL"], altitudeFt: 5500, rules: .ifr)))
-        model.use(on: route, commands: commands, defaults: defaults)
-        #expect(commands.command == .planRoute(dep: "KMSN", stops: ["KJVL"], dest: "KOSH") && commands.then == .navlog)
+        let command = model.use(on: route, defaults: defaults)
+        #expect(command == .planRoute(dep: "KMSN", stops: ["KJVL"], dest: "KOSH"))
         #expect(route.ownAltitudeFt == 5500 && FlightRules.saved(defaults) == .ifr && !model.showing)
     }
 

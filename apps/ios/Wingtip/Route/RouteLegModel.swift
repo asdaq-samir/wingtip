@@ -48,16 +48,16 @@ final class RouteLegModel {
         return legs.first { $0.from.uppercased() == leg.from.uppercased() && $0.to.uppercased() == leg.to.uppercased() }?.index ?? row
     }
 
-    func direct(_ sheet: RouteLegs.Sheet, plan: Plan, from fix: OwnShip.Fix?) {
+    func direct(_ sheet: RouteLegs.Sheet, plan: Plan, from fix: OwnShip.Fix?, nav: Navigator) {
         guard let direct = sheet.direct else { return }
         if direct.on { plan.cancelDirect() } else { plan.directTo(direct.ident, from: fix) }
-        Navigator.shared.finish(.leg(index))
+        nav.finish(.leg(index))
     }
 
-    func remove(_ sheet: RouteLegs.Sheet, plan: Plan) {
+    func remove(_ sheet: RouteLegs.Sheet, plan: Plan, nav: Navigator) {
         guard let stop = sheet.remove else { return }
         plan.stops.removeAll { $0.uppercased() == stop.uppercased() }
         plan.plan()
-        Navigator.shared.finish(.leg(index))
+        nav.finish(.leg(index))
     }
 }

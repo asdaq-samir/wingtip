@@ -55,7 +55,7 @@ struct AirplaneEntityQuery: EntityStringQuery {
 /// "Fly N123AB" to Siri: the route planned with that airplane, its figures
 /// the pilot's record's or the registry type's (Plan.fly), as picking it
 /// on the Airplane tab does.
-struct FlyAirplaneIntent: AppIntent {
+struct FlyAirplaneIntent: CommandIntent {
     static let title: LocalizedStringResource = "Fly an Airplane"
     static let description = IntentDescription("Plans your route with an airplane, by its N-number.")
     static let openAppWhenRun: Bool = true
@@ -63,11 +63,15 @@ struct FlyAirplaneIntent: AppIntent {
     @Parameter(title: "Airplane", requestValueDialog: "Which airplane?")
     var airplane: AirplaneEntity
 
+    @Dependency private var commands: AppCommands
+
     static var parameterSummary: some ParameterSummary { Summary("Fly \(\.$airplane)") }
+
+    func appCommand() -> AppCommand? { .fly(tail: airplane.id) }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let tail = airplane.id
-        await MainActor.run { PendingCommand.shared.command = .fly(tail: tail) }
+        await handOver(to: commands)
         return .result(dialog: IntentDialog(full: "Planning with \(tail).", supporting: "\(tail)"))
     }
 }
@@ -109,15 +113,18 @@ struct LogbookEntryEntityQuery: EntityQuery {
 }
 
 /// An entry opened from Siri or Spotlight: the logbook, where it is.
-struct OpenLogbookEntryIntent: OpenIntent {
+struct OpenLogbookEntryIntent: OpenIntent, CommandIntent {
     static let title: LocalizedStringResource = "Open a Logbook Entry"
     static let description = IntentDescription("Opens your logbook.")
 
     @Parameter(title: "Entry")
     var target: LogbookEntryEntity
+    @Dependency private var commands: AppCommands
+
+    func appCommand() -> AppCommand? { .open(.logbook) }
 
     func perform() async throws -> some IntentResult {
-        await MainActor.run { PendingCommand.shared.command = .open(.logbook) }
+        await handOver(to: commands)
         return .result()
     }
 }

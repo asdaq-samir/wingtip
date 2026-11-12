@@ -12,7 +12,7 @@ import SwiftUI
 /// card's size, coloured and marked by its finding, over Ready to Fly's.
 struct BriefVerdictHead: View {
     @Environment(Verdict.self) private var verdict
-    private var ready: ReadyToFly { .shared }
+    @Environment(ReadyToFly.self) private var ready
 
     var body: some View {
         if let answer = verdict.answer {

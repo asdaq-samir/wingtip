@@ -20,13 +20,16 @@ struct StartFlightIntent: LiveActivityIntent {
 /// "Keep this flight for the air": the route's charts, briefing, NOTAMs,
 /// airport cards and plates kept on the phone for no signal, as FPL's
 /// Keep for the Air button keeps them (KeepForAir, through RootView).
-struct KeepForAirIntent: AppIntent {
+struct KeepForAirIntent: CommandIntent {
     static let title: LocalizedStringResource = "Keep for the Air"
     static let description = IntentDescription("Keeps your route's charts, briefing, NOTAMs, airport cards and plates on this iPhone for flying with no signal.")
     static let openAppWhenRun: Bool = true
+    @Dependency private var commands: AppCommands
+
+    func appCommand() -> AppCommand? { .keepForAir }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        await MainActor.run { PendingCommand.shared.command = .keepForAir }
+        await handOver(to: commands)
         return .result(dialog: "Keeping your flight for the air.")
     }
 }
@@ -35,17 +38,18 @@ struct KeepForAirIntent: AppIntent {
 /// the engine (logbook_from_track, through the planner) and shown for the
 /// pilot to check and log -- never logged unasked. With no flight ended
 /// on the phone, the logbook.
-struct LogFlightIntent: AppIntent {
+struct LogFlightIntent: CommandIntent {
     static let title: LocalizedStringResource = "Log This Flight"
     static let description = IntentDescription("Opens the entry drafted from the flight you just flew, for you to check and log.")
     static let openAppWhenRun: Bool = true
+    @Dependency private var commands: AppCommands
+
+    /// The flight's entry is up already where one ended; else the logbook.
+    func appCommand() -> AppCommand? { AutoLogbook.shared.isOpen ? nil : .open(.logbook) }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let ended = await MainActor.run { () -> Bool in
-            if AutoLogbook.shared.isOpen { return true }
-            PendingCommand.shared.command = .open(.logbook)
-            return false
-        }
+        let ended = await MainActor.run { AutoLogbook.shared.isOpen }
+        await handOver(to: commands)
         return .result(dialog: ended ? "Here's the entry from your flight; check it and log it."
             : "No flight has ended on this iPhone yet. Here's your logbook.")
     }
@@ -97,28 +101,39 @@ struct DirectToNearestIntent: AppIntent {
 
     func perform() async throws -> some IntentResult & ProvidesDialog & OpensIntent {
         guard let here = await SiriPosition.now() else {
-            await MainActor.run { PendingCommand.shared.command = .nearest }
             return .result(opensIntent: OpenWingtipIntent(), dialog: "I can't tell where you are, so here are the nearest airports.")
         }
         guard let field = try? await Planner.nearest(lat: here.latitude, lon: here.longitude, limit: 1).first else {
-            await MainActor.run { PendingCommand.shared.command = .nearest }
             return .result(opensIntent: OpenWingtipIntent(), dialog: "The nearest airport couldn't be found; here's the list.")
         }
         let said = "\(field.ident), \(Format.spokenDistance(field.distanceNm)), \(Format.spokenHeadingTrue(field.bearingDeg))"
         try await requestConfirmation(actionName: .go, dialog: IntentDialog(full: "The nearest is \(said). Go direct?", supporting: "Direct to \(field.ident)?"))
-        let ident = field.ident
-        await MainActor.run { PendingCommand.shared.command = .directTo(place: ident) }
-        return .result(opensIntent: OpenWingtipIntent(), dialog: "Direct to \(ident).")
+        return .result(opensIntent: OpenWingtipIntent(directTo: field.ident), dialog: "Direct to \(field.ident).")
     }
 }
 
-/// The app opened on what an intent before it left to do (PendingCommand):
-/// the follow-on of an intent that asked first, such as Direct To the
-/// nearest once confirmed. Not offered on its own.
-struct OpenWingtipIntent: AppIntent {
+/// The app opened on what an intent that asked first leaves it to do:
+/// Direct To the nearest once confirmed, else the nearest airports where
+/// none was found. Not offered on its own.
+struct OpenWingtipIntent: CommandIntent {
     static let title: LocalizedStringResource = "Open Wingtip Maps"
     static let openAppWhenRun: Bool = true
     static let isDiscoverable: Bool = false
+    @Dependency private var commands: AppCommands
 
-    func perform() async throws -> some IntentResult { .result() }
+    @Parameter(title: "Direct To")
+    var directTo: String?
+
+    init() {}
+
+    init(directTo: String?) {
+        self.directTo = directTo
+    }
+
+    func appCommand() -> AppCommand? { directTo.map { .directTo(place: $0) } ?? .nearest }
+
+    func perform() async throws -> some IntentResult {
+        await handOver(to: commands)
+        return .result()
+    }
 }

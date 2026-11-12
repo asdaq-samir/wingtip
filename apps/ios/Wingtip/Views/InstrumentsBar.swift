@@ -9,8 +9,10 @@ import SwiftUI
 /// Under the alerts and the radio at the top of the map, where nothing
 /// else was: no panel or control moves for it.
 struct InstrumentsBar: View {
+    @Environment(Emergency.self) private var emergency
+    @Environment(\.appCommand) private var appCommand
     @Environment(\.dynamicTypeSize) private var typeSize
-    private var flight: InFlight { .shared }
+    @Environment(InFlight.self) private var flight
 
     var body: some View {
         if let fix = flight.fix, flight.underway {
@@ -54,7 +56,7 @@ struct InstrumentsBar: View {
                 HStack(alignment: .center, spacing: WingtipSpace.sm) {
                     // The one Nearest list, a card over the plan: the map
                     // under the plan's sheet presents nothing (Navigator).
-                    Button { PendingCommand.shared.command = .open(.nearest) } label: {
+                    Button { appCommand(.open(.nearest)) } label: {
                         Label("Nearest", systemImage: "airplane.arrival")
                             .font(.subheadline.weight(.semibold))
                     }
@@ -64,7 +66,7 @@ struct InstrumentsBar: View {
                     // Flying mode's way to the emergency assistant, the
                     // web's FlyingHead Emergency (not a map button,
                     // docs/decisions/0010).
-                    Button(role: .destructive) { Emergency.shared.open = .flying } label: {
+                    Button(role: .destructive) { emergency.open = .flying } label: {
                         Label("Emergency", systemImage: "exclamationmark.triangle.fill")
                             .font(.subheadline.weight(.semibold))
                     }

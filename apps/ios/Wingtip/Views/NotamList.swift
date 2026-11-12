@@ -10,6 +10,7 @@ import SwiftUI
 /// the engine's (notams_ranked) unless the pilot sorts by time or kind in
 /// More; nothing is ranked here.
 struct NotamListView: View {
+    @Environment(ReadyToFly.self) private var ready
     let source: NotamSource
     @Environment(Plan.self) private var plan
     @State private var ranked: APINotamsRanked?
@@ -84,7 +85,7 @@ struct NotamListView: View {
     private func load(force: Bool) async {
         switch source {
         case .route:
-            let model = ReadyToFly.shared
+            let model = ready
             await model.fetchNotams(force: force)
             ranked = model.notams
             problem = model.notamsProblem ?? (plan.routed ? nil : "Plan a route to see its NOTAMs.")

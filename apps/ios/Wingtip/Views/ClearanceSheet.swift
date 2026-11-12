@@ -12,10 +12,11 @@ import SwiftUI
 /// read back. The raw transcript, typed or heard, folds under them.
 /// Nothing heard changes the plan before Enter.
 struct ClearanceSheet: View {
+    @Environment(ClearanceListener.self) private var listener
+    @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(\.look) private var look
-    private var listener: ClearanceListener { ClearanceListener.shared }
     /// The words read: the newest transmission settled while listening,
     /// until the pilot picks one from the log or types.
     @State private var text = ""
@@ -153,7 +154,7 @@ struct ClearanceSheet: View {
             // (HIG Sheets: Cancel leading, Done trailing); listening goes
             // on with the sheet put away: the captions over the map carry
             // it, and Stop ends it.
-            FormCancel(edited: edited, cancel: { Navigator.shared.finish(.clearance) }, asking: $askingCancel)
+            FormCancel(edited: edited, cancel: { nav.finish(.clearance) }, asking: $askingCancel)
             // Done enters the route, as Enter the route does: nothing
             // heard reaches the plan before one of them.
             ToolbarItem(placement: .confirmationAction) { Button("Done") { enter() }.disabled(!ready) }
@@ -250,7 +251,7 @@ struct ClearanceSheet: View {
             plan.ownAltitudeLegal = false
         }
         plan.plan()
-        Navigator.shared.finish(.clearance)
+        nav.finish(.clearance)
     }
 }
 

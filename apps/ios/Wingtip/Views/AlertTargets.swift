@@ -53,15 +53,15 @@ enum AlertActions {
     }
 
     /// Opened by the one way in, as a route point's More Info opens a card.
-    @MainActor static func open(_ target: AlertTarget) {
-        PendingCommand.shared.command = .weather(ident: target.route)
+    static func command(_ target: AlertTarget) -> AppCommand {
+        .weather(ident: target.route)
     }
 
     /// Taken by the one way in: Direct To from where the airplane is, as
     /// Siri's Direct To is (RootView.apply).
-    @MainActor static func take(_ fix: AlertFix) {
+    static func command(_ fix: AlertFix) -> AppCommand {
         switch fix {
-        case .directTo(let ident): PendingCommand.shared.command = .directTo(place: ident)
+        case .directTo(let ident): .directTo(place: ident)
         }
     }
 }

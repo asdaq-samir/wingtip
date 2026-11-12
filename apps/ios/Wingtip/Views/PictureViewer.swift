@@ -139,6 +139,7 @@ struct ShownPicture: Identifiable {
 /// A chart or a photo full screen to pinch in on, as Files shows a page:
 /// its title at the top and the close at the right, which goes back.
 struct PictureViewer: View {
+    @Environment(KeptShown.self) private var keptShown
     let picture: ShownPicture
     @Environment(\.dismiss) private var dismiss
     @State private var images: [UIImage]?
@@ -166,7 +167,7 @@ struct PictureViewer: View {
             .navigationBarTitleDisplayMode(.inline)
             .closeButton { dismiss() }
             .safeAreaInset(edge: .top) {
-                if let kept = picture.kept, images != nil, KeptShown.shared.at(kept.kind, key: kept.key) != nil {
+                if let kept = picture.kept, images != nil, keptShown.at(kept.kind, key: kept.key) != nil {
                     KeptAgeLine(kind: kept.kind, key: kept.key)
                         .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
                         .floatingGlass(in: Capsule(), material: .thinMaterial)

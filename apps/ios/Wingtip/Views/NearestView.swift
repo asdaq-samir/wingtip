@@ -9,6 +9,7 @@ import SwiftUI
 /// from here to it -- its heading, time and fuel the planner's, as any
 /// route's are -- with the route as it was kept for Cancel.
 struct NearestView: View {
+    @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(DryRun.self) private var dryRun
@@ -90,7 +91,7 @@ struct NearestView: View {
     private func divert(_ ident: String) {
         guard let fix else { return }
         plan.divert(to: ident, from: fix)
-        Navigator.shared.showPlan()
+        nav.showPlan()
     }
 }
 
