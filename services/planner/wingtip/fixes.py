@@ -190,7 +190,7 @@ class _Table:
     idents in order, for a prefix found by bisection rather than a scan
     of seventy thousand at every keystroke (8 ms a search, measured
     2026-10-07), and a degree's cells, for a box's fixes without a scan
-    of them all at every pan of the map (13 ms)."""
+    of them all at every pan of the map (13 ms), the VFR waypoints' apart."""
 
     def __init__(self, fixes: dict[str, dict], navaids: dict[str, list[dict]], source: tuple = ()):
         # The files read and their mtimes: a new FAA edition (wingtip.faa_data.
@@ -203,10 +203,8 @@ class _Table:
         self.navaids = navaids
         self.idents = sorted(self.by_ident)
         self.cells: dict[tuple[int, int], list[dict]] = {}
-        everything = [*fixes.values(), *(navaid for found in navaids.values() for navaid in found)]
-        for fix in everything:
+        for fix in [*fixes.values(), *(navaid for found in navaids.values() for navaid in found)]:
             self.cells.setdefault(_cell(fix["lat"], fix["lon"]), []).append(fix)
-        # And the VFR waypoints' alone, for the map's (within's vfr): a tenth of the fixes.
         self.vfr_cells = {cell: vfr for cell, found in self.cells.items() if (vfr := [f for f in found if f["vfr"]])}
 
 
