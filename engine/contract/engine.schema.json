@@ -2714,6 +2714,275 @@
       ],
       "additionalProperties": false
     },
+    "approach_scene": {
+      "description": "A field's way in as the 3D map stands it up: each runway end's extended centreline on the ground, out to the picked approach's final approach fix or 5 nm (past a VASI's 4 NM and a PAPI's 3.4, AIM 2-1-2); the glidepath to the threshold in the air, the approach's own angle and threshold crossing height where the CIFP codes them (ARINC 424-18 5.67, 5.68, 5.70), else 3.00 degrees (FAA Order 8260.3G 2-6-3, AIM 2-1-2) over the threshold at 40 ft (8260.3G Table 10-1-1, height group 1) from the field's elevation, its heights by 8260.3G formula 2-6-4; the picked approach's path, each fix at its crossing altitude (ARINC 424-18 5.29) and down the glidepath from the final approach fix, stopping where no altitude follows; and a ring (its middle and radius) at the pattern altitude (the FAA's TPA, else 1,000 ft above the field, AIM 4-3-3) as far out as the downwind is drawn past half the longest runway. With an approach picked, its runway's glidepath alone.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ApproachSceneInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "elevation_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The field's elevation, ft MSL (NASR): the highest point of its usable runways."
+            },
+            "pattern_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The traffic pattern altitude, ft MSL, as the planner gives it (pattern_altitude)."
+            },
+            "runways": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "length_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "runway_ends": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "ident": {
+                          "type": "string"
+                        },
+                        "lat": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "lon": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "heading_true_deg": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "ident"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "drawing": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ProcedureDrawing"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The approach picked at the field, as the planner draws it with its CIFP figures (`approach`)."
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "runways"
+          ]
+        },
+        "answer": {
+          "title": "ApproachSceneAnswer",
+          "type": "object",
+          "properties": {
+            "centrelines": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "end": {
+                    "type": "string"
+                  },
+                  "points": {
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "minItems": 2,
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "description": "[lat, lon]"
+                    }
+                  }
+                },
+                "required": [
+                  "end",
+                  "points"
+                ]
+              }
+            },
+            "glidepaths": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "end": {
+                    "type": "string"
+                  },
+                  "deg": {
+                    "type": "number"
+                  },
+                  "cross_ft": {
+                    "type": "number",
+                    "description": "The height it crosses the threshold at, ft MSL."
+                  },
+                  "tch_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The threshold crossing height, ft above the threshold, where known."
+                  },
+                  "source": {
+                    "enum": [
+                      "cifp",
+                      "standard"
+                    ],
+                    "description": "The approach's own figures, or the standard 3.00 degrees and 40 ft."
+                  },
+                  "points": {
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "minItems": 3,
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "description": "[lat, lon, ft MSL]"
+                    }
+                  }
+                },
+                "required": [
+                  "end",
+                  "deg",
+                  "cross_ft",
+                  "tch_ft",
+                  "source",
+                  "points"
+                ]
+              }
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "minItems": 3,
+                    "items": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "additionalItems": false,
+                    "description": "[lat, lon, ft MSL]"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The approach's line at its altitudes, transition and final."
+            },
+            "ring": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "ft": {
+                      "type": "number"
+                    },
+                    "radius_nm": {
+                      "type": "number"
+                    },
+                    "center": {
+                      "type": "array",
+                      "minItems": 2,
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "description": "[lat, lon], the field's place."
+                    }
+                  },
+                  "required": [
+                    "ft",
+                    "radius_nm",
+                    "center"
+                  ],
+                  "description": "The pattern's ring: its altitude, ft MSL, and as far round the field as it is drawn, nm; the apps draw the circle."
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "centrelines",
+            "glidepaths",
+            "path",
+            "ring"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "approach_transition": {
       "description": "The transition's debrief, or null, from the vectors' debrief's figures.",
       "type": "object",
@@ -26529,6 +26798,7 @@
     "approach_path_between",
     "approach_profile",
     "approach_quiz",
+    "approach_scene",
     "approach_transition",
     "arrival_circuit",
     "atc_call",

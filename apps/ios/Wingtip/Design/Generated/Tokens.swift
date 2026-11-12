@@ -94,6 +94,18 @@ enum WingtipColor {
         static let patternLabel = rgb(0x0B7A75)
         /// An approach's final segment, its final approach fix to its missed approach point, over its plate on the map: the cyan ForeFlight marks it in (the owner's screenshot, 2026-11-11), apart from the procedure's indigo and the course's magenta. A chart colour, so the same in every look and at night.
         static let finalApproach = rgb(0x00B4E6)
+        /// The sky over the tilted 3D map by day, the chart's pale blue (features/plan/map/terrain/SkyGl).
+        static let sky = rgb(0xA9CBE8)
+        /// The sky's pale band at the horizon by day, and the haze the far ground fades into.
+        static let skyHorizon = rgb(0xE6EEF6)
+        /// The 3D map's sky over the dimmed chart at night: dark, so it does not glare over a chart dimmed for the cockpit.
+        static let skyNight = rgb(0x0D1828)
+        /// The horizon's band and the far ground's haze at night, a step lighter than the night sky so the horizon still reads.
+        static let skyHorizonNight = rgb(0x26354A)
+        /// A runway's extended centreline on the ground in the 3D view, white over the chart and the satellite imagery alike, as a runway's own centreline is painted.
+        static let centreline = rgb(0xFFFFFF)
+        /// The glidepath in the air to a runway's threshold in the 3D view: the final approach segment's cyan, as it is the same descent.
+        static let glidepath = rgb(0x00B4E6)
         /// An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red.
         static let obstacle = rgb(0x7A1F1F)
     }

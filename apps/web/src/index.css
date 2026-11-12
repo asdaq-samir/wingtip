@@ -299,6 +299,13 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
   background: var(--background);
 }
 
+/* The traffic in 3D (features/plan/map/terrain/TrafficAloftGl) stands
+   each airplane at its height with a line down to the ground: the 2D
+   marks on the ground (TrafficGl) are hidden meanwhile, not drawn twice. */
+[data-traffic-aloft] [data-traffic-ground] {
+  visibility: hidden;
+}
+
 /* The chart in sunlight (the map's settings' Sunlight, lib/preferences
    chartLight, set on <html> by lib/sunlight from the light sensor or by
    hand; the owner's canvas "Sunlight mode", 2026-11-03): a screen held

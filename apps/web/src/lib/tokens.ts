@@ -43,6 +43,12 @@ export const CHART = {
   pattern: "#0e8f8a",
   patternLabel: "#0b7a75",
   finalApproach: "#00b4e6",
+  sky: "#a9cbe8",
+  skyHorizon: "#e6eef6",
+  skyNight: "#0d1828",
+  skyHorizonNight: "#26354a",
+  centreline: "#ffffff",
+  glidepath: "#00b4e6",
   obstacle: "#7a1f1f",
 };
 

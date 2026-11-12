@@ -82,6 +82,12 @@
   --chart-pattern: #0e8f8a;
   --chart-pattern-label: #0b7a75;
   --chart-final-approach: #00b4e6;
+  --chart-sky: #a9cbe8;
+  --chart-sky-horizon: #e6eef6;
+  --chart-sky-night: #0d1828;
+  --chart-sky-horizon-night: #26354a;
+  --chart-centreline: #ffffff;
+  --chart-glidepath: #00b4e6;
   --chart-obstacle: #7a1f1f;
   --category-vfr: #1a7f37;
   --category-mvfr: #1f6feb;

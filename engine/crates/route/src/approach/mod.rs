@@ -18,6 +18,8 @@
 //! - `tags`: the tags an approach's fixes carry on the map with its plate
 //!   (crossing altitudes, the glide slope's at the final approach fix, the
 //!   runway's TCH and TDZE) and its final approach segment;
+//! - `scene`: the field's way in for the 3D map -- extended centrelines,
+//!   the glidepath, the approach at its altitudes and the pattern's ring;
 //! - `calls`: the rules by name, as crate::call lists them.
 //!
 //! Both read the procedure as the planner draws it from the FAA's CIFP
@@ -29,6 +31,7 @@
 pub mod calls;
 pub mod debrief;
 pub mod lesson;
+pub mod scene;
 pub mod tags;
 
 use crate::json::Value;

@@ -75,9 +75,10 @@ interface AloftPiece {
   ring: [number, number][];
 }
 
-/** The route aloft cut into pieces `widthM` wide (resampleAloft's steps). */
-export function aloftPieces(points: AloftPoint[], widthM: number): AloftPiece[] {
-  const line = resampleAloft(points);
+/** The route aloft cut into pieces `widthM` wide (resampleAloft's steps,
+ *  `stepNm` apart: finer for a ring a mile or two round). */
+export function aloftPieces(points: AloftPoint[], widthM: number, stepNm = ALOFT_STEP_NM): AloftPiece[] {
+  const line = resampleAloft(points, stepNm);
   const pieces: AloftPiece[] = [];
   for (let i = 1; i < line.length; i++) {
     const a = line[i - 1]!,

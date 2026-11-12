@@ -217,6 +217,12 @@ fun Engine.approachQuiz(drawing: EngineContract.ProcedureDrawing, gsKt: Double):
     rule("approach_quiz", EngineContract.ApproachQuizInput(drawing = drawing, gsKt = gsKt))
 
 /**
+ * A field's way in as the 3D map stands it up: each runway end's extended centreline on the ground, out to the picked approach's final approach fix or 5 nm (past a VASI's 4 NM and a PAPI's 3.4, AIM 2-1-2); the glidepath to the threshold in the air, the approach's own angle and threshold crossing height where the CIFP codes them (ARINC 424-18 5.67, 5.68, 5.70), else 3.00 degrees (FAA Order 8260.3G 2-6-3, AIM 2-1-2) over the threshold at 40 ft (8260.3G Table 10-1-1, height group 1) from the field's elevation, its heights by 8260.3G formula 2-6-4; the picked approach's path, each fix at its crossing altitude (ARINC 424-18 5.29) and down the glidepath from the final approach fix, stopping where no altitude follows; and a ring (its middle and radius) at the pattern altitude (the FAA's TPA, else 1,000 ft above the field, AIM 4-3-3) as far out as the downwind is drawn past half the longest runway. With an approach picked, its runway's glidepath alone.
+ */
+fun Engine.approachScene(lat: Double, lon: Double, elevationFt: Double? = null, patternFt: Double? = null, runways: List<EngineContract.ApproachSceneInputRunwaysItem>, drawing: EngineContract.ProcedureDrawing? = null): Result<EngineContract.ApproachSceneAnswer> =
+    rule("approach_scene", EngineContract.ApproachSceneInput(lat = lat, lon = lon, elevationFt = elevationFt, patternFt = patternFt, runways = runways, drawing = drawing))
+
+/**
  * The transition's debrief, or null, from the vectors' debrief's figures.
  */
 fun Engine.approachTransition(drawings: List<EngineContract.ProcedureDrawing>? = null, points: List<EngineContract.TrackPoint>? = null, fafAt: Double, passed: Int, minimumsFt: Double? = null): Result<EngineContract.ApproachDebrief?> =

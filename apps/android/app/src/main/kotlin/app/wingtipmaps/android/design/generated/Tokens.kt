@@ -143,6 +143,24 @@ object WingtipColors {
         /** An approach's final segment, its final approach fix to its missed approach point, over its plate on the map: the cyan ForeFlight marks it in (the owner's screenshot, 2026-11-11), apart from the procedure's indigo and the course's magenta. A chart colour, so the same in every look and at night. */
         val FinalApproach = Color(0xFF00B4E6)
         const val FINAL_APPROACH_HEX = "#00b4e6"
+        /** The sky over the tilted 3D map by day, the chart's pale blue (features/plan/map/terrain/SkyGl). */
+        val Sky = Color(0xFFA9CBE8)
+        const val SKY_HEX = "#a9cbe8"
+        /** The sky's pale band at the horizon by day, and the haze the far ground fades into. */
+        val SkyHorizon = Color(0xFFE6EEF6)
+        const val SKY_HORIZON_HEX = "#e6eef6"
+        /** The 3D map's sky over the dimmed chart at night: dark, so it does not glare over a chart dimmed for the cockpit. */
+        val SkyNight = Color(0xFF0D1828)
+        const val SKY_NIGHT_HEX = "#0d1828"
+        /** The horizon's band and the far ground's haze at night, a step lighter than the night sky so the horizon still reads. */
+        val SkyHorizonNight = Color(0xFF26354A)
+        const val SKY_HORIZON_NIGHT_HEX = "#26354a"
+        /** A runway's extended centreline on the ground in the 3D view, white over the chart and the satellite imagery alike, as a runway's own centreline is painted. */
+        val Centreline = Color(0xFFFFFFFF)
+        const val CENTRELINE_HEX = "#ffffff"
+        /** The glidepath in the air to a runway's threshold in the 3D view: the final approach segment's cyan, as it is the same descent. */
+        val Glidepath = Color(0xFF00B4E6)
+        const val GLIDEPATH_HEX = "#00b4e6"
         /** An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red. */
         val Obstacle = Color(0xFF7A1F1F)
         const val OBSTACLE_HEX = "#7a1f1f"

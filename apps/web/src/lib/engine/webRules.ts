@@ -30,6 +30,7 @@ export const WEB_RULES = [
   "approach_path_between",
   "approach_profile",
   "approach_quiz",
+  "approach_scene",
   "approach_transition",
   "atc_call",
   "best_fields",
