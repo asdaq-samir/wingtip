@@ -121,9 +121,10 @@ export function useGlSymbols(source: string, layers: SymbolLayerSpecification[],
       reach: TAP.mark,
       rank,
       onTap: (f) => byKey.current.get(String(f.properties.key))?.onTap?.(),
-      find: (p) => nearestTappable(map, of, p),
+      // Only the marks a tap opens, the nearest within a finger (tapHit).
+      filter: ["==", ["get", "tap"], true],
     });
-  }, [map, addTap, ids, rank, tappable]);
+  }, [addTap, ids, rank, tappable]);
 
   // The pointer: a hand over a mark a tap opens, and its hover.
   const hovers = tappable || symbols.some((s) => s.onHover);
@@ -165,27 +166,4 @@ export function useGlSymbols(source: string, layers: SymbolLayerSpecification[],
     const { icon: _icon, tap: _tap, ...rest } = f.properties;
     return rest;
   });
-}
-
-/** The tappable mark nearest the finger within its reach. */
-function nearestTappable(map: MlMap, layers: string[], p: { x: number; y: number }): MapGeoJSONFeature | null {
-  const present = layers.filter((l) => map.getLayer(l));
-  if (!present.length) return null;
-  const r = TAP.mark;
-  const found = map.queryRenderedFeatures(
-    [
-      [p.x - r, p.y - r],
-      [p.x + r, p.y + r],
-    ],
-    { layers: present },
-  );
-  let best: MapGeoJSONFeature | null = null,
-    near = Infinity;
-  for (const f of found) {
-    if (!f.properties.tap || f.geometry.type !== "Point") continue;
-    const at = map.project(f.geometry.coordinates as [number, number]);
-    const d = Math.hypot(at.x - p.x, at.y - p.y);
-    if (d < near) [best, near] = [f, d];
-  }
-  return best;
 }

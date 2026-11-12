@@ -1,6 +1,14 @@
 import { createContext, useContext, useEffect, useRef, type ReactNode, useEffectEvent } from "react";
 import { prefersReducedMotion } from "../../motion";
-import type { GeoJSONSource, LayerSpecification, Map as MlMap, MapGeoJSONFeature, MapMouseEvent, SourceSpecification } from "maplibre-gl";
+import type {
+  FilterSpecification,
+  GeoJSONSource,
+  LayerSpecification,
+  Map as MlMap,
+  MapGeoJSONFeature,
+  MapMouseEvent,
+  SourceSpecification,
+} from "maplibre-gl";
 
 /**
  * The WebGL map's layer API (lib/map/gl): each thing drawn on the map is
@@ -30,6 +38,8 @@ export interface GlTap {
   reach: number;
   /** Lower first. */
   rank: number;
+  /** Only the features of its layers this keeps (a style filter). */
+  filter?: FilterSpecification;
   onTap: (feature: MapGeoJSONFeature, event: MapMouseEvent) => void;
   /** Instead of the style's `layers`, a finder of its own: deck.gl's
    *  picking (lib/map/gl/deckLayers useDeckTap). */
@@ -37,21 +47,48 @@ export interface GlTap {
 }
 
 /** What a tap finds under the finger, within its reach: the nearest
- *  feature of its layers, or what its own finder picks. */
+ *  feature of its layers (nearestHit), or what its own finder picks. */
 export function tapHit(map: MlMap, tap: GlTap, point: { x: number; y: number }): MapGeoJSONFeature | null {
   if (tap.find) return tap.find(point);
   const layers = tap.layers.filter((l) => map.getLayer(l));
   if (!layers.length) return null;
   const r = tap.reach;
-  return (
-    map.queryRenderedFeatures(
-      [
-        [point.x - r, point.y - r],
-        [point.x + r, point.y + r],
-      ],
-      { layers },
-    )[0] ?? null
+  const found = map.queryRenderedFeatures(
+    [
+      [point.x - r, point.y - r],
+      [point.x + r, point.y + r],
+    ],
+    { layers, filter: tap.filter },
   );
+  return nearestHit(found, point, r, (at) => map.project(at));
+}
+
+/** Of the features MapLibre found in a finger's square, the one the tap
+ *  is for: a mark (a point) only where its point is within `reach` of the
+ *  finger, its 44-point target, the nearest first; a line or an area in
+ *  the square as MapLibre gave it, the topmost. The square also takes in
+ *  a mark's drawn words and chip, so a field's ident or a route's pill
+ *  whose point was a finger and more away took the tap: on the chart
+ *  beside a field's name, its card opened rather than the open card
+ *  putting itself away (map.spec), and on O'Hare at the route's whole
+ *  view, C81's chip (classb.spec). */
+export function nearestHit(
+  found: MapGeoJSONFeature[],
+  finger: { x: number; y: number },
+  reach: number,
+  project: (at: [number, number]) => { x: number; y: number },
+): MapGeoJSONFeature | null {
+  let best: MapGeoJSONFeature | null = null,
+    near = Infinity;
+  for (const f of found) {
+    let d = 0;
+    if (f.geometry.type === "Point") {
+      const at = project(f.geometry.coordinates as [number, number]);
+      d = Math.hypot(at.x - finger.x, at.y - finger.y);
+    }
+    if (d <= reach && d < near) [best, near] = [f, d];
+  }
+  return best;
 }
 
 export interface GlMapApi {
