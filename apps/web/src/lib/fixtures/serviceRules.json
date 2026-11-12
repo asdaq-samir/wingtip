@@ -1,0 +1,37 @@
+{
+  "about": "The rules the services ask the engine as they read a feed (the weather service's model winds, app.gfs; the ingest service's STDDS tracks, ingest.swim; the planner's briefing exposure, app.exposure), held by the engine (engine/facade/tests/service_rules.rs).",
+  "model_wind_levels": [
+    {
+      "about": "A GFS level in feet, knots and Celsius: 3,048 m is 10,000 ft (0.3048 m a foot), 10 kt east in m/s blows from the west, 263.15 K is -10 C; no wind at all is from 360; a level with a figure missing is left out",
+      "input": {
+        "levels": [
+          { "height_m": 3048, "temp_k": 263.15, "u_m_s": 5.144444444444445, "v_m_s": 0 },
+          { "height_m": 1524, "temp_k": 273.15, "u_m_s": 0, "v_m_s": 0 },
+          { "height_m": 6096, "temp_k": null, "u_m_s": 1, "v_m_s": 1 }
+        ]
+      },
+      "answer": [
+        { "altitude_ft": 10000.0, "wind_dir_true_deg": 270.0, "wind_speed_kt": 10.0, "temp_c": -10.0 },
+        { "altitude_ft": 5000.0, "wind_dir_true_deg": 360.0, "wind_speed_kt": 0.0, "temp_c": 0.0 }
+      ]
+    }
+  ],
+  "velocity_track": [
+    {
+      "about": "A track toward where it goes, degrees true, and its speed; none where it does not move",
+      "input": { "velocities": [{ "east": 3, "north": 4 }, { "east": -10, "north": 0 }, { "east": 0, "north": 0 }] },
+      "answer": [
+        { "track_deg": 36.86989764584402, "speed": 5.0 },
+        { "track_deg": 270.0, "speed": 10.0 },
+        { "track_deg": null, "speed": 0.0 }
+      ]
+    }
+  ],
+  "gairmet_window": [
+    {
+      "about": "AIM 7-1-6: the 03Z snapshot stands for 00Z to 06Z, as a hazard at 03 and none at 00 or 06 exists from 0001 to 0559",
+      "input": { "valid": 1794452400 },
+      "answer": { "valid_from": 1794441600.0, "valid_to": 1794463200.0 }
+    }
+  ]
+}

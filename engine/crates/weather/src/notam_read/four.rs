@@ -16,7 +16,7 @@ use super::NotamRead;
 use crate::contractions::compass;
 use crate::notam_subject::parts::{condition, designations, is_fuel, lamp_of, Lamp};
 use crate::notam_subject::subject_of;
-use crate::ready::grouped;
+use crate::text::grouped_int as grouped;
 
 #[derive(Debug, Default, PartialEq)]
 pub struct Four {

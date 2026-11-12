@@ -52,10 +52,10 @@ fn date(s: &str) -> Option<(i64, i64, i64)> {
     if p.len() != 3 || p[0].len() != 4 || p[1].len() != 2 || p[2].len() != 2 {
         return None;
     }
-    let (y, m, d) = (p[0].parse().ok()?, p[1].parse().ok()?, p[2].parse().ok()?);
-    let leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
-    let days = [31, if leap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    (y >= 1903 && (1..=12).contains(&m) && d >= 1 && d <= days[(m - 1) as usize]).then_some((y, m, d))
+    let (y, m, d): (i64, i64, i64) = (p[0].parse().ok()?, p[1].parse().ok()?, p[2].parse().ok()?);
+    // The month is checked before its length is asked (core's time, the
+    // Gregorian calendar's leap years).
+    (y >= 1903 && (1..=12).contains(&m) && d >= 1 && d <= i64::from(crate::time::days_in_month(y, m as u32))).then_some((y, m, d))
 }
 
 fn clip(s: Option<&str>, most: usize, what: &str, flags: &mut Vec<Flag>, field: &'static str) -> Option<String> {

@@ -55,14 +55,14 @@ fn split(word: &str) -> Word<'_> {
     Word { pre: &word[..start], core, post: &rest[core.len()..] }
 }
 
-/// "1049" as "1,049" (as the app writes a figure, crate::ready's); a
+/// "1049" as "1,049" (as the app writes a figure, core's text::grouped); a
 /// decimal or a fraction as written, ".5" as "0.5".
 pub(super) fn grouped(n: &str) -> String {
     if n.starts_with('.') {
         return ["0", n].concat();
     }
     match n.parse::<i64>() {
-        Ok(whole) if n.bytes().all(|b| b.is_ascii_digit()) => crate::ready::grouped(whole),
+        Ok(whole) if n.bytes().all(|b| b.is_ascii_digit()) => crate::text::grouped_int(whole),
         _ => n.to_owned(),
     }
 }
