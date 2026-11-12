@@ -47,9 +47,6 @@ export type CardEntry = {
 /** The cards open, the last on top. */
 export const useSheetCards = create<{ stack: CardEntry[] }>(() => ({ stack: [] }));
 
-/** The top card: null with none open. */
-export const topCard = (stack: CardEntry[]): CardEntry | null => [...stack].reverse().find((entry) => entry.shown) ?? null;
-
 const REACH: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 
 /**
