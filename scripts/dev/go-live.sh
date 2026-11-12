@@ -7,9 +7,18 @@
 # checkout, and the compose project is the same (wingtip), so the
 # phone's address and the saved data don't change.
 #
-#   scripts/dev/go-live.sh                 claude/integration
-#   scripts/dev/go-live.sh <branch>        another branch
+#   scripts/dev/go-live.sh [--up]          claude/integration
+#   scripts/dev/go-live.sh [--up] <branch> another branch
+#
+# By default the live tree moves to the branch and the stack stays down:
+# the owner is assumed not to be testing, and asks for the stack when he
+# is (the owner, 2026-11-12). The test guard reads only the live tree's
+# commit, so the wave's tests may run. --up (or GO_LIVE_UP=1) also
+# rebuilds and starts the stack, for the owner's phone or an agent's
+# screenshots.
 set -euo pipefail
+up=${GO_LIVE_UP:-0}
+if [ "${1:-}" = --up ]; then up=1; shift; fi
 branch=${1:-claude/integration}
 # The main checkout: from the script's own repo, or the current
 # directory's when the script is run from a copy.
@@ -65,6 +74,11 @@ for name, svc in sorted(cfg.get("services", {}).items()):
 print("\n".join(lines))
 ' "$main" > docker-compose.override.yml
 echo "go-live: $(git log --oneline -1 | cut -c1-72)"
+if [ "$up" != 1 ]; then
+  docker compose -p wingtip stop >/dev/null 2>&1 || true
+  echo "go-live: the live tree is on the branch; the stack is down (go-live.sh --up starts it)"
+  exit 0
+fi
 # The web build's packages for this tree, then every service rebuilt
 # and restarted where its image or settings changed.
 # The packages are installed with the web build stopped: an install

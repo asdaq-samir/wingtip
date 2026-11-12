@@ -74,8 +74,10 @@ integration branch"):
   finish.
 - **Live for the owner first:** once a wave is merged into
   `claude/integration`, `scripts/dev/go-live.sh` (in
-  `~/Developer/wingtip-live`) tidies the Mac, rebuilds and puts it on the
-  owner's stack for the phone, before any lengthy test or CI. The owner
+  `~/Developer/wingtip-live`) tidies the Mac and moves the live tree to it,
+  before any lengthy test or CI. The stack stays down: the owner is assumed
+  not to be testing and asks for it when he is (2026-11-12); then, or for an
+  agent's screenshots, `go-live.sh --up` rebuilds and starts it. The owner
   is told what to try.
 - **Web first (decision 0038):** a change a pilot sees is made on the web
   as the proof of concept; the iPhone and Android follow only on the

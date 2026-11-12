@@ -85,7 +85,7 @@ planner_track() {
 sample() {
   local n hex marker fdr deadline
   mkdir -p "$STATE"
-  curl -fsS -m 10 "$PLANNER_URL/" >/dev/null 2>&1 || die "the planner is not at $PLANNER_URL: start the stack (scripts/dev/go-live.sh)"
+  curl -fsS -m 10 "$PLANNER_URL/" >/dev/null 2>&1 || die "the planner is not at $PLANNER_URL: start the stack (scripts/dev/go-live.sh --up)"
   if ! n=$(planner_track) || [ "${n:-0}" = 0 ]; then
     # adsb.lol's history keeps about six weeks (and answers 502 at times):
     # put the fixture's trace in the planner's store, where the Studio
