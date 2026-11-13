@@ -133,12 +133,15 @@ mod tests {
 
     #[test]
     fn a_point_is_named_off_the_nearest_navaid_by_its_radial() {
-        // Due east of a VOR with 0 variation, 30 nm: the 090 radial.
+        // Due east of a VOR with 0 variation, half a degree of longitude on
+        // the WGS-84 equator (a = 6,378,137 m, × 0.5° = 55,660 m = 30.05 nm,
+        // to a tenth 30.1; the sphere before 7fd7fa026 gave 30.0): the 090
+        // radial.
         let vor = fix("ABC", 0.0, 0.0, true, "VOR", Some(0.0));
         let gps = fix("GPSFX", 0.0, 0.45, false, "fix", None);
         let named = frd_near(&[vor, gps], 0.0, 0.5, NEAR_NM, 2026.8).unwrap();
-        assert_eq!(named.ident, "ABC/090/30");
-        assert!(named.radial && named.course_deg == 90 && named.distance_nm == 30.0);
+        assert_eq!(named.ident, "ABC/090/30.1");
+        assert!(named.radial && named.course_deg == 90 && named.distance_nm == 30.1);
         assert!(frd_near(&[], 0.0, 0.5, NEAR_NM, 2026.8).is_none());
     }
 

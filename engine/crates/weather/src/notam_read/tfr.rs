@@ -221,10 +221,12 @@ mod tests {
     #[test]
     fn off_the_field_it_says_how_far_its_edge_is_and_which_way() {
         // Six minutes of latitude due south at 31.3 N is 5.986 nm on WGS-84
-        // (core::geo; pyproj's Geod(ellps="WGS84")), said as 6.0 nm.
+        // (core::geo; pyproj's Geod(ellps="WGS84")), said as 5.9 nm: the
+        // distance to a TFR's edge is cut to the tenth below, so it is never
+        // said as farther than it is.
         let field = (31.35, -100.5);
         let edge = (31.25, -100.5);
-        assert_eq!(from_field(Some(false), Some(field), Some(edge)).as_deref(), Some("6.0 nm south of the field"));
+        assert_eq!(from_field(Some(false), Some(field), Some(edge)).as_deref(), Some("5.9 nm south of the field"));
         assert_eq!(from_field(Some(true), None, None).as_deref(), Some("over the field"));
         assert_eq!(from_field(None, None, None), None);
     }

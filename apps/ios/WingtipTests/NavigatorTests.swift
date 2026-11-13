@@ -6,12 +6,17 @@ import Testing
 /// in its own stack, a page done going back to where it was opened from.
 @MainActor
 struct NavigatorTests {
-    @Test func aThingOpensHalfWayAndAPageFull() throws {
+    /// Every card opens half way, a page as a thing does, and Emergency
+    /// alone all the way up (the owner, 2026-11-13: one card rule,
+    /// "natively, but stay consistent").
+    @Test func everyCardOpensHalfWayAndEmergencyFull() throws {
         let nav = Navigator()
         nav.open(.airport("KOSH"))
         #expect(nav.card?.page == .airport("KOSH") && nav.cardDetent == .half)
         nav.open(.screen(.setup))
-        #expect(nav.card?.page == .screen(.setup) && nav.cardDetent == .large)
+        #expect(nav.card?.page == .screen(.setup) && nav.cardDetent == .half)
+        nav.open(.emergency)
+        #expect(nav.card?.page == .emergency && nav.cardDetent == .large)
     }
 
     @Test func aCardTakesTheOnesPlaceRatherThanPilingUp() throws {

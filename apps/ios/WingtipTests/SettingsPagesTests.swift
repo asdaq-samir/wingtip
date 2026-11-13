@@ -9,7 +9,8 @@ import Testing
 struct SettingsPagesTests {
     @Test func settingsIsAPageKeptByTheScene() {
         let page = SheetPage.settings(atMap: true)
-        #expect(page.opensFull && !page.inspects)
+        // Half way as every card but Emergency (the one card rule, 2026-11-13).
+        #expect(!page.opensFull && !page.inspects)
         #expect(page.testID == "card-settings")
         #expect(page.stored == "+settings")
         #expect(SheetPage(stored: "+settings") == .settings(atMap: false))
