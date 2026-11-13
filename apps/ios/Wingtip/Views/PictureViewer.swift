@@ -117,6 +117,9 @@ struct ShownPicture: Identifiable {
     var credit: String?
     /// The kept answer it is drawn from, for its age with no signal.
     var kept: (kind: KeptForAir.Kind, key: String)?
+    /// An approach plate's page as the planner placed it, for own ship on
+    /// its first page (PlatePosition); nil for every other picture.
+    var georeference: APIPlateGeoreference?
     let load: () async throws -> [UIImage]
 
     /// The planner's pictures by their paths.
@@ -149,8 +152,14 @@ struct PictureViewer: View {
         NavigationStack {
             Group {
                 if let images {
-                    ZoomablePictures(images: images)
-                        .ignoresSafeArea(edges: .bottom)
+                    Group {
+                        if let georeference = picture.georeference {
+                            PlatePictures(images: images, georeference: georeference)
+                        } else {
+                            ZoomablePictures(images: images)
+                        }
+                    }
+                    .ignoresSafeArea(edges: .bottom)
                 } else if let problem {
                     ContentUnavailableView {
                         Label("Not shown", systemImage: "exclamationmark.triangle")
@@ -191,6 +200,20 @@ struct PictureViewer: View {
     }
 }
 
+/// A plate's pages with own ship on the first, where the engine places the
+/// fix (PlatePosition), drawn again at each fix; none while own ship is off.
+private struct PlatePictures: View {
+    @Environment(InFlight.self) private var inFlight
+    let images: [UIImage]
+    let georeference: APIPlateGeoreference
+
+    var body: some View {
+        let mark = PlatePosition.mark(inFlight.fix, georeference: georeference)
+        ZoomablePictures(images: images, mark: mark)
+            .accessibilityValue(mark == nil ? "" : "You are here")
+    }
+}
+
 /// The pages one under another in a scroll view that pinches and
 /// double-taps to zoom, as UIKit's own does it best. Pictures, not PDFKit:
 /// the planner sends the FAA's charts as its drawings of their pages
@@ -200,21 +223,29 @@ struct PictureViewer: View {
 /// (DiagramPDFView).
 struct ZoomablePictures: UIViewRepresentable {
     let images: [UIImage]
+    /// Own ship on the first page (a plate's), or nil.
+    var mark: PageMark?
 
     func makeUIView(context: Context) -> PagesScrollView {
         let view = PagesScrollView()
         view.images = images
+        view.mark = mark
         return view
     }
 
     func updateUIView(_ view: PagesScrollView, context: Context) {
         if !view.images.elementsEqual(images, by: ===) { view.images = images }
+        if view.mark != mark { view.mark = mark }
     }
 }
 
 final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
     private let container = UIView()
     private var laidWidth: CGFloat = 0
+    /// The airplane on the first page, inside the zoomed content so it
+    /// stays on its point through a pinch, a drag and a double tap, and
+    /// scaled back each zoom so it keeps its size, as the map's mark does.
+    private let ownShip = PageOwnShipView()
     static let gap: CGFloat = 8
 
     var images: [UIImage] = [] {
@@ -229,6 +260,10 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
             laidWidth = 0
             setNeedsLayout()
         }
+    }
+
+    var mark: PageMark? {
+        didSet { placeOwnShip() }
     }
 
     override init(frame: CGRect) {
@@ -265,8 +300,22 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
             }
             container.frame = CGRect(x: 0, y: 0, width: width, height: max(0, y - Self.gap))
             contentSize = container.frame.size
+            placeOwnShip()
         }
         centre()
+    }
+
+    /// The airplane at its fractions of the first page, turned to the
+    /// track on the page; off the page, none.
+    private func placeOwnShip() {
+        guard let mark, let page = container.subviews.first(where: { $0 is UIImageView }) else {
+            ownShip.removeFromSuperview()
+            return
+        }
+        if ownShip.superview !== container { container.addSubview(ownShip) }
+        container.bringSubviewToFront(ownShip)
+        ownShip.center = CGPoint(x: page.frame.minX + page.frame.width * mark.x, y: page.frame.minY + page.frame.height * mark.y)
+        ownShip.show(mark, zoom: zoomScale)
     }
 
     /// A page shorter than the screen sits in its middle, as Photos'.
@@ -277,7 +326,10 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
 
     func viewForZooming(in scrollView: UIScrollView) -> UIView? { container }
 
-    func scrollViewDidZoom(_ scrollView: UIScrollView) { centre() }
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
+        centre()
+        if let mark { ownShip.show(mark, zoom: zoomScale) }
+    }
 
     @objc private func doubleTapped(_ tap: UITapGestureRecognizer) {
         // The zoom steps rather than glides with Reduce Motion on (MapMotion).
@@ -288,6 +340,41 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
             let size = CGSize(width: bounds.width / 3, height: bounds.height / 3)
             zoom(to: CGRect(x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height), animated: MapMotion.animated)
         }
+    }
+}
+
+/// Own ship on a plate's page: the map's airplane (PlaneMarkView), a blue
+/// arrow in a white disc turned to the track while flying, a dot where it
+/// is still or has no track.
+final class PageOwnShipView: UIView {
+    private let arrow = UIImageView()
+    static let side: CGFloat = 28
+
+    override init(frame: CGRect) {
+        super.init(frame: CGRect(x: 0, y: 0, width: Self.side, height: Self.side))
+        arrow.frame = bounds.insetBy(dx: 3, dy: 3)
+        arrow.contentMode = .scaleAspectFit
+        arrow.tintColor = UIColor.systemBlue
+        backgroundColor = NightPalette.markFill
+        layer.cornerRadius = Self.side / 2
+        layer.borderWidth = 1
+        layer.borderColor = WingtipColor.Chart.shade.withAlphaComponent(0.4).cgColor
+        addSubview(arrow)
+        isUserInteractionEnabled = false
+        isAccessibilityElement = false
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    /// Its glyph for the mark, kept its size at the page's zoom and
+    /// turned to the track on the page.
+    func show(_ mark: PageMark, zoom: CGFloat) {
+        let turned = mark.moving && mark.rotationDeg != nil
+        arrow.image = UIImage(systemName: turned ? "location.north.fill" : "circle.fill")
+        let scale = zoom > 0 ? 1 / zoom : 1
+        transform = CGAffineTransform(scaleX: scale, y: scale)
+            .rotated(by: turned ? (mark.rotationDeg ?? 0) * .pi / 180 : 0)
     }
 }
 

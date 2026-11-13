@@ -90,12 +90,23 @@ final class PlateCardModel {
     }
 
     /// The plate full screen in the app's plate viewer: the FAA's chart's
-    /// pages where the field lists it, else the page the map draws.
+    /// pages where the field lists it, else the page the map draws; own
+    /// ship on its first page where the planner placed the page
+    /// (PlatePage.georeference, PlatePosition). The engine's fractions are
+    /// of the whole page, so they hold for the FAA's page and the map's
+    /// page picture alike; the plan view alone (no page placed) has none.
     func fullScreen(key: String, title: String) -> ShownPicture? {
         guard let parts = PlateKey.parts(key) else { return nil }
-        if let chartURL { return .faaChart(title, url: chartURL, airport: parts.ident) }
-        guard let plate else { return nil }
-        return .paths(title, [PlatePlacement.picturePath(plate, ident: parts.ident, procedure: parts.procedure)])
+        var shown: ShownPicture
+        if let chartURL {
+            shown = .faaChart(title, url: chartURL, airport: parts.ident)
+        } else if let plate {
+            shown = .paths(title, [PlatePlacement.picturePath(plate, ident: parts.ident, procedure: parts.procedure)])
+        } else {
+            return nil
+        }
+        shown.georeference = plate?.page?.georeference
+        return shown
     }
 }
 
