@@ -131,7 +131,7 @@ struct MapSideButtons: View {
                 .floatingGlass(in: Circle(), interactive: true)
                 .accessibilityLabel(toFpl ? "Show flight plan" : "Show search")
                 .accessibilityIdentifier("sheet-page-toggle")
-                .popoverTip(FplTip.shared, arrowEdge: .bottom)
+                .popoverTip(FplTip(), arrowEdge: .bottom)
             }
         }
         .glassGroup(spacing: WingtipSpace.md)
