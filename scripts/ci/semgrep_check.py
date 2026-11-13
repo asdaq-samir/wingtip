@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import os
+import resource
 import subprocess
 import sys
 from collections import Counter
@@ -44,6 +45,23 @@ def command() -> list[str] | None:
     if subprocess.run([tool, "--have", "semgrep"], capture_output=True).returncode == 0:
         return [tool, "semgrep"]
     return None
+
+
+# Semgrep's wrapper raises its engine's stack to a fraction of the hard
+# limit (core_runner.py's set_stack_limit); with no hard limit, as on
+# GitHub's Ubuntu runners and in Docker, the engine it starts crashes at
+# once (semgrep-core exits with -11, which Semgrep reports as "the engine
+# was killed ... used too much memory", the guards' failure since run
+# 43339068488). A finite hard limit, 1 GiB, gives it a third of that
+# (measured in a Linux container: unlimited crashes every time, 64 MiB,
+# 1 GiB and 4 GiB scan every file). The Mac's hard limit is already finite.
+STACK_HARD = 1 << 30
+
+
+def finite_stack() -> None:
+    soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+    if hard == resource.RLIM_INFINITY or hard > STACK_HARD:
+        resource.setrlimit(resource.RLIMIT_STACK, (min(soft, STACK_HARD) if soft != resource.RLIM_INFINITY else STACK_HARD, STACK_HARD))
 
 
 def scan(files: list[str]) -> Counter:
@@ -71,6 +89,7 @@ def scan(files: list[str]) -> Counter:
             cwd=ROOT,
             capture_output=True,
             text=True,
+            preexec_fn=finite_stack,
         )
         try:
             report = json.loads(out.stdout)

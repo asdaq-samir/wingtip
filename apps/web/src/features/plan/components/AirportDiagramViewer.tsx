@@ -1,4 +1,4 @@
-import { Map as GlMap, Marker, type LngLatBoundsLike, type StyleSpecification } from "maplibre-gl";
+import { Map as GlMap, type Marker, type LngLatBoundsLike, type StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 // The worker MapLibre parses its sources in (lib/map/gl/worker).
 import "../../../lib/map/gl/worker";
@@ -8,6 +8,7 @@ import { Button } from "../../../components/ui/button";
 import { api } from "../../../lib/api/client";
 import { chartPagePicture, type PageMark } from "../../../lib/diagram";
 import { ownShipHtml } from "../../../lib/map/marks/icons";
+import { drawOwnShip, ownShipMarker } from "../../../lib/map/gl/layers/ownShipMarker";
 import { TEXT } from "../../../lib/text";
 import { cn } from "cn";
 import FullScreenViewer from "./FullScreenViewer";
@@ -125,20 +126,9 @@ function Pages({ placed, all, mark }: ReturnType<typeof laidOut> & { mark: PageM
       marker.current?.remove();
       return;
     }
-    if (!marker.current) {
-      const el = document.createElement("div");
-      el.style.pointerEvents = "none";
-      el.dataset.testid = "chart-own-ship";
-      marker.current = new Marker({ element: el, rotationAlignment: "map" });
-    }
+    marker.current ??= ownShipMarker("chart-own-ship");
     // Nose up in its markup, turned by the marker to the track on the page.
-    const { size, html } = ownShipHtml(mark.rotationDeg == null ? null : 0, false, mark.moving);
-    const el = marker.current.getElement();
-    if (drawn.current !== html) {
-      drawn.current = html;
-      el.style.width = el.style.height = `${size}px`;
-      el.innerHTML = html;
-    }
+    drawOwnShip(marker.current, drawn, ownShipHtml(mark.rotationDeg == null ? null : 0, false, mark.moving));
     // The page's fractions in its box's degrees: across from its west
     // edge, down from its north one.
     const [west, , , north] = page.box;

@@ -99,11 +99,11 @@ rules:
       A MapLibre HTML marker (a DOM element over the map). The map's marks are
       its own layers (symbol and circle layers, CLAUDE.md "Simplicity rules");
       the only HTML marker is the own-ship arrow
-      (apps/web/src/lib/map/gl/layers/OwnShipGl.tsx). Draw this as a layer.
+      (apps/web/src/lib/map/gl/layers/ownShipMarker.ts). Draw this as a layer.
     severity: ERROR
     languages: [typescript, javascript]
     paths:
-      exclude: ["apps/web/src/lib/map/gl/layers/OwnShipGl.tsx"]
+      exclude: ["apps/web/src/lib/map/gl/layers/ownShipMarker.ts"]
     pattern-either:
       - pattern: new maplibregl.Marker(...)
       - pattern: new Marker(...)

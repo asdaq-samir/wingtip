@@ -1,8 +1,9 @@
-import { Marker } from "maplibre-gl";
+import type { Marker } from "maplibre-gl";
 import { useEffect, useRef } from "react";
 import { SHEET_SECONDS } from "../../../mapChrome";
 import { underway } from "../../position/glide";
 import { ownShipHtml } from "../../marks/icons";
+import { drawOwnShip, ownShipMarker } from "./ownShipMarker";
 import { useOwnShip } from "../../position/ownShip";
 import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
@@ -30,16 +31,13 @@ export function OwnShipGl() {
   const recentred = useOwnShip((s) => s.recentred);
   const recentreZoom = useOwnShip((s) => s.recentreZoom);
   const marker = useRef<Marker | null>(null);
-  // The mark's HTML as last written: the same at nearly every fix (only
-  // its place and turn change), so the element is not built again each second.
+  // The mark's HTML as last written (drawOwnShip).
   const drawn = useRef("");
   const flown = useRef(recentred);
   // While the arrow's flight in to own ship is under way.
   const landing = useRef(false);
   useEffect(() => {
-    const el = document.createElement("div");
-    el.style.pointerEvents = "none";
-    marker.current = new Marker({ element: el, rotationAlignment: "map" });
+    marker.current = ownShipMarker();
     const stop = (e: { originalEvent?: Event }) => {
       if (!e.originalEvent) return;
       const ownShip = useOwnShip.getState();
@@ -67,13 +65,7 @@ export function OwnShipGl() {
     // The app's own mark (icons.ts ownShipHtml, with the
     // `data-own-ship` the specs find), turned by the marker to the heading.
     const heading = enabled ? fix.headingDeg : null;
-    const { size, html } = ownShipHtml(heading == null ? null : 0, !enabled, enabled && (simulated || underway(fix)));
-    const el = m.getElement();
-    if (drawn.current !== html || el.childElementCount === 0) {
-      drawn.current = html;
-      el.style.width = el.style.height = `${size}px`;
-      el.innerHTML = html;
-    }
+    drawOwnShip(m, drawn, ownShipHtml(heading == null ? null : 0, !enabled, enabled && (simulated || underway(fix))));
     m.setLngLat([fix.lon, fix.lat])
       .setRotation(heading ?? 0)
       .addTo(map);
