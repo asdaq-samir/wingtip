@@ -47,8 +47,7 @@ export type OverlayStrength = "faint" | "half" | "full";
 export type NavEdge = "top" | "bottom";
 
 /** The FAA chart in the dark theme: as printed, or dimmed for night
- *  vision (index.css's chart-tiles). Set by Setup's Appearance (Dark is
- *  dimmed, Dark + Bright as printed; QuickControls). */
+ *  vision (index.css's chart-tiles); set by Setup's Appearance. */
 export type ChartNight = "normal" | "dimmed";
 /** The chart in bright sunlight (lib/sunlight): its tiles at higher
  *  contrast, the course and the sheets solid white with black figures.
