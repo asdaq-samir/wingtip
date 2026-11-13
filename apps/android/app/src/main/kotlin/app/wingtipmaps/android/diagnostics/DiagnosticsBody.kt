@@ -1,33 +1,19 @@
 package app.wingtipmaps.android.diagnostics
 
-import kotlinx.serialization.Serializable
-
-/** One fault, as POST /api/diagnostics takes it: what kind, one line to
- *  group it by, the stack trace, and when (an ISO-8601 instant). */
-@Serializable
-data class Fault(val kind: String, val signature: String, val detail: String, val at: String)
+import app.wingtipmaps.android.api.generated.gateway.DiagnosticsReport
+import app.wingtipmaps.android.api.generated.gateway.FaultReport
 
 /**
- * What the app sends the gateway (DiagnosticsController): the build, the
+ * What the app sends the gateway (POST /api/diagnostics), its generated
+ * DiagnosticsReport (from services/gateway/openapi.json): the build, the
  * system, a phone or a tablet, the faults since the last report and the
  * session's speed figures. Nothing of the pilot's: no account, no
  * position, no airplane or route, and the session's cookie is not sent
  * (DiagnosticsReporter), so a report is no one's.
- */
-@Serializable
-data class DiagnosticsBody(
-    val platform: String,
-    val version: String,
-    val os: String,
-    val device: String,
-    val faults: List<Fault>,
-    val metrics: Map<String, Double>,
-)
-
-/**
- * The body cut to what the gateway takes, so a report is never refused
+ *
+ * The body is cut to what the gateway takes, so a report is never refused
  * for its shape (a 400 would lose the faults in it): the limits are the
- * gateway's own (DiagnosticsService). Null when there is nothing to send.
+ * gateway's own (DiagnosticsController). Null when there is nothing to send.
  */
 object DiagnosticsBodies {
     const val MAX_FAULTS = 20
@@ -45,9 +31,9 @@ object DiagnosticsBodies {
         versionCode: Int,
         release: String,
         tablet: Boolean,
-        faults: List<Fault>,
+        faults: List<FaultReport>,
         metrics: Map<String, Double>,
-    ): DiagnosticsBody? {
+    ): DiagnosticsReport? {
         val kept = faults.filter { it.kind in kinds }.takeLast(MAX_FAULTS).map { fault ->
             fault.copy(
                 // One line: the first of the signature's, as the server groups by it.
@@ -60,11 +46,13 @@ object DiagnosticsBodies {
             .entries.take(MAX_METRICS).associate { (name, value) -> name to value.coerceIn(0.0, MAX_METRIC) }
         if (kept.isEmpty() && figures.isEmpty()) return null
         val version = "$versionName ($versionCode)".replace(versionChars, "").take(MAX_WORDS).ifEmpty { "unknown" }
-        return DiagnosticsBody(
+        return DiagnosticsReport(
             platform = "android",
             version = version,
             os = "Android $release".take(MAX_WORDS),
             device = if (tablet) "tablet" else "phone",
+            // The app as a whole: the gateway's page for a report from no page.
+            page = "app",
             faults = kept,
             metrics = figures,
         )

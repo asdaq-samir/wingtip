@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.diagnostics
 
 import android.app.ApplicationExitInfo
+import app.wingtipmaps.android.api.generated.gateway.FaultReport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -12,7 +13,12 @@ import java.time.Instant
  *  (DiagnosticsController's limits), the exits that are faults, the
  *  crash's file, and the session's frame figures. */
 class DiagnosticsTest {
-    private val fault = Fault("crash", "java.lang.IllegalStateException: boom", "at x.y(Z.kt:1)", "2026-11-09T12:00:00Z")
+    private val fault = FaultReport(
+        kind = "crash",
+        signature = "java.lang.IllegalStateException: boom",
+        detail = "at x.y(Z.kt:1)",
+        at = "2026-11-09T12:00:00Z",
+    )
 
     @Test
     fun aBodySaysTheBuildAndTheSystemAndNothingOfThePilots() {
@@ -23,6 +29,7 @@ class DiagnosticsTest {
         assertEquals("1.0 (42)", body.version)
         assertEquals("Android 16", body.os)
         assertEquals("phone", body.device)
+        assertEquals("app", body.page)
         assertEquals(listOf(fault), body.faults)
         assertEquals(mapOf("frames" to 120.0), body.metrics)
         assertEquals("tablet", DiagnosticsBodies.build("1.0", 1, "16", true, listOf(fault), emptyMap())!!.device)

@@ -5,6 +5,7 @@ import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import app.wingtipmaps.android.api.generated.gateway.FaultReport
 import java.time.Instant
 
 /**
@@ -42,24 +43,29 @@ object ExitReasons {
     /** One exit as a fault, or null where it is an ordinary end, no
      *  newer than the last one reported, or a Kotlin crash CrashCatcher
      *  has already written down with its stack (`caught`). */
-    fun fault(reason: Int, description: String?, timestampMs: Long, trace: String?, reportedUpToMs: Long, caught: Boolean = false): Fault? {
+    fun fault(reason: Int, description: String?, timestampMs: Long, trace: String?, reportedUpToMs: Long, caught: Boolean = false): FaultReport? {
         if (timestampMs <= reportedUpToMs) return null
         if (caught && reason == ApplicationExitInfo.REASON_CRASH) return null
         val kind = kindOf(reason) ?: return null
         val signature = listOfNotNull(nameOf(reason), description?.takeIf { it.isNotBlank() }).joinToString(": ")
-        return Fault(kind, signature, trace.orEmpty().take(DiagnosticsBodies.MAX_DETAIL), Instant.ofEpochMilli(timestampMs).toString())
+        return FaultReport(
+            kind = kind,
+            signature = signature,
+            detail = trace.orEmpty().take(DiagnosticsBodies.MAX_DETAIL),
+            at = Instant.ofEpochMilli(timestampMs).toString(),
+        )
     }
 
     /** The exits since the last reported, oldest first, and the newest
      *  one's time to keep once they are sent. Nothing below Android 11. */
-    fun since(context: Context, reportedUpToMs: Long, caught: Boolean): Pair<List<Fault>, Long> {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return emptyList<Fault>() to reportedUpToMs
+    fun since(context: Context, reportedUpToMs: Long, caught: Boolean): Pair<List<FaultReport>, Long> {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return emptyList<FaultReport>() to reportedUpToMs
         return read(context, reportedUpToMs, caught)
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
-    private fun read(context: Context, reportedUpToMs: Long, caught: Boolean): Pair<List<Fault>, Long> {
-        val manager = context.getSystemService(ActivityManager::class.java) ?: return emptyList<Fault>() to reportedUpToMs
+    private fun read(context: Context, reportedUpToMs: Long, caught: Boolean): Pair<List<FaultReport>, Long> {
+        val manager = context.getSystemService(ActivityManager::class.java) ?: return emptyList<FaultReport>() to reportedUpToMs
         val exits = runCatching { manager.getHistoricalProcessExitReasons(context.packageName, 0, 10) }.getOrDefault(emptyList())
         val faults = exits.sortedBy { it.timestamp }.mapNotNull { exit ->
             fault(exit.reason, exit.description, exit.timestamp, traceOf(exit), reportedUpToMs, caught)

@@ -10,59 +10,60 @@ struct TrustTests {
     // MARK: The diagnostics report
 
     @Test func aReportCarriesThePlatformBuildAndDeviceAndNothingElse() throws {
-        var report = DiagnosticsReport(version: "1.0 (7)", os: "iOS 26.1", tablet: false)
+        var report = GWDiagnosticsReport(version: "1.0 (7)", os: "iOS 26.1", tablet: false)
         report.add(kind: "crash", signature: "signal 11 (SIGSEGV)", detail: "{}", at: Date(timeIntervalSince1970: 0))
         let body = try JSONSerialization.jsonObject(with: try report.json()) as? [String: Any]
-        #expect(Set(body?.keys.map { $0 } ?? []) == ["platform", "version", "os", "device", "faults", "metrics"])
+        #expect(Set(body?.keys.map { $0 } ?? []) == ["platform", "version", "os", "device", "page", "faults", "metrics"])
         #expect(body?["platform"] as? String == "ios")
         #expect(body?["device"] as? String == "phone")
+        #expect(body?["page"] as? String == "app")
         let fault = (body?["faults"] as? [[String: Any]])?.first
         #expect(fault?["at"] as? String == "1970-01-01T00:00:00Z")
-        #expect(DiagnosticsReport(version: "1", os: "iOS", tablet: true).device == "tablet")
+        #expect(GWDiagnosticsReport(version: "1", os: "iOS", tablet: true).device == "tablet")
     }
 
     @Test func aFaultIsOneLineWithinTheGatewaysLimits() {
-        var report = DiagnosticsReport(version: "1", os: String(repeating: "x", count: 60), tablet: false)
+        var report = GWDiagnosticsReport(version: "1", os: String(repeating: "x", count: 60), tablet: false)
         #expect(report.os.count == 40)
-        report.add(kind: "crash", signature: "NSRangeException:\nindex 3 beyond bounds", detail: String(repeating: "a", count: 70_000), at: nil)
-        report.add(kind: "hang", signature: String(repeating: "s", count: 3000), detail: nil, at: nil)
-        report.add(kind: "cpu", signature: "  ", detail: nil, at: nil)
+        report.add(kind: "crash", signature: "NSRangeException:\nindex 3 beyond bounds", detail: String(repeating: "a", count: 70_000), at: .now)
+        report.add(kind: "hang", signature: String(repeating: "s", count: 3000), detail: nil, at: .now)
+        report.add(kind: "cpu", signature: "  ", detail: nil, at: .now)
         #expect(report.faults[0].signature == "NSRangeException: index 3 beyond bounds")
-        #expect(report.faults[0].detail?.count == 64_000)
+        #expect(report.faults[0].detail.count == 64_000)
         #expect(report.faults[1].signature.count == 2000)
         #expect(report.faults[2].signature == "cpu")
-        for _ in 0..<30 { report.add(kind: "hang", signature: "Hang", detail: nil, at: nil) }
+        for _ in 0..<30 { report.add(kind: "hang", signature: "Hang", detail: nil, at: .now) }
         #expect(report.faults.count == 20)
     }
 
     @Test func onlyFiguresTheGatewayKeepsAreMeasured() {
-        var report = DiagnosticsReport(version: "1", os: "iOS", tablet: false)
+        var report = GWDiagnosticsReport(version: "1", os: "iOS", tablet: false)
         report.measure("launch_ms_p50", 420)
         report.measure("hang_s", nil)
         report.measure("bad", -1)
         report.measure("huge", 2e8)
         report.measure("nan", .nan)
-        #expect(report.metrics == ["launch_ms_p50": 420])
+        #expect(report.metrics.additionalProperties == ["launch_ms_p50": 420])
         #expect(!report.isEmpty)
-        #expect(DiagnosticsReport(version: "1", os: "iOS", tablet: false).isEmpty)
+        #expect(GWDiagnosticsReport(version: "1", os: "iOS", tablet: false).isEmpty)
     }
 
     @Test func aCrashIsNamedByItsExceptionSignalAndReason() {
-        #expect(DiagnosticsReport.crashSignature(exceptionName: nil, exceptionType: 1, exceptionCode: 0, signal: 11, terminationReason: nil)
+        #expect(GWDiagnosticsReport.crashSignature(exceptionName: nil, exceptionType: 1, exceptionCode: 0, signal: 11, terminationReason: nil)
             == "exception 1, code 0, signal 11 (SIGSEGV)")
-        #expect(DiagnosticsReport.crashSignature(exceptionName: "NSException: NSRangeException", exceptionType: nil, exceptionCode: nil, signal: 6,
-                                                 terminationReason: "Namespace SPRINGBOARD, Code 0x8badf00d")
+        #expect(GWDiagnosticsReport.crashSignature(exceptionName: "NSException: NSRangeException", exceptionType: nil, exceptionCode: nil, signal: 6,
+                                                   terminationReason: "Namespace SPRINGBOARD, Code 0x8badf00d")
                 == "NSException: NSRangeException, signal 6 (SIGABRT), Namespace SPRINGBOARD, Code 0x8badf00d")
-        #expect(DiagnosticsReport.crashSignature(exceptionName: nil, exceptionType: nil, exceptionCode: nil, signal: nil, terminationReason: nil) == "crash")
+        #expect(GWDiagnosticsReport.crashSignature(exceptionName: nil, exceptionType: nil, exceptionCode: nil, signal: nil, terminationReason: nil) == "crash")
     }
 
     @Test func percentilesAreTheBucketWhereTheShareIsReached() {
         // 10 launches: 5 under 300 ms, 4 under 600, 1 under 2000.
         let buckets: [(upper: Double, count: Int)] = [(300, 5), (600, 4), (2000, 1)]
-        #expect(DiagnosticsReport.percentile(0.5, of: buckets) == 300)
-        #expect(DiagnosticsReport.percentile(0.95, of: buckets) == 2000)
-        #expect(DiagnosticsReport.percentile(0.5, of: []) == nil)
-        #expect(DiagnosticsReport.total(of: [(1, 2), (3, 1)]) == 5)
+        #expect(GWDiagnosticsReport.percentile(0.5, of: buckets) == 300)
+        #expect(GWDiagnosticsReport.percentile(0.95, of: buckets) == 2000)
+        #expect(GWDiagnosticsReport.percentile(0.5, of: []) == nil)
+        #expect(GWDiagnosticsReport.total(of: [(1, 2), (3, 1)]) == 5)
     }
 
     @Test func theHitchRatioIsAShareOfTheTimeScrolled() {

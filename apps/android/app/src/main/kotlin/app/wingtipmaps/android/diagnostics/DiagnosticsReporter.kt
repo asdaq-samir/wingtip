@@ -5,6 +5,7 @@ import android.os.Build
 import app.wingtipmaps.android.BuildConfig
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
+import app.wingtipmaps.android.api.generated.gateway.FaultReport
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.encodeToString
 import okhttp3.CookieJar
@@ -28,7 +29,7 @@ object DiagnosticsReporter {
 
     /** Sent and taken (any answer but a server's error: a 400 would come
      *  back the same next time, so its faults are not kept for it). */
-    suspend fun send(context: Context, faults: List<Fault>, metrics: Map<String, Double>): Boolean {
+    suspend fun send(context: Context, faults: List<FaultReport>, metrics: Map<String, Double>): Boolean {
         val body = DiagnosticsBodies.build(
             versionName = BuildConfig.VERSION_NAME,
             versionCode = BuildConfig.VERSION_CODE,

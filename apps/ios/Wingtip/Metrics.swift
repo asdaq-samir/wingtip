@@ -23,7 +23,7 @@ final class Metrics: NSObject, MXMetricManagerSubscriber {
     private var started = false
     /// The report every payload is read into: this build, this system and
     /// this kind of device, read once on the main actor, where UIDevice is.
-    private nonisolated let blank: DiagnosticsReport
+    private nonisolated let blank: GWDiagnosticsReport
     /// Launch to the map's first draw, an interval Instruments shows under
     /// the app's subsystem: the chart itself in, which MetricKit's time to
     /// first draw (the first frame of any view) cannot see.
@@ -32,8 +32,8 @@ final class Metrics: NSObject, MXMetricManagerSubscriber {
 
     override init() {
         let device = UIDevice.current
-        blank = DiagnosticsReport(version: AppVersion.current.text, os: "iOS \(device.systemVersion)",
-                                  tablet: device.userInterfaceIdiom == .pad)
+        blank = GWDiagnosticsReport(version: AppVersion.current.text, os: "iOS \(device.systemVersion)",
+                                    tablet: device.userInterfaceIdiom == .pad)
         super.init()
     }
 
@@ -92,14 +92,14 @@ final class Metrics: NSObject, MXMetricManagerSubscriber {
     private nonisolated static func percentiles(_ histogram: MXHistogram<UnitDuration>?) -> String {
         guard histogram != nil else { return "?" }
         let buckets = DiagnosticsReporter.buckets(histogram, in: .milliseconds)
-        guard let p50 = DiagnosticsReport.percentile(0.5, of: buckets),
-              let p95 = DiagnosticsReport.percentile(0.95, of: buckets) else { return "none" }
+        guard let p50 = GWDiagnosticsReport.percentile(0.5, of: buckets),
+              let p95 = GWDiagnosticsReport.percentile(0.95, of: buckets) else { return "none" }
         return "\(Int(p50)) ms / \(Int(p95)) ms"
     }
 
     /// A histogram's total time, in seconds, for the log.
     private nonisolated static func total(_ histogram: MXHistogram<UnitDuration>?) -> String {
         guard histogram != nil else { return "?" }
-        return "\(Format.number(DiagnosticsReport.total(of: DiagnosticsReporter.buckets(histogram, in: .seconds)), decimals: 1)) s"
+        return "\(Format.number(GWDiagnosticsReport.total(of: DiagnosticsReporter.buckets(histogram, in: .seconds)), decimals: 1)) s"
     }
 }
