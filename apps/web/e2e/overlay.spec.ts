@@ -64,8 +64,8 @@ test("the USGS's imagery over the chart, credited, at the strength picked; no Go
   // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
   await grabberTo(page, "full");
   const overlay = page.getByTestId("overlay-select");
-  await expect(overlay.getByRole("button")).toHaveText(["None", "Imagery"]);
-  await overlay.getByRole("button", { name: "Imagery" }).click();
+  await expect(overlay.getByRole("button")).toHaveText(["None", "USGS"]);
+  await overlay.getByRole("button", { name: "USGS" }).click();
   // The map's own layer, not the choice's picture of it.
   const imagery = () => page.getByTestId("gl-map").getAttribute("data-imagery");
   await expect.poll(imagery, { timeout: slow(15000) }).toMatch(/^usgs /);

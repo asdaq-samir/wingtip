@@ -55,7 +55,7 @@ export default function MapCard() {
           onChange={(v) => prefs.setOverlay((v === "google" ? "google-map" : v) as MapOverlay)}
           options={[
             { value: "none", label: "None", src: chartPicture(prefs.base), faded: true },
-            { value: "usgs", label: "Imagery", src: USGS_PICTURE },
+            { value: "usgs", label: "USGS", src: USGS_PICTURE },
             ...(google ? [{ value: "google", label: "Google", className: "bg-[linear-gradient(135deg,#a8d5f2,#d9ecd1)]" }] : []),
           ]}
         />
