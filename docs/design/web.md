@@ -1053,8 +1053,9 @@ as they are picked, the sheet and the map changing behind it; the owner,
 2026-11-13), and at its foot Apple's permission priming (the owner,
 2026-11-13): with the browser's question still to come, Turn On Location
 (asked at the tap, never on load) and Later, each going on to the map;
-allowed already, Let's Go Flying alone; refused before, Let's Go Flying and
-a line on the browser's site settings. Each, a swipe down or a tap beside
+allowed already, Let's Go Flying alone; refused before, the same two,
+Turn On Location asking again and, refused once more with no question,
+how to allow it in the browser's settings under it, the welcome kept. Each, a swipe down or a tap beside
 the sheet goes on to the map with the one search ready: Search up
 at half (rule 11),
 its field asking for the destination (`useSearchPick`, as the route's own

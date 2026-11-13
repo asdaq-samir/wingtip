@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { MapIcon, Route, Search } from "lucide-react";
 import { cn } from "cn";
@@ -8,7 +8,7 @@ import { Button } from "../../../components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../../../components/ui/dialog";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { useNavEdge } from "../../../hooks/use-nav-edge";
-import { askPositionQuietly, ownShipAvailable } from "../../../lib/map/position/ownShip";
+import { askPositionQuietly, ownShipAvailable, useOwnShip } from "../../../lib/map/position/ownShip";
 import { TEXT } from "../../../lib/text";
 
 /** What the app is, three rows of it (the owner's aim, 2026-11-13: "a
@@ -133,34 +133,63 @@ function useLocationPermission() {
 /**
  * The welcome's foot, Apple's permission priming at the owner's asks
  * (2026-11-13: "welcome screen should ask to turn on location"; "And then
- * a later button instead of let's go flying"): with the browser's question
- * still to come, Turn On Location, filled, asks it at the tap
- * (askPositionQuietly, the map's own start of own ship; never on load,
- * holdAskOnOpen) and goes on to the map whatever the answer, and Later,
- * plain, goes on without asking. Allowed already, or no position to be
- * had over this connection, Let's Go Flying alone; refused before, which a
- * browser does not ask again, Let's Go Flying and where to turn it on.
+ * a later button instead of let's go flying"; "If refused before, ask
+ * again"): unless the position is allowed already, a filled Turn On
+ * Location, which asks at the tap (askPositionQuietly, the map's own start
+ * of own ship; never on load, holdAskOnOpen), and a plain Later, which
+ * goes on without asking. Not asked before, the tap goes on to the map
+ * whatever the answer. Refused before, it asks again all the same -- Safari
+ * asks once more by its own per-site setting, others answer at once -- and
+ * stays for the answer: allowed, on to the map; refused with no question,
+ * how to allow it in the browser's settings under the button, Later still
+ * there. Allowed already, or no position over this connection, Let's Go
+ * Flying alone.
  */
 function Foot({ onGo }: { onGo: () => void }) {
   const permission = useLocationPermission();
-  const asking = permission === "prompt" && ownShipAvailable();
+  const asking = (permission === "prompt" || permission === "denied") && ownShipAvailable();
+  const [refused, setRefused] = useState(false);
+  // The answer to an ask made after a refusal, followed until it comes.
+  const waiting = useRef<(() => void) | null>(null);
+  useEffect(() => () => waiting.current?.(), []);
+  const turnOn = () => {
+    const ship = useOwnShip.getState();
+    if (permission !== "denied") {
+      askPositionQuietly();
+      onGo();
+      return;
+    }
+    // A watch already refused is started afresh, so the browser is asked.
+    if (ship.enabled && !ship.fix) ship.setEnabled(false);
+    setRefused(false);
+    waiting.current?.();
+    waiting.current = useOwnShip.subscribe((s) => {
+      if (s.fix) {
+        waiting.current?.();
+        waiting.current = null;
+        onGo();
+      } else if (!s.enabled) {
+        // The quiet start's refusal: own ship off again (ownShip's failed).
+        waiting.current?.();
+        waiting.current = null;
+        setRefused(true);
+      }
+    });
+    askPositionQuietly();
+  };
   const button = "h-12 w-full rounded-(--radius-control) font-semibold";
   return (
     <div className="mt-auto flex flex-col gap-2 pt-3">
       {asking ? (
         <>
-          <Button
-            type="button"
-            size="lg"
-            className={button}
-            onClick={() => {
-              askPositionQuietly();
-              onGo();
-            }}
-            data-testid="first-flight-location"
-          >
+          <Button type="button" size="lg" className={button} onClick={turnOn} data-testid="first-flight-location">
             Turn On Location
           </Button>
+          {refused && (
+            <p className={cn("text-center text-muted-foreground", TEXT.note)} data-testid="first-flight-location-off">
+              Allow it in Settings › Apps › Safari › Location, or the page&apos;s aA menu › Website Settings › Location.
+            </p>
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -173,16 +202,9 @@ function Foot({ onGo }: { onGo: () => void }) {
           </Button>
         </>
       ) : (
-        <>
-          {permission === "denied" && (
-            <p className={cn("text-center text-muted-foreground", TEXT.note)} data-testid="first-flight-location-off">
-              Turn location on in the browser&apos;s site settings.
-            </p>
-          )}
-          <Button type="button" size="lg" className={button} onClick={onGo} data-testid="first-flight-go">
-            Let&apos;s Go Flying
-          </Button>
-        </>
+        <Button type="button" size="lg" className={button} onClick={onGo} data-testid="first-flight-go">
+          Let&apos;s Go Flying
+        </Button>
       )}
     </div>
   );
