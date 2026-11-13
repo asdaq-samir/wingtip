@@ -1040,7 +1040,8 @@ The first time the planner opens with no route on a device
 up, solid): "Welcome to Wingtip Maps", three rows (Search, like Maps; FPL,
 like your EFB; FAA charts that move like Maps) and one button, Let's Go
 Flying (the owner, 2026-11-13: one, not two). It, a swipe down or a tap
-beside the sheet goes on to the map with the one search ready: Search up,
+beside the sheet goes on to the map with the one search ready: Search up
+at half (rule 11),
 its field asking for the destination (`useSearchPick`, as the route's own
 pickers ask) but not focused, so no keyboard jumps up until the pilot taps
 it; no field of its own. The airport picked is planned to from own ship's

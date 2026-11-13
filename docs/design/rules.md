@@ -282,7 +282,7 @@ only field.
    buttons"). The first time, a welcome sheet says what the app is
    (Search like Maps, FPL like an EFB, the FAA charts) and its one
    button, Let's Go Flying, goes on to the map with the one search ready
-   for where to (Search up, its field not focused), the airport picked
+   for where to (Search up at half, its field not focused), the airport picked
    planned from where the airplane is; after that first route one tip points at the FPL tab, once (the
    owner's option A, 2026-11-13; the web first, the phones keep their
    first-flight card until the owner's word).

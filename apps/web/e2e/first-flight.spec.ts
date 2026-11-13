@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { searchAirports, settle, slow } from "./helpers";
+import { frontSheet, searchAirports, settle, slow } from "./helpers";
 import { expectPage, tab } from "./sheetPages";
 
 /**
@@ -72,6 +72,8 @@ test("a new pilot is welcomed, Let's Go Flying leaves the one search ready, the 
   await welcome.getByTestId("first-flight-go").click();
   await expect(welcome).toHaveCount(0);
   await expectPage(page, 0);
+  // Risen from the pill to half, so the search's page is seen (rule 11).
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   const search = page.getByTestId("search-airports");
   await expect(search).not.toBeFocused();
   await expect(search).toHaveAttribute("placeholder", /destination/i);

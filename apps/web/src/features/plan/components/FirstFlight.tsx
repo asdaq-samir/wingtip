@@ -1,5 +1,6 @@
 import { Suspense, lazy, useState } from "react";
 import { useFirstFlight } from "../hooks/useFirstFlight";
+import type { PanelState } from "../../../lib/mapChrome";
 import type { PanelView } from "../hooks/usePanelView";
 import type { RouteParts } from "./RouteBox";
 
@@ -18,12 +19,14 @@ export default function FirstFlight({
   routed,
   onPlan,
   pickView,
+  setPanel,
 }: {
   routed: boolean;
   onPlan: (parts: RouteParts) => void;
   pickView: (view: PanelView) => void;
+  setPanel: (state: PanelState) => void;
 }) {
-  const { welcome, go, tip, closeTip } = useFirstFlight({ routed, onPlan, pickView });
+  const { welcome, go, tip, closeTip } = useFirstFlight({ routed, onPlan, pickView, setPanel });
   // Kept once drawn, so the sheet closes with its own motion.
   const [drawn, setDrawn] = useState(welcome);
   if (welcome && !drawn) setDrawn(true);

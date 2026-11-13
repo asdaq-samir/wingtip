@@ -123,7 +123,7 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
           </EngineGate>
         </Suspense>
       )}
-      <FirstFlight routed={routed} onPlan={setRoute} pickView={vm.view.pickView} />
+      <FirstFlight routed={routed} onPlan={setRoute} pickView={vm.view.pickView} setPanel={vm.view.setPanel} />
     </div>
   );
 }

@@ -5,7 +5,9 @@ import { askSearchPick, useSearchPick, type SearchPick } from "../../../lib/oneS
 import { usePreferences } from "../../../lib/preferences";
 import { FIRST_FLIGHT, FPL_TIP, unseen, useTips } from "../../../lib/firstRunTips";
 import type { RouteParts } from "../components/RouteBox";
+import type { PanelState } from "../../../lib/mapChrome";
 import type { PanelView } from "./usePanelView";
+import { riseToSee } from "./panelNow";
 
 /**
  * The first flight (FirstFlight), the owner's option A (2026-11-13): a
@@ -30,11 +32,13 @@ export function useFirstFlight({
   routed,
   onPlan,
   pickView,
+  setPanel,
 }: {
   /** Whether there is a route: the welcome is for a planner with none. */
   routed: boolean;
   onPlan: (parts: RouteParts) => void;
   pickView: (view: PanelView) => void;
+  setPanel: (state: PanelState) => void;
 }) {
   const seen = useTips((s) => s.seen);
   const see = useTips((s) => s.see);
@@ -65,13 +69,15 @@ export function useFirstFlight({
   }, [routed]);
 
   /** Let's Go Flying, or the sheet swiped away: not offered again, and
-   *  the map with the one search ready for where to, unfocused. */
+   *  the map with the one search ready for where to, unfocused, the sheet
+   *  risen from the pill to half so its page is seen (rule 11, riseToSee). */
   const go = useCallback(() => {
     see(FIRST_FLIGHT);
     pickView("search");
+    riseToSee(setPanel);
     asked.current = { label: "Destination", fixes: false, onPick: planTo };
     useSearchPick.setState({ pick: asked.current });
-  }, [pickView, planTo, see]);
+  }, [pickView, planTo, see, setPanel]);
 
   const closeTip = useCallback(() => see(FPL_TIP), [see]);
 
