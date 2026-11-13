@@ -3,8 +3,10 @@ import { useContext, useState } from "react";
 import { faaWords } from "../../lib/advisories";
 import type { TerminalChart } from "../../lib/api/types";
 import { CardCloseContext } from "../../lib/map/cards/cardClose";
+import { useOwnShip } from "../../lib/map/position/ownShip";
 import { airportQuery, plateQuery } from "../../lib/queryClient";
 import { plateKey, useHiddenPlates, usePlateLook } from "./plateLook";
+import { pageMarkOf } from "./platePosition";
 
 /** The plate's title as its card writes it: the field, then the FAA's
  *  name of the approach in sentence case with its codes kept ("KOSH ILS
@@ -26,8 +28,9 @@ export function chartOf(name: string | null | undefined, charts: TerminalChart[]
  * The plate's card's view model (PlateCard): its title, Hide Plate (the
  * plate off the map, its approach still on the route, the card put away),
  * View Full Screen (the FAA's chart in the app's viewer, where the field
- * lists it), and the plates' look -- annotations, inverted colours and how
- * solid the page is -- kept on this device (usePlateLook).
+ * lists it), with own ship on its page while the GPS is on (pageMarkOf),
+ * and the plates' look -- annotations, inverted colours and how solid the
+ * page is -- kept on this device (usePlateLook).
  */
 export function usePlateCard(airport: string, id: string) {
   const close = useContext(CardCloseContext);
@@ -37,12 +40,17 @@ export function usePlateCard(airport: string, id: string) {
   const look = usePlateLook();
   const hidePlate = useHiddenPlates((s) => s.hide);
   const [fullScreen, setFullScreen] = useState(false);
+  // Each fix only while the plate is full screen: the card itself draws
+  // no position, and a fix a second is a render a second.
+  const fix = useOwnShip((s) => (fullScreen && s.enabled ? s.fix : null));
   return {
     title: plateTitle(airport, plate?.name ?? id),
     /** The FAA's PDF of the plate, for the viewer; null till the field's
      *  charts come, or where the d-TPP lists none of that name. */
     chartUrl: chart?.url ?? null,
     fullScreen,
+    /** Own ship on the plate's first page full screen, or null. */
+    mark: pageMarkOf(fix, plate?.page?.georeference),
     openFullScreen: () => setFullScreen(true),
     closeFullScreen: () => setFullScreen(false),
     hide: () => {

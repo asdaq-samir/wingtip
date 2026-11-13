@@ -163,6 +163,7 @@ export const WEB_RULES = [
   "place_words",
   "plan_profile",
   "planning_figures",
+  "plate_page_point",
   "point_kind",
   "precip_intensity",
   "procedures_read",

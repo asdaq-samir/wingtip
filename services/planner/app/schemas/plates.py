@@ -13,6 +13,36 @@ class PlateCorner(BaseModel):
     lon: float
 
 
+class PlateBox(BaseModel):
+    """A box on a plate's page, in its points from the bottom left."""
+
+    left: float
+    bottom: float
+    right: float
+    top: float
+
+
+class PlateGeoreference(BaseModel):
+    """A plate's own georeference (wingtip.plate_page.georeference), for the
+    engine's plate_page_point to put the pilot's position on the page: its
+    Lambert conformal conic projection's origin, central meridian and two
+    standard parallels, degrees, on NAD 83; `to_page` the affine [a, b, c, d,
+    e, f] from that projection's metres (no false easting or northing) to
+    the page's points from its bottom left, x = a*E + b*N + c and y = d*E +
+    e*N + f; the page's size in points; its plan view's box, the only part
+    drawn to scale, and the boxes cut from it (the airport sketch's)."""
+
+    lat_0: float
+    lon_0: float
+    lat_1: float
+    lat_2: float
+    to_page: list[float]
+    width_pt: float
+    height_pt: float
+    plan_view: PlateBox
+    insets: list[PlateBox] = []
+
+
 class PlatePage(BaseModel):
     """An approach plate's whole page placed on the map (wingtip.plate_page):
     its picture at /api/approach-plate-page/{cycle}/{ident}/{procedure}.png,
@@ -21,7 +51,8 @@ class PlatePage(BaseModel):
     georeference does; the rest of the page goes round it at the same scale
     and turn, as ForeFlight lays a plate on its chart. The page may turn a
     little from north up (the plate's Lambert projection's meridians lean),
-    so it is drawn between the four corners, not in a box."""
+    so it is drawn between the four corners, not in a box. `georeference`
+    places a position on the page (PlateGeoreference)."""
 
     width: int
     height: int
@@ -29,6 +60,7 @@ class PlatePage(BaseModel):
     top_right: PlateCorner
     bottom_right: PlateCorner
     bottom_left: PlateCorner
+    georeference: PlateGeoreference
 
 
 class PlateOverlay(BaseModel):

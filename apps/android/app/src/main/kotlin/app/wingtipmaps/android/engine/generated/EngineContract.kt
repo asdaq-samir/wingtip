@@ -8665,6 +8665,55 @@ object EngineContract {
         val rows: List<EngineContract.NavLogRow>,
     )
 
+    /**
+     * A box on an approach plate's page, in its points from the bottom left.
+     */
+    @Serializable
+    data class PlatePageBox(
+        val left: Double,
+        val bottom: Double,
+        val right: Double,
+        val top: Double,
+    )
+
+    @Serializable
+    data class PlatePagePointAnswer(
+        val x: Double,
+        val y: Double,
+        @SerialName("rotation_deg")
+        val rotationDeg: Double? = null,
+    )
+
+    @Serializable
+    data class PlatePagePointInput(
+        val lat: Double,
+        val lon: Double,
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        val georeference: EngineContract.PlatePagePointInputGeoreference,
+    )
+
+    @Serializable
+    data class PlatePagePointInputGeoreference(
+        @SerialName("lat_0")
+        val lat0: Double,
+        @SerialName("lon_0")
+        val lon0: Double,
+        @SerialName("lat_1")
+        val lat1: Double,
+        @SerialName("lat_2")
+        val lat2: Double,
+        @SerialName("to_page")
+        val toPage: List<Double>,
+        @SerialName("width_pt")
+        val widthPt: Double,
+        @SerialName("height_pt")
+        val heightPt: Double,
+        @SerialName("plan_view")
+        val planView: EngineContract.PlatePageBox,
+        val insets: List<EngineContract.PlatePageBox>? = null,
+    )
+
     @Serializable
     data class PointKindInput(
         val text: String,

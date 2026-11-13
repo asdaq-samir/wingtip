@@ -110,6 +110,8 @@ export type ProcedureList = Schemas["ProcedureList"];
 export type ProcedureSummary = Schemas["ProcedureSummary"];
 export type ProcedureDrawing = Schemas["ProcedureDrawing"];
 export type PlateOverlay = Schemas["PlateOverlay"];
+/** A plate's own georeference, for own ship on its page (plate_page_point). */
+export type PlateGeoreference = Schemas["PlateGeoreference"];
 export type ProcedureFix = Schemas["ProcedureFix"];
 export type ChartPages = Schemas["ChartPages"];
 export type ClearanceAsk = Schemas["ClearanceAsk"];

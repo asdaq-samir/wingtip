@@ -107,6 +107,11 @@ def test_a_plate_kept_as_not_placed_is_none_until_the_placing_changes(tmp_path):
     assert plates._kept(meta) is None
     meta.write_text('{"cycle": "2610", "name": "RNAV (GPS) RWY 3", "placed": true, "south": 46.6, "page": null}')
     assert plates._kept(meta)["south"] == 46.6
+    # One whose page was kept before its georeference was, too.
+    meta.write_text('{"cycle": "2610", "name": "RNAV (GPS) RWY 3", "placed": true, "south": 46.6, "page": {"width": 1584}}')
+    assert plates._kept(meta) is None
+    meta.write_text('{"cycle": "2610", "name": "RNAV (GPS) RWY 3", "placed": true, "south": 46.6, "page": {"georeference": {}}}')
+    assert plates._kept(meta)["south"] == 46.6
 
 
 def test_circling_minimums_are_the_plates_circling_line(monkeypatch):

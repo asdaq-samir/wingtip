@@ -735,6 +735,11 @@ export type PirepsAlongRouteAnswer = {}[];
 export type PirepsInBoxAnswer = {}[];
 export type PlaceNameAnswer = string | string[];
 export type PlaceWordsAnswer = string;
+export type PlatePagePointAnswer = null | {
+  x: number;
+  y: number;
+  rotation_deg: number | null;
+};
 export type PointKindAnswer = "fix" | "own" | null;
 export type PressureAltitudeFtAnswer = number;
 export type ProcedureArcAnswer = [number, number][];
@@ -2858,6 +2863,13 @@ export interface EngineContract {
   planning_figures: {
     input: PlanningFiguresInput;
     answer: PlanningFiguresAnswer;
+  };
+  /**
+   * Where a position is drawn on an approach plate's page, for own ship on the plate full screen as an EFB's geo-referenced plates draw it: the latitude and longitude through the plate's Lambert conformal conic projection on NAD 83's GRS 80 (Snyder, USGS Professional Paper 1395, eqs. 14-1, 14-2, 14-4, 14-15, 15-7 to 15-10) and the page's affine from its GeoPDF viewport (ISO 32000-2 12.9, as the planner fits it: PlateGeoreference), as fractions of the page's width from the left and its height from the top, with a true track turned onto the page (degrees clockwise from the page's up, null without a track). Null outside the plan view's box or inside an inset cut from it, the only part of a d-TPP plate drawn to scale being the plan view.
+   */
+  plate_page_point: {
+    input: PlatePagePointInput;
+    answer: PlatePagePointAnswer;
   };
   /**
    * What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.
@@ -9843,6 +9855,35 @@ export interface PlanningFiguresInput {}
 export interface PlanningFiguresAnswer {
   turnaround_min: number;
   cruise_reference_ft: number;
+}
+export interface PlatePagePointInput {
+  lat: number;
+  lon: number;
+  track_deg?: number | null;
+  georeference: PlatePageGeoreference;
+}
+export interface PlatePageGeoreference {
+  lat_0: number;
+  lon_0: number;
+  lat_1: number;
+  lat_2: number;
+  to_page: number[];
+  width_pt: number;
+  height_pt: number;
+  plan_view: PlatePageBox;
+  insets?: PlatePageBox[];
+}
+/**
+ * A box on an approach plate's page, in its points from the bottom left.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "PlatePageBox".
+ */
+export interface PlatePageBox {
+  left: number;
+  bottom: number;
+  right: number;
+  top: number;
 }
 export interface PointKindInput {
   text: string;

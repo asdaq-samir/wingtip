@@ -1573,6 +1573,12 @@ fun Engine.planningFigures(): Result<EngineContract.PlanningFiguresAnswer> =
     rule("planning_figures", EngineContract.PlanningFiguresInput())
 
 /**
+ * Where a position is drawn on an approach plate's page, for own ship on the plate full screen as an EFB's geo-referenced plates draw it: the latitude and longitude through the plate's Lambert conformal conic projection on NAD 83's GRS 80 (Snyder, USGS Professional Paper 1395, eqs. 14-1, 14-2, 14-4, 14-15, 15-7 to 15-10) and the page's affine from its GeoPDF viewport (ISO 32000-2 12.9, as the planner fits it: PlateGeoreference), as fractions of the page's width from the left and its height from the top, with a true track turned onto the page (degrees clockwise from the page's up, null without a track). Null outside the plan view's box or inside an inset cut from it, the only part of a d-TPP plate drawn to scale being the plan view.
+ */
+fun Engine.platePagePoint(lat: Double, lon: Double, trackDeg: Double? = null, georeference: EngineContract.PlatePagePointInputGeoreference): Result<EngineContract.PlatePagePointAnswer?> =
+    rule("plate_page_point", EngineContract.PlatePagePointInput(lat = lat, lon = lon, trackDeg = trackDeg, georeference = georeference))
+
+/**
  * What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.
  */
 fun Engine.pointKind(text: String): Result<String?> =

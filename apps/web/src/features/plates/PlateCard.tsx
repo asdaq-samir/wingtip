@@ -4,14 +4,15 @@ import { CardAction } from "../../components/CardAction";
 import { ListGroup } from "../../components/GroupedList";
 import SwitchRow from "../../components/SwitchRow";
 import { Slider } from "../../components/ui/slider";
+import type { PageMark } from "../../lib/diagram";
 import { MapCard } from "../../lib/map/cards/MapCard";
 import { LEAST_PLATE_OPACITY } from "./plateLook";
 import { usePlateCard } from "./usePlateCard";
 
 /** The app's viewer of one of the FAA's charts, full screen (the plan's
  *  FaaChart): handed in by the map that draws the plates, so this feature
- *  needs nothing of the plan's. */
-export type ChartViewer = ComponentType<{ title: string; url: string; airport: string; onClose: () => void }>;
+ *  needs nothing of the plan's; `mark` own ship on its first page. */
+export type ChartViewer = ComponentType<{ title: string; url: string; airport: string; mark?: PageMark | null; onClose: () => void }>;
 
 /**
  * A plate's card, a tap on its page on the map opening it (ForeFlight's
@@ -19,7 +20,7 @@ export type ChartViewer = ComponentType<{ title: string; url: string; airport: s
  * Plate and View Full Screen side by side, the tags on the approach's
  * fixes and the night's inverted colours as the stock switches, and how
  * solid the page is on the stock slider from clear to solid, an icon at
- * each end. The card rule's one card over the search, ✕ at its right
+ * each end. Full screen, the pilot's position is on the plate's plan view. The card rule's one card over the search, ✕ at its right
  * (docs/design/rules.md), as the iPhone's and Android's.
  */
 export function PlateCard({ airport, id, viewer: Viewer }: { airport: string; id: string; viewer: ChartViewer }) {
@@ -61,7 +62,9 @@ export function PlateCard({ airport, id, viewer: Viewer }: { airport: string; id
           </div>
         </ListGroup>
       </div>
-      {vm.fullScreen && vm.chartUrl && <Viewer title={vm.title} url={vm.chartUrl} airport={airport} onClose={vm.closeFullScreen} />}
+      {vm.fullScreen && vm.chartUrl && (
+        <Viewer title={vm.title} url={vm.chartUrl} airport={airport} mark={vm.mark} onClose={vm.closeFullScreen} />
+      )}
     </MapCard>
   );
 }

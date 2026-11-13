@@ -5,6 +5,8 @@
 //! - geo: distances and courses on the WGS-84 ellipsoid, and geo_many:
 //!   the same figures over columns of points at once;
 //! - wmm: magnetic variation from the World Magnetic Model;
+//! - plate: a position on an approach plate's page, by its GeoPDF's
+//!   Lambert projection and affine;
 //! - grid: route options' straight lines over the grid (sums: the
 //!   Python's float sums, kept exactly);
 //! - time: UTC dates;
@@ -22,6 +24,7 @@ pub mod geo;
 pub mod geo_many;
 pub mod grid;
 pub mod json;
+pub mod plate;
 pub mod sort;
 pub mod sums;
 pub mod text;

@@ -6498,7 +6498,8 @@ data class PlateOverlay (
  * georeference does; the rest of the page goes round it at the same scale
  * and turn, as ForeFlight lays a plate on its chart. The page may turn a
  * little from north up (the plate's Lambert projection's meridians lean),
- * so it is drawn between the four corners, not in a box.
+ * so it is drawn between the four corners, not in a box. `georeference`
+ * places a position on the page (PlateGeoreference).
  */
 @Serializable
 data class PlatePage (
@@ -6508,6 +6509,7 @@ data class PlatePage (
     @SerialName("bottom_right")
     val bottomRight: PlateCorner,
 
+    val georeference: PlateGeoreference,
     val height: Int,
 
     @SerialName("top_left")
@@ -6526,6 +6528,56 @@ data class PlatePage (
 data class PlateCorner (
     val lat: Double,
     val lon: Double
+)
+
+/**
+ * A plate's own georeference (wingtip.plate_page.georeference), for the
+ * engine's plate_page_point to put the pilot's position on the page: its
+ * Lambert conformal conic projection's origin, central meridian and two
+ * standard parallels, degrees, on NAD 83; `to_page` the affine [a, b, c, d,
+ * e, f] from that projection's metres (no false easting or northing) to
+ * the page's points from its bottom left, x = a*E + b*N + c and y = d*E +
+ * e*N + f; the page's size in points; its plan view's box, the only part
+ * drawn to scale, and the boxes cut from it (the airport sketch's).
+ */
+@Serializable
+data class PlateGeoreference (
+    @SerialName("height_pt")
+    val heightPt: Double,
+
+    val insets: List<PlateBox>? = null,
+
+    @SerialName("lat_0")
+    val lat0: Double,
+
+    @SerialName("lat_1")
+    val lat1: Double,
+
+    @SerialName("lat_2")
+    val lat2: Double,
+
+    @SerialName("lon_0")
+    val lon0: Double,
+
+    @SerialName("plan_view")
+    val planView: PlateBox,
+
+    @SerialName("to_page")
+    val toPage: List<Double>,
+
+    @SerialName("width_pt")
+    val widthPt: Double
+)
+
+/**
+ * A box on a plate's page, in its points from the bottom left.
+ */
+@Serializable
+data class PlateBox (
+    val bottom: Double,
+    val left: Double,
+    val right: Double,
+    val top: Double
 )
 
 /**
