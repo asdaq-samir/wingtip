@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useFailedAction } from "../../../lib/problems";
+import { holdAskOnOpen } from "../../../lib/map/position/ownShip";
 import { useFirstFlight } from "../hooks/useFirstFlight";
 import type { PanelState } from "../../../lib/mapChrome";
 import type { PanelView } from "../hooks/usePanelView";
@@ -33,9 +34,15 @@ export default function FirstFlight({
   if (welcome && !drawn) setDrawn(true);
   // Nothing stacked over the welcome: an alert raised meanwhile (a refused
   // position's "No position" on a first launch) waits until it closes.
+  // Nor the browser's position question on load: the welcome's Location
+  // row asks it, at a tap (holdAskOnOpen).
   useEffect(() => {
     useFailedAction.setState({ held: welcome });
-    return () => useFailedAction.setState({ held: false });
+    holdAskOnOpen(welcome);
+    return () => {
+      useFailedAction.setState({ held: false });
+      holdAskOnOpen(false);
+    };
   }, [welcome]);
   return (
     <Suspense fallback={null}>
