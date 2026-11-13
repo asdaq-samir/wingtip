@@ -313,8 +313,7 @@ off by default (the owner, 2026-11-13).
   (it rides the card's top then) it puts the card away with its page.
 - **Nothing under the sheet**: its three sizes stand on the screen's foot
   (the home indicator's inset), the bar's room given back. The toggle
-  gives way with the map's buttons all the way up and while a card
-  slides; it goes while the airplane flies the route (the flying sheet
+  gives way with the map's buttons all the way up; it goes while the airplane flies the route (the flying sheet
   is the figures alone) and under Settings' layer.
 - **No sideways swipe turns a page.** A drag sideways is the row's under
   it (Nearest, Favorites, Recents' cards), a drag up or down the sheet's
@@ -442,7 +441,10 @@ gone on every platform.
    top** (and the phones' first-flight card, until they take the web's
    welcome sheet), 24 points over it at the pill and half,
    following a finger's drag frame by frame as Apple Maps' buttons do;
-   all the way up they give way. The 3D and under it the page toggle
+   all the way up they give way. A card opened over the sheet comes up
+   where the sheet's top is and they ride its top from its first frame,
+   gliding only if its height changes, never hidden while it moves (the
+   owner's iPhone, 2026-11-13: they "redraw" at every card). The 3D and under it the page toggle
    are at the left (the owner, 2026-11-13: "replace the radio button on
    the left with the fpl toggle but below 3d"), the map's buttons (Map,
    My Position) at the right, just above the search row (the owner,

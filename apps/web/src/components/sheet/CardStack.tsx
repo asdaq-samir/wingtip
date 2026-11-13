@@ -6,7 +6,7 @@ import { closeTopCard } from "../../lib/openCards";
 import { cardOpening, coverCard, dropCard, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
 import { AT_PILL, sizeAt, snapsOf } from "./insets";
 import { UNDER_INDICATOR } from "./SheetDrawer";
-import { cardSettled, sheetTopRef, useRidingCard } from "./sheetTopSlot";
+import { cardSettled, frontOffset, sheetTopRef, useRidingCard } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
 
 export interface StackProps {
@@ -24,23 +24,26 @@ export interface StackProps {
   below: string;
 }
 
-/** A card's drag eased on the Drawer's own curve, never under a finger. */
+/** A card's drag eased on the Drawer's own curve, never under a finger;
+ *  its fade as it is put away on the same time. */
 const EASE =
-  "transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) data-swiping:transition-none motion-reduce:transition-none";
+  "transition-[transform,opacity] duration-(--motion-drawer) ease-(--motion-drawer-ease) data-swiping:transition-none motion-reduce:transition-none";
 
 /**
- * A card rises from the screen's foot as it opens and slides back down as
- * it closes, as Base UI's own Snap points demo does: its popup off the
- * screen while the Drawer marks it starting or ending. Base UI writes
- * --drawer-snap-point-offset as 0 until it has measured, so with no
- * starting place a new card was drawn all the way up and slid down to half
- * (the owner, 2026-11-11: "a new card is always transition from full to
- * half when opening it"), and with no ending place it went in one frame.
- * Off the screen is the card's own height below where it is drawn, less the
- * sheet's offset it is drawn in (--sheet-base, SheetDrawer), past the home
- * indicator (a top sheet's: above it, past the status bar). The close's
- * time is the demo's: 400 ms at a still finger, shorter after a throw
- * (--drawer-swipe-strength).
+ * A card comes up where the front sheet's top is -- the sheet's, or the
+ * card's under it that the map's buttons ride -- and eases from there to
+ * its own size, as Apple Maps' place card takes over its sheet at the
+ * height the sheet is: its popup placed there while the Drawer marks it
+ * starting (--card-from, the front's own snap offset as the card opened,
+ * less the sheet's offset it is drawn in, --sheet-base, SheetDrawer). So
+ * the map's buttons ride its top from its first frame and only glide if
+ * its height changes (sheetTopSlot). It rose from the screen's foot once,
+ * Base UI's Snap points demo's entry, and the buttons gave way while it
+ * slid (the owner's iPhone, 2026-11-13: they "redraw" at every card).
+ * Base UI writes --drawer-snap-point-offset as 0 until it has measured, so
+ * with no starting place a new card was drawn all the way up and slid
+ * down to half (the owner, 2026-11-11). Put away, it fades where it is,
+ * the sheet's content fading back in under it (SheetDrawer's GIVE_WAY).
  *
  * Base UI plays that entry only for a drawer that opens after it has
  * mounted; one mounted already open is drawn where it rests from its first
@@ -51,8 +54,8 @@ const EASE =
  * 8 px in its first frame, then easing down to 476). So a card's drawer
  * opens the render after it mounts (CardDrawer's `open`).
  */
-const SLIDE =
-  "data-starting-style:[transform:translateY(calc(100%_-_var(--sheet-base,0px)_+_env(safe-area-inset-bottom)_+_2px))] data-ending-style:[transform:translateY(calc(100%_-_var(--sheet-base,0px)_+_env(safe-area-inset-bottom)_+_2px))] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)]";
+const RISE =
+  "data-starting-style:[transform:translateY(calc(var(--card-from,var(--sheet-base,0px))_-_var(--sheet-base,0px)))] data-ending-style:opacity-0";
 
 /**
  * The cards over the map's sheet, each Base UI's own nested Drawer (the
@@ -134,11 +137,12 @@ function CardDrawer({
   // the pilot's or the card's (useCardSize).
   const at = entry.at ?? cardOpening(entry);
   const unset = entry.at === undefined && entry.state === "open";
+  // With where the front sheet's top is as it opens, where it comes up (RISE).
   useLayoutEffect(() => {
-    if (unset) setCard(id, { at });
+    if (unset) setCard(id, { at, from: frontOffset() });
   }, [unset, id, at]);
   const ask = useCallback((size: PanelState) => setCard(id, { at: size }), [id]);
-  // Gone, it is no longer up: opened again it comes up anew (sheetTopSlot).
+  // Gone, it is no longer up (the map's room, map/cardRoom).
   useEffect(() => () => cardSettled(id, false), [id]);
   // A drag let go: the size of the snap point the Drawer picked, one of ours.
   const snapped = (point: Drawer.Root.SnapPoint | null) => {
@@ -150,7 +154,7 @@ function CardDrawer({
   return (
     <Drawer.Root
       // Mounted closed, opened once its size is set (the layout effect
-      // above, before the first paint): so it rises from the foot (SLIDE).
+      // above, before the first paint): so it comes up from the front's top (RISE).
       open={entry.state === "open" && entry.at !== undefined}
       modal={false}
       swipeDirection={fromBottom ? "down" : "up"}
@@ -158,7 +162,7 @@ function CardDrawer({
       snapToSequentialPoints
       snapPoint={onPhone ? snaps.at[at] : undefined}
       onSnapPointChange={snapped}
-      // The map's buttons move onto it once it has finished coming up (sheetTopSlot).
+      // Up: the map may bring what was tapped into sight (map/cardRoom).
       onOpenChangeComplete={(open) => {
         cardSettled(id, open);
         if (!open && entry.state === "leaving") dropCard(id);
@@ -211,7 +215,11 @@ function CardDrawer({
               // The side panel's card does not swipe: no sizes to swipe between.
               data-base-ui-swipe-ignore={onPhone ? undefined : ""}
               // Its corners the sheet's: drawn outside the sheet's clip, so it can stand over it.
-              style={onPhone ? { borderRadius: `${PILL_RADIUS}px ${PILL_RADIUS}px 0 0` } : undefined}
+              style={
+                onPhone
+                  ? ({ borderRadius: `${PILL_RADIUS}px ${PILL_RADIUS}px 0 0`, "--card-from": entry.from } as CSSProperties)
+                  : undefined
+              }
               className={cn(
                 "group/sheet pointer-events-auto absolute inset-0 flex flex-col text-foreground outline-none print:static",
                 p.look,
@@ -222,11 +230,11 @@ function CardDrawer({
                   "[transform:translateY(calc(var(--drawer-snap-point-offset)-var(--sheet-base,0px)+var(--drawer-swipe-movement-y)))] [--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)]",
                 onPhone && p.ready && EASE,
                 // Gone with its content: closed at once, an empty card never slid down.
-                onPhone && (entry.state === "leaving" ? "transition-none" : SLIDE),
+                onPhone && (entry.state === "leaving" ? "transition-none data-ending-style:opacity-0" : RISE),
                 onPhone && fromBottom && UNDER_INDICATOR,
               )}
             >
-              {/* The map's buttons ride the top card's top, as the sheet's (OnSheetTop), once it is up. */}
+              {/* The map's buttons ride its top, as the sheet's (OnSheetTop), from its first frame. */}
               {topSlot && (
                 <div
                   ref={sheetTopRef}
