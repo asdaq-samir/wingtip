@@ -118,7 +118,10 @@ test("the card's runways are a page of its pictures under its title and actions,
   // (places.spec has the distance, in the Details).
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
   await expect(card(page).getByTestId("place-line")).toHaveCount(0);
-  await expect(sketch.getByTestId("place-diagram-runways")).toHaveAttribute("src", "/api/planner/airport-diagram/2610/runways/KDLH.png?v=2");
+  await expect(sketch.getByTestId("place-diagram-runways")).toHaveAttribute(
+    "src",
+    "/api/planner/airport-diagram/2610/runways/KDLH.png?v=2",
+  );
   await expect(card(page).getByTestId("place-elevation")).toContainText(/^Elevation[\d,]+ ft$/);
   // The title, then the actions, then the pictures lower in the card.
   const [name, call, pictures] = await Promise.all(

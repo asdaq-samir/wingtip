@@ -13,6 +13,7 @@ import { flushPendingDeletes } from "./lib/pendingDeletes";
 import { routeOf, stopsOf } from "./lib/identSchema";
 import AppToaster from "./components/AppToaster";
 import { BrandLook } from "./lib/brand";
+import SafariEdges from "./components/SafariEdges";
 import ErrorAlert from "./components/ErrorAlert";
 import { PageErrorBoundary } from "./components/PageError";
 import { registerSW } from "virtual:pwa-register";
@@ -287,6 +288,7 @@ const render = () =>
             <AppToaster />
             <ErrorAlert />
             <BrandLook />
+            <SafariEdges />
           </>
         </QueryClientProvider>
       </ThemeProvider>

@@ -57,7 +57,10 @@ test("the toggle rides the sheet's top at the left, under the 3D, the radio over
       const box = (sel: string) => document.querySelector(sel)!.getBoundingClientRect();
       const glass = document.querySelector('[data-testid="sheet-page-toggle"]')!.parentElement!.getBoundingClientRect();
       // The map's buttons' group: the Map button's card of glass.
-      const group = document.querySelector('[data-map-controls] [data-testid="map-settings-button"]')!.closest(".rounded-2xl")!.getBoundingClientRect();
+      const group = document
+        .querySelector('[data-map-controls] [data-testid="map-settings-button"]')!
+        .closest(".rounded-2xl")!
+        .getBoundingClientRect();
       return {
         sheet: box('[data-slot="map-panel"]'),
         glass: { top: glass.top, bottom: glass.bottom, left: glass.left, w: glass.width, h: glass.height },
