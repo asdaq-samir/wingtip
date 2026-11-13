@@ -16,7 +16,7 @@ import { SHEET_BELOW, SheetParts, type PartsProps } from "./sheet/SheetParts";
 import { SheetGrabber } from "./sheet/SheetGrabber";
 import { CardStack, type StackProps } from "./sheet/CardStack";
 import { SheetDrawer } from "./sheet/SheetDrawer";
-import { useCardMoving, useRidingCard } from "./sheet/sheetTopSlot";
+import { useRidingCard } from "./sheet/sheetTopSlot";
 import type { SheetPages } from "./sheet/SheetPages";
 import { usePageToggle } from "./sheet/pageToggle";
 
@@ -104,7 +104,7 @@ export default function MapPanel(props: Props) {
   // lower than the one under it.
   const coverEntry = useSheetCards((s) => coverCard(s.stack));
   const cardsUp = !!coverEntry;
-  // The map's buttons ride the sheet's top until a card has finished coming up (sheetTopSlot).
+  // The map's buttons ride the sheet's top, or the top of the card over it that covers the map most (sheetTopSlot).
   const ridingCard = useRidingCard();
   // Where the cards over it are put: inside its popup (CardStack).
   const [cardHost, setCardHost] = useState<HTMLElement | null>(null);
@@ -176,13 +176,6 @@ export default function MapPanel(props: Props) {
       delete document.body.dataset.mapPanel;
     };
   }, [front]);
-  // A card still sliding up or down: the map's buttons give way until it
-  // is up and they ride its top (index.css, useCardMoving).
-  const cardMoving = useCardMoving();
-  useLayoutEffect(() => {
-    document.body.toggleAttribute("data-card-moving", cardMoving);
-    return () => document.body.removeAttribute("data-card-moving");
-  }, [cardMoving]);
   useLayoutEffect(() => {
     document.body.toggleAttribute("data-map-sheet", onPhone);
     return () => document.body.removeAttribute("data-map-sheet");

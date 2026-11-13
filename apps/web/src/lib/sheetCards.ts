@@ -39,6 +39,9 @@ export type CardEntry = {
   /** Its own drawer's snap point, set as it opens and then by the pilot's
    *  drag or the card itself (useCardSize). */
   at?: PanelState;
+  /** Where the front sheet's top was as it opened, the Drawer's snap
+   *  offset there (sheetTopSlot's frontOffset): where it comes up from. */
+  from?: string;
   /** Open; kept closed under a page put away (lib/shown) or between its
    *  openings; or leaving, its caller gone: its drawer closes by Base UI's
    *  own close (its focus handed back, its parent told), then the entry

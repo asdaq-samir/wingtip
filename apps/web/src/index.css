@@ -152,16 +152,6 @@ body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-f
   opacity: 0;
   pointer-events: none;
 }
-/* And while a card slides up or down (MapPanel's data-card-moving), at
-   once rather than faded: they ride a card's top only once it is up, and
-   left on the sheet's they were drawn over the content of the card coming
-   up under them (the owner's iPhone, 2026-11-12). They fade back in on its
-   top as it settles. */
-body[data-map-sheet][data-card-moving] :is([data-map-controls], [data-map-food]) {
-  opacity: 0;
-  pointer-events: none;
-  transition: none;
-}
 /* And the map's credits with them: riding on a sheet all the way up they
    sat under the status bar, a line of small print over the clock (the
    UI audit, 2026-11-09). They show again with the map. */

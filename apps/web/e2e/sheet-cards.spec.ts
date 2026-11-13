@@ -298,10 +298,15 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
 // the map panned at each change and again as it closed; and the map's
 // buttons sat over the card's lines. A card's drawer mounted already open,
 // which Base UI draws where it rests from its first frame, all the way up
-// before it has measured itself (CardStack). Now it rises once from the
-// screen's foot to half and stays there, the chart still under it, the
-// buttons out of the way until it is up and then over its top.
-test("a card tapped open on the chart rises once to half, the map still and its buttons never over it", async ({ page }) => {
+// before it has measured itself (CardStack). And the owner's iPhone,
+// 2026-11-13: the buttons hidden while a card slid up from the screen's
+// foot and back on its top once it was up, "redrawing" at every card. Now
+// it comes up where the sheet's top is, as Apple Maps' place card does,
+// and eases once to half, the chart still under it, the buttons on its top
+// in every frame.
+test("a card tapped open on the chart comes up at the sheet's top and eases once to half, its buttons on its top throughout", async ({
+  page,
+}) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's cards and their heights");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -309,6 +314,7 @@ test("a card tapped open on the chart rises once to half, the map still and its 
   await mapStill(page);
   await expect.poll(markWith(page, "route-marks", /^\d+$/), { timeout: slow(60000) }).not.toBeNull();
   const tapped = (await markWith(page, "route-marks", /^\d+$/)())!;
+  const sheetTop = (await sideDrawer(page).boundingBox())!.y;
   // Every frame for a second and a half from the tap, as painted: the
   // card's top, the map's buttons, and whether the chart is moving (the
   // map's data-moving, from a move's start to its end).
@@ -339,11 +345,15 @@ test("a card tapped open on the chart rises once to half, the map still and its 
   await expect(card).toHaveAttribute("data-panel", "half");
   const tops = frames.map((f) => f.card).filter((top): top is number => top !== null);
   const rest = tops[tops.length - 1]!;
-  // It never shows higher than where it rests, and only ever rises.
-  expect(Math.min(...tops)).toBeGreaterThanOrEqual(rest - 1);
-  tops.slice(1).forEach((top, i) => expect(top).toBeLessThanOrEqual(tops[i]! + 1));
-  // The buttons, wherever they are in sight, are over the card's top.
-  for (const f of frames) if (f.shown && f.card !== null && f.buttons !== null) expect(f.buttons).toBeLessThanOrEqual(f.card + 1);
+  // Its first frame where the sheet's top was, then one way to where it rests.
+  expect(tops[0]!).toBeCloseTo(sheetTop, -1);
+  const way = Math.sign(rest - tops[0]!);
+  tops.slice(1).forEach((top, i) => expect((top - tops[i]!) * way).toBeGreaterThanOrEqual(-1));
+  // The buttons in sight in every frame the card is, over its top.
+  for (const f of frames.filter((f) => f.card !== null)) {
+    expect(f.shown).toBe(true);
+    expect(f.buttons!).toBeLessThanOrEqual(f.card! + 1);
+  }
   // The chart moves at most once, to bring the checkpoint out from under
   // the card; the mark tapped ends in sight over it.
   const starts = frames.filter((f, i) => f.moving && !frames[i - 1]?.moving).length;

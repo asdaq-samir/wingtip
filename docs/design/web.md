@@ -235,12 +235,16 @@ close does.
   left it at, never lowered and never taken all the way up, a page put
   away leaving it where it is (`e2e/sheet-size.spec.ts`). They are put inside the sheet's popup
   (`Drawer.Portal`'s `container`), outside its corners' clip, placed from
-  the sheet's snap offset to their own. A card rises from the screen's
-  foot as it opens and slides back down as it closes, as Base UI's Snap
-  points demo does: its popup off the screen under `[data-starting-style]`
-  and `[data-ending-style]`, the close on
-  `calc(var(--drawer-swipe-strength) * 400ms)` (Base UI writes the snap offset as 0 until it has measured, so
-  without a starting place a card slid from full to half). What the sheet
+  the sheet's snap offset to their own. A card comes up where the front
+  sheet's top is (the sheet's, or the card's under it that the map's
+  buttons ride), as Apple Maps' place card takes over its sheet, and
+  eases to its own size: its popup placed at the front's snap offset
+  under `[data-starting-style]` (`--card-from`, `sheetTopSlot`'s
+  `frontOffset`), and faded out under `[data-ending-style]`. The map's
+  buttons move onto its top in the commit it opens in, and glide (Web
+  Animations, on the Drawer's time and curve) only when handed to a top
+  at another height (Base UI writes the snap offset as 0 until it has
+  measured, so without a starting place a card slid from full to half). What the sheet
   holds fades under a card as Base UI's nested drawers demo has it:
   opacity 0 under `[data-nested-drawer-open]`, back under
   `[data-nested-drawer-swiping]`, hidden once faded; its ground, edge and
