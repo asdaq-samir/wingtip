@@ -575,6 +575,7 @@ jobs:
                 - apps/web/public/support.html
               sim:
                 - tools/msfs-agent/**
+                - tools/xplane-driver/wingtip_replay/shots.schema.json
                 - infra/sim-trial/**
                 - scripts/ci/sim_suite.sh
               test-xplane:
