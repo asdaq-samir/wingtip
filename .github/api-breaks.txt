@@ -166,3 +166,8 @@
 2026-11-12 GET /api/auth/capabilities removed the required property `claudeFeatures` from the response with the `200` status -- the Claude switch is gone (decision 0041); no app is released, and every app now ships without reading it
 2026-11-12 GET /api/subscription removed the required property `uses` from the response with the `200` status -- the Claude features' monthly counts are gone with them (decision 0041); no app is released
 2026-11-12 POST /api/subscription/trial removed the required property `uses` from the response with the `200` status -- the same
+2026-11-13 POST /api/aircraft added the new required request property `descentIasKt` -- nullable, as the climb's figures are (a record's every component is listed as required); the descent phase's IAS (38ad5fa4f); no app is released
+2026-11-13 POST /api/aircraft added the new required request property `descentFuelBurnGph` -- the same, the descent's fuel flow
+2026-11-13 PUT /api/aircraft/{id} added the new required request property `descentIasKt` -- the same
+2026-11-13 PUT /api/aircraft/{id} added the new required request property `descentFuelBurnGph` -- the same
+2026-11-13 POST /api/diagnostics the `faults/items/signature` request property's minLength was set to `1` -- springdoc's own document since 7010a2132, the gateway already refusing an empty signature; no app is released

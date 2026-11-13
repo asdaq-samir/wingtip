@@ -44,12 +44,7 @@ export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
             own box laid out of the way (display: contents), its tiles in
             this one. */}
         <PillStrip testId="pill-favorites-row" className="[&>div]:contents">
-          <FavoriteStrip
-            home={home}
-            favorites={favorites}
-            onOpen={(a) => selectPlace(a.ident)}
-            onAddHome={() => addFromPill("home")}
-          />
+          <FavoriteStrip home={home} favorites={favorites} onOpen={(a) => selectPlace(a.ident)} onAddHome={() => addFromPill("home")} />
           <Suspense fallback={null}>
             <AircraftFavoriteStrip
               onOpen={(hex) => selectFlight(hex)}

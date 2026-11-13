@@ -21,4 +21,9 @@ export const useWantedPage = create<{
   /** The first key taken by the console that had it: the rest is for
    *  the pages inside. */
   took: () => void;
-}>((set) => ({ path: [], inside: false, want: (path, inside = false) => set({ path, inside }), took: () => set((s) => ({ path: s.path.slice(1) })) }));
+}>((set) => ({
+  path: [],
+  inside: false,
+  want: (path, inside = false) => set({ path, inside }),
+  took: () => set((s) => ({ path: s.path.slice(1) })),
+}));

@@ -26,12 +26,22 @@ final class AIEvaluationsTests: XCTestCase {
     static let floor = EvalBar.quality(device: 0.8, simulator: 0.7)
     static let namesFloor = EvalBar.quality(device: 0.8, simulator: 0.5)
 
-    private func modelOrSkip() throws {
+    /// Skipped where the model is said to be unavailable, and also where it
+    /// is said to be available but cannot answer: GitHub's macOS runner's
+    /// simulator reports `.available` yet holds none of the model's assets
+    /// (UnifiedAssetFramework 5000, ModelManagerError 1026, CI run
+    /// 43517308483), so every sample came back empty and scored 0.
+    private func modelOrSkip() async throws {
         if let why = OnDeviceWords.unavailableWhy { throw XCTSkip("No on-device model here: \(why)") }
+        do {
+            _ = try await LanguageModelSession().respond(to: "Say OK.")
+        } catch {
+            throw XCTSkip("The on-device model cannot answer here: \(error.localizedDescription)")
+        }
     }
 
     func testTheNotamsInWordsKeepToTheNotams() async throws {
-        try modelOrSkip()
+        try await modelOrSkip()
         let evaluation = NotamWordsEvaluation(samples: try EvalBar.asked(try NotamWordsEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
@@ -40,7 +50,7 @@ final class AIEvaluationsTests: XCTestCase {
     }
 
     func testAClearanceSaidBackReadsTheSame() async throws {
-        try modelOrSkip()
+        try await modelOrSkip()
         let evaluation = ClearanceSaidEvaluation(samples: try EvalBar.asked(try ClearanceSaidEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")

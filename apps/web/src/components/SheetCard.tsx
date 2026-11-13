@@ -190,15 +190,7 @@ export function SheetCard({
   };
   const target = useCardFrame(
     head
-      ? {
-          fullScreen,
-          title,
-          testId,
-          labelledBy: headingId,
-          dismiss,
-          initialFocus: opening,
-          finalFocus: finalFocus ?? toOpener,
-        }
+      ? { fullScreen, title, testId, labelledBy: headingId, dismiss, initialFocus: opening, finalFocus: finalFocus ?? toOpener }
       : // Its content's head names it; the focus left where it is unless
         // it came from the chart (fromMarker), the drawer's own Escape.
         { fullScreen, title, dismiss: ownDismiss, initialFocus, finalFocus },

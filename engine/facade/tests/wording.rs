@@ -183,9 +183,12 @@ fn a_vors_radial_its_morse_and_its_service_volume() {
     let radial = |var: &str, lat: f64, lon: f64| {
         call("radial_of", &format!("{{\"station\": {}, \"at\": {{\"lat\": {lat}, \"lon\": {lon}}}}}", jot(var))).unwrap()
     };
-    // Due north of a 2° E VOR is its 358 radial, 178 to fly to it, 30 nm.
+    // Due north of a 2° E VOR is its 358 radial, 178 to fly to it, and half
+    // a degree of latitude: 29.99 nm on the WGS-84 meridian at 41.8° N
+    // (M = a(1-e²)/(1-e²sin²φ)^1.5 = 6,363,806 m, × 0.5° = 55,535 m), where
+    // the sphere before 7fd7fa026 gave 30.02.
     let north = radial("2", JOT.0 + 0.5, JOT.1);
-    assert!(north.starts_with(r#"{"radial":358.0,"to_course":178.0,"nm":30.02"#), "{north}");
+    assert!(north.starts_with(r#"{"radial":358.0,"to_course":178.0,"nm":29.98"#), "{north}");
     // A west declination the other way: 4° W puts due east on its 094.
     let east = radial("-4", JOT.0, JOT.1 + 0.5);
     assert!(east.starts_with(r#"{"radial":93.8"#), "{east}");
