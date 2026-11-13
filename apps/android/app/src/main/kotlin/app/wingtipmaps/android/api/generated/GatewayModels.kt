@@ -88,6 +88,8 @@ data class AircraftDto (
     val createdAt: String,
     val cruisePowerPct: Double? = null,
     val cruiseTasKt: Double,
+    val descentFuelBurnGph: Double? = null,
+    val descentIasKt: Double? = null,
 
     /**
      * What else falls due on it as its owner keeps it: ADs (14 CFR 91.417(a)(2)(v)) and other
@@ -798,6 +800,8 @@ data class AircraftRequest (
     val colour: String? = null,
     val cruisePowerPct: Double? = null,
     val cruiseTasKt: Double,
+    val descentFuelBurnGph: Double? = null,
+    val descentIasKt: Double? = null,
     val equipment: String? = null,
 
     /**

@@ -144,6 +144,10 @@ extension Components {
             public var cruisePowerPct: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AircraftDto/cruiseTasKt`.
             public var cruiseTasKt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/AircraftDto/descentFuelBurnGph`.
+            public var descentFuelBurnGph: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/AircraftDto/descentIasKt`.
+            public var descentIasKt: Swift.Double?
             /// What else falls due on it as its owner keeps it: ADs (14 CFR 91.417(a)(2)(v)) and other items
             ///
             /// - Remark: Generated from `#/components/schemas/AircraftDto/dueItems`.
@@ -195,6 +199,8 @@ extension Components {
             ///   - createdAt:
             ///   - cruisePowerPct:
             ///   - cruiseTasKt:
+            ///   - descentFuelBurnGph:
+            ///   - descentIasKt:
             ///   - dueItems: What else falls due on it as its owner keeps it: ADs (14 CFR 91.417(a)(2)(v)) and other items
             ///   - equipment: Its flight plan's item 10a, its navigation, communication and approach equipment (AIM Appendix 4, TBL 4-2)
             ///   - figures: Its own handbook figures as its pilot gave them; each null where not given
@@ -215,6 +221,8 @@ extension Components {
                 createdAt: Swift.String,
                 cruisePowerPct: Swift.Double? = nil,
                 cruiseTasKt: Swift.Double,
+                descentFuelBurnGph: Swift.Double? = nil,
+                descentIasKt: Swift.Double? = nil,
                 dueItems: [Components.Schemas.DueItemDto],
                 equipment: Swift.String? = nil,
                 figures: Components.Schemas.OwnFigures,
@@ -235,6 +243,8 @@ extension Components {
                 self.createdAt = createdAt
                 self.cruisePowerPct = cruisePowerPct
                 self.cruiseTasKt = cruiseTasKt
+                self.descentFuelBurnGph = descentFuelBurnGph
+                self.descentIasKt = descentIasKt
                 self.dueItems = dueItems
                 self.equipment = equipment
                 self.figures = figures
@@ -256,6 +266,8 @@ extension Components {
                 case createdAt
                 case cruisePowerPct
                 case cruiseTasKt
+                case descentFuelBurnGph
+                case descentIasKt
                 case dueItems
                 case equipment
                 case figures
@@ -283,6 +295,10 @@ extension Components {
             public var cruisePowerPct: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AircraftRequest/cruiseTasKt`.
             public var cruiseTasKt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/AircraftRequest/descentFuelBurnGph`.
+            public var descentFuelBurnGph: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/AircraftRequest/descentIasKt`.
+            public var descentIasKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AircraftRequest/equipment`.
             public var equipment: Swift.String?
             /// Its own handbook figures, all at once (null in it clears one); left out, they stay as they were
@@ -307,6 +323,8 @@ extension Components {
             ///   - colour:
             ///   - cruisePowerPct:
             ///   - cruiseTasKt:
+            ///   - descentFuelBurnGph:
+            ///   - descentIasKt:
             ///   - equipment:
             ///   - figures: Its own handbook figures, all at once (null in it clears one); left out, they stay as they were
             ///   - fuelBurnGph:
@@ -320,6 +338,8 @@ extension Components {
                 colour: Swift.String? = nil,
                 cruisePowerPct: Swift.Double? = nil,
                 cruiseTasKt: Swift.Double,
+                descentFuelBurnGph: Swift.Double? = nil,
+                descentIasKt: Swift.Double? = nil,
                 equipment: Swift.String? = nil,
                 figures: Components.Schemas.OwnFigures? = nil,
                 fuelBurnGph: Swift.Double,
@@ -333,6 +353,8 @@ extension Components {
                 self.colour = colour
                 self.cruisePowerPct = cruisePowerPct
                 self.cruiseTasKt = cruiseTasKt
+                self.descentFuelBurnGph = descentFuelBurnGph
+                self.descentIasKt = descentIasKt
                 self.equipment = equipment
                 self.figures = figures
                 self.fuelBurnGph = fuelBurnGph
@@ -347,6 +369,8 @@ extension Components {
                 case colour
                 case cruisePowerPct
                 case cruiseTasKt
+                case descentFuelBurnGph
+                case descentIasKt
                 case equipment
                 case figures
                 case fuelBurnGph
