@@ -95,7 +95,7 @@ final class FieldNotams {
     /// what), else its words written out; a TFR's kind and rule (tfr_read).
     func what(_ notam: APIRankedNotam) -> String {
         if notam.kind == "tfr" { return tfr(notam)?.what ?? "TFR" }
-        guard let read = reading(notam) else { return NotamFilter.summary(notam) }
+        guard let read = reading(notam) else { return NotamRows.summary(notam) }
         return read.what ?? read.words
     }
 

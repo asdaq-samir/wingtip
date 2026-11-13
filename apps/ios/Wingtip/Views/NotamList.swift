@@ -2,31 +2,27 @@ import SwiftUI
 
 /// NOTAMs as a list of their own (docs/design/ios.md §6): the route's,
 /// opened from the Brief, or one field's, opened from its card
-/// (/api/airport/{ident}/notams). A large title with the system search
-/// and its scopes, broadest first ("Default to a broader scope and let
-/// people refine it", HIG Search fields), sections by place, each row a
-/// badge for its kind, the NOTAM in sentence case (the engine's faa_words)
-/// and its times in Zulu; a row pushes the NOTAM as sent. The order is
-/// the engine's (notams_ranked) unless the pilot sorts by time or kind in
-/// More; nothing is ranked here.
+/// (/api/airport/{ident}/notams). A large title, sections by place, each
+/// row a badge for its kind, the NOTAM in sentence case (the engine's
+/// faa_words) and its times in Zulu; a row pushes the NOTAM as sent. Every
+/// NOTAM in the engine's order (notams_ranked), nothing ranked, filtered or
+/// sorted here, and no search field: the app keeps one search (the owner,
+/// 2026-11-13: "I don't want search notams"; rules.md 1.5).
 struct NotamListView: View {
     @Environment(ReadyToFly.self) private var ready
     let source: NotamSource
     @Environment(Plan.self) private var plan
     @State private var ranked: APINotamsRanked?
     @State private var problem: String?
-    @State private var query = ""
-    @State private var scope = NotamScope.all
-    @State private var order = NotamOrder.relevance
 
     var body: some View {
         List {
             if let ranked {
-                let shown = NotamFilter.shown(ranked.notams, scope: scope, query: query, order: order)
+                let shown = NotamRows.inOrder(ranked.notams)
                 if ranked.unchecked?.contains("tfrs") == true {
                     Section { ProblemLine("TFRs couldn't be checked just now.") }
                 }
-                ForEach(NotamFilter.places(shown, source: source), id: \.title) { place in
+                ForEach(NotamRows.places(shown, source: source), id: \.title) { place in
                     Section {
                         ForEach(place.notams, id: \.id) { notam in
                             NavigationLink { NotamDetailView(notam: notam) } label: { NotamRow(notam: notam) }
@@ -36,12 +32,7 @@ struct NotamListView: View {
                     }
                 }
                 if shown.isEmpty {
-                    if query.isEmpty {
-                        ContentUnavailableView("No NOTAMs", systemImage: "checkmark.bubble",
-                                               description: Text(scope == .all ? source.noneWords : "None in \(scope.rawValue)."))
-                    } else {
-                        ContentUnavailableView.search(text: query)
-                    }
+                    ContentUnavailableView("No NOTAMs", systemImage: "checkmark.bubble", description: Text(source.noneWords))
                 }
                 if let since = ranked.coverageSince {
                     Section { Text("NOTAMs issued before \(since) and unchanged since aren't held.").font(WingtipType.note).foregroundStyle(.secondary) }
@@ -63,21 +54,6 @@ struct NotamListView: View {
         .listStyle(.insetGrouped)
         .navigationTitle(source.title)
         .navigationBarTitleDisplayMode(.large)
-        .searchable(text: $query, prompt: "Search NOTAMs")
-        .searchScopes($scope) {
-            ForEach(source.scopes) { Text($0.rawValue).tag($0) }
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Picker("Sort By", selection: $order) {
-                        ForEach(NotamOrder.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                } label: {
-                    Label("More", systemImage: "ellipsis")
-                }
-            }
-        }
         .refreshable { await load(force: true) }
         .task(id: source) { await load(force: false) }
     }
@@ -118,61 +94,19 @@ enum NotamSource: Hashable {
         case .field(let ident): "The feed has none for \(ident), and no TFR is within 5 nm."
         }
     }
-
-    /// The scope bar: the route's places, or a field's NOTAMs and TFRs.
-    var scopes: [NotamScope] {
-        switch self {
-        case .route: [.all, .departure, .enRoute, .destination, .tfrs]
-        case .field: [.all, .notams, .tfrs]
-        }
-    }
 }
 
-enum NotamScope: String, CaseIterable, Identifiable, Hashable {
-    case all = "All", departure = "Departure", enRoute = "En Route", destination = "Destination", notams = "NOTAMs", tfrs = "TFRs"
-    var id: String { rawValue }
-
-    /// Whether a NOTAM is in the scope, by the role the engine gave its
-    /// field (dep, stop, dest) and its kind (notam, tfr).
-    func holds(_ notam: APIRankedNotam) -> Bool {
-        switch self {
-        case .all: true
-        case .departure: notam.kind == "notam" && notam.role == "dep"
-        case .enRoute: notam.kind == "notam" && notam.role != "dep" && notam.role != "dest"
-        case .destination: notam.kind == "notam" && notam.role == "dest"
-        case .notams: notam.kind == "notam"
-        case .tfrs: notam.kind == "tfr"
-        }
-    }
-}
-
-/// The More menu's sorts (Files' sort menu): the engine's order, the
-/// soonest start, or by kind.
-enum NotamOrder: String, CaseIterable, Identifiable {
-    case relevance = "Relevance", time = "Time", kind = "Kind"
-    var id: String { rawValue }
-}
-
-/// The list's filtering, sorting and grouping, apart from the view so the
-/// tests read it (NotamListTests).
-enum NotamFilter {
+/// The list's order and sections and each row's words, apart from the view
+/// so the tests read them (NativeLookTests).
+enum NotamRows {
     struct Place {
         let title: String
         let notams: [APIRankedNotam]
     }
 
-    static func shown(_ notams: [APIRankedNotam], scope: NotamScope, query: String, order: NotamOrder) -> [APIRankedNotam] {
-        let words = query.trimmingCharacters(in: .whitespaces)
-        let held = notams.filter { scope.holds($0) && (words.isEmpty || matches($0, words)) }
-        switch order {
-        case .relevance: return held.sorted { $0.rank < $1.rank }
-        case .time: return held.sorted { ($0.starts ?? "", $0.rank) < ($1.starts ?? "", $1.rank) }
-        case .kind: return held.sorted { (kind($0), $0.rank) < (kind($1), $1.rank) }
-        }
-    }
-
-    private static func matches(_ notam: APIRankedNotam, _ words: String) -> Bool {
-        [notam.raw, notam.id, notam.field ?? "", notam.keyword ?? ""].contains { $0.localizedCaseInsensitiveContains(words) }
+    /// Every NOTAM in the engine's order (its rank, notams_ranked).
+    static func inOrder(_ notams: [APIRankedNotam]) -> [APIRankedNotam] {
+        notams.sorted { $0.rank < $1.rank }
     }
 
     /// The NOTAM's kind as its badge says it: the FAA keyword ("RWY",
@@ -236,15 +170,15 @@ struct NotamRow: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.md) {
-            Text(NotamFilter.kind(notam))
+            Text(NotamRows.kind(notam))
                 .font(WingtipType.caption)
                 .foregroundStyle(.white)
                 .padding(.horizontal, WingtipSpace.xs)
                 .padding(.vertical, WingtipSpace.xxs)
-                .background(NotamFilter.colour(notam), in: RoundedRectangle(cornerRadius: WingtipRadius.badge, style: .continuous))
+                .background(NotamRows.colour(notam), in: RoundedRectangle(cornerRadius: WingtipRadius.badge, style: .continuous))
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                Text(NotamFilter.summary(notam)).font(.body).lineLimit(4)
-                let when = NotamFilter.when(notam)
+                Text(NotamRows.summary(notam)).font(.body).lineLimit(4)
+                let when = NotamRows.when(notam)
                 if !when.isEmpty {
                     Text(when).font(.subheadline.monospacedDigit())
                         .foregroundStyle(notam.inForce == true ? WingtipInk.caution : .secondary)
@@ -263,7 +197,7 @@ struct NotamDetailView: View {
 
     var body: some View {
         List {
-            Section { Text(NotamFilter.summary(notam)).font(.body) }
+            Section { Text(NotamRows.summary(notam)).font(.body) }
             if !notam.reasons.isEmpty {
                 Section("Why It Matters") {
                     ForEach(notam.reasons, id: \.key) { Text($0.words) }
@@ -271,7 +205,7 @@ struct NotamDetailView: View {
             }
             Section("As Sent") {
                 Text(notam.raw).font(.body.monospaced()).textSelection(.enabled)
-                let when = NotamFilter.when(notam)
+                let when = NotamRows.when(notam)
                 if !when.isEmpty { LabeledContent("Effective", value: when) }
             }
         }
