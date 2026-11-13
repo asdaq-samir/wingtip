@@ -19,7 +19,7 @@ import {
   type NotamReading,
   type FieldNotams,
 } from "./fieldNotams";
-import { NotamFilter, NotamsState } from "./NotamFilter";
+import { NotamsState } from "./NotamsState";
 import { timeLines } from "./notamTimes";
 import { TfrDetails } from "./TfrDetails";
 
@@ -233,16 +233,16 @@ function kindsOf(notams: FieldNotam[], ident: string): [string, FieldNotam[]][] 
  * many in all at the title's right, and the title opening every one in
  * place and closing them again, as every list on the card does (FirstFew;
  * the owner, 2026-11-11: "Can notams also show as a list of three like
- * others", then "Notams should open like other sections"). Past three, a
- * filter at the list's top (NotamFilter) shows every one that says what is
- * typed.
+ * others", then "Notams should open like other sections"). The list has no
+ * search field: the app keeps one search (the owner, 2026-11-13: "I don't
+ * want search notams").
  */
 export function PlaceNotamsSection({ ident }: { ident: string }) {
-  const { data, isError, total, shown, long, all, toggle, query, setQuery } = useFieldNotams(ident);
+  const { data, isError, total, shown, long, all, toggle } = useFieldNotams(ident);
   if (!data && !isError) return null;
   // "3 of 9" at the right while closed, as FirstFew's sections.
   const count = long && !all ? <span className={cn("text-muted-foreground", TEXT.note)}>{`${shown.length} of ${total}`}</span> : undefined;
-  const state = <NotamsState data={data} isError={isError} query={query} found={shown.length} />;
+  const state = <NotamsState data={data} isError={isError} />;
   return (
     <div className="scroll-mt-16 pt-5" data-testid={SECTION}>
       <PillSection
@@ -252,7 +252,6 @@ export function PlaceNotamsSection({ ident }: { ident: string }) {
         expanded={long ? all : undefined}
         right={count}
       >
-        {long && <NotamFilter query={query} onQuery={setQuery} />}
         {/* Opened, every one in the stock Collapsible's content, under its
             kind (Runway, Taxiway, Obstacle ...), the kinds in the order
             their first NOTAM ranks, as ForeFlight heads its list's groups

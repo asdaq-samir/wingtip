@@ -54,11 +54,10 @@ Compose. Nothing here is built by hand where a stock part does it.
    is meant to stay usable.
 5. **One search field.** Nearest, the traffic list, the airport picker
    and Add a Stop use the main search, scoped to what they ask for, never
-   a field of their own. The airport card's NOTAM list, past three
-   NOTAMs, has its own filter field at its top (the stock `SearchField`
-   Nearest's card uses): it narrows that list only, opens nothing and finds
-   nothing outside it, so it is not a second search (settled the native
-   way, 2026-11-12, claude/notam-extras).
+   a field of their own. The airport card's NOTAM list has none: it shows every NOTAM in the
+   engine's order, three first and the rest on the title (the owner,
+   2026-11-13: "I don't want search notams"). Nearest's scoped field stays
+   as it is.
 6. **Back and Escape close the top card first**, then go back a level.
    Neither only lowers the sheet while a card is open; with no card open
    they may lower it.

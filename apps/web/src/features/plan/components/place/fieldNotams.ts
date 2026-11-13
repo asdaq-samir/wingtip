@@ -37,29 +37,22 @@ const FIRST = 3;
  * engine's order (those in force first, then best first: notams_ranked),
  * the first three or all of them, opened and closed again in place by the
  * section's title as every section on the card is (FirstFew; the owner,
- * 2026-11-11: "Notams should open like other sections"); and what is typed
- * in the list's filter, every NOTAM that says it shown while it is there
- * (the owner, 2026-11-12: a search field in the NOTAM list). Filtering
- * asks the engine (notam_read), so this is used inside the card's
- * EngineGate.
+ * 2026-11-11: "Notams should open like other sections"). It has no filter
+ * of its own (the owner, 2026-11-13: "I don't want search notams").
  */
 export function useFieldNotams(ident: string) {
   const { data, isError } = useQuery(fieldNotamsQuery(ident));
   const [all, setAll] = useState(false);
-  const [query, setQuery] = useState("");
   const notams = data?.notams ?? [];
   const long = notams.length > FIRST;
-  const typed = query.trim();
   return {
     data,
     isError,
     total: notams.length,
-    shown: typed ? notams.filter((n) => saysIt(n, ident, typed)) : all || !long ? notams : notams.slice(0, FIRST),
+    shown: all || !long ? notams : notams.slice(0, FIRST),
     long,
     all,
     toggle: () => setAll(!all),
-    query,
-    setQuery,
   };
 }
 
@@ -67,16 +60,6 @@ export function useFieldNotams(ident: string) {
  *  query the list reads; null until it is had or where none is known. */
 export function useFieldZone(ident: string): string | null {
   return useQuery(fieldNotamsQuery(ident)).data?.time_zone ?? null;
-}
-
-/** Whether a NOTAM says what is typed, in any of the words a pilot sees of
- *  it: its first line, its kind, its number, its words written out and its
- *  text as sent, case aside. */
-function saysIt(n: FieldNotam, ident: string, typed: string): boolean {
-  const read = n.kind === "tfr" ? null : readNotam(n, ident);
-  const words = [whatOf(n, ident), headingOf(n, ident), n.id, read?.words, n.raw];
-  const want = typed.toLowerCase();
-  return words.some((w) => w?.toLowerCase().includes(want));
 }
 
 /** The field's idents as a NOTAM may write them ("OSH", "KOSH"), kept as

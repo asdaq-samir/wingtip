@@ -3,7 +3,6 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import PullDown from "../../components/PullDown";
 import Segmented from "../../components/Segmented";
 import SwitchRow from "../../components/SwitchRow";
-import SearchHint from "../../components/SearchHint";
 import { ALERT_MODES, useAlertMode } from "../../components/alertMode";
 import GlideRingRow from "./GlideRingRow";
 import { GoogleProblem } from "./MapCard";
@@ -21,7 +20,7 @@ import { CHART } from "../../lib/tokens";
  * The Map card's Map Settings page, from the row at the card's foot (the
  * owner's pick, option A of the map settings canvas, 2026-11-13): how the
  * map looks, what else is drawn on it, and the rest -- the alerts, keeping
- * the charts for the air, where the data comes from, the search. The
+ * the charts for the air, where the data comes from. The
  * airport weather, the alerts and the sources are a page each, a row
  * here with what is set at its end. The chart at night and in sunlight
  * are Setup's (its Appearance and Layout, the owner, 2026-11-13), one home
@@ -33,7 +32,6 @@ export default function MapSettingsPage() {
       <LookGroup />
       <OnTheMapGroup />
       <MoreGroup />
-      <SearchHint />
     </div>
   );
 }

@@ -178,22 +178,6 @@ test("a field's NOTAMs show three, and their title opens every one in place and 
   await title.click();
   await expect(section.getByTestId("place-notam")).toHaveCount(3);
   await expect(section).toContainText("3 of 5");
-
-  // The list's own filter (the owner, 2026-11-12): what is typed narrows
-  // this list, every NOTAM that says it, not only the first three; it is
-  // no second search (rules.md 1.5), so the one search stays as it was.
-  const search = section.getByTestId("place-notams-search");
-  await inSheet(page, search);
-  await search.fill("fuel");
-  await expect(section.getByTestId("place-notam")).toHaveCount(1);
-  await expect(section.getByTestId("place-notam-heading")).toHaveText("100LL fuel not available");
-  await search.fill("crane");
-  await expect(section.getByTestId("place-notam-heading")).toHaveText("Crane");
-  await search.fill("no such thing");
-  await expect(section.getByTestId("place-notam")).toHaveCount(0);
-  await expect(section.getByTestId("place-notams-unmatched")).toHaveText("None says “no such thing”");
-  await section.getByTestId("search-clear").click();
-  await expect(section.getByTestId("place-notam")).toHaveCount(3);
 });
 
 /**
