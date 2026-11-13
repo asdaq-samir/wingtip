@@ -1,15 +1,14 @@
 import SwiftUI
 
-/// The plan, the sheet's FPL page (PlanSheet, SheetPager), with no bar
+/// The plan, the sheet's FPL page (PlanSheet, SheetPages), with no bar
 /// of its own so its first row is the route's: with a route, its card
 /// (RouteCard: the route, Ready to Fly, the figures, Brief, Nav Log,
 /// Airplane and the route's •••), then the route -- its ends, its Routes,
 /// the airplane and the altitude (RouteBoxRow) -- the stops and "Add a
 /// Stop", the route's own edits and the procedures, in FPL's order. With
 /// none, the route box empty, its close a level back (the web's, the
-/// owner's 2026-11-11 "We don't need plan a flight either"), under the
-/// first flight's card the first time; Favorites, Recents and Nearest are
-/// the Search page's.
+/// owner's 2026-11-11 "We don't need plan a flight either"); Favorites,
+/// Recents and Nearest are the Search page's.
 struct PlanView: View {
     @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
@@ -34,7 +33,6 @@ struct PlanView: View {
                 // Why the route's Share menu sent nothing (ShareMenu).
                 if let shareProblem = plan.shareProblem { ProblemLine(shareProblem) }
             }
-            FirstFlightSection()
             Section {
                 RouteEndsRow(focused: $focused)
                 if plan.routed && plan.course != nil && RouteLine.shows(plan.routes, picked: plan.pickedChip, problem: plan.routesProblem) {
@@ -60,25 +58,39 @@ struct PlanView: View {
                     RouteBoxRow(open: open)
                 }
             } header: {
-                if !plan.routeState.hasPoints {
+                if !plan.routed {
                     // The box empty -- cleared, or never filled -- its close
                     // a level back, where the route's ••• is with a route
                     // (the web's route box, 2026-11-12): to the field's card
-                    // it was flown to from, else to Search.
+                    // it was flown to from, else to Search. Half a route
+                    // keeps the ••• alone.
                     HStack {
                         Spacer()
-                        // The close glyph in glass, as a card's close is
-                        // drawn in its bar (CloseButton's role-close in a
-                        // list header drew the word "Close" alone).
-                        Button {
-                            focused = nil
-                            nav.closeEmptyRoute()
+                        // How the route is shown, picked before there is a
+                        // route too (the owner, 2026-11-13), the menu
+                        // holding that alone until there is one.
+                        Menu {
+                            ShowRouteAs()
                         } label: {
-                            Label("Close", systemImage: WingtipIcon.close).labelStyle(.iconOnly)
+                            Label("More", systemImage: WingtipIcon.more).labelStyle(.iconOnly)
                         }
                         .glassButton()
                         .buttonBorderShape(.circle)
-                        .accessibilityIdentifier("route-close")
+                        .accessibilityIdentifier("route-more")
+                        // The close glyph in glass, as a card's close is
+                        // drawn in its bar (CloseButton's role-close in a
+                        // list header drew the word "Close" alone).
+                        if !plan.routeState.hasPoints {
+                            Button {
+                                focused = nil
+                                nav.closeEmptyRoute()
+                            } label: {
+                                Label("Close", systemImage: WingtipIcon.close).labelStyle(.iconOnly)
+                            }
+                            .glassButton()
+                            .buttonBorderShape(.circle)
+                            .accessibilityIdentifier("route-close")
+                        }
                     }
                 }
             }

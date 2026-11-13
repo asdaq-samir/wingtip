@@ -21,8 +21,15 @@ final class OneSearchModel {
     static let prompt: LocalizedStringKey = "Search airports, airplanes, or ask"
     /// The field's prompt while Ask by voice listens, nothing said yet.
     static let speak: LocalizedStringKey = "Speak your question"
+    /// The field's prompt after the welcome, asking for the first flight's
+    /// destination (the web's first flight, lib/oneSearch's pick), until
+    /// something is typed or the search is put away.
+    static let whereTo: LocalizedStringKey = "Where are you flying to?"
 
-    var text = ""
+    var text = "" { didSet { if !text.isEmpty { askingDestination = false } } }
+    /// The welcome put away: the field asks for the destination, not
+    /// focused, so no keyboard comes up until the pilot taps it.
+    var askingDestination = false
     /// The search up: the field focused and its suggestions in sight.
     var presented = false
     /// Why a line sent or said was not done, said under the field.
@@ -147,6 +154,7 @@ final class OneSearchModel {
     /// The search put away, what was typed with it.
     func close() {
         presented = false
+        askingDestination = false
         text = ""
         clearFound()
     }

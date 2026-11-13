@@ -114,6 +114,7 @@ struct StripHead: View {
         Menu {
             ShareMenu()
             Button { onFile() } label: { Label("File Flight Plan", systemImage: WingtipIcon.send) }
+            ShowRouteAs()
             Divider()
             Button(role: .destructive) { plan.clear() } label: { Label("Clear Route", systemImage: WingtipIcon.close) }
         } label: {

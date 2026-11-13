@@ -1,12 +1,12 @@
-import CoreLocation
 import Foundation
 import Testing
 @testable import Wingtip
 
-/// The first flight's card (FirstFlightModel), the web's useFirstFlight:
-/// shown with no route until planned or put away, back from the Guide's
-/// Show First Flight Again, planning from the nearest field, else the home
-/// field, else asking where from; and nothing asked or assumed up front.
+/// The first flight's welcome (FirstFlightModel), the web's useFirstFlight:
+/// shown with no route until put away, back from the Guide's Show the
+/// Welcome Again, never under the tests' launch arguments or in the unit
+/// tests' host; and nothing asked or assumed up front. Its foot follows
+/// the position's permission (WelcomeFoot).
 @MainActor
 struct FirstFlightTests {
     private func fresh() -> UserDefaults {
@@ -16,11 +16,8 @@ struct FirstFlightTests {
         return defaults
     }
 
-    private let fix = OwnShip.Fix(coordinate: CLLocationCoordinate2D(latitude: 43.14, longitude: -89.34), altitudeFt: nil, trackDeg: nil,
-                                  groundspeedKt: nil, accuracyM: 5, at: Date())
-
     @Test func shownWithNoRouteUntilPutAwayAndBackFromTheGuide() {
-        let model = FirstFlightModel(defaults: fresh(), arguments: [])
+        let model = FirstFlightModel(defaults: fresh(), arguments: [], environment: [:])
         #expect(model.shown(routed: false))
         #expect(!model.shown(routed: true))
         model.dismiss()
@@ -31,58 +28,34 @@ struct FirstFlightTests {
 
     @Test func notUnderTheTestsLaunchArgumentsUnlessAskedFor() {
         let defaults = fresh()
-        #expect(!FirstFlightModel(defaults: defaults, arguments: ["-screen", "fpl"]).shown(routed: false))
-        #expect(!FirstFlightModel(defaults: defaults, arguments: ["-card", "@KOSH"]).shown(routed: false))
-        #expect(FirstFlightModel(defaults: defaults, arguments: ["-screen", "search", "-firstFlight"]).shown(routed: false))
+        #expect(!FirstFlightModel(defaults: defaults, arguments: ["-screen", "fpl"], environment: [:]).shown(routed: false))
+        #expect(!FirstFlightModel(defaults: defaults, arguments: ["-card", "@KOSH"], environment: [:]).shown(routed: false))
+        #expect(!FirstFlightModel(defaults: defaults, arguments: [], environment: ["XCTestConfigurationFilePath": "x"]).shown(routed: false))
+        #expect(FirstFlightModel(defaults: defaults, arguments: ["-screen", "search", "-firstFlight"], environment: [:]).shown(routed: false))
     }
 
-    @Test func planItFliesFromTheNearestFieldAndIsThenGoneForGood() async {
-        let defaults = fresh()
-        let model = FirstFlightModel(defaults: defaults, arguments: [])
-        let plan = Plan()
-        model.dest = "KOSH · Wittman Regional"
-        #expect(model.destIdent == "KOSH" && model.ready)
-        var opened = 0
-        await model.planIt(plan: plan, fix: fix, home: nil, nearest: { _ in "KMSN" }) { opened += 1 }
-        #expect(plan.dep == "KMSN" && plan.dest == "KOSH" && plan.stops.isEmpty)
-        #expect(opened == 1 && model.seen && !model.shown(routed: false))
-    }
-
-    @Test func withNoPositionTheHomeFieldElseItAsksWhereFrom() async {
-        let defaults = fresh()
-        let model = FirstFlightModel(defaults: defaults, arguments: [])
-        let plan = Plan()
-        model.dest = "kosh"
-        var opened = 0
-        await model.planIt(plan: plan, fix: nil, home: nil, nearest: { _ in nil }) { opened += 1 }
-        #expect(model.needsFrom && !model.ready && opened == 0 && plan.dest.isEmpty)
-        model.from = "C81"
-        #expect(model.ready)
-        await model.planIt(plan: plan, fix: nil, home: nil, nearest: { _ in nil }) { opened += 1 }
-        #expect(plan.dep == "C81" && plan.dest == "KOSH" && opened == 1)
-
-        let kept = fresh()
-        kept.set("KMSN", forKey: FirstFlightModel.homeKey)
-        #expect(FirstFlightModel.savedHome(kept) == "KMSN")
-        let other = FirstFlightModel(defaults: kept, arguments: [])
-        other.dest = "KOSH"
-        await other.planIt(plan: plan, fix: nil, home: nil, nearest: { _ in nil }) {}
-        #expect(plan.dep == "KMSN" && !other.needsFrom)
-    }
-
-    @Test func flyingToWhereYouAreIsSaid() async {
-        let model = FirstFlightModel(defaults: fresh(), arguments: [])
-        let plan = Plan()
-        model.dest = "KMSN"
-        await model.planIt(plan: plan, fix: fix, home: nil, nearest: { _ in "KMSN" }) {}
-        #expect(model.problem == "KMSN is where you are. Pick somewhere to fly to.")
-        #expect(plan.dest.isEmpty && !model.seen)
+    @Test func theFootAsksForThePositionUnlessItIsAllowed() {
+        // Never asked, or refused before: Turn On Location and Later, the
+        // second opening the app's own settings, iOS asking only once.
+        #expect(WelcomeFoot.of(.notDetermined) == .ask)
+        #expect(WelcomeFoot.of(.denied) == .askInSettings)
+        #expect(WelcomeFoot.of(.restricted) == .askInSettings)
+        // Allowed already: Let's Go Flying alone.
+        #expect(WelcomeFoot.of(.authorizedWhenInUse) == .go)
+        #expect(WelcomeFoot.of(.authorizedAlways) == .go)
     }
 
     @Test func nothingIsAssumedOrAskedUpFront() {
         let plan = Plan()
-        let model = FirstFlightModel(defaults: fresh(), arguments: [])
+        let model = FirstFlightModel(defaults: fresh(), arguments: [], environment: [:])
         model.dismiss()
         #expect(!plan.airplaneChosen && plan.tail == nil)
+    }
+
+    @Test func theHomeFieldKeptByAnEarlierWelcomeIsRead() {
+        let kept = fresh()
+        kept.set("KMSN", forKey: FirstFlightModel.homeKey)
+        #expect(FirstFlightModel.savedHome(kept) == "KMSN")
+        #expect(FirstFlightModel.savedHome(fresh()) == nil)
     }
 }

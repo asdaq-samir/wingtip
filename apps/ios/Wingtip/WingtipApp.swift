@@ -1,5 +1,6 @@
 import AppIntents
 import SwiftUI
+import TipKit
 
 /// Wingtip Maps, native: the FAA chart that works like Apple Maps, and
 /// the route, checkpoints and nav log for a flight, on the same planner
@@ -37,6 +38,13 @@ struct WingtipApp: App {
         let session = Session()
         session.flight = screens.flight
         _session = State(initialValue: session)
+        // TipKit's one tip, the FPL toggle's after the first route
+        // (FplTip); none under the UI tests' and pictures' launch
+        // arguments, where it would cover what they look at.
+        if CommandLine.arguments.contains(where: { ["-screen", "-layout", "-fresh", "-card"].contains($0) }) {
+            Tips.hideAllTipsForTesting()
+        }
+        try? Tips.configure()
     }
 
     var body: some Scene {

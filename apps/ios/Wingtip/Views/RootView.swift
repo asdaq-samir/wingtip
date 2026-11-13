@@ -47,10 +47,11 @@ struct RootView: View {
     /// whole map's update again each frame.
     @State private var sheetHeight: CGFloat = 0
 
-    /// The sheet's lowest size, the pill: the page dots and the page's
-    /// first row (the search's on Search, the route's on FPL), as Maps'
-    /// pill is its search row; 132 points for the row, the dots' row over it.
-    static let pill = PresentationDetent.height(132 + PageDots.row)
+    /// The sheet's lowest size, the pill: the page's first row (the
+    /// search's on Search, the route's on FPL), as Maps' pill is its search
+    /// row; 132 points for the row. The page dots' row over it went with
+    /// the dots (the page toggle, 2026-11-13), its room back to the map.
+    static let pill = PresentationDetent.height(132)
 
     var layout: RootLayout { .of(sizeClass, verticalSizeClass) }
 
@@ -120,6 +121,9 @@ struct RootView: View {
         .onChange(of: nav.stored) { _, now in scenePages = SheetPage.store(now) }
         // The search up, the sheet up with it, clear of the keyboard.
         .onChange(of: search.presented) { _, up in if up, layout == .sheet, detent != .large { detent = .large } }
+        // The welcome put away, the search asking for the destination: at
+        // the pill the sheet rises to half so it is seen (rule 11).
+        .onChange(of: search.askingDestination) { _, asking in if asking, detent == RootView.pill { detent = .half } }
         // The picked look's tint, the brand's blue by default (Look).
         .lookTint()
         // The key actions' taps, none with Reduce Motion on (Feel).
