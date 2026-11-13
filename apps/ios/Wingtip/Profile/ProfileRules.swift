@@ -66,12 +66,18 @@ enum ProfileRules {
         let profile = airplane.map {
             EngineContract.NavLogProfile(cruiseTasKt: $0.cruiseTasKt, fuelBurnGph: $0.fuelBurnGph, serviceCeilingFt: $0.serviceCeilingFt,
                                          cruisePowerPct: $0.cruisePowerPct, climbTasKt: $0.climbTasKt, climbFuelBurnGph: $0.climbFuelBurnGph,
+                                         descentIasKt: $0.descentIasKt, descentFuelBurnGph: $0.descentFuelBurnGph,
                                          climbRateFpmSeaLevel: $0.climbRateFpmSeaLevel, taxiFuelGal: $0.taxiFuelGal, usableFuelGal: $0.usableFuelGal,
                                          supplementalOxygen: $0.supplementalOxygen, pressurized: $0.pressurized)
         }
         let leg = out ?? into
         return try Engine.altitudeChange(profile: profile, alongNm: waypoints(legs: legs)[i].alongNm, fromFt: fromFt, toFt: toFt,
                                          mode: mode.rawValue, groundspeedKt: leg?.groundspeedKt, tasKt: leg?.tasKt,
-                                         fuelBurnGph: airplane == nil ? nil : leg?.fuelBurnGph ?? airplane?.fuelBurnGph, oatC: leg?.oatC)
+                                         fuelBurnGph: airplane == nil ? nil : leg?.fuelBurnGph ?? airplane?.fuelBurnGph, oatC: leg?.oatC,
+                                         // The leg's course and wind, so a climb's ground speed is its own
+                                         // wind triangle at the climb speed (FAA-H-8083-25C ch. 16), as
+                                         // the web's LegAltitude asks it.
+                                         trueCourseDeg: leg?.trueCourseDeg, windDirTrueDeg: leg?.wind?.windDirTrueDeg,
+                                         windSpeedKt: leg?.wind?.windSpeedKt)
     }
 }

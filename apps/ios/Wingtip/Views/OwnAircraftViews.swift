@@ -88,10 +88,18 @@ struct AircraftFormView: View {
                 number("Climb", unit: "kt", text: $form.climbTasKt, placeholder: "74", key: "climbTasKt", problems: problems)
                 number("Cruise", unit: "kt", text: $form.cruiseTasKt, placeholder: "110", key: "cruiseTasKt", problems: problems)
             }
+            // The descent as the POH gives it, indicated; the engine makes
+            // it true at the descent's altitude (FAA-H-8083-25C ch. 8). Left
+            // blank, the descent is flown on the cruise's figures and the
+            // nav log says so.
+            Section("Indicated Airspeed") {
+                number("Descent", unit: "kt", text: $form.descentIasKt, placeholder: "110", key: "descentIasKt", problems: problems)
+            }
             // Climb left blank climbs at the type's book figures.
             Section("Fuel Burn") {
                 number("Climb", unit: "gph", text: $form.climbFuelBurnGph, placeholder: "11", key: "climbFuelBurnGph", problems: problems)
                 number("Cruise", unit: "gph", text: $form.fuelBurnGph, placeholder: "8.5", key: "fuelBurnGph", problems: problems)
+                number("Descent", unit: "gph", text: $form.descentFuelBurnGph, placeholder: "6", key: "descentFuelBurnGph", problems: problems)
             }
             // The cruise figures are the airplane's at this power at the
             // engine's reference altitude on a standard day, a row of its

@@ -47,6 +47,22 @@ struct OwnFiguresTests {
         #expect(missing == ["taxi_fuel_gal"])
     }
 
+    @Test func theDescentIsAskedForByItsTwoFigures() throws {
+        // No descent figures in the book or the pilot's: the engine's
+        // airplane_needs names both, and the ask is the speed first.
+        let answer = try #require(Airplanes.answer(book: nil, handbook: nil, own: Figures(cruiseTasKt: 140, fuelBurnGph: 10)))
+        let missing = try Engine.airplaneNeeds(profile: answer.profile, figure: AirplaneNeed.descent.rawValue).missing
+        #expect(missing == ["descent_ias_kt", "descent_fuel_burn_gph"])
+        #expect(AskFigureModel.ask(missing: missing, putOff: [], airplane: "N123AB") == .figure(.descentIasKt))
+        // Given, they are the pilot's and nothing more is asked.
+        let given = try #require(Airplanes.answer(book: nil, handbook: nil,
+                                                  own: Figures(cruiseTasKt: 140, fuelBurnGph: 10, descentIasKt: 120, descentFuelBurnGph: 6)))
+        #expect(Figures(given).descentIasKt == 120 && Figures(given).descentFuelBurnGph == 6)
+        #expect(try Engine.airplaneNeeds(profile: given.profile, figure: AirplaneNeed.descent.rawValue).missing.isEmpty)
+        #expect(OwnFigure.descentIasKt.unit == "kt" && OwnFigure.descentFuelBurnGph.unit == "gal/h")
+        #expect(!OwnFigure.recordFigures.contains(.descentIasKt))
+    }
+
     @Test func theAskIsTheFirstMissingInputNotPutOff() {
         #expect(AskFigureModel.ask(missing: ["airplane"], putOff: [], airplane: "N123AB") == .pick)
         #expect(AskFigureModel.ask(missing: ["taxi_fuel_gal"], putOff: [], airplane: "N123AB") == .figure(.taxiFuelGal))

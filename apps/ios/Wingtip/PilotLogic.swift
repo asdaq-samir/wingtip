@@ -190,6 +190,8 @@ struct AircraftForm: Equatable {
     var cruisePowerPct = ""
     var climbTasKt = ""
     var climbFuelBurnGph = ""
+    var descentIasKt = ""
+    var descentFuelBurnGph = ""
     var usableFuelGal = ""
     var equipment = ""
     var surveillance = ""
@@ -202,6 +204,7 @@ struct AircraftForm: Equatable {
         tailNumber = a.tailNumber; typeDesignator = a.typeDesignator
         cruiseTasKt = s(a.cruiseTasKt); fuelBurnGph = s(a.fuelBurnGph); cruisePowerPct = s(a.cruisePowerPct)
         climbTasKt = s(a.climbTasKt); climbFuelBurnGph = s(a.climbFuelBurnGph); usableFuelGal = s(a.usableFuelGal)
+        descentIasKt = s(a.descentIasKt); descentFuelBurnGph = s(a.descentFuelBurnGph)
         equipment = a.equipment ?? ""; surveillance = a.surveillance ?? ""; colour = a.colour ?? ""
     }
 
@@ -221,7 +224,7 @@ struct AircraftForm: Equatable {
             answer = try Engine.aircraftProblems(
                 tailNumber: tailNumber, typeDesignator: typeDesignator, cruiseTasKt: cruiseTasKt, fuelBurnGph: fuelBurnGph,
                 cruisePowerPct: cruisePowerPct, climbTasKt: climbTasKt, climbFuelBurnGph: climbFuelBurnGph,
-                usableFuelGal: usableFuelGal, equipment: equipment, surveillance: surveillance, colour: colour)
+                descentIasKt: descentIasKt, descentFuelBurnGph: descentFuelBurnGph, usableFuelGal: usableFuelGal, equipment: equipment, surveillance: surveillance, colour: colour)
         } catch {
             Log.engine.error("aircraft_problems: \(error.localizedDescription, privacy: .public)")
             return [Self.formKey: "The figures could not be checked: \(error.localizedDescription)"]
@@ -229,7 +232,8 @@ struct AircraftForm: Equatable {
         let byField: [String: String?] = [
             "tailNumber": answer.tailNumber, "typeDesignator": answer.typeDesignator, "cruiseTasKt": answer.cruiseTasKt,
             "fuelBurnGph": answer.fuelBurnGph, "cruisePowerPct": answer.cruisePowerPct, "climbTasKt": answer.climbTasKt,
-            "climbFuelBurnGph": answer.climbFuelBurnGph, "usableFuelGal": answer.usableFuelGal, "equipment": answer.equipment,
+            "climbFuelBurnGph": answer.climbFuelBurnGph, "descentIasKt": answer.descentIasKt,
+            "descentFuelBurnGph": answer.descentFuelBurnGph, "usableFuelGal": answer.usableFuelGal, "equipment": answer.equipment,
             "surveillance": answer.surveillance, "colour": answer.colour,
         ]
         return byField.compactMapValues { $0 }
@@ -246,6 +250,8 @@ struct AircraftForm: Equatable {
             colour: words(colour),
             cruisePowerPct: opt(cruisePowerPct),
             cruiseTasKt: tas,
+            descentFuelBurnGph: opt(descentFuelBurnGph),
+            descentIasKt: opt(descentIasKt),
             equipment: words(equipment)?.uppercased(),
             fuelBurnGph: burn,
             surveillance: words(surveillance)?.uppercased(),

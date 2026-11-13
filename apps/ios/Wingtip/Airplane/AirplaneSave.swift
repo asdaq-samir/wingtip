@@ -62,7 +62,7 @@ extension Airplanes {
     /// with these figures, a cruise speed or burn not given left as kept.
     static func request(_ record: OwnAircraftRecord, _ f: Figures) -> AircraftRequest {
         AircraftRequest(climbFuelBurnGph: f.climbFuelBurnGph, climbTasKt: f.climbTasKt, colour: record.colour, cruisePowerPct: f.cruisePowerPct,
-                        cruiseTasKt: f.cruiseTasKt ?? record.cruiseTasKt, equipment: record.equipment, figures: f.gateway,
+                        cruiseTasKt: f.cruiseTasKt ?? record.cruiseTasKt, descentFuelBurnGph: f.descentFuelBurnGph, descentIasKt: f.descentIasKt, equipment: record.equipment, figures: f.gateway,
                         fuelBurnGph: f.fuelBurnGph ?? record.fuelBurnGph, surveillance: record.surveillance, tailNumber: record.tailNumber,
                         typeDesignator: record.typeDesignator, usableFuelGal: f.usableFuelGal)
     }
@@ -74,7 +74,7 @@ extension Airplanes {
         // The gateway's type is at most 16 characters (AircraftRequest).
         let designator = String((type?.trimmingCharacters(in: .whitespaces).uppercased()).flatMap { $0.isEmpty ? nil : $0 }?.prefix(16) ?? Substring(noDesignator))
         return AircraftRequest(climbFuelBurnGph: f.climbFuelBurnGph, climbTasKt: f.climbTasKt, colour: nil, cruisePowerPct: f.cruisePowerPct,
-                               cruiseTasKt: cruise, equipment: nil, figures: f.gateway, fuelBurnGph: burn, surveillance: nil,
+                               cruiseTasKt: cruise, descentFuelBurnGph: f.descentFuelBurnGph, descentIasKt: f.descentIasKt, equipment: nil, figures: f.gateway, fuelBurnGph: burn, surveillance: nil,
                                tailNumber: tail, typeDesignator: designator, usableFuelGal: f.usableFuelGal)
     }
 }
