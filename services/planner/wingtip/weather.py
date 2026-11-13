@@ -264,7 +264,7 @@ def nearest_report(lat: float, lon: float, exclude: str | None = None, within_nm
     current = []
     for ident, report in _dataset("metars").items():
         s_lat, s_lon = report.get("lat"), report.get("lon")
-        if ident == exclude or s_lat is None or s_lon is None:
+        if ident == exclude or s_lat is None or s_lon is None or not np.isfinite([s_lat, s_lon]).all():  # NaN: argmin's least
             continue
         # Before the distance test, so an old near station does not hide a
         # current farther one; a report with no readable time is not known
@@ -279,7 +279,7 @@ def nearest_report(lat: float, lon: float, exclude: str | None = None, within_nm
     miles = geo.distance_nm(lat, lon, *(np.array([c[k] for c in current], dtype=float) for k in (2, 3)))
     i = int(np.argmin(miles))
     nm, (ident, report, s_lat, s_lon) = float(miles[i]), current[i]
-    if nm > within_nm:
+    if not nm <= within_nm:  # NaN too: a point with no position has no nearest
         return None
     return {
         "ident": ident,

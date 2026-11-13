@@ -11,9 +11,10 @@ gateway's authorization server.
   refusal turned into words a pilot can act on.
 - records: the pilot's airplanes and flights, asked of the gateway.
 - airport_tools, weather_tools, flight_tools, pilot_tools: the tools, by group.
+
+Nothing is imported here: the generated planner calls
+(app.generated.planner_calls) import app.mcp.calls, and a package that
+imported its server on import made those calls and the tools that use
+them fail to import first on their own (a circular import). app.main
+includes server.router.
 """
-
-from .server import connector_router
-
-#: Included by app.main with the routers (app.mcp.server).
-router = connector_router()

@@ -102,7 +102,8 @@ def test_the_tfrs_unread_are_said_and_nothing_heard_is_nothing_ranked(monkeypatc
 
     monkeypatch.setattr(tfr, "along_route", unavailable)
     body = client.post("/api/notams/ranked", json={"dep": "C81", "dest": "KMSN"}).json()
-    assert body == {"notams": [], "top": 0, "coverage_since": "2025-11-01", "unchecked": ["tfrs"]}
+    # A route's list has no one field's time zone (NotamsRanked.time_zone).
+    assert body == {"notams": [], "top": 0, "coverage_since": "2025-11-01", "unchecked": ["tfrs"], "time_zone": None}
 
 
 def test_each_field_is_timed_round_when_the_flight_is_there():

@@ -166,10 +166,19 @@ def great_circle_points(start: tuple, end: tuple, count: int) -> tuple:
     """`count` points (at least two) evenly along the geodesic from
     start to end, both ends included, as (lats, lons) arrays: each the
     engine's destination from the start on its initial course, as PROJ's
-    inv_intermediate has them. Two points that coincide give `count` of it."""
+    inv_intermediate has them. Two points that coincide give `count` of it.
+
+    The ends are the points given, not the geodesic worked back to them:
+    the direct problem returns its own start a last bit off (47.45 as
+    47.45000000000001), and a route's corner must stay the fix it is, so
+    a path through it (path_points) holds that very point."""
     distance, course = _figure("inverse", start[0], start[1], end[0], end[1])
+    if distance == 0.0:
+        return np.full(max(2, count), float(start[0])), np.full(max(2, count), float(start[1]))
     steps = np.linspace(0.0, distance, max(2, count))
-    return _figure("destination", start[0], start[1], course, steps)
+    lats, lons = _figure("destination", start[0], start[1], course, steps)
+    lats[0], lons[0], lats[-1], lons[-1] = start[0], start[1], end[0], end[1]
+    return lats, lons
 
 
 def path_points(path: list, step_nm: float) -> tuple:
@@ -312,6 +321,16 @@ def _unit_sphere(lat, lon) -> np.ndarray:
     return np.column_stack([np.cos(lat_r) * np.cos(lon_r), np.cos(lat_r) * np.sin(lon_r), np.sin(lat_r)])
 
 
+#: How much longer, at most, the sphere may make the ellipsoid's nearest
+#: than another point: a WGS-84 geodesic is 0.994 (a meridian at the
+#: equator, 110,574 m a degree) to 1.005 (at the pole, 111,694 m) of the
+#: mean sphere's arc (111,195 m a degree; NGA TR8350.2's a and f), so two
+#: arcs' order on the sphere can turn over within 1.1% of each other. A
+#: chord grows no faster than its arc (sin is concave), so the same
+#: ratio on chords keeps every candidate; 2% leaves room.
+SPHERE_SLACK = 1.02
+
+
 def _chord(distance_nm_: float) -> float:
     return 2 * np.sin(distance_nm_ / (2 * EARTH_RADIUS_NM))
 
@@ -320,16 +339,19 @@ def nearest(lat, lon, to_lat, to_lon) -> np.ndarray:
     """For each point, the index of the nearest of the `to` points, the
     first of them where two are as near: what np.argmin of distance_nm
     from every point to every one gives, without the engine asked every
-    pair. The unit vectors' dot products rank them (the nearer, the
-    larger, on the sphere); the engine is asked only between those within
-    rounding of the nearest, so it still decides, and a tie still goes to
-    the first. Route options asked for each cell's distance to every
+    pair. The unit vectors' chords rank them on the sphere; the engine is
+    asked only between those whose chord is within SPHERE_SLACK of the
+    shortest, so it still decides on the ellipsoid, and a tie still goes
+    to the first. Route options asked for each cell's distance to every
     winds-aloft station and each sample of the way to every field: over
     half their second (2026-11-02)."""
     lat, lon = np.asarray(lat, dtype=float).reshape(-1), np.asarray(lon, dtype=float).reshape(-1)
     to_lat, to_lon = np.asarray(to_lat, dtype=float).reshape(-1), np.asarray(to_lon, dtype=float).reshape(-1)
     cosine = _unit_sphere(lat, lon) @ _unit_sphere(to_lat, to_lon).T
-    rows, cols = np.nonzero(cosine >= cosine.max(axis=1, keepdims=True) - 1e-9)
+    # The chord squared, 2 - 2 cos; the absolute 1e-12 covers its rounding
+    # where two points all but coincide (a chord of 1e-6, 0.003 nm).
+    chord2 = np.maximum(2.0 - 2.0 * cosine, 0.0)
+    rows, cols = np.nonzero(chord2 <= chord2.min(axis=1, keepdims=True) * SPHERE_SLACK**2 + 1e-12)
     nm = np.full(cosine.shape, np.inf)
     nm[rows, cols] = distance_nm(lat[rows], lon[rows], to_lat[cols], to_lon[cols])
     return np.argmin(nm, axis=1)

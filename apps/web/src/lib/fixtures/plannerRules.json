@@ -1,5 +1,5 @@
 {
- "_note": "The planner's rules moved into the engine (#482 phase 0): each case's answer is the one the planner's own Python gave before the move (wingtip.airspace_at, wingtip.notams, app.exposure, wingtip.weather, app.gonogo.words), written by it; worstBurnPerNm, fuelStopNeed and patternFlown are app.routers.plan's worst_burn_per_nm, fuel_stops_of's figures and field_pattern_ft (2026-11-09), worked from its code as it was. Since 2026-11-12 fuelStopNeed's figures a mile are over the straight line's length on the WGS-84 ellipsoid (pyproj's Geod(ellps=\"WGS84\"), 492.067 nm from KDLH to KSTL), as the engine's geo has it. engine/facade/tests/planner_rules.rs asks the engine each by name. reportCategory's ceilings of 500 ft and over are asked with 10 sm since 2026-11-08: with the visibility missing they are no category (AIM 7-1-7, one rule with flight_category), as its last case says.",
+ "_note": "The planner's rules moved into the engine (#482 phase 0): each case's answer is the one the planner's own Python gave before the move (wingtip.airspace_at, wingtip.notams, app.exposure, wingtip.weather, app.gonogo.words), written by it; worstBurnPerNm, fuelStopNeed and patternFlown are app.routers.plan's worst_burn_per_nm, fuel_stops_of's figures and field_pattern_ft (2026-11-09), worked from its code as it was. Since 2026-11-12 fuelStopNeed's figures a mile are over the straight line's length on the WGS-84 ellipsoid (pyproj's Geod(ellps=\"WGS84\"), 492.067 nm from KDLH to KSTL), as the engine's geo has it, and modeCVeil's distances to the nearest Class B primary airport are that ellipsoid's too (41.7 N 88.15 W is 18.587 nm from KMDW, 41.9 N 88.4 W 22.503 nm from KORD), none of them across the 30 nm of 14 CFR 91.215(b)(2). engine/facade/tests/planner_rules.rs asks the engine each by name. reportCategory's ceilings of 500 ft and over are asked with 10 sm since 2026-11-08: with the visibility missing they are no category (AIM 7-1-7, one rule with flight_category), as its last case says.",
  "airspaceColumn": [
   {
    "ground_ft": 780.0,
@@ -8283,7 +8283,7 @@
     }
    ],
    "veil": {
-    "distance_nm": 18.5,
+    "distance_nm": 18.6,
     "ident": "KMDW",
     "name": null
    }
@@ -8428,7 +8428,7 @@
     }
    ],
    "veil": {
-    "distance_nm": 22.4,
+    "distance_nm": 22.5,
     "ident": "KORD",
     "name": "CHICAGO O'HARE INTL"
    }

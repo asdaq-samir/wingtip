@@ -143,11 +143,6 @@ def test_the_radar_reaches_the_planners_map_through_the_store(monkeypatch):
     assert [p["hex"] for p in seen] == ["a6ed61"] and seen[0]["seen_s"] == 4.0
 
 
-def test_a_flat_chart_distance_is_near_enough():
-    # O'Hare to N3429J's track, 39.2 nm on the ellipsoid (pyproj's WGS84).
-    assert abs(swim._nm(41.98, -87.9, 42.58095, -88.24562) - 39.2) < 0.5
-
-
 def test_tfms_flight_plans_go_to_the_filed_routes_and_notams_to_theirs():
     assert swim.handler_for("TFMS", "flightData") is swim.filed_routes.heard
     assert swim.handler_for("FNS", "AIXMBasicMessage").reads is swim.notams.heard

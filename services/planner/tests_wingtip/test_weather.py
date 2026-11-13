@@ -286,6 +286,9 @@ def test_a_field_with_no_report_is_given_the_nearest_and_told_whether_it_is_near
         "KNEAR": {"flight_category": "MVFR", "lat": 42.4, "lon": -88.0, "observed_at": now},
         "KFAR": {"flight_category": "VFR", "lat": 42.3, "lon": -88.0 + 12 / 60 / 0.7396, "observed_at": now},
         "KNONE": {"flight_category": "VFR", "lat": None, "lon": None, "observed_at": now},
+        # The METAR table's empty cell, a NaN: argmin took it as the least
+        # and C81's card answered 500 ("cannot convert float NaN to integer").
+        "KNAN": {"flight_category": "VFR", "lat": float("nan"), "lon": float("nan"), "observed_at": now},
     }
     monkeypatch.setattr(weather, "_dataset", lambda name: reports)
     near = weather.nearest_report(42.3, -88.0)

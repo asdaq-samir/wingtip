@@ -119,6 +119,6 @@ def test_scalars_come_back_as_floats():
 def test_intermediate_points_agree_with_proj():
     start, end = (46.8421, -92.1936), (38.7487, -90.37)
     lats, lons = geo.great_circle_points(start, end, 50)
-    want = WGS84.inv_intermediate(start[1], start[0], end[1], end[0], npts=50, initial_idx=0, terminus_idx=0)
+    want = WGS84.inv_intermediate(start[1], start[0], end[1], end[0], npts=50, initial_idx=0, terminus_idx=0, return_back_azimuth=True)
     assert np.allclose(lats, want.lats, atol=1e-9) and np.allclose(lons, want.lons, atol=1e-9)
     assert (lats[0], lons[0]) == pytest.approx(start) and (lats[-1], lons[-1]) == pytest.approx(end, abs=1e-9)

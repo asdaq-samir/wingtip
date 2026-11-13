@@ -57,7 +57,8 @@ from wingtip import (
 from wingtip import airspace_at, congested, cycle_pack, data_cycles, traffic as traffic_store
 from wingtip import airports as airport_table
 
-from . import chart_model, chart_refresh, errors, mcp, openapi_document, tracing
+from . import chart_model, chart_refresh, errors, openapi_document, tracing
+from .mcp import server as mcp
 from .chart_cycle import check as chart_cycle
 from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
@@ -402,9 +403,8 @@ def index() -> Index:
     return Index(service="planner", ui="served by the gateway at /app", warm=WARM.is_set())
 
 
-# Every router, here and not inside another (.importlinter's
-# routers-independent), in the order their paths are matched and the
-# OpenAPI document lists them; a few to a line, as main is at its size.
+# Every router, here and not inside another (.importlinter's routers-independent), in the
+# order their paths are matched and the OpenAPI document lists them; a few to a line.
 ROUTERS = (
     (plan, chart, briefing, notes, devml, system, classb, devservices, airports, airspace_router, traffic, basemaps),
     (route_options, gonogo, figures, clearance, packs, words, weather_map, weather_flow, weather_loop, forecast_run),

@@ -116,3 +116,7 @@ def connector_router() -> APIRouter:
     # routes and its auth middleware see the paths they were made for.
     router.routes.extend(Route(getattr(r, "path"), endpoint=Answered(app)) for r in app.router.routes)
     return router
+
+
+#: Included by app.main with the routers.
+router = connector_router()

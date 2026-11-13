@@ -6,7 +6,7 @@ reason out of an error response (upstream_detail). A plain request to
 an outside source is retried by wingtip.outside's session instead."""
 
 import requests
-from tenacity import Retrying, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
+from tenacity import Retrying, retry_if_exception_type, retry_if_not_exception_type, stop_after_attempt, wait_exponential_jitter
 
 
 def with_retries(
@@ -31,8 +31,9 @@ def with_retries(
     try:
         for attempt in Retrying(
             stop=stop_after_attempt(retries),
-            wait=wait_exponential_jitter(initial=backoff_s, jitter=1.0),
-            retry=retry_if_exception_type(transient) & ~retry_if_exception_type(requests.exceptions.SSLError),
+            wait=wait_exponential_jitter(multiplier=backoff_s, jitter=1.0),
+            # tenacity's conditions combine with & and | but have no ~ (9.2.1).
+            retry=retry_if_exception_type(transient) & retry_if_not_exception_type(requests.exceptions.SSLError),
             reraise=True,
         ):
             with attempt:

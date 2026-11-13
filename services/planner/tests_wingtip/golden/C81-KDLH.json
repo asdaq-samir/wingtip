@@ -9,7 +9,7 @@
     "ete_min": 2.3,
     "fuel_gal": 0.4,
     "groundspeed_kt": 114.4,
-    "magnetic_heading_deg": 341.4,
+    "magnetic_heading_deg": 341.3,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -21,7 +21,7 @@
     "ete_min": 23.6,
     "fuel_gal": 3.4,
     "groundspeed_kt": 111.3,
-    "magnetic_heading_deg": 324.6,
+    "magnetic_heading_deg": 324.5,
     "toc_nm": 1.9,
     "tod_fpm": null,
     "tod_nm": null
@@ -32,8 +32,8 @@
     "distance_nm": 11.2,
     "ete_min": 7.8,
     "fuel_gal": 1.1,
-    "groundspeed_kt": 86.7,
-    "magnetic_heading_deg": 305.2,
+    "groundspeed_kt": 86.6,
+    "magnetic_heading_deg": 305.1,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -45,7 +45,7 @@
     "ete_min": 9.3,
     "fuel_gal": 1.3,
     "groundspeed_kt": 88.2,
-    "magnetic_heading_deg": 307.1,
+    "magnetic_heading_deg": 307.0,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -57,7 +57,7 @@
     "ete_min": 12.6,
     "fuel_gal": 1.8,
     "groundspeed_kt": 88.1,
-    "magnetic_heading_deg": 306.8,
+    "magnetic_heading_deg": 306.7,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -68,8 +68,8 @@
     "distance_nm": 21.0,
     "ete_min": 14.2,
     "fuel_gal": 2.0,
-    "groundspeed_kt": 89.1,
-    "magnetic_heading_deg": 307.9,
+    "groundspeed_kt": 89.0,
+    "magnetic_heading_deg": 307.8,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -77,11 +77,11 @@
    {
     "altitude_ft": 3000.0,
     "climb_min": 0.0,
-    "distance_nm": 16.4,
+    "distance_nm": 16.5,
     "ete_min": 11.4,
     "fuel_gal": 1.6,
-    "groundspeed_kt": 86.7,
-    "magnetic_heading_deg": 304.6,
+    "groundspeed_kt": 86.6,
+    "magnetic_heading_deg": 304.5,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -93,7 +93,7 @@
     "ete_min": 14.7,
     "fuel_gal": 2.1,
     "groundspeed_kt": 83.3,
-    "magnetic_heading_deg": 325.1,
+    "magnetic_heading_deg": 325.0,
     "toc_nm": 1.7,
     "tod_fpm": null,
     "tod_nm": null
@@ -104,8 +104,8 @@
     "distance_nm": 11.9,
     "ete_min": 8.7,
     "fuel_gal": 1.2,
-    "groundspeed_kt": 82.4,
-    "magnetic_heading_deg": 320.4,
+    "groundspeed_kt": 82.3,
+    "magnetic_heading_deg": 320.3,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -117,7 +117,7 @@
     "ete_min": 17.5,
     "fuel_gal": 2.5,
     "groundspeed_kt": 82.9,
-    "magnetic_heading_deg": 323.0,
+    "magnetic_heading_deg": 322.9,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -125,11 +125,11 @@
    {
     "altitude_ft": 10500.0,
     "climb_min": 19.2,
-    "distance_nm": 22.3,
+    "distance_nm": 22.4,
     "ete_min": 21.8,
     "fuel_gal": 3.0,
     "groundspeed_kt": 90.2,
-    "magnetic_heading_deg": 318.6,
+    "magnetic_heading_deg": 318.5,
     "toc_nm": 18.4,
     "tod_fpm": null,
     "tod_nm": null
@@ -140,8 +140,8 @@
     "distance_nm": 26.5,
     "ete_min": 17.6,
     "fuel_gal": 2.5,
-    "groundspeed_kt": 90.3,
-    "magnetic_heading_deg": 318.6,
+    "groundspeed_kt": 90.2,
+    "magnetic_heading_deg": 318.5,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -152,8 +152,8 @@
     "distance_nm": 25.3,
     "ete_min": 18.6,
     "fuel_gal": 2.6,
-    "groundspeed_kt": 81.6,
-    "magnetic_heading_deg": 321.7,
+    "groundspeed_kt": 81.5,
+    "magnetic_heading_deg": 321.6,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -165,7 +165,7 @@
     "ete_min": 9.6,
     "fuel_gal": 1.4,
     "groundspeed_kt": 81.4,
-    "magnetic_heading_deg": 320.8,
+    "magnetic_heading_deg": 320.7,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -173,14 +173,14 @@
    {
     "altitude_ft": 10500.0,
     "climb_min": 0.0,
-    "distance_nm": 31.8,
+    "distance_nm": 31.9,
     "ete_min": 23.4,
     "fuel_gal": 3.3,
-    "groundspeed_kt": 81.6,
+    "groundspeed_kt": 81.5,
     "magnetic_heading_deg": 321.2,
     "toc_nm": null,
     "tod_fpm": 450.0,
-    "tod_nm": 28.1
+    "tod_nm": 28.2
    },
    {
     "altitude_ft": 10500.0,
@@ -189,7 +189,7 @@
     "ete_min": 10.2,
     "fuel_gal": 1.4,
     "groundspeed_kt": 81.0,
-    "magnetic_heading_deg": 318.6,
+    "magnetic_heading_deg": 318.5,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -201,7 +201,7 @@
     "ete_min": 6.3,
     "fuel_gal": 0.9,
     "groundspeed_kt": 82.3,
-    "magnetic_heading_deg": 323.9,
+    "magnetic_heading_deg": 323.8,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -209,7 +209,7 @@
   ],
   "plans": {
    "economical": {
-    "ete_min": 232.9,
+    "ete_min": 233.0,
     "fuel_gal": 32.4,
     "steps": [
      2500.0,
@@ -220,8 +220,8 @@
     ]
    },
    "fastest": {
-    "ete_min": 229.3,
-    "fuel_gal": 32.5,
+    "ete_min": 229.5,
+    "fuel_gal": 32.6,
     "steps": [
      2500.0,
      3000.0,
@@ -230,8 +230,8 @@
     ]
    },
    "highest": {
-    "ete_min": 228.0,
-    "fuel_gal": 31.4,
+    "ete_min": 228.1,
+    "fuel_gal": 31.5,
     "steps": [
      3500.0,
      10500.0,
@@ -241,7 +241,7 @@
     ]
    },
    "lowest": {
-    "ete_min": 235.0,
+    "ete_min": 235.2,
     "fuel_gal": 33.4,
     "steps": [
      2500.0,

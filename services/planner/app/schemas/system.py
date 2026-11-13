@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel
 
+from ..chart_cycle.schemas import NextCycle, PyramidProgress
+from ..feeds.schemas import FeedHealth
 from .common import DataCycle, PickSummary
 
 
@@ -132,32 +134,6 @@ class CorridorStatus(BaseModel):
     notes: int
 
 
-class PyramidPass(BaseModel):
-    """A pass of the charts job's `pyramid` under way: sheets done of
-    the sheets it set out to render, and the one it is on."""
-
-    started_at: str
-    done: int
-    total: int
-    current: str | None
-
-
-class PyramidProgress(BaseModel):
-    """One kind of chart's tile pyramid for a cycle. What finished passes
-    have left -- the sheets rendered, when the last finished, the tiles
-    written -- and the pass under way, if any. `complete` is every sheet
-    the FAA publishes of the kind rendered; `missing` names the rest."""
-
-    kind: str
-    zooms: list[int]
-    sheets: list[str]
-    finished_at: str | None
-    tiles: int
-    current_pass: PyramidPass | None = None
-    complete: bool
-    missing: list[str] = []
-
-
 class ChartsStatus(BaseModel):
     """`cycle` is the edition the map draws; `current_cycle` the one
     the FAA is on. They differ while a newer cycle is being fetched
@@ -223,12 +199,3 @@ class RetrainStarted(BaseModel):
 
     started: bool
     state: str | None
-
-
-# Kept in their own modules and named here only where a model above holds
-# them: imported last, as each imports what it needs from this one.
-from ..chart_cycle.schemas import NextCycle  # noqa: E402
-from ..feeds.schemas import FeedHealth  # noqa: E402
-
-ChartsStatus.model_rebuild()
-Status.model_rebuild()

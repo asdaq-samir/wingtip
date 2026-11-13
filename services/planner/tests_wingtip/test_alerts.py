@@ -14,6 +14,7 @@ import requests
 from shapely.geometry import box
 
 from wingtip import airports, airspace, alerts, elevation, faa_data, sua, tfr, weather_store
+from wingtip.units import M_PER_FT
 
 LAT, LON = 42.0, -88.0
 NOW = datetime(2026, 10, 10, 18, 0, tzinfo=timezone.utc)
@@ -76,7 +77,10 @@ def ahead(monkeypatch):
     # The TFRs as the weather service stores them, read through
     # tfr.with_shapes: its parsed shapes and its box.
     monkeypatch.setattr(tfr, "_record", lambda: weather_store.Record(fetched_at=time.time(), until=None, data=world["tfrs"], meta={}))
-    monkeypatch.setattr(elevation, "ground_m", lambda lat, lon: world["ground_ft"](lat, lon) / 3.28084)
+    # The terrain tiles are in metres: each test's ground in feet, put in
+    # metres by the exact foot alerts takes back out (wingtip.units), not a
+    # rounded 3.28084 that leaves 800 ft as 799.99997.
+    monkeypatch.setattr(elevation, "ground_m", lambda lat, lon: world["ground_ft"](lat, lon) * M_PER_FT)
     monkeypatch.setattr(faa_data, "ensure_nasr_file", lambda name, cache_dir: "DOF.DAT")
     monkeypatch.setattr(faa_data, "load_obstacles", lambda path, bbox, min_agl_ft=0: world["obstacles"])
     monkeypatch.setattr(
