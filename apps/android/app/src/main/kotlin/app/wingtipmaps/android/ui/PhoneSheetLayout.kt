@@ -74,7 +74,9 @@ internal fun PhoneSheetLayout(
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
                 SheetSideButtons(
                     planShown = nav.planShown,
-                    onToggle = if (nav.covered) null else ({ if (nav.planShown) nav.closePlan() else nav.toPlanPage() }),
+                    // In sight with a card open too (the owner, 2026-11-13):
+                    // a tap closes the cards and turns to the other page.
+                    onToggle = nav::togglePage,
                     modifier = Modifier.padding(start = WingtipSpace.Sm),
                 )
                 Spacer(Modifier.weight(1f))

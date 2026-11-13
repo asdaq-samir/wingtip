@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ui
 
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
@@ -191,15 +192,42 @@ class CardRuleTest {
     }
 
     @Test
-    fun emergencyIsFullScreenWithItsCloseInTheAppBar() {
+    fun emergencyIsACardOnTheStackOpenedAtFullHeight() {
+        // The owner, 2026-11-13: every card on the sheet's stack, Emergency
+        // the one opened all the way up, its bar the cards' own.
+        val emergency = Card("Emergency", SheetPage.Emergency, emptyList())
         compose.runOnIdle { EmergencyOpen.open(EmergencyOpen.From.LINK) }
-        val title = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.emergency)
-        compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(hasText(title)).fetchSemanticsNodes().isNotEmpty() }
-        // Full screen: nothing of the sheet's search is reachable under it.
-        compose.onAllNodes(hasContentDescription(close))[0].assertIsDisplayed()
+        compose.waitUntil(TIMEOUT_MS) { shown(emergency) }
+        bar(close).assertIsDisplayed()
+        compose.waitUntil(TIMEOUT_MS) { detent() == "Expanded" }
         back()
-        compose.waitUntil(TIMEOUT_MS) { EmergencyOpen.from.value == null }
+        compose.waitUntil(TIMEOUT_MS) { !shown(emergency) && EmergencyOpen.from.value == null }
     }
+
+    @Test
+    fun theToggleStaysInSightOverACardAndClosesItAsItTurns() {
+        val airport = CARDS.first()
+        open(airport, airport.ways.first())
+        compose.onNode(hasTestTag(PAGE_TOGGLE_TAG)).assertIsDisplayed().performClick()
+        compose.waitUntil(TIMEOUT_MS) { !shown(airport) }
+        // The FPL turned to: the toggle now offers the search back.
+        compose.onNode(hasTestTag(PAGE_TOGGLE_TAG)).assertContentDescriptionEquals(text(R.string.show_search))
+    }
+
+    @Test
+    fun signedOutYouSaysSignInOnce() {
+        // The emulator's app is signed out: the head's Sign In is the
+        // card's one name, with no "You" in its bar and nothing said again
+        // on the rows it greys.
+        val you = CARDS.first { it.page == SheetPage.You }
+        open(you, you.ways.first())
+        val signIn = text(R.string.you_sign_in)
+        compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(hasText(signIn)).fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(1, compose.onAllNodes(hasText(signIn, substring = true)).fetchSemanticsNodes().size)
+        assertEquals(0, compose.onAllNodes(hasText(text(R.string.you)) and hasAnyAncestor(hasTestTag(CardPageTags.BAR))).fetchSemanticsNodes().size)
+    }
+
+    private fun text(id: Int): String = InstrumentationRegistry.getInstrumentation().targetContext.getString(id)
 
     private val close: String get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.close)
     private val back: String get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.back)
@@ -225,6 +253,8 @@ class CardRuleTest {
             // You, the avatar's card.
             Card("You", SheetPage.You, listOf(Way.Tap(SheetPage.You))),
             Card("Brief", SheetPage.Brief, listOf(Way.Link(Screen.BRIEF))),
+            // The Nav Log, a card of its own (the card rule's 3).
+            Card("Nav Log", SheetPage.NavLog, listOf(Way.Link(Screen.NAVLOG))),
             Card("Nearest", SheetPage.Nearest, listOf(Way.Link(Screen.NEAREST), Way.Typed("nearest"))),
             Card("Settings", SheetPage.Settings, listOf(Way.Link(Screen.SETUP), Way.Typed("settings"))),
             Card("About", SheetPage.About, listOf(Way.Link(Screen.ABOUT))),

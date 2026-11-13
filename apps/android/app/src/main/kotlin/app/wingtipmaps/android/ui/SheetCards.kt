@@ -24,7 +24,7 @@ import app.wingtipmaps.android.checklist.ChecklistKind
 import app.wingtipmaps.android.checklist.ChecklistScreen
 import app.wingtipmaps.android.clearance.ClearancePage
 import app.wingtipmaps.android.coach.CoachScreen
-import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.emergency.EmergencyCard
 import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.offline.DownloadsScreen
 import app.wingtipmaps.android.plates.PlateCard
@@ -50,15 +50,14 @@ internal fun SheetCard(
     sheet: SheetNav,
     plan: Plan,
     session: Session,
-    ownShip: OwnShip,
-    ownShipOn: Boolean,
+    ownShip: OwnShipControl,
     assistant: AskScreenModel,
     airports: AirportModel,
     search: SearchControl,
     showPlan: () -> Unit,
 ) {
     val exit = remember(sheet) { CardExit(back = sheet::back, close = sheet::closeAll) }
-    Box(Modifier.fillMaxSize().testTag(page.testId)) { Card(page, sheet, plan, session, ownShip, ownShipOn, assistant, airports, search, showPlan, exit) }
+    Box(Modifier.fillMaxSize().testTag(page.testId)) { Card(page, sheet, plan, session, ownShip, assistant, airports, search, showPlan, exit) }
 }
 
 @Composable
@@ -67,20 +66,20 @@ private fun Card(
     sheet: SheetNav,
     plan: Plan,
     session: Session,
-    ownShip: OwnShip,
-    ownShipOn: Boolean,
+    control: OwnShipControl,
     assistant: AskScreenModel,
     airports: AirportModel,
     search: SearchControl,
     showPlan: () -> Unit,
     exit: CardExit,
 ) {
+    val ownShip = control.ownShip
     when (page) {
         SheetPage.Home, SheetPage.Plan -> {}
         is SheetPage.Airport -> AirportCard(page.ident, plan, exit, onDone = showPlan, model = airports)
         is SheetPage.Airplane -> AirplaneCard(page.at, plan, exit, onFlown = showPlan, onOpen = sheet::push)
         is SheetPage.Thing -> ThingCard(page.pick, plan, exit, onRouted = showPlan)
-        is SheetPage.Leg -> RouteLegCard(page.index, plan, ownShipOn, exit)
+        is SheetPage.Leg -> RouteLegCard(page.index, plan, control.on, exit)
         is SheetPage.Plate -> PlateCard(PlatePick(page.ident, page.procedure), exit)
         SheetPage.MapSettings -> MapCard(exit, open = sheet::push)
         SheetPage.Brief -> BriefPage(plan, session, exit, onSetRoute = showPlan)
@@ -110,6 +109,8 @@ private fun Card(
         }
         SheetPage.YourAirplanes -> YourAirplanesPage(exit)
         SheetPage.Profile -> ProfileCard(plan, exit)
+        SheetPage.NavLog -> NavLogCard(plan, exit, onLeg = { sheet.push(SheetPage.Leg(it)) }, onAddStopAfter = search::addStopAfter)
+        SheetPage.Emergency -> EmergencyCard(plan, control, exit)
         is SheetPage.Checklist -> {
             val kind = ChecklistKind.entries.firstOrNull { it.name == page.kind } ?: ChecklistKind.NORMAL
             Page(stringResource(R.string.checklists_of, page.airplane.uppercase()), exit) { ChecklistScreen(airplane = page.airplane, kind = kind) }

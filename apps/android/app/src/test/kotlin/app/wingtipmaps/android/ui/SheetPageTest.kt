@@ -40,6 +40,8 @@ class SheetPageTest {
         SheetPage.About,
         SheetPage.Clearance,
         SheetPage.Profile,
+        SheetPage.NavLog,
+        SheetPage.Emergency,
         SheetPage.YourAirplanes,
         SheetPage.Checklist("C172", "NORMAL"),
     )
@@ -76,5 +78,10 @@ class SheetPageTest {
         assertEquals(SheetPage.Airport("KOSH").testId, SheetPage.Airport("KMSN").testId)
         assertEquals("card-mapsettings", SheetPage.MapSettings.testId)
         assertEquals(every.size - 4, every.map { it.testId }.toSet().size)
+    }
+
+    @Test
+    fun emergencyAloneOpensAtFullHeight() {
+        assertEquals(listOf(SheetPage.Emergency), every.filter { it.opensFull })
     }
 }

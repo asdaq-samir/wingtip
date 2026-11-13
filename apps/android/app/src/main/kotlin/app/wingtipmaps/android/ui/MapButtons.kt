@@ -157,12 +157,13 @@ fun MapButtons(
  * and under it, nearest the sheet, the round button that turns the
  * sheet's two pages -- no tab bar and no page dots -- showing where a tap
  * goes, as the 3D button does: the route's glyph on Search ("Show flight
- * plan"), the magnifier on FPL ("Show search"); not drawn while a card
- * covers the pages (`onToggle` null). The same Material 3 Expressive
+ * plan"), the magnifier on FPL ("Show search"); in sight while a card
+ * covers the pages too, a tap then closing the cards as it turns them
+ * (SheetNav.togglePage; the owner, 2026-11-13). The same Material 3 Expressive
  * vertical floating toolbar as the right column's.
  */
 @Composable
-fun SheetSideButtons(planShown: Boolean, onToggle: (() -> Unit)?, modifier: Modifier = Modifier) {
+fun SheetSideButtons(planShown: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
     VerticalFloatingToolbar(
         expanded = true,
         modifier = modifier,
@@ -172,15 +173,13 @@ fun SheetSideButtons(planShown: Boolean, onToggle: (() -> Unit)?, modifier: Modi
         expandedShadowElevation = MenuDefaults.ShadowElevation,
     ) {
         ThreeDButton()
-        if (onToggle != null) {
-            Spacer(Modifier.height(WingtipSpace.Sm))
-            FplTipAnchor(showing = !planShown) {
-                FilledTonalIconButton(onClick = onToggle, shapes = IconButtonDefaults.shapes(), modifier = Modifier.testTag(PAGE_TOGGLE_TAG)) {
-                    Icon(
-                        if (planShown) Icons.Filled.Search else WingtipIcons.flightPlan,
-                        contentDescription = stringResource(if (planShown) R.string.show_search else R.string.show_flight_plan),
-                    )
-                }
+        Spacer(Modifier.height(WingtipSpace.Sm))
+        FplTipAnchor(showing = !planShown) {
+            FilledTonalIconButton(onClick = onToggle, shapes = IconButtonDefaults.shapes(), modifier = Modifier.testTag(PAGE_TOGGLE_TAG)) {
+                Icon(
+                    if (planShown) Icons.Filled.Search else WingtipIcons.flightPlan,
+                    contentDescription = stringResource(if (planShown) R.string.show_search else R.string.show_flight_plan),
+                )
             }
         }
     }

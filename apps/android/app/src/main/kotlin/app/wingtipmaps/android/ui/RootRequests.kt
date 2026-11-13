@@ -8,10 +8,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
-import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
-import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.search.SearchControl
 import app.wingtipmaps.android.share.SharedFlightModel
@@ -90,12 +88,9 @@ internal fun RootRequests(
                 search.open()
             }
             is Where.Page -> pages.open(where.page)
-            Where.Emergency -> EmergencyOpen.open(EmergencyOpen.From.LINK)
             Where.None -> {}
         }
-        // The Nav Log is the plan's to scroll to; the strip has no plan page.
-        val inside = screen in OpenScreen.takenInside || (screen == Screen.NAVLOG && !stripLayout)
-        if (!inside) ScreenRequests.take(setOf(screen))
+        if (screen !in OpenScreen.takenInside) ScreenRequests.take(setOf(screen))
     }
 
     val card by CardRequests.wanted.collectAsStateWithLifecycle()

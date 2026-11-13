@@ -13,6 +13,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.airplane.ProfileOpen
+import app.wingtipmaps.android.emergency.EmergencyOpen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
@@ -67,8 +68,13 @@ class SheetNav internal constructor(
      *  comes back to it. It keeps the sheet's height (the owner's decision,
      *  2026-11-10, on the audit's SC-1): only a card shown from the search
      *  or the map brings the sheet to half, so `onShown` is not told of a
-     *  card pushed over another. */
-    fun push(page: SheetPage) = if (page.covers) model.push(page) else show(page)
+     *  card pushed over another -- but for Emergency, which opens at full
+     *  height wherever it is opened from. */
+    fun push(page: SheetPage) {
+        if (!page.covers) return show(page)
+        model.push(page)
+        if (page.opensFull) onShown(page)
+    }
 
     /** A page asked for by its name: on top of the page it was asked from,
      *  else shown as the one card. */
@@ -84,6 +90,15 @@ class SheetNav internal constructor(
      *  it, if any, left as they are. */
     fun closePlan() {
         scope.launch { pager.animateScrollToPage(SEARCH_PAGE) }
+    }
+
+    /** The round toggle under the 3D (SheetSideButtons): every card
+     *  closed, and the carousel turned from the page under them to the
+     *  other (the owner, 2026-11-13: the toggle stays in sight while a
+     *  card is open). */
+    fun togglePage() {
+        closeAll()
+        if (planShown) closePlan() else toPlanPage()
     }
 
     /** The carousel at the plan's page, the cards over it left as they
@@ -110,6 +125,23 @@ fun rememberSheetNav(model: MapViewModel, airports: AirportModel, onShown: (Shee
         val at = profile ?: return@LaunchedEffect
         sheet.open(SheetPage.of(at))
         ProfileOpen.close()
+    }
+    // The emergency assistant asked for from anywhere (EmergencyOpen: flying
+    // mode, the pilot's words, a checklist, You, a link) is a card on the
+    // stack, over the card it was asked from so Back comes back to it; it
+    // stays open, for the map's glide ring and line, while its card is on
+    // the stack, and closes when its card is taken off.
+    val emergency by EmergencyOpen.from.collectAsStateWithLifecycle()
+    LaunchedEffect(emergency) { if (emergency != null && SheetPage.Emergency !in sheet.stack) sheet.open(SheetPage.Emergency) }
+    LaunchedEffect(sheet) {
+        var was = false
+        snapshotFlow { SheetPage.Emergency in sheet.stack }.collect { on ->
+            // Its card brought back with the stack (the process restarted):
+            // the assistant open again with it.
+            if (on && EmergencyOpen.from.value == null) EmergencyOpen.open(EmergencyOpen.From.LINK)
+            if (!on && was) EmergencyOpen.close()
+            was = on
+        }
     }
     return sheet
 }

@@ -10,8 +10,8 @@ import kotlinx.serialization.json.Json
  * the carousel's two pages, the one search and what it shows with nothing
  * typed (Home), and the plan (Plan, the FPL page beside it); over them, one card for a thing -- a field, an airplane, a fix, a
  * VOR, an airspace, traffic, a leg of the route, the Map card --
- * or a page -- the Brief, Nearest, Ask, You, Settings and their pages, a
- * checklist -- each with its name and ← where the search was (CardPage).
+ * or a page -- the Brief, the Nav Log, Nearest, Ask, You, Settings and
+ * their pages, a checklist, Emergency -- each with its name and ← where the search was (CardPage).
  * Each card is a key of the sheet's back stack (MapViewModel), drawn by
  * Navigation 3's NavDisplay (SheetPagesHost) -- on a wide window in the
  * list-detail scene's detail pane -- so the stack outlives a rotation and
@@ -106,6 +106,16 @@ sealed interface SheetPage {
     @Serializable
     data object Profile : SheetPage
 
+    /** The route's legs and totals, a card of its own rather than a part
+     *  of the plan's page (the card rule's 3, the owner, 2026-11-11). */
+    @Serializable
+    data object NavLog : SheetPage
+
+    /** The emergency assistant: on the sheet's stack as every card is,
+     *  the one opened at the sheet's full height (the owner, 2026-11-13). */
+    @Serializable
+    data object Emergency : SheetPage
+
     @Serializable
     data object YourAirplanes : SheetPage
 
@@ -118,6 +128,10 @@ sealed interface SheetPage {
      *  head (or the wide window's detail pane); Home and the plan are the
      *  carousel's pages. */
     val covers: Boolean get() = this != Home && this != Plan
+
+    /** Whether it opens at the sheet's full height rather than at half:
+     *  Emergency alone (the card rule's 2 and 4). */
+    val opensFull: Boolean get() = this == Emergency
 
     /** The card's stable test id, the same whatever opened it (the card
      *  rule's UI tests: "card-airport", "card-settings"). */

@@ -12,7 +12,6 @@
     <string name="airplanes">Airplanes</string>
     <string name="minimums">Minimums</string>
     <string name="training">Training</string>
-    <string name="sign_in_to_use">Sign In to Use</string>
 
     <!-- Settings, in its groups. -->
     <string name="settings_look">Look</string>

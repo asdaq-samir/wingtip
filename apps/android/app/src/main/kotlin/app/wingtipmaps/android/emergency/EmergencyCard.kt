@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.emergency
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -17,21 +16,18 @@ import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.ui.AirplaneModel
 import app.wingtipmaps.android.ui.AirplanePicker
 import app.wingtipmaps.android.ui.OwnShipControl
+import app.wingtipmaps.android.ui.sheet.CardExit
 
 /**
- * Where the emergency assistant opens over the page, and only while it is
- * open (EmergencyOpen): its model follows own ship and asks the planner,
- * so shut it costs nothing. With own ship off it offers to show the
- * position, which the fields are worked out from. Back closes it: the
- * dialog's own Back, and the activity's (a Back that reaches the screen
- * under it, as the nightly CardRuleTest's does), which otherwise went to
- * the sheet and left the assistant open over it.
+ * The emergency assistant's card on the sheet's stack (SheetPage.Emergency,
+ * opened through EmergencyOpen): its model follows own ship and asks the
+ * planner only while the card is up, so shut it costs nothing. With own
+ * ship off it offers to show the position, which the fields are worked out
+ * from. Back and ✕ are the stack's, as every card's (SheetPagesHost).
  */
 @Composable
-fun EmergencyHost(plan: Plan, ownShip: OwnShipControl, model: EmergencyModel = hiltViewModel(), airplanes: AirplaneModel = hiltViewModel(), flight: FlightModel = hiltViewModel()) {
+fun EmergencyCard(plan: Plan, ownShip: OwnShipControl, exit: CardExit, model: EmergencyModel = hiltViewModel(), airplanes: AirplaneModel = hiltViewModel(), flight: FlightModel = hiltViewModel()) {
     val from by EmergencyOpen.from.collectAsStateWithLifecycle()
-    if (from == null) return
-    BackHandler(onBack = EmergencyOpen::close)
     val context = LocalContext.current
     val planned by plan.state.collectAsStateWithLifecycle()
     val fix by ownShip.ownShip.fix.collectAsStateWithLifecycle()
@@ -48,7 +44,7 @@ fun EmergencyHost(plan: Plan, ownShip: OwnShipControl, model: EmergencyModel = h
     // The airplane's track magnetic, the engine's, where it flies a route.
     LaunchedEffect(fix, ownShip.on) { model.took(if (ownShip.on) fix else null, inFlight.progress?.trackMagDeg) }
     EmergencySheet(
-        state, model, onShowPosition = { if (!ownShip.on) ownShip.tap() }, onClose = EmergencyOpen::close,
+        state, model, exit, onShowPosition = { if (!ownShip.on) ownShip.tap() },
         askGlide = { AskFigures(now, "glide") },
     ) {
         // The Airplane page's own picker, here so the emergency stays open.

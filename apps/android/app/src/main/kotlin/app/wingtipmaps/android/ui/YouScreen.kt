@@ -60,8 +60,10 @@ object YouTags {
  * (no name: Add Your Name, opening Pilot Details, whose ← comes back
  * here). Then one segmented list of what is the pilot's, each row a round
  * badge, its name, where it stands and a chevron: Pilot Details,
- * Airplanes, Logbook, Minimums, Training and Emergency; the account's
- * rows greyed signed out, saying why.
+ * Airplanes, Logbook, Minimums, Training and Emergency. Signed out it
+ * says so once (the owner, 2026-11-13): its large line is Sign In, opening
+ * Pilot Details' sign-in, with no "You" over it, and the account's rows
+ * are greyed with nothing more said on each.
  */
 @Composable
 fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
@@ -71,8 +73,9 @@ fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
     val minimums by remember(context) { MinimumsStore.of(context) }.minimums.collectAsStateWithLifecycle()
     val signedIn = pilot != null
+    // Signed out, the head's Sign In is the card's one name.
     CardPage(
-        title = stringResource(R.string.you),
+        title = if (!signedIn && loaded) "" else stringResource(R.string.you),
         exit = exit,
         actions = {
             IconButton(onClick = { open(SheetPage.Settings) }, modifier = Modifier.testTag(YouTags.SETTINGS)) {
@@ -85,17 +88,16 @@ fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Lg),
         ) {
             YouHead(pilot, loaded, onDetails = { open(SheetPage.PilotDetails) })
-            val signedOut = stringResource(R.string.sign_in_to_use)
             val rows = 6
             SettingsGroup {
                 YouRow(Icons.Filled.Person, stringResource(R.string.pilot_details), pilot?.homeBase, 0, rows) { open(SheetPage.PilotDetails) }
                 YouRow(Icons.Filled.Flight, stringResource(R.string.airplanes), tail, 1, rows) { open(SheetPage.YourAirplanes) }
-                YouRow(Icons.AutoMirrored.Filled.MenuBook, stringResource(R.string.logbook), if (signedIn) null else signedOut, 2, rows, enabled = signedIn) {
+                YouRow(Icons.AutoMirrored.Filled.MenuBook, stringResource(R.string.logbook), null, 2, rows, enabled = signedIn) {
                     open(SheetPage.Logbook)
                 }
                 val kept = if (minimums.ceilingFt != null || minimums.visibilitySm != null) Format.ceilingAndVisibility(minimums.ceilingFt, minimums.visibilitySm) else null
                 YouRow(Icons.Filled.VerifiedUser, stringResource(R.string.minimums), kept, 3, rows) { open(SheetPage.Minimums) }
-                YouRow(Icons.Filled.School, stringResource(R.string.training), if (signedIn) null else signedOut, 4, rows, enabled = signedIn) {
+                YouRow(Icons.Filled.School, stringResource(R.string.training), null, 4, rows, enabled = signedIn) {
                     open(SheetPage.Coach)
                 }
                 YouRow(Icons.Filled.Emergency, stringResource(R.string.emergency), null, 5, rows) { EmergencyOpen.open(EmergencyOpen.From.LINK) }

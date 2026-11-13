@@ -9,8 +9,7 @@ import app.wingtipmaps.android.strip.FieldScreen
  * Where each of the app's screens lives (design/screens.json), the one
  * place Android says so (the card rule, the owner, 2026-11-10): the plan,
  * the search itself, a card or a page on the sheet's stack over the
- * search (SheetPage), or the emergency assistant, the one screen of its
- * own. Each `when` is over the generated list, so a screen added there
+ * search (SheetPage), the emergency assistant among them. Each `when` is over the generated list, so a screen added there
  * fails the build here until it opens.
  */
 internal object OpenScreen {
@@ -24,16 +23,14 @@ internal object OpenScreen {
         /** A card or a page over the search. */
         data class Page(val page: SheetPage) : Where
 
-        /** The emergency assistant, full screen. */
-        data object Emergency : Where
-
         /** Opened by its own link's keys (a shared flight), not by name. */
         data object None : Where
     }
 
     fun whereOf(screen: Screen): Where =
         when (screen) {
-            Screen.FPL, Screen.NAVLOG -> Where.Plan
+            Screen.FPL -> Where.Plan
+            Screen.NAVLOG -> Where.Page(SheetPage.NavLog)
             // TODO(claude/carousel-web): Screen.SEARCH, the carousel's Search
             // page (design/screens.json "search"), joins AIRPORT here once
             // that branch's generated screens are merged.
@@ -41,7 +38,7 @@ internal object OpenScreen {
             Screen.BRIEF -> Where.Page(SheetPage.Brief)
             Screen.NEAREST -> Where.Page(SheetPage.Nearest)
             Screen.ASK -> Where.Page(SheetPage.Ask)
-            Screen.EMERGENCY -> Where.Emergency
+            Screen.EMERGENCY -> Where.Page(SheetPage.Emergency)
             // The airplane flown now: its one card, its checklist on the card's stack.
             Screen.AIRPLANE, Screen.CHECKLISTS -> Where.Page(SheetPage.Airplane())
             Screen.SETUP -> Where.Page(SheetPage.Settings)

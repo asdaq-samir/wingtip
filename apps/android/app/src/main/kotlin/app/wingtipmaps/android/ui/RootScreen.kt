@@ -32,7 +32,6 @@ import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.dryrun.DryRun
-import app.wingtipmaps.android.emergency.EmergencyHost
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.logbook.AutoLogbookHost
 import app.wingtipmaps.android.map.MapPick
@@ -73,8 +72,8 @@ import kotlinx.coroutines.launch
  * is Material's standard bottom sheet (MapSheet), at its peek or
  * expanded; Back closes the top card first, then the next, and only with
  * no card open lowers the sheet, then leaves the app, the system's
- * predictive back showing where it goes. Only the emergency assistant is
- * full screen (EmergencyHost).
+ * predictive back showing where it goes. The emergency assistant is a
+ * card too, opened at the sheet's full height (EmergencyCard).
  *
  * @param pending a link opened in the app (MainActivity); `onHandled`
  *   once it has been taken.
@@ -114,7 +113,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     // sheet from the search's peek (the strip's by `map.raised`).
     val pages = rememberSheetNav(map, airports) { page ->
         when {
-            page.covers -> if (!stripLayout) scope.launch { sheet.lower() }
+            // Emergency alone opens at the sheet's full height.
+            page.covers -> if (!stripLayout) scope.launch { if (page.opensFull) sheet.expand() else sheet.lower() }
             stripLayout -> map.raise()
             else -> scope.launch { if (sheet.atPeek) sheet.expand() }
         }
@@ -164,7 +164,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         }
     }
     val cardView: @Composable (SheetPage) -> Unit = { page ->
-        SheetCard(page, pages, plan, session, ownShip.ownShip, ownShip.on, assistant, airports, search, showPlan)
+        SheetCard(page, pages, plan, session, ownShip, assistant, airports, search, showPlan)
     }
     // The phone's sheet (neither the strip, the wide panes nor the fold).
     val sheetLayout = !stripLayout && !wide && fold == null
@@ -188,8 +188,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             plan = {
                 PlanPage(
                     plan, onClose = { pages.closePlan(); RouteHome.shared.backTo(planState.hasPoints)?.let(openField) }, onField = { pages.push(SheetPage.Airport(it)) },
-                    onLeg = { pages.push(SheetPage.Leg(it)) }, onFind = { search.askRouteEnd(plan) }, onAddStop = search::addStop,
-                    onAddStopAfter = search::addStopAfter,
+                    onNavLog = { pages.show(SheetPage.NavLog) }, onFind = { search.askRouteEnd(plan) }, onAddStop = search::addStop,
                 )
             },
             card = cardView,
@@ -240,7 +239,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     map.source?.let { shown -> SourceDialog(shown, onClose = { map.source = null }) }
     // The strip has no plan to edit, so no Snackbar of its own.
     if (!stripLayout) RouteUndoSnackbar(plan, snackbars)
-    EmergencyHost(plan, ownShip)
     SharedFlightHost(shared, plan)
     AirplaneProfileHost(session)
     // A sign-in link, asked before it is followed.

@@ -185,6 +185,19 @@ cards, their gear at the top left of the bar and the close at its right,
 and Settings (`Views/SettingsView`, `SheetPage.settings`) is pushed inside
 the card it was opened from, its Back going back to it.
 
+**On Android every card is on the sheet's own Navigation 3 stack**
+(2026-11-13, the owner: "For phones, just do it natively, but stay
+consistent"; Google Maps' way): `ui/SheetPage` has every card, the Nav Log
+(`ui/NavLogCard`, the legs and totals out of the plan's page) and
+Emergency (`emergency/EmergencyCard`, no longer a full-screen dialog; this
+replaces the table's Emergency cell for Android) among them, each with
+the one `CardPage` bar, opening at half and Emergency alone at full
+(`SheetPage.opensFull`); the round toggle under the 3D stays in sight over
+a card and closes the cards as it turns the page (`SheetNav.togglePage`);
+signed out, You's one name is its Sign In (`ui/YouScreen`). The welcome
+stays Material's modal bottom sheet, questions `AlertDialog`, a task's
+form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
+
 ## 2. The scrolling rule (the owner, 2026-11-10)
 
 1. **The title and ✕ always stay in view.** On the web, owner decision

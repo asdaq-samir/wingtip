@@ -207,7 +207,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     }
     LaunchedEffect(ahead) { flight.hear(ahead) }
     // While the emergency assistant is open, the line from the airplane
-    // to the field it picked (the same model EmergencyHost holds).
+    // to the field it picked (the same model EmergencyCard holds).
     val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()
     // The glide ring off unless the pilot keeps it on, on by itself while
     // the emergency assistant is open (GlideRing); asked of the engine only then.
