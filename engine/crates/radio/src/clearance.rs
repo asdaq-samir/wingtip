@@ -703,13 +703,15 @@ fn is_airway(s: &str) -> bool {
     b.len() >= 2 && b.len() <= 5 && matches!(b[0], b'V' | b'T' | b'J' | b'Q') && b[1..].iter().all(u8::is_ascii_digit)
 }
 
-/// A place found for words said: its ident, none where nothing was.
+/// A place found for words said: its ident and where, none where none was.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Found {
     pub said: String,
     pub ident: Option<String>,
     pub name: Option<String>,
     pub kind: Option<&'static str>,
+    pub lat: Option<f64>,
+    pub lon: Option<f64>,
     pub sure: bool,
 }
 
@@ -894,14 +896,12 @@ pub fn call_pattern(tail: &str) -> Option<String> {
             .join("[\\s,-]*")
     };
     let body = full.strip_prefix('N').unwrap_or(&full);
-    let last = &body[body.len().saturating_sub(3)..];
+    let last = say_chars(&body[body.len().saturating_sub(3)..]);
     let n = say_chars("N");
     let types = TYPE_WORDS.join("|");
     Some(format!(
-        "^\\W*(?:[a-z']+\\W+){{0,{CALL_WITHIN}}}?(?:(?:{n}[\\s,-]*)?{}|{n}[\\s,-]*{}|(?:{types})\\W+{})\\b",
-        say_chars(body),
-        say_chars(last),
-        say_chars(last)
+        "^\\W*(?:[a-z']+\\W+){{0,{CALL_WITHIN}}}?(?:(?:{n}[\\s,-]*)?{}|{n}[\\s,-]*{last}|(?:{types})\\W+{last})\\b",
+        say_chars(body)
     ))
 }
 

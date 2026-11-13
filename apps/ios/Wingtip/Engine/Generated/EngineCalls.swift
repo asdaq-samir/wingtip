@@ -310,6 +310,11 @@ extension Engine {
         try Self.rule("class_b_entered", EngineContract.ClassBEnteredInput(start: start, end: end, altitudeFt: altitudeFt, shelves: shelves))
     }
 
+    /// The places an ATC clearance heard named, found as idents among the places given (the nearest to the route first; nothing is fetched): a navaid by its name ("Gopher" is GEP, NASR NAV_BASE's NAME), a fix said as a word by its sound ("pickla" is PYKLA, offered unsure for the pilot to check), an airport by its name followed by "airport", as AIM 4-4-3 a gives a clearance limit ("cleared to the Duluth airport": an airport and its navaid often share a name), or the field the planner's search found for the limit's name (`limit_airports`), and anything spelled by its ident. Each phrase of the route is its places in order, the longest names first; a word that names nothing is kept, unfound. The SID and STAR by their name and number among the field's own procedures ("Bunyan One departure" is BUNYN1), their transition by its fix's name or sound.
+    static func clearancePlaces(places: [EngineContract.SpokenCandidate], limit: String? = nil, limitAirports: [String: EngineContract.SpokenCandidate]? = nil, route: [String]? = nil, departure: EngineContract.ClearancePlacesInputDeparture? = nil, arrival: EngineContract.ClearancePlacesInputArrival? = nil) throws -> EngineContract.ClearancePlacesAnswer {
+        try Self.rule("clearance_places", EngineContract.ClearancePlacesInput(places: places, limit: limit, limitAirports: limitAirports, route: route, departure: departure, arrival: arrival))
+    }
+
     /// The route a clearance gives, from the words heard, the planner's places found for them (ClearancePlaces) and the route planned.
     static func clearedRoute(text: String, found: EngineContract.ClearedRouteInputFound? = nil, planned: EngineContract.ClearanceRoute) throws -> EngineContract.ClearedRouteAnswer {
         try Self.rule("cleared_route", EngineContract.ClearedRouteInput(text: text, found: found, planned: planned))

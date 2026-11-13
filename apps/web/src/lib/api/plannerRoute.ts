@@ -209,7 +209,7 @@ export const plannerRoute = {
       .POST("/api/checkpoint-notes", { body: { departure_ident: dep, destination_ident: dest, stops, lat, lon, description } })
       .then(data<CheckpointNoteSaved>),
   /** An ATC clearance heard (lib/clearance): the places it named, found
-   *  near the route (wingtip.spoken). */
+   *  near the route (the engine's clearance_places). */
   clearancePlaces: (body: ClearanceAsk) => planner.POST("/api/clearance/places", { body }).then(data<ClearancePlaces>),
 
   /** "When should I go?": the Go / No-Go for each departure hour the

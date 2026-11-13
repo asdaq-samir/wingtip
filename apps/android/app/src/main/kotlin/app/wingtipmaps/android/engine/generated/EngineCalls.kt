@@ -373,6 +373,12 @@ fun Engine.classBEntered(start: List<Double>, end: List<Double>, altitudeFt: Dou
     rule("class_b_entered", EngineContract.ClassBEnteredInput(start = start, end = end, altitudeFt = altitudeFt, shelves = shelves))
 
 /**
+ * The places an ATC clearance heard named, found as idents among the places given (the nearest to the route first; nothing is fetched): a navaid by its name ("Gopher" is GEP, NASR NAV_BASE's NAME), a fix said as a word by its sound ("pickla" is PYKLA, offered unsure for the pilot to check), an airport by its name followed by "airport", as AIM 4-4-3 a gives a clearance limit ("cleared to the Duluth airport": an airport and its navaid often share a name), or the field the planner's search found for the limit's name (`limit_airports`), and anything spelled by its ident. Each phrase of the route is its places in order, the longest names first; a word that names nothing is kept, unfound. The SID and STAR by their name and number among the field's own procedures ("Bunyan One departure" is BUNYN1), their transition by its fix's name or sound.
+ */
+fun Engine.clearancePlaces(places: List<EngineContract.SpokenCandidate>, limit: String? = null, limitAirports: Map<String, EngineContract.SpokenCandidate>? = null, route: List<String>? = null, departure: EngineContract.ClearancePlacesInputDeparture? = null, arrival: EngineContract.ClearancePlacesInputArrival? = null): Result<EngineContract.ClearancePlacesAnswer> =
+    rule("clearance_places", EngineContract.ClearancePlacesInput(places = places, limit = limit, limitAirports = limitAirports, route = route, departure = departure, arrival = arrival))
+
+/**
  * The route a clearance gives, from the words heard, the planner's places found for them (ClearancePlaces) and the route planned.
  */
 fun Engine.clearedRoute(text: String, found: EngineContract.ClearedRouteInputFound? = null, planned: EngineContract.ClearanceRoute): Result<EngineContract.ClearedRouteAnswer> =

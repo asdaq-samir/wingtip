@@ -1,9 +1,11 @@
-//! Places said aloud, found as idents -- wingtip.spoken, here so the native
-//! app finds them in the air with no signal, among the places the phone
-//! keeps: the airports, navaids and fixes of each region it holds a pack
-//! of (crate::pack_query, wingtip.cycle_pack's `write_phone`), the regions its routes
-//! cross. The planner looks nationwide; offline, a place outside the kept
-//! regions is not found, and is said so.
+//! Places said aloud, found as idents, the one matcher: the planner asks
+//! it (`clearance_places`, spoken_ask.rs) with the places it finds near
+//! the route and nationwide, and the native app in the air with no signal
+//! (`hear`) among the places the phone keeps: the airports, navaids and
+//! fixes of each region it holds a pack of (crate::pack_query,
+//! wingtip.cycle_pack's `write_phone`). Offline, a place outside the kept
+//! regions is not found, and is said so. The places are always given:
+//! nothing here fetches them.
 //!
 //! - A navaid by its name: "Gopher" is GEP (NASR NAV_BASE's NAME).
 //! - A fix said as a word, by its sound among those near the route:
@@ -12,7 +14,7 @@
 //! - Anything spelled in the phonetic alphabet by its ident.
 //!
 //! The SIDs and STARs are the CIFP's, which no pack holds: offline they
-//! are shown as said, not found.
+//! are shown as said, not found; the planner gives a field's own.
 
 use crate::clearance::{Found, FoundPlaces};
 use crate::pack::Pack;
@@ -30,7 +32,7 @@ pub struct Place {
 }
 
 /// How alike two sounds must be for a sound-alike fix to be offered.
-const ALIKE: f64 = 0.75;
+pub(crate) const ALIKE: f64 = 0.75;
 
 fn kind_word(w: &str) -> Option<&'static str> {
     Some(match w {
@@ -43,7 +45,7 @@ fn kind_word(w: &str) -> Option<&'static str> {
 
 const FILLER: &[&str] = &["the", "a", "an", "of", "and", "to"];
 
-fn letters_upper(word: &str) -> String {
+pub(crate) fn letters_upper(word: &str) -> String {
     word.to_uppercase().chars().filter(|c| c.is_ascii_uppercase()).collect()
 }
 
@@ -112,53 +114,22 @@ pub fn spelled(word: &str) -> String {
     squeezed
 }
 
-/// difflib.SequenceMatcher(None, a, b).ratio(), for strings this short
-/// (no junk, no popular characters): twice the characters in matching
-/// blocks over both lengths.
+/// How alike two sounds are, 0 to 1: twice the letters they share in
+/// order over both lengths (the `similar` crate's diff ratio, as Python's
+/// difflib gives it but from the longest common subsequence).
 pub fn ratio(a: &str, b: &str) -> f64 {
     let (a, b): (Vec<char>, Vec<char>) = (a.chars().collect(), b.chars().collect());
     let total = a.len() + b.len();
     if total == 0 {
         return 1.0;
     }
-    fn longest(a: &[char], b: &[char], alo: usize, ahi: usize, blo: usize, bhi: usize) -> (usize, usize, usize) {
-        let (mut besti, mut bestj, mut bestsize) = (alo, blo, 0);
-        let mut j2len = vec![0usize; b.len() + 1];
-        for (i, &ac) in a.iter().enumerate().take(ahi).skip(alo) {
-            let mut next = vec![0usize; b.len() + 1];
-            for (j, &bc) in b.iter().enumerate().take(bhi).skip(blo) {
-                if bc == ac {
-                    let k = if j > 0 { j2len[j - 1] } else { 0 } + 1;
-                    next[j] = k;
-                    if k > bestsize {
-                        besti = i + 1 - k;
-                        bestj = j + 1 - k;
-                        bestsize = k;
-                    }
-                }
-            }
-            j2len = next;
-        }
-        (besti, bestj, bestsize)
-    }
-    let mut matched = 0;
-    let mut queue = vec![(0, a.len(), 0, b.len())];
-    while let Some((alo, ahi, blo, bhi)) = queue.pop() {
-        let (i, j, k) = longest(&a, &b, alo, ahi, blo, bhi);
-        if k > 0 {
-            matched += k;
-            if alo < i && blo < j {
-                queue.push((alo, i, blo, j));
-            }
-            if i + k < ahi && j + k < bhi {
-                queue.push((i + k, ahi, j + k, bhi));
-            }
-        }
-    }
-    2.0 * matched as f64 / total as f64
+    let ops = similar::capture_diff_slices(similar::Algorithm::Myers, &a, &b);
+    // Counted here, in f64: similar's own diff_ratio is an f32.
+    let shared: usize = ops.iter().map(|op| if let similar::DiffOp::Equal { len, .. } = op { *len } else { 0 }).sum();
+    2.0 * shared as f64 / total as f64
 }
 
-fn alike(a: &str, b: &str) -> f64 {
+pub(crate) fn alike(a: &str, b: &str) -> f64 {
     ratio(&sound(a), &sound(b))
 }
 
@@ -192,7 +163,15 @@ pub fn name_words(name: &str) -> String {
 }
 
 fn row(said: &str, p: &Place, sure: bool) -> Found {
-    Found { said: said.to_owned(), ident: Some(p.ident.clone()), name: p.name.clone(), kind: Some(p.what), sure }
+    Found {
+        said: said.to_owned(),
+        ident: Some(p.ident.clone()),
+        name: p.name.clone(),
+        kind: Some(p.what),
+        lat: Some(p.lat),
+        lon: Some(p.lon),
+        sure,
+    }
 }
 
 /// The airport an airport's name said is, the nearest first (`places` in
@@ -216,9 +195,11 @@ fn airport_named<'a>(words: &[String], places: &'a [Place]) -> Option<&'a Place>
     None
 }
 
-/// The place `said` names among `places`, the nearest to the route first;
-/// None where nothing is near enough. As wingtip.spoken.point.
-pub fn point(said: &str, places: &[Place]) -> Option<Found> {
+/// The place `said` names among `places`, the nearest to the route first,
+/// or `airport`, the field the planner's search found for an airport's
+/// name said (nationwide, beyond the places near the route); None where
+/// nothing is near enough.
+pub fn point(said: &str, places: &[Place], airport: Option<&Place>) -> Option<Found> {
     let (words, kind) = words_of(said);
     if words.is_empty() {
         return None;
@@ -233,7 +214,7 @@ pub fn point(said: &str, places: &[Place]) -> Option<Found> {
         return Some(row(said, p, true));
     }
     if kind == Some("airport")
-        && let Some(a) = airport_named(&words, places)
+        && let Some(a) = airport.or_else(|| airport_named(&words, places))
     {
         return Some(row(said, a, true));
     }
@@ -242,6 +223,12 @@ pub fn point(said: &str, places: &[Place]) -> Option<Found> {
     }
     if let Some(p) = exact.first() {
         return Some(row(said, p, true));
+    }
+    // An airport's name said short with no "airport": "cleared to Duluth".
+    if let Some(a) =
+        airport.filter(|a| kind.is_none_or(|k| k == "airport") && name_words(a.name.as_deref().unwrap_or("")).starts_with(&spaced))
+    {
+        return Some(row(said, a, true));
     }
     if words.len() != 1 {
         return None;
@@ -260,7 +247,7 @@ pub fn point(said: &str, places: &[Place]) -> Option<Found> {
 }
 
 /// The places a run of words names one after another, the longest names
-/// first; a word that names nothing kept, unfound. As wingtip.spoken.points.
+/// first; a word that names nothing kept, unfound.
 pub fn points(said: &str, places: &[Place]) -> Vec<Found> {
     let (words, _) = words_of(said);
     let mut out = Vec::new();
@@ -268,7 +255,7 @@ pub fn points(said: &str, places: &[Place]) -> Vec<Found> {
     while i < words.len() {
         let mut took = false;
         for j in (i + 1..=words.len()).rev() {
-            if let Some(found) = point(&words[i..j].join(" "), places)
+            if let Some(found) = point(&words[i..j].join(" "), places, None)
                 && (found.sure || j == i + 1)
             {
                 out.push(found);
@@ -289,7 +276,7 @@ pub fn points(said: &str, places: &[Place]) -> Vec<Found> {
 /// run of its route. No SID or STAR: the CIFP is not in a pack.
 pub fn find(limit: Option<&str>, runs: &[&str], places: &[Place]) -> FoundPlaces {
     FoundPlaces {
-        limit: limit.map(|l| point(l, places).unwrap_or(Found { said: l.to_owned(), ..Found::default() })),
+        limit: limit.map(|l| point(l, places, None).unwrap_or(Found { said: l.to_owned(), ..Found::default() })),
         route: runs.iter().map(|r| points(r, places)).collect(),
         departure: None,
         arrival: None,
@@ -379,7 +366,7 @@ pub fn by_nearness(mut places: Vec<Place>, near: &[(f64, f64)]) -> Vec<Place> {
     places
 }
 
-fn found_json(o: &mut String, f: &Found) {
+pub(crate) fn found_json(o: &mut String, f: &Found) {
     o.push_str("{\"said\":");
     json::string(o, &f.said);
     o.push_str(",\"ident\":");
@@ -388,6 +375,10 @@ fn found_json(o: &mut String, f: &Found) {
     json::opt_string(o, f.name.as_deref());
     o.push_str(",\"kind\":");
     json::opt_string(o, f.kind);
+    o.push_str(",\"lat\":");
+    json::opt_number(o, f.lat);
+    o.push_str(",\"lon\":");
+    json::opt_number(o, f.lon);
     o.push_str(if f.sure { ",\"sure\":true}" } else { ",\"sure\":false}" });
 }
 
@@ -466,15 +457,15 @@ pub fn hear(text: &str, tail: Option<&str>, places: Vec<Place>, near: &[(f64, f6
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
-    fn place(ident: &str, name: Option<&str>, what: &'static str, lat: f64, lon: f64) -> Place {
+    pub(crate) fn place(ident: &str, name: Option<&str>, what: &'static str, lat: f64, lon: f64) -> Place {
         Place { ident: ident.into(), name: name.map(Into::into), what, lat, lon }
     }
 
-    /// services/planner/tests_wingtip/test_spoken.py's places, round KMSP and KDLH.
-    fn places() -> Vec<Place> {
+    /// Round KMSP and KDLH, as NASR names them.
+    pub(crate) fn places() -> Vec<Place> {
         vec![
             place("GEP", Some("Gopher"), "navaid", 45.15, -93.37),
             place("DLH", Some("Duluth"), "navaid", 46.80, -92.20),
@@ -498,8 +489,8 @@ mod tests {
     }
 
     #[test]
-    fn ratio_is_difflibs() {
-        // difflib.SequenceMatcher(None, a, b).ratio(), from Python.
+    fn ratio_is_twice_the_shared_letters_over_both_lengths() {
+        // As difflib.SequenceMatcher(None, a, b).ratio() gives these.
         assert!((ratio("PKL", "PKL") - 1.0).abs() < 1e-12);
         assert!((ratio("ABCD", "BCDA") - 0.75).abs() < 1e-12);
         assert!((ratio("PAKLA", "PKLA") - 8.0 / 9.0).abs() < 1e-12);
@@ -508,27 +499,27 @@ mod tests {
 
     #[test]
     fn an_ident_or_a_name_is_found_outright() {
-        assert_eq!(point("GEP", &places()).unwrap().ident.as_deref(), Some("GEP"));
-        let g = point("the Gopher VOR", &places()).unwrap();
+        assert_eq!(point("GEP", &places(), None).unwrap().ident.as_deref(), Some("GEP"));
+        let g = point("the Gopher VOR", &places(), None).unwrap();
         assert_eq!((g.ident.as_deref(), g.kind, g.sure), (Some("GEP"), Some("navaid"), true));
-        assert_eq!(point("Sioux Falls", &places()).unwrap().ident.as_deref(), Some("FSD"));
+        assert_eq!(point("Sioux Falls", &places(), None).unwrap().ident.as_deref(), Some("FSD"));
     }
 
     #[test]
     fn a_fix_said_as_a_word_is_found_by_its_sound_unsure() {
-        let f = point("pickla", &places()).unwrap();
+        let f = point("pickla", &places(), None).unwrap();
         assert_eq!((f.ident.as_deref(), f.sure), (Some("PYKLA"), false));
         let mut more = vec![place("PCKLE", None, "fix", 46.9, -91.9)];
         more.extend(places());
-        assert_eq!(point("pickla", &more).unwrap().ident.as_deref(), Some("PYKLA"));
-        assert!(point("zebra", &places()).is_none());
+        assert_eq!(point("pickla", &more, None).unwrap().ident.as_deref(), Some("PYKLA"));
+        assert!(point("zebra", &places(), None).is_none());
     }
 
     #[test]
     fn airport_after_a_name_is_the_field() {
         // AIM 4-4-3 a: an airport and its navaid often share a name.
-        assert_eq!(point("the Duluth airport", &places()).unwrap().ident.as_deref(), Some("KDLH"));
-        assert_eq!(point("Duluth", &places()).unwrap().ident.as_deref(), Some("DLH"));
+        assert_eq!(point("the Duluth airport", &places(), None).unwrap().ident.as_deref(), Some("KDLH"));
+        assert_eq!(point("Duluth", &places(), None).unwrap().ident.as_deref(), Some("DLH"));
     }
 
     #[test]
@@ -546,8 +537,8 @@ mod tests {
             place("FNT", Some("Flint"), "navaid", 42.97, -83.74),
             place("LVZ", Some("Wilkes-Barre"), "navaid", 41.27, -75.69),
         ];
-        assert_eq!(point("Flint", &p).unwrap().ident.as_deref(), Some("FNT"));
-        assert_eq!(point("flint intersection", &p).unwrap().ident.as_deref(), Some("FLINT"));
+        assert_eq!(point("Flint", &p, None).unwrap().ident.as_deref(), Some("FNT"));
+        assert_eq!(point("flint intersection", &p, None).unwrap().ident.as_deref(), Some("FLINT"));
         let idents: Vec<_> = points("Wilkes Barre Flint", &p).into_iter().map(|f| f.ident).collect();
         assert_eq!(idents, vec![Some("LVZ".into()), Some("FNT".into())]);
     }

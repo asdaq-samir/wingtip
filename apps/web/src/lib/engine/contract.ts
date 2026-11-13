@@ -1460,6 +1460,13 @@ export interface EngineContract {
     answer: boolean;
   };
   /**
+   * The places an ATC clearance heard named, found as idents among the places given (the nearest to the route first; nothing is fetched): a navaid by its name ("Gopher" is GEP, NASR NAV_BASE's NAME), a fix said as a word by its sound ("pickla" is PYKLA, offered unsure for the pilot to check), an airport by its name followed by "airport", as AIM 4-4-3 a gives a clearance limit ("cleared to the Duluth airport": an airport and its navaid often share a name), or the field the planner's search found for the limit's name (`limit_airports`), and anything spelled by its ident. Each phrase of the route is its places in order, the longest names first; a word that names nothing is kept, unfound. The SID and STAR by their name and number among the field's own procedures ("Bunyan One departure" is BUNYN1), their transition by its fix's name or sound.
+   */
+  clearance_places: {
+    input: ClearancePlacesInput;
+    answer: ClearancePlacesAnswer;
+  };
+  /**
    * The route a clearance gives, from the words heard, the planner's places found for them (ClearancePlaces) and the route planned.
    */
   cleared_route: {
@@ -5110,15 +5117,87 @@ export interface ClassBEnteredInput {
   altitude_ft: number;
   shelves?: ClassBShelf[] | null;
 }
-export interface ClearedRouteInput {
-  text: string;
-  found?: {
-    limit?: ClearanceFound | null;
-    route?: ClearanceFound[][];
-    departure?: ClearanceFoundProcedure | null;
-    arrival?: ClearanceFoundProcedure | null;
+export interface ClearancePlacesInput {
+  places: SpokenCandidate[];
+  limit?: string | null;
+  /**
+   * The field the planner's airport search found for each run of the limit's words, by the run in capitals ("DULUTH"): the one for the longest run is the limit where it is said with "airport", or where its name starts with every word said.
+   */
+  limit_airports?: {
+    [k: string]: SpokenCandidate;
+  };
+  route?: string[];
+  departure?: {
+    /**
+     * The name said: "Bunyan", or the navaid's a procedure is named for, "Gopher".
+     */
+    name: string;
+    number: string;
+    /**
+     * The transition's words, where one was said.
+     */
+    transition?: string | null;
+    /**
+     * The field's own procedures, as the CIFP codes them.
+     */
+    procedures: {
+      /**
+       * "BUNYN1": the name's letters and the number.
+       */
+      id: string;
+      kind: "departure" | "arrival" | "approach";
+      transitions?: string[];
+    }[];
   } | null;
-  planned: ClearanceRoute;
+  arrival?: {
+    /**
+     * The name said: "Bunyan", or the navaid's a procedure is named for, "Gopher".
+     */
+    name: string;
+    number: string;
+    /**
+     * The transition's words, where one was said.
+     */
+    transition?: string | null;
+    /**
+     * The field's own procedures, as the CIFP codes them.
+     */
+    procedures: {
+      /**
+       * "BUNYN1": the name's letters and the number.
+       */
+      id: string;
+      kind: "departure" | "arrival" | "approach";
+      transitions?: string[];
+    }[];
+  } | null;
+}
+/**
+ * A place a clearance may name, as the planner or a phone's pack holds it: an airport, a navaid (NASR NAV_BASE, by its NAME) or a fix (no name).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "SpokenCandidate".
+ */
+export interface SpokenCandidate {
+  ident: string;
+  name?: string | null;
+  what: "airport" | "navaid" | "fix";
+  lat: number;
+  lon: number;
+}
+export interface ClearancePlacesAnswer {
+  limit: ClearanceFound | null;
+  route: ClearanceFound[][];
+  departure: {
+    id: string;
+    transition: string | null;
+    sure: boolean;
+  } | null;
+  arrival: {
+    id: string;
+    transition: string | null;
+    sure: boolean;
+  } | null;
 }
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema
@@ -5133,9 +5212,24 @@ export interface ClearanceFound {
    */
   kind?: "airport" | "navaid" | "fix" | null;
   /**
+   * Where it is, where it was found.
+   */
+  lat?: number | null;
+  lon?: number | null;
+  /**
    * True where left out.
    */
   sure?: boolean | null;
+}
+export interface ClearedRouteInput {
+  text: string;
+  found?: {
+    limit?: ClearanceFound | null;
+    route?: ClearanceFound[][];
+    departure?: ClearanceFoundProcedure | null;
+    arrival?: ClearanceFoundProcedure | null;
+  } | null;
+  planned: ClearanceRoute;
 }
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema

@@ -27,6 +27,8 @@ fn found(v: &Value) -> Found {
             Some("fix") => Some("fix"),
             _ => None,
         },
+        lat: v["lat"].as_f64(),
+        lon: v["lon"].as_f64(),
         sure: v["sure"].as_bool().unwrap_or(true),
     }
 }

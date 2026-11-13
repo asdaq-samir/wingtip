@@ -22,8 +22,8 @@ LISTED = {
 def _near_route(monkeypatch):
     monkeypatch.setattr(clearance, "_places", lambda near: PLACES)
     monkeypatch.setattr(clearance, "_exact", lambda said, near: [])
-    duluth = {"ident": "KDLH", "name": "Duluth International Airport", "lat": 46.84, "lon": -92.19}
-    monkeypatch.setattr(clearance, "_airport", lambda said, near: duluth)
+    duluth = {"ident": "KDLH", "name": "Duluth International Airport", "what": "airport", "lat": 46.84, "lon": -92.19}
+    monkeypatch.setattr(clearance, "_airports", lambda said, near: {"DULUTH": duluth})
     monkeypatch.setattr(clearance.procedures, "procedures_at", lambda ident: LISTED)
 
 
@@ -41,8 +41,9 @@ def test_the_limit_route_and_sid_said_are_found_as_idents(monkeypatch):
     assert found["limit"]["ident"] == "KDLH"
     assert [[p["ident"] for p in run] for run in found["route"]] == [["GEP"], ["PYKLA", None]]
     assert found["route"][1][0]["sure"] is False
-    # Among the field's own SIDs of that number, one sound alike is the one.
-    assert found["departure"] == {"id": "BUNYN1", "transition": "DLH", "sure": True}
+    # Among the field's own SIDs of that number, one sound alike is the
+    # one, offered unsure for the pilot to check, as a fix by its sound is.
+    assert found["departure"] == {"id": "BUNYN1", "transition": "DLH", "sure": False}
 
 
 class _Response:
