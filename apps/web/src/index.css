@@ -300,7 +300,7 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* The chart at night (Settings' "Chart at night", lib/preferences
+/* The chart at night (Setup's Appearance, Dark + Dimmed, lib/preferences
    chartNight): its tiles alone are dimmed, by the map's own raster paint
    (lib/map/gl/glStyle chartPaint, the brightness and contrast these tiles
    had here as a CSS filter). Where a tile is not in yet, the night's

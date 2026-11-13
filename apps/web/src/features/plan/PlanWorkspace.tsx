@@ -75,6 +75,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     routePoints,
     routed,
     setLoad,
+    setRouteEdit,
     setPointAltitude,
   } = vm.route;
   const {
@@ -406,6 +407,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
       onNavLog={card === undefined && routed && course ? openNavLogCard : undefined}
       onClear={card === undefined ? vm.routeList.clearRoute : undefined}
+      showRouteAs={card === undefined ? { value: routeEdit, onChange: setRouteEdit } : undefined}
     />
   );
 

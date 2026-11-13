@@ -47,7 +47,8 @@ export type OverlayStrength = "faint" | "half" | "full";
 export type NavEdge = "top" | "bottom";
 
 /** The FAA chart in the dark theme: as printed, or dimmed for night
- *  vision (index.css's chart-tiles). */
+ *  vision (index.css's chart-tiles). Set by Setup's Appearance (Dark is
+ *  as printed, Dark + Dimmed dimmed; QuickControls). */
 export type ChartNight = "normal" | "dimmed";
 /** The chart in bright sunlight (lib/sunlight): its tiles at higher
  *  contrast, the course and the sheets solid white with black figures.
@@ -75,7 +76,8 @@ export type FlightRules = "vfr" | "ifr";
  *  route's box folded to one line, a tap opening it again (A); `plan`, no
  *  box, the route's name over the plan, whose rows are dragged and added
  *  to (B); both folded from the start, no route yet too, the box opened
- *  from the head. In Setup's Layout. */
+ *  from the head. In the route's ••• menu, Show Route As (ShowRouteAs),
+ *  Setup's Layout until 2026-11-13. */
 export type RouteEdit = "box" | "folded" | "plan";
 
 /** The stock Cessna 172 as a pilot picks it, and as the demo flight

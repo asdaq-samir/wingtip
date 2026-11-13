@@ -1,16 +1,16 @@
 import type { ReactNode } from "react";
-import { ChevronsUpDown, ListOrdered, Rows2, Monitor, Moon, Palette, PanelBottom, PanelTop, Route, Sun } from "lucide-react";
+import { ChevronsUpDown, Monitor, Moon, MoonStar, Palette, PanelBottom, PanelTop, Sun, SunDim, SunMedium } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "cn";
 import PullDown, { type PullDownOption } from "./PullDown";
-import { usePreferences, type Brand, type NavEdge, type RouteEdit } from "../lib/preferences";
+import { usePreferences, type Brand, type ChartLight, type ChartNight, type NavEdge } from "../lib/preferences";
 import { BRANDS } from "../lib/brand";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { TEXT } from "../lib/text";
 
 /**
- * Setup's Controls, the only home of the four things a pilot changes in
- * the cockpit, at the owner's split (2026-10-27): "Controls can be alerts,
+ * Setup's Layout, once Controls, the home of the four things a pilot
+ * changes in the cockpit, at the owner's split (2026-10-27): "Controls can be alerts,
  * offline, layout, theme", everything else in the map's menu, and no
  * Settings page; App Look in Offline's place since (the owner, the same
  * day), the charts kept offline in the map's menu. Four big tiles, as iOS's Control Center lays its out, at
@@ -20,40 +20,50 @@ import { TEXT } from "../lib/text";
  * is -- not a cycle a pilot cannot foresee; Offline is on or off.
  *
  * Traffic went to the map's menu, a layer of the map's, and Dark became
- * Theme, keeping System, which a Dark switch could not say. Since
- * 2026-11-05 FPL in Alerts' place, how its route is changed once it is
- * whole, and the alerts in the map's menu (MapSettings), at the owner's
- * ask ("Instead of alerts we can have fpl, and alerts can go to overlay
- * settings"); the section named Layout, as the owner renamed it.
+ * Theme, keeping System, which a Dark switch could not say. The alerts
+ * went to the map's menu (MapSettings) on 2026-11-05, FPL taking their
+ * place; on 2026-11-13 the owner put Sunlight in FPL's place and FPL's
+ * layout on the page it changes: how FPL shows its route is its route's
+ * ••• menu's Show Route As (ShowRouteAs), at the owner's ask ("I want to
+ * move fpl layout to the fpl page"). The same day Appearance took in the
+ * map settings' Chart at Night as a fourth pick, Dark + Dimmed.
  */
 export default function QuickControls() {
   const brand = usePreferences((s) => s.brand);
   const setBrand = usePreferences((s) => s.setBrand);
   const setNavBar = usePreferences((s) => s.setNavBar);
-  const routeEdit = usePreferences((s) => s.routeEdit);
-  const setRouteEdit = usePreferences((s) => s.setRouteEdit);
+  const chartLight = usePreferences((s) => s.chartLight);
+  const setChartLight = usePreferences((s) => s.setChartLight);
   const edge = useNavEdge();
   const { theme, setTheme } = useTheme();
-  const picked = theme === "light" || theme === "dark" ? theme : "system";
+  const chartNight = usePreferences((s) => s.chartNight);
+  const setChartNight = usePreferences((s) => s.setChartNight);
+  // The Appearance's pick, read from the two settings it sets (no third):
+  // the page's theme, and in the dark the chart dimmed or as printed.
+  const picked: Appearance = theme === "light" ? "light" : theme === "dark" ? (chartNight === "dimmed" ? "dark-dimmed" : "dark") : "system";
+  const pickAppearance = (appearance: Appearance) => {
+    const [mode, night] = APPEARANCES[appearance];
+    setTheme(mode);
+    setChartNight(night);
+  };
   return (
     <>
       <div className="grid grid-cols-2 gap-2" data-testid="quick-controls">
-        {/* How FPL's route is changed once it is whole (lib/preferences
-          RouteEdit), at the owner's asks ("I want to have a toggle between
-          A and B in settings"; "Instead of alerts we can have fpl",
-          2026-11-05): its box as it was, folded to one line, or the
-          plan's own rows. */}
-        <MenuTile<RouteEdit>
-          label="FPL"
-          value={routeEdit}
-          onChange={setRouteEdit}
-          on={false}
-          testId="route-edit-select"
-          icon={routeEdit === "plan" ? <ListOrdered /> : routeEdit === "folded" ? <Rows2 /> : <Route />}
+        {/* The chart in bright sunlight (lib/sunlight): from the phone's
+          light sensor where the browser has one, or by hand -- in the
+          cockpit, where a pilot needs it at a tap. Its mark in the tint
+          while On, as Control Center's tiles show theirs. */}
+        <MenuTile<ChartLight>
+          label="Sunlight"
+          value={chartLight}
+          onChange={setChartLight}
+          on={chartLight === "on"}
+          testId="sunlight-select"
+          icon={chartLight === "on" ? <Sun /> : chartLight === "off" ? <SunDim /> : <SunMedium />}
           options={[
-            { value: "box", label: "Route Box", testId: "route-edit-box" },
-            { value: "folded", label: "Route Line", testId: "route-edit-folded" },
-            { value: "plan", label: "Route Cards", testId: "route-edit-plan" },
+            { value: "auto", label: "Auto", testId: "sunlight-auto" },
+            { value: "on", label: "On", testId: "sunlight-on" },
+            { value: "off", label: "Off", testId: "sunlight-off" },
           ]}
         />
         {/* The app's look, Wingtip, Glass Cockpit, Chart ink or Native (lib/brand), its Theme, where
@@ -89,24 +99,41 @@ export default function QuickControls() {
         {/* Light or dark, Appearance as iOS names it (Display & Brightness),
           next-themes keeping it and following the phone on System: a
           pilot planning at night wants the page as dim as the panel
-          lights. */}
-        <MenuTile<"system" | "light" | "dark">
+          lights. Dark + Dimmed folds in the map settings' Chart at Night
+          (the owner, 2026-11-13): the chart's tiles dimmed too, for
+          night vision (APPEARANCES). */}
+        <MenuTile<Appearance>
           label="Appearance"
           value={picked}
-          onChange={setTheme}
+          onChange={pickAppearance}
           on={false}
           testId="theme-select"
-          icon={picked === "dark" ? <Moon /> : picked === "light" ? <Sun /> : <Monitor />}
+          icon={picked === "dark-dimmed" ? <MoonStar /> : picked === "dark" ? <Moon /> : picked === "light" ? <Sun /> : <Monitor />}
           options={[
             { value: "system", label: "System", testId: "theme-system" },
             { value: "light", label: "Light", testId: "theme-light" },
             { value: "dark", label: "Dark", testId: "theme-dark" },
+            { value: "dark-dimmed", label: "Dark + Dimmed", testId: "theme-dark-dimmed" },
           ]}
         />
       </div>
     </>
   );
 }
+
+type Appearance = "system" | "light" | "dark" | "dark-dimmed";
+
+/** What each Appearance sets: the page's theme (next-themes) and the chart
+ *  at night (lib/preferences chartNight, read only while the page is
+ *  dark). System and Light leave the chart dimmed for the dark, as the
+ *  phone's own dark at night has it by default; Dark is the chart as
+ *  printed, Dark + Dimmed its tiles dimmed. */
+const APPEARANCES: Record<Appearance, [theme: "system" | "light" | "dark", night: ChartNight]> = {
+  system: ["system", "dimmed"],
+  light: ["light", "dimmed"],
+  dark: ["dark", "normal"],
+  "dark-dimmed": ["dark", "dimmed"],
+};
 
 /** A control's tile: a rounded card, its mark at the left, its name over
  *  its setting. Its own height is past 44, so it needs no area of its

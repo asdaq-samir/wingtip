@@ -32,6 +32,8 @@ export function usePlanRoute() {
   // How the route is changed once it has a destination (RouteEdit): its
   // box folded to a line, or the plan's own rows under the route's name.
   const routeEdit = usePreferences((p) => p.routeEdit);
+  // Changed from the route's ••• menu (ShowRouteAs).
+  const setRouteEdit = usePreferences((p) => p.setRouteEdit);
   // Every change of the plan can be taken back (Undo, Cmd-Z), whichever
   // button made it, in place of asking first.
   usePlanHistory(address, setAddress);
@@ -181,6 +183,7 @@ export function usePlanRoute() {
     setAddress,
     engine,
     routeEdit,
+    setRouteEdit,
     planned,
     routePoints,
     // The route the selected point was picked on (useLegSheet).
