@@ -508,7 +508,9 @@ a glass circle of its own the size of the 3D and microphone circles (a
 out to the glass's edge, never grown. On a phone it is the last of the
 left-hand column (`MapControls`), so on a bottom sheet it rides the
 sheet's top through `OnSheetTop`, 8 under the 3D circle and level with
-the map's buttons' group at the right; the radio's button is then a
+the map's buttons' group at the right; the radio's button, drawn only
+while Comms Assist is on (a Map Settings switch in More, `comms-assist-toggle`,
+off by default; the owner, 2026-11-13), is then a
 circle of its own over that group, as from md up, its listening pill
 widening to the left across the screen less its margins (in flight its
 circle grown to 60 over NRST, D→ and the arrow). Beside the side panel

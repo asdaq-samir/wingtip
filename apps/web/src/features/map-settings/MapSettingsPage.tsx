@@ -3,6 +3,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import PullDown from "../../components/PullDown";
 import Segmented from "../../components/Segmented";
 import SwitchRow from "../../components/SwitchRow";
+import { setCommsAssist, useCommsAssist } from "../../lib/atc/commsAssist";
 import { ALERT_MODES, useAlertMode } from "../../components/alertMode";
 import GlideRingRow from "./GlideRingRow";
 import { GoogleProblem } from "./MapCard";
@@ -147,6 +148,7 @@ function OnTheMapGroup() {
 function MoreGroup() {
   const prefs = usePreferences();
   const [alertMode] = useAlertMode();
+  const commsAssist = useCommsAssist((s) => s.value);
   return (
     <ListGroup title="More">
       {/* The in-flight alerts, the copilot and the ATC copilot, a page of
@@ -170,6 +172,9 @@ function MoreGroup() {
         disabled={!keepingAvailable()}
         testId="keep-offline-toggle"
       />
+      {/* The radio's button on the map is off until turned on: comms assist
+          is kept but not in the way (the owner, 2026-11-13). */}
+      <SwitchRow title="Comms Assist" on={commsAssist} onChange={setCommsAssist} testId="comms-assist-toggle" />
       {/* Where the map's data comes from and how old it is (MapSourcesPage). */}
       <ListRow title="Sources" chevron onClick={() => openMapPage("sources")} data-testid="sources-row" />
     </ListGroup>

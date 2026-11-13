@@ -4,6 +4,7 @@ import { useFlying } from "../../lib/mapChrome";
 import { useLatestAtcCall } from "../../lib/atc/latestCall";
 import { useAtcListen } from "../../lib/atc/listenSetting";
 import { listenOnce, startRadio, stopRadio } from "../../lib/atcListening";
+import { useCommsAssist } from "../../lib/atc/commsAssist";
 import { useAtcRadio, useRadioActions } from "../../lib/atcRadio";
 import { useCanListen } from "../../lib/speechLocal";
 import { callPattern } from "../../lib/heardCall";
@@ -85,7 +86,9 @@ export function useAtcCopilot(): AtcCopilot {
   // The copilot listens or is not there: where the browser has no
   // recognizer it is off, whatever the setting says.
   const voice = useCanListen();
-  const on = useAtcListen((s) => s.value === "flying") && voice;
+  // Comms Assist is a Map Settings switch, off until turned on (the owner, 2026-11-13).
+  const commsAssist = useCommsAssist((s) => s.value);
+  const on = useAtcListen((s) => s.value === "flying") && voice && commsAssist;
   const flying = useFlying((s) => s.flying);
   const tail = useAtcRadio((s) => s.tail);
   const listening = useAtcRadio((s) => s.listening);
