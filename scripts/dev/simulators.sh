@@ -27,10 +27,10 @@
 #   `am start`. The emulator's localhost is not the Mac's, so `adb reverse`
 #   maps its 8443 to the Mac's: the host stays "localhost", a name the
 #   server certificate holds (make-certs.sh: DNS:localhost); 10.0.2.2
-#   would not match it. The app trusts system authorities only (no
-#   network security config, targetSdk 37), so the authority goes into the
-#   system store, which needs an emulator image `adb root` can open
-#   (Google APIs, not Google Play); on a Play image the script says so.
+#   would not match it. The debug build trusts ca.pem itself: Gradle copies
+#   it into the debug variant's resources and a network security config
+#   (`<debug-overrides>`, apps/android/app/build.gradle.kts) trusts it, so
+#   the stock Google Play emulator image works, no `adb root`.
 #
 # Each heavy build takes a turn of one-at-a-time.sh (CLAUDE.md). Nothing is
 # built or booted until the stack answers and the certificate exists. A
@@ -166,39 +166,6 @@ make_avd() {
   echo wingtip-phone
 }
 
-# The authority into the emulator's system store, for the app trusts system
-# authorities only. Needs `adb root` (a Google APIs image). The tmpfs over
-# the store and the bind into the conscrypt apex are the known way on Android
-# 14 and later; not yet run here, so a failure says so rather than stops.
-trust_system() {
-  local serial=$1 hash
-  hash=$(openssl x509 -in "$ca" -noout -subject_hash_old 2>/dev/null || docker run --rm -i alpine/openssl x509 -noout -subject_hash_old <"$ca")
-  if ! "$adb" -s "$serial" root 2>&1 | grep -qE "restarting adbd as root|already running as root"; then
-    say "Android: this image is not rootable (Google Play), so the local authority cannot go into the system store and the app will not trust https://$host."
-    say "  Next step: make an AVD on a Google APIs arm64 image (sdkmanager \"system-images;android-37.0;google_apis;arm64-v8a\"), or add a debug network security config to the app (a phone-file change)."
-    return 0
-  fi
-  wait_until 30 "adb after root" "$adb" -s "$serial" get-state
-  "$adb" -s "$serial" push "$ca" "/data/local/tmp/$hash.0" >/dev/null
-  {
-    echo "H=/data/local/tmp/$hash.0"
-    cat <<'EOF'
-set -e
-mkdir -p -m 700 /data/local/tmp/tmp-ca
-cp /apex/com.android.conscrypt/cacerts/* /data/local/tmp/tmp-ca/
-mount -t tmpfs tmpfs /system/etc/security/cacerts
-mv /data/local/tmp/tmp-ca/* /system/etc/security/cacerts/
-mv "$H" /system/etc/security/cacerts/
-chown root:root /system/etc/security/cacerts/*
-chmod 644 /system/etc/security/cacerts/*
-chcon u:object_r:system_file:s0 /system/etc/security/cacerts/*
-for z in $(pidof zygote) $(pidof zygote64); do
-  nsenter --mount=/proc/$z/ns/mnt -- /bin/mount --bind /system/etc/security/cacerts /apex/com.android.conscrypt/cacerts
-done
-EOF
-  } | "$adb" -s "$serial" shell sh || say "Android: putting the authority in the system store failed; the app may not trust the stack."
-}
-
 android() {
   [ -x "$adb" ] || die "no adb at $adb. Set ANDROID_HOME, or install the SDK's platform-tools (Android Studio > SDK Manager)."
   [ -x "$emu" ] || die "no emulator at $emu. Install it: Android Studio > SDK Manager > SDK Tools > Android Emulator."
@@ -232,10 +199,9 @@ android() {
   # The emulator's localhost:8443 is the Mac's, and "localhost" is a name the
   # server certificate holds.
   "$adb" -s "$serial" reverse tcp:8443 tcp:8443 >/dev/null
-  trust_system "$serial"
 
   # WINGTIP_HOST is read by build.gradle.kts before its gradle property.
-  WINGTIP_HOST=$host "$turn" "simulators: Android app" bash -c 'cd "$1/apps/android" && ./gradlew --quiet installDebug' _ "$tree"
+  WINGTIP_HOST=$host "$turn" "simulators: Android app" bash -c 'cd "$1/apps/android" && ./gradlew --quiet installDebug -PwingtipLocalCa="$2"' _ "$tree" "$ca"
   local appid
   appid=$(sed -n 's/.*"\(app\.wingtipmaps\.android\.native\)".*/\1/p' "$tree/apps/android/app/build.gradle.kts" | head -1)
   appid=${appid:-app.wingtipmaps.android.native}

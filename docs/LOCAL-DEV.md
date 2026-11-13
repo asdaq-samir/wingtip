@@ -183,9 +183,13 @@ missing, or there is no simulator runtime, AVD or system image.
   simulator with `xcrun simctl keychain <udid> add-root-cert`.
 - **Android:** the host is `WINGTIP_HOST` for Gradle (`BuildConfig`);
   `adb reverse tcp:8443 tcp:8443` makes the emulator's `localhost` the
-  Mac's, a name the server certificate holds (`10.0.2.2` is not in it). The
-  app trusts system authorities only, so the authority is put in the system
-  store, which needs `adb root`: a Google APIs image, not Google Play.
+  Mac's, a name the server certificate holds (`10.0.2.2` is not in it).
+  The debug build trusts the authority itself: Gradle copies
+  `infra/local-https/certs/ca.pem` (or the `wingtipLocalCa` property's file)
+  into the debug variant's resources and a network security config
+  (`<debug-overrides>`) trusts it beside the system store, so the stock Play
+  Store image works with no `adb root`. The release build is unchanged, and
+  a build without the certificate (CI's) is the platform's default.
 
 ## The jobs and on-demand services
 

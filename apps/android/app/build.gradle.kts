@@ -292,3 +292,61 @@ baselineProfile {
     mergeIntoMain = true
     automaticGenerationDuringBuild = false
 }
+
+// The local authority, debug builds only. The app trusts system
+// authorities, which the stack's own (infra/local-https/make-certs.sh,
+// docs/LOCAL-DEV.md) is not in, so a debug build that talks to the local
+// stack on an emulator trusts it too: Android's "Network security
+// configuration" (developer.android.com/privacy-and-security/security-config),
+// `<debug-overrides>`: "trust-anchors ... only when android:debuggable is
+// true", added to the system's, with a certificate from `@raw/…`. The
+// release build has neither the file nor the attribute (src/debug's
+// manifest is merged into debug only). The certificate is never committed:
+// it is copied from infra/local-https/certs/ca.pem (git-ignored; or the
+// path in the `wingtipLocalCa` gradle property) into a generated res
+// folder of the debug variant when it exists; without it, as in CI, the
+// config is the platform's own default (system authorities).
+abstract class LocalCaRes : DefaultTask() {
+    @get:InputFile
+    @get:Optional
+    abstract val ca: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outDir: DirectoryProperty
+
+    @TaskAction
+    fun write() {
+        val res = outDir.get().asFile
+        res.deleteRecursively()
+        val xml = res.resolve("xml").apply { mkdirs() }
+        val anchor = if (ca.isPresent && ca.get().asFile.isFile) {
+            ca.get().asFile.copyTo(res.resolve("raw").apply { mkdirs() }.resolve("wingtip_local_ca.pem"))
+            "<certificates src=\"@raw/wingtip_local_ca\" />"
+        } else {
+            ""
+        }
+        xml.resolve("network_security_config.xml").writeText(
+            """<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            $anchor
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>
+""",
+        )
+    }
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("debug")) { variant ->
+        val localCa = tasks.register<LocalCaRes>("generate${variant.name.replaceFirstChar { it.uppercase() }}LocalCaRes") {
+            val path = providers.gradleProperty("wingtipLocalCa").orNull
+                ?: rootProject.layout.projectDirectory.file("../../infra/local-https/certs/ca.pem").asFile.path
+            ca.set(file(path).takeIf { it.isFile })
+        }
+        variant.sources.res?.addGeneratedSourceDirectory(localCa, LocalCaRes::outDir)
+    }
+}
