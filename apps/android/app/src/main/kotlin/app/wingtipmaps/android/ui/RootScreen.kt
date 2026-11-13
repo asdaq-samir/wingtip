@@ -14,7 +14,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
@@ -28,11 +27,9 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.about.PlanningAidNotice
-import app.wingtipmaps.android.ai.rememberAiOffered
 import app.wingtipmaps.android.airplane.AirplaneProfileHost
 import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.api.AssistantTurn
-import app.wingtipmaps.android.atc.CommsAssist
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.dryrun.DryRun
 import app.wingtipmaps.android.emergency.EmergencyHost
@@ -45,7 +42,6 @@ import app.wingtipmaps.android.route.RouteToolbar
 import app.wingtipmaps.android.route.RouteUndoSnackbar
 import app.wingtipmaps.android.route.hasPoints
 import app.wingtipmaps.android.search.OneSearch
-import app.wingtipmaps.android.search.SearchControl
 import app.wingtipmaps.android.search.rememberSearchControl
 import app.wingtipmaps.android.share.SharedFlightHost
 import app.wingtipmaps.android.share.SharedFlightModel
@@ -83,28 +79,6 @@ import kotlinx.coroutines.launch
  * @param pending a link opened in the app (MainActivity); `onHandled`
  *   once it has been taken.
  */
-/**
- * An end of the route not given yet, asked of the one search (the web's
- * 688305a42: half a route asks for its departure where it can): picked,
- * the route is planned with it; with neither end, the search opens.
- */
-private fun askRouteEnd(plan: Plan, search: SearchControl) {
-    val s = plan.state.value
-    when {
-        s.dep.isEmpty() && s.dest.isNotEmpty() -> search.pickAirport(R.string.where_from) { plan.plan(it, s.dest, s.stops) }
-        s.dest.isEmpty() && s.dep.isNotEmpty() -> search.pickAirport(R.string.where_to) { plan.plan(s.dep, it, s.stops) }
-        else -> search.open()
-    }
-}
-
-/** Comms Assist's radio button's tap where Settings has it on, else none. */
-@Composable
-private fun rememberCommsAssist(open: () -> Unit): (() -> Unit)? {
-    val context = LocalContext.current
-    val on by remember(context) { CommsAssist.of(context) }.on.collectAsStateWithLifecycle()
-    return if (on) open else null
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
@@ -214,7 +188,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             plan = {
                 PlanPage(
                     plan, onClose = { pages.closePlan(); RouteHome.shared.backTo(planState.hasPoints)?.let(openField) }, onField = { pages.push(SheetPage.Airport(it)) },
-                    onLeg = { pages.push(SheetPage.Leg(it)) }, onFind = { askRouteEnd(plan, search) }, onAddStop = search::addStop,
+                    onLeg = { pages.push(SheetPage.Leg(it)) }, onFind = { search.askRouteEnd(plan) }, onAddStop = search::addStop,
                     onAddStopAfter = search::addStopAfter,
                 )
             },
@@ -222,26 +196,16 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         )
     }
 
-    // The sparkle only where a model can answer (AiOffered): Nano here.
-    val askOffered = rememberAiOffered()
-    val onAsk = if (askOffered) ({ pages.show(SheetPage.Ask) }) else null
-    // The map's Layers button opens the Map card; the radio's, Comms
-    // Assist, the clearance card, only while Settings has it on.
-    val onLayers = { pages.show(SheetPage.MapSettings) }
-    val onRadio = rememberCommsAssist { pages.show(SheetPage.Clearance) }
+    // The map's buttons' taps, each a card on the sheet (MapActions).
+    val actions = rememberMapActions(pages)
     val mapView: @Composable (Dp, Boolean) -> Unit = { covered, buttonsOnSheet ->
-        MapPane(
-            plan, ownShip, covered = covered, onPick = onPick, onAsk = onAsk, onNearest = { pages.show(SheetPage.Nearest) },
-            onLayers = onLayers, onRadio = onRadio, buttonsOnSheet = buttonsOnSheet,
-        )
+        MapPane(plan, ownShip, covered = covered, onPick = onPick, actions = actions, buttonsOnSheet = buttonsOnSheet)
     }
     if (stripLayout) {
         StripLayout(
             plan = plan, session = session, ownShip = ownShip.ownShip, flying = flying, raise = map.raised, searchRow = searchRow,
             covered = pages.covered, cards = { modifier -> pagesView(modifier, true, null) {} },
-            map = {
-                MapPane(plan, ownShip, covered = 0.dp, onPick = onPick, onAsk = null, onNearest = { pages.show(SheetPage.Nearest) }, onLayers = onLayers, onRadio = onRadio)
-            },
+            map = { MapPane(plan, ownShip, covered = 0.dp, onPick = onPick, actions = actions.copy(onAsk = null)) },
         )
     } else if (wide) {
         WidePanes(
@@ -268,7 +232,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         }
     } else {
         PhoneSheetLayout(
-            sheet, snackbars, pages, ownShip, onAsk, onLayers, onRadio, plan, search, map = { covered -> mapView(covered, true) }, searchRow = { searchRow(null) },
+            sheet, snackbars, pages, ownShip, actions, plan, search, map = { covered -> mapView(covered, true) }, searchRow = { searchRow(null) },
             pages = { modifier, backEnabled, head -> pagesView(modifier, backEnabled, null, head) },
         )
     }

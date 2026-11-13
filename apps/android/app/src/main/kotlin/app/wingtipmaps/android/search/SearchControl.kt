@@ -8,6 +8,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.R
 
 /**
  * The one search opened from outside its bar: by an Airport link (what
@@ -67,6 +69,19 @@ class SearchControl {
         picking = onPicked
         pickHint = hint
         asked++
+    }
+
+    /** An end of `plan`'s route not given yet, asked for (the web's
+     *  688305a42: half a route asks for its departure where it can):
+     *  picked, the route is planned with it; with neither end, the search
+     *  opens. */
+    fun askRouteEnd(plan: Plan) {
+        val s = plan.state.value
+        when {
+            s.dep.isEmpty() && s.dest.isNotEmpty() -> pickAirport(R.string.where_from) { plan.plan(it, s.dest, s.stops) }
+            s.dest.isEmpty() && s.dep.isNotEmpty() -> pickAirport(R.string.where_to) { plan.plan(s.dep, it, s.stops) }
+            else -> open()
+        }
     }
 
     fun addStop() {
