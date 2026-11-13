@@ -167,6 +167,26 @@ and `data/`; follows the Mac's address if DHCP moved it (a new
 certificate and `PHONE_BASE_URL`); rebuilds what changed; and prints the
 address when every service is healthy.
 
+### The phone simulators
+
+`scripts/dev/simulators.sh [ios|android|both] [--tree <dir>]`, after
+`go-live.sh --up`, boots the newest iPhone simulator and an arm64 Android
+emulator on the live tree (`~/Developer/wingtip-live` unless `--tree` says
+otherwise), builds each app for `localhost:8443` (the gateway's HTTPS port,
+above), installs it and launches it. Each heavy step takes a turn of
+`one-at-a-time.sh`; each wait has a deadline (`SIM_BOOT_WAIT`, 240 s). It
+stops with the next step when the stack does not answer, the certificate is
+missing, or there is no simulator runtime, AVD or system image.
+
+- **iOS:** the host is the `WINGTIP_HOST` build setting (`Config.swift`
+  reads Info.plist's `WingtipHost`); the local authority goes into the
+  simulator with `xcrun simctl keychain <udid> add-root-cert`.
+- **Android:** the host is `WINGTIP_HOST` for Gradle (`BuildConfig`);
+  `adb reverse tcp:8443 tcp:8443` makes the emulator's `localhost` the
+  Mac's, a name the server certificate holds (`10.0.2.2` is not in it). The
+  app trusts system authorities only, so the authority is put in the system
+  store, which needs `adb root`: a Google APIs image, not Google Play.
+
 ## The jobs and on-demand services
 
 The jobs are behind the `jobs` profile, so `docker compose up` never
@@ -250,6 +270,7 @@ All in `scripts/dev/`, each with its usage at its top.
 | `swap-watch.sh`, `install-swap-watch.sh` | Full throttle without swapping: a LaunchAgent that holds the heavy-turn limit as high as the Mac takes (below) |
 | `validate-wave.sh` | The end-of-wave validation on `claude/integration`: every check area, the image builds, the `@smoke` browser specs on a throwaway stack, the iPad tests; one table of what passed |
 | `go-live.sh [branch]` | A branch on the owner's stack for the phone (above) |
+| `simulators.sh [ios\|android\|both] [--tree <dir>]` | The iPhone simulator and the Android emulator, each with the app built for the live stack and launched ([above](#the-phone-simulators)) |
 | `tidy-local.sh [--dry-run]` | Removes merged, clean worktrees and branches and stopped scratch containers; never volumes, never a running agent's worktree |
 | `tidy-branches.sh [--dry-run]` | Removes the `~/Developer/wingtip-*` worktrees whose commit is on `origin/claude/integration` or `origin/main`, with nothing uncommitted and untouched for six hours (never `wingtip`, `wingtip-live` or a locked one), then deletes local `worktree-agent-*` branches already on `origin/main` |
 | `docker-tidy.sh [--dry-run]` | Reclaims Docker disk: images no container uses (`docker image prune -a`), build cache unused for 24 hours, and volumes no container uses except the named caches (`wingtip-cargo-*`, `wingtip-sccache*`, `wingtip-npm*`, `wingtip-format-npm`, `wingtip-m2`, `fp-m2`, `wingtip-check-raw`) and the stacks' own (`wingtip_*`, `fpam_*`, the database among them); never a container; prints the space freed; then `tidy-build-caches.sh` (Shared build caches, below) |
