@@ -61,16 +61,13 @@ enum FlowPaint {
                 min(180, grid.bounds[2]), min(mercatorLimit, grid.bounds[3])]
     }
 
-    static func mercatorY(_ lat: Double) -> Double { log(tan(.pi / 4 + lat * .pi / 360)) }
-    static func latitude(mercatorY y: Double) -> Double { atan(sinh(y)) * 180 / .pi }
-
     /// The picture's pixels, RGBA premultiplied, row by row from the north.
     static func pixels(_ grid: FlowGrid, ramp: FlowRamp) -> (bytes: [UInt8], width: Int, height: Int) {
         let box = box(of: grid)
         let b = grid.bounds
         let width = grid.width, height = grid.height * rowsPerGridRow
         guard b.count == 4, width > 0, height > 0, b[2] > b[0], b[3] > b[1] else { return ([], 0, 0) }
-        let top = mercatorY(box[3]), bottom = mercatorY(box[1])
+        let top = TileMath.mercatorY(box[3]), bottom = TileMath.mercatorY(box[1])
         var bytes = [UInt8](repeating: 0, count: width * height * 4)
         // Each column's grid column, worked out once.
         let columns: [Int] = (0..<width).map { i in
@@ -79,7 +76,7 @@ enum FlowPaint {
             return max(0, min(grid.width - 1, Int(x.rounded())))
         }
         for j in 0..<height {
-            let lat = latitude(mercatorY: top - (Double(j) + 0.5) / Double(height) * (top - bottom))
+            let lat = TileMath.latitude(mercatorY: top - (Double(j) + 0.5) / Double(height) * (top - bottom))
             let y = (b[3] - lat) / (b[3] - b[1]) * Double(grid.height) - 0.5
             let row = max(0, min(grid.height - 1, Int(y.rounded())))
             for i in 0..<width {

@@ -167,6 +167,23 @@ METRICS = {
         ),
         "a unit factor written in the engine: take it from wingtip_core::units",
     ),
+    # Web Mercator formulas on the phones: the iPhone's are Tiles/TileMath.swift's
+    # alone, Android's tiles/TileGrid.kt's.
+    "phone_tile_maths": (
+        lambda: (
+            sum(
+                len(re.findall(r"log\(tan\(|atan\(sinh\(|6_378_137", text(p)))
+                for p in files("apps/ios", ".swift")
+                if not p.endswith("Tiles/TileMath.swift")
+            )
+            + sum(
+                len(re.findall(r"\bln\(tan\(|atan\(sinh\(|6378137", text(p)))
+                for p in files("apps/android", ".kt")
+                if not p.endswith("tiles/TileGrid.kt")
+            )
+        ),
+        "tile maths written again on a phone: use TileMath (iPhone) or TileGrid (Android)",
+    ),
     # The other guards' baselines, their totals (each only shrinks; here
     # for the one trend line).
     "copy_paste_clones": (

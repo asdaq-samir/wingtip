@@ -21,16 +21,10 @@ final class LoopTileOverlay: MKTileOverlay, @unchecked Sendable {
         maximumZ = radar ? 10 : 9
     }
 
-    /// Half the earth's circumference in web Mercator metres (EPSG:3857).
-    /// The iPhone's one place for it: MapKit's own metres per map point are
-    /// the ellipsoid's, not the tiles' sphere of 6,378,137 m.
-    private static let half = Double.pi * 6_378_137
-
     override func url(forTilePath path: MKTileOverlayPath) -> URL {
         guard let template = urlTemplate, template.contains("{bbox-epsg-3857}") else { return super.url(forTilePath: path) }
-        let size = 2 * Self.half / pow(2, Double(path.z))
-        let west = -Self.half + Double(path.x) * size, north = Self.half - Double(path.y) * size
-        let box = "\(west),\(north - size),\(west + size),\(north)"
+        let m = TileMath.metres(z: path.z, x: path.x, y: path.y)
+        let box = "\(m.west),\(m.south),\(m.east),\(m.north)"
         return URL(string: template.replacingOccurrences(of: "{bbox-epsg-3857}", with: box)) ?? super.url(forTilePath: path)
     }
 
