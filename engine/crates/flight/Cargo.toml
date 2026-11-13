@@ -12,5 +12,10 @@ name = "wingtip_flight"
 # plain Rust, so the phones carry it as it is.
 [dependencies]
 
+# The tests' UTC times, from the one calendar (wingtip_core::time) rather
+# than a copy of it.
+[dev-dependencies]
+wingtip-core = { path = "../core" }
+
 [lints]
 workspace = true
