@@ -33,16 +33,20 @@ test("the route box's pills sit as close to their marks and arrows as each other
   await expect(slide.getByRole("group")).toHaveCount(3);
   // Each pill's ident, from its mark's right to the next arrow's glyph:
   // five letters wide, C81 sat 14 points short of its arrow to KUGN's 6.
-  const gaps = await slide.evaluate((el) =>
-    [...el.querySelectorAll<HTMLElement>("[role=group]")].map((pill) => {
+  // Each point is a token of the field of its own (React Aria's), the arrow
+  // to the next at the head of the next one's: the arrows in order, the
+  // i-th after the i-th pill.
+  const gaps = await slide.evaluate((el) => {
+    const arrows = [...el.querySelectorAll<HTMLElement>('[data-testid="route-arrow"] svg')];
+    return [...el.querySelectorAll<HTMLElement>("[role=group]")].map((pill, i) => {
       const mark = pill.firstElementChild!.getBoundingClientRect();
       const range = document.createRange();
       range.selectNodeContents(pill.querySelector("button")!);
       const text = range.getBoundingClientRect();
-      const arrow = pill.nextElementSibling?.querySelector("svg")?.getBoundingClientRect();
+      const arrow = arrows[i]?.getBoundingClientRect();
       return { before: text.left - mark.right, after: arrow ? arrow.left - text.right : null };
-    }),
-  );
+    });
+  });
   const befores = gaps.map((g) => g.before);
   expect(Math.max(...befores) - Math.min(...befores), JSON.stringify(gaps)).toBeLessThan(1.5);
   const afters = gaps.flatMap((g) => (g.after === null ? [] : [g.after]));

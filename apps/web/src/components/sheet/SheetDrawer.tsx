@@ -147,8 +147,12 @@ export function SheetDrawer({
                 // in for its search, so this one's ground, edge and shadow
                 // fade away; the card, drawn inside it, stays (the owner's
                 // iPhone, 2026-11-11: an empty grey sheet over a card at its
-                // pill), and while a finger drags the card too.
-                "data-nested-drawer-open:bg-transparent data-nested-drawer-open:shadow-none data-nested-drawer-open:ring-0 data-nested-drawer-open:backdrop-blur-none",
+                // pill), and while a finger drags the card too. Nor does its
+                // box take a tap: all the way up under a card at its pill it
+                // was a pane over the whole map, unseen, that a tap on a
+                // stop's pin found in place of the pin (stops-sheet.spec,
+                // 2026-11-13); the card sets its own pointer-events back.
+                "data-nested-drawer-open:bg-transparent data-nested-drawer-open:shadow-none data-nested-drawer-open:ring-0 data-nested-drawer-open:backdrop-blur-none data-nested-drawer-open:pointer-events-none",
               )}
             >
               {/* Over its top edge, the parts that ride it (OnSheetTop):

@@ -21,10 +21,12 @@ import {
  * A finger's 44: the box is 32 or 36, and a band six points proud of it
  * above and below (::after, taking no room) is the box's own, which React
  * Aria answers by focusing a segment -- where FieldHit's label did it for
- * a native field, which a label cannot do for segments.
+ * a native field, which a label cannot do for segments. The band is under
+ * the segments (isolate, -z-10), so a finger on the minutes takes the
+ * minutes: over them, every tap was the box's (stops.spec, 2026-11-13).
  */
 const BOX =
-  "relative flex h-9 w-full min-w-0 items-center rounded-md border border-input bg-transparent px-2.5 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm pointer-coarse:text-(length:--type-row) dark:bg-input/30 after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-[''] data-focus-within:border-ring data-focus-within:ring-2 data-focus-within:ring-ring data-focus-within:ring-offset-2 data-focus-within:ring-offset-background data-disabled:pointer-events-none data-disabled:opacity-50 data-invalid:border-destructive data-invalid:ring-3 data-invalid:ring-destructive/20 dark:data-invalid:border-destructive/50";
+  "relative isolate flex h-9 w-full min-w-0 items-center rounded-md border border-input bg-transparent px-2.5 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm pointer-coarse:text-(length:--type-row) dark:bg-input/30 after:absolute after:inset-x-0 after:-inset-y-1.5 after:-z-10 after:content-[''] data-focus-within:border-ring data-focus-within:ring-2 data-focus-within:ring-ring data-focus-within:ring-offset-2 data-focus-within:ring-offset-background data-disabled:pointer-events-none data-disabled:opacity-50 data-invalid:border-destructive data-invalid:ring-3 data-invalid:ring-destructive/20 dark:data-invalid:border-destructive/50";
 
 /** A segment: the one in focus filled in the tint, as iOS marks the part
  *  of a date being set; a blank one's placeholder grey. */

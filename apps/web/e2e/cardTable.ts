@@ -224,6 +224,10 @@ export const CARDS: CardRow[] = [
         name: "list row (Find Nearby)",
         open: async (p) => {
           await nearbyStops(p);
+          // Nearby is round the pilot's position, and the suite's account
+          // has no home base: with neither the card only asks for one.
+          await p.context().grantPermissions(["geolocation"]);
+          await p.context().setGeolocation({ latitude: 42.3247, longitude: -88.0742 });
           await go(p, "/app/plan");
           await showSearch(p);
           await grabberTo(p, "full");

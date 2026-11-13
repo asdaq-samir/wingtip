@@ -12,6 +12,7 @@ import {
   sideDrawer,
 } from "./helpers";
 import { pickAirplane } from "./startState";
+import { bar } from "./sheetPages";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -74,6 +75,10 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   await planSettled(page);
   await expect(save).toBeEnabled();
   await save.click();
+  // The menu gone before it is opened again: opened as it was still going,
+  // its focus was handed back to the button after, and the Escape below
+  // was the sheet's, which it lowered.
+  await expect(page.getByRole("menu")).toHaveCount(0);
   await page.getByTestId("share-route").click();
   await expect(save).toHaveAccessibleName("Saved");
   await expect(save).toBeDisabled();
@@ -113,6 +118,10 @@ test("a flight from a present position is filed from that position", async ({ pa
   await planSettled(page);
   await expect(save).toBeEnabled();
   await save.click();
+  // The menu gone before it is opened again: opened as it was still going,
+  // its focus was handed back to the button after, and the Escape below
+  // was the sheet's, which it lowered.
+  await expect(page.getByRole("menu")).toHaveCount(0);
   await page.getByTestId("share-route").click();
   await expect(save).toHaveAccessibleName("Saved");
   expect(filed).toHaveLength(1);
@@ -205,9 +214,10 @@ test("a saved flight opened from FPL's Saved opens its page, and Open on the map
     ],
   );
   await page.goto("/app/plan");
-  // The saved flights on the one search's own page, under its Favorites,
-  // Recents and Nearest: all the way up.
+  // The saved flights are FPL's page's (FplStrip; the owner: "We can remove
+  // plan button and saved from search"), all the way up.
   await grabberTo(page, "full");
+  await bar(page, 1).click();
   const panel = sideDrawer(page);
   await panel.getByTestId("pill-section-saved-more").click();
   await panel.getByRole("button", { name: /^KMSP → KDLH/ }).click();
@@ -291,9 +301,10 @@ test("a saved flight's ••• and its long press offer Edit, Share and Remove
     await route.fulfill({ status: 204, body: "" });
   });
   await page.goto("/app/plan");
-  // The saved flights on the one search's own page, under its Favorites,
-  // Recents and Nearest: all the way up.
+  // The saved flights are FPL's page's (FplStrip; the owner: "We can remove
+  // plan button and saved from search"), all the way up.
   await grabberTo(page, "full");
+  await bar(page, 1).click();
   const panel = sideDrawer(page);
   await panel.getByTestId("pill-section-saved-more").click();
   // A right click, as a long press on a phone, brings the same menu up.

@@ -221,9 +221,13 @@ test("plan page: the drawer closes the way the stock components close, and nothi
   // No toggle to a narrower nav log: the drawer has the one width.
   expect(await drawer.getByTestId("sidebar-expand-toggle").count()).toBe(0);
 
-  // The Weather is the Brief's card over FPL, the Drawer's own nested
-  // drawer: the stock Escape puts the top card away first, one level, as
-  // every close goes back one (the card rule), then lowers the sheet.
+  // The Weather is a page of the Brief's card over FPL, the Drawer's own
+  // nested drawer: every close goes back one (the card rule), so the stock
+  // Escape takes the page back to the Brief's cards (PanelTabs), then puts
+  // the card away, then lowers the sheet.
+  await closeSidebarWithTheStockKey(page);
+  await expect(drawer.getByTestId("brief-glance")).toBeVisible();
+  await expect(page.locator("[data-sheet-card][data-open]")).toHaveCount(1);
   await closeSidebarWithTheStockKey(page);
   await expect(page.locator("[data-sheet-card][data-open]")).toHaveCount(0);
   await closeSidebarWithTheStockKey(page);

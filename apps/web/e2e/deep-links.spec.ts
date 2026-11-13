@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { noTips, settle, sideDrawer, slow } from "./helpers";
+import { inSheet, noTips, settle, sideDrawer, slow } from "./helpers";
 
 /**
  * A link opens the screen it names (design/screens.json, docs/navigation.md):
@@ -35,8 +35,11 @@ test("a link to the nav log waits for its route, and a field in it opens its car
   const table = page.getByRole("table", { name: /Navigation log from/i });
   await expect(table).toBeVisible({ timeout: slow(30000) });
 
-  // A field's name in the log opens its card.
-  await table.getByTestId("navlog-field-open").last().click();
+  // A field's name in the log opens its card: the destination's, at the
+  // log's foot, under the half card's edge till the card is pulled up.
+  const field = table.getByTestId("navlog-field-open").last();
+  await inSheet(page, field);
+  await field.click();
   await expect(sideDrawer(page).getByTestId("place-card")).toBeVisible();
   await expect(page).toHaveURL(/[?&]place=KDLH/);
 });

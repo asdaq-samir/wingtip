@@ -40,6 +40,11 @@ const drawnBelowHead = (page: Page) =>
       const r = el.getBoundingClientRect();
       if (r.width < 4 || r.height < 4 || r.top < head + 4 || r.bottom > innerHeight) continue;
       if (el.closest("[data-sheet-head], [data-sheet-top]")) continue;
+      // Not rendered at all: a row kept for its return, skipped where it
+      // waits (SheetParts' kept row, tab-away's content-visibility: hidden),
+      // its box still laid out. Hidden by visibility or opacity is what is
+      // looked for, below.
+      if (!el.checkVisibility()) continue;
       inSight++;
       if (!el.checkVisibility({ visibilityProperty: true, opacityProperty: true }))
         unpainted.push(

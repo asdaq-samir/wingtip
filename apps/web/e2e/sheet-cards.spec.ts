@@ -174,7 +174,9 @@ test("a checkpoint tapped on the chart opens its card in the sheet; one opened o
     });
   await expect.poll(() => onTop(map)).toBe(true);
   await expect(checkpoint).toHaveCount(1);
-  await closeCard(page, "sheet-card-close");
+  // The Map's own close: the checkpoint's card under it keeps its head, and
+  // its close, drawn too.
+  await map.getByTestId("sheet-card-close").click();
   await expect(map).toHaveCount(0);
   await expect(checkpoint).toBeVisible();
 

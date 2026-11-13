@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { openPanel, settle, sideDrawer } from "./helpers";
+import { inSheet, openPanel, settle, sideDrawer } from "./helpers";
 
 /**
  * The route's points moved, by a mouse or the keyboard in FPL's list
@@ -89,9 +89,18 @@ test("a point's grip in FPL's list moves it anywhere, by a mouse or the keyboard
   const stopsAre = (stops: string) => new RegExp(`[?&]stops=(${stops.replaceAll(",", "%2C")}|${stops})(&|$)`);
 
   // KDLH's grip let go at the top of C81's row: before it, the departure.
-  await grip("KDLH").scrollIntoViewIfNeeded();
+  // Its row under half's edge, reached by pulling the sheet up, as a
+  // pilot's finger would: half way the sheet's body does not scroll there.
+  await inSheet(page, grip("KDLH"));
   const target = (await row("C81").boundingBox())!;
-  await grip("KDLH").dragTo(row("C81"), { targetPosition: { x: target.width / 2, y: 4 } });
+  // By the row, where the grip is: React Aria's GridList leaves the grip
+  // itself to the keyboard (its drag slot takes no pointer) and lets the
+  // row be dragged.
+  const [from, on] = [(await row("KDLH").boundingBox())!, (await grip("KDLH").boundingBox())!];
+  await row("KDLH").dragTo(row("C81"), {
+    sourcePosition: { x: on.x - from.x + on.width / 2, y: on.y - from.y + on.height / 2 },
+    targetPosition: { x: target.width / 2, y: 4 },
+  });
   await expect(page).toHaveURL(/[?&]dep=KDLH(&|$)/);
   await expect(page).toHaveURL(/[?&]dest=KMSN(&|$)/);
   await expect(page).toHaveURL(stopsAre("C81,KRYV"));

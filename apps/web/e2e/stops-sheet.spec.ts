@@ -173,14 +173,14 @@ test("with a course drawn, the Stops along it, each with a line for each kind it
   await expect.poll(() => pins("KBBB: Fuel")).toBe(1);
   const kbbb = (await drawnMarks(page, "stop-fields")).find((m) => m.title === "KBBB: Fuel")!;
   await page.mouse.click(kbbb.x, kbbb.y);
-  // The Stops a card of its own now (95f9e953b), its drawer left at the
-  // size it is at (the card rule's 11: only the map's sheet rises from the
-  // pill, for something new opened): its row picked, and in sight once
-  // the card is pulled up.
-  await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
+  // The Stops a card of its own now (95f9e953b): its row picked, and the
+  // card half way up from its pill (useFplCards' pickStopField), as the
+  // card rule's 11 has something new raised from the pill to be seen. A row
+  // under half's edge is reached by pulling the card up, as every list's.
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   await expect(rows.nth(1)).toHaveAttribute("aria-current", "true");
   await expect(rows.nth(0)).not.toHaveAttribute("aria-current", "true");
-  await grabberTo(page, "half");
+  await inSheet(page, rows.nth(1));
   await expect(rows.nth(1)).toBeInViewport();
   await expect(page).not.toHaveURL(/[?&]place=/);
 

@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState, type ComponentProps, type 
 import { prefersReducedMotion } from "../../lib/motion";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "../ui/carousel";
 import { setPageHeading } from "./pageHeading";
+import { useOwnDrags } from "./useOwnDrags";
 
 /**
  * The sheet's two pages side by side, Search and FPL (the owner,
@@ -170,27 +171,43 @@ export function SheetPager({
   }, [api]);
   // Where it is heading while it moves, for the grabber's capsule: Embla's
   // own scroll progress (0 on Search, 1 on FPL) at each of its scroll
-  // events, nearer page first, and none once it settles.
+  // events, nearer page first, and none once it settles -- or once, let go,
+  // it is within a point of the page it lands on: Embla's settle comes
+  // after a creep of fractions of a pixel that takes a third of a second
+  // and more, which nobody sees move, and the capsule's second (SheetGrabber's
+  // HOLD_MS) waited on it, the name up some three seconds after a swipe
+  // (sheet-pages.spec, 2026-11-13: the page within half a pixel 0.3 s
+  // before settle, at rest 1.1 to 1.5 s after the swipe).
   useEffect(() => {
     if (!api) return;
-    const moving = () => {
-      const last = api.scrollSnapList().length - 1;
-      setPageHeading(target.current ?? Math.min(last, Math.max(0, Math.round(api.scrollProgress() * last))));
-    };
+    let held = false;
     const still = () => {
       target.current = null;
       setPageHeading(null);
     };
+    const moving = () => {
+      const last = api.scrollSnapList().length - 1;
+      const pages = api.scrollProgress() * last;
+      const off = Math.abs(pages - api.selectedScrollSnap()) * api.rootNode().clientWidth;
+      if (!held && off < 1) return still();
+      setPageHeading(target.current ?? Math.min(last, Math.max(0, Math.round(pages))));
+    };
     const touched = () => {
+      held = true;
       target.current = null;
+    };
+    const released = () => {
+      held = false;
     };
     api.on("scroll", moving);
     api.on("settle", still);
     api.on("pointerDown", touched);
+    api.on("pointerUp", released);
     return () => {
       api.off("scroll", moving);
       api.off("settle", still);
       api.off("pointerDown", touched);
+      api.off("pointerUp", released);
       still();
     };
   }, [api]);
@@ -237,6 +254,7 @@ export function SheetPager({
       root.removeEventListener("touchmove", move);
     };
   }, [api, drag]);
+  useOwnDrags(api);
   // A page picked elsewhere (its bar of the grabber, a route made, a link): the pager
   // follows, at once under Reduce Motion.
   useEffect(() => {

@@ -390,19 +390,19 @@ test("an airport's card keeps its field in sight: the next position the GPS give
   await expect(page.getByTestId("my-position-button")).toHaveAttribute("aria-pressed", "true");
   await shipInTheMiddle(page);
 
-  // A field far from the position, from the search: the map goes to it.
+  // A field far from the position, from the search: the map goes to it (Madison, in the overlay tiles' box).
   const search = await airportSearch(page);
   await sheetUpToType(page); // typing leaves the sheet where it is (5db1f8b10)
   await search.click();
-  await search.fill("KDLH");
-  await searchAirports(page).filter({ hasText: "KDLH" }).first().click();
+  await search.fill("KMSN");
+  await searchAirports(page).filter({ hasText: "KMSN" }).first().click();
   await expect(sideDrawer(page).getByTestId("place-card")).toBeVisible();
-  await fieldClearOfCard(page, "KDLH");
+  await fieldClearOfCard(page, "KMSN");
 
   // The GPS moves on: the map stays on the field, as Maps' does once a place is picked, until the location arrow is tapped.
   await context.setGeolocation({ latitude: 42.33, longitude: -88.08 });
   await page.waitForTimeout(2000);
-  await fieldClearOfCard(page, "KDLH");
+  await fieldClearOfCard(page, "KMSN");
 });
 
 test("a route fitted at the pill and untouched is slid, not fitted again, as the sheet rises to half", async ({ page }) => {

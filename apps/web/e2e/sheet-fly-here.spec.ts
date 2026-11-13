@@ -13,8 +13,11 @@ import { bar, expectShown, openAirport, tapAirportOnMap } from "./sheetPages";
  * went to left the sheet on Search (usePanelView's route key).
  */
 
-// By Oshkosh: KOSH and Fond du Lac (KFLD) on the chart, Nearest by them.
-test.use({ geolocation: { latitude: 43.9844, longitude: -88.5569 }, permissions: ["geolocation"], hasTouch: true });
+// Over Stoughton, south-east of Madison: the map opens on the position with
+// Madison (KMSN) and Middleton's Morey Field (C29) on the chart, Nearest by
+// them. Inside the box the suite's overlay tiles are cut to (41.4 to 43.4 N,
+// scripts/build/e2e-overlay-tiles.sh): Oshkosh, north of it, has no marks.
+test.use({ geolocation: { latitude: 42.92, longitude: -89.22 }, permissions: ["geolocation"], hasTouch: true });
 
 const card = (page: Page) => sideDrawer(page).getByTestId("place-card").last();
 const ROUTE = "/app/plan?dep=C81&dest=KDLH";
@@ -51,8 +54,8 @@ test("Fly Here from an airport tapped on the map lands on FPL, live", { tag: "@s
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "half");
-  await tapAirportOnMap(page, "KOSH");
-  await flyHere(page, "KOSH");
+  await tapAirportOnMap(page, "KMSN");
+  await flyHere(page, "KMSN");
   await expectPlanLive(page);
 });
 
@@ -62,8 +65,9 @@ test("Fly Here from the map over a route, from Search at the pill", async ({ pag
   await grabberTo(page, "half");
   await bar(page, 0).tap();
   await grabberTo(page, "peek");
-  await tapAirportOnMap(page, "KOSH");
-  await flyHere(page, "KOSH");
+  // Dubuque, towered: drawn with the whole route in sight, clear of its line.
+  await tapAirportOnMap(page, "KDBQ");
+  await flyHere(page, "KDBQ");
   await grabberTo(page, "half");
   await expectPlanLive(page);
 });
@@ -149,10 +153,10 @@ test("Fly Here from a card opened over another card lands on FPL", async ({ page
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "half");
-  await openAirport(page, "KOSH", true);
-  await tapAirportOnMap(page, "KFLD");
-  await expect(card(page).getByTestId("place-name")).toHaveText("KFLD", { timeout: slow(10_000) });
-  await flyHere(page, "KFLD");
+  await openAirport(page, "KMSN", true);
+  await tapAirportOnMap(page, "C29");
+  await expect(card(page).getByTestId("place-name")).toHaveText("C29", { timeout: slow(10_000) });
+  await flyHere(page, "C29");
   await expectPlanLive(page);
 });
 
