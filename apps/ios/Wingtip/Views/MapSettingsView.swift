@@ -57,7 +57,7 @@ struct MapSettingsView: View {
             // "a settings button on the top left side of both overlay and
             // avatar"), the close at the right.
             ToolbarItem(placement: .topBarLeading) {
-                SettingsGear { nav.cardDetent = .large; nav.push(.settings(atMap: true)) }
+                SettingsGear { nav.push(.settings(atMap: true)) }
             }
         }
     }

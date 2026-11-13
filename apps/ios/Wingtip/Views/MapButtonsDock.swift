@@ -93,7 +93,10 @@ struct MapButtonsDock: View {
 ///   2026-11-13: "Why not make the same tab on the right toggle between
 ///   search and fpl"), where its page dots were: the route's mark on
 ///   Search ("Show flight plan"), the magnifier on FPL ("Show search").
-///   Only on the plan's sheet: the strip has one page.
+///   Only on the plan's sheet: the strip has one page. It stays in sight
+///   over a card at half, riding the card's top as it rides the plan's,
+///   and a tap closes the cards and turns the sheet under them (the
+///   owner, 2026-11-13: one card rule on the phones, each the native way).
 struct MapSideButtons: View {
     @Environment(Navigator.self) private var nav
     @AppStorage(MapTerrain.key) private var terrain = MapTerrain.flat.rawValue
@@ -118,6 +121,7 @@ struct MapSideButtons: View {
             if layoutName == "plan" {
                 let toFpl = nav.sheetPage == .search
                 Button {
+                    nav.close()
                     withAnimation { nav.sheetPage = toFpl ? .fpl : .search }
                 } label: {
                     Image(systemName: toFpl ? WingtipIcon.flightPlan : "magnifyingglass")

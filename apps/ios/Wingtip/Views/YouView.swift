@@ -5,8 +5,11 @@ import SwiftUI
 /// 2026-11-13; docs/design/rules.md §8): who the pilot is and what is
 /// theirs. The head is the large avatar with the initials, the name large
 /// and bold and the email small and grey under it -- with no name, Add
-/// Your Name in the tint, opening Pilot Details where the Name field is;
-/// signed out, Sign In. Then one inset list of round-badged rows with
+/// Your Name in the tint, opening Pilot Details where the Name field is.
+/// Signed out it says so once (the owner, 2026-11-13): the head's large
+/// line is Sign In, the stock button in the tint, with no "You" in the bar
+/// and nothing more under it, and the rows that need an account are there
+/// but disabled. Then one inset list of round-badged rows with
 /// their values: Pilot Details, Airplanes (the checklists inside), Flights,
 /// Logbook, Minimums, Training (the coach and the drills) and Emergency.
 /// Settings is the gear at the card's top left, the close at its right
@@ -27,13 +30,12 @@ struct YouView: View {
                 ProblemLine(session.problem)
             }
             Section {
-                if session.signedIn {
-                    NavigationLink { PilotDetailsView() } label: {
-                        YouRowLabel(title: "Pilot Details", systemImage: "person.text.rectangle", colour: WingtipColor.Badge.tower,
-                                    value: session.pilot?.homeBase)
-                    }
-                    .accessibilityIdentifier("pilot-details-row")
+                NavigationLink { PilotDetailsView() } label: {
+                    YouRowLabel(title: "Pilot Details", systemImage: "person.text.rectangle", colour: WingtipColor.Badge.tower,
+                                value: session.pilot?.homeBase)
                 }
+                .disabled(!session.signedIn)
+                .accessibilityIdentifier("pilot-details-row")
                 NavigationLink { OwnAircraftListView() } label: {
                     YouRowLabel(title: "Airplanes", systemImage: WingtipIcon.airplane, colour: WingtipColor.Badge.approach,
                                 value: plan.airplaneName)
@@ -42,11 +44,11 @@ struct YouView: View {
                 NavigationLink { FlightsView() } label: {
                     YouRowLabel(title: "Flights", systemImage: "tray.full", colour: WingtipColor.Badge.weather)
                 }
-                if session.signedIn {
-                    NavigationLink { LogbookView() } label: {
-                        YouRowLabel(title: Screen.logbook.title, systemImage: "book", colour: WingtipColor.Badge.fuel)
-                    }
+                NavigationLink { LogbookView() } label: {
+                    YouRowLabel(title: Screen.logbook.title, systemImage: "book", colour: WingtipColor.Badge.fuel)
                 }
+                .disabled(!session.signedIn)
+                .accessibilityIdentifier("logbook-row")
                 // The weather the pilot will not take off or land in, kept
                 // on this phone: the Brief's Go / No-Go holds it to them.
                 NavigationLink { MinimumsView() } label: {
@@ -62,7 +64,10 @@ struct YouView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("You")
         // The head says who it is; the bar keeps only the gear and the close.
+        // Signed out the title goes too, so the card says Sign In alone;
+        // kept as the title, it still names the pages' way back.
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(removing: session.signedIn ? nil : .title)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 SettingsGear { nav.push(.settings(atMap: false)) }
@@ -113,10 +118,6 @@ private struct YouHead: View {
                     .buttonStyle(.borderless)
                     .disabled(!session.loaded)
                     .accessibilityIdentifier("you-sign-in")
-                Text("Keep your airplanes, flights and logbook on every device.")
-                    .font(WingtipType.detail)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
             }
         }
         .frame(maxWidth: .infinity)
@@ -145,19 +146,17 @@ struct TrainingPage: View {
 
     var body: some View {
         List {
+            // What needs an account is there but disabled signed out, with
+            // no words of its own: You's head is the one Sign In.
             NavigationLink { CoachView() } label: {
-                LabeledContent {
-                    if !session.signedIn { Text("Sign In to Use") }
-                } label: {
-                    SettingsLabel(Screen.coach.title, systemImage: "target", colour: WingtipColor.Badge.food)
-                }
+                SettingsLabel(Screen.coach.title, systemImage: "target", colour: WingtipColor.Badge.food)
             }
             .disabled(!session.signedIn)
             NavigationLink { PracticeView() } label: {
                 SettingsLabel("Practice", systemImage: "figure.walk.motion", colour: WingtipColor.Badge.traffic)
             }
             .accessibilityIdentifier("practice-row")
-            if session.signedIn {
+            Group {
                 NavigationLink { TrainingView() } label: {
                     SettingsLabel("Lessons and Endorsements", systemImage: "graduationcap", colour: WingtipColor.Badge.lodging)
                 }
@@ -165,6 +164,7 @@ struct TrainingPage: View {
                     SettingsLabel("Instructing", systemImage: "person.2", colour: WingtipColor.Badge.ground)
                 }
             }
+            .disabled(!session.signedIn)
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Training")
@@ -173,7 +173,7 @@ struct TrainingPage: View {
 
 /// The emergency assistant, a row of You's one list as Apple's account
 /// card has every row (the owner's screenshot, 2026-11-13): opened by its
-/// name, full screen.
+/// name, the card that opens at full height.
 struct EmergencyRow: View {
     @Environment(\.appCommand) private var appCommand
 

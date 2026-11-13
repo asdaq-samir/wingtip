@@ -6,13 +6,11 @@ import SwiftUI
 /// by how close it comes -- with Set to fly it and, in flight, Auto to
 /// follow the airplane's own altitude; a tap on a waypoint for that leg's
 /// altitude (LegAltitudePopover); the Altitude Advisor's rows to choose
-/// the cruise from; then the altitude's cautions and reasons. Opened at
-/// full height, so the slider never fights the sheet's drag. The state is
+/// the cruise from; then the altitude's cautions and reasons. The state is
 /// ProfileModel's; every figure the engine's (ProfileRules).
 struct ProfileCard: View {
     @Environment(ReadyToFly.self) private var ready
     @Environment(FlightUI.self) private var flightUI
-    @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @Environment(DryRun.self) private var dryRun
     @State private var model = ProfileModel()
@@ -86,11 +84,9 @@ struct ProfileCard: View {
                     .disabled(plan.legs.isEmpty || plan.course == nil)
             }
         }
-        // Full height wherever it is opened, a card's page included.
-        .onAppear {
-            if nav.card != nil { nav.cardDetent = .large }
-            takeAltitudeAt()
-        }
+        // Half way as every card opens (the card rule's 2), the pilot's
+        // drag choosing the size from there.
+        .onAppear { takeAltitudeAt() }
         // A stop's "Set Altitude…" opens its popover here (RoutePointMenu).
         .onChange(of: flightUI.altitudeAt) { _, _ in takeAltitudeAt() }
         .onChange(of: plan.altitudeFt) { _, _ in model.previewFt = nil }

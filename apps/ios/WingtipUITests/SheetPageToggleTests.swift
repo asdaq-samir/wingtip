@@ -7,7 +7,8 @@ import XCTest
 /// the route box empty whose close goes back to Search, Fly Here from a
 /// field's card lands on FPL (twice to the same field too), a card opened
 /// over Search closes back to Search, leaving Search puts the keyboard
-/// away, an up or down drag still sizes the sheet on either page, and the
+/// away, the toggle over a card closes it, an up or down drag still sizes
+/// the sheet on either page, and the
 /// first launch's welcome goes on to Search asking for the destination.
 /// Offline, but for Fly Here, whose card needs the planner (PlannerHost).
 final class SheetPageToggleTests: XCTestCase {
@@ -113,6 +114,24 @@ final class SheetPageToggleTests: XCTestCase {
         XCTAssertTrue(close.waitForExistence(timeout: 10), "the Stops did not open")
         close.tap()
         XCTAssertEqual(toggle(app).label, "Show flight plan", "the Stops' close did not come back to Search")
+    }
+
+    /// The toggle stays in sight over a card at half, and a tap closes the
+    /// card and turns the sheet (the owner, 2026-11-13).
+    @MainActor
+    func testTheToggleStaysOverACardAndClosesIt() throws {
+        let app = CardTests.launch(["-card", "+map"], size: [])
+        let card = CardTests.card(app, "card-map")
+        XCTAssertTrue(card.waitForExistence(timeout: 20), "the Map card did not open")
+        let toggle = toggle(app)
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10), "no page toggle over the card")
+        CardTests.settled(toggle)
+        XCTAssertTrue(toggle.isHittable, "the toggle is out of reach over the card")
+        XCTAssertEqual(toggle.label, "Show flight plan")
+        toggle.tap()
+        XCTAssertTrue(card.waitForNonExistence(timeout: 10), "the toggle did not close the card")
+        XCTAssertTrue(app.textFields["To"].waitForExistence(timeout: 10), "the toggle did not turn the sheet to FPL")
+        XCTAssertEqual(toggle.label, "Show search")
     }
 
     @MainActor

@@ -5,8 +5,9 @@ import XCTest
 /// accessibility XXL: the same card by its handle whichever way it came,
 /// the search out of sight while it is up, its close at the right putting
 /// it away back to the plan, a page opened inside a card going Back to
-/// the card, and the emergency assistant full screen with its close at
-/// the top right.
+/// the card, every card opening half way but the emergency assistant,
+/// which opens as a card at full height with its close at the top right,
+/// and You signed out saying Sign In once.
 final class CardRuleTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = true
@@ -21,6 +22,12 @@ final class CardRuleTests: XCTestCase {
                     let app = CardTests.open(entry, size: size.arguments)
                     let shown = CardTests.card(app, card.id)
                     XCTAssertTrue(shown.waitForExistence(timeout: 20), "\(context): \(card.id) did not open")
+                    // Every card opens half way (the card rule's 2).
+                    let grabber = CardTests.grabber(app)
+                    if grabber.waitForExistence(timeout: 5) {
+                        CardTests.settled(grabber)
+                        XCTAssertNotEqual(grabber.value as? String, "Expanded", "\(context): it did not open half way")
+                    }
                     // The card covers the search, as Maps' place card does.
                     let search = app.searchFields[CardTests.searchPrompt]
                     XCTAssertFalse(search.exists && search.isHittable, "\(context): the search is still in reach")
@@ -63,7 +70,7 @@ final class CardRuleTests: XCTestCase {
             app.navigationBars.buttons.element(boundBy: 0).tap()
             XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), "one Back did not return to Settings at \(size.name)")
             app.navigationBars.buttons.element(boundBy: 0).tap()
-            XCTAssertTrue(app.navigationBars["You"].waitForExistence(timeout: 10), "Back did not return to You at \(size.name)")
+            XCTAssertTrue(app.buttons["you-sign-in"].waitForExistence(timeout: 10), "Back did not return to You at \(size.name)")
             app.terminate()
 
             let map = CardTests.launch(["-card", "+map"], size: size.arguments)
@@ -77,25 +84,19 @@ final class CardRuleTests: XCTestCase {
         }
     }
 
-    /// Only the emergency assistant is full screen, its close at the top
-    /// right where iOS puts the system's close.
+    /// The emergency assistant is a card like every other, the one that
+    /// opens at full height, its close at the top right where every card's
+    /// is (the owner, 2026-11-13).
     @MainActor
-    func testTheEmergencyAssistantIsFullScreenWithItsCloseAtTheRight() throws {
+    func testTheEmergencyAssistantIsACardOpenedAtFullHeight() throws {
         for size in CardTests.sizes {
             let app = CardTests.launch(["-screen", "emergency"], size: size.arguments)
             let shown = CardTests.card(app, "card-emergency")
             XCTAssertTrue(shown.waitForExistence(timeout: 20), "the emergency assistant did not open at \(size.name)")
-            // Out of reach: a tap where the sheet's grabber is lands on the
-            // cover, so the sheet keeps its size and the assistant stays.
-            // (isHittable cannot say so: it answers for the grabber in the
-            // window under the cover, as if nothing were over it.)
-            let grabber = app.buttons.matching(identifier: "Sheet Grabber").firstMatch
-            if grabber.exists {
-                let detent = grabber.value as? String
-                grabber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-                XCTAssertTrue(shown.exists, "a tap on the sheet's grabber put the emergency assistant away at \(size.name)")
-                XCTAssertEqual(grabber.value as? String, detent, "a sheet's grabber is in reach over the emergency assistant at \(size.name)")
-            }
+            let grabber = CardTests.grabber(app)
+            XCTAssertTrue(grabber.waitForExistence(timeout: 10), "the emergency assistant is not on a sheet at \(size.name)")
+            CardTests.settled(grabber)
+            XCTAssertEqual(grabber.value as? String, "Expanded", "the emergency assistant did not open at full height at \(size.name)")
             let close = CardTests.close(app)
             XCTAssertTrue(close.waitForExistence(timeout: 10), "no close at \(size.name)")
             XCTAssertGreaterThan(close.frame.midX, app.frame.midX, "the close is not at the right at \(size.name)")
@@ -103,6 +104,26 @@ final class CardRuleTests: XCTestCase {
             close.tap()
             XCTAssertTrue(shown.waitForNonExistence(timeout: 10), "the close did not put it away at \(size.name)")
             app.terminate()
+        }
+    }
+
+    /// Signed out, You says it once (the owner, 2026-11-13): Sign In is the
+    /// head's large line, no "You" in the bar, and the rows that need an
+    /// account are there but disabled, with no words of their own.
+    @MainActor
+    func testYouSignedOutSaysSignInOnce() throws {
+        let app = CardTests.launch(["-screen", "setup"], size: [])
+        XCTAssertTrue(CardTests.card(app, "card-setup").waitForExistence(timeout: 20), "You did not open")
+        let signIn = app.buttons["you-sign-in"]
+        XCTAssertTrue(signIn.waitForExistence(timeout: 10), "no Sign In in You's head")
+        XCTAssertFalse(app.navigationBars.staticTexts["You"].exists, "the bar still says You")
+        XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'sign in'")).count, 0,
+                       "a line besides the head's button says to sign in")
+        for row in ["pilot-details-row", "logbook-row"] {
+            let element = app.buttons[row].firstMatch
+            CardTests.scrollTo(element, in: app)
+            XCTAssertTrue(element.exists, "no \(row) signed out")
+            XCTAssertFalse(element.isEnabled, "\(row) is enabled signed out")
         }
     }
 }

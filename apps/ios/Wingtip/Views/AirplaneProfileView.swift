@@ -66,8 +66,6 @@ struct AirplaneProfileView: View {
         .task {
             await model.load(signedIn: session.signedIn)
             focused = focus
-            // A figure to type wants the card full height.
-            if focus != nil { nav.cardDetent = .large }
         }
         // A figure is saved as the pilot leaves its field.
         .onChange(of: focused) { old, _ in
