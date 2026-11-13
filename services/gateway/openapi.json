@@ -114,6 +114,14 @@
             "format" : "double",
             "type" : "number"
           },
+          "descentFuelBurnGph" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "descentIasKt" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
           "dueItems" : {
             "description" : "What else falls due on it as its owner keeps it: ADs (14 CFR 91.417(a)(2)(v)) and other items",
             "items" : {
@@ -181,7 +189,7 @@
             "description" : "Its last VOR check for IFR (14 CFR 91.171): when, how, where, the bearing error, and the last day it is good for -- 30 days on, if the error was within the check's limit"
           }
         },
-        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "createdAt", "cruisePowerPct", "cruiseTasKt", "dueItems", "equipment", "figures", "fuelBurnGph", "handbook", "id", "inspections", "openSquawks", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal", "vorCheck" ],
+        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "createdAt", "cruisePowerPct", "cruiseTasKt", "descentFuelBurnGph", "descentIasKt", "dueItems", "equipment", "figures", "fuelBurnGph", "handbook", "id", "inspections", "openSquawks", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal", "vorCheck" ],
         "type" : "object"
       },
       "AircraftRequest" : {
@@ -204,6 +212,14 @@
           "cruiseTasKt" : {
             "format" : "double",
             "type" : "number"
+          },
+          "descentFuelBurnGph" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "descentIasKt" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
           },
           "equipment" : {
             "type" : [ "string", "null" ]
@@ -234,7 +250,7 @@
             "type" : [ "number", "null" ]
           }
         },
-        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "cruisePowerPct", "cruiseTasKt", "equipment", "figures", "fuelBurnGph", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal" ],
+        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "cruisePowerPct", "cruiseTasKt", "descentFuelBurnGph", "descentIasKt", "equipment", "figures", "fuelBurnGph", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal" ],
         "type" : "object"
       },
       "AppleNonceAnswer" : {
