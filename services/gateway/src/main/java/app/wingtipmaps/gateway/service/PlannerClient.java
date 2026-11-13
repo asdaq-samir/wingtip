@@ -366,7 +366,7 @@ public class PlannerClient {
      *  planner always sends that is missing is not its answer either: the
      *  generated types box every value, so it shows as a
      *  NullPointerException where it is made into this app's own. */
-    private static <A, T> T rule(String what, Supplier<A> call, Function<A, T> made) {
+    static <A, T> T rule(String what, Supplier<A> call, Function<A, T> made) {
         A answer = ask("the planner", what, () -> AGAIN_ONCE.invoke(call));
         try {
             return made.apply(answer);

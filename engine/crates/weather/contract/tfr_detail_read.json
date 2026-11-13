@@ -1,0 +1,167 @@
+{
+  "x-call": "wingtip_weather::calls::call",
+  "description": "A TFR's detail from the FAA's TFR XML (tfr.faa.gov's XNOTAM file): its times, the rule it is issued under, its purpose, its lowest floor and highest ceiling over its areas, its instructions and its NOTAM's text as sent, and who it names to call: the facility it is coordinated through and its point of contact, each with a telephone or frequency, from their own fields or, where the template left them empty, the sentence that calls one the coordination facility. Null where it holds no NOTAM. Not XML is refused.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TfrDetailReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "TfrDetailReadAnswer",
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "effective": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expires": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rule": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "purpose": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "floor_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "floor_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ceiling_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "instructions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Its operative instructions, a line each as sent."
+        },
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Its NOTAM's text as sent."
+        },
+        "facility": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "phone": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "frequency": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "phone",
+            "frequency"
+          ],
+          "description": "The FAA facility it is coordinated through (CDN FAC), its name written as a name with its kind kept (\"Fort Worth ARTCC\")."
+        },
+        "contact": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "phone": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "frequency": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "phone",
+            "frequency"
+          ],
+          "description": "Its point of contact, who is in charge inside it."
+        }
+      },
+      "required": [
+        "effective",
+        "expires",
+        "rule",
+        "purpose",
+        "floor_ft",
+        "floor_ref",
+        "ceiling_ft",
+        "ceiling_ref",
+        "instructions",
+        "text",
+        "facility",
+        "contact"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

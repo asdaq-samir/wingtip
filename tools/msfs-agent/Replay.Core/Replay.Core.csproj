@@ -5,4 +5,10 @@
   <PropertyGroup>
     <RootNamespace>Wingtip.Replay</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- The shot list's schema, the one both simulator drivers read: its
+         home is beside the X-Plane plugin, which installs it with its
+         package (scripts/dev/xplane-trial.sh). -->
+    <EmbeddedResource Include="../../xplane-driver/wingtip_replay/shots.schema.json" LogicalName="shots.schema.json" />
+  </ItemGroup>
 </Project>

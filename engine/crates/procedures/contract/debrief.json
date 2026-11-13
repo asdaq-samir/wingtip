@@ -1,0 +1,402 @@
+{
+  "x-call": "wingtip_procedures::figures::debrief_calls::call",
+  "description": "The planner's /api/debrief answer (ACS PA.VI.A): the flight flown against the plan, each finding marked, and the tolerances it is held to.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DebriefInput",
+      "type": "object",
+      "properties": {
+        "checkpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sequence_no": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "along_track_nm": {
+                "type": "number"
+              },
+              "true_course_deg": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "ete_min": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "altitude_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "sequence_no",
+              "name",
+              "category",
+              "lat",
+              "lon",
+              "along_track_nm"
+            ]
+          }
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TrackPoint"
+          }
+        },
+        "patterns": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "number"
+              },
+              "description": "Each field's pattern altitude, ft MSL, by ident."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "checkpoints",
+        "points"
+      ]
+    },
+    "answer": {
+      "title": "DebriefAnswer",
+      "type": "object",
+      "properties": {
+        "debrief": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "takeoff": {
+                  "type": "number",
+                  "description": "ms since 1970."
+                },
+                "landing": {
+                  "type": "number"
+                },
+                "flown_min": {
+                  "type": "number"
+                },
+                "planned_min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "legs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "from": {
+                        "type": "string"
+                      },
+                      "to": {
+                        "type": "string"
+                      },
+                      "planned_alt_ft": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "altitude_within": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "worst_alt_ft": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "course_deg": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "course_within": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "worst_off_nm": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "ok": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "from",
+                      "to",
+                      "planned_alt_ft",
+                      "altitude_within",
+                      "worst_alt_ft",
+                      "course_deg",
+                      "course_within",
+                      "worst_off_nm",
+                      "ok"
+                    ]
+                  }
+                },
+                "passes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "category": {
+                        "type": "string"
+                      },
+                      "due_min": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "passed_min": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "closest_nm": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "landed": {
+                        "type": "boolean"
+                      },
+                      "late_min": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "ok": {
+                        "type": [
+                          "boolean",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "category",
+                      "due_min",
+                      "passed_min",
+                      "closest_nm",
+                      "landed",
+                      "late_min",
+                      "ok"
+                    ]
+                  }
+                },
+                "patterns": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "ident": {
+                        "type": "string"
+                      },
+                      "alt_ft": {
+                        "type": "number"
+                      },
+                      "pattern_ft": {
+                        "type": "number"
+                      },
+                      "off_ft": {
+                        "type": "number"
+                      },
+                      "ok": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "ident",
+                      "alt_ft",
+                      "pattern_ft",
+                      "off_ft",
+                      "ok"
+                    ]
+                  }
+                },
+                "profile": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "along_nm": {
+                        "type": "number"
+                      },
+                      "alt_ft": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "along_nm",
+                      "alt_ft"
+                    ]
+                  }
+                },
+                "planned": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "from_nm": {
+                        "type": "number"
+                      },
+                      "to_nm": {
+                        "type": "number"
+                      },
+                      "alt_ft": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "from_nm",
+                      "to_nm",
+                      "alt_ft"
+                    ]
+                  }
+                },
+                "line": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "lat": {
+                        "type": "number"
+                      },
+                      "lon": {
+                        "type": "number"
+                      },
+                      "off": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "lat",
+                      "lon",
+                      "off"
+                    ]
+                  }
+                },
+                "has_altitude": {
+                  "type": "boolean"
+                },
+                "notes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "takeoff",
+                "landing",
+                "flown_min",
+                "planned_min",
+                "legs",
+                "passes",
+                "patterns",
+                "profile",
+                "planned",
+                "line",
+                "has_altitude",
+                "notes"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tolerances": {
+          "type": "object",
+          "properties": {
+            "altitude_ft": {
+              "type": "number"
+            },
+            "course_deg": {
+              "type": "number"
+            },
+            "off_route_nm": {
+              "type": "number"
+            },
+            "eta_min": {
+              "type": "number"
+            },
+            "pattern_nm": {
+              "type": "number"
+            },
+            "pattern_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "altitude_ft",
+            "course_deg",
+            "off_route_nm",
+            "eta_min",
+            "pattern_nm",
+            "pattern_ft"
+          ]
+        }
+      },
+      "required": [
+        "debrief",
+        "tolerances"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

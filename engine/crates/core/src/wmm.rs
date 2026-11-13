@@ -275,6 +275,33 @@ pub fn declination(lat: f64, lon: f64, year: f64) -> f64 {
     by.atan2(bx).to_degrees()
 }
 
+/// `magnetic_variation`: the variation at `lat`, `lon` for `year` (a
+/// decimal year, as the planner's test against pygeomag asks at any
+/// instant), else for the day `date`, YYYY-MM-DD.
+pub fn call(name: &str, v: &crate::json::Value) -> Result<String, String> {
+    use crate::time;
+    let ask = crate::ask::Ask::new(name, v);
+    let decimal = match ask.opt_num("year")? {
+        Some(year) => year,
+        None => {
+            let date = ask.str("date")?;
+            let bad = || format!("{name}: \"date\" is not YYYY-MM-DD: {date:?}");
+            let mut parts = date.splitn(3, '-').map(|p| p.parse::<i64>().map_err(|_| bad()));
+            let (year, month, day) = (parts.next().ok_or_else(bad)??, parts.next().ok_or_else(bad)??, parts.next().ok_or_else(bad)??);
+            if !(1..=12).contains(&month) || day < 1 || day > time::days_in_month(year, month as u32) as i64 {
+                return Err(bad());
+            }
+            let start = time::days_from_civil(year, 1, 1);
+            let of_year = time::days_from_civil(year + 1, 1, 1) - start;
+            let day_of_year = time::days_from_civil(year, month as u32, day as u32) - start + 1;
+            decimal_year(year as i32, day_of_year as u32, of_year as u32)
+        }
+    };
+    let mut out = String::new();
+    crate::json::number(&mut out, declination(ask.num("lat")?, ask.num("lon")?, decimal));
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,8 +1,7 @@
 //! The dispatcher's table (src/call.rs), written from the rules' own
-//! contract files: each `contract/<name>.json` in the facade and in each
-//! crate names its rule (the file's name) and the function that answers it
-//! (`"x-call"`, `fn(&str, &Value) -> Result<String, String>`), and
-//! `"x-feature"` where a cargo feature of this crate gates it. The same
+//! contract files: each `contract/<name>.json` in each crate names its
+//! rule (the file's name) and the function that answers it (`"x-call"`,
+//! `fn(&str, &Value) -> Result<String, String>`), and `"x-feature"` where a cargo feature of this crate gates it. The same
 //! files are the contract (engine/contract/gen), so a name is answered
 //! exactly when the contract has it, and adding a rule adds a file rather
 //! than a line to a shared list.
@@ -37,11 +36,9 @@ fn main() {
     let here = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
     let crates = here.join("../crates");
     println!("cargo:rerun-if-changed={}", crates.display());
-    let mut dirs = vec![here.join("contract")];
-    let mut each: Vec<PathBuf> =
+    let mut dirs: Vec<PathBuf> =
         fs::read_dir(&crates).unwrap().filter_map(|d| d.ok().map(|d| d.path().join("contract"))).filter(|d| d.is_dir()).collect();
-    each.sort();
-    dirs.extend(each);
+    dirs.sort();
 
     // The web's WebAssembly, the one build for wasm32 (bindings/wasm): only
     // the rules the web asks, as scripts/build/web_rules.py lists them from

@@ -1,19 +1,19 @@
 //! The "Your Airplane" form's fields as typed, checked before the round
 //! trip to the gateway, each problem in the words shown under its field:
 //! one copy for the web, the iPhone and Android (the rule
-//! `aircraft_problems`). The limits are the gateway's own (its
-//! AircraftRequest's @NotBlank, @Size, @Positive and @DecimalMin/Max, the
-//! database columns' lengths), which its test holds to this rule's
-//! fixtures (apps/web/src/lib/fixtures/aircraftForm.json), so a value
-//! the form lets through the gateway takes.
+//! `aircraft_problems`). The limits are stated here alone: the gateway
+//! keeps none and asks this rule before it saves an airplane (its
+//! AircraftLimits, through the planner's POST /api/aircraft/problems), so
+//! a value the form lets through the gateway takes. The database
+//! columns' lengths are the gateway's V3 migration's.
 
 use crate::json::{self, Value};
 
 /// A tail number or type designator, at most this many characters: the
 /// columns' own (the gateway's V3 migration).
 pub const IDENT_MAX: usize = 16;
-/// A cruise power a cruise table has, percent: the gateway's limits and
-/// the planner's performance reader's (a design bound, no regulation).
+/// A cruise power a cruise table has, percent: the planner's performance
+/// reader's (a design bound, no regulation).
 pub const POWER_PCT: (f64, f64) = (40.0, 100.0);
 /// FAA Form 7233-4's item 10a (equipment) and 10b (surveillance): letters
 /// and figures, at most 40 and 20 (AIM Appendix 4, TBL 4-2 and 4-3, whose

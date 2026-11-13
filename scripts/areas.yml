@@ -208,6 +208,7 @@ areas:
     check: the replay agent's build, format check and tests (dotnet, in Docker, scripts/ci/sim_suite.sh), cfn-lint on the trial's template, shellcheck on its scripts (the MSFS trial, infra/sim-trial and tools/msfs-agent)
     paths:
       - tools/msfs-agent/**
+      - tools/xplane-driver/wingtip_replay/shots.schema.json
       - infra/sim-trial/**
       - scripts/ci/sim_suite.sh
   xplane:

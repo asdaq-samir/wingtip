@@ -1,0 +1,54 @@
+{
+  "x-call": "wingtip_flight::calls::altitudes",
+  "description": "The altitudes a flight may be planned at: no lower than 500 ft (14 CFR 91.119(c)), VFR up to 17,500 ft (91.159(a)'s highest under Class A, which begins at 18,000 ft MSL, 71.33(a), and takes IFR only, 91.135), IFR up to FL410 (the highest 91.179(b)(4) names); flight levels from 18,000 ft (91.121(a)(2)); 91.159's cruising altitudes 500 ft apart.",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AltitudeLimitsInput",
+      "type": "object",
+      "properties": {
+        "ifr": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "AltitudeLimitsAnswer",
+      "type": "object",
+      "properties": {
+        "lowest_ft": {
+          "type": "number"
+        },
+        "highest_ft": {
+          "type": "number"
+        },
+        "class_a_floor_ft": {
+          "type": "number"
+        },
+        "flight_levels_from_ft": {
+          "type": "number"
+        },
+        "step_ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "lowest_ft",
+        "highest_ft",
+        "class_a_floor_ft",
+        "flight_levels_from_ft",
+        "step_ft"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -11,11 +11,11 @@ enum DiagnosticsReporter {
     /// The diagnostics a payload holds -- each crash, hang, CPU and disk
     /// write exception -- as faults, at the payload's end (MetricKit sends
     /// a diagnostic as it comes, and dates the payload, not each one).
-    static func report(_ payload: MXDiagnosticPayload, from blank: DiagnosticsReport) -> DiagnosticsReport {
+    static func report(_ payload: MXDiagnosticPayload, from blank: GWDiagnosticsReport) -> GWDiagnosticsReport {
         var report = blank
         let at = payload.timeStampEnd
         for crash in payload.crashDiagnostics ?? [] {
-            let signature = DiagnosticsReport.crashSignature(
+            let signature = GWDiagnosticsReport.crashSignature(
                 exceptionName: crash.exceptionReason.map { "\($0.className): \($0.exceptionName)" },
                 exceptionType: crash.exceptionType?.intValue, exceptionCode: crash.exceptionCode?.intValue,
                 signal: crash.signal?.intValue, terminationReason: crash.terminationReason)
@@ -42,15 +42,15 @@ enum DiagnosticsReporter {
     /// 50th and 95th percentile, resume at the 50th, the hang time, the
     /// share of scrolling spent hitching, the peak memory and the exits
     /// the system forced for memory.
-    static func report(_ payload: MXMetricPayload, from blank: DiagnosticsReport) -> DiagnosticsReport {
+    static func report(_ payload: MXMetricPayload, from blank: GWDiagnosticsReport) -> GWDiagnosticsReport {
         var report = blank
         let launch = buckets(payload.applicationLaunchMetrics?.histogrammedTimeToFirstDraw, in: .milliseconds)
-        report.measure("launch_ms_p50", DiagnosticsReport.percentile(0.5, of: launch))
-        report.measure("launch_ms_p95", DiagnosticsReport.percentile(0.95, of: launch))
+        report.measure("launch_ms_p50", GWDiagnosticsReport.percentile(0.5, of: launch))
+        report.measure("launch_ms_p95", GWDiagnosticsReport.percentile(0.95, of: launch))
         let resume = buckets(payload.applicationLaunchMetrics?.histogrammedApplicationResumeTime, in: .milliseconds)
-        report.measure("resume_ms_p50", DiagnosticsReport.percentile(0.5, of: resume))
+        report.measure("resume_ms_p50", GWDiagnosticsReport.percentile(0.5, of: resume))
         let hangs = buckets(payload.applicationResponsivenessMetrics?.histogrammedApplicationHangTime, in: .seconds)
-        if !hangs.isEmpty { report.measure("hang_s", DiagnosticsReport.total(of: hangs)) }
+        if !hangs.isEmpty { report.measure("hang_s", GWDiagnosticsReport.total(of: hangs)) }
         if let hitch = payload.animationMetrics?.scrollHitchTimeRatio {
             report.measure("hitch_ratio", hitchRatio(value: hitch.value, symbol: hitch.unit.symbol))
         }
@@ -105,7 +105,7 @@ enum DiagnosticsReporter {
     /// The report sent; the gateway answers 204 whether it kept it or
     /// dropped it past its hourly allowance, and 400 for one it cannot
     /// read, which is logged for the next build to put right.
-    static func send(_ report: DiagnosticsReport) async {
+    static func send(_ report: GWDiagnosticsReport) async {
         guard !report.isEmpty else { return }
         do {
             var request = URLRequest(url: Config.gateway.appending(path: "/api/diagnostics"))

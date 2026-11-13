@@ -1,4 +1,5 @@
-"""The shot list (shots.json) and when each shot plays.
+"""The shot list (shots.json, of shots.schema.json's shape) and when each
+shot plays.
 
 A shot is a camera (chase, flyby, tower or cockpit) from one time to
 another, in seconds from the flight file's first row. The flight's gaps cut
@@ -10,9 +11,17 @@ tests.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
+from pathlib import Path
 
-KINDS = ("chase", "flyby", "tower", "cockpit")
+#: The shot list's schema, beside this file: the one both simulator
+#: drivers read (the MSFS agent's Replay.Core embeds the same file), so a
+#: camera's kind or a setting's values are stated once.
+SCHEMA = json.loads((Path(__file__).resolve().parent / "shots.schema.json").read_text())
+_PROPS = SCHEMA["properties"]
+
+KINDS = tuple(_PROPS["shots"]["items"]["properties"]["kind"]["enum"])
 
 #: A take shorter than this, s, is left out: a camera that cuts away again
 #: at once is a flicker, not a shot.
@@ -42,25 +51,28 @@ class Take:
 
 @dataclass(frozen=True)
 class Settings:
-    """The shot list's settings beside the shots (docs/XPLANE-TRIAL.md)."""
+    """The shot list's settings beside the shots (docs/XPLANE-TRIAL.md),
+    each as shots.schema.json describes it, its default the schema's."""
 
     flight: str
-    #: "auto" (ask X-Plane to load the .fdr, else place the airplane),
-    #: "menu" (the pilot loaded it through Load Flight; follow its replay),
-    #: "drive" (the plugin places the airplane itself).
-    source: str = "auto"
-    #: "fixed": each drawn frame moves the replay on 1/fps s, whatever the
-    #: Mac's own frame rate, so a recorder that writes every frame writes a
-    #: smooth video; "real": the replay keeps to the wall clock.
-    clock: str = "fixed"
-    fps: float = 30.0
-    record: bool = True
-    autostart: bool = False
-    quit_when_done: bool = False
+    #: "auto", "menu" or "drive": how the airplane is replayed.
+    source: str
+    #: "fixed" (1/fps s a drawn frame) or "real" (the wall clock).
+    clock: str
+    fps: float
+    record: bool
+    autostart: bool
+    quit_when_done: bool
 
 
-_SOURCES = ("auto", "menu", "drive")
-_CLOCKS = ("fixed", "real")
+_SOURCES = tuple(_PROPS["source"]["enum"])
+_CLOCKS = tuple(_PROPS["clock"]["enum"])
+_FPS = (float(_PROPS["fps"]["minimum"]), float(_PROPS["fps"]["maximum"]))
+
+
+def _given(spec: dict, key: str):
+    """A setting as the list gives it, else the schema's default."""
+    return spec.get(key, _PROPS[key]["default"])
 
 
 def load(spec: dict, duration_s: float) -> tuple[Settings, list[Shot]]:
@@ -70,12 +82,12 @@ def load(spec: dict, duration_s: float) -> tuple[Settings, list[Shot]]:
     try:
         settings = Settings(
             flight=str(spec["flight"]),
-            source=str(spec.get("source", "auto")),
-            clock=str(spec.get("clock", "fixed")),
-            fps=float(spec.get("fps", 30.0)),
-            record=bool(spec.get("record", True)),
-            autostart=bool(spec.get("autostart", False)),
-            quit_when_done=bool(spec.get("quit_when_done", False)),
+            source=str(_given(spec, "source")),
+            clock=str(_given(spec, "clock")),
+            fps=float(_given(spec, "fps")),
+            record=bool(_given(spec, "record")),
+            autostart=bool(_given(spec, "autostart")),
+            quit_when_done=bool(_given(spec, "quit_when_done")),
         )
     except KeyError as err:
         raise ShotListError(f"the shot list has no {err.args[0]!r}") from err
@@ -83,8 +95,8 @@ def load(spec: dict, duration_s: float) -> tuple[Settings, list[Shot]]:
         raise ShotListError(f"source must be one of {', '.join(_SOURCES)}, not {settings.source!r}")
     if settings.clock not in _CLOCKS:
         raise ShotListError(f"clock must be one of {', '.join(_CLOCKS)}, not {settings.clock!r}")
-    if not 1.0 <= settings.fps <= 120.0:
-        raise ShotListError(f"fps must be 1 to 120, not {settings.fps}")
+    if not _FPS[0] <= settings.fps <= _FPS[1]:
+        raise ShotListError(f"fps must be {_FPS[0]:g} to {_FPS[1]:g}, not {settings.fps}")
     shots: list[Shot] = []
     for i, raw in enumerate(spec.get("shots", [])):
         kind = raw.get("kind")

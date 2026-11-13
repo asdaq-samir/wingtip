@@ -13,6 +13,7 @@ import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.OwnFigures;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
+import app.wingtipmaps.gateway.service.AircraftLimits;
 import app.wingtipmaps.gateway.service.AircraftService;
 import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.service.PilotService;
@@ -53,6 +54,9 @@ class AircraftFiguresControllerTest {
 
     @MockitoBean
     private PlannerClient planner;
+
+    @MockitoBean
+    private AircraftLimits limits;
 
     @BeforeEach
     void nothingDue() {

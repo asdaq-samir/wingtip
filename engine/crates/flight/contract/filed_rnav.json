@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_flight::calls::filed",
+  "description": "Whether item 15's route takes a T or Q route, an RNAV route (AIM 5-3-4), which asks for G and R in item 10a and PBN/C2 in item 18 where the airplane has them (AIM Appendix 4, TBL 4-13).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FiledRnavInput",
+      "type": "object",
+      "properties": {
+        "airways": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "airways"
+      ]
+    },
+    "answer": {
+      "title": "FiledRnavAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

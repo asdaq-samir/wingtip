@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::written",
+  "description": "A whole number with a comma between each three figures, \"12,500\" (lib/format grouped).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WordsGroupedInput",
+      "type": "object",
+      "properties": {
+        "n": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "n"
+      ]
+    },
+    "answer": {
+      "title": "WordsGroupedAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

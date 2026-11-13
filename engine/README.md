@@ -52,8 +52,8 @@ table, and its why below, in the same commit.
 
 | Crate | Modules | Uses |
 |---|---|---|
-| `core` | base64, geo, wmm, grid, sums, time, json, xml, sort, text (a whole number with its thousands grouped, "12,500") | nothing |
-| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy) | nothing |
+| `core` | base64, geo, wmm, grid, sums, time, json, xml, sort, text (a whole number with its thousands grouped, "12,500"), units (the SI's foot, nautical mile and kelvin, one copy), ask (a rule's input read by its name, for every crate's `call`) | nothing |
+| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy) | core |
 | `weather` | metar, sky (a report's ceiling and its cover, for the station model), taf, winds, forecast (with run: the dry run against the forecast), validity, notam, notam_read (a NOTAM as a pilot reads it: its keyword as a heading, its words written out, its window) over contractions (the FAA's contractions, the one table, which the radio's D-ATIS reads by too), notam_rank (the NOTAMs that matter to a flight, best first), tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table), ready (ready to fly: what the device holds against the cycles and the weather's age; kept: a kept answer's age), worse (a route's weather worse since the briefing) | core, flight |
 | `procedures` | figures (debrief, diversion, endurance (91.151(a) and 91.167(a)(3)'s reserve kept back), holding, lost comms, words), paths (a procedure's legs as drawn: arcs, CIFP holds, procedure turns), occurrence (an accident report, the registry and an ADS-B track as one airplane: the Studio's crash drafts) | core, flight |
 | `radio` | clearance, callsign (our call sign and where it was said, AIM 4-2-3 c, 4-2-4), instruction (an instruction heard in flight read into its items), readback (AIM 4-4-7 b), atc (the ATC copilot's `atc_call` and `readback_check`), atis, datis (a digital ATIS as the tower's data link writes it), mayday (the distress call, AIM 6-3-2), guidance (an emergency's general good practice with no airplane picked) | core, flight, weather, procedures |
@@ -75,7 +75,9 @@ Why these lines:
   (`distance_nm`, `bearing_deg`, `destination`), so no app keeps its own
   great-circle arithmetic.
 - `flight` holds the flight's own rules (the wind triangle, 14 CFR
-  91.159's cruising altitudes, 91.151's reserve, the atmosphere). It is a
+  91.159's cruising altitudes, 91.151's reserve, the atmosphere), and
+  takes `core` for the JSON and the input reader its rules are asked
+  through and the SI's kelvin its atmosphere is worked in. It is a
   crate of its own, not part of `brief`, because `procedures` (the
   diversion's triangle, the fuel strip's reserve) uses it and `brief`
   sits above `procedures`; `weather` reads it too, for the standard
@@ -86,8 +88,8 @@ Why these lines:
   say along a route (`forecast::route`), a field's hours for the airport
   card (`forecast::hours`) and the winds and temperatures aloft at an
   altitude (winds.rs). The basic VFR minimums its "VFR flight not
-  recommended" reasons are held to are `airspace`'s (rules.rs), so
-  call.rs hands them in.
+  recommended" reasons are held to are `flight`'s (vfr.rs), which
+  `airspace`'s rules.rs uses too.
 - `procedures` sits just above them because its `figures::words` (a number
   written as the web writes it) is shared by the Go / No-Go, runways,
   routes, the airspace rules and the wording.
@@ -117,7 +119,9 @@ Why these lines:
   only `core` (its JSON and Base64): the METARs and TAFs it is sent are
   handed on as sent, for `weather` to read where a screen asks, so it
   sits beside `weather`, not on it.
-- `call.rs` dispatches every rule, so it alone stays in the facade, over all.
+- `call.rs` dispatches every rule, so it alone stays in the facade, over all;
+  it answers none itself: each rule is its crate's function, named in its
+  contract file.
 
 ### Outside the workspace
 
@@ -145,9 +149,8 @@ need a crate above its own belongs higher, never in a cycle.
 ## The contract, and adding a rule
 
 Each rule says what it is in one file beside its code:
-`crates/<crate>/contract/<name>.json` (or `facade/contract/<name>.json`
-for the rules `call.rs`'s `rule` answers itself), named for the rule. The
-file is the rule's entry in the contract -- its description, with the
+`crates/<crate>/contract/<name>.json`, named for the rule; the facade
+answers none itself. The file is the rule's entry in the contract -- its description, with the
 AIM, 14 CFR or ACS source of each figure, `"x-tool"` where the assistant
 may ask it, and its `input` and `answer` as JSON Schema -- and two members
 for the build: `"x-call"`, the Rust function that answers it (a path
@@ -388,8 +391,8 @@ Then the callers switch to the name and the old copy is deleted.
 
 - `bindings/wasm` (`wingtip-wasm`): the engine for the web app, as WebAssembly
   with no wasm-bindgen. Every host asks a rule the same way, by name with
-  JSON in and JSON out (`facade/src/call.rs`, which lists the rules and
-  their inputs): the browser through `wt_call` in the module
+  JSON in and JSON out (`facade/src/call.rs`, which looks each name up in
+  the table its contract files give): the browser through `wt_call` in the module
   (`apps/web/src/lib/engine/engine.ts`, `callEngine`), the planner through
   `wingtip_native.call`, the phones through `wt_call` in the header. A rule
   moved into the engine needs only a name there. The module's ABI is in

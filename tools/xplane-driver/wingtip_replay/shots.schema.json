@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ReplayShots",
+  "description": "A replay's shot list, the one schema both simulator drivers read: X-Plane's plugin (tools/xplane-driver, wingtip_replay/shots.py) takes a shots.json of this shape, and the MSFS agent (tools/msfs-agent, Replay.Core/Shots.cs) its cameras by the same kinds in its --shots list. Each shot is a camera from one time to another, s from the flight's first row; the members beside kind, from_s and to_s are the camera's own (a chase's distance_m, height_m and lag_s; a flyby's lead_s, side_m and height_m; the tower's lat, lon, alt_ft and frame_m).",
+  "type": "object",
+  "required": ["flight"],
+  "properties": {
+    "flight": { "type": "string", "description": "The .fdr to replay, in X-Plane's Output/wingtip." },
+    "source": {
+      "enum": ["auto", "menu", "drive"],
+      "default": "auto",
+      "description": "auto: ask X-Plane to load the .fdr, else place the airplane; menu: the pilot loaded it through Load Flight, and the plugin follows its replay; drive: the plugin places the airplane itself."
+    },
+    "clock": {
+      "enum": ["fixed", "real"],
+      "default": "fixed",
+      "description": "fixed: each drawn frame moves the replay on 1/fps s, whatever the Mac's frame rate; real: the replay keeps to the wall clock."
+    },
+    "fps": { "type": "number", "minimum": 1, "maximum": 120, "default": 30 },
+    "record": { "type": "boolean", "default": true },
+    "autostart": { "type": "boolean", "default": false },
+    "quit_when_done": { "type": "boolean", "default": false },
+    "shots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": { "enum": ["chase", "flyby", "tower", "cockpit"] },
+          "from_s": { "type": "number", "minimum": 0, "default": 0 },
+          "to_s": { "type": "number", "description": "The flight's end where left out." }
+        }
+      }
+    }
+  }
+}

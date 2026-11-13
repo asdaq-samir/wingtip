@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_flight::calls::filed",
+  "description": "Hours and minutes in four figures, HHMM, as items 16 (total EET) and 19 (endurance) of FAA Form 7233-4 take them (AIM Appendix 4), the minutes rounded first; the caller rounds the time en route up and the endurance down.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FiledDurationInput",
+      "type": "object",
+      "properties": {
+        "minutes": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "minutes"
+      ]
+    },
+    "answer": {
+      "title": "FiledDurationAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

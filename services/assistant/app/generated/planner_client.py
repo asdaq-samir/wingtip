@@ -109,6 +109,15 @@ def inspections(*, body: m.InspectionsAsk | dict[str, Any]) -> m.Inspections:
     return _INSPECTIONS.validate_python(found)
 
 
+_CHECK_AIRPLANE = _Answer(dict[str, str])
+
+
+def check_airplane(*, body: dict[str, Any] | None = None) -> dict[str, str]:
+    """POST /api/aircraft/problems: Check Airplane"""
+    found = _send('POST', '/api/aircraft/problems', query={}, body=_body(body), headers={})
+    return _CHECK_AIRPLANE.validate_python(found)
+
+
 _AIRPORT_PLACE = _Answer(m.AirportPlace)
 
 

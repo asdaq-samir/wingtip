@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_flight::calls::filed",
+  "description": "The level in item 15 of the flight plan (FAA Form 7233-4, AIM Appendix 4): \"F\" and three figures, a flight level, at and above 18,000 ft (14 CFR 91.121(a)(2)); \"A\" and the hundreds of feet in three figures below it (\"F350\", \"A080\").",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FiledLevelInput",
+      "type": "object",
+      "properties": {
+        "ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "ft"
+      ]
+    },
+    "answer": {
+      "title": "FiledLevelAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

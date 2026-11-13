@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 
 namespace Wingtip.Replay;
 
@@ -35,6 +36,22 @@ public static class ShotList
     /// one before it instead, s: a cut that quick reads as a glitch.</summary>
     const double ShortestS = 5;
 
+    /// <summary>The kinds a shot may be, as the shot list's schema names
+    /// them (tools/xplane-driver/wingtip_replay/shots.schema.json, the one
+    /// the X-Plane plugin reads too, embedded here); ShotKind is held to
+    /// them by ShotTests.</summary>
+    public static readonly IReadOnlyList<string> Kinds = SchemaKinds();
+
+    static string[] SchemaKinds()
+    {
+        using var schema = typeof(ShotList).Assembly.GetManifestResourceStream("shots.schema.json")
+            ?? throw new InvalidOperationException("The shot list's schema is not in Replay.Core.");
+        using var doc = JsonDocument.Parse(schema);
+        var kind = doc.RootElement.GetProperty("properties").GetProperty("shots").GetProperty("items")
+            .GetProperty("properties").GetProperty("kind").GetProperty("enum");
+        return [.. kind.EnumerateArray().Select(k => k.GetString() ?? "")];
+    }
+
     public static readonly IReadOnlyList<ShotSpec> Default =
     [
         new(ShotKind.Chase, 45),
@@ -50,9 +67,9 @@ public static class ShotList
         .. text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(part =>
         {
             var bits = part.Split(':');
-            if (bits.Length != 2 || !Enum.TryParse<ShotKind>(bits[0], true, out var kind)
+            if (bits.Length != 2 || !Kinds.Contains(bits[0].ToLowerInvariant()) || !Enum.TryParse<ShotKind>(bits[0], true, out var kind)
                 || !double.TryParse(bits[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var s) || s <= 0)
-                throw new FormatException($"\"{part}\" is not a shot: write camera:seconds, one of chase, flyby, tower, cockpit.");
+                throw new FormatException($"\"{part}\" is not a shot: write camera:seconds, one of {string.Join(", ", Kinds)}.");
             return new ShotSpec(kind, s);
         }),
     ];

@@ -1,0 +1,46 @@
+{
+  "x-call": "wingtip_pilot::pilot::calls::endorsed",
+  "description": "The warning an instructor sees once their date has passed on the day of signing (14 CFR 61.197(a), (e)), or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "EndorsementLapseInput",
+      "type": "object",
+      "properties": {
+        "until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD."
+        },
+        "until_kind": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "\"EXP\" for the certificate's expiry; anything else is recent experience (\"RE\")."
+        },
+        "signed_on": {
+          "type": "string",
+          "description": "YYYY-MM-DD."
+        }
+      },
+      "required": [
+        "signed_on"
+      ]
+    },
+    "answer": {
+      "title": "EndorsementLapseAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

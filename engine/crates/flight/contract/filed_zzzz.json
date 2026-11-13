@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_flight::calls::filed",
+  "description": "Whether a field's identifier has a figure in it (C81, 06A) and so no ICAO four-letter location indicator: filed as ZZZZ with its name in item 18 (DEP/, DEST/, ALTN/; AIM Appendix 4) where a service takes only indicators.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FiledZzzzInput",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ident"
+      ]
+    },
+    "answer": {
+      "title": "FiledZzzzAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

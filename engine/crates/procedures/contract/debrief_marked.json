@@ -1,0 +1,70 @@
+{
+  "x-call": "wingtip_procedures::figures::debrief_calls::call",
+  "description": "The web's debrief (its figures, snake_case, no marks) marked against ACS PA.VI.A's tolerances as `debrief` marks its own, with the tolerances.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DebriefMarkedInput",
+      "type": "object",
+      "properties": {
+        "debrief": {
+          "type": "object",
+          "description": "The debrief's figures as `debrief` gives them, unmarked: legs, passes, patterns and the rest."
+        }
+      },
+      "required": [
+        "debrief"
+      ]
+    },
+    "answer": {
+      "title": "DebriefMarkedAnswer",
+      "type": "object",
+      "properties": {
+        "debrief": {
+          "type": "object"
+        },
+        "tolerances": {
+          "type": "object",
+          "properties": {
+            "altitude_ft": {
+              "type": "number"
+            },
+            "course_deg": {
+              "type": "number"
+            },
+            "off_route_nm": {
+              "type": "number"
+            },
+            "eta_min": {
+              "type": "number"
+            },
+            "pattern_nm": {
+              "type": "number"
+            },
+            "pattern_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "altitude_ft",
+            "course_deg",
+            "off_route_nm",
+            "eta_min",
+            "pattern_nm",
+            "pattern_ft"
+          ]
+        }
+      },
+      "required": [
+        "debrief",
+        "tolerances"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

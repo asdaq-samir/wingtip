@@ -1,0 +1,45 @@
+{
+  "x-call": "wingtip_procedures::figures::debrief_calls::call",
+  "description": "The track's flights as [first, last] point indices.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DebriefAirborneInput",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TrackPoint"
+          }
+        }
+      },
+      "required": [
+        "points"
+      ]
+    },
+    "answer": {
+      "title": "DebriefAirborneAnswer",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "integer"
+          }
+        ],
+        "additionalItems": false
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

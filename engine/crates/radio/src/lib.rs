@@ -22,6 +22,7 @@
 
 pub mod atc;
 pub mod atis;
+pub mod calls;
 pub mod callsign;
 pub mod clearance;
 pub mod datis;

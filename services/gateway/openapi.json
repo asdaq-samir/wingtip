@@ -187,33 +187,25 @@
       "AircraftRequest" : {
         "properties" : {
           "climbFuelBurnGph" : {
-            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : [ "number", "null" ]
           },
           "climbTasKt" : {
-            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : [ "number", "null" ]
           },
           "colour" : {
-            "maxLength" : 40,
-            "minLength" : 0,
             "type" : [ "string", "null" ]
           },
           "cruisePowerPct" : {
             "format" : "double",
-            "maximum" : 100,
-            "minimum" : 40,
             "type" : [ "number", "null" ]
           },
           "cruiseTasKt" : {
-            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : "number"
           },
           "equipment" : {
-            "pattern" : "\\s*[A-Za-z0-9]{0,40}\\s*",
             "type" : [ "string", "null" ]
           },
           "figures" : {
@@ -225,26 +217,19 @@
             "description" : "Its own handbook figures, all at once (null in it clears one); left out, they stay as they were"
           },
           "fuelBurnGph" : {
-            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : "number"
           },
           "surveillance" : {
-            "pattern" : "\\s*[A-Za-z0-9]{0,20}\\s*",
             "type" : [ "string", "null" ]
           },
           "tailNumber" : {
-            "maxLength" : 16,
-            "minLength" : 0,
             "type" : "string"
           },
           "typeDesignator" : {
-            "maxLength" : 16,
-            "minLength" : 0,
             "type" : "string"
           },
           "usableFuelGal" : {
-            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : [ "number", "null" ]
           }

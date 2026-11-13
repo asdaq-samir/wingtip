@@ -1,0 +1,237 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::diversion",
+  "description": "The planner's /api/diversion solved, steps, problem and checks (ACS PA.VI.C): the diversion worked out in the leg's own air, and the student's estimates checked against it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DiversionInput",
+      "type": "object",
+      "properties": {
+        "true_course_deg": {
+          "type": "number"
+        },
+        "distance_nm": {
+          "type": "number"
+        },
+        "tas_kt": {
+          "type": "number"
+        },
+        "fuel_burn_gph": {
+          "type": "number"
+        },
+        "magnetic_variation_deg": {
+          "type": "number",
+          "description": "East positive."
+        },
+        "wind": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "wind_dir_true_deg": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "wind_speed_kt": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "to": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The field's ident, for the problem's words."
+        },
+        "mh": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gs": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ete": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "true_course_deg",
+        "distance_nm",
+        "tas_kt",
+        "fuel_burn_gph",
+        "magnetic_variation_deg"
+      ]
+    },
+    "answer": {
+      "title": "DiversionAnswer",
+      "type": "object",
+      "properties": {
+        "solved": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "tc": {
+                  "type": "number"
+                },
+                "distance_nm": {
+                  "type": "number"
+                },
+                "wca": {
+                  "type": "number"
+                },
+                "th": {
+                  "type": "number"
+                },
+                "mh": {
+                  "type": "number"
+                },
+                "gs": {
+                  "type": "number"
+                },
+                "ete": {
+                  "type": "number"
+                },
+                "fuel": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "tc",
+                "distance_nm",
+                "wca",
+                "th",
+                "mh",
+                "gs",
+                "ete",
+                "fuel"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "value"
+            ]
+          }
+        },
+        "problem": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "enum": [
+                  "mh",
+                  "gs",
+                  "ete",
+                  "fuel"
+                ]
+              },
+              "label": {
+                "type": "string"
+              },
+              "unit": {
+                "type": "string"
+              },
+              "allowance": {
+                "type": "number"
+              },
+              "typed": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "exact": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "written": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reasonable": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "key",
+              "label",
+              "unit",
+              "allowance",
+              "typed",
+              "exact",
+              "written",
+              "reasonable"
+            ]
+          }
+        }
+      },
+      "required": [
+        "solved",
+        "steps",
+        "problem",
+        "checks"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

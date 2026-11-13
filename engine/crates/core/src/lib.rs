@@ -11,8 +11,12 @@
 //! - json: the little JSON every rule reads and writes;
 //! - sort: the one stable sort every crate's sorting goes through;
 //! - text: a whole number with its thousands grouped, "12,500";
+//! - units: the SI's exact conversions (the foot, the nautical mile, the
+//!   kelvin), one copy;
+//! - ask: a rule's input read by its name, for each crate's `call`;
 //! - xml: the small XML reader the weather products share.
 
+pub mod ask;
 pub mod base64;
 pub mod geo;
 pub mod grid;
@@ -21,5 +25,6 @@ pub mod sort;
 pub mod sums;
 pub mod text;
 pub mod time;
+pub mod units;
 pub mod wmm;
 pub mod xml;

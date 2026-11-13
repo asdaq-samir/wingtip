@@ -16,6 +16,7 @@
 //! both read a pilot's text alike; `js` holds JavaScript's own reading of
 //! text and numbers, which those were first written in.
 
+pub mod calls;
 pub mod checklist;
 pub mod csv;
 pub mod currency;

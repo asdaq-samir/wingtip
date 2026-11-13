@@ -7,6 +7,8 @@
 //! close enough together to catch a heading error before it compounds.
 //! Until 2026-09-10 the nav log zipped all of them into 205 legs.
 
+use crate::json::Value;
+use wingtip_core::ask::Ask;
 use wingtip_core::sort::StableSort;
 
 /// A VFR pilotage checkpoint every 10-15 nm is the spacing flight training
@@ -71,6 +73,44 @@ pub fn select(
     }
     chosen.stable_sort_by(|a, b| a.1.total_cmp(&b.1));
     chosen.into_iter().map(|(i, _)| i).collect()
+}
+
+/// `checkpoints_select`: the nav log's checkpoints from the chart model's
+/// candidates (`{"candidates": [{"along_track_nm", "predicted_score"}],
+/// "min_spacing_nm"?, "max_count"?, "min_score"?, "length_nm"?}`), their
+/// indices. A missing min_score is MIN_SCORE; null takes every score.
+pub fn call(name: &str, v: &Value) -> Result<String, String> {
+    let ask = Ask::new(name, v);
+    let candidates: Vec<Candidate> = ask
+        .list("candidates")?
+        .iter()
+        .map(|c| Candidate {
+            along_track_nm: c.get("along_track_nm").and_then(Value::as_f64),
+            score: c.get("predicted_score").and_then(Value::as_f64),
+        })
+        .collect();
+    let min_score = match v.get("min_score") {
+        None => Some(MIN_SCORE),
+        Some(Value::Null) => None,
+        Some(Value::Number(n)) => Some(*n),
+        Some(_) => return Err(format!("{name}: \"min_score\" is not a number or null")),
+    };
+    let picked = select(
+        &candidates,
+        ask.opt_num("min_spacing_nm")?.unwrap_or(MIN_SPACING_NM),
+        ask.opt_num("max_count")?.map(|n| n.max(0.0) as usize),
+        min_score,
+        ask.opt_num("length_nm")?,
+    );
+    let mut out = String::from("[");
+    for (i, p) in picked.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&p.to_string());
+    }
+    out.push(']');
+    Ok(out)
 }
 
 #[cfg(test)]

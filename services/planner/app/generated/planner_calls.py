@@ -37,6 +37,11 @@ async def inspections(*, body: dict[str, Any]) -> Any:
     return await _send('POST', '/api/aircraft/inspections', query={}, body=body, headers={})
 
 
+async def check_airplane(*, body: dict[str, Any] | None = None) -> Any:
+    """POST /api/aircraft/problems: Check Airplane"""
+    return await _send('POST', '/api/aircraft/problems', query={}, body=body, headers={})
+
+
 async def airport_place(*, ident: str) -> Any:
     """GET /api/airport/{ident}: Airport Place"""
     return await _send('GET', f"/api/airport/{_seg(ident)}", query={}, body=None, headers={})

@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_radio::calls::call",
+  "description": "Our call sign as a regular expression over a recognizer's words (AIM 4-2-4), for a locked phone's listener; null where `tail` is no registration.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CallPatternInput",
+      "type": "object",
+      "properties": {
+        "tail": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "tail"
+      ]
+    },
+    "answer": {
+      "title": "CallPatternAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

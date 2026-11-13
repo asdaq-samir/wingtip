@@ -1,0 +1,41 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::diversion",
+  "description": "Whether a student's estimate is within the diversion drill's allowance (ACS PA.VI.C.S2); an error for a key not estimated.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DiversionReasonableInput",
+      "type": "object",
+      "properties": {
+        "key": {
+          "enum": [
+            "mh",
+            "gs",
+            "ete",
+            "fuel"
+          ]
+        },
+        "typed": {
+          "type": "number"
+        },
+        "exact": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "key",
+        "typed",
+        "exact"
+      ]
+    },
+    "answer": {
+      "title": "DiversionReasonableAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

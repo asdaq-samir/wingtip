@@ -1,0 +1,32 @@
+{
+  "x-call": "wingtip_radio::calls::call",
+  "description": "Whether a transmission is said to the airplane `tail` (AIM 4-2-4).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "OurCallInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "tail": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "tail"
+      ]
+    },
+    "answer": {
+      "title": "OurCallAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

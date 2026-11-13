@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
  * report (the last run's crash, the exits Android kept) sent, and each
  * session's frames and launch sent as the app goes to the background.
  * The same report the iPhone and the web send; nothing of the pilot's is
- * in any of it (DiagnosticsBody).
+ * in any of it (DiagnosticsBodies).
  */
 object Diagnostics {
     private const val PREFS = "diagnostics"

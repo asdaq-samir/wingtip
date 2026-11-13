@@ -1,0 +1,32 @@
+{
+  "x-call": "wingtip_pilot::pilot::calls::files",
+  "description": "The logbook as a CSV file in ForeFlight's column names, oldest flight first.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "LogbookCsvWriteInput",
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "The gateway's LogbookEntry, camelCase."
+          }
+        }
+      },
+      "required": [
+        "entries"
+      ]
+    },
+    "answer": {
+      "title": "LogbookCsvWriteAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

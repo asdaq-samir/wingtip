@@ -1,5 +1,5 @@
 //! wingtip-flight: the flight's own rules, one step above wingtip-core
-//! (engine/README.md) and using nothing: the wind triangle, 91.159's
+//! (engine/README.md) and using only it: the wind triangle, 91.159's
 //! cruising altitudes, 91.151's reserve and the atmosphere. A crate of
 //! its own, under wingtip-procedures and wingtip-brief, because both use
 //! it (the diversion's triangle and the fuel strip's reserve, the runway
@@ -15,8 +15,10 @@
 //! - filing: FAA Form 7233-4's items as AIM Appendix 4 writes them;
 //! - sun: night and civil twilight (14 CFR 1.1), NOAA's solar calculation,
 //!   and 61.57(b)'s night-passenger period;
-//! - vfr: 91.155's basic VFR weather minimums.
+//! - vfr: 91.155's basic VFR weather minimums;
+//! - calls: these rules asked by name.
 
+pub mod calls;
 pub mod filing;
 pub mod flight;
 pub mod limits;

@@ -36,6 +36,17 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/aircraft/inspections`.
     /// - Remark: Generated from `#/paths//api/aircraft/inspections/post(inspections)`.
     func inspections(_ input: Operations.Inspections.Input) async throws -> Operations.Inspections.Output
+    /// Check Airplane
+    ///
+    /// `{field: words}` for each field of the request that may not be
+    /// saved, in the words the apps show under it; `{}` where it may be. The
+    /// figures come as the gateway's JSON numbers and are read as the form's
+    /// typed text, as the engine takes them; a field left out or null is
+    /// blank.
+    ///
+    /// - Remark: HTTP `POST /api/aircraft/problems`.
+    /// - Remark: Generated from `#/paths//api/aircraft/problems/post(check_airplane)`.
+    func checkAirplane(_ input: Operations.CheckAirplane.Input) async throws -> Operations.CheckAirplane.Output
     /// Airport Aerial
     ///
     /// The field's aerial photo from the USGS National Map's imagery
@@ -1533,6 +1544,25 @@ extension APIProtocol {
         body: Operations.Inspections.Input.Body
     ) async throws -> Operations.Inspections.Output {
         try await inspections(Operations.Inspections.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Check Airplane
+    ///
+    /// `{field: words}` for each field of the request that may not be
+    /// saved, in the words the apps show under it; `{}` where it may be. The
+    /// figures come as the gateway's JSON numbers and are read as the form's
+    /// typed text, as the engine takes them; a field left out or null is
+    /// blank.
+    ///
+    /// - Remark: HTTP `POST /api/aircraft/problems`.
+    /// - Remark: Generated from `#/paths//api/aircraft/problems/post(check_airplane)`.
+    public func checkAirplane(
+        headers: Operations.CheckAirplane.Input.Headers = .init(),
+        body: Operations.CheckAirplane.Input.Body? = nil
+    ) async throws -> Operations.CheckAirplane.Output {
+        try await checkAirplane(Operations.CheckAirplane.Input(
             headers: headers,
             body: body
         ))

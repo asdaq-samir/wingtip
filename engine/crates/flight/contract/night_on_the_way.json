@@ -1,0 +1,52 @@
+{
+  "x-call": "wingtip_flight::calls::night",
+  "description": "Whether any of a trip from `start` to `end` of `minutes` (its stops' time on the ground counted), leaving at `depart_s`, falls in the night, judged every half hour along the straight line: 14 CFR 91.151(a)(2)'s 45 minutes then.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NightOnTheWayInput",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon]"
+        },
+        "end": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon]"
+        },
+        "depart_s": {
+          "type": "number"
+        },
+        "minutes": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "depart_s",
+        "minutes"
+      ]
+    },
+    "answer": {
+      "title": "NightOnTheWayAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

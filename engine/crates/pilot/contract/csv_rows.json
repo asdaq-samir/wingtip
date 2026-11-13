@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_pilot::pilot::calls::files",
+  "description": "A CSV file's rows of fields.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CsvRowsInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "CsvRowsAnswer",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

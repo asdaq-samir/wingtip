@@ -973,6 +973,9 @@ dependencies = [
 [[package]]
 name = "wingtip-flight"
 version = "0.1.0"
+dependencies = [
+ "wingtip-core",
+]
 
 [[package]]
 name = "wingtip-inflight"

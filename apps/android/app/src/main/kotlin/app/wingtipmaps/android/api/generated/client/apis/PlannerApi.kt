@@ -460,6 +460,20 @@ interface PlannerApi {
     suspend fun chartTile2x(@Path("kind") kind: kotlin.String, @Path("z") z: kotlin.Int, @Path("x") x: kotlin.Int, @Path("y") y: kotlin.Int): Response<Unit>
 
     /**
+     * POST aircraft/problems
+     * Check Airplane
+     * &#x60;{field: words}&#x60; for each field of the request that may not be saved, in the words the apps show under it; &#x60;{}&#x60; where it may be. The figures come as the gateway&#39;s JSON numbers and are read as the form&#39;s typed text, as the engine takes them; a field left out or null is blank.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param kotlinxSerializationJsonJsonObject  (optional)
+     * @return [Unit]
+     */
+    @POST("aircraft/problems")
+    suspend fun checkAirplane(@Body kotlinxSerializationJsonJsonObject: kotlinx.serialization.json.JsonObject? = null): Response<Unit>
+
+    /**
      * GET checkpoints
      * Checkpoints
      * Scored candidates and the subset worth flying, hop by hop along the whole route: fast once each hop&#39;s chart has been read, a few seconds for its first time.
