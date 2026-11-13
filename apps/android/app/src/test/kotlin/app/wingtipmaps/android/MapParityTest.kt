@@ -168,7 +168,7 @@ class MapParityTest {
     /** The engine's `traffic_fresh` and `destination` stood in for: a
      *  report half a minute old or less fresh, and each step answered a
      *  degree north per nm, so the test reads which step went where; the
-     *  engine itself is held to traffic.json and sphere.json by
+     *  engine itself is held to traffic.json and geodesic.json by
      *  EngineFixturesTest. */
     private open class Steps : TrafficDrawing.Rules {
         val asked = mutableListOf<EngineContract.DestinationInputPointsItem>()

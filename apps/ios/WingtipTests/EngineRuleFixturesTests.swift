@@ -5,7 +5,7 @@ import Testing
 
 /// The small rules the app asks the engine rather than keeping its own
 /// copy (the airplane form's limits, traffic's notice and freshness,
-/// paperwork's tone, the drills' boxes, the sphere's figures), each
+/// paperwork's tone, the drills' boxes, the geodesic figures), each
 /// checked against the web's shared fixture of examples as
 /// SharedFixturesTests checks the rest.
 private struct AircraftFormFixture: Decodable {
@@ -37,7 +37,7 @@ private struct DrillNextFixture: Decodable {
     let next: [Case]
 }
 
-private struct SphereFixture: Decodable {
+private struct GeodesicFixture: Decodable {
     struct Distance: Decodable { let lat1, lon1, lat2, lon2, nm: Double }
     struct Bearing: Decodable { let lat1, lon1, lat2, lon2, deg: Double }
     struct Place: Decodable { let lat, lon: Double }
@@ -122,8 +122,8 @@ struct EngineRuleFixturesTests {
         }
     }
 
-    @Test func theSphereIsTheOneEveryAppAsks() throws {
-        let f = try fixture("sphere", as: SphereFixture.self, decoder: snakeCase)
+    @Test func theGeodesicIsTheOneEveryAppAsks() throws {
+        let f = try fixture("geodesic", as: GeodesicFixture.self, decoder: snakeCase)
         for c in f.distance {
             #expect(roughly(try Engine.distanceNm(lat1: c.lat1, lon1: c.lon1, lat2: c.lat2, lon2: c.lon2), c.nm), "\(c)")
         }

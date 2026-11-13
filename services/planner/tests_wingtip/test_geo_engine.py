@@ -1,5 +1,5 @@
 """wingtip.geo's figures are the engine's: the shared cases every app
-answers (apps/web/src/lib/fixtures/sphere.json, pyproj's own answers), and
+answers (apps/web/src/lib/fixtures/geodesic.json, pyproj's own answers), and
 PROJ's geodesic on the WGS-84 ellipsoid (pyproj's Geod(ellps="WGS84"),
 Karney's algorithm, as the engine's geographiclib-rs is) as an oracle over
 many points at once, scalars and arrays alike, to 1e-6 nm. A nautical mile
@@ -16,7 +16,7 @@ from scipy.optimize import brentq
 
 from wingtip import geo
 
-CASES = json.loads((Path(__file__).resolve().parents[3] / "apps/web/src/lib/fixtures/sphere.json").read_text())
+CASES = json.loads((Path(__file__).resolve().parents[3] / "apps/web/src/lib/fixtures/geodesic.json").read_text())
 #: WGS-84 (NGA TR8350.2), in metres.
 WGS84 = Geod(ellps="WGS84")
 M_PER_NM = 1852.0

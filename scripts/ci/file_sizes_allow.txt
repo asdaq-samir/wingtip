@@ -77,7 +77,7 @@ engine/crates/route/src/motion/instruments.rs 522
 engine/crates/route/src/navlog/plans.rs 496
 engine/crates/route/src/route/options.rs 684
 engine/crates/route/src/route/options/ask.rs 401
-engine/crates/route/src/route/options/fuel.rs 464
+engine/crates/route/src/route/options/fuel.rs 455
 engine/crates/route/src/route/options/read.rs 417
 engine/crates/route/src/route/options/terrain.rs 424
 engine/crates/weather/src/forecast/awc.rs 522

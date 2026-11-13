@@ -3,7 +3,9 @@ package app.wingtipmaps.android
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.wingtipmaps.android.coach.CoachApproaches
+import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.distanceNm
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.jsonArray
@@ -13,12 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.math.asin
-import kotlin.math.cos
 import kotlin.math.min
-import kotlin.math.pow
-import kotlin.math.sin
-import kotlin.math.sqrt
 import kotlin.math.tan
 
 /**
@@ -37,13 +34,11 @@ class CoachApproachesEngineTest {
 
     private fun drawing(id: String) = CoachApproaches.drawing(kbur.getValue(id).toString())
 
-    /** Great-circle distance, nm (a mean earth of 3,440.065 nm): the test's
-     *  own measure of where along the line a point is, not the app's. */
-    private fun nm(a: Pair<Double, Double>, b: Pair<Double, Double>): Double {
-        val r = Math.PI / 180
-        val h = sin((b.first - a.first) * r / 2).pow(2) + cos(a.first * r) * cos(b.first * r) * sin((b.second - a.second) * r / 2).pow(2)
-        return 2 * 3440.065 * asin(sqrt(h))
-    }
+    /** The engine's distance, nm, on WGS-84 (distance_nm through the JNI
+     *  shim): where along the line a point is, by the one measure every
+     *  app asks. */
+    private fun nm(a: Pair<Double, Double>, b: Pair<Double, Double>): Double =
+        Engine.distanceNm(a.first, a.second, b.first, b.second).getOrThrow()
 
     /** The ILS's final, 2 nm out before its first point, flown at 120 kt a
      *  point a second as charted (the web test's onIls): 3,700 ft to SILEX,

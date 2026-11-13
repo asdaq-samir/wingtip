@@ -296,8 +296,8 @@ class EngineFixturesTest {
     }
 
     @Test
-    fun theSpheresFiguresComeThroughTheBridge() {
-        val f = fixture("sphere.json")
+    fun theGeodesicFiguresComeThroughTheBridge() {
+        val f = fixture("geodesic.json")
         fun between(c: JsonObject) = arrayOf("lat1" to c["lat1"], "lon1" to c["lon1"], "lat2" to c["lat2"], "lon2" to c["lon2"])
         for (c in f.cases("distance")) check(ask("distance_nm", *between(c)), c["nm"], "distance $c")
         for (c in f.cases("bearing")) check(ask("bearing_deg", *between(c)), c["deg"], "bearing $c")
