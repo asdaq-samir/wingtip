@@ -49,3 +49,12 @@ describe("the look", () => {
     expect(migratePreferences({ brand: "cockpit" }, 7)).toMatchObject({ brand: "cockpit" });
   });
 });
+
+describe("3D", () => {
+  it("is a switch of its own over the 2D look: a kept 3D is shaded with 3D on, flat and shaded as they were", () => {
+    expect(usePreferences.getInitialState()).toMatchObject({ terrain: "flat", threeD: false });
+    expect(migratePreferences({ terrain: "3d" }, 7)).toMatchObject({ terrain: "shaded", threeD: true });
+    expect(migratePreferences({ terrain: "shaded" }, 7)).toMatchObject({ terrain: "shaded" });
+    expect(migratePreferences({ terrain: "flat" }, 7)).not.toHaveProperty("threeD");
+  });
+});

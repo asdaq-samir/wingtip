@@ -75,7 +75,7 @@ const load: AddProtocolAction = async (params, abort) => {
  * the tiles are heights over the plan). The rest of the chart as it is.
  * A view of the plan, not terrain clearance: no TAWS, and nothing of 14
  * CFR 91.119 or 91.177's minimums, which the plan's altitudes answer; the
- * Map menu's Terrain row says so.
+ * Map Settings' Terrain row says so while 3D is on.
  */
 export default function ClearanceGl({ points }: { points: AloftPoint[] }) {
   const { map } = useGlMap();

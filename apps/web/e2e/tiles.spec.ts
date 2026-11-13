@@ -58,9 +58,9 @@ for (const path of ["/app/dev"] as const) {
     // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
     await grabberTo(page, "full");
     const pin = page.getByTestId("tac-toggle");
-    await expect(pin).toHaveAttribute("aria-checked", "false");
+    await expect(pin).toHaveAttribute("aria-pressed", "false");
     await pin.click();
-    await expect(pin).toHaveAttribute("aria-checked", "true");
+    await expect(pin).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press("Escape");
     await expect.poll(kinds, { timeout: slow(10000) }).toBe("sec tac");
     await expect.poll(() => tacDrawn, { timeout: slow(45000) }).toBeGreaterThan(0);
@@ -72,9 +72,9 @@ for (const path of ["/app/dev"] as const) {
     await openMapSettings(page);
     await grabberTo(page, "full");
     const toggle = page.getByTestId("tac-toggle");
-    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
     await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
     await page.keyboard.press("Escape");
     await expect.poll(kinds).toBe("sec");
   });

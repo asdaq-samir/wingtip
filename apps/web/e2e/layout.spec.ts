@@ -299,7 +299,7 @@ for (const path of PAGES) {
     } else {
       expect(firstBox.y).toBeGreaterThan(viewport.height / 2);
       // The mic a button of its own right over the group, at the same edge.
-      const mic = (await page.locator("[data-map-controls] [data-map-food]").boundingBox())!;
+      const mic = (await page.locator("[data-map-controls]").getByTestId("mic-circle").boundingBox())!;
       expect(mic.y + mic.height).toBeLessThanOrEqual(firstBox.y);
       expect(viewport.width - (mic.x + mic.width)).toBeLessThan(20);
     }

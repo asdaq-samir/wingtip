@@ -1,25 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { editionOf } from "./chartEdition";
-import { ListGroup, ListRow } from "./GroupedList";
-import Segmented from "./Segmented";
-import { ALERT_MODES, useAlertMode, type AlertMode } from "./alertMode";
-import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "./copilotMode";
-import { useMicPrimer } from "./MicPrimer";
-import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../lib/atc/listenSetting";
-import { useCanListen } from "../lib/speechLocal";
-import { usePreferences } from "../lib/preferences";
-import { chartQuery } from "../lib/queryClient";
-import { useDataCycles, useLayerAges } from "../lib/map/sources/layerAges";
-import { cycleWarning } from "../lib/dataCycles";
-import { TEXT } from "../lib/text";
+import { editionOf } from "../../components/chartEdition";
+import { ListGroup, ListRow } from "../../components/GroupedList";
+import Segmented from "../../components/Segmented";
+import { ALERT_MODES, useAlertMode, type AlertMode } from "../../components/alertMode";
+import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "../../components/copilotMode";
+import { useMicPrimer } from "../../components/MicPrimer";
+import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../../lib/atc/listenSetting";
+import { useCanListen } from "../../lib/speechLocal";
+import { usePreferences } from "../../lib/preferences";
+import { chartQuery } from "../../lib/queryClient";
+import { useDataCycles, useLayerAges } from "../../lib/map/sources/layerAges";
+import { cycleWarning } from "../../lib/dataCycles";
+import { TEXT } from "../../lib/text";
 
 /**
- * Two of the Map card's groups (MapSettings), each in a file of its own so
- * the card stays one screen's worth of code: the in-flight alerts and
- * copilots, and where the map's data comes from.
+ * Two of the Map card's pages, each a row of its Map Settings page
+ * (MapSettingsPage; the owner's pick, option A of the map settings
+ * canvas, 2026-11-13): the in-flight alerts and copilots, and where the
+ * map's data comes from. The page's name is the card's (MapCardPages), so
+ * the group under it has none.
  */
-export function MapAlertsGroup() {
+export function MapAlertsPage() {
   const [alertMode, setAlertMode] = useAlertMode();
   const [copilotMode, setCopilotMode] = useCopilotMode();
   const atcListen = useAtcListen((s) => s.value);
@@ -32,7 +34,7 @@ export function MapAlertsGroup() {
       {/* The in-flight alerts, off, shown or said aloud (components/alertMode),
           here from Setup's tiles since the owner's ask ("alerts can go to
           overlay settings", 2026-11-05): a pick of three, segmented. */}
-      <ListGroup title="Alerts">
+      <ListGroup>
         <ListRow title="Alerts">
           <Segmented
             label="Alerts"
@@ -72,7 +74,7 @@ export function MapAlertsGroup() {
   );
 }
 
-export function MapSourcesGroup() {
+export function MapSourcesPage() {
   const traffic = usePreferences((s) => s.traffic);
   // The edition is what a pilot checks: a chart is current for its cycle.
   // adsb.lol's licence (ODbL 1.0, 4.3) asks it be credited, as the owner
@@ -89,7 +91,7 @@ export function MapSourcesGroup() {
     <>
       {/* Where the map's data comes from, and when the weather layers' is from (lib/map/sources/layerAges):
           the METARs behind the airports' colours and the TFRs as the planner fetched them, the traffic as the map last heard it. */}
-      <ListGroup title="Sources">
+      <ListGroup>
         <ListRow
           title="Charts"
           value={<span className="text-foreground">{chart ? `FAA, ${editionOf(chart.chart_cycle)}` : "FAA"}</span>}

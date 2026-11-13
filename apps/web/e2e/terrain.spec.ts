@@ -1,11 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
-import { beforeTheRoute, closeProfile, grabberTo, openPanel, openProfile, pressDryRunStart, settle, sideDrawer, slow } from "./helpers";
+import { closeProfile, openPanel, openProfile, pressDryRunStart, settle, sideDrawer, slow } from "./helpers";
+import { beforeTheRoute, closeMapSettings, openMapSettingsPage, setMap3d } from "./mapCard";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
- * The ground under the chart (features/plan/map/terrain), from the Map menu's
- * Terrain: its relief shaded over the chart, then stood up in 3D with the
+ * The ground under the chart (features/plan/map/terrain), from the Map
+ * Settings' Terrain: its relief shaded over the chart, then stood up in 3D
+ * by the map's round 3D button (ThreeDButton) with the
  * route drawn at its altitudes; and the dry run seen from the pilot's seat,
  * its key saying it is a view, not terrain clearance. The map's own element
  * says what is drawn (its data-layers, data-terrain, data-route-aloft,
@@ -14,9 +16,9 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
 const map = (page: Page) => page.getByTestId("gl-map");
 const layers = (page: Page) => map(page).getAttribute("data-layers");
 
-async function pickTerrain(page: Page, name: "Flat" | "Shaded" | "3D") {
+async function pickTerrain(page: Page, name: "Flat" | "Shaded") {
   await beforeTheRoute(page, async () => {
-    await grabberTo(page, "full");
+    await openMapSettingsPage(page);
     await page.getByTestId("terrain-select").getByRole("button", { name }).click();
   });
 }
@@ -28,12 +30,12 @@ test("the relief is shaded over the chart, and stood up in 3D with the route at 
   await expect.poll(() => layers(page), { timeout: slow(20_000) }).toContain("terrain-hillshade");
   await expect(map(page)).not.toHaveAttribute("data-terrain", "3d");
 
-  // In 3D the menu says what the ground's colours near a route are.
-  await beforeTheRoute(page, async () => {
-    await grabberTo(page, "full");
-    await page.getByTestId("terrain-select").getByRole("button", { name: "3D" }).click();
-    await expect(page.getByTestId("map-settings")).toContainText("A view of the plan, not terrain clearance.");
-  });
+  // 3D from the map's own button; while it is on, the Terrain row says
+  // what the ground's colours near a route are.
+  await setMap3d(page, true);
+  await openMapSettingsPage(page);
+  await expect(page.getByTestId("map-settings")).toContainText("A view of the plan, not terrain clearance.");
+  await closeMapSettings(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expect(map(page)).toHaveAttribute("data-terrain", "3d", { timeout: slow(20_000) });
@@ -46,7 +48,8 @@ test("the relief is shaded over the chart, and stood up in 3D with the route at 
   await expect(map(page)).toHaveAttribute("data-terrain-clearance", "5", { timeout: slow(20_000) });
   await expect.poll(() => layers(page)).toContain("terrain-clearance");
 
-  // Flat again: the chart as printed, north up.
+  // Flat again, 3D off: the chart as printed, north up.
+  await setMap3d(page, false);
   await pickTerrain(page, "Flat");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

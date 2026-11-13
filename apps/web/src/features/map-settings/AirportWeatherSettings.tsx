@@ -1,10 +1,11 @@
-import { ListGroup, ListRow } from "./GroupedList";
-import Segmented from "./Segmented";
-import SwitchRow from "./SwitchRow";
-import { AIRPORT_WEATHER_LOOKS, useAirportWeatherPrefs, type AirportWeatherLook } from "../lib/map/marks/airportWeatherPrefs";
+import { ListGroup, ListRow } from "../../components/GroupedList";
+import Segmented from "../../components/Segmented";
+import SwitchRow from "../../components/SwitchRow";
+import { AIRPORT_WEATHER_LOOKS, useAirportWeatherPrefs, type AirportWeatherLook } from "../../lib/map/marks/airportWeatherPrefs";
 
 /**
- * The Map card's Airport Weather (the owner's pick, 2026-11-10): how each
+ * The Map card's Airport Weather page, from its row on the Map Settings
+ * page (the owner's picks, 2026-11-10 and 2026-11-13): how each
  * field's weather is drawn -- Off, a Halo in its flight category's colour
  * round the chart's symbol (the default), ForeFlight's Dot in place of the
  * symbol, or the Station model wherever it fits -- as one segmented
@@ -18,7 +19,7 @@ export default function AirportWeatherSettings() {
   const prefs = useAirportWeatherPrefs();
   const off = prefs.look === "off";
   return (
-    <ListGroup title="Airport Weather">
+    <ListGroup>
       {/* Four choices, under the row's name where the row is too narrow
           for both (ListRow). */}
       <ListRow title="Show">

@@ -1,9 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
-import { beforeTheRoute, grabberTo, settle, slow } from "./helpers";
+import { settle, slow } from "./helpers";
+import { setMap3d } from "./mapCard";
 
 /**
  * The airspace stood up in 3D (features/plan/map/terrain/AirspaceVolumesGl):
- * from the Map menu's Terrain, 3D, the Class B, C and D, the special use
+ * from the map's round 3D button (ThreeDButton), the Class B, C and D, the special use
  * areas and the TFRs drawn whole with deck.gl between their floors and
  * ceilings (the planner's /api/airspace/volumes), each area named once at
  * its top. The container has no GPU to look at, so the map's own element
@@ -51,10 +52,7 @@ test("in 3D the airspace stands between its floors and ceilings, and flat again 
     (url) => url.pathname.endsWith("/airspace/volumes"),
     (route) => route.fulfill({ json: VOLUMES }),
   );
-  await beforeTheRoute(page, async () => {
-    await grabberTo(page, "full");
-    await page.getByTestId("terrain-select").getByRole("button", { name: "3D" }).click();
-  });
+  await setMap3d(page, true);
   // Over Chicago: O'Hare's Class B and Midway's Class C.
   await page.goto("/app/plan?dep=KDPA&dest=KPWK");
   await settle(page);
@@ -64,10 +62,7 @@ test("in 3D the airspace stands between its floors and ceilings, and flat again 
     .poll(async () => Number((await map(page).getAttribute("data-airspace3d")) ?? 0), { timeout: slow(60_000) })
     .toBeGreaterThan(0);
 
-  await beforeTheRoute(page, async () => {
-    await grabberTo(page, "full");
-    await page.getByTestId("terrain-select").getByRole("button", { name: "Flat" }).click();
-  });
+  await setMap3d(page, false);
   await page.goto("/app/plan?dep=KDPA&dest=KPWK");
   await settle(page);
   await expect.poll(() => map(page).getAttribute("data-layers")).not.toContain("airspace-3d-labels");

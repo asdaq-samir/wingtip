@@ -37,9 +37,16 @@ test("the map's microphone is at the left over the sheet, and its pill widens to
   const shut = (await mic.boundingBox())!;
   const sheet = (await sideDrawer(page).boundingBox())!;
   expect(shut.x).toBeLessThanOrEqual(16);
-  // Over the sheet's top, close above it.
-  expect(shut.y + shut.height).toBeLessThanOrEqual(sheet.y);
-  expect(sheet.y - (shut.y + shut.height)).toBeLessThanOrEqual(40);
+  // Over the sheet's top, close above it, the round 3D button under it
+  // (ThreeDButton, the owner 2026-11-13): two circles of the same size
+  // apart, as Apple Maps' are, not one capsule.
+  const threeD = (await page.getByTestId("map-3d-button").locator("..").boundingBox())!;
+  expect(Math.abs(threeD.width - shut.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(threeD.height - shut.height)).toBeLessThanOrEqual(1);
+  expect(Math.abs(threeD.x - shut.x)).toBeLessThanOrEqual(1);
+  expect(threeD.y).toBeGreaterThan(shut.y + shut.height);
+  expect(threeD.y + threeD.height).toBeLessThanOrEqual(sheet.y);
+  expect(sheet.y - (threeD.y + threeD.height)).toBeLessThanOrEqual(40);
   // Tapped: the pill, listening or saying why it cannot -- the left edge
   // stays where it was, and it grows to the right.
   await mic.getByTestId("radio-button").click();

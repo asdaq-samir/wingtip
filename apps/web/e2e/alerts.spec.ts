@@ -1,5 +1,6 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { drawn, grabberTo, openMapSettings, settle, slow } from "./helpers";
+import { drawn, settle, slow } from "./helpers";
+import { closeMapSettings, openMapSettingsPage } from "./mapCard";
 
 /**
  * What is ahead of own ship in the air (lib/map/position/ahead), said over the map
@@ -204,15 +205,13 @@ test("spoken, each alert ahead is said once as it comes, and turned on it says s
 
   // The map's settings: one Alerts control of Off, On and Spoken, there
   // since the owner's "alerts can go to overlay settings" (2026-11-05).
-  await openMapSettings(page);
-  // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
-  await grabberTo(page, "full");
+  // Its Map Settings' Alerts page since the owner's option A (2026-11-13).
+  await openMapSettingsPage(page, "alerts");
   const mode = page.getByTestId("map-settings").getByTestId("alerts-mode");
   await expect(mode.getByRole("button", { name: "On" })).toHaveAttribute("aria-pressed", "true");
   await mode.getByRole("button", { name: "Spoken" }).click();
   await expect(mode.getByRole("button", { name: "Spoken" })).toHaveAttribute("aria-pressed", "true");
-  await page.keyboard.press("Escape");
-  await expect(page.getByTestId("map-settings")).toHaveCount(0);
+  await closeMapSettings(page);
   // Turned on in the air: it says so, then what is ahead.
   await expect.poll(said).toEqual(["Alerts will be spoken.", "Chicago Class B, in 2 minutes."]);
 

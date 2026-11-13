@@ -151,7 +151,7 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
  *  where the map is in 3D (features/replay/camera), the Studio's own. */
 function Replay() {
   const points = usePastFlight((s) => s.points);
-  const threeD = usePreferences((s) => s.terrain === "3d");
+  const threeD = usePreferences((s) => s.threeD);
   // The camera let go with the card: the map the pilot's again.
   useEffect(() => () => setReplayCamera(null), []);
   return (

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { closeCard, grabberTo, openMapSettings, settle, slow } from "./helpers";
+import { openMapSettingsPage } from "./mapCard";
 
 /**
  * Over the chart, at the pilot's ask (the map's settings, OverlayTiles):
@@ -73,11 +74,15 @@ test("the USGS's imagery over the chart, credited, at the strength picked; no Go
   // Half to begin with, then full; over the base chart and the terminal
   // sheet, on purpose (its slot, BaseGl).
   await expect.poll(imagery).toBe("usgs 0.6");
+  // Its strength on the Map Settings page (the owner's option A, 2026-11-13).
+  await openMapSettingsPage(page);
   await page.getByTestId("overlay-strength").getByRole("button", { name: "Full" }).click();
   await expect.poll(imagery).toBe("usgs 1");
-  // Off: gone, its credit too.
+  // Off, back on the Map: gone, its credit too, and no strength to set.
+  await page.getByTestId("map-settings").getByTestId("sheet-card-close").click();
   await overlay.getByRole("button", { name: "None" }).click();
   await expect.poll(imagery).toBeNull();
+  await openMapSettingsPage(page);
   await expect(page.getByTestId("overlay-strength")).toHaveCount(0);
 });
 
@@ -93,7 +98,8 @@ test("Google's map or its satellite over the chart where the deployment has a ke
   await expect.poll(() => asked.some((u) => u.includes("/v1/createSession?key=AIza-test")), { timeout: slow(15000) }).toBe(true);
   await expect.poll(() => asked.some((u) => /\/v1\/2dtiles\/\d+\/\d+\/\d+\?session=test-session&key=AIza-test/.test(u))).toBe(true);
   await expect(page.locator(".maplibregl-ctrl-attrib", { hasText: "Google Maps · Map data ©2026 Google" })).toBeVisible();
-  // Its satellite: a session of its own, with Google's roads over it.
+  // Its satellite, from the Map Settings page: a session of its own, with Google's roads over it.
+  await openMapSettingsPage(page);
   await page.getByTestId("google-overlay-select").getByRole("button", { name: "Satellite" }).click();
   await expect.poll(() => asked.filter((u) => u.includes("/v1/createSession")).length).toBe(2);
 });
@@ -111,6 +117,7 @@ test("a saved Google overlay where there is no key is off, with no Strength row 
   await openMapSettings(page);
   await grabberTo(page, "full");
   await expect(page.getByTestId("overlay-select").getByRole("button", { name: "None" })).toHaveAttribute("aria-pressed", "true");
+  await openMapSettingsPage(page);
   await expect(page.getByTestId("overlay-strength")).toHaveCount(0);
   await expect(page.getByTestId("google-overlay-select")).toHaveCount(0);
 });
@@ -135,6 +142,7 @@ test("Google's session refused says so in the settings; a kept session of anothe
     (url) => url.hostname === "tile.googleapis.com",
     (route) => route.fulfill({ status: 403, json: {} }),
   );
+  await openMapSettingsPage(page);
   await page.getByTestId("google-overlay-select").getByRole("button", { name: "Satellite" }).click();
   await expect(page.getByTestId("google-problem")).toBeVisible({ timeout: slow(30000) });
 });

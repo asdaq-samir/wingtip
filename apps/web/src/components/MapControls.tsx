@@ -6,6 +6,7 @@ import FullscreenButton from "./FullscreenButton";
 import MyPositionButton from "./MyPositionButton";
 import MapSettingsButton, { MapSettingsCard } from "./MapSettingsButton";
 import RadioButton from "./RadioButton";
+import ThreeDButton from "./ThreeDButton";
 import { useAtcRadio } from "../lib/atcRadio";
 import { useIsMobile } from "../hooks/use-mobile";
 import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "../lib/mapChrome";
@@ -77,9 +78,9 @@ function MapControlsDrawn() {
       className={cn(
         "z-[1000] flex items-end rounded-4xl p-1",
         riding
-          ? "pointer-events-auto absolute bottom-[calc(1.5rem+var(--sheet-top-lift,0px))] left-[max(0.5rem,env(safe-area-inset-left))] max-w-[min(28rem,calc(100vw-6rem))]"
+          ? "max-w-[min(28rem,calc(100vw-6rem))]"
           : onPhone
-            ? "absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] max-w-[min(28rem,calc(100vw-5rem))]"
+            ? "max-w-[min(28rem,calc(100vw-5rem))]"
             : // In the column at the right edge: widening to the left into
               // the pill, its mic staying where it was.
               "max-w-[min(28rem,calc(100vw-30rem))] flex-row-reverse",
@@ -197,6 +198,9 @@ function MapControlsDrawn() {
             )}
           >
             {!onPhone && mic()}
+            {/* The 3D button, its own circle under the mic's (ThreeDButton);
+                on the ground only, as the settings are. */}
+            {!onPhone && !flying && <ThreeDButton />}
             {group}
           </div>
         )}
@@ -218,7 +222,26 @@ function MapControlsDrawn() {
         right into the pill. In the air it grows to 60 points there. Over
         a bottom sheet drawn in the Drawer's popup (OnSheetTop), so it
         follows a finger's drag as Apple Maps' buttons do. */}
-      {onPhone && <OnSheetTop>{(riding) => mic(riding)}</OnSheetTop>}
+      {/* The 3D button under it, a circle of its own (ThreeDButton), on
+        the ground only, as the map's settings are. */}
+      {onPhone && (
+        <OnSheetTop>
+          {(riding) => (
+            <div
+              className={cn(
+                // Only the circles take a tap, not the room between them.
+                "pointer-events-none z-[1000] flex flex-col items-start gap-2 [&>*]:pointer-events-auto",
+                riding
+                  ? "absolute bottom-[calc(1.5rem+var(--sheet-top-lift,0px))] left-[max(0.5rem,env(safe-area-inset-left))]"
+                  : "absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))]",
+              )}
+            >
+              {mic(riding)}
+              {!flying && <ThreeDButton />}
+            </div>
+          )}
+        </OnSheetTop>
+      )}
     </>
   );
 }
