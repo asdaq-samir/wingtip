@@ -92,6 +92,18 @@ HAVERSINE = re.compile(
     r"|\b(?:asin|atan2)\(\s*(?:np\.|math\.|Math\.)?sqrt\("
 )
 HAVERSINE_HOMES = SEARCH_BOX_HOMES
+# A distance margin worked in degrees (round 7's U1 to U4): miles over 60
+# (STORM_NM / 60.0), a degrees constant set as miles over 60, or a reach,
+# margin, pad, buffer or radius constant in degrees added to a latitude or
+# longitude -- each a mile short east and west by cos(latitude). Pad with
+# geo::corridor_bbox or box_around and measure in nm on core::flat::Flat.
+# Degree tilings (a grid's step, a region, a cell) are degrees by design.
+DEGREE_MARGIN = re.compile(
+    r"\b[A-Z][A-Z0-9_]*_NM\s*/\s*\(?\s*(?:60|59\.7)(?:\.0*)?(?![\w.])"
+    r"|\b[A-Z][A-Z0-9_]*_(?:DEG|MARGIN)\b\s*(?::\s*f64\s*)?=\s*[\d.]+\s*/\s*\(?\s*60(?:\.0*)?(?![\w.])"
+    r"|[-+]\s*\b[A-Z0-9_]*(?:REACH|MARGIN|PAD|BUFFER|RADIUS)[A-Z0-9_]*_DEG\b|[-+]\s*\b[A-Z][A-Z0-9_]*_MARGIN\b"
+)
+DEGREE_MARGIN_HOMES = SEARCH_BOX_HOMES + ("engine/crates/core/src/flat.rs",)
 PY_NOT_CODE = re.compile(r'#[^\n]*|"""(.|\n)*?"""|\'\'\'(.|\n)*?\'\'\'|"(\\.|[^"\\\n])*"|\'(\\.|[^\'\\\n])*\'')
 
 

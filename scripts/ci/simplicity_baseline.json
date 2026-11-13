@@ -18,6 +18,7 @@
  "mercator_literals": 0,
  "search_box_formulas": 0,
  "haversine_formulas": 0,
+ "degree_margin_formulas": 0,
  "copy_paste_clones": 36,
  "one_home_findings": 30,
  "rules_outside_engine": 22,

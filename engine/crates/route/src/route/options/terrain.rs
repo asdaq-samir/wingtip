@@ -31,8 +31,8 @@ use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use wingtip_core::grid::{Cell, Point};
 
-/// How far round the route the grid reaches, degrees.
-pub const REACH_DEG: f64 = 5.0;
+/// How far round the route the grid reaches, nm every way (5 degrees of latitude).
+pub const REACH_NM: f64 = 300.0;
 /// The fields near the way round that may be flown by, nm from it.
 pub const FIELD_NM: f64 = 40.0;
 /// The longest leg between two of them looked at, nm: none in effect --
@@ -53,10 +53,10 @@ pub struct Frame {
 }
 
 pub fn frame(start: Point, end: Point) -> Frame {
-    let lat0 = start.0.min(end.0) - REACH_DEG;
-    let lon0 = start.1.min(end.1) - REACH_DEG;
-    let rows = ((start.0.max(end.0) + REACH_DEG - lat0) / CELL_DEG).ceil() as usize;
-    let cols = ((start.1.max(end.1) + REACH_DEG - lon0) / CELL_DEG).ceil() as usize;
+    // corridor_bbox as grid::frame, its corner on one earth-wide grid of cells (a ridge's cells whatever the route).
+    let (south, west, north, east) = geo::corridor_bbox(start, end, REACH_NM);
+    let (lat0, lon0) = ((south / CELL_DEG).floor() * CELL_DEG, (west / CELL_DEG).floor() * CELL_DEG);
+    let (rows, cols) = (((north - lat0) / CELL_DEG).ceil() as usize, ((east - lon0) / CELL_DEG).ceil() as usize);
     Frame { lat0, lon0, rows: rows.max(1), cols: cols.max(1) }
 }
 

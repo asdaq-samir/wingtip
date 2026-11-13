@@ -77,12 +77,21 @@ pub fn step_index(dr: i64, dc: i64) -> usize {
     STEPS.iter().position(|&s| s == (dr, dc)).unwrap_or(0)
 }
 
+/// The bearing, radians clockwise from true north, of a step of `d_lat`
+/// degrees north and `d_lon` east taken at latitude `lat`, on a plane of
+/// degrees with longitude shrunk by cos(lat): a degree of longitude is
+/// cos(latitude) of one of latitude. The one copy for a grid step's course
+/// (route options' groundspeeds) and a line's way (way_of).
+pub fn flat_bearing(lat: f64, d_lat: f64, d_lon: f64) -> f64 {
+    (d_lon * lat.to_radians().cos()).atan2(d_lat)
+}
+
 /// The way in STEPS nearest the line a -> b's bearing, on a plane of
 /// degrees with longitude shrunk by the cosine of the mean latitude, each
 /// part rounded as Python's round does (half to even). Its cosine and sine
 /// cannot both round to 0, so the way is always one of the eight.
 pub fn way_of(a: Point, b: Point) -> usize {
-    let bearing = ((b.1 - a.1) * ((a.0 + b.0) / 2.0).to_radians().cos()).atan2(b.0 - a.0);
+    let bearing = flat_bearing((a.0 + b.0) / 2.0, b.0 - a.0, b.1 - a.1);
     step_index(bearing.cos().round_ties_even() as i64, bearing.sin().round_ties_even() as i64)
 }
 

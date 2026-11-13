@@ -33,7 +33,7 @@ from pathlib import Path
 
 import changed
 from source_literals import ENGINE_UNIT, HAVERSINE, HAVERSINE_HOMES, MERCATOR, MERCATOR_HOMES, SEARCH_BOX, SEARCH_BOX_HOMES, UNIT
-from source_literals import EVERY_SOURCE, code_of, rust_code, text
+from source_literals import DEGREE_MARGIN, DEGREE_MARGIN_HOMES, EVERY_SOURCE, code_of, rust_code, text
 
 ROOT = Path(__file__).resolve().parents[2]
 BASELINE = ROOT / "scripts/ci/simplicity_baseline.json"
@@ -211,6 +211,7 @@ METRICS = {
         lambda: in_code(HAVERSINE, HAVERSINE_HOMES),
         "a great-circle distance worked by hand: ask wingtip.geo.distance_nm or nearest, or the engine's geo",
     ),
+    "degree_margin_formulas": (lambda: in_code(DEGREE_MARGIN, DEGREE_MARGIN_HOMES), "margin in degrees: geo::corridor_bbox, core::flat"),
     # The other guards' baselines, their totals (each only shrinks; here
     # for the one trend line).
     "copy_paste_clones": (

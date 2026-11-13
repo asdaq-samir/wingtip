@@ -5,7 +5,7 @@ use super::ask::{Advisory, Airspace, Report, Station};
 use super::grid::{Grid, PER_CELL};
 use super::words::g;
 use crate::geo;
-use wingtip_core::grid::STEPS;
+use wingtip_core::grid::{flat_bearing, STEPS};
 use wingtip_flight::{flight, limits, vfr};
 use wingtip_weather::forecast::field::TAF_VICINITY_NM;
 use wingtip_weather::metar;
@@ -53,8 +53,10 @@ pub const GAIRMET_SNAPSHOT_S: f64 = 90.0 * 60.0;
 /// a share of a cell's minutes, for every way: their times of use are not
 /// read here, so they are gone round where it costs little, not closed.
 pub const SPECIAL_USE_COST: f64 = 0.5;
-/// The margin kept from a prohibited area or a TFR, degrees: a mile.
-pub const AIRSPACE_MARGIN_DEG: f64 = 1.0 / 60.0;
+/// The margin kept from a prohibited area or a TFR, nm: the planner's own,
+/// not the FAA's -- 14 CFR 91.133(a) and 91.137 to 91.145 bar flying
+/// "within" the area and set no distance outside it; a mile keeps off the edge.
+pub const AIRSPACE_MARGIN_NM: f64 = 1.0;
 /// The airplane is taken to climb to cruise from no lower than this, ft:
 /// the planner's own figure, the lowest a cross-country is flown over
 /// level ground (91.119(c)'s 500 ft and the altitudes the plan picks).
@@ -247,14 +249,12 @@ pub fn sigmets(grid: &mut Grid, advisories: &[Advisory], window: (f64, f64)) {
         let hazard = a.hazard.to_uppercase();
         let raw: String = a.raw.split('\n').next().unwrap_or("").chars().take(60).collect::<String>().trim().to_owned();
         if hazard.starts_with("CONVECTIVE") {
-            // AIM 7-1-27's 20 nm every way: the area's longitudes scaled to
-            // miles at its centre, where degrees alone gave 15 nm east and
-            // west at 40 N (the aviation check, 2026-10-27).
-            let k = a.area.centroid().0.to_radians().cos().max(0.05);
-            let at = grid.in_area(&a.area, STORM_NM / 60.0, k);
+            // AIM 7-1-27's 20 nm every way, in miles at each cell (in_area):
+            // degrees alone gave 15 nm east and west at 40 N (2026-10-27).
+            let at = grid.in_area(&a.area, STORM_NM);
             grid.close(&at, "storm", format!("Convective SIGMET {raw}").trim());
         } else {
-            let at = grid.in_area(&a.area, 0.0, 1.0);
+            let at = grid.in_area(&a.area, 0.0);
             let what = if hazard.is_empty() { "a hazard".to_owned() } else { hazard.to_lowercase() };
             grid.close(&at, "sigmet", format!("SIGMET for {what} {raw}").trim());
         }
@@ -280,7 +280,7 @@ pub fn gairmets(grid: &mut Grid, advisories: &[Advisory], window: (f64, f64), to
         if hazard == "Icing" && a.altitude_low_ft.is_some_and(|low| low >= top_ft) {
             continue;
         }
-        let at = grid.in_area(&a.area, 0.0, 1.0);
+        let at = grid.in_area(&a.area, 0.0);
         // "IFR conditions" as it is, "mountains obscured" in the line.
         let words = if hazard.chars().take(2).all(|c| c.is_uppercase()) {
             hazard.to_owned()
@@ -303,11 +303,11 @@ pub fn special_use(grid: &mut Grid, areas: &[Airspace]) {
     for a in areas {
         match a.kind.as_str() {
             "P" => {
-                let at = grid.in_area(&a.area, AIRSPACE_MARGIN_DEG, 1.0);
+                let at = grid.in_area(&a.area, AIRSPACE_MARGIN_NM);
                 grid.close(&at, "prohibited", &format!("Prohibited area {}", a.name));
             }
             "R" | "MOA" | "W" | "A" => {
-                for i in grid.in_area(&a.area, 0.0, 1.0) {
+                for i in grid.in_area(&a.area, 0.0) {
                     grid.dear[i] = grid.dear[i].max(SPECIAL_USE_COST);
                 }
             }
@@ -320,7 +320,7 @@ pub fn special_use(grid: &mut Grid, areas: &[Airspace]) {
 /// planner's pick of them, closed a mile round.
 pub fn tfrs(grid: &mut Grid, tfrs: &[Airspace]) {
     for t in tfrs {
-        let at = grid.in_area(&t.area, AIRSPACE_MARGIN_DEG, 1.0);
+        let at = grid.in_area(&t.area, AIRSPACE_MARGIN_NM);
         grid.close(&at, "tfr", format!("TFR {} {}", t.kind, t.name).trim());
     }
 }
@@ -344,7 +344,7 @@ pub fn groundspeeds(grid: &Grid, stations: &[Station], altitudes: &[f64], tas_kt
         let ways: Vec<(f64, bool)> = STEPS
             .iter()
             .map(|&(dr, dc)| {
-                let course = geo::py_mod((dc as f64 * lat.to_radians().cos()).atan2(dr as f64).to_degrees(), 360.0);
+                let course = geo::py_mod(flat_bearing(lat, dr as f64, dc as f64).to_degrees(), 360.0);
                 (course, flight::is_eastbound(geo::py_mod(course - variation_deg, 360.0)))
             })
             .collect();
