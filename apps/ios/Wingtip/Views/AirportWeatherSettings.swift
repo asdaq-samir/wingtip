@@ -1,37 +1,72 @@
 import SwiftUI
 
-/// How the map marks each field's weather (the owner's pick, 2026-11-10,
-/// the "Recommended" artboard): a ring in the flight category's colour
-/// round the chart's own symbol by default; ForeFlight's filled dot in
-/// place of the symbol; the station model at every zoom it fits; or
-/// nothing. Kept on the device with the map's other switches.
-enum AirportWeatherStyle: String, CaseIterable, Identifiable, Sendable {
-    case off, halo, dot, station
+/// Settings' Airport Weather, one menu (the owner, 2026-11-13, as the
+/// web's lib/map/marks/airportWeatherPrefs): Off, no weather mark on any
+/// field (the owner's 2026-11-10 pick, put back); the flight category's
+/// ring alone; the ring with the wind -- its barbs farther out and the
+/// station model zoomed in close -- the default; or the station model
+/// wherever it fits. ForeFlight's Dot went, and the three switches that
+/// were under the look; the amber ↓ at a plan's field whose weather gets
+/// worse by the pilot's time there is drawn with every choice but Off.
+enum AirportWeather: String, CaseIterable, Identifiable, Sendable {
+    case off, category, wind, station
+
+    /// The one key the menu is kept under, beside the map's other switches.
+    static let key = "map.airportWeather.show"
+    static let standard = AirportWeather.wind
 
     var id: String { rawValue }
 
-    /// The segment's word, a resource so the string catalog gathers it.
+    /// The menu's words, the web's own.
     var label: LocalizedStringResource {
         switch self {
         case .off: "Off"
-        case .halo: "Halo"
-        case .dot: "Dot"
-        case .station: "Station"
+        case .category: "Flight Category"
+        case .wind: "With Wind"
+        case .station: "Station Model"
         }
     }
 
-    /// The keys of the four settings and their first values: Halo, and
-    /// every switch on (the spec's defaults). The barbs' switch keeps the
-    /// key the arrows' had, as the web keeps its stored key.
-    enum Keys {
+    /// What the map draws for it (the web's airportWeatherDrawn).
+    var choice: AirportWeatherChoice {
+        switch self {
+        case .off: AirportWeatherChoice(style: .off, stationClose: false, windBarbs: false, worse: false)
+        case .category: AirportWeatherChoice(style: .halo, stationClose: false, windBarbs: false, worse: true)
+        case .wind: AirportWeatherChoice(style: .halo, stationClose: true, windBarbs: true, worse: true)
+        case .station: AirportWeatherChoice(style: .station, stationClose: true, windBarbs: true, worse: true)
+        }
+    }
+
+    /// The choice kept, else what a device kept before the menu brought to
+    /// one of its choices, as the web migrates it: Off kept, the station
+    /// model kept, the ring with its barbs With Wind, the rest -- the ring
+    /// alone, the dot -- the flight category.
+    static func kept(_ defaults: UserDefaults = .standard) -> AirportWeather {
+        if let kept = defaults.string(forKey: key).flatMap(AirportWeather.init(rawValue:)) { return kept }
+        guard let old = defaults.string(forKey: Legacy.style) else { return standard }
+        switch old {
+        case "off": return .off
+        case "station": return .station
+        case "halo": return defaults.object(forKey: Legacy.windArrows) as? Bool == false ? .category : .wind
+        default: return .category
+        }
+    }
+
+    /// The keys the look and its three switches were kept under, read
+    /// once to bring a device's choice over.
+    enum Legacy {
         static let style = "map.airportWeather"
-        static let stationClose = "map.airportWeather.stationClose"
         static let windArrows = "map.airportWeather.windArrows"
-        static let worse = "map.airportWeather.worse"
     }
 }
 
-/// The settings as the map reads them, all four at once.
+/// How a field's weather looks on its mark: none, the ring in its flight
+/// category's colour round the chart's own symbol, or the station model.
+enum AirportWeatherStyle: String, Sendable {
+    case off, halo, station
+}
+
+/// The settings as the map reads them, all at once.
 struct AirportWeatherChoice: Equatable, Sendable {
     var style: AirportWeatherStyle = .halo
     var stationClose = true
@@ -39,44 +74,31 @@ struct AirportWeatherChoice: Equatable, Sendable {
     var worse = true
 
     /// The station model drawn: at every zoom with Station, from the zoom
-    /// its lines fit (the token WingtipMap.zoomStationClose, as on the web and Android) with the switch on, never with
-    /// Off.
+    /// its lines fit (the token WingtipMap.zoomStationClose, as on the web
+    /// and Android) With Wind, never with Off or the flight category alone.
     func station(zoom: Double) -> Bool {
         switch style {
         case .off: false
         case .station: true
-        case .halo, .dot: stationClose && zoom >= WingtipMap.zoomStationClose
+        case .halo: stationClose && zoom >= WingtipMap.zoomStationClose
         }
     }
 }
 
-/// The Map section's rows for it: the style as a segmented control, as a
-/// discrete setting of four is (docs/decisions/0017), and the three
-/// switches under it.
-struct AirportWeatherRows: View {
-    @AppStorage(AirportWeatherStyle.Keys.style) private var style = AirportWeatherStyle.halo.rawValue
-    @AppStorage(AirportWeatherStyle.Keys.stationClose) private var stationClose = true
-    @AppStorage(AirportWeatherStyle.Keys.windArrows) private var windBarbs = true
-    @AppStorage(AirportWeatherStyle.Keys.worse) private var worse = true
+/// Settings' Map row for it: a menu, as a discrete setting is (CLAUDE.md;
+/// the web's pull-down), its pick at the row's end.
+struct AirportWeatherRow: View {
+    @AppStorage(AirportWeather.key) private var show = AirportWeather.kept().rawValue
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
-            Text("Airport Weather")
-            Picker("Airport Weather", selection: $style) {
-                ForEach(AirportWeatherStyle.allCases) { Text($0.label).tag($0.rawValue) }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+        Picker("Airport Weather", selection: $show) {
+            ForEach(AirportWeather.allCases) { Text($0.label).tag($0.rawValue) }
         }
-        Toggle("Station Model When Zoomed In", isOn: $stationClose)
-            .disabled(style == AirportWeatherStyle.off.rawValue || style == AirportWeatherStyle.station.rawValue)
-        Toggle("Wind Barbs", isOn: $windBarbs)
-            .disabled(style == AirportWeatherStyle.off.rawValue)
-        Toggle("Getting Worse by Arrival", isOn: $worse)
-            .disabled(style == AirportWeatherStyle.off.rawValue)
+        .pickerStyle(.menu)
+        .accessibilityIdentifier("airport-weather-look")
     }
 }
 
-#Preview("AirportWeatherRows") {
-    List { Section("Map") { AirportWeatherRows() } }
+#Preview("AirportWeatherRow") {
+    List { Section("Map") { AirportWeatherRow() } }
 }
