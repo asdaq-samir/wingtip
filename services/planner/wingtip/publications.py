@@ -489,9 +489,7 @@ def _runways_drawn(pdf: bytes, ends: list) -> bytes | None:
     if not box:
         return None
     x0, y0, x1, y1 = box
-    # Room round the runways for their numbers and the taxiways and ramps
-    # beside them, so the thumbnail reads as the field rather than its
-    # runways alone (the owner, 2026-11-13: "zoom out a bit"; it was 3%).
+    # Room for the taxiways and ramps too (the owner, 2026-11-13: "zoom out").
     pad = 0.15 * max(x1 - x0, y1 - y0) + 4 * DIAGRAM_SCALE
     crop = (int(max(0, x0 - pad)), int(max(0, y0 - pad)), int(min(image.width, x1 + pad)), int(min(image.height, y1 + pad)))
     # Most of the sheet is no crop -- the thick strokes found a legend's or
@@ -519,9 +517,7 @@ def airport_diagram_runways_png(ident: str, cycle: str, ends: list, on: date | N
     # What is drawn depends on the ends: with none the sheet's strokes
     # alone place the crop, and that must not stand in for the labels'
     # once NASR's ends are there.
-    # "-wide" since the crop's margin grew (2026-11-13): the tighter crops
-    # kept for this cycle are not served again.
-    kind = "runways-wide" if ends else "runways-wide-noends"
+    kind = "runways-wide" if ends else "runways-wide-noends"  # wider margin, 2026-11-13
     path = CACHE_DIR / "diagrams" / cycle / f"{Path(url).stem}-{kind}.png"
     none = path.with_suffix(".none")
     if path.exists():
