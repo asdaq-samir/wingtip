@@ -1038,7 +1038,10 @@ The first time the planner opens with no route on a device
 `lib/firstRunTips`), Apple's welcome layout in the app's modal sheet
 (`WelcomeSheet`: the stock Drawer on a phone, the stock Dialog from `md`
 up, solid): "Welcome to Wingtip Maps", three rows (Search, like Maps; FPL,
-like your EFB; FAA charts that move like Maps) and one button, Let's Go
+like your EFB; FAA charts that move like Maps), Theme and Appearance in a
+small grouped list (Setup's own two menus, `components/lookPicks`, applied
+as they are picked, the sheet and the map changing behind it; the owner,
+2026-11-13), and one button, Let's Go
 Flying (the owner, 2026-11-13: one, not two). It, a swipe down or a tap
 beside the sheet goes on to the map with the one search ready: Search up
 at half (rule 11),

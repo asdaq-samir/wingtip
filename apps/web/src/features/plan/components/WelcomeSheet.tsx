@@ -2,7 +2,10 @@ import type { ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { MapIcon, Route, Search } from "lucide-react";
 import { cn } from "cn";
+import { ListGroup, ListRow } from "../../../components/GroupedList";
+import { useAppearancePick, useThemePick } from "../../../components/lookPicks";
 import { PhoneSheet, PhoneSheetBody, PhoneSheetContent } from "../../../components/PhoneSheet";
+import PullDown from "../../../components/PullDown";
 import { Button } from "../../../components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../../../components/ui/dialog";
 import { useIsMobile } from "../../../hooks/use-mobile";
@@ -27,8 +30,12 @@ const ROWS = [
  * The first flight's welcome (FirstFlight, useFirstFlight; the owner's
  * option A, 2026-11-13), laid out as an Apple app's own welcome sheet: the
  * app's name large and centred, three rows each a tinted icon, a bold
- * title and a line, and one way on at its foot, Let's Go Flying (the
- * owner, 2026-11-13: one button, not two). In the app's modal sheet: on a
+ * title and a line; the look picked in a small grouped list, Theme and
+ * Appearance, each the same menu as Setup's tile (lookPicks), changing the
+ * sheet and the map behind it as it is picked (the owner, 2026-11-13:
+ * "give theme and appearance selection on the welcome screen"); and one
+ * way on at its foot, Let's Go Flying (the owner, 2026-11-13: one button,
+ * not two). In the app's modal sheet: on a
  * phone the stock Drawer (PhoneSheet) from the navigation bar's edge,
  * solid; from `md` up the stock Dialog, solid. No close of its own: the
  * button, a swipe down or a tap beside it all go on to the map, the same
@@ -43,11 +50,18 @@ export default function WelcomeSheet({ open, onGo }: { open: boolean; onGo: () =
   if (onPhone)
     return (
       <PhoneSheet edge={edge} open={open} onOpenChange={change}>
-        {/* Tall, as iOS's welcome sheets stand nearly the screen's height,
-            its button at its foot; the focus taken by none of it, so no
-            keyboard comes up as it closes. */}
-        <PhoneSheetContent edge={edge} data-testid="first-flight" initialFocus={false} finalFocus={false} className="h-[85dvh]">
-          <PhoneSheetBody edge={edge} className="flex flex-1 flex-col px-8 pt-12">
+        {/* Tall, as iOS's welcome sheets stand at the large detent, the
+            screen's height less the status bar's room, its button at its
+            foot; the focus taken by none of it, so no keyboard comes up as
+            it closes. */}
+        <PhoneSheetContent
+          edge={edge}
+          data-testid="first-flight"
+          initialFocus={false}
+          finalFocus={false}
+          className="h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)]"
+        >
+          <PhoneSheetBody edge={edge} className="flex flex-1 flex-col px-6 pt-10">
             <Welcome title={<Drawer.Title className={TITLE}>{TITLE_WORDS}</Drawer.Title>} onGo={onGo} />
           </PhoneSheetBody>
         </PhoneSheetContent>
@@ -77,7 +91,7 @@ function Welcome({ title, onGo }: { title: ReactNode; onGo: () => void }) {
   return (
     <>
       {title}
-      <ul className="mt-10 flex flex-col gap-7">
+      <ul className="mt-8 flex flex-col gap-5 px-2">
         {ROWS.map(({ icon: Icon, title: name, line }) => (
           <li key={name} className="flex items-start gap-4">
             <Icon className="mt-0.5 size-8 shrink-0 text-tint" aria-hidden="true" />
@@ -88,8 +102,9 @@ function Welcome({ title, onGo }: { title: ReactNode; onGo: () => void }) {
           </li>
         ))}
       </ul>
+      <LookRows />
       {/* The one way on at the sheet's foot, the space above it its own. */}
-      <div className="mt-auto pt-10">
+      <div className="mt-auto pt-6">
         <Button
           type="button"
           size="lg"
@@ -101,5 +116,23 @@ function Welcome({ title, onGo }: { title: ReactNode; onGo: () => void }) {
         </Button>
       </div>
     </>
+  );
+}
+
+/** Theme and Appearance, Setup's two picks of the look (lookPicks), as an
+ *  iOS settings list's rows: the name, and the one picked at the end as a
+ *  pull-down's tinted words, its menu Setup's own. */
+function LookRows() {
+  const theme = useThemePick();
+  const { value, onChange, options } = useAppearancePick();
+  return (
+    <ListGroup className="mt-7">
+      <ListRow title="Theme">
+        <PullDown label="Theme" {...theme} align="end" testId="welcome-theme" />
+      </ListRow>
+      <ListRow title="Appearance">
+        <PullDown label="Appearance" value={value} onChange={onChange} options={options} align="end" testId="welcome-appearance" />
+      </ListRow>
+    </ListGroup>
   );
 }

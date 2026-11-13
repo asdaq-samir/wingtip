@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
-import { ChevronsUpDown, Monitor, Moon, Palette, PanelBottom, PanelTop, Sun, SunDim, SunMedium, SunMoon } from "lucide-react";
-import { useTheme } from "next-themes";
+import { ChevronsUpDown, Palette, PanelBottom, PanelTop, Sun, SunDim, SunMedium } from "lucide-react";
 import { cn } from "cn";
 import PullDown, { type PullDownOption } from "./PullDown";
-import { usePreferences, type Brand, type ChartLight, type ChartNight, type NavEdge } from "../lib/preferences";
-import { BRANDS } from "../lib/brand";
+import { usePreferences, type ChartLight, type NavEdge } from "../lib/preferences";
+import { useAppearancePick, useThemePick } from "./lookPicks";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { TEXT } from "../lib/text";
 
@@ -29,23 +28,13 @@ import { TEXT } from "../lib/text";
  * map settings' Chart at Night as a fourth pick, Dark + Bright.
  */
 export default function QuickControls() {
-  const brand = usePreferences((s) => s.brand);
-  const setBrand = usePreferences((s) => s.setBrand);
   const setNavBar = usePreferences((s) => s.setNavBar);
   const chartLight = usePreferences((s) => s.chartLight);
   const setChartLight = usePreferences((s) => s.setChartLight);
   const edge = useNavEdge();
-  const { theme, setTheme } = useTheme();
-  const chartNight = usePreferences((s) => s.chartNight);
-  const setChartNight = usePreferences((s) => s.setChartNight);
-  // The Appearance's pick, read from the two settings it sets (no third):
-  // the page's theme, and in the dark the chart dimmed or as printed.
-  const picked: Appearance = theme === "light" ? "light" : theme === "dark" ? (chartNight === "normal" ? "dark-bright" : "dark") : "system";
-  const pickAppearance = (appearance: Appearance) => {
-    const [mode, night] = APPEARANCES[appearance];
-    setTheme(mode);
-    setChartNight(night);
-  };
+  // Theme and Appearance, shared with the first flight's welcome (lookPicks).
+  const themePick = useThemePick();
+  const { icon: appearanceIcon, ...appearancePick } = useAppearancePick();
   return (
     <>
       <div className="grid grid-cols-2 gap-2" data-testid="quick-controls">
@@ -72,15 +61,7 @@ export default function QuickControls() {
           It was "App Look", put here at the owner's ask ("instead of
           offline, let's have app look"); the charts kept offline went to
           the map's menu. */}
-        <MenuTile<Brand>
-          label="Theme"
-          value={brand}
-          onChange={setBrand}
-          on={false}
-          testId="brand-select"
-          icon={<Palette />}
-          options={BRANDS.map((b) => ({ value: b.value, label: b.label, testId: `brand-${b.value}` }))}
-        />
+        <MenuTile label="Theme" {...themePick} on={false} testId="brand-select" icon={<Palette />} />
         {/* The edge the route panel is on, which the sheets come from too
           and the map's buttons keep clear of (useNavEdge). Position, where
           it was Layout, the section's name since (the owner, 2026-11-05). */}
@@ -101,39 +82,12 @@ export default function QuickControls() {
           pilot planning at night wants the page as dim as the panel
           lights. Dark dims the chart's tiles too, for night vision; Dark +
           Bright keeps them as printed, the map settings' Chart at Night
-          folded in (the owner, 2026-11-13; APPEARANCES). */}
-        <MenuTile<Appearance>
-          label="Appearance"
-          value={picked}
-          onChange={pickAppearance}
-          on={false}
-          testId="theme-select"
-          icon={picked === "dark-bright" ? <SunMoon /> : picked === "dark" ? <Moon /> : picked === "light" ? <Sun /> : <Monitor />}
-          options={[
-            { value: "system", label: "System", testId: "theme-system" },
-            { value: "light", label: "Light", testId: "theme-light" },
-            { value: "dark", label: "Dark", testId: "theme-dark" },
-            { value: "dark-bright", label: "Dark + Bright", testId: "theme-dark-bright" },
-          ]}
-        />
+          folded in (the owner, 2026-11-13; lookPicks' APPEARANCES). */}
+        <MenuTile label="Appearance" {...appearancePick} on={false} testId="theme-select" icon={appearanceIcon} />
       </div>
     </>
   );
 }
-
-type Appearance = "system" | "light" | "dark" | "dark-bright";
-
-/** What each Appearance sets: the page's theme (next-themes) and the chart
- *  at night (lib/preferences chartNight, read only while the page is
- *  dark). Dark dims the chart's tiles with the page, the night's default,
- *  and System and Light leave them so for the dark; Dark + Bright is the
- *  chart as printed under the dark page (the owner, 2026-11-13). */
-const APPEARANCES: Record<Appearance, [theme: "system" | "light" | "dark", night: ChartNight]> = {
-  system: ["system", "dimmed"],
-  light: ["light", "dimmed"],
-  dark: ["dark", "dimmed"],
-  "dark-bright": ["dark", "normal"],
-};
 
 /** A control's tile: a rounded card, its mark at the left, its name over
  *  its setting. Its own height is past 44, so it needs no area of its
