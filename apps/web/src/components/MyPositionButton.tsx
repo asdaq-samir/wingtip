@@ -4,7 +4,8 @@ import { showError } from "../lib/problems";
 import { cn } from "cn";
 import IconButton from "./IconButton";
 import { Toggle } from "@base-ui/react/toggle";
-import { APPROXIMATE_M, DRY_RUN_ZOOM, ownShipAvailable, useOwnShip } from "../lib/map/position/ownShip";
+import { APPROXIMATE_M, ownShipAvailable, useOwnShip } from "../lib/map/position/ownShip";
+import { DRY_RUN_ZOOM } from "../lib/map/position/dryRun";
 
 /**
  * My position, among the map's buttons, as Maps and every map app has

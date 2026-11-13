@@ -492,8 +492,11 @@ photo that pushes the actions below the half detent.
 
 The phone's sheet and the desktop's side panel hold two peer pages,
 Search and FPL ([rules.md](rules.md) §4a), turned by one round glass
-button riding the sheet's top at the right (the owner, 2026-11-13: "Why
-not make the same tab on the right toggle between search and fpl"),
+button riding the sheet's top (the owner, 2026-11-13: "Why
+not make the same tab on the right toggle between search and fpl"), on
+a phone at the left under the 3D, in the radio's button's place (the
+owner, 2026-11-13: "Let's replace the radio button on the left with the
+fpl toggle but below 3d"),
 where a tab bar under the sheet, and before it a sideways pager and a
 split grabber, were. It is the app's shadcn Toggle on Base UI's, never
 pressed (`aria-pressed="false"`: a tap goes somewhere, it turns nothing
@@ -502,11 +505,15 @@ tap goes to, as Apple Maps' 2D/3D button does -- lucide's Route on
 Search ("Show flight plan"), the magnifier on FPL ("Show search") -- in
 a glass circle of its own the size of the 3D and microphone circles (a
 36-point button in 4 points of glass), its 44-point area its `::after`
-out to the glass's edge, never grown. It is the last of the right-hand
-column of the map's buttons (`MapControls`), so on a phone's bottom
-sheet it rides the sheet's top through `OnSheetTop`, under the map's
-buttons and level with the 3D circle at the left; over a top sheet and
-beside the side panel it is under them at the bottom right. The pages
+out to the glass's edge, never grown. On a phone it is the last of the
+left-hand column (`MapControls`), so on a bottom sheet it rides the
+sheet's top through `OnSheetTop`, 8 under the 3D circle and level with
+the map's buttons' group at the right; the radio's button is then a
+circle of its own over that group, as from md up, its listening pill
+widening to the left across the screen less its margins (in flight its
+circle grown to 60 over NRST, D→ and the arrow). Beside the side panel
+the toggle is the last of the right-hand column, under the map's
+buttons at the bottom right. The pages
 live in `MapPanel` and the button with the map's, apart in the tree, so
 `MapPanel` tells it the page up and the way to turn it
 (`sheet/pageToggle`), or nothing while they cannot be turned. The
@@ -1188,8 +1195,8 @@ The owner's rule: a screenshot of another app means ours should show this.
 | All the way up: the title gone, the field pinned with a hairline under it | The field pinned with a hairline under it |
 | Large bold section titles, picture cards sliding sideways, a white card with a question and art | The search's page (`SearchHome`): Favorites, Recents and Nearest titled as every section is, 20 points medium in the text's colour with the chevron in the tint (`PillSection`, decision 0021; owner decision 2026-11-10 (decisions page): one heading style, not Apple's bold); the Recents as picture cards of the sectional round each field (`RecentCards`, the chart's own tile, shadcn Carousel); Plan a Flight, "Where do you want to fly?", the mark as its art (`FlightSummary`) |
 | Sheet's foot: Privacy \| Terms \| Legal \| Imagery, the copyright | `SheetFooter`: Privacy \| Terms \| Legal (About, every data source and licence), "© year Wingtip Maps". No "manage your business" line: no page for schools or clubs exists |
-| One rounded card at the top right: map button over location | `MapControls`: the map's settings, the location arrow, the flown track and full screen in one rounded glass card at the right just over a bottom sheet's search row, riding its top as the radio's button does at the left (`OnSheetTop`; the owner, 2026-11-11: "keep the top right map button to just above the search bar on the right"), not at the top right where Apple Maps on the web has it; bottom right under a top sheet or beside the side panel |
-| One round button at the bottom left (Look Around) | The radio's microphone, where it already was |
+| One rounded card at the top right: map button over location | `MapControls`: the map's settings, the location arrow, the flown track and full screen in one rounded glass card at the right just over a bottom sheet's search row, riding its top as the 3D and the page toggle do at the left, the radio's button a circle over it (`OnSheetTop`; the owner, 2026-11-11: "keep the top right map button to just above the search bar on the right"), not at the top right where Apple Maps on the web has it; bottom right under a top sheet or beside the side panel |
+| One round button at the bottom left (Look Around) | The 3D button, and under it the page toggle (the owner, 2026-11-13) |
 | Privacy \| Terms \| Legal \| Imagery at the map's bottom right, over the sheet | `MapCredits`: one MapLibre AttributionControl at the bottom right, riding the sheet's top, Privacy \| Terms \| Legal then each drawn source's credit (imagery, Google, the traffic, the overlay tiles' FAA cycle); gone all the way up, where the footer has them |
 | A place picked: its card is the whole sheet, no search | Any card (a field, an airplane, a point, the Brief, the Map card) hides the search; its ✕ goes back to the search with the query kept |
 | A place card scrolled: its title and ✕ stay in sight | `PinnedHead` (owner decision 2026-11-10: one pinned frosted head, no large title): the card's head is one row, its name, Share and ✕, pinned at the sheet's top under the grabber from the start, the content scrolling under it blurred through its frost (`frost-head`), solid where there is no backdrop-filter and under Reduce Transparency. It replaced a large title folding into a compact bar, which on an iPhone stuck partway down the sheet with the card scrolling above it. Every card with a head has it, one row for all (`CardHeadRow`, the card rule's 8): `SheetCard`'s own (Map card and the cards in the sheet), `CardTitle`'s (airport, airplane), `CardHead`'s (Brief, Nav Log, Profile, Nearest, airspace, past flight); the lists in full (`ListPageHead`), the Stops' row (its distance a filter at its list's top), Settings (`flush`, its scroller unpadded) and its pages (`ConsolePages`) draw the same row, its name and line centred across the card, Share at its start and ✕ alone at its end, two buttons at most (the Brief's Refresh in its ••• menu, the Profile's VFR/IFR in its content), as Apple Maps' place card (`HeadGrid`; the owner, 2026-11-11: "let's move the title in the middle"); what scrolls under the head (an airport's name and town line, `CardHead`'s `line`) stays left-aligned (owner-reported 2026-11-11: Settings' title was its own, at 17 points under its pages' 22; `scripts/ci/shared_parts_guard.py` now fails a head drawn by hand). The airport card's tabs pin under it, each tab keeping its own place in the scroll (`useTabScroll`) |
@@ -1327,7 +1334,7 @@ its reason:
   are the stock way, and each moves as its section is next changed.
 - **Map gestures** (the ruler's two-finger hold, the zoom banner): on
   MapLibre's canvas, where no stock component reaches.
-- **The radio's button and the map's buttons on the sheet's top**
+- **The map's buttons, the radio's, the 3D and the page toggle on the sheet's top**
   (`sheet/sheetTop`, `OnSheetTop`): a portal into a slot in the Drawer's
   popup just over its top edge (`bottom: 100%`), so they move with the
   sheet under a finger and on its curve; the popup's corners are clipped

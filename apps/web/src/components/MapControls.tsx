@@ -21,12 +21,13 @@ import { OnSheetTop } from "./sheet/sheetTop";
  * location arrow), and full screen where it works. A zoom toggle, between the whole route and the
  * selected point, went: picking a waypoint brings the map to it. On a
  * phone's bottom sheet at the right just over its top edge, the search's
- * row, riding it as the radio's button does at the left (the owner,
+ * row, riding it as the 3D and the page toggle do at the left (the owner,
  * 2026-11-11: "keep the top right map button to just above the search bar
  * on the right"); over a top sheet at the bottom right, riding its edge;
- * beside a desktop's side panel at the bottom right. Under them, a circle
- * of its own nearest the sheet, the toggle that turns the sheet's pages
- * (PageToggle).
+ * beside a desktop's side panel at the bottom right. Over them, a circle
+ * of its own, the radio's button, on a phone as on a desktop. On a phone
+ * the toggle that turns the sheet's pages (PageToggle) is at the left
+ * under the 3D; from md up, a circle of its own under the group.
  *
  * Ghost buttons on the group's glass, eight apart inside it, so
  * each one's 44-point hit area (index.css) meets the next one's rather
@@ -65,27 +66,26 @@ function MapControlsDrawn() {
   // next to close button on top", 2026-11-04); while it listens the mic
   // stays, its waveform saying so.
   const pillDone = useAtcRadio((s) => s.pill !== null && !s.pill.listening);
-  // On a phone the mic at the left over the tabs; from md up a button of
-  // its own over the map's buttons at the right (the owner, 2026-11-06:
-  // "move the headset button as a separate button on the right above
-  // other floating buttons"), where it was a circle alone at the chart's
-  // foot past the panel's edge. One of the two drawn, never both: the
-  // radio's state is the one mic's.
+  // The mic a button of its own over the map's buttons at the right (the
+  // owner, 2026-11-06: "move the headset button as a separate button on
+  // the right above other floating buttons"), on a phone too since the
+  // page toggle took its place at the left (the owner, 2026-11-13:
+  // "replace the radio button on the left with the fpl toggle but below
+  // 3d").
   const onPhone = useIsMobile();
-  // `riding`: on a phone's bottom sheet's top (OnSheetTop), 24 over it, its pill widening no further than 5.5rem from the right edge, clear
-  // of the map's buttons riding there (4.75rem with the margin in flight).
-  const mic = (riding = false) => (
+  // The circle is the pill too: tapped, it widens into the listening pill
+  // (RadioPill), easing through a grid column from 0fr to 1fr. In the
+  // column at the right edge it widens to the left, its mic staying where
+  // it was. On a phone over the whole width less the
+  // margins, above the group and the 3D and the toggle at the left (the
+  // pill's foot is level with the toggle's top or higher); from md up
+  // clear of the side panel.
+  const mic = (
     <div
       data-map-food=""
       className={cn(
-        "z-[1000] flex items-end rounded-4xl p-1",
-        riding
-          ? "max-w-[min(28rem,calc(100vw-6rem))]"
-          : onPhone
-            ? "max-w-[min(28rem,calc(100vw-5rem))]"
-            : // In the column at the right edge: widening to the left into
-              // the pill, its mic staying where it was.
-              "max-w-[min(28rem,calc(100vw-30rem))] flex-row-reverse",
+        "z-[1000] flex flex-row-reverse items-end rounded-4xl p-1",
+        onPhone ? "max-w-[min(28rem,calc(100vw-1rem))]" : "max-w-[min(28rem,calc(100vw-30rem))]",
         GLASS,
       )}
       data-testid="mic-circle"
@@ -177,11 +177,11 @@ function MapControlsDrawn() {
         panel and every portal. The map's right edge is the screen's, so
         clear of a landscape phone's notch there. On a phone's bottom sheet
         drawn in the Drawer's popup (OnSheetTop), 24 over its top at the
-        right, level with the radio's button at the left and as it does:
+        right, level with the 3D and the page toggle at the left and as they do:
         following a finger's drag, there over a card's nested drawer as it
         is, and giving way with the sheet all the way up (index.css). 24
         over the top clears the map's credit line at the bottom right
-        (googleCredit); the radio's pill stops short of the group. With
+        (googleCredit); the radio's pill widens to the left above the group. With
         the sheet at the top, just under its edge at the bottom right,
         riding it; beside a desktop's side panel at the bottom right. */}
       {/* The Map button's card, beside what rides the sheet: drawn there
@@ -193,13 +193,17 @@ function MapControlsDrawn() {
             data-map-controls=""
             data-flying={flying || undefined}
             className={cn(
-              "z-[1000] flex flex-col items-end gap-2",
+              // Only the buttons take a tap, not the room the pill's width
+              // makes beside the group.
+              "pointer-events-none z-[1000] flex flex-col items-end gap-2 [&>*]:pointer-events-auto",
               riding
-                ? "pointer-events-auto absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-6"
+                ? "absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-6"
                 : "absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:bottom-auto",
             )}
           >
-            {!onPhone && mic()}
+            {/* In flight the mic's grown circle (FLYING_BUTTON's 60) over
+                NRST, D→ and the arrow's stack, the left column then empty. */}
+            {mic}
             {/* The 3D button, its own circle under the mic's (ThreeDButton);
                 on the ground only, as the settings are. */}
             {!onPhone && !flying && (
@@ -210,32 +214,20 @@ function MapControlsDrawn() {
               </div>
             )}
             {group}
-            {/* The sheet's pages turned (PageToggle), a circle of its own
-                under the group, nearest the sheet's top edge: level with
-                the 3D circle at the left on a phone (the owner, 2026-11-13). */}
-            <PageToggle />
+            {/* From md up the sheet's pages turned (PageToggle), a circle of
+                its own under the group; on a phone it is at the left. */}
+            {!onPhone && <PageToggle />}
           </div>
         )}
       </OnSheetTop>
-      {/* Comms assist, the radio's button (RadioButton), in a glass circle of its own
-        at the left, level with the group, where the Stops were (it was
-        Fly-in Food before them), at the owner's ask (2026-11-02), alone:
-        the route's Play above it went to the route's ••• menu as Profile
-        (2026-11-02, "just the mic"). The circle is the pill too: tapped,
-        it widens to the right into the listening pill (RadioPill) with
-        the radio's glyph become the radio's level at its end, and shrinks back
-        once the pill is put away -- the button and the pill were two
-        things apart, one here and one at the top of the map (the owner,
-        2026-11-03). The width eases through a grid column from 0fr to
-        1fr, which is how a box of unknown width is animated in CSS. */}
-      {/* At the foot's left, over the tabs, riding the sheet's top: back
-        from the top right at the owner's ask (2026-11-04, "Move the mic
-        back to the left side, above the tabs"); tapped, it widens to the
-        right into the pill. In the air it grows to 60 points there. Over
-        a bottom sheet drawn in the Drawer's popup (OnSheetTop), so it
-        follows a finger's drag as Apple Maps' buttons do. */}
-      {/* The 3D button under it, a circle of its own (ThreeDButton), on
-        the ground only, as the map's settings are. */}
+      {/* On a phone at the left, riding the sheet's top: the 3D button, a
+        circle of its own (ThreeDButton), on the ground only, as the map's
+        settings are, and under it, nearest the sheet, the page toggle
+        (PageToggle), in the radio's button's place (the owner, 2026-11-13:
+        "replace the radio button on the left with the fpl toggle but below
+        3d"). Two circles 8 apart, each tap its own 44 points. Over a bottom
+        sheet drawn in the Drawer's popup (OnSheetTop), so they follow a
+        finger's drag as Apple Maps' buttons do. In flight neither is drawn. */}
       {onPhone && (
         <OnSheetTop>
           {(riding) => (
@@ -248,7 +240,6 @@ function MapControlsDrawn() {
                   : "absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))]",
               )}
             >
-              {mic(riding)}
               {!flying && (
                 // Its key to the 3D ground's colours at its right, over the
                 // chart's edge rather than the route's middle.
@@ -257,6 +248,7 @@ function MapControlsDrawn() {
                   <ClearanceKey />
                 </div>
               )}
+              <PageToggle />
             </div>
           )}
         </OnSheetTop>

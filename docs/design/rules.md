@@ -107,7 +107,7 @@ Compose. Nothing here is built by hand where a stock part does it.
     many ("2 stops", "None on the route"). With no card open the pill is
     the page's own: the search on Search, the route's figures on FPL, and
     the one round toggle that turns the pages rides the sheet's top at the
-    right over it (the owner, 2026-11-13; §4a), nothing under the sheet.
+    left over it, under the 3D (the owner, 2026-11-13; §4a), nothing under the sheet.
     **The smallest size is one fixed
     height for every page and card**, never one a page: the web's
     `"4.25rem"` on the screen's foot (sheet/insets), which the search's row, a
@@ -135,7 +135,7 @@ Compose. Nothing here is built by hand where a stock part does it.
 | Back, Escape | Escape is the top card's own nested drawer's, closing it (CardStack); with no card up the sheet's own Escape lowers it to the pill. A device's Back closes the top card the same way (`lib/backNavigation` `closeTopmost`): Android's through the browser's stock CloseWatcher, held only while something is open (`useBackCloses`), a TV remote's by its key; where there is no CloseWatcher (Safari) the browser's Back is left as it is. The browser's history is not the app's, as the planner replaces its address | The stack's Back; the card's close at the right of its bar | System Back closes the top card at once (`MapSheet`'s `lowerOnBack` only with none open); the dry run, the ATC card and the assistant's answer close on Back too |
 | Questions | `SheetDialog`: a bottom sheet on a phone with ✕ or Cancel, centred from `md` up | `.alert` and `.confirmationDialog`, hung on the top of the stack (`TopHosts`) so they always show | `AlertDialog` (`ui/SourceDialog` for a source report) |
 | Emergency | The one full-height card, ✕ at the top right, the map not dimmed | `fullScreenCover`, its close at the top right | Material's full-screen dialog, ✕ at the start of its app bar |
-| One search | Search's page, turned to by one round toggle button riding the sheet's top at the right, under the map's buttons (`PageToggle`; the owner, 2026-11-13), its magnifier showing while FPL is up; the traffic's airplane and Nearest's place are the search scoped to them (`listSearchOf`; Nearest's at its card's top, `nearSearch`, where the card covers the sheet's first row); the route's points ask it for an airport (`askSearchPick`) | The one `.searchable` field, on the TabView's `Tab(role: .search)` | Search a `NavigationBar` item beside FPL's; Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`) |
+| One search | Search's page, turned to by one round toggle button riding the sheet's top at the left, under the 3D (`PageToggle`; the owner, 2026-11-13), its magnifier showing while FPL is up; the traffic's airplane and Nearest's place are the search scoped to them (`listSearchOf`; Nearest's at its card's top, `nearSearch`, where the card covers the sheet's first row); the route's points ask it for an airport (`askSearchPick`) | The one `.searchable` field, on the TabView's `Tab(role: .search)` | Search a `NavigationBar` item beside FPL's; Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`) |
 | At the pill | The card's pinned head (`data-sheet-head`: `PinnedHead`, Settings' title row, a console page's head) is all of the card left in sight there (CardStack's scroller), with its short line under its name (`CardHead`'s `sub`); a tap on the row raises the card to half | The system sheet's smallest detent shows the card's bar | The sheet's peek shows the card's bar |
 | By name | `useOpenScreen` through `lib/navigation/wanted` | `RootView.openScreen`, which opens the card by `Navigator.open` | `OpenScreen` through `ScreenRequests` |
 
@@ -269,8 +269,11 @@ option A"; the canvas's boards "A · Tab bar",
 one button for both in the bar's place ("Why not make the same tab on
 the right toggle between search and fpl"). This amends "The sheet has
 no tabs. Its first row is one field": the sheet has two peer pages,
-turned by one round toggle button riding its top at the right, and the
-one search is still the only field.
+turned by one round toggle button riding its top, and the one search is
+still the only field. The same day the toggle took the radio's button's
+place at the left, under the 3D ("Let's replace the radio button on the
+left with the fpl toggle but below 3d"), the radio's button going over
+the map's buttons at the right.
 
 1. **Search** (the first page): the search's row (field, microphone,
    account button) and its home list (Favorites, Recents, Nearest,
@@ -292,10 +295,11 @@ one search is still the only field.
    FPL has no field of its own: adding a stop asks the one search.
 
 - **One round toggle button turns the page** (the owner, 2026-11-13),
-  riding the sheet's top at the right where the map's buttons ride, its
-  own glass circle the size of the 3D and microphone circles, under the
-  map's buttons (never over them, never merged into their group), level
-  with the 3D circle at the left. It shows the page a tap goes to, as
+  riding the sheet's top at the left, its own glass circle the size of
+  the 3D and microphone circles, directly under the 3D circle, nearest
+  the sheet, 8 points apart (two circles, never one capsule), level with
+  the map's buttons' group at the right. Beside a side panel, under the
+  map's buttons at the bottom right. It shows the page a tap goes to, as
   Apple Maps' 2D/3D button shows the mode it switches to: on Search FPL's
   route glyph ("Show flight plan" to a screen reader), on FPL the
   magnifier ("Show search"). A real button, never pressed, its name
@@ -329,7 +333,7 @@ one search is still the only field.
 
 | Web | iPhone | Android |
 |---|---|---|
-| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, in the right-hand column of the map's buttons (`MapControls`, riding the sheet's top through `OnSheetTop`), told the pages by `MapPanel` (`sheet/pageToggle`); the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/plan/components/workspace/PlanPage`. Beside the side panel the same circle under the map's buttons at the bottom right | A `TabView` with FPL's `Tab` and a `Tab(role: .search)`, its Liquid Glass tab bar under the system sheet (or inside it, where the sheet is the tab's content), the sheet's detents above the bar | Material 3 `NavigationBar` under `BottomSheetScaffold`, FPL and Search its two items, the sheet's peek and half over the bar |
+| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, on a phone in the left-hand column under the 3D (`MapControls`, riding the sheet's top through `OnSheetTop`), told the pages by `MapPanel` (`sheet/pageToggle`); the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/plan/components/workspace/PlanPage`. Beside the side panel the same circle under the map's buttons at the bottom right | A `TabView` with FPL's `Tab` and a `Tab(role: .search)`, its Liquid Glass tab bar under the system sheet (or inside it, where the sheet is the tab's content), the sheet's detents above the bar | Material 3 `NavigationBar` under `BottomSheetScaffold`, FPL and Search its two items, the sheet's peek and half over the bar |
 
 The iPhone's and Android's columns are still the tab bar's design; the
 toggle reaches them at the owner's word (web first).
@@ -428,14 +432,19 @@ gone on every platform.
 
 ## 7. What rides the sheet, and the map's small print (the owner, 2026-11-11)
 
-1. **The radio's button and the map's own buttons ride the sheet's
+1. **The map's own buttons, the radio's, the 3D and the page toggle ride the sheet's
    top** (and the phones' first-flight card, until they take the web's
    welcome sheet), 24 points over it at the pill and half,
    following a finger's drag frame by frame as Apple Maps' buttons do;
-   all the way up they give way. The radio's button is at the left, the
-   map's buttons (Map, My Position) at the right, just above the search
-   row (the owner, 2026-11-11: "keep the top right map button to just
-   above the search bar on the right"), clear of each other and of the
+   all the way up they give way. The 3D and under it the page toggle
+   are at the left (the owner, 2026-11-13: "replace the radio button on
+   the left with the fpl toggle but below 3d"), the map's buttons (Map,
+   My Position) at the right, just above the search row (the owner,
+   2026-11-11: "keep the top right map button to just above the search
+   bar on the right"), with the radio's button a circle of its own over
+   them, its listening pill widening to the left (as from md up; in
+   flight its circle grown to 60 points over NRST, D→ and the arrow),
+   clear of each other and of the
    map's credit line, each tap its own 44 points. Over a top sheet they
    stay at the bottom right, riding its edge; beside a side panel, at
    the bottom right.
@@ -457,7 +466,7 @@ gone on every platform.
 | Riding the sheet | `components/sheet/sheetTop` (`OnSheetTop`): a slot in the Drawer's popup just over its top edge (`bottom: 100%`), the popup's corners clipped on an inner box | `MapButtonsDock`: the system sheet's own height, the plan's and a card's over it (`onGeometryChange`, `SheetEdge`), sets the glass group (Map, My Position, Ask) 24 over the higher top at the right, fading out past 60% of the screen; at the top right beside the iPad's sidebar. SwiftUI has no stock placement that follows a sheet over a UIKit map |
 | Settings' foot | `features/pilot/PilotPanel`'s "More" row, `settings-foot`; 44-point hit areas that meet (`PAGE_LINK`), a second line at a large text size | |
 | Status | `components/StatusPanel`: FAA Data, On the Map (`lib/map/gl/creditStore`) | |
-| Tests | `e2e/sheet-webkit.spec.ts` (WebKit at an iPhone's size: heads pinned, nothing over or through them, the radio and the map's buttons 24 over the sheet and clear of each other, Settings at the pill, its seven links, no credits row, Status's cycles), `e2e/legal.spec.ts` | `WingtipUITests/MapButtonsTests` (over the search at half and the pill, at the right edge, 44 points, out of reach at full) |
+| Tests | `e2e/sheet-webkit.spec.ts` (WebKit at an iPhone's size: heads pinned, nothing over or through them, the page toggle and the map's buttons 24 over the sheet and clear of each other, the radio's among the map's, Settings at the pill, its seven links, no credits row, Status's cycles), `e2e/legal.spec.ts` | `WingtipUITests/MapButtonsTests` (over the search at half and the pill, at the right edge, 44 points, out of reach at full) |
 
 On Android the map's buttons (My Position, with Ask over it) ride the
 `BottomSheetScaffold`'s top at the right the same way, placed from the
