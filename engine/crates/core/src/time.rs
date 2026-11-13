@@ -1,6 +1,8 @@
 //! UTC dates as Unix seconds, for the weather products' day-and-hour
 //! times, with no crate: Howard Hinnant's days-from-civil algorithm
-//! (proleptic Gregorian, the calendar UTC is kept in).
+//! (proleptic Gregorian, the calendar UTC is kept in). jiff, measured on
+//! 2026-11-12 without its time zone database, would add 128 KB raw and
+//! 40 KB gzipped to the web's module, a tenth of it, for UTC alone.
 
 pub const DAY_S: i64 = 86_400;
 

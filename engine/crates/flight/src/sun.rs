@@ -217,15 +217,8 @@ pub fn night_at_either_end(start: (f64, f64), depart_s: f64, end: (f64, f64), ar
 mod tests {
     use super::*;
 
-    fn utc(y: i32, m: u32, d: u32, h: u32, min: u32) -> f64 {
-        // Days from 1970-01-01 by the civil calendar (Howard Hinnant's).
-        let (y, m) = if m <= 2 { (y - 1, m + 9) } else { (y, m - 3) };
-        let era = y.div_euclid(400);
-        let yoe = y - era * 400;
-        let doy = (153 * m + 2) / 5 + d - 1;
-        let doe = yoe as u32 * 365 + yoe as u32 / 4 - yoe as u32 / 100 + doy;
-        let days = era as i64 * 146_097 + doe as i64 - 719_468;
-        (days * 86_400 + h as i64 * 3600 + min as i64 * 60) as f64
+    fn utc(y: i64, m: u32, d: u32, h: u32, min: u32) -> f64 {
+        (wingtip_core::time::days_from_civil(y, m, d) * wingtip_core::time::DAY_S + h as i64 * 3600 + min as i64 * 60) as f64
     }
 
     #[test]

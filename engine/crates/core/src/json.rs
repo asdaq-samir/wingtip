@@ -1,9 +1,9 @@
-//! The little JSON the engine writes for the phones (crate::pack_query), with
-//! the planner's own field names; a phone pack's place tables
-//! (crate::spoken), `{"columns": [...], "rows": [[...], ...]}` of
-//! strings, as wingtip.cycle_pack writes them; and any JSON value (`parse`), which
-//! is how every host asks the engine a rule by name (crate::call). No
-//! dependency, so the engine stays plain std for the phones and the web.
+//! The little JSON the engine writes for the phones (crate::pack_query), with the planner's own field names; a
+//! phone pack's place tables (crate::spoken), `{"columns": [...], "rows": [[...], ...]}` of strings, as
+//! wingtip.cycle_pack writes them; and any JSON value (`parse`), which is how every host asks the engine a rule
+//! by name (crate::call). No dependency, so the engine stays plain std for the phones and the web: serde_json in
+//! its place (float_roundtrip, a formatter writing the same bytes) grew the web's module 32,150 bytes raw and
+//! 16,286 gzipped on 2026-11-12, past wasm_size.py's raw budget, so this stays until the budget has room.
 
 /// A string, quoted and escaped (RFC 8259, section 7).
 pub fn string(out: &mut String, s: &str) {

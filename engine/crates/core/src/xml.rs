@@ -5,6 +5,9 @@
 //! Names keep only their local part ("event:NOTAM" is "NOTAM"), which is
 //! how the files are read here. Anything malformed is an error, never a
 //! guess: an unclosed or mismatched tag, a stray '<', an unknown entity.
+//! roxmltree, measured on 2026-11-12, would add about 33 KB raw and 15 KB
+//! gzipped to the web's module (read_track and tfr_read are in it), which
+//! its budget has no room for.
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Element {
