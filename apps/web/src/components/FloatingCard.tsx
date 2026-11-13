@@ -1,4 +1,4 @@
-import type { ReactNode, Ref } from "react";
+import { useRef, type ReactNode, type Ref } from "react";
 import type { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { cn } from "cn";
 import { Dialog, DialogPopup, DialogPortal } from "./ui/dialog";
@@ -67,13 +67,20 @@ export function FloatingCard({
   className?: string;
   children?: ReactNode;
 }) {
+  // With no place given (You), the card itself, which names itself to a
+  // screen reader, unless a key opened it: Base UI's own first control is
+  // a corner button whose tooltip then showed as the card came, taking the
+  // first Escape (a link to Settings, 2026-11-13).
+  const popup = useRef<HTMLDivElement>(null);
+  const focus = initialFocus ?? ((type: string) => (type === "keyboard" ? true : popup.current));
   return (
     <Dialog open={open} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete} modal={modal}>
       <DialogPortal keepMounted>
         <DialogPopup
           aria-label={label}
           aria-labelledby={label ? undefined : labelledBy}
-          initialFocus={initialFocus}
+          ref={popup}
+          initialFocus={focus}
           finalFocus={finalFocus}
           data-testid={testId}
           data-sheet-card={card ? "" : undefined}

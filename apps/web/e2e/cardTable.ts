@@ -48,7 +48,18 @@ export interface Entry {
 
 /** The checks a row may be excused from, each with its reason. */
 export type Check =
-  "searchHidden" | "escape" | "scroll" | "dragUp" | "dragDown" | "textSize" | "sideways" | "position" | "desktop" | "pill" | "nested";
+  | "searchHidden"
+  | "escape"
+  | "scroll"
+  | "dragUp"
+  | "dragDown"
+  | "textSize"
+  | "sideways"
+  | "position"
+  | "desktop"
+  | "pill"
+  | "nested"
+  | "head";
 
 export interface CardRow {
   name: string;
@@ -259,9 +270,14 @@ const ROWS: CardRow[] = [
     ],
     inside: {
       open: (p) => consolePage(p.getByTestId("console-sheet"), "About"),
-      back: (p) => p.getByTestId("console-sheet").getByRole("button", { name: "Back to You", exact: true }).click(),
+      // About is a page of Settings' Help & About (the owner, 2026-11-13):
+      // its close goes back a page, to Help & About, You still open.
+      back: (p) => p.getByTestId("console-sheet").getByRole("button", { name: "Back to Help & About", exact: true }).click(),
     },
-    not: { sideways: "no sideways row" },
+    not: {
+      sideways: "no sideways row",
+      head: "no head row: You's ✕ and gear float in its top corners, as Apple Maps' account card's (ConsoleLayer, 2026-11-13)",
+    },
   },
   {
     // A Settings page opened straight from the search: one ✕, its own, and

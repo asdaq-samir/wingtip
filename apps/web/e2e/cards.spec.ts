@@ -138,6 +138,7 @@ for (const row of CARDS) {
     if (!row.question)
       test("its name centred in its head, Share at the start and ✕ at the end, two buttons at most", async ({ page }) => {
         test.skip(!phone(page) && !!row.not?.desktop, row.not?.desktop ?? "");
+        test.skip(!!row.not?.head, row.not?.head ?? "");
         await open(page, row, row.entries[0]!);
         const head = page.locator("[data-sheet-head]").filter({ visible: true }).first();
         const [box, name] = await Promise.all([head.boundingBox(), head.getByRole("heading").first().boundingBox()]);

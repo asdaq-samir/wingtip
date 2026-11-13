@@ -178,6 +178,16 @@ export function SheetCard({
     requestAnimationFrame(find);
     return false;
   };
+  // The caller's place first; where it has none (`true`, Base UI's own
+  // first control: the ✕, whose tooltip would then show as the card opens
+  // and take the first Escape), the name.
+  const opening: Drawer.Popup.Props["initialFocus"] =
+    typeof initialFocus === "function"
+      ? (type) => {
+          const at = initialFocus(type);
+          return at === true ? toName() : at;
+        }
+      : (initialFocus ?? toName);
   // And back to what opened it as it is put away, once what it covered is
   // back (the control may have been under it), unless the focus has gone
   // somewhere of its own since.
@@ -197,7 +207,7 @@ export function SheetCard({
           testId,
           labelledBy: headingId,
           dismiss,
-          initialFocus: initialFocus ?? toName,
+          initialFocus: opening,
           finalFocus: finalFocus ?? toOpener,
         }
       : // Its content's head names it; the focus left where it is unless
