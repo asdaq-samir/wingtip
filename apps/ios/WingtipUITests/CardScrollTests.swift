@@ -19,7 +19,7 @@ final class CardScrollTests: XCTestCase {
     @MainActor
     func testTheTitleAndCloseStayInSightScrolledToTheEnd() throws {
         for size in CardTests.sizes {
-            for (entry, id, title) in [(CardTests.Entry.link("setup"), "card-setup", "Settings"), (.card("+map"), "card-map", "Map")] {
+            for (entry, id, title) in [(CardTests.Entry.link("setup"), "card-setup", "You"), (.card("+map"), "card-map", "Map")] {
                 let context = "\(title) at \(size.name)"
                 let app = CardTests.open(entry, size: size.arguments)
                 XCTAssertTrue(CardTests.card(app, id).waitForExistence(timeout: 20), "\(context): did not open")
@@ -45,7 +45,7 @@ final class CardScrollTests: XCTestCase {
             CardTests.settled(grabber)
             XCTAssertNotEqual(grabber.value as? String, "Expanded", "the Map card did not open half way at \(size.name)")
             let title = app.navigationBars["Map"]
-            let firstRow = app.switches.firstMatch
+            let firstRow = app.descendants(matching: .any)["layer-traffic"]
             let rowY = firstRow.frame.minY - title.frame.minY
             card.swipeUp()
             CardTests.settled(grabber)
@@ -58,27 +58,31 @@ final class CardScrollTests: XCTestCase {
         }
     }
 
-    /// Settings' last row reached and tapped; Back returns to it in place,
-    /// and Settings opened afresh starts at its top.
+    /// Settings' last row, pushed from You's gear, reached and tapped; Back
+    /// returns to it in place, and You opened afresh starts at its top.
     @MainActor
     func testTheLastRowIsReachedAndTheListKeepsItsPlace() throws {
         for size in CardTests.sizes {
             let app = CardTests.launch(["-screen", "setup"], size: size.arguments)
-            XCTAssertTrue(CardTests.card(app, "card-setup").waitForExistence(timeout: 20), "Settings did not open at \(size.name)")
-            let about = app.buttons["About"].firstMatch
-            CardTests.scrollTo(about, in: app)
-            let at = about.frame.minY
-            about.tap()
-            XCTAssertTrue(app.navigationBars["About"].waitForExistence(timeout: 10), "About did not open at \(size.name)")
+            XCTAssertTrue(CardTests.card(app, "card-setup").waitForExistence(timeout: 20), "You did not open at \(size.name)")
+            app.buttons["settings-gear"].tap()
+            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), "the gear did not open Settings at \(size.name)")
+            let help = app.buttons["help-row"].firstMatch
+            CardTests.scrollTo(help, in: app)
+            let at = help.frame.minY
+            help.tap()
+            XCTAssertTrue(app.navigationBars["Help & About"].waitForExistence(timeout: 10), "Help & About did not open at \(size.name)")
             app.navigationBars.buttons.element(boundBy: 0).tap()
-            XCTAssertTrue(about.waitForExistence(timeout: 10) && about.isHittable, "Back lost the list's place at \(size.name)")
-            XCTAssertEqual(about.frame.minY, at, accuracy: 4, "Back moved the list at \(size.name)")
+            XCTAssertTrue(help.waitForExistence(timeout: 10) && help.isHittable, "Back lost the list's place at \(size.name)")
+            XCTAssertEqual(help.frame.minY, at, accuracy: 4, "Back moved the list at \(size.name)")
+            app.navigationBars.buttons.element(boundBy: 0).tap()
             CardTests.close(app).tap()
             let account = app.buttons["account-button"]
             XCTAssertTrue(account.waitForExistence(timeout: 10), "no account button at \(size.name)")
             account.tap()
-            XCTAssertTrue(app.staticTexts["Sign In"].waitForExistence(timeout: 10) && app.staticTexts["Sign In"].isHittable,
-                          "Settings opened again did not start at its top at \(size.name)")
+            let signIn = app.buttons["you-sign-in"]
+            XCTAssertTrue(signIn.waitForExistence(timeout: 10) && signIn.isHittable,
+                          "You opened again did not start at its top at \(size.name)")
             app.terminate()
         }
     }

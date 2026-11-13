@@ -1,33 +1,19 @@
 @preconcurrency import MapKit
 import SwiftUI
 
-/// The Map card's Terrain, the web's Map menu's (Flat | Shaded | 3D) as
-/// MapKit can draw it: flat as the chart is printed, or 3D, Apple's own
-/// ground stood up and the map free to tilt. The web's Shaded, the relief
-/// shaded over the chart from the planner's terrain tiles, has no MapKit
-/// counterpart (MapKit draws no hillshade of an app's own elevation), so
-/// it is not offered here rather than drawn by hand.
+/// The map's Terrain, the 3D map button's (MapSideButtons; the web's 3D
+/// button) as MapKit can draw it: flat as the chart is printed, or 3D,
+/// Apple's own ground stood up and the map free to tilt. The web's 2D is
+/// the relief shaded over the chart from the planner's terrain tiles,
+/// which has no MapKit counterpart (MapKit draws no hillshade of an app's
+/// own elevation), so the iPhone's 2D is the chart as printed rather than
+/// a shading drawn by hand.
 enum MapTerrain: String, CaseIterable, Identifiable, Sendable {
     case flat, raised = "3d"
 
     static let key = "mapTerrain"
     var id: String { rawValue }
     var label: String { self == .flat ? "Flat" : "3D" }
-}
-
-/// The Terrain pick in the Map card, segmented as the web's is.
-struct TerrainPicker: View {
-    @AppStorage(MapTerrain.key) private var terrain = MapTerrain.flat.rawValue
-
-    var body: some View {
-        LabeledContent("Terrain") {
-            Picker("Terrain", selection: $terrain) {
-                ForEach(MapTerrain.allCases) { Text($0.label).tag($0.rawValue) }
-            }
-            .pickerStyle(.segmented)
-            .fixedSize()
-        }
-    }
 }
 
 /// The app's MKMapView, which knows the Terrain. Flat, it is the map as it

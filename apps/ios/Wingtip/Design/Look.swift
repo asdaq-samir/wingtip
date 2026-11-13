@@ -76,6 +76,9 @@ extension EnvironmentValues {
 /// look itself in the environment.
 private struct LookTint: ViewModifier {
     @AppStorage(Look.key) private var look = Look.standard.rawValue
+    /// Settings' Appearance (Appearance): the app's own light or dark, or
+    /// the phone's.
+    @AppStorage(Appearance.schemeKey) private var appearance = Appearance.system.scheme
     @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
@@ -86,7 +89,7 @@ private struct LookTint: ViewModifier {
             .tint(picked.appliedTint(dark: scheme == .dark))
             .environment(\.look, picked)
             .environment(\.lookAccent, picked.appliedTint(dark: scheme == .dark) ?? .blue)
-            .background(WindowTint(tint: picked.windowTint).allowsHitTesting(false).accessibilityHidden(true))
+            .background(WindowTint(tint: picked.windowTint, style: Appearance.style(appearance)).allowsHitTesting(false).accessibilityHidden(true))
     }
 }
 
@@ -100,27 +103,35 @@ extension Look {
     }
 }
 
-/// Sets the window's tint (Look.windowTint) once the root is in a window,
-/// and again as the look changes.
+/// Sets the window's tint (Look.windowTint) and its light or dark
+/// (Appearance) once the root is in a window, and again as either changes:
+/// the window's own style, so every sheet, alert and the map under them
+/// follow it, as UIKit's overrideUserInterfaceStyle is meant to be used.
 private struct WindowTint: UIViewRepresentable {
     let tint: UIColor?
+    let style: UIUserInterfaceStyle
 
     func makeUIView(context _: Context) -> Probe { Probe() }
 
     func updateUIView(_ view: Probe, context _: Context) {
         view.tint = tint
+        view.style = style
         view.apply()
     }
 
     final class Probe: UIView {
         var tint: UIColor?
+        var style: UIUserInterfaceStyle = .unspecified
 
         override func didMoveToWindow() {
             super.didMoveToWindow()
             apply()
         }
 
-        func apply() { window?.tintColor = tint }
+        func apply() {
+            window?.tintColor = tint
+            window?.overrideUserInterfaceStyle = style
+        }
     }
 }
 

@@ -24,10 +24,10 @@ final class CardRuleTests: XCTestCase {
                     // The card covers the search, as Maps' place card does.
                     let search = app.searchFields[CardTests.searchPrompt]
                     XCTAssertFalse(search.exists && search.isHittable, "\(context): the search is still in reach")
-                    if case .settingsRow = entry {
-                        // Opened inside Settings: Back goes to Settings, not the map.
+                    if case .youRow = entry {
+                        // Opened inside You: Back goes to You, not the map.
                         app.navigationBars.buttons.element(boundBy: 0).tap()
-                        XCTAssertTrue(CardTests.card(app, "card-setup").waitForExistence(timeout: 10), "\(context): Back did not go to Settings")
+                        XCTAssertTrue(CardTests.card(app, "card-setup").waitForExistence(timeout: 10), "\(context): Back did not go to You")
                     } else {
                         let close = CardTests.close(app)
                         XCTAssertTrue(close.waitForExistence(timeout: 10), "\(context): no close")
@@ -42,20 +42,38 @@ final class CardRuleTests: XCTestCase {
         }
     }
 
-    /// A page opened inside a card stays in that card: Settings' Downloads
-    /// row pushed with Back, one Back returning to Settings.
+    /// A page opened inside a card stays in that card: Settings pushed from
+    /// You's gear, its Downloads row pushed with Back, one Back returning to
+    /// Settings and one more to You; the Map card's gear opens the same
+    /// Settings, its Back returning to the Map card.
     @MainActor
     func testAPageOpenedInACardGoesBackToTheCard() throws {
         for size in CardTests.sizes {
             let app = CardTests.launch(["-screen", "setup"], size: size.arguments)
-            XCTAssertTrue(CardTests.card(app, "card-setup").waitForExistence(timeout: 20), "Settings did not open at \(size.name)")
+            XCTAssertTrue(CardTests.card(app, "card-setup").waitForExistence(timeout: 20), "You did not open at \(size.name)")
+            let gear = app.buttons["settings-gear"]
+            XCTAssertTrue(gear.exists, "no gear on You at \(size.name)")
+            XCTAssertLessThan(gear.frame.midX, app.frame.midX, "You's gear is not at the left at \(size.name)")
+            gear.tap()
+            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), "the gear did not open Settings at \(size.name)")
             let row = app.buttons["Downloads"].firstMatch
             CardTests.scrollTo(row, in: app)
             row.tap()
             XCTAssertTrue(app.navigationBars["Downloads"].waitForExistence(timeout: 10), "Downloads did not push at \(size.name)")
             app.navigationBars.buttons.element(boundBy: 0).tap()
             XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), "one Back did not return to Settings at \(size.name)")
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            XCTAssertTrue(app.navigationBars["You"].waitForExistence(timeout: 10), "Back did not return to You at \(size.name)")
             app.terminate()
+
+            let map = CardTests.launch(["-card", "+map"], size: size.arguments)
+            XCTAssertTrue(CardTests.card(map, "card-map").waitForExistence(timeout: 20), "the Map card did not open at \(size.name)")
+            map.buttons["settings-gear"].tap()
+            XCTAssertTrue(map.navigationBars["Settings"].waitForExistence(timeout: 10), "the Map card's gear did not open Settings at \(size.name)")
+            XCTAssertTrue(map.buttons["airport-weather-look"].waitForExistence(timeout: 10), "Settings did not open at its Map group at \(size.name)")
+            map.navigationBars.buttons.element(boundBy: 0).tap()
+            XCTAssertTrue(map.navigationBars["Map"].waitForExistence(timeout: 10), "Back did not return to the Map card at \(size.name)")
+            map.terminate()
         }
     }
 

@@ -30,10 +30,10 @@ final class LaunchTests: XCTestCase {
         add(shot)
     }
 
-    /// The account button beside the one search opens Settings at once,
-    /// with no menu in between (the owner, 2026-11-10).
+    /// The avatar beside the one search opens You at once, with no menu in
+    /// between (the owner, 2026-11-10 and 2026-11-13).
     @MainActor
-    func testTheAccountButtonOpensSettings() throws {
+    func testTheAccountButtonOpensYou() throws {
         let app = XCUIApplication()
         // The Search page, the account button's (the FPL page has no bar).
         app.launchArguments += ["-layout", "plan", "-screen", "search"]
@@ -42,6 +42,7 @@ final class LaunchTests: XCTestCase {
         let account = app.buttons["account-button"]
         XCTAssertTrue(account.waitForExistence(timeout: 20), "no account button")
         account.tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), "Settings did not open")
+        XCTAssertTrue(app.navigationBars["You"].waitForExistence(timeout: 10), "You did not open")
+        XCTAssertTrue(app.buttons["settings-gear"].exists, "no Settings gear on You")
     }
 }
