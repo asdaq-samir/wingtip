@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .aircraft_figures import DemonstratedCrosswind, DistanceTable, ShortField  # noqa: F401  (re-exported)
 from .common import AltitudeChoice, FlightRules, Hazard, Loading, SpecialUse, Wind
 
+from .leg_points import TopOfClimb, TopOfDescent
 from .route_profile import ProfileAirspace, ProfileGround, ProfileObstacle, RouteProfile  # noqa: F401  (the side view, its own file)
 from .winds_period import WindsPeriod
 
@@ -152,44 +153,6 @@ class Checkpoints(BaseModel):
     stops: list[AirportEnd] = []
     candidates: list[Candidate]
     selected: list[Candidate]
-
-
-class LegPoint(BaseModel):
-    """A point on a leg that the nav log has a row for, the leg cut there.
-    The miles, minutes and gallons are from the leg's start;
-    `altitude_ft`, the level there."""
-
-    along_nm: float
-    ete_min: float
-    fuel_gal: float | None
-    altitude_ft: float
-    lat: float
-    lon: float
-
-
-class TopOfClimb(LegPoint):
-    """Where a climb tops out (TOC), and the climb's true airspeed and
-    ground speed on the way up to it (wingtip.navlog.with_climbs)."""
-
-    tas_kt: float
-    groundspeed_kt: float
-
-
-class TopOfDescent(LegPoint):
-    """Where a descent starts (TOD): down from `altitude_ft` to `to_ft` --
-    the pattern altitude of the field landed at, the altitude an
-    approach's first fix is crossed at, or the next leg's lower level --
-    at `fpm`, three to one at the leg's ground speed, or steeper where
-    the climb before it left less room (wingtip.navlog.with_descents)."""
-
-    to_ft: float
-    # Whether `to_ft` is the pattern altitude at the field the flight
-    # lands at, rather than a lower level on the way.
-    pattern: bool
-    # The approach's fix `to_ft` is crossed at, where the flight lands by
-    # one (plan.approach_end).
-    fix: str | None = None
-    fpm: float
 
 
 class MissedApproachPath(BaseModel):

@@ -603,7 +603,7 @@ object EngineContract {
          */
         val mode: String,
         /**
-         * The leg's ground speed, knots: a descent's minutes, and with tas_kt the wind a climb's ground speed is scaled by. Null where the leg has none.
+         * The leg's ground speed, knots: a descent's minutes, and, where the course and wind are not given, with tas_kt the scale of a climb's ground speed. Null where the leg has none.
          */
         @SerialName("groundspeed_kt")
         val groundspeedKt: Double? = null,
@@ -622,6 +622,21 @@ object EngineContract {
          */
         @SerialName("oat_c")
         val oatC: Double? = null,
+        /**
+         * The leg's true course, degrees: with the wind, the climb's own wind triangle at the climb speed (PHAK ch. 16). Optional; left out, the climb's ground speed is the leg's scaled by the airspeeds.
+         */
+        @SerialName("true_course_deg")
+        val trueCourseDeg: Double? = null,
+        /**
+         * The leg's wind, from, degrees true (its NavLogWind's), for the climb's wind triangle. Null or left out where the leg has none.
+         */
+        @SerialName("wind_dir_true_deg")
+        val windDirTrueDeg: Double? = null,
+        /**
+         * The leg's wind speed, knots, with wind_dir_true_deg.
+         */
+        @SerialName("wind_speed_kt")
+        val windSpeedKt: Double? = null,
     )
 
     @Serializable
@@ -7667,7 +7682,7 @@ object EngineContract {
     )
 
     /**
-     * A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg.
+     * A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg. A top of climb also carries the climb's own figures for the piece of its leg up to it: the climb speed, its wind correction, headings and ground speed in the leg's wind, and its fuel flow.
      */
     @Serializable
     data class NavLogTop(
@@ -7688,6 +7703,14 @@ object EngineContract {
         val tasKt: Double? = null,
         @SerialName("groundspeed_kt")
         val groundspeedKt: Double? = null,
+        @SerialName("fuel_burn_gph")
+        val fuelBurnGph: Double? = null,
+        @SerialName("wca_deg")
+        val wcaDeg: Double? = null,
+        @SerialName("true_heading_deg")
+        val trueHeadingDeg: Double? = null,
+        @SerialName("magnetic_heading_deg")
+        val magneticHeadingDeg: Double? = null,
         val lat: Double? = null,
         val lon: Double? = null,
     )

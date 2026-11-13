@@ -82,6 +82,13 @@ pub struct Airplane {
     pub fuel_burn_gph: f64,
     pub cruise_power_pct: Option<f64>,
     pub cruise_altitude_ft: Option<f64>,
+    /// The climb's true airspeed, knots, used as it is: not a handbook's
+    /// Vy, which is indicated. The stock profiles' figure is worked from
+    /// the POH's time, fuel and distance to climb (miles over minutes, a
+    /// speed over the ground in still air, so a TAS; data/aircraft's
+    /// `source` says so where it names the climb), and the apps ask a pilot for it as a
+    /// TAS ("Climb speed (TAS)"). Converting it as if indicated would
+    /// count the density twice.
     pub climb_tas_kt: Option<f64>,
     pub climb_fuel_burn_gph: Option<f64>,
     pub climb_rate_fpm_sea_level: Option<f64>,

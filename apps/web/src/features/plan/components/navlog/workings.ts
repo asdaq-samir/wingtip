@@ -36,8 +36,12 @@ export function written(key: AnswerKey, value: number): string {
 export interface Workings {
   /** The steps in order, each a name, its sum and its result. */
   steps: { name: string; sum: string; result: string }[];
-  /** The figures a student is asked for, cruise only. */
+  /** The figures a student is asked for, of the one phase the row is
+   *  flown in: the cruise's, or the climb's where the row is all climb. */
   answers: Record<AnswerKey, number>;
+  /** Which phase the figures are: a climbing row's are the climb's own
+   *  (the engine's with_climbs puts them on the leg or its top of climb). */
+  phase: "climb" | "cruise";
   /** What the leg's climb adds, where it has one: the log's own time and
    *  fuel are the cruise's and this. */
   climb: { min: number; gal: number } | null;
@@ -47,8 +51,9 @@ export interface Workings {
 }
 
 /** A leg worked out, or null for one that cannot be (no wind is a calm
- *  leg; a wind faster than the airplane, no leg at all). */
-export function workingsOf(leg: Leg): Workings | null {
+ *  leg; a wind faster than the airplane, no leg at all). `climbing`: the
+ *  row is flown all in the climb (rows' inClimb), its figures the climb's. */
+export function workingsOf(leg: Leg, climbing = false): Workings | null {
   if (leg.groundspeed_kt == null || leg.groundspeed_kt <= 0 || leg.ete_min == null || leg.fuel_gal == null) return null;
   // No airplane, no wind triangle to work: its figures are an airplane's.
   if (
@@ -94,7 +99,12 @@ export function workingsOf(leg: Leg): Workings | null {
     },
     {
       name: "True airspeed",
-      sum: `${Math.round(leg.power_pct)}% power at a density altitude of ${grouped(leg.density_altitude_ft)} ft`,
+      // A climb is flown at the airplane's climb speed, not at a cruise
+      // power setting (FAA-H-8083-25C ch. 16: each phase at its own
+      // figures).
+      sum: climbing
+        ? "the airplane's climb speed"
+        : `${Math.round(leg.power_pct)}% power at a density altitude of ${grouped(leg.density_altitude_ft)} ft`,
       result: `${Math.round(tas)} kt`,
     },
     {
@@ -115,11 +125,16 @@ export function workingsOf(leg: Leg): Workings | null {
       result: `${Math.round(gs)} kt`,
     },
     { name: "Time", sum: `${r1(leg.distance_nm)} nm ÷ ${Math.round(gs)} kt × 60`, result: `${Math.round(ete)} min` },
-    { name: "Fuel", sum: `${Math.round(ete)} min at ${r1(leg.fuel_burn_gph)} gal/h`, result: `${r1(fuel)} gal` },
+    {
+      name: "Fuel",
+      sum: `${Math.round(ete)} min at ${climbing ? "the climb's " : ""}${r1(leg.fuel_burn_gph)} gal/h`,
+      result: `${r1(fuel)} gal`,
+    },
   ];
   return {
     steps,
     answers: { wca, th, mh, gs, ete, fuel },
+    phase: climbing ? "climb" : "cruise",
     climb: climbMin > 0.5 ? { min: climbMin, gal: Math.max(0, climbGal) } : null,
     procedure: procedure && procedure.min > 0 ? { ...procedure, landing: p!.landing } : null,
   };

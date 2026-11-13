@@ -20363,8 +20363,10 @@ extension Components {
                 case tfrs
             }
         }
-        /// Where a climb tops out (TOC), and the climb's true airspeed and
-        /// ground speed on the way up to it (wingtip.navlog.with_climbs).
+        /// Where a climb tops out (TOC), and the climb's own figures on the
+        /// way up to it (the engine's with_climbs): its true airspeed, its wind
+        /// correction, headings and ground speed in the leg's wind, and its fuel
+        /// flow, so the nav log's row up to the top is the climb's.
         ///
         /// - Remark: Generated from `#/components/schemas/TopOfClimb`.
         public struct TopOfClimb: Codable, Hashable, Sendable {
@@ -20374,6 +20376,8 @@ extension Components {
             public var altitudeFt: Swift.Double
             /// - Remark: Generated from `#/components/schemas/TopOfClimb/ete_min`.
             public var eteMin: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TopOfClimb/fuel_burn_gph`.
+            public var fuelBurnGph: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TopOfClimb/fuel_gal`.
             public var fuelGal: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TopOfClimb/groundspeed_kt`.
@@ -20382,47 +20386,69 @@ extension Components {
             public var lat: Swift.Double
             /// - Remark: Generated from `#/components/schemas/TopOfClimb/lon`.
             public var lon: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TopOfClimb/magnetic_heading_deg`.
+            public var magneticHeadingDeg: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TopOfClimb/tas_kt`.
             public var tasKt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TopOfClimb/true_heading_deg`.
+            public var trueHeadingDeg: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/TopOfClimb/wca_deg`.
+            public var wcaDeg: Swift.Double?
             /// Creates a new `TopOfClimb`.
             ///
             /// - Parameters:
             ///   - alongNm:
             ///   - altitudeFt:
             ///   - eteMin:
+            ///   - fuelBurnGph:
             ///   - fuelGal:
             ///   - groundspeedKt:
             ///   - lat:
             ///   - lon:
+            ///   - magneticHeadingDeg:
             ///   - tasKt:
+            ///   - trueHeadingDeg:
+            ///   - wcaDeg:
             public init(
                 alongNm: Swift.Double,
                 altitudeFt: Swift.Double,
                 eteMin: Swift.Double,
+                fuelBurnGph: Swift.Double? = nil,
                 fuelGal: Swift.Double? = nil,
                 groundspeedKt: Swift.Double,
                 lat: Swift.Double,
                 lon: Swift.Double,
-                tasKt: Swift.Double
+                magneticHeadingDeg: Swift.Double? = nil,
+                tasKt: Swift.Double,
+                trueHeadingDeg: Swift.Double? = nil,
+                wcaDeg: Swift.Double? = nil
             ) {
                 self.alongNm = alongNm
                 self.altitudeFt = altitudeFt
                 self.eteMin = eteMin
+                self.fuelBurnGph = fuelBurnGph
                 self.fuelGal = fuelGal
                 self.groundspeedKt = groundspeedKt
                 self.lat = lat
                 self.lon = lon
+                self.magneticHeadingDeg = magneticHeadingDeg
                 self.tasKt = tasKt
+                self.trueHeadingDeg = trueHeadingDeg
+                self.wcaDeg = wcaDeg
             }
             public enum CodingKeys: String, CodingKey {
                 case alongNm = "along_nm"
                 case altitudeFt = "altitude_ft"
                 case eteMin = "ete_min"
+                case fuelBurnGph = "fuel_burn_gph"
                 case fuelGal = "fuel_gal"
                 case groundspeedKt = "groundspeed_kt"
                 case lat
                 case lon
+                case magneticHeadingDeg = "magnetic_heading_deg"
                 case tasKt = "tas_kt"
+                case trueHeadingDeg = "true_heading_deg"
+                case wcaDeg = "wca_deg"
             }
         }
         /// Where a descent starts (TOD): down from `altitude_ft` to `to_ft` --

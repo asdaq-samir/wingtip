@@ -75,7 +75,9 @@ function TryIt({ workings }: { workings: Workings }) {
                   : answer.key === "wca"
                     ? "+ right, − left"
                     : answer.key === "ete" || answer.key === "fuel"
-                      ? "Cruise only"
+                      ? workings.phase === "climb"
+                        ? "The climb's"
+                        : "Cruise only"
                       : undefined
               }
               data-testid={`try-${answer.key}`}
@@ -120,8 +122,8 @@ function TryIt({ workings }: { workings: Workings }) {
  * its sum -- or, under Try it, the student's own figures checked against
  * them. A popover from `md` up, a sheet on a phone.
  */
-export default function LegWorkings({ leg }: { leg: Leg }) {
-  const workings = workingsOf(leg);
+export default function LegWorkings({ leg, climbing = false }: { leg: Leg; climbing?: boolean }) {
+  const workings = workingsOf(leg, climbing);
   const [mode, setMode] = useState("worked");
   if (!workings) return null;
   return (

@@ -618,7 +618,7 @@ enum EngineContract {
         var toFt: Double
         /// start_at: the change begins at the waypoint and runs on from it; cross_at: it is done by the waypoint.
         var mode: String
-        /// The leg's ground speed, knots: a descent's minutes, and with tas_kt the wind a climb's ground speed is scaled by. Null where the leg has none.
+        /// The leg's ground speed, knots: a descent's minutes, and, where the course and wind are not given, with tas_kt the scale of a climb's ground speed. Null where the leg has none.
         var groundspeedKt: Double?
         /// The leg's cruise true airspeed, knots, for the wind's share of the ground speed.
         var tasKt: Double?
@@ -626,6 +626,12 @@ enum EngineContract {
         var fuelBurnGph: Double?
         /// The forecast temperature at to_ft, degrees C: the climb is flown that far from a standard day (ISA, PHAK ch. 4). Null for a standard day.
         var oatC: Double?
+        /// The leg's true course, degrees: with the wind, the climb's own wind triangle at the climb speed (PHAK ch. 16). Optional; left out, the climb's ground speed is the leg's scaled by the airspeeds.
+        var trueCourseDeg: Double?
+        /// The leg's wind, from, degrees true (its NavLogWind's), for the climb's wind triangle. Null or left out where the leg has none.
+        var windDirTrueDeg: Double?
+        /// The leg's wind speed, knots, with wind_dir_true_deg.
+        var windSpeedKt: Double?
 
         enum CodingKeys: String, CodingKey {
             case profile
@@ -637,6 +643,9 @@ enum EngineContract {
             case tasKt = "tas_kt"
             case fuelBurnGph = "fuel_burn_gph"
             case oatC = "oat_c"
+            case trueCourseDeg = "true_course_deg"
+            case windDirTrueDeg = "wind_dir_true_deg"
+            case windSpeedKt = "wind_speed_kt"
         }
     }
 
@@ -7743,7 +7752,7 @@ enum EngineContract {
         }
     }
 
-    /// A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg.
+    /// A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg. A top of climb also carries the climb's own figures for the piece of its leg up to it: the climb speed, its wind correction, headings and ground speed in the leg's wind, and its fuel flow.
     struct NavLogTop: Codable, Equatable, Sendable {
         var alongNm: Double
         var eteMin: Double
@@ -7755,6 +7764,10 @@ enum EngineContract {
         var fpm: Double?
         var tasKt: Double?
         var groundspeedKt: Double?
+        var fuelBurnGph: Double?
+        var wcaDeg: Double?
+        var trueHeadingDeg: Double?
+        var magneticHeadingDeg: Double?
         var lat: Double?
         var lon: Double?
 
@@ -7769,6 +7782,10 @@ enum EngineContract {
             case fpm
             case tasKt = "tas_kt"
             case groundspeedKt = "groundspeed_kt"
+            case fuelBurnGph = "fuel_burn_gph"
+            case wcaDeg = "wca_deg"
+            case trueHeadingDeg = "true_heading_deg"
+            case magneticHeadingDeg = "magnetic_heading_deg"
             case lat
             case lon
         }

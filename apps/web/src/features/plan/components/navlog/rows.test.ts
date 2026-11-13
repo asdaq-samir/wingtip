@@ -1,6 +1,18 @@
 import { describe, expect, test } from "vitest";
 import type { Airport, Candidate, Leg } from "../../../../lib/api/types";
-import { flownNmOf, groundMinAt, legOf, navLogRows, procedureOf, routeLegs, rowPoint, savedCheckpoints, turnaroundMin } from "./rows";
+import {
+  firstFlown,
+  flownNmOf,
+  groundMinAt,
+  inClimb,
+  legOf,
+  navLogRows,
+  procedureOf,
+  routeLegs,
+  rowPoint,
+  savedCheckpoints,
+  turnaroundMin,
+} from "./rows";
 
 const airport = (ident: string, lat: number, lon: number): Airport =>
   ({ ident, name: `${ident} field`, lat, lon, elevation_ft: 900 }) as Airport;
@@ -55,7 +67,20 @@ describe("a leg flown by a procedure", () => {
     ({
       ...leg(6.7, 4.99),
       groundspeed_kt: 88.8,
-      toc: { along_nm: 3.6, ete_min: 3.5, fuel_gal: 0.61, altitude_ft: 3000, lat: 42.48, lon: -87.89, tas_kt: 74, groundspeed_kt: 61.7 },
+      toc: {
+        along_nm: 3.6,
+        ete_min: 3.5,
+        fuel_gal: 0.61,
+        altitude_ft: 3000,
+        lat: 42.48,
+        lon: -87.89,
+        tas_kt: 74,
+        groundspeed_kt: 61.7,
+        fuel_burn_gph: null,
+        wca_deg: null,
+        true_heading_deg: null,
+        magnetic_heading_deg: null,
+      },
       procedure: {
         path: [],
         ft: [],
@@ -86,6 +111,46 @@ describe("a leg flown by a procedure", () => {
     const rows = navLogRows(ends, [], [{ ...flownBy({ nm: 3.1, min: 2.1, landing: true }), toc: null }]);
     expect(procedureOf(rows[1]!)?.word).toBe("pattern");
     expect(flownNmOf(rows[1]!)).toBeCloseTo(4.99 + 3.1, 5);
+  });
+});
+
+describe("a climb's rows are the climb's", () => {
+  // The leg's top of climb 3.6 nm and 3.5 min in at the climb's 61.7 kt
+  // and 334 degrees (more correction at the slower speed), its cruise
+  // 100 kt and 332 (the engine's with_climbs).
+  const climbing = (): Leg =>
+    ({
+      ...leg(20, 30),
+      climb_min: 3.5,
+      toc: {
+        along_nm: 3.6,
+        ete_min: 3.5,
+        fuel_gal: 0.61,
+        altitude_ft: 4500,
+        lat: 42.48,
+        lon: -87.89,
+        tas_kt: 74,
+        groundspeed_kt: 61.7,
+        fuel_burn_gph: 10.5,
+        wca_deg: 4,
+        true_heading_deg: 334,
+        magnetic_heading_deg: 334,
+      },
+    }) as Leg;
+
+  test("the piece up to the top states the climb's speed, heading and flow, the rest the cruise's", () => {
+    const rows = navLogRows(ends, [], [climbing()]);
+    const [toc, rest] = [rows[1]!, rows[2]!];
+    expect(inClimb(toc)).toBe(true);
+    expect(legOf(toc)).toMatchObject({ groundspeed_kt: 61.7, tas_kt: 74, magnetic_heading_deg: 334, fuel_burn_gph: 10.5 });
+    expect(inClimb(rest)).toBe(false);
+    expect(legOf(rest)).toMatchObject({ groundspeed_kt: 100, magnetic_heading_deg: 332 });
+  });
+
+  test("a leg that climbs with no top on it is climb all through, and on from its start a leg climbs first", () => {
+    const rows = navLogRows(ends, [], [{ ...leg(20, 30), climb_min: 20, toc: null }]);
+    expect(inClimb(rows[1]!)).toBe(true);
+    expect(firstFlown(climbing())).toMatchObject({ groundspeed_kt: 61.7, magnetic_heading_deg: 334 });
   });
 });
 

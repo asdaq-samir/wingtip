@@ -5469,8 +5469,10 @@ data class MissedApproachPath (
 )
 
 /**
- * Where a climb tops out (TOC), and the climb's true airspeed and
- * ground speed on the way up to it (wingtip.navlog.with_climbs).
+ * Where a climb tops out (TOC), and the climb's own figures on the
+ * way up to it (the engine's with_climbs): its true airspeed, its wind
+ * correction, headings and ground speed in the leg's wind, and its fuel
+ * flow, so the nav log's row up to the top is the climb's.
  */
 @Serializable
 data class TopOfClimb (
@@ -5483,6 +5485,9 @@ data class TopOfClimb (
     @SerialName("ete_min")
     val eteMin: Double,
 
+    @SerialName("fuel_burn_gph")
+    val fuelBurnGph: Double? = null,
+
     @SerialName("fuel_gal")
     val fuelGal: Double? = null,
 
@@ -5492,8 +5497,17 @@ data class TopOfClimb (
     val lat: Double,
     val lon: Double,
 
+    @SerialName("magnetic_heading_deg")
+    val magneticHeadingDeg: Double? = null,
+
     @SerialName("tas_kt")
-    val tasKt: Double
+    val tasKt: Double,
+
+    @SerialName("true_heading_deg")
+    val trueHeadingDeg: Double? = null,
+
+    @SerialName("wca_deg")
+    val wcaDeg: Double? = null
 )
 
 /**

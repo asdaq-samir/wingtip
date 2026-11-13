@@ -1145,7 +1145,7 @@ export interface EngineContract {
     answer: AltitudeAnywayAnswer;
   };
   /**
-   * A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its climb speed scaled by the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.
+   * A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its own ground speed, the wind triangle at the climb speed in the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.
    */
   altitude_change: {
     input: AltitudeChangeInput;
@@ -4017,7 +4017,7 @@ export interface AltitudeChangeInput {
    */
   mode: "start_at" | "cross_at";
   /**
-   * The leg's ground speed, knots: a descent's minutes, and with tas_kt the wind a climb's ground speed is scaled by. Null where the leg has none.
+   * The leg's ground speed, knots: a descent's minutes, and, where the course and wind are not given, with tas_kt the scale of a climb's ground speed. Null where the leg has none.
    */
   groundspeed_kt?: number | null;
   /**
@@ -4032,6 +4032,18 @@ export interface AltitudeChangeInput {
    * The forecast temperature at to_ft, degrees C: the climb is flown that far from a standard day (ISA, PHAK ch. 4). Null for a standard day.
    */
   oat_c?: number | null;
+  /**
+   * The leg's true course, degrees: with the wind, the climb's own wind triangle at the climb speed (PHAK ch. 16). Optional; left out, the climb's ground speed is the leg's scaled by the airspeeds.
+   */
+  true_course_deg?: number | null;
+  /**
+   * The leg's wind, from, degrees true (its NavLogWind's), for the climb's wind triangle. Null or left out where the leg has none.
+   */
+  wind_dir_true_deg?: number | null;
+  /**
+   * The leg's wind speed, knots, with wind_dir_true_deg.
+   */
+  wind_speed_kt?: number | null;
 }
 /**
  * An airplane's profile (data/aircraft/*.json, a pilot's own figures laid over it). A figure of 0 is taken as none.
@@ -8866,7 +8878,7 @@ export interface NavLogLeg {
   [k: string]: unknown;
 }
 /**
- * A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg.
+ * A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg. A top of climb also carries the climb's own figures for the piece of its leg up to it: the climb speed, its wind correction, headings and ground speed in the leg's wind, and its fuel flow.
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "NavLogTop".
@@ -8882,6 +8894,10 @@ export interface NavLogTop {
   fpm?: number;
   tas_kt?: number;
   groundspeed_kt?: number;
+  fuel_burn_gph?: number;
+  wca_deg?: number;
+  true_heading_deg?: number;
+  magnetic_heading_deg?: number;
   lat?: number;
   lon?: number;
   [k: string]: unknown;

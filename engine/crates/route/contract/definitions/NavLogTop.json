@@ -38,6 +38,18 @@
     "groundspeed_kt": {
       "type": "number"
     },
+    "fuel_burn_gph": {
+      "type": "number"
+    },
+    "wca_deg": {
+      "type": "number"
+    },
+    "true_heading_deg": {
+      "type": "number"
+    },
+    "magnetic_heading_deg": {
+      "type": "number"
+    },
     "lat": {
       "type": "number"
     },
@@ -51,5 +63,5 @@
     "altitude_ft"
   ],
   "additionalProperties": true,
-  "description": "A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg."
+  "description": "A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg. A top of climb also carries the climb's own figures for the piece of its leg up to it: the climb speed, its wind correction, headings and ground speed in the leg's wind, and its fuel flow."
 }

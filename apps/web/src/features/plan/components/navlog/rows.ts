@@ -66,6 +66,26 @@ function piece(leg: Leg, from: { nm: number; min: number; gal: number }, to: { n
   return { ...leg, distance_nm: Math.max(0, to.nm - from.nm), ete_min: less(to.min, from.min), fuel_gal: less(to.gal, from.gal) };
 }
 
+/** The piece of a leg up to its top of climb with the climb's own
+ *  figures rather than the cruise's: its speeds, heading and fuel flow (the
+ *  engine's with_climbs), so the piece's miles over its minutes are its
+ *  ground speed. */
+function climbPiece(part: Leg, toc: TopOfClimb): Leg {
+  return {
+    ...part,
+    tas_kt: toc.tas_kt,
+    groundspeed_kt: toc.groundspeed_kt,
+    fuel_burn_gph: toc.fuel_burn_gph ?? part.fuel_burn_gph,
+    wca_deg: toc.wca_deg ?? part.wca_deg,
+    true_heading_deg: toc.true_heading_deg ?? part.true_heading_deg,
+    magnetic_heading_deg: toc.magnetic_heading_deg ?? part.magnetic_heading_deg,
+  };
+}
+
+/** A leg as it is first flown, for what a pilot does on from its start:
+ *  up to a top of climb on it, the climb's own figures (climbPiece). */
+export const firstFlown = (leg: Leg | undefined): Leg | undefined => (leg?.toc ? climbPiece(leg, leg.toc) : leg);
+
 export type RouteEnds = Pick<Course, "departure" | "destination"> &
   Partial<Pick<Course, "stops">> & {
     /** Minutes on the ground at the stops, by ident (the address's
@@ -112,9 +132,9 @@ export function navLogRows(ends: RouteEnds | null, selected: Candidate[], legs: 
       // them where they are not (features/plan/components/navlog/workings).
       const part = { ...piece(leg, from, { nm: point.along_nm, min: point.ete_min, gal: point.fuel_gal }), procedure: null };
       const key = `${on.kind}-${at}`;
-      // Up to a top of climb, the climb's speeds rather than the cruise's.
+      // Up to a top of climb, the climb's own figures (climbPiece).
       if (on.kind === "toc") {
-        const climb = { ...part, tas_kt: on.point.tas_kt, groundspeed_kt: on.point.groundspeed_kt };
+        const climb = climbPiece(part, on.point);
         rows.push({ kind: "toc", key, point: on.point, leg, part: climb, minutesFlown: minutesTo(climb) });
       } else {
         rows.push({ kind: "tod", key, point: on.point, leg, part, minutesFlown: minutesTo(part) });
@@ -147,6 +167,16 @@ export function navLogRows(ends: RouteEnds | null, selected: Candidate[], legs: 
 /** What a row's figures are: the piece of its leg that arrives at it,
  *  the whole leg where nothing cuts it; the departure has none. */
 export const legOf = (row: NavLogRow): Leg | undefined => (row.kind === "departure" ? undefined : (row.part ?? row.leg));
+
+/** Whether a row is flown all in the climb, so its figures are the
+ *  climb's (the engine's with_climbs): the piece up to a top of climb, or
+ *  a leg that climbs and has no top on it, the climb carrying on past its
+ *  end. */
+export function inClimb(row: NavLogRow): boolean {
+  if (row.kind === "toc") return true;
+  const leg = row.kind === "departure" ? undefined : row.leg;
+  return !!leg && (leg.climb_min ?? 0) > 0 && !leg.toc;
+}
 
 /**
  * The miles a row's leg is flown beyond its own straight line, where it

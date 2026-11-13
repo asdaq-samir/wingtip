@@ -86,3 +86,29 @@ describe("a leg worked out", () => {
     expect(bearing(0)).toBe("360°");
   });
 });
+
+describe("a row flown all in the climb", () => {
+  // The same leg climbed whole: the climb speed's own triangle in the same
+  // wind (74 kt, 13.5 degrees left, 62 kt over the ground: the engine's
+  // with_climbs), its time the miles at that speed and its fuel the
+  // climb's 10.5 gal/h, nothing added for a climb it already is.
+  const CLIMB = {
+    ...LEG,
+    tas_kt: 74,
+    wca_deg: -13.5,
+    groundspeed_kt: 62,
+    ete_min: (20 / 62) * 60,
+    fuel_burn_gph: 10.5,
+    fuel_gal: (20 / 62) * 10.5,
+    climb_min: 19,
+  } as Leg;
+
+  test("its airspeed is the climb speed, not a cruise power, and its time and fuel are the climb's", () => {
+    const w = workingsOf(CLIMB, true)!;
+    expect(w.phase).toBe("climb");
+    expect(w.steps.find((s) => s.name === "True airspeed")).toMatchObject({ sum: "the airplane's climb speed", result: "74 kt" });
+    expect(w.steps.find((s) => s.name === "Fuel")?.sum).toContain("the climb's 10.5 gal/h");
+    expect(w.answers.ete).toBeCloseTo(CLIMB.ete_min!, 6);
+    expect(w.climb).toBeNull();
+  });
+});

@@ -24,7 +24,7 @@ import { GROUP_HEADING, TEXT } from "../../../../lib/text";
 import { type Description, descriptionKey } from "../../hooks/useCheckpointNotes";
 import { altFt, bearing, clockTime, etaAt, feetBelowClouds, legsWithoutWind, one, plannedWords, windAloft } from "../../format";
 import type { BriefingPart } from "../briefing/sections";
-import { flownNmOf, isLegPoint, legOf, navLogRows, rowPoint, type NavLogRow, type RouteEnds } from "./rows";
+import { flownNmOf, inClimb, isLegPoint, legOf, navLogRows, rowPoint, type NavLogRow, type RouteEnds } from "./rows";
 import LegWorkings from "./LegWorkings";
 import DiversionDrill from "./DiversionDrill";
 import RouteProfileSection from "./RouteProfileSection";
@@ -188,7 +188,7 @@ function legPointNote(point: TopOfClimb | TopOfDescent, descent: TopOfDescent | 
   return `Top of descent: ${descent.fpm} fpm down to ${feet(descent.to_ft)}${to}.`;
 }
 
-function LegLine({ leg, at }: { leg: Leg; at: { name: string; lat: number; lon: number } }) {
+function LegLine({ leg, at, climbing }: { leg: Leg; at: { name: string; lat: number; lon: number }; climbing: boolean }) {
   const figures: [string, string][] = [
     ["TC", bearing(leg.true_course_deg)],
     ["Wind", leg.wind ? windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt) : "no data"],
@@ -218,7 +218,7 @@ function LegLine({ leg, at }: { leg: Leg; at: { name: string; lat: number; lon: 
           reaches 11 pt past its 22 pt line, so the lines sit 22 pt apart
           for the areas to meet rather than overlap. */}
       <div className="flex flex-wrap gap-x-4 gap-y-5.5">
-        <LegWorkings leg={leg} />
+        <LegWorkings leg={leg} climbing={climbing} />
         <DiversionDrill leg={leg} at={at} />
       </div>
     </div>
@@ -564,7 +564,7 @@ export default function NavLogView({
     const leg = legOf(r);
     return (
       <>
-        {leg && <LegLine leg={leg} at={rowPoint(r)} />}
+        {leg && <LegLine leg={leg} at={rowPoint(r)} climbing={inClimb(r)} />}
         {r.kind === "departure" ? (
           // The departure airport's own name, not editable and never
           // AI-generated -- there's no "how to spot it" for an airport and

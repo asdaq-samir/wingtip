@@ -2,8 +2,8 @@
 //! with_climbs, climb_penalty_min and climb_fuel_penalty_gal. The
 //! descents are descents.rs's.
 
-use super::legs::wind_triangle;
-use super::{number, object, py_round, Obj, Profile, R};
+use super::legs::{wind_of, wind_triangle};
+use super::{py_round, Obj, Profile, R};
 use crate::geo::py_mod;
 use crate::json::Value;
 use wingtip_flight::flight::isa_temp_c;
@@ -80,39 +80,29 @@ pub fn with_climbs(legs: &[Obj], start_altitude_ft: Option<f64>, profile: &Profi
         if climb_left_min > 0.0 && gs.is_some() && leg.has("ete_min") {
             let gs = gs.unwrap_or_default();
             let distance = leg.num("distance_nm")?;
-            // The climb's own triangle in the leg's wind. Scaling the
-            // cruise's ground speed by the airspeeds, as this did, scaled
-            // the wind too: 110 kt into a 20 kt headwind is 90 over the
-            // ground, and at a 70 kt climb that made 57 where the wind
-            // leaves 50. At least 1 kt, as before, where a crosswind
-            // stronger than the climb speed holds no heading.
-            let (climb_wca, climb_gs) = match leg.opt("true_course_deg")? {
-                Some(tc) => wind_triangle(tc, leg.get("wind").unwrap_or(&Value::Null), climb_tas)?,
-                None => (0.0, climb_tas),
-            };
-            let climb_gs = climb_gs.max(1.0);
+            // The climb's own triangle in the leg's wind (ClimbAir).
+            let air = ClimbAir::on(&leg, climb_tas)?;
+            let climb_gs = air.groundspeed_kt;
             let climb_nm = climb_gs * climb_left_min / 60.0;
             let (climb_min, cruise_min);
             if climb_nm >= distance {
                 climb_min = distance / climb_gs * 60.0;
                 cruise_min = 0.0;
                 climb_left_min -= climb_min;
-                climbed_whole(&mut leg, climb_tas, climb_wca, climb_gs, climb_burn_gph)?;
+                air.state_on(&mut leg, climb_burn_gph);
             } else {
                 climb_min = climb_left_min;
                 cruise_min = (distance - climb_nm) / gs * 60.0;
                 climb_left_min = 0.0;
-                leg.set(
-                    "toc",
-                    object(vec![
-                        ("along_nm", number(py_round(climb_nm, 1))),
-                        ("ete_min", number(py_round(climb_min, 1))),
-                        ("fuel_gal", number(py_round(climb_min / 60.0 * climb_burn_gph, 2))),
-                        ("altitude_ft", number(level)),
-                        ("tas_kt", number(climb_tas)),
-                        ("groundspeed_kt", number(climb_gs)),
-                    ]),
-                );
+                let mut toc = Obj::default();
+                toc.set_num("along_nm", py_round(climb_nm, 1));
+                toc.set_num("ete_min", py_round(climb_min, 1));
+                toc.set_num("fuel_gal", py_round(climb_min / 60.0 * climb_burn_gph, 2));
+                toc.set_num("altitude_ft", level);
+                // The climbing piece's own figures, as a leg climbed whole
+                // states them on the leg: the nav log's row up to the top.
+                air.state_on(&mut toc, climb_burn_gph);
+                leg.set("toc", toc.value());
             }
             leg.set_num("climb_min", py_round(climb_min, 1));
             leg.set_num("ete_min", climb_min + cruise_min);
@@ -123,31 +113,89 @@ pub fn with_climbs(legs: &[Obj], start_altitude_ft: Option<f64>, profile: &Profi
     Ok(out)
 }
 
-/// A leg flown wholly in the climb, its row the climb's: the climb speed,
-/// its wind correction and headings, its ground speed and its fuel flow in
-/// place of the cruise's, so the row's ground speed times its time is its
-/// miles and its fuel flow times its time its gallons. Its power and
-/// density altitude stay the cruise's: the climb speed is the profile's
-/// own figure, not one worked from them.
-fn climbed_whole(leg: &mut Obj, climb_tas: f64, wca: f64, gs: f64, burn_gph: f64) -> R<()> {
-    leg.set_num("tas_kt", climb_tas);
-    leg.set_num("groundspeed_kt", gs);
-    leg.set_num("fuel_burn_gph", burn_gph);
-    if let Some(tc) = leg.opt("true_course_deg")? {
+/// A climb's own air on a leg: the wind triangle at the climb speed in the
+/// leg's wind, the same wind its cruise is worked in (wind_triangle;
+/// FAA-H-8083-25C, PHAK ch. 16), with the leg's course and variation for
+/// its headings. Scaling the cruise's ground speed by the airspeeds, as the
+/// climb once did, scaled the wind too: 110 kt into a 20 kt headwind is 90
+/// over the ground, and at a 70 kt climb that made 57 where the wind leaves
+/// 50. At least 1 kt, as before, where a crosswind stronger than the climb
+/// speed holds no heading. A leg with no course (none given) is still air.
+struct ClimbAir {
+    tas_kt: f64,
+    wca_deg: f64,
+    groundspeed_kt: f64,
+    true_heading_deg: Option<f64>,
+    magnetic_heading_deg: Option<f64>,
+}
+
+impl ClimbAir {
+    fn on(leg: &Obj, climb_tas: f64) -> R<ClimbAir> {
+        let Some(tc) = leg.opt("true_course_deg")? else {
+            return Ok(ClimbAir {
+                tas_kt: climb_tas,
+                wca_deg: 0.0,
+                groundspeed_kt: climb_tas,
+                true_heading_deg: None,
+                magnetic_heading_deg: None,
+            });
+        };
+        let (wca, gs) = wind_triangle(tc, wind_of(leg.get("wind").unwrap_or(&Value::Null))?, climb_tas);
         let true_heading = py_mod(tc + wca, 360.0);
-        leg.set_num("wca_deg", wca);
-        leg.set_num("true_heading_deg", true_heading);
-        if let Some(variation) = leg.opt("magnetic_variation_deg")? {
-            leg.set_num("magnetic_heading_deg", py_mod(true_heading - variation, 360.0));
+        // East variation is least, west is best (FAA-H-8083-25C ch. 16).
+        let magnetic = leg.opt("magnetic_variation_deg")?.map(|v| py_mod(true_heading - v, 360.0));
+        Ok(ClimbAir {
+            tas_kt: climb_tas,
+            wca_deg: wca,
+            groundspeed_kt: gs.max(1.0),
+            true_heading_deg: Some(true_heading),
+            magnetic_heading_deg: magnetic,
+        })
+    }
+
+    /// The climb's figures on `to`: a leg flown wholly in the climb, whose
+    /// row is then the climb's, or a top of climb, the piece of its leg up
+    /// to the top. The climb speed, its wind correction and headings, its
+    /// ground speed and its fuel flow in place of the cruise's, so the
+    /// row's ground speed times its time is its miles and its fuel flow
+    /// times its time its gallons. Its power and density altitude stay the
+    /// cruise's: the climb speed is the profile's own figure, not one
+    /// worked from them.
+    fn state_on(&self, to: &mut Obj, burn_gph: f64) {
+        to.set_num("tas_kt", self.tas_kt);
+        to.set_num("groundspeed_kt", self.groundspeed_kt);
+        to.set_num("fuel_burn_gph", burn_gph);
+        if let Some(th) = self.true_heading_deg {
+            to.set_num("wca_deg", self.wca_deg);
+            to.set_num("true_heading_deg", th);
+        }
+        if let Some(mh) = self.magnetic_heading_deg {
+            to.set_num("magnetic_heading_deg", mh);
         }
     }
-    Ok(())
+}
+
+/// The climb's ground speed over the cruise's on `leg`: the share of the
+/// cruise's ground the climb's minutes cover, both in the leg's wind
+/// (ClimbAir). Without a leg's ground speed, the airspeeds' ratio: still air.
+fn climb_over_cruise(leg: Option<&Obj>, profile: &Profile, climb_tas: f64) -> R<f64> {
+    if let Some(l) = leg
+        && let Some(gs) = l.opt("groundspeed_kt")?.filter(|g| *g > 0.0)
+    {
+        return Ok(ClimbAir::on(l, climb_tas)?.groundspeed_kt / gs);
+    }
+    let cruise_tas = match leg {
+        Some(l) => l.num("tas_kt")?,
+        None => profile.airplane.cruise_tas_kt,
+    };
+    Ok(climb_tas / cruise_tas)
 }
 
 /// Minutes a climb from `from_ft` to `to_ft` costs over cruising level:
 /// the climb's minutes (in the air of `leg`, the leg flown at `to_ft`,
-/// where given), flown at the climb speed rather than the leg's cruise,
-/// and the difference is ground not covered. A descent costs nothing, and
+/// where given), flown at the climb's ground speed rather than the leg's
+/// cruise's, each in the leg's wind (climb_over_cruise), and the
+/// difference is ground not covered. A descent costs nothing, and
 /// never below nothing: a climb speed typed above the cruise does not make
 /// climbing pay. Nothing with no climb speed in the profile, which flies
 /// no climb (with_climbs).
@@ -157,16 +205,13 @@ pub fn climb_penalty_min(from_ft: f64, to_ft: f64, profile: &Profile, climber: &
         return Ok(0.0);
     }
     let minutes = climber.climb(from_ft, to_ft, isa_dev_c(leg)?).minutes;
-    let cruise_tas = match leg {
-        Some(l) => l.num("tas_kt")?,
-        None => profile.airplane.cruise_tas_kt,
-    };
-    Ok((minutes * (1.0 - climb_tas / cruise_tas)).max(0.0))
+    Ok((minutes * (1.0 - climb_over_cruise(leg, profile, climb_tas)?)).max(0.0))
 }
 
 /// Gallons a climb from `from_ft` to `to_ft` burns over cruising the same
 /// ground: its gallons, less what the leg's cruise would have burned over
-/// the ground the climb covers at the climb speed. Never below nothing,
+/// the ground the climb covers at its ground speed (climb_over_cruise, in
+/// the leg's wind). Never below nothing,
 /// and nothing with no climb speed in the profile (with_climbs).
 pub fn climb_fuel_penalty_gal(from_ft: f64, to_ft: f64, profile: &Profile, climber: &Climber, leg: Option<&Obj>) -> R<f64> {
     let Some(climb_tas) = profile.airplane.climb_tas_kt() else { return Ok(0.0) };
@@ -174,11 +219,11 @@ pub fn climb_fuel_penalty_gal(from_ft: f64, to_ft: f64, profile: &Profile, climb
         return Ok(0.0);
     }
     let climb: Climb = climber.climb(from_ft, to_ft, isa_dev_c(leg)?);
-    let (cruise_tas, cruise_burn) = match leg {
-        Some(l) => (l.num("tas_kt")?, l.num("fuel_burn_gph")?),
-        None => (profile.airplane.cruise_tas_kt, profile.airplane.fuel_burn_gph),
+    let cruise_burn = match leg {
+        Some(l) => l.num("fuel_burn_gph")?,
+        None => profile.airplane.fuel_burn_gph,
     };
-    let cruise_gal = climb.minutes / 60.0 * cruise_burn * climb_tas / cruise_tas;
+    let cruise_gal = climb.minutes / 60.0 * cruise_burn * climb_over_cruise(leg, profile, climb_tas)?;
     Ok((climb.gallons - cruise_gal).max(0.0))
 }
 
@@ -250,6 +295,11 @@ mod tests {
         let toc = Obj::read("test", second.get("toc").unwrap()).unwrap();
         assert!((toc.num("groundspeed_kt").unwrap() - 50.0).abs() < 1e-9);
         assert!((toc.num("along_nm").unwrap() - 0.6).abs() < 1e-9);
+        // With the climb's airspeed, flow and heading for the piece up to
+        // the top: one climb, one flow on both legs.
+        assert_eq!(toc.num("tas_kt").unwrap(), 70.0);
+        assert_eq!(toc.num("fuel_burn_gph").unwrap(), first.num("fuel_burn_gph").unwrap());
+        assert_eq!(toc.num("magnetic_heading_deg").unwrap(), 0.0);
     }
 
     #[test]
@@ -267,5 +317,21 @@ mod tests {
         assert!((l.num("wca_deg").unwrap() - 16.60).abs() < 0.01);
         assert!((l.num("magnetic_heading_deg").unwrap() - 26.60).abs() < 0.01);
         assert!((l.num("groundspeed_kt").unwrap() * l.num("ete_min").unwrap() / 60.0 - 3.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn a_climbs_cost_is_ground_lost_at_its_own_ground_speed() {
+        // Into the same 20 kt: the climb covers 50 kt where the cruise
+        // covers 80, so its minutes lose 1 - 50/80 = 0.375 of themselves,
+        // where the airspeeds' 70/100 said 0.3; and the cruise would have
+        // burned 8 gph over 50/80 of them.
+        let p = profile();
+        let climber = Climber::new(&p.airplane);
+        let l = leg(20.0, (360.0, 20.0), 80.0, 0.0);
+        let climb = climber.climb(500.0, 3500.0, 0.0);
+        let lost = climb_penalty_min(500.0, 3500.0, &p, &climber, Some(&l)).unwrap();
+        assert!((lost - climb.minutes * 0.375).abs() < 1e-9);
+        let gal = climb_fuel_penalty_gal(500.0, 3500.0, &p, &climber, Some(&l)).unwrap();
+        assert!((gal - (climb.gallons - climb.minutes / 60.0 * 8.0 * 0.625)).abs() < 1e-9);
     }
 }

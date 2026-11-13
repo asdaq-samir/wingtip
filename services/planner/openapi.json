@@ -22403,7 +22403,7 @@
         "type": "object"
       },
       "TopOfClimb": {
-        "description": "Where a climb tops out (TOC), and the climb's true airspeed and\nground speed on the way up to it (wingtip.navlog.with_climbs).",
+        "description": "Where a climb tops out (TOC), and the climb's own figures on the\nway up to it (the engine's with_climbs): its true airspeed, its wind\ncorrection, headings and ground speed in the leg's wind, and its fuel\nflow, so the nav log's row up to the top is the climb's.",
         "properties": {
           "along_nm": {
             "title": "Along Nm",
@@ -22416,6 +22416,18 @@
           "ete_min": {
             "title": "Ete Min",
             "type": "number"
+          },
+          "fuel_burn_gph": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fuel Burn Gph"
           },
           "fuel_gal": {
             "anyOf": [
@@ -22440,9 +22452,45 @@
             "title": "Lon",
             "type": "number"
           },
+          "magnetic_heading_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Magnetic Heading Deg"
+          },
           "tas_kt": {
             "title": "Tas Kt",
             "type": "number"
+          },
+          "true_heading_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "True Heading Deg"
+          },
+          "wca_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Wca Deg"
           }
         },
         "required": [
