@@ -72,10 +72,9 @@ Compose. Nothing here is built by hand where a stock part does it.
    under its pages' 22): a card's or a page's head row, its name at a
    card's 22 centred across the card with its line under it, Share (or
    the route's •••) at its start -- on the Map card a gear in that place,
-   opening the app's Settings as a card over it, its ✕ back to the Map
-   (`SettingsButton`; the owner, 2026-11-13: "put a settings button on
-   the top left side"; Settings itself, the account button's card, has
-   none, being the page it opens) -- and ✕ alone at its end -- two buttons at
+   opening the app's Settings over it at its Map group, its ✕ back to the
+   Map (`SettingsButton`; the owner, 2026-11-13: "put a settings button
+   on the top left side"; §8) -- and ✕ alone at its end -- two buttons at
    most, a star a Favorite tile in the card's action row (the owner,
    2026-11-11: "all the cards have at most two head buttons"), and what
    else acts on a card in its ••• menu or its content: the Brief's Refresh
@@ -231,8 +230,8 @@ the suite prints that reason. What runs when is [docs/CI.md](../CI.md).
 The sheet's Search page (§4a: its pages turned by one round toggle
 button riding the sheet's top at the right, the owner, 2026-11-13) has one field as its first row, "Search airports,
 airplanes, or ask", with the on-device microphone and the account button
-beside it; the account button holds settings and the account, where
-Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXzCV>.
+beside it; the account button opens You, who the pilot is and what is
+theirs, with Settings one of its rows (§8), where Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXzCV>.
 
 - **Nothing typed:** the current flight as a card at the top (route,
   distance, ETE, fuel, altitude, airplane; a tap goes to the plan), then
@@ -278,7 +277,7 @@ still the only field. The same day the toggle took the radio's button's
 place at the left, under the 3D ("Let's replace the radio button on the
 left with the fpl toggle but below 3d"), the radio's button going over
 the map's buttons at the right, and then ("Or actually make it a setting
-instead") only where Comms Assist is on: a switch in Map Settings' More,
+instead") only where Comms Assist is on: a switch of Settings' ATC page,
 off by default (the owner, 2026-11-13).
 
 1. **Search** (the first page): the search's row (field, microphone,
@@ -292,7 +291,7 @@ off by default (the owner, 2026-11-13).
    (the owner, 2026-11-11: "We don't need plan a flight either with two
    buttons"). The first time, a welcome sheet says what the app is
    (Search like Maps, FPL like an EFB, the FAA charts), offers Theme and
-   Appearance (Setup's own menus), and its one
+   Appearance (Settings' own Look tiles), and its one
    button, Let's Go Flying, goes on to the map with the one search ready
    for where to (Search up at half, its field not focused), the airport picked
    planned from where the airplane is; after that first route one tip points at the toggle while it shows FPL ("Your flight plan is one tap away ... tap here any time"), once (the
@@ -383,11 +382,12 @@ At each airport the chart already shows, from the map's own
   (departure, stops, destination, alternates) when the engine's
   `weather_worse` says the TAF worsens by the pilot's ETA there. Off the
   route, no badge.
-- **The setting**, in the Map card with the other map settings: Airport
-  Weather, Off / Halo / Dot / Station (Dot is ForeFlight's filled dot in
-  place of the symbol; Station draws the station model wherever it fits),
-  and three switches, all on to begin with: Station Model When Zoomed In,
-  Wind Barbs, Getting Worse by Arrival.
+- **The setting**, in Settings' Map group (§8): Airport Weather, one menu
+  of three (the owner, 2026-11-13) -- Flight Category (the halo alone),
+  With Wind (the halo, the wind barbs farther out and the station model
+  zoomed in close; the default) and Station Model (wherever it fits).
+  The getting-worse badge is always drawn; Off, the Dot and the three
+  switches went.
 - **Access:** brand tokens only; a screen reader says the category and
   wind ("KJVL, IFR, wind 220 at 18 gusting 26").
 
@@ -481,6 +481,36 @@ stock sheet's offset each frame and faded away when it is expanded
 (`ui/sheet/MapSheet`'s `onTop`, `ui/MapButtons`;
 `androidTest/.../ui/MapButtonsOnSheetTest`; [android.md](android.md)
 §3.1).
+
+## 8. One home per control: You, Settings and the Map card (the owner, 2026-11-13)
+
+The owner's pick of option A of the account canvas
+(<https://claude.ai/artifact/NY1E2HHscfyzmvB9gCNuNs>), the Apple Maps
+way: three homes, and every control in one of them.
+
+1. **You**, the avatar's card: who the pilot is (a centred avatar, the
+   name, Pilot Details and the account's menu) and what is theirs --
+   Airplanes (each airplane's checklists inside it, and the picked one's
+   Checklists row), Flights, Logbook, Minimums, Training (the Coach and
+   Practice), the Emergency Assistant -- then Settings and Subscription.
+2. **Settings**, one page, You's row: Look (Sunlight, Theme,
+   Appearance), Map (Airport Weather, Glide Ring, Clear Your Path), In
+   Flight (Alerts; ATC, one page of Comms Assist, ATC Alerts and the
+   Copilot), Data (Keep for the Air), and Help & About (Guide, Status,
+   Log, About, Sources, and the Privacy, Terms and Legal links). The Map
+   card's gear opens the same page at its Map group; it is the one
+   thing called Settings.
+3. **The Map card**, the map's own button: only what is on the map --
+   the charts, the overlay (None, USGS, Google Map, Google Satellite,
+   Google's only with a key) with its Strength while one is picked, and
+   the layers.
+
+Taken out the same day, with no home: the sheet's Position (a phone's
+sheet is always at the bottom), Terrain's Flat (the 2D chart is always
+shaded; 3D is the map's own button) and You on the Map (own ship is
+always the airplane). A new control goes into one of the three, never a
+second home; the web first (`features/pilot`, `features/settings`,
+`features/map-settings`), the phones on the owner's word.
 
 ## Changing a rule
 

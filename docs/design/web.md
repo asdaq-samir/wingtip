@@ -75,7 +75,9 @@ These hold on every screen below and win over any reference app.
   the issue (decision 0013). Where this reference differs from today's
   placement it is a proposal for the owner, not an instruction.
 - **Close goes back one level**; there are no Back buttons (decision 0015).
-- **One home per control**; there is no Settings page (decision 0014).
+- **One home per control**: You, Settings and the Map card
+  ([rules.md](rules.md) §8; the owner, 2026-11-13), Settings one page
+  and the one thing so named (decision 0014's no-second-home, kept).
 - **Discrete settings are menus or segmented controls**, not sliders
   (decision 0017).
 - **Errors show where they happen** (`lib/problems`), never in a toast.
@@ -509,7 +511,7 @@ out to the glass's edge, never grown. On a phone it is the last of the
 left-hand column (`MapControls`), so on a bottom sheet it rides the
 sheet's top through `OnSheetTop`, 8 under the 3D circle and level with
 the map's buttons' group at the right; the radio's button, drawn only
-while Comms Assist is on (a Map Settings switch in More, `comms-assist-toggle`,
+while Comms Assist is on (a switch of Settings' ATC page, `comms-assist-toggle`,
 off by default; the owner, 2026-11-13), is then a
 circle of its own over that group, as from md up, its listening pill
 widening to the left across the screen less its margins (in flight its
@@ -837,9 +839,10 @@ than its METAR now (`weather_worse`). The weather comes on the map's own
 `/api/airports/in-view` answer (`weather`), the same for every app; the
 shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
 screen reader says each field's category and wind ("KJVL, IFR, wind 220
-at 18 gusting 26"). The Map card's Airport Weather is a segmented control (Off,
-Halo, Dot, Station; `Segmented`, shadcn's ToggleGroup) with three switches: the station model when zoomed
-in, the wind arrows, and getting worse by arrival, all on to begin with.
+at 18 gusting 26"). Settings' Airport Weather is one menu (`PullDown`,
+`airport-weather-look`) of Flight Category, With Wind (the default) and
+Station Model (`lib/map/marks/airportWeatherPrefs`); the getting-worse
+badge is always drawn (the owner, 2026-11-13).
 
 ### 8. The emergency assistant
 
@@ -1008,16 +1011,20 @@ may need a cognitive test such as remembering a password unless there is
 an alternative or help ([WCAG 2.2][wcag22]).
 
 **Structure, top to bottom.** A tap on the account button (the avatar
-at the search row's end, beside the field, as on iOS and Android) opens the account and settings
-page itself, with no menu between (the owner, 2026-11-10: "When tapping
-the avatar just open the settings"; `AccountButton`, still named
-"Account and settings"). Its rows are the pilot's own screens (Airplanes,
-Checklists, Flights, Logbook, Coach, Practice, Minimums, Status, Guide,
-About, from `design/screens.json`) and the look (Wingtip, Glass Cockpit,
-Chart ink, Native); signing in and out, the mode, a copy of the data and
-deleting the account are in the page's own Account menu. The map's
-switches are the Map card's, which the map's own Map button opens over
-the search (§15a). Sign-in by an emailed code or link.
+at the search row's end, beside the field, as on iOS and Android) opens
+You (`PilotPanel`, `lib/openSettings` `openYou`; the owner's option A,
+2026-11-13, [rules.md](rules.md) §8), as Apple Maps' avatar opens yours:
+a centred avatar, the name, Pilot Details and the account's menu
+(signing in and out, the mode, a copy of the data, deleting the
+account), then Airplanes (the checklists inside), Flights, Logbook,
+Minimums, Training (Coach, Practice), the Emergency Assistant, Settings
+and Subscription. Settings (`features/settings`) is one page pushed over
+You (`ConsolePages`): Look (Sunlight, Theme, Appearance), Map, In Flight
+(Alerts; ATC), Data and Help & About (Guide, Status, Log, About,
+Sources, the legal links); `openSettings` is the one way in, and the Map
+card's gear opens it at its Map group with the card raised. The map's
+layers are the Map card's, which the map's own Map button opens over the
+search (§15a). Sign-in by an emailed code or link.
 
 **Stock parts.** Base UI Menu (the page's Account menu); Base UI OTP Field for an
 emailed code (stable since 1.6, [Base UI releases][bui-releases]); shadcn
@@ -1050,7 +1057,7 @@ The first time the planner opens with no route on a device
 (`WelcomeSheet`: the stock Drawer on a phone, the stock Dialog from `md`
 up, solid): "Welcome to Wingtip Maps", three rows (Search, like Maps; FPL,
 like your EFB; FAA charts that move like Maps), Theme and Appearance on
-Setup's own two tiles (`components/lookPicks`, `MenuTile`, applied
+Settings' own two Look tiles (`components/lookPicks`, `MenuTile`, applied
 as they are picked, the sheet and the map changing behind it; the owner,
 2026-11-13), and at its foot Apple's permission priming (the owner,
 2026-11-13): with the browser's question still to come, Turn On Location
@@ -1066,7 +1073,7 @@ it; no field of its own. The airport picked is planned to from own ship's
 nearest field, else the last
 departure or Home, else the search asks for the departure. FPL comes up
 and one tip (`FplTip`, the stock Popover anchored to the FPL tab with its
-arrow) says the flight plan lives there, once. Setup's Guide, Show First
+arrow) says the flight plan lives there, once. Settings' Guide, Show First
 Flight Again, brings both back. The airplane is picked when it is needed,
 never assumed (decision 0011).
 
@@ -1099,7 +1106,7 @@ standalone`, `theme_color` (the launch token), the icons and maskable
 icons. The page's own `theme-color` is two metas, the launch ground by
 day and the night navy by the device's scheme (`vite-plugins/manifest`
 `themeColor`, from the tokens), then the page's ground once the look and
-Setup's theme are on (`lib/brand` `BrandLook`), so the browser's bar is
+Settings' Theme are on (`lib/brand` `BrandLook`), so the browser's bar is
 dark at night (2026-11-11). **Proposed,
 generated rather than hand-written:**
 1. `id` set to the app's path, so a later `start_url` change does not
@@ -1209,7 +1216,7 @@ The owner's rule: a screenshot of another app means ours should show this.
 | Questions over the page | Ready to Fly's prompt and a source's report as sent are SheetDialog's: from the bottom on a phone with their ✕, centred from `md` up |
 | Typing, scrolled: the title and the field go up with the list, nothing pinned, the keyboard up | `sheet/useScrollAway`: all the way up with the search in use, the head pulled up by as much as the list has scrolled, back at its top; the field never leaves the page, so it keeps its focus |
 | A sent search: Cancel beside the field, chips, rows with thumbnails, Filters page, numbered map marks | The sent search's list, its chips and Filters page on one filter state (VFR now and VFR at a time, towered, public, an instrument approach, fuel, runway surface and length, distance: the planner's Nearest with `wingtip.field_facts` and `field_forecast`; no fuel price, which the app has no source for), each row its METAR wind and visibility and what the field has, and the results as their own clustered MapLibre layer over the chart (the chart's own airport symbols untouched) |
-| Map-type button: "Choose Map" card in the sheet, picture tiles | The Map card in the sheet (`MapSettingsButton`), chart picture tiles from committed crops (`public/map-tiles/`), every setting of the old menu under it |
+| Map-type button: "Choose Map" card in the sheet, picture tiles | The Map card in the sheet (`MapSettingsButton`): chart picture tiles from committed crops (`public/map-tiles/`), the overlay's four pictures with Strength under them while one is picked, and the layers; the rest of the old menu is Settings', the card's gear opening it at Map (the owner, 2026-11-13) |
 
 **The one scrolling rule (the owner, 2026-11-10).** Every card, page and
 sheet scrolls one way on a phone:
