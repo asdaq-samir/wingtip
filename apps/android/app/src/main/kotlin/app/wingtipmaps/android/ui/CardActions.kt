@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
@@ -25,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -117,7 +119,12 @@ fun CardButtonGroup(items: List<GroupAction>, modifier: Modifier = Modifier) {
     val sources = remember(items.size) { List(items.size) { MutableInteractionSource() } }
     ButtonGroup(
         overflowIndicator = { menu -> ButtonGroupDefaults.OverflowIndicator(menuState = menu) },
-        modifier = modifier,
+        // The group itself is measured at its content's width, never
+        // stretched: Material 1.5's ButtonGroup measures its overflow menu
+        // with the group's own minimum width, so a group made to fill a row
+        // too narrow for its buttons (a 320-dp phone) throws as it lays out.
+        // The caller's modifier still gives the row; the group sits at its start.
+        modifier = modifier.wrapContentWidth(Alignment.Start),
         horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
     ) {
         items.forEachIndexed { i, item ->
