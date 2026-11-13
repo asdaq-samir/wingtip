@@ -367,8 +367,7 @@ def test_a_search_takes_its_turn_between_requests(clock):
     asked_at = []
     with patch("requests.get", side_effect=lambda url, **kw: (asked_at.append(clock.now), get(url))[1]):
         traffic.near(42.3, -88.1, 25)
-        # A callsign with nothing, then the same as a registration: each
-        # five seconds after the one before.
+        # A callsign with nothing, then the same as a registration: each five seconds after the one before.
         assert traffic.find("FOO123") == []
     assert asked_at == [1000.0, 1005.0, 1010.0]
 
@@ -493,11 +492,12 @@ def test_a_flight_whose_track_begins_in_the_air_or_away_from_a_field_says_no_dep
         assert traffic.flight("a0b7d8")["departed"] is None
 
 
-def test_a_flight_with_no_trace_is_drawn_without_its_past(clock, monkeypatch):
+def test_a_flight_with_no_trace_is_drawn_without_its_past_and_named_by_its_faa_record(clock, monkeypatch):
     stand_in(monkeypatch, "_TRACES", {})
+    monkeypatch.setattr(registry, "lookup", lambda **kw: {"n_number": "N654FL", "year": 1971})  # N654FL's card read "Registration –"
     with patch("requests.get", return_value=Mock(status_code=404)):
-        found = traffic.flight("a0b7d8")
-    assert found["trail"] == [] and found["departed"] is None and found["registration"] is None
+        found = traffic.flight("a89c1e")
+    assert (found["trail"], found["departed"], found["type"], found["registration"], found["year"]) == ([], None, None, "N654FL", 1971)
 
 
 def test_a_flight_that_has_landed_is_its_flight_to_the_landing_not_the_parked_tail(clock, monkeypatch):

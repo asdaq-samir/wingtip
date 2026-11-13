@@ -14,6 +14,12 @@ export type CardSlide = {
   testId?: string;
 };
 
+// A tile 70% of the card's width, so the next one shows at the edge and
+// says the row goes on; one alone the card's whole width, where it was
+// two-thirds with nothing beside it (N654FL's sketch, 2026-11-13).
+const SLIDE = "basis-[70%] pl-3 sm:basis-[60%]";
+const SLIDE_ALONE = "basis-full pl-3";
+
 const TILE =
   "absolute inset-0 block size-full overflow-hidden rounded-2xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset";
 
@@ -40,11 +46,10 @@ export function CardPictures({
   return (
     // A sideways drag the row's, an up or down one the sheet's (the one scrolling rule).
     <Carousel opts={{ align: "start", dragFree: true }} aria-label={label} data-base-ui-swipe-ignore="x" data-testid={testId}>
-      {/* A tile 70% of the card's width, so the next one shows at the edge
-          and says the row goes on; 12 points between, as Maps' have. */}
+      {/* 12 points between the tiles, as Maps' have. */}
       <CarouselContent className="-ml-3">
         {shown.map((slide) => (
-          <CarouselItem key={slide.key} className="basis-[70%] pl-3 sm:basis-[60%]">
+          <CarouselItem key={slide.key} className={shown.length > 1 ? SLIDE : SLIDE_ALONE}>
             <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-foreground/8">
               {slide.href ? (
                 <a href={slide.href} target="_blank" rel="noopener" aria-label={slide.label} className={TILE} data-testid={slide.testId}>
