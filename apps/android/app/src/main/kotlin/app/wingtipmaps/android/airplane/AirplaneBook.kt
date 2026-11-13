@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.airplane
 
+import app.wingtipmaps.android.api.AircraftProfileSummary
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import kotlinx.coroutines.CancellationException
@@ -7,9 +8,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * The stock types' book figures, each profile whole as the planner sends
@@ -26,7 +26,7 @@ object AirplaneBook {
     suspend fun load() {
         if (_profiles.value.isNotEmpty()) return
         try {
-            _profiles.value = read(Planner.fetch("/api/aircraft-profiles"))
+            _profiles.value = read(Planner.aircraftProfiles())
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
@@ -34,10 +34,10 @@ object AirplaneBook {
         }
     }
 
-    /** Each profile of the answer by its name. */
-    fun read(body: String): Map<String, JsonObject> = Gateway.json.parseToJsonElement(body).jsonObject["profiles"]?.jsonArray.orEmpty()
-        .mapNotNull { p -> (p as? JsonObject)?.let { o -> o["name"]?.jsonPrimitive?.content?.let { it to o } } }
-        .toMap()
+    /** Each profile of the answer by its name, as the JSON the engine's
+     *  airplane_figures reads for its `book`. */
+    fun read(profiles: List<AircraftProfileSummary>): Map<String, JsonObject> =
+        profiles.associate { it.name to Gateway.json.encodeToJsonElement(it).jsonObject }
 
     /** The book of `type`, the planner's profile name or a designator
      *  that is one ("C172"); null for a type with none. */

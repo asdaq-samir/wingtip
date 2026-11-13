@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.LoopFrame
+import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CancellationException
@@ -22,7 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
 import app.wingtipmaps.android.api.generated.WeatherLoop as LoopAnswer
 
 /** The loop's five, as the owner listed them (2026-11-09); `kind` is the planner's. */
@@ -187,7 +187,7 @@ class WeatherLoop private constructor(private val context: Context, private val 
         /** The planner's frame list for a pick (/api/weather/loop): the
          *  loop's own ask, and Keep for the Air's. */
         suspend fun fetch(kind: LoopKind): LoopAnswer =
-            Gateway.json.decodeFromString<LoopAnswer>(Planner.fetch("/api/weather/loop", mapOf("kind" to kind.kind)))
+            Planner.api.weatherLoopFrames(kind.kind).planned()
 
         private val KIND = stringPreferencesKey("weather_loop")
         private val SPEED = stringPreferencesKey("weather_loop_speed")

@@ -13,7 +13,7 @@ import app.wingtipmaps.android.airplane.AskFigures
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.checklist.ChecklistKind
 import app.wingtipmaps.android.checklist.ChecklistStore
-import app.wingtipmaps.android.flight.InFlight
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.ui.AirplaneModel
 import app.wingtipmaps.android.ui.AirplanePicker
 import app.wingtipmaps.android.ui.OwnShipControl
@@ -28,14 +28,14 @@ import app.wingtipmaps.android.ui.OwnShipControl
  * the sheet and left the assistant open over it.
  */
 @Composable
-fun EmergencyHost(plan: Plan, ownShip: OwnShipControl, model: EmergencyModel = hiltViewModel(), airplanes: AirplaneModel = hiltViewModel()) {
+fun EmergencyHost(plan: Plan, ownShip: OwnShipControl, model: EmergencyModel = hiltViewModel(), airplanes: AirplaneModel = hiltViewModel(), flight: FlightModel = hiltViewModel()) {
     val from by EmergencyOpen.from.collectAsStateWithLifecycle()
     if (from == null) return
     BackHandler(onBack = EmergencyOpen::close)
     val context = LocalContext.current
     val planned by plan.state.collectAsStateWithLifecycle()
     val fix by ownShip.ownShip.fix.collectAsStateWithLifecycle()
-    val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
+    val inFlight by flight.state.collectAsStateWithLifecycle()
     val state by model.state.collectAsStateWithLifecycle()
     // No airplane chosen: no glide is guessed (decision 0011). An own
     // airplane of no stock type glides at its pilot's ratio alone.

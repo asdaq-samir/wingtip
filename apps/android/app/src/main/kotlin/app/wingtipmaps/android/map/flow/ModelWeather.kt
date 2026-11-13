@@ -4,10 +4,10 @@ import android.annotation.SuppressLint
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.FlowFrame
 import app.wingtipmaps.android.api.generated.FlowLayer
+import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.flowLevels
 import app.wingtipmaps.android.settings
@@ -169,7 +169,7 @@ class ModelWeather private constructor(private val context: Context, private val
     private suspend fun fetchForever() {
         while (true) {
             try {
-                val layer = Gateway.json.decodeFromString(FlowLayer.serializer(), Planner.fetch("/api/weather/flow"))
+                val layer = Planner.api.flowLayer().planned()
                 _state.update { it.copy(layer = layer, failed = false) }
             } catch (e: CancellationException) {
                 throw e

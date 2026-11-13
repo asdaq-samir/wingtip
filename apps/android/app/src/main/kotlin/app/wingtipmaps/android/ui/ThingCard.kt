@@ -17,20 +17,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.graphics.toColorInt
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.name
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.Tracking
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.format.Format
@@ -151,10 +151,9 @@ internal fun ink(hex: String) = Color(hex.toColorInt())
  *  its speed and track, and Track, which follows it (Tracking) and keeps
  *  it ringed on the map. */
 @Composable
-private fun PlaneCard(hex: String) {
-    val context = LocalContext.current
-    val traffic = remember(context) { Traffic.of(context) }
-    val tracking = remember(context) { Tracking.of(context) }
+private fun PlaneCard(hex: String, flight: FlightModel = hiltViewModel()) {
+    val traffic = flight.traffic
+    val tracking = flight.tracking
     val planes by traffic.planes.collectAsStateWithLifecycle()
     val marks by traffic.marks.collectAsStateWithLifecycle()
     val trafficProblem by traffic.problem.collectAsStateWithLifecycle()

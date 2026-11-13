@@ -12,6 +12,7 @@ import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.deleteAccount
 import app.wingtipmaps.android.api.setContact
+import app.wingtipmaps.android.flight.FlightSession
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.HomeAirport
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,7 +31,7 @@ import javax.inject.Inject
  * app's Session.swift, as a ViewModel with its state in flows.
  */
 @HiltViewModel
-class Session @Inject constructor(app: Application) : AndroidViewModel(app) {
+class Session @Inject constructor(app: Application, private val flight: FlightSession) : AndroidViewModel(app) {
     private val _pilot = MutableStateFlow<Pilot?>(null)
     val pilot: StateFlow<Pilot?> = _pilot.asStateFlow()
 
@@ -152,7 +153,7 @@ class Session @Inject constructor(app: Application) : AndroidViewModel(app) {
     fun signIn(context: Context) {
         val ask = _signInAsk.value ?: return
         _signInAsk.value = null
-        val wipe = PhoneWipe.of(context)
+        val wipe = PhoneWipe.of(context, flight)
         viewModelScope.launch {
             if (ask.current != null) {
                 val _ = runCatching { Gateway.signOut() }
@@ -178,7 +179,7 @@ class Session @Inject constructor(app: Application) : AndroidViewModel(app) {
      *  aviation data kept for the air -- the fields' cards, the NOTAMs, the
      *  weather (KeptForAir) -- is not the pilot's, and stays. */
     fun signOut(context: Context) {
-        val wipe = PhoneWipe.of(context)
+        val wipe = PhoneWipe.of(context, flight)
         viewModelScope.launch {
             val _ = runCatching { Gateway.signOut() }
             forget(wipe)
@@ -218,7 +219,7 @@ class Session @Inject constructor(app: Application) : AndroidViewModel(app) {
      *  gateway refuses (nothing deleted), the pilot stays signed in and
      *  its words are the problem shown under the account. */
     fun deleteAccount(context: Context) {
-        val wipe = PhoneWipe.of(context)
+        val wipe = PhoneWipe.of(context, flight)
         viewModelScope.launch {
             _deleting.value = true
             try {

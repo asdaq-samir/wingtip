@@ -8,7 +8,7 @@ import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.WeatherArea
-import app.wingtipmaps.android.api.generated.WeatherMap
+import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.aviationGridBands
@@ -66,11 +66,6 @@ object ModelWeatherLayer {
     private const val AIRMETS = "flow-gairmets"
     private const val AIRMET_LINE = "flow-gairmet-line"
     private const val AIRMET_LABEL = "flow-gairmet-label"
-
-    /** The G-AIRMETs' box: the lower 48 and round it, where they are
-     *  issued (aviationweather.gov: "Contiguous 48 United States"), the
-     *  web's CONUS. */
-    private val CONUS = mapOf("south" to "18", "west" to "-130", "north" to "56", "east" to "-61")
 
     /** Each G-AIRMET's colour by its hazard, as aviationweather.gov's map
      *  tells them apart (the web's weatherColours AREA_COLOURS). */
@@ -208,8 +203,9 @@ object ModelWeatherLayer {
      *  (the engine's gairmet_hazards). */
     private suspend fun gairmets(view: MapView, at: Long) {
         try {
-            val body = Planner.fetch("/api/weather/map", CONUS + ("at" to at.toString()))
-            val map = Gateway.json.decodeFromString(WeatherMap.serializer(), body)
+            // The G-AIRMETs' box: the lower 48 and round it, where they are issued
+            // (aviationweather.gov: "Contiguous 48 United States"), the web's CONUS.
+            val map = Planner.api.weatherOnTheMap(south = 18.0, west = -130.0, north = 56.0, east = -61.0, at = at.toDouble()).planned()
             val labels = Engine.gairmetHazards().getOrNull()?.labels.orEmpty()
             airmets = geoJson(map.advisories.orEmpty().filter { it.kind == "gairmet" }, labels)
             redraw(view)

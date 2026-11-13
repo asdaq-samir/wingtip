@@ -6,8 +6,7 @@ import androidx.glance.appwidget.updateAll
 import app.wingtipmaps.android.airplane.OwnAirplanes
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.checklist.ChecklistStore
-import app.wingtipmaps.android.flight.OwnShip
-import app.wingtipmaps.android.flight.OwnTrail
+import app.wingtipmaps.android.flight.FlightSession
 import app.wingtipmaps.android.logbook.FlightRecorder
 import app.wingtipmaps.android.pilot.MinimumsStore
 import app.wingtipmaps.android.plan.FlightChoices
@@ -57,16 +56,16 @@ class PhoneWipe(private val parts: List<Pair<String, suspend () -> Unit>>) {
     companion object {
         private val log = Logger.getLogger("Wingtip")
 
-        fun of(context: Context): PhoneWipe {
+        fun of(context: Context, flight: FlightSession): PhoneWipe {
             val app = context.applicationContext
             return PhoneWipe(
                 listOf(
                     "checklists" to { ChecklistStore.of(app).forgetAll() },
                     "kept plan" to { KeptPlan(app as Application).clear() },
                     "records" to { Records.database(app).erase() },
-                    "path flown" to { OwnTrail.of(app).wipe() },
+                    "path flown" to { flight.trail.wipe() },
                     "flight recorded" to { FlightRecorder.of(app).wipe() },
-                    "last position" to { OwnShip.of(app).forgetLastPosition() },
+                    "last position" to { flight.ownShip.forgetLastPosition() },
                     "own airplanes" to { OwnAirplanes.of(app).forget() },
                     "minimums" to { MinimumsStore.of(app).forget() },
                     // The pilot's home airport, as the web's forgetPilot drops it.

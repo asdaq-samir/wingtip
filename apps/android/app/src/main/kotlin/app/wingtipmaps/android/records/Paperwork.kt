@@ -3,6 +3,7 @@ package app.wingtipmaps.android.records
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.generated.gateway.DueDto
 import app.wingtipmaps.android.api.generated.gateway.PaperworkDto
+import app.wingtipmaps.android.api.readOrNone
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.dueTone
 import java.util.Locale
@@ -16,7 +17,7 @@ import java.util.Locale
  */
 object Paperwork {
     /** The list, or null signed out. */
-    suspend fun fetch(): PaperworkDto? = Gateway.read("/api/paperwork")
+    suspend fun fetch(): PaperworkDto? = Gateway.api.due().readOrNone()
 
     /** How near it is: past, within the window, further off, or not known. */
     enum class Tone { PAST, SOON, FINE, UNKNOWN }

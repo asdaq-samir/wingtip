@@ -7,10 +7,9 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.ai.AiOffered
 import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.api.AssistantContext
-import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.api.Planner
-import app.wingtipmaps.android.api.generated.NearestAirports
+import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -29,7 +28,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.intOrNull
@@ -179,10 +177,7 @@ class StripModel @Inject constructor() : ViewModel() {
     }
 
     /** The nearest field to a position, the planner's (/api/airports/nearest). */
-    private suspend fun nearest(lat: Double, lon: Double): String? {
-        val body = Planner.fetch("/api/airports/nearest", mapOf("lat" to lat.toString(), "lon" to lon.toString(), "limit" to "1"))
-        return Gateway.json.decodeFromString<NearestAirports>(body).airports.firstOrNull()?.ident
-    }
+    private suspend fun nearest(lat: Double, lon: Double): String? = Planner.nearest(lat, lon, limit = 1).firstOrNull()?.ident
 
     /** The cards of the route's fields, each asked once. */
     fun loadFields(idents: Collection<String>) {

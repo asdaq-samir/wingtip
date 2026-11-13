@@ -2,29 +2,18 @@ package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
@@ -42,21 +31,14 @@ import app.wingtipmaps.android.ai.rememberAiOffered
 import app.wingtipmaps.android.airplane.AirplaneProfileHost
 import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.api.AssistantTurn
-import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.dryrun.DryRun
 import app.wingtipmaps.android.emergency.EmergencyHost
-import app.wingtipmaps.android.emergency.EmergencyOpen
-import app.wingtipmaps.android.firstflight.FirstFlightCard
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.logbook.AutoLogbookHost
 import app.wingtipmaps.android.map.MapPick
-import app.wingtipmaps.android.navigation.CardRequests
-import app.wingtipmaps.android.navigation.ScreenRequests
-import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.ready.ReadyToFlyHost
 import app.wingtipmaps.android.route.RouteHome
-import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.route.RouteToolbar
 import app.wingtipmaps.android.route.RouteUndoSnackbar
 import app.wingtipmaps.android.route.hasPoints
@@ -67,16 +49,10 @@ import app.wingtipmaps.android.share.SharedFlightModel
 import app.wingtipmaps.android.strip.AnswerCard
 import app.wingtipmaps.android.strip.StripLayout
 import app.wingtipmaps.android.strip.StripModel
-import app.wingtipmaps.android.ui.OpenScreen.Where
 import app.wingtipmaps.android.ui.sheet.MapSheet
-import app.wingtipmaps.android.ui.sheet.halfWindow
 import app.wingtipmaps.android.ui.sheet.rememberMapSheetState
 import app.wingtipmaps.android.widget.NextFlightFeed
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -153,72 +129,11 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         }
     }
     val openField: (String) -> Unit = { ident -> pages.show(SheetPage.Airport(ident)) }
-    // The carousel (SheetCarousel): a route made, opened or changed from
-    // anywhere (Fly Here, Depart From, Direct To, Add a Stop, a link, the
-    // copilot's) brings the FPL page, the route's points its key as the
-    // web's usePanelView has it; clearing it leaves the page as it is, and
-    // the one search asked for from the plan (Add a Stop) or an airport
-    // field brings the Search page, where its field is. Fly Here to the
-    // airport the route already goes to changes no point: its card shows
-    // the plan itself (showPlan).
-    LaunchedEffect(plan, stripLayout) {
-        if (!stripLayout) {
-            plan.state.map { s -> if (s.routed) listOf(s.dep, s.dest) + s.stops else null }
-                .distinctUntilChanged().drop(1).filterNotNull().collect { pages.toPlanPage() }
-        }
-    }
-    LaunchedEffect(search) { snapshotFlow { search.asked }.drop(1).collect { pages.closePlan() } }
-
-    val link by pending.collectAsStateWithLifecycle()
     val shared: SharedFlightModel = hiltViewModel()
-    LaunchedEffect(link) {
-        when (val opened = link) {
-            null -> return@LaunchedEffect
-            is Links.Place -> openField(opened.ident)
-            is Links.Route -> {
-                plan.plan(opened.dep, opened.dest, opened.stops)
-                showPlan()
-                opened.then?.let(ScreenRequests::ask)
-            }
-            is Links.Open -> ScreenRequests.ask(opened.screen)
-            // Previewed first: the receiver's plan stays until Use This Plan.
-            is Links.Shared -> shared.open(opened)
-            is Links.SignIn -> {}
-        }
-        onHandled()
-    }
-
-    // A screen asked for by its name -- a link, a shortcut, an App
-    // Function, a row or a menu -- where it lives now (OpenScreen).
-    val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
-    LaunchedEffect(wanted, layout) {
-        val screen = wanted ?: return@LaunchedEffect
-        when (val where = OpenScreen.whereOf(screen)) {
-            Where.Plan -> showPlan()
-            // The search is under the cards: they close for it.
-            Where.Search -> {
-                pages.closeAll()
-                search.open()
-            }
-            is Where.Page -> pages.open(where.page)
-            Where.Emergency -> EmergencyOpen.open(EmergencyOpen.From.LINK)
-            Where.None -> {}
-        }
-        // The Nav Log is the plan's to scroll to; the strip has no plan page.
-        val inside = screen in OpenScreen.takenInside || (screen == Screen.NAVLOG && !stripLayout)
-        if (!inside) ScreenRequests.take(setOf(screen))
-    }
+    RootRequests(pending, onHandled, plan, pages, search, stripLayout, layout, showPlan, shared)
 
     // A tap on the map: the thing's one card, over the search (SheetPage.of).
     val onPick: (MapPick) -> Unit = { pick -> pages.show(SheetPage.of(pick)) }
-    val card by CardRequests.wanted.collectAsStateWithLifecycle()
-    LaunchedEffect(card) { CardRequests.take()?.let(pages::open) }
-    // The leg whose card is on top, cased in green on the map.
-    val legs: RouteLegModel = hiltViewModel()
-    LaunchedEffect(pages.top) {
-        val leg = pages.top as? SheetPage.Leg
-        if (leg != null) legs.open(leg.index) else legs.close()
-    }
 
     // The one search's line and picks, the same in every layout.
     val routed = planState.routed
@@ -254,9 +169,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     }
     // The phone's sheet (neither the strip, the wide panes nor the fold).
     val sheetLayout = !stripLayout && !wide && fold == null
-    // The search's row as measured, whatever the font scale: the sheet's
-    // peek is the handle, this row and the navigation bar.
-    var searchRowPx by remember { mutableIntStateOf(0) }
     val pagesView: @Composable (Modifier, Boolean, SceneStrategy<SheetPage>?, @Composable () -> Unit) -> Unit = { modifier, backEnabled, scenes, head ->
         SheetPagesHost(
             pages, backEnabled, modifier, head = head, carousel = !stripLayout, scenes = scenes,
@@ -321,43 +233,10 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             pagesView(Modifier.weight(1f), true, null) { searchRow(null) }
         }
     } else {
-        // Over the navigation bar (edge to edge): its peek is the handle and
-        // the search's row as measured, above the bar, so the bar fits at
-        // every font scale (the sheet audit's S-1).
-        val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val searchHeight = with(LocalDensity.current) { searchRowPx.toDp() }.takeIf { it > 0.dp } ?: WingtipSize.TapTarget
-        // At the peek, the carousel's dots and the first row of its page in
-        // view: the search's, or the plan's bar.
-        val firstRow = if (pages.planShown) TopAppBarDefaults.TopAppBarExpandedHeight else searchHeight + WingtipSpace.Sm
-        val peek = if (pages.covered) halfWindow() else SheetHandle + SheetDotsHeight + firstRow + navigationBar
-        // The map's buttons ride the sheet's top at the right, just above
-        // the search (the owner, 2026-11-11), the position button nearest it;
-        // the first flight's card, while it is offered and no card is up,
-        // rides under them, the buttons standing over it rather than on it
-        // (the web's FirstFlight, 2026-11-12). Planned, the nav log opens.
-        MapSheet(
-            state = sheet, peek = peek, snackbars = snackbars, lowerOnBack = !pages.covered,
-            onTop = {
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
-                    MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, positionLast = true)
-                    if (!pages.covered) {
-                        FirstFlightCard(
-                            plan, search, onPlanned = { ScreenRequests.ask(Screen.NAVLOG) },
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg).padding(top = WingtipSpace.Sm),
-                        )
-                    }
-                }
-            },
-            body = { covered -> mapView(covered, true) },
-        ) {
-            // A card takes the search's place, its name and ← where the
-            // search was; Home and the plan carry the search's row.
-            // Back closes a card at once; with none it lowers the expanded
-            // sheet first (MapSheet), then goes back a page.
-            pagesView(Modifier.weight(1f).padding(bottom = navigationBar), pages.covered || sheet.atPeek, null) {
-                Box(Modifier.onSizeChanged { searchRowPx = it.height }) { searchRow(null) }
-            }
-        }
+        PhoneSheetLayout(
+            sheet, snackbars, pages, ownShip, onAsk, plan, search, map = { covered -> mapView(covered, true) }, searchRow = { searchRow(null) },
+            pages = { modifier, backEnabled, head -> pagesView(modifier, backEnabled, null, head) },
+        )
     }
 
     map.source?.let { shown -> SourceDialog(shown, onClose = { map.source = null }) }
@@ -374,7 +253,3 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     AutoLogbookHost(plan, session)
     NextFlightFeed(plan)
 }
-
-/** The stock drag handle's height: its 4-dp bar in 22 dp above and below,
- *  Material's 48-dp target (SheetDefaults.DragHandle). */
-private val SheetHandle = WingtipSize.TapTarget

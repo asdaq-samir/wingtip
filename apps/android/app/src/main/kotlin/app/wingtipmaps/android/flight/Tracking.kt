@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.flight
 
-import android.annotation.SuppressLint
 import android.content.Context
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.FlightStatus
@@ -21,8 +20,6 @@ import app.wingtipmaps.android.records.WatchKind
 import app.wingtipmaps.android.records.id
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +38,7 @@ import kotlinx.coroutines.launch
  * The twin of the iOS app's Tracking.swift, with Room's flows in place
  * of SwiftData's fetches: the lists are read whole as the store changes.
  */
-class Tracking private constructor(
+class Tracking(
     private val context: Context,
     private val dao: RecordsDao,
     private val ticker: Ticker,
@@ -253,19 +250,6 @@ class Tracking private constructor(
         /** At most this many points of a tracked flight's path, as the web
          *  app's PATH_POINTS. */
         const val PATH_POINTS = 2000
-
-        // The application's context alone (of), which lives as long as the process.
-        @SuppressLint("StaticFieldLeak")
-        @Volatile
-        private var shared: Tracking? = null
-
-        fun of(context: Context): Tracking =
-            shared ?: synchronized(this) {
-                shared ?: Tracking(
-                    context.applicationContext, Records.database(context).dao(), Ticker.shared,
-                    CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
-                ).also { shared = it }
-            }
 
         /** Whether the airplane is in the air (the engine's `airborne_now`,
          *  the web app's airborneNow): in the air where heard there; on the

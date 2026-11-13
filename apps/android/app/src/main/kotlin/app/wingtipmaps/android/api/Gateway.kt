@@ -16,7 +16,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Cache
 import okhttp3.FormBody
@@ -144,8 +143,8 @@ object Gateway {
     }
 
     /** One call with the pilot's session: the answer's body and status.
-     *  Every gateway call goes through here, and is refused through `send`
-     *  or `read` in the gateway's own words. */
+     *  For the paths the gateway's OpenAPI document has none of (Spring
+     *  Security's own /logout); every other call is the generated `api`'s. */
     suspend fun call(method: String, path: String, json: String? = null, form: Map<String, String>? = null): Pair<String, Int> =
         client.newCall(request(method, path, json, form)).also { call ->
             if (method != "GET") call.timeout().timeout(WRITE_TIMEOUT_S, TimeUnit.SECONDS)
@@ -153,23 +152,6 @@ object Gateway {
             // Read on the IO dispatcher, as Planner.fetch reads its body.
             withContext(Dispatchers.IO) { response.body.string() } to response.code
         }
-
-    /** A call whose answer is read, or nothing where the server sends no
-     *  body; refused outside `ok`, with the gateway's own words. */
-    suspend fun send(method: String, path: String, json: String? = null, form: Map<String, String>? = null, ok: IntRange = 200..299): String {
-        val (body, status) = call(method, path, json, form)
-        if (status !in ok) throw Refusal(status, words(body))
-        return body
-    }
-
-    /** A read that is nobody's when signed out: null for the statuses in
-     *  `none` (401, 403 and 204 unless a call says otherwise). */
-    suspend inline fun <reified T> read(path: String, none: Set<Int> = setOf(204, 401, 403)): T? {
-        val (body, status) = call("GET", path)
-        if (status == 200) return json.decodeFromString<T>(body)
-        if (status in none) return null
-        throw Refusal(status, words(body))
-    }
 
     /** The gateway answers RFC 9457 problem details: the words are in
      *  `detail`, which already names each broken field, and `errors` lists
@@ -213,6 +195,19 @@ object Gateway {
 
     suspend fun verifyMagicLink(token: String) {
         writes.verify(token).done(ok = 200..399)
+    }
+
+    /** A file from outside the servers (the FAA's diagram PDF) into
+     *  `file`, whole or not at all, through the app's one OkHttp client (its
+     *  cache and limits); refused in `who`'s name where it answers no file. */
+    suspend fun saveFile(url: String, file: File, who: String) {
+        client.newCall(Request.Builder().url(url).build()).executeAsync().use { response ->
+            if (!response.isSuccessful) throw IllegalStateException("$who answered ${response.code}.")
+            file.parentFile?.mkdirs()
+            val part = File(file.path + ".part")
+            part.writeBytes(response.body.bytes())
+            if (!part.renameTo(file)) part.delete()
+        }
     }
 
     /** Spring Security's own logout, which answers 204. */

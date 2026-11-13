@@ -10,6 +10,7 @@ import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.gateway.FlightCheckpointDto
 import app.wingtipmaps.android.api.generated.gateway.SharedFlightDto
+import app.wingtipmaps.android.api.readOrNone
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.FlightChoices
@@ -68,7 +69,7 @@ class SharedFlightModel @Inject constructor(app: Application) : AndroidViewModel
         _state.value = State.Reading
         reading = viewModelScope.launch {
             _state.value = try {
-                Gateway.read<SharedFlightDto>("/api/shared-flights/$token", none = setOf(404))?.let(::shown) ?: State.Gone
+                Gateway.api.shared(token).readOrNone(none = setOf(404))?.let(::shown) ?: State.Gone
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

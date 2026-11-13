@@ -30,6 +30,15 @@ class FlightModel @Inject constructor(private val session: FlightSession) : View
     val underway: StateFlow<Boolean> get() = session.inFlight.underway
     val traffic: Traffic get() = session.traffic
 
+    /** Own ship: its fix, the permission and the reading. */
+    val ownShip: OwnShip get() = session.ownShip
+
+    /** The airplane tracked (Track on a traffic card). */
+    val tracking: Tracking get() = session.tracking
+
+    /** The alerts ahead said aloud, turned on and off from Settings. */
+    val spoken: SpokenAlerts get() = session.spoken
+
     /** The airplane tracked, by its hex. */
     val tracked: StateFlow<String?> get() = session.tracking.hex
 

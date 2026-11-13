@@ -18,7 +18,7 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.airplane.GlideRingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.flight.SpokenAlerts
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.map.ModelWeatherRow
@@ -61,7 +61,7 @@ fun MapSettingsRows() {
         // A Stratux, Sentry or the like on the cockpit's Wi-Fi: its traffic
         // and FIS-B weather with no internet.
         ReceiverSettingRows()
-        val spoken = remember(context) { SpokenAlerts.of(context) }
+        val spoken = hiltViewModel<FlightModel>().spoken
         val spokenOn by spoken.on.collectAsStateWithLifecycle()
         SwitchSettingRow(stringResource(R.string.speak_alerts), spokenOn, index = 0, count = 1, onChange = spoken::setOn)
     }
@@ -74,11 +74,11 @@ fun MapSettingsRows() {
  * Military Fields, then Traffic and Approach Plates.
  */
 @Composable
-private fun MapLayerRows() {
+private fun MapLayerRows(flight: FlightModel = hiltViewModel()) {
     val context = LocalContext.current
     val store = remember(context) { MapLayersStore.of(context) }
     val layers by store.layers.collectAsStateWithLifecycle()
-    val traffic = remember(context) { Traffic.of(context) }
+    val traffic = flight.traffic
     val trafficOn by traffic.on.collectAsStateWithLifecycle()
     SettingsGroup {
         SwitchSettingRow(stringResource(R.string.layer_airspace), layers.airspace, 0, MAP_ROWS) { store.set(MapLayersStore.Switch.AIRSPACE, it) }

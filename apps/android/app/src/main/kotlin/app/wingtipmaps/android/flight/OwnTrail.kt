@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.flight
 
-import android.content.Context
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.KeptFile
@@ -126,14 +125,5 @@ class OwnTrail(
         /** At most a long day's flying of points. */
         const val MOST = 5000
         const val WRITE_EVERY_MS = 30_000L
-
-        @Volatile
-        private var shared: OwnTrail? = null
-
-        /** The app's one path, in filesDir/own-trail.json. */
-        fun of(context: Context): OwnTrail =
-            shared ?: synchronized(this) {
-                shared ?: OwnTrail(File(context.applicationContext.filesDir, "own-trail.json")).also { shared = it }
-            }
     }
 }

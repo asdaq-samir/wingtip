@@ -43,11 +43,13 @@ rules:
   - id: mercator-outside-tile-maths-phones
     message: >-
       Web Mercator (EPSG:3857) projection maths written again on a phone.
-      Use the app's one tile-maths helper (the copies here are baselined until
-      batch G gives each phone one home), never a new copy (simplicity audit
-      2026-11-12, finding 10).
+      Use the app's one tile-maths helper (Android's tiles/TileGrid.kt; the
+      iPhone's copies are baselined until it has one), never a new copy
+      (simplicity audit 2026-11-12, finding 10).
     severity: ERROR
     languages: [swift, kotlin, java]
+    paths:
+      exclude: ["apps/android/app/src/main/kotlin/app/wingtipmaps/android/tiles/TileGrid.kt"]
     pattern-either:
       - pattern: atan(sinh($X))
       - pattern: asinh(tan($X))

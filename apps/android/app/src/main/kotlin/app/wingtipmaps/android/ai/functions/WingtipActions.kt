@@ -13,7 +13,7 @@ import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.api.notamsRanked
 import app.wingtipmaps.android.emergency.PhoneFields
 import app.wingtipmaps.android.engine.CyclePacks
-import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.flight.FlightSession
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.offline.KeptForAir
@@ -37,6 +37,10 @@ import java.time.Instant
  * it (a PendingIntent for Gemini, the activity for the app's own Ask).
  */
 class WingtipActions(private val app: Application) {
+    /** The flight's one owner, from Hilt's component: neither the
+     *  AppFunctions service nor the on-phone Ask is built by Hilt. */
+    private val flight by lazy { FlightSession.from(app) }
+
     /** A field's card, by its ident. */
     suspend fun airport(ident: String): AirportEntity {
         val p = place(ident)
@@ -64,7 +68,7 @@ class WingtipActions(private val app: Application) {
      *  the planner's, else the cycle packs' on the phone (PhoneFields), with
      *  no flight category or runway. */
     suspend fun nearest(): List<NearestEntity> {
-        val (lat, lon) = OwnShip.of(app).lastPosition ?: throw NoAnswer("The phone has no position yet.")
+        val (lat, lon) = flight.ownShip.lastPosition ?: throw NoAnswer("The phone has no position yet.")
         val fields = try {
             Planner.nearest(lat, lon, MAX_LIST)
         } catch (e: CancellationException) {

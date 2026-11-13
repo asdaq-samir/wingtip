@@ -11,8 +11,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -28,8 +26,8 @@ import java.util.concurrent.TimeUnit
  * website's calls carry it, as the iOS app's Planner.swift has it. Its
  * calls are the Retrofit interface generated from its OpenAPI document
  * (PlannerApi, di/NetworkModule), each answer its generated model
- * (api/generated, named in Models.kt); `fetch` and `lines` are for what
- * that does not cover (a stream, an answer read by a model of its own).
+ * (api/generated, named in Models.kt); `get` and `lines` are for what
+ * that does not cover (a stream, a file's bytes).
  */
 object Planner {
     /** FastAPI's `{"detail": "…"}`, where an answer carries one. */
@@ -63,20 +61,10 @@ object Planner {
     val api: PlannerApi by lazy { NetworkModule.planner(Gateway.client) }
     val inFlight: PlannerApi by lazy { NetworkModule.planner(Gateway.client.newBuilder().callTimeout(IN_FLIGHT_MS, TimeUnit.MILLISECONDS).build()) }
 
-    /** An answer's body, or the planner's own words why not. Every planner
-     *  call goes through here; `timeoutMs` bounds the whole call for those
-     *  made in the air (IN_FLIGHT_MS). executeAsync comes back on the
-     *  caller's dispatcher, the main thread for a screen, with the body
-     *  still to come off the network, so it is read on the IO dispatcher
-     *  (OkHttp's own advice for executeAsync). */
-    suspend fun fetch(path: String, query: Map<String, String?> = emptyMap(), timeoutMs: Long? = null): String =
-        Gateway.client.newCall(get(path, query)).also { call ->
-            if (timeoutMs != null) call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS)
-        }.executeAsync().use { response ->
-            val body = withContext(Dispatchers.IO) { response.body.string() }
-            if (response.code != 200) throw Failure(response.code, detail(body))
-            body
-        }
+    /** The planner's posts that work a while (the forecast run, the
+     *  clearance's places, a debrief), on the gateway's write limit,
+     *  Gateway.WRITE_TIMEOUT_S, as Gateway.call gave them. */
+    val writes: PlannerApi by lazy { NetworkModule.planner(Gateway.client.newBuilder().callTimeout(Gateway.WRITE_TIMEOUT_S, TimeUnit.SECONDS).build()) }
 
     fun detail(body: String): String? =
         runCatching { (Gateway.json.parseToJsonElement(body) as? JsonObject)?.get("detail")?.jsonPrimitive?.contentOrNull }.getOrNull()

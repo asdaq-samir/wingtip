@@ -19,8 +19,6 @@ import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.offline.KeptForAir
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.Request
-import okhttp3.coroutines.executeAsync
 import java.io.File
 
 /** A diagram's first page as a picture, with its graticule from its
@@ -92,17 +90,9 @@ class DiagramPage(
             }
         }
 
-        /** The diagram's PDF from the FAA into `file`, whole or not at all,
-         *  through the app's one OkHttp client (its cache and limits). */
-        suspend fun download(url: String, file: File) {
-            Gateway.client.newCall(Request.Builder().url(url).build()).executeAsync().use { response ->
-                if (!response.isSuccessful) throw IllegalStateException("The FAA answered ${response.code}.")
-                file.parentFile?.mkdirs()
-                val part = File(file.path + ".part")
-                part.writeBytes(response.body.bytes())
-                if (!part.renameTo(file)) part.delete()
-            }
-        }
+        /** The diagram's PDF from the FAA into `file`, whole or not at all
+         *  (Gateway.saveFile). */
+        suspend fun download(url: String, file: File) = Gateway.saveFile(url, file, "The FAA")
 
         /** Whether this Android reads a PDF page's text and where it is
          *  drawn: Android 15's PDF extension, SDK extension 13 of S. */
