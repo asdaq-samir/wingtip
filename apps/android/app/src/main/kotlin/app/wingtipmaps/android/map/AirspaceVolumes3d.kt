@@ -4,6 +4,7 @@ import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.airspaceVolumeSpan
+import app.wingtipmaps.android.format.Units
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -38,10 +39,6 @@ import kotlin.math.min
  * volume out until its terrain is in.
  */
 object AirspaceVolumes3d {
-    /** Metres in a foot: the international foot, exactly 0.3048 m (NIST
-     *  Handbook 44, Appendix C). */
-    const val M_PER_FT = 0.3048
-
     /** A kind's ink, how see-through, and the app's zoom it is drawn from
      *  (the web's KINDS): far out only Class B and the special use areas,
      *  C from 9, D and surface E from 10. */
@@ -140,8 +137,8 @@ object AirspaceVolumes3d {
                         putJsonObject("properties") {
                             p.forEach { (k, v) -> if (v is JsonPrimitive) put(k, v) }
                             put("kind", kind)
-                            put("base_m", v.floorFt * M_PER_FT)
-                            put("height_m", v.ceilingFt * M_PER_FT)
+                            put("base_m", v.floorFt * Units.M_PER_FT)
+                            put("height_m", v.ceilingFt * Units.M_PER_FT)
                         }
                     },
                 )

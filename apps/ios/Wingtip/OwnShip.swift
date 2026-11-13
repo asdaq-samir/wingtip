@@ -90,11 +90,15 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let last = locations.last else { return }
+        // Core Location's altitude is metres above mean sea level and its
+        // speed metres a second; the foot is Foundation's exact one, the
+        // knot Units' (UnitSpeed.knots is rounded).
         let fix = Fix(
             coordinate: last.coordinate,
-            altitudeFt: last.verticalAccuracy >= 0 ? last.altitude * 3.28084 : nil,
+            altitudeFt: last.verticalAccuracy >= 0
+                ? Measurement(value: last.altitude, unit: UnitLength.meters).converted(to: .feet).value : nil,
             trackDeg: last.course >= 0 ? last.course : nil,
-            groundspeedKt: last.speed >= 0 ? last.speed * 1.943844 : nil,
+            groundspeedKt: last.speed >= 0 ? last.speed * Units.ktPerMS : nil,
             accuracyM: last.horizontalAccuracy, at: last.timestamp)
         Task { @MainActor in self.took(fix) }
     }

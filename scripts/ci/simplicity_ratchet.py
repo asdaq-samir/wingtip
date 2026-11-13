@@ -83,9 +83,14 @@ def allow_total(path: str) -> int:
 ANDROID = "apps/android/app/src/main"
 UNIT = r"\b(0\.3048|3\.2808\d*|6076(\.\d+)?|1852(\.0)?|1\.9438\d*)\b"
 # The engine's unit literals, set or used inline: the foot, the nautical
-# and statute miles, their rounded ratios and the kelvin's offset. Each is
-# engine/crates/core/src/units.rs's alone.
-ENGINE_UNIT = re.compile(r"(?<![\w.])(0\.3048|3\.2808\d*|6_?076(\.\d+)?|1_?852(\.0*)?|1\.852|1_?609\.344|1\.9438\d*|273\.15)(?![\w.])")
+# and statute miles, their rounded ratios (nautical miles in a statute
+# mile, 0.8689...; statute in a nautical, 1.1507...; knots in a metre a
+# second, 1.9438...; metres a second in a knot, 0.5144...) and the
+# kelvin's offset. Each is engine/crates/core/src/units.rs's alone.
+ENGINE_UNIT = re.compile(
+    r"(?<![\w.])(0\.3048|3\.2808\d*|6_?076(\.\d+)?|1_?852(\.0*)?|1\.852|1_?609\.344|5_?280(\.0*)?"
+    r"|1\.9438\d*|0\.5144\d*|0\.8689\d*|1\.1507\d*|273\.15)(?![\w.])"
+)
 RUST_NOT_CODE = re.compile(r'//[^\n]*|/\*.*?\*/|r(#*)".*?"\1|b?"(\\.|[^"\\])*"|\'(\\.|[^\'\\])\'', re.S)
 
 
@@ -166,6 +171,16 @@ METRICS = {
             if not p.endswith("engine/crates/core/src/units.rs")
         ),
         "a unit factor written in the engine: take it from wingtip_core::units",
+    ),
+    # The phones' unit literals, the engine's list, outside each phone's one
+    # units home (Foundation's Measurement and Units.swift; format/Units.kt).
+    "phone_unit_literals": (
+        lambda: sum(
+            len(ENGINE_UNIT.findall(rust_code(text(p))))
+            for p in files("apps/ios", ".swift") + files("apps/android", ".kt")
+            if not p.endswith(("apps/ios/Wingtip/Format/Units.swift", "android/format/Units.kt"))
+        ),
+        "a unit factor written on a phone: convert with Foundation's Measurement or take it from Units.swift / format/Units.kt",
     ),
     # The other guards' baselines, their totals (each only shrinks; here
     # for the one trend line).

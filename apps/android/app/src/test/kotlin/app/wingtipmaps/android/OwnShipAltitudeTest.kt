@@ -10,8 +10,8 @@ import org.junit.Test
 class OwnShipAltitudeTest {
     @Test
     fun metresAboveSeaLevelInFeet() {
-        // 1,000 m is 3,280.84 ft (1 ft = 0.3048 m exactly).
-        assertEquals(3280.84, OwnShip.mslFeet(1000.0)!!, 0.01)
+        // 1,000 m is 3,280.839895 ft (1 ft = 0.3048 m exactly).
+        assertEquals(3280.839895, OwnShip.mslFeet(1000.0)!!, 1e-6)
     }
 
     @Test

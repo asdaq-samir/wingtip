@@ -261,8 +261,7 @@ def nearest_report(lat: float, lon: float, exclude: str | None = None, within_nm
     "distance_nm", "bearing_deg" (true, from the point), "near" (within
     NEAR_REPORT_SM, close enough to say the field's weather by it,
     approximately), "metar"}; None with none that close."""
-    best = None
-    coslat = np.cos(np.radians(lat))
+    current = []
     for ident, report in _dataset("metars").items():
         s_lat, s_lon = report.get("lat"), report.get("lon")
         if ident == exclude or s_lat is None or s_lon is None:
@@ -273,18 +272,19 @@ def nearest_report(lat: float, lon: float, exclude: str | None = None, within_nm
         observed = _unix(report.get("observed_at"))
         if observed is None or time.time() - observed > NEAREST_REPORT_MAX_AGE_S:
             continue
-        # Flat-earth nautical miles: within thirty the error is yards.
-        north, east = (s_lat - lat) * 60, (s_lon - lon) * 60 * coslat
-        nm = float(np.hypot(north, east))
-        if nm <= within_nm and (best is None or nm < best[0]):
-            best = (nm, ident, report, float(np.degrees(np.arctan2(east, north))) % 360)
-    if best is None:
+        current.append((ident, report, s_lat, s_lon))
+    if not current:
         return None
-    nm, ident, report, bearing = best
+    # The engine's WGS-84 miles, every station in one call; argmin keeps the first of equals, as the loop did.
+    miles = geo.distance_nm(lat, lon, *(np.array([c[k] for c in current], dtype=float) for k in (2, 3)))
+    i = int(np.argmin(miles))
+    nm, (ident, report, s_lat, s_lon) = float(miles[i]), current[i]
+    if nm > within_nm:
+        return None
     return {
         "ident": ident,
         "distance_nm": round(nm, 1),
-        "bearing_deg": round(bearing),
+        "bearing_deg": round(geo.bearing_deg(lat, lon, s_lat, s_lon)),
         "near": nm <= NEAR_REPORT_SM * NM_PER_SM,
         "metar": report,
     }

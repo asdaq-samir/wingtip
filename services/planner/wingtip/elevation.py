@@ -20,7 +20,7 @@ import numpy as np
 import requests
 from cachetools import LRUCache
 
-from . import atomic, outside
+from . import atomic, outside, units
 from .config import REQUEST_HEADERS
 from .geo import destination_point, tile_xy
 from .retry import with_retries
@@ -320,7 +320,7 @@ _TERRAIN_SESSION = outside.session(pool=16)
 #: 14 CFR 91.159's "3,000 feet above the surface" and a floor are taken
 #: from. The grid's lowest was 30,000 ft below the sea off Baja and in the
 #: Gulf of California, where rows of a tile read -12,849 m (2026-11-02).
-LOWEST_GROUND_M = -282 / 3.28084
+LOWEST_GROUND_M = -282 * units.M_PER_FT
 
 
 def terrarium_m(rgb: np.ndarray) -> np.ndarray:

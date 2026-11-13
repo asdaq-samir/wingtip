@@ -32,7 +32,7 @@ pub const STEP_FT: f64 = 500.0;
 /// "Entry to the downwind leg should be at a 45-degree angle abeam the
 /// midpoint of the runway"). Both are a sketch's sizes, not a rule: the
 /// size of a pattern is the pilot's.
-pub const PATTERN_DOWNWIND_NM: f64 = 0.75 * 0.868976;
+pub const PATTERN_DOWNWIND_NM: f64 = 0.75 * wingtip_core::units::NM_PER_SM;
 pub const PATTERN_ENTRY_NM: f64 = 1.2;
 
 /// How far from the field's centre the 45-degree entry begins, nm (about

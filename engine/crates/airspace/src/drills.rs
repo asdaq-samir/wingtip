@@ -8,6 +8,7 @@
 
 use crate::json::{self, Value};
 use crate::rules::{self, Rule, CLASS_A_FLOOR_FT, G_LOW_AGL_FT, TEN_THOUSAND_FT};
+use wingtip_core::units::FT_PER_SM;
 
 /// 14 CFR 91.125's table, word for word: each colour and type of signal,
 /// what it means to an aircraft on the surface and to one in flight. The
@@ -93,7 +94,7 @@ pub fn rule_words(r: &Rule) -> String {
     let sm = |v: f64| format!("{} sm", crate::figures::words::js_num(v));
     match (r.below_ft, r.above_ft, r.horizontal_ft) {
         (Some(below), Some(above), Some(horizontal)) => {
-            let horizontal = if horizontal == 5280.0 { "1 sm".to_owned() } else { format!("{} ft", grouped(horizontal)) };
+            let horizontal = if horizontal == FT_PER_SM { "1 sm".to_owned() } else { format!("{} ft", grouped(horizontal)) };
             format!("{}; {} ft below, {} ft above, {horizontal} horizontal", sm(r.visibility_sm), grouped(below), grouped(above))
         }
         _ => format!("{}; clear of clouds", sm(r.visibility_sm)),

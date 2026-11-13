@@ -62,16 +62,14 @@ final class ApproachLines {
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)
     }
 
-    /// One international nautical mile, 1,852 m exactly (NIST Handbook 44, Appendix C).
-    nonisolated static let metresPerNm = 1852.0
-
     nonisolated static func overlays(_ scene: EngineContract.ApproachSceneAnswer) -> [any MKOverlay] {
         var out: [any MKOverlay] = scene.centrelines.compactMap { line in
             let points = line.points.compactMap(coordinate)
             return points.count >= 2 ? CentrelinePolyline(coordinates: points, count: points.count) : nil
         }
         if let ring = scene.ring, let middle = coordinate(ring.center) {
-            out.append(PatternRing(center: middle, radius: ring.radiusNm * metresPerNm))
+            let radius = Measurement(value: ring.radiusNm, unit: UnitLength.nauticalMiles).converted(to: .meters)
+            out.append(PatternRing(center: middle, radius: radius.value))
         }
         return out
     }
