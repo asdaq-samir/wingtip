@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -24,7 +23,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -34,21 +32,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
-import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.pilot.MinimumsStore
 import app.wingtipmaps.android.plan.FlightChoices
-import app.wingtipmaps.android.strip.StripData
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 
@@ -57,15 +49,6 @@ object YouTags {
     const val NAME = "you-name"
     const val ADDRESS = "you-address"
     const val SETTINGS = "settings-row"
-}
-
-/** The name You heads itself with: never an address, as an email sign-in's
- *  display name is the address itself (the web's YouHead); none given, null. */
-object YouName {
-    fun of(pilot: Pilot?): String? {
-        val given = pilot?.fullName?.takeIf { it.isNotBlank() } ?: pilot?.displayName
-        return given?.trim()?.takeIf { it.isNotEmpty() && '@' !in it && it != pilot?.email }
-    }
 }
 
 /**
@@ -121,50 +104,6 @@ fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
     }
 }
 
-/** The card's head: the avatar, the name (or Add Your Name), the address. */
-@Composable
-private fun YouHead(pilot: Pilot?, loaded: Boolean, onDetails: () -> Unit) {
-    val name = YouName.of(pilot)
-    Column(Modifier.fillMaxWidth().padding(top = WingtipSpace.Md), horizontalAlignment = Alignment.CenterHorizontally) {
-        Surface(
-            shape = CircleShape,
-            color = if (name != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
-            modifier = Modifier.size(Avatar),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                val initials = StripData.initialsOf(pilot)
-                if (pilot != null && initials.isNotEmpty()) {
-                    Text(
-                        initials, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
-                        color = if (name != null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
-                    )
-                } else {
-                    Icon(Icons.Filled.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(AvatarGlyph))
-                }
-            }
-        }
-        val large = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-        when {
-            name != null -> Text(
-                name, style = large, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = WingtipSpace.Sm).semantics { heading() }.testTag(YouTags.NAME),
-            )
-            // A pilot with no name given: the large line asks for one; signed
-            // out, Sign In -- both in Pilot Details, its ← back to You.
-            pilot != null || loaded -> TextButton(onClick = onDetails, modifier = Modifier.testTag(YouTags.NAME)) {
-                Text(stringResource(if (pilot != null) R.string.add_your_name else R.string.you_sign_in), style = large)
-            }
-            else -> Text(stringResource(R.string.checking_sign_in), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = WingtipSpace.Sm))
-        }
-        pilot?.email?.let {
-            Text(
-                it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag(YouTags.ADDRESS),
-            )
-        }
-    }
-}
-
 /** One of You's rows: a round badge, the name, where it stands, a chevron. */
 @Composable
 private fun YouRow(icon: ImageVector, title: String, value: String?, index: Int, count: Int, enabled: Boolean = true, onClick: () -> Unit) {
@@ -186,10 +125,6 @@ private fun YouRow(icon: ImageVector, title: String, value: String?, index: Int,
         onClick = onClick,
     )
 }
-
-/** The avatar, Apple Maps' and the web's 72 points, and its glyph. */
-private val Avatar = 72.dp
-private val AvatarGlyph = 36.dp
 
 /** A row's round badge, Android settings' 32-dp icon disc, and its glyph. */
 private val Badge = 32.dp

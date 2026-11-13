@@ -87,24 +87,12 @@ import kotlinx.coroutines.withContext
  * @param covered what the sheet covers at its pill, where the map opens
  *   and the loading mark turns in the middle of what is left; a sheet
  *   pulled up over the map moves neither.
- * @param onAsk the sparkle's Ask, or none (the strip's field is the way).
- * @param onLayers the Layers button's Map card.
- * @param onRadio Comms Assist's radio button, or none while it is off.
+ * @param actions what the map's buttons open (MapActions).
  * @param buttonsOnSheet whether the phone's sheet carries the map's
  *   buttons on its top edge (MapSheet's `onTop`), so none are drawn here.
  */
 @Composable
-fun MapPane(
-    plan: Plan,
-    ownShip: OwnShipControl,
-    covered: Dp,
-    onPick: (MapPick) -> Unit,
-    onAsk: (() -> Unit)?,
-    onNearest: () -> Unit,
-    onLayers: () -> Unit,
-    onRadio: (() -> Unit)? = null,
-    buttonsOnSheet: Boolean = false,
-) {
+fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) -> Unit, actions: MapActions, buttonsOnSheet: Boolean = false) {
     val charts: Charts = hiltViewModel()
     val info by charts.info.collectAsStateWithLifecycle()
     val overlays by charts.overlays.collectAsStateWithLifecycle()
@@ -281,7 +269,7 @@ fun MapPane(
             // Under the status bar, and clear of a cutout or a navigation
             // bar at the side in landscape (edge to edge).
             MapButtons(
-                ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, onLayers = onLayers, onRadio = onRadio, threeD = true,
+                ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = actions.onAsk, onLayers = actions.onLayers, onRadio = actions.onRadio, threeD = true,
                 modifier = Modifier.align(Alignment.TopEnd).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.End)),
             )
         }
@@ -301,7 +289,7 @@ fun MapPane(
         if (ownShip.on && !approximate && !denied) {
             // What is ahead and the flight's instruments, at the top left of
             // the buttons where nothing else was (#218).
-            InFlightTop(ahead = ahead, onNearest = onNearest, modifier = Modifier.align(Alignment.TopStart)) { now ->
+            InFlightTop(ahead = ahead, onNearest = actions.onNearest, modifier = Modifier.align(Alignment.TopStart)) { now ->
                 CopilotBanner(state, flying = now.underway, fix = now.fix, ahead = ahead)
                 // The ATC copilot's card for the newest call to us.
                 AtcCopilotHost(plan, flying = now.underway, fix = now.fix)

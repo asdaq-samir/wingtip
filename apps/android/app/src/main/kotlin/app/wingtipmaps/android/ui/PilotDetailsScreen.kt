@@ -1,7 +1,6 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -18,14 +16,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedListItem
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -41,7 +37,6 @@ import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.pilot.MinimumsRows
-import app.wingtipmaps.android.strip.StripData
 
 /**
  * Pilot Details, You's first row (the owner, 2026-11-13: the account's
@@ -99,21 +94,14 @@ fun PilotDetailsScreen(session: Session, pickAirport: (onPicked: (String) -> Uni
 
 /**
  * Who is signed in, as Android's settings head their account: the
- * pilot's initials in a circle in the tint, the name, and the address
- * under it.
+ * pilot's avatar (You's), the name, and the address under it.
  */
 @Composable
 private fun AccountRow(pilot: Pilot) {
     SegmentedListItem(
         shapes = ListItemDefaults.segmentedShapes(index = 0, count = 1),
         modifier = Modifier.fillMaxWidth(),
-        leadingContent = {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(WingtipSize.TapTarget)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(StripData.initialsOf(pilot), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimary)
-                }
-            }
-        },
+        leadingContent = { PilotAvatar(pilot, WingtipSize.TapTarget, MaterialTheme.typography.titleMedium) },
         supportingContent = if (YouName.of(pilot) != null) {
             { Text(pilot.email, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         } else {

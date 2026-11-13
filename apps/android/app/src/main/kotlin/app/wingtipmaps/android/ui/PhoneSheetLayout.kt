@@ -46,9 +46,7 @@ internal fun PhoneSheetLayout(
     snackbars: SnackbarHostState,
     nav: SheetNav,
     ownShip: OwnShipControl,
-    onAsk: (() -> Unit)?,
-    onLayers: () -> Unit,
-    onRadio: (() -> Unit)?,
+    actions: MapActions,
     plan: Plan,
     search: SearchControl,
     map: @Composable (covered: Dp) -> Unit,
@@ -80,7 +78,7 @@ internal fun PhoneSheetLayout(
                     modifier = Modifier.padding(start = WingtipSpace.Sm),
                 )
                 Spacer(Modifier.weight(1f))
-                MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, onLayers = onLayers, onRadio = onRadio, positionLast = true)
+                MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = actions.onAsk, onLayers = actions.onLayers, onRadio = actions.onRadio, positionLast = true)
             }
         },
         body = map,
