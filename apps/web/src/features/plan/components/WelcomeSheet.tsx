@@ -10,7 +10,7 @@ import { Button } from "../../../components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../../../components/ui/dialog";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { useNavEdge } from "../../../hooks/use-nav-edge";
-import { OPEN_ZOOM, ownShipAvailable, useOwnShip } from "../../../lib/map/position/ownShip";
+import { askPositionQuietly, ownShipAvailable } from "../../../lib/map/position/ownShip";
 import { TEXT } from "../../../lib/text";
 
 /** What the app is, three rows of it (the owner's aim, 2026-11-13: "a
@@ -38,9 +38,9 @@ const ROWS = [
  * way on at its foot, Let's Go Flying (the owner, 2026-11-13: one button,
  * not two). In the app's modal sheet: on a
  * phone the stock Drawer (PhoneSheet) from the navigation bar's edge,
- * solid; from `md` up the stock Dialog, solid. No close of its own: the
- * button, a swipe down or a tap beside it all go on to the map, the same
- * way (`onGo`).
+ * solid; from `md` up the stock Dialog, solid. No close of its own: its
+ * foot's buttons (Foot), a swipe down or a tap beside it all go on to the
+ * map, the same way (`onGo`).
  */
 export default function WelcomeSheet({ open, onGo }: { open: boolean; onGo: () => void }) {
   const onPhone = useIsMobile();
@@ -105,27 +105,17 @@ function Welcome({ title, onGo }: { title: ReactNode; onGo: () => void }) {
         ))}
       </ul>
       <LookRows />
-      {/* The one way on at the sheet's foot, the space above it its own. */}
-      <div className="mt-auto pt-3">
-        <Button
-          type="button"
-          size="lg"
-          className="h-12 w-full rounded-(--radius-control) font-semibold"
-          onClick={onGo}
-          data-testid="first-flight-go"
-        >
-          Let&apos;s Go Flying
-        </Button>
-      </div>
+      <Foot onGo={onGo} />
     </>
   );
 }
 
 /** The browser's answer for the position: "granted", "denied", or
- *  "prompt" while its question is still to come (and where it will not
- *  say), followed as it changes. */
+ *  "prompt" while its question is still to come, followed as it changes;
+ *  null until it has said (and where it will not), so the foot shows Let's
+ *  Go Flying rather than a question that may not be one. */
 function useLocationPermission() {
-  const [state, setState] = useState<PermissionState>("prompt");
+  const [state, setState] = useState<PermissionState | null>(null);
   useEffect(() => {
     let status: PermissionStatus | null = null;
     const read = () => status && setState(status.state);
@@ -143,49 +133,60 @@ function useLocationPermission() {
 }
 
 /**
- * Location, asked in context at the owner's ask (2026-11-13: "welcome
- * screen should ask to turn on location"): never on load (locateOnOpen
- * waits while the welcome is up, holdAskOnOpen), only at Turn On, which
- * is the map's own position button's start (own ship on, the map on it)
- * and so the browser's own question. On once allowed or a fix is in; Off
- * with where to change it once refused (the browser's site settings, as
- * a browser asks a site once), the row's own line kept short for the
- * owner's largest text.
+ * The welcome's foot, Apple's permission priming at the owner's asks
+ * (2026-11-13: "welcome screen should ask to turn on location"; "And then
+ * a later button instead of let's go flying"): with the browser's question
+ * still to come, Turn On Location, filled, asks it at the tap
+ * (askPositionQuietly, the map's own start of own ship; never on load,
+ * holdAskOnOpen) and goes on to the map whatever the answer, and Later,
+ * plain, goes on without asking. Allowed already, or no position to be
+ * had over this connection, Let's Go Flying alone; refused before, which a
+ * browser does not ask again, Let's Go Flying and where to turn it on.
  */
-function LocationRow() {
+function Foot({ onGo }: { onGo: () => void }) {
   const permission = useLocationPermission();
-  const fixed = useOwnShip((s) => s.enabled && s.fix !== null);
-  const refused = useOwnShip((s) => s.error !== null);
-  const on = permission === "granted" || fixed;
-  const off = !on && (permission === "denied" || refused || !ownShipAvailable());
-  const turnOn = () => {
-    const ship = useOwnShip.getState();
-    ship.setEnabled(true);
-    ship.recentre(OPEN_ZOOM);
-  };
+  const asking = permission === "prompt" && ownShipAvailable();
+  const button = "h-12 w-full rounded-(--radius-control) font-semibold";
   return (
-    <ListRow title="Location" description={off ? "Turn it on in the browser's site settings." : undefined}>
-      {on ? (
-        <span className={cn("text-muted-foreground", TEXT.row)} data-testid="welcome-location">
-          On
-        </span>
-      ) : off ? (
-        <span className={cn("text-muted-foreground", TEXT.row)} data-testid="welcome-location">
-          Off
-        </span>
+    <div className="mt-auto flex flex-col gap-2 pt-3">
+      {asking ? (
+        <>
+          <Button
+            type="button"
+            size="lg"
+            className={button}
+            onClick={() => {
+              askPositionQuietly();
+              onGo();
+            }}
+            data-testid="first-flight-location"
+          >
+            Turn On Location
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            className={cn(button, "font-normal text-tint")}
+            onClick={onGo}
+            data-testid="first-flight-later"
+          >
+            Later
+          </Button>
+        </>
       ) : (
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          className="rounded-full bg-tint/12 font-semibold text-tint hover:bg-tint/20"
-          onClick={turnOn}
-          data-testid="welcome-location"
-        >
-          Turn On
-        </Button>
+        <>
+          {permission === "denied" && (
+            <p className={cn("text-center text-muted-foreground", TEXT.note)} data-testid="first-flight-location-off">
+              Turn location on in the browser&apos;s site settings.
+            </p>
+          )}
+          <Button type="button" size="lg" className={button} onClick={onGo} data-testid="first-flight-go">
+            Let&apos;s Go Flying
+          </Button>
+        </>
       )}
-    </ListRow>
+    </div>
   );
 }
 
@@ -203,7 +204,6 @@ function LookRows() {
       <ListRow title="Appearance">
         <PullDown label="Appearance" value={value} onChange={onChange} options={options} align="end" testId="welcome-appearance" />
       </ListRow>
-      <LocationRow />
     </ListGroup>
   );
 }

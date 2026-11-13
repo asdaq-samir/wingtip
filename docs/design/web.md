@@ -1043,11 +1043,12 @@ up, solid): "Welcome to Wingtip Maps", three rows (Search, like Maps; FPL,
 like your EFB; FAA charts that move like Maps), Theme and Appearance in a
 small grouped list (Setup's own two menus, `components/lookPicks`, applied
 as they are picked, the sheet and the map changing behind it; the owner,
-2026-11-13), Location under them (Turn On asks the browser at the tap,
-never on load, as the map's position button does; then On, or Off with
-the browser's site settings to change it), and one button, Let's Go
-Flying (the owner, 2026-11-13: one, not two). It, a swipe down or a tap
-beside the sheet goes on to the map with the one search ready: Search up
+2026-11-13), and at its foot Apple's permission priming (the owner,
+2026-11-13): with the browser's question still to come, Turn On Location
+(asked at the tap, never on load) and Later, each going on to the map;
+allowed already, Let's Go Flying alone; refused before, Let's Go Flying and
+a line on the browser's site settings. Each, a swipe down or a tap beside
+the sheet goes on to the map with the one search ready: Search up
 at half (rule 11),
 its field asking for the destination (`useSearchPick`, as the route's own
 pickers ask) but not focused, so no keyboard jumps up until the pilot taps
