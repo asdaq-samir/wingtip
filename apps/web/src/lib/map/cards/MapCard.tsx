@@ -12,10 +12,9 @@ import { TEXT } from "../../text";
  * Measured before this existed, across the three cards a pilot can
  * open: two different close buttons and three sizes of corner control
  * (32, 36 and 40). Each was reasonable where it was written and none of
- * them agreed. Now every one is a card in the map's panel (SheetCard,
- * which the map's openCard and the training map both open), as Maps
- * opens a place's card in its one sheet, with the panel's close as every
- * card's. Its words at a list's sizes (TEXT): to a finger the title 17
+ * them agreed. Now every one is a card floating over the map (SheetCard,
+ * which the map's openCard and the training map both open; FloatingCard),
+ * as Apple Maps' iOS 27 cards float, with the one close every card has. Its words at a list's sizes (TEXT): to a finger the title 17
  * points and the rest 15, where they were 14 and 12.
  *
  * A tap on the chart puts a card away (GlMapShell), which is what every

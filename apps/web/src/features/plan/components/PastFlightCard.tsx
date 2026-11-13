@@ -249,7 +249,8 @@ const UNDER_CHART = 8;
  * the card, its time axis was cut off. The body in sight at half is the
  * card's body less the Drawer's own snap offset (--sheet-offset, CardStack:
  * the card is laid out at its full height and slid by it); none from `md`
- * up, whose side panel has no half. From where the graph starts in the
+ * up, whose side panel has no half, nor in its floating card (no sheet's
+ * body round it, FloatingCards), where it is the stock h-28. From where the graph starts in the
  * body, not from guessed heights of what is above it, which change with the
  * text size; all the way up the room all the way up. Measured by a
  * ResizeObserver on the body and the card and as the card's size changes

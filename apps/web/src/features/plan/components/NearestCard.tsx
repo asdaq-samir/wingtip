@@ -1,5 +1,4 @@
-import { useEffect, useId, useRef } from "react";
-import type { Drawer } from "@base-ui/react/drawer";
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { LocateFixed, MapPin, Navigation2 } from "lucide-react";
 import { cn } from "cn";
@@ -7,8 +6,6 @@ import { Badge } from "../../../components/ui/badge";
 import { ListPageHead } from "../../../components/Favorites";
 import { SheetCard } from "../../../components/SheetCard";
 import { SearchField } from "../../../components/PanelCapsule";
-import { closeTopCard } from "../../../lib/openCards";
-import { useCardSize } from "../../../lib/sheetCards";
 import QueryState from "../../../components/QueryState";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { api } from "../../../lib/api/client";
@@ -288,24 +285,12 @@ export default function NearestCard({
   // Underway (the engine's, its flying speed): the GPS track is steady
   // enough to point the rows' arrows from.
   const ahead = !from && fix?.headingDeg != null && underway(fix) ? fix.headingDeg : null;
-  const cardId = useId();
-  const card = useCardSize(cardId);
-  // What its drawer tells it: a tap on the chart (not its own buttons)
-  // lowers it to the pill; Escape closes it, a level back, as every card's
-  // does (lib/openCards); the rest refused, it is no modal.
-  const lowerOnMap = (details: Drawer.Root.ChangeEventDetails) => {
-    details.cancel();
-    const at = details.event.target instanceof Element ? details.event.target : null;
-    if (details.reason === "outside-press") {
-      if (at?.closest(".maplibregl-map") && !at.closest("[data-map-controls], .maplibregl-ctrl")) card?.setSize("peek");
-      return;
-    }
-    if (details.reason === "escape-key" && !details.event.defaultPrevented && closeTopCard()) details.event.preventDefault();
-  };
   return (
-    // At half as it opens, as every card does; a tap on the chart lowers
-    // its own drawer to the pill, the list kept (lowerOnMap).
-    <SheetCard head={false} testId="nearest-card" cardId={cardId} dismiss={lowerOnMap}>
+    // Floating over the map as every card but an airport's does (the
+    // owner, 2026-11-13). It lowered itself to the pill on a tap on the
+    // chart while it rode the sheet; floating, a tap on the chart leaves
+    // it as it is, and its Back or Escape puts it away.
+    <SheetCard head={false} testId="nearest-card">
       <ListPageHead title="Nearest" backLabel="Back to the search" onBack={onBack} testId="nearest-page" />
       <NearField />
       <NearAnswers from={from} onFrom={onFrom} />

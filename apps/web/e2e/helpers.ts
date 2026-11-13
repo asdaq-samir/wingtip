@@ -46,8 +46,12 @@ export async function settle(page: Page) {
  *  Its `data-panel` is its own size, under a card too (a card's is on its
  *  own drawer, frontSheet): peek at rest, half or full when it is out. */
 export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]');
-/** The sheet in front: the top card's own drawer (CardStack), else the map's. */
-export const frontSheet = (page: Page) => page.locator('[data-slot="map-panel"], [data-sheet-card][data-open]').last();
+/** The sheet in front: the top riding card's own drawer (CardStack: an
+ *  airport's, the route's Brief, Nav Log, Profile, Stops), else the map's.
+ *  A floating card (FloatingCards) has no sheet sizes; the sheet under it
+ *  stays as it was. */
+export const frontSheet = (page: Page) =>
+  page.locator('[data-slot="map-panel"], [data-sheet-card]:not([data-floating-card])[data-open]').last();
 
 /** The first row in sight: the sheet's, static over a card, at the pill too. */
 export async function showTabs(page: Page) {
@@ -124,6 +128,8 @@ export async function inSheet(page: Page, locator: Locator) {
   const panel = frontSheet(page);
   await locator.waitFor();
   const under = await locator.evaluate((el) => {
+    // A floating card scrolls inside itself, whatever the sheet's size.
+    if (el.closest("[data-floating-card]")) return false;
     const sheet = el.closest("[data-sheet-card], [data-slot=map-panel]");
     if (!sheet || sheet.getAttribute("data-panel") === "full") return false;
     const box = sheet.getBoundingClientRect();

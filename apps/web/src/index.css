@@ -732,3 +732,25 @@ body[data-map-sheet]:is([data-map-panel="peek"], [data-map-panel="half"])
     }
   }
 }
+
+/* A floating card's material (FloatingCard: You, a map card): the sheet's
+   own ground nearly whole and a frost past the sheet's (material.card-fill,
+   card-blur), so the map's buttons and the sheet's search under it are not
+   read through its rows, as Apple Maps' iOS 27 card hides what is behind
+   it (the lead's screenshots of You, 2026-11-13: the 3D, Map and location
+   buttons and "Search airports" legible through the glass). Solid under
+   Reduce Transparency or Increase Contrast, as the map's glass is. */
+@utility card-glass {
+  background-color: color-mix(in oklab, var(--sheet, var(--background)) var(--card-fill), transparent);
+  -webkit-backdrop-filter: blur(var(--card-blur)) saturate(1.2);
+  backdrop-filter: blur(var(--card-blur)) saturate(1.2);
+  box-shadow: var(--depth-float);
+  @variant solid {
+    background-color: var(--sheet, var(--background)) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow:
+      0 0 0 1px var(--border),
+      var(--depth-float);
+  }
+}

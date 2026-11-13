@@ -29,8 +29,11 @@ import { pickAirplane } from "./startState";
  * (`back`), checked after ✕ and Escape. A check that cannot apply to a card
  * says why in `not`, which the specs print as the skip's reason.
  *
- * On a phone each card is the stock Drawer's own nested drawer over the
- * map's sheet (sheet/CardStack, the owner 2026-11-11), checked by `nested`.
+ * On a phone an airport's card and the route's Brief, Nav Log, Profile and
+ * Stops are each the stock Drawer's own nested drawer over the map's sheet
+ * (sheet/CardStack, the owner 2026-11-11), checked by `nested`; every other
+ * card floats over the map (`floating`, FloatingCard; the owner,
+ * 2026-11-13), the sheet's sizes not its own.
  */
 
 /** Where a card's close goes back to. */
@@ -56,6 +59,9 @@ export interface CardRow {
   entries: Entry[];
   /** A question (SheetDialog): its ✕ is Cancel, the state left as it was. */
   question?: boolean;
+  /** A card floating over the map (FloatingCard), not riding the sheet:
+   *  every card but an airport's and the route's (the owner, 2026-11-13). */
+  floating?: boolean;
   /** Emergency: the sheet all the way up, its ✕ at the top right. */
   fullHeight?: boolean;
   /** A row in it that slides sideways (photos, chips, pills). */
@@ -68,7 +74,7 @@ export interface CardRow {
   not?: Partial<Record<Check, string>>;
 }
 
-export const CARDS: CardRow[] = [
+const ROWS: CardRow[] = [
   {
     name: "airport",
     card: "place-card",
@@ -134,6 +140,7 @@ export const CARDS: CardRow[] = [
   {
     name: "route leg",
     card: "route-leg-card",
+    floating: true,
     close: "route-leg-close",
     entries: [{ name: "map tap", open: tapLeg, back: "map" }],
     not: { sideways: "no sideways row", position: "nothing opens inside a leg", scroll: "a leg's card is shorter than the half sheet" },
@@ -141,6 +148,7 @@ export const CARDS: CardRow[] = [
   {
     name: "traffic (an airplane's card)",
     card: "flight-card",
+    floating: true,
     close: "flight-close",
     entries: [
       {
@@ -162,6 +170,7 @@ export const CARDS: CardRow[] = [
   {
     name: "airplane profile",
     card: "airplane-profile",
+    floating: true,
     close: "sheet-card-close",
     entries: [{ name: "link (airplane=)", open: (p) => go(p, "/app/plan?airplane=N14511"), back: "map" }],
     not: { sideways: "no sideways row", position: "nothing opens inside it" },
@@ -169,6 +178,7 @@ export const CARDS: CardRow[] = [
   {
     name: "Map settings",
     card: "map-settings",
+    floating: true,
     close: "sheet-card-close",
     entries: [{ name: "map button", open: async (p) => (await go(p, ROUTE), await openMapSettings(p)), back: "map" }],
     not: { sideways: "its chart tiles wrap in a grid, none slides", position: "nothing opens inside it" },
@@ -241,6 +251,7 @@ export const CARDS: CardRow[] = [
   {
     name: "Settings and its About",
     card: "console-sheet",
+    floating: true,
     close: "console-close",
     entries: [
       { name: "account button", open: async (p) => (await go(p, "/app/plan"), await openConsole(p)), back: "search-home" },
@@ -258,6 +269,7 @@ export const CARDS: CardRow[] = [
     // not to Settings first (the card rule, docs/design/rules.md).
     name: "Minimums from search",
     card: "console-page",
+    floating: true,
     close: "console-page-close",
     entries: [
       {
@@ -281,6 +293,7 @@ export const CARDS: CardRow[] = [
   {
     name: "Emergency",
     card: "emergency-sheet",
+    floating: true,
     close: "sheet-card-close",
     fullHeight: true,
     entries: [
@@ -342,6 +355,26 @@ export const CARDS: CardRow[] = [
     },
   },
 ];
+
+/** What a floating card is excused from: the checks of a card that rides
+ *  the sheet, its sizes, its pill and its drags. */
+const FLOATS = "it floats over the map (FloatingCard; the owner, 2026-11-13), as tall as it is, the sheet under it left as it was";
+
+export const CARDS: CardRow[] = ROWS.map((row) =>
+  row.floating
+    ? {
+        ...row,
+        not: {
+          searchHidden: "it floats over the sheet, whose search stays as it was under it",
+          nested: FLOATS,
+          pill: FLOATS,
+          dragUp: FLOATS,
+          dragDown: FLOATS,
+          ...row.not,
+        },
+      }
+    : row,
+);
 
 // Ask is not a card on the web: its answers are a section of the search's
 // own page (SearchHome's AskSection), and design/screens.json lists `ask`

@@ -29,6 +29,28 @@ Compose. Nothing here is built by hand where a stock part does it.
    an airspace, or the Map settings. It is the same card wherever it is
    opened from: the search, a map tap, a list (Nearest, Favorites,
    Recents), the plan, or a link.
+
+   **On the web every card but an airport's floats** (the owner,
+   2026-11-13: "Except for airport card, redesign the others as
+   recommended"), as Apple Maps' iOS 27 cards and You do: the stock Base
+   UI Dialog in one shell (`components/FloatingCard`, drawn by
+   `components/sheet/FloatingCards`), ten points in from the screen's
+   sides and foot (from `sm` up at the side panel's top corner), corners
+   `radius.sheet`, only as tall as its content and scrolling inside, its
+   head row (a leading button such as Share or the Map card's gear, the
+   name, ✕) at its top, no grabber; its material the sheet's ground at
+   `material.card-fill` over `material.card-blur` (`card-glass`), solid
+   under Reduce Transparency or Increase Contrast, so nothing under it
+   is read through it. The sheet under it stays as it was -- its size,
+   its search, its list -- and the map's buttons stay on the sheet's top.
+   One opened from another floats over it, and its ✕ goes back to it; one
+   opened from an airport's card floats over that. An airport's card
+   (`SheetCard`'s `ride`, `PlaceCard`) and the route's Brief, Nav Log,
+   Profile and Stops (`CardLayer`) still ride the sheet as nested
+   Drawers, with its sizes, grabber and swipe and the map's buttons on
+   their top; an airport's card opened from a floating one (Nearest's
+   list) puts the floating ones away while it is up (`ridingOver`). The
+   detent rules below (2, 10, 11) are the riding cards'.
 2. **What opens inside a card stays in that card's stack, with Back**
    (NOTAMs, a diagram's details, a past flight, a page of Settings).
    **Every card opens at half** (the medium detent), whatever it covers
@@ -133,9 +155,9 @@ Compose. Nothing here is built by hand where a stock part does it.
 
 | | Web | iPhone (Apple Maps' way) | Android (Google Maps' way) |
 |---|---|---|---|
-| A card | Base UI's own nested Drawer over the map's sheet, one per card, the last opened on top (`components/sheet/CardStack`; the owner, 2026-11-11): every `SheetCard` -- the one card component (the card rule's 8; `PanelCard` merged into it, 2026-11-11), its head row `CardHeadRow` drawn by it or, for an airport, an airspace, traffic, a past flight and Nearest (`head={false}`), by the content's `CardTitle` or `CardHead` --, the Brief, the Nav Log, the Profile, the Stops and Settings (`CardLayer`), with the sheet's sizes, its grabber and its swipe; it covers the search and the title row, the sheet under it kept as it was; ✕ goes back to the search with its query kept (`lib/openCards`). The Nav Log, the Profile and the Stops are kept between their openings (`CardLayer`'s `open`, their drawers closed but laid out: index.css's kept cards) | One card over the plan's sheet, the same view (`SheetPageView`) from every way in, presented through one `.sheet(item:)` (`Navigation/CardHost`); the search is out of sight while it is up | The search bar becomes "← KOSH", the card's name with ←, its actions and ✕ at the end (`ui/sheet/CardPage`); the card fills the sheet, on the sheet's own Navigation 3 stack (`ui/MapViewModel`, `ui/SheetPages`) |
+| A card | Floating: the stock Dialog in one shell over the map and its sheet, the last opened on top, the sheet left as it was (`components/FloatingCard`, `components/sheet/FloatingCards`; the owner, 2026-11-13): every `SheetCard` but an airport's, and You. Riding (an airport's, `SheetCard`'s `ride`; the Brief, Nav Log, Profile and Stops, `CardLayer`): Base UI's own nested Drawer over the map's sheet, one per card, the last opened on top (`components/sheet/CardStack`; the owner, 2026-11-11): what follows was every `SheetCard`'s -- the one card component (the card rule's 8; `PanelCard` merged into it, 2026-11-11), its head row `CardHeadRow` drawn by it or, for an airport, an airspace, traffic, a past flight and Nearest (`head={false}`), by the content's `CardTitle` or `CardHead` --, the Brief, the Nav Log, the Profile, the Stops and Settings (`CardLayer`), with the sheet's sizes, its grabber and its swipe; it covers the search and the title row, the sheet under it kept as it was; ✕ goes back to the search with its query kept (`lib/openCards`). The Nav Log, the Profile and the Stops are kept between their openings (`CardLayer`'s `open`, their drawers closed but laid out: index.css's kept cards) | One card over the plan's sheet, the same view (`SheetPageView`) from every way in, presented through one `.sheet(item:)` (`Navigation/CardHost`); the search is out of sight while it is up | The search bar becomes "← KOSH", the card's name with ←, its actions and ✕ at the end (`ui/sheet/CardPage`); the card fills the sheet, on the sheet's own Navigation 3 stack (`ui/MapViewModel`, `ui/SheetPages`) |
 | Inside a card | Its own stack in the sheet; ✕ goes back one level | Pushed in the card's `NavigationStack` with the system's Back and edge swipe (`Navigator.push`) | `SheetNav.push`; ← and system Back go back one level, ✕ closes every card |
-| Back, Escape | Escape is the top card's own nested drawer's, closing it (CardStack); with no card up the sheet's own Escape lowers it to the pill. A device's Back closes the top card the same way (`lib/backNavigation` `closeTopmost`): Android's through the browser's stock CloseWatcher, held only while something is open (`useBackCloses`), a TV remote's by its key; where there is no CloseWatcher (Safari) the browser's Back is left as it is. The browser's history is not the app's, as the planner replaces its address | The stack's Back; the card's close at the right of its bar | System Back closes the top card at once (`MapSheet`'s `lowerOnBack` only with none open); the dry run, the ATC card and the assistant's answer close on Back too |
+| Back, Escape | Escape and a tap outside are the top card's, riding or floating (`components/sheet/cardClose`'s `answerClose`, the store's `topCard`), closing it; with no card up the sheet's own Escape lowers it to the pill. A device's Back closes the top card the same way (`lib/backNavigation` `closeTopmost`): Android's through the browser's stock CloseWatcher, held only while something is open (`useBackCloses`), a TV remote's by its key; where there is no CloseWatcher (Safari) the browser's Back is left as it is. The browser's history is not the app's, as the planner replaces its address | The stack's Back; the card's close at the right of its bar | System Back closes the top card at once (`MapSheet`'s `lowerOnBack` only with none open); the dry run, the ATC card and the assistant's answer close on Back too |
 | Questions | `SheetDialog`: a bottom sheet on a phone with ✕ or Cancel, centred from `md` up | `.alert` and `.confirmationDialog`, hung on the top of the stack (`TopHosts`) so they always show | `AlertDialog` (`ui/SourceDialog` for a source report) |
 | Emergency | The one full-height card, ✕ at the top right, the map not dimmed | `fullScreenCover`, its close at the top right | Material's full-screen dialog, ✕ at the start of its app bar |
 | One search | Search's page, turned to by one round toggle button riding the sheet's top at the left, under the 3D (`PageToggle`; the owner, 2026-11-13), its magnifier showing while FPL is up; the traffic's airplane and Nearest's place are the search scoped to them (`listSearchOf`; Nearest's at its card's top, `nearSearch`, where the card covers the sheet's first row); the route's points ask it for an airport (`askSearchPick`) | The one `.searchable` field, on the TabView's `Tab(role: .search)` | Search a `NavigationBar` item beside FPL's; Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`) |
@@ -441,7 +463,9 @@ gone on every platform.
    top** (and the phones' first-flight card, until they take the web's
    welcome sheet), 24 points over it at the pill and half,
    following a finger's drag frame by frame as Apple Maps' buttons do;
-   all the way up they give way. A card opened over the sheet comes up
+   all the way up they give way. A floating card (§1) leaves them where
+   they are, on the sheet's or the riding card's top, and floats over
+   them. A riding card opened over the sheet comes up
    where the sheet's top is and they ride its top from its first frame,
    gliding only if its height changes, never hidden while it moves (the
    owner's iPhone, 2026-11-13: they "redraw" at every card). The 3D and under it the page toggle

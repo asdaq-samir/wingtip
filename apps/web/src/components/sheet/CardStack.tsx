@@ -2,8 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, type CSSProperties, type React
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
-import { closeTopCard } from "../../lib/openCards";
-import { cardOpening, coverCard, dropCard, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
+import { cardOpening, coverCard, dropCard, setCard, topCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
+import { answerClose } from "./cardClose";
 import { AT_PILL, sizeAt, snapsOf } from "./insets";
 import { UNDER_INDICATOR } from "./SheetDrawer";
 import { cardSettled, frontOffset, sheetTopRef, useRidingCard } from "./sheetTopSlot";
@@ -58,7 +58,9 @@ const RISE =
   "data-starting-style:[transform:translateY(calc(var(--card-from,var(--sheet-base,0px))_-_var(--sheet-base,0px)))] data-ending-style:opacity-0";
 
 /**
- * The cards over the map's sheet, each Base UI's own nested Drawer (the
+ * The cards that ride the map's sheet -- an airport's (SheetCard's
+ * `ride`), the route's Brief, Nav Log, Profile and Stops (CardLayer); the
+ * rest float over it (FloatingCards) -- each Base UI's own nested Drawer (the
  * owner, 2026-11-11: "Yes", the stock Drawer's nested drawers in place of
  * the hand-built card stack), stacked over the sheet as Apple Maps stacks
  * its cards, the last opened on top. Drawn in the sheet's own Drawer, so
@@ -91,17 +93,22 @@ const RISE =
  * its parent nothing, and would cut the chain: it is drawn beside it.
  */
 export function CardStack(p: StackProps & { host: HTMLElement | null }) {
-  const stack = useSheetCards((s) => s.stack);
+  const all = useSheetCards((s) => s.stack);
   const riding = useRidingCard();
   if (!p.host) return null;
   const host = p.host;
-  const top = [...stack].reverse().find((entry) => entry.state === "open")?.id;
+  // The card on top of them all, floating ones too: the one that hears
+  // Escape and a tap outside. The riding cards' own top has the grabber.
+  const top = topCard(all);
+  const stack = all.filter((entry) => !entry.float);
+  const front = topCard(stack);
   const cover = coverCard(stack)?.id;
   const drawer = (entry: CardEntry, over?: ReactNode) => (
     <CardDrawer
       key={entry.id}
       entry={entry}
       top={entry.id === top}
+      front={entry.id === front}
       cover={entry.id === cover}
       riding={entry.id === riding}
       {...p}
@@ -122,12 +129,22 @@ export function CardStack(p: StackProps & { host: HTMLElement | null }) {
 function CardDrawer({
   entry,
   top,
+  front,
   cover,
   riding,
   host,
   children,
   ...p
-}: StackProps & { entry: CardEntry; top: boolean; cover: boolean; riding: boolean; host: HTMLElement; children?: ReactNode }) {
+}: StackProps & {
+  entry: CardEntry;
+  top: boolean;
+  /** The front riding card, a floating one over it or not: its grabber. */
+  front: boolean;
+  cover: boolean;
+  riding: boolean;
+  host: HTMLElement;
+  children?: ReactNode;
+}) {
   const { id, frame } = entry;
   const slot = useCallback((node: HTMLElement | null) => setCard(id, { slot: node }), [id]);
   const { onPhone, fromBottom } = p;
@@ -146,7 +163,7 @@ function CardDrawer({
   useEffect(() => () => cardSettled(id, false), [id]);
   // A drag let go: the size of the snap point the Drawer picked, one of ours.
   const snapped = (point: Drawer.Root.SnapPoint | null) => {
-    if (point === null || !top) return;
+    if (point === null || !front) return;
     const target = sizeAt(fromBottom, point);
     if (target && target !== at) ask(target);
   };
@@ -168,27 +185,7 @@ function CardDrawer({
         if (!open && entry.state === "leaving") dropCard(id);
       }}
       onOpenChange={(open, details) => {
-        if (open) return;
-        // The card on top alone hears it, as Base UI gives Escape to the
-        // topmost of nested drawers; kept here for a tap or a swipe.
-        // The focus going elsewhere -- the sheet, the map -- leaves it
-        // open: it is no modal.
-        if (!top || details.reason === "focus-out") return details.cancel();
-        // A swipe past the pill is no close: the card stays at the pill
-        // with its title row (the card rule's 10).
-        if (details.reason === "swipe") {
-          details.cancel();
-          ask("peek");
-          return;
-        }
-        if (frame.dismiss) return frame.dismiss(details);
-        details.cancel();
-        // Escape closes the top card, a level back, as a device's Back does
-        // (lib/openCards), unless something took the key first (a desktop's
-        // shortcuts); taken, so the Back's Escape (lib/backNavigation) goes
-        // no further.
-        if (details.reason !== "escape-key" || details.event.defaultPrevented) return;
-        if (closeTopCard()) details.event.preventDefault();
+        if (!open) answerClose(frame, top, details, () => ask("peek"));
       }}
     >
       <Drawer.VirtualKeyboardProvider>
@@ -243,11 +240,11 @@ function CardDrawer({
                   className="pointer-events-none absolute inset-x-0 bottom-full"
                 />
               )}
-              {onPhone && fromBottom && top && p.grabber(at, ask)}
+              {onPhone && fromBottom && front && p.grabber(at, ask)}
               <div className="flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]">
                 <CardScroller {...p} pill={onPhone && at === "peek"} raise={() => ask("half")} slot={slot} />
               </div>
-              {!(onPhone && fromBottom) && top && p.grabber(at, ask)}
+              {!(onPhone && fromBottom) && front && p.grabber(at, ask)}
             </Drawer.Popup>
           </SheetViewport>
         </Drawer.Portal>

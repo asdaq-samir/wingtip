@@ -422,8 +422,8 @@ export default function PlaceCard({
     void shareOrCopy({ title: place?.name ?? ident, url: `${location.origin}/app/plan?place=${place?.ident ?? ident}` }).catch(() => {});
   return (
     // Half way as it opens, from the map, the search or a list alike (the
-    // card rule's 2); its own drawer, sized from here (useCardSize).
-    <SheetCard head={false} testId="place-card" cardId={cardId}>
+    // card rule's 2); the one card riding the sheet, sized here (useCardSize).
+    <SheetCard ride head={false} testId="place-card" cardId={cardId}>
       {place || !error ? (
         <>
           {/* The head and the actions from the first frame, live once the

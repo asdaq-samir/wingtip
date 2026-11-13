@@ -5,8 +5,10 @@ import { Shown, useShown } from "../../lib/shown";
 import { useCardFrame } from "./useCardFrame";
 
 /**
- * Content shown as a card of its own over the map's sheet -- a place's
- * (SheetCard), the Brief, Settings (ConsoleLayer) -- a nested Drawer
+ * Content shown as a card of its own riding the map's sheet -- the
+ * route's Brief, Nav Log, Profile and Stops, sized by the sheet's sizes
+ * as the airport's card is (SheetCard's `ride`; the rest float,
+ * FloatingCards) -- a nested Drawer
  * (CardStack) with the sheet's sizes, its grabber and its swipe; drawn
  * here, for the caller's providers, and put in the drawer's scroller.
  * Escape is its drawer's: the top card closed (lib/openCards), or the

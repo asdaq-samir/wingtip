@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { firstRow, frontSheet, grabberTo, settled, slow } from "./helpers";
 import { CARDS, type CardRow, type Entry } from "./cardTable";
-import { expectBack, hittable, nestedOverSheet, scrollOf } from "./cardEntries";
+import { expectBack, floatingCardOf, hittable, nestedOverSheet, scrollOf } from "./cardEntries";
 
 /**
  * Opening and closing every card, by the one card rule (the owner,
@@ -9,8 +9,10 @@ import { expectBack, hittable, nestedOverSheet, scrollOf } from "./cardEntries";
  * is opened, the same component comes, the search goes while it is open
  * (Apple Maps' card covers the search), and ✕ and Escape each close it in
  * one press -- never only lowering the sheet -- back where it came from.
- * On a phone each is the stock Drawer's nested drawer over the map's sheet
- * (sheet/CardStack, the owner 2026-11-11), as Apple Maps stacks its cards.
+ * An airport's card and the route's ride the map's sheet, each the stock
+ * Drawer's nested drawer over it on a phone (sheet/CardStack, the owner
+ * 2026-11-11); every other card floats over the map (FloatingCard, the
+ * owner 2026-11-13), as Apple Maps' iOS 27 cards do.
  * The device's Back is the web's Escape (lib/backNavigation's
  * closeTopmost); the browser's history is not the app's, the planner
  * replacing its address at each change, so history back would leave it.
@@ -35,8 +37,10 @@ for (const row of CARDS) {
           if (row.not?.searchHidden) test.info().annotations.push({ type: "not", description: row.not.searchHidden });
           else await expect(firstRow(page)).toBeHidden();
         }
-        // On a phone, a nested drawer of its own over the sheet.
-        if (phone(page) && !row.question) {
+        // Floating over the map, the sheet under it as it was; else, on a
+        // phone, a nested drawer of its own over the sheet.
+        if (row.floating) await expect(floatingCardOf(page, row.card)).toHaveCount(1);
+        else if (phone(page) && !row.question) {
           if (row.not?.nested) test.info().annotations.push({ type: "not", description: row.not.nested });
           else await expect.poll(() => nestedOverSheet(page, row.card), { timeout: slow(5_000) }).toBe(true);
         }
@@ -147,11 +151,14 @@ for (const row of CARDS) {
     if (row.fullHeight)
       test("it is the one full-height card, its ✕ at the top right, the map not dimmed", async ({ page }) => {
         await open(page, row, row.entries[0]!);
-        if (phone(page)) await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
+        const frame = row.floating ? floatingCardOf(page, row.card) : frontSheet(page);
+        if (phone(page) && !row.floating) await expect(frame).toHaveAttribute("data-panel", "full");
         const close = (await page.getByTestId(row.close).filter({ visible: true }).first().boundingBox())!;
-        // The card's drawer's box, not its content's: the content runs on under
-        // its pinned head, its own top scrolled above the drawer's (the one scrolling rule).
-        const sheet = (await frontSheet(page).boundingBox())!;
+        // The card's own box, not its content's: the content runs on under
+        // its pinned head, its own top scrolled above the card's (the one scrolling rule).
+        const sheet = (await frame.boundingBox())!;
+        // Floating, all the way up: within the room under the screen's top (FloatingCard's `tall`).
+        if (row.floating) expect(sheet.height).toBeGreaterThan(page.viewportSize()!.height * 0.8);
         expect(close.x + close.width / 2).toBeGreaterThan(sheet.x + sheet.width / 2);
         expect(close.y).toBeLessThan(Math.max(sheet.y, 0) + 120);
         // Not modal: no dimming over the map, no dialog taking the page.

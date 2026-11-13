@@ -192,7 +192,7 @@ def gen_css(tree):
         ("glass-blur", "%gpx" % mat["glass-blur"]),
         ("glass-fill-light", "%g%%" % (mat["glass-fill"] * 100)),
         ("glass-fill-dark", "%g%%" % (mat["glass-fill-dark"] * 100)),
-        ("sheet-blur", "%gpx" % mat["sheet-blur"]),
+        *[(k, "%gpx" % mat[k]) for k in ("sheet-blur", "card-blur")] + [("card-fill", "%g%%" % (mat["card-fill"] * 100))],
     ]
     root += [("motion-%s" % k, bezier(v) if isinstance(v, list) else "%gs" % v) for k, v in motion.items()]
     day_feel, night_feel = feel.css(tokens(tree["feel"]))

@@ -8,7 +8,7 @@ import { HeadGrid } from "./HeadGrid";
 import { PinnedHead } from "./PinnedHead";
 import { useCardFrame } from "./sheet/useCardFrame";
 import { holdOpenCard, setCardPill, type OpenCard, type PillHead } from "../lib/openCards";
-import { CardId, SheetCardHead, type CardFrame } from "../lib/sheetCards";
+import { CardId, SheetCardHead, type CardCloseDetails, type CardFrame } from "../lib/sheetCards";
 
 /**
  * The app's one card (the card rule's 8; the owner, 2026-11-11: "Are we
@@ -24,16 +24,23 @@ import { CardId, SheetCardHead, type CardFrame } from "../lib/sheetCards";
  * consistency and common code", 2026-10-27) they are cards over the
  * sheet, as Maps opens a place's card over its sheet.
  *
- * Each is the stock Drawer's own nested drawer over the sheet
- * (sheet/CardStack, the owner 2026-11-11), with the sheet's sizes, grabber
- * and swipe. Drawn where the caller is, in React's tree, so what it reads
- * from its providers stays the same, and put in its drawer's scroller
- * (useCardFrame). The last opened on top: one opened from another (a hold
- * from the procedures) covers it, which stays as it was, its place in its
- * own scroller kept, and its close goes back to it.
+ * Each floats over the map and its sheet, its buttons too, as Apple Maps'
+ * iOS 27 cards do (the owner, 2026-11-13: "Except for airport card,
+ * redesign the others as recommended"): the stock Dialog in the shell You
+ * has (FloatingCard, sheet/FloatingCards), as tall as what is in it, its
+ * head row (its name, a leading button, its ✕) at its top. An airport's
+ * card alone rides the sheet (`ride`): the stock Drawer's own nested
+ * drawer over it (sheet/CardStack, the owner 2026-11-11), with the sheet's
+ * sizes, grabber and swipe, the map's buttons riding its top. Drawn where
+ * the caller is, in React's tree, so what it reads from its providers
+ * stays the same, and put in its card's scroller (useCardFrame). The last
+ * opened on top: one opened from another (a hold from the procedures, a
+ * NOTAM from an airport) floats over it, which stays as it was, its place
+ * in its own scroller kept, and its close goes back to it.
  */
 
 export function SheetCard({
+  ride = false,
   head = true,
   dismiss: ownDismiss,
   title,
@@ -51,6 +58,9 @@ export function SheetCard({
   finalFocus,
   children,
 }: {
+  /** Riding the map's sheet as its nested Drawer, the map's buttons on its
+   *  top: an airport's card alone (PlaceCard). Every other card floats. */
+  ride?: boolean;
   /** Its head row drawn here from its name, Cancel, Save and close; false
    *  where its content draws the same row itself (CardHead, CardTitle),
    *  which holds its close for Back, and a tap on the chart is the
@@ -132,9 +142,9 @@ export function SheetCard({
     };
   }, [head]);
 
-  // The Drawer's word on Escape, a tap on the chart, ... as it was the
-  // dialog's: the card on top alone hears it (CardStack).
-  const dismiss = (details: Drawer.Root.ChangeEventDetails) => {
+  // Base UI's word on Escape, a tap on the chart, ...: the card on top
+  // alone hears it (sheet/cardClose).
+  const dismiss = (details: CardCloseDetails) => {
     // A tap on the chart puts it away, as a tap outside the sheets put
     // them away -- what the tap opens is what shows, where it opened under
     // it out of sight. Not the map's own buttons, nor the panel or
@@ -181,6 +191,7 @@ export function SheetCard({
   const target = useCardFrame(
     head
       ? {
+          float: !ride,
           fullScreen,
           title,
           testId,
@@ -191,7 +202,7 @@ export function SheetCard({
         }
       : // Its content's head names it; the focus left where it is unless
         // it came from the chart (fromMarker), the drawer's own Escape.
-        { fullScreen, title, dismiss: ownDismiss, initialFocus, finalFocus },
+        { float: !ride, fullScreen, title, dismiss: ownDismiss, initialFocus, finalFocus },
     id,
   );
   const fromMarker = useFromMarker();
@@ -202,16 +213,10 @@ export function SheetCard({
   if (!target) return null;
   if (!head)
     return createPortal(
-      // Laid out whole in its drawer's scroller, its room over its first
-      // line the grabber's (--pinned-room), which its pinned head reaches
-      // up over; there at once as it opens, still while the sheet moves
-      // round it (the owner: "Is the airport and aircraft card same
-      // style?").
-      <div
-        ref={fromMarker}
-        className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
-        data-testid={testId}
-      >
+      // Laid out whole in its card's scroller (RIDING, FLOATING); there at
+      // once as it opens, still while the sheet moves round it (the owner:
+      // "Is the airport and aircraft card same style?").
+      <div ref={fromMarker} className={ride ? RIDING : FLOATING} data-testid={testId}>
         <CardId.Provider value={id}>
           <EngineGate>{children}</EngineGate>
         </CardId.Provider>
@@ -226,9 +231,8 @@ export function SheetCard({
       action
     );
   return createPortal(
-    // Laid out whole in its drawer's scroller, from the sheet's corner (its
-    // close where every card's is).
-    <div className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden">
+    // Laid out whole in its card's scroller, its close where every card's is.
+    <div className={ride ? RIDING : FLOATING}>
       {/* The one head row (CardHeadRow): its name at the left at a card's
           size and the close at the right end; a form's Cancel and Save at
           the two ends, the name between them; pinned at the card's top,
@@ -255,6 +259,15 @@ export function SheetCard({
     target,
   );
 }
+
+/** Laid out whole in its card's scroller. Riding, its room over its first
+ *  line the grabber's (--pinned-room), which its pinned head reaches up
+ *  over, and the screen's foot under it. Floating, no grabber: its head
+ *  row's round buttons twelve points in from its top corner, where You's
+ *  ✕ is (FloatingCard), and the card's own foot under it. */
+const RIDING =
+  "relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden";
+const FLOATING = "relative shrink-0 px-4 pt-(--pinned-room) pb-4 [--pinned-room:0.375rem] print:hidden";
 
 /** The head row's room for a name its content draws (MapCard's mark and
  *  name), centred, the close at its end, as CardHeadRow's (HeadGrid). */
