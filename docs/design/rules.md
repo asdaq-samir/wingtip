@@ -71,7 +71,11 @@ Compose. Nothing here is built by hand where a stock part does it.
    the web (owner-reported 2026-11-11: Settings' own title at 17 points
    under its pages' 22): a card's or a page's head row, its name at a
    card's 22 centred across the card with its line under it, Share (or
-   the route's •••) at its start and ✕ alone at its end -- two buttons at
+   the route's •••) at its start -- on the Map card a gear in that place,
+   opening the app's Settings as a card over it, its ✕ back to the Map
+   (`SettingsButton`; the owner, 2026-11-13: "put a settings button on
+   the top left side"; Settings itself, the account button's card, has
+   none, being the page it opens) -- and ✕ alone at its end -- two buttons at
    most, a star a Favorite tile in the card's action row (the owner,
    2026-11-11: "all the cards have at most two head buttons"), and what
    else acts on a card in its ••• menu or its content: the Brief's Refresh

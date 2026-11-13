@@ -2,6 +2,7 @@ import { Map as MapIcon } from "lucide-react";
 import IconButton from "./IconButton";
 import { SheetCard } from "./SheetCard";
 import CloseButton from "./CloseButton";
+import SettingsButton from "./SettingsButton";
 import { MapCardBody } from "../features/map-settings";
 import { closeMapPage, mapPageTitle, showMapCard, useMapCard } from "../lib/mapCard";
 
@@ -56,6 +57,10 @@ export function MapSettingsCard() {
       onClose={() => showMapCard(false)}
       testId="map-settings"
       returnFocus={() => document.querySelector<HTMLElement>('[data-testid="map-settings-button"]')}
+      // The app's Settings at the Map's head start (the owner, 2026-11-13),
+      // over the Map card; its pages head with their name and back alone.
+      leading={page ? undefined : <SettingsButton />}
+      closeButton={!page}
       action={
         page ? (
           <CloseButton label={`Back to ${mapPageTitle(pages.at(-2))}`} onClick={closeMapPage} data-back="" data-testid="sheet-card-close" />
