@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The API reference: each service's committed openapi.json rendered by Redoc
-# into one static HTML page, <out>/planner.html, gateway.html, assistant.html
+# into one static HTML page, <out>/planner.html and gateway.html
 # and an index.html linking them. The documents are the source of truth
 # (FastAPI and springdoc write them from the code, and a test holds each to
 # its code), so the endpoint lists in the READMEs are this, not prose.
@@ -24,7 +24,7 @@ out=$(cd "$out" && pwd)
 node=$("$here/scripts/build/toolchain.sh" get nodejs)
 
 # The service's document, the title the page carries.
-services="planner:services/planner/openapi.json gateway:services/gateway/openapi.json assistant:services/assistant/openapi.json"
+services="planner:services/planner/openapi.json gateway:services/gateway/openapi.json"
 
 render='set -e; cd /repo
 for s in $SERVICES; do

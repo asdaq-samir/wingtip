@@ -76,7 +76,6 @@ ruff_check() {
   # the settings it always has.
   (cd services/planner && "${ruff[@]}" check app tests wingtip tests_wingtip) &&
     (cd services/ingest && "${ruff[@]}" check ingest tests) &&
-    (cd services/assistant && "${ruff[@]}" check app tests) &&
     (cd services/weather && "${ruff[@]}" check app tests) &&
     (cd services/jobs && "${ruff[@]}" check charts crash) &&
     (cd tools/xplane-driver && "${ruff[@]}" check .)

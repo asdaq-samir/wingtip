@@ -10,7 +10,7 @@
 #
 #   scripts/dev/validate-wave.sh [--rebuild] [step...]
 #
-#   steps     web py planner ingest assistant weather jobs engine java ios
+#   steps     web py planner ingest weather jobs engine java ios
 #             android (check.sh's areas), images, e2e, ipad; all by default
 #   --rebuild builds the check images again without BuildKit's layer cache
 #             (check.sh's CHECK_NO_CACHE), for an image whose key missed a
@@ -41,7 +41,7 @@ export ONE_AT_A_TIME_SLOTS=${ONE_AT_A_TIME_SLOTS:-2}
 export ONE_AT_A_TIME_WAIT=${ONE_AT_A_TIME_WAIT:-14400}
 turn="$here/scripts/dev/one-at-a-time.sh"
 
-CHECK_AREAS="web py planner ingest assistant weather jobs engine java ios android"
+CHECK_AREAS="web py planner ingest weather jobs engine java ios android"
 ALL="$CHECK_AREAS images e2e ipad"
 PROJECT=wingtip-wave
 GATEWAY_PORT=18080 MAILPIT_PORT=18025 PLANNER_PORT=18084

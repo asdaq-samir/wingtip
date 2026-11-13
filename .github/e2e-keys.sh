@@ -8,8 +8,8 @@
 # One line each: "<name> <key>".
 #
 #   gateway            its jar: services/gateway's Dockerfile, pom and
-#                     sources, and the planner's and the assistant's
-#                     OpenAPI documents built into it. Not apps/web/: the suite's stack serves the
+#                     sources, and the planner's OpenAPI document
+#                     built into it. Not apps/web/: the suite's stack serves the
 #                     page below, mounted over the image's
 #                     (infra/docker-compose.ci.yml).
 #   planner  its packages: the Dockerfile, the base it is built
@@ -29,8 +29,8 @@
 # `pushed`), so that a change there is a new image for every key.
 set -euo pipefail
 key() { { echo "zstd"; git ls-tree -r HEAD -- "$@"; } | git hash-object --stdin | cut -c1-16; }
-echo "gateway $(key services/gateway/Dockerfile services/gateway/pom.xml services/gateway/src/main services/planner/openapi.json services/assistant/openapi.json)"
+echo "gateway $(key services/gateway/Dockerfile services/gateway/pom.xml services/gateway/src/main services/planner/openapi.json)"
 echo "planner $(key services/planner/Dockerfile services/Dockerfile.base services/planner/requirements.txt services/planner/requirements-wingtip.txt services/planner/requirements-wingtip-charts.txt engine)"
 echo "weather $(key services/weather/Dockerfile services/weather/requirements.txt services/Dockerfile.base services/planner/requirements-wingtip.txt engine)"
-echo "page $(git ls-tree -r HEAD -- apps/web services/planner/openapi.json services/assistant/openapi.json services/gateway/openapi.json apps/web/.nvmrc \
+echo "page $(git ls-tree -r HEAD -- apps/web services/planner/openapi.json services/gateway/openapi.json apps/web/.nvmrc \
   | grep -v $'\tapps/web/e2e/' | git hash-object --stdin | cut -c1-16)"

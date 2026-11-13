@@ -229,7 +229,7 @@ jobs:
 
   # The Python suites, one leg each where `changes` found its filter
   # touched (test-planner, test-wingtip, test-jobs, test-ingest,
-  # test-assistant, test-weather in scripts/areas.yml), each on its own
+  # test-weather in scripts/areas.yml), each on its own
   # requirements (scripts/ci/python_suite.sh); ruff is the guards job's.
   # None to run skips the job, which counts as passed.
   test-python:
@@ -278,9 +278,8 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
-      # All but the assistant and the X-Plane driver import wingtip's Rust
-      # extension (Claude and the planner are stood in for in the assistant).
-      - if: matrix.service != 'assistant' && matrix.service != 'xplane'
+      # All but the X-Plane driver import wingtip's Rust extension.
+      - if: matrix.service != 'xplane'
         uses: ./.github/actions/engine-wheel
         with:
           mode: install
@@ -392,7 +391,6 @@ jobs:
                 - .github/actions/**
               api:
                 - services/planner/openapi.json
-                - services/assistant/openapi.json
                 - services/gateway/openapi.json
                 - .github/api-breaks.txt
               infra:
@@ -402,7 +400,6 @@ jobs:
               docs:
                 - services/gateway/**
                 - services/planner/openapi.json
-                - services/assistant/openapi.json
                 - scripts/build/api-reference.sh
               base:
                 - services/Dockerfile.base
@@ -433,9 +430,6 @@ jobs:
               ingest:
                 - services/ingest/**
                 - services/planner/wingtip/**
-              assistant:
-                - services/assistant/**
-                - services/Dockerfile.base
               weather:
                 - services/weather/**
                 - services/Dockerfile.base
@@ -446,13 +440,11 @@ jobs:
                 - apps/web/**
                 - services/gateway/**
                 - services/planner/openapi.json
-                - services/assistant/openapi.json
                 - engine/contract/**
               test-web:
                 - apps/web/**
                 - .prettierrc.yaml
                 - services/planner/openapi.json
-                - services/assistant/openapi.json
                 - services/gateway/openapi.json
                 - engine/contract/**
                 - scripts/build/api-models-apps.*
@@ -506,19 +498,13 @@ jobs:
               test-planner:
                 - services/planner/**
                 - engine/**
+                - scripts/build/planner_calls.py
+                - scripts/build/planner-calls.sh
               test-ingest:
                 - services/ingest/**
                 - services/planner/wingtip/**
                 - services/planner/requirements-wingtip.txt
                 - engine/**
-              test-assistant:
-                - services/assistant/**
-                - .ruff.toml
-                - services/planner/openapi.json
-                - services/planner/app/generated/**
-                - engine/contract/**
-                - scripts/build/assistant*
-                - scripts/build/planner_calls.py
               test-weather:
                 - services/weather/**
                 - services/planner/wingtip/**
@@ -543,7 +529,6 @@ jobs:
                 - services/planner/tests_wingtip/fixtures/native/**
               test-gateway:
                 - services/gateway/**
-                - services/assistant/openapi.json
                 - services/planner/openapi.json
                 - apps/web/src/lib/fixtures/aircraftForm.json
               ios:
@@ -1306,7 +1291,7 @@ jobs:
       # by Redoc (scripts/build/api-reference.sh). An artifact, not a
       # committed page: GitHub shows .html as source, and the page's bytes
       # change with Redoc's bundle.
-      - name: API reference (planner, gateway, assistant)
+      - name: API reference (planner, gateway)
         run: scripts/build/api-reference.sh "$RUNNER_TEMP"/api-reference
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
@@ -1389,7 +1374,7 @@ jobs:
         run: |
           docker pull -q "$OASDIFF_IMAGE"
           status=0
-          for doc in services/planner/openapi.json services/assistant/openapi.json services/gateway/openapi.json; do
+          for doc in services/planner/openapi.json services/gateway/openapi.json; do
             mkdir -p "/tmp/base/$(dirname "$doc")"
             if ! git show "HEAD^1:$doc" > "/tmp/base/$doc" 2>/dev/null; then
               echo "$doc is new: nothing on main to break"

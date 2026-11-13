@@ -53,7 +53,7 @@ umask 077
   echo "POSTGRES_PASSWORD=$db_password"
   echo "ORIGIN_SECRET=$origin_secret"
   # The owner's own values (infra/server/env.example lists them), kept as
-  # one JSON secret: ANTHROPIC_API_KEY, MAIL_USERNAME, MAIL_PASSWORD, ...
+  # one JSON secret: MAIL_USERNAME, MAIL_PASSWORD, ...
   # Double-quoted, escapes and all: Sign in with Apple's private key is a
   # multi-line PEM, which compose's .env reads back from "\n".
   printf '%s' "$app_values" | python3 -c 'import json, sys

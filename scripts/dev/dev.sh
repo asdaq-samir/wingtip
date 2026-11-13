@@ -120,7 +120,7 @@ up() {
     say "" >&2
     say "The stack did not become healthy in time. What is running:" >&2
     docker compose ps >&2 || true
-    say "Look at a service's log with: make logs s=<service>   (planner, gateway, ingest, weather, assistant, db)" >&2
+    say "Look at a service's log with: make logs s=<service>   (planner, gateway, ingest, weather, db)" >&2
     exit 1
   fi
   scripts/dev/pg-refresh-collation.sh

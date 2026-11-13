@@ -5,8 +5,8 @@
 # scripts/dev/one-at-a-time.sh, and warm from the first run of any worktree.
 #
 #   scripts/dev/check.sh <area>...       an area of scripts/areas.yml (the table of areas, their
-#                                    paths and checks): web py planner ingest assistant
-#                                    weather jobs engine java ios android site sim xplane arch
+#                                    paths and checks): web py planner ingest weather
+#                                    jobs engine java ios android site sim xplane arch
 #   scripts/dev/check.sh all-changed     the areas `git diff origin/main...` and
 #                                    the uncommitted files touch, in parallel
 #   scripts/dev/check.sh --areas         reads paths on stdin, prints their areas
@@ -237,7 +237,6 @@ run_area() {
     py) run_py services/planner requirements-dev-wingtip.txt "$PYTHON" wingtip tests_wingtip ;;
     planner) run_py services/planner requirements-dev.txt "$PYTHON" app tests ;;
     ingest) run_py services/ingest requirements-dev.txt "$PYTHON" ingest tests ;;
-    assistant) run_py services/assistant requirements-dev.txt "$PYTHON" app tests ;;
     weather) run_py services/weather requirements-dev.txt "$PYTHON" app tests ;;
     jobs) run_py services/jobs requirements-dev-jobs.txt "$PYTHON" "charts crash" "charts/tests crash/tests" ;;
     engine)
@@ -275,9 +274,9 @@ run_area() {
         "rustup component add clippy 2>/dev/null && RUSTC_WRAPPER= cargo clippy -q --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings && $cmd"
       ;;
     java)
-      # The whole repository, not the gateway alone: the pom generates the
-      # assistant's answers from ../assistant/openapi.json, and the tests
-      # read the shared fixtures in apps/web/src/lib/fixtures.
+      # The whole repository, not the gateway alone: the pom reads the
+      # planner's ../planner/openapi.json, and the tests read the shared
+      # fixtures in apps/web/src/lib/fixtures.
       docker run --rm -v "$here":/repo -v /repo/services/gateway/target -v fp-m2:/root/.m2 \
         -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
         -w /repo/services/gateway "maven:$MAVEN-eclipse-temurin-$JAVA" mvn -B -q test

@@ -1,4 +1,4 @@
-# Breaking changes to the planner's, the assistant's or the gateway's API made on purpose,
+# Breaking changes to the planner's or the gateway's API (and, until 2026-11-12, the assistant's) made on purpose,
 # which ci.yml's api-compat job lets through (oasdiff --err-ignore).
 # One line each, dated, with the method and path and oasdiff's own words
 # for the change, as its failure printed them, and why no released app
@@ -160,3 +160,9 @@
 2026-11-10 GET /api/me/export removed the required property `flights/items/track/points` from the response with the `401` status -- the same
 2026-11-10 GET /api/me/export removed the required property `flights/items/track/source` from the response with the `200` status -- the same
 2026-11-10 GET /api/me/export removed the required property `flights/items/track/source` from the response with the `401` status -- the same
+2026-11-12 POST /api/checkpoint-notes/pending api path removed without deprecation -- the assistant's alone, never forwarded to an app; the route's notes are POST /api/checkpoint-notes/route now (decision 0041)
+2026-11-12 POST /api/checkpoint-notes/seed api path removed without deprecation -- the assistant's alone, never forwarded; Claude no longer writes notes (decision 0041)
+2026-11-12 POST /api/engine/{name} api path removed without deprecation -- the assistant's alone, on the stack's own network, never forwarded (decision 0041)
+2026-11-12 GET /api/auth/capabilities removed the required property `claudeFeatures` from the response with the `200` status -- the Claude switch is gone (decision 0041); no app is released, and every app now ships without reading it
+2026-11-12 GET /api/subscription removed the required property `uses` from the response with the `200` status -- the Claude features' monthly counts are gone with them (decision 0041); no app is released
+2026-11-12 POST /api/subscription/trial removed the required property `uses` from the response with the `200` status -- the same

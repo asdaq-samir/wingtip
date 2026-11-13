@@ -3,7 +3,7 @@
 # s3://SERVER_BUCKET/backups/<date>/; the bucket keeps 14 days.
 # - postgres.dump: every pilot's account, aircraft and flights
 #   (pg_dump, custom format).
-# - labels.tar.gz: the checkpoint notes pilots and Claude have written,
+# - labels.tar.gz: the checkpoint notes pilots have written,
 #   and any chart ratings -- the planner keeps those as files in
 #   data/labels, not in the database.
 #

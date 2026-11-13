@@ -2,8 +2,8 @@
 # (`lint-imports`, run from this directory with services/planner on the
 # path by scripts/ci/python_suite.sh's weather leg). The service writes
 # the shared store from the outside feeds and holds no rule of its own
-# (CLAUDE.md, Architecture; the simplicity audit of 2026-11-12: weather and
-# the assistant were the two services with no contract).
+# (CLAUDE.md, Architecture; the simplicity audit of 2026-11-12 found it
+# with no contract).
 [importlinter]
 root_packages =
     app
@@ -17,11 +17,3 @@ source_modules =
     wingtip
 forbidden_modules =
     app
-
-[importlinter:contract:no-claude-here]
-name = the weather service makes no Claude call (the assistant makes every one)
-type = forbidden
-source_modules =
-    app
-forbidden_modules =
-    anthropic

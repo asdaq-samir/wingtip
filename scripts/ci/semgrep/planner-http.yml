@@ -7,8 +7,8 @@
 # classes each building their own HTTP client to it.
 #
 # The clients: the web's apps/web/src/lib/api/ (over the generated
-# schema), the assistant's generated services/assistant/app/planner_client.py,
-# the gateway's PlannerClient (and its proxy, which forwards the public
+# schema), the MCP connector's generated
+# services/planner/app/generated/planner_calls.py, the gateway's PlannerClient (and its proxy, which forwards the public
 # API), the phones' API/ folders over the generated models.
 rules:
   - id: planner-http-by-hand-web
@@ -30,13 +30,13 @@ rules:
   - id: planner-http-by-hand-python
     message: >-
       A request to an /api/ path written by hand. Python reaches the planner
-      through the generated client (services/assistant/app/planner_client.py,
+      through the generated calls (services/planner/app/generated/planner_calls.py,
       from the planner's openapi.json), never by a typed path and an untyped
       dict (simplicity audit 2026-11-12, finding 6).
     severity: ERROR
     languages: [python]
     paths:
-      exclude: ["services/assistant/app/planner_client.py"]
+      exclude: ["services/planner/app/generated/planner_calls.py"]
     patterns:
       - pattern-inside: $F(...)
       # A route's own path in its decorator (@router.get("/api/...")) is

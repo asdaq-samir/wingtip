@@ -51,7 +51,6 @@ AREAS = [
     "services/weather/app",
     "services/ingest/ingest",
     "services/jobs",
-    "services/assistant/app",
     "tools",
 ]
 SUFFIXES = {".ts", ".tsx", ".js", ".mjs", ".swift", ".kt", ".java", ".py", ".cs"}

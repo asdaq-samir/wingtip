@@ -124,11 +124,11 @@ jobs:
           SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          # The five images the production server runs
+          # The four images the production server runs
           # (infra/docker-compose.prod.yml) and the charts job's, which the
           # refresh task and the server's hourly overlays run. The retrain
           # job stays out of production (docs/README-AWS.md).
-          for service in gateway planner ingest assistant weather charts; do
+          for service in gateway planner ingest weather charts; do
             source="$GHCR/$service:sha-$SHA"
             if ! docker buildx imagetools inspect --raw "$source" > /dev/null 2>&1; then
               source="$GHCR/$service:latest"

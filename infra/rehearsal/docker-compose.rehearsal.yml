@@ -42,11 +42,6 @@ services:
     volumes: !override
       - ${REHEARSAL_DIR:?}/data:/workspace/data
 
-  assistant:
-    logging: !override { driver: json-file, options: { max-size: "20m", max-file: "5" } }
-    volumes: !override
-      - ${REHEARSAL_DIR:?}/data:/workspace/data
-
   weather:
     logging: !override { driver: json-file, options: { max-size: "20m", max-file: "5" } }
     volumes: !override
@@ -55,13 +50,10 @@ services:
   gateway:
     logging: !override { driver: json-file, options: { max-size: "20m", max-file: "5" } }
     environment:
-      # The browser suite signs in and asks for notes more often in a run
-      # than a pilot does in an hour (docker-compose.yml loosens the same).
+      # The browser suite signs in more often in a run than a pilot does
+      # in an hour (docker-compose.yml loosens the same).
       APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR: "60"
       APP_MAGIC_LINK_PER_CLIENT_PER_HOUR: "200"
-      APP_PAID_CALLS_PER_DAY: "500"
-      APP_PAID_CALLS_ASSISTANT_PER_DAY: "500"
-      APP_PAID_CALLS_WORDS_PER_DAY: "5000"
 
   cdn:
     image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
