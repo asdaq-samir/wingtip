@@ -220,8 +220,8 @@ mod tests {
 
     #[test]
     fn off_the_field_it_says_how_far_its_edge_is_and_which_way() {
-        // One minute of latitude south is one nautical mile on the sphere
-        // (core::geo): six minutes is 6.0 nm, due south.
+        // Six minutes of latitude due south at 31.3 N is 5.986 nm on WGS-84
+        // (core::geo; pyproj's Geod(ellps="WGS84")), said as 6.0 nm.
         let field = (31.35, -100.5);
         let edge = (31.25, -100.5);
         assert_eq!(from_field(Some(false), Some(field), Some(edge)).as_deref(), Some("6.0 nm south of the field"));

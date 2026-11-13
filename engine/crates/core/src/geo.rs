@@ -1,63 +1,78 @@
-//! Distances as every app has them: great circles on a sphere of 3,440.065
-//! nm, the approximation flight computers use, worked out here for the
-//! planner (wingtip.geo, through geo_many), the web and the phones alike.
-//! The central angle by the atan2 form of Vincenty's formula for a sphere,
-//! well-conditioned at every distance, so it agrees with PROJ's geodesic
-//! on the same sphere to a few micrometres.
+//! Distances as every app has them: geodesics on the WGS-84 ellipsoid,
+//! worked out here for the planner (wingtip.geo, through geo_many), the
+//! web and the phones alike, so the nav log's miles and courses are the
+//! ones a GPS navigator shows for the same two points.
 //!
-//! The FAA's data (NASR, the CIFP, the DOF) are on WGS-84, an ellipsoid;
-//! the sphere, 3,440.065 nm (6,371.0 km, the mean radius), is a stated
-//! simplification whose error is accepted: 0.086% on KDLH to KSTL (0.42
-//! nm in 492 nm) and at most about 0.5% anywhere, a few tenths of a mile
-//! over a cross-country leg, inside any figure the nav log rounds to.
+//! The FAA's coordinates are on WGS-84 (the CIFP's, as ARINC 424 has
+//! them; NASR's are NAD 83, within a metre or two of it), as GPS's are: the ellipsoid of NGA TR8350.2 (3rd ed., 2000), a = 6,378,137 m
+//! and 1/f = 298.257223563 (its table 3.1). The geodesic between two
+//! points on it is Karney's solution (C. F. F. Karney, "Algorithms for
+//! geodesics", J. Geodesy 87:43-55, 2013), as GeographicLib has it and
+//! PROJ (pyproj's Geod) runs it, from the stock crate geographiclib-rs, a
+//! port of GeographicLib by the georust project, accurate to about 15
+//! nanometres: no formula of our own. A nautical mile is 1,852 m exactly
+//! (the International Nautical Mile, 1929; NIST SP 811, B.8).
+//!
+//! The 3,440.065 nm sphere it replaced was up to 0.41% and 0.16 deg off.
+
+use std::sync::OnceLock;
+
+use geographiclib_rs::{DirectGeodesic, Geodesic, InverseGeodesic};
 
 use crate::json::{self, Value};
 
-/// wingtip.geo's EARTH_RADIUS_NM.
+/// The mean radius, 6,371.0 km in nautical miles: not the earth the
+/// figures below are worked on (that is WGS-84), but the scale of the
+/// small approximations that say they take it (the replay's step in
+/// degrees, the planner's KD-tree chords, the corridor prefilter), each
+/// within 0.4% of the ellipsoid.
 pub const EARTH_RADIUS_NM: f64 = 3440.065;
 
-/// The great-circle distance in nautical miles between two points in degrees.
+/// Metres in a nautical mile, exactly (NIST SP 811, B.8).
+const M_PER_NM: f64 = 1852.0;
+
+/// WGS-84 (NGA TR8350.2), made once: `Geodesic::wgs84()` copies it a call.
+fn wgs84() -> &'static Geodesic {
+    static WGS84: OnceLock<Geodesic> = OnceLock::new();
+    WGS84.get_or_init(Geodesic::wgs84)
+}
+
+/// (distance in metres, initial azimuth in degrees -180 to 180) of the
+/// geodesic from point one to point two.
+fn inverse(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> (f64, f64) {
+    let (s12, azi1, _azi2, _a12): (f64, f64, f64, f64) = wgs84().inverse(lat1, lon1, lat2, lon2);
+    (s12, azi1)
+}
+
+/// The geodesic distance in nautical miles between two points in degrees.
 pub fn distance_nm(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
-    let (p1, p2) = (lat1.to_radians(), lat2.to_radians());
-    let dl = (lon2 - lon1).to_radians();
-    let (s1, c1) = p1.sin_cos();
-    let (s2, c2) = p2.sin_cos();
-    let (sd, cd) = dl.sin_cos();
-    let y = ((c2 * sd).powi(2) + (c1 * s2 - s1 * c2 * cd).powi(2)).sqrt();
-    let x = s1 * s2 + c1 * c2 * cd;
-    EARTH_RADIUS_NM * y.atan2(x)
+    distance_and_bearing(lat1, lon1, lat2, lon2).0
 }
 
-/// The initial great-circle bearing from point one to point two, degrees
-/// 0 to 360 true (wingtip.geo.bearing_deg, PROJ's forward azimuth on the same
-/// sphere). Zero for two points that coincide, as wingtip.geo answers: PROJ's
-/// own 180 would give a zero-length leg a due-south course.
+/// The geodesic's initial course from point one to point two, degrees 0
+/// to 360 true (pyproj's Geod forward azimuth). Zero for two points that
+/// coincide, as wingtip.geo answers: Karney's own 180 would give a
+/// zero-length leg a due-south course.
 pub fn bearing_deg(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
-    if distance_nm(lat1, lon1, lat2, lon2) == 0.0 {
-        return 0.0;
-    }
-    let (p1, p2) = (lat1.to_radians(), lat2.to_radians());
-    let dl = (lon2 - lon1).to_radians();
-    let y = dl.sin() * p2.cos();
-    let x = p1.cos() * p2.sin() - p1.sin() * p2.cos() * dl.cos();
-    py_mod(y.atan2(x).to_degrees(), 360.0)
+    distance_and_bearing(lat1, lon1, lat2, lon2).1
 }
 
-/// Where a great circle from a point on a true bearing reaches `nm` out,
-/// (lat, lon) in degrees, the longitude within -180 to 180: the web's
-/// lib/geo destination, written as it is (`deg * PI / 180`). The engine's
-/// one copy: the look ahead (airspace::ahead) and the phones' traffic
-/// carried on along its track (the rule `destination`) both reach a point
-/// here.
+/// distance_nm and bearing_deg from one solution of the inverse problem,
+/// for the callers that want both (geo_many's rows, a nav log's legs).
+pub fn distance_and_bearing(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> (f64, f64) {
+    let (s12, azi1) = inverse(lat1, lon1, lat2, lon2);
+    (s12 / M_PER_NM, if s12 == 0.0 { 0.0 } else { py_mod(azi1, 360.0) })
+}
+
+/// Where the geodesic from a point on a true course reaches `nm` out,
+/// (lat, lon) in degrees, the longitude within -180 to 180 (Karney's
+/// direct problem). The engine's one copy: the look ahead
+/// (airspace::ahead), the phones' traffic carried on along its track
+/// (the rule `destination`) and the planner's points along a leg all
+/// reach a point here.
 pub fn destination(lat: f64, lon: f64, bearing: f64, nm: f64) -> (f64, f64) {
-    use std::f64::consts::PI;
-    let d = nm / EARTH_RADIUS_NM;
-    let b = bearing * PI / 180.0;
-    let (lat1, lon1) = (lat * PI / 180.0, lon * PI / 180.0);
-    // Clamped, so a rounding past 1 at a pole is the pole, not NaN.
-    let lat2 = (lat1.sin() * d.cos() + lat1.cos() * d.sin() * b.cos()).clamp(-1.0, 1.0).asin();
-    let lon2 = lon1 + (b.sin() * d.sin() * lat1.cos()).atan2(d.cos() - lat1.sin() * lat2.sin());
-    (lat2 * 180.0 / PI, (lon2 * 180.0 / PI + 540.0).rem_euclid(360.0) - 180.0)
+    let (lat2, lon2): (f64, f64) = wgs84().direct(lat, lon, bearing, nm * M_PER_NM);
+    (lat2, (lon2 + 540.0).rem_euclid(360.0) - 180.0)
 }
 
 /// How far apart two directions are, degrees 0 to 180, either way round
@@ -80,35 +95,71 @@ pub fn py_mod(a: f64, m: f64) -> f64 {
     }
 }
 
-/// (cross-track, along-track) of a point from the great circle a -> b, in
-/// nautical miles, both signed (wingtip.geo's _track): cross-track positive
-/// right of course, along-track negative behind the start. The standard
-/// spherical identities: xtd = asin(sin(d13/R) sin(t13 - t12)) R, atd =
-/// acos(cos(d13/R) / cos(xtd/R)) R, signed by cos(t13 - t12).
+/// (cross-track, along-track) of a point from the geodesic a -> b, in
+/// nautical miles, both signed (wingtip.geo's _track): cross-track
+/// positive right of course, along-track negative behind the start.
+///
+/// On the ellipsoid neither has a closed form. This is the point-to-line
+/// solution of S. Baselga and J. C. Martinez-Llario, "Intersection and
+/// point-to-line solutions for geodesics on the ellipsoid", Stud.
+/// Geophys. Geod. 62:353-363 (2018), section 3, which GeographicLib's own
+/// Intersect class cites: from a base X on the geodesic (first a), the
+/// inverse problem X -> P gives the distance s and the angle A between
+/// the line and P; a right spherical triangle of radius a (the paper's
+/// choice, the semi-major axis) gives how far along the line the foot of
+/// the perpendicular is, tan(sAX / a) = tan(s / a) cos A (Napier's rule,
+/// the paper's eq. 10 in another of its forms, with no 0/0 at A = 90);
+/// the direct problem from a moves X there, and again, until the step is
+/// under a tenth of a millimetre. It converges in two or three steps (the
+/// paper's table 4: 24.8 km, then 0.2 mm), each an inverse and a direct,
+/// and agrees with Karney's gnomonic intercept (Karney 2013, section 8,
+/// the paper's comparison). The cross-track is then the last s, signed
+/// by sin A.
 pub fn track_nm(lat: f64, lon: f64, a: (f64, f64), b: (f64, f64)) -> (f64, f64) {
-    let to_point = distance_nm(a.0, a.1, lat, lon);
-    let offset = (bearing_deg(a.0, a.1, lat, lon) - bearing_deg(a.0, a.1, b.0, b.1)).to_radians();
-    let angular = to_point / EARTH_RADIUS_NM;
-    let cross = (angular.sin() * offset.sin()).clamp(-1.0, 1.0).asin() * EARTH_RADIUS_NM;
-    let ratio = (angular.cos() / (cross / EARTH_RADIUS_NM).cos()).clamp(-1.0, 1.0);
-    let c = offset.cos();
-    let sign = if c < 0.0 {
-        -1.0
-    } else if c > 0.0 {
-        1.0
-    } else {
-        0.0
-    };
-    (cross, ratio.acos() * EARTH_RADIUS_NM * sign)
+    let course = bearing_deg(a.0, a.1, b.0, b.1);
+    track_from(lat, lon, a, course)
+}
+
+/// track_nm from the course already known at `a`: geo_many's corridors
+/// ask one route's start and end against thousands of points.
+pub fn track_from(lat: f64, lon: f64, a: (f64, f64), course: f64) -> (f64, f64) {
+    let r = wgs84().equatorial_radius();
+    let (mut base, mut azimuth, mut along) = (a, course, 0.0);
+    // Ten steps is far more than the paper's examples took (three, from
+    // 24 km and from 1,000 km off the line); the tenth answer stands if
+    // ever a point needs more.
+    for tries in 1..=10 {
+        let (s, to_point) = inverse(base.0, base.1, lat, lon);
+        let angle = (to_point - azimuth).to_radians();
+        let (sin_s, cos_s) = (s / r).sin_cos();
+        let step = (sin_s * angle.cos()).atan2(cos_s) * r;
+        along += step;
+        if step.abs() < 1e-4 || tries == 10 {
+            // The foot is under a tenth of a millimetre on, at right
+            // angles, so s from here is the cross-track to well within it.
+            let side = angle.sin();
+            let sign = if side > 0.0 {
+                1.0
+            } else if side < 0.0 {
+                -1.0
+            } else {
+                0.0
+            };
+            return (s * sign / M_PER_NM, along / M_PER_NM);
+        }
+        let (lat2, lon2, azi2): (f64, f64, f64) = wgs84().direct(a.0, a.1, course, along);
+        (base, azimuth) = ((lat2, lon2), azi2);
+    }
+    unreachable!("the tenth try returns")
 }
 
 /// A padded (min_lat, min_lon, max_lat, max_lon) box round the route a ->
-/// b (wingtip.geo.corridor_bbox): `buffer_nm` a minute of latitude a mile,
-/// and of longitude cos(latitude) of a mile, taken at the box's poleward
-/// edge, where a degree is shortest. A coarse prefilter: the corridor
-/// itself is held by a cross-track or a crossing test after it.
+/// b (wingtip.geo.corridor_bbox): `buffer_nm` at WGS-84's shortest degree
+/// of latitude, the equator's 59.7 nm (110,574 m), and of longitude
+/// cos(latitude) of that at the box's poleward edge, where a degree is
+/// shortest. A prefilter: a cross-track or a crossing test holds after it.
 pub fn corridor_bbox(a: (f64, f64), b: (f64, f64), buffer_nm: f64) -> (f64, f64, f64, f64) {
-    let pad_lat = buffer_nm / 60.0;
+    let pad_lat = buffer_nm / 59.7;
     let widest = (a.0.abs().max(b.0.abs()) + pad_lat).min(89.0);
     let pad_lon = pad_lat / widest.to_radians().cos().max(0.05);
     (a.0.min(b.0) - pad_lat, a.1.min(b.1) - pad_lon, a.0.max(b.0) + pad_lat, a.1.max(b.1) + pad_lon)
@@ -192,7 +243,7 @@ fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
     v.get(key).and_then(Value::as_f64).ok_or_else(|| format!("{name}: \"{key}\" is missing or not a number"))
 }
 
-/// The sphere's figures by name, for the apps that draw between fixes (the
+/// The geodesic figures by name, for the apps that draw between fixes (the
 /// phones' traffic notice, own trail and replay) and the planner, so no app
 /// keeps its own great-circle arithmetic: `distance_nm` and `bearing_deg`
 /// from `{"lat1", "lon1", "lat2", "lon2"}`, and `destination` from
@@ -277,28 +328,42 @@ mod tests {
 
     #[test]
     fn track_is_signed() {
-        let (x, a) = track_nm(0.0, 0.5, (0.0, 0.0), (0.0, 1.0));
-        assert!(x.abs() < 1e-6 && (a - 30.0).abs() < 0.1, "{x} {a}");
-        let (x, a) = track_nm(0.1, -0.5, (0.0, 0.0), (0.0, 1.0));
-        assert!(x < 0.0 && a < 0.0, "{x} {a}");
+        // Each against pyproj 3.8.0's Geod(ellps="WGS84"): the foot found
+        // as the root of its right-angle condition (scipy's brentq over
+        // Geod.fwd and Geod.inv), an independent route to the same point.
+        let close = |got: (f64, f64), want: (f64, f64)| (got.0 - want.0).abs() < 1e-9 && (got.1 - want.1).abs() < 1e-9;
+        let on = track_nm(0.0, 0.5, (0.0, 0.0), (0.0, 1.0));
+        assert!(close(on, (0.0, 30.053_858_205_530_23)), "{on:?}");
+        let behind = track_nm(0.1, -0.5, (0.0, 0.0), (0.0, 1.0));
+        assert!(close(behind, (-5.970_533_312_582_22, -30.053_858_205_527_43)), "{behind:?}");
+        let beside = track_nm(44.0, -91.0, (46.8421, -92.1936), (38.7487, -90.37));
+        assert!(close(beside, (-21.210_240_980_906_825, 176.585_340_569_693_07)), "{beside:?}");
+        // Baselga and Martinez-Llario's example 1 (table 4): the foot they
+        // give, 51 50' 45.9212" N 5 15' 37.5426" E, is 13.382445 nm from A
+        // and 12.833544 nm from P by Geod.inv; to their 1e-4" (3 mm).
+        let paper = track_nm(52.0, 5.5, (52.0, 5.0), (51.4, 6.0));
+        assert!((paper.0 + 12.833_544).abs() < 2e-6 && (paper.1 - 13.382_445).abs() < 2e-6, "{paper:?}");
     }
 
     #[test]
-    fn distances_are_vfr_geos() {
-        // pyproj.Geod(a=3440.065, f=0).inv, as wingtip.geo.distance_nm: O'Hare
-        // to Midway, Duluth to St Louis.
+    fn distances_are_wgs84_geodesics() {
+        // pyproj 3.8.0's Geod(ellps="WGS84").inv over 1,852 m, as
+        // wingtip.geo.distance_nm: O'Hare to Midway, Duluth to St Louis.
         let ord_mdw = distance_nm(41.9786, -87.9048, 41.7868, -87.7522);
-        assert!((ord_mdw - 13.384_450_662_612_632).abs() < 1e-9, "{ord_mdw}");
+        assert!((ord_mdw - 13.382_524_218_830_271).abs() < 1e-9, "{ord_mdw}");
         let dlh_stl = distance_nm(46.8421, -92.1936, 38.7487, -90.37);
-        assert!((dlh_stl - 492.489_160_876_009_75).abs() < 1e-9, "{dlh_stl}");
+        assert!((dlh_stl - 492.066_809_632_600_6).abs() < 1e-9, "{dlh_stl}");
         assert_eq!(distance_nm(45.0, -93.0, 45.0, -93.0), 0.0);
     }
 
     #[test]
-    fn bearings_and_angles_are_vfr_geos() {
-        // pyproj.Geod(a=3440.065, f=0).inv's azimuth, O'Hare to Midway.
+    fn bearings_and_angles_are_wgs84_geodesics() {
+        // pyproj 3.8.0's Geod(ellps="WGS84").inv's azimuth, O'Hare to
+        // Midway, and Duluth to St Louis.
         let b = bearing_deg(41.9786, -87.9048, 41.7868, -87.7522);
-        assert!((b - 149.308_659_909_716_54).abs() < 1e-9, "{b}");
+        assert!((b - 149.214_896_390_586_74).abs() < 1e-9, "{b}");
+        let b = bearing_deg(46.8421, -92.1936, 38.7487, -90.37);
+        assert!((b - 169.949_158_273_416_23).abs() < 1e-9, "{b}");
         assert_eq!(bearing_deg(45.0, -93.0, 45.0, -93.0), 0.0);
         assert!((bearing_deg(42.0, -88.0, 43.0, -88.0) - 0.0).abs() < 1e-12);
         assert_eq!(angle_between(358.0, 2.0), 4.0);
@@ -308,11 +373,12 @@ mod tests {
     }
 
     #[test]
-    fn destination_is_the_sphere_s() {
-        // Due north 60 nm is a degree of latitude on wingtip.geo's sphere
-        // (the look ahead's own test, before its copy was folded in here).
+    fn destination_is_the_direct_geodesic() {
+        // Due north 60 nm from 45 N: pyproj 3.8.0's Geod(ellps="WGS84").fwd,
+        // short of a whole degree, as a degree of latitude there is 60.006
+        // nm of the ellipsoid's meridian.
         let (lat, lon) = destination(45.0, -93.0, 0.0, 60.0);
-        assert!((lat - 45.999_413).abs() < 1e-4 && (lon + 93.0).abs() < 1e-9, "{lat} {lon}");
+        assert!((lat - 45.999_806_133_882_48).abs() < 1e-9 && (lon + 93.0).abs() < 1e-9, "{lat} {lon}");
         assert!((distance_nm(45.0, -93.0, lat, lon) - 60.0).abs() < 1e-9);
         // Across the antimeridian the longitude comes back within 180.
         let (_, lon) = destination(0.0, 179.9, 90.0, 60.0);
@@ -320,11 +386,11 @@ mod tests {
     }
 
     #[test]
-    fn the_sphere_s_figures_by_name() {
+    fn the_geodesic_figures_by_name() {
         let ask = |name: &str, text: &str| call(name, &json::parse(text).unwrap());
         assert_eq!(ask("distance_nm", r#"{"lat1":45,"lon1":-93,"lat2":45,"lon2":-93}"#).unwrap(), "0.0");
         let b: f64 = ask("bearing_deg", r#"{"lat1":41.9786,"lon1":-87.9048,"lat2":41.7868,"lon2":-87.7522}"#).unwrap().parse().unwrap();
-        assert!((b - 149.308_659_909_716_54).abs() < 1e-9, "{b}");
+        assert!((b - 149.214_896_390_586_74).abs() < 1e-9, "{b}");
         let to = ask("destination", r#"{"points":[{"lat":45,"lon":-93,"bearing_deg":0,"nm":60}]}"#).unwrap();
         assert!(to.starts_with("[{\"lat\":45.99") && to.ends_with(",\"lon\":-93.0}]"), "{to}");
         assert_eq!(ask("destination", r#"{"points":[]}"#).unwrap(), "[]");

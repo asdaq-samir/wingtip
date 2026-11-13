@@ -3,7 +3,7 @@
 //! geodesy and the general readers, no aviation rule.
 //!
 //! - base64: bytes carried in JSON (RFC 4648), as a receiver's are;
-//! - geo: great-circle distances, as wingtip.geo has them, and geo_many:
+//! - geo: distances and courses on the WGS-84 ellipsoid, and geo_many:
 //!   the same figures over columns of points at once;
 //! - wmm: magnetic variation from the World Magnetic Model;
 //! - grid: route options' straight lines over the grid (sums: the

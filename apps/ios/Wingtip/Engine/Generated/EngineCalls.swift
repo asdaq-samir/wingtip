@@ -240,7 +240,7 @@ extension Engine {
         try Self.rule("bare_field", EngineContract.BareFieldInput(ident: ident))
     }
 
-    /// The initial great-circle course from the first point to the second, degrees true 0 to 360, on the same sphere as distance_nm (wingtip.geo.bearing_deg); 0 for two points that coincide.
+    /// The initial course of the geodesic from the first point to the second on the WGS-84 ellipsoid, as distance_nm, degrees true 0 to 360 (wingtip.geo.bearing_deg, pyproj's Geod(ellps="WGS84") forward azimuth); 0 for two points that coincide.
     static func bearingDeg(lat1: Double, lon1: Double, lat2: Double, lon2: Double) throws -> Double {
         try Self.rule("bearing_deg", EngineContract.BearingDegInput(lat1: lat1, lon1: lon1, lat2: lat2, lon2: lon2))
     }
@@ -405,7 +405,7 @@ extension Engine {
         try Self.rule("departure_window", EngineContract.DepartureWindowInput(start: start, end: end, airplane: airplane, minimums: minimums, risk: risk, hours: hours))
     }
 
-    /// Where a great circle from each point on its true course reaches its distance out, on the same sphere as distance_nm, the longitude within -180 to 180: the phones' traffic carried on along its track between reports, a list so a map's airplanes cross once.
+    /// Where the geodesic from each point on its true course reaches its distance out, on the WGS-84 ellipsoid as distance_nm, the longitude within -180 to 180: the phones' traffic carried on along its track between reports, a list so a map's airplanes cross once.
     static func destination(points: [EngineContract.DestinationInputPointsItem]) throws -> [EngineContract.DestinationAnswerItem] {
         try Self.rule("destination", EngineContract.DestinationInput(points: points))
     }
@@ -435,7 +435,7 @@ extension Engine {
         try Self.rule("direct_of", EngineContract.DirectOfInput(text: text))
     }
 
-    /// The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0), the great circle of FAA-H-8083-25C ch. 16.
+    /// The distance between two points, nm (1,852 m), along the geodesic on the WGS-84 ellipsoid (NGA TR8350.2) the FAA's coordinates and GPS are on, by Karney's algorithm (J. Geodesy 87:43-55, 2013) as pyproj's Geod(ellps="WGS84") and a GPS navigator have it: the great circle of FAA-H-8083-25C ch. 16 on the ellipsoid.
     static func distanceNm(lat1: Double, lon1: Double, lat2: Double, lon2: Double) throws -> Double {
         try Self.rule("distance_nm", EngineContract.DistanceNmInput(lat1: lat1, lon1: lon1, lat2: lat2, lon2: lon2))
     }
@@ -845,7 +845,7 @@ extension Engine {
         try Self.rule("gonogo_with_alternate", EngineContract.GonogoWithAlternateInput(items: items, found: found))
     }
 
-    /// distance_nm and bearing_deg over many legs at once, columns in and columns out: row i is the great circle from (lat1[i], lon1[i]) to (lat2[i], lon2[i]) on the same sphere of 3,440.065 nm (wingtip.geo), its distance in nm and its initial course in degrees true 0 to 360, 0 for two points that coincide. The lists are all as long as each other, so a corridor of points, a route's legs or a map's stops cross into the engine once.
+    /// distance_nm and bearing_deg over many legs at once, columns in and columns out: row i is the geodesic from (lat1[i], lon1[i]) to (lat2[i], lon2[i]) on the WGS-84 ellipsoid (wingtip.geo), its distance in nm and its initial course in degrees true 0 to 360, 0 for two points that coincide. The lists are all as long as each other, so a corridor of points, a route's legs or a map's stops cross into the engine once.
     static func greatCircles(lat1: [Double], lon1: [Double], lat2: [Double], lon2: [Double]) throws -> EngineContract.GreatCirclesAnswer {
         try Self.rule("great_circles", EngineContract.GreatCirclesInput(lat1: lat1, lon1: lon1, lat2: lat2, lon2: lon2))
     }

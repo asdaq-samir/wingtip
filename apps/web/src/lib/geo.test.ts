@@ -26,7 +26,7 @@ describe("geo", () => {
     expect(bearingDeg(duluth, campbell)).toBeLessThan(150);
   });
 
-  it("answers the shared cases, the engine's sphere every app asks", () => {
+  it("answers the shared cases, the engine's WGS-84 geodesic every app asks", () => {
     for (const c of sphere.distance) expect(distanceNm({ lat: c.lat1, lon: c.lon1 }, { lat: c.lat2, lon: c.lon2 })).toBeCloseTo(c.nm, 9);
     for (const c of sphere.bearing) expect(bearingDeg({ lat: c.lat1, lon: c.lon1 }, { lat: c.lat2, lon: c.lon2 })).toBeCloseTo(c.deg, 9);
     for (const c of sphere.destination) {

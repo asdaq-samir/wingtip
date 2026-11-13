@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 
 from wingtip.geo import (
-    EARTH_RADIUS_NM,
     along_path_nm,
     along_track_distance_nm,
     bearing_deg,
@@ -28,10 +27,11 @@ from wingtip.geo import (
 
 
 def test_distance_nm_one_degree_of_longitude_at_equator():
-    # circumference / 360, since a degree of longitude at the equator is
-    # one 360th of the way around the globe
-    expected = 2 * math.pi * EARTH_RADIUS_NM / 360
-    assert distance_nm(0, 0, 0, 1) == pytest.approx(expected, rel=1e-3)
+    # The equator is a geodesic and a circle of WGS-84's semi-major axis,
+    # 6,378,137 m (NGA TR8350.2), so a degree of it is a 360th of that
+    # circle, over 1,852 m to the nautical mile.
+    expected = 2 * math.pi * 6378137.0 / 360 / 1852.0
+    assert distance_nm(0, 0, 0, 1) == pytest.approx(expected, rel=1e-12)
 
 
 def test_distance_nm_same_point_is_zero():
@@ -150,15 +150,16 @@ def test_corridor_bbox_padding():
 
 # --- The library check ---------------------------------------------------
 #
-# wingtip.geo's distances and azimuths are PROJ's, and the two track
-# distances are written there from the standard spherical identities.
-# pygeodesy has its own independent implementation of all four, so it is
-# the oracle they are pinned against. It is a test dependency only
-# (requirements-dev.txt) and ships in no service image.
+# wingtip.geo's distances and azimuths are the engine's WGS-84 geodesic.
+# pygeodesy's ellipsoidalExact is its own pure-Python implementation of
+# Karney's geodesic (GeodesicExact, no PROJ and no geographiclib), so it
+# is the oracle they are pinned against; the cross- and along-track are
+# pinned to pyproj in test_geo_engine.py. It is a test dependency only
+# (requirements-dev-wingtip.txt) and ships in no service image.
 
 
 def _pygeodesy():
-    return pytest.importorskip("pygeodesy.sphericalTrigonometry").LatLon
+    return pytest.importorskip("pygeodesy.ellipsoidalExact").LatLon
 
 
 def _random_cases(n, seed):
@@ -173,10 +174,9 @@ def test_it_matches_an_independent_implementation():
     LatLon = _pygeodesy()
     for start, end, point in _random_cases(300, seed=17):
         a, b, p = LatLon(*start), LatLon(*end), LatLon(*point)
-        assert distance_nm(*start, *end) == pytest.approx(a.distanceTo(b, radius=EARTH_RADIUS_NM), abs=1e-6)
+        assert distance_nm(*start, *end) == pytest.approx(a.distanceTo(b) / 1852.0, abs=1e-6)
         assert bearing_deg(*start, *end) == pytest.approx(a.initialBearingTo(b), abs=1e-6)
-        assert cross_track_distance_nm(*point, start, end) == pytest.approx(p.crossTrackDistanceTo(a, b, radius=EARTH_RADIUS_NM), abs=1e-6)
-        assert along_track_distance_nm(*point, start, end) == pytest.approx(p.alongTrackDistanceTo(a, b, radius=EARTH_RADIUS_NM), abs=1e-6)
+        assert distance_nm(*start, *point) == pytest.approx(a.distanceTo(p) / 1852.0, abs=1e-6)
 
 
 def test_the_array_form_is_the_scalar_form():
@@ -282,7 +282,8 @@ def test_nearest_is_the_argmin_of_every_distance_first_on_a_tie():
 
 @pytest.mark.parametrize("lat", [0.0, 46.8, 64.8, -33.9])
 def test_the_box_around_a_point_holds_every_point_within_its_radius(lat):
-    """Each point 30 nm off, every way, on the sphere this module flies."""
+    """Each point 30 nm off, every way, on the WGS-84 geodesic this module
+    flies: at the equator 30 nm north is 0.5025 degrees, past 30 / 60."""
     south, west, north, east = box_around(lat, -92.2, 30.0)
     for bearing in range(0, 360, 15):
         p_lat, p_lon = destination_point(lat, -92.2, bearing, 30.0)
@@ -290,9 +291,9 @@ def test_the_box_around_a_point_holds_every_point_within_its_radius(lat):
 
 
 def test_great_circle_points_are_evenly_along_the_course_both_ends_kept():
-    """Every point is on the great circle from start to end: its distance
+    """Every point is on the geodesic from start to end: its distance
     from the start plus to the end is the whole, and the steps are equal.
-    The vertex of KSEA to KJFK's great circle is north of both ends."""
+    The vertex of KSEA to KJFK's geodesic is north of both ends."""
     start, end = (47.45, -122.31), (40.64, -73.78)
     lats, lons = great_circle_points(start, end, 11)
     total = distance_nm(*start, *end)
@@ -314,7 +315,7 @@ def test_path_points_follow_each_leg_in_steps_no_longer_than_asked():
 
 
 @pytest.mark.parametrize(("lat", "bearing", "nm"), [(49.0, 90.0, 5.0), (25.0, 0.0, 5.0), (40.0, 225.0, 120.0)])
-def test_shape_distance_from_the_centre_is_the_great_circle_distance(lat, bearing, nm):
+def test_shape_distance_from_the_centre_is_the_geodesic_distance(lat, bearing, nm):
     from shapely.geometry import Point
 
     there = destination_point(lat, -86.0, bearing, nm)

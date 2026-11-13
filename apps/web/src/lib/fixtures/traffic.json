@@ -1,5 +1,5 @@
 {
-  "about": "Traffic's label under an airplane on the map, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft (the VFR cruising altitudes' spacing, 14 CFR 91.159). The hundreds cut toward own ship, never away (the owner's conservative pick, 2026-10-28). Web: features/plan/map/traffic.ts. iOS: Traffic.label and Traffic.near. notice: with own ship's place and the airplane's, how far off it is, its true bearing and tell, near in height and within 5 nm (the phones' notification; a design choice). fresh: whether a position seen_s old in an answer age_s old is within 30 s (wingtip.traffic's STALE_S). iOS and Android: Traffic.",
+  "about": "Traffic's label under an airplane on the map, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft (the VFR cruising altitudes' spacing, 14 CFR 91.159). The hundreds cut toward own ship, never away (the owner's conservative pick, 2026-10-28). Web: features/plan/map/traffic.ts. iOS: Traffic.label and Traffic.near. notice: with own ship's place and the airplane's, how far off it is (WGS-84, pyproj's Geod(ellps=\"WGS84\")), its true bearing and tell, near in height and within 5 nm (the phones' notification; a design choice). fresh: whether a position seen_s old in an answer age_s old is within 30 s (wingtip.traffic's STALE_S). iOS and Android: Traffic.",
   "cases": [
     {
       "plane": {
@@ -254,7 +254,7 @@
         "lon": -88.0,
         "altitude_ft": 3500
       },
-      "nm": 3.0020230366309564,
+      "nm": 2.9987518648550715,
       "bearing_deg": 0.0,
       "near": true,
       "tell": true
@@ -270,7 +270,7 @@
         "lon": -88.0,
         "altitude_ft": 3500
       },
-      "nm": 6.00404607326166,
+      "nm": 5.997529947185701,
       "bearing_deg": 0.0,
       "near": true,
       "tell": false
@@ -286,8 +286,8 @@
         "lon": -88.05,
         "altitude_ft": 4100
       },
-      "nm": 2.2309378539409392,
-      "bearing_deg": 270.0167282657474,
+      "nm": 2.236791587697436,
+      "bearing_deg": 270.0167282657475,
       "near": false,
       "tell": false
     },
@@ -302,8 +302,8 @@
         "lon": -88.05,
         "altitude_ft": 3990
       },
-      "nm": 2.2309378539409392,
-      "bearing_deg": 270.0167282657474,
+      "nm": 2.236791587697436,
+      "bearing_deg": 270.0167282657475,
       "near": true,
       "tell": true
     },
@@ -318,7 +318,7 @@
         "lon": -88.0,
         "altitude_ft": null
       },
-      "nm": 3.0020230366309564,
+      "nm": 2.9987518648550715,
       "bearing_deg": 0.0,
       "near": false,
       "tell": false
@@ -334,7 +334,7 @@
         "lon": -88.0,
         "altitude_ft": 3500
       },
-      "nm": 3.0020230366309564,
+      "nm": 2.9987518648550715,
       "bearing_deg": 0.0,
       "near": false,
       "tell": false
@@ -364,7 +364,7 @@
         "altitude_ft": 4800,
         "pressure_altitude": true
       },
-      "nm": 3.0020230366309564,
+      "nm": 2.9987518648550715,
       "bearing_deg": 0.0,
       "near": true,
       "tell": true,
@@ -381,7 +381,7 @@
         "lon": -88.0,
         "altitude_ft": 4800
       },
-      "nm": 3.0020230366309564,
+      "nm": 2.9987518648550715,
       "bearing_deg": 0.0,
       "near": false,
       "tell": false,
@@ -399,7 +399,7 @@
         "altitude_ft": 5100,
         "pressure_altitude": true
       },
-      "nm": 3.0020230366309564,
+      "nm": 2.9987518648550715,
       "bearing_deg": 0.0,
       "near": false,
       "tell": false,
