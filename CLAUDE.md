@@ -98,8 +98,12 @@ integration branch"):
 - Each piece of work is a `claude/<topic>` branch, pushed once when the
   code is done, with no pull request yet. Pushing a `claude/` branch
   starts no CI (`claude/native-*` does: don't use that name). Before that
-  push, only a compile or type check of what changed and the generated
-  files it needs; tests are written with the code, not run.
+  push: a compile or type check of what changed, the generated files it
+  needs, and **the change's own tests, run narrowly** (decision 0042):
+  `vitest <files>` or `--changed`, `pytest <paths>`, `cargo test -p
+  <crate>`, `playwright test <spec>` for a spec written or changed,
+  `gradlew … --tests <class>`, `xcodebuild … -only-testing:<class>`. A few
+  minutes, never a whole suite.
 - Work that builds on an unmerged branch merges that branch in; nothing
   waits for a merge. Branches merge into `claude/integration` as they
   finish.
@@ -114,22 +118,15 @@ integration branch"):
   as the proof of concept; the iPhone and Android follow only on the
   owner's word for that piece (the hook refuses phone edits and merges
   until its topic is in `~/.config/wingtip/phones-approved`).
-- **Enforced (decision 0037):** `.claude/hooks/guard.py` refuses every
-  long test until the live stack runs the current `claude/integration`,
-  and while any requested change is still in flight (the owner,
-  2026-11-12: whoever asked, the owner, an audit or a bug fix): a
-  `claude/<topic>` branch or worktree changed in the last day and not yet
-  merged. A validation under way stops its tests when new changes are
-  asked for, keeps its fixes, and runs again once they merge. A brief
-  never asks an agent to verify before pushing.
-- **Then one validation pass**, `scripts/dev/validate-wave.sh` on
-  `claude/integration`: every area's checks, `@smoke` and the browser
-  specs the wave touched, never the full browser suite, which is CI's
-  nightly (decision 0034). Each branch and each validation agent pushes
-  once, when it's done: a push moves integration past the live stack and
-  the guard holds every test until go-live runs again. Its fixes are one
-  commit set; then a few grouped pull
-  requests to `main`, which merge by themselves once "CI passed" is green
+- **Enforced (decisions 0037, 0042):** `.claude/hooks/guard.py` lets a
+  narrow test run at any time and refuses a whole suite until the live
+  stack runs the current `claude/integration`.
+- **Then one validation pass, on GitHub** (decision 0042): the wave's
+  pull request to `main` and its CI (tier 1, about three minutes), plus
+  the browser specs the wave touched; the full browser suite stays CI's
+  nightly (decision 0034), and the Mac runs no suite for it. A failure is
+  reproduced with its narrow test, fixed in one commit set and pushed
+  once; the pull request merges by itself once "CI passed" is green
   (auto-merge-agents.yml). Nothing merges red. CI failures are fixed in
   that pass, at most once more after it; an asked-for review is put right
   in "Address review:" commits.
@@ -175,8 +172,9 @@ integration branch"):
 
 ## Checks
 
-While writing code, only a compile or type check of what changed; the
-table is the end-of-wave validation, and no test holds up a code change.
+While writing code, a compile or type check and the change's own tests,
+narrowly (decision 0042); the table is what CI runs, and a whole area runs
+on the Mac only to reproduce a CI failure.
 `scripts/dev/check.sh <area>` runs an area, `scripts/dev/check.sh
 all-changed` every area the branch and its uncommitted files touch. It
 runs in Docker (the phones on the host), each area in its own turn of

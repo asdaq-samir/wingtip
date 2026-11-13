@@ -47,3 +47,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0039 | [The crash pipeline's schedule and the MCP tools' source, weighed against their alternatives](0039-crash-and-mcp-boundaries.md) | 2026-11-12 | Accepted |
 | 0040 | [The iPhone app's oldest iOS is 27, and the Watch's watchOS 27](0040-ios-27-floor.md) | 2026-11-12 | Accepted |
 | 0041 | [The server's Claude features are taken out](0041-claude-taken-out.md) | 2026-11-12 | Accepted |
+| 0042 | [Each change runs its own tests; the wave is validated on GitHub](0042-fast-checks.md) | 2026-11-13 | Accepted |
