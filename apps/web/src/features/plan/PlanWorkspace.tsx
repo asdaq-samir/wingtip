@@ -465,21 +465,11 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // route's row from half up (the owner, 2026-11-11, the canvas's b).
         // FPL's page's own (SheetParts); under the Profile, its foot (PlanPage).
         foot: !place && !heldPoint && !flight && !briefShown && !vm.fpl.profileShown ? routed && <FlightFoot vm={vm} /> : undefined,
-        // The route as one box of pills, in place of the two airport fields,
-        // the top row to itself, at the pilot's ask: its close and its
-        // Procedures beside it went to the chips' row (Approaches) and the
-        // Share menu (Clear the route). An airport twice (a round trip with its
-        // stop taken out) keeps the box, its notice saying what to change.
-        // Whatever the tab: MapPanel keeps it under the others' heads (`kept`).
-        // Once the route is whole, folded away (lib/preferences RouteEdit, the
-        // owner's A and B of the FPL canvas, 2026-11-05: "keeping the route box
-        // on top after a destination is known is redundant because the plan
-        // at the bottom can have dragables"): the route on one line, a tap the
-        // box again (A), or its name over the plan whose rows change it (B);
-        // the airplane, the altitude and the route's buttons under either, as
-        // they were under the box. The box again while a stop is typed in
-        // from the list or a problem, and while it is opened from the head;
-        // with no route either, the head folded (the owner, 2026-11-05).
+        // The route as one box of pills, the top row to itself (MapPanel keeps
+        // it under the others' heads). How it shows once whole is the pilot's
+        // pick from its ••• menu's Show Route As (lib/preferences RouteEdit:
+        // the box, one line, or the plan's own rows; the owner, 2026-11-05 and
+        // 2026-11-13); the box again while a stop is typed in or a problem shows.
         route: (
           <RouteHead
             vm={vm}
