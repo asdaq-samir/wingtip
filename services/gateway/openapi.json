@@ -803,7 +803,6 @@
             "type" : "string"
           },
           "version" : {
-            "pattern" : "[A-Za-z0-9._ ()+-]{1,40}",
             "type" : "string"
           }
         },
@@ -1113,7 +1112,6 @@
             "type" : "string"
           },
           "kind" : {
-            "pattern" : "crash|hang|exit|error|exception|cpu|disk",
             "type" : "string"
           },
           "signature" : {

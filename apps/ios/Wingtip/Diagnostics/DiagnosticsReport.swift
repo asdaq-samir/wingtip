@@ -103,10 +103,6 @@ struct AppVersion: Equatable, Sendable {
 
     static let current = AppVersion(info: Bundle.main.infoDictionary)
 
-    /// "1.0 (1)", cut to the gateway's 40 characters of its own alphabet.
-    var text: String {
-        let allowed = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._ ()+-")
-        let clean = String(String.UnicodeScalarView("\(short) (\(build))".unicodeScalars.filter { allowed.contains($0) }))
-        return String(clean.prefix(40))
-    }
+    /// "1.0 (1)", as it is; the gateway cleans and cuts it.
+    var text: String { "\(short) (\(build))" }
 }
