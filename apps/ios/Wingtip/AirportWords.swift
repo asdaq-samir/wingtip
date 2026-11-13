@@ -192,7 +192,7 @@ enum AirportWords {
     static func minimumsLine(_ m: VfrMinimums) -> String {
         if m.clearOfClouds { return "\(plain(m.visibilitySm)) sm, clear of clouds" }
         func ft(_ x: Double?) -> String { x.map(Format.grouped) ?? Format.none }
-        let horizontal = m.horizontalFt == 5280 ? "1 sm" : ft(m.horizontalFt)
+        let horizontal = m.horizontalFt == Units.ftPerSm ? "1 sm" : ft(m.horizontalFt)
         return "\(plain(m.visibilitySm)) sm, \(ft(m.belowFt)) below, \(ft(m.aboveFt)) above, \(horizontal) horizontal"
     }
 
@@ -232,6 +232,7 @@ enum AirportWords {
     /// walk, else statute miles.
     static func away(_ place: NearbyPlace) -> String {
         if let walk = place.walkMin { return "\(walk) min walk" }
-        return "\(Format.number(Double(place.distanceM) / 1609.344, decimals: 1)) mi"
+        let miles = Measurement(value: Double(place.distanceM), unit: UnitLength.meters).converted(to: .miles)
+        return "\(Format.number(miles.value, decimals: 1)) mi"
     }
 }

@@ -2,6 +2,7 @@ package app.wingtipmaps.android.map
 
 import app.wingtipmaps.android.engine.EngineException
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.format.Units
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.double
@@ -37,8 +38,8 @@ class AirspaceVolumes3dTest {
         val out = AirspaceVolumes3d.geoJson(features, 10.0) { asked = it; Result.success(answer) }
         assertEquals(want, asked)
         val p = Json.parseToJsonElement(out).jsonObject["features"]!!.jsonArray[0].jsonObject["properties"]!!.jsonObject
-        assertEquals(3600 * AirspaceVolumes3d.M_PER_FT, p["base_m"]!!.jsonPrimitive.double, 1e-6)
-        assertEquals(17_999 * AirspaceVolumes3d.M_PER_FT, p["height_m"]!!.jsonPrimitive.double, 1e-6)
+        assertEquals(3600 * Units.M_PER_FT, p["base_m"]!!.jsonPrimitive.double, 1e-6)
+        assertEquals(17_999 * Units.M_PER_FT, p["height_m"]!!.jsonPrimitive.double, 1e-6)
     }
 
     @Test

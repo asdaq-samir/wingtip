@@ -404,11 +404,11 @@ final class RunwaySurface: MKPolygon {
     private(set) var soft: Bool? = false
 
     /// The rectangle's corners, each end moved half the width either side
-    /// of the centreline in map points (a foot is 0.3048 m exactly).
+    /// of the centreline in map points (Foundation's foot, exactly 0.3048 m).
     static func between(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D, widthFt: Double, soft: Bool? = false) -> RunwaySurface {
         let pa = MKMapPoint(a), pb = MKMapPoint(b)
         let length = max(1e-9, hypot(pb.x - pa.x, pb.y - pa.y))
-        let half = widthFt * 0.3048 / 2 * MKMapPointsPerMeterAtLatitude((a.latitude + b.latitude) / 2)
+        let half = Measurement(value: widthFt, unit: UnitLength.feet).converted(to: .meters).value / 2 * MKMapPointsPerMeterAtLatitude((a.latitude + b.latitude) / 2)
         let nx = -(pb.y - pa.y) / length * half, ny = (pb.x - pa.x) / length * half
         let corners = [MKMapPoint(x: pa.x + nx, y: pa.y + ny), MKMapPoint(x: pb.x + nx, y: pb.y + ny),
                        MKMapPoint(x: pb.x - nx, y: pb.y - ny), MKMapPoint(x: pa.x - nx, y: pa.y - ny)]

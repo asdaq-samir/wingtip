@@ -17,6 +17,7 @@ import app.wingtipmaps.android.api.ahead
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.underway
+import app.wingtipmaps.android.format.Units
 import app.wingtipmaps.android.logbook.FlightRecorder
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -334,14 +335,14 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
                 lat = location.latitude, lon = location.longitude,
                 altitudeFt = mslFeet(if (LocationCompat.hasMslAltitude(location)) LocationCompat.getMslAltitudeMeters(location) else null),
                 trackDeg = if (location.hasBearing()) location.bearing.toDouble() else null,
-                groundspeedKt = if (location.hasSpeed()) location.speed * KT_PER_MPS else null,
+                groundspeedKt = if (location.hasSpeed()) location.speed * Units.KT_PER_M_S else null,
                 accuracyM = if (location.hasAccuracy()) location.accuracy.toDouble() else Double.NaN,
                 atMs = location.time,
             )
 
         /** Feet above mean sea level from metres above it; none stays none,
          *  never the ellipsoid's height in its place. */
-        fun mslFeet(mslMeters: Double?): Double? = mslMeters?.let { it * FT_PER_M }
+        fun mslFeet(mslMeters: Double?): Double? = mslMeters?.let { it * Units.FT_PER_M }
 
         /** How often the position is kept for the next launch's map. */
         const val KEEP_EVERY_MS = 60_000L
@@ -360,7 +361,5 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
          *  the strip go by too. Below it nothing ahead is asked: taxiing,
          *  or a fix wandering while parked. */
         fun underway(speedKt: Double?): Result<Boolean> = Engine.underway(speedKt)
-        const val FT_PER_M = 3.28084
-        const val KT_PER_MPS = 1.943844
     }
 }
