@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import AboutPanel from "../../components/AboutPanel";
 import StatusPanel from "../../components/StatusPanel";
 import LoadLogPanel from "../../components/LoadLogPanel";
-import { ConsolePages, PageRow } from "../../components/ConsolePages";
+import { ConsolePages, PageRow, useOpenPage } from "../../components/ConsolePages";
 import { Button } from "../../components/ui/button";
 import EmptyState from "../../components/EmptyState";
 import { ListGroup } from "../../components/GroupedList";
@@ -21,7 +21,6 @@ import { usePreferences } from "../../lib/preferences";
 import type { Minimums } from "../../lib/minimums";
 import { TEXT } from "../../lib/text";
 import { useDevMode } from "../../hooks/use-dev-mode";
-import { useWantedPage } from "../../lib/navigation/wantedPage";
 import { SettingsPage, type HelpPages } from "../settings";
 import { FlightsPanel } from "./AccountPanels";
 import { AccountFace } from "./AccountFace";
@@ -228,6 +227,8 @@ function YouHead({ pilot }: { pilot: Pilot | null }) {
   const given = pilot ? pilot.fullName || pilot.displayName : null;
   const name = given && given !== pilot?.email && !given.includes("@") ? given : null;
   const address = pilot?.email ?? (given !== name ? given : null);
+  // Pilot Details as its row opens it, its close back to You.
+  const openPage = useOpenPage();
   return (
     <div role="group" aria-label="Account" className="flex flex-col items-center gap-1 pt-6" data-testid="setup-pill-account">
       <span
@@ -251,7 +252,7 @@ function YouHead({ pilot }: { pilot: Pilot | null }) {
             "relative h-auto max-w-full truncate p-0 font-bold tracking-tight after:absolute after:-inset-y-2 after:inset-x-0",
             TEXT.hero,
           )}
-          onClick={() => useWantedPage.getState().want(["pilot"])}
+          onClick={() => openPage("pilot")}
           data-testid="you-name"
         >
           Add Your Name

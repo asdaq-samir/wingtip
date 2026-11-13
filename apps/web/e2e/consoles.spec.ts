@@ -164,6 +164,14 @@ test("You floats over the map as Apple Maps' account card does: in from a phone'
   await expect(name).not.toContainText("@");
   const size = (el: typeof name) => el.evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
   expect(await size(name)).toBeGreaterThan(await size(address));
+  // With no name, Add Your Name opens Pilot Details and its close goes
+  // back to You, as the row's does, not out of the card.
+  if ((await name.textContent()) === "Add Your Name") {
+    await name.click();
+    await expect(pilot.getByTestId("pilot-name")).toBeVisible();
+    await pilot.getByTestId("console-page-close").first().click();
+    await expect(pilot.getByTestId("you-name")).toBeVisible();
+  }
 });
 
 test("Setup's Appearance control is system, light, dark or dark with the chart bright, a menu of all four, and the choice survives a reload", async ({
