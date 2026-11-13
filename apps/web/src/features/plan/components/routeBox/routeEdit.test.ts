@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pointsOf, readTyped, routeOf, withoutPoint, withTyped, type RouteShape } from "./routeEdit";
+import { pointsOf, readTyped, releaseTyped, routeOf, withoutPoint, withTyped, type RouteShape } from "./routeEdit";
 
 // Airports are four letters here, waypoints five (a fix's ident).
 const isEnd = (ident: string) => ident.length === 4 || ident.length === 3;
@@ -97,5 +97,21 @@ describe("words typed, read", () => {
 
   it("drops what is empty", () => {
     expect(readTyped(["", " ", "kmsp"], true).fresh).toEqual(["KMSP"]);
+  });
+});
+
+describe("a SID or STAR typed last, held till what follows it", () => {
+  it("waits for the destination typed after a STAR, then is given out with it", () => {
+    const held = { current: [] };
+    const first = readTyped(["C81", "BAEE1", "BAE", "OSH", "OSHH2"], true);
+    expect(releaseTyped(held, ["C81", "BAEE1", "BAE", "OSH", "OSHH2"], first.procedures, false).map((p) => p.name)).toEqual(["BAEE1"]);
+    expect(held.current).toEqual([{ name: "OSHH2", before: "OSH", after: null }]);
+    expect(releaseTyped(held, ["KATW"], [], true)).toEqual([{ name: "OSHH2", before: "OSH", after: "KATW" }]);
+    expect(held.current).toEqual([]);
+  });
+
+  it("gives out one typed last as the typing is done", () => {
+    const held = { current: [] };
+    expect(releaseTyped(held, ["OSHH2"], readTyped(["OSHH2"], true).procedures, true).map((p) => p.name)).toEqual(["OSHH2"]);
   });
 });

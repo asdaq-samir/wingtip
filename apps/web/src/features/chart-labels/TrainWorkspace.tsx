@@ -205,8 +205,13 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   // Skipped while a field has focus, and for a press a stock layer
   // already used (its own list walks with the same arrows), which it
   // marks by preventing the default or keeping focus inside itself.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+  // Heard on the window, and on the drawer's list itself: the stock Drawer's
+  // popup keeps the arrows it uses from going further (Base UI's
+  // COMPOSITE_KEYS), so on a phone, where the list is in the sheet, Down
+  // from a row never reached the window (dev-page.spec, 2026-11-13). The
+  // first to take a press prevents its default, which the other then skips.
+  const onKey = useCallback(
+    (e: KeyboardEvent) => {
       const target = e.target instanceof HTMLElement ? e.target : null;
       const tag = target?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
@@ -217,12 +222,16 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
         return;
       }
       if (/^[0-5]$/.test(e.key) && point && !isEndpoint(point)) {
+        e.preventDefault();
         void rate(Number(e.key) as Rating).then(() => step(1));
       }
-    };
+    },
+    [point, rate, step],
+  );
+  useEffect(() => {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [point, rate, step]);
+  }, [onKey]);
 
   // Loading a route writes the address, which is what the queries key
   // on -- the same route again costs nothing, being kept.
@@ -293,13 +302,16 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
           <div className="h-40" />
         )
       ) : (
-        <WaypointPanel
-          entries={walk}
-          selected={point}
-          onFocus={focus}
-          departureIdent={store.course?.departure.ident ?? ""}
-          destinationIdent={store.course?.destination.ident ?? ""}
-        />
+        // eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the list's own keys, caught as they bubble, before the sheet's Drawer keeps them from the window.
+        <div className="contents" onKeyDown={(e) => onKey(e.nativeEvent)}>
+          <WaypointPanel
+            entries={walk}
+            selected={point}
+            onFocus={focus}
+            departureIdent={store.course?.departure.ident ?? ""}
+            destinationIdent={store.course?.destination.ident ?? ""}
+          />
+        </div>
       ),
     // Perf's head the model serving and Retrain (PerfHead), the route's
     // form being Train's.

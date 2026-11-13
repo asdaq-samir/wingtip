@@ -220,6 +220,10 @@ export function DryRunControls({
           onKeyDown={step}
           className={cn(
             "absolute inset-y-0 right-3 left-3 w-auto cursor-ew-resize rounded-lg",
+            // Its control, which takes the pointer, the chart's whole height:
+            // the stock one is its thumb's 16 points, at the top, so a tap or
+            // a drag lower on the chart moved nothing (dry-run.spec, 2026-11-13).
+            "*:h-full",
             "has-[[data-slot=slider-thumb]:focus-visible]:ring-2 has-[[data-slot=slider-thumb]:focus-visible]:ring-ring",
             "[&_[data-slot=slider-range]]:bg-transparent [&_[data-slot=slider-track]]:bg-transparent",
           )}

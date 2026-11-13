@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, openMapSettings, settle, slow } from "./helpers";
+import { grabberTo, openMapSettings, settle, slow, tapTheChart } from "./helpers";
 
 /**
  * The model weather's flow layer (features/weather-flow, the owner's
@@ -220,7 +220,9 @@ test("model weather is off by default, turned on from the Map menu, and its lege
   await page.keyboard.press("End");
   await expect(bar).toContainText("Forecast +6 h");
   await page.getByTestId("weather-flow-span").getByRole("button", { name: "1h" }).click();
-  await expect(page.getByRole("slider", { name: "Precipitation hour" })).toHaveAttribute("aria-valuemax", "1");
+  // The stock Slider's thumb is a range input: its bounds are its own
+  // min and max, read by a screen reader as the input's.
+  await expect(page.getByRole("slider", { name: "Precipitation hour" })).toHaveAttribute("max", "1");
   // An hour past is still the model's forecast (the radar's mosaic, held
   // by the stub, would say "Observed"), not a forecast ahead.
   await expect(page.getByTestId("weather-flow-time")).not.toContainText("Forecast +");
@@ -230,10 +232,15 @@ test("model weather is off by default, turned on from the Map menu, and its lege
   await page.getByTestId("weather-flow-now").click();
   await expect(page.getByTestId("weather-flow-time")).not.toContainText("Forecast +");
 
-  // The temperature carries no bubble's unit: its pill is the figure alone.
+  // The temperature carries no bubble's unit: its pill is the figure alone,
+  // and only where the pilot taps (FlowBubble: at the map's middle it
+  // stood on own ship's pill).
   await page.getByTestId("weather-flow-legend-field").click();
   await page.getByTestId("weather-flow-legend-field-temp").click();
   await expect(legend).toContainText("-15");
+  await expect(page.getByTestId("weather-flow-bubble")).toHaveCount(0);
+  await tapTheChart(page);
+  await expect(page.getByTestId("weather-flow-bubble").first()).toBeVisible();
   await expect(page.getByTestId("weather-flow-bubble").first()).not.toContainText("°C");
   await page.getByTestId("weather-flow-legend-field").click();
   await page.getByTestId("weather-flow-legend-field-precip").click();

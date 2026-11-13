@@ -4,7 +4,7 @@ import { showError } from "../lib/problems";
 import { cn } from "cn";
 import IconButton from "./IconButton";
 import { Toggle } from "@base-ui/react/toggle";
-import { APPROXIMATE_M, ownShipAvailable, useOwnShip } from "../lib/map/position/ownShip";
+import { APPROXIMATE_M, DRY_RUN_ZOOM, ownShipAvailable, useOwnShip } from "../lib/map/position/ownShip";
 
 /**
  * My position, among the map's buttons, as Maps and every map app has
@@ -74,7 +74,9 @@ export default function MyPositionButton() {
       setEnabled(true);
       recentre();
     } else if (!follow) {
-      recentre();
+      // In a dry run, back in on the airplane at the run's own zoom, as it
+      // started; the position's close-in (OwnShipGl's) stopped a level out.
+      recentre(simulated ? DRY_RUN_ZOOM : undefined);
     } else {
       setEnabled(false);
     }

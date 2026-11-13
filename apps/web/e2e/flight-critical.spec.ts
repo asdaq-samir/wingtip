@@ -130,11 +130,14 @@ test(
       await expect(page.getByText("Charts Saved Offline")).toBeVisible({ timeout: slow(180_000) });
     }
 
+    const route = page.url();
     await context.setOffline(true);
     if (keeping) {
       // Loaded again with no connection: the app from the worker, the
-      // route's answers from what Keep for the Air kept.
-      await page.reload();
+      // route's answers from what Keep for the Air kept. Opened by its
+      // link, which lands where it says: a reload starts clean, with no
+      // route, as Maps does when it is opened (features/shell/freshLoad).
+      await page.goto(route);
       await settle(page);
     } else {
       test.info().annotations.push({ type: "offline", description: "No service worker over plain http: not reloaded offline." });

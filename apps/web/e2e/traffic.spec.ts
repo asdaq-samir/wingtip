@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { drawn, grabberTo, settle, slow } from "./helpers";
+import { drawn, grabberTo, mapStill, settle, slow } from "./helpers";
 
 /**
  * The traffic about the map (TrafficGl's symbol layers, read through
@@ -67,9 +67,14 @@ test(
     await page.goto("/app/plan?place=C81");
     await settle(page);
     await expect.poll(async () => (await drawn(page, "traffic-marks")).length, { timeout: slow(15_000) }).toBe(2);
+    // With no own ship, each one's own height, a descent's arrow with it:
+    // once the map has come in to the field (HEIGHT_ZOOM). The account has
+    // no home, so the page opens on the whole country and flies in to C81,
+    // and the airplanes are drawn on the way, their heights not yet.
+    await expect
+      .poll(async () => (await drawn(page, "traffic-marks")).map((m) => String(m.label)).sort())
+      .toEqual([expect.stringMatching(/^4,500↓/), expect.stringMatching(/^9,800/)]);
     const marks = await drawn(page, "traffic-marks");
-    // With no own ship, each one's own height, a descent's arrow with it.
-    expect(marks.map((m) => String(m.label)).sort()).toEqual([expect.stringMatching(/^4,500↓/), expect.stringMatching(/^9,800/)]);
     // Turned by MapLibre against the map (icon-rotation-alignment "map"),
     // the flat chart's bearing 0, so its turn is the track.
     expect(marks.find((m) => m.hex === "a1")?.track).toBe(320);
@@ -101,6 +106,9 @@ test("between reports each airplane is carried on along its track, as ForeFlight
   await expect.poll(async () => (await mark()).length, { timeout: slow(15_000) }).toBe(1);
   // Its line out to where it will be in a minute.
   await expect.poll(async () => (await drawn(page, "traffic-trends")).length).toBe(1);
+  // The map at rest over C81 first: the page opens on the whole country
+  // (the account has no home) and flies in, which moved the mark too.
+  await mapStill(page);
   const first = (await mark())[0]!;
   await page.waitForTimeout(3000);
   const later = (await mark())[0]!;

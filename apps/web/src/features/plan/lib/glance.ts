@@ -30,6 +30,9 @@ export interface FieldGlance {
   wind: string | null;
   /** The crosswind on that runway, the gusts' where more (features/plan/lib/runwayCheck). */
   crosswindKt: number | null;
+  /** Whether that crosswind is past the airplane's demonstrated one: a
+   *  caution can be the runway's length past the POH's tables alone. */
+  crosswindOver: boolean;
   /** The first station called or listened to there (features/plan/lib/radio). */
   radio: { to: string; mhz: number } | null;
   finding: Finding;
@@ -156,7 +159,12 @@ function sentence(lead: string, action: string): string {
 /** The crosswind finding in the figures the glance already has: each
  *  field's runway and the knots across it, else the engine's own words. */
 function crosswindLead(detail: string, glance: BriefGlance | null): string {
-  const fields = [glance?.depart, glance?.arrive].filter((f): f is FieldGlance => !!f && f.finding === "caution" && f.crosswindKt != null);
+  // Only a field whose crosswind is past the demonstrated: a caution for
+  // its runway's length alone read "Runway 3 at KDLH has 0 kt across, past
+  // the POH's demonstrated" (brief-glance.spec, 2026-11-13).
+  const fields = [glance?.depart, glance?.arrive].filter(
+    (f): f is FieldGlance => !!f && f.finding === "caution" && f.crosswindOver && f.crosswindKt != null,
+  );
   if (!fields.length) return detail;
   const each = fields.map((f) => `${f.runway ? `Runway ${f.runway} at ` : ""}${f.ident} has ${f.crosswindKt} kt across`);
   return `${each.join(", ")}, past the POH's demonstrated`;

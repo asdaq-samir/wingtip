@@ -139,6 +139,38 @@ test("the loop bar's keys: arrows step a frame, Space plays, one pass stops on t
   await expect(page.getByRole("toolbar", { name: "Radar loop" })).toBeVisible();
 });
 
+test("the scrubber is live while the frames' tiles still load: a key then moves the frame", async ({ page }) => {
+  // Under Reduce Motion, so nothing plays by itself once the tiles are in
+  // (PRELOAD_CAP_MS at the latest) and the frame is the key's alone.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await stubLoop(page);
+  // IEM's tiles held unanswered (the later route is asked first): the
+  // frames not in, the loop not ready (WeatherLoopGl). A scrubber disabled
+  // until they were dropped the key (LoopBar).
+  let release = () => {};
+  const held = new Promise<void>((done) => (release = done));
+  await page.route(
+    (url) => url.hostname === "mesonet.agron.iastate.edu",
+    async (route) => {
+      await held;
+      await route.fulfill({ body: PIXEL, contentType: "image/png" });
+    },
+  );
+  await page.goto("/app/plan");
+  await settle(page);
+  await turnOnRadar(page);
+  const time = page.getByTestId("weather-loop-time");
+  await expect(time).toContainText(/\d{4}Z/);
+  await expect(time).not.toContainText("Old");
+  const slider = page.getByRole("slider", { name: "Radar frame" });
+  await expect(slider).toBeEnabled();
+  await slider.focus();
+  await page.keyboard.press("Home");
+  // The oldest frame, an hour old, said so, its tiles still coming.
+  await expect(time).toContainText(/Old: \d+m ago|Old: 1h/);
+  release();
+});
+
 test("on a desktop a mouse over the scrubber shows that frame and says its time, and leaving goes back", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1024, "a mouse's hover, a desktop's");
   await page.emulateMedia({ reducedMotion: "reduce" });

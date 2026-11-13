@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import {
   chartZoom,
   closeProfile,
+  frontSheet,
   grabberTo,
   inSheet,
   openPanel,
@@ -14,7 +15,7 @@ import {
 } from "./helpers";
 import { markWith } from "./marks";
 import { pickAirplane } from "./startState";
-import { middleOfMap, shipAt } from "./ownShipProbes";
+import { middleOfFront, shipAt } from "./ownShipProbes";
 import { R27 } from "./approachR27";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -195,10 +196,10 @@ test("the dry run's airplane is kept in the middle of what the panel leaves as t
   await pressDryRunStart(page, start);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
   const inTheMiddle = async () => {
-    await settled(sideDrawer(page));
+    await settled(frontSheet(page));
     await expect(async () => {
       const at = await shipAt(page, true),
-        middle = await middleOfMap(page);
+        middle = await middleOfFront(page);
       expect(Math.abs(at.x - middle.x)).toBeLessThan(40);
       expect(Math.abs(at.y - middle.y)).toBeLessThan(40);
     }).toPass({ timeout: slow(10_000) });
@@ -207,15 +208,17 @@ test("the dry run's airplane is kept in the middle of what the panel leaves as t
   await inTheMiddle();
   await grabberTo(page, "half");
   await inTheMiddle();
-  // Panned by hand, off the middle: the map no longer follows it, and the
-  // arrow offers to again.
+  // Panned by hand, off the middle: the map no longer follows it, and the arrow offers to again.
   const viewport = page.viewportSize()!;
   const from = { x: viewport.width < 768 ? viewport.width / 2 : viewport.width * 0.75, y: 150 };
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move(from.x - 90, from.y - 60, { steps: 8 });
   await page.mouse.up();
+  // Never the whole route in sight at the run's zoom: the route's first (MyPositionButton's routeAway).
   const arrow = page.locator("[data-map-controls]").getByTestId("my-position-button");
+  await expect(arrow).toHaveAccessibleName("Show the whole route");
+  await arrow.click();
   await expect(arrow).toHaveAccessibleName("Follow the airplane");
   await arrow.click();
   await inTheMiddle();
@@ -360,16 +363,13 @@ test("with an approach picked, the dry run flies it into the field: out to its f
   // CIRUS -- where straight in it was still south-east of the field.
   const panel = sideDrawer(page);
   await panel.getByTestId("dry-run-play").click();
-  // The chart's drag (shadcn's Slider over it): a tap at its right end
-  // takes the run there, within a pixel's tenths of a mile; End to the end.
+  // The chart's drag (the stock Slider over it): a tap at its right end takes the run there; End to the end.
   const scrub = panel.getByTestId("dry-run-scrub");
   const thumb = scrub.getByRole("slider", { name: "Where the dry run is along the course" });
-  // The Profile card is half way, as every card opens (e7bb15ec8): pulled up
-  // to the scrubber, as a finger would, before a tap at its end.
+  // The Profile card opens half way (e7bb15ec8): pulled up to the scrubber, as a finger would.
   await inSheet(page, scrub);
   const box = (await scrub.boundingBox())!;
-  // The stock Slider's range input says its end as its own max.
-  const end = Number(await thumb.getAttribute("max"));
+  const end = Number(await thumb.getAttribute("max")); // the stock Slider's range input's own
   expect(end).toBeGreaterThan(0);
   await page.mouse.click(box.x + box.width - 0.5, box.y + box.height / 2);
   await expect.poll(async () => Number(await thumb.getAttribute("aria-valuenow"))).toBeGreaterThan(end - 2);
@@ -409,7 +409,7 @@ test("with an approach picked, the dry run flies it into the field: out to its f
   await expect(panel.getByTestId("dry-run-again")).toHaveCount(0);
   const missed = panel.getByTestId("dry-run-missed");
   await expect(missed).toHaveCount(0);
-  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("PageUp"); // five miles (an arrow is a tenth, 923b30ba7)
   await expect(missed).toBeVisible();
   await missed.click();
   await expect(missed).toHaveCount(0);

@@ -134,6 +134,9 @@ test(
     await openNavLog(page);
     const table = page.getByRole("table", { name: /Navigation log from/i });
     await expect(table).toBeVisible();
+    // Its card come all the way up first: still sliding in, it carried the
+    // row clicked below 15 points up with it (2026-11-13).
+    await settled(page.locator("[data-sheet-card]").filter({ has: navLogSheet(page) }));
     const selectedRow = table.locator('[role="row"][data-selected]');
     await expect(selectedRow).toHaveCount(1);
     const scroller = navLogScroller(page);

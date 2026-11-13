@@ -1,5 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { openTab, settle, sideDrawer, slow } from "./helpers";
+import { pickAirplane } from "./startState";
+// An airplane, so the legs have their times and a field when it is reached
+// (the setup picks none, and with none there is no time to forecast for).
+test.beforeEach(({ page }) => pickAirplane(page));
 
 /**
  * A field the airplane reaches more than an hour from now has its runway

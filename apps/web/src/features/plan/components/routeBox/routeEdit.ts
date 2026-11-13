@@ -116,3 +116,26 @@ export function readTyped(typed: string[], withProcedures: boolean): { fresh: st
     .filter(Boolean);
   return { fresh, procedures };
 }
+
+/**
+ * The typed SIDs and STARs to pick now, and those held. One among the words
+ * that ended last, with nothing typed after it yet, waits for what comes
+ * after it: a filed route's STAR comes before its destination, and the box
+ * puts words in as each one ends, so "... OSH OSHH2 KATW" asked OSH, the
+ * destination then, for OSHH2, and KATW's arrival was never picked
+ * (ifr.spec, 2026-11-13). Given out with the next words, its `after` the
+ * first point among them, or as the typing is `done` (a commit). Those
+ * held kept in `held`.
+ */
+export function releaseTyped(
+  held: { current: TypedProcedure[] },
+  words: string[],
+  procedures: TypedProcedure[],
+  done: boolean,
+): TypedProcedure[] {
+  const next = words.map((w) => w.trim().toUpperCase()).find((w) => w && !procedures.some((p) => p.name === w)) ?? null;
+  const all = [...held.current.map((p) => (p.after === null && next ? { ...p, after: next } : p)), ...procedures];
+  const waits = (p: TypedProcedure) => !done && p.after === null;
+  held.current = all.filter(waits);
+  return all.filter((p) => !waits(p));
+}

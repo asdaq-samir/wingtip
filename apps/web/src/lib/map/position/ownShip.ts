@@ -259,7 +259,7 @@ export const SIMULATED_FIX_MS = 250;
  *  a phone, the route's checkpoints and fields round it named, at the
  *  owner's ask ("When play is pressed it should also zoom into plane on
  *  the route"). */
-const DRY_RUN_ZOOM = 10;
+export const DRY_RUN_ZOOM = 10;
 
 /** A point of the planned flight's dry run (features/plan/map/pastFlight's). */
 interface SimulatedPoint {

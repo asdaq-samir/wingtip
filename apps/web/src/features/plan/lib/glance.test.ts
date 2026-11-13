@@ -28,6 +28,7 @@ const field = (ident: string, runway: string, crosswindKt: number) => ({
   overFiftyFt: 1800,
   wind: "270/18",
   crosswindKt,
+  crosswindOver: crosswindKt > 15,
   radio: null,
   finding: "caution" as const,
 });
@@ -63,6 +64,15 @@ describe("the Brief's lines at a glance", () => {
     expect(act[0]!.cite).toBe("14 CFR 91.103(b); the POH");
     expect(act[0]!.raw).toEqual(["METAR C81 ..."]);
     expect(rest.line).toBe("Weather, TFRs & special use, altitude, fuel, weight & balance, risk: nothing to fix");
+  });
+
+  it("names only the fields whose crosswind is past the demonstrated, not one cautioned for its runway's length", () => {
+    // KDLH a caution with 0 kt across: past the POH's distance tables, not its crosswind.
+    const short = { ...glance, arrive: { ...field("KDLH", "3", 0), finding: "caution" as const } };
+    const { act } = glanceLines(with_({ runways: ["caution", "Crosswind past the POH's demonstrated at C81"] }), short);
+    expect(act[0]!.line).toBe(
+      "Runway 27 at C81 has 18 kt across, past the POH's demonstrated: ask for another runway, or wait for the wind",
+    );
   });
 
   it("puts the stops before the cautions, at most three lines, the rest counted", () => {

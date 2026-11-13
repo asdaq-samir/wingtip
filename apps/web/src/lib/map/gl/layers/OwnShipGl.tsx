@@ -36,6 +36,8 @@ export function OwnShipGl() {
   // its place and turn change), so the element is not built again each second.
   const drawn = useRef("");
   const flown = useRef(recentred);
+  // While the arrow's flight in to own ship is under way.
+  const landing = useRef(false);
   useEffect(() => {
     const el = document.createElement("div");
     el.style.pointerEvents = "none";
@@ -84,10 +86,21 @@ export function OwnShipGl() {
       flown.current = recentred;
       picked();
       const zoom = recentreZoom !== null ? glZoom(recentreZoom) : Math.max(map.getZoom(), glZoom(LOCAL_ZOOM));
+      landing.current = true;
       map.flyTo({ center: [fix.lon, fix.lat], zoom, duration: SHEET_SECONDS * 2000 });
+      // Ended however it ends: come in, stopped by a drag, or at once
+      // under Reduce Motion (then already over here).
+      if (!map.isMoving()) landing.current = false;
+      else
+        map.once("moveend", () => {
+          landing.current = false;
+        });
       return;
     }
-    if (follow) map.easeTo({ center: [fix.lon, fix.lat], duration: 500 });
+    // Not over the flight in: the next fix's ease, a quarter second on in
+    // a dry run, stopped it part way, the map left two levels short of
+    // the run's zoom (dry-run.spec, 2026-11-13).
+    if (follow && !landing.current) map.easeTo({ center: [fix.lon, fix.lat], duration: 500 });
   }, [map, fix, enabled, follow, recentred, recentreZoom]);
   return null;
 }

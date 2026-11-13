@@ -156,8 +156,12 @@ export default function AltitudeGroup({
         onFocus: (e) => {
           const input = e.currentTarget;
           setEditing(true);
+          const tapped = input.value;
+          // Not once a figure is typed: a key inside that frame had its
+          // figure taken whole and typed over by the next ("075" went in as
+          // FL-75, plans.spec, 2026-11-13).
           const pick = () => {
-            if (document.activeElement === input) input.setSelectionRange(3, input.value.length);
+            if (document.activeElement === input && input.value === tapped) input.setSelectionRange(3, input.value.length);
           };
           pick();
           requestAnimationFrame(pick);

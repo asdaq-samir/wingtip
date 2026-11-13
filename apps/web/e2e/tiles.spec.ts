@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, openMapSettings, settle, slow } from "./helpers";
+import { chartZoom, grabberTo, openMapSettings, settle, slow } from "./helpers";
 import { markWith } from "./marks";
 
 /**
@@ -41,15 +41,20 @@ for (const path of ["/app/dev"] as const) {
     });
     await expect.poll(kinds, { timeout: slow(15000) }).toBe("sec");
 
-    // Wheel-zoom in over the departure marker, well past the sectional's
-    // own zooms; the map zooms about the cursor, so C81 stays under it.
+    // Wheel-zoom in over the departure marker to the TAC's own levels
+    // (its tiles from z10, ChartGl's data-chart-zoom 11 and on), where
+    // the sectional is at its last detail; the map zooms about the
+    // cursor, so C81 stays under it. Not further: past the TAC's last
+    // level (13) the chart fades into the imagery (closeZoom) and no TAC
+    // tile is asked for, pinned or not. Eight fixed wheel steps from the
+    // route's whole view (zoom 6) came only to 7, short of the TAC.
     await expect.poll(markWith(page, "route-marks", "C81")).not.toBeNull();
     const marker = (await markWith(page, "route-marks", "C81")())!;
     await page.mouse.move(marker.x, marker.y);
-    for (let i = 0; i < 8; i++) {
-      await page.mouse.wheel(0, -60);
-      await page.waitForTimeout(400);
-    }
+    await expect(async () => {
+      await page.mouse.wheel(0, -120);
+      expect(await chartZoom(page)).toBeGreaterThanOrEqual(11);
+    }).toPass({ timeout: slow(30000) });
     expect(await kinds()).toBe("sec");
     expect(tacDrawn).toBe(0);
 

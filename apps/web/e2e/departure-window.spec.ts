@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, sideDrawer, slow, openBrief } from "./helpers";
+import { grabberTo, settle, sideDrawer, slow, openBrief } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -67,6 +67,9 @@ test("the Brief says when to go: an hour strip under the verdict, the best windo
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
+  // The Brief's card opens half way, as every card does (e7bb15ec8), the
+  // strip under its foot, where no scroll reaches: pulled all the way up.
+  await grabberTo(page, "full");
   const glance = sideDrawer(page).getByTestId("brief-glance");
   const strip = glance.getByTestId("departure-window");
   await expect(strip).toBeVisible({ timeout: slow(30_000) });

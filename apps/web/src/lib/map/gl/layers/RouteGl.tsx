@@ -95,7 +95,11 @@ const NAMES: SymbolLayerSpecification = {
     "text-font": GL_FONT,
     "text-size": 12,
     "text-variable-anchor": ["left", "right"],
-    "text-radial-offset": 1.3,
+    // Clear of its own dot's picture, which MapLibre's collision sees whole:
+    // 16 points from its middle (markPictures' dotPicture, 26 across and 3
+    // round it for the shadow). At 1.3 em (15.6) every name met its own dot
+    // and none was drawn at any zoom.
+    "text-radial-offset": 1.5,
     "text-justify": "auto",
     "symbol-sort-key": ["get", "number"],
   },

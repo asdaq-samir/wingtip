@@ -150,6 +150,8 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
       stepping = false,
       reported = -Infinity,
       reportedAt: number | null = null,
+      // A paused scrub's report held for the quarter second (draw).
+      trailing = 0,
       wasPlaying = false,
       // What the marker was last drawn at, so a frame with nothing new
       // writes nothing to it (a paused replay's, or a reduced-motion step's).
@@ -164,6 +166,17 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
           simulateFix(here);
           reported = now;
           reportedAt = at;
+        } else if (at !== reportedAt && !playing && !trailing) {
+          // Paused, no frame comes after this one: a scrub inside the
+          // quarter second (Page Down twice) is reported as it ends, where
+          // it was dropped and own ship left a scrub behind (dry-run.spec).
+          trailing = window.setTimeout(
+            () => {
+              trailing = 0;
+              draw(performance.now());
+            },
+            SIMULATED_FIX_MS - (now - reported),
+          );
         }
         return;
       }
@@ -222,6 +235,7 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
     return () => {
       unsubscribe();
       cancelAnimationFrame(frame);
+      window.clearTimeout(trailing);
       drop();
       if (asOwnShip) endSimulation();
     };

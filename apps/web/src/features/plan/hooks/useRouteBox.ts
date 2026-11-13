@@ -5,6 +5,7 @@ import { usePreferences, type RecentAirport } from "../../../lib/preferences";
 import type { TypedProcedure } from "../../../lib/procedures";
 import { useAirportSearch } from "../../../lib/useAirportSearch";
 import { pointsOf, readTyped, roleAt, routeOf, withoutPoint, withTyped, type RouteParts } from "../components/routeBox/routeEdit";
+import { releaseTyped } from "../components/routeBox/routeEdit";
 import { endedWords, removedPoint, routeValue, samePoints, takeTyped, tokensOf, typedOf } from "../components/routeBox/routeTokens";
 import type { RouteValue } from "../components/routeBox/routeTokens";
 import { useRouteCaret } from "./useRouteCaret";
@@ -92,12 +93,11 @@ export function useRouteBox({
     const route = withoutPoint(shape, i);
     if (route) send(route);
   };
-  // Words typed, put in before point `at` (null: after the last), the
-  // field's value then `rest`'s: what is still typed kept, the caret
-  // after what went in. The SIDs and STARs among them go to the route's
-  // procedures, with the route they were typed into.
-  const put = (words: string[], at: number | null, rest: RouteValue) => {
+  // Words typed, put in before point `at` (null: after the last), `rest` the field's; their SIDs and STARs picked (releaseTyped).
+  const held = useRef<TypedProcedure[]>([]);
+  const put = (words: string[], at: number | null, rest: RouteValue, done: boolean) => {
     const { fresh, procedures } = readTyped(words, !!onTypedProcedures);
+    const ready = releaseTyped(held, words, procedures, done);
     const placed = fresh.length ? withTyped(shape, fresh, at) : null;
     const route = placed?.route ?? null;
     if (route) send(route);
@@ -109,12 +109,12 @@ export function useRouteBox({
     // destination and a stop, KMSN both ends of a cleared route).
     valueNow.current = shown;
     setValue(shown);
-    if (procedures.length) onTypedProcedures?.(procedures, { dep: route?.dep ?? shownRoute.dep, dest: route?.dest ?? shownRoute.dest });
+    if (ready.length) onTypedProcedures?.(ready, { dep: route?.dep ?? shownRoute.dep, dest: route?.dest ?? shownRoute.dest });
   };
   // Everything typed, put in where it was typed: false where nothing was.
   const commit = (from: RouteValue = valueNow.current) => {
     const taken = takeTyped(from);
-    if (taken) put(taken.words, taken.at, taken.rest);
+    if (taken) put(taken.words, taken.at, taken.rest, true);
     return !!taken;
   };
 
@@ -126,7 +126,7 @@ export function useRouteBox({
   const onValue = (next: RouteValue) => {
     const ended = endedWords(next);
     if (ended) {
-      if (ended.words.length) put(ended.words, ended.at, ended.rest);
+      if (ended.words.length) put(ended.words, ended.at, ended.rest, false);
       else setValue(ended.rest);
       return;
     }
@@ -172,7 +172,7 @@ export function useRouteBox({
   // for the next; an airport among the recents, as the search bar's.
   const pick = (ident: string, airport?: RecentAirport) => {
     if (airport) usePreferences.getState().addRecentAirport(airport);
-    put([ident], typed.at, routeValue(tokensOf(value), "", typed.at, value));
+    put([ident], typed.at, routeValue(tokensOf(value), "", typed.at, value), true);
     onAddingChange(false);
     field.current?.focus();
   };

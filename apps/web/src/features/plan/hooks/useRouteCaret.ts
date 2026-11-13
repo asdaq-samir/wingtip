@@ -125,8 +125,25 @@ export function useRouteCaret({
   const asked = addAt !== null ? addAt : via?.length ? via[0]!.stop_index + 1 : Math.max(points.length - 1, 0);
   const askedNow = useEffectEvent(() => focusAt(asked));
   useEffect(() => {
-    if (adding) askedNow();
-  }, [adding]);
+    if (!adding) return;
+    askedNow();
+    // Asked as a card over the sheet goes (the Profile's Add a Stop): the
+    // sheet comes back into sight a frame or two after the card leaves
+    // (SheetDrawer's GIVE_WAY, a visibility transition), and a field still
+    // hidden takes no focus -- the box said "A stop here" with no caret in
+    // it (plans.spec, "no legal altitude", 2026-11-13). Asked again as it
+    // shows, for half a second at most.
+    let frame = 0;
+    let frames = 0;
+    const again = () => {
+      const el = field.current;
+      if (!el || document.activeElement === el || ++frames > 30) return;
+      if (el.checkVisibility({ visibilityProperty: true })) askedNow();
+      else frame = requestAnimationFrame(again);
+    };
+    frame = requestAnimationFrame(again);
+    return () => cancelAnimationFrame(frame);
+  }, [adding, field]);
   // Opened from its folded line, the same: in the tap's own commit, so iOS
   // brings the keyboard up (it does for no focus after the tap).
   const openedNow = useEffectEvent(() => focusAt(startAt));

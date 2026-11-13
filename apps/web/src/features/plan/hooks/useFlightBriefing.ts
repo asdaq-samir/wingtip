@@ -390,10 +390,10 @@ export function useFlightBriefing({
             overFiftyFt: distance ? Math.round(distance.totalFt) : null,
             wind: said === "calm" ? "Calm" : said ? `${said.dir.replace(/T$/, "")}/${said.speed}` : null,
             crosswindKt: check ? Math.round(check.crosswindKt) : null,
+            crosswindOver: !!check?.crosswindOver,
             radio: call ? { to: call.to, mhz: call.mhz! } : null,
-            // A field not checked (no elevation, no runway length) is not known,
-            // never fine; one past the POH's tables is a caution (the engine's
-            // runways finding says the same).
+            // A field not checked (no elevation, no runway length) is not known, never fine; one past
+            // the POH's tables is a caution (the engine's runways finding says the same).
             finding:
               !check || check.unchecked || !distance || distance.unknown
                 ? "unknown"

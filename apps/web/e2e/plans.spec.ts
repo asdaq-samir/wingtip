@@ -45,9 +45,8 @@ test(
     // Hundreds of feet after "FL", at the owner's pick: FL045 for 4,500 ft.
     await expect(input).toHaveValue(/^FL-\d{3}$/);
     await openProfile(page);
-    // The Profile card: the side view with its slider, the Altitude
-    // Advisor under it (Fastest marked), the flight rules,
-    // and how it was chosen, folded.
+    // The Profile card: the side view with its slider, the Altitude Advisor
+    // under it (Fastest marked), the flight rules, and how it was chosen, folded.
     const popover = page.getByTestId("profile-card");
     await expect(popover).toBeVisible();
     const wheel = popover.getByRole("slider", { name: "Cruise altitude" }); // the stock Slider, a step each altitude
@@ -106,11 +105,11 @@ test(
     // ceiling once each, with their reasons (the owner's pick of the
     // redesign): there is no list over the steps that said them again.
     const drawer = sideDrawer(page);
-    await openTab(page, "Nav Log");
+    await openTab(page, "En route"); // the Brief pulled up first: half way, its pages' cards are under its foot
     await openSection(page, "Cruise Altitude");
     const cruise = drawer.locator('[data-title="Cruise Altitude"]');
     await expect(cruise).toBeVisible();
-    await expect(drawer.getByText("14 CFR 91.159")).toBeVisible();
+    await expect(cruise.getByText("14 CFR 91.159")).toBeVisible();
     const steps = cruise.getByTestId("altitude-steps").locator('[data-slot="accordion-trigger"]');
     await expect(steps.first()).toContainText(/^Fastest plan.+(\d+h( \d+m)?|\d+m) · [\d.]+ gal$/);
     await expect(steps.nth(1)).toContainText(/^FloorTerrain and obstacles, with margin[\d,]+ ft$/);
@@ -184,6 +183,7 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   // bottom of arrival"), and in full in the Brief.
   await expect(page.getByTestId("fuel-check")).toHaveCount(0);
   await expect(page.getByTestId("fuel-breakdown-open")).not.toHaveAttribute("data-alert");
+  await openTab(page, "Preflight"); // the Brief pulled up first, as above
   await openSection(page, "Fuel");
   const detail = page.getByTestId("fuel-detail");
   await expect(detail.locator("[data-slot=item]", { hasText: "Usable fuel" })).toContainText("40 gal");
