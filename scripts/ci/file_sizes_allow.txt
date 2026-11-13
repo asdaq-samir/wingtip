@@ -65,7 +65,7 @@ engine/crates/brief/src/gonogo/verdict.rs 488
 engine/crates/brief/src/runway/calls.rs 420
 engine/crates/core/src/json.rs 422
 engine/crates/pilot/src/pilot/currency.rs 443
-engine/crates/pilot/src/pilot/handbook.rs 430
+engine/crates/pilot/src/pilot/handbook.rs 427
 engine/crates/pilot/src/pilot/kinds.rs 416
 engine/crates/procedures/src/figures/debrief.rs 637
 engine/crates/radio/src/atis.rs 723
@@ -80,15 +80,15 @@ engine/crates/route/src/route/options/ask.rs 401
 engine/crates/route/src/route/options/fuel.rs 455
 engine/crates/route/src/route/options/read.rs 417
 engine/crates/route/src/route/options/terrain.rs 424
-engine/crates/weather/src/forecast/awc.rs 522
+engine/crates/weather/src/forecast/awc.rs 520
 engine/crates/weather/src/forecast/route.rs 422
-engine/crates/weather/src/metar.rs 490
+engine/crates/weather/src/metar.rs 488
 engine/crates/wording/src/wording/script.rs 600
 engine/facade/tests/approach.rs 818
 engine/facade/tests/contract.rs 699
 engine/facade/tests/figures.rs 480
 engine/facade/tests/gonogo.rs 1185
-engine/facade/tests/motion.rs 767
+engine/facade/tests/motion.rs 763
 engine/facade/tests/navlog.rs 684
 engine/facade/tests/runway.rs 598
 scripts/build/design_tokens.py 556

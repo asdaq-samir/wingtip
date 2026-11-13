@@ -9,6 +9,7 @@ use serde_json::{json, Value};
 use std::path::PathBuf;
 use wingtip_engine::call::call;
 use wingtip_engine::geo::{bearing_deg, destination, distance_nm};
+use wingtip_engine::units::FT_PER_NM;
 
 fn ask(name: &str, input: Value) -> Value {
     let text = call(name, &input.to_string()).unwrap_or_else(|e| panic!("{name}: {e}"));
@@ -24,7 +25,6 @@ fn drawing(id: &str) -> Value {
     kbur()[id].clone()
 }
 
-const FT_PER_NM: f64 = 6076.12;
 const RW08: (f64, f64) = (34.197911, -118.369142);
 
 type Ll = (f64, f64);

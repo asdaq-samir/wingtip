@@ -6,6 +6,7 @@
 
 use super::debrief::AIRBORNE_KT;
 use crate::flight;
+use wingtip_core::units::FT_PER_NM;
 
 /// Below this over the ground (or slower than AIRBORNE_KT, the debrief's
 /// too), the airplane is on the ground or about to be, and there is no
@@ -15,8 +16,6 @@ pub const AIRBORNE_AGL_FT: f64 = 500.0;
 /// 90-66C's 1,000 ft above it for a propeller airplane, from where a
 /// landing can still be flown.
 pub const ARRIVE_AGL_FT: f64 = 1000.0;
-/// Feet in a nautical mile (1,852 m exactly, over 0.3048 m a foot).
-pub const FT_PER_NM: f64 = 1852.0 / 0.3048;
 
 /// Still-air nm for every 1,000 ft from an airplane's glide ratio (feet
 /// forward for each foot down, its POH's Section 3 "Maximum glide"); None

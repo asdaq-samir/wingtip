@@ -8,6 +8,7 @@ use serde_json::{json, Value};
 use std::path::PathBuf;
 use wingtip_engine::call::call;
 use wingtip_engine::geo::distance_nm;
+use wingtip_engine::units::{FT_PER_M, FT_PER_NM};
 
 fn ask(name: &str, input: Value) -> Value {
     let text = call(name, &input.to_string()).unwrap_or_else(|e| panic!("{name}: {e}"));
@@ -207,11 +208,6 @@ fn alerts_go_off_once_as_it_happens() {
     assert_eq!(n(&inbound["nm"]).round(), 6.0);
     assert_eq!(fires(json!({ "kind": "near", "plane": { "lat": 42.9, "lon": -88.3 }, "to": galt, "limit_nm": 10 }))["fires"], json!(false));
 }
-
-// --- Glide ------------------------------------------------------------------
-
-// The c172 profile's 9 to 1 (its POH, figure 3-1), feet in a nm.
-const FT_PER_NM: f64 = 1852.0 / 0.3048;
 
 // --- In flight (#218) ---------------------------------------------------------
 
@@ -698,7 +694,7 @@ fn a_gpx_track_is_read_in_time_order_its_heights_in_feet() {
         read["points"],
         json!([
             { "t": 1790859540000.0, "lat": 42.4, "lon": -88.4, "alt_ft": null },
-            { "t": 1790863200000.0, "lat": 42.1, "lon": -88.1, "alt_ft": 250.5 * 3.28084 },
+            { "t": 1790863200000.0, "lat": 42.1, "lon": -88.1, "alt_ft": 250.5 * FT_PER_M },
             { "t": 1790863205250.0, "lat": 42.2, "lon": -88.2, "alt_ft": null },
         ])
     );
@@ -714,7 +710,7 @@ fn a_kml_track_log_is_read_from_its_whens_and_coords() {
     ));
     let points = read["points"].as_array().unwrap();
     assert_eq!(points.len(), 3);
-    assert_eq!(norm(&points[0]), json!({ "t": 1790863200000.0, "lat": 42.1, "lon": -88.1, "alt_ft": 300.0 * 3.28084 }));
+    assert_eq!(norm(&points[0]), json!({ "t": 1790863200000.0, "lat": 42.1, "lon": -88.1, "alt_ft": 300.0 * FT_PER_M }));
     assert_eq!(points[1]["alt_ft"], Value::Null);
     assert_eq!(points[2]["lat"], json!(42.3));
 }

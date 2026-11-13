@@ -6,7 +6,7 @@
 //! wind triangle (lib/diversion) is held to the same fixture
 //! (apps/web/src/lib/fixtures/flightRules.json).
 
-use wingtip_core::units::KELVIN_AT_0_C;
+use wingtip_core::units::{KELVIN_AT_0_C, M_PER_FT};
 
 /// The wind correction angle, degrees, positive to the right: the E6B's
 /// triangle (FAA-H-8083-25C, Pilot's Handbook of Aeronautical Knowledge,
@@ -148,7 +148,7 @@ pub fn pressure_altitude_ft(elevation_ft: f64, altimeter_inhg: f64) -> f64 {
 pub const ISA_SEA_LEVEL_HPA: f64 = 1013.25;
 /// The tropopause of the standard atmosphere, ft (11,000 m, ICAO Doc
 /// 7488): the formula below holds under it.
-pub const ISA_TROPOPAUSE_FT: f64 = 11_000.0 / 0.3048;
+pub const ISA_TROPOPAUSE_FT: f64 = 11_000.0 / M_PER_FT;
 
 /// A standard day's pressure at a pressure altitude, hPa: the same
 /// troposphere formula as density_ratio's, (1 - L h / T0)^(g / R L) of

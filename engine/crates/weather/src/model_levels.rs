@@ -91,6 +91,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wingtip_core::units::M_S_PER_KT;
 
     fn close(a: f64, b: f64) -> bool {
         (a - b).abs() < 1e-9
@@ -99,11 +100,11 @@ mod tests {
     #[test]
     fn a_level_is_read_in_feet_knots_and_celsius() {
         // 1,852 m a second east is 3,600 kt toward the east: from the west.
-        let w = level(GribLevel { height_m: 3048.0, temp_k: KELVIN_AT_0_C, u_m_s: 1852.0 / 3600.0 * 10.0, v_m_s: 0.0 });
+        let w = level(GribLevel { height_m: 3048.0, temp_k: KELVIN_AT_0_C, u_m_s: M_S_PER_KT * 10.0, v_m_s: 0.0 });
         assert!(close(w.altitude_ft, 10_000.0) && close(w.temp_c, 0.0), "{w:?}");
         assert!(close(w.wind_speed_kt, 10.0) && close(w.wind_dir_true_deg, 270.0), "{w:?}");
         // From the south-west at 20 kt: blowing north-east.
-        let part = 20.0 / 2f64.sqrt() * 1852.0 / 3600.0;
+        let part = 20.0 / 2f64.sqrt() * M_S_PER_KT;
         let w = level(GribLevel { height_m: 0.0, temp_k: 253.15, u_m_s: part, v_m_s: part });
         assert!(close(w.wind_speed_kt, 20.0) && close(w.wind_dir_true_deg, 225.0) && close(w.temp_c, -20.0), "{w:?}");
         // No wind at all: from 360, at nothing.

@@ -31,6 +31,7 @@
 
 use super::sim_config::{self, Config, Frame};
 use wingtip_core::geo::EARTH_RADIUS_NM;
+use wingtip_core::units::{FT_PER_NM, HPA_PER_INHG, M_S_PER_KT};
 use wingtip_core::wmm;
 use wingtip_flight::flight;
 
@@ -51,10 +52,8 @@ pub const MAX_RATE_HZ: f64 = 60.0;
 pub const ATTITUDE_SPAN_S: f64 = 2.5;
 /// Standard gravity, m/s^2 (CGPM 1901; ISO 80000-3).
 const G_MS2: f64 = 9.80665;
-const MS_PER_KT: f64 = 1852.0 / 3600.0;
-const FTS_PER_KT: f64 = 1852.0 / 0.3048 / 3600.0;
-/// Hectopascals in an inch of mercury (NIST SP 811, B.8: 3,386.389 Pa).
-const HPA_PER_INHG: f64 = 33.86389;
+/// Feet a second in a knot.
+const FTS_PER_KT: f64 = FT_PER_NM / 3600.0;
 /// 14 CFR 91.121(a): the local setting below this, 29.92 at or above.
 const STANDARD_SETTING_FT: f64 = 18_000.0;
 /// Degrees of latitude a nautical mile, on the engine's sphere (geo).
@@ -307,7 +306,7 @@ fn frames(run: &[Point], settings: &[Setting], ground: &[(f64, f64)], pressure: 
                 return 0.0;
             }
             let rate_rad_s = (heading[b] - heading[a]).to_radians() / (frames[b].t - frames[a].t);
-            (frames[i].gs_kt * MS_PER_KT * rate_rad_s / G_MS2).atan().to_degrees()
+            (frames[i].gs_kt * M_S_PER_KT * rate_rad_s / G_MS2).atan().to_degrees()
         })
         .collect();
     let pitch_raw: Vec<f64> =

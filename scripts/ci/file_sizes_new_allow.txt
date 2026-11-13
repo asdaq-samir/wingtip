@@ -9,9 +9,9 @@ apps/ios/Wingtip/Views/FieldNotamViews.swift 304
 engine/crates/airspace/src/sua_tab.rs 393
 engine/crates/procedures/src/occurrence.rs 340
 engine/crates/route/src/approach/scene.rs 332
-engine/crates/route/src/approach/tags.rs 318
+engine/crates/route/src/approach/tags.rs 317
 engine/crates/route/src/motion/replay.rs 322
-engine/crates/route/src/motion/sim.rs 367
+engine/crates/route/src/motion/sim.rs 366
 engine/crates/weather/src/aviation_grids.rs 356
 engine/crates/weather/src/notam_read/body.rs 362
 engine/crates/weather/src/notam_read/mod.rs 347

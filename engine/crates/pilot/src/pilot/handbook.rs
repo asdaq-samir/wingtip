@@ -13,10 +13,7 @@
 
 use super::js;
 use crate::json;
-
-/// A statute mile an hour in knots: 1,609.344 m / 1,852 m (the
-/// international mile and nautical mile).
-pub const MPH_TO_KT: f64 = 1609.344 / 1852.0;
+use wingtip_core::units::NM_PER_SM;
 
 /// A figure and the line it was read from.
 #[derive(Clone, Debug, PartialEq)]
@@ -159,7 +156,7 @@ pub fn knots(line: &str, value: f64) -> f64 {
         return value;
     }
     if says_mph(&b) || says_mph(&chars(line)) {
-        js::round(value * MPH_TO_KT)
+        js::round(value * NM_PER_SM)
     } else {
         value
     }
