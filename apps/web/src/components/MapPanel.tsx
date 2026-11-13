@@ -186,6 +186,10 @@ export default function MapPanel(props: Props) {
   const panelSize = useMemo(() => ({ size, to: ask, card: layer === "card" }), [size, ask, layer]);
   const shared: PartsProps = {
     ...props,
+    // The pages as drawn (none under the console, a card or in flight):
+    // the props' own drew SheetPage's panels with no Tabs round them, and
+    // the console's opening threw Base UI's "TabsRootContext is missing".
+    pages,
     layer,
     flying,
     size,
