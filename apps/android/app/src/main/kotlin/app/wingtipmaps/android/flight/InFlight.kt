@@ -38,7 +38,7 @@ import kotlinx.coroutines.launch
  * A planning aid beside the airplane's own instruments: a phone's GPS is
  * not an approved navigation source (AC 120-76D), and the bar says so.
  */
-class InFlight private constructor() {
+class InFlight {
     /** What the screens read. `problem` is the engine's words where one of
      *  its rules failed for this fix, shown on the instruments bar, so a
      *  figure left out is never taken for one the engine had none of. */
@@ -151,8 +151,6 @@ class InFlight private constructor() {
         /** How often the nearest field is asked for the ring's ground: a
          *  field's elevation changes slowly as an airplane flies. */
         const val FIELD_EVERY_MS = 60_000L
-
-        val shared: InFlight by lazy { InFlight() }
 
         /** The engine's `in_flight` for a fix on the plan's route: the
          *  fields in order (the departure, the stops, the destination) are

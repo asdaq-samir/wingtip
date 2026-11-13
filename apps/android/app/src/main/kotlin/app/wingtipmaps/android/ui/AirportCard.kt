@@ -47,7 +47,7 @@ import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.search.Remembered
 import app.wingtipmaps.android.search.SearchMemory
@@ -79,11 +79,11 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, model: AirportModel = hiltViewModel()) {
+fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, model: AirportModel = hiltViewModel(), flight: FlightModel = hiltViewModel()) {
     val context = LocalContext.current
     val state by model.state.collectAsStateWithLifecycle()
     val planState by plan.state.collectAsStateWithLifecycle()
-    val fix by remember(context) { OwnShip.of(context) }.fix.collectAsStateWithLifecycle()
+    val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
     val airplane = rememberAirplaneNow(plan)
     val actions = rememberRouteActions(plan)
     LaunchedEffect(ident) { if (ident.isNotEmpty()) model.open(ident) }

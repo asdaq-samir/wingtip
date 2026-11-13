@@ -26,15 +26,9 @@ data class TileTemplate(
 ) {
     fun url(z: Int, x: Int, y: Int): String = at(z.toString(), x.toString(), y.toString())
 
-    /** The tile at zoom `z` a point lies in, by the slippy-map tile
-     *  numbering of the Web Mercator grid the charts are cut on. */
-    fun around(lat: Double, lon: Double, z: Int): String {
-        val n = 1 shl z
-        val x = ((lon + 180.0) / 360.0 * n).toInt().coerceIn(0, n - 1)
-        val r = Math.toRadians(lat)
-        val y = ((1.0 - kotlin.math.ln(kotlin.math.tan(r) + 1.0 / kotlin.math.cos(r)) / Math.PI) / 2.0 * n).toInt().coerceIn(0, n - 1)
-        return url(z, x, y)
-    }
+    /** The tile at zoom `z` a point lies in, on the Web Mercator grid
+     *  the charts are cut on (TileGrid). */
+    fun around(lat: Double, lon: Double, z: Int): String = url(z, TileGrid.column(lon, z), TileGrid.row(lat, z))
 
     /** The address with the map's own placeholders in it, for MapLibre's
      *  raster source, which fills them in per tile. */

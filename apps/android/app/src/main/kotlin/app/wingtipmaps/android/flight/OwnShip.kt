@@ -1,7 +1,6 @@
 package app.wingtipmaps.android.flight
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -67,7 +66,7 @@ import kotlinx.coroutines.withContext
  * worked out from the wrong place, so no fixes are read from it at all
  * and the screen says why and asks again.
  */
-class OwnShip private constructor(private val context: Context) {
+class OwnShip(private val context: Context, private val trail: OwnTrail) {
     /** A fix as the flight pieces read it: feet, knots, degrees true,
      *  ms since 1970. Null where the provider did not send a figure. */
     data class Fix(
@@ -247,7 +246,7 @@ class OwnShip private constructor(private val context: Context) {
         // off only while flying and only once the pilot has said Start
         // Flight: offered as the airplane reaches flying speed, stopped as
         // it slows below it, when the next flight asks again.
-        flying(OwnTrail.of(context).took(fix))
+        flying(trail.took(fix))
         // The track the logbook is drawn from, ground and air alike.
         FlightRecorder.of(context).took(fix)
     }
@@ -363,13 +362,5 @@ class OwnShip private constructor(private val context: Context) {
         fun underway(speedKt: Double?): Result<Boolean> = Engine.underway(speedKt)
         const val FT_PER_M = 3.28084
         const val KT_PER_MPS = 1.943844
-
-        // The application's context alone (of), which lives as long as the process.
-        @SuppressLint("StaticFieldLeak")
-        @Volatile
-        private var shared: OwnShip? = null
-
-        fun of(context: Context): OwnShip =
-            shared ?: synchronized(this) { shared ?: OwnShip(context.applicationContext).also { shared = it } }
     }
 }

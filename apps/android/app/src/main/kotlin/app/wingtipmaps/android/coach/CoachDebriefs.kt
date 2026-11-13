@@ -1,8 +1,8 @@
 package app.wingtipmaps.android.coach
 
 import app.wingtipmaps.android.AppClock
-import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
+import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.CoachDebrief
 import app.wingtipmaps.android.api.generated.CoachLeg
 import app.wingtipmaps.android.api.generated.CoachPattern
@@ -10,12 +10,11 @@ import app.wingtipmaps.android.api.generated.DebriefAnswer
 import app.wingtipmaps.android.api.generated.DebriefAsk
 import app.wingtipmaps.android.api.generated.DebriefCheckpoint
 import app.wingtipmaps.android.api.generated.DebriefPoint
-import app.wingtipmaps.android.api.generated.gateway.FlightDto
 import app.wingtipmaps.android.api.generated.gateway.FlightSummaryDto
+import app.wingtipmaps.android.api.planned
+import app.wingtipmaps.android.api.readOrNone
 import app.wingtipmaps.android.api.track
 import kotlinx.coroutines.CancellationException
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import java.time.Instant
 import java.time.ZoneId
 
@@ -62,11 +61,11 @@ object CoachDebriefs {
      *  approaches after it; a flight whose track or plan cannot be had is
      *  left out. */
     suspend fun fetch(): List<CoachDebrief> {
-        val flights = quietly { Gateway.read<List<FlightSummaryDto>>("/api/flights") } ?: return emptyList()
+        val flights = quietly { Gateway.api.flightList().readOrNone() } ?: return emptyList()
         return recent(flights).flatMap { summary ->
             val track = quietly { Gateway.track(summary.id) } ?: return@flatMap emptyList()
             val first = track.points.firstOrNull() ?: return@flatMap emptyList()
-            val flight = quietly { Gateway.read<FlightDto>("/api/flights/${summary.id}") } ?: return@flatMap emptyList()
+            val flight = quietly { Gateway.api.flightGet(summary.id).readOrNone() } ?: return@flatMap emptyList()
             val flownOn = dayOf(first.t)
             val flown = quietly {
                 val ask = DebriefAsk(
@@ -75,9 +74,7 @@ object CoachDebriefs {
                     },
                     points = track.points.map { DebriefPoint(it.altFt, it.lat, it.lon, it.t.toDouble()) },
                 )
-                val answer = Gateway.json.decodeFromString<DebriefAnswer>(
-                    Gateway.send("POST", Config.plannerPath("/api/debrief"), Gateway.json.encodeToString(ask)),
-                )
+                val answer = Planner.writes.debrief(ask).planned()
                 trimmed(answer, "${flight.departureIdent}-${flight.destinationIdent}", flownOn)
             }
             listOfNotNull(flown) + CoachApproaches.fetch(flight.destinationIdent, track, flownOn)

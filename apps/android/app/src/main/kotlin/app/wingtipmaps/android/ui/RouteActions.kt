@@ -5,12 +5,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.design.Haptics
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.rememberHaptics
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.route.RouteHome
@@ -102,9 +104,9 @@ class RouteActions(
 }
 
 @Composable
-fun rememberRouteActions(plan: Plan): RouteActions {
+fun rememberRouteActions(plan: Plan, flight: FlightModel = hiltViewModel()): RouteActions {
     val context = LocalContext.current
-    val fix by remember { OwnShip.of(context) }.fix.collectAsStateWithLifecycle()
+    val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
     val haptics = rememberHaptics()
     return remember(plan, fix, state.routed, state.course) { RouteActions(plan, fix, state.routed && state.course != null, context, haptics) }

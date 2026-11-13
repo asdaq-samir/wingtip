@@ -10,7 +10,6 @@
  },
  "mercator-outside-tile-maths-phones": {
   "apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/flow/FlowColour.kt": 2,
-  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/offline/KeptLoopTiles.kt": 1,
   "apps/ios/Wingtip/ModelWeather/FlowPaint.swift": 2,
   "apps/ios/Wingtip/Offline/OfflineStore.swift": 1
  },
@@ -21,7 +20,6 @@
   "apps/android/app/src/main/kotlin/app/wingtipmaps/android/Charts.kt": 1,
   "apps/android/app/src/main/kotlin/app/wingtipmaps/android/diagnostics/DiagnosticsReporter.kt": 1,
   "apps/android/app/src/main/kotlin/app/wingtipmaps/android/offline/DownloadsModel.kt": 1,
-  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/trip/TripPlannerModel.kt": 1,
   "apps/ios/Wingtip/Diagnostics/DiagnosticsReporter.swift": 1
  },
  "planner-http-by-hand-python": {
@@ -29,7 +27,6 @@
  },
  "planner-http-by-hand-web": {
   "apps/web/src/features/pilot/useExportAccount.ts": 1,
-  "apps/web/src/features/tripPlanner/useTripPlanner.ts": 1,
   "apps/web/src/lib/errorReports.ts": 1
  },
  "unit-constant-outside-units-module": {

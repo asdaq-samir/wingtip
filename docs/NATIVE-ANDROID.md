@@ -48,7 +48,8 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     what the planner said of it), and `Links` (the site's links the app
     opens);
   - `tiles/TileTemplate.kt`: the tile address, the web app's and the iOS
-    app's;
+    app's; `tiles/TileGrid.kt` the tile a point lies in, the app's one copy
+    of the Web Mercator maths, clamped at MapLibre's own limits;
   - `map/`: the map. `ChartMap` (the MapLibre view, its camera, the
     route, own ship and the path flown), `MapStyle` (the first style as
     JSON: the chart and the overlay tiles' layers, the web's

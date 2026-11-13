@@ -3,9 +3,8 @@ package app.wingtipmaps.android.map
 import android.view.View
 import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.Config
-import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
-import app.wingtipmaps.android.api.generated.AirspaceVolumes
+import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.design.generated.WingtipMap
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.approachScene
@@ -127,12 +126,9 @@ object Map3dLayer {
         scope.launch {
             try {
                 val (b, classes) = want
-                val body = Planner.fetch(
-                    "/api/airspace/volumes",
-                    mapOf("south" to "${b.south}", "west" to "${b.west}", "north" to "${b.north}", "east" to "${b.east}", "classes" to classes.joinToString(",")),
-                )
+                val answer = Planner.api.airspaceVolumesIn(b.south, b.west, b.north, b.east, classes.joinToString(",")).planned()
                 // Read off the main thread: each polygon's floor and ceiling is asked of the engine.
-                volumes = withContext(Dispatchers.Default) { AirspaceVolumes3d.geoJson(Gateway.json.decodeFromString(AirspaceVolumes.serializer(), body).features, appZoom) }
+                volumes = withContext(Dispatchers.Default) { AirspaceVolumes3d.geoJson(answer.features, appZoom) }
                 redraw(view, camera = false)
             } catch (e: CancellationException) {
                 throw e

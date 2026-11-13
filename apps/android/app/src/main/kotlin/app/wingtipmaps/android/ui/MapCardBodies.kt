@@ -14,17 +14,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.engine.MapRules
-import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapStyle
@@ -105,10 +105,9 @@ private fun MapPick.Vor.station() = app.wingtipmaps.android.engine.Station(ident
  *  Chart Supplement lists them, under Restrictions where it is in service
  *  with them. */
 @Composable
-internal fun VorCard(vor: MapPick.Vor) {
+internal fun VorCard(vor: MapPick.Vor, flight: FlightModel = hiltViewModel()) {
     Head(ink(MapStyle.BLUE), vor.kind, listOfNotNull(vor.name?.let(MapRules::placeName), vor.freq).joinToString(" · "))
-    val context = LocalContext.current
-    val fix by OwnShip.of(context).fix.collectAsStateWithLifecycle()
+    val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
     val radial = fix?.let { MapRules.radialOf(vor.station(), it.lat, it.lon) }
     radial?.exceptionOrNull()?.let { ProblemLine("The radial failed: ${it.message}") }
     val on = radial?.getOrNull()

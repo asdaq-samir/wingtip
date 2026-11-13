@@ -1,11 +1,10 @@
 package app.wingtipmaps.android.clearance
 
-import app.wingtipmaps.android.Config
-import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.ClearanceAsk
 import app.wingtipmaps.android.api.generated.ClearancePlaces
 import app.wingtipmaps.android.api.generated.SpokenProcedureAsk
+import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.altitudeSaid
@@ -14,8 +13,6 @@ import app.wingtipmaps.android.engine.generated.readClearance
 import app.wingtipmaps.android.engine.generated.readbackCheck
 import app.wingtipmaps.android.format.Format
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 
@@ -99,9 +96,5 @@ object EngineClearance : ClearanceRules {
 /** The planner's finding of the places a clearance named, as idents
  *  near the route (POST /api/clearance/places, wingtip.spoken). */
 object ClearancePlanner {
-    suspend fun places(ask: ClearanceAsk): ClearancePlaces {
-        val (body, status) = Gateway.call("POST", Config.plannerPath("/api/clearance/places"), json = Gateway.json.encodeToString(ask))
-        if (status != 200) throw Planner.Failure(status, Planner.detail(body))
-        return Gateway.json.decodeFromString(body)
-    }
+    suspend fun places(ask: ClearanceAsk): ClearancePlaces = Planner.writes.clearancePlaces(ask).planned()
 }

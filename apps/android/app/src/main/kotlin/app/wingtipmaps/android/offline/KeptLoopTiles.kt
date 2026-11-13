@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.offline
 
 import app.wingtipmaps.android.api.generated.LoopFrame
+import app.wingtipmaps.android.tiles.TileGrid
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,11 +15,6 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import okhttp3.coroutines.executeAsync
 import java.io.File
 import java.io.IOException
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.floor
-import kotlin.math.ln
-import kotlin.math.tan
 
 /**
  * The weather loop's newest frame kept over the route for the air (the
@@ -93,21 +89,13 @@ class KeptLoopTiles(private val dir: File) {
         fun tiles(south: Double, west: Double, north: Double, east: Double): List<Tile> {
             val out = ArrayList<Tile>()
             for (z in MIN_Z..MAX_Z) {
-                val n = 1 shl z
-                val (x0, x1) = column(west, n) to column(east, n)
-                val (y0, y1) = row(north, n) to row(south, n)
+                val (x0, x1) = TileGrid.column(west, z) to TileGrid.column(east, z)
+                val (y0, y1) = TileGrid.row(north, z) to TileGrid.row(south, z)
                 val level = (x0..x1).flatMap { x -> (y0..y1).map { y -> Tile(z, x, y) } }
                 if (out.size + level.size > MAX_TILES) break
                 out += level
             }
             return out
-        }
-
-        private fun column(lon: Double, n: Int): Int = floor((lon + 180.0) / 360.0 * n).toInt().coerceIn(0, n - 1)
-
-        private fun row(lat: Double, n: Int): Int {
-            val r = Math.toRadians(lat.coerceIn(-85.05, 85.05))
-            return floor((1.0 - ln(tan(r) + 1.0 / cos(r)) / PI) / 2.0 * n).toInt().coerceIn(0, n - 1)
         }
     }
 }

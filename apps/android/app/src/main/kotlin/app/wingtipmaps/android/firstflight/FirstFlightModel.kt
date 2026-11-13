@@ -11,7 +11,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.nearest
-import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.flight.FlightSession
 import app.wingtipmaps.android.plan.FlightChoices
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -39,7 +39,7 @@ import javax.inject.Inject
  * good (FirstFlightMemory) and `onPlanned` opens the nav log.
  */
 @HiltViewModel
-class FirstFlightModel @Inject constructor(app: Application) : AndroidViewModel(app) {
+class FirstFlightModel @Inject constructor(app: Application, private val flight: FlightSession) : AndroidViewModel(app) {
     data class State(
         val dest: String? = null,
         val from: String? = null,
@@ -53,6 +53,9 @@ class FirstFlightModel @Inject constructor(app: Application) : AndroidViewModel(
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
+
+    /** Whether the phone may read its position, so Plan It asks first where it may not. */
+    val permitted: Boolean get() = flight.ownShip.permitted
 
     fun pickDest(ident: String) = _state.update { it.copy(dest = ident.uppercase(), problem = null) }
 
@@ -100,7 +103,7 @@ class FirstFlightModel @Inject constructor(app: Application) : AndroidViewModel(
      *  (the fused provider's current location, a few seconds at most), or
      *  null without the permission, which the card asks for at its tap. */
     private suspend fun located(): Pair<Double, Double>? {
-        OwnShip.of(getApplication()).fix.value?.let { return it.lat to it.lon }
+        flight.ownShip.fix.value?.let { return it.lat to it.lon }
         val app = getApplication<Application>()
         // Checked here, beside the call it guards, as lint's MissingPermission reads it.
         val allowed = ContextCompat.checkSelfPermission(app, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||

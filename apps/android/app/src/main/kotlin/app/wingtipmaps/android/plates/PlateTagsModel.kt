@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.plates
 
-import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.coach.CoachApproaches
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -121,7 +120,7 @@ class PlateTagsModel(private val scope: CoroutineScope, private val tagsOf: susp
          *  draws it (as the coach does) and the engine for its tags. */
         val shared: PlateTagsModel by lazy {
             PlateTagsModel(CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)) { pick ->
-                Engine.approachFixTags(CoachApproaches.drawing(Planner.fetch("/api/airport/${pick.ident}/procedures/${pick.procedure}"))).getOrNull()
+                Engine.approachFixTags(CoachApproaches.drawn(pick.ident, pick.procedure)).getOrNull()
             }
         }
     }

@@ -38,7 +38,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.search.SearchControl
 import app.wingtipmaps.android.ui.OwnShipControl
 import app.wingtipmaps.android.ui.ProblemLine
@@ -74,7 +73,7 @@ fun FirstFlightCard(plan: Plan, search: SearchControl, onPlanned: () -> Unit, mo
     var askedLocation by rememberSaveable { mutableStateOf(false) }
     val location = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { model.planIt(plan, onPlanned) }
     val planIt = {
-        if (state.from == null && !askedLocation && !OwnShip.of(context).permitted) {
+        if (state.from == null && !askedLocation && !model.permitted) {
             askedLocation = true
             location.launch(OwnShipControl.LOCATION)
         } else {

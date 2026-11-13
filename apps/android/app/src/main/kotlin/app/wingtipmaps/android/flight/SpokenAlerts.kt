@@ -21,7 +21,7 @@ import kotlin.math.roundToInt
  * ahead and comes back. The words are the planner's, as a voice reads
  * them, through Android's own TextToSpeech.
  */
-class SpokenAlerts private constructor(context: Context) {
+class SpokenAlerts(context: Context) {
     private val prefs = Kept.of(context, "spoken-alerts")
     private val _on = MutableStateFlow(prefs[KEY] ?: false)
     val on: StateFlow<Boolean> = _on.asStateFlow()
@@ -51,12 +51,6 @@ class SpokenAlerts private constructor(context: Context) {
 
     companion object {
         private val KEY = booleanPreferencesKey("on")
-
-        @Volatile
-        private var shared: SpokenAlerts? = null
-
-        fun of(context: Context): SpokenAlerts =
-            shared ?: synchronized(this) { shared ?: SpokenAlerts(context.applicationContext).also { shared = it } }
 
         /** When: "inside", "now", "in 40 seconds", "in 3 minutes" (the web
          *  app's alertWhen, as said). */

@@ -7,6 +7,7 @@ import app.wingtipmaps.android.api.AirspaceAt
 import app.wingtipmaps.android.api.CyclePackIndex
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.engine.generated.distanceNm
 import app.wingtipmaps.android.engine.generated.regionOf
 import kotlinx.coroutines.CancellationException
@@ -15,6 +16,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import okhttp3.coroutines.executeAsync
 import java.io.File
 import java.io.RandomAccessFile
@@ -88,14 +90,14 @@ class CyclePacks(private val root: File) {
     private val keeping = Mutex()
 
     private suspend fun keepOne(wanted: Set<String>) {
-        val listing = try {
-            Planner.fetch("/api/cycle-packs")
+        val fresh = try {
+            Planner.api.cyclePacks().planned()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             return
         }
-        val fresh = runCatching { Gateway.json.decodeFromString<CyclePackIndex>(listing) }.getOrNull() ?: return
+        val listing = Gateway.json.encodeToString(fresh)
         val kept = index
         val names = wanted.toMutableSet()
         if (kept != null) names += keptRegions(kept.cycle)

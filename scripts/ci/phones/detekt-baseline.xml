@@ -3,10 +3,8 @@
   <ManuallySuppressedIssues/>
   <CurrentIssues>
     <ID>ForbiddenImport:DiagnosticsReporter.kt:import okhttp3.Request</ID>
-    <ID>ForbiddenImport:DiagramOwnShip.kt:import okhttp3.Request</ID>
     <ID>ForbiddenImport:KeptLoopTiles.kt:import okhttp3.Request</ID>
     <ID>ForbiddenImport:OfflineWorker.kt:import okhttp3.Request</ID>
     <ID>ForbiddenImport:OverlayCache.kt:import okhttp3.Request</ID>
-    <ID>ForbiddenImport:TripPlannerModel.kt:import okhttp3.Request</ID>
   </CurrentIssues>
 </SmellBaseline>

@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.flight
 
-import android.annotation.SuppressLint
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -21,9 +20,7 @@ import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -70,7 +67,13 @@ typealias Mark = EngineContract.TrafficMarksAnswerItem
  * against own ship's as TCAS writes it, and whether it is near -- is the
  * engine's (`traffic_marks`), in one call for the whole answer.
  */
-class Traffic private constructor(private val context: Context, private val ticker: Ticker, private val scope: CoroutineScope) {
+class Traffic(
+    private val context: Context,
+    private val ticker: Ticker,
+    private val scope: CoroutineScope,
+    private val ownShip: OwnShip,
+    private val tracking: Tracking,
+) {
     private val switch = TrafficSwitch(context.settings, scope)
     /** Whether the layer is on; kept across launches (TrafficSwitch),
      *  turned on and off from Setup's Map section. */
@@ -126,7 +129,7 @@ class Traffic private constructor(private val context: Context, private val tick
     fun start() {
         // The receiver's airplanes merged as each second's bytes are read.
         Receiver.of(context).onRead = { if (on.value) publish(lastFix, tell = false) }
-        if (every == null) every = ticker.every(EVERY_MS) { ask(OwnShip.of(context).fix.value) }
+        if (every == null) every = ticker.every(EVERY_MS) { ask(ownShip.fix.value) }
     }
 
     fun stop() {
@@ -135,7 +138,7 @@ class Traffic private constructor(private val context: Context, private val tick
     }
 
     /** One answer now, out of the clock's turn: a pull on a traffic card. */
-    suspend fun refresh() = ask(OwnShip.of(context).fix.value)
+    suspend fun refresh() = ask(ownShip.fix.value)
 
     /** One answer about a point, where traffic is on and there is one. */
     private suspend fun ask(fix: OwnShip.Fix?) {
@@ -187,7 +190,7 @@ class Traffic private constructor(private val context: Context, private val tick
         // is still drawn, and the card says why it has no mark.
         _marks.value = marks.getOrElse { planes.map { Mark("", near = false, tell = false) } }
         _problem.value = (ownProblem ?: marks.exceptionOrNull())?.let { "The traffic rules failed: ${it.message}" }
-        Tracking.of(context).heard(planes)
+        tracking.heard(planes)
         if (tell) tellNear(fix, planes, _marks.value)
     }
 
@@ -240,17 +243,6 @@ class Traffic private constructor(private val context: Context, private val tick
          *  seconds (wingtip.traffic), so no sooner than that; twice that with
          *  the app put away (Ticker). */
         const val EVERY_MS = 5_000L
-
-        // The application's context alone (of), which lives as long as the process.
-        @SuppressLint("StaticFieldLeak")
-        @Volatile
-        private var shared: Traffic? = null
-
-        fun of(context: Context): Traffic =
-            shared ?: synchronized(this) {
-                shared ?: Traffic(context.applicationContext, Ticker.shared, CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate))
-                    .also { shared = it }
-            }
 
         /** An airplane heard as the engine's traffic rules read it. */
         private fun TrafficAircraft.asPlane(): EngineContract.TrafficPlane =

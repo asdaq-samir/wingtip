@@ -13,10 +13,9 @@ import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
-import app.wingtipmaps.android.api.generated.OfflineBox
 import app.wingtipmaps.android.api.generated.OfflineCatalog
 import app.wingtipmaps.android.api.generated.OfflineRegion
-import app.wingtipmaps.android.api.generated.OfflineRegionFiles
+import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.engine.CyclePacks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -78,7 +77,7 @@ class DownloadsModel @Inject constructor(app: Application) : AndroidViewModel(ap
 
     fun load() = viewModelScope.launch {
         store.sweep()
-        runCatching { Gateway.json.decodeFromString(OfflineCatalog.serializer(), Planner.fetch("/api/offline-charts")) }
+        runCatching { Planner.api.offlineCatalog().planned() }
             .onSuccess { _catalog.value = it; _problem.value = null }
             .onFailure { _problem.value = Problems.say("The regions could not be listed", it) }
     }
@@ -90,7 +89,7 @@ class DownloadsModel @Inject constructor(app: Application) : AndroidViewModel(ap
             val at = cycle ?: return@launch
             _busy.value += regionId
             try {
-                val files = Gateway.json.decodeFromString(OfflineRegionFiles.serializer(), Planner.fetch("/api/offline-charts/$at/$regionId"))
+                val files = Planner.api.offlineRegion(at, regionId).planned()
                 val wanted = archives(picked, scale)
                 val chosen = files.archives.filter { it.archive in wanted }
                 if (chosen.isEmpty()) {
@@ -140,8 +139,7 @@ class DownloadsModel @Inject constructor(app: Application) : AndroidViewModel(ap
     /** A box on the map as a region of its own (/api/offline-box). */
     fun downloadBox(west: Double, south: Double, east: Double, north: Double) = viewModelScope.launch {
         runCatching {
-            val q = mapOf("west" to "$west", "south" to "$south", "east" to "$east", "north" to "$north")
-            Gateway.json.decodeFromString(OfflineBox.serializer(), Planner.fetch("/api/offline-box", q)).id
+            Planner.api.offlineBox(west = west, south = south, east = east, north = north).planned().id
         }.onSuccess { download(it) }.onFailure { _problem.value = "The view could not be kept: ${it.message}" }
     }
 

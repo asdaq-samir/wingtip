@@ -29,7 +29,7 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.flight.InFlight
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.sheet.CardExit
@@ -45,12 +45,12 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * Profile row or by typing "profile" in the search.
  */
 @Composable
-fun ProfileCard(plan: Plan, exit: CardExit) {
+fun ProfileCard(plan: Plan, exit: CardExit, flight: FlightModel = hiltViewModel()) {
     val state by plan.state.collectAsStateWithLifecycle()
     val altitudes by PlanAltitudes.state.collectAsStateWithLifecycle()
     val model: ProfileModel = hiltViewModel()
     val shown by model.state.collectAsStateWithLifecycle()
-    val flight by InFlight.shared.state.collectAsStateWithLifecycle()
+    val inFlight by flight.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.dep, state.dest, state.stops) { model.load(state) }
     var tapped by remember { mutableStateOf<ProfileModel.Waypoint?>(null) }
     val flown = ProfileModel.flown(state, altitudes)
@@ -80,7 +80,7 @@ fun ProfileCard(plan: Plan, exit: CardExit) {
                         flownFt = flown,
                         previewFt = shown.previewFt,
                         clearance = clearance?.getOrNull(),
-                        airplaneFt = flight.fix?.altitudeFt?.takeIf { flight.underway },
+                        airplaneFt = inFlight.fix?.altitudeFt?.takeIf { inFlight.underway },
                         onPreview = model::preview,
                         onSet = { ft ->
                             // Set: the plan flies it, a legal row at each leg's nearest as the Advisor's (warn, never limit).

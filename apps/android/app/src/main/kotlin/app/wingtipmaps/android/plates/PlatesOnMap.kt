@@ -1,9 +1,8 @@
 package app.wingtipmaps.android.plates
 
-import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.PlateOverlay
-import app.wingtipmaps.android.api.generated.ProcedureList
+import app.wingtipmaps.android.api.planned
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -103,10 +102,9 @@ class PlatesOnMap(
         val shared: PlatesOnMap by lazy {
             PlatesOnMap(
                 CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
-                plate = { p -> Gateway.json.decodeFromString<PlateOverlay>(Planner.fetch("/api/airport/${p.ident}/procedures/${p.procedure}/plate")) },
+                plate = { p -> Planner.api.airportProcedurePlate(p.ident, p.procedure).planned() },
                 approaches = { ident ->
-                    Gateway.json.decodeFromString<ProcedureList>(Planner.fetch("/api/airport/$ident/procedures"))
-                        .procedures.filter { it.kind == "approach" }.map { it.id }
+                    Planner.api.airportProcedures(ident).planned().procedures.filter { it.kind == "approach" }.map { it.id }
                 },
             )
         }
