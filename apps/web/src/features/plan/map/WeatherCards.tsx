@@ -3,6 +3,7 @@ import { faaWords } from "../../../lib/advisories";
 import { areaWords, routeThrough } from "../lib/weatherMap";
 import { bearing, knots, mapLevel } from "../../../lib/format";
 import { WINDS_MODELLED } from "../../../lib/windsAloft";
+import { useGeo } from "../../../lib/geo";
 import { MapCard } from "../../../lib/map/cards/MapCard";
 
 /**
@@ -23,7 +24,8 @@ export function AreaCard({ area, line, altitudeFt }: { area: WeatherArea; line: 
       : [area.valid_from != null && `From ${zulu(area.valid_from)}`, area.valid_to != null && `to ${zulu(area.valid_to)}`]
           .filter(Boolean)
           .join(" ");
-  const through = line ? routeThrough(area, line, altitudeFt) : null;
+  const geo = useGeo();
+  const through = line && geo ? routeThrough(geo, area, line, altitudeFt) : null;
   return (
     <MapCard title={title} subtitle={[area.severity && faaWords(area.severity), when].filter(Boolean).join(" · ")}>
       <div className="space-y-1 text-left" data-testid="weather-area-card">

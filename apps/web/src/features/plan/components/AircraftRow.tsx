@@ -1,7 +1,7 @@
 import { PlaneMark } from "../../../components/PlaneMarks";
 import { ListRow } from "../../../components/GroupedList";
 import type { TrafficAircraft } from "../../../lib/api/types";
-import type { LatLon } from "../../../lib/geo";
+import { useGeo, type LatLon } from "../../../lib/geo";
 import { awayFrom } from "../../../lib/useAway";
 import { trafficLabel } from "../map/traffic";
 import { altFt } from "../../../lib/format";
@@ -21,7 +21,8 @@ export default function AircraftRow({
   onPick: () => void;
   testId?: string;
 }) {
-  const where = from ? awayFrom(from, plane) : undefined;
+  const geo = useGeo();
+  const where = from && geo ? awayFrom(geo, from, plane) : undefined;
   const height =
     plane.altitude_ft == null
       ? null

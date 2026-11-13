@@ -1,7 +1,7 @@
 import type { CircleLayerSpecification, ExpressionSpecification, MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useEffectEvent } from "react";
 import type { Leg, ProcedureDrawing } from "../../../api/types";
-import { bearingDeg, type LatLon } from "../../../geo";
+import { useGeo, type LatLon } from "../../../geo";
 import { useAirplaneChosen } from "../../../preferences";
 import type { TrafficPattern } from "../../../trafficPattern";
 import { altFt } from "../../../format";
@@ -159,9 +159,10 @@ export function PatternsGl({ patterns }: { patterns: TrafficPattern[] }) {
   );
   useGlLines("patterns", "route", circuits, { colour: CHART.casing, width: 7, opacity: 0.9 });
   useGlLines("pattern-entries", "route", entries, { colour: CHART.casing, width: 7, opacity: 0.9 }, [7 / 3, 2]);
+  const geo = useGeo();
   const marks = useMemo<GlSymbol[]>(
     () =>
-      level < PATTERN_WORDS_FROM_ZOOM
+      level < PATTERN_WORDS_FROM_ZOOM || !geo
         ? []
         : patterns.flatMap((p) => {
             const downwind = p.legs.find((l) => l.name === "Downwind");
@@ -174,7 +175,7 @@ export function PatternsGl({ patterns }: { patterns: TrafficPattern[] }) {
               ...p.legs.map((l) => ({
                 ...at(along(l.from, l.to, 0.3), l.name),
                 picture: PATTERN_ARROW,
-                props: { kind: "arrow", rotate: Math.round(bearingDeg(l.from, l.to)) },
+                props: { kind: "arrow", rotate: Math.round(geo.bearingDeg(l.from, l.to)) },
               })),
               ...(downwindAt
                 ? [{ ...at(downwindAt, "downwind"), picture: PATTERN_LABEL, text: downwindWords, props: { kind: "label" } }]
@@ -182,7 +183,7 @@ export function PatternsGl({ patterns }: { patterns: TrafficPattern[] }) {
               { ...at(entryAt, "entry"), picture: PATTERN_LABEL, text: entryWords, props: { kind: "label" } },
             ];
           }),
-    [patterns, level],
+    [patterns, level, geo],
   );
   useGlSymbols("pattern-marks", PATTERN_LAYERS, marks);
   return null;

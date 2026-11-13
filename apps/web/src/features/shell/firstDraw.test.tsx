@@ -107,6 +107,21 @@ describe("the planner before the engine is there", () => {
     expect(await screen.findByPlaceholderText(/^Search airports/, undefined, { timeout: 10_000 })).toBeTruthy();
   });
 
+  test("draws a route and a card with a fix in hand, then loads the engine without a throw", { timeout: 30_000 }, async () => {
+    // The parts that say how far and which way (lib/geo's useGeo) draw
+    // without the figure until the engine is there; the console guard
+    // fails the test on any throw, before or after.
+    const { act, engine, screen } = await drawAt("/plan?dep=KMSN&dest=KOSH&place=KUGN", async () => {
+      const { useOwnShip } = await import("../../lib/map/position/ownShip");
+      useOwnShip.setState({
+        enabled: true,
+        fix: { lat: 42.1, lon: -87.9, accuracyM: 10, speedKt: 0, headingDeg: null, altitudeFt: null, at: Date.now() },
+      });
+    });
+    await act(() => engine.loadEngine(readFileSync(wasm)));
+    expect(await screen.findByText("Skip to the map", undefined, { timeout: 10_000 })).toBeTruthy();
+  });
+
   test("says Working out in a card's place, opened from the address", { timeout: 30_000 }, async () => {
     const { screen } = await drawAt("/plan?place=KOSH");
     expect(await screen.findByText("Working out…", undefined, { timeout: 10_000 })).toBeTruthy();

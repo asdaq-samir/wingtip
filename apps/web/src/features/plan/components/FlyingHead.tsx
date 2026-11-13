@@ -3,9 +3,8 @@ import { GLASS } from "../../../lib/mapChrome";
 import { Button } from "../../../components/ui/button";
 import { openEmergency } from "../../../lib/emergencyStore";
 import { clockTime, duration } from "../../../lib/format";
-import { distanceNm } from "../../../lib/geo";
+import { useGeo } from "../../../lib/geo";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
-import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import { DRY_RUN, usePastFlight } from "../map/pastFlight";
 import { GROUP_HEADING, TEXT } from "../../../lib/text";
 import { dryRunAt, type DryRun } from "./navlog/dryRun";
@@ -57,16 +56,16 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
   });
   // The distance to the next row is the engine's (lib/geo): no line from
   // the GPS until its .wasm is there, the rows passed kept meanwhile.
-  const engine = useEngineReady();
+  const geo = useGeo();
   const gpsKey = useOwnShip((s) => {
     if (run || !s.enabled || !s.fix) {
       forgetPassed();
       return "";
     }
-    if (!engine) return "";
-    const index = gpsNext(rows, s.fix);
+    if (!geo) return "";
+    const index = gpsNext(geo, rows, s.fix);
     if (index === null) return "";
-    const nm = distanceNm(s.fix, rowPoint(rows[index]!));
+    const nm = geo.distanceNm(s.fix, rowPoint(rows[index]!));
     const min = s.fix.speedKt ? (nm / s.fix.speedKt) * 60 : null;
     const at = min === null ? null : Math.floor((s.fix.at / 1000 + min * 60) / 60) * 60;
     return [index, nm.toFixed(1), min === null ? "" : Math.round(min), at ?? ""].join(" ");

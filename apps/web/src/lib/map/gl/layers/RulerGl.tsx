@@ -5,28 +5,20 @@ import { placed } from "../../ruler/rulerPlaced";
 import { useCruiseTas } from "../../useCruiseTas";
 import { HOLD_MS, heldStill } from "../../ruler/ruler";
 import { useGlMap } from "../glLayer";
-import { EngineGate } from "../../../engine/engineGate";
+import { useGeo } from "../../../geo";
 
 type XY = { x: number; y: number };
 type Ends = readonly [XY, XY];
-
-/** Drawn once the shared engine is there (lib/engine/engineGate), which
- *  it asks as it draws: the chart under it draws at once (MapPage). */
-export function RulerGl() {
-  return (
-    <EngineGate>
-      <RulerGlDrawn />
-    </EngineGate>
-  );
-}
 
 /**
  * Two fingers held still on the chart measure it, as ForeFlight's ruler
  * (MapRuler) -- the WebGL map's: held for HOLD_MS without the map zooming,
  * the pinch handed over to the ruler, which follows the fingers until
- * they lift, its distance, course and time en route along it.
+ * they lift, its distance, course and time en route along it. Its
+ * figures are the engine's (lib/geo): none until its .wasm is there,
+ * while the chart under it draws at once (MapPage).
  */
-function RulerGlDrawn() {
+export function RulerGl() {
   const { map } = useGlMap();
   const [ends, setEnds] = useState<{ first: Ends; now: Ends } | null>(null);
   const [declination, setDeclination] = useState<Declination | null>(null);
@@ -129,11 +121,15 @@ function RulerGlDrawn() {
     },
     [map],
   );
-  const drawn = useMemo(() => ends && placed(toLatLon, ends.now, declination, tasKt), [ends, toLatLon, declination, tasKt]);
+  const geo = useGeo();
+  const drawn = useMemo(
+    () => (geo && ends ? placed(geo, toLatLon, ends.now, declination, tasKt) : null),
+    [geo, ends, toLatLon, declination, tasKt],
+  );
   const first = ends?.first;
   const spoken = useMemo(
-    () => (first ? placed(toLatLon, first, declination, tasKt).words.spoken : ""),
-    [first, toLatLon, declination, tasKt],
+    () => (geo && first ? placed(geo, toLatLon, first, declination, tasKt).words.spoken : ""),
+    [geo, first, toLatLon, declination, tasKt],
   );
   return <RulerDrawing drawn={drawn} spoken={spoken} />;
 }

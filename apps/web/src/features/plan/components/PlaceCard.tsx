@@ -18,7 +18,7 @@ import PlaceActions from "./place/PlaceActions";
 import { ApiError } from "../../../lib/api/client";
 import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
 import { compassPoint } from "../../../lib/compass";
-import { distanceNm, type LatLon } from "../../../lib/geo";
+import { useGeo, type Geo, type LatLon } from "../../../lib/geo";
 import { awayFrom } from "../../../lib/useAway";
 import { chipFillOf } from "../../../lib/map/marks/flightCategory";
 import { inkOn } from "../../../lib/scoreScale";
@@ -50,8 +50,8 @@ const SketchViewer = lazy(() => import("./SketchViewer"));
 const PictureViewer = lazy(() => import("./AirportDiagramViewer"));
 
 /** "18 nm NE", from wherever the card is measured from. */
-function away(from: LatLon, to: LatLon): string {
-  return distanceNm(from, to) < 0.5 ? "here" : awayFrom(from, to);
+function away(geo: Geo, from: LatLon, to: LatLon): string {
+  return geo.distanceNm(from, to) < 0.5 ? "here" : awayFrom(geo, from, to);
 }
 
 /** How far the field is, for the Info tab's Details (the owner,
@@ -59,10 +59,10 @@ function away(from: LatLon, to: LatLon): string {
  *  where there is nothing to measure from, nor where the start is the
  *  field itself: the departure's own card, with no fix, said "here of
  *  KMSN", as the phones said "From KMSN 0 nm". */
-function distanceOf(place: AirportPlace, from: { point: LatLon; name: string | null } | null): string | null {
-  const itself = !!from?.name && (sameField(from.name, place.ident) || distanceNm(from.point, place) < 0.5);
-  if (!from || itself) return null;
-  return from.name ? `${away(from.point, place)} of ${from.name}` : away(from.point, place);
+function distanceOf(geo: Geo | null, place: AirportPlace, from: { point: LatLon; name: string | null } | null): string | null {
+  const itself = !!from?.name && (sameField(from.name, place.ident) || (geo?.distanceNm(from.point, place) ?? Infinity) < 0.5);
+  if (!geo || !from || itself) return null;
+  return from.name ? `${away(geo, from.point, place)} of ${from.name}` : away(geo, from.point, place);
 }
 
 /** What the field is, beside its name in brackets where it is not a
@@ -174,10 +174,10 @@ export default function PlaceCard({
   // address on a page just loaded, read its ident alone over an empty
   // card while its answer queued behind the page's first requests.
   const kept = useKeptAirport(ident);
-  // How far, from own ship's fix as it is (not useOwnShipNear's: tenths
-  // of a mile from a fix a hundredth of a degree old would be wrong), read
-  // as the words, so the card is drawn again only when they change.
-  const distance = useOwnShip((o) => (place ? distanceOf(place, o.enabled && o.fix ? { point: o.fix, name: null } : from) : null));
+  // How far, from own ship's fix as it is (not useOwnShipNear's, a hundredth
+  // of a degree old), as words, so the card redraws only when they change.
+  const geo = useGeo();
+  const distance = useOwnShip((o) => (place ? distanceOf(geo, place, o.enabled && o.fix ? { point: o.fix, name: null } : from) : null));
   // Fly Here tapped: the tile says so at once, a frame before the route
   // is drawn (PlanWorkspace's flyHere), which is a moment of a phone's --
   // the tap looked lost under it, at the pilot's ask for no lag. The card

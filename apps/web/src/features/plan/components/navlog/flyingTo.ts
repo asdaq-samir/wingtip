@@ -1,8 +1,7 @@
-import { distanceNm } from "../../../../lib/geo";
+import { useGeo, type Geo } from "../../../../lib/geo";
 import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
 import { useOwnShip } from "../../../../lib/map/position/ownShip";
 import { useFlying } from "../../../../lib/mapChrome";
-import { useEngineReady } from "../../../../lib/engine/useEngineReady";
 import { dryRunRow, type DryRun } from "./dryRun";
 import { isLegPoint, rowPoint, type NavLogRow } from "./rows";
 
@@ -35,9 +34,9 @@ export function dryRunNext(run: DryRun, rows: NavLogRow[], t: number): number | 
 }
 
 /** Own ship's next row from the GPS fix, marking those it has passed. */
-export function gpsNext(rows: NavLogRow[], fix: { lat: number; lon: number }): number | null {
+export function gpsNext(geo: Geo, rows: NavLogRow[], fix: { lat: number; lon: number }): number | null {
   let index = checkpointFrom(rows, 1);
-  while (index !== null && (passed.has(rows[index]!.key) || distanceNm(fix, rowPoint(rows[index]!)) < PASSED_NM)) {
+  while (index !== null && (passed.has(rows[index]!.key) || geo.distanceNm(fix, rowPoint(rows[index]!)) < PASSED_NM)) {
     passed.add(rows[index]!.key);
     index = checkpointFrom(rows, index + 1);
   }
@@ -60,10 +59,10 @@ export function useFlyingTo(run: DryRun | null, rows: NavLogRow[]): string | nul
   });
   // How far the fix is from each row is the engine's (lib/geo): none
   // until its .wasm is there, as useAway waits.
-  const engine = useEngineReady();
+  const geo = useGeo();
   const gps = useOwnShip((s) => {
-    if (!flying || run || !engine || !s.enabled || !s.fix) return null;
-    const index = gpsNext(rows, s.fix);
+    if (!flying || run || !geo || !s.enabled || !s.fix) return null;
+    const index = gpsNext(geo, rows, s.fix);
     return index === null ? null : rows[index]!.key;
   });
   return dry ?? gps;

@@ -1,7 +1,10 @@
 import { describe, expect, test } from "vitest";
 import type { Runway } from "./api/types";
-import { bearingDeg, distanceNm } from "./geo";
+import { geoLoaded } from "./geo";
 import { departurePattern, patternsOf, patternsParam, trafficPattern } from "./trafficPattern";
+
+// The engine's geodesic rules, loaded by the setup file (vitestSetup).
+const { bearingDeg, distanceNm } = await geoLoaded;
 
 // A runway 09/27 a mile long on the equator: 09 lands east, 27 west.
 const RUNWAY = {

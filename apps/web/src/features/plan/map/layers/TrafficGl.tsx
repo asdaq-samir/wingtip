@@ -3,7 +3,7 @@ import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { TrafficAircraft } from "../../../../lib/api/types";
 import { api } from "../../../../lib/api/client";
-import { M_PER_NM } from "../../../../lib/geo";
+import { M_PER_NM, useGeo, type Geo } from "../../../../lib/geo";
 import { clearProblem, raiseProblem } from "../../../../lib/problems";
 import { usePreferences } from "../../../../lib/preferences";
 import { TRAFFIC_COLOURS } from "../../../../lib/map/marks/icons";
@@ -64,10 +64,12 @@ export function TrafficGl() {
   const hex = useTracking((s) => s.hex);
   const past = usePastFlight((s) => (s.hex === hex ? s.id : null));
   const focused = useTrafficFocus((s) => s.on);
+  // Carried on along their tracks by the engine (lib/geo): drawn once it is there.
+  const geo = useGeo();
   if (!on && !tracking && !focused) return null;
   return (
     <>
-      <Traffic />
+      {geo && <Traffic geo={geo} />}
       {hex && past === null && <TrackedPathGl key={hex} hex={hex} />}
       {hex && past !== null && <PastFlightGl key={`${hex}-${past}`} hex={hex} id={past} />}
     </>
@@ -81,7 +83,7 @@ function viewOf(map: ReturnType<typeof useGlMap>["map"]) {
   return { lat: c.lat, lon: c.lng, radiusNm: Math.min(165, Math.max(10, c.distanceTo(ne) / M_PER_NM)), zoom: appZoomOf(map.getZoom()) };
 }
 
-function Traffic() {
+function Traffic({ geo }: { geo: Geo }) {
   const { map } = useGlMap();
   // Own ship's height alone, exact (the 1,000 ft "near own height" rule is
   // the engine's traffic_marks, read against it as it is, not rounded), so
@@ -184,14 +186,14 @@ function Traffic() {
       const now = Date.now();
       // Blended over a second from where it is drawn onto where the new
       // report carries it, not jumped.
-      const should = carriedOn(plane, (now - at) / 1000);
+      const should = carriedOn(geo, plane, (now - at) / 1000);
       held.shift = held.pos ? { lat: held.pos.lat - should.lat, lon: held.pos.lon - should.lon, from: now } : null;
       held.plane = plane;
       held.at = at;
     }
     for (const hex of targets.current.keys()) if (!seen.has(hex)) targets.current.delete(hex);
     useTracking.setState({ seen: reports });
-  }, [merged]);
+  }, [geo, merged]);
 
   const only = useTrafficFocus((s) => (s.on ? s.only : null));
   useEffect(() => {
@@ -213,8 +215,8 @@ function Traffic() {
         trendS: plane.track_deg != null ? trendSeconds(plane.speed_kt, plane.lat, view.zoom) : 0,
       };
     }
-    drawTargets(map, targets.current);
-  }, [map, merged, ownFt, view.zoom, hex, only]);
+    drawTargets(geo, map, targets.current);
+  }, [geo, map, merged, ownFt, view.zoom, hex, only]);
 
   // The airplane tracked, followed: flown to as its first report comes.
   const heard = useTracking((s) => !!s.hex && s.latest?.plane.hex === s.hex);
@@ -234,7 +236,7 @@ function Traffic() {
     let timer = 0;
     const step = () => {
       timer = document.hidden ? 0 : window.setTimeout(step, frameMs(appZoomOf(map.getZoom())));
-      if (!map.isZooming()) drawTargets(map, targets.current);
+      if (!map.isZooming()) drawTargets(geo, map, targets.current);
     };
     const back = () => {
       if (!document.hidden && !timer) timer = window.setTimeout(step, 0);
@@ -245,14 +247,14 @@ function Traffic() {
       document.removeEventListener("visibilitychange", back);
       window.clearTimeout(timer);
     };
-  }, [map]);
+  }, [geo, map]);
   return null;
 }
 
 /** Each airplane carried on to now, in sight only, and the layers' data
  *  set again (Traffic's step, a frame at a time, more often closer in);
  *  those older than CARRY_S let go. */
-function drawTargets(map: MlMap, targets: Map<string, Target>) {
+function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
   const now = Date.now();
   const b = map.getBounds();
   const dLat = (b.getNorth() - b.getSouth()) / 4,
@@ -274,7 +276,7 @@ function drawTargets(map: MlMap, targets: Map<string, Target>) {
       if (left <= 0) target.shift = null;
       else shift = { lat: target.shift.lat * left, lon: target.shift.lon * left };
     }
-    const here = carriedOn(plane, age);
+    const here = carriedOn(geo, plane, age);
     const pos = { lat: here.lat + shift.lat, lon: here.lon + shift.lon };
     target.pos = pos;
     const inSight =
@@ -298,7 +300,7 @@ function drawTargets(map: MlMap, targets: Map<string, Target>) {
       },
     });
     if (look.trendS > 0) {
-      const ahead = carriedOn(plane, age + look.trendS);
+      const ahead = carriedOn(geo, plane, age + look.trendS);
       trends.push({
         type: "Feature",
         geometry: {

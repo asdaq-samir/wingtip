@@ -1,10 +1,13 @@
 import { describe, expect, test } from "vitest";
 import type { ProcedureDrawing } from "../lib/api/types";
 import { attemptsAt, debriefApproach, findApproaches, withMinimums, withTransition } from "./approachDebriefModel";
-import { bearingDeg, destination, distanceNm, FT_PER_NM, rad } from "../lib/geo";
+import { FT_PER_NM, rad, geoLoaded } from "../lib/geo";
 import { callEngine } from "../lib/engine/engine";
 import type { TrackPoint } from "../lib/track";
 import KBUR from "../lib/fixtures/approachKbur.json";
+
+// The engine's geodesic rules, loaded by the setup file (vitestSetup).
+const { bearingDeg, destination, distanceNm } = await geoLoaded;
 
 // KBUR's ILS Y RWY 08 and RNAV (GPS) Z RWY 08 as the planner draws them
 // from the CIFP of 1 Oct 2026 (services/planner/tests_wingtip/cifp, wingtip.procedures.procedure_drawing).

@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import type { ProcedureDrawing } from "../../../../lib/api/types";
 import { deckColour, deckSlot, useDeckLayers } from "../../../../lib/map/gl/deckLayers";
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../../lib/map/gl/glLayer";
+import { useGeo } from "../../../../lib/geo";
 import { airportQuery } from "../../../../lib/queryClient";
 import { CHART } from "../../../../lib/tokens";
 import { curtainLayer } from "./curtain";
@@ -45,13 +46,14 @@ export default function ApproachGl({ ident, picked }: { ident: string; picked: P
   ]);
   useGlData("approach-centreline", scene ? centrelineFeatures(scene) : null);
 
+  const geo = useGeo();
   const layers = useMemo(() => {
     if (!scene) return [];
     const path = scene.path ? aloft(scene.path) : [];
     const lines = [
       ...scene.glidepaths.map((g) => ({ path: aloftPath(aloft(g.points)), colour: CHART.glidepath, width: GLIDE_M })),
       ...(path.length > 1 ? [{ path: aloftPath(path), colour: CHART.procedure, width: PATH_M }] : []),
-      ...(scene.ring ? [{ path: aloftPath(ringPoints(scene)), colour: CHART.pattern, width: RING_M }] : []),
+      ...(scene.ring && geo ? [{ path: aloftPath(ringPoints(geo, scene)), colour: CHART.pattern, width: RING_M }] : []),
     ];
     return [
       curtainLayer("approach-curtain", curtainWalls(path), CHART.procedure, 0.2),
@@ -67,7 +69,7 @@ export default function ApproachGl({ ident, picked }: { ident: string; picked: P
         ...deckSlot("route"),
       }),
     ];
-  }, [scene]);
+  }, [scene, geo]);
   useDeckLayers("approach-aloft", layers);
 
   // For the browser tests: what is drawn, and whose figures.

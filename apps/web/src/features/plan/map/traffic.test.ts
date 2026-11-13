@@ -14,6 +14,10 @@ import {
 } from "./traffic";
 import type { Fix } from "../../../lib/map/position/ownShip";
 import trafficFixture from "../../../lib/fixtures/traffic.json";
+import { geoLoaded } from "../../../lib/geo";
+
+// The engine's geodesic rules, loaded by the setup file (vitestSetup).
+const geo = await geoLoaded;
 
 const plane = (over: Partial<TrafficAircraft> = {}): TrafficAircraft => ({
   hex: "a128b9",
@@ -98,15 +102,15 @@ describe("ownShipHex", () => {
 describe("carriedOn", () => {
   it("carries an airplane on along its track at its speed", () => {
     // 120 kt east for 30 s: a mile, 0.0224 degrees of longitude at 42 N.
-    const there = carriedOn(plane({ lat: 42, lon: -88, track_deg: 90, speed_kt: 120 }), 30);
+    const there = carriedOn(geo, plane({ lat: 42, lon: -88, track_deg: 90, speed_kt: 120 }), 30);
     expect(there.lat).toBeCloseTo(42, 4);
     expect(there.lon).toBeCloseTo(-88 + 1 / (60 * Math.cos((42 * Math.PI) / 180)), 4);
   });
 
   it("leaves it where it was with no track or speed, or no time gone", () => {
-    expect(carriedOn(plane({ track_deg: null }), 30)).toEqual({ lat: 42.3246, lon: -88.0741 });
-    expect(carriedOn(plane({ speed_kt: null }), 30)).toEqual({ lat: 42.3246, lon: -88.0741 });
-    expect(carriedOn(plane(), 0)).toEqual({ lat: 42.3246, lon: -88.0741 });
+    expect(carriedOn(geo, plane({ track_deg: null }), 30)).toEqual({ lat: 42.3246, lon: -88.0741 });
+    expect(carriedOn(geo, plane({ speed_kt: null }), 30)).toEqual({ lat: 42.3246, lon: -88.0741 });
+    expect(carriedOn(geo, plane(), 0)).toEqual({ lat: 42.3246, lon: -88.0741 });
   });
 });
 

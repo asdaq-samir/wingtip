@@ -1,7 +1,7 @@
 import type { AirportPlace, ProcedureDrawing } from "../../../../lib/api/types";
 import type { ApproachSceneInput } from "../../../../lib/engine/contract";
 import { callEngine, type EngineAnswer } from "../../../../lib/engine/engine";
-import { destination } from "../../../../lib/geo";
+import type { Geo } from "../../../../lib/geo";
 import { sameField } from "../../../../lib/procedures";
 import type { AloftPoint } from "./geometry";
 
@@ -66,12 +66,12 @@ const RING_POINTS = 72;
 
 /** The ring as points in the air, all at the pattern's altitude: round
  *  its middle at the engine's radius. */
-export function ringPoints(scene: Scene): AloftPoint[] {
+export function ringPoints(geo: Geo, scene: Scene): AloftPoint[] {
   const ring = scene.ring;
   if (!ring) return [];
   const [lat, lon] = ring.center;
   return Array.from({ length: RING_POINTS + 1 }, (_, i) => ({
-    ...destination({ lat, lon }, (360 * i) / RING_POINTS, ring.radius_nm),
+    ...geo.destination({ lat, lon }, (360 * i) / RING_POINTS, ring.radius_nm),
     altFt: ring.ft,
   }));
 }

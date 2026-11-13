@@ -1,6 +1,6 @@
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { callEngine, type EngineAnswer } from "../../../lib/engine/engine";
-import { M_PER_NM, destination, type LatLon } from "../../../lib/geo";
+import { M_PER_NM, type Geo, type LatLon } from "../../../lib/geo";
 import type { Fix } from "../../../lib/map/position/ownShip";
 
 /*
@@ -111,10 +111,10 @@ const TREND_S = 60;
 /** Where an airplane is `seconds` after its report, carried on along its
  *  track at its ground speed, as ForeFlight carries internet traffic on
  *  between reports; where it was where it gives no track or speed. */
-export function carriedOn(plane: TrafficAircraft, seconds: number): LatLon {
+export function carriedOn(geo: Geo, plane: TrafficAircraft, seconds: number): LatLon {
   const at = { lat: plane.lat, lon: plane.lon };
   if (plane.track_deg == null || plane.speed_kt == null || seconds <= 0) return at;
-  return destination(at, plane.track_deg, (plane.speed_kt * seconds) / 3600);
+  return geo.destination(at, plane.track_deg, (plane.speed_kt * seconds) / 3600);
 }
 
 /** How long its trend line is on the screen, points: TREND_S at its

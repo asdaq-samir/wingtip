@@ -2,6 +2,10 @@ import { describe, expect, test } from "vitest";
 import type { WeatherArea } from "../../../lib/api/types";
 import { mapLevel } from "../../../lib/format";
 import { areaWords, inside, pirepMark, routeThrough } from "./weatherMap";
+import { geoLoaded } from "../../../lib/geo";
+
+// The engine's geodesic rules, loaded by the setup file (vitestSetup).
+const geo = await geoLoaded;
 
 const square = [
   [42, -90],
@@ -46,15 +50,16 @@ describe("the weather drawn on the map", () => {
       [43, -92],
       [43, -85],
     ];
-    const through = routeThrough(turb, line, 4500)!;
+    const through = routeThrough(geo, turb, line, 4500)!;
     expect(through.nm).toBeGreaterThan(125);
     expect(through.nm).toBeLessThan(140);
     expect(through.relation).toBe("below");
-    expect(routeThrough(turb, line, 9500)!.relation).toBe("in");
+    expect(routeThrough(geo, turb, line, 9500)!.relation).toBe("in");
     // From the freezing level: no altitude to say it against.
-    expect(routeThrough(icing, line, 4500)!.relation).toBeNull();
+    expect(routeThrough(geo, icing, line, 4500)!.relation).toBeNull();
     expect(
       routeThrough(
+        geo,
         turb,
         [
           [45, -92],
