@@ -173,9 +173,7 @@ export function SheetParts(p: PartsProps) {
           </header>
         )}
         {shown && !atPill && p.controls && (
-          <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-3 px-3 pt-1 print:hidden", "pb-1.5")}>
-            {p.controls}
-          </div>
+          <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-3 px-3 pt-1 print:hidden", "pb-1.5")}>{p.controls}</div>
         )}
       </div>
     );
@@ -198,10 +196,7 @@ export function SheetParts(p: PartsProps) {
       // A row focused or brought into view stops under the search's row,
       // not behind it (WCAG 2.4.11).
       style={{ "--sheet-head": head, scrollPaddingTop: head } as CSSProperties}
-      className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible",
-        p.onPhone && fromBottom && cut && CUT_BOTTOM,
-      )}
+      className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible", p.onPhone && fromBottom && cut && CUT_BOTTOM)}
     >
       <div
         data-head-band=""

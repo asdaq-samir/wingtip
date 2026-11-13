@@ -47,11 +47,7 @@ export function AirplanesPage({ signedIn }: { signedIn: boolean }) {
       }}
     >
       <div className="flex flex-col gap-5 [&:has([data-slot=console-page])>[data-slot=airplanes-more]]:hidden">
-        {signedIn ? (
-          <AircraftPanel />
-        ) : (
-          <p className={cn("px-1 text-muted-foreground", TEXT.note)}>Sign in to keep your airplanes.</p>
-        )}
+        {signedIn ? <AircraftPanel /> : <p className={cn("px-1 text-muted-foreground", TEXT.note)}>Sign in to keep your airplanes.</p>}
         <div data-slot="airplanes-more">
           <ListGroup>
             <PageRow

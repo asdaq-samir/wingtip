@@ -103,8 +103,9 @@ test("the Map button's card stays open once tapped, and the button says so", asy
 
 // The owner, 2026-11-13: "put a settings button on the top left side". The
 // Map card's head starts with a gear that opens the app's Settings as a
-// card over it; Settings' ✕ goes back one level, to the Map card.
-test("the Map card's gear opens Settings over it, and Settings' close goes back to the Map card", async ({ page }) => {
+// card over it, at its Map group (option A, the same day); Settings' ✕
+// goes back one level, to the Map card, which has no Map Settings now.
+test("the Map card's gear opens Settings over it at Map, and Settings' close goes back to the Map card", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await settled(sideDrawer(page));
@@ -119,14 +120,13 @@ test("the Map card's gear opens Settings over it, and Settings' close goes back 
   await gear.click();
   const settings = page.getByTestId("console-sheet");
   await expect(settings).toBeVisible();
-  await expect(settings.getByRole("heading", { name: "Settings", level: 2 })).toBeVisible();
-  await page.getByTestId("console-close").click();
+  await expect(settings.getByRole("heading", { name: "Settings", level: 3 })).toBeVisible();
+  // Raised all the way, its Map group in sight.
+  await expect(settings.getByTestId("airport-weather-look")).toBeInViewport();
+  await settings.getByRole("button", { name: "Back to the map", exact: true }).click();
   await expect(settings).toHaveCount(0);
   await expect(card).toBeVisible();
-  // A page of the card heads with its name and back alone: no gear there.
-  await card.getByTestId("map-settings-more").click();
-  await expect(card.getByRole("heading", { name: "Map Settings", level: 2 })).toBeVisible();
-  await expect(card.getByRole("button", { name: "Settings", exact: true })).toHaveCount(0);
+  await expect(card.getByTestId("map-settings-more")).toHaveCount(0);
 });
 
 test("the approaches' pull-down is a card in the sheet, and the list it opens takes its place there", async ({ page }) => {

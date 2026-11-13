@@ -211,9 +211,7 @@ function CardDrawer({
               // The side panel's card does not swipe: no sizes to swipe between.
               data-base-ui-swipe-ignore={onPhone ? undefined : ""}
               // Its corners the sheet's: drawn outside the sheet's clip, so it can stand over it.
-              style={
-                onPhone ? { borderRadius: `${PILL_RADIUS}px ${PILL_RADIUS}px 0 0` } : undefined
-              }
+              style={onPhone ? { borderRadius: `${PILL_RADIUS}px ${PILL_RADIUS}px 0 0` } : undefined}
               className={cn(
                 "group/sheet pointer-events-auto absolute inset-0 flex flex-col text-foreground outline-none print:static",
                 p.look,

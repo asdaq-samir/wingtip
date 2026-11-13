@@ -84,7 +84,11 @@ export function PhoneSheetContent({ className, style, children, onPointerDown, .
             {...props}
           >
             {/* iOS's grabber, 36 by 5, five points in from the sheet's top. */}
-            <div aria-hidden="true" data-swipe-handle="" className="absolute inset-x-0 top-0 z-10 flex h-4 items-start justify-center pt-1.25">
+            <div
+              aria-hidden="true"
+              data-swipe-handle=""
+              className="absolute inset-x-0 top-0 z-10 flex h-4 items-start justify-center pt-1.25"
+            >
               <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" />
             </div>
             {children}
@@ -113,10 +117,7 @@ export function PhoneSheetHeader({
   end?: ReactNode;
 }) {
   return (
-    <div
-      data-slot="sheet-header"
-      className="flex flex-row flex-wrap items-center justify-between gap-1.5 p-4 pt-5 pb-2 text-left"
-    >
+    <div data-slot="sheet-header" className="flex flex-row flex-wrap items-center justify-between gap-1.5 p-4 pt-5 pb-2 text-left">
       {leading}
       {/* A sheet's title at the app's size for one (TEXT). */}
       <Drawer.Title

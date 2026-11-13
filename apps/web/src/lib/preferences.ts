@@ -331,7 +331,12 @@ export function migratePreferences(kept: unknown, from: number): Preferences {
   // 9: the sheet's edge, the flat ground and own ship's look let go, none a
   // setting now (2026-11-13): a browser's kept top, flat or arrow falls
   // back to the bottom, the shaded ground and the airplane, unsaid.
-  const { navBar: _navBar, terrain, ownShipLook: _ownShipLook, ...rest } = kept as { navBar?: unknown; terrain?: string; ownShipLook?: unknown };
+  const {
+    navBar: _navBar,
+    terrain,
+    ownShipLook: _ownShipLook,
+    ...rest
+  } = kept as { navBar?: unknown; terrain?: string; ownShipLook?: unknown };
   return {
     ...rest,
     ...(from < 6 && isStockDefault((kept as { aircraft?: AircraftChoice }).aircraft) ? { aircraft: NO_AIRPLANE } : {}),

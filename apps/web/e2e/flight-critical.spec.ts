@@ -11,7 +11,7 @@ import {
   sideDrawer,
   slow,
 } from "./helpers";
-import { closeMapSettings, openMapSettingsPage } from "./mapCard";
+import { closeMapSettings, openSettingsPage } from "./mapCard";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -52,8 +52,8 @@ test(
     // context: https, or localhost); the suite's plain-http stack has none.
     const keeping = await page.evaluate(() => "serviceWorker" in navigator && window.isSecureContext);
     if (keeping) {
-      // The Map card's Map Settings page, all the way up, its More group in reach.
-      await openMapSettingsPage(page);
+      // Settings from the Map card's gear, its Data group in reach.
+      await openSettingsPage(page);
       const keep = page.getByTestId("keep-offline-toggle");
       if ((await keep.getAttribute("aria-checked")) !== "true") await keep.click();
       await closeMapSettings(page);
@@ -121,7 +121,7 @@ test(
 
     const keeping = await page.evaluate(() => "serviceWorker" in navigator && window.isSecureContext);
     if (keeping) {
-      await openMapSettingsPage(page);
+      await openSettingsPage(page);
       const keep = page.getByTestId("keep-offline-toggle");
       if ((await keep.getAttribute("aria-checked")) !== "true") await keep.click();
       await closeMapSettings(page);

@@ -9,7 +9,9 @@ describe("Settings' Airport Weather", () => {
   });
 
   it("brings a device's kept look and switches to one of the three", () => {
-    expect(migrateAirportWeather({ look: "halo", stationClose: true, windArrows: true, worseByArrival: true }, 0)).toEqual({ show: "wind" });
+    expect(migrateAirportWeather({ look: "halo", stationClose: true, windArrows: true, worseByArrival: true }, 0)).toEqual({
+      show: "wind",
+    });
     expect(migrateAirportWeather({ look: "halo", windArrows: false }, 0)).toEqual({ show: "category" });
     expect(migrateAirportWeather({ look: "station", windArrows: false }, 0)).toEqual({ show: "station" });
     expect(migrateAirportWeather({ look: "dot" }, 0)).toEqual({ show: "category" });

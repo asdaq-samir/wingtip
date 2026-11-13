@@ -15,9 +15,9 @@ import { CHART } from "../../tokens";
  * the tail, the wing's tips rounded and its trailing edge swept in to the
  * cabin, a rounded tailplane. */
 const PARTS =
-    `<path d="M16 2 C17.3 2 18 3.6 18 5.6 L18 21.5 C18 24 17.3 27 16 29.5 C14.7 27 14 24 14 21.5 L14 5.6 C14 3.6 14.7 2 16 2 Z"/>` +
-    `<path d="M3.2 10 L28.8 10 Q30 10 30 11.2 L30 12.4 Q30 13.4 28.9 13.5 L18 14.8 L14 14.8 L3.1 13.5 Q2 13.4 2 12.4 L2 11.2 Q2 10 3.2 10 Z"/>` +
-    `<path d="M10.6 24 L21.4 24 Q22.2 24 22.2 24.8 L22.2 25.6 Q22.2 26.4 21.4 26.4 L10.6 26.4 Q9.8 26.4 9.8 25.6 L9.8 24.8 Q9.8 24 10.6 24 Z"/>`;
+  `<path d="M16 2 C17.3 2 18 3.6 18 5.6 L18 21.5 C18 24 17.3 27 16 29.5 C14.7 27 14 24 14 21.5 L14 5.6 C14 3.6 14.7 2 16 2 Z"/>` +
+  `<path d="M3.2 10 L28.8 10 Q30 10 30 11.2 L30 12.4 Q30 13.4 28.9 13.5 L18 14.8 L14 14.8 L3.1 13.5 Q2 13.4 2 12.4 L2 11.2 Q2 10 3.2 10 Z"/>` +
+  `<path d="M10.6 24 L21.4 24 Q22.2 24 22.2 24.8 L22.2 25.6 Q22.2 26.4 21.4 26.4 L10.6 26.4 Q9.8 26.4 9.8 25.6 L9.8 24.8 Q9.8 24 10.6 24 Z"/>`;
 
 /** The plane's SVG at `size` points, `fill` over a white casing. Moving
  * (`beam`), the plane with Maps' fading beam ahead of its nose and a faint

@@ -112,7 +112,7 @@ test(
     const c = (await close.boundingBox())!;
     expect((await at(page, c.x + c.width / 2, c.y + c.height / 2)).inHead).toBe(true);
 
-    // Settings: at the pill its title and ✕; its foot's seven links; no
+    // You: at the pill its title and ✕; Help & About's three links; no
     // credits row on the map; Status with the FAA data's cycles.
     await go(page, "/app/plan");
     await openConsole(page);
@@ -123,9 +123,12 @@ test(
     const k = (await consoleClose.boundingBox())!;
     expect((await at(page, k.x + k.width / 2, k.y + k.height / 2)).inHead).toBe(true);
     await grabberTo(page, "full");
+    // Help & About, Settings' row (the owner's option A, 2026-11-13): the legal links at its foot.
+    await page.getByTestId("settings-row").click();
+    await page.getByTestId("help-row").click();
     const foot = page.getByTestId("settings-foot");
     await foot.scrollIntoViewIfNeeded();
-    await expect(foot.locator("button, a")).toHaveText(["Status", "Log", "Guide", "About", "Privacy", "Terms", "Legal"]);
+    await expect(foot.locator("button, a")).toHaveText(["Privacy", "Terms", "Legal"]);
     await expect(page.locator(".maplibregl-ctrl-attrib")).toHaveCount(0);
     await consolePage(page.getByTestId("console-sheet"), "Status");
     await expect(page.getByTestId("status-data-cycle").first()).toBeVisible({ timeout: slow(15_000) });

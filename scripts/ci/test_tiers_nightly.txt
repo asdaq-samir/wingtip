@@ -80,7 +80,6 @@ ruler.spec.ts
 saved-flight-edit.spec.ts
 search-desk.spec.ts
 search-results.spec.ts
-setup-rows.spec.ts
 sheet-cards.spec.ts
 sheet-drag-content.spec.ts
 sheet-drag.spec.ts
@@ -105,3 +104,4 @@ tv.spec.ts
 undo.spec.ts
 weather-flow.spec.ts
 workings.spec.ts
+you-rows.spec.ts

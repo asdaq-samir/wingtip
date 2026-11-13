@@ -1,6 +1,6 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { drawn, settle, slow } from "./helpers";
-import { closeMapSettings, openMapSettingsPage } from "./mapCard";
+import { closeMapSettings, openSettingsPage } from "./mapCard";
 
 /**
  * What is ahead of own ship in the air (lib/map/position/ahead), said over the map
@@ -205,9 +205,9 @@ test("spoken, each alert ahead is said once as it comes, and turned on it says s
 
   // The map's settings: one Alerts control of Off, On and Spoken, there
   // since the owner's "alerts can go to overlay settings" (2026-11-05).
-  // Its Map Settings' Alerts page since the owner's option A (2026-11-13).
-  await openMapSettingsPage(page, "alerts");
-  const mode = page.getByTestId("map-settings").getByTestId("alerts-mode");
+  // Settings' Alerts page since the owner's option A (2026-11-13).
+  await openSettingsPage(page, "alerts");
+  const mode = page.getByTestId("alerts-mode");
   await expect(mode.getByRole("button", { name: "On" })).toHaveAttribute("aria-pressed", "true");
   await mode.getByRole("button", { name: "Spoken" }).click();
   await expect(mode.getByRole("button", { name: "Spoken" })).toHaveAttribute("aria-pressed", "true");

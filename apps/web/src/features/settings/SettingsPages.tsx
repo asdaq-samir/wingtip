@@ -34,7 +34,13 @@ export function AlertsPage() {
   return (
     <ListGroup>
       <ListRow title="Alerts">
-        <Segmented label="Alerts" value={alertMode} onChange={(v) => setAlertMode(v as AlertMode)} testId="alerts-mode" options={ALERT_MODES} />
+        <Segmented
+          label="Alerts"
+          value={alertMode}
+          onChange={(v) => setAlertMode(v as AlertMode)}
+          testId="alerts-mode"
+          options={ALERT_MODES}
+        />
       </ListRow>
     </ListGroup>
   );

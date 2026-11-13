@@ -53,7 +53,6 @@ export default function WelcomeSheet({ open, onGo }: { open: boolean; onGo: () =
             foot; the focus taken by none of it, so no keyboard comes up as
             it closes. */}
         <PhoneSheetContent
-         
           data-testid="first-flight"
           initialFocus={false}
           finalFocus={false}

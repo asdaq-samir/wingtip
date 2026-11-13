@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 import {
-  closeConsole,
   closeSidebarWithTheStockKey,
   consoleSheet,
   expectDrawerClosed,
@@ -106,10 +105,12 @@ test(
     await expect(pilot.getByRole("region", { name: "Airplanes", exact: true })).toBeVisible();
     await library(pilot, "Flights");
     await expect(pilot.getByRole("region", { name: "Flights", exact: true })).toBeVisible();
-    // Guide and About as links at the page's foot, no Settings page.
+    // Settings a row of You, Guide and About rows of its Help & About
+    // (the owner's option A, 2026-11-13).
     await consolePage(pilot, "Account");
-    for (const link of ["guide-link", "about-link"]) await expect(pilot.getByTestId("setup-page").getByTestId(link)).toBeVisible();
-    await expect(pilot.getByTestId("setup-page").getByRole("button", { name: /^Settings/ })).toHaveCount(0);
+    await pilot.getByTestId("settings-row").click();
+    await pilot.getByTestId("help-row").click();
+    for (const link of ["guide-link", "about-link"]) await expect(pilot.getByTestId(link)).toBeVisible();
     // The personal minimums are Personal's, with no sign-in needed.
     await library(pilot, "Minimums");
     await expect(pilot.getByTestId("minimum-ceilingFt")).toBeVisible();
@@ -124,82 +125,6 @@ test(
     await openSidebar(page);
   },
 );
-
-test("the navigation bar's edge is a setting: the panel moves to it, the map's buttons take the other, the console comes from it, and it is remembered", async ({
-  page,
-}) => {
-  // By default the bottom on a phone and the top from md up; the other
-  // edge picked in the settings moves the panel there, the map's
-  // buttons to the edge away from it, and the console in from it.
-  await page.goto("/app/plan");
-  await settle(page);
-  const viewport = page.viewportSize();
-  if (!viewport) throw new Error("no viewport configured");
-  const phone = viewport.width < 768;
-  await openSetup(page);
-  await pickControl(page, "nav-bar-select", phone ? "nav-bar-top" : "nav-bar-bottom");
-  await closeConsole(page);
-  await expect(page.locator("[data-slot=sheet-content], [data-slot=popover-content], [data-testid=console-sheet]")).toHaveCount(0);
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  // Once the panel has come to rest: it measures its head and eases to
-  // its height after a load, and the reload below is compared with this.
-  await settled(page.locator('[data-slot="map-panel"]'));
-
-  // The panel at rest is the tabs' pill (no head of its own): where the
-  // panel is, its box.
-  const header = (await page.locator('[data-slot="map-panel"]').boundingBox())!;
-  const buttons = (await page.locator("[data-map-controls] > *").first().boundingBox())!;
-  if (phone) {
-    expect(header.y).toBeLessThan(40);
-    expect(buttons.y).toBeGreaterThan(viewport.height / 2);
-  } else {
-    expect(header.y + header.height).toBeGreaterThan(viewport.height / 2);
-    expect(buttons.y).toBeLessThan(viewport.height / 2);
-  }
-
-  // The console, its tab, comes in from the same edge: on a phone the
-  // panel's layer, the panel half way down from the top, in from the
-  // screen's edges.
-  await page.goto("/app/plan");
-  await settle(page);
-  await showTabs(page);
-  await openConsole(page);
-  const pilot = consoleSheet(page);
-  await expect(
-    pilot
-      .getByTestId("setup-page")
-      .or(pilot.getByRole("tab", { name: "Guide" }))
-      .first(),
-  ).toBeVisible();
-  // An animation cancelled on the way (a transition replaced by the next)
-  // rejects its `finished`; it has stopped all the same.
-  await pilot.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))));
-  const box = (await (phone ? page.locator('[data-slot="map-panel"]') : pilot).boundingBox())!;
-  // All the way up: the sheet to the screen's edge (MapPanel's "edge").
-  if (phone) expect(Math.round(box.y)).toBeLessThanOrEqual(8);
-  // Beside a desktop's map, Setup is the panel's (MapPage's inPanel), and
-  // the panel runs the window's height, its float (FLOAT_PX, 16) in from
-  // the screen's foot.
-  else {
-    expect(await pilot.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
-    const panel = (await page.locator('[data-slot="map-panel"]').boundingBox())!;
-    expect(box.y + box.height).toBeLessThanOrEqual(panel.y + panel.height + 1);
-    expect(viewport.height - Math.round(panel.y + panel.height)).toBeLessThanOrEqual(17);
-  }
-  await page.keyboard.press("Escape");
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  await expect(pilot).toHaveCount(0);
-
-  // Remembered per browser: the route opened again (a reload would
-  // forget it, features/shell/freshLoad).
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  // To the pixel, once the panel has settled: it measures its head and
-  // eases to its height after a load.
-  await expect.poll(async () => Math.abs((await page.locator('[data-slot="map-panel"]').boundingBox())!.y - header.y)).toBeLessThan(1);
-});
 
 test("the console is the panel's own: up from the bottom of a phone's screen, in the panel beside a desktop's map", async ({ page }) => {
   // The planner's Setup is a layer of the map's panel on every screen

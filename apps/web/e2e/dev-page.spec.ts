@@ -46,11 +46,11 @@ test(
     await openConsole(page);
     const devMl = consoleSheet(page);
     await expect(devMl).toBeVisible();
-    // The developer's Setup is the pilot's (the owner's pick of the dev
-    // page's redesign): the switches and the account, then Status,
-    // Settings, Guide and About as rows; the Guide the three steps that
-    // change the model. How good the models are is the page's Perf tab.
-    await expect(devMl.getByTestId("setup-head")).toBeVisible();
+    // The developer's console is the pilot's You (the owner's pick of the
+    // dev page's redesign), Status and Guide the developer's, in Settings'
+    // Help & About; the Guide the three steps that change the model. How
+    // good the models are is the page's Perf tab.
+    await expect(devMl.getByTestId("setup-pill-account")).toBeVisible();
     await consolePage(devMl, "Guide");
     await expect(devMl.getByText("Load a route")).toBeVisible();
     await expect(devMl.getByText("Rate its points")).toBeVisible();

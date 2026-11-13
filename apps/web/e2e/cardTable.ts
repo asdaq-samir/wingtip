@@ -248,7 +248,7 @@ export const CARDS: CardRow[] = [
     ],
     inside: {
       open: (p) => consolePage(p.getByTestId("console-sheet"), "About"),
-      back: (p) => p.getByTestId("console-sheet").getByRole("button", { name: "Back to Setup", exact: true }).click(),
+      back: (p) => p.getByTestId("console-sheet").getByRole("button", { name: "Back to You", exact: true }).click(),
     },
     not: { sideways: "no sideways row" },
   },

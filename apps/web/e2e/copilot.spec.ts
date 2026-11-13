@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { openPanel, openProfile, pressDryRunStart, settle, sideDrawer, slow } from "./helpers";
-import { closeMapSettings, openMapSettingsPage } from "./mapCard";
+import { closeMapSettings, openSettingsPage } from "./mapCard";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -41,11 +41,11 @@ async function startDryRun(page: Page) {
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
 }
 
-test("the copilot is a choice beside the alerts in the map's settings", async ({ page }) => {
+test("the copilot is a choice of Settings' ATC page", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
-  await openMapSettingsPage(page, "alerts");
-  const mode = page.getByTestId("map-settings").getByTestId("copilot-mode");
+  await openSettingsPage(page, "atc");
+  const mode = page.getByTestId("copilot-mode");
   await expect(mode.getByRole("button", { name: "On" })).toHaveAttribute("aria-pressed", "true");
 });
 
@@ -67,8 +67,8 @@ test("with the copilot off nothing is said in flight", async ({ page }) => {
   await stubAround(page);
   await page.goto("/app/plan");
   await settle(page);
-  await openMapSettingsPage(page, "alerts");
-  await page.getByTestId("map-settings").getByTestId("copilot-mode").getByRole("button", { name: "Off" }).click();
+  await openSettingsPage(page, "atc");
+  await page.getByTestId("copilot-mode").getByRole("button", { name: "Off" }).click();
   await closeMapSettings(page);
   await startDryRun(page);
   await expect(page.getByTestId("flying-head")).toBeVisible({ timeout: slow(10_000) });

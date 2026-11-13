@@ -202,18 +202,18 @@ export async function openConsole(page: Page) {
   await grabberTo(page, "full");
 }
 
-/** Setup's page all the way out, its Controls on top (QuickControls):
- *  the one home of the alerts, offline charts, layout and theme since the
- *  Settings page went (the owner, 2026-10-27). Escape closes it again. */
+/** Settings, You's row, all the way out, its Look tiles on top
+ *  (QuickControls; the owner's option A, 2026-11-13). Escape closes it. */
 export async function openSetup(page: Page) {
   await openConsole(page);
+  await page.getByTestId("settings-row").click();
   await expect(page.getByTestId("quick-controls").first()).toBeVisible();
   await expandConsole(page);
 }
 
-/** One of Setup's Controls set from its menu: its tile, then the item. */
-export async function pickControl(page: Page, control: "nav-bar-select" | "theme-select" | "sunlight-select", item: string) {
-  await page.getByTestId("setup-page").getByTestId(control).click();
+/** One of Settings' Look tiles set from its menu: its tile, then the item. */
+export async function pickControl(page: Page, control: "theme-select" | "sunlight-select", item: string) {
+  await page.getByTestId("settings-page").getByTestId(control).click();
   await page.getByTestId(item).click();
 }
 
@@ -279,9 +279,7 @@ export const consoleSheet = (page: Page) => page.getByTestId("console-sheet");
 export async function library(scope: Page | Locator, section: "Airplanes" | "Flights" | "Logbook" | "Minimums") {
   await consolePage(scope, "Account");
   const list = scope.getByTestId("library-section");
-  const back = scope.getByRole("button", { name: "Back to Setup", exact: true });
-  await expect(list.or(back)).toBeVisible();
-  if (!(await list.isVisible())) await back.click();
+  await expect(list).toBeVisible();
   // Setup opens half way, as every card does (e7bb15ec8): a row under its
   // edge is reached by pulling it up.
   const row = list.getByRole("button", { name: new RegExp(`^${section}`) });
@@ -659,9 +657,8 @@ export async function openAccount(page: Page) {
 }
 
 /** One of the console's places by name: the developer's console's tab of
- *  that name; the pilot's console is one page now (Setup, at the owner's
- *  pick of the redesign), its account first and Settings, Guide and About
- *  rows that open their pages -- Account is the page itself. */
+ *  that name; the pilot's console is You, Account the page itself, Guide,
+ *  About and Status rows of Settings' Help & About (the owner, 2026-11-13). */
 export async function consolePage(scope: Page | Locator, name: "Account" | "Guide" | "About" | "Status") {
   const tab = scope.getByRole("tab", { name, exact: true });
   const setup = scope.getByTestId("setup-page");
@@ -670,13 +667,15 @@ export async function consolePage(scope: Page | Locator, name: "Account" | "Guid
     await tab.click();
     return;
   }
-  // Back to the page's list from a page open on it, by its close.
-  const back = scope.getByRole("button", { name: "Back to Setup", exact: true });
-  if (await back.isVisible()) await back.click();
+  // Back to You from the pages open on it, one close at a time.
+  const back = scope.getByRole("button", { name: /^Back to (?!the map)/ }).locator("visible=true");
+  while (await back.count()) await back.first().click();
   if (name === "Account") return;
-  const row = setup.getByRole("button", { name: new RegExp(`^${name}`) });
-  await inSheet("page" in scope ? scope.page() : scope, row);
-  await row.click();
+  for (const id of ["settings-row", "help-row", `${name.toLowerCase()}-link`]) {
+    const row = scope.getByTestId(id);
+    await inSheet("page" in scope ? scope.page() : scope, row);
+    await row.click();
+  }
 }
 
 /** A strip set to show one of its lists -- the flights' Saved or Recents, the traffic's Favorites,

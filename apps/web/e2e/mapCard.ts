@@ -1,29 +1,29 @@
 import { expect, type Page } from "@playwright/test";
 import { frontSheet, grabberTo, openMapSettings, slow } from "./helpers";
 
-/* The Map card's pages and the map's 3D button (features/map-settings,
-   ThreeDButton; the owner's option A, 2026-11-13), apart from helpers.ts,
-   which is at its size. */
+/* The Map card, the Settings its gear opens, and the map's 3D button
+   (features/map-settings, features/settings, ThreeDButton; the owner's
+   option A, 2026-11-13), apart from helpers.ts, which is at its size. */
 
-/** One of the Map card's pages (features/map-settings): its Map Settings,
- *  from the row at the Map's foot, and from those a row's own page --
- *  the airport weather, the alerts or the sources. The card opened first
- *  where it is not, and pulled all the way up (it opens half way, as every
- *  card does), its rows in reach. */
-export async function openMapSettingsPage(page: Page, sub?: "airport-weather" | "alerts" | "sources") {
+/** The app's Settings opened by the Map card's gear, at its Map group
+ *  (lib/openSettings; the owner's option A, 2026-11-13), the card opened
+ *  first where it is not; and from it a page -- the alerts, ATC, Help &
+ *  About or its Sources -- where one is asked for. */
+export async function openSettingsPage(page: Page, sub?: "alerts" | "atc" | "help" | "sources") {
   const card = page.getByTestId("map-settings");
   if (!(await card.isVisible())) await openMapSettings(page);
-  await grabberTo(page, "full");
-  await card.getByTestId("map-settings-more").click();
-  if (sub) await card.getByTestId(`${sub}-row`).click();
+  await card.getByTestId("card-settings").click();
+  await expect(page.getByTestId("settings-page")).toBeVisible();
+  for (const row of sub === "sources" ? ["help-row", "sources-row"] : sub ? [`${sub}-row`] : []) await page.getByTestId(row).click();
 }
 
-/** The Map card put away from whichever of its pages is open: Escape
- *  goes back a page at a time, as its close does, then puts it away. */
+/** The Map card and Settings over it put away: Escape goes back a page at
+ *  a time, as each close does, then puts each card away. */
 export async function closeMapSettings(page: Page) {
   await expect(async () => {
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("map-settings")).toHaveCount(0, { timeout: 1000 });
+    await expect(page.getByTestId("console-sheet")).toHaveCount(0, { timeout: 1000 });
   }).toPass({ timeout: slow(10000) });
 }
 

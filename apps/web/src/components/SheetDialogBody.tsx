@@ -130,14 +130,13 @@ export default function SheetDialog({
         {trigger && <PhoneSheetTrigger render={trigger} />}
         <PhoneSheetContent
           ref={sheet}
-         
+
           data-testid={testId}
           initialFocus={focus}
           // Only an alert's: an undefined role would take Base UI's "dialog" away.
           {...(alert ? { role: "alertdialog" } : {})}
         >
           <PhoneSheetHeader
-           
             title={title}
             description={description}
             leading={
