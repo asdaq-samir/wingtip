@@ -38,9 +38,12 @@ export function airportWeatherDrawn(show: AirportWeather): { look: AirportWeathe
 export function migrateAirportWeather(kept: unknown, from: number): { show: AirportWeather } {
   const old = (kept ?? {}) as { look?: string; windArrows?: boolean; show?: AirportWeather };
   if (from >= 1 && old.show) return { show: old.show };
-  if (old.look === "off") return { show: "off" };
-  if (old.look === "station") return { show: "station" };
-  return { show: old.look === "halo" && old.windArrows !== false ? "wind" : "category" };
+  // Nothing kept is the old store's default, the ring with every switch
+  // on, so it comes to the new default, With Wind.
+  const look = old.look ?? "halo";
+  if (look === "off") return { show: "off" };
+  if (look === "station") return { show: "station" };
+  return { show: look === "halo" && old.windArrows !== false ? "wind" : "category" };
 }
 
 /** Kept on this device, as the map's other weather settings are

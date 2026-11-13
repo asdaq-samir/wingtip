@@ -9,7 +9,7 @@ describe("Settings' Airport Weather", () => {
     expect(airportWeatherDrawn("station")).toMatchObject({ look: "station" });
   });
 
-  it("brings a device's kept look and switches to one of the three", () => {
+  it("brings a device's kept look and switches to one of its choices", () => {
     expect(migrateAirportWeather({ look: "halo", stationClose: true, windArrows: true, worseByArrival: true }, 0)).toEqual({
       show: "wind",
     });
