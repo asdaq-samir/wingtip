@@ -155,6 +155,15 @@ test("You floats over the map as Apple Maps' account card does: in from a phone'
   }
   // Within the screen, scrolling inside where it is taller.
   expect(box.y).toBeGreaterThan(0);
+  // The name large and the address smaller under it, as Apple's card
+  // (the owner, 2026-11-13); an address is never the large line -- with
+  // no name given it asks for one.
+  const name = pilot.getByTestId("you-name");
+  const address = pilot.getByTestId("you-address");
+  await expect(address).toContainText("@");
+  await expect(name).not.toContainText("@");
+  const size = (el: typeof name) => el.evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+  expect(await size(name)).toBeGreaterThan(await size(address));
 });
 
 test("Setup's Appearance control is system, light, dark or dark with the chart bright, a menu of all four, and the choice survives a reload", async ({

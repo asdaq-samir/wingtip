@@ -7,6 +7,7 @@ import AboutPanel from "../../components/AboutPanel";
 import StatusPanel from "../../components/StatusPanel";
 import LoadLogPanel from "../../components/LoadLogPanel";
 import { ConsolePages, PageRow } from "../../components/ConsolePages";
+import { Button } from "../../components/ui/button";
 import EmptyState from "../../components/EmptyState";
 import { ListGroup } from "../../components/GroupedList";
 import { RowBadge } from "../../components/RowBadge";
@@ -20,6 +21,7 @@ import { usePreferences } from "../../lib/preferences";
 import type { Minimums } from "../../lib/minimums";
 import { TEXT } from "../../lib/text";
 import { useDevMode } from "../../hooks/use-dev-mode";
+import { useWantedPage } from "../../lib/navigation/wantedPage";
 import { SettingsPage, type HelpPages } from "../settings";
 import { FlightsPanel } from "./AccountPanels";
 import { AccountFace } from "./AccountFace";
@@ -215,12 +217,17 @@ function minimumsWords(m: Minimums): string | null {
 
 /** Who is signed in, at You's top, as Apple Maps' account card heads
  *  itself (the owner's screenshot, 2026-11-13): their initials in a large
- *  round avatar, their name in large bold under it -- or their address,
- *  with no name given -- and the address in grey under that. Signed out,
- *  the avatar's glyph and Sign In. Room over it for the card's ✕. */
+ *  round avatar, their name in large bold under it and the address
+ *  smaller in grey under that, as Apple Maps' card has it (the owner,
+ *  2026-11-13: "the name bigger and then below it smaller email"). An
+ *  address is never the name: an email sign-in's display name is the
+ *  address itself, and where there is no name the large line asks for
+ *  one, opening Pilot Details at its Name. Signed out, the avatar's glyph
+ *  and Sign In. Room over it for the card's ✕. */
 function YouHead({ pilot }: { pilot: Pilot | null }) {
-  const name = pilot ? pilot.fullName || pilot.displayName : null;
-  const address = pilot?.email && pilot.email !== name ? pilot.email : null;
+  const given = pilot ? pilot.fullName || pilot.displayName : null;
+  const name = given && given !== pilot?.email && !given.includes("@") ? given : null;
+  const address = pilot?.email ?? (given !== name ? given : null);
   return (
     <div role="group" aria-label="Account" className="flex flex-col items-center gap-1 pt-6" data-testid="setup-pill-account">
       <span
@@ -233,9 +240,23 @@ function YouHead({ pilot }: { pilot: Pilot | null }) {
       >
         <AccountFace name={name} />
       </span>
-      <span className={cn("max-w-full truncate font-bold tracking-tight text-foreground", TEXT.hero)} data-testid="you-name">
-        {name ?? "You"}
-      </span>
+      {name || !pilot ? (
+        <span className={cn("max-w-full truncate font-bold tracking-tight text-foreground", TEXT.hero)} data-testid="you-name">
+          {name ?? "You"}
+        </span>
+      ) : (
+        <Button
+          variant="link"
+          className={cn(
+            "relative h-auto max-w-full truncate p-0 font-bold tracking-tight after:absolute after:-inset-y-2 after:inset-x-0",
+            TEXT.hero,
+          )}
+          onClick={() => useWantedPage.getState().want(["pilot"])}
+          data-testid="you-name"
+        >
+          Add Your Name
+        </Button>
+      )}
       {address && (
         <span className={cn("max-w-full truncate text-muted-foreground", TEXT.detail)} data-testid="you-address">
           {address}
