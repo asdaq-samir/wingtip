@@ -73,6 +73,7 @@ risk.spec.ts
 route-change.spec.ts
 route-fields.spec.ts
 route-fit.spec.ts
+route-half.spec.ts
 route-leg.spec.ts
 route-line.spec.ts
 ruler.spec.ts

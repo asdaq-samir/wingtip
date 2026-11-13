@@ -289,10 +289,18 @@ export default function RouteBox({
               </button>
             )}
             {/* Its own taps, not the box's room (isRoom), which types at the
-                route's end; ten under the lines, the clear's 44-point area
-                and the last button's apart (the iOS audit's P1). */}
+                route's end. Under the lines only what keeps the 44-point
+                areas of a pill above and below apart (the iOS audit's P1):
+                the tap target less the line's 1.75rem pills and the eighth
+                over them, ten at a 16 root and two at the owner's 19.65,
+                whose taller pills come nearer 44 themselves. A fixed ten
+                read as a band 30 tall between the route and its airplane
+                (the owner's screenshot, 2026-11-13). */}
             {footer && (
-              <div className="flex w-full basis-full items-center pt-2.5 pr-0.5 pb-2 pl-1.5" data-testid="route-box-footer">
+              <div
+                className="flex w-full basis-full items-center pt-[max(0px,calc(var(--tap-target)-2.125rem))] pr-0.5 pb-2 pl-1.5"
+                data-testid="route-box-footer"
+              >
                 {footer}
               </div>
             )}

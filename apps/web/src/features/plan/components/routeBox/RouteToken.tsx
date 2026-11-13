@@ -83,13 +83,11 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
     // (white-space: pre), which in a pill took 12 points beside its ident
     // and put the next arrow's hit area over it.
     <span className="inline-flex items-center gap-x-px align-middle font-sans leading-normal whitespace-nowrap normal-case">
-      {i === 0 && !hasDep && !box.typedAtStart && (
-        <span aria-hidden="true" className={ASKING}>
-          Departure
-        </span>
-      )}
       {/* Before the first point an arrow only with no departure yet: the
-          departure is typed there. */}
+          departure is asked for there, the word for it in the same button,
+          as a field's placeholder takes the tap that fills it -- a tap on
+          the word put the caret at the route's end (the owner's
+          screenshot, 2026-11-13). */}
       {(i > 0 || !hasDep) && (
         <Button
           variant="ghost"
@@ -104,8 +102,10 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
           className={cn(
             "h-5 w-4 rounded-full text-muted-foreground hover:bg-transparent hover:text-tint native:text-muted-foreground disabled:opacity-40",
             i > 0 && "ml-px",
+            i === 0 && "w-auto",
           )}
         >
+          {i === 0 && !box.typedAtStart && <span className={ASKING}>Departure</span>}
           <ArrowRight className="size-3" />
         </Button>
       )}

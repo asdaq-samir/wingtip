@@ -194,14 +194,17 @@ export default function ProcedureMenu({
             data-kind={kind}
             data-look={look}
             className={cn(
-              "relative h-8 min-w-0 shrink justify-start gap-0.5 rounded-full text-left font-semibold",
+              "relative h-8 justify-start gap-0.5 rounded-full text-left font-semibold",
               "after:absolute after:-inset-1.5 after:content-['']",
-              look === "add" ? "px-3" : "max-w-[10rem] px-2.5",
+              // A kind to add whole, "+ Approach", the row wrapping it under
+              // where it has no room: shrunk, it read "+ A…" at the owner's
+              // text size (2026-11-13). A picked one's name kept to a chip.
+              look === "add" ? "shrink-0 px-3" : "min-w-0 shrink max-w-[10rem] px-2.5",
               TEXT.detail,
             )}
             aria-label={`${ident} ${TITLE[kind].toLowerCase()}: ${label ?? "none picked"}`}
           >
-            {look === "add" ? <span className="truncate">+ {TITLE[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
+            {look === "add" ? <span>+ {TITLE[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
             {look !== "add" && <ChevronDown className="size-4 shrink-0" aria-hidden />}
           </Button>
         )}

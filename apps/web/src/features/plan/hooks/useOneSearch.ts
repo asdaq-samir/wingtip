@@ -8,6 +8,8 @@ import { SCREENS, type ScreenId } from "../../../lib/navigation/generated/screen
 import { wantScreen } from "../../../lib/navigation/wanted";
 import { takeSearchAsk, useSearchAsk, useSearchPick } from "../../../lib/oneSearch";
 import { usePickScope } from "./usePickScope";
+import { positionIdent } from "../../../lib/identSchema";
+import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { searchWords } from "../lib/searchPlaceholder";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../../lib/queryClient";
@@ -208,7 +210,14 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     }
   };
 
+  // Where the airplane is, for a route's departure asked for (useStopAsked).
+  const fix = useOwnShip((s) => (s.enabled ? s.fix : null));
   const does: DoHit[] = [];
+  // The departure asked for: where the airplane is, first, as Maps' From
+  // offers My Location -- a route may start at a present position, as Fly
+  // Here's does (the owner's "Departure → HSKEL → KJAX", 2026-11-13).
+  if (pick?.label === "Departure" && fix && (!typed || finds(typed, "My Position")))
+    does.push({ key: "my-position", label: "My Position", kind: "action", run: () => pickIdent(positionIdent(fix)) });
   if (!direct && !pick) {
     const out = does;
     const first = airports[0];
@@ -330,9 +339,13 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
         takeSearchAsk();
         setDirect(ask.mode === "direct");
         setProblem(null);
+        // A picker's ask on the Search page, where its field and rows are:
+        // asked from FPL (the route box's Departure), it focused a field on
+        // the page not up, and nothing seemed to happen (2026-11-13).
+        if (ask.mode === "pick") pickView("search");
         input.current?.focus();
       }),
-    [input],
+    [input, pickView],
   );
 
   return {

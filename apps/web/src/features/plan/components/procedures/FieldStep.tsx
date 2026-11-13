@@ -225,11 +225,11 @@ export function FieldStep({
                 <Glyph className="size-5" aria-hidden />
               </CollapsibleTrigger>
             ) : (
-              <span className={TRAY_HEAD}>
+              <span className={cn(TRAY_HEAD, a.runways?.length === 0 && "rounded-r-full")}>
                 <Glyph className="size-5" aria-label={part.role === "Arrive" ? "landing" : "takeoff"} role="img" />
               </span>
             )}
-            <div className="min-w-0 flex-1">{part.chips(adds.length > 0 ? adds : null)}</div>
+            <div className={cn("min-w-0 flex-1", a.runways?.length === 0 && "pl-2")}>{part.chips(adds.length > 0 ? adds : null)}</div>
           </Collapsible>
           {part.leaves && <span className="shrink-0">{part.leaves}</span>}
         </div>
