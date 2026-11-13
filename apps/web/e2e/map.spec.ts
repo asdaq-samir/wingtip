@@ -4,7 +4,6 @@ import {
   chartZoom,
   drawn,
   mapStill,
-  beforeTheRoute,
   openPanel,
   settle,
   sideDrawer,
@@ -15,6 +14,7 @@ import {
   openNavLog,
   navLogSheet,
 } from "./helpers";
+import { beforeTheRoute } from "./mapCard";
 import { drawnMarks, markWith, tapMark } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -171,7 +171,7 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   await beforeTheRoute(page, async () => {
     await grabberTo(page, "full");
     const toggle = page.getByTestId("waypoints-toggle");
-    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
     await toggle.click();
   });
   const asked: string[] = [];

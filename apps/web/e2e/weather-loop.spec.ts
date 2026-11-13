@@ -53,6 +53,8 @@ async function turnOnRadar(page: Page) {
   await grabberTo(page, "full");
   await page.getByTestId("weather-loop").click();
   await page.getByTestId("weather-loop-radar").click();
+  // With a loop on, its speed is a second group of the tile's menu.
+  await page.getByTestId("weather-loop").click();
   await expect(page.getByTestId("weather-loop-speed")).toBeVisible();
   await expect(async () => {
     await page.keyboard.press("Escape");

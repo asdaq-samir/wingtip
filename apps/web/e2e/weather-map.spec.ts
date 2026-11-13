@@ -74,7 +74,7 @@ test(
     await openMapSettings(page);
     // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
     await grabberTo(page, "full");
-    await expect(page.getByTestId("weather-areas-toggle")).toHaveAttribute("aria-checked", "false");
+    await expect(page.getByTestId("weather-areas-toggle")).toHaveAttribute("aria-pressed", "false");
     await page.getByTestId("weather-areas-toggle").click();
     await page.getByTestId("weather-pireps-toggle").click();
     await page.getByTestId("weather-winds").click();

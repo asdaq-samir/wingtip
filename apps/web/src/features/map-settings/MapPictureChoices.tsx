@@ -1,7 +1,7 @@
 import { cn } from "cn";
-import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
-import SectionTitle from "./SectionTitle";
-import { TEXT } from "../lib/text";
+import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
+import SectionTitle from "../../components/SectionTitle";
+import { TEXT } from "../../lib/text";
 
 export interface PictureChoice {
   value: string;
@@ -14,9 +14,9 @@ export interface PictureChoice {
 /**
  * A pick of one of a few, each a picture with its word on a strip across
  * its foot, as Apple Maps' "Choose Map" card sets its maps (the owner's
- * screenshot, 2026-11-10): with `lead`, the first as wide as the card and
- * the rest two to a row, as Apple's Standard over Hybrid and Satellite;
- * the one picked ringed in the tint. The stock ToggleGroup underneath, so
+ * screenshot, 2026-11-10), three to a row so the Map card is one screen
+ * (option A of the map settings canvas, 2026-11-13); the one picked
+ * ringed in the tint. The stock ToggleGroup underneath, so
  * each is a radio to a screen reader and the arrow keys move between them;
  * a pick applies at once, with nothing to confirm. A picture that does not
  * load leaves its muted box.
@@ -27,14 +27,12 @@ export default function MapPictureChoices({
   onChange,
   options,
   testId,
-  lead = false,
 }: {
   title: string;
   value: string;
   onChange: (value: string) => void;
   options: PictureChoice[];
   testId: string;
-  lead?: boolean;
 }) {
   return (
     <section className="flex flex-col">
@@ -50,9 +48,9 @@ export default function MapPictureChoices({
         }}
         aria-label={title}
         data-testid={testId}
-        className={cn("grid w-full gap-2", lead ? "grid-cols-2" : "grid-cols-3")}
+        className="grid w-full grid-cols-3 gap-2"
       >
-        {options.map((o, i) => (
+        {options.map((o) => (
           <ToggleGroupItem
             key={o.value}
             value={o.value}
@@ -62,11 +60,12 @@ export default function MapPictureChoices({
               "hover:bg-muted data-pressed:bg-muted",
               // The one picked ringed in the tint, two points, as Apple's is.
               "ring-1 ring-border data-pressed:ring-2 data-pressed:ring-tint",
-              lead && i === 0 && "col-span-2",
               o.className,
             )}
           >
-            <span aria-hidden="true" className={cn("block", lead && i === 0 ? "aspect-[16/7]" : "aspect-[4/3]")}>
+            {/* 16:10, flatter than the 4:3 they were, so the Map card's charts,
+                overlay and layers fit one iPhone screen with nothing to scroll. */}
+            <span aria-hidden="true" className="block aspect-[16/10]">
               {o.src && (
                 <img
                   src={o.src}

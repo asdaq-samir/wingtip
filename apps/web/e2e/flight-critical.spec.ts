@@ -3,15 +3,15 @@ import {
   closeNavLog,
   grabberTo,
   navLogSheet,
-  openMapSettings,
   openNavLog,
   openPanel,
   openProfile,
+  pressDryRunStart,
   settle,
   sideDrawer,
   slow,
-  pressDryRunStart,
 } from "./helpers";
+import { closeMapSettings, openMapSettingsPage } from "./mapCard";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -52,12 +52,11 @@ test(
     // context: https, or localhost); the suite's plain-http stack has none.
     const keeping = await page.evaluate(() => "serviceWorker" in navigator && window.isSecureContext);
     if (keeping) {
-      await openMapSettings(page);
-      // The menu is the map's sheet: all the way up, its Offline group in reach.
-      await grabberTo(page, "full");
+      // The Map card's Map Settings page, all the way up, its More group in reach.
+      await openMapSettingsPage(page);
       const keep = page.getByTestId("keep-offline-toggle");
       if ((await keep.getAttribute("aria-checked")) !== "true") await keep.click();
-      await page.keyboard.press("Escape");
+      await closeMapSettings(page);
       await expect(page.getByText("Charts Saved Offline")).toBeVisible({ timeout: slow(180_000) });
     } else {
       test.info().annotations.push({ type: "offline", description: "No service worker over plain http: the charts were not kept." });
@@ -122,11 +121,10 @@ test(
 
     const keeping = await page.evaluate(() => "serviceWorker" in navigator && window.isSecureContext);
     if (keeping) {
-      await openMapSettings(page);
-      await grabberTo(page, "full");
+      await openMapSettingsPage(page);
       const keep = page.getByTestId("keep-offline-toggle");
       if ((await keep.getAttribute("aria-checked")) !== "true") await keep.click();
-      await page.keyboard.press("Escape");
+      await closeMapSettings(page);
       await expect(page.getByText("Charts Saved Offline")).toBeVisible({ timeout: slow(180_000) });
     }
 

@@ -1,9 +1,9 @@
 import { Map as MapIcon } from "lucide-react";
 import IconButton from "./IconButton";
 import { SheetCard } from "./SheetCard";
-import MapSettings from "./MapSettings";
-import WeatherSettings from "./WeatherSettings";
-import { useMapCard } from "../lib/mapCard";
+import CloseButton from "./CloseButton";
+import { MapCardBody } from "../features/map-settings";
+import { closeMapPage, mapPageTitle, showMapCard, useMapCard } from "../lib/mapCard";
 
 /**
  * The map's own button, first among the map's buttons as Maps' is: its
@@ -26,7 +26,7 @@ export default function MapSettingsButton() {
       data-testid="map-settings-button"
       aria-expanded={open}
       data-popup-open={open ? "" : undefined}
-      onClick={() => useMapCard.setState({ open: !open })}
+      onClick={() => showMapCard(!open)}
     >
       <MapIcon strokeWidth={1.5} className="size-5" />
     </IconButton>
@@ -40,19 +40,29 @@ export default function MapSettingsButton() {
  * Apple Maps' Choose Map card on the web): its name at the top and its
  * close at the right, which goes back to the sheet and the search as they
  * were, the focus back on the Map button. Drawn by MapControls, beside
- * what rides the sheet, never inside it.
+ * what rides the sheet, never inside it. Its pages (features/map-settings)
+ * are in the same card, each named on its head, whose close goes back one
+ * (the app's one close, no Back: the owner, 2026-10-22), as Escape and a
+ * device's Back do (SheetCard's `action`).
  */
 export function MapSettingsCard() {
   const open = useMapCard((s) => s.open);
+  const pages = useMapCard((s) => s.pages);
   if (!open) return null;
+  const page = pages.at(-1);
   return (
     <SheetCard
-      title="Map"
-      onClose={() => useMapCard.setState({ open: false })}
+      title={mapPageTitle(page)}
+      onClose={() => showMapCard(false)}
       testId="map-settings"
       returnFocus={() => document.querySelector<HTMLElement>('[data-testid="map-settings-button"]')}
+      action={
+        page ? (
+          <CloseButton label={`Back to ${mapPageTitle(pages.at(-2))}`} onClick={closeMapPage} data-back="" data-testid="sheet-card-close" />
+        ) : undefined
+      }
     >
-      <MapSettings weather={<WeatherSettings />} />
+      <MapCardBody page={page} />
     </SheetCard>
   );
 }

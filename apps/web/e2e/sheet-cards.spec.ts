@@ -237,7 +237,7 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
   await place.getByRole("tab", { name: "Info" }).click();
   await grabberTo(page, "full");
   const controls = page.locator("[data-map-controls]");
-  const radio = page.locator("[data-map-food]");
+  const radio = page.getByTestId("mic-circle");
 
   // All the way up, a NOTAM's card over it at half: the buttons give way.
   await place.getByTestId("place-notam").first().click();

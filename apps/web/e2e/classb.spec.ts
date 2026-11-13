@@ -1,5 +1,6 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { beforeTheRoute, chartZoom, grabberTo, openMapSettings, sideDrawer, slow, tapNear } from "./helpers";
+import { chartZoom, grabberTo, openMapSettings, sideDrawer, slow, tapNear } from "./helpers";
+import { beforeTheRoute } from "./mapCard";
 import { markWith, tapMark } from "./marks";
 
 /**

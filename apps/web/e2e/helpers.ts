@@ -225,17 +225,6 @@ export async function openMapSettings(page: Page) {
   await expect(page.getByTestId("map-settings")).toBeVisible();
 }
 
-/** A map setting changed on the planner before a route is loaded --
- *  remembered per browser -- and the route loaded after, for a route's
- *  map that should show it. */
-export async function beforeTheRoute(page: Page, change: () => Promise<void>) {
-  await page.goto("/app/plan");
-  await openMapSettings(page);
-  await change();
-  await page.keyboard.press("Escape");
-  await expect(page.getByTestId("map-settings")).toHaveCount(0);
-}
-
 /** The console all the way out. On a phone it is a card of its own over
  *  the map's sheet (ConsoleLayer's CardLayer, the stock Drawer's nested
  *  drawer), opened half way as every card is (e7bb15ec8): its grabber

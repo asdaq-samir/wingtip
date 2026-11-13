@@ -40,7 +40,7 @@ import type { AloftPoint } from "./terrain/geometry";
 import { useTerrainView } from "./terrain/useTerrainView";
 
 /** The relief, the 3D ground and the pilot's-eye view (features/plan/map/terrain):
- *  a chunk of its own, loaded only once the Map menu's Terrain or the dry
+ *  a chunk of its own, loaded only once the Terrain, the 3D button or the dry
  *  run asks for it. */
 const TerrainGl = lazy(() => import("./terrain/TerrainGl"));
 

@@ -1,16 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import {
-  consoleSheet,
-  controlsInSight,
-  grabberTo,
-  library,
-  openBrief,
-  openConsole,
-  openMapSettings,
-  openPanel,
-  showTabs,
-  sideDrawer,
-} from "./helpers";
+import { consoleSheet, controlsInSight, grabberTo, library, openBrief, openConsole, openPanel, showTabs, sideDrawer } from "./helpers";
+import { openMapSettingsPage } from "./mapCard";
 import { pickAirplane } from "./startState";
 import { bar } from "./sheetPages";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -342,7 +332,7 @@ test("Print is in the Brief's Share menu; Keep for the Air is in the map's menu,
 
   // From the search bar, the route closed.
   await page.goto("/app/plan");
-  await openMapSettings(page);
+  await openMapSettingsPage(page);
   const keep = page.getByTestId("keep-offline-toggle");
   await expect(keep).toBeVisible();
   // The suite's stack is plain http, where the service worker that keeps

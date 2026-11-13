@@ -15,6 +15,7 @@ import {
 import { demSource } from "./dem";
 import type { AloftPoint } from "./geometry";
 import { svColours } from "./svColours";
+import { useClearanceDrawn } from "../../../../lib/map/terrainClearanceWords";
 
 const CLEARANCE_DEM = "terrain-clearance-dem";
 const CLEARANCE_TINT = "terrain-clearance";
@@ -75,7 +76,7 @@ const load: AddProtocolAction = async (params, abort) => {
  * the tiles are heights over the plan). The rest of the chart as it is.
  * A view of the plan, not terrain clearance: no TAWS, and nothing of 14
  * CFR 91.119 or 91.177's minimums, which the plan's altitudes answer; the
- * Map menu's Terrain row says so.
+ * map's clearance key (ClearanceKey) says so while these are drawn.
  */
 export default function ClearanceGl({ points }: { points: AloftPoint[] }) {
   const { map } = useGlMap();
@@ -102,7 +103,10 @@ export default function ClearanceGl({ points }: { points: AloftPoint[] }) {
     map.addLayer(tint, slotId("imagery"));
     const el = map.getContainer();
     el.dataset.terrainClearance = String(corridorNm);
+    // The map's key to these colours (ClearanceKey) shows while they do.
+    useClearanceDrawn.setState({ drawn: true });
     return () => {
+      useClearanceDrawn.setState({ drawn: false });
       routes.delete(key);
       delete el.dataset.terrainClearance;
       if (!map.style) return;
