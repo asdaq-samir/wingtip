@@ -165,13 +165,29 @@ class CardRuleTest {
     fun aPageOpenedInsideAPageComesBackToIt() {
         val settings = CARDS.first { it.page == SheetPage.Settings }
         open(settings, Way.Link(Screen.SETUP))
-        val map = Card("Map Settings", SheetPage.MapSettings, emptyList())
+        val map = Card("Map", SheetPage.MapSettings, emptyList())
         compose.runOnIdle { CardRequests.open(SheetPage.MapSettings) }
         compose.waitUntil(TIMEOUT_MS) { shown(map) }
         back()
         compose.waitUntil(TIMEOUT_MS) { shown(settings) && !shown(map) }
         back()
         compose.waitUntil(TIMEOUT_MS) { !shown(settings) && searchShown() }
+    }
+
+    @Test
+    fun youAndTheMapCardOpenSettingsByTheirGearsAndComeBack() {
+        val you = CARDS.first { it.page == SheetPage.You }
+        val settings = CARDS.first { it.page == SheetPage.Settings }
+        val map = CARDS.first { it.page == SheetPage.MapSettings }
+        listOf(you to YouTags.SETTINGS, map to MapCardTags.GEAR).forEach { (card, gear) ->
+            open(card, card.ways.first())
+            compose.onNode(hasTestTag(gear)).performClick()
+            compose.waitUntil(TIMEOUT_MS) { shown(settings) }
+            back()
+            compose.waitUntil(TIMEOUT_MS) { shown(card) && !shown(settings) }
+            back()
+            compose.waitUntil(TIMEOUT_MS) { !shown(card) && searchShown() }
+        }
     }
 
     @Test
@@ -204,7 +220,10 @@ class CardRuleTest {
             Card("Traffic", SheetPage.Thing(MapPick.Plane("a1b2c3")), listOf(Way.Tap(SheetPage.of(MapPick.Plane("a1b2c3"))))),
             // An approach plate tapped on the map: its card of settings.
             Card("Plate", SheetPage.Plate("KOSH", "I36"), listOf(Way.Tap(SheetPage.of(MapPick.Plate("KOSH", "I36"))))),
-            Card("Map Settings", SheetPage.MapSettings, listOf(Way.Tap(SheetPage.MapSettings), Way.Typed("map settings"))),
+            // The Map card, the map's Layers button's (the owner, 2026-11-13).
+            Card("Map", SheetPage.MapSettings, listOf(Way.Tap(SheetPage.MapSettings), Way.Typed("map settings"))),
+            // You, the avatar's card.
+            Card("You", SheetPage.You, listOf(Way.Tap(SheetPage.You))),
             Card("Brief", SheetPage.Brief, listOf(Way.Link(Screen.BRIEF))),
             Card("Nearest", SheetPage.Nearest, listOf(Way.Link(Screen.NEAREST), Way.Typed("nearest"))),
             Card("Settings", SheetPage.Settings, listOf(Way.Link(Screen.SETUP), Way.Typed("settings"))),

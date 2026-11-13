@@ -14,32 +14,36 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-/** How the ground is drawn (the web's TerrainMode): not at all, its relief
- *  shaded over the chart, or the map tilted into 3D. `key` is what the
- *  settings file keeps. */
+/** How the ground is drawn (the web's TerrainMode): its relief shaded
+ *  over the chart, always now (the owner, 2026-11-13, took Flat out), or
+ *  the map tilted into 3D. OFF is only the 3D layer's own "not yet read".
+ *  `key` is what the settings file keeps. */
 enum class TerrainMode(val key: String) { OFF("off"), RELIEF("relief"), THREE_D("3d") }
 
 /**
- * The map's Terrain choice (Map Settings' Terrain, the web's Map menu's),
- * kept in the settings file across launches, and the field whose way in
- * the 3D view draws: the open card's, else the route's destination (the
- * web's TerrainGl `field`). A pick made before the kept one is read wins,
- * as MapLayersStore's switches do.
+ * The map's 3D, the round map button's (ThreeDButton, as Apple Maps' and
+ * the web's 3D circle), kept in the settings file across launches over
+ * the shaded relief that is always drawn, and the field whose way in the
+ * 3D view draws: the open card's, else the route's destination (the web's
+ * TerrainGl `field`). A tap made before the kept one is read wins, as
+ * MapLayersStore's switches do; a kept "off" (Flat, gone) is the relief.
  */
 class MapTerrain private constructor(private val context: Context, private val scope: CoroutineScope) {
-    private val _mode = MutableStateFlow(TerrainMode.OFF)
+    private val _mode = MutableStateFlow(TerrainMode.RELIEF)
     val mode: StateFlow<TerrainMode> = _mode.asStateFlow()
     private var touched = false
 
     init {
         scope.launch {
             val kept = context.settings.data.first()[KEY]
-            if (!touched) _mode.value = TerrainMode.entries.firstOrNull { it.key == kept } ?: TerrainMode.OFF
+            if (!touched) _mode.value = if (kept == TerrainMode.THREE_D.key) TerrainMode.THREE_D else TerrainMode.RELIEF
         }
     }
 
-    fun pick(mode: TerrainMode) {
+    /** 3D on or off, kept. */
+    fun set3d(on: Boolean) {
         touched = true
+        val mode = if (on) TerrainMode.THREE_D else TerrainMode.RELIEF
         _mode.value = mode
         scope.launch { context.settings.edit { it[KEY] = mode.key } }
     }

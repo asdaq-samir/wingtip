@@ -58,6 +58,8 @@ data class OwnRecord(
                 dto.usableFuelGal?.let { put(FigureKey.USABLE.key, it) }
                 dto.climbTasKt?.let { put(FigureKey.CLIMB_TAS.key, it) }
                 dto.climbFuelBurnGph?.let { put(FigureKey.CLIMB_BURN.key, it) }
+                dto.descentIasKt?.let { put(FigureKey.DESCENT_IAS.key, it) }
+                dto.descentFuelBurnGph?.let { put(FigureKey.DESCENT_BURN.key, it) }
                 dto.figures.climbRateFpm?.let { put(FigureKey.CLIMB_RATE.key, it) }
                 dto.figures.serviceCeilingFt?.let { put(FigureKey.CEILING.key, it) }
                 dto.figures.taxiFuelGal?.let { put(FigureKey.TAXI.key, it) }
@@ -105,7 +107,8 @@ data class OwnRecord(
                 tailNumber = tail, typeDesignator = r.type.ifEmpty { NO_DESIGNATOR }.uppercase(),
                 cruiseTasKt = cruise, fuelBurnGph = burn, cruisePowerPct = all[FigureKey.POWER.key],
                 usableFuelGal = all[FigureKey.USABLE.key], climbTasKt = all[FigureKey.CLIMB_TAS.key],
-                climbFuelBurnGph = all[FigureKey.CLIMB_BURN.key], figures = ownFigures(r.figures),
+                climbFuelBurnGph = all[FigureKey.CLIMB_BURN.key], descentIasKt = all[FigureKey.DESCENT_IAS.key],
+                descentFuelBurnGph = all[FigureKey.DESCENT_BURN.key], figures = ownFigures(r.figures),
                 colour = was?.colour, equipment = was?.equipment, surveillance = was?.surveillance,
             )
         }

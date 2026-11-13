@@ -2,13 +2,13 @@
 <!-- The map's 3D view and its model weather (map/Map3dLayer, map/flow), the
      web's words (features/plan/map/terrain, features/weather-flow). -->
 <resources>
-    <!-- Map Settings' Terrain row, the web's Map menu's Terrain. -->
-    <string name="terrain">Terrain</string>
-    <string name="terrain_off">Off</string>
-    <string name="terrain_relief">Relief</string>
-    <string name="terrain_3d">3D</string>
+    <!-- The round 3D map button: what a tap goes to, as Apple Maps' and
+         the web's 3D circle say it, and its name for TalkBack. -->
+    <string name="map_3d">3D</string>
+    <string name="map_2d">2D</string>
+    <string name="map_3d_button">3D map</string>
 
-    <!-- Map Settings' Model Weather row, under the radar loop. -->
+    <!-- The Map card's Model Weather tile. -->
     <string name="model_weather">Model Weather</string>
     <string name="model_weather_off">Off</string>
     <string name="flow_wind">Wind</string>

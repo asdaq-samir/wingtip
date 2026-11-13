@@ -69,6 +69,7 @@ import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.FlightRules
 import app.wingtipmaps.android.ready.ReadyToFlyRow
+import app.wingtipmaps.android.route.LegPhase
 import app.wingtipmaps.android.route.LegWords
 import app.wingtipmaps.android.route.RouteMenu
 import app.wingtipmaps.android.route.RoutePointMenu
@@ -251,7 +252,14 @@ private fun LegFigures(leg: Leg, modifier: Modifier) {
     ) {
         Column(Modifier.weight(1.4f)) {
             Text(leg.to, style = MaterialTheme.typography.titleMedium)
-            Text(Format.cruiseAltitude(leg.altitudeFt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // The leg's phase where it is flown whole in the climb or the
+            // descent, its figures that phase's (LegPhase).
+            val altitude = Format.cruiseAltitude(leg.altitudeFt)
+            val phase = LegPhase.name(leg)
+            Text(
+                if (phase != null) stringResource(R.string.leg_in_phase, altitude, phase) else altitude,
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         LegFigure(stringResource(R.string.figure_dist), Format.distance(leg.distanceNm))
         // The heading needs the airplane's airspeed against the wind: with

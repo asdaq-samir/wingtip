@@ -19,7 +19,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
-import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -37,11 +36,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The sheet's carousel (the owner, 2026-11-11): a sideways swipe moves
- * between Search and the FPL and the dots follow and take a tap, saying
- * which page to TalkBack; a page put away gives up the focus, so the
- * keyboard goes down; a route made brings the FPL page; and an upward
- * drag on either page still raises the sheet.
+ * The sheet's two pages (the owner, 2026-11-11 and 2026-11-13): the round
+ * toggle in the map's left column turns between Search and the FPL,
+ * saying where it goes to TalkBack, and a sideways swipe no longer does;
+ * a page put away gives up the focus, so the keyboard goes down; a route
+ * made brings the FPL page; and an upward drag on either page still
+ * raises the sheet.
  */
 @RunWith(AndroidJUnit4::class)
 class SheetCarouselTest {
@@ -56,7 +56,10 @@ class SheetCarouselTest {
             WingtipTheme {
                 sheet = rememberMapSheetState()
                 nav = rememberSheetNav(model = viewModel(), airports = viewModel(), onShown = {})
-                MapSheet(state = sheet, peek = PEEK, body = { Box(Modifier.fillMaxSize()) }) {
+                MapSheet(
+                    state = sheet, peek = PEEK, body = { Box(Modifier.fillMaxSize()) },
+                    onTop = { SheetSideButtons(nav.planShown, onToggle = { if (nav.planShown) nav.closePlan() else nav.toPlanPage() }) },
+                ) {
                     SheetPagesHost(
                         nav, backEnabled = true, modifier = Modifier.weight(1f),
                         home = { if (field) TextField(rememberTextFieldState(), Modifier.testTag(FIELD)) else Lines("search") },
@@ -71,32 +74,33 @@ class SheetCarouselTest {
 
     private val pager get() = compose.onNode(hasTestTag(SHEET_PAGER_TAG))
 
-    private fun dot(page: Int) = compose.onNode(hasTestTag(SHEET_DOT_TAG + page))
+    private val toggle get() = compose.onNode(hasTestTag(PAGE_TOGGLE_TAG))
+
+    private fun turnTo(page: Int) {
+        if (nav.pager.currentPage != page) toggle.performClick()
+    }
 
     private fun on(page: Int) = compose.waitUntil(TIMEOUT_MS) { nav.pager.currentPage == page && !nav.pager.isScrollInProgress }
 
     @Test
-    fun aSwipeMovesBetweenThePagesAndTheDotsFollow() {
+    fun theToggleTurnsThePagesAndSaysWhereItGoes() {
         host()
-        dot(0).assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
-        pager.performTouchInput { swipeLeft() }
+        toggle.assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(context.getString(R.string.show_flight_plan))))
+        toggle.performClick()
         on(PLAN_PAGE)
-        dot(1).assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
         assertEquals(SheetPage.Plan, nav.top)
-        pager.performTouchInput { swipeRight() }
+        toggle.assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(context.getString(R.string.show_search))))
+        toggle.performClick()
         on(SEARCH_PAGE)
         assertEquals(SheetPage.Home, nav.top)
-        dot(1).performClick()
-        on(PLAN_PAGE)
-        dot(0).performClick()
-        on(SEARCH_PAGE)
     }
 
     @Test
-    fun theDotsSayWhichPage() {
+    fun aSidewaysSwipeTurnsNoPage() {
         host()
-        val words = context.getString(R.string.sheet_page_of, 1, 2, context.getString(R.string.sheet_page_search))
-        dot(0).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(words)))
+        pager.performTouchInput { swipeLeft() }
+        compose.waitForIdle()
+        assertEquals(SEARCH_PAGE, nav.pager.currentPage)
     }
 
     @Test
@@ -104,7 +108,7 @@ class SheetCarouselTest {
         host(field = true)
         compose.onNode(hasTestTag(FIELD)).performClick()
         compose.onNode(hasTestTag(FIELD)).assertIsFocused()
-        dot(1).performClick()
+        toggle.performClick()
         on(PLAN_PAGE)
         compose.onNode(hasTestTag(FIELD)).assertIsNotFocused()
     }
@@ -128,7 +132,7 @@ class SheetCarouselTest {
 
     private fun raisedOn(page: Int) {
         host()
-        dot(page).performClick()
+        turnTo(page)
         on(page)
         pager.performTouchInput { swipeUp() }
         compose.waitUntil(TIMEOUT_MS) { !sheet.atPeek }

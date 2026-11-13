@@ -82,18 +82,23 @@ private fun Card(
         is SheetPage.Thing -> ThingCard(page.pick, plan, exit, onRouted = showPlan)
         is SheetPage.Leg -> RouteLegCard(page.index, plan, ownShipOn, exit)
         is SheetPage.Plate -> PlateCard(PlatePick(page.ident, page.procedure), exit)
-        SheetPage.MapSettings -> Page(stringResource(R.string.map_settings), exit) { MapSettingsRows() }
+        SheetPage.MapSettings -> MapCard(exit, open = sheet::push)
         SheetPage.Brief -> BriefPage(plan, session, exit, onSetRoute = showPlan)
         SheetPage.Nearest -> NearestPage(ownShip, plan, exit, onOpen = { sheet.push(SheetPage.Airport(it)) })
         SheetPage.Ask -> Page(stringResource(R.string.ask), exit) { AskScreen(plan = plan, session = session, ownShip = ownShip, client = assistant) }
-        SheetPage.Settings -> Page(stringResource(R.string.settings), exit) {
+        SheetPage.You -> YouCard(session, exit, open = sheet::push)
+        SheetPage.PilotDetails -> Page(stringResource(R.string.pilot_details), exit) {
             // The one search is under the cards: they close for it, and
-            // Settings comes back with the field picked.
-            SetupScreen(session, onMapSettings = { sheet.push(SheetPage.MapSettings) }) { onPicked ->
+            // Pilot Details comes back with the field picked.
+            PilotDetailsScreen(session) { onPicked ->
                 sheet.closeAll()
-                search.pickAirport(R.string.home_airport_pick) { ident -> onPicked(ident); sheet.show(SheetPage.Settings) }
+                search.pickAirport(R.string.home_airport_pick) { ident -> onPicked(ident); sheet.show(SheetPage.PilotDetails) }
             }
         }
+        SheetPage.Minimums -> Page(stringResource(R.string.minimums), exit) { MinimumsScreen() }
+        SheetPage.Settings -> Page(stringResource(R.string.settings), exit) { SettingsScreen(open = sheet::push) }
+        SheetPage.Atc -> Page(stringResource(R.string.atc), exit) { AtcPage() }
+        SheetPage.Help -> Page(stringResource(R.string.help_and_about), exit) { HelpPage(open = sheet::push) }
         SheetPage.Logbook -> LogbookScreen(exit, onCoach = { sheet.push(SheetPage.Coach) })
         SheetPage.Coach -> CoachScreen(exit)
         SheetPage.Downloads -> Page(stringResource(R.string.offline_downloads), exit) { DownloadsScreen() }

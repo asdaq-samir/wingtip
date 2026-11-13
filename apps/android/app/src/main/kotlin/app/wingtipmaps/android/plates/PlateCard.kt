@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.plates
 
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,7 +23,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -45,8 +43,9 @@ import kotlinx.coroutines.launch
  * card (CardPage, the card rule) titled with the plate's name as the FAA
  * writes it, in sentence case with its codes kept ("KOSH ILS or LOC rwy
  * 36"); Hide Plate and View Full Screen side by side in Material's button
- * group; Show Annotations and Invert Plate Colors as the stock switch
- * rows; and the plate's transparency on Material's stock Slider, clear to
+ * group, the page full screen in the app with own ship on it
+ * (PlateViewer); Show Annotations and Invert Plate Colors as the stock
+ * switch rows; and the plate's transparency on Material's stock Slider, clear to
  * solid with an icon at each end -- continuous, so a slider rather than a
  * menu. Each setting is kept on this phone (PlateLookStore) and changes
  * the plate on the map as it is made.
@@ -61,6 +60,7 @@ fun PlateCard(pick: PlatePick, exit: CardExit) {
     val title = remember(name, pick) { if (name == null) "${pick.ident} ${pick.procedure}" else "${pick.ident} ${MapRules.faaWords(name)}" }
     val scope = rememberCoroutineScope()
     var noPage by remember { mutableStateOf(false) }
+    var viewing by remember { mutableStateOf<String?>(null) }
     val hide = stringResource(R.string.plate_hide)
     val full = stringResource(R.string.plate_full_screen)
     CardPage(title = title, exit = exit) { padding ->
@@ -74,14 +74,13 @@ fun PlateCard(pick: PlatePick, exit: CardExit) {
                         model.hide(pick)
                         exit.close()
                     },
-                    // The FAA's own page, in the app's plate viewer (the
-                    // phone's PDF viewer, as the airport card's Approaches
-                    // rows open theirs).
+                    // The FAA's own page full screen in the app, own ship on
+                    // it where the plate is placed (PlateViewer).
                     GroupAction(full, null, enabled = name != null) {
                         scope.launch {
                             val url = model.fullScreen(pick)
                             noPage = url == null
-                            if (url != null) context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+                            viewing = url
                         }
                     },
                 ),
@@ -95,6 +94,7 @@ fun PlateCard(pick: PlatePick, exit: CardExit) {
             OpacityRow(look.opacity, onChange = model::dragOpacity, onDone = { model.keepOpacity() })
         }
     }
+    viewing?.let { url -> PlateViewer(title, url, plates.placed[pick]?.georeference, onClose = { viewing = null }) }
 }
 
 /** The transparency slider, clear at the start and solid at the end. */

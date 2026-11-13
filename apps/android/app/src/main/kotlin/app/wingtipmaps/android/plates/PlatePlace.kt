@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.plates
 
+import app.wingtipmaps.android.api.generated.PlateGeoreference
 import app.wingtipmaps.android.api.generated.PlateOverlay
 import kotlinx.serialization.Serializable
 
@@ -21,9 +22,18 @@ data class LatLon(val lat: Double, val lon: Double)
  * bottom right, bottom left -- where the plate's own georeference puts
  * them (wingtip.plates). Only the plan view is to the ground's scale; the
  * rest of the page goes round it at the same scale and turn, the
- * convention ForeFlight's plates on the map follow.
+ * convention ForeFlight's plates on the map follow. `georeference` is the
+ * page's own (wingtip.plate_page.georeference), which puts the pilot on
+ * the page full screen (PlatePosition); none where the page is not placed.
  */
-data class PlacedPlate(val pick: PlatePick, val name: String, val cycle: String, val picture: String, val corners: List<LatLon>) {
+data class PlacedPlate(
+    val pick: PlatePick,
+    val name: String,
+    val cycle: String,
+    val picture: String,
+    val corners: List<LatLon>,
+    val georeference: PlateGeoreference? = null,
+) {
     companion object {
         /**
          * The planner's answer placed: the whole page by its four corners
@@ -46,7 +56,7 @@ data class PlacedPlate(val pick: PlatePick, val name: String, val cycle: String,
             if (!corners.all { it.lat.isFinite() && it.lon.isFinite() }) return null
             val path = if (page != null) "approach-plate-page" else "approach-plate"
             val picture = "/api/$path/${overlay.cycle}/${pick.ident}/${pick.procedure}.png"
-            return PlacedPlate(pick, overlay.name, overlay.cycle, picture, corners)
+            return PlacedPlate(pick, overlay.name, overlay.cycle, picture, corners, page?.georeference)
         }
 
         /**

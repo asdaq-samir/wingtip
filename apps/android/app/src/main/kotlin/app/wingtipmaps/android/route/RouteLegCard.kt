@@ -103,6 +103,8 @@ fun RouteLegCard(index: Int, plan: Plan, ownShipOn: Boolean, exit: CardExit, fli
             val figures = leg.leg
             if (figures != null) {
                 NavLogFigures(figures)
+                // Its tops of climb and descent, each piece's own figures.
+                LegTops(figures, plan)
             } else {
                 Fact(stringResource(R.string.route_leg_distance), leg.distanceNm?.let(Format::distance) ?: Format.NONE, Spoken.distance(leg.distanceNm))
                 Fact(

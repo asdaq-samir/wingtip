@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The nav log by phase and the airplane's descent figures (the owner,
+     2026-11-13), and own ship on a plate full screen, in the web's words
+     (features/plan/components/navlog, features/plates). -->
+<resources>
+    <!-- The airplane's descent figures, in its form and asked inline. -->
+    <string name="field_descent_ias">Descent Speed (IAS, kt)</string>
+    <string name="field_descent_burn">Descent Fuel Burn (gph)</string>
+    <string name="own_descent_ias">Descent Speed</string>
+    <string name="own_descent_burn">Descent Burn</string>
+    <string name="ask_descent_ias">How fast does %1$s descend, indicated airspeed?</string>
+    <string name="ask_descent_burn">How much fuel does %1$s burn an hour in the descent?</string>
+
+    <!-- A leg's phase, and its tops of climb and descent. -->
+    <string name="phase_climb">Climb</string>
+    <string name="phase_descent">Descent</string>
+    <string name="leg_in_phase">%1$s · %2$s</string>
+    <string name="top_of_climb">Top of Climb</string>
+    <string name="top_of_descent">Top of Descent</string>
+    <string name="top_along">%1$s from %2$s</string>
+    <string name="leg_fuel_flow">Fuel Flow</string>
+    <string name="leg_descent_rate">Descent Rate</string>
+    <string name="descent_at_cruise">Flown at the cruise\'s speed and fuel flow, for want of the airplane\'s descent figures</string>
+
+    <!-- Own ship on a plate full screen (plates/PlateViewer). -->
+    <string name="plate_you_are_here">You are here</string>
+</resources>

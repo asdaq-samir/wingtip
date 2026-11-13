@@ -19,7 +19,7 @@ class WeatherAgeTest {
 
     @Test
     fun aStaleMarkWearsTheGreyAndAFreshOneItsCategory() {
-        val pips = AirportWeatherMarks.pips(mapOf("KOSH" to "VFR", "KMSN" to "IFR"), AirportWeatherMode.HALO, stale = setOf("KMSN"))
+        val pips = AirportWeatherMarks.pips(mapOf("KOSH" to "VFR", "KMSN" to "IFR"), AirportWeatherMode.CATEGORY, stale = setOf("KMSN"))
         assertEquals("h" + AirportWeatherMarks.CATEGORY_COLOURS.getValue("VFR"), pips["KOSH"])
         assertEquals("h" + AirportWeatherMarks.STALE, pips["KMSN"])
         // Every pip worn has its picture.

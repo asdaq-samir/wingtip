@@ -45,6 +45,9 @@ class FlightModel @Inject constructor(private val session: FlightSession) : View
     /** The path this phone flew. */
     val trail: StateFlow<List<PathPoint>> get() = session.trail.points
 
+    /** Settings' Clear Your Path: the path put away; the next flight's starts empty. */
+    fun clearTrail() = session.trail.clear()
+
     /** The map moved: the traffic is asked about its middle, out to the
      *  miles to its corner, the engine's `distance_nm`; where it cannot say
      *  (Engine.rule has logged why), the last kept. */

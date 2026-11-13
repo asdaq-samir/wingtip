@@ -137,11 +137,6 @@
     <string name="stops">Stops</string>
     <string name="stops_help">Idents, separated by commas</string>
     <string name="plan">Plan</string>
-    <!-- The sheet's carousel (the owner, 2026-11-11): its two pages, the
-         dots' words for TalkBack, and the plan's page with no route. -->
-    <string name="sheet_page_search">Search</string>
-    <string name="sheet_page_fpl">FPL</string>
-    <string name="sheet_page_of">Page %1$d of %2$d, %3$s</string>
     <string name="under_reserve">Under the reserve the planner holds the flight to. Fly it with a fuel stop.</string>
 
     <!-- A leg (LegSheet). -->
@@ -230,13 +225,11 @@
     <string name="layout_plan">Plan</string>
     <string name="layout_strip">Strip</string>
     <string name="theme">Theme</string>
-    <string name="account">Account</string>
     <string name="sign_out">Sign Out</string>
     <string name="email">Email</string>
     <string name="email_sign_in_link">Email Me a Sign-In Link</string>
     <string name="check_email">Check your email: the link opens the app and signs you in.</string>
     <string name="coming_up">Coming Up</string>
-    <string name="map_settings">Map Settings</string>
     <!-- The radar and satellite loop (map/WeatherLoopBar). -->
     <string name="loop_kind">Radar and Satellite</string>
     <string name="loop_speed">Loop Speed</string>
@@ -254,12 +247,9 @@
     <string name="layer_plates">Approach Plates</string>
     <string name="airport_weather">Airport Weather</string>
     <string name="airport_weather_off">Off</string>
-    <string name="airport_weather_halo">Halo</string>
-    <string name="airport_weather_dot">Dot</string>
-    <string name="airport_weather_station">Station</string>
-    <string name="airport_weather_station_close">Station Model When Zoomed In</string>
-    <string name="airport_weather_wind_arrows">Wind Barbs</string>
-    <string name="airport_weather_worse">Getting Worse by Arrival</string>
+    <string name="airport_weather_category">Flight Category</string>
+    <string name="airport_weather_wind">With Wind</string>
+    <string name="airport_weather_station">Station Model</string>
     <string name="speak_alerts">Speak Alerts Ahead</string>
     <string name="passenger_briefing">Passenger Briefing</string>
     <string name="passengers_briefed">Briefed: %1$d of %2$d</string>
@@ -293,7 +283,7 @@
     <string name="about_terms">Terms of Use</string>
     <string name="about_support">Support</string>
     <string name="about_demo_flight">Demo Flight</string>
-    <string name="account_and_settings">Account and settings</string>
+    <string name="account_and_settings">You and your account</string>
 
     <!-- Live reports from SWIM on the airport and airspace cards (live/). -->
     <string name="live_programs">Ground Stops and Delays</string>
@@ -366,7 +356,6 @@
     <string name="when_to_go_no_go">No hour with nothing against it before %1$s.</string>
     <string name="when_to_go_leaving">%1$s leaving %2$s</string>
     <!-- The pilot's personal minimums (pilot/) and the flight's choices (plan/). -->
-    <string name="personal_minimums">Personal Minimums</string>
     <string name="minimum_off">Off</string>
     <string name="minimum_ceiling">Ceiling</string>
     <string name="minimum_visibility">Visibility</string>

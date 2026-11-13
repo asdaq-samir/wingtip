@@ -9,8 +9,8 @@ import kotlinx.serialization.json.Json
  * What the docked sheet shows (the card rule, the owner, 2026-11-10):
  * the carousel's two pages, the one search and what it shows with nothing
  * typed (Home), and the plan (Plan, the FPL page beside it); over them, one card for a thing -- a field, an airplane, a fix, a
- * VOR, an airspace, traffic, a leg of the route, the map's settings --
- * or a page -- the Brief, Nearest, Ask, Settings and its pages, a
+ * VOR, an airspace, traffic, a leg of the route, the Map card --
+ * or a page -- the Brief, Nearest, Ask, You, Settings and their pages, a
  * checklist -- each with its name and ← where the search was (CardPage).
  * Each card is a key of the sheet's back stack (MapViewModel), drawn by
  * Navigation 3's NavDisplay (SheetPagesHost) -- on a wide window in the
@@ -61,8 +61,28 @@ sealed interface SheetPage {
     @Serializable
     data object Ask : SheetPage
 
+    /** The pilot's own card, the avatar's (the owner, 2026-11-13: three
+     *  homes, You, Settings and the Map card). */
+    @Serializable
+    data object You : SheetPage
+
+    /** You's first row: the account, its sign-in and its role's actions. */
+    @Serializable
+    data object PilotDetails : SheetPage
+
+    @Serializable
+    data object Minimums : SheetPage
+
     @Serializable
     data object Settings : SheetPage
+
+    /** Settings' ATC: Comms Assist, the ATC alerts and the copilot. */
+    @Serializable
+    data object Atc : SheetPage
+
+    /** Settings' Help & About. */
+    @Serializable
+    data object Help : SheetPage
 
     @Serializable
     data object Logbook : SheetPage

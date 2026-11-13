@@ -47,6 +47,10 @@ fun AircraftFormFields(form: AircraftForm, problems: Map<Field, String>, onChang
     field(R.string.field_power, Field.POWER, form.cruisePowerPct, Kind.FIGURE) { copy(cruisePowerPct = it) }
     field(R.string.field_climb_tas, Field.CLIMB_TAS, form.climbTasKt, Kind.FIGURE) { copy(climbTasKt = it) }
     field(R.string.field_climb_burn, Field.CLIMB_BURN, form.climbFuelBurnGph, Kind.FIGURE) { copy(climbFuelBurnGph = it) }
+    // The descent's speed as the handbook gives it, indicated, and its
+    // fuel flow (the owner, 2026-11-13: "Yes to descent and flow").
+    field(R.string.field_descent_ias, Field.DESCENT_IAS, form.descentIasKt, Kind.FIGURE) { copy(descentIasKt = it) }
+    field(R.string.field_descent_burn, Field.DESCENT_BURN, form.descentFuelBurnGph, Kind.FIGURE) { copy(descentFuelBurnGph = it) }
     field(R.string.field_usable_fuel, Field.USABLE_FUEL, form.usableFuelGal, Kind.FIGURE) { copy(usableFuelGal = it) }
     field(R.string.field_equipment, Field.EQUIPMENT, form.equipment, Kind.CODE) { copy(equipment = it.uppercase()) }
     field(R.string.field_surveillance, Field.SURVEILLANCE, form.surveillance, Kind.CODE) { copy(surveillance = it.uppercase()) }

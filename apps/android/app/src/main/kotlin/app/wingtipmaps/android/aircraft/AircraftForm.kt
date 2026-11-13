@@ -22,6 +22,8 @@ data class AircraftForm(
     val cruisePowerPct: String = "",
     val climbTasKt: String = "",
     val climbFuelBurnGph: String = "",
+    val descentIasKt: String = "",
+    val descentFuelBurnGph: String = "",
     val usableFuelGal: String = "",
     val equipment: String = "",
     val surveillance: String = "",
@@ -42,7 +44,8 @@ data class AircraftForm(
                 listOf(
                     Field.TAIL to a.tailNumber, Field.TYPE to a.typeDesignator, Field.CRUISE_TAS to a.cruiseTasKt,
                     Field.BURN to a.fuelBurnGph, Field.POWER to a.cruisePowerPct, Field.CLIMB_TAS to a.climbTasKt,
-                    Field.CLIMB_BURN to a.climbFuelBurnGph, Field.USABLE_FUEL to a.usableFuelGal, Field.EQUIPMENT to a.equipment,
+                    Field.CLIMB_BURN to a.climbFuelBurnGph, Field.DESCENT_IAS to a.descentIasKt, Field.DESCENT_BURN to a.descentFuelBurnGph,
+                    Field.USABLE_FUEL to a.usableFuelGal, Field.EQUIPMENT to a.equipment,
                     Field.SURVEILLANCE to a.surveillance, Field.COLOUR to a.colour,
                 ).mapNotNull { (field, words) -> words?.let { field to it } }.toMap()
             },
@@ -59,7 +62,8 @@ data class AircraftForm(
         return AircraftRequest(
             tailNumber = tailNumber.trim().uppercase(), typeDesignator = typeDesignator.trim().uppercase(),
             cruiseTasKt = tas, fuelBurnGph = burn, cruisePowerPct = opt(cruisePowerPct),
-            climbTasKt = opt(climbTasKt), climbFuelBurnGph = opt(climbFuelBurnGph), usableFuelGal = opt(usableFuelGal),
+            climbTasKt = opt(climbTasKt), climbFuelBurnGph = opt(climbFuelBurnGph),
+            descentIasKt = opt(descentIasKt), descentFuelBurnGph = opt(descentFuelBurnGph), usableFuelGal = opt(usableFuelGal),
             equipment = words(equipment)?.uppercase(), surveillance = words(surveillance)?.uppercase(), colour = words(colour),
         )
     }
@@ -85,19 +89,24 @@ data class AircraftForm(
             tailNumber = keep(tailNumber, w.tailNumber), typeDesignator = keep(typeDesignator, w.typeDesignator),
             cruiseTasKt = keep(cruiseTasKt, w.cruiseTasKt), fuelBurnGph = keep(fuelBurnGph, w.fuelBurnGph),
             cruisePowerPct = keep(cruisePowerPct, w.cruisePowerPct), climbTasKt = keep(climbTasKt, w.climbTasKt),
-            climbFuelBurnGph = keep(climbFuelBurnGph, w.climbFuelBurnGph), usableFuelGal = keep(usableFuelGal, w.usableFuelGal),
+            climbFuelBurnGph = keep(climbFuelBurnGph, w.climbFuelBurnGph), descentIasKt = keep(descentIasKt, w.descentIasKt),
+            descentFuelBurnGph = keep(descentFuelBurnGph, w.descentFuelBurnGph), usableFuelGal = keep(usableFuelGal, w.usableFuelGal),
             equipment = keep(equipment, w.equipment), surveillance = keep(surveillance, w.surveillance), colour = keep(colour, w.colour),
         )
     }
 
-    enum class Field { TAIL, TYPE, CRUISE_TAS, BURN, POWER, CLIMB_TAS, CLIMB_BURN, USABLE_FUEL, EQUIPMENT, SURVEILLANCE, COLOUR }
+    enum class Field { TAIL, TYPE, CRUISE_TAS, BURN, POWER, CLIMB_TAS, CLIMB_BURN, DESCENT_IAS, DESCENT_BURN, USABLE_FUEL, EQUIPMENT, SURVEILLANCE, COLOUR }
 
     /** The form as typed, to the engine. */
     object EngineRules : Rules {
         override fun problems(form: AircraftForm) = with(form) {
+            // By name: the contract's order puts the descent's two
+            // between the climb's burn and the usable fuel.
             Engine.aircraftProblems(
-                tailNumber, typeDesignator, cruiseTasKt, fuelBurnGph, cruisePowerPct, climbTasKt,
-                climbFuelBurnGph, usableFuelGal, equipment, surveillance, colour,
+                tailNumber = tailNumber, typeDesignator = typeDesignator, cruiseTasKt = cruiseTasKt, fuelBurnGph = fuelBurnGph,
+                cruisePowerPct = cruisePowerPct, climbTasKt = climbTasKt, climbFuelBurnGph = climbFuelBurnGph,
+                descentIasKt = descentIasKt, descentFuelBurnGph = descentFuelBurnGph, usableFuelGal = usableFuelGal,
+                equipment = equipment, surveillance = surveillance, colour = colour,
             )
         }
     }
@@ -113,7 +122,8 @@ data class AircraftForm(
         fun of(a: AircraftDto) = AircraftForm(
             tailNumber = a.tailNumber, typeDesignator = a.typeDesignator,
             cruiseTasKt = shown(a.cruiseTasKt), fuelBurnGph = shown(a.fuelBurnGph), cruisePowerPct = shown(a.cruisePowerPct),
-            climbTasKt = shown(a.climbTasKt), climbFuelBurnGph = shown(a.climbFuelBurnGph), usableFuelGal = shown(a.usableFuelGal),
+            climbTasKt = shown(a.climbTasKt), climbFuelBurnGph = shown(a.climbFuelBurnGph),
+            descentIasKt = shown(a.descentIasKt), descentFuelBurnGph = shown(a.descentFuelBurnGph), usableFuelGal = shown(a.usableFuelGal),
             equipment = a.equipment.orEmpty(), surveillance = a.surveillance.orEmpty(), colour = a.colour.orEmpty(),
         )
 
