@@ -9,6 +9,13 @@ import Observation
 final class Charts {
     private(set) var info: ChartInfo?
     private(set) var problem: String?
+    /// The chart picked on the Map card (Sectional, IFR Low, IFR High; the
+    /// web's preference `base`), kept on this device; the sectional until
+    /// one is picked.
+    var picked: String = UserDefaults.standard.string(forKey: Charts.pickedKey) ?? "sec" {
+        didSet { UserDefaults.standard.set(picked, forKey: Self.pickedKey) }
+    }
+    nonisolated static let pickedKey = "base"
 
     private nonisolated static let kept = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appending(path: "chart.json")
@@ -44,11 +51,19 @@ final class Charts {
         }
     }
 
-    /// The sectional, the base layer the map opens on (apps/web/src/lib/map/
-    /// tiles.ts chartPair: "sec", else the first base layer).
+    /// The chart the map draws: the one picked, else the sectional, else
+    /// the first base layer (apps/web/src/lib/map/tiles.ts chartPair).
     var base: ChartLayer? {
         guard let layers = info?.chartLayers else { return nil }
-        return layers.first { $0.kind == "sec" } ?? layers.first { $0.base }
+        return layers.first { $0.kind == picked && $0.base } ?? layers.first { $0.kind == "sec" } ?? layers.first { $0.base }
+    }
+
+    /// The charts the Map card offers as pictures: the base layers the
+    /// planner has, in the web's order (BASE_CHARTS).
+    var choices: [ChartLayer] {
+        let order = ["sec", "ifr_low", "ifr_high"]
+        return (info?.chartLayers ?? []).filter { $0.base && order.contains($0.kind) }
+            .sorted { order.firstIndex(of: $0.kind) ?? 0 < order.firstIndex(of: $1.kind) ?? 0 }
     }
 
     /// The base chart's tiles, from the 512-pixel @2x pyramid where the

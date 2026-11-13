@@ -1,61 +1,5 @@
 import SwiftUI
 
-/// The pilot's own airplanes (the web app's AircraftPanel): a row each,
-/// the one the nav log flies ticked, a tap opening its figures to edit,
-/// and New Airplane at the top. Each airplane's page has its checklist,
-/// squawks, inspections and VOR check, and Delete, asked first.
-struct OwnAircraftListView: View {
-    @Environment(Plan.self) private var plan
-    @State private var list: [OwnAircraftRecord]?
-    @State private var problem: String?
-    @State private var adding = false
-
-    var body: some View {
-        List {
-            if let list {
-                if list.isEmpty {
-                    ContentUnavailableView("No Airplanes", systemImage: "airplane", description: Text("Add yours with its handbook's figures."))
-                }
-                ForEach(list) { airplane in
-                    NavigationLink {
-                        OwnAircraftPage(record: airplane, onChange: { Task { await load() } })
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                                HStack(spacing: WingtipSpace.sm) {
-                                    Text(airplane.tailNumber).font(.headline.monospaced()).appEntityIdentifier(SiriSaw.airplane(airplane.tailNumber))
-                                    Text(airplane.typeDesignator).foregroundStyle(.secondary)
-                                }
-                                Text(OwnAircraftPage.figuresLine(airplane)).font(.footnote).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if plan.tail == airplane.tailNumber.uppercased() { Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityLabel("Flying now") }
-                        }
-                    }
-                }
-            } else if problem == nil {
-                ProgressView()
-            }
-            ProblemLine(problem)
-        }
-        .navigationTitle("Your Airplanes")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { adding = true } label: { Label("New Airplane", systemImage: "plus") }
-            }
-        }
-        .sheet(isPresented: $adding) {
-            NavigationStack { AircraftFormView(record: nil) { _ in Task { await load() } } }
-        }
-        .task { await load() }
-        .refreshable { await load() }
-    }
-
-    private func load() async {
-        do { list = try await Gateway.aircraftRecords(); problem = nil } catch { problem = error.localizedDescription }
-    }
-}
-
 /// The figures, the flight plan's items and Save (the web app's form):
 /// a new airplane in a sheet with Cancel and Add, one of the pilot's
 /// with Save.
@@ -88,10 +32,18 @@ struct AircraftFormView: View {
                 number("Climb", unit: "kt", text: $form.climbTasKt, placeholder: "74", key: "climbTasKt", problems: problems)
                 number("Cruise", unit: "kt", text: $form.cruiseTasKt, placeholder: "110", key: "cruiseTasKt", problems: problems)
             }
+            // The descent as the POH gives it, indicated; the engine makes
+            // it true at the descent's altitude (FAA-H-8083-25C ch. 8). Left
+            // blank, the descent is flown on the cruise's figures and the
+            // nav log says so.
+            Section("Indicated Airspeed") {
+                number("Descent", unit: "kt", text: $form.descentIasKt, placeholder: "110", key: "descentIasKt", problems: problems)
+            }
             // Climb left blank climbs at the type's book figures.
             Section("Fuel Burn") {
                 number("Climb", unit: "gph", text: $form.climbFuelBurnGph, placeholder: "11", key: "climbFuelBurnGph", problems: problems)
                 number("Cruise", unit: "gph", text: $form.fuelBurnGph, placeholder: "8.5", key: "fuelBurnGph", problems: problems)
+                number("Descent", unit: "gph", text: $form.descentFuelBurnGph, placeholder: "6", key: "descentFuelBurnGph", problems: problems)
             }
             // The cruise figures are the airplane's at this power at the
             // engine's reference altitude on a standard day, a row of its

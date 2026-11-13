@@ -15,37 +15,25 @@ struct NativeLookTests {
                        runways: [], score: 10, starts: starts, tied: false, top: rank == 1)
     }
 
-    @Test func scopesNarrowByRoleAndKind() {
-        let all = [notam("a", rank: 1, role: "dep"), notam("b", rank: 2, role: "stop"), notam("c", rank: 3), notam("t", rank: 4, kind: "tfr")]
-        #expect(NotamFilter.shown(all, scope: .all, query: "", order: .relevance).map(\.id) == ["a", "b", "c", "t"])
-        #expect(NotamFilter.shown(all, scope: .departure, query: "", order: .relevance).map(\.id) == ["a"])
-        #expect(NotamFilter.shown(all, scope: .enRoute, query: "", order: .relevance).map(\.id) == ["b"])
-        #expect(NotamFilter.shown(all, scope: .destination, query: "", order: .relevance).map(\.id) == ["c"])
-        #expect(NotamFilter.shown(all, scope: .tfrs, query: "", order: .relevance).map(\.id) == ["t"])
-        #expect(NotamFilter.shown(all, scope: .notams, query: "", order: .relevance).map(\.id) == ["a", "b", "c"])
-    }
-
-    @Test func theEnginesOrderStandsUnlessSorted() {
-        let all = [notam("late", rank: 1, starts: "2026-11-10T14:00:00Z"), notam("soon", rank: 2, keyword: "AD", starts: "2026-11-09T14:00:00Z")]
-        #expect(NotamFilter.shown(all, scope: .all, query: "", order: .relevance).map(\.id) == ["late", "soon"])
-        #expect(NotamFilter.shown(all, scope: .all, query: "", order: .time).map(\.id) == ["soon", "late"])
-        #expect(NotamFilter.shown(all, scope: .all, query: "", order: .kind).map(\.id) == ["soon", "late"])
-        #expect(NotamFilter.shown(all, scope: .all, query: "clsd", order: .relevance).count == 2)
-        #expect(NotamFilter.shown(all, scope: .all, query: "ILS", order: .relevance).isEmpty)
+    @Test func everyNotamShowsInTheEnginesOrder() {
+        // No search, scope or sort: the app keeps one search (the owner,
+        // 2026-11-13), and the order is the engine's rank.
+        let all = [notam("c", rank: 3), notam("t", rank: 4, kind: "tfr"), notam("a", rank: 1, role: "dep"), notam("b", rank: 2, role: "stop")]
+        #expect(NotamRows.inOrder(all).map(\.id) == ["a", "b", "c", "t"])
     }
 
     @Test func sectionsGoByPlaceWithTfrsTogether() {
         let all = [notam("a", rank: 1, field: "KMSN"), notam("t", rank: 2, kind: "tfr"), notam("b", rank: 3, field: "KOSH"), notam("c", rank: 4, field: "KMSN")]
-        let places = NotamFilter.places(all, source: .route)
+        let places = NotamRows.places(all, source: .route)
         #expect(places.map(\.title) == ["KMSN", "TFRs", "KOSH"])
         #expect(places.first?.notams.map(\.id) == ["a", "c"])
     }
 
     @Test func aRowSaysWhenInZuluAndDropsTheHead() {
-        #expect(NotamFilter.when(notam("a", rank: 1, starts: "2026-11-09T14:00:00Z")) == "From 1400Z")
-        #expect(NotamFilter.when(notam("a", rank: 1, inForce: true)) == "In effect now")
-        #expect(!NotamFilter.summary(notam("a", rank: 1)).hasPrefix("!OSH"))
-        #expect(NotamFilter.kind(notam("t", rank: 1, kind: "tfr")) == "TFR")
+        #expect(NotamRows.when(notam("a", rank: 1, starts: "2026-11-09T14:00:00Z")) == "From 1400Z")
+        #expect(NotamRows.when(notam("a", rank: 1, inForce: true)) == "In effect now")
+        #expect(!NotamRows.summary(notam("a", rank: 1)).hasPrefix("!OSH"))
+        #expect(NotamRows.kind(notam("t", rank: 1, kind: "tfr")) == "TFR")
     }
 
     @Test func notamPagesAreKeptByTheScene() {

@@ -204,7 +204,14 @@ struct LegRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: WingtipSpace.xs) {
-                Text(leg.to).font(WingtipType.title)
+                HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.sm) {
+                    Text(leg.to).font(WingtipType.title)
+                    // A leg flown whole in the climb or the descent: its
+                    // figures are that phase's (the engine's `phase`).
+                    if let phase = LegPhase.of(leg) {
+                        Text(phase.word).font(WingtipType.note).foregroundStyle(.secondary)
+                    }
+                }
                 HStack(spacing: WingtipSpace.md) {
                     // No heading without an airplane (the wind's correction
                     // is at its speed): the leg's magnetic course in its
@@ -246,6 +253,7 @@ struct LegRow: View {
     /// course magnetic, so each says which.
     static func spoken(_ leg: Leg, number: Int?) -> String {
         var parts = [number.map { "Leg \($0), \(leg.from) to \(leg.to)" } ?? "\(leg.from) to \(leg.to)"]
+        if let phase = LegPhase.of(leg) { parts.append(phase == .climb ? "in the climb" : "in the descent") }
         if let heading = leg.magneticHeadingDeg {
             parts.append("heading \(Format.spokenHeadingMagnetic(heading))")
         } else {

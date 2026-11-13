@@ -66,6 +66,7 @@ final class Verdict {
         ask.procedures = try ProcedurePick.text(plan.procedures.filter { plan.idents.contains($0.ident) })
         ask.cruiseTasKt = figures.cruiseTasKt; ask.fuelBurnGph = figures.fuelBurnGph; ask.usableFuelGal = figures.usableFuelGal
         ask.cruisePowerPct = figures.cruisePowerPct; ask.climbTasKt = figures.climbTasKt; ask.climbFuelBurnGph = figures.climbFuelBurnGph
+        ask.descentIasKt = figures.descentIasKt; ask.descentFuelBurnGph = figures.descentFuelBurnGph
         ask.serviceCeilingFt = figures.serviceCeilingFt
         ask.climbRateFpm = figures.climbRateFpm; ask.taxiFuelGal = figures.taxiFuelGal; ask.glideRatio = figures.glideRatio
         ask.day = Day.string(today)

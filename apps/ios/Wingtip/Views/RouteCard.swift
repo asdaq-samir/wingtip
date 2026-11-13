@@ -125,6 +125,7 @@ struct RouteCard: View {
                     Label(undoManager.undoActionName.isEmpty ? "Undo" : "Undo \(undoManager.undoActionName)", systemImage: "arrow.uturn.backward")
                 }
             }
+            ShowRouteAs()
             Divider()
             Button(role: .destructive) { plan.clear() } label: { Label("Clear Route", systemImage: WingtipIcon.close) }
         }, label: Image(systemName: WingtipIcon.more).imageScale(.large).hitArea())

@@ -31,7 +31,7 @@ struct MapButtons: View {
             // The Map card, as Maps' map button opens Choose Map: the
             // layers, the weather and the alerts (MapSettingsView).
             Button { nav.open(.mapSettings) } label: { glyph("map") }
-                .accessibilityLabel("Map Settings")
+                .accessibilityLabel("Map")
                 .accessibilityIdentifier("map-settings")
                 .foregroundStyle(accent)
             Divider().frame(width: side * 0.6)

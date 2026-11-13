@@ -60,7 +60,7 @@ struct OneSearch: ViewModifier {
         content
             .searchable(text: $model.text, isPresented: $model.presented,
                         placement: oneRow ? .toolbarPrincipal : .navigationBarDrawer(displayMode: .always),
-                        prompt: Text(voice.listening ? OneSearchModel.speak : OneSearchModel.prompt))
+                        prompt: Text(voice.listening ? OneSearchModel.speak : model.askingDestination ? OneSearchModel.whereTo : OneSearchModel.prompt))
             .searchSuggestions {
                 if let problem = model.problem {
                     Section { ProblemLine(problem) }

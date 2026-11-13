@@ -155,6 +155,10 @@ enum NavLog {
         query.cruisePowerPct = figures.cruisePowerPct
         query.climbTasKt = figures.climbTasKt
         query.climbFuelBurnGph = figures.climbFuelBurnGph
+        // The descent's own figures, which the engine flies it at (its
+        // descent_phase); without them it is flown on the cruise's.
+        query.descentIasKt = figures.descentIasKt
+        query.descentFuelBurnGph = figures.descentFuelBurnGph
         query.serviceCeilingFt = figures.serviceCeilingFt
         query.climbRateFpm = figures.climbRateFpm
         query.taxiFuelGal = figures.taxiFuelGal

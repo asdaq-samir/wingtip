@@ -1,14 +1,14 @@
 import SwiftUI
-import UIKit
 
-/// The plan's sheet's two pages, swiped between sideways (the owner's
-/// carousel, 2026-11-11, docs/design/rules.md): Search, the one search
-/// and its home list, and FPL, the flight plan. Always two, so the dots
-/// do not change count; FPL with no route shows the route box empty.
+/// The plan's sheet's two pages (docs/design/rules.md §4): Search, the one
+/// search and its home list, and FPL, the flight plan; turned by the one
+/// round toggle on the map (MapSideButtons; the owner, 2026-11-13), where
+/// the pager's dots and swipe were. FPL with no route shows the route box
+/// empty.
 enum PlanPage: Int, CaseIterable, Hashable {
     case search, fpl
 
-    /// The page's name, as VoiceOver says it after "Page 1 of 2".
+    /// The page's name, as VoiceOver says it.
     var title: String {
         switch self {
         case .search: String(localized: "Search")
@@ -17,80 +17,28 @@ enum PlanPage: Int, CaseIterable, Hashable {
     }
 }
 
-/// The two pages in SwiftUI's own pager (TabView's page style), so the
-/// swipe, its spring and its edge are the system's; its own dots are off,
-/// since they sit at the foot and the sheet's go under the grabber
-/// (PageDots). A sideways swipe moves the pages and never the sheet; an
-/// up or down drag stays the sheet's, and each page's List keeps its own
-/// scroll.
-struct SheetPager<Search: View, Fpl: View>: View {
-    @Binding var page: PlanPage
+/// The two pages, the one in sight on top and the other kept laid out
+/// under it, hidden and out of reach, so each keeps its own scroll and
+/// what was typed when the toggle turns back to it (the web's kept
+/// SheetPages).
+struct SheetPages<Search: View, Fpl: View>: View {
+    let page: PlanPage
     @ViewBuilder let search: () -> Search
     @ViewBuilder let fpl: () -> Fpl
 
     var body: some View {
-        TabView(selection: $page) {
-            search().tag(PlanPage.search)
-            fpl().tag(PlanPage.fpl)
+        ZStack {
+            kept(search(), shown: page == .search)
+            kept(fpl(), shown: page == .fpl)
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        // A container of its own, so the identifier names the pager while
-        // the pages' elements keep theirs. (The one search's modifier,
-        // applied over this view in PlanSheet, set "one-search" on it too,
-        // which nothing asked for and which hid "sheet-pager" from the UI
-        // tests; it is gone.)
         .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("sheet-pager")
-    }
-}
-
-/// The page dots under the sheet's grabber: UIKit's own UIPageControl,
-/// SwiftUI having no page control of its own in the iOS 27.2 SDK (only
-/// TabView's dots, drawn at its foot). A tap on a dot or either side moves
-/// the page, as the stock control does; VoiceOver hears "Page 1 of 2,
-/// Search" and swipes up or down on it to turn the page.
-struct PageDots: UIViewRepresentable {
-    @Binding var page: PlanPage
-
-    /// The row the dots take in the sheet, and the control's height: its
-    /// taps stay inside it, clear of the system's grabber about 5 points
-    /// under the sheet's top and of the bar below (each of which a taller
-    /// frame overlapped, taking the grabber's drags; the iPhone stock
-    /// audit, 2026-11-12). The control spans the row's width, where
-    /// nothing else is, for the rest of its tap area (CLAUDE.md, hit
-    /// areas: nothing grows to get one).
-    static let row: CGFloat = WingtipSize.tapTarget - WingtipSpace.sm * 2
-
-    func makeUIView(context: Context) -> UIPageControl {
-        let control = UIPageControl()
-        control.numberOfPages = PlanPage.allCases.count
-        control.hidesForSinglePage = false
-        // The dots in the label's grey and the page's in the look's tint
-        // (lookTint sets the window's tint), as the stock control is used
-        // over a sheet's ground rather than its own white on a photo.
-        control.pageIndicatorTintColor = .tertiaryLabel
-        control.currentPageIndicatorTintColor = .tintColor
-        control.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .valueChanged)
-        control.accessibilityIdentifier = "sheet-page-dots"
-        return control
+        .accessibilityIdentifier("sheet-pages")
     }
 
-    func updateUIView(_ control: UIPageControl, context: Context) {
-        context.coordinator.page = $page
-        if control.currentPage != page.rawValue { control.currentPage = page.rawValue }
-        control.accessibilityValue = String(localized: "Page \(page.rawValue + 1) of \(PlanPage.allCases.count), \(page.title)")
-    }
-
-    func makeCoordinator() -> Coordinator { Coordinator(page: $page) }
-
-    @MainActor
-    final class Coordinator: NSObject {
-        var page: Binding<PlanPage>
-        init(page: Binding<PlanPage>) { self.page = page }
-
-        @objc func changed(_ control: UIPageControl) {
-            guard let next = PlanPage(rawValue: control.currentPage) else { return }
-            withAnimation { page.wrappedValue = next }
-        }
+    private func kept(_ content: some View, shown: Bool) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .allowsHitTesting(shown)
+            .accessibilityHidden(!shown)
     }
 }

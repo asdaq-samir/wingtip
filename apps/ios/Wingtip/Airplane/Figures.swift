@@ -13,6 +13,11 @@ struct Figures: Codable, Equatable, Sendable {
     var cruisePowerPct: Double?
     var climbTasKt: Double?
     var climbFuelBurnGph: Double?
+    /// The descent's indicated airspeed and fuel flow, the POH's; with
+    /// neither the descent is flown on the cruise's (the engine's
+    /// descent_phase, which says so as descent_at_cruise).
+    var descentIasKt: Double?
+    var descentFuelBurnGph: Double?
     var serviceCeilingFt: Double?
     var climbRateFpm: Double?
     var taxiFuelGal: Double?
@@ -22,11 +27,12 @@ struct Figures: Codable, Equatable, Sendable {
 
     init(cruiseTasKt: Double? = nil, fuelBurnGph: Double? = nil, usableFuelGal: Double? = nil, cruisePowerPct: Double? = nil, climbTasKt: Double? = nil,
          climbFuelBurnGph: Double? = nil, serviceCeilingFt: Double? = nil, climbRateFpm: Double? = nil, taxiFuelGal: Double? = nil, glideRatio: Double? = nil,
-         emptyWeightLb: Double? = nil, emptyMomentLbIn: Double? = nil) {
+         emptyWeightLb: Double? = nil, emptyMomentLbIn: Double? = nil, descentIasKt: Double? = nil, descentFuelBurnGph: Double? = nil) {
         self.cruiseTasKt = cruiseTasKt; self.fuelBurnGph = fuelBurnGph; self.usableFuelGal = usableFuelGal
         self.cruisePowerPct = cruisePowerPct; self.climbTasKt = climbTasKt; self.climbFuelBurnGph = climbFuelBurnGph
         self.serviceCeilingFt = serviceCeilingFt; self.climbRateFpm = climbRateFpm; self.taxiFuelGal = taxiFuelGal
         self.glideRatio = glideRatio; self.emptyWeightLb = emptyWeightLb; self.emptyMomentLbIn = emptyMomentLbIn
+        self.descentIasKt = descentIasKt; self.descentFuelBurnGph = descentFuelBurnGph
     }
 
     /// The pilot's airplane record's figures, every one it keeps.
@@ -34,7 +40,8 @@ struct Figures: Codable, Equatable, Sendable {
         let f = own.figures
         self.init(cruiseTasKt: own.cruiseTasKt, fuelBurnGph: own.fuelBurnGph, usableFuelGal: own.usableFuelGal, cruisePowerPct: own.cruisePowerPct,
                   climbTasKt: own.climbTasKt, climbFuelBurnGph: own.climbFuelBurnGph, serviceCeilingFt: f.serviceCeilingFt, climbRateFpm: f.climbRateFpm,
-                  taxiFuelGal: f.taxiFuelGal, glideRatio: f.glideRatio, emptyWeightLb: f.emptyWeightLb, emptyMomentLbIn: f.emptyMomentLbIn)
+                  taxiFuelGal: f.taxiFuelGal, glideRatio: f.glideRatio, emptyWeightLb: f.emptyWeightLb, emptyMomentLbIn: f.emptyMomentLbIn,
+                  descentIasKt: own.descentIasKt, descentFuelBurnGph: own.descentFuelBurnGph)
     }
 
     /// The figures off the engine's airplane_figures answer, each its
@@ -56,6 +63,8 @@ struct Figures: Codable, Equatable, Sendable {
             case .climbTasKt: climbTasKt
             case .climbFuelBurnGph: climbFuelBurnGph
             case .climbRateFpm: climbRateFpm
+            case .descentIasKt: descentIasKt
+            case .descentFuelBurnGph: descentFuelBurnGph
             case .serviceCeilingFt: serviceCeilingFt
             case .taxiFuelGal: taxiFuelGal
             case .glideRatio: glideRatio
@@ -72,6 +81,8 @@ struct Figures: Codable, Equatable, Sendable {
             case .climbTasKt: climbTasKt = newValue
             case .climbFuelBurnGph: climbFuelBurnGph = newValue
             case .climbRateFpm: climbRateFpm = newValue
+            case .descentIasKt: descentIasKt = newValue
+            case .descentFuelBurnGph: descentFuelBurnGph = newValue
             case .serviceCeilingFt: serviceCeilingFt = newValue
             case .taxiFuelGal: taxiFuelGal = newValue
             case .glideRatio: glideRatio = newValue

@@ -59,12 +59,9 @@ struct MicButton: View {
     }
 }
 
-/// The account button, Setup's home now the tabs are gone (the owner's
-/// design, 2026-11-09): a tap opens Settings on the sheet's stack, with
-/// nothing in between (the owner, 2026-11-10: "When tapping the avatar
-/// just open the settings"). Settings holds what the menu did: the
-/// account and signing in or out, the flying screens, the pilot's
-/// records, the minimums, the look and the rest (SetupView).
+/// The account button, the avatar: a tap opens You, the account card
+/// (YouView; the owner's option A of the account canvas, 2026-11-13, as
+/// Apple Maps' avatar opens its account card), Settings a gear on it.
 struct AccountButton: View {
     let open: (SheetPage) -> Void
     @Environment(Session.self) private var session
@@ -86,7 +83,7 @@ struct AccountButton: View {
             // it drew 40 by 36 in the microphone's capsule.
             .frame(width: WingtipSize.tapTarget, height: WingtipSize.tapTarget)
         }
-        .accessibilityLabel(session.pilot.map { "\($0.displayName), account and settings" } ?? "Account and Settings")
+        .accessibilityLabel(session.pilot.map { "\($0.displayName), You" } ?? "You")
         .accessibilityIdentifier("account-button")
     }
 }

@@ -1,16 +1,16 @@
 import SwiftUI
 
-/// Settings' parts laid out as iOS's own Settings app (docs/design/ios.md
-/// §13): the pilot first, a row with their initials and name over
-/// "Account, Records, Sync" that opens the account's page ("Sign In"
-/// before, with what signing in adds), and each row led by a small
-/// coloured square from the badge tokens (color.badge.*, radius.badge).
+/// You's and Settings' row parts, laid out as iOS's own Settings app and
+/// Apple Maps' account card (docs/design/ios.md §13): each row led by a
+/// small coloured badge from the badge tokens (color.badge.*, radius.badge),
+/// round on You as Maps' account card draws them.
 
-/// The row's leading square, a white glyph on a badge colour, sized with
-/// the text.
+/// The row's leading badge, a white glyph on a badge colour, sized with
+/// the text: a rounded square, or round.
 struct SettingsIcon: View {
     let systemImage: String
     let colour: UIColor
+    var round = false
     @ScaledMetric(relativeTo: .body) private var side = 29.0
 
     var body: some View {
@@ -18,95 +18,82 @@ struct SettingsIcon: View {
             .font(.footnote.weight(.semibold))
             .foregroundStyle(.white)
             .frame(width: side, height: side)
-            .background(Color(uiColor: colour), in: RoundedRectangle(cornerRadius: WingtipRadius.badge, style: .continuous))
+            .background(Color(uiColor: colour), in: round
+                ? AnyShape(Circle())
+                : AnyShape(RoundedRectangle(cornerRadius: WingtipRadius.badge, style: .continuous)))
             .accessibilityHidden(true)
     }
 }
 
-/// A Settings row: its square and its title.
+/// A Settings row: its badge and its title.
 struct SettingsLabel: View {
     let title: String
     let systemImage: String
     let colour: UIColor
+    var round = false
 
-    init(_ title: String, systemImage: String, colour: UIColor) {
+    init(_ title: String, systemImage: String, colour: UIColor, round: Bool = false) {
         self.title = title
         self.systemImage = systemImage
         self.colour = colour
+        self.round = round
     }
 
     var body: some View {
-        Label { Text(title) } icon: { SettingsIcon(systemImage: systemImage, colour: colour) }
+        Label { Text(title) } icon: { SettingsIcon(systemImage: systemImage, colour: colour, round: round) }
     }
 }
 
-/// The account at the top of Settings, as Settings puts the pilot's name
-/// first: signed in, their initials, name and "Account, Records, Sync",
-/// opening the account's page; signed out, Sign In and what it keeps.
-struct AccountHeadRow: View {
-    @Environment(\.lookAccent) private var accent
-    @Environment(Session.self) private var session
-    let signIn: () -> Void
-    @ScaledMetric(relativeTo: .title2) private var side = 60.0
+/// A row of You: its round badge, its title and its value at the end, as
+/// Apple Maps' account card lists its rows (the owner's iOS 27 screenshot,
+/// 2026-11-13); the chevron is the NavigationLink's own.
+struct YouRowLabel: View {
+    let title: String
+    let systemImage: String
+    let colour: UIColor
+    var value: String?
 
     var body: some View {
-        if let pilot = session.pilot {
-            NavigationLink { AccountPage() } label: {
-                HStack(spacing: WingtipSpace.md) {
-                    avatar(StripData.initials(name: pilot.displayName, email: pilot.email))
-                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                        Text(pilot.displayName).font(WingtipType.heading)
-                        Text("Account, Records, Sync").font(WingtipType.detail).foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .accessibilityHint("Opens your account")
-        } else {
-            Button(action: signIn) {
-                HStack(spacing: WingtipSpace.md) {
-                    avatar("")
-                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                        Text("Sign In").font(WingtipType.heading)
-                        // The system's secondary label, not the button's tinted
-                        // secondary, which read too faint (the audit, 2026-11-09).
-                        Text("Keep your airplanes, flights and logbook on every device.").font(WingtipType.detail)
-                            .foregroundStyle(Color(.secondaryLabel))
-                    }
-                }
-            }
-            .disabled(!session.loaded)
+        LabeledContent {
+            if let value { Text(value) }
+        } label: {
+            SettingsLabel(title, systemImage: systemImage, colour: colour, round: true)
         }
-    }
-
-    private func avatar(_ initials: String) -> some View {
-        ZStack {
-            Circle().fill(accent)
-            if initials.isEmpty {
-                Image(systemName: "person.fill").font(.title2).foregroundStyle(.white)
-            } else {
-                Text(initials).font(.title2.weight(.semibold)).foregroundStyle(.white)
-            }
-        }
-        .frame(width: side, height: side)
-        .accessibilityHidden(true)
     }
 }
 
-/// The account's page: who is signed in, the contact, the data to take
-/// away, Sign Out, and Delete Account last, destructive and asked first
-/// (HIG Managing accounts: "help them delete it").
-struct AccountPage: View {
+/// Pilot Details, You's first row: the name as on the pilot certificate,
+/// the email signed in with, the contact (a phone and the home base), then
+/// the account's menu -- Export My Data, Sign Out, and Delete Account last,
+/// destructive and asked first (HIG Managing accounts: "help them delete
+/// it").
+struct PilotDetailsView: View {
     @Environment(Session.self) private var session
     @Environment(Plan.self) private var plan
     @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var problem: String?
+    @FocusState private var naming: Bool
 
     var body: some View {
         List {
             if let pilot = session.pilot {
                 Section {
-                    LabeledContent("Name", value: pilot.displayName)
+                    LabeledContent("Name") {
+                        TextField("Name", text: $name, prompt: Text("As on your certificate"))
+                            .multilineTextAlignment(.trailing)
+                            .textContentType(.name)
+                            .focused($naming)
+                            .submitLabel(.done)
+                            .onSubmit { save() }
+                            .accessibilityIdentifier("pilot-name")
+                    }
                     LabeledContent("Email", value: pilot.email)
-                    NavigationLink("Contact") { ContactView() }
+                    NavigationLink { ContactView() } label: {
+                        LabeledContent("Contact") { if let home = pilot.homeBase { Text(home) } }
+                    }
+                } footer: {
+                    if let problem { ProblemLine(problem) }
                 }
                 Section {
                     ExportDataButton()
@@ -123,6 +110,25 @@ struct AccountPage: View {
             ProblemLine(session.problem)
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Account")
+        .navigationTitle("Pilot Details")
+        .onAppear { name = session.pilot?.fullName ?? "" }
+        // A name typed and left is kept, as Settings' fields keep themselves.
+        .onChange(of: naming) { _, now in if !now { save() } }
+    }
+
+    /// The name as the gateway keeps it (the training record's, as the web's
+    /// Pilot Details saves it), then the pilot read again.
+    private func save() {
+        let typed = name.trimmingCharacters(in: .whitespaces)
+        guard !typed.isEmpty, typed != session.pilot?.fullName else { return }
+        Task {
+            do {
+                _ = try await Gateway.setTrainingName(typed)
+                await session.refresh()
+                problem = nil
+            } catch {
+                problem = "Your name was not saved: \(error.localizedDescription)"
+            }
+        }
     }
 }

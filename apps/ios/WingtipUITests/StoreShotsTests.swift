@@ -107,11 +107,9 @@ final class StoreShotsTests: XCTestCase {
 
     @MainActor
     func testDownloads() throws {
-        let app = launch(screen: "setup")
-        let link = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Downloads'")).firstMatch
-        for _ in 0..<4 where !link.isHittable { app.swipeUp() }
-        XCTAssertTrue(link.waitForExistence(timeout: 30))
-        link.tap()
+        // Downloads is a page of Settings now (Data); its own link opens it.
+        let app = launch(screen: "downloads")
+        XCTAssertTrue(app.navigationBars["Downloads"].waitForExistence(timeout: 30))
         save(app, "05-downloads", settle: 8)
     }
 }

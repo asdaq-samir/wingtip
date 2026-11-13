@@ -27,7 +27,7 @@ struct PilotGuideView: View {
                     firstFlight.again()
                     askedFirstFlight = true
                 } label: {
-                    SettingsLabel(askedFirstFlight ? "First Flight Will Show Again" : "Show First Flight Again",
+                    SettingsLabel(askedFirstFlight ? "The Welcome Will Show Again" : "Show the Welcome Again",
                                   systemImage: "lightbulb", colour: WingtipColor.Badge.rule)
                 }
                 .disabled(askedFirstFlight)

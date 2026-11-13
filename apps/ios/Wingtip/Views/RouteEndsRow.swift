@@ -11,6 +11,10 @@ import SwiftUI
 struct RouteEndsRow: View {
     @Environment(ClearanceListener.self) private var listener
     @Environment(Plan.self) private var plan
+    @Environment(OwnShip.self) private var ownShip
+    /// Settings' Comms Assist (In Flight › ATC): the radio's button only
+    /// while it is on, off by default (the owner, 2026-11-13).
+    @AppStorage(CommsAssist.key) private var commsAssist = false
     @Environment(\.dynamicTypeSize) private var typeSize
     var focused: FocusState<PlanView.Field?>.Binding
     /// The fields' widths follow the type size, so an ident still fits at
@@ -23,19 +27,45 @@ struct RouteEndsRow: View {
             VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 routeField("From", text: $plan.dep, field: .dep)
                 routeField("To", text: $plan.dest, field: .dest)
+                fromPosition
                 HStack(spacing: WingtipSpace.md) {
-                    radio
+                    if commsAssist { radio }
                     planButton
                 }
             }
         } else {
-            HStack(spacing: WingtipSpace.sm) {
-                routeField("From", text: $plan.dep, field: .dep)
-                Image(systemName: "arrow.right").foregroundStyle(.secondary).accessibilityHidden(true)
-                routeField("To", text: $plan.dest, field: .dest)
-                radio
-                planButton
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+                HStack(spacing: WingtipSpace.sm) {
+                    routeField("From", text: $plan.dep, field: .dep)
+                    Image(systemName: "arrow.right").foregroundStyle(.secondary).accessibilityHidden(true)
+                    routeField("To", text: $plan.dest, field: .dest)
+                    if commsAssist { radio }
+                    planButton
+                }
+                fromPosition
             }
+        }
+    }
+
+    /// Half a route, its departure still to give (the owner's screenshot,
+    /// 2026-11-13: "Departure → HSKEL → KJAX"): where own ship has a fix,
+    /// My Position offered first as Maps' From offers My Location, planned
+    /// from the present position as a Direct to is (RouteExtras.position);
+    /// with no fix the From field's own prompt asks for it.
+    @ViewBuilder private var fromPosition: some View {
+        if plan.dep.isEmpty, !plan.dest.isEmpty, let fix = ownShip.fix {
+            Button {
+                focused.wrappedValue = nil
+                plan.dep = RouteExtras.position(fix)
+                plan.plan()
+            } label: {
+                Label("From My Position", systemImage: WingtipIcon.myLocation)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .buttonStyle(.borderless)
+            .hitArea()
+            .accessibilityIdentifier("from-my-position")
         }
     }
 

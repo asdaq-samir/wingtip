@@ -1,16 +1,11 @@
 import MapKit
 import SwiftUI
 
-/// Settings' Airport Weather as the map reads it, the four keys as one.
+/// Settings' Airport Weather as the map reads it: the one menu's pick.
 struct AirportWeatherSetting: DynamicProperty {
-    @AppStorage(AirportWeatherStyle.Keys.style) private var style = AirportWeatherStyle.halo.rawValue
-    @AppStorage(AirportWeatherStyle.Keys.stationClose) private var stationClose = true
-    @AppStorage(AirportWeatherStyle.Keys.windArrows) private var windBarbs = true
-    @AppStorage(AirportWeatherStyle.Keys.worse) private var worse = true
+    @AppStorage(AirportWeather.key) private var show = AirportWeather.kept().rawValue
 
-    var choice: AirportWeatherChoice {
-        AirportWeatherChoice(style: AirportWeatherStyle(rawValue: style) ?? .halo, stationClose: stationClose, windBarbs: windBarbs, worse: worse)
-    }
+    var choice: AirportWeatherChoice { (AirportWeather(rawValue: show) ?? .standard).choice }
 }
 
 /// What the plan gives the marks: the route's fields whose TAF is worse

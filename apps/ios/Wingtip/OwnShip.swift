@@ -24,6 +24,9 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
 
     private(set) var fix: Fix?
     private(set) var denied = false
+    /// The position's permission as iOS last said it, for the welcome's
+    /// foot (WelcomeFoot).
+    private(set) var authorization: CLAuthorizationStatus = .notDetermined
     /// What the track runs into in the next minutes, from the planner.
     private(set) var ahead: [AheadAlert] = []
     /// The ground under the airplane from the packs kept on the phone,
@@ -105,7 +108,10 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
 
     nonisolated func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         let denied = status == .denied || status == .restricted
-        Task { @MainActor in self.denied = denied }
+        Task { @MainActor in
+            self.denied = denied
+            self.authorization = status
+        }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {}

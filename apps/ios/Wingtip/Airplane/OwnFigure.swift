@@ -17,6 +17,8 @@ enum OwnFigure: String, CaseIterable, Identifiable, Sendable {
     case climbTasKt = "climb_tas_kt"
     case climbFuelBurnGph = "climb_fuel_burn_gph"
     case climbRateFpm = "climb_rate_fpm"
+    case descentIasKt = "descent_ias_kt"
+    case descentFuelBurnGph = "descent_fuel_burn_gph"
     case serviceCeilingFt = "service_ceiling_ft"
     case taxiFuelGal = "taxi_fuel_gal"
     case glideRatio = "glide_ratio"
@@ -40,6 +42,8 @@ enum OwnFigure: String, CaseIterable, Identifiable, Sendable {
         case .climbTasKt: "Climb speed (TAS)"
         case .climbFuelBurnGph: "Climb fuel burn"
         case .climbRateFpm: "Climb rate at sea level"
+        case .descentIasKt: "Descent speed (IAS)"
+        case .descentFuelBurnGph: "Descent fuel burn"
         case .serviceCeilingFt: "Service ceiling"
         case .taxiFuelGal: "Start and taxi fuel"
         case .glideRatio: "Glide ratio"
@@ -50,8 +54,8 @@ enum OwnFigure: String, CaseIterable, Identifiable, Sendable {
 
     var unit: String {
         switch self {
-        case .cruiseTasKt, .climbTasKt: "kt"
-        case .fuelBurnGph, .climbFuelBurnGph: "gal/h"
+        case .cruiseTasKt, .climbTasKt, .descentIasKt: "kt"
+        case .fuelBurnGph, .climbFuelBurnGph, .descentFuelBurnGph: "gal/h"
         case .cruisePowerPct: "%"
         case .usableFuelGal, .taxiFuelGal: "gal"
         case .climbRateFpm: "fpm"
@@ -73,6 +77,10 @@ enum OwnFigure: String, CaseIterable, Identifiable, Sendable {
         case .climbTasKt: "How fast does \(airplane) climb, true airspeed?"
         case .climbFuelBurnGph: "How much fuel does \(airplane) burn an hour in the climb?"
         case .climbRateFpm: "How fast does \(airplane) climb at sea level?"
+        // Indicated, as its POH's Section 5 gives the descent; the engine
+        // makes it true at the descent's altitude (FAA-H-8083-25C ch. 8).
+        case .descentIasKt: "How fast does \(airplane) descend, indicated airspeed?"
+        case .descentFuelBurnGph: "How much fuel does \(airplane) burn an hour in the descent?"
         // The altitude its best rate of climb falls to 100 fpm
         // (FAA-H-8083-25C, chapter 11).
         case .serviceCeilingFt: "What is \(airplane)'s service ceiling?"
@@ -92,6 +100,7 @@ enum AirplaneNeed: String, Sendable {
     case fuelTotals = "fuel_totals"
     case glide
     case climb
+    case descent
     case weightBalance = "weight_balance"
     case takeoffLanding = "takeoff_landing"
 }

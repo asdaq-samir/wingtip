@@ -136,15 +136,36 @@ struct FieldWeatherMarksTests {
     }
 
     @Test func theStationModelShowsCloseInOrAlways() {
-        var choice = AirportWeatherChoice()
-        #expect(choice.style == .halo && choice.stationClose && choice.windBarbs && choice.worse)
-        #expect(!choice.station(zoom: 9) && choice.station(zoom: 10))
-        choice.stationClose = false
-        #expect(!choice.station(zoom: 12))
-        choice.style = .station
-        #expect(choice.station(zoom: 5))
-        choice.style = .off
-        #expect(!choice.station(zoom: 12))
+        // With Wind, the default: the ring, its barbs, the station model close in.
+        let wind = AirportWeather.standard.choice
+        #expect(AirportWeather.standard == .wind)
+        #expect(wind.style == .halo && wind.stationClose && wind.windBarbs && wind.worse)
+        #expect(!wind.station(zoom: 9) && wind.station(zoom: 10))
+        // The flight category's ring alone: no barbs, no station model.
+        let category = AirportWeather.category.choice
+        #expect(!category.station(zoom: 12) && !category.windBarbs && category.worse)
+        #expect(AirportWeather.station.choice.station(zoom: 5))
+        // Off: nothing, the worse-by-arrival arrow too.
+        let off = AirportWeather.off.choice
+        #expect(off.style == .off && !off.station(zoom: 12) && !off.windBarbs && !off.worse)
+    }
+
+    @Test func aKeptLookComesOverToTheMenu() throws {
+        func kept(_ values: [String: Any]) throws -> AirportWeather {
+            let name = "airport-weather-\(UUID().uuidString)"
+            let defaults = try #require(UserDefaults(suiteName: name))
+            defer { defaults.removePersistentDomain(forName: name) }
+            for (key, value) in values { defaults.set(value, forKey: key) }
+            return AirportWeather.kept(defaults)
+        }
+        #expect(try kept([:]) == .wind)
+        #expect(try kept([AirportWeather.Legacy.style: "off"]) == .off)
+        #expect(try kept([AirportWeather.Legacy.style: "station"]) == .station)
+        #expect(try kept([AirportWeather.Legacy.style: "halo"]) == .wind)
+        #expect(try kept([AirportWeather.Legacy.style: "halo", AirportWeather.Legacy.windArrows: false]) == .category)
+        #expect(try kept([AirportWeather.Legacy.style: "dot"]) == .category)
+        // The menu's own pick wins over what was kept before it.
+        #expect(try kept([AirportWeather.key: "off", AirportWeather.Legacy.style: "station"]) == .off)
     }
 
     @Test func aReportHeardOverAnHourAgoSaysItsAge() {

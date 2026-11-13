@@ -24,15 +24,15 @@ enum CardTests {
         case card(String)
         /// A button on the map or beside the search, by its identifier or label.
         case button(String)
-        /// A row of Settings, by its words.
-        case settingsRow(String)
+        /// A row of You, by its words.
+        case youRow(String)
 
         var description: String {
             switch self {
             case .link(let id): "link \(id)"
             case .card(let kept): "card \(kept)"
             case .button(let id): "button \(id)"
-            case .settingsRow(let words): "Settings' \(words) row"
+            case .youRow(let words): "You's \(words) row"
             }
         }
     }
@@ -48,14 +48,14 @@ enum CardTests {
 
     /// The table: a new card gets every check by one row here.
     static let cards: [Card] = [
-        Card(name: "Map settings", id: "card-map", entries: [.button("map-settings"), .card("+map"), .settingsRow("Map")], half: true),
+        Card(name: "Map", id: "card-map", entries: [.button("map-settings"), .card("+map")], half: true),
         Card(name: "Airport", id: "card-airport", entries: [.card("@KOSH")], half: true),
         Card(name: "Nearest", id: "card-nearest", entries: [.link("nearest")], half: true),
         Card(name: "Brief", id: "card-brief", entries: [.link("brief")]),
         Card(name: "Nav Log", id: "card-navlog", entries: [.link("navlog")]),
         Card(name: "Profile", id: "card-profile", entries: [.link("profile")]),
         Card(name: "Airplane", id: "card-airplane", entries: [.link("airplane")]),
-        Card(name: "Settings", id: "card-setup", entries: [.link("setup"), .button("account-button")]),
+        Card(name: "You", id: "card-setup", entries: [.link("setup"), .button("account-button")]),
         Card(name: "Downloads", id: "card-downloads", entries: [.link("downloads")]),
         Card(name: "Ask", id: "card-ask", entries: [.link("ask"), .button("Ask about this flight")]),
         // A plate's card, as a tap on its page on the map opens it; offline,
@@ -88,9 +88,9 @@ enum CardTests {
             XCTAssertTrue(button.waitForExistence(timeout: 20), "no \(handle) button")
             button.tap()
             return app
-        case .settingsRow(let words):
+        case .youRow(let words):
             let app = launch(["-screen", "setup"], size: size)
-            XCTAssertTrue(card(app, "card-setup").waitForExistence(timeout: 20), "Settings did not open")
+            XCTAssertTrue(card(app, "card-setup").waitForExistence(timeout: 20), "You did not open")
             let row = app.buttons[words].firstMatch
             scrollTo(row, in: app)
             row.tap()

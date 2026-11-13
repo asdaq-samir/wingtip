@@ -32,9 +32,12 @@ enum SheetPage: Hashable {
     case flown(Int, String)
     /// The assistant, with the question the search sent where there is one.
     case ask(String?)
-    /// The map's own settings: its layers, weather and alerts (the Map
-    /// button's card, as Maps' Choose Map card).
+    /// The Map card, the map's own button's: what is on the map (as Maps'
+    /// Choose Map card).
     case mapSettings
+    /// The app's Settings, pushed from You's gear or the Map card's, at its
+    /// Map group from the Map card's (docs/design/rules.md §8).
+    case settings(atMap: Bool)
     /// An approach plate on the map, by its key ("KOSH:I36"): its card's
     /// Hide Plate, View Full Screen and how the page is drawn (PlateCard).
     case plate(String)
@@ -59,7 +62,7 @@ enum SheetPage: Hashable {
         case .airport(let text): RootLayout.inspects(AirportRoute(text))
         case .screen(let screen): [.brief, .profile, .flights].contains(screen)
         case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged: true
-        case .flight, .notams, .practice, .training, .instructing, .contact: false
+        case .flight, .notams, .practice, .training, .instructing, .contact, .settings: false
         }
     }
 
@@ -68,7 +71,7 @@ enum SheetPage: Hashable {
     var opensFull: Bool {
         switch self {
         case .screen(let screen): ![.nearest, .favorites].contains(screen)
-        case .flight, .notams, .practice, .training, .instructing, .contact, .ask, .clearance: true
+        case .flight, .notams, .practice, .training, .instructing, .contact, .ask, .clearance, .settings: true
         case .airport, .leg, .traffic, .tail, .hold, .flown, .mapSettings, .plate, .sharedFlight, .flightLogged: false
         }
     }
@@ -108,6 +111,7 @@ enum SheetPage: Hashable {
         case .flown: "card-flown"
         case .ask: "card-ask"
         case .mapSettings: "card-map"
+        case .settings: "card-settings"
         case .plate: "card-plate"
         case .clearance: "card-clearance"
         case .sharedFlight: "card-shared"
@@ -127,6 +131,7 @@ enum SheetPage: Hashable {
         case .instructing: "+instructing"
         case .contact: "+contact"
         case .mapSettings: "+map"
+        case .settings: "+settings"
         case .plate(let key): "+plate:" + key
         case .notams(.route): "+notams"
         case .notams(.field(let ident)): "+notams:" + ident
@@ -147,6 +152,7 @@ enum SheetPage: Hashable {
         case "+instructing": self = .instructing
         case "+contact": self = .contact
         case "+map": self = .mapSettings
+        case "+settings": self = .settings(atMap: false)
         // Never kept (stored is nil), but opened by the UI tests' `-card`.
         case "+clearance": self = .clearance
         case "+notams": self = .notams(.route)
@@ -215,6 +221,7 @@ struct SheetPageView: View {
         case .flown(let id, let title): FlownTrackView(flight: id, title: title).id(id)
         case .ask(let question): AskView(first: question)
         case .mapSettings: MapSettingsView()
+        case .settings(let atMap): SettingsView(atMap: atMap)
         case .plate(let key): PlateCard(key: key).id(key)
         case .clearance: ClearanceSheet()
         case .sharedFlight: SharedFlightView()
@@ -234,7 +241,7 @@ struct ScreenPage: View {
     var body: some View {
         switch screen {
         case .airplane: AircraftView()
-        case .setup: SetupView()
+        case .setup: YouView()
         case .brief: BriefView()
         case .navlog: NavLogPage()
         case .profile: ProfileCard()
