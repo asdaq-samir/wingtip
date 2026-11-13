@@ -82,6 +82,18 @@ def allow_total(path: str) -> int:
 
 ANDROID = "apps/android/app/src/main"
 UNIT = r"\b(0\.3048|3\.2808\d*|6076(\.\d+)?|1852(\.0)?|1\.9438\d*)\b"
+# The engine's unit literals, set or used inline: the foot, the nautical
+# and statute miles, their rounded ratios and the kelvin's offset. Each is
+# engine/crates/core/src/units.rs's alone.
+ENGINE_UNIT = re.compile(r"(?<![\w.])(0\.3048|3\.2808\d*|6_?076(\.\d+)?|1_?852(\.0*)?|1\.852|1_?609\.344|1\.9438\d*|273\.15)(?![\w.])")
+RUST_NOT_CODE = re.compile(r'//[^\n]*|/\*.*?\*/|r(#*)".*?"\1|b?"(\\.|[^"\\])*"|\'(\\.|[^\'\\])\'', re.S)
+
+
+def rust_code(source: str) -> str:
+    """A Rust file with its comments, strings and characters taken out:
+    test data written in a string is data, not a factor."""
+    return RUST_NOT_CODE.sub(" ", source)
+
 
 # name -> (how it is counted, what to do when it rises)
 METRICS = {
@@ -146,6 +158,14 @@ METRICS = {
             if not p.endswith(("lib/geo.ts", "lib/units.ts"))
         ),
         "a unit factor set again: import it from lib/geo or lib/units",
+    ),
+    "engine_unit_literals": (
+        lambda: sum(
+            len(ENGINE_UNIT.findall(rust_code(text(p))))
+            for p in files("engine", ".rs")
+            if not p.endswith("engine/crates/core/src/units.rs")
+        ),
+        "a unit factor written in the engine: take it from wingtip_core::units",
     ),
     # The other guards' baselines, their totals (each only shrinks; here
     # for the one trend line).

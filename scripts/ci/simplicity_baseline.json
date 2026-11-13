@@ -11,6 +11,7 @@
  "gateway_http_client_builders": 2,
  "python_unit_constants": 2,
  "web_unit_constants": 0,
+ "engine_unit_literals": 0,
  "copy_paste_clones": 37,
  "one_home_findings": 33,
  "rules_outside_engine": 22,

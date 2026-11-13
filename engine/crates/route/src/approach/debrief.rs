@@ -24,7 +24,7 @@
 //!
 //! The web's lib/approachDebrief, ported line for line with its words.
 
-use super::{Drawing, RunwayPath, FT_PER_NM};
+use super::{Drawing, RunwayPath, FT_PER_M, FT_PER_NM};
 use crate::figures::debrief::{airborne, Point};
 use crate::figures::words::{alt_ft, grouped, js_num, js_round_f, to_fixed};
 use crate::geo::distance_nm;
@@ -69,7 +69,7 @@ pub const GLIDESLOPE_ANTENNA_FT: f64 = 1000.0;
 /// curved sea level by d²/2R, 32 ft at 6 nm, which the chart's glide
 /// slope altitude at the final approach fix includes (KBUR's ILS 08: 2,753
 /// ft at BUDDE, 6.0 nm out on 3.00° from 787 ft).
-const EARTH_FT: f64 = 6_371_000.0 * 3.28084;
+const EARTH_FT: f64 = 6_371_000.0 * FT_PER_M;
 /// The mean distance off a glidepath, ft, within which the track is
 /// taken to have come down it: two approaches down one final are told
 /// apart by it. The app's.

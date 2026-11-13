@@ -9,6 +9,7 @@
 
 use crate::metar::{self, Layer, Wind};
 use crate::time;
+use wingtip_core::units::M_PER_SM;
 
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct Period {
@@ -95,7 +96,7 @@ fn weather_of(p: &mut Period, words: &[&str]) {
             p.visibility_sm = metar::statute_miles(w, None).map(|(v, _)| v);
         } else if p.visibility_sm.is_none() && digits(w, 4) {
             let metres: f64 = w.parse().unwrap();
-            p.visibility_sm = Some(if metres >= 9999.0 { 6.0 } else { metres / 1609.344 });
+            p.visibility_sm = Some(if metres >= 9999.0 { 6.0 } else { metres / M_PER_SM });
         } else if w == "NSW" {
             p.weather.push(w.to_string());
         } else if let Some(cover) = sky(w) {

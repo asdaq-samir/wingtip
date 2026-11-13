@@ -32,7 +32,7 @@
 //!   3,000 ft of the landing surface, the Pilot/Controller Glossary) are
 //!   shown at the runway instead.
 
-use super::{list, num, opt_num, str_or_empty, Drawing, Fix, R};
+use super::{list, num, opt_num, str_or_empty, Drawing, Fix, FT_PER_M, R};
 use crate::json::{self, Value};
 
 /// The TERPS constant for the earth's mean radius in spherical
@@ -42,8 +42,6 @@ pub const TERPS_EARTH_FT: f64 = 20_890_537.0;
 /// (NIMA TR8350.2, table 3.1 and 7.1): the FAA's fixes are on WGS-84.
 const WGS84_A_M: f64 = 6_378_137.0;
 const WGS84_E2: f64 = 0.006_694_379_990_14;
-/// Feet in a metre, exactly (the international foot, 0.3048 m).
-const FT_PER_M: f64 = 1.0 / 0.3048;
 
 /// The CIFP's own altitude coded at a fix beside its limits: the glide
 /// slope's at the final approach fix ("G", "H"), the glide slope's

@@ -35,9 +35,7 @@ pub mod scene;
 pub mod tags;
 
 use crate::json::Value;
-
-/// Feet in a nautical mile (1,852 m), as the web's lib/geo FT_PER_NM.
-pub const FT_PER_NM: f64 = 6076.12;
+pub(crate) use wingtip_core::units::{FT_PER_M, FT_PER_NM};
 
 /// A fix of the procedure: its place, its roles ("IAF", "IF", "FACF",
 /// "FAF", "MAP", "hold"), its crossing altitudes, and whether it is the

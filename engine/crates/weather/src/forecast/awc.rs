@@ -13,9 +13,7 @@
 use crate::json::{self, Value};
 use crate::xml::{self, Element};
 use crate::{metar, sort::StableSort, time, validity};
-
-/// Feet in a metre (the international foot, 0.3048 m).
-const FT_PER_M: f64 = 1.0 / 0.3048;
+use wingtip_core::units::FT_PER_M;
 
 /// How old a PIREP is still told: the conditions it reports move on. A
 /// design choice -- a PIREP has no period of validity (AIM chapter 7,

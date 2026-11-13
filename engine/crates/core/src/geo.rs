@@ -20,6 +20,7 @@ use std::sync::OnceLock;
 use geographiclib_rs::{DirectGeodesic, Geodesic, InverseGeodesic};
 
 use crate::json::{self, Value};
+use crate::units::M_PER_NM;
 
 /// The mean radius, 6,371.0 km in nautical miles: not the earth the
 /// figures below are worked on (that is WGS-84), but the scale of the
@@ -27,9 +28,6 @@ use crate::json::{self, Value};
 /// degrees, the planner's KD-tree chords, the corridor prefilter), each
 /// within 0.4% of the ellipsoid.
 pub const EARTH_RADIUS_NM: f64 = 3440.065;
-
-/// Metres in a nautical mile, exactly (NIST SP 811, B.8).
-const M_PER_NM: f64 = 1852.0;
 
 /// WGS-84 (NGA TR8350.2), made once: `Geodesic::wgs84()` copies it a call.
 fn wgs84() -> &'static Geodesic {

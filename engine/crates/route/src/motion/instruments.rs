@@ -512,7 +512,7 @@ mod tests {
     fn the_ring_is_over_the_higher_ground() {
         let (range, ground, ring) = glide_ring(45.0, -93.0, Some(5000.0), Some(100.0), Some(1200.0), Some(900.0), Some(9.0)).unwrap();
         assert_eq!(ground, 1200.0);
-        assert!((range - 3.8 * 9000.0 / glide::FT_PER_NM).abs() < 1e-9, "the 172S's 9 to 1, its POH figure 3-1");
+        assert!((range - 3.8 * 9000.0 / wingtip_core::units::FT_PER_NM).abs() < 1e-9, "the 172S's 9 to 1, its POH figure 3-1");
         assert_eq!(ring.len(), RING_POINTS + 1);
         assert_eq!(ring[0], ring[RING_POINTS]);
         assert!((distance_nm(45.0, -93.0, ring[10].0, ring[10].1) - range).abs() < 1e-6);
