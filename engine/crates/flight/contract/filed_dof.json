@@ -1,0 +1,37 @@
+{
+  "x-call": "wingtip_flight::calls::filed",
+  "description": "Item 18's date of flight, DOF/YYMMDD, where the flight is not on the UTC day it is filed (AIM Appendix 4, TBL 4-1); null on the same day.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FiledDofInput",
+      "type": "object",
+      "properties": {
+        "depart": {
+          "type": "string",
+          "description": "ISO, UTC."
+        },
+        "today": {
+          "type": "string",
+          "description": "ISO, UTC."
+        }
+      },
+      "required": [
+        "depart",
+        "today"
+      ]
+    },
+    "answer": {
+      "title": "FiledDofAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

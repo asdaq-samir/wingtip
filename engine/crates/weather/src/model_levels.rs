@@ -10,8 +10,8 @@
 //! - HGT, the level's geopotential height, metres: taken as feet by the
 //!   international foot, 0.3048 m exactly (NIST SP 811, B.9), as the FB's
 //!   levels are heights;
-//! - TMP, kelvin: degrees Celsius are kelvin less 273.15 (the SI's own
-//!   definition, NIST SP 811, 4.2.1.1);
+//! - TMP, kelvin: degrees Celsius are kelvin less wingtip_core::units'
+//!   KELVIN_AT_0_C (the SI's own definition, NIST SP 811, 4.2.1.1);
 //! - UGRD and VGRD, the wind's east and north parts, metres a second,
 //!   toward where it blows: knots by the international nautical mile,
 //!   1,852 m exactly (NIST SP 811, B.9), so a metre a second is 3,600 /
@@ -26,14 +26,7 @@
 
 use crate::aloft_grid::from_parts;
 use crate::json::{self, Value};
-
-/// Metres in a foot, the international foot (NIST SP 811 B.9).
-pub const M_PER_FT: f64 = 0.3048;
-/// Knots in a metre a second, by the international nautical mile (1,852
-/// m, NIST SP 811 B.9): 3,600 s an hour over 1,852 m a mile.
-pub const KT_PER_M_S: f64 = 3600.0 / 1852.0;
-/// Kelvin at 0 degrees Celsius (NIST SP 811 4.2.1.1).
-pub const KELVIN_AT_0_C: f64 = 273.15;
+use wingtip_core::units::{KELVIN_AT_0_C, KT_PER_M_S, M_PER_FT};
 
 /// One level as the GRIB2 gives it.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -106,7 +99,7 @@ mod tests {
     #[test]
     fn a_level_is_read_in_feet_knots_and_celsius() {
         // 1,852 m a second east is 3,600 kt toward the east: from the west.
-        let w = level(GribLevel { height_m: 3048.0, temp_k: 273.15, u_m_s: 1852.0 / 3600.0 * 10.0, v_m_s: 0.0 });
+        let w = level(GribLevel { height_m: 3048.0, temp_k: KELVIN_AT_0_C, u_m_s: 1852.0 / 3600.0 * 10.0, v_m_s: 0.0 });
         assert!(close(w.altitude_ft, 10_000.0) && close(w.temp_c, 0.0), "{w:?}");
         assert!(close(w.wind_speed_kt, 10.0) && close(w.wind_dir_true_deg, 270.0), "{w:?}");
         // From the south-west at 20 kt: blowing north-east.

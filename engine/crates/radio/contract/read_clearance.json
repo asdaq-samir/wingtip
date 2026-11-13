@@ -1,0 +1,27 @@
+{
+  "x-call": "wingtip_radio::calls::call",
+  "description": "An ATC clearance heard, read into its items as the web's lib/clearance read it (AIM 4-4-3), camelCase.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ReadClearanceInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "$ref": "#/definitions/Clearance"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

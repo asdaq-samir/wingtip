@@ -6,6 +6,8 @@
 //! wind triangle (lib/diversion) is held to the same fixture
 //! (apps/web/src/lib/fixtures/flightRules.json).
 
+use wingtip_core::units::KELVIN_AT_0_C;
+
 /// The wind correction angle, degrees, positive to the right: the E6B's
 /// triangle (FAA-H-8083-25C, Pilot's Handbook of Aeronautical Knowledge,
 /// ch. 16, "Wind triangle"). The wind is the direction it blows FROM.
@@ -102,7 +104,7 @@ pub fn reserve_min(ifr: bool, night: bool) -> f64 {
 // density's is one less. wingtip.performance's constants, the same digits.
 pub const ISA_SEA_LEVEL_C: f64 = 15.0;
 pub const ISA_LAPSE_C_PER_FT: f64 = 0.0019812;
-const SEA_LEVEL_K: f64 = 288.15;
+const SEA_LEVEL_K: f64 = ISA_SEA_LEVEL_C + KELVIN_AT_0_C;
 const LAPSE_OVER_T0_PER_FT: f64 = 6.8755856e-6;
 const PRESSURE_EXPONENT: f64 = 5.2558797;
 const LOWEST_FT: f64 = -2000.0;
@@ -121,7 +123,7 @@ pub fn isa_temp_c(altitude_ft: f64) -> f64 {
 pub fn density_ratio(altitude_ft: f64, oat_c: f64) -> f64 {
     let altitude_ft = altitude_ft.clamp(LOWEST_FT, HIGHEST_FT);
     let pressure_ratio = (1.0 - LAPSE_OVER_T0_PER_FT * altitude_ft).powf(PRESSURE_EXPONENT);
-    pressure_ratio * SEA_LEVEL_K / (oat_c + 273.15)
+    pressure_ratio * SEA_LEVEL_K / (oat_c + KELVIN_AT_0_C)
 }
 
 /// The altitude at which a standard day's air has density sigma.

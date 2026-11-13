@@ -1,0 +1,32 @@
+{
+  "x-call": "wingtip_flight::calls::call",
+  "description": "Sigma, the air's density at a pressure altitude and temperature over a standard day's at sea level (ICAO Doc 7488).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DensityRatioInput",
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": "number"
+        },
+        "oat_c": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "altitude_ft",
+        "oat_c"
+      ]
+    },
+    "answer": {
+      "title": "DensityRatioAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

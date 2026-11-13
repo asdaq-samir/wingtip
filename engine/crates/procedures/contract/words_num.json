@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::written",
+  "description": "A number as JavaScript writes it into a string, \"null\" for none.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WordsNumInput",
+      "type": "object",
+      "properties": {
+        "n": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "WordsNumAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -8,9 +8,10 @@ description = "The flight's own rules: the wind triangle, 14 CFR 91.159's cruisi
 [lib]
 name = "wingtip_flight"
 
-# None: a rule module with no other crate under it (engine/README.md),
-# plain Rust, so the phones carry it as it is.
+# wingtip-core alone: its JSON and the input reader its rules are asked
+# through, and the SI's units (engine/README.md).
 [dependencies]
+wingtip-core = { path = "../core" }
 
 [lints]
 workspace = true

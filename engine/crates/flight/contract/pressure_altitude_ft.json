@@ -1,0 +1,33 @@
+{
+  "x-call": "wingtip_flight::calls::call",
+  "description": "Pressure altitude from a field's elevation and its altimeter setting: the standard atmosphere's height of the setting above 29.92 \"Hg, (1 - (setting/29.92)^(1/5.2558797)) x 145,442 ft (ICAO Doc 7488), FAA-H-8083-25C ch. 11 Figure 11-3's conversion factor to within 2 ft (30.10 \"Hg: -165).",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PressureAltitudeFtInput",
+      "type": "object",
+      "properties": {
+        "elevation_ft": {
+          "type": "number"
+        },
+        "altimeter_inhg": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "elevation_ft",
+        "altimeter_inhg"
+      ]
+    },
+    "answer": {
+      "title": "PressureAltitudeFtAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

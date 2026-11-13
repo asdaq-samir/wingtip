@@ -1,0 +1,38 @@
+{
+  "x-call": "wingtip_flight::calls::night",
+  "description": "Whether the sun is down at a point and an instant: after sunset and before sunrise, the sun's centre 0.833 degrees below the horizon (its upper limb on it; NOAA's solar calculation, the Naval Observatory's definition). Not 14 CFR 1.1's night, which begins only at the end of evening civil twilight: this is the sky as a pilot sees it, the map's day or night glyph.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "SunDownInput",
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number",
+          "description": "East positive."
+        },
+        "at_s": {
+          "type": "number",
+          "description": "UNIX seconds."
+        }
+      },
+      "required": [
+        "lat",
+        "lon",
+        "at_s"
+      ]
+    },
+    "answer": {
+      "title": "SunDownAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

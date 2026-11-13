@@ -1,0 +1,59 @@
+{
+  "x-call": "wingtip_pilot::pilot::calls::endorsed",
+  "description": "The latest not voided of each code, as [code, index] into the record (newest first).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "EndorsementsInForceInput",
+      "type": "object",
+      "properties": {
+        "signed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "voided": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          }
+        }
+      },
+      "required": [
+        "signed"
+      ]
+    },
+    "answer": {
+      "title": "EndorsementsInForceAnswer",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "integer"
+          }
+        ],
+        "additionalItems": false
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

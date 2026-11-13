@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::written",
+  "description": "A cruising altitude in hundreds of feet, \"FL-045\"; \"FL-___\" for none (lib/format flightLevel).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WordsFlightLevelInput",
+      "type": "object",
+      "properties": {
+        "ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "WordsFlightLevelAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

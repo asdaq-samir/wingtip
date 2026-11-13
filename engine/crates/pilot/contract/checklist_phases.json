@@ -1,0 +1,35 @@
+{
+  "x-call": "wingtip_pilot::pilot::calls::checklists",
+  "description": "The headings a checklist can start from, with nothing under them: a pilot's operating handbook's Normal Procedures (GAMA Specification No. 1, Section 4) or Emergency Procedures (Section 3), in its order; the items are the pilot's, from their own airplane's handbook (FAA-H-8083-3C, chapter 2).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ChecklistPhasesInput",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "normal",
+            "emergency"
+          ]
+        }
+      },
+      "required": [
+        "kind"
+      ]
+    },
+    "answer": {
+      "title": "ChecklistPhasesAnswer",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

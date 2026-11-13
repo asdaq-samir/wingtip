@@ -1,0 +1,45 @@
+{
+  "x-call": "wingtip_flight::calls::call",
+  "description": "The nav log's ground speed once the heading holds the course: the airspeed's share along it less the wind's.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GroundspeedKtInput",
+      "type": "object",
+      "properties": {
+        "true_course_deg": {
+          "type": "number"
+        },
+        "wind_from_deg": {
+          "type": "number"
+        },
+        "wind_kt": {
+          "type": "number"
+        },
+        "tas_kt": {
+          "type": "number"
+        },
+        "wca_deg": {
+          "type": "number",
+          "description": "The wind correction angle."
+        }
+      },
+      "required": [
+        "true_course_deg",
+        "wind_from_deg",
+        "wind_kt",
+        "tas_kt",
+        "wca_deg"
+      ]
+    },
+    "answer": {
+      "title": "GroundspeedKtAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

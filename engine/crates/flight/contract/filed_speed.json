@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_flight::calls::filed",
+  "description": "Item 15's cruising speed on FAA Form 7233-4: the true airspeed in knots, \"N\" and four figures (AIM Appendix 4: \"N0450\").",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FiledSpeedInput",
+      "type": "object",
+      "properties": {
+        "tas_kt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "tas_kt"
+      ]
+    },
+    "answer": {
+      "title": "FiledSpeedAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::written",
+  "description": "An altitude grouped, \"12,500\"; an em dash for none (lib/format altFt).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WordsAltFtInput",
+      "type": "object",
+      "properties": {
+        "ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "WordsAltFtAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}
