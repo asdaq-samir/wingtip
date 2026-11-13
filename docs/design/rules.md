@@ -168,6 +168,17 @@ Each "by name" path is a `switch` or `when` over the generated list of
 `design/screens.json` (`scripts/build/screens.sh`), so a screen added
 there fails each app's build until that app opens it.
 
+**On the iPhone the cards stay the system sheet** (2026-11-13, the web's
+floating cards ported the native way): iOS 26 and later draw a sheet at a
+partial detent inset from the screen's edges with Liquid Glass, as Apple
+Maps' own place, guide and account cards float, so the one `.sheet(item:)`
+(`Navigation/CardHost`) is already the floating card, with the system's
+grabber, detents and swipe; nothing is hand-built over it. You
+(`Views/YouView`) and the Map card (`Views/MapSettingsView`) are such
+cards, their gear at the top left of the bar and the close at its right,
+and Settings (`Views/SettingsView`, `SheetPage.settings`) is pushed inside
+the card it was opened from, its Back going back to it.
+
 ## 2. The scrolling rule (the owner, 2026-11-10)
 
 1. **The title and ✕ always stay in view.** On the web, owner decision
@@ -364,6 +375,14 @@ off by default (the owner, 2026-11-13).
 The iPhone's and Android's columns are still the tab bar's design; the
 toggle reaches them at the owner's word (web first).
 
+**iPhone (2026-11-13):** the pager's dots and swipe are gone; the two
+pages are kept laid out one over the other (`Search/SheetPager`'s
+`SheetPages`) and turned by one round Liquid Glass map button under the
+3D at the left, riding the sheet's top (`Views/MapButtonsDock`'s
+`MapSideButtons`), its glyph where it goes, the pill's dots row given back
+to the map; TipKit's one popover tip (`FplTip`) points at it after the
+first route. `WingtipUITests/SheetPageToggleTests`.
+
 Tests: [`e2e/sheet-page-toggle.spec.ts`](../../apps/web/e2e/sheet-page-toggle.spec.ts)
 (`@smoke`: Search to FPL and back by the toggle, the size kept, by the
 keyboard too; where it rides and the sheet on the screen's foot; a
@@ -421,6 +440,12 @@ At each airport the chart already shows, from the map's own
 Every app's tests read the shared fixture
 [`apps/web/src/lib/fixtures/airportWeatherMarks.json`](../../apps/web/src/lib/fixtures/airportWeatherMarks.json):
 barb shown or not, red or not, ↓ shown or not.
+
+**iPhone's setting (2026-11-13):** one `Picker(.menu)` of Off, Flight
+Category, With Wind and Station Model in Settings' Map group
+(`Views/AirportWeatherSettings`'s `AirportWeatherRow`), kept under one
+key, a device's old look and switches brought over once
+(`AirportWeather.kept`); the Dot is gone.
 
 ## 6. Altitude in the profile (the owner, 2026-11-10)
 
@@ -508,6 +533,13 @@ stock sheet's offset each frame and faded away when it is expanded
 `androidTest/.../ui/MapButtonsOnSheetTest`; [android.md](android.md)
 §3.1).
 
+On the iPhone the 3D ("3D" flat, "2D" standing, as Maps labels its own)
+and under it the page toggle ride the same top at the left
+(`MapSideButtons`), beside the iPad's sidebar under the map's buttons at
+the top right. With no ground-clearance colours in MapKit's 3D there is no
+key to them. The radio's button (the route's ends row) shows only with
+Comms Assist on (Settings › ATC, off by default).
+
 ## 8. One home per control: You, Settings and the Map card (the owner, 2026-11-13)
 
 The owner's pick of option A of the account canvas
@@ -538,6 +570,18 @@ shaded; 3D is the map's own button) and You on the Map (own ship is
 always the airplane). A new control goes into one of the three, never a
 second home; the web first (`features/pilot`, `features/settings`,
 `features/map-settings`), the phones on the owner's word.
+
+**iPhone (2026-11-13):** You is `Views/YouView` (Pilot Details holds the
+name, the contact, Export, Sign Out and Delete Account; Airplanes holds
+the Checklists; Training the Coach, Practice, Lessons and Instructing; no
+Subscription, nothing being sold), Settings `Views/SettingsView` (Theme
+and Appearance as menus; no Sunlight, which needs a light sensor iOS gives
+no app; Data holds what is kept for the air, Downloads, the ADS-B receiver
+and the checkpoint notes), and the Map card the base charts as their
+pictures and the layers as the stock toggle's button style, with no
+overlay row (Google's tiles are not drawn on the iPhone, and the USGS
+imagery already comes in by itself close in). Show Route As (Route Box or
+Strip) is in the route's ••• menu, the empty route's too.
 
 ## Changing a rule
 
