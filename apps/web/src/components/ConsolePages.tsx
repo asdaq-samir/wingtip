@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
+import { useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { ListRow } from "./GroupedList";
 import { useShown } from "../lib/shown";
@@ -9,9 +9,9 @@ import { CardHeadRow } from "./CardHead";
 import { PAGE_LINK } from "./pageLink";
 import CloseButton from "./CloseButton";
 import { ConsoleLeave } from "./consoleLeave";
+import { Pages } from "./consolePagesContext";
 
 /** The way to open one of a tab's pages, and the page back came from. */
-const Pages = createContext<{ open: (page: string) => void; from: string | null } | null>(null);
 
 /**
  * iOS's navigation inside a console tab, as Settings has it: the tab's
@@ -157,14 +157,6 @@ export function ConsolePages({
       )}
     </div>
   );
-}
-
-/** Opens one of the console's pages from something on its list that is
- *  not a row -- You's Add Your Name, opening Pilot Details -- as a row
- *  does: its close back to the list, not out of the console. */
-export function useOpenPage(): (page: string) => void {
-  const pages = useContext(Pages);
-  return (page) => pages?.open(page);
 }
 
 /** A row that opens one of the tab's pages: its name, what it holds at
