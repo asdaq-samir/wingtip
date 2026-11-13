@@ -48,9 +48,7 @@ apps/web/src/features/plan/components/procedures/FieldStep.tsx 556
 apps/web/src/features/plan/components/procedures/PatternChips.tsx 434
 apps/web/src/features/plan/hooks/useFlightBriefing.ts 570
 apps/web/src/features/plan/hooks/usePlan.ts 589
-apps/web/src/features/plan/hooks/usePlanWorkspace.ts 1192
 apps/web/src/features/plan/hooks/useProceduresRoute.ts 667
-apps/web/src/lib/api/client.ts 1192
 apps/web/src/lib/audioInput.test.ts 632
 apps/web/src/lib/audioInput.ts 592
 apps/web/src/lib/map/gl/glOverlays.ts 465

@@ -12,38 +12,13 @@ import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
  * and its controls once it is whole (RouteEdit), or the box of pills.
  */
 export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; controls: ReactNode }) {
-  const {
-    addAt,
-    addingChange,
-    addingStop,
-    airspaceOf,
-    altitudeAt,
-    course,
-    directParam,
-    directToPoint,
-    fuelStops,
-    hideFuelStop,
-    keepFuelStops,
-    metarColour,
-    openProcedures,
-    planned,
-    routeEdit,
-    routeFolded,
-    routeLine,
-    routeOpen,
-    routePoints,
-    routeProcedures,
-    s,
-    searchNear,
-    selectPlace,
-    setPointAltitude,
-    setRoute,
-    setRouteOpen,
-    typeProcedures,
-    typeStopAt,
-    waypointStops,
-    wholeRoute,
-  } = vm;
+  const { directParam, planned, routeEdit, routePoints, setPointAltitude, setRoute, wholeRoute } = vm.route;
+  const { course, directToPoint, s } = vm.plan;
+  const { selectPlace } = vm.cards;
+  const { openProcedures, routeProcedures, typeProcedures } = vm.picks;
+  const { fuelStops, hideFuelStop, keepFuelStops } = vm.stops;
+  const { addAt, addingChange, addingStop, routeFolded, routeLine, routeOpen, setRouteOpen, typeStopAt, waypointStops } = vm.routeList;
+  const { airspaceOf, altitudeAt, metarColour, searchNear } = vm.brief;
   // A stop asked for from a card (the profile's no-legal-altitude problem,
   // its Add a Stop): asked of the box once the card has gone. Under it the
   // sheet's head is inert (SheetParts, while a card is up), and the box's

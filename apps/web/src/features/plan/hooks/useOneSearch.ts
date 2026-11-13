@@ -80,24 +80,12 @@ const finds = (typed: string, name: string) => name.toLowerCase().includes(typed
  * figures out. Direct To, and a picker (usePickScope), take the next pick.
  */
 export function useOneSearch(vm: PlanWorkspaceModel) {
-  const {
-    query,
-    setQuery,
-    search,
-    pickPlace,
-    routed,
-    pickView,
-    setPanel,
-    picking,
-    setPicking,
-    place,
-    selectPlace,
-    selectFlight,
-    listAway,
-    flyHere,
-    departFrom,
-    changeAircraft,
-  } = vm;
+  const { pickView, setPanel } = vm.view;
+  const { routed, departFrom } = vm.route;
+  const { changeAircraft } = vm.plan;
+  const { place, selectPlace, selectFlight, listAway } = vm.cards;
+  const { flyHere } = vm.map;
+  const { query, setQuery, search, pickPlace, picking, setPicking } = vm.search;
   const typed = query.trim();
   // A search sent (useSearchResults): its list in the sheet while the
   // field is not being typed in, its fields on the map.
@@ -105,7 +93,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   const index = useAirportIndex(true, typed.length > 0);
   const [direct, setDirect] = useState(false);
   // A picker's ask: airports only (the waypoints too for a stop), its pick.
-  const { pick, from: pickFrom } = usePickScope(vm.view); // pickIdent: its airport, picked or typed
+  const { pick, from: pickFrom } = usePickScope(vm.view.view); // pickIdent: its airport, picked or typed
   const [problem, setProblem] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const directTo = useRadioActions((s) => s.directTo);
@@ -253,8 +241,8 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     const near = nearOf(
       text,
       index,
-      vm.nearOrigin ? { label: vm.nearFrom?.label ?? "your position", ...vm.nearOrigin } : null,
-      vm.planned.dep,
+      vm.map.nearOrigin ? { label: vm.cards.nearFrom?.label ?? "your position", ...vm.map.nearOrigin } : null,
+      vm.route.planned.dep,
     );
     if (!near) {
       setProblem('Name a field to search round ("near KMSN"), or turn on your position.');
@@ -317,8 +305,8 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   // departure -- one, a single wide pill, where only one does (Apple's "Directions").
   const quick = (r: AirportSearchRow) =>
     [
-      r.ident !== vm.planned.dest && { label: "Fly Here", run: () => flyTo(r), testId: "search-top-fly-here" },
-      r.ident !== vm.planned.dep && { label: "Depart From", run: () => departFromHit(r), testId: "search-top-depart-from" },
+      r.ident !== vm.route.planned.dest && { label: "Fly Here", run: () => flyTo(r), testId: "search-top-fly-here" },
+      r.ident !== vm.route.planned.dep && { label: "Depart From", run: () => departFromHit(r), testId: "search-top-depart-from" },
     ].filter((a): a is { label: string; run: () => void; testId: string } => !!a);
   const flyAirplane = (hit: AirplaneHit) => {
     if (!hit.fly) return;
@@ -348,7 +336,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
 
   // ⌘K, `/`, the Map menu's row and D ask for the field (lib/oneSearch):
   // focused within the ask, so the keyboard comes up.
-  const input = vm.searchInput;
+  const input = vm.search.searchInput;
   useEffect(
     () =>
       useSearchAsk.subscribe(({ ask }) => {
@@ -383,7 +371,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
       if (sent && text !== sent.query) useSearchResults.getState().clear();
       setQuery(text);
       setProblem(null);
-      if (text && vm.view !== "search") pickView("search");
+      if (text && vm.view.view !== "search") pickView("search");
     },
     pickAirport,
     pickWaypoint,
