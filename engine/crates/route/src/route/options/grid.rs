@@ -157,16 +157,13 @@ impl Grid {
     }
 
     /// The cells within `nm` of a point, measured only in the box that can
-    /// hold them: a cell wider than the great circle needs, no cell more
-    /// than `nm` of latitude away, or `nm` along the parallel nearest the
-    /// pole within it, being nearer (the haversine's cos term at its
-    /// least). A field's weather asked of the whole grid was a long
+    /// hold them: core's box_around a tenth wider and a cell beyond, a box
+    /// that holds the whole circle wherever the grid can be. A field's weather asked of the whole grid was a long
     /// route's second and a half (2026-10-27).
     pub fn near(&self, lat: f64, lon: f64, nm: f64) -> Vec<usize> {
-        let pad_lat = nm / 60.0 + CELL_DEG;
-        let pad_lon = 1.1 * nm / 60.0 / (89.0f64.min(lat.abs() + pad_lat)).to_radians().cos().max(0.05) + CELL_DEG;
-        let (r0, c0) = self.cell((lat - pad_lat, lon - pad_lon));
-        let (r1, c1) = self.cell((lat + pad_lat, lon + pad_lon));
+        let (s, w, n, e) = geo::box_around(lat, lon, 1.1 * nm);
+        let (r0, c0) = self.cell((s - CELL_DEG, w - CELL_DEG));
+        let (r1, c1) = self.cell((n + CELL_DEG, e + CELL_DEG));
         let mut out = Vec::new();
         for r in r0..=r1 {
             for c in c0..=c1 {

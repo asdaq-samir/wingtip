@@ -32,7 +32,7 @@ import sys
 from pathlib import Path
 
 import changed
-from source_literals import ENGINE_UNIT, MERCATOR, MERCATOR_HOMES, UNIT, code_of, rust_code, text
+from source_literals import ENGINE_UNIT, MERCATOR, MERCATOR_HOMES, SEARCH_BOX, SEARCH_BOX_HOMES, UNIT, code_of, rust_code, text
 
 ROOT = Path(__file__).resolve().parents[2]
 BASELINE = ROOT / "scripts/ci/simplicity_baseline.json"
@@ -199,6 +199,17 @@ METRICS = {
         ),
         "the earth's size or Web Mercator's edge written again: take it from lib/map/tileMath.ts, Tiles/TileMath.swift, "
         "tiles/TileGrid.kt, wingtip/geo.py or the engine's core geo (and tags.rs's TERPS_EARTH_FT)",
+    ),
+    # A search box padded by hand in the engine or a Python service, outside
+    # core's geo.rs and wingtip/geo.py (round 5's S1).
+    "search_box_formulas": (
+        lambda: sum(
+            len(SEARCH_BOX.findall(code_of(p)))
+            for top, suffix in (("engine", ".rs"), ("services", ".py"))
+            for p in files(top, suffix)
+            if not p.endswith(SEARCH_BOX_HOMES)
+        ),
+        "a search box padded by hand: take it from the engine's geo::corridor_bbox or box_around, or wingtip.geo's",
     ),
     # The other guards' baselines, their totals (each only shrinks; here
     # for the one trend line).

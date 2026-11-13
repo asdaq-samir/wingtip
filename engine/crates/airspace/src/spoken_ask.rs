@@ -6,7 +6,7 @@
 
 use crate::clearance::Found;
 use crate::json::{self, Value};
-use crate::spoken::{alike, found_json, letters_upper, point, points, words_of, Place, ALIKE};
+use crate::spoken::{alike, by_nearness, found_json, letters_upper, point, points, words_of, Place, ALIKE};
 use wingtip_core::ask::Ask;
 
 /// A SID or STAR found by its name and number: its coded identifier
@@ -67,6 +67,21 @@ pub fn transition(said: &str, transitions: &[String], places: &[Place]) -> Optio
         }
     }
     point(said, &among, None).and_then(|f| f.ident)
+}
+
+/// The route's points, `near` as `[[lat, lon], ...]`; none where it is
+/// not given.
+fn near_in(name: &str, v: &Value) -> Result<Vec<(f64, f64)>, String> {
+    let Some(near) = v.get("near").filter(|n| !matches!(n, Value::Null)) else { return Ok(Vec::new()) };
+    let bad = || format!("{name}: \"near\" is a list of [lat, lon]");
+    near.as_array()
+        .ok_or_else(bad)?
+        .iter()
+        .map(|p| match p.as_array() {
+            Some([lat, lon]) => lat.as_f64().zip(lon.as_f64()).ok_or_else(bad),
+            _ => Err(bad()),
+        })
+        .collect()
 }
 
 fn place_in(name: &str, v: &Value) -> Result<Place, String> {
@@ -137,10 +152,13 @@ fn searched_airport<'a>(words: &[String], searched: &'a [(&str, Place)]) -> Opti
 
 /// `clearance_places`: the clearance's limit (an airport by its name, AIM
 /// 4-4-3 a), each phrase of its route as the places in it, and its SID and
-/// STAR, among the `places` given (the nearest to the route first).
+/// STAR, among the `places` given, put nearest to the route's points
+/// (`near`) first as the offline `hear` puts them (spoken.rs by_nearness):
+/// of two places alike, the one by the route is taken.
 pub fn clearance_places(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
-    let places = ask.list("places")?.iter().map(|p| place_in(name, p)).collect::<Result<Vec<_>, _>>()?;
+    let given = ask.list("places")?.iter().map(|p| place_in(name, p)).collect::<Result<Vec<_>, _>>()?;
+    let places = by_nearness(given, &near_in(name, v)?);
     let searched = match v.get("limit_airports") {
         Some(Value::Object(m)) => m.iter().map(|(run, a)| Ok((run.as_str(), place_in(name, a)?))).collect::<Result<Vec<_>, String>>()?,
         _ => Vec::new(),

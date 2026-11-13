@@ -60,6 +60,16 @@ MERCATOR_HOMES = (
     "engine/crates/core/src/geo.rs",
     "engine/crates/route/src/approach/tags.rs",
 )
+# A search box padded by hand: a pad in miles divided by 60 (or 59.7) to
+# make degrees, or widened by a cosine of latitude, in the engine or a
+# Python service (round 5's S1). core's geo::corridor_bbox and box_around,
+# and wingtip.geo's, are the homes: a degree of latitude taken at its
+# shortest, 59.7 nm, and of longitude at the box's poleward edge.
+SEARCH_BOX = re.compile(
+    r"/\s*\(?\s*(?:60|59\.7)(?:\.0*)?(?![\w.])[^\n]*\bcos\b"
+    r"|\bpad\w*\s*=(?!=)[^\n]*(?:/\s*\(?\s*(?:60|59\.7)(?:\.0*)?(?![\w.])|\bcos\b)"
+)
+SEARCH_BOX_HOMES = ("engine/crates/core/src/geo.rs", "services/planner/wingtip/geo.py")
 PY_NOT_CODE = re.compile(r'#[^\n]*|"""(.|\n)*?"""|\'\'\'(.|\n)*?\'\'\'|"(\\.|[^"\\\n])*"|\'(\\.|[^\'\\\n])*\'')
 
 

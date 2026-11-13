@@ -2097,6 +2097,10 @@ object EngineContract {
     @Serializable
     data class ClearancePlacesInput(
         val places: List<EngineContract.SpokenCandidate>,
+        /**
+         * The route's points, [lat, lon] each: the places are ordered nearest to them first (a flat-earth distance, enough for an order). None given keeps the places' order.
+         */
+        val near: List<List<Double>>? = null,
         val limit: String? = null,
         /**
          * The field the planner's airport search found for each run of the limit's words, by the run in capitals ("DULUTH"): the one for the longest run is the limit where it is said with "airport", or where its name starts with every word said.

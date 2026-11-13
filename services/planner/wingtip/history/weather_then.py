@@ -96,15 +96,12 @@ def stations_near(points: list[tuple[float, float]]) -> list[str]:
     idents = list(known)
     lats = np.array([known[i][0] for i in idents])
     lons = np.array([known[i][1] for i in idents])
-    # A box round the track first, a degree of latitude being 60 nm, so
+    # A box round the track first (geo.corridor_bbox over its corners), so
     # the distances are worked out for the few stations it holds.
-    pad = NEAR_NM / 60.0
     t_lats = np.array([p[0] for p in track])
     t_lons = np.array([p[1] for p in track])
-    pad_lon = pad / max(np.cos(np.radians(np.abs(t_lats).max())), 0.1)
-    inside = (
-        (lats >= t_lats.min() - pad) & (lats <= t_lats.max() + pad) & (lons >= t_lons.min() - pad_lon) & (lons <= t_lons.max() + pad_lon)
-    )
+    s, w, n, e = geo.corridor_bbox((t_lats.min(), t_lons.min()), (t_lats.max(), t_lons.max()), NEAR_NM)
+    inside = (lats >= s) & (lats <= n) & (lons >= w) & (lons <= e)
     near = np.full(len(idents), np.inf)
     for i in np.flatnonzero(inside):
         near[i] = float(np.min(geo.distance_nm(np.full(len(track), lats[i]), np.full(len(track), lons[i]), t_lats, t_lons)))

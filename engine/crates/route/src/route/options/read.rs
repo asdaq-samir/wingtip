@@ -5,6 +5,7 @@ use super::ask::{Advisory, Airspace, Report, Station};
 use super::grid::{Grid, PER_CELL};
 use super::words::g;
 use crate::geo;
+use wingtip_core::grid::STEPS;
 use wingtip_flight::{flight, limits, vfr};
 use wingtip_weather::forecast::field::TAF_VICINITY_NM;
 use wingtip_weather::metar;
@@ -62,13 +63,6 @@ pub const LOWEST_CRUISE_FT: f64 = 2500.0;
 /// is not to be had (AIM 7-1-6) -- and those that mark them marginal.
 pub const GAIRMET_CLOSES: [&str; 2] = ["IFR conditions", "Mountains obscured"];
 pub const GAIRMET_MARKS: [&str; 3] = ["Turbulence", "Icing", "Low-level wind shear"];
-
-/// The eight ways out of a cell: (rows, columns).
-pub const STEPS: [(i64, i64); 8] = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)];
-
-pub fn step_index(dr: i64, dc: i64) -> usize {
-    STEPS.iter().position(|&s| s == (dr, dc)).unwrap_or(0)
-}
 
 /// The highest VFR cruising altitude the airplane reaches either way:
 /// 91.159's odd thousands plus 500 eastbound, even westbound, under its

@@ -55,7 +55,7 @@ apps/web/src/lib/map/gl/glOverlays.ts 465
 apps/web/src/lib/map/gl/glStyle.ts 577
 apps/web/src/lib/preferences.ts 625
 apps/web/src/lib/queryClient.ts 442
-engine/crates/airspace/src/ahead.rs 1035
+engine/crates/airspace/src/ahead.rs 1032
 engine/crates/airspace/src/rules.rs 553
 engine/crates/airspace/src/spoken.rs 551
 engine/crates/airspace/src/view.rs 820
@@ -75,11 +75,11 @@ engine/crates/route/src/approach/lesson.rs 888
 engine/crates/route/src/motion/dry_run.rs 715
 engine/crates/route/src/motion/instruments.rs 522
 engine/crates/route/src/navlog/plans.rs 496
-engine/crates/route/src/route/options.rs 684
+engine/crates/route/src/route/options.rs 683
 engine/crates/route/src/route/options/ask.rs 401
 engine/crates/route/src/route/options/fuel.rs 455
-engine/crates/route/src/route/options/read.rs 417
-engine/crates/route/src/route/options/terrain.rs 424
+engine/crates/route/src/route/options/read.rs 411
+engine/crates/route/src/route/options/terrain.rs 423
 engine/crates/weather/src/forecast/awc.rs 520
 engine/crates/weather/src/forecast/route.rs 422
 engine/crates/weather/src/metar.rs 488
@@ -131,7 +131,7 @@ services/planner/wingtip/pipeline.py 875
 services/planner/wingtip/planning.py 692
 services/planner/wingtip/procedure_paths.py 402
 services/planner/wingtip/procedures.py 867
-services/planner/wingtip/publications.py 562
+services/planner/wingtip/publications.py 557
 services/planner/wingtip/traffic/flights.py 444
 services/planner/wingtip/weather.py 516
 services/weather/app/gfs.py 402

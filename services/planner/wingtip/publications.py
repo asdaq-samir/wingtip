@@ -31,6 +31,7 @@ from pathlib import Path
 import numpy as np
 import pypdfium2
 import requests
+import wingtip_native
 from PIL import Image
 from scipy import ndimage
 
@@ -410,32 +411,26 @@ _DMS = re.compile(r"(\d{1,3})\s*°?\s*(\d{1,2}(?:\.\d+)?)\s*['’]\s*([NSEW])")
 def _graticule(page) -> tuple | None:
     """Where latitude and longitude fall on a north-up diagram's page, from
     its own labels: (y = a * lat + b, x = c * lon + d) in the page's points
-    from its top left, as least squares over two labels of each at the
-    least. None where the diagram has too few, or is turned on its page
-    (its scale north-south and east-west then disagree): KCRQ's and
+    from its top left. The labels are found and placed here, from the
+    page's text; the fit and its checks are the engine's
+    diagram_graticule. None where the diagram has too few, or is turned on
+    its page (its scales then disagree, or north is not up): KCRQ's and
     KORD's have none."""
     textpage = page.get_textpage()
     text = textpage.get_text_bounded()
     height = page.get_height()
-    lats, lons = [], []
+    labels = []
     for match in _DMS.finditer(text):
         boxes = [textpage.get_charbox(i) for i in range(match.start(), match.end())]
         x = (min(b[0] for b in boxes) + max(b[2] for b in boxes)) / 2
         y = height - (min(b[1] for b in boxes) + max(b[3] for b in boxes)) / 2
-        degrees = int(match.group(1)) + float(match.group(2)) / 60
-        if match.group(3) in "SW":
-            degrees = -degrees
-        (lats if match.group(3) in "NS" else lons).append((degrees, x, y))
-    if len({d for d, _, _ in lats}) < 2 or len({d for d, _, _ in lons}) < 2:
+        labels.append({"text": match.group(0), "x": x, "y": y})
+    grid = json.loads(wingtip_native.call("diagram_graticule", json.dumps({"labels": labels})))
+    # The crop places the runways on a north-up page only, latitude down
+    # the page and longitude across it.
+    if grid is None or grid["lat_on_x"] or grid["north_deg"] != 0:
         return None
-    a, b = np.polyfit([d for d, _, _ in lats], [y for _, _, y in lats], 1)
-    c, d = np.polyfit([d for d, _, _ in lons], [x for _, x, _ in lons], 1)
-    # North up: y falls as latitude rises, x grows as longitude does, and a
-    # degree of latitude is a degree of longitude over its cosine.
-    mid = np.mean([deg for deg, _, _ in lats])
-    if a >= 0 or c <= 0 or not 0.85 < (c / np.cos(np.radians(mid))) / -a < 1.15:
-        return None
-    return a, b, c, d
+    return grid["a"], grid["b"], grid["c"], grid["d"]
 
 
 def _thick_strokes(image) -> tuple | None:
