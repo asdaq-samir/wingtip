@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FloatingCard } from "../FloatingCard";
 import { dropCard, floatLayer, ridingOver, setCard, topCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
 import { answerClose } from "./cardClose";
+import { useFloatBox } from "./floatRoom";
 
 /**
  * The cards that float over the map and its sheet (the owner, 2026-11-13:
@@ -36,8 +37,18 @@ export function FloatingCards() {
 
 function Floating({ entry, top, layer, covered }: { entry: CardEntry; top: boolean; layer: number; covered: boolean }) {
   const { id, frame, state } = entry;
-  const slot = useCallback((node: HTMLElement | null) => setCard(id, { slot: node }), [id]);
+  // The popup too, its box told for the map to keep what the card is about
+  // out from under it (floatRoom, map/cardRoom).
+  const [popup, setPopup] = useState<HTMLElement | null>(null);
+  const slot = useCallback(
+    (node: HTMLElement | null) => {
+      setCard(id, { slot: node });
+      setPopup(node?.parentElement ?? null);
+    },
+    [id],
+  );
   const open = state === "open";
+  useFloatBox(id, popup, open && !covered);
   // Its caller gone before its dialog ever opened: nothing to close, so
   // nothing tells it closed (onOpenChangeComplete); taken away here.
   const opened = useRef(false);
