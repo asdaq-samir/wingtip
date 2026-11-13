@@ -4,6 +4,7 @@
 # Captured by driving each route's sample path (every {var} as X) through the old controller against a
 # fake upstream, and through the old SecurityConfig signed out, signed in as a pilot, and without a CSRF token.
 # UpstreamRoutesTest and UpstreamSecurityRulesTest hold what the OpenAPI documents produce to it.
+# The rows whose upstream is the assistant were taken out with it on 2026-11-12 (docs/decisions/0041).
 # method	pattern	upstream	access	paid	bodyLimit	csrf	pilot	range	passedHeaders	headAccess
 GET	/api/chart	planner	public	-	-	-	false	false	Cache-Control	signed-in
 GET	/api/course	planner	public	-	-	-	false	false	-	signed-in

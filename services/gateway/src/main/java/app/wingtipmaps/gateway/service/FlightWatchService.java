@@ -1,7 +1,5 @@
 package app.wingtipmaps.gateway.service;
 
-import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
-import app.wingtipmaps.gateway.assistant.model.AssistantSentence;
 import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.FlightWatch;
@@ -12,6 +10,7 @@ import app.wingtipmaps.gateway.dto.FlightWatchDto;
 import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.FlightWatchRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
+import app.wingtipmaps.gateway.service.ChangeLines.Changes;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -34,7 +33,7 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * The flight watch: a pilot watches a saved flight, and up to its
  * departure this app re-briefs it on a schedule, asks the planner what
- * changed in words, keeps the latest changes for the app to show
+ * changed ({@link ChangeLines}), keeps the latest changes for the app to show
  * ({@link FlightWatchDto}) and emails the pilot when something did.
  *
  * <p>Nothing aviation is read or worked out here. The briefing is the
@@ -43,11 +42,6 @@ import tools.jackson.databind.json.JsonMapper;
  * email as it was given. A pilot's watch is theirs alone, scoped the
  * way {@link FlightService} scopes their flights.
  *
- * <p>Claude puts the changes in words only where app.claude-features
- * gives this pilot the Claude features; off, the default since the
- * owner's decision of 2026-11-10 (docs/decisions/0035), the planner's own
- * line for each change is the sentence ({@link ChangeLines}), and no
- * request reaches Anthropic.
  */
 @Service
 public class FlightWatchService {
@@ -62,16 +56,15 @@ public class FlightWatchService {
 
     static final Duration BEFORE_DEPARTURE = Duration.ofHours(36);
     /** No two checks of one watch closer than this, however the schedule
-     *  fires: a briefing is weather fetched along the route, and the words
-     *  a Claude call this app pays for. */
+     *  fires: a briefing is weather fetched along the route. */
     static final Duration AGAIN_AFTER = Duration.ofMinutes(20);
     /** Watches a run checks at most, nearest departure first: each is two
      *  planner calls of tens of seconds, and the next run is half an hour
      *  after this one ends. */
     static final int MOST_A_RUN = 50;
     /** The most of one run's watches a single pilot's may take, so one
-     *  pilot watching fifty flights cannot spend the whole run (each is a
-     *  billed Claude call) and delay everyone else's. */
+     *  pilot watching fifty flights cannot spend the whole run and delay
+     *  everyone else's. */
     static final int MOST_A_PILOT_A_RUN = 5;
 
     private final FlightWatchRepository watches;
@@ -79,7 +72,6 @@ public class FlightWatchService {
     private final PilotRepository pilots;
     private final PlannerClient planner;
     private final ChangeLines lines;
-    private final SubscriptionService.ClaudeFeatures claude;
     private final Mailer mail;
     /** Where the email's link into the app points (the magic link's and
      *  the instructor emails' app.public-base-url); blank where this
@@ -98,7 +90,7 @@ public class FlightWatchService {
             AppProperties app,
             Mailer mail,
             JsonMapper json) {
-        this(watches, flights, pilots, planner, lines, app.claudeFeatures(), mail, app.publicBaseUrl(), json);
+        this(watches, flights, pilots, planner, lines, mail, app.publicBaseUrl(), json);
     }
 
     public FlightWatchService(
@@ -107,7 +99,6 @@ public class FlightWatchService {
             PilotRepository pilots,
             PlannerClient planner,
             ChangeLines lines,
-            SubscriptionService.ClaudeFeatures claude,
             Mailer mail,
             String publicBaseUrl,
             JsonMapper json) {
@@ -116,7 +107,6 @@ public class FlightWatchService {
         this.pilots = pilots;
         this.planner = planner;
         this.lines = lines;
-        this.claude = claude;
         this.mail = mail;
         this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
         this.json = json;
@@ -223,22 +213,13 @@ public class FlightWatchService {
             return false;
         }
         String briefing = briefingOf(flight, watch.getDepartAt());
-        Changes read = claudeWrites(watch) ? planner::changes : lines::changes;
-        AssistantChangesWords answer = read.changes(
+        Changes answer = lines.changes(
                 flight.getDepartureIdent(),
                 flight.getDestinationIdent(),
                 flight.getStops(),
                 watch.getBriefingJson(),
                 briefing);
-        if (answer.getUnavailable() != null) {
-            // The words could not be written, so what changed is not known
-            // yet: the baseline stays, and the next check diffs the same
-            // one again rather than losing the change.
-            log.warn("Flight {}'s changes could not be put in words: {}", watch.getFlightId(), answer.getUnavailable());
-            watches.save(watch.checked(now));
-            return false;
-        }
-        if (!Boolean.TRUE.equals(answer.getChanged())) {
+        if (!answer.changed()) {
             watches.save(watch.checked(now));
             return false;
         }
@@ -250,25 +231,6 @@ public class FlightWatchService {
         return true;
     }
 
-    /** Whether Claude writes this watch's changes: everyone's, or a
-     *  developer's where the developers have it; never while off. */
-    private boolean claudeWrites(FlightWatch watch) {
-        return switch (claude) {
-            case EVERYONE -> true;
-            case DEVELOPERS ->
-                pilots.findById(watch.getPilotId())
-                        .map(p -> p.getRole().isDeveloper())
-                        .orElse(false);
-            case OFF -> false;
-        };
-    }
-
-    /** Either way of reading what changed: Claude's words, or the planner's lines. */
-    @FunctionalInterface
-    private interface Changes {
-        AssistantChangesWords changes(String dep, String dest, List<String> stops, String then, String now);
-    }
-
     private String briefingOf(Flight flight, Instant departAt) {
         return planner.briefing(
                 flight.getDepartureIdent(),
@@ -278,7 +240,7 @@ public class FlightWatchService {
                 flight.getTotalEteMin());
     }
 
-    private void send(Pilot pilot, Flight flight, AssistantChangesWords answer) {
+    private void send(Pilot pilot, Flight flight, Changes answer) {
         try {
             mail.send(message(pilot, flight, answer, publicBaseUrl));
         } catch (RuntimeException failed) {
@@ -293,15 +255,15 @@ public class FlightWatchService {
     /** The email: what changed, a sentence a line, and where to read the
      *  briefing. The link opens the flight's route on the planner, as the
      *  app's own flight links do (web lib/flightLink). */
-    static SimpleMailMessage message(Pilot pilot, Flight flight, AssistantChangesWords answer, String publicBaseUrl) {
+    static SimpleMailMessage message(Pilot pilot, Flight flight, Changes answer, String publicBaseUrl) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(pilot.getEmail());
         message.setSubject(
                 "Your flight " + flight.getDepartureIdent() + " to " + flight.getDestinationIdent() + ": what changed");
         StringBuilder body = new StringBuilder();
-        for (AssistantSentence sentence :
-                answer.getSentences() == null ? List.<AssistantSentence>of() : answer.getSentences()) {
-            body.append(sentence.getText()).append('\n');
+        for (BriefingChangeDto sentence :
+                answer.sentences() == null ? List.<BriefingChangeDto>of() : answer.sentences()) {
+            body.append(sentence.text()).append('\n');
         }
         body.append("\nOpen the app to see the briefing.");
         if (!publicBaseUrl.isBlank()) {
@@ -327,18 +289,14 @@ public class FlightWatchService {
         // This app's own answer to the browser and the phones, copied out
         // of the planner's: its shape is this app's API, which outlives
         // a change to the planner's.
-        AssistantChangesWords changes = read(watch);
-        List<BriefingChangeDto> sentences = changes == null || changes.getSentences() == null
+        Changes changes = read(watch);
+        List<BriefingChangeDto> sentences = changes == null || changes.sentences() == null
                 ? List.of()
-                : changes.getSentences().stream()
-                        .map(c -> new BriefingChangeDto(
-                                c.getText(), c.getSources() == null ? List.<String>of() : c.getSources()))
+                : changes.sentences().stream()
+                        .map(c ->
+                                new BriefingChangeDto(c.text(), c.sources() == null ? List.<String>of() : c.sources()))
                         .toList();
-        List<BriefingSourceDto> sources = changes == null || changes.getSources() == null
-                ? List.of()
-                : changes.getSources().stream()
-                        .map(s -> new BriefingSourceDto(s.getId(), s.getLabel(), s.getText()))
-                        .toList();
+        List<BriefingSourceDto> sources = changes == null || changes.sources() == null ? List.of() : changes.sources();
         return new FlightWatchDto(
                 watch.getFlightId(),
                 watch.getDepartAt(),
@@ -348,7 +306,7 @@ public class FlightWatchService {
                 sources);
     }
 
-    private String write(AssistantChangesWords answer) {
+    private String write(Changes answer) {
         try {
             return json.writeValueAsString(answer);
         } catch (JacksonException e) {
@@ -356,14 +314,14 @@ public class FlightWatchService {
         }
     }
 
-    private AssistantChangesWords read(FlightWatch watch) {
+    private Changes read(FlightWatch watch) {
         if (watch.getChangesJson() == null) {
             return null;
         }
         try {
-            // Kept as the planner wrote it, so read as the planner's: the
-            // rows written before these were generated have the same fields.
-            return json.readValue(watch.getChangesJson(), AssistantChangesWords.class);
+            // Kept as ChangeLines wrote it; a row kept before Claude was
+            // taken out has the same fields and two more, read past.
+            return json.readValue(watch.getChangesJson(), Changes.class);
         } catch (JacksonException e) {
             throw new IllegalStateException("Flight " + watch.getFlightId() + "'s kept changes are not JSON", e);
         }

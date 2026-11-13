@@ -30,9 +30,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * SecurityConfig's rules for the planner's and the assistant's routes,
- * now built from their OpenAPI documents, refuse and admit every route the
- * old hand-written matchers did: driven route by route, signed out, signed
+ * SecurityConfig's rules for the planner's routes, now built from its
+ * OpenAPI document, refuse and admit every route the old hand-written
+ * matchers sent to it: driven route by route, signed out, signed
  * in as a plain pilot and without a CSRF token, as the old rules were when
  * planner-routes-before.tsv was recorded (RoutesBefore).
  */
@@ -50,14 +50,13 @@ class UpstreamSecurityRulesTest {
     static final Set<String> HEAD_NOW_THE_DEVELOPERS =
             Set.of("/api/detect/stream", "/api/classify", "/api/model-comparison");
 
-    /** The old routes wider than any upstream answered (UpstreamRoutesTest's
-     *  NARROWED), probed at an address the upstream does answer: the rest
-     *  of what they matched is no route now, and needs a session as any
-     *  unknown address does. */
+    /** The old routes wider than the planner answered (UpstreamRoutesTest's
+     *  NARROWED), probed at an address it does answer: the rest of what
+     *  they matched is no route now, and needs a session as any unknown
+     *  address does. */
     static final Map<String, String> ANSWERED = Map.of(
             "/api/overlay-tiles/{file}", "/api/overlay-tiles/X.pmtiles",
-            "/api/cycle-pack/{cycle}/{file}", "/api/cycle-pack/X/X.pack",
-            "/api/words/{kind}", "/api/words/weather");
+            "/api/cycle-pack/{cycle}/{file}", "/api/cycle-pack/X/X.pack");
 
     @Autowired
     private MockMvc mockMvc;
@@ -93,6 +92,9 @@ class UpstreamSecurityRulesTest {
         given(pilotService.current(any())).willReturn(Optional.of(pilot));
         List<String> differences = new ArrayList<>();
         for (RoutesBefore route : RoutesBefore.all()) {
+            if (route.takenOut()) {
+                continue;
+            }
             String path = "/api/planner"
                     + ANSWERED.getOrDefault(route.pattern(), route.sample()).substring("/api".length());
             String name = route.method() + " " + route.pattern();

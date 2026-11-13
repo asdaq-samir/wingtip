@@ -2,7 +2,6 @@ package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.security.SignInOptions;
-import app.wingtipmaps.gateway.service.SubscriptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,34 +50,22 @@ public class SignInCapabilitiesController {
                     description = "Whether this deployment sells the subscription; where not, the page says "
                             + "nothing of one.",
                     example = "false")
-            boolean subscriptions,
-
-            @Schema(
-                    description = "Who has the features Claude writes (the assistant, the written briefing, "
-                            + "the readings in words, checkpoint descriptions, the mock oral, a photographed "
-                            + "page read): OFF, the default, for nobody, whatever else is sold or open -- the "
-                            + "apps then use only on-device models and the engine's own words; DEVELOPERS; "
-                            + "or EVERYONE signed in.",
-                    example = "OFF")
-            SubscriptionService.ClaudeFeatures claudeFeatures) {}
+            boolean subscriptions) {}
 
     private final SignInOptions signIn;
     private final boolean sold;
-    private final SubscriptionService.ClaudeFeatures claude;
 
-    /** The two settings read as SubscriptionService reads them, not through
-     *  it: this answers before anyone signs in, from settings alone. */
+    /** Whether the subscription is sold, read as SubscriptionService reads
+     *  it, not through it: this answers before anyone signs in, from
+     *  settings alone. */
     public SignInCapabilitiesController(SignInOptions signIn, AppProperties app) {
-        boolean sold = app.subscription().enabled();
-        SubscriptionService.ClaudeFeatures claude = app.claudeFeatures();
         this.signIn = signIn;
-        this.sold = sold;
-        this.claude = claude;
+        this.sold = app.subscription().enabled();
     }
 
     @Operation(summary = "Whether anyone can sign in here")
     @GetMapping
     public Capabilities capabilities() {
-        return new Capabilities(signIn.access(), signIn.providers(), sold, claude);
+        return new Capabilities(signIn.access(), signIn.providers(), sold);
     }
 }

@@ -56,8 +56,8 @@ class AlertMailTest {
 
     @Test
     void theSubjectCountsWhatBeganAndWhatEnded() {
-        Outages.Change back = new Outages.Change("assistant", false, "answering", T0, T0.plusSeconds(900));
+        Outages.Change back = new Outages.Change("weather service", false, "answering", T0, T0.plusSeconds(900));
         assertThat(AlertMail.subject(List.of(down("planner"), back))).isEqualTo("Wingtip: 1 down, 1 back");
-        assertThat(AlertMail.line(back)).isEqualTo("BACK assistant since 14:03Z 9 Nov (15 min): answering");
+        assertThat(AlertMail.line(back)).isEqualTo("BACK weather service since 14:03Z 9 Nov (15 min): answering");
     }
 }

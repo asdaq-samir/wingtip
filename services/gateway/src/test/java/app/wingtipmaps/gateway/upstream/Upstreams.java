@@ -7,7 +7,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
-/** The planner's and the assistant's clients as UpstreamClients has Boot
+/** The planner's clients as UpstreamClients has Boot
  *  make them, for a test that starts no application: the same HTTP/1.1
  *  JDK client, at a stub's address. */
 public final class Upstreams {
@@ -25,10 +25,7 @@ public final class Upstreams {
                 .createClient(type);
     }
 
-    public static PlannerClient plannerClient(String plannerUrl, String assistantUrl) {
-        return new PlannerClient(
-                client(PlannerApi.class, plannerUrl),
-                client(BriefingApi.class, plannerUrl),
-                client(AssistantApi.class, assistantUrl));
+    public static PlannerClient plannerClient(String plannerUrl) {
+        return new PlannerClient(client(PlannerApi.class, plannerUrl), client(BriefingApi.class, plannerUrl));
     }
 }

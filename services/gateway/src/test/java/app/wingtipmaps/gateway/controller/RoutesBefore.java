@@ -28,6 +28,12 @@ public record RoutesBefore(
         List<String> passedHeaders,
         String headAccess) {
 
+    /** Whether the old list sent it to the assistant service: every one a
+     *  Claude call, taken out with it (docs/decisions/0041), and a 404 now. */
+    public boolean takenOut() {
+        return "assistant".equals(upstream);
+    }
+
     /** The route's sample path: each {variable} as "X". */
     public String sample() {
         return sample(pattern);

@@ -13,7 +13,7 @@ import org.springframework.web.client.RestClientException;
 /**
  * One look at a service: a GET with a short wait, its status and body, or
  * why there was none. Pinned to HTTP/1.1 as the planner's clients are (the
- * planner, the assistant and the weather service are uvicorn and Python's
+ * planner and the weather service are uvicorn and Python's
  * own server), and nothing else rides with it: a RestClient of its own,
  * not Boot's, so no session, no trace and no request id.
  */

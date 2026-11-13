@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import app.wingtipmaps.gateway.service.PilotService;
-import app.wingtipmaps.gateway.service.SubscriptionService;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -55,9 +54,6 @@ class PlannerProxyConditionalTest {
     @MockitoBean
     private PilotService pilotService;
 
-    @MockitoBean
-    private SubscriptionService subscriptions;
-
     /** A planner that answers as /api/tfrs does: a 304 for the list held,
      *  the list with its ETag otherwise. */
     @BeforeAll
@@ -91,9 +87,6 @@ class PlannerProxyConditionalTest {
         registry.add(
                 "app.planner.base-url",
                 () -> "http://127.0.0.1:" + upstream.getAddress().getPort());
-        registry.add(
-                "app.assistant.base-url",
-                () -> "http://127.0.0.1:" + upstream.getAddress().getPort() + "/assistant");
     }
 
     @BeforeEach

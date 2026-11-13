@@ -28,7 +28,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 public class WingtipApplication {
 
     /** How long the JDK's HttpClient keeps an idle connection, in seconds:
-     *  under uvicorn's 5 s keep-alive (the planner, the assistant), so a
+     *  under uvicorn's 5 s keep-alive (the planner, the weather service), so a
      *  connection the planner has closed is never taken from the pool for
      *  the next call. Read once, when the JDK's pool is first made, so set
      *  before anything is. PlannerClient also asks a rule again once. */

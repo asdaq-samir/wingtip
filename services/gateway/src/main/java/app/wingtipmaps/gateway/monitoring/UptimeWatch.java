@@ -3,7 +3,6 @@ package app.wingtipmaps.gateway.monitoring;
 import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.planner.model.PlannerFeedHealth;
 import app.wingtipmaps.gateway.planner.model.PlannerFeedState;
-import app.wingtipmaps.gateway.service.SubscriptionService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -21,8 +20,8 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * The launch's monitor, each minute: whether the planner, the assistant,
- * the weather service and this gateway (its readiness: the app and its
+ * The launch's monitor, each minute: whether the planner, the weather
+ * service and this gateway (its readiness: the app and its
  * database) answer, and whether a live feed has gone stale -- and an
  * alert by mail (AlertMail) when one stays down {@code app.monitoring.down-after}
  * (five minutes), and again when it is back.
@@ -67,8 +66,6 @@ public class UptimeWatch {
                 alerts,
                 json,
                 app.planner().baseUrl(),
-                app.assistant().baseUrl(),
-                app.claudeFeatures(),
                 app.monitoring().weatherUrl(),
                 server.getPort(),
                 app.monitoring().downAfter());
@@ -79,8 +76,6 @@ public class UptimeWatch {
             AlertMail alerts,
             JsonMapper json,
             String plannerBaseUrl,
-            String assistantBaseUrl,
-            SubscriptionService.ClaudeFeatures claude,
             String weatherUrl,
             int port,
             Duration downAfter) {
@@ -90,12 +85,6 @@ public class UptimeWatch {
         this.plannerBaseUrl = trim(plannerBaseUrl);
         this.down = new Outages(downAfter);
         services.put("planner", this.plannerBaseUrl + "/");
-        // The assistant only runs with the Claude features on (off by
-        // default since the owner's decision of 2026-11-10,
-        // docs/decisions/0035): off, it is not started, and not missed.
-        if (claude != SubscriptionService.ClaudeFeatures.OFF) {
-            services.put("assistant", trim(assistantBaseUrl) + "/");
-        }
         if (StringUtils.hasText(weatherUrl)) {
             services.put("weather service", trim(weatherUrl) + "/");
         }

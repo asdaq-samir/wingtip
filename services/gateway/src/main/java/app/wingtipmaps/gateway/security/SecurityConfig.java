@@ -151,16 +151,14 @@ public class SecurityConfig {
                         case OPEN -> (authentication, context) -> new AuthorizationDecision(true);
                         case CLOSED -> (authentication, context) -> new AuthorizationDecision(false);
                     };
-                    // Which of the planner's and the assistant's routes are
-                    // whose, as the two services mark each in its OpenAPI
-                    // document (UpstreamRoutes, x-gateway's access): the
-                    // developer's first, so the stack's status and its
-                    // services are not read by anyone who asks. Picks are
-                    // the model's training labels, so writing one is
-                    // training the next model; the mock oral is a billed
-                    // Claude call, the developer's until a CFI has reviewed
-                    // what it says; the training page's chart reads are
-                    // chart-vision jobs the planner runs and keeps.
+                    // Which of the planner's routes are whose, as it marks
+                    // each in its OpenAPI document (UpstreamRoutes,
+                    // x-gateway's access): the developer's first, so the
+                    // stack's status and its services are not read by
+                    // anyone who asks. Picks are the model's training
+                    // labels, so writing one is training the next model;
+                    // the training page's chart reads are chart-vision
+                    // jobs the planner runs and keeps.
                     UpstreamRoutes upstream = UpstreamRoutes.shipped();
                     auth.requestMatchers(upstream.matcher(UpstreamRoutes.Access.DEVELOPER))
                             .access(developer)
@@ -178,10 +176,8 @@ public class SecurityConfig {
                     // ForeFlight's, for the checkpoints' pack.
                     auth.requestMatchers(HttpMethod.HEAD, "/api/planner/foreflight-pack/**")
                             .permitAll();
-                    // Writing through the planner -- a checkpoint note, the
-                    // Brief's narrative, the assistant, the words (a real
-                    // billed Claude call every time) -- and any address no
-                    // document marks (a 404 from the proxy) need a session
+                    // Writing through the planner -- a checkpoint note, a
+                    // proficiency plan -- and any address no document marks (a 404 from the proxy) need a session
                     // as soon as this deployment offers any way to get one.
                     //
                     // Where nothing does, they are open only when the

@@ -63,7 +63,7 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
         <!-- RestClient and the HTTP interface clients Boot makes of the
-             planner and the assistant (UpstreamClients, application.yml's
+             planner (UpstreamClients, application.yml's
              spring.http.serviceclient). -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -293,29 +293,14 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <!-- The assistant's answers this app reads itself (PlannerClient's
-                 changes in words, for the flight watch), generated at
-                 build time from the assistant service's committed
-                 OpenAPI document rather than written out by hand, so a
-                 field the assistant renames or drops fails this build
-                 instead of reading as null in production. Models only:
-                 the asking is Spring's HTTP interfaces (upstream/), which
-                 Boot makes into clients; the generator's own
-                 spring-http-interface library is still labelled testing.
-                 Only the schemas read
-                 here are generated (modelsToGenerate), prefixed Assistant
-                 so "Source" and "Sentence" do not read as this app's own;
-                 the browser's pass-through proxies read nothing and need
-                 none. The Dockerfile copies the document to the same
-                 place relative to the pom. -->
-            <!-- The planner's and the assistant's committed OpenAPI
-                 documents, into the jar at upstreams/{planner,assistant}/:
-                 the routes the proxy forwards and who may call each are
-                 read from their x-gateway extensions (UpstreamRoutes).
+            <!-- The planner's committed OpenAPI document, into the jar at
+                 upstreams/planner/: the routes the proxy forwards and who
+                 may call each are read from its x-gateway extensions
+                 (UpstreamRoutes).
                  Built in rather than fetched from the planner at start, so
                  the jar's rules are the ones it was tested with and do not
-                 wait on the planner being up. The Dockerfile copies both
-                 beside the pom, as it does the assistant's above. -->
+                 wait on the planner being up. The Dockerfile copies it
+                 beside the pom. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -338,24 +323,6 @@
                             </resources>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>upstream-routes-assistant</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/upstreams/assistant</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.basedir}/../assistant</directory>
-                                    <includes>
-                                        <include>openapi.json</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -363,43 +330,14 @@
                 <artifactId>openapi-generator-maven-plugin</artifactId>
                 <version>7.27.0</version>
                 <executions>
-                    <execution>
-                        <id>assistant-models</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/../assistant/openapi.json</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <modelPackage>app.wingtipmaps.gateway.assistant.model</modelPackage>
-                            <modelNamePrefix>Assistant</modelNamePrefix>
-                            <modelsToGenerate>ChangesWords,Sentence,Source</modelsToGenerate>
-                            <generateApis>false</generateApis>
-                            <generateSupportingFiles>false</generateSupportingFiles>
-                            <generateModelTests>false</generateModelTests>
-                            <generateModelDocumentation>false</generateModelDocumentation>
-                            <!-- FastAPI writes an optional field as anyOf
-                                 [type, null] (OpenAPI 3.1): read as a plain
-                                 nullable field, not a wrapper type. -->
-                            <openapiNormalizer>SIMPLIFY_ONEOF_ANYOF=true</openapiNormalizer>
-                            <configOptions>
-                                <useSpringBoot4>true</useSpringBoot4>
-                                <useJackson3>true</useJackson3>
-                                <useJspecify>true</useJspecify>
-                                <generateJsonIncludeAnnotations>false</generateJsonIncludeAnnotations>
-                                <generateJsonSetterNullsAnnotations>false</generateJsonSetterNullsAnnotations>
-                                <openApiNullable>false</openApiNullable>
-                                <useBeanValidation>false</useBeanValidation>
-                                <documentationProvider>none</documentationProvider>
-                                <annotationLibrary>none</annotationLibrary>
-                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
-                            </configOptions>
-                        </configuration>
-                    </execution>
                     <!-- The planner's asks and answers PlannerClient sends and
-                         reads (the pilot's and the airplane's rules),
-                         generated from the planner's committed document
-                         the same way, prefixed Planner: a field the planner
+                         reads (the pilot's and the airplane's rules, the
+                         flight watch's changes), generated at build time
+                         from the planner's committed document rather than
+                         written out by hand, prefixed Planner so "Source"
+                         does not read as this app's own. Models only: the
+                         asking is Spring's HTTP interfaces (upstream/),
+                         which Boot makes into clients: a field the planner
                          renames or drops, or a type it changes, fails this
                          build at the line that uses it. A JSON number stays
                          the generator's BigDecimal: typeMappings number=Double
@@ -444,7 +382,7 @@
                 <configuration>
                     <!-- Generated, and documented by the planner's own
                          document instead. -->
-                    <excludePackageNames>app.wingtipmaps.gateway.assistant.model:app.wingtipmaps.gateway.planner.model</excludePackageNames>
+                    <excludePackageNames>app.wingtipmaps.gateway.planner.model</excludePackageNames>
                     <!-- Still catches malformed {@link}s, bad HTML, and
                          unknown tags; just doesn't demand a comment on
                          every trivial getter/DI constructor, where one

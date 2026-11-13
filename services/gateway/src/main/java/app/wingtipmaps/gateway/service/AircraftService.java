@@ -148,7 +148,7 @@ public class AircraftService {
     }
 
     /** Its handbook figures as its pilot confirmed them, kept as sent (the
-     *  engine checked them, through the assistant); null takes them away. */
+     *  engine checked them); null takes them away. */
     public Optional<Aircraft> keepHandbook(Pilot pilot, Long id, HandbookFigures figures) {
         return get(pilot, id).map(a -> aircraft.save(a.keepHandbook(figures)));
     }

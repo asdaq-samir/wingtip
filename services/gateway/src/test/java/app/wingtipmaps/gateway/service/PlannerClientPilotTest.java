@@ -60,9 +60,8 @@ class PlannerClientPilotTest {
     }
 
     private PlannerClient client() {
-        // The rules are the planner's; the assistant is not asked here.
         return Upstreams.plannerClient(
-                "http://127.0.0.1:" + planner.getAddress().getPort(), "http://127.0.0.1:1");
+                "http://127.0.0.1:" + planner.getAddress().getPort());
     }
 
     private static List<LogbookEntry> logbook() {
