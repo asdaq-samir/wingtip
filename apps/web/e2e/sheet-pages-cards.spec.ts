@@ -62,8 +62,11 @@ test.describe("cards over the pages", () => {
     await page.getByTestId("route-clear").click();
     await expect(page).not.toHaveURL(/[?&]dest=/);
     await expectShown(page, 1);
-    // The menu went with the route; the box's Close is where it was.
-    await expect(page.getByTestId("share-route")).toHaveCount(0);
+    // The route's actions went with it, the menu left with its Show Route
+    // As alone (the owner, 2026-11-13); the box's Close before it.
+    await page.getByTestId("share-route").first().click();
+    await expect(page.getByTestId("route-clear")).toHaveCount(0);
+    await page.keyboard.press("Escape");
     const close = sideDrawer(page).getByTestId("route-close");
     await expect(close).toHaveAccessibleName("Close");
     await close.click();

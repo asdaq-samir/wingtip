@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ChevronsUpDown, Monitor, Moon, MoonStar, Palette, PanelBottom, PanelTop, Sun, SunDim, SunMedium } from "lucide-react";
+import { ChevronsUpDown, Monitor, Moon, Palette, PanelBottom, PanelTop, Sun, SunDim, SunMedium, SunMoon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "cn";
 import PullDown, { type PullDownOption } from "./PullDown";
@@ -26,7 +26,7 @@ import { TEXT } from "../lib/text";
  * layout on the page it changes: how FPL shows its route is its route's
  * ••• menu's Show Route As (ShowRouteAs), at the owner's ask ("I want to
  * move fpl layout to the fpl page"). The same day Appearance took in the
- * map settings' Chart at Night as a fourth pick, Dark + Dimmed.
+ * map settings' Chart at Night as a fourth pick, Dark + Bright.
  */
 export default function QuickControls() {
   const brand = usePreferences((s) => s.brand);
@@ -40,7 +40,7 @@ export default function QuickControls() {
   const setChartNight = usePreferences((s) => s.setChartNight);
   // The Appearance's pick, read from the two settings it sets (no third):
   // the page's theme, and in the dark the chart dimmed or as printed.
-  const picked: Appearance = theme === "light" ? "light" : theme === "dark" ? (chartNight === "dimmed" ? "dark-dimmed" : "dark") : "system";
+  const picked: Appearance = theme === "light" ? "light" : theme === "dark" ? (chartNight === "normal" ? "dark-bright" : "dark") : "system";
   const pickAppearance = (appearance: Appearance) => {
     const [mode, night] = APPEARANCES[appearance];
     setTheme(mode);
@@ -99,21 +99,21 @@ export default function QuickControls() {
         {/* Light or dark, Appearance as iOS names it (Display & Brightness),
           next-themes keeping it and following the phone on System: a
           pilot planning at night wants the page as dim as the panel
-          lights. Dark + Dimmed folds in the map settings' Chart at Night
-          (the owner, 2026-11-13): the chart's tiles dimmed too, for
-          night vision (APPEARANCES). */}
+          lights. Dark dims the chart's tiles too, for night vision; Dark +
+          Bright keeps them as printed, the map settings' Chart at Night
+          folded in (the owner, 2026-11-13; APPEARANCES). */}
         <MenuTile<Appearance>
           label="Appearance"
           value={picked}
           onChange={pickAppearance}
           on={false}
           testId="theme-select"
-          icon={picked === "dark-dimmed" ? <MoonStar /> : picked === "dark" ? <Moon /> : picked === "light" ? <Sun /> : <Monitor />}
+          icon={picked === "dark-bright" ? <SunMoon /> : picked === "dark" ? <Moon /> : picked === "light" ? <Sun /> : <Monitor />}
           options={[
             { value: "system", label: "System", testId: "theme-system" },
             { value: "light", label: "Light", testId: "theme-light" },
             { value: "dark", label: "Dark", testId: "theme-dark" },
-            { value: "dark-dimmed", label: "Dark + Dimmed", testId: "theme-dark-dimmed" },
+            { value: "dark-bright", label: "Dark + Bright", testId: "theme-dark-bright" },
           ]}
         />
       </div>
@@ -121,18 +121,18 @@ export default function QuickControls() {
   );
 }
 
-type Appearance = "system" | "light" | "dark" | "dark-dimmed";
+type Appearance = "system" | "light" | "dark" | "dark-bright";
 
 /** What each Appearance sets: the page's theme (next-themes) and the chart
  *  at night (lib/preferences chartNight, read only while the page is
- *  dark). System and Light leave the chart dimmed for the dark, as the
- *  phone's own dark at night has it by default; Dark is the chart as
- *  printed, Dark + Dimmed its tiles dimmed. */
+ *  dark). Dark dims the chart's tiles with the page, the night's default,
+ *  and System and Light leave them so for the dark; Dark + Bright is the
+ *  chart as printed under the dark page (the owner, 2026-11-13). */
 const APPEARANCES: Record<Appearance, [theme: "system" | "light" | "dark", night: ChartNight]> = {
   system: ["system", "dimmed"],
   light: ["light", "dimmed"],
-  dark: ["dark", "normal"],
-  "dark-dimmed": ["dark", "dimmed"],
+  dark: ["dark", "dimmed"],
+  "dark-bright": ["dark", "normal"],
 };
 
 /** A control's tile: a rounded card, its mark at the left, its name over

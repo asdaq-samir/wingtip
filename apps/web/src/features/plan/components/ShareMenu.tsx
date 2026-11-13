@@ -305,11 +305,16 @@ export default function ShareMenu({
                   <DropdownMenuSeparator />
                 </>
               )}
-              {saving(afterMenu(() => setAskingReview(true)))}
-              <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
-                <FileText />
-                File flight plan
-              </DropdownMenuItem>
+              {/* Before there is a route, only what applies then: the
+                  route's Show Route As (the owner, 2026-11-13), the rest
+                  left out, not greyed. */}
+              {routed && saving(afterMenu(() => setAskingReview(true)))}
+              {routed && (
+                <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
+                  <FileText />
+                  File flight plan
+                </DropdownMenuItem>
+              )}
               {planAgain && (
                 <DropdownMenuItem onClick={planAgain.onPlan} data-testid="plan-again" data-stale={planAgain.stale.length ? "" : undefined}>
                   <RotateCw />
@@ -352,7 +357,8 @@ export default function ShareMenu({
               put them, the Clear still last. */}
           {showRouteAs && (
             <>
-              <DropdownMenuSeparator />
+              {/* A band after the route's actions; none over it alone. */}
+              {routed && <DropdownMenuSeparator />}
               <ShowRouteAs {...showRouteAs} />
             </>
           )}
