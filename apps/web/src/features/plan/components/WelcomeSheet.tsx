@@ -2,10 +2,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { MapIcon, Route, Search } from "lucide-react";
 import { cn } from "cn";
-import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { useAppearancePick, useThemePick } from "../../../components/lookPicks";
+import { AppearanceTile, ThemeTile } from "../../../components/lookPicks";
 import { PhoneSheet, PhoneSheetBody, PhoneSheetContent } from "../../../components/PhoneSheet";
-import PullDown from "../../../components/PullDown";
 import { Button } from "../../../components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../../../components/ui/dialog";
 import { useIsMobile } from "../../../hooks/use-mobile";
@@ -31,8 +29,8 @@ const ROWS = [
  * The first flight's welcome (FirstFlight, useFirstFlight; the owner's
  * option A, 2026-11-13), laid out as an Apple app's own welcome sheet: the
  * app's name large and centred, three rows each a tinted icon, a bold
- * title and a line; the look picked in a small grouped list, Theme and
- * Appearance, each the same menu as Setup's tile (lookPicks), changing the
+ * title and a line; the look picked on Setup's own two tiles, Theme and
+ * Appearance side by side as its Layout has them (lookPicks), changing the
  * sheet and the map behind it as it is picked (the owner, 2026-11-13:
  * "give theme and appearance selection on the welcome screen"); and one
  * way on at its foot, Let's Go Flying (the owner, 2026-11-13: one button,
@@ -190,20 +188,13 @@ function Foot({ onGo }: { onGo: () => void }) {
   );
 }
 
-/** Theme and Appearance, Setup's two picks of the look (lookPicks), as an
- *  iOS settings list's rows: the name, and the one picked at the end as a
- *  pull-down's tinted words, its menu Setup's own. */
+/** Theme and Appearance as Setup's Layout draws them (lookPicks' tiles,
+ *  QuickControls' grid): the same two tiles, side by side. */
 function LookRows() {
-  const theme = useThemePick();
-  const { value, onChange, options } = useAppearancePick();
   return (
-    <ListGroup className="mt-4">
-      <ListRow title="Theme">
-        <PullDown label="Theme" {...theme} align="end" testId="welcome-theme" />
-      </ListRow>
-      <ListRow title="Appearance">
-        <PullDown label="Appearance" value={value} onChange={onChange} options={options} align="end" testId="welcome-appearance" />
-      </ListRow>
-    </ListGroup>
+    <div className="mt-4 grid grid-cols-2 gap-2">
+      <ThemeTile />
+      <AppearanceTile />
+    </div>
   );
 }
