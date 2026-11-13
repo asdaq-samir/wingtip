@@ -36,7 +36,7 @@ struct StripSheetView: View {
     /// The one search, the plan's own (RootView keeps it).
     let search: OneSearchModel
     @State private var path: [StripPage] = []
-    @State private var client = AssistantClient()
+    @State private var client = AskScreenModel()
 
     /// The pages the stack opens over the strip.
     enum StripPage: Hashable {

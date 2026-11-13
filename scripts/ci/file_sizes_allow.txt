@@ -119,8 +119,8 @@ services/planner/tests_wingtip/test_traffic.py 1382
 services/planner/wingtip/airports.py 762
 services/planner/wingtip/airspace.py 611
 services/planner/wingtip/chart_faces.py 937
-services/planner/wingtip/charts.py 2338
-services/planner/wingtip/chartvision.py 1073
+services/planner/wingtip/charts.py 2336
+services/planner/wingtip/chartvision.py 1070
 services/planner/wingtip/cycle_pack.py 906
 services/planner/wingtip/elevation.py 460
 services/planner/wingtip/faa_data.py 820

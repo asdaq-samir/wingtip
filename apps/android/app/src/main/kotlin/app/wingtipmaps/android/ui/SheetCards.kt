@@ -18,7 +18,7 @@ import app.wingtipmaps.android.about.AboutScreen
 import app.wingtipmaps.android.aircraft.YourAirplanesPage
 import app.wingtipmaps.android.airplane.AirplaneCard
 import app.wingtipmaps.android.altitude.ProfileCard
-import app.wingtipmaps.android.api.AssistantClient
+import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.briefing.PassengerScreen
 import app.wingtipmaps.android.checklist.ChecklistKind
 import app.wingtipmaps.android.checklist.ChecklistScreen
@@ -52,7 +52,7 @@ internal fun SheetCard(
     session: Session,
     ownShip: OwnShip,
     ownShipOn: Boolean,
-    assistant: AssistantClient,
+    assistant: AskScreenModel,
     airports: AirportModel,
     search: SearchControl,
     showPlan: () -> Unit,
@@ -69,7 +69,7 @@ private fun Card(
     session: Session,
     ownShip: OwnShip,
     ownShipOn: Boolean,
-    assistant: AssistantClient,
+    assistant: AskScreenModel,
     airports: AirportModel,
     search: SearchControl,
     showPlan: () -> Unit,

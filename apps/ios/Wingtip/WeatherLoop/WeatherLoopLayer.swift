@@ -22,6 +22,8 @@ final class LoopTileOverlay: MKTileOverlay, @unchecked Sendable {
     }
 
     /// Half the earth's circumference in web Mercator metres (EPSG:3857).
+    /// The iPhone's one place for it: MapKit's own metres per map point are
+    /// the ellipsoid's, not the tiles' sphere of 6,378,137 m.
     private static let half = Double.pi * 6_378_137
 
     override func url(forTilePath path: MKTileOverlayPath) -> URL {

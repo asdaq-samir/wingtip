@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Ask: a question about the flight answered on this iPhone
-/// (AssistantClient), in words with the engine's and the planner's own
+/// (AskScreenModel), in words with the engine's and the planner's own
 /// figures and the raw reports it read, each a chip under the answer
 /// that opens the report as sent. The conversation is bubbles, the
 /// assistant's on the left, the pilot's on the right in the tint, and the
@@ -18,7 +18,7 @@ struct AskView: View {
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var client = AssistantClient()
+    @State private var client = AskScreenModel()
     @State private var question = ""
     /// The chip tapped, its raw text pushed in this card.
     @State private var source: AssistantSource?

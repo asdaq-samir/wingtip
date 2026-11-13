@@ -40,7 +40,7 @@ import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.about.PlanningAidNotice
 import app.wingtipmaps.android.ai.rememberAiOffered
 import app.wingtipmaps.android.airplane.AirplaneProfileHost
-import app.wingtipmaps.android.api.AssistantClient
+import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -111,7 +111,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val session: Session = hiltViewModel()
     val airports: AirportModel = hiltViewModel()
     val strip: StripModel = hiltViewModel()
-    val assistant: AssistantClient = hiltViewModel()
+    val assistant: AskScreenModel = hiltViewModel()
     val dryRun: DryRun = hiltViewModel()
     val map: MapViewModel = hiltViewModel()
     val ownShip = rememberOwnShipControl()

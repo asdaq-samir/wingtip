@@ -35,6 +35,7 @@ import numpy as np
 import wingtip_native
 from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import connected_components
+from pyproj import Transformer
 from scipy.spatial import KDTree
 
 from .units import M_PER_NM
@@ -264,6 +265,27 @@ def tile_lat_lon(x, y, zoom: int) -> tuple:
     n = 2**zoom
     lat = np.degrees(np.arctan(np.sinh(np.pi * (1.0 - 2.0 * y / n))))
     return _plain(lat), _plain(x / n * 360.0 - 180.0)
+
+
+# The projection's own metres, from PROJ (always_xy: x east, y north), so
+# the earth's size (the sphere of 6,378,137 m) is written nowhere here.
+_TO_MERCATOR = Transformer.from_crs(4326, 3857, always_xy=True)
+_FROM_MERCATOR = Transformer.from_crs(3857, 4326, always_xy=True)
+
+#: Half the world's width in EPSG:3857 metres: the tile grid's origin.
+WEB_MERCATOR_HALF_WORLD_M = float(_TO_MERCATOR.transform(180.0, 0.0)[0])
+#: The equator's length, m: the whole world's width in EPSG:3857.
+WEB_MERCATOR_CIRCUMFERENCE_M = 2 * WEB_MERCATOR_HALF_WORLD_M
+
+
+def mercator_y_to_lat(y):
+    """The latitude, degrees, at EPSG:3857 metres north `y`; scalar or array."""
+    return _FROM_MERCATOR.transform(np.zeros_like(y), y)[1]
+
+
+def mercator_x_to_lon(x):
+    """The longitude, degrees, at EPSG:3857 metres east `x`; scalar or array."""
+    return _FROM_MERCATOR.transform(x, np.zeros_like(x))[0]
 
 
 # --- Neighbourhood questions, answered with a KD-tree on the unit sphere ---

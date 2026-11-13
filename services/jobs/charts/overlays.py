@@ -99,7 +99,7 @@ DETAIL = 12
 #: within 0.0001 degree, 11 m (wingtip.cycle_pack.PHONE_TOLERANCE_DEG); a
 #: sectional's printed airspace line is itself some 100 m wide at
 #: 1:500,000. services/jobs/charts/tests/test_overlays.py measures it on Chicago's Class B.
-TOLERANCE_M = round((1 + 0.5 * 2**0.5) * 40_075_016.686 / 2**MAX_ZOOM / 2**DETAIL, 1)
+TOLERANCE_M = round((1 + 0.5 * 2**0.5) * geo.WEB_MERCATOR_CIRCUMFERENCE_M / 2**MAX_ZOOM / 2**DETAIL, 1)
 
 #: Each layer's first zoom, by what the feature is. Below it a feature is
 #: left out of the tiles; from it on, it is in every tile it touches, and

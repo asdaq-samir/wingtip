@@ -34,8 +34,8 @@ Functional core, imperative shell, four layers, each with one job
 - **Spring Boot** (`services/gateway`) is who the pilot is and what they
   saved: accounts, sign-in, records, the public API, scheduled mail. It
   holds no aviation logic and asks the planner for a figure (`PlannerClient`).
-  AC 61-65K's endorsement texts (`EndorsementKind`) are still Java (#482).
-  Add no new rule there.
+  AC 61-65K's endorsement texts are the engine's (`endorsement_kinds`); the
+  gateway keeps only the pilot's records of them. Add no new rule there.
 - **Each app is a shell that gets data, keeps state and draws**, and asks
   the engine the rest by name: the web through `callEngine`
   (apps/web/src/lib/engine, the engine built to WebAssembly), the iPhone

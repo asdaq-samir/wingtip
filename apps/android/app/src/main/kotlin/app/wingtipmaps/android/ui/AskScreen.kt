@@ -45,7 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
-import app.wingtipmaps.android.api.AssistantClient
+import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.design.Loading
@@ -62,7 +62,7 @@ val askSuggestions = listOf(
 
 /**
  * Ask: a question about the flight answered on the phone by Gemini Nano
- * (AssistantClient, OnPhoneAsk), in words with the app's own figures and
+ * (AskScreenModel, OnPhoneAsk), in words with the app's own figures and
  * the raw reports it read, each a chip under the answer that opens the report as
  * sent. The twin of the iOS app's AskView: the conversation as bubbles,
  * the assistant's on the left, the pilot's on the right in the tint;
@@ -73,7 +73,7 @@ val askSuggestions = listOf(
  * sparkle button beside the map's buttons.
  */
 @Composable
-fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantClient = hiltViewModel()) {
+fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AskScreenModel = hiltViewModel()) {
     val conversation by client.conversation.collectAsStateWithLifecycle()
     val planState by plan.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
