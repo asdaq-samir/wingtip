@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import { FavoriteStrip, PillSection, PillStrip } from "../../../../components/Favorites";
+import { usePreferences } from "../../../../lib/preferences";
+import AddFavoriteTile from "../../../../components/AddFavoriteTile";
 import TabPage from "../../../../components/TabPage";
 import { AircraftFavoriteStrip } from "../../aircraftTabChunk";
 import FindNearby from "../FindNearby";
@@ -12,7 +14,7 @@ import SheetFooter from "./SheetFooter";
  * The one search with nothing typed (the owner's one-search design,
  * 2026-11-09), the sheet's Search page: Nearest and Find Nearby first (the owner,
  * 2026-11-11: "move nearest and find nearby above favorites"), then
- * Favorites (the airports' and the airplanes') and Recents, each
+ * Favorites (the airports' and the airplanes', one Add at the end) and Recents, each
  * section's title the list in full.
  * The flight and the flights saved and planned last are the FPL page's
  * alone (PlanPage), with "Plan a flight" there: the owner, 2026-11-11,
@@ -28,6 +30,7 @@ export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
   const { nearOrigin } = vm.map;
   const { openNearest, findNearby } = vm.fpl;
   const { home, favorites, addFromPill, askFor, pickPlace, nearStrip } = vm.search;
+  const hasAirplane = usePreferences((s) => !!s.myAircraft || s.favoriteAircraft.length > 0);
   return (
     <TabPage testId="search-home">
       <PillSection title="Nearest" onMore={openNearest} testId="pill-section-nearest">
@@ -46,7 +49,6 @@ export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
             favorites={favorites}
             onOpen={(a) => selectPlace(a.ident)}
             onAddHome={() => addFromPill("home")}
-            onAddFavorite={() => askFor("favorite")}
           />
           <Suspense fallback={null}>
             <AircraftFavoriteStrip
@@ -59,8 +61,28 @@ export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
                 pickView("traffic");
                 addFromPill("airplane");
               }}
+              showAdd={false}
             />
           </Suspense>
+          {/* One Add at the row's end, as Apple Maps' Favorites have: with
+              nothing kept yet Home's and Airplane's own "Add" stand. */}
+          {(home || favorites.length > 0 || hasAirplane) && (
+            <AddFavoriteTile
+              testId="pill-favorite-add"
+              choices={[
+                { value: "airport", label: "Airport", testId: "pill-favorite-add-airport", onPick: () => askFor("favorite") },
+                {
+                  value: "airplane",
+                  label: "Airplane",
+                  testId: "pill-favorite-add-airplane",
+                  onPick: () => {
+                    pickView("traffic");
+                    addFromPill("airplane");
+                  },
+                },
+              ]}
+            />
+          )}
         </PillStrip>
       </PillSection>
       <PillSection title="Recents" onMore={() => openList("recents")} testId="airport-recents">
