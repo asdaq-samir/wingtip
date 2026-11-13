@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { Monitor, Moon, Sun, SunMoon } from "lucide-react";
+import { Monitor, Moon, Palette, Sun, SunMoon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { BRANDS } from "../lib/brand";
 import { usePreferences, type Brand, type ChartNight } from "../lib/preferences";
+import MenuTile from "./MenuTile";
 import type { PullDownOption } from "./PullDown";
 
 /**
@@ -11,7 +12,10 @@ import type { PullDownOption } from "./PullDown";
  * One source for both of their homes, Setup's tiles (QuickControls) and
  * the first flight's welcome (WelcomeSheet, the owner, 2026-11-13: "give
  * theme and appearance selection on the welcome screen"): each a
- * PullDown's value, options and setter.
+ * PullDown's value, options and setter, drawn as Setup's tile (ThemeTile,
+ * AppearanceTile) in both, so they look the same in each (the owner,
+ * 2026-11-13: "Make the appearance and theme the same look as in the
+ * settings").
  */
 interface LookPick<V extends string> {
   value: V;
@@ -20,7 +24,7 @@ interface LookPick<V extends string> {
 }
 
 /** Theme: the look's brand, kept in the preferences. */
-export function useThemePick(): LookPick<Brand> {
+function useThemePick(): LookPick<Brand> {
   const value = usePreferences((s) => s.brand);
   const onChange = usePreferences((s) => s.setBrand);
   return { value, onChange, options: BRANDS.map((b) => ({ value: b.value, label: b.label, testId: `brand-${b.value}` })) };
@@ -49,7 +53,7 @@ const APPEARANCE_OPTIONS: PullDownOption<Appearance>[] = [
 
 /** Appearance, read from the two settings it sets (no third): the page's
  *  theme, and in the dark the chart dimmed or as printed; with its mark. */
-export function useAppearancePick(): LookPick<Appearance> & { icon: ReactNode } {
+function useAppearancePick(): LookPick<Appearance> & { icon: ReactNode } {
   const { theme, setTheme } = useTheme();
   const chartNight = usePreferences((s) => s.chartNight);
   const setChartNight = usePreferences((s) => s.setChartNight);
@@ -61,4 +65,15 @@ export function useAppearancePick(): LookPick<Appearance> & { icon: ReactNode } 
   };
   const icon = value === "dark-bright" ? <SunMoon /> : value === "dark" ? <Moon /> : value === "light" ? <Sun /> : <Monitor />;
   return { value, onChange, options: APPEARANCE_OPTIONS, icon };
+}
+
+/** Theme's tile (MenuTile). */
+export function ThemeTile() {
+  return <MenuTile label="Theme" {...useThemePick()} on={false} testId="brand-select" icon={<Palette />} />;
+}
+
+/** Appearance's tile (MenuTile), its mark the one picked. */
+export function AppearanceTile() {
+  const { icon, ...pick } = useAppearancePick();
+  return <MenuTile label="Appearance" {...pick} on={false} testId="theme-select" icon={icon} />;
 }

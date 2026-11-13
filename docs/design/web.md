@@ -1040,8 +1040,8 @@ The first time the planner opens with no route on a device
 `lib/firstRunTips`), Apple's welcome layout in the app's modal sheet
 (`WelcomeSheet`: the stock Drawer on a phone, the stock Dialog from `md`
 up, solid): "Welcome to Wingtip Maps", three rows (Search, like Maps; FPL,
-like your EFB; FAA charts that move like Maps), Theme and Appearance in a
-small grouped list (Setup's own two menus, `components/lookPicks`, applied
+like your EFB; FAA charts that move like Maps), Theme and Appearance on
+Setup's own two tiles (`components/lookPicks`, `MenuTile`, applied
 as they are picked, the sheet and the map changing behind it; the owner,
 2026-11-13), and at its foot Apple's permission priming (the owner,
 2026-11-13): with the browser's question still to come, Turn On Location

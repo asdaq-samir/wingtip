@@ -59,6 +59,11 @@
       "count": 1
     }
   },
+  "src/components/MenuTile.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "src/components/PictureSlides.tsx": {
     "no-restricted-syntax": {
       "count": 1
@@ -77,11 +82,6 @@
   "src/components/QueryState.tsx": {
     "no-restricted-syntax": {
       "count": 2
-    }
-  },
-  "src/components/QuickControls.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
     }
   },
   "src/components/SignInModal.tsx": {
