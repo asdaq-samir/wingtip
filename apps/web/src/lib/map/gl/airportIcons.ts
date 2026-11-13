@@ -81,8 +81,8 @@ const WEATHER: ExpressionSpecification = [
 /** The airports' symbol from the tiles: its picture by its ink, size, use
  *  and weather (airportMarkId), the weather read from the map's state, so
  *  a new METAR is one state change, not a new expression. The halo with
- *  every one of Settings' Airport Weather (lib/map/marks/airportWeatherPrefs);
- *  Off and the Dot went (the owner, 2026-11-13). */
+ *  every one of Settings' Airport Weather but Off, which sets no colour
+ *  (lib/map/marks/airportWeatherPrefs); the Dot went (the owner, 2026-11-13). */
 export const TILE_AIRPORT_ICON: ExpressionSpecification = [
   "concat",
   "apt|",

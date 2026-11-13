@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { airportWeatherDrawn, migrateAirportWeather } from "./airportWeatherPrefs";
 
 describe("Settings' Airport Weather", () => {
-  it("draws the ring alone, the ring with its wind, or the station model", () => {
+  it("draws nothing, the ring alone, the ring with its wind, or the station model", () => {
+    expect(airportWeatherDrawn("off")).toEqual({ look: "off", stationClose: false, windArrows: false });
     expect(airportWeatherDrawn("category")).toEqual({ look: "halo", stationClose: false, windArrows: false });
     expect(airportWeatherDrawn("wind")).toEqual({ look: "halo", stationClose: true, windArrows: true });
     expect(airportWeatherDrawn("station")).toMatchObject({ look: "station" });
@@ -15,8 +16,9 @@ describe("Settings' Airport Weather", () => {
     expect(migrateAirportWeather({ look: "halo", windArrows: false }, 0)).toEqual({ show: "category" });
     expect(migrateAirportWeather({ look: "station", windArrows: false }, 0)).toEqual({ show: "station" });
     expect(migrateAirportWeather({ look: "dot" }, 0)).toEqual({ show: "category" });
-    expect(migrateAirportWeather({ look: "off" }, 0)).toEqual({ show: "category" });
+    expect(migrateAirportWeather({ look: "off" }, 0)).toEqual({ show: "off" });
     expect(migrateAirportWeather(undefined, 0)).toEqual({ show: "wind" });
+    expect(migrateAirportWeather({ show: "off" }, 1)).toEqual({ show: "off" });
     expect(migrateAirportWeather({ show: "station" }, 1)).toEqual({ show: "station" });
   });
 });

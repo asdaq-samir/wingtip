@@ -138,22 +138,24 @@ export default function AirportWeatherGl({ fields, worse }: { fields: AirportPin
   }, [fields, worse, demonstrated]);
   useGlData(SOURCE, data);
   // Settings' Airport Weather on the layers: which are drawn, and from
-  // which zoom; the amber ↓ always (its switch went, 2026-11-13).
+  // which zoom; the amber ↓ with all but Off (its switch went, 2026-11-13).
+  // Off hides these four layers; the halo is the airports' own (AirportsGl).
   useEffect(() => {
     if (!map.style) return;
     const { look, stationClose, windArrows } = airportWeatherDrawn(show);
+    const off = look === "off";
     const station = look === "station" || stationClose;
     const from = glZoom(look === "station" ? STATION_ALWAYS : STATION_CLOSE);
     const shown = (id: string, on: boolean) => map.getLayer(id) && map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
     for (const id of [BARB.id, LINES.id]) {
-      shown(id, station);
+      shown(id, station && !off);
       if (map.getLayer(id)) map.setLayerZoomRange(id, from, 24);
     }
     // Farther out, the barbs the wind earns; close in the station model's
     // own, every wind.
-    shown(FAR.id, windArrows);
+    shown(FAR.id, windArrows && !off);
     if (map.getLayer(FAR.id)) map.setLayerZoomRange(FAR.id, glZoom(FAR_FROM), station ? from : 24);
-    shown(WORSE.id, true);
+    shown(WORSE.id, !off);
   }, [map, show]);
   // The specs' view of the marks drawn (data-airport-weather, useGlProbe).
   useGlProbe("airport-weather", [BARB.id, LINES.id, FAR.id, WORSE.id], (f) => ({

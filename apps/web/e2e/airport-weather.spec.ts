@@ -3,13 +3,13 @@ import { inSheet, settle } from "./helpers";
 import { openSettingsPage } from "./mapCard";
 
 /**
- * Settings' Airport Weather (the owner, 2026-11-13): one menu of Flight
+ * Settings' Airport Weather (the owner, 2026-11-13): one menu of Off, Flight
  * Category, With Wind and Station Model, With Wind to begin with, where it
  * was a page of four looks and three switches; the getting-worse badge is
  * always drawn. The pick is kept across a reload, as the map's other
  * settings are.
  */
-test("the map's Airport Weather is one menu of three, With Wind to begin with, kept across a reload", async ({ page }) => {
+test("the map's Airport Weather is one menu of four, Off first, With Wind to begin with, kept across a reload", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
   await openSettingsPage(page);
@@ -20,7 +20,7 @@ test("the map's Airport Weather is one menu of three, With Wind to begin with, k
     await expect(page.getByTestId(gone)).toHaveCount(0);
 
   await look.click();
-  for (const id of ["airport-weather-category", "airport-weather-wind", "airport-weather-station"])
+  for (const id of ["airport-weather-off", "airport-weather-category", "airport-weather-wind", "airport-weather-station"])
     await expect(page.getByTestId(id)).toBeVisible();
   await page.getByTestId("airport-weather-station").click();
   await expect(look).toHaveAccessibleName("Airport weather: Station Model");
@@ -34,4 +34,7 @@ test("the map's Airport Weather is one menu of three, With Wind to begin with, k
   await look.click();
   await page.getByTestId("airport-weather-category").click();
   await expect(look).toHaveAccessibleName("Airport weather: Flight Category");
+  await look.click();
+  await page.getByTestId("airport-weather-off").click();
+  await expect(look).toHaveAccessibleName("Airport weather: Off");
 });

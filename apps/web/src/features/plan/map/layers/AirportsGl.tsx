@@ -12,6 +12,7 @@ import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { GL_FONT_BOLD, TAP } from "../../../../lib/map/gl/layers/common";
 import MapMarksList from "./MapMarksList";
 import AirportHover from "./AirportHover";
+import { useAirportWeatherPrefs } from "../../../../lib/map/marks/airportWeatherPrefs";
 import AirportWeatherGl from "./AirportWeatherGl";
 import { CHART } from "../../../../lib/tokens";
 
@@ -164,11 +165,13 @@ function TileAirports(props: Props) {
       for (const a of list ?? []) if (a.flight_category) out.set(a.ident, colourOf(a.flight_category));
     return out;
   }, [alongRoute, inView]);
+  const off = useAirportWeatherPrefs((s) => s.show) === "off";
   const known = useRef(colours);
   useEffect(() => {
     known.current = colours;
-    setAirportWeather(map, colours);
-  }, [map, colours]);
+    // Off: no colour for any field, so each keeps the chart's plain symbol.
+    setAirportWeather(map, off ? new Map() : colours);
+  }, [map, colours, off]);
   const reporting = useMemo(() => [...(alongRoute ?? []), ...(inView ?? [])], [alongRoute, inView]);
   useAirportTaps(props, (f) => {
     const p = f.properties;
