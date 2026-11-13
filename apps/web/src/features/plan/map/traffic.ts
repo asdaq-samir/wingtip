@@ -120,12 +120,13 @@ export function carriedOn(geo: Geo, plane: TrafficAircraft, seconds: number): La
 
 /** How long its trend line is on the screen, points: TREND_S at its
  *  ground speed, at the map's scale there (the Web Mercator world's
- *  width over a 256-point tile at zoom 0 on the equator), at most `max`
- *  (160). */
+ *  width over MapLibre's 512-point world at zoom 0 on the equator: its
+ *  camera's tileSize is 512, the world 512 x 2^zoom points wide, not the
+ *  raster tiles' 256), at most `max` (160). */
 export function trendPx(speedKt: number | null | undefined, lat: number, zoom: number, max = 160): number {
   if (!speedKt) return 0;
   const metres = ((speedKt * TREND_S) / 3600) * M_PER_NM;
-  const metresPerPoint = ((WORLD_WIDTH_M / 256) * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
+  const metresPerPoint = ((WORLD_WIDTH_M / 512) * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
   return Math.min(max, metres / metresPerPoint);
 }
 

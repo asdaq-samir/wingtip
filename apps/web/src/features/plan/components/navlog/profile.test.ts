@@ -24,8 +24,8 @@ describe("the plan from the side", () => {
       { along_nm: 0, plan_ft: 800 },
       { along_nm: 8, plan_ft: 5500 },
       { along_nm: 48, plan_ft: 5500 },
-      // Level 1.7236 nm out, where the 45-degree entry begins (AC 90-66C 11.3).
-      { along_nm: 58.27640478071473, plan_ft: 1500 },
+      // Level 1.7236 nm out, where the 45-degree entry begins (AC 90-66C 11.3), a statute mile 1,609.344 / 1,852 nm.
+      { along_nm: 58.27640462279747, plan_ft: 1500 },
       { along_nm: 60, plan_ft: 500 },
     ]);
     expect(marks.map((m) => m.kind)).toEqual(["TOC", "TOD"]);

@@ -15,7 +15,7 @@ const SOURCES = { [AREAS]: EMPTY, [POINTS]: EMPTY };
 /** Each kind of area in a colour of the chart's own tokens: a SIGMET the
  *  TFR's red, a G-AIRMET the special-use orange, the SPC outlook LIFR's
  *  magenta. */
-const KIND_COLOUR = ["match", ["get", "kind"], "sigmet", CHART.tfr, "gairmet", CHART.specialUse, CATEGORY.LIFR!, CHART.tfr];
+const KIND_COLOUR = ["match", ["get", "kind"], "sigmet", CHART.tfr, "gairmet", CHART.specialUse, "outlook", CATEGORY.LIFR!, CHART.tfr];
 const FILL: FillLayerSpecification = {
   id: "forecast-run-fill",
   type: "fill",

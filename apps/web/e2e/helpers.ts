@@ -61,8 +61,7 @@ export async function showTabs(page: Page) {
 export async function openPanel(page: Page) {
   const panel = sideDrawer(page);
   await panel.waitFor();
-  // Once it has come to rest: on its way down to the pill it is not the
-  // capsule yet, and was taken for one out already.
+  // Once it has come to rest: on its way down to the pill it is not the capsule yet, and was taken for one out already.
   await settled(panel);
   if ((await panel.getAttribute("data-capsule")) === null) return;
   await grabberTo(page, "half");
@@ -197,8 +196,8 @@ export async function openConsole(page: Page) {
   await showTabs(page);
   if (!(await page.getByTestId("account-button").isVisible())) await grabberTo(page, "half");
   await page.getByTestId("account-button").click();
+  await expect(page.getByTestId("console-sheet")).toBeVisible(); // there before it is raised, or the sheet under it went up
   await grabberTo(page, "full");
-  await expect(page.getByTestId("console-sheet")).toBeVisible();
 }
 
 /** Setup's page all the way out, its Controls on top (QuickControls):
@@ -490,6 +489,7 @@ export async function openSection(page: Page, title: string) {
     return;
   }
   await openBrief(page);
+  await panelFull(page); // its page cards are past the half card's foot, as in openTab
   const here = panel.locator(`[role="tabpanel"]:not([inert]) [data-title="${title}"]`).first();
   if (!(await here.isVisible().catch(() => false))) {
     await briefPage(page, "Preflight");

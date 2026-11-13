@@ -84,7 +84,11 @@ export function LoopBar() {
                 step={1}
                 value={[Math.max(0, loop.shown)]}
                 onValueChange={(v) => loop.seek((Array.isArray(v) ? v[0] : v) ?? 0)}
-                disabled={!loop.ready}
+                // Live while the frames' tiles still load: a key or a tap
+                // then moves the frame (and the loop no longer plays by
+                // itself), where a scrubber disabled until they were in
+                // dropped it.
+                disabled={loop.frames.length < 2}
                 // The thumb's 44-point reach round its 16, a pseudo-element's.
                 thumb={{
                   "aria-label": `${name} frame`,

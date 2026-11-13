@@ -59,7 +59,9 @@ test.describe("/app/plan", () => {
     await fromRest(page);
     await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
     await expect(firstRow(page)).toBeVisible();
-    await expect(sideDrawer(page).getByTestId("route-type")).toBeHidden();
+    // The route's field is on FPL's page of the sheet's pager, beside
+    // Search's off the screen's edge: out of sight, not out of the page.
+    await expect(sideDrawer(page).getByTestId("route-type")).not.toBeInViewport();
     await expect(sideDrawer(page).getByTestId("flight-line")).toHaveCount(0);
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);

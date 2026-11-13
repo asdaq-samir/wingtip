@@ -21,10 +21,13 @@ function Sheet() {
   const [host, setHost] = useState<HTMLElement | null>(null);
   return (
     <Drawer.Root open modal={false}>
+      {/* In its Viewport, as the app's sheet is (SheetDrawer): Base UI says so where it is not. */}
       <Drawer.Portal>
-        <Drawer.Popup data-testid="sheet">
-          <div ref={setHost} />
-        </Drawer.Popup>
+        <Drawer.Viewport>
+          <Drawer.Popup data-testid="sheet">
+            <div ref={setHost} />
+          </Drawer.Popup>
+        </Drawer.Viewport>
       </Drawer.Portal>
       <CardStack host={host} onPhone={false} fromBottom ready grabber={() => null} look="" below="" />
     </Drawer.Root>

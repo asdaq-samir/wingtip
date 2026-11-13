@@ -18,7 +18,12 @@ const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
  *  the card moved, so it came only once the card had settled (the owner,
  *  2026-11-11: "The grabber shows up after card settles"). */
 const BOX = "absolute inset-x-0 z-30 mx-auto flex h-6 w-14 transform-gpu print:hidden";
-const edge = (at: "top" | "bottom") => (at === "top" ? "top-0 items-start pt-1" : "bottom-0 items-end pb-1.25");
+const edge = (at: "top" | "bottom") => (at === "top" ? "top-0 items-start" : "bottom-0 items-end");
+/** The bar's inset from the sheet's edge, on whatever holds the bar: the
+ *  button, or each of the split grabber's tabs, so the tab's own box starts
+ *  at the sheet's edge as the button's does (on the Tabs' root it put the
+ *  tabs 4 points in: layout.spec, 2026-11-12). */
+const inset = (at: "top" | "bottom") => (at === "top" ? "pt-1" : "pb-1.25");
 const RING = "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset";
 
 /** The sheet's sizes from the grabber: a tap cycles them, small to big and
@@ -164,7 +169,7 @@ export function SheetGrabber({
         onKeyDown={arrows}
         // Its hit area no more than its box, so what is under it -- the
         // title row's ends, the field all the way up -- is clear of it.
-        className={cn(BOX, edge(at), RING, "justify-center rounded-full", "after:inset-x-0! after:top-0! after:bottom-0!")}
+        className={cn(BOX, edge(at), inset(at), RING, "justify-center rounded-full", "after:inset-x-0! after:top-0! after:bottom-0!")}
       >
         <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" aria-hidden="true" />
       </button>
@@ -229,6 +234,7 @@ export function SheetGrabber({
               className={cn(
                 "group/bar relative flex h-full flex-1 rounded-full",
                 at === "top" ? "items-start" : "items-end",
+                inset(at),
                 RING,
                 // Two 16-point bars four apart: the grabber's 36 in all.
                 i === 0 ? "justify-end pr-0.5" : "justify-start pl-0.5",
