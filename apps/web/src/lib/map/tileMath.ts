@@ -16,6 +16,12 @@
  *  falls, arctan(sinh(π)). */
 const MAX_LATITUDE = 85.0511287798;
 
+/** The equator's length, m: the Web Mercator world's width (EPSG:3857, the
+ *  sphere of 6,378,137 m). The web's one place for the earth's size;
+ *  MapLibre's MercatorCoordinate is not used for it because it takes the
+ *  mean radius (6,371,008.8 m), a tenth of a percent short of the tiles'. */
+export const WORLD_WIDTH_M = 40075016.686;
+
 /** Where a longitude falls across the Web Mercator world, 0 at 180 W to 1
  *  at 180 E. */
 export const mercX = (lon: number) => (lon + 180) / 360;

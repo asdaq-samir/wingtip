@@ -30,7 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.Session
-import app.wingtipmaps.android.api.AssistantClient
+import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.design.Loading
@@ -83,7 +83,7 @@ fun StripLayout(
     cards: @Composable (Modifier) -> Unit,
     raise: Int = 0,
     model: StripModel = hiltViewModel(),
-    assistant: AssistantClient = hiltViewModel(),
+    assistant: AskScreenModel = hiltViewModel(),
     brief: BriefModel = hiltViewModel(),
 ) {
     val state by plan.state.collectAsStateWithLifecycle()

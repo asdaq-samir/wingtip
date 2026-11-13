@@ -39,15 +39,12 @@ from dataclasses import dataclass, field
 import numpy as np
 from PIL import Image
 
-from . import charts
+from . import charts, geo
 from .config import VFR_SECTIONAL_MAX_ZOOM
 from .geo import EARTH_RADIUS_NM, along_track_distance_nm, cross_track_distance_nm, distance_nm, great_circle_points, tile_lat_lon, tile_xy
 
 TILE_PX = 256
 DEFAULT_ZOOM = VFR_SECTIONAL_MAX_ZOOM  # 12; the chart's own maximum
-
-# Earth's circumference at the equator, for the web-mercator scale below.
-EARTH_CIRCUMFERENCE_M = 40_075_016.686
 
 
 @dataclass
@@ -290,7 +287,7 @@ def metres_per_pixel(lat: float, zoom: int = DEFAULT_ZOOM) -> float:
     """Ground resolution at this latitude -- web mercator stretches with
     latitude, so a pixel is not a fixed distance and blob areas would be
     overstated in the north without this."""
-    return EARTH_CIRCUMFERENCE_M * math.cos(math.radians(lat)) / ((2**zoom) * TILE_PX)
+    return geo.WEB_MERCATOR_CIRCUMFERENCE_M * math.cos(math.radians(lat)) / ((2**zoom) * TILE_PX)
 
 
 def corridor_tiles(start: tuple, end: tuple, half_width_nm: float, zoom: int = DEFAULT_ZOOM) -> list:

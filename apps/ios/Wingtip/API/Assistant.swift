@@ -97,7 +97,7 @@ struct AssistantConversation: Equatable, Sendable {
 /// stay on the page.
 @MainActor
 @Observable
-final class AssistantClient {
+final class AskScreenModel {
     private(set) var conversation = AssistantConversation()
     private var running: Task<Void, Never>?
     var router = AskRouter()

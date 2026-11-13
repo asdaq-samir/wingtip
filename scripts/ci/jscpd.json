@@ -33,7 +33,6 @@
     "**/build/**",
     "**/pkg/**",
     "**/lib/engine/contract.ts",
-    "**/planner_client.py",
     "**/planner_models.py",
     "**/.venv/**",
     "**/bin/**",

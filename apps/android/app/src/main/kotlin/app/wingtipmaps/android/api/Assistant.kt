@@ -154,7 +154,7 @@ object Assistant {
  * for AskScreen to draw.
  */
 @HiltViewModel
-class AssistantClient @Inject constructor() : ViewModel() {
+class AskScreenModel @Inject constructor() : ViewModel() {
     private val _conversation = MutableStateFlow(AssistantConversation())
     val conversation: StateFlow<AssistantConversation> = _conversation.asStateFlow()
 

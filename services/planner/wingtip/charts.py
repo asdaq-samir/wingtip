@@ -89,7 +89,7 @@ from .config import (
     VFR_TAC_MIN_ZOOM,
     get_settings,
 )
-from . import apra, chart_faces, outside, tile_archive
+from . import apra, chart_faces, geo, outside, tile_archive
 from .atomic import atomic_path
 from .geo import tile_lat_lon, tile_xy
 
@@ -116,10 +116,8 @@ TILE_PX = 256
 TILE_SCALES = (1, 2)
 
 # Web mercator's half-world extent in metres (EPSG:3857) -- the origin
-# the standard {z}/{x}/{y} tile grid is laid out from -- and the sphere
-# it is defined on.
-_MERCATOR_ORIGIN_M = 20037508.342789244
-_EARTH_RADIUS_M = 6378137.0
+# the standard {z}/{x}/{y} tile grid is laid out from -- is geo's.
+_MERCATOR_ORIGIN_M = geo.WEB_MERCATOR_HALF_WORLD_M
 
 Box = tuple[float, float, float, float]  # (west, south, east, north), degrees
 
@@ -935,8 +933,8 @@ def _warp_smooth(src, bbox_3857: tuple, width: int, height: int, upsample: float
     weight = inside.astype(np.float32)
     if face is not None:
         ys = outer[3] - (np.arange(rows + 2 * m) + 0.5) * cell_y
-        lats = np.degrees(2 * np.arctan(np.exp(ys / _EARTH_RADIUS_M)) - np.pi / 2)
-        lons = (outer[0] + (np.arange(cols + 2 * m) + 0.5) * cell_x) / _MERCATOR_ORIGIN_M * 180.0
+        lats = geo.mercator_y_to_lat(ys)
+        lons = geo.mercator_x_to_lon(outer[0] + (np.arange(cols + 2 * m) + 0.5) * cell_x)
         weight *= _face_mask(face, lats, lons)
     box = (m, m, m + cols, m + rows)
 
@@ -964,14 +962,14 @@ def _tile_lats(y: int, zoom: int, px: int = TILE_PX) -> np.ndarray:
     pixels high."""
     _, ymin, _, ymax = tile_bbox_3857(0, y, zoom)
     ys = ymax - (np.arange(px) + 0.5) / px * (ymax - ymin)
-    return np.degrees(2 * np.arctan(np.exp(ys / _EARTH_RADIUS_M)) - np.pi / 2)
+    return geo.mercator_y_to_lat(ys)
 
 
 def _tile_lons(x: int, zoom: int, px: int = TILE_PX) -> np.ndarray:
     """The longitude at the centre of each pixel column of tile column `x`,
     `px` pixels wide."""
     xmin, _, xmax, _ = tile_bbox_3857(x, 0, zoom)
-    return (xmin + (np.arange(px) + 0.5) / px * (xmax - xmin)) / _MERCATOR_ORIGIN_M * 180.0
+    return geo.mercator_x_to_lon(xmin + (np.arange(px) + 0.5) / px * (xmax - xmin))
 
 
 def _face_mask(face: Box, lats: np.ndarray, lons: np.ndarray) -> np.ndarray:

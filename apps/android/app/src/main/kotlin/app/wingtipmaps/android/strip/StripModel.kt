@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.ai.AiOffered
-import app.wingtipmaps.android.api.AssistantClient
+import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
@@ -40,7 +40,7 @@ import javax.inject.Inject
  * says what it means; this does it, as the web's PlanWorkspace.fieldLine
  * does): a route is planned (Plan), a field's card opened, a place looked
  * up through the planner's search and flown to, a screen opened, and
- * anything else asked of the assistant (AssistantClient, the Ask
+ * anything else asked of the assistant (AskScreenModel, the Ask
  * screen's own). Why a line could not be done is said under the field,
  * in the planner's words or the app's, never in a toast.
  *
@@ -94,7 +94,7 @@ class StripModel @Inject constructor() : ViewModel() {
         plan: Plan,
         pilot: Pilot?,
         fix: OwnShip.Fix?,
-        assistant: AssistantClient,
+        assistant: AskScreenModel,
         context: AssistantContext,
         onOpen: (FieldScreen) -> String?,
     ) {
@@ -125,7 +125,7 @@ class StripModel @Inject constructor() : ViewModel() {
         plan: Plan,
         pilot: Pilot?,
         fix: OwnShip.Fix?,
-        assistant: AssistantClient,
+        assistant: AskScreenModel,
         context: AssistantContext,
         onOpen: (FieldScreen) -> String?,
     ): String? {
@@ -155,7 +155,7 @@ class StripModel @Inject constructor() : ViewModel() {
 
     /** A question put to the assistant as it is (the search's "Ask: …"),
      *  its answer shown as a card over the sheet's content. */
-    fun ask(question: String, assistant: AssistantClient, context: AssistantContext): String? {
+    fun ask(question: String, assistant: AskScreenModel, context: AssistantContext): String? {
         // No model to ask here (AiOffered: no Gemini Nano): the line is said as not found, not sent anywhere.
         if (!AiOffered.known()) return "Nothing found for “$question”."
         assistant.ask(question, context)
