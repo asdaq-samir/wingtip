@@ -101,6 +101,34 @@ test("the Map button's card stays open once tapped, and the button says so", asy
   await expect(button).toHaveAttribute("aria-expanded", "false");
 });
 
+// The owner, 2026-11-13: "put a settings button on the top left side". The
+// Map card's head starts with a gear that opens the app's Settings as a
+// card over it; Settings' ✕ goes back one level, to the Map card.
+test("the Map card's gear opens Settings over it, and Settings' close goes back to the Map card", async ({ page }) => {
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await settled(sideDrawer(page));
+  await openMapSettings(page);
+  const card = page.getByTestId("map-settings");
+  await expect(card).toBeVisible();
+  const gear = card.getByRole("button", { name: "Settings", exact: true });
+  await expect(gear).toBeVisible();
+  // At the head's start, left of the name, as a card's Share is.
+  const name = card.getByRole("heading", { name: "Map", level: 2 });
+  expect((await gear.boundingBox())!.x).toBeLessThan((await name.boundingBox())!.x);
+  await gear.click();
+  const settings = page.getByTestId("console-sheet");
+  await expect(settings).toBeVisible();
+  await expect(settings.getByRole("heading", { name: "Settings", level: 2 })).toBeVisible();
+  await page.getByTestId("console-close").click();
+  await expect(settings).toHaveCount(0);
+  await expect(card).toBeVisible();
+  // A page of the card heads with its name and back alone: no gear there.
+  await card.getByTestId("map-settings-more").click();
+  await expect(card.getByRole("heading", { name: "Map Settings", level: 2 })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Settings", exact: true })).toHaveCount(0);
+});
+
 test("the approaches' pull-down is a card in the sheet, and the list it opens takes its place there", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's card; wider it is a popover");
   await page.route(

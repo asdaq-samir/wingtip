@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { useConsoleOpen } from "../../lib/mapChrome";
-import { wantScreen } from "../../lib/navigation/wanted";
+import { openSettings } from "../../lib/openSettings";
 import { pilotQuery } from "../../lib/queryClient";
 import { AccountFace } from "./AccountFace";
 import { accountButton } from "./accountLook";
@@ -25,10 +24,7 @@ export default function AccountButton({ className }: { className?: string }) {
       aria-label={name ? `Account and settings, ${name}` : "Account and settings"}
       data-testid="account-button"
       data-console-button=""
-      onClick={() => {
-        wantScreen("setup");
-        useConsoleOpen.getState().setOpen(true);
-      }}
+      onClick={openSettings}
       className={cn(accountButton(!!name), className)}
     >
       <AccountFace name={name} />
