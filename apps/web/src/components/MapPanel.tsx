@@ -142,12 +142,16 @@ export default function MapPanel(props: Props) {
   // map, read from the Drawer as its snap point is set: the map eases with
   // the sheet (GlMapShell, in the Drawer's time).
   const { cover, card: coverIsCard } = useSheetCover(sheetNode, front, onPhone, fromBottom);
-  // The pages turned by their toggle (PageToggle), in the workspace and not
-  // flying (a card over it keeps it: a page picked puts the card away with
-  // it, usePanelView). Told to the toggle, drawn with the map's buttons.
-  const pages = props.pages && !flying && layer === "tab" ? props.pages : undefined;
-  const pageAt = pages?.at;
-  const pageGo = pages?.go;
+  // The pages, drawn whenever the workspace has them and is not flying: a
+  // card alone over them (`layer` "card") is drawn from inside one, the
+  // Brief from FPL's (PlanPage), so put away with them it never opened.
+  const pages = props.pages && !flying ? props.pages : undefined;
+  // Turned by their toggle (PageToggle) only with no card over them (a page
+  // picked puts the card away with it, usePanelView). Told to the toggle,
+  // drawn with the map's buttons.
+  const toggled = layer === "tab" ? pages : undefined;
+  const pageAt = toggled?.at;
+  const pageGo = toggled?.go;
   useEffect(() => {
     usePageToggle.setState({ pages: pageGo && pageAt !== undefined ? { at: pageAt, go: pageGo } : null });
   }, [pageAt, pageGo]);
@@ -185,9 +189,7 @@ export default function MapPanel(props: Props) {
   const panelSize = useMemo(() => ({ size, to: ask, card: layer === "card" }), [size, ask, layer]);
   const shared: PartsProps = {
     ...props,
-    // The pages as drawn (none under the console, a card or in flight):
-    // the props' own drew SheetPage's panels with no Tabs round them, and
-    // the console's opening threw Base UI's "TabsRootContext is missing".
+    // The pages as drawn (none in flight).
     pages,
     layer,
     flying,
