@@ -2,6 +2,9 @@ package app.wingtipmaps.android.offline
 
 import android.content.Context
 import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.keptAge
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -92,6 +95,12 @@ class KeptForAir(private val dir: File) {
          *  obstacles under it, a cycle's data, so said with no age. Not one
          *  of the engine's kinds: ready_to_fly does not count it. */
         const val ROUTE_PROFILE = "route_profile"
+
+        /** The engine's kept_age for an answer of `kind` fetched at `fetchedAtMs`:
+         *  its line ("Fetched 42 min ago") and whether it is past the freshness
+         *  ready_to_fly holds that kind to. Null where the engine could not say. */
+        fun age(kind: String, fetchedAtMs: Long, nowMs: Long = AppClock.nowMs()): EngineContract.KeptAgeAnswer? =
+            Engine.keptAge(now = (nowMs / 1000).toDouble(), fetchedAt = (fetchedAtMs / 1000).toDouble(), kind = kind).getOrNull()
 
         /** The key a field's own NOTAMs are kept under, the one the airport
          *  card reads (AirportModel) and Keep for the Air writes. */

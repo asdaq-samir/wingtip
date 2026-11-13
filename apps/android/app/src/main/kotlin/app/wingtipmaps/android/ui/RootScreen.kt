@@ -48,7 +48,7 @@ import app.wingtipmaps.android.dryrun.DryRun
 import app.wingtipmaps.android.emergency.EmergencyHost
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.firstflight.FirstFlightCard
-import app.wingtipmaps.android.flight.InFlight
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.logbook.AutoLogbookHost
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
@@ -122,7 +122,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val resources = LocalResources.current
     val search = rememberSearchControl()
     // Under way: own ship on and at flying speed (the engine's `underway`), told as it changes.
-    val underway by InFlight.shared.underway.collectAsStateWithLifecycle()
+    val underway by hiltViewModel<FlightModel>().underway.collectAsStateWithLifecycle()
     val flying = ownShip.on && underway
     val layout by rememberLayout()
     val stripLayout = layout == LayoutPreference.STRIP

@@ -47,15 +47,9 @@ import app.wingtipmaps.android.dryrun.DryRun
 import app.wingtipmaps.android.dryrun.DryRunBar
 import app.wingtipmaps.android.emergency.EmergencyModel
 import app.wingtipmaps.android.emergency.EmergencyOpen
-import app.wingtipmaps.android.engine.Engine
-import app.wingtipmaps.android.engine.generated.distanceNm
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.GlideRing
-import app.wingtipmaps.android.flight.InFlight
-import app.wingtipmaps.android.flight.OwnTrail
-import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.StartFlightAsk
-import app.wingtipmaps.android.flight.Tracking
-import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.map.AirportWeatherMarks
 import app.wingtipmaps.android.map.AirportWeatherMode
 import app.wingtipmaps.android.map.AirportWeatherStore
@@ -74,7 +68,6 @@ import app.wingtipmaps.android.map.TrafficDrawing
 import app.wingtipmaps.android.map.WeatherAge
 import app.wingtipmaps.android.map.WeatherAgeChip
 import app.wingtipmaps.android.map.WeatherLoopBar
-import app.wingtipmaps.android.notify.LiveFlight
 import app.wingtipmaps.android.plates.rememberPlatesShown
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.receiver.ReceiverChip
@@ -134,12 +127,14 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val stale = remember(heardAt, nowMs, freshMin) { WeatherAge.stale(heardAt, nowMs, freshMin) }
     val weather = remember(categories, airportWeather.mode, stale) { AirportWeatherMarks.pips(categories, airportWeather.mode, stale) }
     val fieldsWx by mapWeather.fields.collectAsStateWithLifecycle()
-    val traffic = remember { Traffic.of(context) }
+    // The flight's one owner (FlightSession), read through the screen's model.
+    val flight: FlightModel = hiltViewModel()
+    val traffic = flight.traffic
     val trafficOn by traffic.on.collectAsStateWithLifecycle()
     val planes by traffic.planes.collectAsStateWithLifecycle()
     val marks by traffic.marks.collectAsStateWithLifecycle()
     val heardAtMs by traffic.heardAtMs.collectAsStateWithLifecycle()
-    val tracked by remember { Tracking.of(context) }.hex.collectAsStateWithLifecycle()
+    val tracked by flight.tracked.collectAsStateWithLifecycle()
     val targets = remember(planes, marks, heardAtMs) {
         val heard = heardAtMs ?: AppClock.nowMs()
         planes.mapIndexed { i, p -> TrafficDrawing.Target(p, marks.getOrNull(i), heard - ((p.seenS ?: 0.0) * 1000).toLong()) }
@@ -163,35 +158,30 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             marksJob = scope.launch { fieldsInView = MapMarks.fieldsInView(context, view) }
         }
         mapWeather.view(view)
-        traffic.mapCentre = (view.south + view.north) / 2 to (view.west + view.east) / 2
-        // The miles to the map's corner, the engine's `distance_nm`; where
-        // it cannot say (Engine.rule has logged why), the last kept.
-        Engine.distanceNm((view.south + view.north) / 2, (view.west + view.east) / 2, view.north, view.east)
-            .onSuccess { traffic.mapRadiusNm = it }
+        flight.mapView(view.south, view.west, view.north, view.east)
     }
 
     val ship = ownShip.ownShip
     val opensAt = remember { ship.lastPosition }
-    val trail = remember { OwnTrail.of(context) }
     // The fix and the instruments read only in ChartMap's lambdas (and
     // InFlightTop), so the pane is not drawn again at every fix.
     val fix = ship.fix.collectAsStateWithLifecycle()
     val approximate by ship.approximate.collectAsStateWithLifecycle()
     val denied by ship.denied.collectAsStateWithLifecycle()
-    val flown by trail.points.collectAsStateWithLifecycle()
+    val flown by flight.trail.collectAsStateWithLifecycle()
     // In the air (#218): each fix asked of the engine once for the
     // instruments, the strip's figures and the glide ring (InFlight), again
     // when the route changes under it; what is ahead said aloud where the
     // pilot asked (SpokenAlerts).
     val ahead by ship.ahead.collectAsStateWithLifecycle()
     val groundFt by ship.groundFt.collectAsStateWithLifecycle()
-    val inFlight = InFlight.shared.state.collectAsStateWithLifecycle()
-    LaunchedEffect(groundFt) { InFlight.shared.terrainFt = groundFt }
+    val inFlight = flight.state.collectAsStateWithLifecycle()
+    LaunchedEffect(groundFt) { flight.ground(groundFt) }
     // The airplane's own glide ratio (the pilot's over its book's), none
     // with no airplane or none given: no other airplane's is taken.
     val airplaneNow = rememberAirplaneNow(plan)
     val glideRatio = airplaneNow.glideRatio
-    LaunchedEffect(glideRatio) { InFlight.shared.glideRatio = glideRatio }
+    LaunchedEffect(glideRatio) { flight.glideRatio(glideRatio) }
     // The airport weather's barbs, arrows and badges (StationLayer): the
     // arrow red only past the picked airplane's demonstrated crosswind, the
     // badge at the plan's fields whose TAF is worse by the time there,
@@ -213,19 +203,16 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // counting down with the phone in a pocket.
     val planNow by rememberUpdatedState(state)
     LaunchedEffect(ship, ownShip.on, state.course, state.legs) {
-        ship.fix.collect { taken ->
-            InFlight.shared.took(if (ownShip.on) taken else null, planNow)
-            LiveFlight.took(context, InFlight.shared.state.value, planNow)
-        }
+        ship.fix.collect { taken -> flight.took(if (ownShip.on) taken else null, planNow) }
     }
-    LaunchedEffect(ahead) { SpokenAlerts.of(context).hear(ahead) }
+    LaunchedEffect(ahead) { flight.hear(ahead) }
     // While the emergency assistant is open, the line from the airplane
     // to the field it picked (the same model EmergencyHost holds).
     val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()
     // The glide ring off unless the pilot keeps it on, on by itself while
     // the emergency assistant is open (GlideRing); asked of the engine only then.
     val ringShown = ownShip.on && GlideRing.shown(ringKept == true, emergencyFrom != null)
-    LaunchedEffect(ringShown) { InFlight.shared.ringShown = ringShown }
+    LaunchedEffect(ringShown) { flight.ringShown(ringShown) }
     val emergency by hiltViewModel<EmergencyModel>().state.collectAsStateWithLifecycle()
     // The dry run's airplane, drawn as own ship while a run is open (DryRun).
     val dryRun by hiltViewModel<DryRun>().state.collectAsStateWithLifecycle()
@@ -302,10 +289,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         if (ownShip.on && !approximate && !denied) {
             // What is ahead and the flight's instruments, at the top left of
             // the buttons where nothing else was (#218).
-            InFlightTop(ahead = ahead, onNearest = onNearest, modifier = Modifier.align(Alignment.TopStart)) { flight ->
-                CopilotBanner(state, flying = flight.underway, fix = flight.fix, ahead = ahead)
+            InFlightTop(ahead = ahead, onNearest = onNearest, modifier = Modifier.align(Alignment.TopStart)) { now ->
+                CopilotBanner(state, flying = now.underway, fix = now.fix, ahead = ahead)
                 // The ATC copilot's card for the newest call to us.
-                AtcCopilotHost(plan, flying = flight.underway, fix = flight.fix)
+                AtcCopilotHost(plan, flying = now.underway, fix = now.fix)
             }
         }
         // At flying speed, the pilot asked before the position is read with

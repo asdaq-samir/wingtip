@@ -13,7 +13,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,10 +22,6 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.generated.AirportServices
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.engine.Engine
-import app.wingtipmaps.android.engine.generated.EngineContract
-import app.wingtipmaps.android.engine.generated.fuelNames
-import app.wingtipmaps.android.engine.generated.gonogoRunwayInUse
 import java.util.Locale
 
 /**
@@ -41,24 +36,7 @@ import java.util.Locale
  * as by the FAA's data, so neither badge sits beside a red Closed (KORD's
  * 04L/22R, "CLSD EXC TAX", 2026-11-11). -1 for none.
  */
-data class RunwayBadges(val longest: Int, val bestWind: Int) {
-    companion object {
-        fun of(place: AirportPlace, marks: NotamMarks): RunwayBadges {
-            val closed = place.runways.mapIndexed { i, r -> r.closed || marks.runway[i]?.unusable == true }
-            val open = place.runways.indices.filter { !closed[it] && place.runways[it].lengthFt != null }
-            val longest = if (open.size > 1) open.maxBy { place.runways[it].lengthFt ?: 0 } else -1
-            val asked = place.runways.mapIndexed { i, r ->
-                EngineContract.Runway(
-                    closed = closed[i], surface = r.surface, lengthFt = r.lengthFt?.toDouble(),
-                    runwayEnds = r.runwayEnds?.map { EngineContract.RunwayRunwayEndsItem(it.ident, it.headingTrueDeg) },
-                    wind = r.wind?.let { EngineContract.GonogoRunwayWind(it.end, it.headwindKt, it.crosswindKt, it.gustCrosswindKt, it.inUse) },
-                )
-            }
-            val inUse = if (asked.isEmpty()) null else Engine.gonogoRunwayInUse(asked).getOrNull()
-            return RunwayBadges(longest, inUse?.takeIf { it.byWind }?.runway ?: -1)
-        }
-    }
-}
+data class RunwayBadges(val longest: Int, val bestWind: Int)
 
 /**
  * The Runways tab's rows: each runway, "Runway 18/36" with its Best Wind,
@@ -138,12 +116,11 @@ fun LazyListScope.lightRows(place: AirportPlace, marks: NotamMarks, onNotam: (No
  * their own; and as written, folded (the owner, 2026-11-11: "fuel remarks
  * and as written can be separate from fuel").
  */
-fun LazyListScope.fuelRows(services: AirportServices?, mark: NotamMark?, onNotam: (NotamMark) -> Unit, pad: Modifier) {
+fun LazyListScope.fuelRows(services: AirportServices?, names: String?, mark: NotamMark?, onNotam: (NotamMark) -> Unit, pad: Modifier) {
     if (services == null) return
     item(key = "fuel") {
         val types = services.fuelTypes.orEmpty()
         val none = stringResource(R.string.fuel_none_listed)
-        val names = remember(types) { if (types.isEmpty()) null else Engine.fuelNames(types).getOrNull() }
         PlaceRow(
             headline = { Titled(stringResource(R.string.fuel)) { mark?.let { NotamBadge(it) } } },
             trailing = { Text(names ?: types.joinToString(", ").ifEmpty { none }, fontWeight = FontWeight.SemiBold) },
