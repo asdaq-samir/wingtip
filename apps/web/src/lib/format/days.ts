@@ -1,18 +1,31 @@
 /**
  * The calendar days the app writes, "Mon 5 Jan, 14:30", "5 Jan 2026",
- * "1/5": by hand from the date's own fields, as time.ts writes the clock
- * and for its reasons (an Intl formatter is slow to make on a phone).
- * They were date-fns's `format`, 19.5 KB of the first load for a handful
- * of patterns (the speed audit, 2026-11-10). English, as every other word
- * the app writes is, in this device's time zone.
+ * "1/5". They were date-fns's `format`, 19.5 KB of the first load for a
+ * handful of patterns (the speed audit, 2026-11-10). English, as every
+ * other word the app writes is, in this device's time zone.
+ *
+ * The browser's Intl writes those it writes the same: the weekday, "1/5"
+ * and a distance's words. Each formatter is made the first time it is
+ * asked for, never at load (time.ts says what one costs to make on a
+ * phone). The day before the month is written by hand: en-US puts the
+ * month first ("Jan 5") and en-GB writes September "Sept" (CLDR, checked
+ * in Node 24, 2026-11-12), and a U.S. form's "01-05-2026" is no locale's.
  */
 import { clockTime, twoFigures as two } from "./time";
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+/** A value made the first time it is asked for, then kept. */
+function lazy<T>(make: () => T): () => T {
+  let made: T | undefined;
+  return () => (made ??= make());
+}
+
+const weekday = lazy(() => new Intl.DateTimeFormat("en-US", { weekday: "short" }));
+const monthDay = lazy(() => new Intl.DateTimeFormat("en-US", { month: "numeric", day: "numeric" }));
+
 /** The day of the week, short: "Mon". */
-export const weekdayShort = (at: Date) => WEEKDAYS[at.getDay()]!;
+export const weekdayShort = (at: Date) => weekday().format(at);
 
 /** The day and month: "5 Jan". */
 export const dayMonth = (at: Date) => `${at.getDate()} ${MONTHS[at.getMonth()]}`;
@@ -27,7 +40,7 @@ export const dayMonthTime = (at: Date) => `${dayMonth(at)}, ${clockTime(at)}`;
 export const weekdayDayMonthTime = (at: Date) => `${weekdayShort(at)} ${dayMonthTime(at)}`;
 
 /** Month and day as figures, the U.S. way: "1/5". */
-export const monthSlashDay = (at: Date) => `${at.getMonth() + 1}/${at.getDate()}`;
+export const monthSlashDay = (at: Date) => monthDay().format(at);
 
 /** A U.S. form's date: "01-05-2026" (an advisory circular's endorsement). */
 export const usFormDay = (at: Date) => `${two(at.getMonth() + 1)}-${two(at.getDate())}-${at.getFullYear()}`;
@@ -40,7 +53,7 @@ export const usFormDay = (at: Date) => `${two(at.getMonth() + 1)}-${two(at.getDa
  */
 export function strictDistance(a: Date | number, b: Date | number): string {
   const seconds = Math.abs(Number(a) - Number(b)) / 1000;
-  const [count, unit] =
+  const [count, unit]: [number, string] =
     seconds < 60
       ? [seconds, "second"]
       : seconds < 3600
@@ -52,8 +65,18 @@ export function strictDistance(a: Date | number, b: Date | number): string {
             : seconds < 365 * 86_400
               ? [seconds / (30 * 86_400), "month"]
               : [seconds / (365 * 86_400), "year"];
-  const n = Math.round(count);
-  return `${n} ${unit}${n === 1 ? "" : "s"}`;
+  return unitWords(unit).format(Math.round(count));
+}
+
+const unitFormats = new Map<string, Intl.NumberFormat>();
+/** The unit in words, "1 day", "14 days", Intl's plural rather than ours. */
+function unitWords(unit: string): Intl.NumberFormat {
+  let format = unitFormats.get(unit);
+  if (!format) {
+    format = new Intl.NumberFormat("en-US", { style: "unit", unit, unitDisplay: "long" });
+    unitFormats.set(unit, format);
+  }
+  return format;
 }
 
 /** An ISO day or time as a Date: a bare day ("2026-10-13") at this

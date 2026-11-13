@@ -14,7 +14,10 @@ struct TrafficFindView: View {
     @State private var found: TrafficFound?
     @State private var asked = ""
     @State private var failed = false
-    @State private var searching: Task<Void, Never>?
+    /// Moved on by a submit or a pull, so the same text is asked again at
+    /// once; askedTurn is the turn the last search began on.
+    @State private var turn = 0
+    @State private var askedTurn = 0
 
     /// adsb.lol answers one request every few seconds from the planner's
     /// address: a search it could not be asked for yet is asked again,
@@ -114,41 +117,40 @@ struct TrafficFindView: View {
         .textInputAutocapitalization(.characters)
         .autocorrectionDisabled()
         .onSubmit(of: .search) {
-            if let first = listed.first { open(first.hex, plane: first) } else { ask(wanted, now: true) }
+            if let first = listed.first { open(first.hex, plane: first) } else { turn += 1 }
         }
-        .onChange(of: wanted) { _, next in ask(next, now: false) }
+        // SwiftUI's own debounce: the task is cancelled and begun again
+        // each time the text (or the turn) changes, and when the view goes.
+        .task(id: Asking(text: wanted, turn: turn)) { await search(wanted) }
         // Pulled down: the traffic round the airplane asked now, and the
         // search asked again, the airplanes being live.
         .refreshable {
-            ask(wanted, now: true)
+            turn += 1
             await traffic.ask(near: ownShip.fix)
         }
     }
 
-    /// Asked once the typing pauses, half a second: each search is a
-    /// request adsb.lol paces.
-    private func ask(_ text: String, now: Bool) {
-        searching?.cancel()
+    /// Asked once the typing pauses, half a second, or at once on a submit
+    /// or a pull: each search is a request adsb.lol paces.
+    private func search(_ text: String) async {
+        let now = turn != askedTurn
+        askedTurn = turn
         guard text.count >= 3 else { return }
-        searching = Task {
-            if !now { try? await Task.sleep(for: .milliseconds(500)) }
+        do {
+            if !now { try await Task.sleep(for: .milliseconds(500)) }
             for attempt in 0...Self.retries {
+                let answer = try await Planner.findTraffic(text)
                 guard !Task.isCancelled else { return }
-                do {
-                    let answer = try await Planner.findTraffic(text)
-                    guard !Task.isCancelled else { return }
-                    found = answer
-                    asked = text
-                    failed = false
-                    if answer.checked != false { return }
-                } catch {
-                    guard !Task.isCancelled else { return }
-                    asked = text
-                    failed = true
-                    return
-                }
-                if attempt < Self.retries { try? await Task.sleep(for: Self.retryEvery) }
+                found = answer
+                asked = text
+                failed = false
+                if answer.checked != false { return }
+                if attempt < Self.retries { try await Task.sleep(for: Self.retryEvery) }
             }
+        } catch {
+            guard !Task.isCancelled else { return }
+            asked = text
+            failed = true
         }
     }
 
@@ -156,6 +158,12 @@ struct TrafficFindView: View {
         tracking.track(hex, plane: plane)
         nav.open(.traffic(hex.lowercased()))
     }
+}
+
+/// What the find task is keyed on: the text and the turn.
+private struct Asking: Equatable {
+    let text: String
+    let turn: Int
 }
 
 struct KeptRow: View {

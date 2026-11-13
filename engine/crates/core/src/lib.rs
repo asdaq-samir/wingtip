@@ -2,7 +2,6 @@
 //! which every other one may use and which uses none of them: the
 //! geodesy and the general readers, no aviation rule.
 //!
-//! - base64: bytes carried in JSON (RFC 4648), as a receiver's are;
 //! - geo: distances and courses on the WGS-84 ellipsoid, and geo_many:
 //!   the same figures over columns of points at once;
 //! - wmm: magnetic variation from the World Magnetic Model;
@@ -18,7 +17,6 @@
 //! - xml: the small XML reader the weather products share.
 
 pub mod ask;
-pub mod base64;
 pub mod geo;
 pub mod geo_many;
 pub mod grid;
