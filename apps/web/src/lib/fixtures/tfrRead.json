@@ -1,8 +1,8 @@
 {
-  "_note": "TFRs read for a pilot, the engine's tfr_read (engine/crates/weather/src/notam_read/tfr.rs), from what tfr.faa.gov gives of them: the list's kind and title, the XNOTAM's rule, floor and ceiling. KSJT's is FDC 6/2478 as listed on 2026-11-12 (3,500 ft MSL to FL180, 14 CFR 99.7). Distances are core::geo's, on WGS-84: six minutes of latitude at 31.3 N are 5.986 nm, said as 6.0. engine/facade/tests/tfr_read.rs asks the engine each case.",
+  "_note": "TFRs read for a pilot, the engine's tfr_read (engine/crates/weather/src/notam_read/tfr.rs), from what tfr.faa.gov gives of them: the list's kind and title, the XNOTAM's rule, floor and ceiling. KSJT's is FDC 6/2478 as listed on 2026-11-12 (3,500 ft MSL to FL180, 14 CFR 99.7). Distances are core::geo's, on WGS-84: six minutes of latitude at 31.3 N are 5.987 nm, said as 5.9: tfr.rs rounds the distance to the edge down to a tenth, the nearer figure being the safer one to say. engine/facade/tests/tfr_read.rs asks the engine each case.",
   "cases": [
     {
-      "about": "KSJT's security TFR: its kind and rule, its band, east of the field, its title's dates off",
+      "about": "KSJT's security TFR: its kind and rule, its band, south of the field, its title's dates off",
       "input": {
         "kind": "Security",
         "rule": "special security instructions (99.7)",
@@ -18,7 +18,7 @@
       "answer": {
         "heading": "Security TFR",
         "what": "Security TFR, 14 CFR 99.7",
-        "where": "3,500 to 18,000 ft MSL, 6.0 nm south of the field",
+        "where": "3,500 to 18,000 ft MSL, 5.9 nm south of the field",
         "place": "San Angelo, TX"
       }
     },

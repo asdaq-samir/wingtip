@@ -363,7 +363,7 @@ fn the_plan_descends_to_the_pattern_by_its_45_degree_entry_ac_90_66c_11_3() {
         norm(&p["points"]),
         norm(&json!([
             { "along_nm": 0, "plan_ft": 800 }, { "along_nm": 8, "plan_ft": 5500 }, { "along_nm": 48, "plan_ft": 5500 },
-            { "along_nm": 58.27640478071473, "plan_ft": 1500 }, { "along_nm": 60, "plan_ft": 500 },
+            { "along_nm": 58.27640462279747, "plan_ft": 1500 }, { "along_nm": 60, "plan_ft": 500 }, // statute mile 1,609.344 / 1,852 nm
         ]))
     );
     assert_eq!(p["marks"].as_array().unwrap().iter().map(|m| m["kind"].as_str().unwrap()).collect::<Vec<_>>(), ["TOC", "TOD"]);
