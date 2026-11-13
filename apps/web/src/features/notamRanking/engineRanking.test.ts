@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { engineRanking, type EngineRanked } from "./engineRanking";
 
-describe("the engine's NOTAM ranking, with Claude off", () => {
-  it("keeps the engine's order and top ones, each line its reasons, none worded", () => {
+describe("the engine's NOTAM ranking", () => {
+  it("keeps the engine's order and top ones, each line its reasons", () => {
     const found = {
       top: 1,
       coverage_since: "2026-11-01",
@@ -21,11 +21,10 @@ describe("the engine's NOTAM ranking, with Claude off", () => {
       ],
     } as unknown as EngineRanked;
     const answer = engineRanking(found);
-    expect(answer.notams.map((n) => [n.label, n.rank, n.top, n.worded])).toEqual([
-      ["NOTAM 1/2345", 1, true, false],
-      ["TFR FDC 6/7890", 2, false, false],
+    expect(answer.notams.map((n) => [n.label, n.rank, n.top])).toEqual([
+      ["NOTAM 1/2345", 1, true],
+      ["TFR FDC 6/7890", 2, false],
     ]);
     expect(answer.notams[0]?.why).toBe("The runway in use.");
-    expect(answer.unavailable).toBeNull();
   });
 });

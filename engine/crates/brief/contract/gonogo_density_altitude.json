@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_brief::gonogo::calls::call",
   "description": "Density altitude, ft, from pressure altitude and temperature (PHAK ch. 4).",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

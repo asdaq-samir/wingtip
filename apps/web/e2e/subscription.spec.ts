@@ -1,23 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
-import {
-  consoleSheet,
-  openBriefing,
-  openConsole,
-  openSection,
-  openTab,
-  settle,
-  showTabs,
-  slow,
-  consolePage,
-  openNavLog,
-  navLogSheet,
-} from "./helpers";
+import { consoleSheet, openConsole, settle, showTabs, slow, consolePage } from "./helpers";
 
 /**
- * The subscription to the paid features (lib/subscription, PaidPrompt):
- * without it, each paid feature's own place says what it does, that it
- * comes with the subscription and its price, and the free month starts
- * there; nothing paid is asked of the server meanwhile. The suite's
+ * The subscription (lib/subscription, PaidPrompt): without it, the paid
+ * feature's place says what it does, that it comes with the subscription
+ * and its price, and the free month starts there. The suite's
  * pilot is a developer, who has it given; here the gateway's answer is a
  * plain pilot's, stubbed, as the server's check is the Java tests'.
  */
@@ -32,11 +19,6 @@ const subscription = (state: Standing, over: Record<string, unknown> = {}) => ({
   trialDays: 30,
   plan: null,
   store: null,
-  uses: [
-    { feature: "NARRATIVE", used: 1, cap: 60 },
-    { feature: "CHECKPOINT_NOTES", used: 0, cap: 60 },
-    { feature: "ORAL", used: 0, cap: 60 },
-  ],
   ...over,
 });
 
@@ -60,10 +42,6 @@ async function stubSubscription(page: Page, state: Standing, over: Record<string
       return route.fulfill({ json: subscription("TRIAL") });
     },
   );
-  page.on("request", (r) => {
-    const path = new URL(r.url()).pathname;
-    if (path.endsWith("/api/planner/briefing/narrative") || path.endsWith("/checkpoint-notes/generate")) asked.push(path);
-  });
   return asked;
 }
 
@@ -73,8 +51,7 @@ async function sold(page: Page, change: Record<string, unknown>) {
     (url) => url.pathname === "/api/auth/capabilities",
     async (route) => {
       const real = await (await route.fetch()).json();
-      // Claude on unless a test says otherwise: it is off by default (./claude).
-      await route.fulfill({ json: { ...real, claudeFeatures: "EVERYONE", ...change } });
+      await route.fulfill({ json: { ...real, ...change } });
     },
   );
 }
@@ -83,47 +60,27 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("without the subscription the Brief's narrative says it comes with it, and the free month starts there", async ({ page }) => {
+test("without the subscription, Personal's Subscription page says what it adds, and the free month starts there", async ({ page }) => {
   const asked = await stubSubscription(page, "FREE");
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await page.goto("/app/plan");
   await settle(page);
-  await openBriefing(page);
-  await openTab(page, "Brief");
-  await openSection(page, "Narrative");
-
-  const prompt = page.getByTestId("paid-prompt-NARRATIVE");
+  await showTabs(page);
+  await openConsole(page);
+  const console = consoleSheet(page);
+  await consolePage(console, "Account");
+  await console.getByRole("button", { name: /^Subscription/ }).click();
+  const panel = console.getByTestId("subscription-panel");
+  const prompt = panel.getByTestId("paid-prompt-DEBRIEF");
   await expect(prompt).toBeVisible({ timeout: slow(30000) });
   await expect(prompt).toContainText("$1 a month or $10 a year, the first month free");
-  // Nothing written, nothing billed.
   expect(asked).toEqual([]);
 
   await prompt.getByTestId("start-trial").click();
-  await page.getByTestId("brief-narrative-write").click({ timeout: slow(60000) });
-  const narrative = page.getByTestId("brief-narrative");
-  await expect(narrative).toContainText("A test narrative.", { timeout: slow(60000) });
   await expect(prompt).toHaveCount(0);
-  expect(asked[0]).toBe("trial");
-  expect(asked.filter((a) => a.endsWith("/api/planner/briefing/narrative"))).toHaveLength(1);
-  // What is left of the month, under the text.
-  await expect(narrative).toContainText("left this month");
+  expect(asked).toEqual(["trial"]);
 });
 
-test("without the subscription the nav log's wand says checkpoint descriptions come with it, and writes none", async ({ page }) => {
-  const asked = await stubSubscription(page, "FREE");
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  await openBriefing(page);
-  await openNavLog(page);
-  const wand = navLogSheet(page).getByTestId("generate-descriptions-button");
-  await expect(wand).toBeEnabled({ timeout: slow(60000) });
-  await wand.click();
-  const paywall = page.getByTestId("descriptions-paywall");
-  await expect(paywall.getByTestId("paid-prompt-CHECKPOINT_NOTES")).toBeVisible();
-  await expect(paywall).toContainText("A line for each checkpoint on what to look for from the air.");
-  expect(asked).toEqual([]);
-});
-
-test("Personal's Subscription page says what the pilot has, and the month's uses", async ({ page }) => {
+test("Personal's Subscription page says what the pilot has", async ({ page }) => {
   await stubSubscription(page, "TRIAL");
   await page.goto("/app/plan");
   await settle(page);
@@ -136,35 +93,17 @@ test("Personal's Subscription page says what the pilot has, and the month's uses
   await row.click();
   const panel = console.getByTestId("subscription-panel");
   await expect(panel.getByTestId("subscription-standing")).toContainText(/Free until \d{1,2} November/);
-  await expect(panel.getByTestId("subscription-use-NARRATIVE")).toContainText("1 of 60");
   // What it adds, a row, where it was a footnote.
-  await expect(panel).toContainText("The written briefing, checkpoint descriptions, the mock oral and the debrief");
+  await expect(panel).toContainText("The debrief");
 });
 
 // The proof of concept, at the owner's ask: no subscription sold and no
-// word of one, the features Claude writes every pilot's with an account.
+// word of one.
 test.describe("where no subscription is sold", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test("a pilot signed out is asked only to sign in for the narrative, with no price, trial or subscribing", async ({ page }) => {
-    await sold(page, { subscriptions: false, claudeFeatures: "EVERYONE" });
-    await page.addInitScript(() => {
-      localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["*"] }, version: 0 }));
-    });
-    await page.goto("/app/plan?dep=C81&dest=KDLH");
-    await settle(page);
-    await openBriefing(page);
-    await openTab(page, "Brief");
-    await openSection(page, "Narrative");
-    const prompt = page.getByTestId("paid-prompt-NARRATIVE");
-    await expect(prompt).toBeVisible({ timeout: slow(30000) });
-    await expect(prompt).toContainText("Sign in to have it.");
-    await expect(prompt).not.toContainText(/subscri|\$|free month/i);
-    await expect(page.getByTestId("start-trial")).toHaveCount(0);
-  });
-
   test("Personal has no Subscription row, and the terms and the privacy policy no word of one", async ({ page }) => {
-    await sold(page, { subscriptions: false, claudeFeatures: "EVERYONE" });
+    await sold(page, { subscriptions: false });
     await page.addInitScript(() => {
       localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["*"] }, version: 0 }));
     });

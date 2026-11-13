@@ -5,7 +5,6 @@ import app.wingtipmaps.android.api.generated.CoachEvidence
 import app.wingtipmaps.android.api.generated.CoachSession
 import app.wingtipmaps.android.api.generated.CoachWeakArea
 import app.wingtipmaps.android.api.generated.ProficiencyPlan
-import app.wingtipmaps.android.api.generated.assistant.CoachWordsAnswer
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -56,17 +55,6 @@ object CoachLines {
 
     /** "May count toward WINGS: Area, ACS task", never that it does. */
     fun wings(s: CoachSession): String? = s.wings?.let { "May count toward WINGS: ${it.area}, ACS ${it.acs}" }
-
-    /** The model's line for each session, by the session's id; a line
-     *  for a session the plan does not have is left out. */
-    fun sessionLines(plan: ProficiencyPlan, words: CoachWordsAnswer?): Map<String, String> {
-        val ids = plan.sessions.map { it.id }.toSet()
-        return words?.sessionLines.orEmpty().filter { it.session in ids }.associate { it.session to it.text }
-    }
-
-    /** The words' paragraph, or null where the model said nothing. */
-    fun paragraph(words: CoachWordsAnswer?): String? =
-        words?.sentences.orEmpty().joinToString(" ") { it.text.trim() }.ifEmpty { null }
 
     /** A weak area's heading: "Stabilized approaches · 2 · ACS IR.VI.B". */
     fun weakTitle(w: CoachWeakArea): String =

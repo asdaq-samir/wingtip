@@ -26,7 +26,6 @@ areas:
       # Prettier's settings (npm run format:check)
       - .prettierrc.yaml
       - services/planner/openapi.json
-      - services/assistant/openapi.json
       - services/gateway/openapi.json
       - engine/contract/**
       # The phones' models of the API documents, checked there.
@@ -97,6 +96,10 @@ areas:
     paths:
       - services/planner/**
       - engine/**
+      # The MCP connector's calls, generated from the planner's document
+      # (--check in the planner's suite).
+      - scripts/build/planner_calls.py
+      - scripts/build/planner-calls.sh
   ingest:
     ci: test-ingest
     check: the ingest service's ruff and pytest, in Docker
@@ -106,20 +109,6 @@ areas:
       - services/planner/wingtip/**
       - services/planner/requirements-wingtip.txt
       - engine/**
-  assistant:
-    ci: test-assistant
-    check: the assistant's ruff and pytest, in Docker
-    paths:
-      - services/assistant/**
-      - .ruff.toml
-      # the assistant's generated planner client and engine-rule tools
-      # come from these (scripts/build/assistant_client.py, --check in its suite)
-      - services/planner/openapi.json
-      - services/planner/app/generated/**
-      - engine/contract/**
-      - scripts/build/assistant*
-      # The planner's MCP calls, written by assistant_client.py's generate().
-      - scripts/build/planner_calls.py
   weather:
     ci: test-weather
     check: the weather service's ruff and pytest, in Docker
@@ -159,8 +148,7 @@ areas:
     paths:
       - services/gateway/**
       # the routes the proxy forwards, and the answers PlannerClient reads,
-      # are generated from these (UpstreamRoutes)
-      - services/assistant/openapi.json
+      # are generated from this (UpstreamRoutes)
       - services/planner/openapi.json
       # AircraftRequest's limits are held to the engine's aircraft_problems
       # cases (AircraftRequestFixtureTest)
@@ -306,7 +294,6 @@ ci_only:
   # The APIs the phones call, for api-compat.
   api:
     - services/planner/openapi.json
-    - services/assistant/openapi.json
     - services/gateway/openapi.json
     - .github/api-breaks.txt
   # The production stack's own files.
@@ -318,7 +305,6 @@ ci_only:
   docs:
     - services/gateway/**
     - services/planner/openapi.json
-    - services/assistant/openapi.json
     - scripts/build/api-reference.sh
   # The images, each by what its Dockerfile reads: the base
   # (services/Dockerfile.base, wingtip's requirements and engine/)
@@ -352,9 +338,6 @@ ci_only:
   ingest:
     - services/ingest/**
     - services/planner/wingtip/**
-  assistant:
-    - services/assistant/**
-    - services/Dockerfile.base
   weather:
     - services/weather/**
     - services/Dockerfile.base
@@ -368,5 +351,4 @@ ci_only:
     - apps/web/**
     - services/gateway/**
     - services/planner/openapi.json
-    - services/assistant/openapi.json
     - engine/contract/**

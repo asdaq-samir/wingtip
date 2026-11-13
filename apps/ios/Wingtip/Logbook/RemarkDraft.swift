@@ -65,7 +65,7 @@ enum RemarkDraft {
     static func draft(_ figures: [WordsSource], device: any WordsProvider = OnDeviceWords()) async -> Result<String, WordsUnavailable> {
         guard !figures.isEmpty else { return .failure(WordsUnavailable(why: "The entry has nothing to word yet.")) }
         do {
-            let words = try await device.words(try WordsAsk(kind: .remark, body: [String: String](), figures: figures))
+            let words = try await device.words(WordsAsk(kind: .remark, figures: figures))
             // Checked here too, whoever wrote them: cited facts only, and
             // no number the facts they cite do not hold.
             let checked = NumberGuard.kept(Words.checked(words.sentences, sources: figures, model: words.model, most: most))

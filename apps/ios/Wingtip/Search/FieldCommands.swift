@@ -42,7 +42,7 @@ enum FieldCommands {
         "airplanes": .airplane, "weight and balance": .airplane, "w&b": .airplane, "checklist": .airplane, "poh": .airplane,
         "logbook": .logbook, "log book": .logbook, "my logbook": .logbook, "currency": .logbook, "endorsements": .logbook,
         "settings": .setup, "setup": .setup, "account": .setup, "sign in": .setup, "sign out": .setup,
-        "training": .setup, "pilot guide": .setup, "guide": .setup, "mock oral": .setup, "passenger briefing": .setup,
+        "training": .setup, "pilot guide": .setup, "guide": .setup, "passenger briefing": .setup,
         "instructor": .instructor, "my instructor": .instructor,
         "brief": .brief, "brief me": .brief, "briefing": .brief, "the brief": .brief, "go no go": .brief, "go/no-go": .brief,
         "nearest": .nearest, "nearest airport": .nearest, "nearest airports": .nearest, "nrst": .nearest,

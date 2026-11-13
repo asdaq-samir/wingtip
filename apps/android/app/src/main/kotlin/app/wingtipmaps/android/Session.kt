@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.account.PhoneWipe
-import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.api.Problems
@@ -85,9 +84,6 @@ class Session @Inject constructor(app: Application) : AndroidViewModel(app) {
             _problem.value = Problems.say("Your account could not be checked", e)
             _checkFailed.value = true
         }
-        // Whether the server's Claude features are this pilot's, asked with
-        // every sign-in change: DEVELOPERS depends on who it is (ClaudeGate).
-        ClaudeGate.refresh(_pilot.value?.developer == true)
         _loaded.value = true
     }
 
@@ -186,7 +182,6 @@ class Session @Inject constructor(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val _ = runCatching { Gateway.signOut() }
             forget(wipe)
-            ClaudeGate.refresh(developer = false)
         }
     }
 
@@ -230,7 +225,6 @@ class Session @Inject constructor(app: Application) : AndroidViewModel(app) {
                 Gateway.deleteAccount()
                 _problem.value = null
                 forget(wipe)
-                ClaudeGate.refresh(developer = false)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

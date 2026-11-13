@@ -2,9 +2,7 @@
 # The phones' code for the servers' APIs, generated from the same OpenAPI
 # documents the web's API client is (`npm run types`:
 # services/planner/openapi.json for the planner, services/gateway/openapi.json
-# for the gateway, services/assistant/openapi.json for the assistant the
-# gateway forwards /api/assistant, /api/words/* and the checkpoint notes
-# to), so a field renamed on a server fails the phones' build and CI, not
+# for the gateway), so a field renamed on a server fails the phones' build and CI, not
 # a pilot's screen at runtime. All committed with a "generated, do not
 # edit" header (neither app's build has Node or the generator); CI runs
 # this and fails when the committed files differ.
@@ -17,8 +15,8 @@
 # types, one module each, which the app links (apps/ios/project.yml) and
 # calls through its runtime and URLSession transport (API/Planner.swift):
 #
-#   apps/ios/WingtipAPI/{PlannerAPI,GatewayAPI,AssistantAPI}/*.swift
-#   apps/ios/Wingtip/API/Generated/{Planner,Gateway,Assistant}API.swift
+#   apps/ios/WingtipAPI/{PlannerAPI,GatewayAPI}/*.swift
+#   apps/ios/Wingtip/API/Generated/{Planner,Gateway}API.swift
 #       each schema's name in the app: APICourse, GWPilotDto, ASSource
 #
 # Android: quicktype writes the models -- @Serializable data classes, no
@@ -30,8 +28,7 @@
 #
 #   apps/android/.../api/generated/PlannerModels.kt     package ...api.generated
 #   apps/android/.../api/generated/GatewayModels.kt     package ...api.generated.gateway
-#   apps/android/.../api/generated/AssistantModels.kt   package ...api.generated.assistant
-#   apps/android/.../api/generated/client/apis/{Planner,Gateway,Assistant}Api.kt
+#   apps/android/.../api/generated/client/apis/{Planner,Gateway}Api.kt
 #   apps/android/.../api/generated/client/infrastructure/CollectionFormats.kt
 #
 # Every schema of every document is generated, so there is no list to keep.
@@ -84,7 +81,7 @@ node() { # the repo read-only at /w, the scratch folder at /x
 }
 
 node '
-  for doc in planner gateway assistant; do
+  for doc in planner gateway; do
     node scripts/build/api-models-apps.mjs prep "services/$doc/openapi.json" "/x/docs/$doc.kotlin.json"
     node scripts/build/api-models-apps.mjs openapi "services/$doc/openapi.json" "/x/docs/$doc.swift.json"
   done
@@ -100,8 +97,7 @@ node '
   }
   gen planner app.wingtipmaps.android.api.generated PlannerModels.kt
   gen gateway app.wingtipmaps.android.api.generated.gateway GatewayModels.kt
-  gen assistant app.wingtipmaps.android.api.generated.assistant AssistantModels.kt
-  for doc in planner gateway assistant; do
+  for doc in planner gateway; do
     models=$(echo "$doc" | sed "s/^./\U&/")Models.kt
     node scripts/build/api-models-apps.mjs client "services/$doc/openapi.json" "/x/out/'"$kotlin_dir"'/$models" "$doc" /x/docs
   done
@@ -109,7 +105,7 @@ node '
 
 # Each server's Retrofit interface, and the one support file it imports.
 mkdir -p "$work/out/$kotlin_dir/client/apis" "$work/out/$kotlin_dir/client/infrastructure"
-for server in planner gateway assistant; do
+for server in planner gateway; do
   "$docker" run --rm -v "$work:/api" "$openapi_generator" generate --skip-validate-spec \
     -i "/api/docs/$server.client.json" -c "/api/docs/$server.config.json" -o "/api/out-$server" \
     -g kotlin --library jvm-retrofit2 \
@@ -140,7 +136,7 @@ mkdir -p "$cache"
     mkdir -p "/cache/$1"
     cp "$(swift build -c release --package-path /tmp/generator --show-bin-path)/swift-openapi-generator" "$bin"
   fi
-  for doc in Planner Gateway Assistant; do
+  for doc in Planner Gateway; do
     lower=$(echo "$doc" | tr "[:upper:]" "[:lower:]")
     "$bin" generate --config "$2/openapi-generator-config.yaml" --output-directory "/x/out/$2/${doc}API" \
       "/x/docs/$lower.swift.json" >/tmp/log 2>&1 || { cat /tmp/log; exit 1; }
@@ -150,7 +146,6 @@ mkdir -p "$cache"
 node '
   node scripts/build/api-models-apps.mjs aliases /x/out/'"$swift_api"'/PlannerAPI/Types+Components+Schemas.swift PlannerAPI API /x/out/'"$swift_dir"'/PlannerAPI.swift
   node scripts/build/api-models-apps.mjs aliases /x/out/'"$swift_api"'/GatewayAPI/Types+Components+Schemas.swift GatewayAPI GW /x/out/'"$swift_dir"'/GatewayAPI.swift
-  node scripts/build/api-models-apps.mjs aliases /x/out/'"$swift_api"'/AssistantAPI/Types+Components+Schemas.swift AssistantAPI AS /x/out/'"$swift_dir"'/AssistantAPI.swift
 '
 
 cp "$here/$swift_api/openapi-generator-config.yaml" "$work/out/$swift_api/"
@@ -168,4 +163,4 @@ if [ "$status" = 1 ]; then
   echo "the phones' generated API code is not what the OpenAPI documents give: run scripts/build/api-models-apps.sh and commit the files" >&2
   exit 1
 fi
-[ "$check" = 1 ] || echo "generated every schema and the clients of services/planner, services/gateway and services/assistant openapi.json"
+[ "$check" = 1 ] || echo "generated every schema and the clients of services/planner and services/gateway openapi.json"

@@ -1,5 +1,5 @@
-# swift-openapi-generator's settings for the iPhone's three API modules
-# (PlannerAPI, GatewayAPI, AssistantAPI), written by
+# swift-openapi-generator's settings for the iPhone's two API modules
+# (PlannerAPI, GatewayAPI), written by
 # scripts/build/api-models-apps.sh from the servers' OpenAPI documents.
 generate: [types, client]
 # Public, as each is a module of its own the app imports.

@@ -10,7 +10,7 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import type { CheckpointDescriptionMessage, Course, NavLogMessage } from "../../../lib/api/types";
+import type { Course, NavLogMessage } from "../../../lib/api/types";
 import { useSystemProblems } from "../../../lib/problems";
 import { queryClient } from "../../../lib/queryClient";
 import { usePlan, type PlanParams } from "./usePlan";
@@ -22,9 +22,8 @@ vi.mock("../../../lib/api/client", async (importOriginal) => ({
     checkpoints: vi.fn(),
     navlog: vi.fn(),
     briefing: vi.fn(),
-    describeCheckpoints: vi.fn(),
     saveCheckpointNote: vi.fn(),
-    narrative: vi.fn(),
+    checkpointNotes: vi.fn(),
     me: vi.fn(),
     // The chart's cycle (chartCycle): unanswered but where a test sets it.
     chart: vi.fn(),
@@ -73,6 +72,7 @@ beforeEach(() => {
   vi.mocked(api.checkpoints).mockReturnValue(new Promise(() => {}));
   vi.mocked(api.me).mockResolvedValue(null);
   vi.mocked(api.chart).mockReturnValue(new Promise(() => {}));
+  vi.mocked(api.checkpointNotes).mockResolvedValue({ departure_ident: "C81", checkpoints: [] });
 });
 
 afterEach(() => {
@@ -84,47 +84,21 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-/** One generated line per point, the way the notes stream carries them. */
-async function* notesStream(lines: [number, number, string][]): AsyncGenerator<CheckpointDescriptionMessage> {
-  yield { type: "start", count: lines.length } as CheckpointDescriptionMessage;
-  for (const [lat, lon, text] of lines) {
-    yield { type: "checkpoint", lat, lon, description: text, source: "generated" } as CheckpointDescriptionMessage;
-  }
-}
-
 describe("checkpoint notes", () => {
   const key = "43.00000,-89.00000";
 
-  test("a note typed before Generate shows at once, and Generate still asks the planner", async () => {
-    // The edit in the stream's own cache makes the query count as
-    // fetched: Generate asks whether the stream began, not that.
+  test("a note typed shows at once, saved to the planner", async () => {
     vi.mocked(api.saveCheckpointNote).mockResolvedValue(undefined as never);
-    vi.mocked(api.describeCheckpoints).mockImplementation(() => notesStream([[44, -90, "the dam"]]));
     const { result } = renderHook(() => usePlan(params), { wrapper });
 
     // Written into the notes' own cache (an optimistic update), which the
     // query hands on at its next notification.
     await act(() => result.current.saveDescription(43, -89, "the water tower"));
-    await waitFor(() => expect(result.current.descriptions[key]).toEqual({ text: "the water tower", source: "saved" }));
-
-    act(() => result.current.generateDescriptions());
-    await waitFor(() => expect(result.current.descriptions["44.00000,-90.00000"]?.text).toBe("the dam"));
-    expect(api.describeCheckpoints).toHaveBeenCalledTimes(1);
-    expect(result.current.descriptions[key]?.text).toBe("the water tower");
+    await waitFor(() => expect(result.current.descriptions[key]).toEqual({ text: "the water tower" }));
+    expect(api.saveCheckpointNote).toHaveBeenCalledTimes(1);
   });
 
-  test("a later generated line for the same point does not replace the pilot's edit", async () => {
-    vi.mocked(api.saveCheckpointNote).mockResolvedValue(undefined as never);
-    vi.mocked(api.describeCheckpoints).mockImplementation(() => notesStream([[43, -89, "a town"]]));
-    const { result } = renderHook(() => usePlan(params), { wrapper });
-
-    await act(() => result.current.saveDescription(43, -89, "the grain elevator"));
-    act(() => result.current.generateDescriptions());
-    await waitFor(() => expect(result.current.descriptionProgress).toBeNull());
-    expect(result.current.descriptions[key]).toEqual({ text: "the grain elevator", source: "saved" });
-  });
-
-  test("a failed first save leaves nothing marked saved", async () => {
+  test("a failed first save leaves nothing kept", async () => {
     vi.mocked(api.saveCheckpointNote).mockRejectedValue(new ApiError("planner down", 502));
     const { result } = renderHook(() => usePlan(params), { wrapper });
 
@@ -154,22 +128,44 @@ describe("checkpoint notes", () => {
       await first;
     });
 
-    await waitFor(() => expect(result.current.descriptions[key]).toEqual({ text: "B", source: "saved" }));
+    await waitFor(() => expect(result.current.descriptions[key]).toEqual({ text: "B" }));
   });
 
-  test("changing the altitude keeps the notes, and asks for nothing", async () => {
-    vi.mocked(api.describeCheckpoints).mockImplementation(() => notesStream([[43, -89, "the river bend"]]));
+  test("changing the altitude keeps the notes", async () => {
+    vi.mocked(api.saveCheckpointNote).mockResolvedValue(undefined as never);
     const { result, rerender } = renderHook((p: PlanParams) => usePlan(p), { wrapper, initialProps: params });
-    act(() => result.current.generateDescriptions());
+    await act(() => result.current.saveDescription(43, -89, "the river bend"));
     await waitFor(() => expect(result.current.descriptions[key]?.text).toBe("the river bend"));
 
     rerender({ ...params, altitudeFt: "5500" });
 
     expect(result.current.descriptions[key]?.text).toBe("the river bend");
-    expect(api.describeCheckpoints).toHaveBeenCalledTimes(1);
   });
 
-  test("after Log out the last pilot's notes are gone, and Generate asks again", async () => {
+  test("signed in, the notes kept for the route show, the pilot's own among them", async () => {
+    vi.mocked(api.me).mockResolvedValue({
+      id: 7,
+      displayName: "A. Pilot",
+      email: "a@example.com",
+      developer: false,
+      fullName: null,
+      phone: null,
+      homeBase: null,
+    });
+    vi.mocked(api.checkpointNotes).mockResolvedValue({
+      departure_ident: "C81",
+      checkpoints: [
+        { lat: 43, lon: -89, id: "cp1", name: null, category: "town", along_track_nm: 12, hop_key: "h", saved: "the water tower" },
+        { lat: 44, lon: -90, id: "cp2", name: null, category: "lake", along_track_nm: 30, hop_key: "h", saved: null },
+      ],
+    });
+    const { result } = renderHook(() => usePlan(params), { wrapper });
+
+    await waitFor(() => expect(result.current.descriptions[key]).toEqual({ text: "the water tower" }));
+    expect(result.current.descriptions["44.00000,-90.00000"]).toBeUndefined();
+  });
+
+  test("after Log out the last pilot's notes are gone", async () => {
     vi.mocked(api.me).mockResolvedValue({
       id: 7,
       displayName: "A. Pilot",
@@ -180,18 +176,14 @@ describe("checkpoint notes", () => {
       homeBase: null,
     });
     vi.mocked(api.saveCheckpointNote).mockResolvedValue(undefined as never);
-    vi.mocked(api.describeCheckpoints).mockImplementation(() => notesStream([]));
     const { result } = renderHook(() => usePlan(params), { wrapper });
     await waitFor(() => expect(queryClient.getQueryData(["pilot"])).toBeTruthy());
     await act(() => result.current.saveDescription(43, -89, "mine alone"));
-    act(() => result.current.generateDescriptions());
-    await waitFor(() => expect(api.describeCheckpoints).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(result.current.descriptions[key]?.text).toBe("mine alone"));
 
     act(() => queryClient.setQueryData(["pilot"], null)); // what Log out does
 
     await waitFor(() => expect(result.current.descriptions[key]).toBeUndefined());
-    act(() => result.current.generateDescriptions());
-    await waitFor(() => expect(api.describeCheckpoints).toHaveBeenCalledTimes(2));
   });
 });
 

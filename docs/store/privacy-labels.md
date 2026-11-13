@@ -11,21 +11,16 @@ with it.
 "Collected" is Apple's meaning: sent off the device and kept longer than
 it takes to answer the request.
 
-## The Claude features are off
+## No Claude features
 
-Since 2026-11-10 the features Claude writes are off by default
-(docs/decisions/0035-claude-off-until-subscription.md: "To keep the cost
-low, we only add the claude feature later when we decide about
-subscription model. For now just the free siri and gemini."): Anthropic
-receives nothing from any app or the server, and no use is counted
-against a cap. The answers below hold either way, since they describe the
-most the app collects; the rows that name Claude apply only once the
-owner turns the features on (`APP_CLAUDE_FEATURES`), when Anthropic
-receives what the inventory's "Who else receives what" lists: Ask's
-question and its context, the trip planner's request, the written
-briefing, the Brief's NOTAM, weather and risk words, the debrief's and
-the Coach's words, the checkpoint notes, the mock oral, a photographed
-page, and the flight watch's changes.
+The features Claude wrote on the server (Ask's planner answers, the
+written briefing, the words beside the Brief's figures, checkpoint
+descriptions, the mock oral, a photographed page read) were off from
+2026-11-10 and taken out on 2026-11-12
+(docs/decisions/0041-claude-taken-out.md): Anthropic receives nothing
+from any app or the server, and no use is counted. The pilot's own Claude
+or ChatGPT, where the pilot connects Wingtip to it (the MCP connector),
+is that app's maker's collection, under its terms.
 
 ## The policy these answers point to
 
@@ -58,7 +53,6 @@ Crashlytics, Firebase or analytics kit: a grep of `apps/ios` finds none).
 | Identifiers: User ID | The account's id, Apple's subject for the sign-in | `Session.swift` |
 | User Content: Other User Content | Airplanes, saved flights and nav logs, the logbook, endorsements, currency dates, checkpoint notes | `Views/AircraftView.swift`, `Views/LogbookViews.swift`, `Logbook/AutoLogbook.swift`, `API/` |
 | Location: Precise Location | A flight's track, when the pilot logs or saves it (the auto-drafted logbook entry sends the track to the planner, and the logged flight keeps it), linked to the account | `Logbook/FlightRecorder.swift`, `Logbook/AutoLogbook.swift`; the gateway's `flight_tracks` |
-| Usage Data: Product Interaction | The month's count of each Claude-written feature used, for its cap | the gateway's `paid_feature_uses` (privacy-inventory.md) |
 
 ### Data not linked to you
 
@@ -104,8 +98,8 @@ Not collected, though the app uses them on the device:
   the airport idents in it go to the planner, unkept, as any airport
   lookup does; the on-device model's words are written on the phone; a
   photographed page is read on the phone where it can be (iOS 27,
-  `Documents/OnDeviceDocumentReader.swift`), else sent to the assistant
-  to read and not kept. Nothing new is collected.
+  `Documents/OnDeviceDocumentReader.swift`), and is offered only where
+  it can be. Nothing new is collected.
 - **Apple's Private Cloud Compute** (`Words/AppleModels.swift`, iOS 27,
   off until the entitlement is assigned): where the on-device model
   cannot answer, the same words, figures or page go to Apple's Private
@@ -123,8 +117,7 @@ answer a type: the saved track makes it linked, the live position sent to
 answer being kept nowhere); Crash Data and Performance Data, not linked;
 all for App Functionality. Its required-reason APIs and the widget
 extension's own manifest are in privacy-inventory.md, "The iOS app's
-privacy manifest". Product Interaction joins them if the Claude caps ever
-count on iOS.
+privacy manifest".
 
 ## Google Play: Data safety
 
@@ -151,14 +144,13 @@ pilot without the app asks by email and confirms from the link
 | Personal info: User IDs | Yes | No | No | Account management | `Session.kt` |
 | Location: Precise location | Yes, a logged flight's track | No | Yes | App functionality | `logbook/FlightRecorder.kt`, `logbook/AutoLogbookHost.kt` |
 | App activity: Other user-generated content | Yes (airplanes, flights, logbook, notes) | No | Yes | App functionality | `logbook/`, `records/` |
-| App activity: Other actions | Yes, the count of Claude-written features for their cap (none while they are off, the default) | No | Yes | App functionality | the gateway |
 | App info and performance: Crash logs | Yes: the exits Android kept (`ApplicationExitInfo`: crashes, ANRs with their traces, low-memory kills) and an uncaught exception's stack, with the app's version, the Android version and phone or tablet; sent as the phone has it and scrubbed on receipt (queries, emails, home folders and UUIDs, `DiagnosticText`), no account; kept 30 days | No | No | App functionality (finding faults) | `diagnostics/ExitReasons.kt`, `CrashCatcher.kt`, `DiagnosticsReporter.kt` |
 | App info and performance: Diagnostics | Yes: the start-up time and the share of slow frames (JankStats), the same way; kept 400 days | No | No | App functionality (keeping the app fast) | `diagnostics/FrameStats.kt` |
-| Photos and videos: Photos | **No**: a page photographed for Add from a Photo is read on the phone where it has Gemini Nano (ML Kit text recognition, then Nano, `ai/read/OnPhoneReader.kt`); otherwise it is sent to be read and not kept, "processed ephemerally" | | | | `documents/` |
+| Photos and videos: Photos | **No**: a page photographed for Add from a Photo is read on the phone with Gemini Nano (ML Kit text recognition, then Nano, `ai/read/OnPhoneReader.kt`) and sent nowhere; without Nano, Add from a Photo is not offered | | | | `documents/` |
 | Audio: Voice or sound recordings | **No**: the radio is heard by the phone's on-device `SpeechRecognizer` only (`createOnDeviceSpeechRecognizer`, `atc/RadioListener.kt`) and read on the phone, and a question asked by voice by its own on-device recognizer (`voice/VoiceInput.kt`, since 2026-11-10), its words typed into the field as a typed question; nothing is sent by the app or to Google; without an on-device recognizer voice is not offered | | | | |
 
 "Shared" is Google's meaning: the recipients in the inventory (AWS,
-Amazon SES, and Anthropic only while the Claude features are on)
+and Amazon SES)
 process data for the app and are not sharing. The device's live
 position, sent to answer Nearest and the copilot and not kept, is
 "processed ephemerally" and not collected in Google's sense. The map
@@ -171,8 +163,7 @@ ML Kit's document scanner and text recognition) against these rows.
 AI on the phone (docs/android-ai.md) adds nothing to collect: where the
 phone has Gemini Nano, Ask, In Plain Words, a drafted remark and a page
 photographed are made on the phone (`ai/`), and without it they are
-not offered while the Claude features are off (`ai/ClaudeGate.kt`), or
-go to Claude as the inventory says once they are on. Gemini and the system's agents read what
+not offered. Gemini and the system's agents read what
 the pilot asks them for through AppFunctions (`ai/functions/`), answered
 on the phone; that is the agent's maker's collection, under its terms.
 

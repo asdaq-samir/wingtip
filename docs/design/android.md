@@ -1312,7 +1312,6 @@ swapped:
   `selected`/`onClick`), `Surface(onClick)`, `TextButton`, or Compose's
   `LinkAnnotation` for the logbook's N-number. Each list item keeps its
   stock role, press shape and colours.
-- The trip planner's bubbles: `Card`s.
 
 Kept, each still a thin wrapper over stock parts:
 

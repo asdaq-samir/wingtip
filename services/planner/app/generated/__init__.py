@@ -1,1 +1,1 @@
-"""Generated code: see scripts/build/assistant_client.py. Do not edit."""
+"""Generated code: see scripts/build/planner_calls.py. Do not edit."""

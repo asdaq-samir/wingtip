@@ -10,7 +10,6 @@ import app.wingtipmaps.android.api.generated.CoachDebrief
 import app.wingtipmaps.android.api.generated.CoachEndorsement
 import app.wingtipmaps.android.api.generated.CoachLogbookEntry
 import app.wingtipmaps.android.api.generated.ProficiencyPlan
-import app.wingtipmaps.android.api.generated.assistant.CoachWordsAnswer
 import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.TrainingDto
@@ -47,9 +46,7 @@ enum class Certificate(val wire: String, val ratings: List<String>) {
  * The Coach's view model (the web's useCoach): the pilot's logbook, dates,
  * training record and home field as the gateway keeps them, the
  * certificate they hold (a menu, kept on this phone), and on their ask the
- * engine's plan through the planner, then the plan in words from the
- * assistant. The plan is the engine's; the words come after it and never
- * hold it up, so a plan shows whether or not they come.
+ * engine's plan through the planner. The plan is the engine's.
  */
 @HiltViewModel(assistedFactory = CoachModel.Factory::class)
 class CoachModel(
@@ -76,10 +73,6 @@ class CoachModel(
         val making: Boolean = false,
         val problem: String? = null,
         val plan: ProficiencyPlan? = null,
-        val words: CoachWordsAnswer? = null,
-        val wording: Boolean = false,
-        /** Why there are no words, where the assistant could not be asked. */
-        val noWords: String? = null,
     )
 
     /** The certificate the pilot picked; until then the guess stands. */
@@ -123,13 +116,13 @@ class CoachModel(
         _state.update { it.copy(certificate = certificate) }
     }
 
-    /** The plan asked for again, and its words after it. */
+    /** The plan asked for again. */
     fun make() {
         val s = _state.value
         if (!s.ready || s.making) return
         making?.cancel()
         making = viewModelScope.launch {
-            _state.update { it.copy(making = true, problem = null, plan = null, words = null, noWords = null) }
+            _state.update { it.copy(making = true, problem = null, plan = null) }
             val ask = askOf(entries, currency, training, s.certificate, s.home, today().toString(), source.debriefs())
             val plan = try {
                 source.plan(ask)
@@ -139,21 +132,7 @@ class CoachModel(
                 _state.update { it.copy(making = false, problem = said(e, "Your plan could not be made")) }
                 return@launch
             }
-            // The words are Claude's: while the Claude features are off
-            // (ClaudeGate) the engine's plan stands alone, nothing promised.
-            if (!source.wordsOffered()) {
-                _state.update { it.copy(making = false, plan = plan) }
-                return@launch
-            }
-            _state.update { it.copy(making = false, plan = plan, wording = true) }
-            try {
-                val words = source.words(plan)
-                _state.update { it.copy(wording = false, words = words, noWords = words.unavailable.takeIf { words.sentences.isEmpty() }) }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.update { it.copy(wording = false, noWords = said(e, "The assistant could not be reached")) }
-            }
+            _state.update { it.copy(making = false, plan = plan) }
         }
     }
 

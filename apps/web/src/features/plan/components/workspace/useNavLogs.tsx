@@ -1,6 +1,5 @@
 import { Suspense, useMemo, type ReactNode } from "react";
 import { CardHead } from "../../../../components/CardHead";
-import PaidPrompt from "../../../../components/PaidPromptLazy";
 import type { BriefingPart } from "../briefing/sections";
 import { BriefingNotices, FlightBriefingView, NavLogView } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
@@ -23,15 +22,7 @@ export function useNavLogs(
   const { briefShown, closeNavLogCard, navLogShown } = vm.fpl;
   const { dryRunning } = vm.flight;
   const { deselectPoint, selectPointAt, selectedPoint } = vm.leg;
-  const { briefLine, descriptionsHidden, descriptionsLoading, estimate, landedStops, marks, metarColour, paywalled, unflyableBrief } =
-    vm.brief;
-  const descriptionsPaywall = useMemo(
-    () =>
-      paywalled ? (
-        <PaidPrompt feature="CHECKPOINT_NOTES">A line for each checkpoint on what to look for from the air.</PaidPrompt>
-      ) : undefined,
-    [paywalled],
-  );
+  const { briefLine, estimate, landedStops, marks, metarColour, unflyableBrief } = vm.brief;
 
   // What the Nav Log under the route and the Nav Log card both show.
   const shared = useMemo(
@@ -39,7 +30,6 @@ export function useNavLogs(
       totals: s.totals,
       nav: s.nav,
       legs: s.legs,
-      descriptionError: s.descriptionError,
       depart,
       dep: planned.dep,
       dest: planned.dest,
@@ -47,10 +37,6 @@ export function useNavLogs(
       selected: s.logSelected,
       descriptions: s.descriptions,
       onSaveDescription: s.saveDescription,
-      onGenerateDescriptions: s.generateDescriptions,
-      descriptionsLoading,
-      descriptionsPaywall,
-      descriptionsHidden,
       selectedPoint,
       onSelectPoint: selectPointAt,
       onDeselectPoint: deselectPoint,
@@ -63,7 +49,6 @@ export function useNavLogs(
     }),
     [
       s.totals,
-      s.descriptionError,
       s.nav,
       s.legs,
       depart,
@@ -73,10 +58,6 @@ export function useNavLogs(
       s.logSelected,
       s.descriptions,
       s.saveDescription,
-      s.generateDescriptions,
-      descriptionsLoading,
-      descriptionsPaywall,
-      descriptionsHidden,
       selectedPoint,
       selectPointAt,
       deselectPoint,
@@ -120,7 +101,6 @@ export function useNavLogs(
               course={course}
               totals={s.totals}
               depart={depart}
-              narrativeText={s.narrative.text}
               problem={unflyableBrief}
             />
           </EngineGate>
@@ -139,7 +119,6 @@ export function useNavLogs(
       course,
       s.briefing,
       landedStops,
-      s.narrative.text,
       unflyableBrief,
       kneeboard,
       drawerOpen,

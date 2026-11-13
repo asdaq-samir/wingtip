@@ -396,10 +396,6 @@ export async function openBriefing(page: Page) {
   await expectDrawerOpen(page);
 }
 
-/** One of the planning panel's tabs: Nav Log (Local, for one airport to
- *  itself), Brief, Weather, Performance or Airports. The Brief asks for its
- *  narrative as it opens -- a real, billed Claude call -- so here it is
- *  answered with a line of its own. */
 /** The planning panel's tabs by the names they had before they were the
  *  flight's phases (the owner's pick of the redesign, "C"): the Brief's
  *  go / no-go is Preflight's, the weather on the way En route's, the
@@ -408,6 +404,8 @@ export async function openBriefing(page: Page) {
 const PHASE_OF = { Brief: "Preflight", Weather: "En route", Performance: "Depart" } as const;
 type PhaseTab = "Preflight" | "Depart" | "En route" | "Arrive";
 
+/** One of the planning panel's tabs: Nav Log (Local, for one airport to
+ *  itself), or one of the Brief's pages. */
 export async function openTab(page: Page, name: keyof typeof PHASE_OF | PhaseTab | "Nav Log" | "Local") {
   if (name === "Nav Log" || name === "Local") {
     await closeBrief(page);
@@ -419,17 +417,6 @@ export async function openTab(page: Page, name: keyof typeof PHASE_OF | PhaseTab
   // line: all the way out, as a finger drags it, to reach them.
   await panelFull(page);
   const phase: PhaseTab = name in PHASE_OF ? PHASE_OF[name as keyof typeof PHASE_OF] : (name as PhaseTab);
-  if (phase === "Preflight") {
-    await page.route(
-      (url) => url.pathname.endsWith("/api/planner/briefing/narrative"),
-      (route) =>
-        route.fulfill({
-          status: 200,
-          contentType: "application/x-ndjson",
-          body: JSON.stringify({ type: "done", briefing: "A test narrative." }) + "\n",
-        }),
-    );
-  }
   // On the Brief's cards (BriefGlance), the page's card; then its tab.
   await briefPage(page, phase);
   // Not the tab up already: tapped again all the way up, it lowers the
@@ -507,8 +494,8 @@ export async function openSection(page: Page, title: string) {
   if (!(await here.isVisible().catch(() => false))) {
     await briefPage(page, "Preflight");
     // Round the phases again until it is on one: a section drawn once the
-    // plan is in -- the Flight Plan with the nav log's totals, the Mock
-    // Oral with the briefing -- is on none of them for as long as a cold
+    // plan is in -- the Flight Plan with the nav log's totals -- is on
+    // none of them for as long as a cold
     // planner takes, and one round of 3 s a phase gave up first (CI's
     // flight-plan and oral specs, 2026-10-28).
     await expect(async () => {

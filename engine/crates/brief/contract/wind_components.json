@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_brief::runway::calls::call",
   "description": "A wind's head- and crosswind on a heading: a tailwind negative, a crosswind from the right positive (the crosswind component chart's figures, FAA-H-8083-25C ch. 11).",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

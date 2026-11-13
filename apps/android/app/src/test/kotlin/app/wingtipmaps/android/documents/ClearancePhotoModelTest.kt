@@ -2,8 +2,8 @@ package app.wingtipmaps.android.documents
 
 import app.wingtipmaps.android.MainRule
 import app.wingtipmaps.android.api.Planner
-import app.wingtipmaps.android.api.generated.assistant.ClearanceNote
-import app.wingtipmaps.android.api.generated.assistant.DocumentRead
+import app.wingtipmaps.android.documents.model.ClearanceNote
+import app.wingtipmaps.android.documents.model.DocumentRead
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

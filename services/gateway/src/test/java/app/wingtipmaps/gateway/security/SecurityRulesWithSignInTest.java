@@ -172,24 +172,6 @@ class SecurityRulesWithSignInTest {
         mockMvc.perform(get("/api/planner/classify")).andExpect(status().isUnauthorized());
     }
 
-    /** The assistant and the readings in words are billed Claude calls. */
-    @Test
-    void theAssistantAndTheWordsNeedASession() throws Exception {
-        mockMvc.perform(post("/api/planner/assistant").with(csrf())).andExpect(status().isUnauthorized());
-        mockMvc.perform(post("/api/planner/words/notams").with(csrf())).andExpect(status().isUnauthorized());
-    }
-
-    /** Every narrative is a real, billed Claude call. */
-    @Test
-    void aNarrativeNeedsASession() throws Exception {
-        mockMvc.perform(post("/api/planner/briefing/narrative").with(csrf())).andExpect(status().isUnauthorized());
-        signedInAs(PilotRole.PILOT);
-        mockMvc.perform(post("/api/planner/briefing/narrative")
-                        .with(oidcLogin())
-                        .with(csrf()))
-                .andExpect(notRefused());
-    }
-
     private void signedInAs(PilotRole role) {
         Pilot pilot = new Pilot("pilot@example.com", "A. Pilot", "sub-1");
         ReflectionTestUtils.setField(pilot, "role", role);

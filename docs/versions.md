@@ -99,10 +99,10 @@ SDK), targetSdk 37, minSdk 26.
 ### Servers (`services/*/requirements*.txt`, `services/gateway/pom.xml`)
 
 - **Gateway:** Spring Boot 4.1.2 on Java 25, Maven 3.10.
-- **Planner, weather, ingest, assistant, jobs:** Python 3.15 with FastAPI
+- **Planner, weather, ingest, jobs:** Python 3.15 with FastAPI
   0.162.2, pydantic 2.14.3, uvicorn 0.54.0, numpy 2.5.4, pandas 3.1.1,
-  shapely 2.2.0, pyproj 3.8.0, rasterio 1.5.2, scikit-learn 1.9.1, the
-  Anthropic SDK 2.8.0, pytest 9.2.0; the engine's Python binding on PyO3
+  shapely 2.2.0, pyproj 3.8.0, rasterio 1.5.2, scikit-learn 1.9.1,
+  pytest 9.2.0; the engine's Python binding on PyO3
   0.30.1.
 - **Images the stack runs:** PostgreSQL 18 (`postgres:18-trixie`), Caddy
   2.11.9, Mailpit 1.33.1, Jaeger 2.23.0.
@@ -166,8 +166,8 @@ unless the owner ticks an update in that issue. The holds above are rules in
 3. **Regenerate what comes from it**, never by hand: the engine contract
    (`cargo run -p wingtip-contract-gen`), the web's types (`npm run
    types`), the phones' engine calls (`scripts/build/engine-contract-apps.sh`)
-   and API models (`scripts/build/api-models-apps.sh`), the assistant's
-   client (`scripts/build/assistant-client.sh`), the OpenAPI documents
+   and API models (`scripts/build/api-models-apps.sh`), the MCP
+   connector's calls (`scripts/build/planner-calls.sh`), the OpenAPI documents
    (`python -m app.openapi`, `WRITE_OPENAPI=1 mvn -B test`), the design
    tokens (`scripts/build/design-tokens.sh`) and the `.wasm`
    (`scripts/build/build-engine-wasm.sh`).

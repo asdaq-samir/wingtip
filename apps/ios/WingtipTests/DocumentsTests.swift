@@ -7,9 +7,9 @@ import UIKit
 
 private final class DocumentsFixtureBundle {}
 
-/// What POST /api/read-document answers for the shared pages
-/// (apps/web/src/lib/fixtures/documentAnswers.json), each answer as the
-/// bytes the reader sends.
+/// The reader's answers for the shared pages
+/// (apps/web/src/lib/fixtures/documentAnswers.json), each as the bytes
+/// OnDeviceDocumentReader.answer writes.
 private func answer(_ key: String) throws -> DocumentAnswer {
     let url = try #require(Bundle(for: DocumentsFixtureBundle.self).url(forResource: "documentAnswers", withExtension: "json"))
     let all = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
@@ -32,7 +32,7 @@ private func count(_ value: OpenAPIValueContainer?) -> Int? { list(value)?.count
 private func isNull(_ value: OpenAPIValueContainer?) -> Bool { value != nil && value?.value == nil }
 
 /// "Add from a Photo" on the phone (Wingtip/Documents): the reader's
-/// answers decoded, the ask, the read cut to what the pilot confirmed and
+/// answers decoded, the photo made small, the read cut to what the pilot confirmed and
 /// checked again by the engine, the logbook rows that can be logged, and
 /// the flags' inks. No network.
 @MainActor
@@ -106,8 +106,8 @@ struct DocumentsTests {
     @Test func theFormTakesOnlyTheProfilesFiguresToATenth() {
         var form = AircraftForm()
         form.climbFuelBurnGph = "12"
-        HandbookReview.fill(&form, from: ASHandbookProfile(climbFuelBurnGph: nil, cruiseFrom: "cruise.2", cruisePowerPct: 65,
-                                                           cruiseTasKt: 112.96, fuelBurnGph: 8.5, usableFuelGal: nil))
+        HandbookReview.fill(&form, from: HandbookProfile(cruiseTasKt: 112.96, fuelBurnGph: 8.5, cruisePowerPct: 65,
+                                                         cruiseFrom: "cruise.2", climbFuelBurnGph: nil, usableFuelGal: nil))
         #expect(form.cruiseTasKt == "113.0")
         #expect(form.fuelBurnGph == "8.5")
         #expect(form.cruisePowerPct == "65")
@@ -128,7 +128,7 @@ struct DocumentsTests {
         #expect(both.climbSpeedKias == performance.climbSpeedKias)
     }
 
-    @Test func theAskCarriesASmallJPEGInBase64() throws {
+    @Test func thePhotoIsMadeSmallEnough() throws {
         let big = UIGraphicsImageRenderer(size: CGSize(width: 3000, height: 1000), format: {
             let f = UIGraphicsImageRendererFormat(); f.scale = 1; return f
         }()).image { ctx in
@@ -137,13 +137,6 @@ struct DocumentsTests {
         let jpeg = try #require(DocumentReader.jpeg(big))
         let back = try #require(UIImage(data: jpeg))
         #expect(back.size.width == 2000 && back.size.height == 667)
-
-        let body = try Planner.snakeEncoder.encode(DocumentReader.ask(.logbookPage, jpeg: jpeg, today: "2026-11-09"))
-        let sent = try #require(try JSONSerialization.jsonObject(with: body) as? [String: String])
-        #expect(sent["kind"] == "logbook-page")
-        #expect(sent["media_type"] == "image/jpeg")
-        #expect(sent["today"] == "2026-11-09")
-        #expect(Data(base64Encoded: sent["image"] ?? "") == jpeg)
 
         // A small photo is never made larger.
         let small = UIGraphicsImageRenderer(size: CGSize(width: 40, height: 20)).image { _ in }

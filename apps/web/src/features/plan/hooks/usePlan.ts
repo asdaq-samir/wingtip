@@ -18,7 +18,6 @@ import type {
 import type { FlightRules } from "../../../lib/preferences";
 import { ownOf } from "../../../lib/airplane/figures";
 import { useCheckpointNotes } from "./useCheckpointNotes";
-import { useNarrative } from "./useNarrative";
 import { briefingLegs } from "./briefingLegs";
 import { useDirectHere } from "./directOnDevice";
 import { useSaved } from "../../../lib/fromCache";
@@ -32,15 +31,13 @@ import { sameRoute, stripType } from "./planMessages";
  * the same answer today as an hour ago -- and are kept for the
  * session; the nav log is live winds and streams in leg by leg, keyed
  * on the airplane, the altitude and the departure time as well. The
- * briefing, the checkpoint descriptions and the narrative are
- * asked for when a pilot opens or clicks for them. Every failure is
+ * briefing is asked for when a pilot opens it. Every failure is
  * the query client's to report (queryClient.ts). A route had first to
  * be collected, which the page offered; its checkpoints come off the
  * chart now, for any route it covers.
  *
- * Checkpoint notes and the narrative are hooks of their own
- * (useCheckpointNotes, useNarrative),
- * which this one composes into the page's one plan: each changes for
+ * The pilot's checkpoint notes are a hook of their own
+ * (useCheckpointNotes), which this one composes into the page's one plan: each changes for
  * its own reasons, and this file used to change for all of them.
  */
 
@@ -144,8 +141,7 @@ const NONE: Candidate[] = [];
 /** Where the runways left from are in a plan's key (planKeyOf). */
 const PLAN_KEY_RUNWAYS = 15;
 
-/** Everything the nav log is computed from -- the narrative is keyed
- *  on the same, so a narrative is always about the log on screen. */
+/** Everything the nav log is computed from. */
 function planKeyOf({
   dep,
   dest,
@@ -390,9 +386,9 @@ export function usePlan({
   // re-plan's second or so.
   const holdKey = planKey.filter((_, i) => i < 3 || (i >= 5 && i !== PLAN_KEY_RUNWAYS && i < planKey.length - 1)).join("|");
   const whole = streamed.some((m) => m.type === "done");
-  const [held, setHeld] = useState<{ key: string; planKey: ReturnType<typeof planKeyOf>; messages: NavLogMessage[] } | null>(null);
+  const [held, setHeld] = useState<{ key: string; messages: NavLogMessage[] } | null>(null);
   if (whole && !pointToPoint && (held?.messages !== streamed || held.key !== holdKey)) {
-    setHeld({ key: holdKey, planKey, messages: streamed });
+    setHeld({ key: holdKey, messages: streamed });
   }
   const holding = !whole && !navlog.error && navlog.isFetching && held?.key === holdKey;
   const messages = holding ? held.messages : streamed;
@@ -554,9 +550,6 @@ export function usePlan({
   }, [briefable, hasCourse, briefing.data, briefing.dataUpdatedAt, briefing.error, briefingSavedAt]);
 
   const notes = useCheckpointNotes(dep, dest, stops);
-  // Written from the checkpoints' nav log, not the route as entered.
-  // The held log's narrative while it is held: it is about it.
-  const narrative = useNarrative({ dep, dest, planKey: holding ? held.planKey : planKey, nav, legs, whole: !!totals && !pointToPoint });
 
   return {
     // Not the previous route's, kept as a placeholder, once the route is
@@ -584,6 +577,5 @@ export function usePlan({
     local,
     briefing: briefingState,
     ...notes,
-    ...narrative,
   };
 }

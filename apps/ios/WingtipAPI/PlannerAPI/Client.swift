@@ -3387,24 +3387,21 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Notes To Write
+    /// Route Notes
     ///
     /// A route's selected checkpoints in along-track order, each with the
-    /// note already kept for it (the pilot's own edit, else the shared one)
-    /// or None, and the hop its note is kept under: what the assistant
-    /// service writes the missing notes from (its POST
-    /// /api/checkpoint-notes/generate, which the apps reach). Asked by the
-    /// assistant alone; the gateway forwards no app here.
+    /// note kept for it (the pilot's own edit, else the shared one) or None,
+    /// and the hop its note is kept under.
     ///
-    /// - Remark: HTTP `POST /api/checkpoint-notes/pending`.
-    /// - Remark: Generated from `#/paths//api/checkpoint-notes/pending/post(notes_to_write)`.
-    public func notesToWrite(_ input: Operations.NotesToWrite.Input) async throws -> Operations.NotesToWrite.Output {
+    /// - Remark: HTTP `POST /api/checkpoint-notes/route`.
+    /// - Remark: Generated from `#/paths//api/checkpoint-notes/route/post(route_notes)`.
+    public func routeNotes(_ input: Operations.RouteNotes.Input) async throws -> Operations.RouteNotes.Output {
         try await client.send(
             input: input,
-            forOperation: Operations.NotesToWrite.id,
+            forOperation: Operations.RouteNotes.id,
             serializer: { input in
                 let path = try converter.renderedPath(
-                    template: "/api/checkpoint-notes/pending",
+                    template: "/api/checkpoint-notes/route",
                     parameters: []
                 )
                 var request: HTTPTypes.HTTPRequest = .init(
@@ -3436,7 +3433,7 @@ public struct Client: APIProtocol {
                 switch response.status.code {
                 case 200:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
-                    let body: Operations.NotesToWrite.Output.Ok.Body
+                    let body: Operations.RouteNotes.Output.Ok.Body
                     let chosenContentType = try converter.bestContentType(
                         received: contentType,
                         options: [
@@ -3446,7 +3443,7 @@ public struct Client: APIProtocol {
                     switch chosenContentType {
                     case "application/json":
                         body = try await converter.getResponseBodyAsJSON(
-                            Components.Schemas.NotesToWrite.self,
+                            Components.Schemas.RouteNotes.self,
                             from: responseBody,
                             transforming: { value in
                                 .json(value)
@@ -3458,102 +3455,7 @@ public struct Client: APIProtocol {
                     return .ok(.init(body: body))
                 case 422:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
-                    let body: Operations.NotesToWrite.Output.UnprocessableContent.Body
-                    let chosenContentType = try converter.bestContentType(
-                        received: contentType,
-                        options: [
-                            "application/json"
-                        ]
-                    )
-                    switch chosenContentType {
-                    case "application/json":
-                        body = try await converter.getResponseBodyAsJSON(
-                            Components.Schemas.HTTPValidationError.self,
-                            from: responseBody,
-                            transforming: { value in
-                                .json(value)
-                            }
-                        )
-                    default:
-                        preconditionFailure("bestContentType chose an invalid content type.")
-                    }
-                    return .unprocessableContent(.init(body: body))
-                default:
-                    return .undocumented(
-                        statusCode: response.status.code,
-                        .init(
-                            headerFields: response.headerFields,
-                            body: responseBody
-                        )
-                    )
-                }
-            }
-        )
-    }
-    /// Seed Note
-    ///
-    /// A generated note offered as the shared one at its place: kept where
-    /// none is there yet, else the one saved meanwhile stays and is
-    /// answered. The assistant's alone, as /pending is.
-    ///
-    /// - Remark: HTTP `POST /api/checkpoint-notes/seed`.
-    /// - Remark: Generated from `#/paths//api/checkpoint-notes/seed/post(seed_note)`.
-    public func seedNote(_ input: Operations.SeedNote.Input) async throws -> Operations.SeedNote.Output {
-        try await client.send(
-            input: input,
-            forOperation: Operations.SeedNote.id,
-            serializer: { input in
-                let path = try converter.renderedPath(
-                    template: "/api/checkpoint-notes/seed",
-                    parameters: []
-                )
-                var request: HTTPTypes.HTTPRequest = .init(
-                    soar_path: path,
-                    method: .post
-                )
-                suppressMutabilityWarning(&request)
-                converter.setAcceptHeader(
-                    in: &request.headerFields,
-                    contentTypes: input.headers.accept
-                )
-                let body: OpenAPIRuntime.HTTPBody?
-                switch input.body {
-                case let .json(value):
-                    body = try converter.setRequiredRequestBodyAsJSON(
-                        value,
-                        headerFields: &request.headerFields,
-                        contentType: "application/json; charset=utf-8"
-                    )
-                }
-                return (request, body)
-            },
-            deserializer: { response, responseBody in
-                switch response.status.code {
-                case 200:
-                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
-                    let body: Operations.SeedNote.Output.Ok.Body
-                    let chosenContentType = try converter.bestContentType(
-                        received: contentType,
-                        options: [
-                            "application/json"
-                        ]
-                    )
-                    switch chosenContentType {
-                    case "application/json":
-                        body = try await converter.getResponseBodyAsJSON(
-                            Components.Schemas.NoteSeeded.self,
-                            from: responseBody,
-                            transforming: { value in
-                                .json(value)
-                            }
-                        )
-                    default:
-                        preconditionFailure("bestContentType chose an invalid content type.")
-                    }
-                    return .ok(.init(body: body))
-                case 422:
-                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
-                    let body: Operations.SeedNote.Output.UnprocessableContent.Body
+                    let body: Operations.RouteNotes.Output.UnprocessableContent.Body
                     let chosenContentType = try converter.bestContentType(
                         received: contentType,
                         options: [
@@ -5232,105 +5134,6 @@ public struct Client: APIProtocol {
                 case 422:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Operations.EmergencyFields.Output.UnprocessableContent.Body
-                    let chosenContentType = try converter.bestContentType(
-                        received: contentType,
-                        options: [
-                            "application/json"
-                        ]
-                    )
-                    switch chosenContentType {
-                    case "application/json":
-                        body = try await converter.getResponseBodyAsJSON(
-                            Components.Schemas.HTTPValidationError.self,
-                            from: responseBody,
-                            transforming: { value in
-                                .json(value)
-                            }
-                        )
-                    default:
-                        preconditionFailure("bestContentType chose an invalid content type.")
-                    }
-                    return .unprocessableContent(.init(body: body))
-                default:
-                    return .undocumented(
-                        statusCode: response.status.code,
-                        .init(
-                            headerFields: response.headerFields,
-                            body: responseBody
-                        )
-                    )
-                }
-            }
-        )
-    }
-    /// Engine Rule
-    ///
-    /// The engine's rule `name` on the input given, its answer as the
-    /// engine gives it (the contract's `answer` for the name). An input not
-    /// of the rule's shape is a 422 with the engine's words.
-    ///
-    /// - Remark: HTTP `POST /api/engine/{name}`.
-    /// - Remark: Generated from `#/paths//api/engine/{name}/post(engine_rule)`.
-    public func engineRule(_ input: Operations.EngineRule.Input) async throws -> Operations.EngineRule.Output {
-        try await client.send(
-            input: input,
-            forOperation: Operations.EngineRule.id,
-            serializer: { input in
-                let path = try converter.renderedPath(
-                    template: "/api/engine/{}",
-                    parameters: [
-                        input.path.name
-                    ]
-                )
-                var request: HTTPTypes.HTTPRequest = .init(
-                    soar_path: path,
-                    method: .post
-                )
-                suppressMutabilityWarning(&request)
-                converter.setAcceptHeader(
-                    in: &request.headerFields,
-                    contentTypes: input.headers.accept
-                )
-                let body: OpenAPIRuntime.HTTPBody?
-                switch input.body {
-                case .none:
-                    body = nil
-                case let .json(value):
-                    body = try converter.setOptionalRequestBodyAsJSON(
-                        value,
-                        headerFields: &request.headerFields,
-                        contentType: "application/json; charset=utf-8"
-                    )
-                }
-                return (request, body)
-            },
-            deserializer: { response, responseBody in
-                switch response.status.code {
-                case 200:
-                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
-                    let body: Operations.EngineRule.Output.Ok.Body
-                    let chosenContentType = try converter.bestContentType(
-                        received: contentType,
-                        options: [
-                            "application/json"
-                        ]
-                    )
-                    switch chosenContentType {
-                    case "application/json":
-                        body = try await converter.getResponseBodyAsJSON(
-                            OpenAPIRuntime.OpenAPIValueContainer.self,
-                            from: responseBody,
-                            transforming: { value in
-                                .json(value)
-                            }
-                        )
-                    default:
-                        preconditionFailure("bestContentType chose an invalid content type.")
-                    }
-                    return .ok(.init(body: body))
-                case 422:
-                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
-                    let body: Operations.EngineRule.Output.UnprocessableContent.Body
                     let chosenContentType = try converter.bestContentType(
                         received: contentType,
                         options: [
@@ -9570,8 +9373,8 @@ public struct Client: APIProtocol {
     /// Whether a route would plan, checked as a typed one is (load_route):
     /// a 404 naming an ident that is not one, a 422 for a stop at the point
     /// before it or too many stops. With an end missing, each ident given is
-    /// checked alone. Nothing is read or planned. For the assistant's
-    /// proposals of a change to the plan; the gateway forwards no app here.
+    /// checked alone. Nothing is read or planned. The gateway forwards
+    /// no app here.
     ///
     /// - Remark: HTTP `GET /api/route-check`.
     /// - Remark: Generated from `#/paths//api/route-check/get(route_check)`.
@@ -13116,7 +12919,7 @@ public struct Client: APIProtocol {
     /// What changed between two readings of a flight's briefing, each
     /// change a source with both readings (briefing_changes), the flight
     /// first; none at all where nothing did, which is most half hours of a
-    /// flight watch, so the assistant asks the model nothing then.
+    /// flight watch, so the watch sends nothing then.
     ///
     /// - Remark: HTTP `POST /api/words/changes/sources`.
     /// - Remark: Generated from `#/paths//api/words/changes/sources/post(changes_sources)`.
@@ -13209,7 +13012,7 @@ public struct Client: APIProtocol {
     }
     /// Coach Sources
     ///
-    /// A proficiency plan's lines for the assistant to put into words.
+    /// A proficiency plan's lines, each a source a sentence can cite.
     ///
     /// - Remark: HTTP `POST /api/words/coach/sources`.
     /// - Remark: Generated from `#/paths//api/words/coach/sources/post(coach_sources)`.

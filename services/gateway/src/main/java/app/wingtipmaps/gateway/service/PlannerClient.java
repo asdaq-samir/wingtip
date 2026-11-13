@@ -1,6 +1,5 @@
 package app.wingtipmaps.gateway.service;
 
-import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
 import app.wingtipmaps.gateway.dto.EndorsementFieldDto;
@@ -22,7 +21,6 @@ import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
 import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
 import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
-import app.wingtipmaps.gateway.upstream.AssistantApi;
 import app.wingtipmaps.gateway.upstream.BriefingApi;
 import app.wingtipmaps.gateway.upstream.PlannerApi;
 import java.math.BigDecimal;
@@ -47,13 +45,13 @@ import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.databind.util.RawValue;
 
 /**
- * This app's one client of the planner and the assistant on its own behalf
+ * This app's one client of the planner on its own behalf
  * (a browser's request is {@link app.wingtipmaps.gateway.controller.PlannerProxyController}'s):
- * the flight watch's briefings and their changes in words (FlightWatchService,
+ * the flight watch's briefings and their changes (FlightWatchService,
  * ChangeLines), the engine's rules over a pilot's logbook and airplane, as
  * this app holds no aviation rule of its own (CLAUDE.md), a pilot's notes
  * (CheckpointNotesClient) and the Studio's drafts (CrashDraftMail). The
- * asking is Spring's HTTP interfaces (PlannerApi, BriefingApi, AssistantApi,
+ * asking is Spring's HTTP interfaces (PlannerApi and BriefingApi,
  * made by UpstreamClients); here each answer is made into this app's own,
  * and any failure into a PlannerUnavailableException that says who and what.
  */
@@ -79,12 +77,10 @@ public class PlannerClient {
 
     private final PlannerApi planner;
     private final BriefingApi briefings;
-    private final AssistantApi assistant;
 
-    public PlannerClient(PlannerApi planner, BriefingApi briefings, AssistantApi assistant) {
+    public PlannerClient(PlannerApi planner, BriefingApi briefings) {
         this.planner = planner;
         this.briefings = briefings;
-        this.assistant = assistant;
     }
 
     /**
@@ -100,26 +96,6 @@ public class PlannerClient {
                 "the planner",
                 "the briefing",
                 () -> briefings.briefing(dep, dest, joined, DateTimeFormatter.ISO_INSTANT.format(depart), eteMin));
-    }
-
-    /**
-     * What changed between two briefings of the flight, in words (POST
-     * /api/words/changes): whether anything did, the sentences that say
-     * what, the reports they came from, and which model wrote them;
-     * {@code unavailable} says why there are none when the words could
-     * not be written. Asked of the assistant service, which asks the
-     * planner for the changes and Claude for the words. The answer is
-     * the assistant's own ChangesWords, generated from
-     * services/assistant/openapi.json at build time (the pom's
-     * openapi-generator-maven-plugin). Both briefings go as the JSON
-     * they came as, never parsed here: what they say is the planner's.
-     *
-     * @throws PlannerUnavailableException when the assistant cannot be reached, refuses,
-     *     or answers something that is not its answer
-     */
-    public AssistantChangesWords changes(String dep, String dest, List<String> stops, String then, String now) {
-        String body = changesAsk(dep, dest, stops, then, now);
-        return ask("the assistant", "the changes", () -> assistant.changes(body));
     }
 
     /** What changed between two briefings, as the planner lines it up (ChangeLines). */
@@ -149,7 +125,7 @@ public class PlannerClient {
                 a -> a);
     }
 
-    /** The changes' ask, the assistant's and the planner's alike (ChangeLines):
+    /** The changes' ask (ChangeLines):
      *  both briefings embedded as the JSON they already are, not as strings holding JSON. */
     static String changesAsk(String dep, String dest, List<String> stops, String then, String now) {
         ObjectNode body = JsonNodeFactory.instance.objectNode().put("dep", dep).put("dest", dest);

@@ -467,12 +467,6 @@
             "example" : "SIGN_IN",
             "type" : "string"
           },
-          "claudeFeatures" : {
-            "description" : "Who has the features Claude writes (the assistant, the written briefing, the readings in words, checkpoint descriptions, the mock oral, a photographed page read): OFF, the default, for nobody, whatever else is sold or open -- the apps then use only on-device models and the engine's own words; DEVELOPERS; or EVERYONE signed in.",
-            "enum" : [ "OFF", "DEVELOPERS", "EVERYONE" ],
-            "example" : "OFF",
-            "type" : "string"
-          },
           "providers" : {
             "description" : "The OIDC providers with real credentials, by registration id: the sign-in buttons to offer. Empty where only the emailed link signs in (the local stack).",
             "example" : [ "google", "apple" ],
@@ -487,7 +481,7 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "access", "claudeFeatures", "providers", "subscriptions" ],
+        "required" : [ "access", "providers", "subscriptions" ],
         "type" : "object"
       },
       "ConnectorGrantDto" : {
@@ -1138,26 +1132,20 @@
         "type" : "object"
       },
       "FeatureUse" : {
-        "description" : "One paid feature's uses this month (UTC)",
         "properties" : {
-          "cap" : {
-            "description" : "The month's allowance",
-            "example" : 60,
-            "format" : "int32",
-            "type" : "integer"
-          },
           "feature" : {
-            "enum" : [ "NARRATIVE", "CHECKPOINT_NOTES", "ORAL", "ASSISTANT", "WORDS", "DEBRIEF" ],
-            "example" : "NARRATIVE",
             "type" : "string"
           },
-          "used" : {
-            "example" : 3,
+          "month" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "uses" : {
             "format" : "int32",
             "type" : "integer"
           }
         },
-        "required" : [ "cap", "feature", "used" ],
+        "required" : [ "feature", "month", "uses" ],
         "type" : "object"
       },
       "FieldReport" : {
@@ -2879,16 +2867,9 @@
             "description" : "When the free month or the paid time runs out; null for FREE and COMPED",
             "format" : "date-time",
             "type" : [ "string", "null" ]
-          },
-          "uses" : {
-            "description" : "This month's uses of each paid feature Claude writes, against its cap",
-            "items" : {
-              "$ref" : "#/components/schemas/FeatureUse"
-            },
-            "type" : "array"
           }
         },
-        "required" : [ "entitled", "plan", "state", "store", "trialAvailable", "trialDays", "until", "uses" ],
+        "required" : [ "entitled", "plan", "state", "store", "trialAvailable", "trialDays", "until" ],
         "type" : "object"
       },
       "SubscriptionRow" : {

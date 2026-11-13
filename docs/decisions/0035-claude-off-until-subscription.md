@@ -1,7 +1,7 @@
 # 0035. The Claude features are off until the subscription is decided
 
 - **Date:** 2026-11-10
-- **Status:** Accepted
+- **Status:** Superseded by [0041](0041-claude-taken-out.md) (2026-11-12): the features, the switch and the assistant service are taken out
 
 ## Context
 

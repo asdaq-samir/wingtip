@@ -5,7 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
-import app.wingtipmaps.android.api.generated.assistant.DocumentRead
+import app.wingtipmaps.android.documents.model.DocumentRead
 import app.wingtipmaps.android.logbook.LogbookChanged
 import app.wingtipmaps.android.logbook.LogbookSource
 import app.wingtipmaps.android.logbook.ServerLogbook

@@ -19,8 +19,7 @@ import { ALL_NOTAMS, arrangeNotams } from "./notamView";
  * engine ranked for this flight, each with its line and its chip, then
  * the rest folded under "N more", none dropped; the feed's coverage line
  * under them (lib/notamCoverage), and none heard said as such, never as
- * no NOTAMs. Where the briefer could not write the lines, the engine's
- * own reasons stand and a sentence says so, in place (lib/problems).
+ * no NOTAMs.
  * Filtered, sorted, pinned and marked read as the pilot asks (web.md §6,
  * NotamToolbar, NotamLine): what the filters leave out is counted, with
  * Show All, so a NOTAM is folded or filtered by the pilot, never dropped.
@@ -102,11 +101,6 @@ export default function NotamRankingSection() {
                 </ol>
               </CollapsibleContent>
             </Collapsible>
-          )}
-          {answer?.unavailable && (
-            <p className={cn("text-muted-foreground", TEXT.note)} data-testid="brief-notams-unworded">
-              The lines are the planner's own; the briefer could not be reached.
-            </p>
           )}
           {answer?.unchecked.includes("tfrs") && (
             <p className={cn("text-muted-foreground", TEXT.note)} data-testid="brief-notams-unchecked">

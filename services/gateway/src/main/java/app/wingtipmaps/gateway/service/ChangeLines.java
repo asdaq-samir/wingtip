@@ -1,35 +1,38 @@
 package app.wingtipmaps.gateway.service;
 
-import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
-import app.wingtipmaps.gateway.assistant.model.AssistantSentence;
-import app.wingtipmaps.gateway.assistant.model.AssistantSource;
+import app.wingtipmaps.gateway.dto.BriefingChangeDto;
+import app.wingtipmaps.gateway.dto.BriefingSourceDto;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSource;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
 /**
- * What changed in a watched flight's briefing, in the planner's own lines
- * rather than Claude's words: the flight watch's answer while the Claude
- * features are off (app.claude-features, the owner's decision of
- * 2026-11-10, docs/decisions/0035).
+ * What changed in a watched flight's briefing, in the planner's own lines.
  *
- * <p>The planner finds the changes either way (POST
- * /api/words/changes/sources, routers/words.py briefing_changes: a field's
- * flight category, a SIGMET or AIRMET new or gone, a TFR new, a field newly
- * below VFR, a TAF crossing a category line). The assistant only puts them
- * into sentences; here each change's own heading ("KDLH METAR, VFR to IFR")
- * is the sentence, citing that change, and its raw reports go with it, so
- * the email and the app read the same as with the words, minus the prose,
- * and no request reaches Anthropic. Asked through {@link PlannerClient}, its
- * answer the planner's generated WordsSources.
+ * <p>The planner finds the changes (POST /api/words/changes/sources,
+ * routers/words.py briefing_changes: a field's flight category, a SIGMET
+ * or AIRMET new or gone, a TFR new, a field newly below VFR, a TAF
+ * crossing a category line). Each change's own heading ("KDLH METAR, VFR
+ * to IFR") is the sentence, citing that change, and its raw reports go
+ * with it, so the email and the app say what changed and what it was read
+ * from. Asked through {@link PlannerClient}, its answer the planner's
+ * generated WordsSources.
  */
 @Component
 public class ChangeLines {
 
-    /** What the answer says wrote it, where a model's name would be. */
-    static final String WRITER = "planner";
+    /**
+     * What changed, as the flight watch keeps it with the watch (its
+     * changes_json) and shows it: whether anything did, a sentence a
+     * change, and the reports they cite. Rows kept before Claude was taken
+     * out (docs/decisions/0041) carry a model's name and an unavailable
+     * reason as well, which are read past.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Changes(boolean changed, List<BriefingChangeDto> sentences, List<BriefingSourceDto> sources) {}
 
     /** The flight itself, which the planner puts first for a sentence to
      *  rest on: not a change. */
@@ -47,29 +50,21 @@ public class ChangeLines {
      * @throws PlannerUnavailableException when the planner cannot be reached,
      *     refuses, or answers something that is not its answer
      */
-    public AssistantChangesWords changes(String dep, String dest, List<String> stops, String then, String now) {
+    public Changes changes(String dep, String dest, List<String> stops, String then, String now) {
         return lines(planner.changeSources(dep, dest, stops, then, now));
     }
 
-    /** The planner's WordsSources as the assistant's ChangesWords: a
-     *  sentence a change, its heading, citing it. */
-    static AssistantChangesWords lines(PlannerWordsSources found) {
-        List<AssistantSource> sources = new ArrayList<>();
-        List<AssistantSentence> sentences = new ArrayList<>();
+    /** The planner's WordsSources as the watch's changes: a sentence a
+     *  change, its heading, citing it. */
+    static Changes lines(PlannerWordsSources found) {
+        List<BriefingSourceDto> sources = new ArrayList<>();
+        List<BriefingChangeDto> sentences = new ArrayList<>();
         for (PlannerWordsSource source : found.getSources()) {
-            sources.add(new AssistantSource()
-                    .id(source.getId())
-                    .label(source.getLabel())
-                    .text(source.getText()));
+            sources.add(new BriefingSourceDto(source.getId(), source.getLabel(), source.getText()));
             if (!FLIGHT.equals(source.getId())) {
-                sentences.add(
-                        new AssistantSentence().text(source.getLabel() + ".").sources(List.of(source.getId())));
+                sentences.add(new BriefingChangeDto(source.getLabel() + ".", List.of(source.getId())));
             }
         }
-        return new AssistantChangesWords()
-                .changed(!sentences.isEmpty())
-                .sentences(sentences)
-                .sources(sentences.isEmpty() ? List.of() : sources)
-                .model(WRITER);
+        return new Changes(!sentences.isEmpty(), sentences, sentences.isEmpty() ? List.of() : sources);
     }
 }

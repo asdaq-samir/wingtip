@@ -8,11 +8,11 @@ import app.wingtipmaps.android.aircraft.AircraftForm
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.addAircraft
 import app.wingtipmaps.android.api.aircraft
-import app.wingtipmaps.android.api.generated.assistant.DocumentRead
-import app.wingtipmaps.android.api.generated.assistant.HandbookCheck
-import app.wingtipmaps.android.api.generated.assistant.HandbookRead
 import app.wingtipmaps.android.api.saveHandbook
 import app.wingtipmaps.android.api.updateAircraft
+import app.wingtipmaps.android.documents.model.DocumentRead
+import app.wingtipmaps.android.documents.model.HandbookCheck
+import app.wingtipmaps.android.documents.model.HandbookRead
 import app.wingtipmaps.android.engine.Engine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -26,8 +26,8 @@ import javax.inject.Inject
 
 /**
  * "Add from a Photo" for the airplane's own figures (the web's handbook
- * import, the iPhone's): which page, the page read by the assistant and
- * checked by the engine, each item confirmed by the pilot, the read
+ * import, the iPhone's): which page, the page read on the phone
+ * (OnPhoneReader) and checked by the engine, each item confirmed by the pilot, the read
  * reduced to what was confirmed and checked again by the engine on the
  * phone (handbook_read_check), its profile filling the airplane's
  * figures; then, on the pilot's own Save, the airplane's record and its

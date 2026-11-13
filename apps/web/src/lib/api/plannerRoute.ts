@@ -8,6 +8,7 @@ import type {
   IcingForecast,
   Briefing,
   CheckpointNoteSaved,
+  RouteNotes,
   Checkpoints,
   Course,
   NavLogMessage,
@@ -196,6 +197,12 @@ export const plannerRoute = {
         signal,
       })
       .then(data<Briefing>),
+  /** The route's checkpoints, each with the note kept for it (the
+   *  pilot's own, else the shared one). */
+  checkpointNotes: (dep: string, dest: string, stops: string[] = [], signal?: AbortSignal) =>
+    planner
+      .POST("/api/checkpoint-notes/route", { body: { departure_ident: dep, destination_ident: dest, stops }, signal })
+      .then(data<RouteNotes>),
   /** A pilot's own edit to one checkpoint's identification note. */
   saveCheckpointNote: (dep: string, dest: string, lat: number, lon: number, description: string, stops: string[] = []) =>
     planner

@@ -1,8 +1,8 @@
 """POST /api/notams/ranked: the flight's NOTAMs and TFRs, the ones that
 bear on it first (wingtip.notam_rank, the engine's notams_ranked). The
 route parses the ask, finds the route's fields and asks; the ranking is
-the engine's. The assistant asks it for the Brief's "NOTAMs that matter"
-and words the top three; the phones may ask it as it is.
+the engine's. The Brief's "NOTAMs that matter" are its first three; the
+phones may ask it as it is.
 
 GET /api/airport/{ident}/notams: one field's own NOTAMs and the TFRs near
 it, ranked the same way, for the field's card."""

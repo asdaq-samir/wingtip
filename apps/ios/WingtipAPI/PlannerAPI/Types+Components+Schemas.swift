@@ -9589,35 +9589,6 @@ extension Components {
                 case validAt = "valid_at"
             }
         }
-        /// - Remark: Generated from `#/components/schemas/GenerateNotesRequest`.
-        public struct GenerateNotesRequest: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/GenerateNotesRequest/departure_ident`.
-            public var departureIdent: Swift.String
-            /// - Remark: Generated from `#/components/schemas/GenerateNotesRequest/destination_ident`.
-            public var destinationIdent: Swift.String
-            /// - Remark: Generated from `#/components/schemas/GenerateNotesRequest/stops`.
-            public var stops: [Swift.String]?
-            /// Creates a new `GenerateNotesRequest`.
-            ///
-            /// - Parameters:
-            ///   - departureIdent:
-            ///   - destinationIdent:
-            ///   - stops:
-            public init(
-                departureIdent: Swift.String,
-                destinationIdent: Swift.String,
-                stops: [Swift.String]? = nil
-            ) {
-                self.departureIdent = departureIdent
-                self.destinationIdent = destinationIdent
-                self.stops = stops
-            }
-            public enum CodingKeys: String, CodingKey {
-                case departureIdent = "departure_ident"
-                case destinationIdent = "destination_ident"
-                case stops
-            }
-        }
         /// The POH's best-glide speed and glide ratio (Section 3). A pilot's
         /// own airplane of no stock type has its glide ratio alone, as its pilot
         /// gave it: no best-glide speed (none is taken from another airplane) and
@@ -13391,122 +13362,6 @@ extension Components {
                 case stops
             }
         }
-        /// A generated note offered as the shared one: kept (`written`), or
-        /// the shared one saved meanwhile, which stays (`description` is it).
-        ///
-        /// - Remark: Generated from `#/components/schemas/NoteSeeded`.
-        public struct NoteSeeded: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/NoteSeeded/description`.
-            public var description: Swift.String
-            /// - Remark: Generated from `#/components/schemas/NoteSeeded/written`.
-            public var written: Swift.Bool
-            /// Creates a new `NoteSeeded`.
-            ///
-            /// - Parameters:
-            ///   - description:
-            ///   - written:
-            public init(
-                description: Swift.String,
-                written: Swift.Bool
-            ) {
-                self.description = description
-                self.written = written
-            }
-            public enum CodingKeys: String, CodingKey {
-                case description
-                case written
-            }
-        }
-        /// A route's checkpoint as the assistant writes its note
-        /// (POST /api/checkpoint-notes/pending): where it is, what it is, the
-        /// hop its note is kept under, and the note already kept for it -- the
-        /// pilot's own, else the shared one -- or None, for the assistant to
-        /// write and seed.
-        ///
-        /// - Remark: Generated from `#/components/schemas/NoteToWrite`.
-        public struct NoteToWrite: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/NoteToWrite/along_track_nm`.
-            public var alongTrackNm: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/NoteToWrite/category`.
-            public var category: Swift.String
-            /// - Remark: Generated from `#/components/schemas/NoteToWrite/hop_key`.
-            public var hopKey: Swift.String
-            /// - Remark: Generated from `#/components/schemas/NoteToWrite/id`.
-            public var id: Swift.String
-            /// - Remark: Generated from `#/components/schemas/NoteToWrite/lat`.
-            public var lat: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/NoteToWrite/lon`.
-            public var lon: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/NoteToWrite/name`.
-            public var name: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/NoteToWrite/saved`.
-            public var saved: Swift.String?
-            /// Creates a new `NoteToWrite`.
-            ///
-            /// - Parameters:
-            ///   - alongTrackNm:
-            ///   - category:
-            ///   - hopKey:
-            ///   - id:
-            ///   - lat:
-            ///   - lon:
-            ///   - name:
-            ///   - saved:
-            public init(
-                alongTrackNm: Swift.Double,
-                category: Swift.String,
-                hopKey: Swift.String,
-                id: Swift.String,
-                lat: Swift.Double,
-                lon: Swift.Double,
-                name: Swift.String? = nil,
-                saved: Swift.String? = nil
-            ) {
-                self.alongTrackNm = alongTrackNm
-                self.category = category
-                self.hopKey = hopKey
-                self.id = id
-                self.lat = lat
-                self.lon = lon
-                self.name = name
-                self.saved = saved
-            }
-            public enum CodingKeys: String, CodingKey {
-                case alongTrackNm = "along_track_nm"
-                case category
-                case hopKey = "hop_key"
-                case id
-                case lat
-                case lon
-                case name
-                case saved
-            }
-        }
-        /// A route's checkpoints in along-track order, for their notes.
-        ///
-        /// - Remark: Generated from `#/components/schemas/NotesToWrite`.
-        public struct NotesToWrite: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/NotesToWrite/checkpoints`.
-            public var checkpoints: [Components.Schemas.NoteToWrite]
-            /// - Remark: Generated from `#/components/schemas/NotesToWrite/departure_ident`.
-            public var departureIdent: Swift.String
-            /// Creates a new `NotesToWrite`.
-            ///
-            /// - Parameters:
-            ///   - checkpoints:
-            ///   - departureIdent:
-            public init(
-                checkpoints: [Components.Schemas.NoteToWrite],
-                departureIdent: Swift.String
-            ) {
-                self.checkpoints = checkpoints
-                self.departureIdent = departureIdent
-            }
-            public enum CodingKeys: String, CodingKey {
-                case checkpoints
-                case departureIdent = "departure_ident"
-            }
-        }
         /// One NTSB case of the airplane (wingtip.history.ntsb), its texts
         /// verbatim: where and when (the local date), its phase of flight and
         /// highest injury in the NTSB's words, its probable cause once the final
@@ -17112,6 +16967,123 @@ extension Components {
                 case name
             }
         }
+        /// A route's checkpoint with its note (POST /api/checkpoint-notes/route):
+        /// where it is, what it is, the hop its note is kept under, and the note
+        /// kept for it -- the pilot's own, else the shared one -- or None.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RouteNote`.
+        public struct RouteNote: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RouteNote/along_track_nm`.
+            public var alongTrackNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/RouteNote/category`.
+            public var category: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RouteNote/hop_key`.
+            public var hopKey: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RouteNote/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RouteNote/lat`.
+            public var lat: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/RouteNote/lon`.
+            public var lon: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/RouteNote/name`.
+            public var name: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RouteNote/saved`.
+            public var saved: Swift.String?
+            /// Creates a new `RouteNote`.
+            ///
+            /// - Parameters:
+            ///   - alongTrackNm:
+            ///   - category:
+            ///   - hopKey:
+            ///   - id:
+            ///   - lat:
+            ///   - lon:
+            ///   - name:
+            ///   - saved:
+            public init(
+                alongTrackNm: Swift.Double,
+                category: Swift.String,
+                hopKey: Swift.String,
+                id: Swift.String,
+                lat: Swift.Double,
+                lon: Swift.Double,
+                name: Swift.String? = nil,
+                saved: Swift.String? = nil
+            ) {
+                self.alongTrackNm = alongTrackNm
+                self.category = category
+                self.hopKey = hopKey
+                self.id = id
+                self.lat = lat
+                self.lon = lon
+                self.name = name
+                self.saved = saved
+            }
+            public enum CodingKeys: String, CodingKey {
+                case alongTrackNm = "along_track_nm"
+                case category
+                case hopKey = "hop_key"
+                case id
+                case lat
+                case lon
+                case name
+                case saved
+            }
+        }
+        /// A route's checkpoints in along-track order, for their notes.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RouteNotes`.
+        public struct RouteNotes: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RouteNotes/checkpoints`.
+            public var checkpoints: [Components.Schemas.RouteNote]
+            /// - Remark: Generated from `#/components/schemas/RouteNotes/departure_ident`.
+            public var departureIdent: Swift.String
+            /// Creates a new `RouteNotes`.
+            ///
+            /// - Parameters:
+            ///   - checkpoints:
+            ///   - departureIdent:
+            public init(
+                checkpoints: [Components.Schemas.RouteNote],
+                departureIdent: Swift.String
+            ) {
+                self.checkpoints = checkpoints
+                self.departureIdent = departureIdent
+            }
+            public enum CodingKeys: String, CodingKey {
+                case checkpoints
+                case departureIdent = "departure_ident"
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RouteNotesRequest`.
+        public struct RouteNotesRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RouteNotesRequest/departure_ident`.
+            public var departureIdent: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RouteNotesRequest/destination_ident`.
+            public var destinationIdent: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RouteNotesRequest/stops`.
+            public var stops: [Swift.String]?
+            /// Creates a new `RouteNotesRequest`.
+            ///
+            /// - Parameters:
+            ///   - departureIdent:
+            ///   - destinationIdent:
+            ///   - stops:
+            public init(
+                departureIdent: Swift.String,
+                destinationIdent: Swift.String,
+                stops: [Swift.String]? = nil
+            ) {
+                self.departureIdent = departureIdent
+                self.destinationIdent = destinationIdent
+                self.stops = stops
+            }
+            public enum CodingKeys: String, CodingKey {
+                case departureIdent = "departure_ident"
+                case destinationIdent = "destination_ident"
+                case stops
+            }
+        }
         /// One way to fly the route (wingtip.route_options): the points between
         /// its ends in order, as the address's `stops` takes them -- turns as the
         /// pilot's own points off a fix, fuel stops as fields (`fuel`) -- and the
@@ -18334,41 +18306,6 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case areas
-            }
-        }
-        /// - Remark: Generated from `#/components/schemas/SeedNoteRequest`.
-        public struct SeedNoteRequest: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/SeedNoteRequest/description`.
-            public var description: Swift.String
-            /// - Remark: Generated from `#/components/schemas/SeedNoteRequest/hop_key`.
-            public var hopKey: Swift.String
-            /// - Remark: Generated from `#/components/schemas/SeedNoteRequest/lat`.
-            public var lat: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/SeedNoteRequest/lon`.
-            public var lon: Swift.Double
-            /// Creates a new `SeedNoteRequest`.
-            ///
-            /// - Parameters:
-            ///   - description:
-            ///   - hopKey:
-            ///   - lat:
-            ///   - lon:
-            public init(
-                description: Swift.String,
-                hopKey: Swift.String,
-                lat: Swift.Double,
-                lon: Swift.Double
-            ) {
-                self.description = description
-                self.hopKey = hopKey
-                self.lat = lat
-                self.lon = lon
-            }
-            public enum CodingKeys: String, CodingKey {
-                case description
-                case hopKey = "hop_key"
-                case lat
-                case lon
             }
         }
         /// - Remark: Generated from `#/components/schemas/ServiceStatus`.

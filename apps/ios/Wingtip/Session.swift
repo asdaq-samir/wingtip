@@ -30,9 +30,6 @@ final class Session {
             Log.app.notice("who is signed in could not be asked: \(error.localizedDescription, privacy: .public)")
         }
         loaded = true
-        // Who the pilot is decides whether the server's Claude features
-        // are theirs (ServerFeatures), so it is asked again with them.
-        await ServerFeatures.shared.refresh(signedIn: pilot != nil, developer: pilot?.developer ?? false)
     }
 
     /// The nonce for the next Sign in with Apple, asked as the sign-in
@@ -151,7 +148,6 @@ final class Session {
     func signOut() async {
         try? await Gateway.signOut()
         pilot = nil
-        await ServerFeatures.shared.refresh(signedIn: false, developer: false)
         Session.forgetPilot()
         (flight?.tracking ?? Tracking()).forgetFavorites()
         WidgetFeed.shared.forgetPilot()

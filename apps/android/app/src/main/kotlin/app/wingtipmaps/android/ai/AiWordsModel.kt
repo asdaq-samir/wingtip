@@ -24,7 +24,7 @@ class AiWordsModel(
     private val say: suspend (AiTask, List<AssistantSource>) -> AiWords.Answer? = AiWords::say,
     private val offered: suspend () -> Boolean = AiWords::offered,
 ) : ViewModel() {
-    /** Hilt's: the words on the phone or the server (AiWords). */
+    /** Hilt's: the words on the phone (AiWords). */
     @Inject
     constructor(words: AiWords) : this(words::say, words::offered)
     data class State(

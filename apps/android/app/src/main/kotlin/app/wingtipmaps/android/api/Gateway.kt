@@ -102,8 +102,8 @@ object Gateway {
             .build()
     }
 
-    /** The client for what takes as long as it takes -- the nav log's and
-     *  the assistant's streams, the packs', charts' and overlays' downloads,
+    /** The client for what takes as long as it takes -- the nav log's
+     *  stream, the packs', charts' and overlays' downloads,
      *  the account's export -- with no whole-call limit; OkHttp's 10 s
      *  between bytes still ends one on a dead link. The same pool, cache
      *  and interceptors as `client`. */

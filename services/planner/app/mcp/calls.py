@@ -8,11 +8,11 @@ directory reviews both refuse a bare "Internal Server Error"
 
 The tools ask the planner's HTTP API (GET /api/plan, POST /api/go-no-go,
 ...) through its ASGI app, not its routers' functions: the answers are the
-ones the app and the assistant get, shaped and checked by their response
+ones the apps get, shaped and checked by their response
 models, and only app.main imports a router (.importlinter). Each operation
 is a function generated from the planner's OpenAPI document
-(app.generated.planner_calls, by scripts/build/assistant_client.py, as
-the assistant's own client is), which sends through planner() here."""
+(app.generated.planner_calls, by scripts/build/planner_calls.py), which
+sends through planner() here."""
 
 from __future__ import annotations
 

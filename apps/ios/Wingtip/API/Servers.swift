@@ -1,4 +1,3 @@
-import AssistantAPI
 import Foundation
 import GatewayAPI
 import HTTPTypes
@@ -10,8 +9,8 @@ import PlannerAPI
 /// swift-openapi-generator (scripts/build/api-models-apps.sh, the
 /// WingtipAPI modules), each sent through URLSession with the gateway's
 /// cookie jar and cache (Gateway.session). What the app adds to every call
-/// is a middleware here: the planner's and the assistant's paths behind
-/// the gateway's proxy, the CSRF token, the session's cookies kept, and a
+/// is a middleware here: the planner's paths behind the
+/// gateway's proxy, the CSRF token, the session's cookies kept, and a
 /// refusal thrown in the server's own words.
 enum Servers {
     /// How long a call waits, each its own URLSession over the one jar and
@@ -78,20 +77,8 @@ extension Planner {
         try await Servers.unwrapped(clients[wait]!, call)
     }
 
-    /// The assistant's, behind the same proxy (/api/planner/assistant…).
-    static let assistants: [Servers.Wait: AssistantAPI.Client] = Dictionary(uniqueKeysWithValues: Servers.Wait.allCases.map {
-        ($0, AssistantAPI.Client(serverURL: Config.gateway, configuration: Servers.configuration, transport: Servers.transport($0),
-                                 middlewares: [PlannerPath(), CSRF(), Refusals(gateway: false)]))
-    })
-
-    /// One of the assistant's calls (a photo read waits as an upload).
-    nonisolated(nonsending) static func ask<T>(_ wait: Servers.Wait = .usual, _ call: (AssistantAPI.Client) async throws -> T) async throws -> T {
-        try await Servers.unwrapped(assistants[wait]!, call)
-    }
-
     /// An answer streamed a line at a time (newline-delimited JSON: the
-    /// nav log, the checkpoints' notes, the assistant), each line read by
-    /// `decode`; nil skips a line.
+    /// nav log), each line read by `decode`; nil skips a line.
     static func lines<T: Sendable>(_ body: @escaping @Sendable () async throws -> HTTPBody,
                                    _ decode: @escaping @Sendable (Data) throws -> T?) -> AsyncThrowingStream<T, any Error> {
         AsyncThrowingStream { continuation in
@@ -134,7 +121,7 @@ extension Gateway {
 }
 
 /// The planner's operation paths are `/api/…`; through the gateway's proxy
-/// they are `/api/planner/…` (Config.plannerPath), the assistant's too.
+/// they are `/api/planner/…` (Config.plannerPath).
 struct PlannerPath: ClientMiddleware {
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {

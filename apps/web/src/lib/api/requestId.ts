@@ -1,7 +1,7 @@
 /**
  * The id a call to the servers goes with (`X-Request-Id`): the gateway
  * writes it on the call's log lines and its trace (RequestIdFilter), and
- * passes it to the planner and the assistant, so with tracing on a slow
+ * passes it to the planner, so with tracing on a slow
  * or failed call is found in Jaeger by the id the page sent
  * (docs/LOCAL-DEV.md, "Tracing"). A new one each call.
  *

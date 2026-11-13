@@ -5,7 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../co
 import { said } from "../../../lib/endorsements";
 import { FINDING_TONE, type Finding } from "../../../lib/findings";
 import { TEXT } from "../../../lib/text";
-import type { CoachDue, CoachSession, CoachWords, ProficiencyPlan } from "./coachApi";
+import type { CoachDue, CoachSession, ProficiencyPlan } from "./coachApi";
 import { CERTIFICATES, useCoach, type Certificate } from "./useCoach";
 import { coachStep } from "./coachStep";
 import { FieldError } from "../../../components/ui/field";
@@ -15,9 +15,7 @@ import { FieldError } from "../../../components/ui/field";
  * ask, what is due and when (14 CFR 61.56, 61.57), what their debriefed
  * flights show, and up to four sessions -- what, why, where and how long,
  * and where it may count toward WINGS -- all the engine's
- * (proficiency_plan), with a short paragraph and a line a session in
- * words from the assistant, each resting on the plan's own lines. It
- * opens on the paragraph and the sessions; the currencies and the
+ * (proficiency_plan). It opens on the sessions; the currencies and the
  * evidence fold under them (docs/decisions/0012).
  */
 export default function CoachPage() {
@@ -33,7 +31,7 @@ export default function CoachPage() {
         {coachStep(c)}
       </p>
       {c.problem && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{c.problem.message}</FieldError>}
-      {c.plan && <Plan plan={c.plan} words={c.words} wording={c.wording} />}
+      {c.plan && <Plan plan={c.plan} />}
       <ListGroup title="Your Certificate">
         <ListChoices value={c.certificate} onChange={(v) => c.choose(v as Certificate)} label="Your certificate">
           {CERTIFICATES.map((o) => (
@@ -77,8 +75,7 @@ const STATUS: Record<CoachDue["status"], { tone: Finding; words: (d: CoachDue) =
   unknown: { tone: "unknown", words: () => "Not on record" },
 };
 
-function Plan({ plan, words, wording }: { plan: ProficiencyPlan; words: CoachWords | null; wording: boolean }) {
-  const lines = new Map((words?.session_lines ?? []).map((l) => [l.session, l.text]));
+function Plan({ plan }: { plan: ProficiencyPlan }) {
   return (
     <>
       {plan.reminders.length > 0 && (
@@ -88,10 +85,9 @@ function Plan({ plan, words, wording }: { plan: ProficiencyPlan; words: CoachWor
           ))}
         </ListGroup>
       )}
-      <Words words={words} wording={wording} />
       <ListGroup title="Sessions">
         {plan.sessions.length ? (
-          plan.sessions.map((s) => <Session key={s.id} s={s} line={lines.get(s.id)} />)
+          plan.sessions.map((s) => <Session key={s.id} s={s} />)
         ) : (
           <ListRow
             muted
@@ -134,20 +130,7 @@ function Plan({ plan, words, wording }: { plan: ProficiencyPlan; words: CoachWor
   );
 }
 
-function Words({ words, wording }: { words: CoachWords | null; wording: boolean }) {
-  // While the words are on their way the status line says so (coachStep).
-  if (wording || !words) return null;
-  if (!words.sentences.length) {
-    return words.unavailable ? <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>No words for now: {words.unavailable}</p> : null;
-  }
-  return (
-    <p className={cn("px-1", TEXT.prose)} data-testid="coach-words">
-      {words.sentences.map((s) => s.text).join(" ")}
-    </p>
-  );
-}
-
-function Session({ s, line }: { s: CoachSession; line: string | undefined }) {
+function Session({ s }: { s: CoachSession }) {
   const where = s.place ? `${s.place.ident}${s.place.approach ? `, ${s.place.approach}` : ""} · ` : "";
   const who = s.instructor ? " · With an instructor" : "";
   return (
@@ -162,7 +145,6 @@ function Session({ s, line }: { s: CoachSession; line: string | undefined }) {
               May count toward WINGS: {s.wings.area}, ACS {s.wings.acs}
             </span>
           )}
-          {line && <span className="block text-foreground">{line}</span>}
         </>
       }
     />

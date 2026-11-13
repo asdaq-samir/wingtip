@@ -29,8 +29,6 @@ import { FieldError } from "../../components/ui/field";
 // Its own chunk: the approach's debrief is drawn only where a track came
 // down a final, and asks for the field's procedures as it is.
 const ApproachDebriefs = lazy(() => import("../../components/ApproachDebrief"));
-// Its own chunk too: the words are asked only where a track came in.
-const DebriefWords = lazy(() => import("./DebriefWords"));
 
 /** A difference as said, its sign after rounding: "+3 min", "±0 min". */
 function signed(n: number, unit = ""): string {
@@ -355,12 +353,6 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
         <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>No flight in this track: it never went faster than taxiing.</p>
       )}
       {result && <Findings d={result} />}
-      {/* Under the figures, what they say to practise next, in words. */}
-      {result && (
-        <Suspense fallback={null}>
-          <DebriefWords flightId={flight.id} debrief={result} />
-        </Suspense>
-      )}
       {result && track && (
         <Suspense fallback={null}>
           <ApproachDebriefs fields={approachFields} points={track.points} picked={picked} />
@@ -432,7 +424,7 @@ function InstructorReview({ summary }: { summary: FlightSummary }) {
 export default function FlightPage({ summary, planHref }: { summary: FlightSummary; planHref: string }) {
   const { data: flight, isPending, error } = useQuery({ queryKey: ["flight", summary.id], queryFn: () => api.flights.get(summary.id) });
   // The debrief comes with the subscription: without it, its place says so.
-  const entitlement = useEntitlement("DEBRIEF");
+  const entitlement = useEntitlement();
   return (
     <div className="space-y-4">
       <ListGroup>
@@ -464,7 +456,7 @@ export default function FlightPage({ summary, planHref }: { summary: FlightSumma
       ) : mayUse(entitlement) ? (
         <DebriefSection flight={flight} planHref={planHref} />
       ) : (
-        <PaidPrompt feature="DEBRIEF">
+        <PaidPrompt>
           Your track from ForeFlight, Garmin Pilot or a GPS, measured against this flight's nav log as an examiner would.
         </PaidPrompt>
       )}

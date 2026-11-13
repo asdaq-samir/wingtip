@@ -1,11 +1,9 @@
 """The sources of the readings in words: the planner's own figures --
 the route's NOTAMs, its briefing, its Go / No-Go, a flown flight's
 debrief, what changed in a briefing since the last look -- each put as a
-line a sentence can cite and a pilot can read raw. The assistant service
-(services/assistant, app.words) asks for them here, POST
-/api/words/{kind}/sources, and has Claude put them into a few plain
-sentences; the gateway forwards the apps' POST /api/words/{kind} to it,
-and never these.
+line a sentence can cite and a pilot can read raw, at POST
+/api/words/{kind}/sources. The gateway forwards none of them; it asks the
+changes' lines itself for a pilot's flight watch (its ChangeLines).
 
 The figures come from the planner as its other endpoints give them
 (nothing is fetched here that the briefing, the Go / No-Go or the debrief
@@ -603,6 +601,6 @@ def changes_sources(ask: ChangesAsk) -> WordsSources:
     """What changed between two readings of a flight's briefing, each
     change a source with both readings (briefing_changes), the flight
     first; none at all where nothing did, which is most half hours of a
-    flight watch, so the assistant asks the model nothing then."""
+    flight watch, so the watch sends nothing then."""
     changes = briefing_changes(ask.then, ask.now)
     return WordsSources(sources=[_flight_source(ask.dep.upper(), ask.dest.upper(), ask.stops), *changes] if changes else [])

@@ -5,21 +5,15 @@ import { NO_PLAN, useBriefPlan } from "../../../lib/briefPlan";
 import { picksOf } from "../../../lib/flightLink";
 import { identOf } from "../../../lib/identSchema";
 import { useWindPicks } from "../lib/windPicks";
-import { useAsk } from "../../../lib/ask/useAsk";
 import { useTabAsk } from "../components/navlog/panelTab";
 import { briefingLegs } from "./briefingLegs";
 import type { PlannedRoute } from "./planAddress";
 import type { PlanAnswer, PlanCourse } from "./planTypes";
-import type { useRouteEdits } from "./useRouteEdits";
-
-type RouteEdits = ReturnType<typeof useRouteEdits>;
 
 /**
  * The plan as a flight to save and file (usePlanWorkspace): Save's, the
- * solo cross-country review's and the Brief's Flight Plan; the flight as
- * the Brief reads it (lib/briefPlan) for its Ask, its words and its watch;
- * and the assistant's proposed changes applied through the route's own
- * setters.
+ * solo cross-country review's and the Brief's Flight Plan; and the flight
+ * as the Brief reads it (lib/briefPlan) for its NOTAMs and its watch.
  */
 export function useFlightToSave({
   s,
@@ -32,9 +26,6 @@ export function useFlightToSave({
   localMin,
   address,
   setAddress,
-  setRoute,
-  flyAltitude,
-  changeDepart,
 }: {
   s: PlanAnswer;
   planned: PlannedRoute;
@@ -48,9 +39,6 @@ export function useFlightToSave({
   localMin: number;
   address: Address;
   setAddress: SetAddress;
-  setRoute: RouteEdits["setRoute"];
-  flyAltitude: RouteEdits["flyAltitude"];
-  changeDepart: (iso: string) => void;
 }) {
   // The flight plan filed: the Brief's Flight Plan, where the FAA's form
   // is filled in from the plan and sent where Flight Service is connected
@@ -147,22 +135,5 @@ export function useFlightToSave({
     flightToSave.picks,
   ]);
   useEffect(() => () => useBriefPlan.getState().set(NO_PLAN), []);
-  // A change the assistant proposes (useAsk's actions), applied at the
-  // pilot's tap through the route box's own setters -- the route, the
-  // altitude flown, the departure time -- each a change of the address,
-  // which plans again. Registered while the workspace is up; the chip
-  // applies nothing otherwise.
-  useEffect(() => {
-    useAsk.setState({
-      applyChange: (change) => {
-        if (change.dep !== undefined || change.dest !== undefined || change.stops !== undefined) {
-          setRoute({ dep: change.dep ?? planned.dep, stops: change.stops ?? planned.stops, dest: change.dest ?? planned.dest });
-        }
-        if (change.altitude_ft !== undefined) flyAltitude(change.altitude_ft);
-        if (change.depart !== undefined) changeDepart(change.depart);
-      },
-    });
-    return () => useAsk.setState({ applyChange: null });
-  }, [setRoute, flyAltitude, changeDepart, planned.dep, planned.stops, planned.dest]);
   return { fileable, fileFlightPlan, flightToSave };
 }

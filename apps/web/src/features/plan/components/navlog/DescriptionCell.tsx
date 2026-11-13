@@ -5,14 +5,9 @@ import { TEXT } from "../../../../lib/text";
 import type { Description } from "../../hooks/useCheckpointNotes";
 
 /**
- * One checkpoint's "how to spot it" text -- an editable box from the
- * start, whether or not the AI button has ever been clicked for this
- * route: a pilot can type their own note here without asking for a
- * generated one first. Clicking the AI button just streams a value
- * into it later, the same as a pilot's own edit would, and this cell
- * doesn't care which one filled it in. Local draft state is what lets
- * typing feel immediate without saving on every keystroke; the save
- * itself happens on blur.
+ * One checkpoint's "how to spot it" text, the pilot's own, in an editable
+ * box. Local draft state is what lets typing feel immediate without
+ * saving on every keystroke; the save itself happens on blur.
  */
 export function DescriptionCell({
   description,
@@ -33,13 +28,10 @@ export function DescriptionCell({
    *  its own description is what's actually being edited. */
   onFocus: () => void;
 }) {
-  // null while nobody is editing: the box shows the note as it stands,
-  // and a line that streams in shows at once. A string while a pilot
-  // types, kept until it is saved -- a generated line arriving in the
-  // middle does not replace it, and a save that fails leaves it in the
-  // box to try again. It used to be one string reset whenever the note
-  // changed, so a line arriving mid-typing replaced the typing, and the
-  // blur that followed saw nothing new to save.
+  // null while nobody is editing: the box shows the note as it stands. A
+  // string while a pilot types, kept until it is saved -- a change to the
+  // note in the middle does not replace it, and a save that fails leaves
+  // it in the box to try again.
   const [draft, setDraft] = useState<string | null>(null);
   const id = useId();
   return (
@@ -74,7 +66,7 @@ export function DescriptionCell({
           );
         }}
         rows={1}
-        placeholder={description?.source === "error" ? "Couldn't auto-generate — type one" : "How to spot it…"}
+        placeholder="How to spot it…"
         // shadcn's own Textarea, sized down to a table cell: one line in
         // the row, at the row's own size -- 15 to a finger, where it was a
         // field's 17 among figures of 15 (iOS Safari zooms in on a field

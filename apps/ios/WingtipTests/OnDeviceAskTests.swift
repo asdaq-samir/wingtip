@@ -5,8 +5,7 @@ import Testing
 /// Ask with no signal (Wingtip/OnDevice): the figures the tools hand the
 /// model are the engine's, through the phone's own bridge; a sentence
 /// citing a figure not handed over, or a number not in what it cites, is
-/// dropped; with no model the engine's own words answer; and the router
-/// falls from the planner to the phone. The model is a fake here: the
+/// dropped; and with no model the engine's own words answer. The model is a fake here: the
 /// simulator may have none.
 struct OnDeviceAskTests {
     static let metarRaw = "KMSN 031853Z 27008G18KT 10SM FEW045 12/03 A3012"

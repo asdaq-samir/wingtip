@@ -63,7 +63,6 @@ private struct ReachedModels: ViewModifier {
             .environment(KeepForAir.shared)
             .environment(KeptShown.shared)
             .environment(VoiceInput.shared)
-            .environment(ServerFeatures.shared)
             .environment(ModelWeather.shared)
             .environment(WeatherLoop.shared)
     }

@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_procedures::figures::calls::hold",
   "description": "The planner's /api/holding answer (AIM 5-3-8): the entry and its steps, the other entry near a sector's edge, and the legs in the wind where a true airspeed, wind and altitude are all given.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

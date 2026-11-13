@@ -1,4 +1,4 @@
-import type { RankedNotam } from "../../lib/api/types";
+import type { RankedNotam } from "./engineRanking";
 
 /**
  * How the Brief's NOTAMs are shown, as ForeFlight 18.6 lets a pilot do

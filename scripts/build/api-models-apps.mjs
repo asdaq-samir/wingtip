@@ -3,7 +3,7 @@
 //
 //   node api-models-apps.mjs prep <openapi.json> <out.json>
 //   node api-models-apps.mjs kotlin <file> <openapi.json>
-//   node api-models-apps.mjs client <openapi.json> <models.kt> <planner|gateway|assistant> <out dir>
+//   node api-models-apps.mjs client <openapi.json> <models.kt> <planner|gateway> <out dir>
 //   node api-models-apps.mjs openapi <openapi.json> <out.json>
 //   node api-models-apps.mjs aliases <Types+Components+Schemas.swift> <module> <prefix> <out.swift>
 //
@@ -209,7 +209,7 @@ function openapi(doc) {
         const any = content["*/*"];
         if (any && any.schema?.type !== "string") response.content = { "application/json": any };
         // FastAPI's untyped JSON beside a response's real type (a tile's
-        // image/png, the assistant's application/x-ndjson) is left out;
+        // image/png) is left out;
         // alone (the nav log's lines), it is the bytes as they come.
         const json = content["application/json"];
         const untyped = json && Object.keys(json.schema ?? {}).length === 0;
@@ -245,8 +245,8 @@ function client(docPath, modelsKt, server, outDir) {
   const paths = {};
   const ops = [];
   for (const [path, item] of Object.entries(doc.paths)) {
-    // The planner and the assistant are reached through the gateway's
-    // proxy (UpstreamRoutes), their clients' base /api/planner/
+    // The planner is reached through the gateway's
+    // proxy (UpstreamRoutes), its client's base /api/planner/
     // (Config.plannerPath); the gateway's proxy is no call of the
     // gateway's own; a page ("/") is no API.
     if (!path.startsWith("/api/") || path.startsWith("/api/planner/")) continue;
@@ -286,7 +286,7 @@ function client(docPath, modelsKt, server, outDir) {
   for (const [, name] of fs.readFileSync(modelsKt, "utf8").matchAll(/^(?:data class|class|typealias|enum class) (\w+)/gm)) {
     classes.set(name.toLowerCase(), name);
   }
-  const pkg = { planner: "", gateway: ".gateway", assistant: ".assistant" }[server];
+  const pkg = { planner: "", gateway: ".gateway" }[server];
   const schemaMappings = {};
   for (const name of Object.keys(doc.components?.schemas ?? {})) {
     const found = classes.get(name.replace(/[^A-Za-z0-9]/g, "").toLowerCase());

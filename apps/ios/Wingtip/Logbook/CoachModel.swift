@@ -46,21 +46,15 @@ struct CoachPilot: Sendable {
 
 /// The Coach screen's state and its calls (the web app's useCoach): the
 /// pilot's record as the app has it, the certificate they hold, and on
-/// their ask the engine's plan through the planner, then the plan in
-/// words from the assistant. The plan shows as soon as it comes; the
-/// words follow and never hold it up, and with none the plan stands.
+/// their ask the engine's plan through the planner.
 @MainActor
 @Observable
 final class CoachModel {
     private(set) var pilot: CoachPilot?
     private(set) var plan: ProficiencyPlan?
-    private(set) var words: CoachWords?
     private(set) var making = false
-    private(set) var wording = false
     /// Why the record or the plan could not be had, said in place.
     private(set) var problem: String?
-    /// Why the words could not be had, said where they would be.
-    private(set) var wordsProblem: String?
 
     private let calls: CoachCalls
     private let fetchPilot: @Sendable () async throws -> CoachPilot
@@ -96,11 +90,6 @@ final class CoachModel {
 
     var ready: Bool { pilot != nil }
 
-    /// The model's line for each session, by the session's id.
-    var sessionLines: [String: String] {
-        Dictionary((words?.sessionLines ?? []).map { ($0.session, $0.text) }, uniquingKeysWith: { first, _ in first })
-    }
-
     func load() async {
         do {
             pilot = try await fetchPilot()
@@ -121,35 +110,17 @@ final class CoachModel {
                         ratings: certificate.ratings, remindDays: nil, today: today)
     }
 
-    /// The plan, then its words.
+    /// The plan.
     func make(home: String?) async {
         guard !making else { return }
         making = true
+        defer { making = false }
         problem = nil
-        words = nil
-        wordsProblem = nil
-        let planned: CoachPlanned
         debriefs = await fetchDebriefs()
         do {
-            planned = try await calls.plan(ask(home: home))
-            plan = planned.plan
-            making = false
+            plan = try await calls.plan(ask(home: home))
         } catch {
             problem = "Your plan could not be made: \(error.localizedDescription)"
-            making = false
-            return
-        }
-        // No words while the server's Claude features are off: the plan is
-        // the engine's whole, and nothing is promised in their place.
-        guard let wordsOf = calls.words else { return }
-        wording = true
-        defer { wording = false }
-        do {
-            let said = try await wordsOf(planned.raw)
-            words = said
-            if said.sentences.isEmpty, let why = said.unavailable { wordsProblem = "No words for now: \(why)" }
-        } catch {
-            wordsProblem = "No words for now: \(error.localizedDescription)"
         }
     }
 

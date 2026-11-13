@@ -22,8 +22,7 @@ const TILE_TINT = {
 } as const;
 
 /**
- * "When should I go?" in the Brief, under the verdict and the assistant's
- * field: an hour-by-hour strip across as far as the forecasts reach, each
+ * "When should I go?" in the Brief, under the verdict: an hour-by-hour strip across as far as the forecasts reach, each
  * hour go, caution, no-go or not known by the Brief's own Go / No-Go for
  * a flight leaving then, the best window said over it ("Best: 07:00–10:00
  * CST"), and a tap on an hour opening why, with its time and fuel. Its

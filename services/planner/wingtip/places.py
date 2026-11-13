@@ -35,7 +35,7 @@ from scipy.spatial import KDTree
 
 from .atomic import atomic_path
 from .config import DATA_DIR
-from .geo import _arc_nm, _unit_sphere, bearing_deg, distance_nm
+from .geo import _unit_sphere, bearing_deg, distance_nm
 from .retry import with_retries
 
 log = logging.getLogger(__name__)
@@ -181,16 +181,18 @@ def _nearest(table: dict, kind: str, lat: float, lon: float) -> tuple[str, float
     part = table[kind]
     if part["tree"] is None:
         return None
-    chord, i = part["tree"].query(_unit_sphere(lat, lon)[0])
-    return part["names"][i], float(_arc_nm(np.array(chord))), float(part["lat"][i]), float(part["lon"][i])
+    # The KD-tree's chord finds the nearest; the engine measures it, on
+    # WGS-84 like every other distance (wingtip.geo.nearest_neighbour_nm).
+    _, i = part["tree"].query(_unit_sphere(lat, lon)[0])
+    return part["names"][i], float(distance_nm(lat, lon, part["lat"][i], part["lon"][i])), float(part["lat"][i]), float(part["lon"][i])
 
 
 def _nearest_few(table: dict, kind: str, lat: float, lon: float, k: int) -> list[tuple[str, float]]:
     part = table[kind]
     if part["tree"] is None:
         return []
-    chords, indices = part["tree"].query(_unit_sphere(lat, lon)[0], k=min(k, len(part["names"])))
-    return [(part["names"][i], float(_arc_nm(np.array(c)))) for c, i in zip(np.atleast_1d(chords), np.atleast_1d(indices))]
+    _, indices = part["tree"].query(_unit_sphere(lat, lon)[0], k=min(k, len(part["names"])))
+    return [(part["names"][i], float(distance_nm(lat, lon, part["lat"][i], part["lon"][i]))) for i in np.atleast_1d(indices)]
 
 
 def checkpoint_name(kind: str, lat: float, lon: float, table: dict | None = None) -> str | None:

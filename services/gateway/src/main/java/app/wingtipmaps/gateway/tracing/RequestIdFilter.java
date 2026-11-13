@@ -23,7 +23,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * ({@code requestId} in the MDC, logging.pattern.correlation), on its
  * span as {@code wingtip.request_id} where tracing is on, so Jaeger finds
  * the trace by the id a pilot's page saw, back on the response, and on to
- * the planner and the assistant ({@link TraceHeaders}).
+ * the planner ({@link TraceHeaders}).
  *
  * <p>Ordered just after Spring's ServerHttpObservationFilter
  * (HIGHEST_PRECEDENCE + 1), so the request's span is current when it is

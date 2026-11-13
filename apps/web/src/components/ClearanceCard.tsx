@@ -5,7 +5,6 @@ import { cn } from "cn";
 import IconButton from "./IconButton";
 import { Toggle } from "@base-ui/react/toggle";
 import ListenThrough from "./ListenThrough";
-import ClearancePhoto from "./ClearancePhoto";
 import { ClearanceElements, Line } from "./ClearanceRead";
 import { ListGroup, ListRow } from "./GroupedList";
 import { Button } from "./ui/button";
@@ -337,8 +336,6 @@ export default function ClearanceCard({
             data-testid="clearance-text"
             className={cn(TEXT.detail, "resize-none font-mono")}
           />
-          {/* A clearance copied down on paper, read into the words above. */}
-          <ClearancePhoto onRead={pick} />
           {/* The clearance element by element as read, a polite live region
               so each new word is said without taking the focus; the one
               tap that changes the plan is Use This Route on the Enter row. */}

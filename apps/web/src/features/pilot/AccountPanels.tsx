@@ -24,8 +24,7 @@ import ChecklistPage from "../../components/ChecklistPage";
 import SquawksPage from "./SquawksPage";
 import { aircraftKey, choiceOf } from "../../lib/aircraftChoice";
 import { api } from "../../lib/api/client";
-import type { Aircraft, AircraftRequest, HandbookFigures, InspectionsRequest } from "../../lib/api/types";
-import { HandbookPhotoRow, mergeHandbook, type ConfirmedHandbook } from "../document-photo";
+import type { Aircraft, AircraftRequest, InspectionsRequest } from "../../lib/api/types";
 import { cruiseReferenceFt } from "../../lib/performance";
 import { usePreferences } from "../../lib/preferences";
 import { TEXT } from "../../lib/text";
@@ -374,28 +373,22 @@ export function AircraftPanel() {
     control,
     handleSubmit,
     reset,
-    setValue,
     setError,
     formState: { errors },
   } = useForm<AircraftFormValues>({ resolver: zodResolver(aircraftSchema), defaultValues: EMPTY_AIRCRAFT_FORM });
 
-  // Handbook figures confirmed from a photo (features/document-photo),
-  // kept with the airplane when the pilot saves it, never before.
-  const [handbook, setHandbook] = useState<HandbookFigures | null>(null);
   const cancelEdit = () => {
     setEditingId(null);
     setAdding(false);
-    setHandbook(null);
     reset(EMPTY_AIRCRAFT_FORM);
   };
 
   // A save or a delete shows in the list at once, the form closed
   // (useAirplanes); a refused save opens the form again on what was typed,
   // with why at its top, where the pilot was.
-  const { list, isLoading, saving, save, remove } = useAirplanes(({ id, request, figures }, why) => {
+  const { list, isLoading, saving, save, remove } = useAirplanes(({ id, request }, why) => {
     if (id) setEditingId(id);
     else setAdding(true);
-    setHandbook(figures);
     reset(formOf(request));
     setError("root.server", { type: "server", message: why });
   });
@@ -404,28 +397,14 @@ export function AircraftPanel() {
     // One the gateway has yet to give an id is not edited until it has.
     if (a.id < 0) return;
     setEditingId(a.id);
-    setHandbook(null);
     reset(formOf(a));
   };
 
-  // The confirmed figures put in the form's fields to see and save; the rest of the page's go with that save.
-  const fromPhoto = ({ handbook: figures, profile }: ConfirmedHandbook) => {
-    const fill = (name: keyof AircraftFormValues, v: number | null | undefined) => {
-      if (v != null) setValue(name, String(Math.round(v * 10) / 10), { shouldDirty: true, shouldValidate: true });
-    };
-    fill("cruiseTasKt", profile.cruise_tas_kt);
-    fill("fuelBurnGph", profile.fuel_burn_gph);
-    fill("cruisePowerPct", profile.cruise_power_pct);
-    fill("climbFuelBurnGph", profile.climb_fuel_burn_gph);
-    fill("usableFuelGal", profile.usable_fuel_gal);
-    setHandbook((now) => mergeHandbook(now ?? list?.find((a) => a.id === editingId)?.handbook, figures));
-  };
-
   const onSubmit = (values: AircraftFormValues) => {
-    const sent = { id: editingId, figures: handbook };
+    const id = editingId;
     cancelEdit();
     save({
-      ...sent,
+      id,
       request: {
         tailNumber: values.tailNumber.trim(),
         typeDesignator: values.typeDesignator.trim(),
@@ -641,9 +620,6 @@ export function AircraftPanel() {
                       />
                     </FieldHit>
                   </ListRow>
-                </ListGroup>
-                <ListGroup>
-                  <HandbookPhotoRow onConfirmed={fromPhoto} pending={!!handbook} />
                 </ListGroup>
                 <ListGroup title="True airspeed">
                   <NumberRow

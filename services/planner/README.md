@@ -2,8 +2,7 @@
 
 The planner: it works out a flight, over HTTP. Fetches the FAA's data
 and the weather, reads FAA sectional tiles, scores the checkpoints with
-the chart model in its own process, puts the nav log together and runs
-the AI assistant, and asks the Rust engine every aviation rule by name
+the chart model in its own process, puts the nav log together, and asks the Rust engine every aviation rule by name
 (`wingtip_native.call`; [`engine/README.md`](../../engine/README.md)). It
 is one of four layers: under it the engine, beside it Spring Boot
 (accounts and saved records, which asks this service when it needs a
@@ -28,9 +27,8 @@ calls and returns, and never imports another: `lint-imports` holds that
 (`.importlinter`: no router imports another, only `app/main.py` imports
 the routers, and `wingtip` never imports `app`), in check.sh's py and
 planner areas and in CI. The legs themselves are
-`wingtip.navlog`'s. The planner calls no model: every Claude call is the
-`assistant` service's (services/assistant), which asks the endpoints
-here for its figures.
+`wingtip.navlog`'s. The planner calls no model; the pilot's own AI app reaches it through
+the MCP connector (`app/mcp`).
 Every response, streamed lines included, is a model in `app/schemas/` (one module per router,
 `common.py` for those shared):
 FastAPI validates against it and publishes it in `openapi.json`,

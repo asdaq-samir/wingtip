@@ -10,11 +10,10 @@ describe("the progress toast", () => {
   });
 
   it("says one thing at a time, the nav log's first", () => {
-    expect(progressWords(null, null, false, null)).toBeNull();
-    expect(progressWords(null, "course", true, null)).toBe("Drawing Route…");
-    expect(progressWords(null, null, true, null)).toBe("Fetching Weather…");
-    expect(progressWords(null, null, false, { done: 2, total: 9 })).toBe("Describing Checkpoints 2 of 9");
-    expect(progressWords("Altitudes", "navlog", false, null)).toBe("Planning Altitudes…");
+    expect(progressWords(null, null, false)).toBeNull();
+    expect(progressWords(null, "course", true)).toBe("Drawing Route…");
+    expect(progressWords(null, null, true)).toBe("Fetching Weather…");
+    expect(progressWords("Altitudes", "navlog", false)).toBe("Planning Altitudes…");
   });
 });
 

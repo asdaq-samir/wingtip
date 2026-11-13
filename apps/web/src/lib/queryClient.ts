@@ -419,7 +419,7 @@ export const plateQuery = (airport: string, id: string) =>
 export const flightsQuery = queryOptions({ queryKey: ["flights"], queryFn: () => api.flights.list(), meta: { silent: true } });
 
 /** The pilot's training record: the logbook's, the checkride's, the
- *  Brief's mock oral and solo review's, a flight's page's. */
+ *  Brief's solo review's, a flight's page's. */
 export const trainingQuery = queryOptions({ queryKey: ["training"], queryFn: () => api.training.get() });
 
 /** The pilot's own airplanes, for the aircraft chips, the Brief and

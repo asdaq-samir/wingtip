@@ -1241,7 +1241,7 @@ draft from the auto-logbook is pre-filled and says so.
 3. **Trends:** approaches flown, landings and debrief scores, each with
    an up or down arrow and one line of coaching words. A trend needs
    enough flights before it shows; until then it says how many more.
-4. **Practice:** quizzes, mock oral and drills, as rows with badges.
+4. **Practice:** quizzes and drills, as rows with badges.
 5. **Debriefs:** past flights, each opening its debrief.
 6. **Instructor:** the CFI invited, endorsements, and the 61.93
    solo cross-country review.
@@ -1745,7 +1745,7 @@ The iOS speed audit measured three things; what changed for each:
     is missing, come at once (`OnDeviceAsk.answer`).
   - Apple's model is warmed (`LanguageModelSession.prewarm()`, its name
     in the iOS 27.2 SDK) when the one search takes focus and when Ask
-    opens, unless the planner will answer (`AskRouter.prewarm`).
+    opens (`AskRouter.prewarm`).
   - The answer streams (`streamResponse`). A sentence is shown once it
     is finished and has passed the same id and number checks as the
     whole answer, so every figure is still the engine's from the first

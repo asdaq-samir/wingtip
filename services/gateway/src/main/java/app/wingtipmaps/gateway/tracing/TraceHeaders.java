@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * What every request the browser's proxy (StreamingProxy) makes of the
- * planner or the assistant carries so the trace goes on through it: the
+ * planner carries so the trace goes on through it: the
  * W3C {@code traceparent} of the request being served (where
  * management.tracing is on) and the page's request id
  * ({@link RequestIdFilter}). The proxy pipes through the JDK's HttpClient

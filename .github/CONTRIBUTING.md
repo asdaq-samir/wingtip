@@ -11,9 +11,7 @@ Docker is the only thing to install: every service builds its own image.
 docker compose up gateway          # the app at http://localhost:8080/app
 ```
 
-The Claude features (the written briefing, checkpoint notes, the
-assistant: the `assistant` service) need an `ANTHROPIC_API_KEY` of your own in `.env`; without one
-they say the model cannot be reached. The full setup is in
+The full setup is in
 [docs/LOCAL-DEV.md](../docs/LOCAL-DEV.md).
 
 ## Where a change goes
@@ -31,7 +29,7 @@ The project is four layers, each with one job:
   the generated types, a fixture test and the WebAssembly build follow;
   [engine/README.md](../engine/README.md) has the steps.
 - **Working out a flight** (fetching FAA and weather data, the chart and
-  its model, the assistant) is the planner: [`services/planner`](../services/planner)
+  its model) is the planner: [`services/planner`](../services/planner)
   over [`services/planner/wingtip`](../services/planner/wingtip). It asks the engine every rule.
 - **Who the pilot is and what they saved** (accounts, sign-in, records,
   the public API, scheduled mail) is Spring Boot:

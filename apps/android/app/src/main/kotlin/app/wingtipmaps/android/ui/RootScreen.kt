@@ -285,8 +285,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         )
     }
 
-    // The sparkle only where a model can answer (AiOffered): Nano here, or
-    // the server's assistant while the Claude features are on.
+    // The sparkle only where a model can answer (AiOffered): Nano here.
     val askOffered = rememberAiOffered()
     val onAsk = if (askOffered) ({ pages.show(SheetPage.Ask) }) else null
     val mapView: @Composable (Dp, Boolean) -> Unit = { covered, buttonsOnSheet ->

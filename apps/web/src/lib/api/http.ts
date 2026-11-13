@@ -1,6 +1,5 @@
 import createClient, { type Middleware } from "openapi-fetch";
 import type { paths } from "./schema";
-import type { paths as AssistantPaths } from "./assistant-schema";
 import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
 import { REQUEST_ID_HEADER, newRequestId } from "./requestId";
@@ -13,9 +12,8 @@ import { failIfNotOk } from "./errors";
  * echoed back; session cookies are attached by the browser on their
  * own, which is the condition CSRF exploits, so this is what tells our
  * own request apart from someone else's page making the same one. The
- * one place the rule lives -- both clients' middleware, both plain
- * fetches, and the assistant's and the words' own (./assistant, ./words)
- * ask it.
+ * one place the rule lives -- both clients' middleware and the plain
+ * fetches ask it.
  */
 export function csrfHeaders(method: string): Record<string, string> {
   if (method.toUpperCase() === "GET") return {};
@@ -62,13 +60,6 @@ export class GatewayRequest extends TimedRequest {
 
 export const planner = createClient<paths>({ baseUrl: "", Request: GatewayRequest });
 planner.use(csrfAndFailures);
-
-/** The assistant service's endpoints -- every Claude call: the narrative,
- *  the checkpoint notes, the mock oral (and ./assistant, ./words) -- typed
- *  by its own document, at the same /api/planner/... addresses: the
- *  gateway sends them on to the assistant (PlannerProxyController). */
-export const assistant = createClient<AssistantPaths>({ baseUrl: "", Request: GatewayRequest });
-assistant.use(csrfAndFailures);
 
 /** The Spring Boot endpoints, on this same origin. */
 export const gateway = createClient<GatewayPaths>({ baseUrl: "", Request: TimedRequest });

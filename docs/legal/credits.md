@@ -37,7 +37,6 @@ the terms it is used under.
 | MapLibre GL | BSD 3-Clause | The web map and the Android map |
 | Apple MapKit | Apple's terms | The iPhone's map under the chart |
 | Google Maps Platform map tiles | Google's terms; its attribution is drawn on the map | The web's Google overlay where it is turned on |
-| Claude, by Anthropic | Anthropic's commercial terms | The features the app says Claude writes: Ask, the written briefing, the words beside a figure, checkpoint notes, the mock oral |
 
 ## A planning aid
 

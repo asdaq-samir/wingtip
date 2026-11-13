@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_flight::calls::altitudes",
   "description": "Whether an altitude asked for may be planned: at least 500 ft (91.119(c)), under Class A for VFR (any figure under 18,000 ft MSL, 71.33(a), 91.135), at most FL410 for IFR (91.179(b)(4)).",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

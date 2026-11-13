@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 /**
- * Every planner and assistant endpoint the web app asks for is one the
- * gateway forwards: an operation its service marks with `x-gateway` in its
+ * Every planner endpoint the web app asks for is one the gateway
+ * forwards: an operation the planner marks with `x-gateway` in its
  * OpenAPI document (services/planner/app/gateway.py), which the gateway
  * reads to build its routes (UpstreamRoutes). An unmarked one is a 404
  * there, and the runway's forecast wind and an airplane's alert state had
@@ -26,16 +26,12 @@ function marked(document: string): Set<string> {
 }
 
 describe("the gateway", () => {
-  it("forwards every planner and assistant endpoint the web app asks for", () => {
-    const forwarded = {
-      planner: marked("../../../../../services/planner/openapi.json"),
-      assistant: marked("../../../../../services/assistant/openapi.json"),
-    };
-    const asked = [...read("./client.ts").matchAll(/(planner|assistant)\.(GET|POST|DELETE)\("([^"]+)"/g)].map((m) => ({
-      service: m[1] as "planner" | "assistant",
-      call: `${m[2]} ${m[3]}`,
-    }));
+  it("forwards every planner endpoint the web app asks for", () => {
+    const forwarded = marked("../../../../../services/planner/openapi.json");
+    // The planner's calls, by area (./client's api).
+    const areas = ["./plannerRoute.ts", "./plannerAirports.ts", "./plannerMap.ts", "./plannerDev.ts"].map(read).join("\n");
+    const asked = [...areas.matchAll(/planner\.(GET|POST|DELETE)\("([^"]+)"/g)].map((m) => `${m[1]} ${m[2]}`);
     expect(asked.length).toBeGreaterThan(30);
-    expect(asked.filter(({ service, call }) => !forwarded[service].has(call))).toEqual([]);
+    expect(asked.filter((call) => !forwarded.has(call))).toEqual([]);
   });
 });

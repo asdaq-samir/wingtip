@@ -1,5 +1,5 @@
 {
- "about": "What POST /api/read-document answers (the assistant's DocumentRead) for documents.json's pages, the engine's checks computed by the engine itself: for the apps' tests of their review screens, which decode these as the server sends them. Regenerate after a rule changes.",
+ "about": "A page read (DocumentRead) for each of documents.json's pages, with the engine's checks computed by the engine itself: for the phones' tests of their review screens. Written by the server's reader until it was taken out (decision 0041); the phones now read pages on the device into the same shape. Check the answers again by hand after a rule changes.",
  "handbook": {
   "kind": "poh-performance",
   "model": "claude-opus-5-5",

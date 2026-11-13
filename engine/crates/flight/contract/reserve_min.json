@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_flight::calls::call",
   "description": "The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

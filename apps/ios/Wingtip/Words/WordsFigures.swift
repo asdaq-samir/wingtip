@@ -1,5 +1,4 @@
 import Foundation
-import OpenAPIRuntime
 
 /// The figures the words rest on, as the phone assembles them from the
 /// briefing and the Go / No-Go it has already (nothing is fetched here),
@@ -118,33 +117,5 @@ enum WordsFigures {
             }
         }
         return out
-    }
-}
-
-/// POST /api/words/weather's body (app.routers.words.WeatherAsk): the
-/// briefing's own parameters, so the planner reads the same briefing.
-typealias WeatherWordsAsk = APIWeatherAsk
-
-extension WeatherWordsAsk {
-    init(dep: String, dest: String, stops: [String] = [], eteMin: Double? = nil, fixes: String = "", legMin: String = "") {
-        self.init(dep: dep, depart: nil, dest: dest, eteMin: eteMin, fixes: fixes, legMin: legMin, stops: stops)
-    }
-}
-
-/// POST /api/words/risk's body (app.routers.words.RiskAsk): the Go /
-/// No-Go as the planner answered it, the parts its words read (the
-/// loading and the balance are left out: the phone keeps only the parts
-/// of them its pages show, and the planner reads neither for the words),
-/// and the pilot's own record where the phone has one.
-typealias RiskWordsAsk = APIRiskAsk
-
-extension RiskWordsAsk {
-    /// The answer's line and findings are the RiskVerdict's looser ones by
-    /// name, read again as those.
-    init(_ answer: GoNoGoAnswer, pilot: [String: String]? = nil) throws {
-        let verdict = APIRiskVerdict(finding: nil, items: try answer.items.map { try Engine.recoded($0) }, line: try Engine.recoded(answer.line),
-                                     risk: answer.risk, words: nil)
-        let record = try pilot.map { try OpenAPIObjectContainer(unvalidatedValue: $0) }
-        self.init(pilot: record.map { .init(additionalProperties: $0) }, verdict: verdict)
     }
 }

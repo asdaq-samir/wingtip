@@ -54,15 +54,7 @@ struct FlightExtrasDecodingTests {
         #expect(try drawing.fixes[1].charted() == "at 2,000 ft")
     }
 
-    @Test func theNotesAsTheyAreWritten() throws {
-        let lines = [
-            #"{"type":"start","count":2}"#,
-            #"{"type":"checkpoint","id":"c1","lat":42.1,"lon":-88.2,"description":"The water tower west of the lake.","source":"generated"}"#,
-            #"{"type":"checkpoint","id":"c2","lat":42.2,"lon":-88.3,"description":null,"source":"error","detail":"Busy"}"#,
-            #"{"type":"done"}"#,
-        ]
-        let read = try lines.map { try Planner.json.decode(NoteLine.self, from: Data($0.utf8)) }
-        #expect(read[0].count == 2 && read[1].description?.hasPrefix("The water") == true && read[2].source == "error" && read[3].type == "done")
+    @Test func aCheckpointsNoteIsKeptByWhereItIs() {
         #expect(CheckpointNotesView.key(42.1, -88.2) == "42.10000,-88.20000")
     }
 

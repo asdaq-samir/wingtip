@@ -1,7 +1,6 @@
 """The readings in words' sources (routers/words.py): each of the
-planner's figures as a line a sentence can cite and a pilot can read raw,
-for the assistant service to put into words. A briefing's changes are
-found here, and there are none to send where nothing changed."""
+planner's figures as a line a sentence can cite and a pilot can read raw.
+A briefing's changes are found here, and there are none to send where nothing changed."""
 
 from fastapi.testclient import TestClient
 

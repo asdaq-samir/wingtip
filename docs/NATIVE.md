@@ -11,14 +11,14 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
 - `apps/ios/project.yml`: the Xcode project, made by XcodeGen on the runner.
   Nothing under `apps/ios/` is a generated file; the project is never
   committed.
-- `apps/ios/Wingtip/API`: the planner's, the assistant's and the gateway's
+- `apps/ios/Wingtip/API`: the planner's and the gateway's
   calls, generated from their OpenAPI documents as the web's types are:
   `scripts/build/api-models-apps.sh` runs Apple's swift-openapi-generator
   (its version in `.tool-versions`) into `apps/ios/WingtipAPI`, one module a
-  document (`PlannerAPI`, `GatewayAPI`, `AssistantAPI`: each its `Client`,
+  document (`PlannerAPI`, `GatewayAPI`: each its `Client`,
   its operations and its schemas), and names each schema in the app in
-  `API/Generated` (the planner's prefixed `API`, the gateway's `GW`, the
-  assistant's `AS`). All committed; `--check` and CI fail when they are not
+  `API/Generated` (the planner's prefixed `API`, the gateway's `GW`). All
+  committed; `--check` and CI fail when they are not
   what the documents give, so a field or a call a server renames fails the
   build rather than a screen. The clients go through the swift-openapi
   runtime's URLSession transport (`Servers.swift`): one session a wait
@@ -116,16 +116,13 @@ each with the chips of the figures it rests on; a chip opens the report
 as sent. Every figure is the engine's or the planner's; a model only
 writes the sentences, and never a figure of its own:
 
-- `WordsFor` asks the planner first while the Claude features are on
-  (`PlannerWords`: `POST /api/words/{weather,risk}` through the gateway's
-  proxy, Claude in the assistant service; off by default, decision 0035,
-  when it asks only this iPhone), then this iPhone when the planner fails or
-  cannot be reached (`OnDeviceWords`: Apple's on-device model,
-  FoundationModels with Apple Intelligence on), and says why
-  in plain words when neither can (no Apple Intelligence, the model still
-  downloading, no signal and no planner). The caption over the
-  sentences says which wrote them ("From the planner", "On this
-  iPhone").
+- `WordsFor` asks this iPhone (`OnDeviceWords`: Apple's on-device model,
+  FoundationModels with Apple Intelligence on, then Apple's Private Cloud
+  Compute), and says why in plain words when it cannot (no Apple
+  Intelligence, the model still downloading). The caption over the
+  sentences says which wrote them ("On this iPhone", "Apple's Private
+  Cloud Compute"). The planner's Claude path was taken out on 2026-11-12
+  (decision 0041).
 - The figures go to the device's model as compact JSON of `{id, label,
   text}` (`WordsFigures`), with the planner's own ids (`metar:KMSN`,
   `taf:KMSN`, `hazard:0`, `tfr:<notam id>`, `finding:fuel`,
@@ -144,17 +141,14 @@ writes the sentences, and never a figure of its own:
 ## Ask and the Brief's glance, with no signal
 
 `Wingtip/OnDevice/` answers Ask in the air with nothing leaving the
-phone, and gives the Brief its glance when the planner's words cannot be
-had. The figures are the engine's on the phone or the planner's as last
-fetched; a model only words them:
+phone, and gives the Brief its glance. The figures are the engine's on
+the phone or the planner's as last fetched; a model only words them:
 
-- **Where an answer comes from** (`AskRoute`): Ask's menu at its top left
-  picks Automatic (the planner, else this iPhone), The Planner, or On
-  This iPhone, kept as `wingtip.ask.where`. Under Automatic a phone with
-  no path out (`NWPathMonitor`) asks the phone at once, and a planner
-  that fails or errs before its first word is replaced by the phone's
-  answer; one begun stays the planner's. The caption over each answer
-  says who wrote it.
+- **Where an answer comes from** (`AskRouter`): this iPhone, always;
+  nothing goes to Wingtip's server for an answer, and the caption over each
+  answer says which of Apple's models wrote it. The planner's Ask (Claude
+  in the assistant service) and the menu that chose between them were
+  taken out on 2026-11-12 (decision 0041).
 - **The tools** (`OnDeviceTools`, Foundation Models' `Tool`): the field's
   METAR, TAF and density altitude; the wind on its runways; the fuel; the
   glide; the nearest fields from the cycle packs. Each asks the engine
@@ -172,9 +166,8 @@ fetched; a model only words them:
   still downloading, or nothing kept): `EngineWords` reads the question's
   words for its topic and says each figure as the engine's own sentence,
   captioned "The engine on this iPhone" with why.
-- **The Brief's glance** (`BriefSummary`, `BriefSummarySection`): when
-  the Go / No-Go's words are not the planner's, "At a Glance" over it
-  gives the verdict and at most three actions (docs/decisions/0012),
+- **The Brief's glance** (`BriefSummary`, `BriefSummarySection`): "At a
+  Glance" over the Go / No-Go gives the verdict and at most three actions (docs/decisions/0012),
   guided generation of `BriefGlanceAnswer` from the findings held. The
   finding must be the verdict's, each action must name a finding acted
   on and quote only its numbers, or the engine's `Glance` is shown. Say

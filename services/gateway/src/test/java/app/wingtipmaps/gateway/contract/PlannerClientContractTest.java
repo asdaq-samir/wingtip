@@ -53,8 +53,8 @@ import tools.jackson.databind.node.ObjectNode;
  * and method exist, every required field or query parameter is sent
  * (the generated types let one be left null), nothing is sent the
  * operation does not take, and each value is null only where the planner
- * takes null. The briefing's query and the changes' body, for the
- * assistant, are written by hand and checked the same way.
+ * takes null. The briefing's query and the changes' body are written by
+ * hand and checked the same way.
  */
 class PlannerClientContractTest {
 
@@ -84,8 +84,6 @@ class PlannerClientContractTest {
             new Call(
                     "briefing (no stops)",
                     c -> c.planner().briefing("KDLH", "KMSP", List.of(), Instant.parse("2026-11-09T15:00:00Z"), null)),
-            new Call(
-                    "changes", c -> c.planner().changes("KDLH", "KMSP", List.of("KHYR"), Stub.briefing, Stub.briefing)),
             new Call(
                     "currency",
                     c -> c.planner().currency(logbook(), DAY.minusYears(1), DAY.plusYears(2), DAY.minusMonths(3), DAY)),
@@ -121,14 +119,9 @@ class PlannerClientContractTest {
     /** PlannerClient's methods that ask nothing themselves. */
     private static final Set<String> NOT_CALLS = Set.of("endorsementKind"); // a filter over endorsementKinds()
 
-    /** The gateway forwards the briefings it watches to the assistant,
-     *  which hands the body whole to the planner's words sources: the body
-     *  is the planner's ChangesAsk, though the assistant is who is asked. */
-    private static final Map<String, String> BODY_FOR = Map.of("changes", "/api/words/changes/sources");
-
     @Test
     void everyCallFitsThePlannersDocument() {
-        List<String> problems = problems(OpenApiContract.shipped("planner"), OpenApiContract.shipped("assistant"));
+        List<String> problems = problems(OpenApiContract.shipped("planner"));
         if (!problems.isEmpty()) {
             fail("The gateway's calls do not fit services/planner/openapi.json:\n  " + String.join("\n  ", problems));
         }
@@ -158,7 +151,7 @@ class PlannerClientContractTest {
     void aBodyFieldRenamedIsNamed() {
         JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
         rename(planner, "CurrencyAsk", "today", "asOf");
-        assertThat(problems(planner, OpenApiContract.shipped("assistant")))
+        assertThat(problems(planner))
                 .anySatisfy(p -> assertThat(p)
                         .startsWith("PlannerClient.currency:")
                         .contains("body.today is sent, but the planner has no such field"))
@@ -175,7 +168,7 @@ class PlannerClientContractTest {
                 ((ObjectNode) param).put("name", "ete_minutes");
             }
         }
-        assertThat(problems(planner, OpenApiContract.shipped("assistant")))
+        assertThat(problems(planner))
                 .anySatisfy(p -> assertThat(p)
                         .startsWith("PlannerClient.briefing:")
                         .contains("query parameter 'ete_min' is sent"));
@@ -185,7 +178,7 @@ class PlannerClientContractTest {
     void anOperationGoneIsNamed() {
         JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
         ((ObjectNode) planner.get("paths")).remove("/api/pilot/endorsement-kinds");
-        assertThat(problems(planner, OpenApiContract.shipped("assistant")))
+        assertThat(problems(planner))
                 .anySatisfy(
                         p -> assertThat(p)
                                 .isEqualTo(
@@ -203,19 +196,18 @@ class PlannerClientContractTest {
         }
     }
 
-    /** What is wrong with every call in CALLS against the two documents,
-     *  each problem headed by the client method it is in. */
-    static List<String> problems(JsonNode plannerDocument, JsonNode assistantDocument) {
+    /** What is wrong with every call in CALLS against the planner's
+     *  document, each problem headed by the client method it is in. */
+    static List<String> problems(JsonNode plannerDocument) {
         OpenApiContract planner = new OpenApiContract(plannerDocument);
         List<String> problems = new ArrayList<>();
-        try (Stub plannerStub = new Stub("planner", planner);
-                Stub assistantStub = new Stub("assistant", new OpenApiContract(assistantDocument))) {
+        try (Stub plannerStub = new Stub("planner", planner)) {
             Stub.briefing = new AnswerContract(planner)
                     .sample(planner.operation("GET", "/api/briefing")
                             .flatMap(OpenApiContract::answerSchema)
                             .orElseThrow())
                     .toString();
-            PlannerClient client = Upstreams.plannerClient(plannerStub.url(), assistantStub.url());
+            PlannerClient client = Upstreams.plannerClient(plannerStub.url());
             Clients clients = new Clients(
                     client,
                     accounts(plannerStub.url()),
@@ -226,7 +218,6 @@ class PlannerClientContractTest {
                 String who = call.method().contains(".") ? call.method() : "PlannerClient." + call.method();
                 List<Stub.Asked> asked = new ArrayList<>();
                 plannerStub.asked.clear();
-                assistantStub.asked.clear();
                 try {
                     call.make().accept(clients);
                 } catch (PlannerUnavailableException | AccountService.AccountNotDeletedException refused) {
@@ -238,21 +229,18 @@ class PlannerClientContractTest {
                     }
                 }
                 asked.addAll(plannerStub.asked);
-                asked.addAll(assistantStub.asked);
                 if (asked.isEmpty()) {
                     problems.add(who + ": asked nothing of the planner");
                 }
                 for (Stub.Asked one : asked) {
-                    problems.addAll(check(call, one, planner).stream()
-                            .map(p -> who + ": " + p)
-                            .toList());
+                    problems.addAll(check(one).stream().map(p -> who + ": " + p).toList());
                 }
             }
         }
         return problems.stream().distinct().toList();
     }
 
-    private static List<String> check(Call call, Stub.Asked asked, OpenApiContract planner) {
+    private static List<String> check(Stub.Asked asked) {
         List<String> problems = new ArrayList<>();
         OpenApiContract document = asked.stub().contract;
         JsonNode operation = document.operation(asked.method(), asked.path()).orElse(null);
@@ -268,20 +256,11 @@ class PlannerClientContractTest {
                 problems.add("header " + name + " is sent, but the operation takes no such header " + headers.keySet());
             }
         });
-        String bodyPath = BODY_FOR.get(call.method());
-        JsonNode bodyOperation = bodyPath == null
-                ? operation
-                : planner.operation("POST", bodyPath).orElse(null);
-        if (bodyOperation == null) {
-            problems.add("POST " + bodyPath + ", which takes this body on, is not in services/planner/openapi.json");
-        } else {
-            JsonNode schema = OpenApiContract.requestSchema(bodyOperation).orElse(null);
-            OpenApiContract against = bodyPath == null ? document : planner;
-            if (schema != null && asked.body().isBlank()) {
-                problems.add("no body is sent, but " + asked.method() + " " + asked.path() + " takes one");
-            } else if (schema != null) {
-                problems.addAll(against.check(Stub.parse(asked.body()), schema, "body"));
-            }
+        JsonNode schema = OpenApiContract.requestSchema(operation).orElse(null);
+        if (schema != null && asked.body().isBlank()) {
+            problems.add("no body is sent, but " + asked.method() + " " + asked.path() + " takes one");
+        } else if (schema != null) {
+            problems.addAll(document.check(Stub.parse(asked.body()), schema, "body"));
         }
         return problems;
     }

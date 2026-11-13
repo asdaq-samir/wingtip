@@ -12,15 +12,9 @@ import java.io.Serial;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,10 +36,7 @@ import org.springframework.web.ErrorResponseException;
  * account, started by them), while paid time runs (a store's or the
  * website's, recorded by {@link #paid}), or always when they are given
  * them: a developer, or an address {@code app.subscription.comped-emails}
- * lists (an instructor, a tester). Each feature Claude writes is counted
- * against a monthly cap per pilot, so a heavy user of the mock oral --
- * Opus, cents a question -- cannot cost more than a subscription brings
- * in. A developer's own testing is not counted.
+ * lists (an instructor, a tester).
  *
  * <p>Where nobody can sign in and writes are open (app.open-writes: one's
  * own machine) there is no pilot to hold a subscription, and every paid
@@ -54,31 +45,13 @@ import org.springframework.web.ErrorResponseException;
  * <p>A deployment may sell no subscription at all ({@code
  * app.subscription.enabled} false), at the owner's ask for the proof of
  * concept ("no mention of it at all ... if it picks up, I will go that
- * route"): the debrief, which costs nothing a use, is then everyone's,
- * and the features Claude writes are whoever {@code app.claude-features}
- * says -- nobody, the developers, or every pilot signed in -- each within
- * the monthly caps, which keep what one pilot can cost in Claude calls
- * bounded.
- *
- * <p>Nobody is the default, and it wins over everything else -- a sold
- * subscription, a developer, a machine of one's own -- so that with it no
- * request reaches Anthropic at all. The owner, 2026-11-10, after the cost
- * audit found Claude 90-96% of the bill: "To keep the cost low, we only
- * add the claude feature later when we decide about subscription model.
- * For now just the free siri and gemini." (docs/decisions/0035).
+ * route"): the debrief, which costs nothing a use, is then everyone's.
  */
 @Service
 public class SubscriptionService {
 
     /** Why a paid call was refused: the status and the pilot's sentence. */
     public record Refusal(int status, String detail) {}
-
-    /** Who has the features Claude writes where no subscription is sold. */
-    public enum ClaudeFeatures {
-        OFF,
-        DEVELOPERS,
-        EVERYONE
-    }
 
     /** The trial is already started, or was once: once an account. A 409 problem. */
     public static class TrialUsedException extends ErrorResponseException {
@@ -100,10 +73,8 @@ public class SubscriptionService {
     private final SignInOptions signIn;
     private final Clock clock;
     private final int trialDays;
-    private final Map<PaidFeature, Integer> caps;
     private final Set<String> compedEmails;
     private final boolean sold;
-    private final ClaudeFeatures claude;
 
     @Autowired
     public SubscriptionService(
@@ -114,20 +85,8 @@ public class SubscriptionService {
                 signIn,
                 Clock.systemUTC(),
                 app.subscription().trialDays(),
-                Map.of(
-                        PaidFeature.NARRATIVE,
-                        app.subscription().caps().narrative(),
-                        PaidFeature.CHECKPOINT_NOTES,
-                        app.subscription().caps().checkpointNotes(),
-                        PaidFeature.ORAL,
-                        app.subscription().caps().oral(),
-                        PaidFeature.ASSISTANT,
-                        app.subscription().caps().assistant(),
-                        PaidFeature.WORDS,
-                        app.subscription().caps().words()),
                 app.subscription().compedEmails(),
-                app.subscription().enabled(),
-                app.claudeFeatures());
+                app.subscription().enabled());
     }
 
     /** A deployment that sells the subscription, as the tests mostly ask about. */
@@ -137,9 +96,8 @@ public class SubscriptionService {
             SignInOptions signIn,
             Clock clock,
             int trialDays,
-            Map<PaidFeature, Integer> caps,
             String compedEmails) {
-        this(subscriptions, pilots, signIn, clock, trialDays, caps, compedEmails, true, ClaudeFeatures.EVERYONE);
+        this(subscriptions, pilots, signIn, clock, trialDays, compedEmails, true);
     }
 
     SubscriptionService(
@@ -148,19 +106,15 @@ public class SubscriptionService {
             SignInOptions signIn,
             Clock clock,
             int trialDays,
-            Map<PaidFeature, Integer> caps,
             String compedEmails,
-            boolean sold,
-            ClaudeFeatures claude) {
+            boolean sold) {
         this.subscriptions = subscriptions;
         this.pilots = pilots;
         this.signIn = signIn;
         this.clock = clock;
         this.trialDays = trialDays;
-        this.caps = new EnumMap<>(caps);
         this.compedEmails = Typed.addresses(compedEmails);
         this.sold = sold;
-        this.claude = claude;
     }
 
     /** Whether this deployment sells the subscription at all: where not,
@@ -169,7 +123,7 @@ public class SubscriptionService {
         return sold;
     }
 
-    /** The pilot's subscription, with this month's uses. */
+    /** The pilot's subscription. */
     @Transactional(readOnly = true)
     public SubscriptionDto status(Pilot pilot) {
         Instant now = clock.instant();
@@ -184,11 +138,6 @@ public class SubscriptionService {
         // introductory offer is a new subscriber's too.
         boolean trialAvailable = held.map(s -> s.getTrialStartedAt() == null && s.getPaidUntil() == null)
                 .orElse(true);
-        Map<String, Integer> used = usesThisMonth(pilot, now);
-        List<SubscriptionDto.FeatureUse> uses = Arrays.stream(PaidFeature.values())
-                .filter(PaidFeature::capped)
-                .map(f -> new SubscriptionDto.FeatureUse(f, used.getOrDefault(f.name(), 0), caps.getOrDefault(f, 0)))
-                .toList();
         boolean paid = state == State.SUBSCRIBED;
         return new SubscriptionDto(
                 state,
@@ -197,8 +146,7 @@ public class SubscriptionService {
                 trialAvailable && state == State.FREE,
                 trialDays,
                 paid ? held.orElseThrow().getPlan() : null,
-                paid ? held.orElseThrow().getStore() : null,
-                uses);
+                paid ? held.orElseThrow().getStore() : null);
     }
 
     /** The free month, from now: once an account, whenever the pilot
@@ -225,19 +173,12 @@ public class SubscriptionService {
     }
 
     /**
-     * Whether the caller may use {@code feature} now, counting the use
-     * when they may: empty to go on, or the refusal to answer with -- a
-     * 401 signed out, a 402 without the subscription, a 429 past the
-     * month's cap.
+     * Whether the caller may use {@code feature} now: empty to go on, or
+     * the refusal to answer with -- a 401 signed out, a 402 without the
+     * subscription.
      */
     @Transactional
     public Optional<Refusal> refusal(Authentication authentication, PaidFeature feature) {
-        if (feature.capped() && claude == ClaudeFeatures.OFF) {
-            // Off is off for everyone, before the open machine and the
-            // developer are let through: said as not offered (404), not as
-            // something to buy, and the assistant service is never asked.
-            return Optional.of(new Refusal(404, feature.comes() + " later; it is not offered yet."));
-        }
         if (signIn.access() == SignInOptions.Access.OPEN) {
             return Optional.empty();
         }
@@ -245,43 +186,15 @@ public class SubscriptionService {
         if (current.isEmpty()) {
             return Optional.of(new Refusal(401, "Sign in for " + feature.object() + "."));
         }
-        Pilot pilot = current.get();
-        Instant now = clock.instant();
         if (!sold) {
-            // No subscription here: the debrief is everyone's; what Claude
-            // writes is whoever the deployment says, said as not offered
-            // (404) rather than as something to buy.
-            if (!feature.capped() || pilot.getRole().isDeveloper()) {
-                return Optional.empty();
-            }
-            if (claude != ClaudeFeatures.EVERYONE) {
-                return Optional.of(new Refusal(404, feature.comes() + " later; it is not offered yet."));
-            }
-            return counted(pilot, feature, now);
-        }
-        Optional<Subscription> held = subscriptions.findById(pilot.getId());
-        State state = stateOf(pilot, held, now);
-        if (state == State.FREE) {
-            return Optional.of(new Refusal(402, feature.comes() + " with the subscription" + whyFree(held)));
-        }
-        if (!feature.capped() || pilot.getRole().isDeveloper()) {
+            // No subscription here: the debrief is everyone's.
             return Optional.empty();
         }
-        return counted(pilot, feature, now);
-    }
-
-    /** A use of a Claude-written feature, counted against the month's cap;
-     *  past it, refused with when there are more. */
-    private Optional<Refusal> counted(Pilot pilot, PaidFeature feature, Instant now) {
-        int cap = caps.getOrDefault(feature, 0);
-        int used = usesThisMonth(pilot, now).getOrDefault(feature.name(), 0);
-        if (used >= cap) {
-            LocalDate next = month(now).plusMonths(1);
-            return Optional.of(new Refusal(
-                    429,
-                    "That is this month's " + cap + " " + feature.counted() + ". More on " + DAY.format(next) + "."));
+        Pilot pilot = current.get();
+        Optional<Subscription> held = subscriptions.findById(pilot.getId());
+        if (stateOf(pilot, held, clock.instant()) == State.FREE) {
+            return Optional.of(new Refusal(402, feature.comes() + " with the subscription" + whyFree(held)));
         }
-        subscriptions.countUse(pilot.getId(), month(now), feature.name());
         return Optional.empty();
     }
 
@@ -311,18 +224,5 @@ public class SubscriptionService {
             return ". Your free month ended on " + DAY.format(s.getTrialEndsAt().atZone(ZoneOffset.UTC)) + ".";
         }
         return ", its first month free.";
-    }
-
-    private Map<String, Integer> usesThisMonth(Pilot pilot, Instant now) {
-        Map<String, Integer> used = new HashMap<>();
-        for (Object[] row : subscriptions.usesIn(pilot.getId(), month(now))) {
-            used.put((String) row[0], ((Number) row[1]).intValue());
-        }
-        return used;
-    }
-
-    /** The month a moment falls in, by its first day, UTC. */
-    private static LocalDate month(Instant now) {
-        return LocalDate.ofInstant(now, ZoneOffset.UTC).withDayOfMonth(1);
     }
 }

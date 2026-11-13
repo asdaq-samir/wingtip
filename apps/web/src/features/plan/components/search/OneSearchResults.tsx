@@ -39,8 +39,8 @@ function lined<T>(items: T[], key: (item: T) => string, row: (item: T) => ReactN
  * laid out as Apple Maps on the web lays out a search typed (the owner's
  * screenshot, 2026-11-10): one white group, the top hit first with its
  * quick actions in it (an airport's Fly Here and Depart From, one of the
- * pilot's airplanes' Fly This Airplane), then the suggestion -- the
- * question for the assistant, on a grey magnifier -- then the rest: the
+ * pilot's airplanes' Fly This Airplane), then the suggestion -- the words
+ * sent round a place, on a grey magnifier -- then the rest: the
  * airports, the waypoints and navaids, the airplanes and what can be done,
  * each on its round icon, a hairline between rows. Every row is still Base
  * UI Autocomplete's item in a named group, so the field's arrows and Enter
@@ -55,10 +55,9 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
   // A mouse resting on an airport's row: its preview beside the panel
   // (the owner, 2026-11-09: hover previews on pointer devices only).
   const hover = usePointerHover();
-  // The suggestions: the words sent round a place (Search Nearby), then
-  // the question for the assistant.
-  const asks = does.filter((d) => d.kind === "ask" || d.kind === "nearby");
-  const rest = does.filter((d) => d.kind !== "ask" && d.kind !== "nearby");
+  // The suggestion: the words sent round a place (Search Nearby).
+  const asks = does.filter((d) => d.kind === "nearby");
+  const rest = does.filter((d) => d.kind !== "nearby");
   // The top hit: the first airport, else the first airplane.
   const topAirport = airports[0] ?? null;
   const topAirplane = topAirport ? null : (airplanes[0] ?? null);
@@ -135,14 +134,14 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
     <ResultRow
       key={hit.key}
       value={hit.key}
-      icon={<RoundIcon>{hit.kind === "ask" || hit.kind === "nearby" ? <Search /> : doGlyph(hit)}</RoundIcon>}
+      icon={<RoundIcon>{hit.kind === "nearby" ? <Search /> : doGlyph(hit)}</RoundIcon>}
       title={hit.kind === "nearby" ? <Matched text={hit.label} typed={typed} /> : hit.label}
-      detail={hit.kind === "ask" ? "Ask the assistant" : hit.kind === "nearby" ? "Search Nearby" : undefined}
+      detail={hit.kind === "nearby" ? "Search Nearby" : undefined}
       onSelect={hit.run}
       testId={`search-do-${hit.key}`}
-      // What is done in the tint, as a button's words are; the question
-      // a suggestion, in the text's colour as Apple's are.
-      tint={hit.kind !== "ask" && hit.kind !== "nearby"}
+      // What is done in the tint, as a button's words are; the
+      // suggestion in the text's colour as Apple's are.
+      tint={hit.kind !== "nearby"}
       end={hit.keys ? <CommandShortcut className="self-center">{keyHint(hit.keys)}</CommandShortcut> : undefined}
     />
   );

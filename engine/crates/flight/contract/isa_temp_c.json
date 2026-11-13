@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_flight::calls::call",
   "description": "A standard day's temperature at a pressure altitude (ICAO Doc 7488).",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

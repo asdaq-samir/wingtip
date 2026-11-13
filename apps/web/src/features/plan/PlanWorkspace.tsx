@@ -18,7 +18,6 @@ import {
   Kneeboard,
   FlightInputs,
   AltitudeGroup,
-  BriefNarrative,
 } from "./routePanelParts";
 import { usePlanWorkspace } from "./hooks/usePlanWorkspace";
 import PlanMap from "./components/workspace/PlanMap";
@@ -131,16 +130,11 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     unflyable,
     unflyableBrief,
   } = vm.brief;
-  // Each tab's part of the briefing; the Brief's narrative under its Go /
-  // No-Go. Made once for the same plan (useCallback, useMemo), and each
+  // Each tab's part of the briefing. Made once for the same plan
+  // (useCallback), and each
   // part drawn again only when its plan changes (FlightBriefingView's
   // memo): a row picked in the nav log drew all four tabs again, the
   // hidden ones and their charts too -- half a second of a phone's.
-  const narrative = useMemo(
-    () => !s.local && <BriefNarrative ready={!!s.totals} onGenerateNarrative={s.generateNarrative} narrative={s.narrative} />,
-    [s.local, s.totals, s.generateNarrative, s.narrative],
-  );
-
   const tabContent = useCallback(
     (part: BriefingPart) => (
       <FlightBriefingView
@@ -157,9 +151,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         course={course}
         totals={s.totals}
         depart={depart}
-        narrativeText={s.narrative.text}
         problem={unflyableBrief}
-        narrative={part === "preflight" ? narrative : undefined}
       />
     ),
     [
@@ -174,9 +166,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       course,
       s.totals,
       depart,
-      s.narrative.text,
       unflyableBrief,
-      narrative,
     ],
   );
 

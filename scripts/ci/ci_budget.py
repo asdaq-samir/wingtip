@@ -52,7 +52,6 @@ BUDGETS = [
     ("test-wingtip", 3, 4),
     ("test-jobs", 2, 2),
     ("test-ingest", 2, 2),
-    ("test-assistant", 2, 2),
     ("test-weather", 2, 2),
     ("test-xplane", 1, 1),
     ("test-sim", 3, 4),

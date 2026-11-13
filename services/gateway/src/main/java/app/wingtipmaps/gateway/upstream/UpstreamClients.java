@@ -11,18 +11,17 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.service.registry.ImportHttpServices;
 
 /**
- * The clients of the planner and the assistant, made by Boot from Spring's
+ * The clients of the planner, made by Boot from Spring's
  * HTTP interfaces: each group's address and waits are application.yml's
  * {@code spring.http.serviceclient}, and Boot's observation traces each
  * call under the request being served. Every RestClient Boot builds here is
  * the JDK's HttpClient pinned to HTTP/1.1, for the reason StreamingProxy
- * gives: the services behind this one are uvicorn, and a pooled connection
+ * gives: the planner behind this one is uvicorn, and a pooled connection
  * that attempted an HTTP/2 upgrade corrupted the next request on it.
  */
 @Configuration(proxyBeanMethods = false)
 @ImportHttpServices(group = "planner", types = PlannerApi.class)
 @ImportHttpServices(group = "briefing", types = BriefingApi.class)
-@ImportHttpServices(group = "assistant", types = AssistantApi.class)
 public class UpstreamClients {
 
     /** The JDK's client, pinned to HTTP/1.1: Boot's, and HealthProbe's. */

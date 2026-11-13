@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { claudeFeatures } from "./claude";
 import {
   airportSearch,
   consolePage,
@@ -23,7 +22,7 @@ import { showPage } from "./oneSearch";
  * button, the account button at the row's end -- no title row over it,
  * taken out for the map's room (the owner, 2026-11-10); nothing typed, the search's own page (the flight,
  * Favorites, Recents, Nearest); typed, one list in groups -- Airports,
- * Waypoints and Navaids, Airplanes, Do -- and "Ask:"; an airport picked,
+ * Waypoints and Navaids, Airplanes, Do -- and Search Nearby; an airport picked,
  * its card with Fly Here, Add Stop, Call and Favorite at its top (the
  * owner, 2026-11-11), the first two setting the plan and showing it; the account button's menu, Setup's
  * rows. The plan is the sheet's main content with a route.
@@ -33,7 +32,6 @@ test(
   "the account button at the one search's end, no title row over it; typed, its results come in groups, and an airport's card's Add Stop sets the plan",
   { tag: "@smoke" },
   async ({ page }) => {
-    await claudeFeatures(page); // the Ask suggestion, which is Claude's (./claude)
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     // With a route the plan is the sheet's main content, the one search over
@@ -42,8 +40,8 @@ test(
     const row = firstRow(page);
     // Short in sight, so it fits beside the mic and Cancel at larger text;
     // the whole sentence its name (the sheet audit's F-S2).
-    await expect(row.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search or ask");
-    await expect(row.getByTestId("search-airports")).toHaveAttribute("aria-label", "Search airports, airplanes, or ask");
+    await expect(row.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search airports");
+    await expect(row.getByTestId("search-airports")).toHaveAttribute("aria-label", "Search airports and airplanes");
     await expect(row.getByTestId("account-button")).toBeVisible();
     await expect(sideDrawer(page).getByTestId("sheet-title")).toHaveCount(0);
     await expect(sideDrawer(page).getByRole("tablist", { name: "Tabs" })).toHaveCount(0);
@@ -64,14 +62,14 @@ test(
 
     // Typed: one list, grouped as Apple Maps' results are (the owner's
     // screenshot, 2026-11-10): the top hit with its quick actions, then the
-    // question for the assistant as a suggestion.
+    // words sent round a place as a suggestion.
     await search.fill("osh");
     const results = sideDrawer(page).getByTestId("one-search-results");
     await expect(searchAirports(page).filter({ hasText: "KOSH" }).first()).toBeVisible({ timeout: slow(10_000) });
     const top = results.getByRole("group", { name: "Top Hit" });
     await expect(top.getByTestId("search-top-fly-here")).toBeVisible();
     await expect(top.getByTestId("search-top-depart-from")).toBeVisible();
-    await expect(results.getByRole("group", { name: "Suggestions" }).getByTestId("search-do-ask")).toContainText("Ask: “osh”");
+    await expect(results.getByRole("group", { name: "Suggestions" }).getByTestId("search-do-nearby")).toContainText("Search Nearby");
 
     // KOSH picked: its card, its four actions at its top and no others.
     await searchAirports(page).filter({ hasText: "KOSH" }).first().click();

@@ -31,7 +31,6 @@ Each fact lives in one doc; the others link to it.
 | [services/planner/wingtip/README.md](../services/planner/wingtip/README.md) | wingtip, the planner's Python package, module by module |
 | [services/ingest/README.md](../services/ingest/README.md) | The live feeds: what each SWIM feed sends and how the live store is shared |
 | [services/weather/README.md](../services/weather/README.md) | The weather service: products, schedule and health |
-| [services/assistant/README.md](../services/assistant/README.md) | Every Claude call: endpoints, models and settings |
 | [services/jobs/README.md](../services/jobs/README.md) | The one-off jobs: the training run, the chart cycle, the overlay tiles |
 | [services/gateway/README.md](../services/gateway/README.md) | The Spring Boot gateway: sign-in, records, the package map |
 | [apps/web/README.md](../apps/web/README.md) | The web app: its layout, the fast test loop, the map |

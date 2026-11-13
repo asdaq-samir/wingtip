@@ -18,7 +18,7 @@ class AiWordsModelTest {
     @Test
     fun wordsComeOnlyOnTheTapAndGoWithTheirSources() {
         var asked = 0
-        val model = AiWordsModel(say = { _, _ -> asked++; AiWords.Answer("Clear skies.", AiWords.Where.PHONE, 0, metar) }, offered = { true })
+        val model = AiWordsModel(say = { _, _ -> asked++; AiWords.Answer("Clear skies.", 0, metar) }, offered = { true })
         assertTrue(model.state.value.offered)
         assertEquals(0, asked)
         model.sourcesAre("a")

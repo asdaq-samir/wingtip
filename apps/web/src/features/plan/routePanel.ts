@@ -24,7 +24,6 @@ export { default as Kneeboard } from "./components/Kneeboard";
 export { default as FlightInputs } from "./components/navlog/FlightInputs";
 export { default as AltitudeGroup } from "./components/navlog/AltitudeGroup";
 export { AltitudeProfile } from "./components/navlog/altitude/AltitudeProfile";
-export { default as BriefNarrative } from "./components/briefing/BriefNarrative";
 export { default as RouteProblem } from "./components/RouteProblem";
 export { default as LocalDuration } from "./components/LocalDuration";
 export { default as BriefCard } from "./components/BriefCard";

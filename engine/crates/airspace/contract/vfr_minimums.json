@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_airspace::drills::call",
   "description": "14 CFR 91.155(a)'s basic VFR weather minimums for a class at an altitude MSL (the height above the ground counts in Class G alone, 1,200 ft its line, and is taken as above it where not given): the day's and the night's, or null in Class A, which is flown under IFR (91.135) and begins at 18,000 ft MSL whatever class is asked (71.33).",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

@@ -1,15 +1,13 @@
 package app.wingtipmaps.gateway.dto;
 
-import app.wingtipmaps.gateway.domain.PaidFeature;
 import app.wingtipmaps.gateway.domain.Subscription;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
-import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
  * A pilot's subscription as the app shows it: whether the paid features
- * are theirs, until when, and this month's uses of each against its cap.
+ * are theirs, and until when.
  * For the page to say so; the server checks it again on every paid call.
  */
 @Schema(description = "The signed-in pilot's subscription to the paid features")
@@ -36,10 +34,7 @@ public record SubscriptionDto(
         Subscription.@Nullable Plan plan,
 
         @Schema(description = "Where it was bought, when paid for")
-        Subscription.@Nullable Store store,
-
-        @Schema(description = "This month's uses of each paid feature Claude writes, against its cap")
-        List<FeatureUse> uses) {
+        Subscription.@Nullable Store store) {
 
     public enum State {
         FREE,
@@ -47,12 +42,4 @@ public record SubscriptionDto(
         SUBSCRIBED,
         COMPED
     }
-
-    @Schema(description = "One paid feature's uses this month (UTC)")
-    public record FeatureUse(
-            @Schema(example = "NARRATIVE") PaidFeature feature,
-            @Schema(example = "3") int used,
-
-            @Schema(description = "The month's allowance", example = "60")
-            int cap) {}
 }

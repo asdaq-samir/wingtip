@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_flight::calls::call",
   "description": "The lowest VFR cruising altitude at or above a floor for a magnetic course: odd thousands plus 500 eastbound, even westbound (14 CFR 91.159(a)).",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

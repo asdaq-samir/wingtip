@@ -6,7 +6,7 @@ import { DescriptionCell } from "./DescriptionCell";
 
 afterEach(cleanup);
 
-const generated = (text: string): Description => ({ text, source: "generated" });
+const note = (text: string): Description => ({ text });
 
 function cell(description: Description | undefined, onSave = vi.fn(() => Promise.resolve())) {
   const view = render(<DescriptionCell description={description} onSave={onSave} selected={false} onFocus={() => {}} />);
@@ -17,18 +17,16 @@ function cell(description: Description | undefined, onSave = vi.fn(() => Promise
 }
 
 describe("a checkpoint's note box", () => {
-  test("an untouched box shows a line that streams in at once", () => {
+  test("an untouched box shows the note as it changes", () => {
     const { box, rerender } = cell(undefined);
-    rerender(generated("the water tower"));
+    rerender(note("the water tower"));
     expect(box.value).toBe("the water tower");
   });
 
-  test("a line that streams in while the pilot types does not replace the typing, and the typing is saved", () => {
-    // It used to: the box reset to the arriving line, and the blur that
-    // followed saw nothing new, so the pilot's note was silently lost.
+  test("a note that changes while the pilot types does not replace the typing, and the typing is saved", () => {
     const { box, onSave, rerender } = cell(undefined);
     fireEvent.change(box, { target: { value: "red barn by the bend" } });
-    rerender(generated("a river bend"));
+    rerender(note("a river bend"));
     expect(box.value).toBe("red barn by the bend");
 
     fireEvent.blur(box);
@@ -43,7 +41,7 @@ describe("a checkpoint's note box", () => {
           fail = () => reject(new Error("502"));
         }),
     );
-    const { box } = cell(generated("a town"), onSave);
+    const { box } = cell(note("a town"), onSave);
     fireEvent.change(box, { target: { value: "the grain elevator" } });
     fireEvent.blur(box);
     await act(async () => {
@@ -53,18 +51,18 @@ describe("a checkpoint's note box", () => {
   });
 
   test("once saved, the box goes back to showing the note as it stands", async () => {
-    const { box, rerender } = cell(generated("a town"));
+    const { box, rerender } = cell(note("a town"));
     fireEvent.change(box, { target: { value: "the grain elevator" } });
     await act(async () => {
       fireEvent.blur(box);
     });
-    rerender({ text: "the grain elevator", source: "saved" });
-    rerender(generated("regenerated later"));
-    expect(box.value).toBe("regenerated later");
+    rerender(note("the grain elevator"));
+    rerender(note("the grain elevator, north side"));
+    expect(box.value).toBe("the grain elevator, north side");
   });
 
   test("emptied and left, it shows the stored note again and saves nothing", () => {
-    const { box, onSave } = cell(generated("a town"));
+    const { box, onSave } = cell(note("a town"));
     fireEvent.change(box, { target: { value: "   " } });
     fireEvent.blur(box);
     expect(onSave).not.toHaveBeenCalled();

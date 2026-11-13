@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { RankedNotam } from "../../lib/api/types";
+import type { RankedNotam } from "./engineRanking";
 import { ALL_NOTAMS, arrangeNotams, showsAll } from "./notamView";
 
 const notam = (id: string, rank: number, over: Partial<RankedNotam> = {}): RankedNotam => ({
@@ -7,7 +7,6 @@ const notam = (id: string, rank: number, over: Partial<RankedNotam> = {}): Ranke
   kind: "notam",
   label: `NOTAM ${id}`,
   why: id,
-  worded: true,
   top: rank <= 2,
   rank,
   score: 1,

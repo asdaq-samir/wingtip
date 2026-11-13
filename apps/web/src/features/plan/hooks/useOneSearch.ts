@@ -3,8 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api/client";
 import { aircraftKey, choiceOf, tailTyped } from "../../../lib/aircraftChoice";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
-import { useAsk } from "../../../lib/ask/useAsk";
-import { useClaudeOn } from "../../../lib/subscription";
 import { useRadioActions } from "../../../lib/atcRadio";
 import { SCREENS, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { wantScreen } from "../../../lib/navigation/wanted";
@@ -36,14 +34,13 @@ export interface AirplaneHit {
   fly?: () => void;
 }
 
-/** One thing to do: an action, a screen, a question for the assistant, or
- *  the words typed sent as a search round a place (Apple Maps' "Search
+/** One thing to do: an action, a screen, or the words typed sent as a search round a place (Apple Maps' "Search
  *  Nearby" suggestion, the owner's screenshot, 2026-11-10). */
 export interface DoHit {
   key: string;
   label: string;
   keys?: string;
-  kind: "action" | "screen" | "ask" | "nearby";
+  kind: "action" | "screen" | "nearby";
   run: () => void;
 }
 
@@ -97,7 +94,6 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   const [problem, setProblem] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const directTo = useRadioActions((s) => s.directTo);
-  const claude = useClaudeOn(); // Ask only with Claude on (lib/subscription, off by default since 2026-11-10)
 
   // The pilot's own airplanes: their records signed in, and the ones kept
   // on this device (their Airplane, Favorites and Recents, by ICAO address).
@@ -232,7 +228,6 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     }
     // The words typed sent as a search round a place, Apple's "Search Nearby" row, first.
     if (typed) out.push({ key: "nearby", label: typed, kind: "nearby", run: () => send(typed) });
-    if (typed && claude) out.push({ key: "ask", label: `Ask: “${typed}”`, kind: "ask", run: () => ask(typed) });
   }
 
   // Sent: round the place it names, else own ship or Nearest's place, else
@@ -254,15 +249,6 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     useSearchResults.getState().send(text, near, readQuery(text).filters, (ident) => selectPlace(ident));
     pickView("search");
     riseToSee(setPanel);
-  };
-
-  // The question to the assistant (lib/ask): with a route its answer in
-  // the Brief, the assistant's home; with none on the search's page.
-  const ask = (question: string) => {
-    done();
-    void useAsk.getState().ask(question);
-    if (routed) wantScreen("brief");
-    else pickView("search");
   };
 
   const pickIdent = (ident: string) => {
@@ -360,7 +346,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     sent: !!sent && !focused,
     send,
     // The field's words, shown short and said whole.
-    ...searchWords(direct, pick, picking, claude),
+    ...searchWords(direct, pick, picking),
     answered: search.answered,
     airports,
     waypoints,

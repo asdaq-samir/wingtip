@@ -14,9 +14,6 @@
 # TILES_DIR      a chart pyramid to serve as the S3 bucket
 #                (this checkout's data/raw/chart_tiles.nosync)
 # SKIP_BUILD=1   use the images already built
-# ANTHROPIC_API_KEY, else this checkout's .env's: for the Claude features,
-#                which stay off unless APP_CLAUDE_FEATURES and
-#                COMPOSE_PROFILES=claude turn them on (docs/decisions/0035)
 #
 # Stop it with: docker compose -p wingtip-prod down   (add -v to forget it)
 set -euo pipefail
@@ -30,8 +27,6 @@ if [ "${SKIP_BUILD:-}" != 1 ]; then
   docker build -t wingtip-local/planner:rehearsal -f services/planner/Dockerfile \
     --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
   docker build -t wingtip-local/ingest:rehearsal -f services/ingest/Dockerfile \
-    --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
-  docker build -t wingtip-local/assistant:rehearsal -f services/assistant/Dockerfile \
     --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
   docker build -t wingtip-local/weather:rehearsal -f services/weather/Dockerfile \
     --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
@@ -55,7 +50,6 @@ fi
 
 env_file=$REHEARSAL_DIR/.env
 if [ ! -f "$env_file" ]; then
-  key=${ANTHROPIC_API_KEY:-$(sed -n 's/^ANTHROPIC_API_KEY=//p' .env 2>/dev/null || true)}
   umask 077
   cat > "$env_file" <<CONF
 IMAGE_REGISTRY=wingtip-local
@@ -70,7 +64,6 @@ MAIL_USERNAME=rehearsal
 MAIL_PASSWORD=rehearsal
 MAIL_FROM=no-reply@wingtip.local
 APP_DEVELOPER_EMAILS=developer@example.com
-ANTHROPIC_API_KEY=$key
 REHEARSAL_DIR=$REHEARSAL_DIR
 TILES_DIR=$TILES_DIR
 CONF

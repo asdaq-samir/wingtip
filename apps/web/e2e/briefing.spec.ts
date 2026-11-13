@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { claudeFeatures } from "./claude";
 import {
   slow,
   settle,
@@ -30,10 +29,9 @@ import {
  * holds, and how the briefing in it ends.
  */
 
-test("plan page: the flight planning drawer opens the way the Model Training drawer does, the same panel beside the map, with the two inputs and the narrative and Print in its header and the totals and the descriptions button in the nav log's own section", async ({
+test("plan page: the flight planning drawer opens the way the Model Training drawer does, the same panel beside the map, with the two inputs and Print in its header and the totals in the nav log's own section", async ({
   page,
 }) => {
-  await claudeFeatures(page); // the narrative and the wand in their places (./claude)
   const viewport = page.viewportSize();
   if (!viewport) throw new Error("no viewport configured");
 
@@ -68,10 +66,9 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await controlsInSight(page);
   await expect(drawer.getByTestId("aircraft-select")).toBeVisible();
   await expect(drawer.getByTestId("procedures").getByTestId("depart-date")).toBeVisible();
-  await expect(drawer.getByTestId("ai-narrative-button")).toHaveCount(0);
   expect(await drawer.locator('[role="tabpanel"] [data-testid="aircraft-select"]').count()).toBe(0);
   // The panel's tabs, in the pilot's order, the nav log's up: it holds
-  // the totals and the descriptions button above the table.
+  // the totals above the table.
   // "Perf" on its tab, its name whole (PanelTabs). No Airports tab: the
   // airports are the Brief's sections, at the pilot's ask.
   // The route's pages, the Brief's, all the way up.
@@ -90,13 +87,11 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
     expect(box.x + box.width).toBeLessThanOrEqual(tabsBox.x + tabsBox.width + 1);
   }
   await expect(panelTabs(page).getByRole("tab", { name: "Preflight" })).toHaveAttribute("aria-selected", "true");
-  // FPL all the way up, the route in order; the nav log in its own sheet,
-  // the descriptions' wand at its head.
+  // FPL all the way up, the route in order; the nav log in its own sheet.
   await openTab(page, "Nav Log");
   await expect(drawer.getByTestId("procedures")).toBeVisible();
   await openNavLog(page);
   await expect(navLogSheet(page).getByRole("table", { name: /Navigation log from/i })).toBeVisible();
-  await expect(navLogSheet(page).getByTestId("generate-descriptions-button")).toBeVisible();
   await closeNavLog(page);
   // The altitude, its chip beside the airplane in the pill, once the log
   // has streamed in.
@@ -208,38 +203,6 @@ test("plan page: the nav log and the summary on screen, the 'planning aid only' 
   await expect(route).toBeHidden();
   await openTab(page, "Nav Log");
   await expect(route).toBeVisible();
-});
-
-test("plan page: the Brief is a tab after the Nav Log, its narrative written by Claude only when asked", async ({ page }) => {
-  await claudeFeatures(page); // the narrative answered by openTab's stub (./claude)
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-
-  await openBriefing(page);
-
-  // The narrative is the planner's (/api/briefing/narrative), a real,
-  // billed Claude call -- answered here by a line of the test's own
-  // (openTab), nothing billed.
-  const asked: string[] = [];
-  page.on("request", (r) => {
-    if (r.url().includes("/api/planner/briefing/narrative")) asked.push(r.method());
-  });
-  // The Brief's cards as it opens, and nothing asked for until a tap:
-  // each is billed, and the Brief is opened for every route looked at.
-  await openBrief(page);
-  await expect(sideDrawer(page).getByTestId("brief-glance")).toBeVisible();
-  await openTab(page, "Preflight");
-  await openSection(page, "Narrative");
-  await page.waitForTimeout(500);
-  expect(asked).toEqual([]);
-  await page.getByTestId("brief-narrative-write").click();
-  const narrative = page.getByTestId("brief-narrative");
-  await expect(narrative).toContainText("A test narrative.", { timeout: slow(60000) });
-  await expect.poll(() => asked).toEqual(["POST"]);
-  // Written once for the plan: no second button, and nothing asked again.
-  await expect(page.getByTestId("brief-narrative-write")).toHaveCount(0);
-  await page.waitForTimeout(500);
-  expect(asked).toEqual(["POST"]);
 });
 
 test("plan page: the drawer closes the way the stock components close, and nothing else", async ({ page }) => {

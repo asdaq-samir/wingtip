@@ -124,7 +124,6 @@ gonogo_verdict_items
 gonogo_verdict_line
 great_circles
 handbook_figures
-handbook_read_check
 hold_length_read
 hold_length_write
 hold_read
@@ -140,7 +139,6 @@ least_crosswind
 logbook_csv_read
 logbook_csv_write
 logbook_from_track
-logbook_read_check
 lost_comms
 magnetic_variation
 mayday_call

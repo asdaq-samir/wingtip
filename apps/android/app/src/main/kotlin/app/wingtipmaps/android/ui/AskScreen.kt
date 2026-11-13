@@ -45,20 +45,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
-import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.AssistantClient
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
-import app.wingtipmaps.android.api.Gateway
-import app.wingtipmaps.android.api.generated.assistant.Context
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.strip.StripModel
-import app.wingtipmaps.android.trip.TripPlannerCard
-import app.wingtipmaps.android.trip.TripPlannerModel
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonObject
 
 /** What a pilot asks first, offered while there is nothing to read. */
 val askSuggestions = listOf(
@@ -68,9 +61,9 @@ val askSuggestions = listOf(
 )
 
 /**
- * Ask: a question about the flight put to the assistant (AssistantClient),
- * which answers in words with the planner's own figures and the raw
- * reports it read, each a chip under the answer that opens the report as
+ * Ask: a question about the flight answered on the phone by Gemini Nano
+ * (AssistantClient, OnPhoneAsk), in words with the app's own figures and
+ * the raw reports it read, each a chip under the answer that opens the report as
  * sent. The twin of the iOS app's AskView: the conversation as bubbles,
  * the assistant's on the left, the pilot's on the right in the tint;
  * while the assistant looks something up its own words for that stand
@@ -87,12 +80,7 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
     val fix by ownShip.fix.collectAsStateWithLifecycle()
     var question by rememberSaveable { mutableStateOf("") }
     var source by remember { mutableStateOf<AssistantSource?>(null) }
-    // "Plan a trip…": the trip planner in the conversation's place until
-    // closed, as the web's Ask has it.
-    var trip by rememberSaveable { mutableStateOf(false) }
-    val tripModel: TripPlannerModel = hiltViewModel()
     val list = rememberLazyListState()
-    val claude by ClaudeGate.on.collectAsStateWithLifecycle()
 
     // The context as the app has it (StripModel.contextOf).
     val context = StripModel.contextOf(planState, fix, pilot)
@@ -117,24 +105,8 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
             contentPadding = PaddingValues(WingtipSpace.Lg),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md),
         ) {
-            if (trip) {
-                item(key = "trip") {
-                    TripPlannerCard(
-                        tripModel,
-                        context = {
-                            Context(
-                                aircraft = context.aircraft, altitudeFt = context.altitudeFt, dep = context.dep, depart = context.depart, dest = context.dest,
-                                stops = context.stops, rules = "vfr",
-                                pilot = context.pilot?.let { Gateway.json.encodeToJsonElement(it).jsonObject },
-                            )
-                        },
-                        onUse = { leg -> with(leg.change) { plan.useLeg(dep, dest, stops, altitudeFt, depart) } },
-                        onSource = { source = AssistantSource(it.id, it.label, it.text) },
-                        onClose = { trip = false },
-                    )
-                }
-            } else if (conversation.turns.isEmpty()) {
-                item { Suggestions(onAsk = ::send, onTrip = if (claude) ({ trip = true }) else null) }
+            if (conversation.turns.isEmpty()) {
+                item { Suggestions(onAsk = ::send) }
             }
             items(conversation.turns, key = { it.id }) { turn ->
                 TurnBubble(turn, onSource = { source = it })
@@ -169,16 +141,13 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
 }
 
 @Composable
-private fun Suggestions(onAsk: (String) -> Unit, onTrip: (() -> Unit)?) {
+private fun Suggestions(onAsk: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         SectionTitle(stringResource(R.string.ask_about_flight))
         Text(
             stringResource(R.string.ask_help),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        // The first chip, as on the web: the trip planner, Claude's alone,
-        // so not offered while the Claude features are off (ClaudeGate).
-        if (onTrip != null) AssistChip(onClick = onTrip, label = { Text(stringResource(R.string.trip_chip)) })
         askSuggestions.forEach { words ->
             AssistChip(onClick = { onAsk(words) }, label = { Text(words) })
         }

@@ -1,6 +1,5 @@
 package app.wingtipmaps.gateway.config;
 
-import app.wingtipmaps.gateway.service.SubscriptionService.ClaudeFeatures;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,7 +24,6 @@ public record AppProperties(
         // email's links, the connector's issuer; blank on a machine that
         // mails nothing.
         String publicBaseUrl,
-        @NotNull ClaudeFeatures claudeFeatures,
         // Comma-separated: the addresses whose pilot is a developer.
         String developerEmails,
         @NotBlank String staticLocation,
@@ -33,12 +31,10 @@ public record AppProperties(
         boolean hsts,
         String chartTilesOrigin,
         @Valid @NotNull Upstream planner,
-        @Valid @NotNull Upstream assistant,
         @Valid @NotNull Internal internal,
         @Valid @NotNull Https https,
         @Valid @NotNull Speed speed,
         @Valid @NotNull MagicLink magicLink,
-        @Valid @NotNull PaidCalls paidCalls,
         @Valid @NotNull Subscription subscription,
         @Valid @NotNull ReviewSignIn reviewSignIn,
         @Valid @NotNull Monitoring monitoring,
@@ -49,7 +45,7 @@ public record AppProperties(
         @Valid @NotNull Android android,
         @Valid @NotNull Mail mail) {
 
-    /** The planner's or the assistant's address on the stack's network. */
+    /** The planner's address on the stack's network. */
     public record Upstream(@NotBlank String baseUrl) {}
 
     /** The port of the routes only other services call (0: none). */
@@ -69,26 +65,8 @@ public record AppProperties(
             @PositiveOrZero int perClientPerHour,
             @PositiveOrZero int accountPerClientPerHour) {}
 
-    /** The calls this app pays Anthropic for, a day's worth each. */
-    public record PaidCalls(
-            @PositiveOrZero int perDay,
-            @PositiveOrZero int assistantPerDay,
-            @PositiveOrZero int wordsPerDay) {}
-
     public record Subscription(
-            boolean enabled,
-            @PositiveOrZero int trialDays,
-            @Valid @NotNull Caps caps,
-            String compedEmails) {
-
-        /** Each Claude-written feature's monthly allowance per subscriber. */
-        public record Caps(
-                @PositiveOrZero int narrative,
-                @PositiveOrZero int checkpointNotes,
-                @PositiveOrZero int oral,
-                @PositiveOrZero int assistant,
-                @PositiveOrZero int words) {}
-    }
+            boolean enabled, @PositiveOrZero int trialDays, String compedEmails) {}
 
     public record ReviewSignIn(boolean enabled, String email, String code) {}
 

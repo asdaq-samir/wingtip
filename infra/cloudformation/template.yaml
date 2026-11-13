@@ -109,7 +109,7 @@ Conditions:
 Resources:
   # ---------------------------------------------------------------------
   # Network: one public subnet. The server and the refresh task reach the
-  # FAA, NOAA, Anthropic and AWS's own APIs directly, so there is no NAT
+  # FAA, NOAA and AWS's own APIs directly, so there is no NAT
   # gateway ($33 a month) and no VPC endpoints ($7 each).
   # ---------------------------------------------------------------------
   Vpc:
@@ -183,16 +183,6 @@ Resources:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: wingtip/ingest
-      EmptyOnDelete: true
-      LifecyclePolicy:
-        LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 20","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}'
-
-  # Every Claude call (services/assistant, issue #535), split out of the
-  # planner: the third image the server runs.
-  AssistantRepository:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: wingtip/assistant
       EmptyOnDelete: true
       LifecyclePolicy:
         LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 20","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}'
@@ -294,7 +284,7 @@ Resources:
     Type: AWS::SecretsManager::Secret
     Properties:
       Description: The owner's own values (infra/server/env.example). Fill in, then run deploy.sh.
-      SecretString: '{"ANTHROPIC_API_KEY":"","MAIL_USERNAME":"","MAIL_PASSWORD":"","APP_DEVELOPER_EMAILS":""}'
+      SecretString: '{"MAIL_USERNAME":"","MAIL_PASSWORD":"","APP_DEVELOPER_EMAILS":""}'
 
   # ---------------------------------------------------------------------
   # The server
@@ -334,7 +324,6 @@ Resources:
                   - !GetAtt GatewayRepository.Arn
                   - !GetAtt PlannerRepository.Arn
                   - !GetAtt IngestRepository.Arn
-                  - !GetAtt AssistantRepository.Arn
                   - !GetAtt WeatherRepository.Arn
                   - !GetAtt ChartsRepository.Arn
               - Effect: Allow
@@ -1055,7 +1044,6 @@ Resources:
                   - !GetAtt GatewayRepository.Arn
                   - !GetAtt PlannerRepository.Arn
                   - !GetAtt IngestRepository.Arn
-                  - !GetAtt AssistantRepository.Arn
                   - !GetAtt WeatherRepository.Arn
                   - !GetAtt ChartsRepository.Arn
               # The server changes with each Spot interruption, so deploys

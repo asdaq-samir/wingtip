@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_pilot::aircraft::calls::call",
   "description": "What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

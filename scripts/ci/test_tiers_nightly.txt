@@ -12,11 +12,9 @@ airspace-3d.spec.ts
 airspace-lines.spec.ts
 approach-debrief.spec.ts
 approach-lesson.spec.ts
-ask.spec.ts
 brief-glance.spec.ts
 card-scroll.spec.ts
 checkride.spec.ts
-claude-off.spec.ts
 coach.spec.ts
 copilot.spec.ts
 debrief.spec.ts
@@ -26,7 +24,6 @@ desktop.spec.ts
 devswitch.spec.ts
 direct-to.spec.ts
 diversion.spec.ts
-document-photo.spec.ts
 dry-run-bar.spec.ts
 export.spec.ts
 field-lights.spec.ts
@@ -58,7 +55,6 @@ navlog-fit.spec.ts
 navlog-winds.spec.ts
 night.spec.ts
 no-airplane.spec.ts
-oral.spec.ts
 overlay.spec.ts
 pass-times.spec.ts
 passengers.spec.ts

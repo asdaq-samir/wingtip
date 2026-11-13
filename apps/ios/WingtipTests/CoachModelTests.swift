@@ -2,8 +2,7 @@ import Foundation
 import Testing
 @testable import Wingtip
 
-/// The Coach screen's model: the planner's plan and the assistant's words
-/// read as the services send them, each session given its line, the
+/// The Coach screen's model: the planner's plan read as it sends it, the
 /// status words, and the ask the certificate makes.
 @MainActor
 struct CoachModelTests {
@@ -22,12 +21,6 @@ struct CoachModelTests {
       {"id":"session:2","key":"unstable_approach","practise":"Stabilized approaches","why":["ev:1"],"place":{"ident":"KMSN","name":"Dane County Rgnl","distance_nm":0,"approach":"ILS OR LOC RWY 36"},"minutes":90,"instructor":true,"wings":{"area":"Approach and landing","acs":"IR.VI.B","note":"May count toward WINGS"}}]}
     """#
 
-    nonisolated static let words = #"""
-    {"sentences":[{"text":"Your night passenger currency runs out in 9 days.","sources":["due:night_passengers"]}],
-     "session_lines":[{"session":"session:2","text":"Fly the ILS at KMSN with your instructor.","sources":["session:2","ev:1"]}],
-     "sources":[],"model":"claude","unavailable":null}
-    """#
-
     static func entry(approaches: Int = 0) throws -> LogbookEntry {
         let json = #"{"id":4,"flownOn":"2026-10-12","aircraft":"N3429J","aircraftType":"P28A","route":"KDLH KHIB","remarks":"","totalHours":1.4,"nightHours":0,"crossCountryHours":1.4,"dualHours":1.4,"soloHours":0,"instrumentHours":0.3,"dayLandings":2,"nightLandings":0,"toweredLandings":1,"distanceNm":62,"longestLegNm":62,"approaches":\#(approaches),"holding":true,"tracking":false,"airHours":1.3,"touchAndGoes":1,"fromTrack":true,"flightId":40}"#
         return try JSONDecoder().decode(LogbookEntry.self, from: Data(json.utf8))
@@ -40,39 +33,21 @@ struct CoachModelTests {
     }
 
     /// A model answered by stubs, its choice kept in a store of its own.
-    static func model(pilot: CoachPilot, words: String = CoachModelTests.words, wordsFail: Bool = false) -> CoachModel {
-        let calls = CoachCalls(
-            plan: { _ in
-                let raw = Data(Self.plan.utf8)
-                return CoachPlanned(plan: try Planner.json.decode(ProficiencyPlan.self, from: raw), raw: raw)
-            },
-            words: { _ in
-                if wordsFail { throw URLError(.notConnectedToInternet) }
-                return try Planner.json.decode(CoachWords.self, from: Data(words.utf8))
-            })
+    static func model(pilot: CoachPilot) -> CoachModel {
+        let calls = CoachCalls(plan: { _ in try Planner.json.decode(ProficiencyPlan.self, from: Data(Self.plan.utf8)) })
         let defaults = UserDefaults(suiteName: "coach-tests-\(UUID().uuidString)")!
         return CoachModel(calls: calls, fetchPilot: { pilot }, fetchDebriefs: { [] }, defaults: defaults)
     }
 
-    @Test func eachSessionGetsItsOwnLineAndThePlanShows() async throws {
+    @Test func thePlanShowsWithEachSessionsDetail() async throws {
         let model = Self.model(pilot: CoachPilot(entries: [try Self.entry()]))
         await model.load()
         await model.make(home: "kmsn")
         let plan = try #require(model.plan)
         #expect(plan.sessions.count == 2 && plan.weakAreas.first?.evidence == ["ev:1"])
-        #expect(model.sessionLines["session:2"] == "Fly the ILS at KMSN with your instructor.")
-        #expect(model.sessionLines["session:1"] == nil)
-        #expect(model.words?.sentences.count == 1 && model.wordsProblem == nil && model.problem == nil)
+        #expect(model.problem == nil)
         #expect(CoachModel.sessionDetail(plan.sessions[1]) == "KMSN, ILS OR LOC RWY 36 · About 90 min · With an instructor")
         #expect(CoachModel.sessionDetail(plan.sessions[0]) == "KMSN · About 60 min")
-    }
-
-    @Test func thePlanStandsWhenTheWordsFail() async throws {
-        let model = Self.model(pilot: CoachPilot(entries: []), wordsFail: true)
-        await model.load()
-        await model.make(home: nil)
-        #expect(model.plan?.due.count == 4 && model.words == nil && model.problem == nil)
-        #expect(model.wordsProblem?.hasPrefix("No words for now") == true)
     }
 
     @Test func anApproachsEvidenceNamesItsProcedureAndAFlightsItsRouteAlone() throws {

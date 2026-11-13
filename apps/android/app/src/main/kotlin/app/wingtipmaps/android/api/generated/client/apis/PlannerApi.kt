@@ -400,7 +400,7 @@ interface PlannerApi {
     /**
      * POST words/changes/sources
      * Changes Sources
-     * What changed between two readings of a flight&#39;s briefing, each change a source with both readings (briefing_changes), the flight first; none at all where nothing did, which is most half hours of a flight watch, so the assistant asks the model nothing then.
+     * What changed between two readings of a flight&#39;s briefing, each change a source with both readings (briefing_changes), the flight first; none at all where nothing did, which is most half hours of a flight watch, so the watch sends nothing then.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
@@ -564,7 +564,7 @@ interface PlannerApi {
     /**
      * POST words/coach/sources
      * Coach Sources
-     * A proficiency plan&#39;s lines for the assistant to put into words.
+     * A proficiency plan&#39;s lines, each a source a sentence can cite.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
@@ -847,21 +847,6 @@ interface PlannerApi {
      */
     @POST("pilot/endorsements")
     suspend fun endorsements(@Body appWingtipmapsAndroidApiGeneratedEndorsementsAsk: app.wingtipmaps.android.api.generated.EndorsementsAsk): Response<app.wingtipmaps.android.api.generated.Endorsements>
-
-    /**
-     * POST engine/{name}
-     * Engine Rule
-     * The engine&#39;s rule &#x60;name&#x60; on the input given, its answer as the engine gives it (the contract&#39;s &#x60;answer&#x60; for the name). An input not of the rule&#39;s shape is a 422 with the engine&#39;s words.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param name
-     * @param kotlinxSerializationJsonJsonObject  (optional)
-     * @return [Unit]
-     */
-    @POST("engine/{name}")
-    suspend fun engineRule(@Path("name") name: kotlin.String, @Body kotlinxSerializationJsonJsonObject: kotlinx.serialization.json.JsonObject? = null): Response<Unit>
 
     /**
      * POST pilot/experience
@@ -1274,21 +1259,6 @@ interface PlannerApi {
     suspend fun notamsRanked(@Body appWingtipmapsAndroidApiGeneratedNotamsRankedAsk: app.wingtipmaps.android.api.generated.NotamsRankedAsk): Response<app.wingtipmaps.android.api.generated.NotamsRanked>
 
     /**
-     * POST checkpoint-notes/pending
-     * Notes To Write
-     * A route&#39;s selected checkpoints in along-track order, each with the note already kept for it (the pilot&#39;s own edit, else the shared one) or None, and the hop its note is kept under: what the assistant service writes the missing notes from (its POST /api/checkpoint-notes/generate, which the apps reach). Asked by the assistant alone; the gateway forwards no app here.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedGenerateNotesRequest
-     * @param xPilotId  (optional)
-     * @return [app.wingtipmaps.android.api.generated.NotesToWrite]
-     */
-    @POST("checkpoint-notes/pending")
-    suspend fun notesToWrite(@Body appWingtipmapsAndroidApiGeneratedGenerateNotesRequest: app.wingtipmaps.android.api.generated.GenerateNotesRequest, @Header("X-Pilot-Id") xPilotId: kotlin.String? = null): Response<app.wingtipmaps.android.api.generated.NotesToWrite>
-
-    /**
      * GET terrain/obstacles
      * Obstacles
      * The FAA&#39;s Digital Obstacle File&#39;s obstacles in a box at least &#x60;min_agl_ft&#x60; tall (200 ft by default, 14 CFR 77.9(a)&#39;s), tallest first, for the map to stand them up over its 3D ground. A box over two degrees either way is a 422: the map asks for its view close in.
@@ -1524,7 +1494,7 @@ interface PlannerApi {
     /**
      * GET route-check
      * Route Check
-     * Whether a route would plan, checked as a typed one is (load_route): a 404 naming an ident that is not one, a 422 for a stop at the point before it or too many stops. With an end missing, each ident given is checked alone. Nothing is read or planned. For the assistant&#39;s proposals of a change to the plan; the gateway forwards no app here.
+     * Whether a route would plan, checked as a typed one is (load_route): a 404 naming an ident that is not one, a 422 for a stop at the point before it or too many stops. With an end missing, each ident given is checked alone. Nothing is read or planned. The gateway forwards no app here.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
@@ -1536,6 +1506,21 @@ interface PlannerApi {
      */
     @GET("route-check")
     suspend fun routeCheck(@Query("dep") dep: kotlin.String? = "", @Query("dest") dest: kotlin.String? = "", @Query("stops") stops: kotlin.String? = ""): Response<app.wingtipmaps.android.api.generated.RouteChecked>
+
+    /**
+     * POST checkpoint-notes/route
+     * Route Notes
+     * A route&#39;s selected checkpoints in along-track order, each with the note kept for it (the pilot&#39;s own edit, else the shared one) or None, and the hop its note is kept under.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedRouteNotesRequest
+     * @param xPilotId  (optional)
+     * @return [app.wingtipmaps.android.api.generated.RouteNotes]
+     */
+    @POST("checkpoint-notes/route")
+    suspend fun routeNotes(@Body appWingtipmapsAndroidApiGeneratedRouteNotesRequest: app.wingtipmaps.android.api.generated.RouteNotesRequest, @Header("X-Pilot-Id") xPilotId: kotlin.String? = null): Response<app.wingtipmaps.android.api.generated.RouteNotes>
 
     /**
      * GET route-options
@@ -1621,20 +1606,6 @@ interface PlannerApi {
      */
     @POST("checkpoint-notes")
     suspend fun saveCheckpointNote(@Body appWingtipmapsAndroidApiGeneratedCheckpointNoteRequest: app.wingtipmaps.android.api.generated.CheckpointNoteRequest, @Header("X-Pilot-Id") xPilotId: kotlin.String? = null): Response<app.wingtipmaps.android.api.generated.CheckpointNoteSaved>
-
-    /**
-     * POST checkpoint-notes/seed
-     * Seed Note
-     * A generated note offered as the shared one at its place: kept where none is there yet, else the one saved meanwhile stays and is answered. The assistant&#39;s alone, as /pending is.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedSeedNoteRequest
-     * @return [app.wingtipmaps.android.api.generated.NoteSeeded]
-     */
-    @POST("checkpoint-notes/seed")
-    suspend fun seedNote(@Body appWingtipmapsAndroidApiGeneratedSeedNoteRequest: app.wingtipmaps.android.api.generated.SeedNoteRequest): Response<app.wingtipmaps.android.api.generated.NoteSeeded>
 
     /**
      * POST dev/services/{service}/start
