@@ -1,6 +1,18 @@
 import { describe, expect, test } from "vitest";
 import type { Airport, Candidate, Leg } from "../../../../lib/api/types";
-import { flownNmOf, groundMinAt, legOf, navLogRows, procedureOf, routeLegs, rowPoint, savedCheckpoints, turnaroundMin } from "./rows";
+import {
+  firstFlown,
+  flownNmOf,
+  groundMinAt,
+  phaseOf,
+  legOf,
+  navLogRows,
+  procedureOf,
+  routeLegs,
+  rowPoint,
+  savedCheckpoints,
+  turnaroundMin,
+} from "./rows";
 
 const airport = (ident: string, lat: number, lon: number): Airport =>
   ({ ident, name: `${ident} field`, lat, lon, elevation_ft: 900 }) as Airport;
@@ -55,7 +67,20 @@ describe("a leg flown by a procedure", () => {
     ({
       ...leg(6.7, 4.99),
       groundspeed_kt: 88.8,
-      toc: { along_nm: 3.6, ete_min: 3.5, fuel_gal: 0.61, altitude_ft: 3000, lat: 42.48, lon: -87.89, tas_kt: 74, groundspeed_kt: 61.7 },
+      toc: {
+        along_nm: 3.6,
+        ete_min: 3.5,
+        fuel_gal: 0.61,
+        altitude_ft: 3000,
+        lat: 42.48,
+        lon: -87.89,
+        tas_kt: 74,
+        groundspeed_kt: 61.7,
+        fuel_burn_gph: null,
+        wca_deg: null,
+        true_heading_deg: null,
+        magnetic_heading_deg: null,
+      },
       procedure: {
         path: [],
         ft: [],
@@ -86,6 +111,87 @@ describe("a leg flown by a procedure", () => {
     const rows = navLogRows(ends, [], [{ ...flownBy({ nm: 3.1, min: 2.1, landing: true }), toc: null }]);
     expect(procedureOf(rows[1]!)?.word).toBe("pattern");
     expect(flownNmOf(rows[1]!)).toBeCloseTo(4.99 + 3.1, 5);
+  });
+});
+
+describe("a climb's rows are the climb's", () => {
+  // The leg's top of climb 3.6 nm and 3.5 min in at the climb's 61.7 kt
+  // and 334 degrees (more correction at the slower speed), its cruise
+  // 100 kt and 332 (the engine's with_climbs).
+  const climbing = (): Leg =>
+    ({
+      ...leg(20, 30),
+      climb_min: 3.5,
+      toc: {
+        along_nm: 3.6,
+        ete_min: 3.5,
+        fuel_gal: 0.61,
+        altitude_ft: 4500,
+        lat: 42.48,
+        lon: -87.89,
+        tas_kt: 74,
+        groundspeed_kt: 61.7,
+        fuel_burn_gph: 10.5,
+        wca_deg: 4,
+        true_heading_deg: 334,
+        magnetic_heading_deg: 334,
+      },
+    }) as Leg;
+
+  test("the piece up to the top states the climb's speed, heading and flow, the rest the cruise's", () => {
+    const rows = navLogRows(ends, [], [climbing()]);
+    const [toc, rest] = [rows[1]!, rows[2]!];
+    expect(phaseOf(toc)).toBe("climb");
+    expect(legOf(toc)).toMatchObject({ groundspeed_kt: 61.7, tas_kt: 74, magnetic_heading_deg: 334, fuel_burn_gph: 10.5 });
+    expect(phaseOf(rest)).toBe("cruise");
+    expect(legOf(rest)).toMatchObject({ groundspeed_kt: 100, magnetic_heading_deg: 332 });
+  });
+
+  test("a leg the engine flew whole in the climb is climb all through, and on from its start a leg climbs first", () => {
+    const rows = navLogRows(ends, [], [{ ...leg(20, 30), climb_min: 20, toc: null, phase: "climb" }]);
+    expect(phaseOf(rows[1]!)).toBe("climb");
+    expect(firstFlown(climbing())).toMatchObject({ groundspeed_kt: 61.7, magnetic_heading_deg: 334 });
+  });
+});
+
+describe("a descent's rows are the descent's", () => {
+  // A top of descent 8 nm into a 20 nm leg, the descent's 12 nm at
+  // 105.3 kt true and 5 gph (the engine's descent_phase); the leg's own
+  // 100 kt up to the top.
+  const tod = (atCruise: boolean) =>
+    ({
+      along_nm: 8,
+      ete_min: 4.8,
+      fuel_gal: 0.64,
+      altitude_ft: 5500,
+      to_ft: 1500,
+      pattern: true,
+      fix: null,
+      fpm: 600,
+      lat: 42.2,
+      lon: -88,
+      tas_kt: atCruise ? null : 105.3,
+      groundspeed_kt: atCruise ? null : 105.3,
+      fuel_burn_gph: atCruise ? null : 5,
+      wca_deg: atCruise ? null : 0,
+      true_heading_deg: atCruise ? null : 330,
+      magnetic_heading_deg: atCruise ? null : 332,
+      descent_at_cruise: atCruise,
+    }) as Leg["tod"];
+
+  test("the piece after the top states the descent's figures, the piece before it the cruise's", () => {
+    const rows = navLogRows(ends, [], [{ ...leg(11.6, 20), toc: null, tod: tod(false) }]);
+    const [top, rest] = [rows[1]!, rows[2]!];
+    expect(phaseOf(top)).toBe("cruise");
+    expect(legOf(top)).toMatchObject({ groundspeed_kt: 100 });
+    expect(phaseOf(rest)).toBe("descent");
+    expect(legOf(rest)).toMatchObject({ groundspeed_kt: 105.3, tas_kt: 105.3, fuel_burn_gph: 5 });
+  });
+
+  test("without the airplane's descent figures the piece is the cruise's", () => {
+    const rows = navLogRows(ends, [], [{ ...leg(12, 20), toc: null, tod: tod(true) }]);
+    expect(phaseOf(rows[2]!)).toBe("cruise");
+    expect(legOf(rows[2]!)).toMatchObject({ groundspeed_kt: 100 });
   });
 });
 

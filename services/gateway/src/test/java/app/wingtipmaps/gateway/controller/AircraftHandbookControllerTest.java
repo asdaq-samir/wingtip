@@ -70,7 +70,7 @@ class AircraftHandbookControllerTest {
     }
 
     private static Aircraft sampleAircraft() {
-        return new Aircraft(samplePilot(), "N12345", "C172", 110, 8.5, null, null, null, 40.0);
+        return new Aircraft(samplePilot(), "N12345", "C172", 110, 8.5, null, null, null, null, null, 40.0);
     }
 
     /** The handbook figures a pilot confirmed from a photographed page

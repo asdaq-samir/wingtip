@@ -73,7 +73,7 @@ class AircraftFiguresControllerTest {
      *  airplane's own figures. */
     @Test
     void aFigureAskedInlineIsAddedAndReturned() throws Exception {
-        Aircraft airplane = new Aircraft(pilot(), "N12345", "C172", 110, 8.5, null, null, null, 40.0)
+        Aircraft airplane = new Aircraft(pilot(), "N12345", "C172", 110, 8.5, null, null, null, null, null, 40.0)
                 .keepFigures(null, null, 1.2, null, null, null);
         given(aircraftService.addFigures(any(), eq(8L), eq(new OwnFigures(null, null, 1.2, null, null, null))))
                 .willReturn(Optional.of(airplane));

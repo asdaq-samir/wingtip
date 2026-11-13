@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_pilot::aircraft::form::call",
-  "description": "What is wrong with the \"Your Airplane\" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.",
+  "description": "What is wrong with the \"Your Airplane\" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's, the descent's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.",
   "type": "object",
   "properties": {
     "input": {
@@ -44,6 +44,18 @@
           ]
         },
         "climbFuelBurnGph": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "descentIasKt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "descentFuelBurnGph": {
           "type": [
             "string",
             "null"
@@ -99,6 +111,12 @@
           "type": "string"
         },
         "climbFuelBurnGph": {
+          "type": "string"
+        },
+        "descentIasKt": {
+          "type": "string"
+        },
+        "descentFuelBurnGph": {
           "type": "string"
         },
         "usableFuelGal": {

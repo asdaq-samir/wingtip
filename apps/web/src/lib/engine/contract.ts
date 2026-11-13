@@ -1061,7 +1061,7 @@ export interface EngineContract {
     answer: AirborneNowAnswer;
   };
   /**
-   * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
+   * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's, the descent's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
    */
   aircraft_problems: {
     input: AircraftProblemsInput;
@@ -1075,7 +1075,7 @@ export interface EngineContract {
     answer: AirplaneFiguresAnswer;
   };
   /**
-   * The inputs a figure needs that the airplane's profile lacks, by name, so the app asks for them where the figure would be (the owner, 2026-11-09): the legs their cruise speed and burn; the fuel totals also the start, taxi and takeoff allowance; the glide its glide ratio; the climb its climb speed, sea-level rate and service ceiling; a weight and balance its loading envelope and its own empty weight and moment; takeoff and landing their charts. ["airplane"] with no airplane.
+   * The inputs a figure needs that the airplane's profile lacks, by name, so the app asks for them where the figure would be (the owner, 2026-11-09): the legs their cruise speed and burn; the fuel totals also the start, taxi and takeoff allowance; the glide its glide ratio; the climb its climb speed, sea-level rate and service ceiling; the descent its indicated speed and fuel flow; a weight and balance its loading envelope and its own empty weight and moment; takeoff and landing their charts. ["airplane"] with no airplane.
    */
   airplane_needs: {
     input: AirplaneNeedsInput;
@@ -1145,7 +1145,7 @@ export interface EngineContract {
     answer: AltitudeAnywayAnswer;
   };
   /**
-   * A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its climb speed scaled by the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.
+   * A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its own ground speed, the wind triangle at the climb speed in the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.
    */
   altitude_change: {
     input: AltitudeChangeInput;
@@ -2643,14 +2643,14 @@ export interface EngineContract {
     answer: NavLogTotals1;
   };
   /**
-   * The legs with their climbs flown, from the field (start_altitude_ft; null starts level) and at every step up, at the best rate in each leg's air and the climb speed; each leg's climb_min and the top of climb (toc).
+   * The legs with their climbs flown, from the field (start_altitude_ft; null starts level) and at every step up, at the best rate in each leg's air and the climb speed; each leg's climb_min and the top of climb (toc). A climb is flown at its own ground speed, the climb speed's wind triangle in the leg's wind; a leg flown wholly in the climb states the climb's TAS, wind correction, headings, ground speed and fuel flow, so its ground speed times its time is its miles; a leg partly climbed keeps the cruise's, the climb's on its toc.
    */
   navlog_with_climbs: {
     input: NavLogWithClimbsInput;
     answer: NavLogWithClimbsAnswer;
   };
   /**
-   * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude where the 45-degree entry begins, about 1.7 nm before the end (AC 90-66C 11.2, 11.3: level at pattern altitude before entering), to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before; the times and fuel unchanged. A top of descent's minutes and gallons are those flown to it: what a leg flies beyond its line, counted at its end (its procedure's more_min and more_gal, a hold with at_end), comes after it.
+   * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude where the 45-degree entry begins, about 1.7 nm before the end (AC 90-66C 11.2, 11.3: level at pattern altitude before entering), to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before. With a profile giving the descent's speed and fuel flow, each descent is flown as its own phase (its wind triangle at the descent's TAS, its flow), the legs' times and fuel changed by it and each row stating its phase's figures; else the times and fuel unchanged, the descent on the cruise's. A top of descent's minutes and gallons are those flown to it: what a leg flies beyond its line, counted at its end (its procedure's more_min and more_gal, a hold with at_end), comes after it.
    */
   navlog_with_descents: {
     input: NavLogWithDescentsInput;
@@ -3668,6 +3668,8 @@ export interface AircraftProblemsInput {
   cruisePowerPct?: string | null;
   climbTasKt?: string | null;
   climbFuelBurnGph?: string | null;
+  descentIasKt?: string | null;
+  descentFuelBurnGph?: string | null;
   usableFuelGal?: string | null;
   equipment?: string | null;
   surveillance?: string | null;
@@ -3681,6 +3683,8 @@ export interface AircraftProblemsAnswer {
   cruisePowerPct?: string;
   climbTasKt?: string;
   climbFuelBurnGph?: string;
+  descentIasKt?: string;
+  descentFuelBurnGph?: string;
   usableFuelGal?: string;
   equipment?: string;
   surveillance?: string;
@@ -3724,7 +3728,7 @@ export interface AirplaneNeedsInput {
    * The airplane (airplane_figures' profile); null for no airplane.
    */
   profile?: {} | null;
-  figure: "legs" | "fuel_totals" | "glide" | "climb" | "weight_balance" | "takeoff_landing";
+  figure: "legs" | "fuel_totals" | "glide" | "climb" | "descent" | "weight_balance" | "takeoff_landing";
 }
 export interface AirplaneNeedsAnswer {
   /**
@@ -4017,7 +4021,7 @@ export interface AltitudeChangeInput {
    */
   mode: "start_at" | "cross_at";
   /**
-   * The leg's ground speed, knots: a descent's minutes, and with tas_kt the wind a climb's ground speed is scaled by. Null where the leg has none.
+   * The leg's ground speed, knots: a descent's minutes, and, where the course and wind are not given, with tas_kt the scale of a climb's ground speed. Null where the leg has none.
    */
   groundspeed_kt?: number | null;
   /**
@@ -4032,6 +4036,18 @@ export interface AltitudeChangeInput {
    * The forecast temperature at to_ft, degrees C: the climb is flown that far from a standard day (ISA, PHAK ch. 4). Null for a standard day.
    */
   oat_c?: number | null;
+  /**
+   * The leg's true course, degrees: with the wind, the climb's own wind triangle at the climb speed (PHAK ch. 16). Optional; left out, the climb's ground speed is the leg's scaled by the airspeeds.
+   */
+  true_course_deg?: number | null;
+  /**
+   * The leg's wind, from, degrees true (its NavLogWind's), for the climb's wind triangle. Null or left out where the leg has none.
+   */
+  wind_dir_true_deg?: number | null;
+  /**
+   * The leg's wind speed, knots, with wind_dir_true_deg.
+   */
+  wind_speed_kt?: number | null;
 }
 /**
  * An airplane's profile (data/aircraft/*.json, a pilot's own figures laid over it). A figure of 0 is taken as none.
@@ -4050,6 +4066,14 @@ export interface NavLogProfile {
   cruise_altitude_ft?: number | null;
   climb_tas_kt?: number | null;
   climb_fuel_burn_gph?: number | null;
+  /**
+   * The descent's indicated airspeed, knots, as the POH gives it; flown as a TAS at the descent's middle altitude. Null or left out: the descent is flown on the cruise's figures.
+   */
+  descent_ias_kt?: number | null;
+  /**
+   * The descent's fuel flow, gallons an hour, from the POH.
+   */
+  descent_fuel_burn_gph?: number | null;
   climb_rate_fpm_sea_level?: number | null;
   taxi_fuel_gal?: number | null;
   usable_fuel_gal?: number | null;
@@ -8857,6 +8881,10 @@ export interface NavLogLeg {
   oat_c?: number | null;
   density_altitude_ft?: number | null;
   climb_min?: number | null;
+  /**
+   * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
+   */
+  phase?: "climb" | "descent" | null;
   toc?: NavLogTop | null;
   tod?: NavLogTop | null;
   /**
@@ -8866,7 +8894,7 @@ export interface NavLogLeg {
   [k: string]: unknown;
 }
 /**
- * A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg.
+ * A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg. A top of climb also carries the climb's own figures for the piece of its leg up to it: the climb speed, its wind correction, headings and ground speed in the leg's wind, and its fuel flow. A top of descent with an airplane whose profile gives the descent's figures carries them the same way for the piece of its leg after it, that piece's ground speed its miles over its minutes.
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "NavLogTop".
@@ -8882,6 +8910,14 @@ export interface NavLogTop {
   fpm?: number;
   tas_kt?: number;
   groundspeed_kt?: number;
+  fuel_burn_gph?: number;
+  wca_deg?: number;
+  true_heading_deg?: number;
+  magnetic_heading_deg?: number;
+  /**
+   * A top of descent with an airplane: true where its profile has no descent speed or fuel flow and the descent is flown on the cruise's figures (the app asks for them), false where it is flown at its own.
+   */
+  descent_at_cruise?: boolean;
   lat?: number;
   lon?: number;
   [k: string]: unknown;
@@ -8910,6 +8946,10 @@ export interface NavLogLeg1 {
   oat_c?: number | null;
   density_altitude_ft?: number | null;
   climb_min?: number | null;
+  /**
+   * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
+   */
+  phase?: "climb" | "descent" | null;
   toc?: NavLogTop | null;
   tod?: NavLogTop | null;
   /**
@@ -9021,6 +9061,10 @@ export interface NavLogLeg2 {
   oat_c?: number | null;
   density_altitude_ft?: number | null;
   climb_min?: number | null;
+  /**
+   * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
+   */
+  phase?: "climb" | "descent" | null;
   toc?: NavLogTop | null;
   tod?: NavLogTop | null;
   /**
@@ -9126,6 +9170,10 @@ export interface NavLogWithDescentsInput {
    */
   end_before_nm?: number | null;
   end_fix?: string | null;
+  /**
+   * The airplane, for the descent flown as its own phase at its descent_ias_kt and descent_fuel_burn_gph (descent_phase): each leg's time and fuel over the miles descended, its row's figures the descent's. Left out or null: the legs as they are. A profile without the two: the descent on the cruise's figures, each top of descent descent_at_cruise.
+   */
+  profile?: NavLogProfile | null;
 }
 export interface NightAtEitherEndInput {
   /**

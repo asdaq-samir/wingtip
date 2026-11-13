@@ -33,11 +33,19 @@ export function written(key: AnswerKey, value: number): string {
   return `${Math.round(value)} ${key === "gs" ? "kt" : "min"}`;
 }
 
+/** The phase of flight a row is flown in, its figures that phase's. */
+export type Phase = "climb" | "descent" | "cruise";
+
 export interface Workings {
   /** The steps in order, each a name, its sum and its result. */
   steps: { name: string; sum: string; result: string }[];
-  /** The figures a student is asked for, cruise only. */
+  /** The figures a student is asked for, of the one phase the row is
+   *  flown in: the climb's, the cruise's or the descent's. */
   answers: Record<AnswerKey, number>;
+  /** Which phase the figures are: a climbing or descending row's are that
+   *  phase's own (the engine puts them on the leg, or on its top of climb
+   *  or descent for the piece of it). */
+  phase: Phase;
   /** What the leg's climb adds, where it has one: the log's own time and
    *  fuel are the cruise's and this. */
   climb: { min: number; gal: number } | null;
@@ -47,8 +55,9 @@ export interface Workings {
 }
 
 /** A leg worked out, or null for one that cannot be (no wind is a calm
- *  leg; a wind faster than the airplane, no leg at all). */
-export function workingsOf(leg: Leg): Workings | null {
+ *  leg; a wind faster than the airplane, no leg at all). `phase`: the
+ *  phase the row is flown in (rows' phaseOf), its figures that phase's. */
+export function workingsOf(leg: Leg, phase: Phase = "cruise"): Workings | null {
   if (leg.groundspeed_kt == null || leg.groundspeed_kt <= 0 || leg.ete_min == null || leg.fuel_gal == null) return null;
   // No airplane, no wind triangle to work: its figures are an airplane's.
   if (
@@ -94,7 +103,16 @@ export function workingsOf(leg: Leg): Workings | null {
     },
     {
       name: "True airspeed",
-      sum: `${Math.round(leg.power_pct)}% power at a density altitude of ${grouped(leg.density_altitude_ft)} ft`,
+      // A climb or a descent is flown at the airplane's speed for it, not
+      // at a cruise power setting (FAA-H-8083-25C ch. 16: each phase at
+      // its own figures); the descent's is its indicated speed made true
+      // at the descent's altitude.
+      sum:
+        phase === "climb"
+          ? "the airplane's climb speed"
+          : phase === "descent"
+            ? "the airplane's descent speed, indicated, at the descent's altitude"
+            : `${Math.round(leg.power_pct)}% power at a density altitude of ${grouped(leg.density_altitude_ft)} ft`,
       result: `${Math.round(tas)} kt`,
     },
     {
@@ -115,11 +133,16 @@ export function workingsOf(leg: Leg): Workings | null {
       result: `${Math.round(gs)} kt`,
     },
     { name: "Time", sum: `${r1(leg.distance_nm)} nm ÷ ${Math.round(gs)} kt × 60`, result: `${Math.round(ete)} min` },
-    { name: "Fuel", sum: `${Math.round(ete)} min at ${r1(leg.fuel_burn_gph)} gal/h`, result: `${r1(fuel)} gal` },
+    {
+      name: "Fuel",
+      sum: `${Math.round(ete)} min at ${phase === "cruise" ? "" : `the ${phase}'s `}${r1(leg.fuel_burn_gph)} gal/h`,
+      result: `${r1(fuel)} gal`,
+    },
   ];
   return {
     steps,
     answers: { wca, th, mh, gs, ete, fuel },
+    phase,
     climb: climbMin > 0.5 ? { min: climbMin, gal: Math.max(0, climbGal) } : null,
     procedure: procedure && procedure.min > 0 ? { ...procedure, landing: p!.landing } : null,
   };

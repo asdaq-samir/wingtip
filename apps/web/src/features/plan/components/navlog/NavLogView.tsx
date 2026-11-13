@@ -16,22 +16,24 @@ import { LEGS, type PanelTab } from "./panelTab";
 import { SectionPane } from "../../../../components/SectionPane";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../../../components/ui/table";
-import type { Candidate, Leg, NavLogAltitude, Totals, TopOfClimb, TopOfDescent } from "../../../../lib/api/types";
-import { feet, magneticVariation, windCorrection } from "../../../../lib/format";
+import type { Candidate, Leg, NavLogAltitude, Totals } from "../../../../lib/api/types";
+import { magneticVariation, windCorrection } from "../../../../lib/format";
 import { routeName } from "../../../../lib/identSchema";
 import { revealRow } from "../../../../lib/revealRow";
 import { GROUP_HEADING, TEXT } from "../../../../lib/text";
 import { type Description, descriptionKey } from "../../hooks/useCheckpointNotes";
 import { altFt, bearing, clockTime, etaAt, feetBelowClouds, legsWithoutWind, one, plannedWords, windAloft } from "../../format";
 import type { BriefingPart } from "../briefing/sections";
-import { flownNmOf, isLegPoint, legOf, navLogRows, rowPoint, type NavLogRow, type RouteEnds } from "./rows";
+import { flownNmOf, isLegPoint, legOf, navLogRows, phaseOf, rowPoint, type NavLogRow, type RouteEnds } from "./rows";
 import LegWorkings from "./LegWorkings";
+import type { Phase } from "./workings";
 import DiversionDrill from "./DiversionDrill";
 import RouteProfileSection from "./RouteProfileSection";
 import { dryRunRow, type DryRun } from "./dryRun";
 import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
 import { PointMark } from "./PointMark";
 import { NavLogList } from "./NavLogList";
+import { LegPointNote } from "./LegPointNote";
 import { DescriptionCell } from "./DescriptionCell";
 import { NavLogTotals } from "./NavLogTotals";
 import NavLogAge from "./NavLogAge";
@@ -180,15 +182,7 @@ interface Props {
  *  its value at the rows' own size; it was a run of "TC 327° Wind
  *  220°/28 WCA ..." breaking wherever the line ran out. (Their whole
  *  names were tried, two across, and the pilot kept the shorthand.) */
-/** What a top of climb or descent's row says under it: the level, or
- *  the rate down and what to. */
-function legPointNote(point: TopOfClimb | TopOfDescent, descent: TopOfDescent | null): string {
-  if (!descent) return `Top of climb: level at ${feet(point.altitude_ft)}.`;
-  const to = descent.pattern ? ", the pattern" : descent.fix ? ` by ${descent.fix}, the approach's first fix` : "";
-  return `Top of descent: ${descent.fpm} fpm down to ${feet(descent.to_ft)}${to}.`;
-}
-
-function LegLine({ leg, at }: { leg: Leg; at: { name: string; lat: number; lon: number } }) {
+function LegLine({ leg, at, phase }: { leg: Leg; at: { name: string; lat: number; lon: number }; phase: Phase }) {
   const figures: [string, string][] = [
     ["TC", bearing(leg.true_course_deg)],
     ["Wind", leg.wind ? windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt) : "no data"],
@@ -218,7 +212,7 @@ function LegLine({ leg, at }: { leg: Leg; at: { name: string; lat: number; lon: 
           reaches 11 pt past its 22 pt line, so the lines sit 22 pt apart
           for the areas to meet rather than overlap. */}
       <div className="flex flex-wrap gap-x-4 gap-y-5.5">
-        <LegWorkings leg={leg} />
+        <LegWorkings leg={leg} phase={phase} />
         <DiversionDrill leg={leg} at={at} />
       </div>
     </div>
@@ -564,7 +558,7 @@ export default function NavLogView({
     const leg = legOf(r);
     return (
       <>
-        {leg && <LegLine leg={leg} at={rowPoint(r)} />}
+        {leg && <LegLine leg={leg} at={rowPoint(r)} phase={phaseOf(r)} />}
         {r.kind === "departure" ? (
           // The departure airport's own name, not editable and never
           // AI-generated -- there's no "how to spot it" for an airport and
@@ -573,7 +567,7 @@ export default function NavLogView({
           // description sits in, so the pair still reads as one group.
           (r.airport.name ?? "—")
         ) : isLegPoint(r) ? (
-          legPointNote(r.point, r.kind === "tod" ? r.point : null)
+          <LegPointNote point={r.point} descent={r.kind === "tod" ? r.point : null} />
         ) : r.kind === "checkpoint" ? (
           <DescriptionCell
             description={descriptions[r.key]}

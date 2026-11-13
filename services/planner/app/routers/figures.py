@@ -98,7 +98,7 @@ def diversion(
     place = airports.find_place(to)
     if place is None:
         raise HTTPException(404, f"No US airport goes by {to.strip().upper()!r}.")
-    profile = aircraft_profile(aircraft, cruise_tas_kt, fuel_burn_gph, None, None, None, cruise_power_pct, None)
+    profile = aircraft_profile(aircraft, cruise_tas_kt, fuel_burn_gph, cruise_power_pct=cruise_power_pct)
     try:
         leg = navlog.leg_from((lat, lon), (place["lat"], place["lon"]), altitude_ft, profile, winds_key_for(depart))
     except WeatherServiceError as err:

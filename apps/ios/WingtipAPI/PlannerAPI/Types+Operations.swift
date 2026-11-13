@@ -12726,6 +12726,10 @@ public enum Operations {
                 public var climbTasKt: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/local-flight/GET/query/climb_fuel_burn_gph`.
                 public var climbFuelBurnGph: Swift.Double?
+                /// - Remark: Generated from `#/paths/api/local-flight/GET/query/descent_ias_kt`.
+                public var descentIasKt: Swift.Double?
+                /// - Remark: Generated from `#/paths/api/local-flight/GET/query/descent_fuel_burn_gph`.
+                public var descentFuelBurnGph: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/local-flight/GET/query/cruise_power_pct`.
                 public var cruisePowerPct: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/local-flight/GET/query/service_ceiling_ft`.
@@ -12780,6 +12784,8 @@ public enum Operations {
                 ///   - usableFuelGal:
                 ///   - climbTasKt:
                 ///   - climbFuelBurnGph:
+                ///   - descentIasKt:
+                ///   - descentFuelBurnGph:
                 ///   - cruisePowerPct:
                 ///   - serviceCeilingFt:
                 ///   - climbRateFpm:
@@ -12813,6 +12819,8 @@ public enum Operations {
                     usableFuelGal: Swift.Double? = nil,
                     climbTasKt: Swift.Double? = nil,
                     climbFuelBurnGph: Swift.Double? = nil,
+                    descentIasKt: Swift.Double? = nil,
+                    descentFuelBurnGph: Swift.Double? = nil,
                     cruisePowerPct: Swift.Double? = nil,
                     serviceCeilingFt: Swift.Double? = nil,
                     climbRateFpm: Swift.Double? = nil,
@@ -12846,6 +12854,8 @@ public enum Operations {
                     self.usableFuelGal = usableFuelGal
                     self.climbTasKt = climbTasKt
                     self.climbFuelBurnGph = climbFuelBurnGph
+                    self.descentIasKt = descentIasKt
+                    self.descentFuelBurnGph = descentFuelBurnGph
                     self.cruisePowerPct = cruisePowerPct
                     self.serviceCeilingFt = serviceCeilingFt
                     self.climbRateFpm = climbRateFpm
@@ -13777,6 +13787,10 @@ public enum Operations {
                 public var climbTasKt: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/navlog/GET/query/climb_fuel_burn_gph`.
                 public var climbFuelBurnGph: Swift.Double?
+                /// - Remark: Generated from `#/paths/api/navlog/GET/query/descent_ias_kt`.
+                public var descentIasKt: Swift.Double?
+                /// - Remark: Generated from `#/paths/api/navlog/GET/query/descent_fuel_burn_gph`.
+                public var descentFuelBurnGph: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/navlog/GET/query/cruise_power_pct`.
                 public var cruisePowerPct: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/navlog/GET/query/service_ceiling_ft`.
@@ -13831,6 +13845,8 @@ public enum Operations {
                 ///   - usableFuelGal:
                 ///   - climbTasKt:
                 ///   - climbFuelBurnGph:
+                ///   - descentIasKt:
+                ///   - descentFuelBurnGph:
                 ///   - cruisePowerPct:
                 ///   - serviceCeilingFt:
                 ///   - climbRateFpm:
@@ -13864,6 +13880,8 @@ public enum Operations {
                     usableFuelGal: Swift.Double? = nil,
                     climbTasKt: Swift.Double? = nil,
                     climbFuelBurnGph: Swift.Double? = nil,
+                    descentIasKt: Swift.Double? = nil,
+                    descentFuelBurnGph: Swift.Double? = nil,
                     cruisePowerPct: Swift.Double? = nil,
                     serviceCeilingFt: Swift.Double? = nil,
                     climbRateFpm: Swift.Double? = nil,
@@ -13897,6 +13915,8 @@ public enum Operations {
                     self.usableFuelGal = usableFuelGal
                     self.climbTasKt = climbTasKt
                     self.climbFuelBurnGph = climbFuelBurnGph
+                    self.descentIasKt = descentIasKt
+                    self.descentFuelBurnGph = descentFuelBurnGph
                     self.cruisePowerPct = cruisePowerPct
                     self.serviceCeilingFt = serviceCeilingFt
                     self.climbRateFpm = climbRateFpm
@@ -16925,8 +16945,8 @@ public enum Operations {
     /// predictable one) -- and the reasoning comes back with it, since
     /// "why am I at 6,500" is a question a pilot will actually ask.
     ///
-    /// aircraft names a stock profile; cruise_tas_kt, fuel_burn_gph,
-    /// usable_fuel_gal, climb_tas_kt, climb_fuel_burn_gph and
+    /// aircraft names a stock profile; cruise_tas_kt, fuel_burn_gph, usable_fuel_gal,
+    /// climb_tas_kt, climb_fuel_burn_gph, descent_ias_kt (indicated), descent_fuel_burn_gph and
     /// cruise_power_pct (the power the cruise figures are at), when given,
     /// are a pilot's own aeroplane's numbers laid over it. Each leg flies
     /// them in its own air: the cruise figures are the aeroplane's at a
@@ -16969,6 +16989,10 @@ public enum Operations {
                 public var climbTasKt: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/plan/GET/query/climb_fuel_burn_gph`.
                 public var climbFuelBurnGph: Swift.Double?
+                /// - Remark: Generated from `#/paths/api/plan/GET/query/descent_ias_kt`.
+                public var descentIasKt: Swift.Double?
+                /// - Remark: Generated from `#/paths/api/plan/GET/query/descent_fuel_burn_gph`.
+                public var descentFuelBurnGph: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/plan/GET/query/cruise_power_pct`.
                 public var cruisePowerPct: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/plan/GET/query/service_ceiling_ft`.
@@ -17022,6 +17046,8 @@ public enum Operations {
                 ///   - usableFuelGal:
                 ///   - climbTasKt:
                 ///   - climbFuelBurnGph:
+                ///   - descentIasKt:
+                ///   - descentFuelBurnGph:
                 ///   - cruisePowerPct:
                 ///   - serviceCeilingFt:
                 ///   - climbRateFpm:
@@ -17054,6 +17080,8 @@ public enum Operations {
                     usableFuelGal: Swift.Double? = nil,
                     climbTasKt: Swift.Double? = nil,
                     climbFuelBurnGph: Swift.Double? = nil,
+                    descentIasKt: Swift.Double? = nil,
+                    descentFuelBurnGph: Swift.Double? = nil,
                     cruisePowerPct: Swift.Double? = nil,
                     serviceCeilingFt: Swift.Double? = nil,
                     climbRateFpm: Swift.Double? = nil,
@@ -17086,6 +17114,8 @@ public enum Operations {
                     self.usableFuelGal = usableFuelGal
                     self.climbTasKt = climbTasKt
                     self.climbFuelBurnGph = climbFuelBurnGph
+                    self.descentIasKt = descentIasKt
+                    self.descentFuelBurnGph = descentFuelBurnGph
                     self.cruisePowerPct = cruisePowerPct
                     self.serviceCeilingFt = serviceCeilingFt
                     self.climbRateFpm = climbRateFpm

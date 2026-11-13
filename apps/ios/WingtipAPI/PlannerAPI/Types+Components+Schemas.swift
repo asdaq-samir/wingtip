@@ -211,6 +211,10 @@ extension Components {
             public var cruisePowerPct: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AircraftProfile/cruise_tas_kt`.
             public var cruiseTasKt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/AircraftProfile/descent_fuel_burn_gph`.
+            public var descentFuelBurnGph: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/AircraftProfile/descent_ias_kt`.
+            public var descentIasKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AircraftProfile/designator`.
             public var designator: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftProfile/fuel_burn_gph`.
@@ -246,6 +250,8 @@ extension Components {
             ///   - crosswind:
             ///   - cruisePowerPct:
             ///   - cruiseTasKt:
+            ///   - descentFuelBurnGph:
+            ///   - descentIasKt:
             ///   - designator:
             ///   - fuelBurnGph:
             ///   - landing:
@@ -266,6 +272,8 @@ extension Components {
                 crosswind: Components.Schemas.DemonstratedCrosswind? = nil,
                 cruisePowerPct: Swift.Double? = nil,
                 cruiseTasKt: Swift.Double,
+                descentFuelBurnGph: Swift.Double? = nil,
+                descentIasKt: Swift.Double? = nil,
                 designator: Swift.String? = nil,
                 fuelBurnGph: Swift.Double,
                 landing: Components.Schemas.ShortField? = nil,
@@ -286,6 +294,8 @@ extension Components {
                 self.crosswind = crosswind
                 self.cruisePowerPct = cruisePowerPct
                 self.cruiseTasKt = cruiseTasKt
+                self.descentFuelBurnGph = descentFuelBurnGph
+                self.descentIasKt = descentIasKt
                 self.designator = designator
                 self.fuelBurnGph = fuelBurnGph
                 self.landing = landing
@@ -307,6 +317,8 @@ extension Components {
                 case crosswind
                 case cruisePowerPct = "cruise_power_pct"
                 case cruiseTasKt = "cruise_tas_kt"
+                case descentFuelBurnGph = "descent_fuel_burn_gph"
+                case descentIasKt = "descent_ias_kt"
                 case designator
                 case fuelBurnGph = "fuel_burn_gph"
                 case landing
@@ -345,6 +357,14 @@ extension Components {
                 self.cruiseTasKt = try container.decode(
                     Swift.Double.self,
                     forKey: .cruiseTasKt
+                )
+                self.descentFuelBurnGph = try container.decodeIfPresent(
+                    Swift.Double.self,
+                    forKey: .descentFuelBurnGph
+                )
+                self.descentIasKt = try container.decodeIfPresent(
+                    Swift.Double.self,
+                    forKey: .descentIasKt
                 )
                 self.designator = try container.decodeIfPresent(
                     Swift.String.self,
@@ -401,6 +421,8 @@ extension Components {
                     "crosswind",
                     "cruise_power_pct",
                     "cruise_tas_kt",
+                    "descent_fuel_burn_gph",
+                    "descent_ias_kt",
                     "designator",
                     "fuel_burn_gph",
                     "landing",
@@ -440,6 +462,14 @@ extension Components {
                 try container.encode(
                     self.cruiseTasKt,
                     forKey: .cruiseTasKt
+                )
+                try container.encodeIfPresent(
+                    self.descentFuelBurnGph,
+                    forKey: .descentFuelBurnGph
+                )
+                try container.encodeIfPresent(
+                    self.descentIasKt,
+                    forKey: .descentIasKt
                 )
                 try container.encodeIfPresent(
                     self.designator,
@@ -5983,6 +6013,10 @@ extension Components {
             public var dep: Swift.String
             /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/depart`.
             public var depart: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/descent_fuel_burn_gph`.
+            public var descentFuelBurnGph: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/descent_ias_kt`.
+            public var descentIasKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/dest`.
             public var dest: Swift.String
             /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/fuel_burn_gph`.
@@ -6044,6 +6078,8 @@ extension Components {
             ///   - day:
             ///   - dep:
             ///   - depart:
+            ///   - descentFuelBurnGph:
+            ///   - descentIasKt:
             ///   - dest:
             ///   - fuelBurnGph:
             ///   - glideRatio:
@@ -6084,6 +6120,8 @@ extension Components {
                 day: Swift.String? = nil,
                 dep: Swift.String,
                 depart: Swift.String? = nil,
+                descentFuelBurnGph: Swift.Double? = nil,
+                descentIasKt: Swift.Double? = nil,
                 dest: Swift.String,
                 fuelBurnGph: Swift.Double? = nil,
                 glideRatio: Swift.Double? = nil,
@@ -6124,6 +6162,8 @@ extension Components {
                 self.day = day
                 self.dep = dep
                 self.depart = depart
+                self.descentFuelBurnGph = descentFuelBurnGph
+                self.descentIasKt = descentIasKt
                 self.dest = dest
                 self.fuelBurnGph = fuelBurnGph
                 self.glideRatio = glideRatio
@@ -6165,6 +6205,8 @@ extension Components {
                 case day
                 case dep
                 case depart
+                case descentFuelBurnGph = "descent_fuel_burn_gph"
+                case descentIasKt = "descent_ias_kt"
                 case dest
                 case fuelBurnGph = "fuel_burn_gph"
                 case glideRatio = "glide_ratio"
@@ -9716,6 +9758,10 @@ extension Components {
             public var dep: Swift.String
             /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/depart`.
             public var depart: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/descent_fuel_burn_gph`.
+            public var descentFuelBurnGph: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/descent_ias_kt`.
+            public var descentIasKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/dest`.
             public var dest: Swift.String
             /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/fuel_burn_gph`.
@@ -9772,6 +9818,8 @@ extension Components {
             ///   - day:
             ///   - dep:
             ///   - depart:
+            ///   - descentFuelBurnGph:
+            ///   - descentIasKt:
             ///   - dest:
             ///   - fuelBurnGph:
             ///   - glideRatio:
@@ -9809,6 +9857,8 @@ extension Components {
                 day: Swift.String? = nil,
                 dep: Swift.String,
                 depart: Swift.String? = nil,
+                descentFuelBurnGph: Swift.Double? = nil,
+                descentIasKt: Swift.Double? = nil,
                 dest: Swift.String,
                 fuelBurnGph: Swift.Double? = nil,
                 glideRatio: Swift.Double? = nil,
@@ -9846,6 +9896,8 @@ extension Components {
                 self.day = day
                 self.dep = dep
                 self.depart = depart
+                self.descentFuelBurnGph = descentFuelBurnGph
+                self.descentIasKt = descentIasKt
                 self.dest = dest
                 self.fuelBurnGph = fuelBurnGph
                 self.glideRatio = glideRatio
@@ -9884,6 +9936,8 @@ extension Components {
                 case day
                 case dep
                 case depart
+                case descentFuelBurnGph = "descent_fuel_burn_gph"
+                case descentIasKt = "descent_ias_kt"
                 case dest
                 case fuelBurnGph = "fuel_burn_gph"
                 case glideRatio = "glide_ratio"
@@ -10757,6 +10811,8 @@ extension Components {
             public var magneticVariationDeg: Swift.Double
             /// - Remark: Generated from `#/components/schemas/Leg/oat_c`.
             public var oatC: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/Leg/phase`.
+            public var phase: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Leg/power_pct`.
             public var powerPct: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Leg/procedure`.
@@ -10796,6 +10852,7 @@ extension Components {
             ///   - magneticHeadingDeg:
             ///   - magneticVariationDeg:
             ///   - oatC:
+            ///   - phase:
             ///   - powerPct:
             ///   - procedure:
             ///   - tasKt:
@@ -10823,6 +10880,7 @@ extension Components {
                 magneticHeadingDeg: Swift.Double? = nil,
                 magneticVariationDeg: Swift.Double,
                 oatC: Swift.Double? = nil,
+                phase: Swift.String? = nil,
                 powerPct: Swift.Double? = nil,
                 procedure: Components.Schemas.LegProcedure? = nil,
                 tasKt: Swift.Double? = nil,
@@ -10850,6 +10908,7 @@ extension Components {
                 self.magneticHeadingDeg = magneticHeadingDeg
                 self.magneticVariationDeg = magneticVariationDeg
                 self.oatC = oatC
+                self.phase = phase
                 self.powerPct = powerPct
                 self.procedure = procedure
                 self.tasKt = tasKt
@@ -10878,6 +10937,7 @@ extension Components {
                 case magneticHeadingDeg = "magnetic_heading_deg"
                 case magneticVariationDeg = "magnetic_variation_deg"
                 case oatC = "oat_c"
+                case phase
                 case powerPct = "power_pct"
                 case procedure
                 case tasKt = "tas_kt"
@@ -12612,6 +12672,8 @@ extension Components {
             public var magneticVariationDeg: Swift.Double
             /// - Remark: Generated from `#/components/schemas/NavLogLeg/oat_c`.
             public var oatC: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NavLogLeg/phase`.
+            public var phase: Swift.String?
             /// - Remark: Generated from `#/components/schemas/NavLogLeg/power_pct`.
             public var powerPct: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/NavLogLeg/procedure`.
@@ -12653,6 +12715,7 @@ extension Components {
             ///   - magneticHeadingDeg:
             ///   - magneticVariationDeg:
             ///   - oatC:
+            ///   - phase:
             ///   - powerPct:
             ///   - procedure:
             ///   - tasKt:
@@ -12681,6 +12744,7 @@ extension Components {
                 magneticHeadingDeg: Swift.Double? = nil,
                 magneticVariationDeg: Swift.Double,
                 oatC: Swift.Double? = nil,
+                phase: Swift.String? = nil,
                 powerPct: Swift.Double? = nil,
                 procedure: Components.Schemas.LegProcedure? = nil,
                 tasKt: Swift.Double? = nil,
@@ -12709,6 +12773,7 @@ extension Components {
                 self.magneticHeadingDeg = magneticHeadingDeg
                 self.magneticVariationDeg = magneticVariationDeg
                 self.oatC = oatC
+                self.phase = phase
                 self.powerPct = powerPct
                 self.procedure = procedure
                 self.tasKt = tasKt
@@ -12738,6 +12803,7 @@ extension Components {
                 case magneticHeadingDeg = "magnetic_heading_deg"
                 case magneticVariationDeg = "magnetic_variation_deg"
                 case oatC = "oat_c"
+                case phase
                 case powerPct = "power_pct"
                 case procedure
                 case tasKt = "tas_kt"
@@ -20363,8 +20429,10 @@ extension Components {
                 case tfrs
             }
         }
-        /// Where a climb tops out (TOC), and the climb's true airspeed and
-        /// ground speed on the way up to it (wingtip.navlog.with_climbs).
+        /// Where a climb tops out (TOC), and the climb's own figures on the
+        /// way up to it (the engine's with_climbs): its true airspeed, its wind
+        /// correction, headings and ground speed in the leg's wind, and its fuel
+        /// flow, so the nav log's row up to the top is the climb's.
         ///
         /// - Remark: Generated from `#/components/schemas/TopOfClimb`.
         public struct TopOfClimb: Codable, Hashable, Sendable {
@@ -20374,6 +20442,8 @@ extension Components {
             public var altitudeFt: Swift.Double
             /// - Remark: Generated from `#/components/schemas/TopOfClimb/ete_min`.
             public var eteMin: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TopOfClimb/fuel_burn_gph`.
+            public var fuelBurnGph: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TopOfClimb/fuel_gal`.
             public var fuelGal: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TopOfClimb/groundspeed_kt`.
@@ -20382,54 +20452,76 @@ extension Components {
             public var lat: Swift.Double
             /// - Remark: Generated from `#/components/schemas/TopOfClimb/lon`.
             public var lon: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TopOfClimb/magnetic_heading_deg`.
+            public var magneticHeadingDeg: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TopOfClimb/tas_kt`.
             public var tasKt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TopOfClimb/true_heading_deg`.
+            public var trueHeadingDeg: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/TopOfClimb/wca_deg`.
+            public var wcaDeg: Swift.Double?
             /// Creates a new `TopOfClimb`.
             ///
             /// - Parameters:
             ///   - alongNm:
             ///   - altitudeFt:
             ///   - eteMin:
+            ///   - fuelBurnGph:
             ///   - fuelGal:
             ///   - groundspeedKt:
             ///   - lat:
             ///   - lon:
+            ///   - magneticHeadingDeg:
             ///   - tasKt:
+            ///   - trueHeadingDeg:
+            ///   - wcaDeg:
             public init(
                 alongNm: Swift.Double,
                 altitudeFt: Swift.Double,
                 eteMin: Swift.Double,
+                fuelBurnGph: Swift.Double? = nil,
                 fuelGal: Swift.Double? = nil,
                 groundspeedKt: Swift.Double,
                 lat: Swift.Double,
                 lon: Swift.Double,
-                tasKt: Swift.Double
+                magneticHeadingDeg: Swift.Double? = nil,
+                tasKt: Swift.Double,
+                trueHeadingDeg: Swift.Double? = nil,
+                wcaDeg: Swift.Double? = nil
             ) {
                 self.alongNm = alongNm
                 self.altitudeFt = altitudeFt
                 self.eteMin = eteMin
+                self.fuelBurnGph = fuelBurnGph
                 self.fuelGal = fuelGal
                 self.groundspeedKt = groundspeedKt
                 self.lat = lat
                 self.lon = lon
+                self.magneticHeadingDeg = magneticHeadingDeg
                 self.tasKt = tasKt
+                self.trueHeadingDeg = trueHeadingDeg
+                self.wcaDeg = wcaDeg
             }
             public enum CodingKeys: String, CodingKey {
                 case alongNm = "along_nm"
                 case altitudeFt = "altitude_ft"
                 case eteMin = "ete_min"
+                case fuelBurnGph = "fuel_burn_gph"
                 case fuelGal = "fuel_gal"
                 case groundspeedKt = "groundspeed_kt"
                 case lat
                 case lon
+                case magneticHeadingDeg = "magnetic_heading_deg"
                 case tasKt = "tas_kt"
+                case trueHeadingDeg = "true_heading_deg"
+                case wcaDeg = "wca_deg"
             }
         }
         /// Where a descent starts (TOD): down from `altitude_ft` to `to_ft` --
         /// the pattern altitude of the field landed at, the altitude an
         /// approach's first fix is crossed at, or the next leg's lower level --
-        /// at `fpm`, three to one at the leg's ground speed, or steeper where
-        /// the climb before it left less room (wingtip.navlog.with_descents).
+        /// at `fpm`, three to one at the descent's ground speed, or steeper where
+        /// the climb before it left less room (the engine's with_descents).
         ///
         /// - Remark: Generated from `#/components/schemas/TopOfDescent`.
         public struct TopOfDescent: Codable, Hashable, Sendable {
@@ -20437,69 +20529,111 @@ extension Components {
             public var alongNm: Swift.Double
             /// - Remark: Generated from `#/components/schemas/TopOfDescent/altitude_ft`.
             public var altitudeFt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TopOfDescent/descent_at_cruise`.
+            public var descentAtCruise: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/TopOfDescent/ete_min`.
             public var eteMin: Swift.Double
             /// - Remark: Generated from `#/components/schemas/TopOfDescent/fix`.
             public var fix: Swift.String?
             /// - Remark: Generated from `#/components/schemas/TopOfDescent/fpm`.
             public var fpm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TopOfDescent/fuel_burn_gph`.
+            public var fuelBurnGph: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TopOfDescent/fuel_gal`.
             public var fuelGal: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/TopOfDescent/groundspeed_kt`.
+            public var groundspeedKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TopOfDescent/lat`.
             public var lat: Swift.Double
             /// - Remark: Generated from `#/components/schemas/TopOfDescent/lon`.
             public var lon: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TopOfDescent/magnetic_heading_deg`.
+            public var magneticHeadingDeg: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TopOfDescent/pattern`.
             public var pattern: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/TopOfDescent/tas_kt`.
+            public var tasKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TopOfDescent/to_ft`.
             public var toFt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TopOfDescent/true_heading_deg`.
+            public var trueHeadingDeg: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/TopOfDescent/wca_deg`.
+            public var wcaDeg: Swift.Double?
             /// Creates a new `TopOfDescent`.
             ///
             /// - Parameters:
             ///   - alongNm:
             ///   - altitudeFt:
+            ///   - descentAtCruise:
             ///   - eteMin:
             ///   - fix:
             ///   - fpm:
+            ///   - fuelBurnGph:
             ///   - fuelGal:
+            ///   - groundspeedKt:
             ///   - lat:
             ///   - lon:
+            ///   - magneticHeadingDeg:
             ///   - pattern:
+            ///   - tasKt:
             ///   - toFt:
+            ///   - trueHeadingDeg:
+            ///   - wcaDeg:
             public init(
                 alongNm: Swift.Double,
                 altitudeFt: Swift.Double,
+                descentAtCruise: Swift.Bool? = nil,
                 eteMin: Swift.Double,
                 fix: Swift.String? = nil,
                 fpm: Swift.Double,
+                fuelBurnGph: Swift.Double? = nil,
                 fuelGal: Swift.Double? = nil,
+                groundspeedKt: Swift.Double? = nil,
                 lat: Swift.Double,
                 lon: Swift.Double,
+                magneticHeadingDeg: Swift.Double? = nil,
                 pattern: Swift.Bool,
-                toFt: Swift.Double
+                tasKt: Swift.Double? = nil,
+                toFt: Swift.Double,
+                trueHeadingDeg: Swift.Double? = nil,
+                wcaDeg: Swift.Double? = nil
             ) {
                 self.alongNm = alongNm
                 self.altitudeFt = altitudeFt
+                self.descentAtCruise = descentAtCruise
                 self.eteMin = eteMin
                 self.fix = fix
                 self.fpm = fpm
+                self.fuelBurnGph = fuelBurnGph
                 self.fuelGal = fuelGal
+                self.groundspeedKt = groundspeedKt
                 self.lat = lat
                 self.lon = lon
+                self.magneticHeadingDeg = magneticHeadingDeg
                 self.pattern = pattern
+                self.tasKt = tasKt
                 self.toFt = toFt
+                self.trueHeadingDeg = trueHeadingDeg
+                self.wcaDeg = wcaDeg
             }
             public enum CodingKeys: String, CodingKey {
                 case alongNm = "along_nm"
                 case altitudeFt = "altitude_ft"
+                case descentAtCruise = "descent_at_cruise"
                 case eteMin = "ete_min"
                 case fix
                 case fpm
+                case fuelBurnGph = "fuel_burn_gph"
                 case fuelGal = "fuel_gal"
+                case groundspeedKt = "groundspeed_kt"
                 case lat
                 case lon
+                case magneticHeadingDeg = "magnetic_heading_deg"
                 case pattern
+                case tasKt = "tas_kt"
                 case toFt = "to_ft"
+                case trueHeadingDeg = "true_heading_deg"
+                case wcaDeg = "wca_deg"
             }
         }
         /// The trip's sums, and the fuel check: the legs' fuel plus the VFR

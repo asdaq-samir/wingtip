@@ -24,6 +24,8 @@ public record AircraftRequest(
         @Nullable Double cruisePowerPct,
         @Nullable Double climbTasKt,
         @Nullable Double climbFuelBurnGph,
+        @Nullable Double descentIasKt,
+        @Nullable Double descentFuelBurnGph,
         @Nullable Double usableFuelGal,
         @Nullable String equipment,
         @Nullable String surveillance,

@@ -24,7 +24,7 @@ class AircraftLimitsTest {
     private final AircraftLimits limits = new AircraftLimits(planner);
 
     private static AircraftRequest request(Double power) {
-        return new AircraftRequest("N1", "C172", 110, 8.5, power, null, null, null, null, null, null, null);
+        return new AircraftRequest("N1", "C172", 110, 8.5, power, null, null, null, null, null, null, null, null, null);
     }
 
     @Test

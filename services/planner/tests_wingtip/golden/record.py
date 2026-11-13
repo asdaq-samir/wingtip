@@ -108,7 +108,11 @@ def expected(given: dict, pattern_ft, choice: str) -> dict:
         given["fixes"], given["segments"], given["profile"], given["fcst_hr"], departure_elevation_ft=given["departure_elevation_ft"]
     )
     legs = engine(
-        "navlog_with_descents", legs=plans[choice]["legs"], fixes=[navlog.engine_fix(f) for f in given["fixes"]], end_altitude_ft=pattern_ft
+        "navlog_with_descents",
+        legs=plans[choice]["legs"],
+        fixes=[navlog.engine_fix(f) for f in given["fixes"]],
+        profile=given["profile"],
+        end_altitude_ft=pattern_ft,
     )
     return {
         "plans": {

@@ -25,6 +25,8 @@ AIRPLANE_FIELDS = (
     "cruisePowerPct",
     "climbTasKt",
     "climbFuelBurnGph",
+    "descentIasKt",
+    "descentFuelBurnGph",
     "usableFuelGal",
     "equipment",
     "surveillance",

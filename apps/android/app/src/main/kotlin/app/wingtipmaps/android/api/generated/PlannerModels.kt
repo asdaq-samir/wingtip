@@ -2506,6 +2506,13 @@ data class DepartureWindowAsk (
     val day: String? = null,
     val dep: String,
     val depart: String? = null,
+
+    @SerialName("descent_fuel_burn_gph")
+    val descentFuelBurnGph: Double? = null,
+
+    @SerialName("descent_ias_kt")
+    val descentIasKt: Double? = null,
+
     val dest: String,
 
     @SerialName("fuel_burn_gph")
@@ -3939,6 +3946,13 @@ data class GoNoGoAsk (
     val day: String? = null,
     val dep: String,
     val depart: String? = null,
+
+    @SerialName("descent_fuel_burn_gph")
+    val descentFuelBurnGph: Double? = null,
+
+    @SerialName("descent_ias_kt")
+    val descentIasKt: Double? = null,
+
     val dest: String,
 
     @SerialName("fuel_burn_gph")
@@ -4709,6 +4723,12 @@ data class AircraftProfile (
     @SerialName("cruise_tas_kt")
     val cruiseTasKt: Double,
 
+    @SerialName("descent_fuel_burn_gph")
+    val descentFuelBurnGph: Double? = null,
+
+    @SerialName("descent_ias_kt")
+    val descentIasKt: Double? = null,
+
     val designator: String? = null,
 
     @SerialName("fuel_burn_gph")
@@ -5354,6 +5374,8 @@ data class NavLogLeg (
     @SerialName("oat_c")
     val oatC: Double? = null,
 
+    val phase: String? = null,
+
     @SerialName("power_pct")
     val powerPct: Double? = null,
 
@@ -5469,8 +5491,10 @@ data class MissedApproachPath (
 )
 
 /**
- * Where a climb tops out (TOC), and the climb's true airspeed and
- * ground speed on the way up to it (wingtip.navlog.with_climbs).
+ * Where a climb tops out (TOC), and the climb's own figures on the
+ * way up to it (the engine's with_climbs): its true airspeed, its wind
+ * correction, headings and ground speed in the leg's wind, and its fuel
+ * flow, so the nav log's row up to the top is the climb's.
  */
 @Serializable
 data class TopOfClimb (
@@ -5483,6 +5507,9 @@ data class TopOfClimb (
     @SerialName("ete_min")
     val eteMin: Double,
 
+    @SerialName("fuel_burn_gph")
+    val fuelBurnGph: Double? = null,
+
     @SerialName("fuel_gal")
     val fuelGal: Double? = null,
 
@@ -5492,16 +5519,25 @@ data class TopOfClimb (
     val lat: Double,
     val lon: Double,
 
+    @SerialName("magnetic_heading_deg")
+    val magneticHeadingDeg: Double? = null,
+
     @SerialName("tas_kt")
-    val tasKt: Double
+    val tasKt: Double,
+
+    @SerialName("true_heading_deg")
+    val trueHeadingDeg: Double? = null,
+
+    @SerialName("wca_deg")
+    val wcaDeg: Double? = null
 )
 
 /**
  * Where a descent starts (TOD): down from `altitude_ft` to `to_ft` --
  * the pattern altitude of the field landed at, the altitude an
  * approach's first fix is crossed at, or the next leg's lower level --
- * at `fpm`, three to one at the leg's ground speed, or steeper where
- * the climb before it left less room (wingtip.navlog.with_descents).
+ * at `fpm`, three to one at the descent's ground speed, or steeper where
+ * the climb before it left less room (the engine's with_descents).
  */
 @Serializable
 data class TopOfDescent (
@@ -5511,21 +5547,43 @@ data class TopOfDescent (
     @SerialName("altitude_ft")
     val altitudeFt: Double,
 
+    @SerialName("descent_at_cruise")
+    val descentAtCruise: Boolean? = null,
+
     @SerialName("ete_min")
     val eteMin: Double,
 
     val fix: String? = null,
     val fpm: Double,
 
+    @SerialName("fuel_burn_gph")
+    val fuelBurnGph: Double? = null,
+
     @SerialName("fuel_gal")
     val fuelGal: Double? = null,
 
+    @SerialName("groundspeed_kt")
+    val groundspeedKt: Double? = null,
+
     val lat: Double,
     val lon: Double,
+
+    @SerialName("magnetic_heading_deg")
+    val magneticHeadingDeg: Double? = null,
+
     val pattern: Boolean,
 
+    @SerialName("tas_kt")
+    val tasKt: Double? = null,
+
     @SerialName("to_ft")
-    val toFt: Double
+    val toFt: Double,
+
+    @SerialName("true_heading_deg")
+    val trueHeadingDeg: Double? = null,
+
+    @SerialName("wca_deg")
+    val wcaDeg: Double? = null
 )
 
 /**
@@ -5619,6 +5677,8 @@ data class NavLogMessage (
 
     @SerialName("oat_c")
     val oatC: Double? = null,
+
+    val phase: String? = null,
 
     @SerialName("power_pct")
     val powerPct: Double? = null,
@@ -6379,6 +6439,8 @@ data class Leg (
 
     @SerialName("oat_c")
     val oatC: Double? = null,
+
+    val phase: String? = null,
 
     @SerialName("power_pct")
     val powerPct: Double? = null,

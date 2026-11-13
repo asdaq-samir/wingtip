@@ -35,6 +35,8 @@ const FIGURES: &[Figure] = &[
     Figure { key: "climb_tas_kt", path: &["climb_tas_kt"], handbook: Some("climbTasKt") },
     Figure { key: "climb_fuel_burn_gph", path: &["climb_fuel_burn_gph"], handbook: None },
     Figure { key: "climb_rate_fpm", path: &["climb_rate_fpm_sea_level"], handbook: None },
+    Figure { key: "descent_ias_kt", path: &["descent_ias_kt"], handbook: None },
+    Figure { key: "descent_fuel_burn_gph", path: &["descent_fuel_burn_gph"], handbook: None },
     Figure { key: "service_ceiling_ft", path: &["service_ceiling_ft"], handbook: Some("serviceCeilingFt") },
     Figure { key: "taxi_fuel_gal", path: &["taxi_fuel_gal"], handbook: None },
     Figure { key: "glide_ratio", path: &["glide", "ratio"], handbook: None },
@@ -148,7 +150,9 @@ fn figures(name: &str, v: &Value) -> R<String> {
 /// sea-level rate and its ceiling (the rate falls to 100 fpm there:
 /// FAA-H-8083-25C ch. 11, p. 11-9, "The service ceiling is the altitude at
 /// which the aircraft is unable to climb at a rate greater than 100 feet
-/// per minute"); a
+/// per minute"); the descent its indicated speed and fuel flow (the POH's
+/// section 5 descent figures; FAA-H-8083-25C ch. 16 flies each phase at its
+/// own); a
 /// weight and balance its loading envelope and its own empty weight and
 /// moment (FAA-H-8083-1B; 14 CFR 91.9, the AFM's limits); takeoff and
 /// landing their charts (the POH's Section 5).
@@ -157,6 +161,7 @@ const NEEDS: &[(&str, &[&str])] = &[
     ("fuel_totals", &["cruise_tas_kt", "fuel_burn_gph", "taxi_fuel_gal"]),
     ("glide", &["glide_ratio"]),
     ("climb", &["climb_tas_kt", "climb_rate_fpm", "service_ceiling_ft"]),
+    ("descent", &["descent_ias_kt", "descent_fuel_burn_gph"]),
     ("weight_balance", &["loading", "empty_weight_lb", "empty_moment_lb_in"]),
     ("takeoff_landing", &["takeoff", "landing"]),
 ];

@@ -19,7 +19,7 @@ import { usePreferences } from "../../../lib/preferences";
 import type { StopKind } from "../../../lib/stopKinds";
 import type { StopPin } from "../../../lib/map/marks/stopPins";
 import { inkOn, scoreColor } from "../../../lib/scoreScale";
-import type { NavLogRow, RouteLeg } from "./navlog/rows";
+import { firstFlown, type NavLogRow, type RouteLeg } from "./navlog/rows";
 import { useTerrainView } from "../map/terrain/useTerrainView";
 import { useRouteAloft } from "../hooks/useRouteAloft";
 
@@ -125,7 +125,7 @@ function legFactsOf(selected: Candidate[], legs: Leg[]): Map<string, LegFacts> {
     // The time in the air to it: each leg's time, and any stop's on the
     // ground before it (ground_min).
     const afterMin = legs.slice(0, at + 1).reduce((sum, leg) => sum + (leg.ete_min ?? 0) + (leg.ground_min ?? 0), 0);
-    facts.set(`${c.lat},${c.lon}`, { into: legs[at], out: legs[at + 1], afterMin });
+    facts.set(`${c.lat},${c.lon}`, { into: legs[at], out: firstFlown(legs[at + 1]), afterMin });
   }
   return facts;
 }

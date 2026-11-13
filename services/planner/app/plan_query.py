@@ -39,6 +39,12 @@ TaxiFuel = Annotated[float | None, Query(ge=0, le=50)]
 #: Its own still-air glide ratio, from its handbook's Section 3: a
 #: light airplane's is about 7 to 12 to 1, a glider's past 40.
 GlideRatio = Annotated[float | None, Query(gt=1, le=80)]
+#: Its own descent's indicated airspeed, kt, as a handbook gives it (the
+#: engine turns it to true at the altitudes the descent passes through),
+#: and the descent's fuel flow, gal/h: above zero, and in the range a
+#: light piston airplane's, a twin's or a single turboprop's descent covers.
+DescentIas = Annotated[float | None, Query(ge=30, le=300)]
+DescentBurn = Annotated[float | None, Query(ge=1, le=150)]
 
 
 @dataclass
@@ -77,6 +83,8 @@ class PlanQuery:
     usable_fuel_gal: float | None = None
     climb_tas_kt: CruiseTas = None
     climb_fuel_burn_gph: float | None = None
+    descent_ias_kt: DescentIas = None
+    descent_fuel_burn_gph: DescentBurn = None
     cruise_power_pct: CruisePower = None
     #: The airplane's own ceiling over its profile's, where the pilot has
     #: set one for their N-number (the owner's "give users a way to change
@@ -164,6 +172,8 @@ class PlanQuery:
             self.usable_fuel_gal,
             self.climb_tas_kt,
             self.climb_fuel_burn_gph,
+            self.descent_ias_kt,
+            self.descent_fuel_burn_gph,
             self.cruise_power_pct,
             self.service_ceiling_ft,
             self.climb_rate_fpm,

@@ -59,6 +59,10 @@ function changeWords(point: ProfilePoint, feet: number, mode: ChangeMode, profil
       tas_kt: leg?.tas_kt ?? null,
       fuel_burn_gph: leg?.fuel_burn_gph ?? null,
       oat_c: leg?.oat_c ?? null,
+      // The climb's own wind triangle in the leg's wind.
+      true_course_deg: leg?.true_course_deg ?? null,
+      wind_dir_true_deg: leg?.wind?.wind_dir_true_deg ?? null,
+      wind_speed_kt: leg?.wind?.wind_speed_kt ?? null,
     });
   let c;
   try {

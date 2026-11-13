@@ -6599,6 +6599,20 @@ public struct Client: APIProtocol {
                     in: &request,
                     style: .form,
                     explode: true,
+                    name: "descent_ias_kt",
+                    value: input.query.descentIasKt
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "descent_fuel_burn_gph",
+                    value: input.query.descentFuelBurnGph
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
                     name: "cruise_power_pct",
                     value: input.query.cruisePowerPct
                 )
@@ -7297,6 +7311,20 @@ public struct Client: APIProtocol {
                     explode: true,
                     name: "climb_fuel_burn_gph",
                     value: input.query.climbFuelBurnGph
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "descent_ias_kt",
+                    value: input.query.descentIasKt
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "descent_fuel_burn_gph",
+                    value: input.query.descentFuelBurnGph
                 )
                 try converter.setQueryItemAsURI(
                     in: &request,
@@ -8982,8 +9010,8 @@ public struct Client: APIProtocol {
     /// predictable one) -- and the reasoning comes back with it, since
     /// "why am I at 6,500" is a question a pilot will actually ask.
     ///
-    /// aircraft names a stock profile; cruise_tas_kt, fuel_burn_gph,
-    /// usable_fuel_gal, climb_tas_kt, climb_fuel_burn_gph and
+    /// aircraft names a stock profile; cruise_tas_kt, fuel_burn_gph, usable_fuel_gal,
+    /// climb_tas_kt, climb_fuel_burn_gph, descent_ias_kt (indicated), descent_fuel_burn_gph and
     /// cruise_power_pct (the power the cruise figures are at), when given,
     /// are a pilot's own aeroplane's numbers laid over it. Each leg flies
     /// them in its own air: the cruise figures are the aeroplane's at a
@@ -9094,6 +9122,20 @@ public struct Client: APIProtocol {
                     explode: true,
                     name: "climb_fuel_burn_gph",
                     value: input.query.climbFuelBurnGph
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "descent_ias_kt",
+                    value: input.query.descentIasKt
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "descent_fuel_burn_gph",
+                    value: input.query.descentFuelBurnGph
                 )
                 try converter.setQueryItemAsURI(
                     in: &request,

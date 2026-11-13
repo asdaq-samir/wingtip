@@ -28,6 +28,8 @@ export function airplaneQuery(aircraft?: AircraftChoice) {
     usable_fuel_gal: aircraft?.usableFuelGal,
     climb_tas_kt: aircraft?.climbTasKt,
     climb_fuel_burn_gph: aircraft?.climbFuelBurnGph,
+    descent_ias_kt: aircraft?.descentIasKt,
+    descent_fuel_burn_gph: aircraft?.descentFuelBurnGph,
     cruise_power_pct: aircraft?.cruisePowerPct,
     service_ceiling_ft: aircraft?.serviceCeilingFt,
     climb_rate_fpm: aircraft?.climbRateFpm,

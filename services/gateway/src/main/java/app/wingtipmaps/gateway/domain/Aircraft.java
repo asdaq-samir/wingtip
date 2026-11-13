@@ -83,6 +83,12 @@ public class Aircraft {
 
     private Double climbFuelBurnGph;
 
+    /** The descent's indicated airspeed, as a handbook gives it, and its
+     *  fuel flow: the nav log flies the descent as a phase of its own. */
+    private Double descentIasKt;
+
+    private Double descentFuelBurnGph;
+
     private Double usableFuelGal;
 
     /** Its own handbook figures (V37): the service ceiling, the sea-level
@@ -170,6 +176,8 @@ public class Aircraft {
             Double cruisePowerPct,
             Double climbTasKt,
             Double climbFuelBurnGph,
+            Double descentIasKt,
+            Double descentFuelBurnGph,
             Double usableFuelGal) {
         this.pilot = pilot;
         this.tailNumber = tailNumber;
@@ -179,6 +187,8 @@ public class Aircraft {
         this.cruisePowerPct = cruisePowerPct;
         this.climbTasKt = climbTasKt;
         this.climbFuelBurnGph = climbFuelBurnGph;
+        this.descentIasKt = descentIasKt;
+        this.descentFuelBurnGph = descentFuelBurnGph;
         this.usableFuelGal = usableFuelGal;
         this.createdAt = Instant.now();
     }
@@ -194,6 +204,8 @@ public class Aircraft {
             Double cruisePowerPct,
             Double climbTasKt,
             Double climbFuelBurnGph,
+            Double descentIasKt,
+            Double descentFuelBurnGph,
             Double usableFuelGal) {
         this.tailNumber = tailNumber;
         this.typeDesignator = typeDesignator;
@@ -202,6 +214,8 @@ public class Aircraft {
         this.cruisePowerPct = cruisePowerPct;
         this.climbTasKt = climbTasKt;
         this.climbFuelBurnGph = climbFuelBurnGph;
+        this.descentIasKt = descentIasKt;
+        this.descentFuelBurnGph = descentFuelBurnGph;
         this.usableFuelGal = usableFuelGal;
         return this;
     }

@@ -22,7 +22,20 @@ const leg = {
   groundspeed_kt: 100,
   tas_kt: 110,
   true_course_deg: 0,
-  toc: { along_nm: 8, ete_min: 6, fuel_gal: 1, altitude_ft: 5500, lat: 42.13, lon: -88, tas_kt: 70, groundspeed_kt: 75 },
+  toc: {
+    along_nm: 8,
+    ete_min: 6,
+    fuel_gal: 1,
+    altitude_ft: 5500,
+    lat: 42.13,
+    lon: -88,
+    tas_kt: 70,
+    groundspeed_kt: 75,
+    fuel_burn_gph: null,
+    wca_deg: null,
+    true_heading_deg: null,
+    magnetic_heading_deg: null,
+  },
   tod: { along_nm: 48, ete_min: 28.8, fuel_gal: 4, altitude_ft: 5500, to_ft: 1500, pattern: true, fpm: 550, lat: 42.8, lon: -88 },
 } as Leg;
 const rows = navLogRows({ departure: airport("C81", 42, 800), destination: airport("KDLH", 43, 500) }, [], [leg]);

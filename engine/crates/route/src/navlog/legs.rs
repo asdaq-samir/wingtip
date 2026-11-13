@@ -58,20 +58,7 @@ pub fn assemble_leg(
     };
     let cruise = profile.airplane.cruise(altitude_ft, air.oat_c);
     let tas_kt = cruise.tas_kt;
-    let (wca_deg, gs_kt) = match &air.wind {
-        Value::Null => (0.0, tas_kt),
-        w => {
-            let o = Obj::read("navlog", w)?;
-            let (from, kt) = (o.num("wind_dir_true_deg")?, o.num("wind_speed_kt")?);
-            let wca = flight::wind_correction_deg(true_course_deg, from, kt, tas_kt);
-            let mut gs = flight::groundspeed_kt(true_course_deg, from, kt, tas_kt, wca);
-            let crosswind_kt = kt * (from - true_course_deg).to_radians().sin();
-            if crosswind_kt.abs() > tas_kt {
-                gs = 0.0;
-            }
-            (wca, gs)
-        }
-    };
+    let (wca_deg, gs_kt) = wind_triangle(true_course_deg, wind_of(&air.wind)?, tas_kt);
     let true_heading_deg = py_mod(true_course_deg + wca_deg, 360.0);
     let magnetic_heading_deg = py_mod(true_heading_deg - variation_deg, 360.0);
     // The course over the ground as the compass reads it: the figure a
@@ -100,6 +87,32 @@ pub fn assemble_leg(
     leg.set_opt("oat_c", air.oat_c);
     leg.set_num("density_altitude_ft", cruise.density_altitude_ft.round_ties_even());
     Ok(leg)
+}
+
+/// The wind triangle at `tas_kt` along `true_course_deg` in `wind` (from,
+/// degrees true, and knots; FAA-H-8083-25C, PHAK ch. 16, "Wind triangle"):
+/// the wind correction angle and the ground speed. No wind (None) is no
+/// correction and the ground speed the TAS; a crosswind stronger than the
+/// TAS holds no heading, and the ground speed is none (0). The cruise's
+/// triangle (assemble_leg) and the climb's (with_climbs, altitude_change,
+/// at the climb speed in the same wind) are all this one.
+pub(crate) fn wind_triangle(true_course_deg: f64, wind: Option<(f64, f64)>, tas_kt: f64) -> (f64, f64) {
+    let Some((from, kt)) = wind else { return (0.0, tas_kt) };
+    let wca = flight::wind_correction_deg(true_course_deg, from, kt, tas_kt);
+    let crosswind_kt = kt * (from - true_course_deg).to_radians().sin();
+    let gs = if crosswind_kt.abs() > tas_kt { 0.0 } else { flight::groundspeed_kt(true_course_deg, from, kt, tas_kt, wca) };
+    (wca, gs)
+}
+
+/// A leg's `wind` as the triangle takes it: (from, kt), None for null.
+pub(crate) fn wind_of(wind: &Value) -> R<Option<(f64, f64)>> {
+    match wind {
+        Value::Null => Ok(None),
+        w => {
+            let o = Obj::read("navlog", w)?;
+            Ok(Some((o.num("wind_dir_true_deg")?, o.num("wind_speed_kt")?)))
+        }
+    }
 }
 
 /// A fix's (lat, lon) and the name a leg calls it by: its name, else its

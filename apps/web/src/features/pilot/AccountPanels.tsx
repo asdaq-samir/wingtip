@@ -14,6 +14,7 @@ import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import NumberRow from "./NumberRow";
+import SpeedAndBurnGroups from "./SpeedAndBurnGroups";
 import { useAirplanes } from "./airplanes/useAirplanes";
 import { Spinner } from "../../components/ui/spinner";
 import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
@@ -50,6 +51,8 @@ const AIRCRAFT_FIELDS = [
   "cruisePowerPct",
   "climbTasKt",
   "climbFuelBurnGph",
+  "descentIasKt",
+  "descentFuelBurnGph",
   "usableFuelGal",
   "equipment",
   "surveillance",
@@ -70,7 +73,7 @@ const aircraftSchema = z
       if (message) ctx.addIssue({ code: "custom", path: [field], message });
     }
   });
-type AircraftFormValues = z.infer<typeof aircraftSchema>;
+export type AircraftFormValues = z.infer<typeof aircraftSchema>;
 const EMPTY_AIRCRAFT_FORM: AircraftFormValues = {
   tailNumber: "",
   typeDesignator: "",
@@ -79,6 +82,8 @@ const EMPTY_AIRCRAFT_FORM: AircraftFormValues = {
   cruisePowerPct: "",
   climbTasKt: "",
   climbFuelBurnGph: "",
+  descentIasKt: "",
+  descentFuelBurnGph: "",
   usableFuelGal: "",
   equipment: "",
   surveillance: "",
@@ -96,6 +101,8 @@ function formOf(a: AircraftRequest): AircraftFormValues {
     cruisePowerPct: typed(a.cruisePowerPct),
     climbTasKt: typed(a.climbTasKt),
     climbFuelBurnGph: typed(a.climbFuelBurnGph),
+    descentIasKt: typed(a.descentIasKt),
+    descentFuelBurnGph: typed(a.descentFuelBurnGph),
     usableFuelGal: typed(a.usableFuelGal),
     equipment: a.equipment ?? "",
     surveillance: a.surveillance ?? "",
@@ -413,6 +420,8 @@ export function AircraftPanel() {
         cruisePowerPct: orNull(values.cruisePowerPct),
         climbTasKt: orNull(values.climbTasKt),
         climbFuelBurnGph: orNull(values.climbFuelBurnGph),
+        descentIasKt: orNull(values.descentIasKt),
+        descentFuelBurnGph: orNull(values.descentFuelBurnGph),
         usableFuelGal: orNull(values.usableFuelGal),
         equipment: values.equipment.trim() || null,
         surveillance: values.surveillance.trim() || null,
@@ -621,51 +630,7 @@ export function AircraftPanel() {
                     </FieldHit>
                   </ListRow>
                 </ListGroup>
-                <ListGroup title="True airspeed">
-                  <NumberRow
-                    id={`${formId}-climb-tas`}
-                    title="Climb"
-                    unit="kt"
-                    placeholder="74"
-                    name="Climb TAS in knots"
-                    control={control}
-                    field="climbTasKt"
-                    error={errors.climbTasKt?.message}
-                  />
-                  <NumberRow
-                    id={`${formId}-tas`}
-                    title="Cruise"
-                    unit="kt"
-                    placeholder="110"
-                    name="Cruise TAS in knots"
-                    control={control}
-                    field="cruiseTasKt"
-                    error={errors.cruiseTasKt?.message}
-                  />
-                </ListGroup>
-                {/* Climb is optional: left blank, the nav log climbs at the type's book figures. */}
-                <ListGroup title="Fuel burn">
-                  <NumberRow
-                    id={`${formId}-climb-burn`}
-                    title="Climb"
-                    unit="gph"
-                    placeholder="11"
-                    name="Climb fuel burn in gallons per hour"
-                    control={control}
-                    field="climbFuelBurnGph"
-                    error={errors.climbFuelBurnGph?.message}
-                  />
-                  <NumberRow
-                    id={`${formId}-burn`}
-                    title="Cruise"
-                    unit="gph"
-                    placeholder="8.5"
-                    name="Cruise fuel burn in gallons per hour"
-                    control={control}
-                    field="fuelBurnGph"
-                    error={errors.fuelBurnGph?.message}
-                  />
-                </ListGroup>
+                <SpeedAndBurnGroups formId={formId} control={control} errors={errors} />
                 {/* What the cruise figures mean to the planner, said where
                   they are typed: they are the airplane's at this power at
                   the reference altitude, and each leg flies them in its own

@@ -868,7 +868,7 @@ def flown_legs(r, runs: list[HopRun], outcome: Flown, asked: Asked) -> list:
         fix_list = [fix for j, run in enumerate(runs[at : at + hops]) for fix in (run.fixes if j == 0 else run.fixes[1:])]
         approach = approach_end(flight, drawn or [], legs[-1]["altitude_ft"] if legs else None)
         end = approach or {"end_altitude_ft": pattern_altitude(flight, own)}
-        out.extend(engine("navlog_with_descents", legs=legs, fixes=[navlog.engine_fix(f) for f in fix_list], **end))
+        out.extend(engine("navlog_with_descents", legs=legs, fixes=[navlog.engine_fix(f) for f in fix_list], profile=asked.profile, **end))
         if out and k < len(flights) - 1:
             out[-1] = {**out[-1], "ground_min": ground_min_at(ground, flight.dest_ident)}
         at += hops

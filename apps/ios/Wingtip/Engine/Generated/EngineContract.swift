@@ -71,6 +71,8 @@ enum EngineContract {
         var cruisePowerPct: String?
         var climbTasKt: String?
         var climbFuelBurnGph: String?
+        var descentIasKt: String?
+        var descentFuelBurnGph: String?
         var usableFuelGal: String?
         var equipment: String?
         var surveillance: String?
@@ -85,6 +87,8 @@ enum EngineContract {
         var cruisePowerPct: String?
         var climbTasKt: String?
         var climbFuelBurnGph: String?
+        var descentIasKt: String?
+        var descentFuelBurnGph: String?
         var usableFuelGal: String?
         var equipment: String?
         var surveillance: String?
@@ -618,7 +622,7 @@ enum EngineContract {
         var toFt: Double
         /// start_at: the change begins at the waypoint and runs on from it; cross_at: it is done by the waypoint.
         var mode: String
-        /// The leg's ground speed, knots: a descent's minutes, and with tas_kt the wind a climb's ground speed is scaled by. Null where the leg has none.
+        /// The leg's ground speed, knots: a descent's minutes, and, where the course and wind are not given, with tas_kt the scale of a climb's ground speed. Null where the leg has none.
         var groundspeedKt: Double?
         /// The leg's cruise true airspeed, knots, for the wind's share of the ground speed.
         var tasKt: Double?
@@ -626,6 +630,12 @@ enum EngineContract {
         var fuelBurnGph: Double?
         /// The forecast temperature at to_ft, degrees C: the climb is flown that far from a standard day (ISA, PHAK ch. 4). Null for a standard day.
         var oatC: Double?
+        /// The leg's true course, degrees: with the wind, the climb's own wind triangle at the climb speed (PHAK ch. 16). Optional; left out, the climb's ground speed is the leg's scaled by the airspeeds.
+        var trueCourseDeg: Double?
+        /// The leg's wind, from, degrees true (its NavLogWind's), for the climb's wind triangle. Null or left out where the leg has none.
+        var windDirTrueDeg: Double?
+        /// The leg's wind speed, knots, with wind_dir_true_deg.
+        var windSpeedKt: Double?
 
         enum CodingKeys: String, CodingKey {
             case profile
@@ -637,6 +647,9 @@ enum EngineContract {
             case tasKt = "tas_kt"
             case fuelBurnGph = "fuel_burn_gph"
             case oatC = "oat_c"
+            case trueCourseDeg = "true_course_deg"
+            case windDirTrueDeg = "wind_dir_true_deg"
+            case windSpeedKt = "wind_speed_kt"
         }
     }
 
@@ -7475,6 +7488,8 @@ enum EngineContract {
         var oatC: Double?
         var densityAltitudeFt: Double?
         var climbMin: Double?
+        /// The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
+        var phase: String?
         var toc: EngineContract.NavLogTop?
         var tod: EngineContract.NavLogTop?
         /// A pilot's Start At at the fix the leg starts from (wingtip.own_altitude): a descent to the leg's lower altitude begins at that fix and runs on from it at three to one, rather than being done by it (navlog_with_descents).
@@ -7501,6 +7516,7 @@ enum EngineContract {
             case oatC = "oat_c"
             case densityAltitudeFt = "density_altitude_ft"
             case climbMin = "climb_min"
+            case phase
             case toc
             case tod
             case startAt = "start_at"
@@ -7648,6 +7664,10 @@ enum EngineContract {
         var cruiseAltitudeFt: Double?
         var climbTasKt: Double?
         var climbFuelBurnGph: Double?
+        /// The descent's indicated airspeed, knots, as the POH gives it; flown as a TAS at the descent's middle altitude. Null or left out: the descent is flown on the cruise's figures.
+        var descentIasKt: Double?
+        /// The descent's fuel flow, gallons an hour, from the POH.
+        var descentFuelBurnGph: Double?
         var climbRateFpmSeaLevel: Double?
         var taxiFuelGal: Double?
         var usableFuelGal: Double?
@@ -7662,6 +7682,8 @@ enum EngineContract {
             case cruiseAltitudeFt = "cruise_altitude_ft"
             case climbTasKt = "climb_tas_kt"
             case climbFuelBurnGph = "climb_fuel_burn_gph"
+            case descentIasKt = "descent_ias_kt"
+            case descentFuelBurnGph = "descent_fuel_burn_gph"
             case climbRateFpmSeaLevel = "climb_rate_fpm_sea_level"
             case taxiFuelGal = "taxi_fuel_gal"
             case usableFuelGal = "usable_fuel_gal"
@@ -7743,7 +7765,7 @@ enum EngineContract {
         }
     }
 
-    /// A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg.
+    /// A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg. A top of climb also carries the climb's own figures for the piece of its leg up to it: the climb speed, its wind correction, headings and ground speed in the leg's wind, and its fuel flow. A top of descent with an airplane whose profile gives the descent's figures carries them the same way for the piece of its leg after it, that piece's ground speed its miles over its minutes.
     struct NavLogTop: Codable, Equatable, Sendable {
         var alongNm: Double
         var eteMin: Double
@@ -7755,6 +7777,12 @@ enum EngineContract {
         var fpm: Double?
         var tasKt: Double?
         var groundspeedKt: Double?
+        var fuelBurnGph: Double?
+        var wcaDeg: Double?
+        var trueHeadingDeg: Double?
+        var magneticHeadingDeg: Double?
+        /// A top of descent with an airplane: true where its profile has no descent speed or fuel flow and the descent is flown on the cruise's figures (the app asks for them), false where it is flown at its own.
+        var descentAtCruise: Bool?
         var lat: Double?
         var lon: Double?
 
@@ -7769,6 +7797,11 @@ enum EngineContract {
             case fpm
             case tasKt = "tas_kt"
             case groundspeedKt = "groundspeed_kt"
+            case fuelBurnGph = "fuel_burn_gph"
+            case wcaDeg = "wca_deg"
+            case trueHeadingDeg = "true_heading_deg"
+            case magneticHeadingDeg = "magnetic_heading_deg"
+            case descentAtCruise = "descent_at_cruise"
             case lat
             case lon
         }
@@ -7827,6 +7860,8 @@ enum EngineContract {
         /// How far before the legs' end the descent is finished, nm: an approach's fix's distance out; where not given, down to a pattern, where the 45-degree entry begins (limits::pattern_entry_start_nm, about 1.7 nm), and 0 with an end_fix.
         var endBeforeNm: Double?
         var endFix: String?
+        /// The airplane, for the descent flown as its own phase at its descent_ias_kt and descent_fuel_burn_gph (descent_phase): each leg's time and fuel over the miles descended, its row's figures the descent's. Left out or null: the legs as they are. A profile without the two: the descent on the cruise's figures, each top of descent descent_at_cruise.
+        var profile: EngineContract.NavLogProfile?
 
         enum CodingKeys: String, CodingKey {
             case legs
@@ -7834,6 +7869,7 @@ enum EngineContract {
             case endAltitudeFt = "end_altitude_ft"
             case endBeforeNm = "end_before_nm"
             case endFix = "end_fix"
+            case profile
         }
     }
 

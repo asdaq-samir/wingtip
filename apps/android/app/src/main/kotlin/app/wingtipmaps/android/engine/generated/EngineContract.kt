@@ -71,6 +71,8 @@ object EngineContract {
         val cruisePowerPct: String? = null,
         val climbTasKt: String? = null,
         val climbFuelBurnGph: String? = null,
+        val descentIasKt: String? = null,
+        val descentFuelBurnGph: String? = null,
         val usableFuelGal: String? = null,
         val equipment: String? = null,
         val surveillance: String? = null,
@@ -86,6 +88,8 @@ object EngineContract {
         val cruisePowerPct: String? = null,
         val climbTasKt: String? = null,
         val climbFuelBurnGph: String? = null,
+        val descentIasKt: String? = null,
+        val descentFuelBurnGph: String? = null,
         val usableFuelGal: String? = null,
         val equipment: String? = null,
         val surveillance: String? = null,
@@ -603,7 +607,7 @@ object EngineContract {
          */
         val mode: String,
         /**
-         * The leg's ground speed, knots: a descent's minutes, and with tas_kt the wind a climb's ground speed is scaled by. Null where the leg has none.
+         * The leg's ground speed, knots: a descent's minutes, and, where the course and wind are not given, with tas_kt the scale of a climb's ground speed. Null where the leg has none.
          */
         @SerialName("groundspeed_kt")
         val groundspeedKt: Double? = null,
@@ -622,6 +626,21 @@ object EngineContract {
          */
         @SerialName("oat_c")
         val oatC: Double? = null,
+        /**
+         * The leg's true course, degrees: with the wind, the climb's own wind triangle at the climb speed (PHAK ch. 16). Optional; left out, the climb's ground speed is the leg's scaled by the airspeeds.
+         */
+        @SerialName("true_course_deg")
+        val trueCourseDeg: Double? = null,
+        /**
+         * The leg's wind, from, degrees true (its NavLogWind's), for the climb's wind triangle. Null or left out where the leg has none.
+         */
+        @SerialName("wind_dir_true_deg")
+        val windDirTrueDeg: Double? = null,
+        /**
+         * The leg's wind speed, knots, with wind_dir_true_deg.
+         */
+        @SerialName("wind_speed_kt")
+        val windSpeedKt: Double? = null,
     )
 
     @Serializable
@@ -7452,6 +7471,10 @@ object EngineContract {
         val densityAltitudeFt: Double? = null,
         @SerialName("climb_min")
         val climbMin: Double? = null,
+        /**
+         * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
+         */
+        val phase: String? = null,
         val toc: EngineContract.NavLogTop? = null,
         val tod: EngineContract.NavLogTop? = null,
         /**
@@ -7591,6 +7614,16 @@ object EngineContract {
         val climbTasKt: Double? = null,
         @SerialName("climb_fuel_burn_gph")
         val climbFuelBurnGph: Double? = null,
+        /**
+         * The descent's indicated airspeed, knots, as the POH gives it; flown as a TAS at the descent's middle altitude. Null or left out: the descent is flown on the cruise's figures.
+         */
+        @SerialName("descent_ias_kt")
+        val descentIasKt: Double? = null,
+        /**
+         * The descent's fuel flow, gallons an hour, from the POH.
+         */
+        @SerialName("descent_fuel_burn_gph")
+        val descentFuelBurnGph: Double? = null,
         @SerialName("climb_rate_fpm_sea_level")
         val climbRateFpmSeaLevel: Double? = null,
         @SerialName("taxi_fuel_gal")
@@ -7667,7 +7700,7 @@ object EngineContract {
     )
 
     /**
-     * A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg.
+     * A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg. A top of climb also carries the climb's own figures for the piece of its leg up to it: the climb speed, its wind correction, headings and ground speed in the leg's wind, and its fuel flow. A top of descent with an airplane whose profile gives the descent's figures carries them the same way for the piece of its leg after it, that piece's ground speed its miles over its minutes.
      */
     @Serializable
     data class NavLogTop(
@@ -7688,6 +7721,19 @@ object EngineContract {
         val tasKt: Double? = null,
         @SerialName("groundspeed_kt")
         val groundspeedKt: Double? = null,
+        @SerialName("fuel_burn_gph")
+        val fuelBurnGph: Double? = null,
+        @SerialName("wca_deg")
+        val wcaDeg: Double? = null,
+        @SerialName("true_heading_deg")
+        val trueHeadingDeg: Double? = null,
+        @SerialName("magnetic_heading_deg")
+        val magneticHeadingDeg: Double? = null,
+        /**
+         * A top of descent with an airplane: true where its profile has no descent speed or fuel flow and the descent is flown on the cruise's figures (the app asks for them), false where it is flown at its own.
+         */
+        @SerialName("descent_at_cruise")
+        val descentAtCruise: Boolean? = null,
         val lat: Double? = null,
         val lon: Double? = null,
     )
@@ -7748,6 +7794,10 @@ object EngineContract {
         val endBeforeNm: Double? = null,
         @SerialName("end_fix")
         val endFix: String? = null,
+        /**
+         * The airplane, for the descent flown as its own phase at its descent_ias_kt and descent_fuel_burn_gph (descent_phase): each leg's time and fuel over the miles descended, its row's figures the descent's. Left out or null: the legs as they are. A profile without the two: the descent on the cruise's figures, each top of descent descent_at_cruise.
+         */
+        val profile: EngineContract.NavLogProfile? = null,
     )
 
     @Serializable
