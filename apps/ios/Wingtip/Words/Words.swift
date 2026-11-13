@@ -1,36 +1,41 @@
 import Foundation
 import FoundationModels
-import OpenAPIRuntime
 import os
 
 /// The briefing and the Go / No-Go in a few plain sentences, each
 /// resting on figures the pilot can read raw. The figures are always the
-/// engine's or the planner's; the words are a model's: the planner's
-/// (POST /api/words/{kind}, app.ai_words, Claude) while the planner can be
-/// reached, else Apple's on-device model (FoundationModels), with
-/// no signal in the air. A sentence cites the figures it rests on by
-/// their ids, and a sentence citing an id it was not given is dropped,
-/// here as on the planner (app.ai_words.checked): the model can cite
-/// wrongly, and a sentence resting on nothing is not shown. Neither
-/// model is asked for a figure, and the screen's own figures are never
-/// touched: the words are an addition above them.
+/// engine's or the planner's; the words are Apple's models' (on the
+/// phone, or Apple's Private Cloud Compute; AppleModels). A sentence
+/// cites the figures it rests on by their ids, and a sentence citing an
+/// id it was not given is dropped: the model can cite wrongly, and a
+/// sentence resting on nothing is not shown. The model is never asked
+/// for a figure, and the screen's own figures are never touched: the
+/// words are an addition above them.
 
-/// One figure a sentence can rest on (app.ai_words.Source): its id, as the
-/// planner names them ("metar:KMSN", "taf:KMSN", "hazard:0",
-/// "finding:fuel"), the chip's label and the raw text the chip opens.
-/// Generated from the assistant's OpenAPI document, as the next two are.
-typealias WordsSource = ASSource
+/// One figure a sentence can rest on: its id ("metar:KMSN", "taf:KMSN",
+/// "hazard:0", "finding:fuel"), the chip's label and the raw text the
+/// chip opens.
+struct WordsSource: Codable, Hashable, Identifiable, Sendable {
+    var id: String
+    var label: String
+    var text: String
+}
 
-extension WordsSource: @retroactive Identifiable {}
+/// One sentence and the ids of the figures it rests on.
+struct WordsSentence: Codable, Hashable, Sendable {
+    var sources: [String]
+    var text: String
+}
 
-/// One sentence and the ids of the figures it rests on (app.ai_words.Sentence).
-typealias WordsSentence = ASSentence
-
-/// The words endpoints' answer (app.ai_words.WordsAnswer), and the shape the
-/// on-device words take too: the sentences, the most important first;
-/// the sources they cite, in the order given; which model wrote them;
-/// and, with no sentences, why not, in words.
-typealias Words = ASWordsAnswer
+/// The words as the screens show them: the sentences, the most important
+/// first; the sources they cite, in the order given; which model wrote
+/// them; and, with no sentences, why not, in words.
+struct Words: Codable, Hashable, Sendable {
+    var model: String
+    var sentences: [WordsSentence]
+    var sources: [WordsSource]
+    var unavailable: String?
+}
 
 extension Words {
     /// No words, and why.
@@ -40,10 +45,10 @@ extension Words {
 
     /// The sentences every one of whose cited ids is a figure given, the
     /// first `most` of them, and the figures they cite in the order
-    /// given; the rest dropped (app.ai_words.checked). A sentence citing
-    /// nothing rests on nothing and goes too, as does one citing an id
-    /// not given, however plausible it reads: the model can cite wrongly,
-    /// and a sentence whose chip would open nothing is not shown.
+    /// given; the rest dropped. A sentence citing nothing rests on nothing
+    /// and goes too, as does one citing an id not given, however plausible
+    /// it reads: the model can cite wrongly, and a sentence whose chip
+    /// would open nothing is not shown.
     static func checked(_ sentences: [WordsSentence], sources: [WordsSource], model: String, most: Int = 10) -> Words {
         let given = Set(sources.map(\.id))
         var kept: [WordsSentence] = []
@@ -66,39 +71,27 @@ extension Words {
     func source(_ id: String) -> WordsSource? { sources.first { $0.id == id } }
 }
 
-/// Which words endpoint, and which instructions on the device.
+/// Which words, and so which instructions the model is given: besides
+/// the briefing's, a logbook entry's remark (RemarkDraft) and why the
+/// plan flies its altitude (AltitudeWhy).
 enum WordsKind: String, Sendable {
-    case notams, weather, risk, debrief, changes
-    /// On this iPhone only, the planner having no endpoint for them: a
-    /// logbook entry's remark (RemarkDraft) and why the plan flies its
-    /// altitude (AltitudeWhy).
-    case remark, altitude
+    case notams, weather, risk, debrief, changes, remark, altitude
 }
 
-/// What the words are asked for: the planner's body for its endpoint,
-/// encoded already (Planner.snakeEncoder), and the same figures as the
-/// phone assembles them (WordsFigures) for the on-device model, which
-/// can reach no planner.
+/// What the words are asked for: their kind and the figures the phone
+/// assembled for them (WordsFigures).
 struct WordsAsk: Sendable {
     let kind: WordsKind
-    let body: Data
     let figures: [WordsSource]
-
-    init(kind: WordsKind, body: some Encodable, figures: [WordsSource]) throws {
-        self.kind = kind
-        self.body = try Planner.snakeEncoder.encode(body)
-        self.figures = figures
-    }
 }
 
 /// Where the words came from, for the caption over them: the pilot
 /// should know which model wrote what they read.
 enum WordsOrigin: Equatable, Sendable {
-    case planner, device, cloud, none
+    case device, cloud, none
 
     var caption: String {
         switch self {
-        case .planner: "From the planner"
         case .device: "On this iPhone"
         case .cloud: "Apple's Private Cloud Compute"
         case .none: "No words"
@@ -115,7 +108,7 @@ struct SaidWords: Equatable, Sendable {
     let origin: WordsOrigin
 }
 
-/// A source of words: the planner, the device, or a fake in a test.
+/// A source of words: the device, or a fake in a test.
 protocol WordsProvider: Sendable {
     func words(_ ask: WordsAsk) async throws -> Words
 }
@@ -124,42 +117,6 @@ protocol WordsProvider: Sendable {
 struct WordsUnavailable: Error, LocalizedError, Equatable {
     let why: String
     var errorDescription: String? { why }
-}
-
-// MARK: - The planner's words
-
-/// The planner's words (POST /api/words/{kind}, through the gateway's
-/// /api/planner proxy): the planner assembles the figures itself from
-/// the same ask the briefing and the Go / No-Go took, and answers with
-/// Claude's sentences checked against them. Its "unavailable" (the
-/// planner reached, its model not) is passed on as it came, and the
-/// facade asks the device instead (WordsFor.said).
-struct PlannerWords: WordsProvider {
-    func words(_ ask: WordsAsk) async throws -> Words {
-        let words = try await Self.asked(ask)
-        if words.sentences.isEmpty, words.unavailable != nil { return words }
-        // Checked again on the phone: the planner checks its own, but the
-        // chips open only what the answer carries.
-        return Words.checked(words.sentences, sources: words.sources, model: words.model)
-    }
-}
-
-extension PlannerWords {
-    /// The assistant's answer for the ask's kind, through its generated
-    /// client: the body, encoded already, is the open object each words
-    /// endpoint takes, and each answer is read as the Words they share.
-    static func asked(_ ask: WordsAsk) async throws -> Words {
-        let body = try JSONDecoder().decode(OpenAPIObjectContainer.self, from: ask.body)
-        let answer: any Encodable = switch ask.kind {
-        case .weather: try await Planner.ask { try await $0.weatherWords(body: .json(.init(additionalProperties: body))).ok.body.json }
-        case .risk: try await Planner.ask { try await $0.riskWords(body: .json(.init(additionalProperties: body))).ok.body.json }
-        case .notams: try await Planner.ask { try await $0.notamWords(body: .json(.init(additionalProperties: body))).ok.body.json }
-        case .changes: try await Planner.ask { try await $0.changesWords(body: .json(.init(additionalProperties: body))).ok.body.json }
-        case .debrief: try await Planner.ask { try await $0.debriefWords(body: .json(.init(additionalProperties: body))).ok.body.json }
-        case .remark, .altitude: throw WordsUnavailable(why: "The planner has no words of this kind.")
-        }
-        return try Engine.recoded(answer, encoder: JSONEncoder(), decoder: Planner.json)
-    }
 }
 
 // MARK: - The words on this iPhone
@@ -205,9 +162,8 @@ struct OnDeviceWords: WordsProvider {
         }
     }
 
-    /// What each kind of words is asked to say, as the planner asks its
-    /// model (app.routers.words WEATHER_ASK, RISK_ASK), and the rule over
-    /// all of them: no figure of the model's own.
+    /// What each kind of words is asked to say, and the rule over all of
+    /// them: no figure of the model's own.
     static func instructions(_ kind: WordsKind) -> String {
         let ask: String
         switch kind {
@@ -267,55 +223,22 @@ struct OnDeviceWords: WordsProvider {
 
 // MARK: - The facade
 
-/// Where the words come from, in order: the planner first; this iPhone
-/// when the planner fails or cannot be reached; and no words, with why
-/// in plain language, when neither can (no Apple Intelligence, the model not
-/// ready, no signal and no planner). Never a figure of its own: the
-/// figures are on the screen already, and the words rest on them.
-/// While the server's Claude features are off (ServerFeatures, the
-/// owner's decision of 2026-11-10 in docs/decisions) the planner is not
-/// asked: its words are Claude's, and Apple's models answer alone.
+/// The words from Apple's models, or no words with why in plain
+/// language where they cannot be had (no Apple Intelligence, the model
+/// not ready). Never a figure of its own: the figures are on the screen
+/// already, and the words rest on them.
 struct WordsFor: Sendable {
-    var planner: any WordsProvider = PlannerWords()
     var device: any WordsProvider = OnDeviceWords()
-    var claudeOn: @Sendable () -> Bool = { ServerFeatures.claudeOnNow }
-
-    init(planner: any WordsProvider = PlannerWords(), device: any WordsProvider = OnDeviceWords(),
-         claudeOn: @escaping @Sendable () -> Bool = { ServerFeatures.claudeOnNow }) {
-        self.planner = planner
-        self.device = device
-        self.claudeOn = claudeOn
-    }
 
     func said(_ ask: WordsAsk) async -> SaidWords {
-        let server = claudeOn()
-        if server { if let words = await fromPlanner(ask) { return SaidWords(words: words, origin: .planner) } }
         do {
             let words = try await device.words(ask)
             return SaidWords(words: words, origin: .apple(words))
         } catch {
             Log.words.notice("the iPhone's \(ask.kind.rawValue, privacy: .public) words failed: \(error.localizedDescription, privacy: .public)")
             let why = (error as? WordsUnavailable)?.why ?? "Apple's on-device model could not write them."
-            let said = server ? "No words: the planner cannot be reached, and \(why.prefix(1).lowercased() + why.dropFirst())" : "No words: \(why)"
-            return SaidWords(words: .none("none", said), origin: .none)
+            return SaidWords(words: .none("none", "No words: \(why)"), origin: .none)
         }
-    }
-
-    /// The planner's words, or nil where it failed or its model was not
-    /// reached, which is a reason to ask this iPhone.
-    private func fromPlanner(_ ask: WordsAsk) async -> Words? {
-        do {
-            let words = try await planner.words(ask)
-            // The planner reached but its model not ("The briefer could not
-            // be reached."): no sentences, and a reason to ask this iPhone,
-            // not an answer of no words. Here, not in PlannerWords, so a
-            // provider's own "unavailable" is read in one place.
-            if !(words.sentences.isEmpty && words.unavailable != nil) { return words }
-            Log.words.notice("the planner's \(ask.kind.rawValue, privacy: .public) words were unavailable")
-        } catch {
-            Log.words.notice("the planner's \(ask.kind.rawValue, privacy: .public) words failed: \(error.localizedDescription, privacy: .public)")
-        }
-        return nil
     }
 }
 

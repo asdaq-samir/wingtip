@@ -280,7 +280,7 @@ struct StripSheetView: View {
 
     /// A question, answered on the strip (StripAnswerCard).
     private func ask(_ question: String) {
-        client.ask(question, context: AssistantContext.make(plan: plan, ownShip: ownShip, session: session, minimums: verdict.minimums))
+        client.ask(question, facts: .make(plan: plan, ownShip: ownShip, inFlight: inFlight))
         up()
     }
 

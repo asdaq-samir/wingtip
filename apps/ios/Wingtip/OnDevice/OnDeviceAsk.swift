@@ -4,11 +4,10 @@ import os
 
 /// Who wrote an answer the pilot reads, for the caption over it.
 enum AskOrigin: String, Equatable, Sendable {
-    case planner, device, cloud, engine
+    case device, cloud, engine
 
     var caption: String {
         switch self {
-        case .planner: "From the planner"
         case .device: "On this iPhone"
         case .cloud: "Apple's Private Cloud Compute"
         case .engine: "The engine on this iPhone"
@@ -27,8 +26,7 @@ struct OnDeviceAnswer: Equatable, Sendable {
     /// this iPhone · Apple Intelligence is off in Settings."
     var caption: String { why.map { "\(origin.caption) · \($0)" } ?? origin.caption }
 
-    /// The answer as the assistant's stream lines (AssistantConversation
-    /// takes them as it takes the planner's).
+    /// The answer as Ask's stream lines (AssistantConversation takes them).
     var lines: [AssistantLine] { lines(after: StreamedWords()) }
 
     /// The finished answer after what was streamed of it: only the

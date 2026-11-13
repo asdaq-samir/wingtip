@@ -38,8 +38,7 @@ enum PlanningAid {
 
 /// What About credits, in docs/legal/credits.md's order and words: the
 /// data the app is made from, then the maps and software the iPhone draws
-/// and writes with (Apple MapKit under the chart, and Claude; MapLibre and
-/// Google's tiles are the web's and Android's, not used here). Change
+/// with (Apple MapKit under the chart; MapLibre and Google's tiles are the web's and Android's, not used here). Change
 /// credits.md first, then the web's components/dataSources.ts, Android's
 /// about/AboutCredits.kt and this, so the three say the same. Each line
 /// says whose it is and the terms it is used under, as the licences ask
@@ -74,6 +73,5 @@ enum AboutCredits {
 
     static let software: [Credit] = [
         Credit(what: "Apple MapKit", terms: "Apple's terms"),
-        Credit(what: "Claude, by Anthropic", terms: "Anthropic's commercial terms"),
     ]
 }

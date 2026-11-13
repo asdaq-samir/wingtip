@@ -14,7 +14,7 @@ final class HandbookPhotoModel {
     private(set) var page: OpenAPIValueContainer?
     /// The engine's check of `page`: the reader's at first, the phone's own
     /// once a figure is edited.
-    private(set) var check: ASHandbookCheck?
+    private(set) var check: HandbookCheck?
     /// The items the pilot confirmed against the page, by key ("cruise.2").
     private(set) var confirmed: Set<String> = []
     /// What the engine could not check, said in the review.
@@ -60,7 +60,7 @@ final class HandbookPhotoModel {
 
     /// The engine's answer for the confirmed items alone: its profile for
     /// the form, its figures to save with the airplane.
-    func confirmedCheck() throws -> ASHandbookCheck {
+    func confirmedCheck() throws -> HandbookCheck {
         guard let page else { throw Engine.Refused(message: "No page was read.") }
         return try HandbookReview.check(HandbookReview.confirmedOnly(page, keys: confirmed))
     }

@@ -8,7 +8,7 @@ enum DocumentFigureText {
         return unit == "%" ? "\(n)%" : "\(n) \(unit)"
     }
 
-    static func line(_ f: ASHandbookFigure) -> String {
+    static func line(_ f: HandbookFigure) -> String {
         let read = value(f.value, f.unit)
         guard f.unit != f.appUnit || abs(f.value - f.appValue) > 1e-9 else { return read }
         return "\(read) · \(value(f.appValue, f.appUnit))"
@@ -65,9 +65,9 @@ struct HandbookPhotoSection: View {
 /// never limit).
 struct HandbookReviewView: View {
     @Bindable var model: HandbookPhotoModel
-    var onUse: (ASHandbookCheck) -> Void
+    var onUse: (HandbookCheck) -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var editing: ASHandbookFigure?
+    @State private var editing: HandbookFigure?
     @State private var editText = ""
 
     var body: some View {

@@ -95,7 +95,6 @@ targets:
       # packages the app calls them and its pictures and Keychain through.
       - target: PlannerAPI
       - target: GatewayAPI
-      - target: AssistantAPI
       - package: swift-openapi-runtime
         product: OpenAPIRuntime
       - package: swift-http-types
@@ -273,7 +272,7 @@ targets:
         ENABLE_USER_SCRIPT_SANDBOXING: NO
   # The servers' clients, one module a document, written by
   # scripts/build/api-models-apps.sh with swift-openapi-generator from
-  # services/{planner,gateway,assistant}/openapi.json and committed. A
+  # services/{planner,gateway}/openapi.json and committed. A
   # module each, as each document has its own Client, Components and
   # Operations; the app names their schemas by API/Generated's aliases.
   PlannerAPI:
@@ -282,9 +281,6 @@ targets:
   GatewayAPI:
     templates: [ServerAPI]
     sources: [WingtipAPI/GatewayAPI]
-  AssistantAPI:
-    templates: [ServerAPI]
-    sources: [WingtipAPI/AssistantAPI]
   # The Live Activity (WingtipWidgets/WingtipWidgets.swift): a flight in
   # progress on the Lock Screen and in the Dynamic Island, drawn by this
   # extension from the attributes the app shares with it (Wingtip/Shared).

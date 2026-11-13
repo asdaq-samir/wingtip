@@ -3,16 +3,14 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
-/// How to spot each checkpoint from the air, one line each, written on
-/// the pilot's tap (each is a billed call, so never on its own) and
-/// streamed as they come; a pilot's own edit is theirs from then on (the
-/// web app's useCheckpointNotes).
+/// How to spot each checkpoint from the air, one line each: the notes
+/// kept for the route (the pilot's own, else the shared one), and a
+/// pilot's own edit theirs from then on (the web app's
+/// useCheckpointNotes).
 struct CheckpointNotesView: View {
-    @Environment(ServerFeatures.self) private var features
     @Environment(Plan.self) private var plan
+    @Environment(Session.self) private var session
     @State private var notes: [String: (text: String, source: String)] = [:]
-    @State private var writing = false
-    @State private var count: Int?
     @State private var problem: String?
     @State private var editing: Checkpoint?
     @State private var typed = ""
@@ -22,10 +20,6 @@ struct CheckpointNotesView: View {
 
     var body: some View {
         List {
-            // Claude's descriptions have no free path: hidden while the Claude features are off (docs/decisions/0035).
-            if features.claudeOn {
-                Button(writing ? (count.map { "Writing \(notes.count) of \($0)…" } ?? "Writing…") : "Describe the Checkpoints") { describe() }.disabled(writing || plan.checkpoints.isEmpty)
-            }
             ProblemLine(problem)
             Section("Checkpoints") {
                 if plan.checkpoints.isEmpty { Text("The route's checkpoints come with its plan.").foregroundStyle(.secondary) }
@@ -47,6 +41,9 @@ struct CheckpointNotesView: View {
             }
         }
         .navigationTitle("Checkpoint notes")
+        // The notes kept for the route, asked again as the route changes;
+        // signed out, there are none to ask for.
+        .task(id: "\(plan.dep)|\(plan.dest)|\(plan.stops)|\(session.signedIn)") { await load() }
         .alert(editing.map { $0.name ?? $0.waypoint ?? $0.category } ?? "Note", isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
             TextField("What you see there", text: $typed)
             Button("Save") { save() }
@@ -56,27 +53,20 @@ struct CheckpointNotesView: View {
         }
     }
 
-    private func describe() {
-        writing = true
-        problem = nil
-        let dep = plan.dep, dest = plan.dest, stops = plan.stops
-        Task {
-            do {
-                for try await line in Planner.describeCheckpoints(dep: dep, dest: dest, stops: stops) {
-                    switch line.type {
-                    case "start": count = line.count
-                    case "checkpoint":
-                        if let lat = line.lat, let lon = line.lon {
-                            notes[Self.key(lat, lon)] = (line.description ?? "", line.source ?? "generated")
-                        }
-                    case "error": problem = line.detail
-                    default: break
-                    }
-                }
-            } catch {
-                problem = "The descriptions could not be written: \(error.localizedDescription)"
+    private func load() async {
+        guard session.signedIn, !plan.dep.isEmpty, !plan.dest.isEmpty else { return }
+        do {
+            let kept = try await Planner.routeNotes(dep: plan.dep, dest: plan.dest, stops: plan.stops)
+            guard !Task.isCancelled else { return }
+            for point in kept {
+                guard let text = point.saved, !text.isEmpty else { continue }
+                let key = Self.key(point.lat, point.lon)
+                // An edit made while they were asked for stays.
+                if notes[key] == nil { notes[key] = (text, "saved") }
             }
-            writing = false
+        } catch {
+            guard !Task.isCancelled else { return }
+            problem = "The route's notes couldn't be fetched: \(error.localizedDescription)"
         }
     }
 

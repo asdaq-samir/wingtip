@@ -403,27 +403,15 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /api/checkpoint-notes/mine`.
     /// - Remark: Generated from `#/paths//api/checkpoint-notes/mine/delete(forget_pilots_notes)`.
     func forgetPilotsNotes(_ input: Operations.ForgetPilotsNotes.Input) async throws -> Operations.ForgetPilotsNotes.Output
-    /// Notes To Write
+    /// Route Notes
     ///
     /// A route's selected checkpoints in along-track order, each with the
-    /// note already kept for it (the pilot's own edit, else the shared one)
-    /// or None, and the hop its note is kept under: what the assistant
-    /// service writes the missing notes from (its POST
-    /// /api/checkpoint-notes/generate, which the apps reach). Asked by the
-    /// assistant alone; the gateway forwards no app here.
+    /// note kept for it (the pilot's own edit, else the shared one) or None,
+    /// and the hop its note is kept under.
     ///
-    /// - Remark: HTTP `POST /api/checkpoint-notes/pending`.
-    /// - Remark: Generated from `#/paths//api/checkpoint-notes/pending/post(notes_to_write)`.
-    func notesToWrite(_ input: Operations.NotesToWrite.Input) async throws -> Operations.NotesToWrite.Output
-    /// Seed Note
-    ///
-    /// A generated note offered as the shared one at its place: kept where
-    /// none is there yet, else the one saved meanwhile stays and is
-    /// answered. The assistant's alone, as /pending is.
-    ///
-    /// - Remark: HTTP `POST /api/checkpoint-notes/seed`.
-    /// - Remark: Generated from `#/paths//api/checkpoint-notes/seed/post(seed_note)`.
-    func seedNote(_ input: Operations.SeedNote.Input) async throws -> Operations.SeedNote.Output
+    /// - Remark: HTTP `POST /api/checkpoint-notes/route`.
+    /// - Remark: Generated from `#/paths//api/checkpoint-notes/route/post(route_notes)`.
+    func routeNotes(_ input: Operations.RouteNotes.Input) async throws -> Operations.RouteNotes.Output
     /// Checkpoints
     ///
     /// Scored candidates and the subset worth flying, hop by hop along
@@ -624,15 +612,6 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/emergency/fields`.
     /// - Remark: Generated from `#/paths//api/emergency/fields/get(emergency_fields)`.
     func emergencyFields(_ input: Operations.EmergencyFields.Input) async throws -> Operations.EmergencyFields.Output
-    /// Engine Rule
-    ///
-    /// The engine's rule `name` on the input given, its answer as the
-    /// engine gives it (the contract's `answer` for the name). An input not
-    /// of the rule's shape is a 422 with the engine's words.
-    ///
-    /// - Remark: HTTP `POST /api/engine/{name}`.
-    /// - Remark: Generated from `#/paths//api/engine/{name}/post(engine_rule)`.
-    func engineRule(_ input: Operations.EngineRule.Input) async throws -> Operations.EngineRule.Output
     /// Faa Chart
     ///
     /// The pages of one of the FAA's charts in force -- by its address on
@@ -2124,39 +2103,19 @@ extension APIProtocol {
     public func forgetPilotsNotes(headers: Operations.ForgetPilotsNotes.Input.Headers = .init()) async throws -> Operations.ForgetPilotsNotes.Output {
         try await forgetPilotsNotes(Operations.ForgetPilotsNotes.Input(headers: headers))
     }
-    /// Notes To Write
+    /// Route Notes
     ///
     /// A route's selected checkpoints in along-track order, each with the
-    /// note already kept for it (the pilot's own edit, else the shared one)
-    /// or None, and the hop its note is kept under: what the assistant
-    /// service writes the missing notes from (its POST
-    /// /api/checkpoint-notes/generate, which the apps reach). Asked by the
-    /// assistant alone; the gateway forwards no app here.
+    /// note kept for it (the pilot's own edit, else the shared one) or None,
+    /// and the hop its note is kept under.
     ///
-    /// - Remark: HTTP `POST /api/checkpoint-notes/pending`.
-    /// - Remark: Generated from `#/paths//api/checkpoint-notes/pending/post(notes_to_write)`.
-    public func notesToWrite(
-        headers: Operations.NotesToWrite.Input.Headers = .init(),
-        body: Operations.NotesToWrite.Input.Body
-    ) async throws -> Operations.NotesToWrite.Output {
-        try await notesToWrite(Operations.NotesToWrite.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Seed Note
-    ///
-    /// A generated note offered as the shared one at its place: kept where
-    /// none is there yet, else the one saved meanwhile stays and is
-    /// answered. The assistant's alone, as /pending is.
-    ///
-    /// - Remark: HTTP `POST /api/checkpoint-notes/seed`.
-    /// - Remark: Generated from `#/paths//api/checkpoint-notes/seed/post(seed_note)`.
-    public func seedNote(
-        headers: Operations.SeedNote.Input.Headers = .init(),
-        body: Operations.SeedNote.Input.Body
-    ) async throws -> Operations.SeedNote.Output {
-        try await seedNote(Operations.SeedNote.Input(
+    /// - Remark: HTTP `POST /api/checkpoint-notes/route`.
+    /// - Remark: Generated from `#/paths//api/checkpoint-notes/route/post(route_notes)`.
+    public func routeNotes(
+        headers: Operations.RouteNotes.Input.Headers = .init(),
+        body: Operations.RouteNotes.Input.Body
+    ) async throws -> Operations.RouteNotes.Output {
+        try await routeNotes(Operations.RouteNotes.Input(
             headers: headers,
             body: body
         ))
@@ -2469,25 +2428,6 @@ extension APIProtocol {
         try await emergencyFields(Operations.EmergencyFields.Input(
             query: query,
             headers: headers
-        ))
-    }
-    /// Engine Rule
-    ///
-    /// The engine's rule `name` on the input given, its answer as the
-    /// engine gives it (the contract's `answer` for the name). An input not
-    /// of the rule's shape is a 422 with the engine's words.
-    ///
-    /// - Remark: HTTP `POST /api/engine/{name}`.
-    /// - Remark: Generated from `#/paths//api/engine/{name}/post(engine_rule)`.
-    public func engineRule(
-        path: Operations.EngineRule.Input.Path,
-        headers: Operations.EngineRule.Input.Headers = .init(),
-        body: Operations.EngineRule.Input.Body? = nil
-    ) async throws -> Operations.EngineRule.Output {
-        try await engineRule(Operations.EngineRule.Input(
-            path: path,
-            headers: headers,
-            body: body
         ))
     }
     /// Faa Chart

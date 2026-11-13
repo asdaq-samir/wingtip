@@ -44,8 +44,7 @@ enum NotamWords {
     /// The on-device model's sentences; else the engine's reasons as
     /// they are, saying the model could not run.
     static func said(_ figures: [WordsSource], reasons: [APINotamReason], device: any WordsProvider = OnDeviceWords()) async -> (text: String, origin: String) {
-        if let ask = try? WordsAsk(kind: .notams, body: [String: String](), figures: figures),
-           let words = try? await device.words(ask), !words.sentences.isEmpty {
+        if let words = try? await device.words(WordsAsk(kind: .notams, figures: figures)), !words.sentences.isEmpty {
             return (words.sentences.map(\.text).joined(separator: " "), AskOrigin.device.caption)
         }
         let why = reasons.map(\.words)

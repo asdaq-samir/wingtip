@@ -88,21 +88,6 @@ extension OnDeviceFacts {
         return facts
     }
 
-    /// The facts the assistant's context carries, for an Ask asked where
-    /// the plan's models are not to hand (the strip's one field): the
-    /// route and own ship, with no briefing.
-    static func from(_ context: AssistantContext?) -> OnDeviceFacts {
-        guard let context else { return OnDeviceFacts() }
-        var facts = OnDeviceFacts(dep: (context.dep ?? "").uppercased(), dest: (context.dest ?? "").uppercased(),
-                                  stops: (context.stops ?? []).map { $0.uppercased() })
-        facts.aircraft = context.aircraft == Plan.noAirplane ? nil : context.aircraft
-        facts.cruiseFt = context.altitudeFt
-        if let own = context.ownShip {
-            facts.own = Own(lat: own.lat, lon: own.lon, altitudeFt: own.altitudeFt, groundspeedKt: own.groundspeedKt, trackDeg: own.trackDeg)
-        }
-        return facts
-    }
-
     /// The briefing's fields: each airport's facilities, its METAR, and
     /// the TAF of the station that is the field.
     static func fields(of briefing: Briefing) -> [String: Field] {

@@ -1178,9 +1178,6 @@
     "Departure hours" : {
 
     },
-    "Describe the Checkpoints" : {
-
-    },
     "Describe the trip" : {
 
     },
@@ -2809,9 +2806,6 @@
     "Plan a trip to ${airport} leaving ${departure}" : {
 
     },
-    "Plan a trip…" : {
-
-    },
     "Plan and brief your flight in Wingtip Maps first, and I'll tell you." : {
 
     },
@@ -2919,9 +2913,6 @@
 
     },
     "Puts an approach on your route at its airport and opens the Brief." : {
-
-    },
-    "Putting your plan into words…" : {
 
     },
     "Radar and Satellite" : {
@@ -3988,9 +3979,6 @@
 
     },
     "Writing the words…" : {
-
-    },
-    "Writing…" : {
 
     },
     "You are here" : {

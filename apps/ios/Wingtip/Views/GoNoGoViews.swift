@@ -88,9 +88,9 @@ struct GoNoGoSection: View {
     @State private var restOpen = false
 
     var body: some View {
-        // With the planner's words out of reach, the glance on this
-        // iPhone first (OnDevice/BriefSummary).
-        if let answer = verdict.answer, let said = riskWords, said.origin != .planner {
+        // The glance on this iPhone first (OnDevice/BriefSummary), once
+        // the words have been asked for.
+        if let answer = verdict.answer, riskWords != nil {
             BriefSummarySection(answer: answer)
         }
         if verdict.answer != nil {
@@ -171,15 +171,7 @@ struct GoNoGoSection: View {
             guard let answer = verdict.answer else { riskWords = nil; return }
             writingWords = true
             defer { writingWords = false }
-            let minimums = PersonalMinimums.Key.allCases.compactMap { key in verdict.minimums[key].map { "\(key.title): \(key.words($0))" } }
-            let pilot: [String: String]? = minimums.isEmpty ? nil : ["personal minimums": minimums.joined(separator: ", ")]
-            let ask: WordsAsk
-            do { ask = try WordsAsk(kind: .risk, body: try RiskWordsAsk(answer, pilot: pilot), figures: WordsFigures.risk(answer)) } catch {
-                // Said where the words would be, not left blank.
-                riskWords = SaidWords(words: .none("none", "No words: the question could not be written (\(error.localizedDescription))."), origin: .none)
-                return
-            }
-            let said = await WordsFor().said(ask)
+            let said = await WordsFor().said(WordsAsk(kind: .risk, figures: WordsFigures.risk(answer)))
             guard !Task.isCancelled else { return }
             riskWords = said
         }

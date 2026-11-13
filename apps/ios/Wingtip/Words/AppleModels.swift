@@ -16,10 +16,8 @@ enum ModelPlace: String, Equatable, Sendable {
 /// Apple's models in the owner's order (2026-11-09, "Yes to AI cloud"):
 /// the on-device model first; Apple's Private Cloud Compute where the
 /// phone cannot (the model still downloading, a page it cannot read, an
-/// answer it could not give or whose every sentence the guard dropped);
-/// the planner's or the assistant's Claude only where a feature has such
-/// a path and neither of Apple's could answer. Every answer from either
-/// place passes the same guards (Words.checked, NumberGuard), and the
+/// answer it could not give or whose every sentence the guard dropped).
+/// Every answer from either place passes the same guards (Words.checked, NumberGuard), and the
 /// figures stay the engine's.
 ///
 /// Private Cloud Compute keeps nothing: Apple's design is that a request's

@@ -5,13 +5,12 @@ import Vision
 
 /// A photographed page read on the phone (iOS 27): Apple's on-device model
 /// shown the photo (an image Attachment) with Vision's text recognition as
-/// a tool (OCRTool), filling the same shapes the assistant's reader fills
-/// (DocumentDrafts), and the engine on the phone checking the figures as
-/// the server's reader has them checked (handbook_read_check,
-/// logbook_read_check). The photo never leaves the phone. Where the phone
-/// cannot (no Apple Intelligence, a model without vision, an iOS before
-/// 27) or the read fails, DocumentReader sends it to the assistant as
-/// before. The owner's privacy ask, 2026-11-09.
+/// a tool (OCRTool), filling the shapes the engine's checks take
+/// (DocumentDrafts), and the engine on the phone checking the figures
+/// (handbook_read_check, logbook_read_check). The photo goes no further
+/// than Apple's own models. Where they cannot (no Apple Intelligence, a
+/// model without vision), the page is not read. The owner's privacy ask,
+/// 2026-11-09.
 enum OnDeviceDocumentReader {
     static let model = "apple-on-device"
 
@@ -27,9 +26,8 @@ enum OnDeviceDocumentReader {
         return places.isEmpty ? "Apple's models here cannot read photos." : nil
     }
 
-    /// What the model is told: the assistant's reader's rules
-    /// (services/assistant/app/documents/prompts.py SYSTEM), short, as the
-    /// on-device model's context is small.
+    /// What the model is told, short, as the on-device model's context is
+    /// small.
     static let instructions = """
     You read a photograph of a page a pilot keeps into figures for a flight planning app. Call the text recognition tool \
     to read the printed or written text exactly. Rules: read only what the photograph shows; never fill a figure from what \
@@ -39,7 +37,7 @@ enum OnDeviceDocumentReader {
     the kind of page asked for, say why in unreadable and give no figures.
     """
 
-    /// The ask for each kind of page, as the assistant's (prompts.py ASKS).
+    /// The ask for each kind of page.
     static func ask(_ kind: DocumentKind) -> String {
         switch kind {
         case .pohPerformance:
@@ -53,7 +51,7 @@ enum OnDeviceDocumentReader {
         }
     }
 
-    /// The page read and checked, as the assistant's answer is.
+    /// The page read and checked (DocumentRead).
     static func read(_ kind: DocumentKind, image: UIImage, today: String = Day.today()) async throws -> DocumentAnswer {
         if let why = unavailableWhy { throw WordsUnavailable(why: why) }
         guard let cg = DocumentReader.jpeg(image).flatMap(UIImage.init(data:))?.cgImage else {
@@ -75,7 +73,7 @@ enum OnDeviceDocumentReader {
         }
         // This iPhone's model first, then Apple's Private Cloud Compute
         // (AppleModels); the photo goes to Apple's only where the phone's
-        // cannot read it, and to the assistant only where neither can.
+        // cannot read it.
         return try await AppleModels.attempt(places) { place in
             let session = AppleModels.session(place, tools: tools, instructions: instructions)
             let draft: [String: Any]
@@ -104,16 +102,15 @@ enum OnDeviceDocumentReader {
         return said.isEmpty ? nil : said
     }
 
-    /// A draft as JSON in snake case, the assistant's and the engine's keys.
+    /// A draft as JSON in snake case, the engine's keys.
     static func json(_ draft: some Encodable) throws -> [String: Any] {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
         return try JSONSerialization.jsonObject(with: encoder.encode(draft)) as? [String: Any] ?? [:]
     }
 
-    /// The answer as the assistant writes it (DocumentRead): the read, the
-    /// engine's check of it from the engine on the phone, the notes and why
-    /// it could not be read. An unreadable page gives no figures.
+    /// The answer (DocumentRead): the read, the engine's check of it from
+    /// the engine on the phone, the notes and why it could not be read. An unreadable page gives no figures.
     static func answer(_ kind: DocumentKind, draft: [String: Any], today: String, model: String = OnDeviceDocumentReader.model) throws -> Data {
         var figures = draft
         let page = figures.removeValue(forKey: "page") as? [String: Any] ?? [:]

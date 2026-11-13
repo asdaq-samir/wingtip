@@ -6757,25 +6757,22 @@ public enum Operations {
             }
         }
     }
-    /// Notes To Write
+    /// Route Notes
     ///
     /// A route's selected checkpoints in along-track order, each with the
-    /// note already kept for it (the pilot's own edit, else the shared one)
-    /// or None, and the hop its note is kept under: what the assistant
-    /// service writes the missing notes from (its POST
-    /// /api/checkpoint-notes/generate, which the apps reach). Asked by the
-    /// assistant alone; the gateway forwards no app here.
+    /// note kept for it (the pilot's own edit, else the shared one) or None,
+    /// and the hop its note is kept under.
     ///
-    /// - Remark: HTTP `POST /api/checkpoint-notes/pending`.
-    /// - Remark: Generated from `#/paths//api/checkpoint-notes/pending/post(notes_to_write)`.
-    public enum NotesToWrite {
-        public static let id: Swift.String = "notes_to_write"
+    /// - Remark: HTTP `POST /api/checkpoint-notes/route`.
+    /// - Remark: Generated from `#/paths//api/checkpoint-notes/route/post(route_notes)`.
+    public enum RouteNotes {
+        public static let id: Swift.String = "route_notes"
         public struct Input: Sendable, Hashable {
-            /// - Remark: Generated from `#/paths/api/checkpoint-notes/pending/POST/header`.
+            /// - Remark: Generated from `#/paths/api/checkpoint-notes/route/POST/header`.
             public struct Headers: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/checkpoint-notes/pending/POST/header/X-Pilot-Id`.
+                /// - Remark: Generated from `#/paths/api/checkpoint-notes/route/POST/header/X-Pilot-Id`.
                 public var xPilotId: Swift.String?
-                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.NotesToWrite.AcceptableContentType>]
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RouteNotes.AcceptableContentType>]
                 /// Creates a new `Headers`.
                 ///
                 /// - Parameters:
@@ -6783,27 +6780,27 @@ public enum Operations {
                 ///   - accept:
                 public init(
                     xPilotId: Swift.String? = nil,
-                    accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.NotesToWrite.AcceptableContentType>] = .defaultValues()
+                    accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RouteNotes.AcceptableContentType>] = .defaultValues()
                 ) {
                     self.xPilotId = xPilotId
                     self.accept = accept
                 }
             }
-            public var headers: Operations.NotesToWrite.Input.Headers
-            /// - Remark: Generated from `#/paths/api/checkpoint-notes/pending/POST/requestBody`.
+            public var headers: Operations.RouteNotes.Input.Headers
+            /// - Remark: Generated from `#/paths/api/checkpoint-notes/route/POST/requestBody`.
             @frozen public enum Body: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/checkpoint-notes/pending/POST/requestBody/content/application\/json`.
-                case json(Components.Schemas.GenerateNotesRequest)
+                /// - Remark: Generated from `#/paths/api/checkpoint-notes/route/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.RouteNotesRequest)
             }
-            public var body: Operations.NotesToWrite.Input.Body
+            public var body: Operations.RouteNotes.Input.Body
             /// Creates a new `Input`.
             ///
             /// - Parameters:
             ///   - headers:
             ///   - body:
             public init(
-                headers: Operations.NotesToWrite.Input.Headers = .init(),
-                body: Operations.NotesToWrite.Input.Body
+                headers: Operations.RouteNotes.Input.Headers = .init(),
+                body: Operations.RouteNotes.Input.Body
             ) {
                 self.headers = headers
                 self.body = body
@@ -6811,15 +6808,15 @@ public enum Operations {
         }
         @frozen public enum Output: Sendable, Hashable {
             public struct Ok: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/checkpoint-notes/pending/POST/responses/200/content`.
+                /// - Remark: Generated from `#/paths/api/checkpoint-notes/route/POST/responses/200/content`.
                 @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/checkpoint-notes/pending/POST/responses/200/content/application\/json`.
-                    case json(Components.Schemas.NotesToWrite)
+                    /// - Remark: Generated from `#/paths/api/checkpoint-notes/route/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.RouteNotes)
                     /// The associated value of the enum case if `self` is `.json`.
                     ///
                     /// - Throws: An error if `self` is not `.json`.
                     /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.NotesToWrite {
+                    public var json: Components.Schemas.RouteNotes {
                         get throws {
                             switch self {
                             case let .json(body):
@@ -6829,26 +6826,26 @@ public enum Operations {
                     }
                 }
                 /// Received HTTP response body
-                public var body: Operations.NotesToWrite.Output.Ok.Body
+                public var body: Operations.RouteNotes.Output.Ok.Body
                 /// Creates a new `Ok`.
                 ///
                 /// - Parameters:
                 ///   - body: Received HTTP response body
-                public init(body: Operations.NotesToWrite.Output.Ok.Body) {
+                public init(body: Operations.RouteNotes.Output.Ok.Body) {
                     self.body = body
                 }
             }
             /// Successful Response
             ///
-            /// - Remark: Generated from `#/paths//api/checkpoint-notes/pending/post(notes_to_write)/responses/200`.
+            /// - Remark: Generated from `#/paths//api/checkpoint-notes/route/post(route_notes)/responses/200`.
             ///
             /// HTTP response code: `200 ok`.
-            case ok(Operations.NotesToWrite.Output.Ok)
+            case ok(Operations.RouteNotes.Output.Ok)
             /// The associated value of the enum case if `self` is `.ok`.
             ///
             /// - Throws: An error if `self` is not `.ok`.
             /// - SeeAlso: `.ok`.
-            public var ok: Operations.NotesToWrite.Output.Ok {
+            public var ok: Operations.RouteNotes.Output.Ok {
                 get throws {
                     switch self {
                     case let .ok(response):
@@ -6862,9 +6859,9 @@ public enum Operations {
                 }
             }
             public struct UnprocessableContent: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/checkpoint-notes/pending/POST/responses/422/content`.
+                /// - Remark: Generated from `#/paths/api/checkpoint-notes/route/POST/responses/422/content`.
                 @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/checkpoint-notes/pending/POST/responses/422/content/application\/json`.
+                    /// - Remark: Generated from `#/paths/api/checkpoint-notes/route/POST/responses/422/content/application\/json`.
                     case json(Components.Schemas.HTTPValidationError)
                     /// The associated value of the enum case if `self` is `.json`.
                     ///
@@ -6880,202 +6877,26 @@ public enum Operations {
                     }
                 }
                 /// Received HTTP response body
-                public var body: Operations.NotesToWrite.Output.UnprocessableContent.Body
+                public var body: Operations.RouteNotes.Output.UnprocessableContent.Body
                 /// Creates a new `UnprocessableContent`.
                 ///
                 /// - Parameters:
                 ///   - body: Received HTTP response body
-                public init(body: Operations.NotesToWrite.Output.UnprocessableContent.Body) {
+                public init(body: Operations.RouteNotes.Output.UnprocessableContent.Body) {
                     self.body = body
                 }
             }
             /// Validation Error
             ///
-            /// - Remark: Generated from `#/paths//api/checkpoint-notes/pending/post(notes_to_write)/responses/422`.
+            /// - Remark: Generated from `#/paths//api/checkpoint-notes/route/post(route_notes)/responses/422`.
             ///
             /// HTTP response code: `422 unprocessableContent`.
-            case unprocessableContent(Operations.NotesToWrite.Output.UnprocessableContent)
+            case unprocessableContent(Operations.RouteNotes.Output.UnprocessableContent)
             /// The associated value of the enum case if `self` is `.unprocessableContent`.
             ///
             /// - Throws: An error if `self` is not `.unprocessableContent`.
             /// - SeeAlso: `.unprocessableContent`.
-            public var unprocessableContent: Operations.NotesToWrite.Output.UnprocessableContent {
-                get throws {
-                    switch self {
-                    case let .unprocessableContent(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "unprocessableContent",
-                            response: self
-                        )
-                    }
-                }
-            }
-            /// Undocumented response.
-            ///
-            /// A response with a code that is not documented in the OpenAPI document.
-            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
-        }
-        @frozen public enum AcceptableContentType: AcceptableProtocol {
-            case json
-            case other(Swift.String)
-            public init?(rawValue: Swift.String) {
-                switch rawValue.lowercased() {
-                case "application/json":
-                    self = .json
-                default:
-                    self = .other(rawValue)
-                }
-            }
-            public var rawValue: Swift.String {
-                switch self {
-                case let .other(string):
-                    return string
-                case .json:
-                    return "application/json"
-                }
-            }
-            public static var allCases: [Self] {
-                [
-                    .json
-                ]
-            }
-        }
-    }
-    /// Seed Note
-    ///
-    /// A generated note offered as the shared one at its place: kept where
-    /// none is there yet, else the one saved meanwhile stays and is
-    /// answered. The assistant's alone, as /pending is.
-    ///
-    /// - Remark: HTTP `POST /api/checkpoint-notes/seed`.
-    /// - Remark: Generated from `#/paths//api/checkpoint-notes/seed/post(seed_note)`.
-    public enum SeedNote {
-        public static let id: Swift.String = "seed_note"
-        public struct Input: Sendable, Hashable {
-            /// - Remark: Generated from `#/paths/api/checkpoint-notes/seed/POST/header`.
-            public struct Headers: Sendable, Hashable {
-                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SeedNote.AcceptableContentType>]
-                /// Creates a new `Headers`.
-                ///
-                /// - Parameters:
-                ///   - accept:
-                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SeedNote.AcceptableContentType>] = .defaultValues()) {
-                    self.accept = accept
-                }
-            }
-            public var headers: Operations.SeedNote.Input.Headers
-            /// - Remark: Generated from `#/paths/api/checkpoint-notes/seed/POST/requestBody`.
-            @frozen public enum Body: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/checkpoint-notes/seed/POST/requestBody/content/application\/json`.
-                case json(Components.Schemas.SeedNoteRequest)
-            }
-            public var body: Operations.SeedNote.Input.Body
-            /// Creates a new `Input`.
-            ///
-            /// - Parameters:
-            ///   - headers:
-            ///   - body:
-            public init(
-                headers: Operations.SeedNote.Input.Headers = .init(),
-                body: Operations.SeedNote.Input.Body
-            ) {
-                self.headers = headers
-                self.body = body
-            }
-        }
-        @frozen public enum Output: Sendable, Hashable {
-            public struct Ok: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/checkpoint-notes/seed/POST/responses/200/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/checkpoint-notes/seed/POST/responses/200/content/application\/json`.
-                    case json(Components.Schemas.NoteSeeded)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.NoteSeeded {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.SeedNote.Output.Ok.Body
-                /// Creates a new `Ok`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.SeedNote.Output.Ok.Body) {
-                    self.body = body
-                }
-            }
-            /// Successful Response
-            ///
-            /// - Remark: Generated from `#/paths//api/checkpoint-notes/seed/post(seed_note)/responses/200`.
-            ///
-            /// HTTP response code: `200 ok`.
-            case ok(Operations.SeedNote.Output.Ok)
-            /// The associated value of the enum case if `self` is `.ok`.
-            ///
-            /// - Throws: An error if `self` is not `.ok`.
-            /// - SeeAlso: `.ok`.
-            public var ok: Operations.SeedNote.Output.Ok {
-                get throws {
-                    switch self {
-                    case let .ok(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "ok",
-                            response: self
-                        )
-                    }
-                }
-            }
-            public struct UnprocessableContent: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/checkpoint-notes/seed/POST/responses/422/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/checkpoint-notes/seed/POST/responses/422/content/application\/json`.
-                    case json(Components.Schemas.HTTPValidationError)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.HTTPValidationError {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.SeedNote.Output.UnprocessableContent.Body
-                /// Creates a new `UnprocessableContent`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.SeedNote.Output.UnprocessableContent.Body) {
-                    self.body = body
-                }
-            }
-            /// Validation Error
-            ///
-            /// - Remark: Generated from `#/paths//api/checkpoint-notes/seed/post(seed_note)/responses/422`.
-            ///
-            /// HTTP response code: `422 unprocessableContent`.
-            case unprocessableContent(Operations.SeedNote.Output.UnprocessableContent)
-            /// The associated value of the enum case if `self` is `.unprocessableContent`.
-            ///
-            /// - Throws: An error if `self` is not `.unprocessableContent`.
-            /// - SeeAlso: `.unprocessableContent`.
-            public var unprocessableContent: Operations.SeedNote.Output.UnprocessableContent {
+            public var unprocessableContent: Operations.RouteNotes.Output.UnprocessableContent {
                 get throws {
                     switch self {
                     case let .unprocessableContent(response):
@@ -10039,216 +9860,6 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.unprocessableContent`.
             /// - SeeAlso: `.unprocessableContent`.
             public var unprocessableContent: Operations.EmergencyFields.Output.UnprocessableContent {
-                get throws {
-                    switch self {
-                    case let .unprocessableContent(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "unprocessableContent",
-                            response: self
-                        )
-                    }
-                }
-            }
-            /// Undocumented response.
-            ///
-            /// A response with a code that is not documented in the OpenAPI document.
-            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
-        }
-        @frozen public enum AcceptableContentType: AcceptableProtocol {
-            case json
-            case other(Swift.String)
-            public init?(rawValue: Swift.String) {
-                switch rawValue.lowercased() {
-                case "application/json":
-                    self = .json
-                default:
-                    self = .other(rawValue)
-                }
-            }
-            public var rawValue: Swift.String {
-                switch self {
-                case let .other(string):
-                    return string
-                case .json:
-                    return "application/json"
-                }
-            }
-            public static var allCases: [Self] {
-                [
-                    .json
-                ]
-            }
-        }
-    }
-    /// Engine Rule
-    ///
-    /// The engine's rule `name` on the input given, its answer as the
-    /// engine gives it (the contract's `answer` for the name). An input not
-    /// of the rule's shape is a 422 with the engine's words.
-    ///
-    /// - Remark: HTTP `POST /api/engine/{name}`.
-    /// - Remark: Generated from `#/paths//api/engine/{name}/post(engine_rule)`.
-    public enum EngineRule {
-        public static let id: Swift.String = "engine_rule"
-        public struct Input: Sendable, Hashable {
-            /// - Remark: Generated from `#/paths/api/engine/{name}/POST/path`.
-            public struct Path: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/engine/{name}/POST/path/name`.
-                public var name: Swift.String
-                /// Creates a new `Path`.
-                ///
-                /// - Parameters:
-                ///   - name:
-                public init(name: Swift.String) {
-                    self.name = name
-                }
-            }
-            public var path: Operations.EngineRule.Input.Path
-            /// - Remark: Generated from `#/paths/api/engine/{name}/POST/header`.
-            public struct Headers: Sendable, Hashable {
-                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.EngineRule.AcceptableContentType>]
-                /// Creates a new `Headers`.
-                ///
-                /// - Parameters:
-                ///   - accept:
-                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.EngineRule.AcceptableContentType>] = .defaultValues()) {
-                    self.accept = accept
-                }
-            }
-            public var headers: Operations.EngineRule.Input.Headers
-            /// - Remark: Generated from `#/paths/api/engine/{name}/POST/requestBody`.
-            @frozen public enum Body: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/engine/{name}/POST/requestBody/json`.
-                public struct JsonPayload: Codable, Hashable, Sendable {
-                    /// A container of undocumented properties.
-                    public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
-                    /// Creates a new `JsonPayload`.
-                    ///
-                    /// - Parameters:
-                    ///   - additionalProperties: A container of undocumented properties.
-                    public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
-                        self.additionalProperties = additionalProperties
-                    }
-                    public init(from decoder: any Swift.Decoder) throws {
-                        additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
-                    }
-                    public func encode(to encoder: any Swift.Encoder) throws {
-                        try encoder.encodeAdditionalProperties(additionalProperties)
-                    }
-                }
-                /// - Remark: Generated from `#/paths/api/engine/{name}/POST/requestBody/content/application\/json`.
-                case json(Operations.EngineRule.Input.Body.JsonPayload)
-            }
-            public var body: Operations.EngineRule.Input.Body?
-            /// Creates a new `Input`.
-            ///
-            /// - Parameters:
-            ///   - path:
-            ///   - headers:
-            ///   - body:
-            public init(
-                path: Operations.EngineRule.Input.Path,
-                headers: Operations.EngineRule.Input.Headers = .init(),
-                body: Operations.EngineRule.Input.Body? = nil
-            ) {
-                self.path = path
-                self.headers = headers
-                self.body = body
-            }
-        }
-        @frozen public enum Output: Sendable, Hashable {
-            public struct Ok: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/engine/{name}/POST/responses/200/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/engine/{name}/POST/responses/200/content/application\/json`.
-                    case json(OpenAPIRuntime.OpenAPIValueContainer)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: OpenAPIRuntime.OpenAPIValueContainer {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.EngineRule.Output.Ok.Body
-                /// Creates a new `Ok`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.EngineRule.Output.Ok.Body) {
-                    self.body = body
-                }
-            }
-            /// Successful Response
-            ///
-            /// - Remark: Generated from `#/paths//api/engine/{name}/post(engine_rule)/responses/200`.
-            ///
-            /// HTTP response code: `200 ok`.
-            case ok(Operations.EngineRule.Output.Ok)
-            /// The associated value of the enum case if `self` is `.ok`.
-            ///
-            /// - Throws: An error if `self` is not `.ok`.
-            /// - SeeAlso: `.ok`.
-            public var ok: Operations.EngineRule.Output.Ok {
-                get throws {
-                    switch self {
-                    case let .ok(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "ok",
-                            response: self
-                        )
-                    }
-                }
-            }
-            public struct UnprocessableContent: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/engine/{name}/POST/responses/422/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/engine/{name}/POST/responses/422/content/application\/json`.
-                    case json(Components.Schemas.HTTPValidationError)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.HTTPValidationError {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.EngineRule.Output.UnprocessableContent.Body
-                /// Creates a new `UnprocessableContent`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.EngineRule.Output.UnprocessableContent.Body) {
-                    self.body = body
-                }
-            }
-            /// Validation Error
-            ///
-            /// - Remark: Generated from `#/paths//api/engine/{name}/post(engine_rule)/responses/422`.
-            ///
-            /// HTTP response code: `422 unprocessableContent`.
-            case unprocessableContent(Operations.EngineRule.Output.UnprocessableContent)
-            /// The associated value of the enum case if `self` is `.unprocessableContent`.
-            ///
-            /// - Throws: An error if `self` is not `.unprocessableContent`.
-            /// - SeeAlso: `.unprocessableContent`.
-            public var unprocessableContent: Operations.EngineRule.Output.UnprocessableContent {
                 get throws {
                     switch self {
                     case let .unprocessableContent(response):

@@ -61,13 +61,13 @@ struct LogbookReviewView: View {
         }
     }
 
-    @ViewBuilder private func rowView(_ i: Int, _ row: ASLogbookRowCheck) -> some View {
+    @ViewBuilder private func rowView(_ i: Int, _ row: LogbookRowCheck) -> some View {
         let e = row.entry
-        let landings = (e.dayLandings ?? 0) + (e.nightLandings ?? 0)
+        let landings = Int(e.dayLandings + e.nightLandings)
         VStack(alignment: .leading, spacing: WingtipSpace.xs) {
             Toggle(isOn: Binding(get: { model.isConfirmed(i) }, set: { model.setConfirmed(i, $0) })) {
                 Text((e.flownOn.map(Day.said) ?? "No date read") + (e.route.map { " · \($0)" } ?? ""))
-                Text([e.aircraft, e.aircraftType, Format.hours(e.totalHours ?? 0), "\(landings) landing\(landings == 1 ? "" : "s")"]
+                Text([e.aircraft, e.aircraftType, Format.hours(e.totalHours), "\(landings) landing\(landings == 1 ? "" : "s")"]
                     .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
             }
             .disabled(!LogbookPhotoModel.canConfirm(row) || model.logged.contains(i))

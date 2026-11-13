@@ -8,9 +8,9 @@ import OpenAPIRuntime
 /// engine's (engine/crates/pilot/src/documents).
 enum HandbookReview {
     /// The engine's check of a read (the rule's input is the read itself,
-    /// its keys as the reader wrote them), its answer as the reader sent it.
-    static func check(_ read: OpenAPIValueContainer) throws -> ASHandbookCheck {
-        try Engine.call("handbook_read_check", read, decoder: Planner.json)
+    /// its keys as the reader wrote them).
+    static func check(_ read: OpenAPIValueContainer) throws -> HandbookCheck {
+        try Engine.call("handbook_read_check", read)
     }
 
     /// The read with only the confirmed items: a cruise, takeoff or landing
@@ -64,16 +64,16 @@ enum HandbookReview {
 
     /// The figures to save with the airplane (the gateway's HandbookFigures,
     /// the same shape in the same app units).
-    static func gateway(_ h: ASHandbookFigures) -> GWHandbookFigures {
+    static func gateway(_ h: HandbookFigures) -> GWHandbookFigures {
         GWHandbookFigures(
             climbBurnGph: h.climbBurnGph, climbRateFpm: h.climbRateFpm, climbSpeedKias: h.climbSpeedKias,
-            cruise: (h.cruise ?? []).map { GWCruise(altitudeFt: $0.altitudeFt, burnGph: $0.burnGph, powerPct: $0.powerPct, rpm: $0.rpm, tasKt: $0.tasKt) },
+            cruise: h.cruise.map { GWCruise(altitudeFt: $0.altitudeFt, burnGph: $0.burnGph, powerPct: $0.powerPct, rpm: $0.rpm, tasKt: $0.tasKt) },
             emptyArmIn: h.emptyArmIn, emptyWeightLb: h.emptyWeightLb,
-            envelope: (h.envelope ?? []).map { GWCorner(armIn: $0.armIn, weightLb: $0.weightLb) },
+            envelope: h.envelope.map { GWCorner(armIn: $0.armIn, weightLb: $0.weightLb) },
             fuelTotalGal: h.fuelTotalGal, glideRatio: h.glideRatio, glideSpeedKias: h.glideSpeedKias,
-            landing: (h.landing ?? []).map { GWDistance(groundRollFt: $0.groundRollFt, overObstacleFt: $0.overObstacleFt, pressureAltitudeFt: $0.pressureAltitudeFt, tempC: $0.tempC) },
+            landing: h.landing.map { GWDistance(groundRollFt: $0.groundRollFt, overObstacleFt: $0.overObstacleFt, pressureAltitudeFt: $0.pressureAltitudeFt, tempC: $0.tempC) },
             maxTakeoffWeightLb: h.maxTakeoffWeightLb,
-            takeoff: (h.takeoff ?? []).map { GWDistance(groundRollFt: $0.groundRollFt, overObstacleFt: $0.overObstacleFt, pressureAltitudeFt: $0.pressureAltitudeFt, tempC: $0.tempC) },
+            takeoff: h.takeoff.map { GWDistance(groundRollFt: $0.groundRollFt, overObstacleFt: $0.overObstacleFt, pressureAltitudeFt: $0.pressureAltitudeFt, tempC: $0.tempC) },
             usableFuelGal: h.usableFuelGal)
     }
 
@@ -95,7 +95,7 @@ enum HandbookReview {
 
     /// The airplane form's figures from the engine's profile, only those it
     /// gives, each to a tenth as the form shows them.
-    static func fill(_ form: inout AircraftForm, from profile: ASHandbookProfile) {
+    static func fill(_ form: inout AircraftForm, from profile: HandbookProfile) {
         if let v = profile.cruiseTasKt { form.cruiseTasKt = Format.tenths(v) }
         if let v = profile.fuelBurnGph { form.fuelBurnGph = Format.tenths(v) }
         if let v = profile.cruisePowerPct { form.cruisePowerPct = Format.tenths(v) }

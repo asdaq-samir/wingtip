@@ -3,11 +3,9 @@ import FoundationModels
 
 /// The shapes Apple's on-device model fills in when it reads a photographed
 /// page on the phone (OnDeviceDocumentReader): member for member the
-/// assistant's (services/assistant/app/documents/schemas.py, the engine's
-/// handbook_read_check and logbook_read_check inputs), written to JSON in
-/// snake case, so the engine checks the phone's read exactly as it checks
-/// the server's, and the screens take either. Every figure is optional: a
-/// figure the page does not show is left out, never filled in.
+/// engine's handbook_read_check and logbook_read_check inputs, written to
+/// JSON in snake case for the engine to check. Every figure is optional:
+/// a figure the page does not show is left out, never filled in.
 @Generable
 struct PageNotes: Codable {
     @Guide(description: "Each figure that was hidden, blurred, cut off or ambiguous, and why; empty when none.")

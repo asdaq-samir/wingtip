@@ -731,10 +731,6 @@ extension Components {
             ///
             /// - Remark: Generated from `#/components/schemas/Capabilities/access`.
             public var access: Swift.String
-            /// Who has the features Claude writes (the assistant, the written briefing, the readings in words, checkpoint descriptions, the mock oral, a photographed page read): OFF, the default, for nobody, whatever else is sold or open -- the apps then use only on-device models and the engine's own words; DEVELOPERS; or EVERYONE signed in.
-            ///
-            /// - Remark: Generated from `#/components/schemas/Capabilities/claudeFeatures`.
-            public var claudeFeatures: Swift.String
             /// The OIDC providers with real credentials, by registration id: the sign-in buttons to offer. Empty where only the emailed link signs in (the local stack).
             ///
             /// - Remark: Generated from `#/components/schemas/Capabilities/providers`.
@@ -747,23 +743,19 @@ extension Components {
             ///
             /// - Parameters:
             ///   - access: SIGN_IN: a session can be had, and the developer's workspace needs the role. OPEN: nobody can sign in and everything is open (the local stack). CLOSED: nobody can sign in, and writes and the developer's workspace are refused.
-            ///   - claudeFeatures: Who has the features Claude writes (the assistant, the written briefing, the readings in words, checkpoint descriptions, the mock oral, a photographed page read): OFF, the default, for nobody, whatever else is sold or open -- the apps then use only on-device models and the engine's own words; DEVELOPERS; or EVERYONE signed in.
             ///   - providers: The OIDC providers with real credentials, by registration id: the sign-in buttons to offer. Empty where only the emailed link signs in (the local stack).
             ///   - subscriptions: Whether this deployment sells the subscription; where not, the page says nothing of one.
             public init(
                 access: Swift.String,
-                claudeFeatures: Swift.String,
                 providers: [Swift.String],
                 subscriptions: Swift.Bool
             ) {
                 self.access = access
-                self.claudeFeatures = claudeFeatures
                 self.providers = providers
                 self.subscriptions = subscriptions
             }
             public enum CodingKeys: String, CodingKey {
                 case access
-                case claudeFeatures
                 case providers
                 case subscriptions
             }
@@ -1820,37 +1812,33 @@ extension Components {
                 case signature
             }
         }
-        /// One paid feature's uses this month (UTC)
-        ///
         /// - Remark: Generated from `#/components/schemas/FeatureUse`.
         public struct FeatureUse: Codable, Hashable, Sendable {
-            /// The month's allowance
-            ///
-            /// - Remark: Generated from `#/components/schemas/FeatureUse/cap`.
-            public var cap: Swift.Int
             /// - Remark: Generated from `#/components/schemas/FeatureUse/feature`.
             public var feature: Swift.String
-            /// - Remark: Generated from `#/components/schemas/FeatureUse/used`.
-            public var used: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/FeatureUse/month`.
+            public var month: Swift.String
+            /// - Remark: Generated from `#/components/schemas/FeatureUse/uses`.
+            public var uses: Swift.Int
             /// Creates a new `FeatureUse`.
             ///
             /// - Parameters:
-            ///   - cap: The month's allowance
             ///   - feature:
-            ///   - used:
+            ///   - month:
+            ///   - uses:
             public init(
-                cap: Swift.Int,
                 feature: Swift.String,
-                used: Swift.Int
+                month: Swift.String,
+                uses: Swift.Int
             ) {
-                self.cap = cap
                 self.feature = feature
-                self.used = used
+                self.month = month
+                self.uses = uses
             }
             public enum CodingKeys: String, CodingKey {
-                case cap
                 case feature
-                case used
+                case month
+                case uses
             }
         }
         /// - Remark: Generated from `#/components/schemas/FieldReport`.
@@ -4437,10 +4425,6 @@ extension Components {
             ///
             /// - Remark: Generated from `#/components/schemas/SubscriptionDto/until`.
             public var until: Swift.String?
-            /// This month's uses of each paid feature Claude writes, against its cap
-            ///
-            /// - Remark: Generated from `#/components/schemas/SubscriptionDto/uses`.
-            public var uses: [Components.Schemas.FeatureUse]
             /// Creates a new `SubscriptionDto`.
             ///
             /// - Parameters:
@@ -4451,7 +4435,6 @@ extension Components {
             ///   - trialAvailable: Whether the free month is still theirs to start: once an account
             ///   - trialDays: The free month's length, days
             ///   - until: When the free month or the paid time runs out; null for FREE and COMPED
-            ///   - uses: This month's uses of each paid feature Claude writes, against its cap
             public init(
                 entitled: Swift.Bool,
                 plan: Swift.String? = nil,
@@ -4459,8 +4442,7 @@ extension Components {
                 store: Swift.String? = nil,
                 trialAvailable: Swift.Bool,
                 trialDays: Swift.Int,
-                until: Swift.String? = nil,
-                uses: [Components.Schemas.FeatureUse]
+                until: Swift.String? = nil
             ) {
                 self.entitled = entitled
                 self.plan = plan
@@ -4469,7 +4451,6 @@ extension Components {
                 self.trialAvailable = trialAvailable
                 self.trialDays = trialDays
                 self.until = until
-                self.uses = uses
             }
             public enum CodingKeys: String, CodingKey {
                 case entitled
@@ -4479,7 +4460,6 @@ extension Components {
                 case trialAvailable
                 case trialDays
                 case until
-                case uses
             }
         }
         /// - Remark: Generated from `#/components/schemas/SubscriptionRow`.

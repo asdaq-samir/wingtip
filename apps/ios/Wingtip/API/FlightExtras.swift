@@ -73,20 +73,6 @@ extension ProcedureFix: @retroactive Identifiable {
     }
 }
 
-/// One line of the checkpoints' notes as they are written: "start", one
-/// "checkpoint" each, "error", "done". The planner's document does not
-/// describe the stream's lines, so this one is the app's.
-struct NoteLine: Codable, Equatable, Sendable {
-    let type: String
-    var count: Int?
-    var id: String?
-    var lat: Double?
-    var lon: Double?
-    var description: String?
-    var source: String?
-    var detail: String?
-}
-
 /// Flight Service, where the gateway has it connected (FlightServiceStatus).
 typealias FlightServiceStatus = GWFlightServiceStatus
 
@@ -140,17 +126,11 @@ extension Planner {
         try await call { try await $0.airportProcedure(path: .init(ident: ident, procedure: id), query: .init(transition: transition)).ok.body.json }
     }
 
-    /// One "how to spot it" line per checkpoint, as they are written: each
-    /// a billed call, so asked for only on the pilot's tap.
-    /// Claude's, so nothing is asked while the server's Claude features
-    /// are off (ServerFeatures): the stream ends empty.
-    static func describeCheckpoints(dep: String, dest: String, stops: [String],
-                                    claudeOn: Bool = ServerFeatures.claudeOnNow) -> AsyncThrowingStream<NoteLine, any Error> {
-        guard claudeOn else { return AsyncThrowingStream { $0.finish() } }
-        let ask = ASGenerateNotesRequest(departureIdent: dep, destinationIdent: dest, stops: stops)
-        return lines({ try await Planner.ask { try await $0.describeCheckpoints(body: .json(ask)).ok.body.applicationXNdjson } }) {
-            try snakeCase.decode(NoteLine.self, from: $0)
-        }
+    /// The route's checkpoints, each with the note kept for it: the
+    /// pilot's own, else the shared one, or none.
+    static func routeNotes(dep: String, dest: String, stops: [String]) async throws -> [APIRouteNote] {
+        let ask = APIRouteNotesRequest(departureIdent: dep, destinationIdent: dest, stops: stops)
+        return try await call { try await $0.routeNotes(body: .json(ask)).ok.body.json.checkpoints }
     }
 
     /// A pilot's own note on a checkpoint, saved.
