@@ -33,7 +33,7 @@
 
 use crate::json::{self, Value};
 use crate::rules::CLASS_A_FLOOR_FT;
-use crate::sua_tab::{limit, Limit};
+use crate::sua_tab::{limit, read_limit, Limit};
 
 /// The ground under a volume, ft MSL: its lowest and its highest.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -77,13 +77,6 @@ pub fn span(floor: Limit, ceiling: Limit, ground: Option<Ground>) -> Option<Span
 /// {...}, "ground"?: {"low_ft", "high_ft"}}` to `{"floor_ft",
 /// "ceiling_ft", "surface"}`, or null.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
-    fn text<'a>(o: Option<&'a Value>, key: &str) -> Option<&'a str> {
-        o.and_then(|o| o.get(key)).and_then(Value::as_str)
-    }
-    let read = |key: &str| {
-        let o = v.get(key).filter(|o| !matches!(o, Value::Null));
-        Limit { ft: o.and_then(|o| o.get("ft")).and_then(Value::as_f64), code: text(o, "code"), desc: text(o, "desc") }
-    };
     let ground = match v.get("ground") {
         None | Some(Value::Null) => None,
         Some(g) => {
@@ -96,7 +89,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             Some(Ground { low_ft: at("low_ft")?, high_ft: at("high_ft")? })
         }
     };
-    Ok(match span(read("floor"), read("ceiling"), ground) {
+    Ok(match span(read_limit(v, "floor"), read_limit(v, "ceiling"), ground) {
         None => "null".to_owned(),
         Some(s) => {
             let mut o = String::from("{\"floor_ft\":");

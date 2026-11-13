@@ -15,7 +15,7 @@ left.
 The rules -- which way an end is flown, how high, and the pattern's
 corners and legs -- are the shared engine's (wingtip_engine::runway, through
 wingtip_native.call), the very code the web app's map (lib/trafficPattern,
-lib/pattern) and the phones (wt_call) ask; this reads the FAA's files they
+lib/pattern) and the phones (the generated `call`) ask; this reads the FAA's files they
 are fed from and carries the dicts across.
 """
 

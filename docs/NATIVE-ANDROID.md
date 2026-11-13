@@ -527,8 +527,7 @@ fused location provider, kept going in the air by a foreground service
 of the location type with Android's persistent notification; the path
 flown (OwnTrail); the airplane tracked and its watches (Tracking,
 Traffic); the cycle packs on the device and the engine's in-view readers
-through JNI entries appended to the shim (Packs.kt, CyclePacks,
-InView; since 2026-11-12 the generated UniFFI Kotlin); the pilot's records in Room 3 (androidx.room3, over the
+through the generated UniFFI Kotlin (Packs.kt, CyclePacks, InView); the pilot's records in Room 3 (androidx.room3, over the
 framework's SQLite driver); and notification channels. The
 map draws own ship as the blue dot and the path under the route, with
 the location button over the map (`ui/MapButtons`) as Apple Maps has

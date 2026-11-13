@@ -1,5 +1,5 @@
 //! Instrument approaches taught and debriefed, one copy for the web app
-//! (callEngine), the planner (wingtip_native.call) and the phones (wt_call),
+//! (callEngine), the planner (wingtip_native.call) and the phones (the generated `call`),
 //! so the iPhone can teach an approach and debrief one flown with no
 //! signal, from the same rules:
 //!

@@ -11,7 +11,7 @@
  *
  * Worked out by the shared engine (engine/crates/brief/src/gonogo/verdict.rs,
  * through lib/engine), the very code behind the planner's POST
- * /api/go-no-go and the phones' wt_call: the rules, their words and
+ * /api/go-no-go and the phones' `call`: the rules, their words and
  * their sources live there. Only the shapes are made here.
  */
 import { create } from "zustand";

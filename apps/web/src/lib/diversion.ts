@@ -13,7 +13,7 @@
  *
  * Worked out by the shared engine (engine/crates/procedures/src/figures/diversion.rs,
  * through lib/engine), the very code behind the planner's /api/diversion
- * and the phones' wt_call("diversion"). ALLOWANCES stays here as the drill's
+ * and the phones' `call`("diversion"). ALLOWANCES stays here as the drill's
  * labels and the type of its keys; diversion.test.ts holds it to the
  * engine's. Its stopwatch's figures are lib/format's (stopwatch).
  */

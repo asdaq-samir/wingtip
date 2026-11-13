@@ -26,7 +26,6 @@
  "services/gateway/src/main/java/app/wingtipmaps/gateway/controller/AircraftController.java | services/gateway/src/main/java/app/wingtipmaps/gateway/controller/InstructorController.java": 1,
  "services/gateway/src/main/java/app/wingtipmaps/gateway/controller/AircraftController.java | services/gateway/src/main/java/app/wingtipmaps/gateway/controller/LogbookController.java": 1,
  "services/gateway/src/main/java/app/wingtipmaps/gateway/controller/AppleNativeSignInController.java | services/gateway/src/main/java/app/wingtipmaps/gateway/controller/DeviceSignInController.java": 1,
- "services/gateway/src/main/java/app/wingtipmaps/gateway/controller/DiagnosticsController.java | services/gateway/src/main/java/app/wingtipmaps/gateway/controller/SpeedController.java": 1,
  "services/gateway/src/main/java/app/wingtipmaps/gateway/controller/InstructorController.java | services/gateway/src/main/java/app/wingtipmaps/gateway/controller/TrainingController.java": 1,
  "services/gateway/src/main/java/app/wingtipmaps/gateway/domain/AircraftDueItem.java | services/gateway/src/main/java/app/wingtipmaps/gateway/domain/Squawk.java": 1,
  "services/gateway/src/main/java/app/wingtipmaps/gateway/domain/FlightTrack.java | services/gateway/src/main/java/app/wingtipmaps/gateway/domain/FlightWatch.java": 1,

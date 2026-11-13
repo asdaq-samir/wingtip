@@ -5,7 +5,7 @@
 //! and how far off the line, the fuel the plan leaves at each; the
 //! vertical speed from the fix's own altitudes; and the still-air glide
 //! ring about the airplane over the ground under it. One copy for the
-//! iPhone, Android and the web (wt_call, callEngine), where FiguresStrip's
+//! iPhone, Android and the web (the generated `call`, callEngine), where FiguresStrip's
 //! own arithmetic (the phone's Flight.along, burnt and off) was before.
 //!
 //! Figures for a planning aid flown beside the airplane's own

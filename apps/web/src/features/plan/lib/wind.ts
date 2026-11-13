@@ -7,7 +7,7 @@
  *
  * Worked out by the shared engine (engine/crates/brief/src/runway/wind.rs,
  * through lib/engine), the very code behind the planner's
- * wingtip.runway_wind and the phones' wt_call: the rules and their sources
+ * wingtip.runway_wind and the phones' `call`: the rules and their sources
  * live there.
  */
 import type { Runway } from "../../../lib/api/types";

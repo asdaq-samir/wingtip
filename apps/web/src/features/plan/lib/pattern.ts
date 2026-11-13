@@ -9,7 +9,7 @@
  *
  * Worked out by the shared engine (engine/crates/brief/src/runway/pick.rs and
  * wind.rs, through lib/engine), the very code behind the planner's
- * wingtip.pattern and wingtip.runway_wind and the phones' wt_call: the rules and
+ * wingtip.pattern and wingtip.runway_wind and the phones' `call`: the rules and
  * their AC 90-66C and 14 CFR sources live there. Only the shapes the
  * pages read are made here.
  */

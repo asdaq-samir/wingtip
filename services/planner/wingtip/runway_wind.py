@@ -10,7 +10,7 @@ an end with no number has no heading, and no wind of its own.
 
 The rules are the shared engine's (wingtip_engine::runway::wind, through
 wingtip_native.call), the very code the web app (lib/wind, lib/pattern) and
-the phones (wt_call) ask; these keep their names and dicts and only carry
+the phones (the generated `call`) ask; these keep their names and dicts and only carry
 them across.
 """
 
