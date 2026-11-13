@@ -7,6 +7,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 dotnet=$(scripts/build/toolchain.sh get dotnet)
-docker run --rm -v "$PWD/tools/msfs-agent:/src" -v wingtip-nuget:/root/.nuget/packages -w /src \
+# tools/ whole, as Replay.Core embeds the shot list's schema from beside
+# the X-Plane plugin (tools/xplane-driver/wingtip_replay/shots.schema.json).
+docker run --rm -v "$PWD/tools:/src" -v wingtip-nuget:/root/.nuget/packages -w /src/msfs-agent \
   -e DOTNET_CLI_TELEMETRY_OPTOUT=1 -e DOTNET_NOLOGO=1 "mcr.microsoft.com/dotnet/sdk:$dotnet" \
   sh -c 'dotnet build MsfsAgent.slnx -v q && dotnet format MsfsAgent.slnx --verify-no-changes && dotnet test --solution MsfsAgent.slnx --no-build'

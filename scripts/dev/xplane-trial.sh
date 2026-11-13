@@ -140,7 +140,8 @@ install() {
   plugins=$xp/Resources/plugins/PythonPlugins
   mkdir -p "$plugins/wingtip_replay" "$xp/Output/wingtip"
   cp "$driver/PI_wingtip_replay.py" "$plugins/"
-  cp "$driver"/wingtip_replay/*.py "$plugins/wingtip_replay/"
+  # The package and the shot list's schema it reads (shots.schema.json).
+  cp "$driver"/wingtip_replay/*.py "$driver"/wingtip_replay/*.json "$plugins/wingtip_replay/"
   cp "$STATE/sample.fdr" "$xp/Output/wingtip/sample.fdr"
   python3 - "$driver/shots.json" "$xp/Output/wingtip/shots.json" "$source" <<'EOF'
 import json, sys

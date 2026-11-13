@@ -9,6 +9,13 @@ public sealed class ShotTests
     static IReadOnlyList<FlightPath> Paths() => FlightPath.Of(Sedona, new Heights([]).FtMsl);
 
     [Fact]
+    public void The_cameras_are_the_kinds_the_shared_schema_names()
+    {
+        Assert.Equal(ShotList.Kinds, Enum.GetNames<ShotKind>().Select(n => n.ToLowerInvariant()));
+        Assert.Throws<FormatException>(() => ShotList.Parse("drone:10"));
+    }
+
+    [Fact]
     public void Each_run_is_covered_end_to_end_and_no_shot_crosses_a_gap()
     {
         var paths = Paths();

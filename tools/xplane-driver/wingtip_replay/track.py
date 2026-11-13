@@ -9,8 +9,8 @@ Plain Python, with no X-Plane module, so the tests run it anywhere. The
 path between rows is not smoothed again here: the engine's sim_flight
 already made the rows a smooth curve through the reports, ten a second, so
 the plugin only goes in a straight line between two neighbouring rows, as
-X-Plane does with an FDR. Two rows further apart than GAP_S are a gap, and
-nothing is drawn across it.
+X-Plane does with an FDR. Two rows further apart than GAP_FRAMES of the
+file's own rows are a gap, and nothing is drawn across it.
 """
 
 from __future__ import annotations
@@ -18,12 +18,15 @@ from __future__ import annotations
 import bisect
 import math
 import re
+import statistics
 from dataclasses import dataclass
 
-#: Rows further apart than this, s, are a gap: the export writes ten a
-#: second (FRAME_HZ in simExport/flight.ts), so a missing second is no
-#: longer the smooth path between reports.
-GAP_S = 1.0
+#: Rows further apart than this many of the file's own rows are a gap.
+#: The export writes its rows at one rate, FRAME_HZ in simExport/flight.ts
+#: (ten a second; prepare-track.sh's RATE_HZ for a smaller file), so the
+#: rate is read from the rows themselves rather than kept here: at ten a
+#: second a missing second is no longer the smooth path between reports.
+GAP_FRAMES = 10
 
 #: A UTC clock time as the export writes it, HH:MM:SS.ss.
 _CLOCK = re.compile(r"^(\d{1,2}):(\d{2}):(\d{2}(?:\.\d+)?)$")
@@ -161,17 +164,29 @@ _STILL_M = 0.5
 _EARTH_M = 6371008.8  # the mean Earth radius (IUGG), for the still test only
 
 
+def velocity_track(east: float, north: float) -> float | None:
+    """A track toward where a motion's east and north parts go, degrees
+    true, None where it does not move: the engine's velocity_track
+    (engine/crates/core/src/geo.rs), which X-Plane's own Python cannot
+    link, so tests/test_track.py holds this to the engine's fixture
+    (apps/web/src/lib/fixtures/serviceRules.json)."""
+    if math.hypot(east, north) == 0.0:
+        return None
+    return math.degrees(math.atan2(east, north)) % 360.0
+
+
 def _course(p: tuple[float, float], q: tuple[float, float]) -> float | None:
-    """The initial great-circle bearing from p to q, degrees true (the
-    spherical formula; over half a second the sphere's error is nothing),
-    or None where they are the same place."""
+    """The initial great-circle course from p to q, degrees true: the
+    motion's north and east parts on the sphere (over half a second its
+    error is nothing) as velocity_track reads them, or None where they are
+    the same place."""
     lat1, lon1, lat2, lon2 = map(math.radians, (p[0], p[1], q[0], q[1]))
     dlon = lon2 - lon1
     north = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
     east = math.sin(dlon) * math.cos(lat2)
     if math.hypot(north, east) * _EARTH_M < _STILL_M:
         return None
-    return math.degrees(math.atan2(east, north)) % 360.0
+    return velocity_track(east, north)
 
 
 def _clock_s(text: str) -> float | None:
@@ -181,12 +196,13 @@ def _clock_s(text: str) -> float | None:
     return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
 
 
-def parse_fdr(text: str, gap_s: float = GAP_S) -> Flight:
+def parse_fdr(text: str, gap_s: float | None = None) -> Flight:
     """The file's header and rows. Rows are version 4's: a UTC clock time,
     longitude, latitude, altitude, heading, pitch, roll, then one column a
     DREF line. A clock that runs back by more than half a day has crossed
     midnight and goes on into the next day; a row at or before the last
-    one's time is left out."""
+    one's time is left out. A gap is longer than `gap_s`, or GAP_FRAMES of
+    the rows' own spacing (their median, the export's 1 / FRAME_HZ)."""
     head: dict[str, str] = {}
     drefs: list[str] = []
     frames: list[Frame] = []
@@ -220,6 +236,9 @@ def parse_fdr(text: str, gap_s: float = GAP_S) -> Flight:
         numbers = [float(v) for v in fields[1:]]
         lon, lat, alt, hdg, pitch, roll = numbers[:6]
         frames.append(Frame(t, lat, lon, alt, hdg % 360.0, pitch, roll, tuple(numbers[6:])))
+    if gap_s is None:
+        spacing = [b.t - a.t for a, b in zip(frames, frames[1:])]
+        gap_s = GAP_FRAMES * statistics.median(spacing) if spacing else 0.0
     runs: list[tuple[int, int]] = []
     for i, frame in enumerate(frames):
         if runs and frame.t - frames[i - 1].t <= gap_s:

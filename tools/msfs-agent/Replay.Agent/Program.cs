@@ -10,7 +10,7 @@ using Wingtip.Replay.Agent;
 var track = new Option<FileInfo>("--track") { Description = "The track, as tools/msfs-agent/prepare-track.sh writes it", Required = true };
 var outDir = new Option<DirectoryInfo>("--out") { Description = "Where the recording, the log and summary.json go", Required = true };
 var resolution = new Option<string>("--resolution") { Description = "1440p or 4k", DefaultValueFactory = _ => "1440p" };
-var shots = new Option<string?>("--shots") { Description = "camera:seconds, ... (chase, flyby, tower, cockpit); the default list where not given" };
+var shots = new Option<string?>("--shots") { Description = $"camera:seconds, ... ({string.Join(", ", ShotList.Kinds)}); the default list where not given" };
 var speed = new Option<double>("--speed") { Description = "How many times real time", DefaultValueFactory = _ => 1 };
 var offset = new Option<double?>("--offset-ft") { Description = "Move every height by this, ft, in place of the one measured at the landings" };
 var tower = new Option<string?>("--tower") { Description = "lat,lon of the tower camera; beside the last touchdown where not given" };

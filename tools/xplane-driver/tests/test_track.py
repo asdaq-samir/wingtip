@@ -1,8 +1,14 @@
 """The flight file as the plugin reads it: rows, gaps, midnight, and the
 airplane between two rows."""
 
+import json
+from pathlib import Path
+
 from conftest import clock, fdr, northbound
-from wingtip_replay.track import parse_fdr
+from wingtip_replay.track import parse_fdr, velocity_track
+
+#: The engine's own cases for its velocity_track (engine/facade/tests/service_rules.rs).
+SERVICE_RULES = Path(__file__).resolve().parents[3] / "apps" / "web" / "src" / "lib" / "fixtures" / "serviceRules.json"
 
 START = 15 * 3600  # 15:00:00 UTC
 
@@ -60,3 +66,18 @@ def test_a_row_at_the_same_time_as_the_last_is_left_out():
     rows = northbound(START, 1)
     flight = parse_fdr(fdr(rows[:5] + [rows[4]] + rows[5:]))
     assert len(flight.frames) == len(rows)
+
+
+def test_the_course_is_read_as_the_engines_velocity_track():
+    for case in json.loads(SERVICE_RULES.read_text())["velocity_track"]:
+        for v, want in zip(case["input"]["velocities"], case["answer"]):
+            got = velocity_track(v["east"], v["north"])
+            assert (got is None) == (want["track_deg"] is None)
+            assert got is None or abs(got - want["track_deg"]) < 1e-9
+
+
+def test_the_gap_is_the_files_own_rate_not_a_figure_kept_here():
+    # Two a second (prepare-track.sh's RATE_HZ=2): rows half a second apart
+    # are one run, a missing five seconds (ten rows) is a gap.
+    rows = northbound(START, 10, hz=2) + northbound(START + 16, 2, lat0=47.6, hz=2)
+    assert parse_fdr(fdr(rows)).run_times() == [(0.0, 10.0), (16.0, 18.0)]
