@@ -97,17 +97,10 @@ wait_until() {
 # --- iOS ---------------------------------------------------------------
 # The newest iPhone: the highest model number, and of that model the plain
 # one before the Max or the e ("iPhone 18 Pro" over "iPhone 18 Pro Max").
-# Sorting by name alone, as check.sh does, put "iPhone Air" last, after
+# Sorting by name alone put "iPhone Air" last, after
 # every numbered model. iPhone Duo is the foldable, tested apart.
 newest_iphone() {
-  xcrun simctl list devices available -j | python3 -c '
-import json, re, sys
-ds = [d for r, ds in json.load(sys.stdin)["devices"].items() if "iOS" in r for d in ds
-      if d["name"].startswith("iPhone") and "Duo" not in d["name"]]
-def key(d):
-    m = re.match(r"iPhone (\d+)", d["name"])
-    return (int(m.group(1)) if m else 0, -len(d["name"]))
-print(max(ds, key=key)["udid"] if ds else "")'
+  xcrun simctl list devices available -j | python3 "$(dirname "$0")/newest_simulator.py" iPhone
 }
 
 sim_booted() { xcrun simctl list devices | grep -q "$1.*(Booted)"; }

@@ -48,6 +48,20 @@ files() { # PATTERN
   fi
 }
 
+# SwiftLint itself. On Linux, the release's statically linked build beside
+# the usual one when mise unpacked it: the usual one is linked against
+# libxml2.so.2, which ubuntu-26.04's runners no longer have (2.14 is
+# libxml2.so.16), so it would not start there.
+swiftlint() {
+  local bin
+  if [ "$(uname -s)" = Linux ] && bin=$("$here/scripts/build/tool.sh" --path swiftlint 2> /dev/null) &&
+    [ -x "$(dirname "$bin")/swiftlint-static" ]; then
+    "$(dirname "$bin")/swiftlint-static" "$@"
+  else
+    "$here/scripts/build/tool.sh" swiftlint "$@"
+  fi
+}
+
 ios() {
   local list
   # SwiftLint at .tool-versions' version, installed by mise.
@@ -56,12 +70,12 @@ ios() {
   [ -n "$list" ] || { echo "phone_lint: no Swift changed"; return 0; }
   if $write; then
     # shellcheck disable=SC2086  # one path a word: the repo's paths have no spaces
-    "$here/scripts/build/tool.sh" swiftlint lint --quiet --config "$cfg/swiftlint.yml" --write-baseline "$cfg/swiftlint-baseline.json" $list > /dev/null
+    swiftlint lint --quiet --config "$cfg/swiftlint.yml" --write-baseline "$cfg/swiftlint-baseline.json" $list > /dev/null
     echo "phone_lint: wrote scripts/ci/phones/swiftlint-baseline.json"
     return 0
   fi
   # shellcheck disable=SC2086
-  "$here/scripts/build/tool.sh" swiftlint lint --quiet --strict --config "$cfg/swiftlint.yml" --baseline "$cfg/swiftlint-baseline.json" $list
+  swiftlint lint --quiet --strict --config "$cfg/swiftlint.yml" --baseline "$cfg/swiftlint-baseline.json" $list
 }
 
 android() {

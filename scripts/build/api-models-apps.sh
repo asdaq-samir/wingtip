@@ -73,7 +73,16 @@ kotlin_dir=apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generate
 # Written into a scratch folder, then moved over the committed files (or,
 # with --check, compared with them).
 work=$(mktemp -d)
-trap 'rm -rf "$work"' EXIT
+# On Linux (CI) the containers write the scratch folder as root, which the
+# runner's user cannot remove, and a failed removal in the EXIT trap became
+# the script's exit status after a good run: the files are removed from a
+# container then.
+cleanup() {
+  rm -rf "$work" 2>/dev/null && return
+  "$docker" run --rm -v "$work:/x" "node:$("$toolchain" get nodejs)-slim" sh -c 'rm -rf /x/* /x/.[!.]*' >/dev/null 2>&1 || true
+  rm -rf "$work" 2>/dev/null || true
+}
+trap cleanup EXIT
 mkdir -p "$work/docs" "$work/out/$swift_api" "$work/out/$swift_dir" "$work/out/$kotlin_dir"
 
 node() { # the repo read-only at /w, the scratch folder at /x

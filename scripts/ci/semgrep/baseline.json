@@ -8,11 +8,6 @@
   "apps/web/src/features/weather-flow/FlowPins.tsx": 1,
   "apps/web/src/lib/map/gl/htmlMarker.ts": 1
  },
- "mercator-outside-tile-maths-phones": {
-  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/flow/FlowColour.kt": 2,
-  "apps/ios/Wingtip/ModelWeather/FlowPaint.swift": 2,
-  "apps/ios/Wingtip/Offline/OfflineStore.swift": 1
- },
  "planner-http-by-hand-java": {
   "services/gateway/src/main/java/app/wingtipmaps/gateway/monitoring/UptimeWatch.java": 1
  },
@@ -30,13 +25,6 @@
   "apps/web/src/lib/errorReports.ts": 1
  },
  "unit-constant-outside-units-module": {
-  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/flight/OwnShip.kt": 2,
-  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/AirspaceVolumes3d.kt": 1,
-  "apps/ios/Wingtip/Map/ApproachLines.swift": 1,
-  "apps/ios/Wingtip/OwnShip.swift": 2,
-  "apps/ios/Wingtip/Views/ChartOverlays.swift": 1,
-  "apps/web/src/lib/map/position/ownShip.ts": 1,
-  "services/planner/wingtip/elevation.py": 1,
   "tools/msfs-agent/Replay.Core/Geo.cs": 1,
   "tools/xplane-driver/wingtip_replay/player.py": 1
  }

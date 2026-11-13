@@ -132,18 +132,10 @@ jobs:
         id: sim
         run: |
           # The newest iPhone the runner's Xcode has, and at night an iPad
-          # (a Pro where there is one) and iPhone Duo, each by its id.
+          # (a Pro where there is one) and iPhone Duo, each by its id, picked
+          # as on the Mac (scripts/dev/newest_simulator.py).
           pick() {
-            xcrun simctl list devices available -j | python3 -c '
-          import json, sys
-          kind = sys.argv[1]
-          devices = [d for runtime, ds in json.load(sys.stdin)["devices"].items() if "iOS" in runtime for d in ds if d["name"].startswith(kind)]
-          devices = [d for d in devices if ("Duo" in d["name"]) == (kind == "iPhone Duo")]
-          if not devices:
-              sys.exit(0)
-          pros = [d for d in devices if "Pro" in d["name"]] if kind == "iPad" else []
-          best = sorted(pros or devices, key=lambda d: d["name"])[-1]
-          print(best["udid"])' "$1"
+            xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "$1"
           }
           echo "iphone=$(pick iPhone)" >> "$GITHUB_OUTPUT"
           if [ "$FULL" = true ]; then

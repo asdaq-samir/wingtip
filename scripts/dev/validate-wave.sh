@@ -78,12 +78,8 @@ step_images() {
 # iPhone), in the same derived data, so the build is the ios step's.
 step_ipad() {
   local sim
-  sim=$(xcrun simctl list devices available -j | python3 -c '
-import json, sys
-ds = [d for r, ds in json.load(sys.stdin)["devices"].items() if "iOS" in r for d in ds
-      if d["name"].startswith("iPad Pro")]
-print(sorted(ds, key=lambda d: d["name"])[-1]["udid"] if ds else "")')
-  [ -n "$sim" ] || { echo "validate-wave: no iPad Pro simulator in this Xcode"; return 1; }
+  sim=$(xcrun simctl list devices available -j | python3 "$here/scripts/dev/newest_simulator.py" iPad)
+  [ -n "$sim" ] || { echo "validate-wave: no iPad simulator in this Xcode"; return 1; }
   [ -d "$here/apps/ios/Frameworks/WingtipEngine/WingtipEngineFFI.xcframework" ] || { echo "validate-wave: no engine for the iPad (run the ios step first)"; return 1; }
   xcodegen generate --spec "$here/apps/ios/project.yml" --project "$here/apps/ios" --quiet || return 1
   "$turn" "validate-wave ipad ($(basename "$here"))" \
@@ -197,11 +193,20 @@ EOF
     while read -r f; do [ -f "$here/$f" ] && echo "${f#apps/web/}"; done)
   if [ -n "$touched" ]; then
     echo "validate-wave: the $(echo "$touched" | wc -l | tr -d ' ') specs the wave changed"
-    # shellcheck disable=SC2086 # one argument per spec file
-    docker run --rm --network host -e CI=1 \
-      -e BASE_URL="http://localhost:$GATEWAY_PORT" -e MAILPIT_URL="http://localhost:$MAILPIT_PORT" \
-      -v "$here/apps/web:/w" -v "$vol:/w/node_modules" -w /w "$image" \
-      npx playwright test --project=mobile --reporter=list $touched || status=$?
+    # In batches of WAVE_SPEC_BATCH files, one Playwright call each: one
+    # call for a wave's 65 specs ran into CI's 30-minute globalTimeout
+    # (playwright.config.ts) with 205 tests never started (2026-11-12),
+    # and that limit is CI's, not to be raised here.
+    local batch
+    while read -r batch; do
+      [ -n "$batch" ] || continue
+      echo "validate-wave: batch $batch"
+      # shellcheck disable=SC2086 # one argument per spec file
+      docker run --rm --network host -e CI=1 \
+        -e BASE_URL="http://localhost:$GATEWAY_PORT" -e MAILPIT_URL="http://localhost:$MAILPIT_PORT" \
+        -v "$here/apps/web:/w" -v "$vol:/w/node_modules" -w /w "$image" \
+        npx playwright test --project=mobile --reporter=list $batch || status=$?
+    done < <(echo "$touched" | xargs -n "${WAVE_SPEC_BATCH:-15}")
   fi
   # The stack's whole logs beside the suite's, for a failure to be read.
   wave logs --no-color --timestamps planner gateway weather > "$out/stack.log" 2>&1

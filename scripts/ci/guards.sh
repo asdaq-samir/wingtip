@@ -147,6 +147,15 @@ if { on ENGINE || on FLIGHT; } && command -v rustup > /dev/null; then
   (cd engine && rustup toolchain install > /dev/null 2>&1 && rustup component add clippy rustfmt > /dev/null 2>&1) || true
 fi
 
+# Semgrep first and alone: among clippy, the engine's tests, tsc, knip and
+# detekt on the runner's 16 GB its engine was the one killed for memory
+# ("You are seeing this because the engine was killed", runs 43339068488,
+# 43353880136 and 43365238024); alone it peaks near 350 MB a chunk and
+# takes some fifteen seconds.
+if on ARCH; then
+  start "One home (Semgrep)" python3 scripts/ci/semgrep_check.py --base "$base"
+  wait
+fi
 start "Areas filter" python3 scripts/areas.py check
 start "Rules boundary" python3 scripts/ci/rules_boundary.py
 start "Legal pages" scripts/build/legal_pages.py --check
@@ -164,7 +173,6 @@ if on ARCH; then
   start "Brand" python3 scripts/ci/brand_guard.py
   start "Shared parts" python3 scripts/ci/shared_parts_guard.py
   start "Unused Python" scripts/ci/dead_python.sh
-  start "One home (Semgrep)" python3 scripts/ci/semgrep_check.py --base "$base"
   start "Copy-paste (jscpd)" python3 scripts/ci/jscpd_check.py --base "$base"
   start "Simplicity ratchet" python3 scripts/ci/simplicity_ratchet.py --base "$base"
 fi

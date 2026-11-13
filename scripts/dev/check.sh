@@ -213,13 +213,9 @@ run_py() {
     sh -c "ruff check $lint $tests && { [ ! -f .importlinter ] || PYTHONPATH=../planner lint-imports; } && pytest $tests/ -q -p no:cacheprovider"
 }
 
-# The newest iPhone this Xcode has, by its id (native-ios.yml's pick).
+# The newest iPhone this Xcode has, by its id (scripts/dev/newest_simulator.py).
 newest_iphone() {
-  xcrun simctl list devices available -j | python3 -c '
-import json, sys
-ds = [d for r, ds in json.load(sys.stdin)["devices"].items() if "iOS" in r for d in ds
-      if d["name"].startswith("iPhone") and "Duo" not in d["name"]]
-print(sorted(ds, key=lambda d: d["name"])[-1]["udid"] if ds else "")'
+  xcrun simctl list devices available -j | python3 "$here/scripts/dev/newest_simulator.py" iPhone
 }
 
 run_area() {
@@ -308,6 +304,10 @@ run_area() {
       # build-android.sh looks in the SDK for it whatever this says.
       ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$(tool android-ndk)
       export ANDROID_NDK_HOME
+      # adb's server with no mDNS bridge: on macOS 27.2 with platform-tools
+      # 37.0.1 it panics there every few seconds and drops the emulator
+      # (simulators.sh); a server Gradle starts reads this too.
+      export ADB_MDNS=0
       "$here/engine/bindings/ffi/build-android.sh"
       (cd "$here/apps/android" && ./gradlew --quiet testDebugUnitTest lintDebug assembleDebug)
       ;;

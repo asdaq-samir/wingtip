@@ -26,7 +26,6 @@ long | ci.yml | e2e | The planner's data, as annotations | 34
 long | ci.yml | e2e-images | The keys nothing has been built for yet | 30
 long | ci.yml | api-compat | oasdiff breaking, each document against main's | 18
 long | ci.yml | standards | Speed trend | 35
-long | native-ios.yml | test | The simulators to test on | 17
 long | native-ios.yml | test | Each device's first screen | 20
 long | promote.yml | promote | This commit's images, as latest | 21
 
