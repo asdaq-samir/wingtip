@@ -11,40 +11,26 @@ import Foundation
 /// without MetricKit's payloads, which a test cannot make
 /// (DiagnosticsReporter reads those).
 extension GWDiagnosticsReport {
-    // The gateway's limits (DiagnosticsController), kept here so a report
-    // is never refused whole for one long field. The OpenAPI document
-    // states the faults', the system's and a fault's lengths; the figures'
-    // count and range it does not.
-    static let maxFaults = 20
-    static let maxMetrics = 30
-    static let maxSignature = 2000
-    static let maxDetail = 64000
-    static let maxOs = 40
-    static let maxMetric = 100_000_000.0
-
     /// The report for this build on this kind of device, from the app as
     /// a whole (the gateway's page "app").
     init(version: String, os: String, tablet: Bool) {
-        self.init(device: tablet ? "tablet" : "phone", faults: [], metrics: .init(), os: String(os.prefix(Self.maxOs)),
+        self.init(device: tablet ? "tablet" : "phone", faults: [], metrics: .init(), os: os,
                   page: "app", platform: "ios", version: version)
     }
 
-    /// A fault added within the gateway's limits: one line, cut to its
-    /// length; past twenty, the rest wait for no one (the gateway would
-    /// refuse the report). `at` is the instant as the gateway reads it,
+    /// A fault added as one line. The gateway holds the size limits and
+    /// cuts a report to them. `at` is the instant as the gateway reads it,
     /// ISO-8601.
     mutating func add(kind: String, signature: String, detail: String?, at: Date) {
-        guard faults.count < Self.maxFaults else { return }
         let line = signature.split(whereSeparator: \.isNewline).joined(separator: " ").trimmingCharacters(in: .whitespaces)
-        faults.append(GWFaultReport(at: at.formatted(.iso8601), detail: String((detail ?? "").prefix(Self.maxDetail)), kind: kind,
-                                    signature: String((line.isEmpty ? kind : line).prefix(Self.maxSignature))))
+        faults.append(GWFaultReport(at: at.formatted(.iso8601), detail: detail ?? "", kind: kind,
+                                    signature: line.isEmpty ? kind : line))
     }
 
-    /// A figure added where it is one the gateway keeps: a finite number
-    /// from 0 to 100,000,000, under thirty names.
+    /// A figure added where it is a finite number (JSON has no other);
+    /// the gateway holds its range and the count.
     mutating func measure(_ name: String, _ value: Double?) {
-        guard let value, value.isFinite, value >= 0, value <= Self.maxMetric,
-              metrics.additionalProperties.count < Self.maxMetrics else { return }
+        guard let value, value.isFinite else { return }
         metrics.additionalProperties[name] = value
     }
 

@@ -41,7 +41,7 @@ object CrashCatcher {
 
     /** The file's text: when, then the signature, then the stack. */
     fun write(error: Throwable, at: Instant): String =
-        "$at\n${signatureOf(error)}\n${error.stackTraceToString().take(DiagnosticsBodies.MAX_DETAIL)}"
+        "$at\n${signatureOf(error)}\n${error.stackTraceToString()}"
 
     fun read(text: String): FaultReport? {
         val lines = text.split('\n', limit = 3)
