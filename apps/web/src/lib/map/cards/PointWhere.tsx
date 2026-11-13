@@ -2,6 +2,7 @@ import { cn } from "cn";
 import { degreesMinutes } from "../../coords";
 import { TEXT } from "../../text";
 import { awayFrom } from "../../useAway";
+import { useGeo } from "../../geo";
 import { useOwnFix } from "../position/ownShip";
 
 /**
@@ -14,9 +15,10 @@ import { useOwnFix } from "../position/ownShip";
  */
 export function PointWhere({ lat, lon }: { lat: number; lon: number }) {
   const ship = useOwnFix();
+  const geo = useGeo();
   return (
     <p className={cn("flex flex-col gap-0.5 tabular-nums", TEXT.detail)} data-testid="point-where">
-      {ship && <span>{awayFrom(ship, { lat, lon })} of you</span>}
+      {ship && geo && <span>{awayFrom(geo, ship, { lat, lon })} of you</span>}
       <span className="text-muted-foreground">{degreesMinutes({ lat, lon })}</span>
     </p>
   );

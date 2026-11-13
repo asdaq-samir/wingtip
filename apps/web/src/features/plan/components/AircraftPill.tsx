@@ -16,6 +16,7 @@ import { filterFor, QUESTIONS, questionOf, strip, useFilteredAircraft, useTraffi
 import { useStripShows } from "../hooks/useStripShows";
 import { AircraftFavoriteStrip, AircraftRecentTiles } from "./AircraftCard";
 import { useShownStore } from "../../../lib/shown";
+import { useGeo } from "../../../lib/geo";
 
 /** The strip's title for each question: what it lists, the airport after
  *  it where it asks of one. */
@@ -85,7 +86,7 @@ export default function AircraftPill({
     // An airport's question with none named yet: which one, at once.
     if (QUESTIONS.find((x) => x.value === value)!.airport && !filter.airport) setPicking(true);
   };
-  const rows = strip(question, found, from, field).slice(0, STRIP_MOST);
+  const rows = strip(useGeo(), question, found, from, field).slice(0, STRIP_MOST);
   const map = useTrafficFocus((s) => s.on);
   // The airplanes left on the map, as the strip's change: the Favorites
   // and the Airplane, the Recents, or the question's answer.

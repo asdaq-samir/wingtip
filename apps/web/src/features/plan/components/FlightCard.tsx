@@ -15,7 +15,7 @@ import { PillSection } from "../../../components/Favorites";
 import { RowBadge } from "../../../components/RowBadge";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
-import { bearingDeg, distanceNm } from "../../../lib/geo";
+import { useGeo } from "../../../lib/geo";
 import { useClock } from "../../../lib/useMinuteClock";
 import { useOwnFixShown, type Fix } from "../../../lib/map/position/ownShip";
 import { carriedOn, closestApproach, nearInHeight } from "../map/traffic";
@@ -170,7 +170,7 @@ function FlightSummary({
   departedAt,
   now,
   fix,
-  here,
+  fromYou,
   cpa,
   onOpenAirport,
   airport,
@@ -187,7 +187,7 @@ function FlightSummary({
   departedAt: number | null;
   now: number;
   fix: Fix | null;
-  here: { lat: number; lon: number } | null;
+  fromYou: string | null;
   cpa: { inMin: number; nm: number; aboveFt: number | null } | null;
   onOpenAirport?: (ident: string) => void;
   /** The field the airport tap was for: the card's Airport tile's. */
@@ -262,9 +262,9 @@ function FlightSummary({
           Squawk {squawk} · {meaning}
         </span>
       )}
-      {plane && fix && here && (
+      {plane && fix && fromYou && (
         <span className={cn("text-muted-foreground", TEXT.detail)} data-testid="flight-from-you">
-          {`${awayFrom({ lat: fix.lat, lon: fix.lon }, here)} of you`}
+          {`${fromYou} of you`}
           {fix.altitudeFt != null && plane.altitude_ft != null ? `, ${against(plane.altitude_ft - fix.altitudeFt)}` : ""}
           {cpa && (
             <span
@@ -351,8 +351,9 @@ export default function FlightCard({
   }, [kept]);
   const name =
     plane?.callsign ?? detail?.registration ?? plane?.registration ?? detail?.faa?.n_number ?? keptBefore?.name ?? hex.toUpperCase();
-  // Where it is now, carried on from its report, as the map draws it.
-  const here = latest ? carriedOn(latest.plane, (now - latest.at) / 1000) : null;
+  // Where it is now, carried on from its report, as the map draws it (lib/geo).
+  const geo = useGeo();
+  const here = geo && latest ? carriedOn(geo, latest.plane, (now - latest.at) / 1000) : null;
   const cpa = fix && plane && here ? closestApproach(fix, { ...plane, ...here }) : null;
   const squawk = plane?.squawk ?? null;
   const meaning = squawkMeaning(squawk);
@@ -424,14 +425,13 @@ export default function FlightCard({
     ? { ident: fromIdent, place: townOf(fromField) ?? (plane ? (route?.airports[0]?.location ?? null) : null) }
     : null;
   const toEnd = toIdent ? { ident: toIdent, place: townOf(toField) ?? (plane ? (flying?.airports.at(-1)?.location ?? null) : null) } : null;
-  // How far along, by the miles flown from the field it left against the
-  // miles still to go to the one it is bound for; a flight landed all the
-  // way.
+  // How far along: the miles flown from the field it left against those
+  // still to go to the one it is bound for; a flight landed all the way.
   const progress = plane
-    ? fromField && toField && here
+    ? geo && fromField && toField && here
       ? (() => {
-          const done = distanceNm(fromField, here),
-            left = distanceNm(here, toField);
+          const done = geo.distanceNm(fromField, here),
+            left = geo.distanceNm(here, toField);
           return done + left > 0 ? done / (done + left) : null;
         })()
       : null
@@ -473,7 +473,7 @@ export default function FlightCard({
           points={trail}
           now={here && plane ? { ...here, altFt: plane.altitude_ft ?? null } : null}
           // Its track now, or, not heard, its last flight's last way.
-          trackDeg={plane?.track_deg ?? (trail.length > 1 ? bearingDeg(trail[trail.length - 2]!, trail[trail.length - 1]!) : null)}
+          trackDeg={plane?.track_deg ?? (geo && trail.length > 1 ? geo.bearingDeg(trail.at(-2)!, trail.at(-1)!) : null)}
           from={fromField ?? null}
           to={toField ?? null}
         />
@@ -567,7 +567,7 @@ export default function FlightCard({
           departedAt={plane ? (detail?.departed?.at ?? null) : null}
           now={now}
           fix={fix}
-          here={here}
+          fromYou={geo && fix && here ? awayFrom(geo, fix, here) : null}
           cpa={cpa}
           onOpenAirport={onOpenAirport}
           airport={airport}

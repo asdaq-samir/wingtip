@@ -1,6 +1,5 @@
 import { compassPoint } from "./compass";
-import { useEngineReady } from "./engine/useEngineReady";
-import { bearingDeg, distanceNm, type LatLon } from "./geo";
+import { useGeo, type Geo, type LatLon } from "./geo";
 import { useOwnFixShown } from "./map/position/ownShip";
 import type { RecentAirport } from "./preferences";
 
@@ -17,8 +16,8 @@ export function nmFigure(nm: number): string {
 export const nmAway = (nm: number) => `${nmFigure(nm)} nm`;
 
 /** How far and which way from `from`: "4.6 nm NE". */
-export function awayFrom(from: LatLon, to: LatLon): string {
-  return `${nmAway(distanceNm(from, to))} ${compassPoint(bearingDeg(from, to))}`;
+export function awayFrom(geo: Geo, from: LatLon, to: LatLon): string {
+  return `${nmAway(geo.distanceNm(from, to))} ${compassPoint(geo.bearingDeg(from, to))}`;
 }
 
 /** How far and which way the point is from the airplane ("12 nm NE of
@@ -28,8 +27,8 @@ export function awayFrom(from: LatLon, to: LatLon): string {
 export function useAwayWords(lat: number, lon: number): string | undefined {
   const ship = useOwnFixShown();
   // The engine works the figure out; none until its .wasm is there.
-  const engine = useEngineReady();
-  return ship && engine ? `${awayFrom(ship, { lat, lon })} of you` : undefined;
+  const geo = useGeo();
+  return ship && geo ? `${awayFrom(geo, ship, { lat, lon })} of you` : undefined;
 }
 
 /** A kept airport's tile's second line -- Home's, the Favorites', the
@@ -42,9 +41,9 @@ export function useAway(): (airport: RecentAirport) => string {
   const from = useOwnFixShown();
   // The strips draw at once on a fresh open, before the engine's .wasm:
   // the town until it is there to work out the distance.
-  const engine = useEngineReady();
+  const geo = useGeo();
   return (a) =>
-    from && engine && a.lat !== undefined && a.lon !== undefined
-      ? nmAway(distanceNm(from, { lat: a.lat, lon: a.lon }))
+    from && geo && a.lat !== undefined && a.lon !== undefined
+      ? nmAway(geo.distanceNm(from, { lat: a.lat, lon: a.lon }))
       : a.municipality || a.name;
 }

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import geodesic from "./fixtures/geodesic.json";
-import { angleBetween, bearingDeg, bestStopIndex, deg, destination, distanceNm, legsNm, normalizeDeg, rad, signedTurn } from "./geo";
+import { angleBetween, deg, normalizeDeg, rad, signedTurn, geoLoaded } from "./geo";
+
+// The engine's geodesic rules, loaded by the setup file (vitestSetup).
+const { bearingDeg, bestStopIndex, destination, distanceNm, legsNm } = await geoLoaded;
 
 describe("geo", () => {
   it("turns degrees to radians and back", () => {

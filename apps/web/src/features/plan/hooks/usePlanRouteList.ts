@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { positionIdent, stopsOf } from "../../../lib/identSchema";
-import { bestStopIndex, type LatLon } from "../../../lib/geo";
+import { useGeo, type LatLon } from "../../../lib/geo";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { ADDRESS_CLEARED } from "../../../lib/address";
 import { proceduresOf, proceduresParam } from "../../../lib/procedures";
@@ -49,11 +49,12 @@ export function usePlanRouteList(
   // asked for once the plan has the leg to it). The card put away, all in
   // one change of the address.
   const [holdAsk, setHoldAsk] = useState<string | null>(null);
+  const geo = useGeo();
   const dropIntoRoute = useCallback(
     (ident: string, at: LatLon, then: "add" | "direct" | "hold") => {
-      if (!course) return;
+      if (!geo || !course) return;
       const points = [course.departure, ...(course.stops ?? []), course.destination];
-      const index = bestStopIndex(points, at);
+      const index = geo.bestStopIndex(points, at);
       const ship = useOwnShip.getState();
       const fix = ship.enabled ? ship.fix : null;
       setAddress((prev) => {
@@ -78,7 +79,7 @@ export function usePlanRouteList(
       riseToSee(setPanel);
       if (then === "hold") setHoldAsk(`${ident}@${Date.now()}`);
     },
-    [course, setAddress, setPanel, setViewPick],
+    [geo, course, setAddress, setPanel, setViewPick],
   );
   // The route's close, at the pilot's ask: first it clears the route --
   // the address keeps nothing of it, and its box, the controls and the

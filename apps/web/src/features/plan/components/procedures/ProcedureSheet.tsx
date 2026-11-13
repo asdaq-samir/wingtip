@@ -6,7 +6,7 @@ import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { Button } from "../../../../components/ui/button";
 import { ToggleGroupItem } from "../../../../components/ui/toggle-group";
 import type { ProcedureDrawing, ProcedureList, ProcedureSummary } from "../../../../lib/api/types";
-import { distanceNm } from "../../../../lib/geo";
+import { useGeo } from "../../../../lib/geo";
 import { runwayNumber, type WindPick } from "../../lib/pattern";
 import { transitionWords, type PickedProcedure } from "../../../../lib/procedures";
 import { TEXT } from "../../../../lib/text";
@@ -205,6 +205,7 @@ const FIX_ROLES = ["IAF", "IF", "FAF", "MAP"];
  * at both where they are one.
  */
 function FixLadder({ drawing }: { drawing: ProcedureDrawing }) {
+  const geo = useGeo();
   const flown = drawing.fixes.filter((f) => !f.missed && !(f.roles.length === 1 && f.roles[0] === "hold"));
   if (flown.length === 0) return null;
   const hold = drawing.holds.find((h) => h.missed);
@@ -217,7 +218,7 @@ function FixLadder({ drawing }: { drawing: ProcedureDrawing }) {
             {from && (
               <li aria-hidden="true" className="grid grid-cols-[2.75rem_1fr] items-center gap-x-2.5">
                 <span className="mx-auto h-5 w-0.5 rounded-full bg-tint" />
-                <span className={cn("text-muted-foreground", TEXT.note)}>{`${distanceNm(from, f).toFixed(1)} nm`}</span>
+                <span className={cn("text-muted-foreground", TEXT.note)}>{geo ? `${geo.distanceNm(from, f).toFixed(1)} nm` : ""}</span>
               </li>
             )}
             <li className="grid min-h-10 grid-cols-[2.75rem_1fr_auto] items-center gap-x-2.5">

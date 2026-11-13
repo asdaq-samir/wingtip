@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { awayFrom, nmAway, nmFigure } from "./useAway";
+import { geoLoaded } from "./geo";
+
+// The engine's geodesic rules, loaded by the setup file (vitestSetup).
+const geo = await geoLoaded;
 
 describe("how far, as the app says it", () => {
   it("to a tenth under 10 nm, in whole miles from there", () => {
@@ -12,6 +16,6 @@ describe("how far, as the app says it", () => {
 
   it("which way, as a compass point", () => {
     // Campbell (C81) to Waukegan (KUGN), some 17 nm to the east-north-east.
-    expect(awayFrom({ lat: 42.3246, lon: -88.0741 }, { lat: 42.4222, lon: -87.8679 })).toMatch(/^1\d nm (NE|E)$/);
+    expect(awayFrom(geo, { lat: 42.3246, lon: -88.0741 }, { lat: 42.4222, lon: -87.8679 })).toMatch(/^1\d nm (NE|E)$/);
   });
 });

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { areaFrom, insideAny, lineEnters, outsides } from "./areaPlace";
+import { geoLoaded } from "../../../lib/geo";
+
+// The engine's geodesic rules, loaded by the setup file (vitestSetup).
+const geo = await geoLoaded;
 
 // A square a tenth of a degree a side round 42 N, 88 W.
 const square = outsides({
@@ -35,8 +39,8 @@ describe("areaPlace", () => {
   });
 
   it("says where it is from the airplane", () => {
-    expect(areaFrom(square, { lat: 42, lon: -88 })).toBe("You are inside it");
-    expect(areaFrom(square, { lat: 41.75, lon: -88 })).toMatch(/^1\d nm N of you$/);
+    expect(areaFrom(geo, square, { lat: 42, lon: -88 })).toBe("You are inside it");
+    expect(areaFrom(geo, square, { lat: 41.75, lon: -88 })).toMatch(/^1\d nm N of you$/);
   });
 
   it("takes a multipolygon's outsides", () => {

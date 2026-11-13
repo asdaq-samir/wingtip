@@ -21,7 +21,7 @@ import {
 } from "../../../lib/approachLesson";
 import type { AircraftProfile, ProcedureDrawing, QuizAnswer } from "../../../lib/api/types";
 import { noteAt } from "../../../lib/assignedLessons";
-import { bearingDeg } from "../../../lib/geo";
+import { useGeo } from "../../../lib/geo";
 import { NO_FOCUS, endLessonMap, useLessonMap } from "../../../lib/map/route/lessonMap";
 import type { PickedProcedure } from "../../../lib/procedures";
 import { airportQuery, procedureQuery } from "../../../lib/queryClient";
@@ -241,12 +241,12 @@ function FlyPage({
   onDone: () => void;
 }) {
   const steps = useMemo(() => coachingSteps(input, gs), [input, gs]);
-  // Where each step is and what it shows, the same at any speed: a new
-  // speed changes the words, and the airplane stays where it is.
+  // Where each step is and what it shows, alike at any speed: the airplane stays put.
   const places = useMemo(() => coachingSteps(input, SPEEDS[1]).map((s) => ({ at: s.at, focus: s.focus })), [input]);
   const path = useMemo(() => lessonPath(input.drawing), [input.drawing]);
   const [at, setAt] = useState(0);
   const step = steps[Math.min(at, steps.length - 1)];
+  const geo = useGeo();
   // The airplane flown from the last step's place to this one's, along the
   // approach's line; at the first, put at it.
   useEffect(() => {
@@ -260,10 +260,10 @@ function FlyPage({
     useLessonMap.setState((s) => ({
       focus: place.focus,
       flight: way.length
-        ? { path: way, track: a && b ? bearingDeg(a, b) : (s.flight?.track ?? null), id: (s.flight?.id ?? 0) + 1 }
+        ? { path: way, track: geo && a && b ? geo.bearingDeg(a, b) : (s.flight?.track ?? null), id: (s.flight?.id ?? 0) + 1 }
         : s.flight,
     }));
-  }, [at, path, places]);
+  }, [at, path, places, geo]);
   // Flown to its last step: the instructor told, once a lesson.
   const flownToEnd = steps.length > 0 && at >= steps.length - 1;
   const onFlown = from?.onFlown;

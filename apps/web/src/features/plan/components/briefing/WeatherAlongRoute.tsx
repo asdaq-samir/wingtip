@@ -16,6 +16,7 @@ import { phasesOf, type Phase } from "./sections";
 import { categoryAt, nearestStation, ownStation, placesOf, tafReachNm, type Station } from "./fieldWeather";
 import { FINDING_TONE } from "../../../../lib/findings";
 import OnRouteRow from "./OnRouteRow";
+import { useGeo } from "../../../../lib/geo";
 
 type Pirep = Briefing["pireps"][number];
 
@@ -123,7 +124,11 @@ export default function WeatherAlongRoute({
   unchecked: (source: Briefing["weather_unavailable"][number]) => boolean;
 }) {
   const printing = usePrinting();
-  const places = placesOf(course);
+  // Where each place is along the route is the engine's (lib/geo): none
+  // until its .wasm is there.
+  const geo = useGeo();
+  if (!geo) return null;
+  const places = placesOf(geo, course);
   const stations = briefing.forecast.stations;
   const own = new Map(places.map((p) => [p.ident, ownStation(stations, p.ident)]));
   const owned = new Set([...own.values()].filter(Boolean).map((s) => s!.icaoId));

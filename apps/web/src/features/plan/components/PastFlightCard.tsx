@@ -10,7 +10,7 @@ import { RowBadge } from "../../../components/RowBadge";
 import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../../lib/api/types";
 import { clockTime } from "../../../lib/format";
 import { compassPoint } from "../../../lib/compass";
-import { legsNm } from "../../../lib/geo";
+import { useGeo } from "../../../lib/geo";
 import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight } from "../map/pastFlight";
 import { usePreferences } from "../../../lib/preferences";
 import { CameraMenu, ReplayTimeline, setReplayCamera } from "../../replay";
@@ -71,7 +71,9 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
 
 /** Off and on, how long, how high, how far over the ground and how fast. */
 function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFlightPoint[] }) {
-  const flown = useMemo(() => legsNm(points).reduce((sum, nm) => sum + nm, 0), [points]);
+  // The miles flown are the engine's (lib/geo): their rows wait for it.
+  const geo = useGeo();
+  const flown = useMemo(() => geo?.legsNm(points).reduce((sum, nm) => sum + nm, 0) ?? null, [geo, points]);
   const hours = (flight.on - flight.off) / 3600;
   const value = (text: string) => <span className="font-semibold text-foreground tabular-nums">{text}</span>;
   return (
@@ -116,7 +118,7 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
         title="Highest"
         value={value(`${altFt(flight.max_alt_ft)} ft`)}
       />
-      {points.length > 1 && (
+      {points.length > 1 && flown !== null && (
         <>
           <ListRow
             media={

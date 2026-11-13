@@ -1,6 +1,6 @@
 import type { MapPirep, WeatherArea } from "../../../lib/api/types";
 import { callEngine } from "../../../lib/engine/engine";
-import { bearingDeg, destination, distanceNm, type LatLon } from "../../../lib/geo";
+import type { Geo, LatLon } from "../../../lib/geo";
 import { hundreds, mapLevel } from "../../../lib/format";
 import { WEATHER } from "../../../lib/tokens";
 
@@ -47,6 +47,7 @@ export function inside(point: LatLon, ring: number[][]): boolean {
  *  walked a mile at a time), and whether the planned altitude is under,
  *  in or over its altitudes there; null where it does not cross. */
 export function routeThrough(
+  geo: Geo,
   area: WeatherArea,
   line: [number, number][],
   altitudeFt: number | null,
@@ -55,9 +56,9 @@ export function routeThrough(
   for (let i = 1; i < line.length; i++) {
     const a = { lat: line[i - 1]![0], lon: line[i - 1]![1] },
       b = { lat: line[i]![0], lon: line[i]![1] };
-    const length = distanceNm(a, b),
-      course = bearingDeg(a, b);
-    for (let s = 0.5; s < length; s += 1) if (inside(destination(a, course, s), area.coords)) nm += Math.min(1, length - s + 0.5);
+    const length = geo.distanceNm(a, b),
+      course = geo.bearingDeg(a, b);
+    for (let s = 0.5; s < length; s += 1) if (inside(geo.destination(a, course, s), area.coords)) nm += Math.min(1, length - s + 0.5);
   }
   if (nm < 0.5) return null;
   if (altitudeFt == null || area.from_freezing_level) return { nm, relation: null };

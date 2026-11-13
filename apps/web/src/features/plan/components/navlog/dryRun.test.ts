@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Airport, Leg, LegProcedure } from "../../../../lib/api/types";
-import { distanceNm } from "../../../../lib/geo";
+import { geoLoaded } from "../../../../lib/geo";
 import { dryRunAt, dryRunFlown, dryRunOf, dryRunRow, runNmAt } from "./dryRun";
 import { navLogRows } from "./rows";
+
+// The engine's geodesic rules, loaded by the setup file (vitestSetup).
+const { distanceNm } = await geoLoaded;
 
 const airport = (ident: string, lat: number, elevation: number): Airport =>
   ({ ident, name: ident, lat, lon: -88, elevation_ft: elevation, kind: "airport" }) as Airport;

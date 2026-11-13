@@ -11,6 +11,7 @@ import { CHART } from "../../../../lib/tokens";
 import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "../layers/trafficMarks";
 import { CARRY_S, carriedOn, markTraffic, nearOwnHeight, trafficLabel } from "../traffic";
 import { standAtM } from "./trafficAloft";
+import { useGeo, type Geo } from "../../../../lib/geo";
 
 /** How often the airplanes are carried on along their tracks, ms: the
  *  2D map's own step close in (TrafficGl's FRAME_MS, doubled). */
@@ -37,7 +38,8 @@ const LAYERS = trafficLayers(IDS, { points: POINTS, trends: TRENDS });
 export default function TrafficAloftGl() {
   const on = usePreferences((s) => s.traffic);
   const tracking = useTracking((s) => !!s.hex || s.listing);
-  return on || tracking ? <Aloft /> : null;
+  const geo = useGeo();
+  return (on || tracking) && geo ? <Aloft geo={geo} /> : null;
 }
 
 interface Drawn {
@@ -49,7 +51,7 @@ interface Drawn {
   near: boolean;
 }
 
-function Aloft() {
+function Aloft({ geo }: { geo: Geo }) {
   const { map } = useGlMap();
   const seen = useTracking((s) => s.seen);
   const hex = useTracking((s) => s.hex);
@@ -75,7 +77,7 @@ function Aloft() {
     for (const { plane, at } of seen) {
       const age = (now - at) / 1000;
       if (age > CARRY_S) continue;
-      const { lat, lon } = carriedOn(plane, age);
+      const { lat, lon } = carriedOn(geo, plane, age);
       const groundM = map.queryTerrainElevation([lon, lat]) ?? 0;
       const altM = standAtM(plane.altitude_ft, groundM);
       const near = nearOwnHeight(plane, ownFt);
@@ -106,7 +108,7 @@ function Aloft() {
       });
     }
     return out;
-  }, [map, seen, ownFt, hex, now]);
+  }, [geo, map, seen, ownFt, hex, now]);
 
   useGlData(
     POINTS,

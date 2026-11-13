@@ -25,6 +25,25 @@ const STOCK_BANS = [
     message: 'A hand-set role="alert": show the problem where it happens with lib/problems and components/ui\'s Alert.',
   },
 ];
+// The engine's geodesic rules are reached through a Geo (lib/geo), which
+// useGeo() gives as null until the engine's .wasm is there: so a part that
+// draws before then is a type error, not a throw on the phone (five such
+// callers were found at run time, e385bb20f and f13ad6cb4). These keep the
+// null from being asserted away, and the rules from being asked past it.
+const GEO_BANS = [
+  {
+    selector: "TSNonNullExpression > CallExpression[callee.name='useGeo']",
+    message: "useGeo() is null until the engine is loaded: draw without the figure until then, never `useGeo()!` (lib/geo).",
+  },
+  {
+    selector: "TSAsExpression > CallExpression[callee.name='useGeo']",
+    message: "useGeo() is null until the engine is loaded: draw without the figure until then, never cast it (lib/geo).",
+  },
+  {
+    selector: "CallExpression[callee.name='callEngine'][arguments.0.value=/^(distance_nm|bearing_deg|great_circles|destination)$/]",
+    message: "A geodesic rule asked past lib/geo: use its Geo (useGeo, geoLoaded), which exists only once the engine is loaded.",
+  },
+];
 // The hand-built parts the simplicity audit of 2026-11-12 kept, each where
 // no stock part does the job: the route box (RouteBox.tsx, an editable row
 // of route pills with inline arrows no combobox draws), the map's control
@@ -81,8 +100,10 @@ export default defineConfig(
   {
     files: ["src/**/*.tsx"],
     ignores: ["src/components/ui/**", "src/**/*.test.tsx", ...HAND_BUILT_KEPT],
-    rules: { "no-restricted-syntax": ["error", ...STOCK_BANS] },
+    rules: { "no-restricted-syntax": ["error", ...STOCK_BANS, ...GEO_BANS] },
   },
+  { files: ["src/**/*.ts"], ignores: ["src/lib/geo.ts", "src/**/*.test.ts"], rules: { "no-restricted-syntax": ["error", ...GEO_BANS] } },
+
   { files: ["e2e/**/*.ts", "**/*.test.ts", "**/*.test.tsx"], languageOptions: { globals: globals.node } },
   // The usual causes of a flaky test, caught as it is written (docs/CI.md,
   // "Flaky tests"). Vitest's own plugin (@vitest/eslint-plugin, which

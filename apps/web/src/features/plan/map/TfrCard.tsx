@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { cn } from "cn";
 import { areaFrom, lineEnters, outsides } from "../lib/areaPlace";
 import { useOwnFix } from "../../../lib/map/position/ownShip";
+import { useGeo } from "../../../lib/geo";
 import { usePointActions } from "../../../lib/map/cards/pointActions";
 import { Ban } from "lucide-react";
 import { RowBadge } from "../../../components/RowBadge";
@@ -21,7 +22,8 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
   const line = usePointActions((s) => s.courseLine);
   const enters = useMemo(() => !!line && rings.length > 0 && lineEnters(rings, line), [rings, line]);
   const ship = useOwnFix();
-  const from = ship ? areaFrom(rings, ship) : null;
+  const geo = useGeo();
+  const from = ship && geo ? areaFrom(geo, rings, ship) : null;
   return (
     <MapCard
       // A TFR's badge, red while it is in force, as its shape is drawn.

@@ -3,7 +3,7 @@ import { api } from "../../../lib/api/client";
 import type { AircraftChoice } from "../../../lib/api/types";
 import { N_NUMBER, shortName } from "../../../lib/aircraftChoice";
 import { useAtcRadio, useRadioActions } from "../../../lib/atcRadio";
-import { bestStopIndex } from "../../../lib/geo";
+import { useGeo } from "../../../lib/geo";
 import { MAX_STOPS } from "../../../lib/identSchema";
 import { usePointActions } from "../../../lib/map/cards/pointActions";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
@@ -49,17 +49,18 @@ export function useMapActions({
   // A field's card or a waypoint's diamond on the chart, put in the
   // stops where it bends the route least (bestStopIndex): landed at, or
   // flown through.
+  const geo = useGeo();
   const addStopAt = useCallback(
     (at: { ident: string; lat: number; lon: number }) => {
       // The planner's limit, as the airport card's Add Stop keeps it.
-      if (!course || planned.stops.length >= MAX_STOPS) return;
+      if (!geo || !course || planned.stops.length >= MAX_STOPS) return;
       const points = [course.departure, ...(course.stops ?? []), course.destination];
       if (points.some((p) => p.ident === at.ident)) return;
       const stops = [...planned.stops];
-      stops.splice(bestStopIndex(points, at), 0, at.ident);
+      stops.splice(geo.bestStopIndex(points, at), 0, at.ident);
       setStops(stops);
     },
-    [course, planned.stops, setStops],
+    [geo, course, planned.stops, setStops],
   );
   // The map's VOR and fix cards' Add to Route and Direct To, while there
   // is a route (lib/map/cards/pointActions).

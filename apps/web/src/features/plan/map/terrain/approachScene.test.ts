@@ -2,6 +2,10 @@ import { describe, expect, test } from "vitest";
 import type { AirportPlace, ProcedureDrawing } from "../../../../lib/api/types";
 import KOSH from "../../../../lib/fixtures/approachKosh.json";
 import { aloft, approachScene, centrelineFeatures, pickedApproach, ringPoints } from "./approachScene";
+import { geoLoaded } from "../../../../lib/geo";
+
+// The engine's geodesic rules, loaded by the setup file (vitestSetup).
+const geo = await geoLoaded;
 
 // KOSH runway 36's ILS as the planner draws it from the CIFP (the shared
 // fixture; engine/facade/tests/approach_scene.rs holds the engine's
@@ -50,6 +54,6 @@ describe("a field's way in, in 3D", () => {
       ["18", "standard", 848],
     ]);
     expect(scene.path).toBeNull();
-    expect(new Set(ringPoints(scene).map((p) => p.altFt))).toEqual(new Set([1808]));
+    expect(new Set(ringPoints(geo, scene).map((p) => p.altFt))).toEqual(new Set([1808]));
   });
 });

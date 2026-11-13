@@ -10,7 +10,7 @@ import { useGlideRatio } from "../../../../lib/map/position/useGlideRatio";
 import { nearestQuery } from "../../../../lib/queryClient";
 import { CHART } from "../../../../lib/tokens";
 import { keptStore } from "../../../../lib/storage";
-import { distanceNm } from "../../../../lib/geo";
+import { useGeo } from "../../../../lib/geo";
 
 const SOURCE = "glide-ring";
 
@@ -60,7 +60,8 @@ export function GlideRingGl() {
   useEffect(() => {
     if (field?.elevation_ft != null) keptField().setState({ value: { lat: field.lat, lon: field.lon, field_ft: field.elevation_ft } });
   }, [field]);
-  const fieldFt = answered ?? (kept && fix && distanceNm(kept, fix) <= KEPT_WITHIN_NM ? kept.field_ft : null);
+  const geo = useGeo();
+  const fieldFt = answered ?? (geo && kept && fix && geo.distanceNm(kept, fix) <= KEPT_WITHIN_NM ? kept.field_ft : null);
   useGlLayer("route", { [SOURCE]: { type: "geojson", data: { type: "FeatureCollection", features: [] } } }, LAYERS);
   const data = useMemo<GeoJSON.FeatureCollection | null>(() => {
     if (!wanted || !fix) return null;
