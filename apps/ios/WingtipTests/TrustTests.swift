@@ -72,9 +72,9 @@ struct TrustTests {
         #expect(version.build == "34")
         #expect(version.text == "1.2 (34)")
         #expect(AppVersion(info: nil).text == "unknown (unknown)")
-        // Only the gateway's characters, and at most 40 of them.
-        #expect(AppVersion(short: "1.0β", build: String(repeating: "9", count: 50)).text.count == 40)
-        #expect(AppVersion(short: "1.0β", build: "2").text == "1.0 (2)")
+        // Sent as it is: the gateway cleans it to its characters and cuts it
+        // to 40 (DiagnosticsController, the one home of the report's rules).
+        #expect(AppVersion(short: "1.0β", build: "2").text == "1.0β (2)")
     }
 
     @Test func theCreditsAreTheIPhonesShareOfTheList() {

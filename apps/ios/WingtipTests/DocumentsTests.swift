@@ -183,9 +183,12 @@ struct DocumentsTests {
         #expect(FlagTone(level: "check").color == WingtipInk.caution)
     }
 
+    /// The page is read on the iPhone alone since the server's reader went
+    /// (decision 0041): its refusals are the on-device reader's own words,
+    /// anything else said as a page that could not be read.
     @Test func theReadersRefusalsAreSaidInItsWords() {
-        #expect(DocumentReader.words(for: Planner.Failure(status: 503, detail: "The reader declined this page.")) == "The reader declined this page.")
-        #expect(DocumentReader.words(for: Planner.Failure(status: 502, detail: nil)) == "The figures read could not be checked.")
-        #expect(DocumentReader.words(for: Planner.Failure(status: 413, detail: nil)) == "That photo is too large to send.")
+        #expect(DocumentReader.words(for: WordsUnavailable(why: "That photo could not be opened.")) == "That photo could not be opened.")
+        struct Other: LocalizedError { var errorDescription: String? { "no model" } }
+        #expect(DocumentReader.words(for: Other()) == "The page could not be read: no model")
     }
 }
