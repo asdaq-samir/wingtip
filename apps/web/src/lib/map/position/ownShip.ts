@@ -331,6 +331,14 @@ export function endSimulation() {
  * refusal now leaves own ship off, the map on the country, with no error
  * over it (a tap on the arrow still says why).
  */
+let askHeld = false;
+
+/** The first flight's welcome up (FirstFlight): locateOnOpen asks nothing
+ *  by itself while it is, the welcome's Location row asking instead. */
+export function holdAskOnOpen(held: boolean) {
+  askHeld = held;
+}
+
 export async function locateOnOpen() {
   if (!ownShipAvailable()) return;
   const permission =
@@ -339,6 +347,11 @@ export async function locateOnOpen() {
       .then((status) => status.state)
       .catch(() => "prompt" as const)) ?? "prompt";
   if (permission === "denied") return;
+  // Under the first flight's welcome the browser's question waits for its
+  // Location row's Turn On (the owner, 2026-11-13: "welcome screen should
+  // ask to turn on location"), asked in context, not on load; a position
+  // already allowed is still taken, with no question.
+  if (askHeld && permission !== "granted") return;
   const { enabled, setEnabled, recentre } = useOwnShip.getState();
   if (!enabled) {
     quiet = true;
