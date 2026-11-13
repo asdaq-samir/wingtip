@@ -3,13 +3,13 @@
   "choice": "fastest",
   "legs": [
    {
-    "altitude_ft": 2500.0,
-    "climb_min": 2.3,
+    "altitude_ft": 3000.0,
+    "climb_min": 2.2,
     "distance_nm": 3.0,
-    "ete_min": 2.3,
+    "ete_min": 2.2,
     "fuel_gal": 0.4,
-    "groundspeed_kt": 114.4,
-    "magnetic_heading_deg": 341.3,
+    "groundspeed_kt": 80.8,
+    "magnetic_heading_deg": 338.5,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -22,7 +22,7 @@
     "fuel_gal": 3.4,
     "groundspeed_kt": 111.3,
     "magnetic_heading_deg": 324.5,
-    "toc_nm": 1.9,
+    "toc_nm": 2.0,
     "tod_fpm": null,
     "tod_nm": null
    },
@@ -90,11 +90,11 @@
     "altitude_ft": 4000.0,
     "climb_min": 1.8,
     "distance_nm": 19.6,
-    "ete_min": 14.7,
+    "ete_min": 14.9,
     "fuel_gal": 2.1,
     "groundspeed_kt": 83.3,
     "magnetic_heading_deg": 325.0,
-    "toc_nm": 1.7,
+    "toc_nm": 1.5,
     "tod_fpm": null,
     "tod_nm": null
    },
@@ -123,85 +123,85 @@
     "tod_nm": null
    },
    {
-    "altitude_ft": 10500.0,
-    "climb_min": 19.2,
+    "altitude_ft": 8500.0,
+    "climb_min": 11.1,
     "distance_nm": 22.4,
-    "ete_min": 21.8,
-    "fuel_gal": 3.0,
-    "groundspeed_kt": 90.2,
-    "magnetic_heading_deg": 318.5,
-    "toc_nm": 18.4,
+    "ete_min": 20.1,
+    "fuel_gal": 2.9,
+    "groundspeed_kt": 88.8,
+    "magnetic_heading_deg": 320.8,
+    "toc_nm": 9.0,
     "tod_fpm": null,
     "tod_nm": null
    },
    {
-    "altitude_ft": 10500.0,
+    "altitude_ft": 8500.0,
     "climb_min": 0.0,
     "distance_nm": 26.5,
-    "ete_min": 17.6,
+    "ete_min": 17.9,
     "fuel_gal": 2.5,
-    "groundspeed_kt": 90.2,
-    "magnetic_heading_deg": 318.5,
+    "groundspeed_kt": 88.9,
+    "magnetic_heading_deg": 320.8,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
    },
    {
-    "altitude_ft": 10500.0,
+    "altitude_ft": 8500.0,
     "climb_min": 0.0,
     "distance_nm": 25.3,
-    "ete_min": 18.6,
-    "fuel_gal": 2.6,
-    "groundspeed_kt": 81.5,
-    "magnetic_heading_deg": 321.6,
+    "ete_min": 19.4,
+    "fuel_gal": 2.7,
+    "groundspeed_kt": 78.2,
+    "magnetic_heading_deg": 323.5,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
    },
    {
-    "altitude_ft": 10500.0,
+    "altitude_ft": 8500.0,
     "climb_min": 0.0,
     "distance_nm": 13.0,
-    "ete_min": 9.6,
+    "ete_min": 10.0,
     "fuel_gal": 1.4,
-    "groundspeed_kt": 81.4,
-    "magnetic_heading_deg": 320.7,
+    "groundspeed_kt": 78.0,
+    "magnetic_heading_deg": 322.6,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
    },
    {
-    "altitude_ft": 10500.0,
+    "altitude_ft": 8500.0,
     "climb_min": 0.0,
     "distance_nm": 31.9,
-    "ete_min": 23.4,
-    "fuel_gal": 3.3,
-    "groundspeed_kt": 81.5,
-    "magnetic_heading_deg": 321.2,
-    "toc_nm": null,
-    "tod_fpm": 450.0,
-    "tod_nm": 28.2
-   },
-   {
-    "altitude_ft": 10500.0,
-    "climb_min": 0.0,
-    "distance_nm": 13.7,
-    "ete_min": 10.2,
-    "fuel_gal": 1.4,
-    "groundspeed_kt": 81.0,
-    "magnetic_heading_deg": 318.5,
+    "ete_min": 24.5,
+    "fuel_gal": 3.5,
+    "groundspeed_kt": 78.1,
+    "magnetic_heading_deg": 323.1,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
    },
    {
-    "altitude_ft": 10500.0,
+    "altitude_ft": 8500.0,
+    "climb_min": 0.0,
+    "distance_nm": 13.7,
+    "ete_min": 10.6,
+    "fuel_gal": 1.5,
+    "groundspeed_kt": 77.8,
+    "magnetic_heading_deg": 320.4,
+    "toc_nm": null,
+    "tod_fpm": 450.0,
+    "tod_nm": 2.3
+   },
+   {
+    "altitude_ft": 8500.0,
     "climb_min": 0.0,
     "distance_nm": 8.6,
-    "ete_min": 6.3,
+    "ete_min": 6.6,
     "fuel_gal": 0.9,
-    "groundspeed_kt": 82.3,
-    "magnetic_heading_deg": 323.8,
+    "groundspeed_kt": 78.7,
+    "magnetic_heading_deg": 325.6,
     "toc_nm": null,
     "tod_fpm": null,
     "tod_nm": null
@@ -209,29 +209,27 @@
   ],
   "plans": {
    "economical": {
-    "ete_min": 233.0,
-    "fuel_gal": 32.4,
+    "ete_min": 231.7,
+    "fuel_gal": 32.9,
     "steps": [
-     2500.0,
      3000.0,
      4000.0,
-     10500.0,
-     12500.0
-    ]
-   },
-   "fastest": {
-    "ete_min": 229.5,
-    "fuel_gal": 32.6,
-    "steps": [
-     2500.0,
-     3000.0,
-     4000.0,
+     8500.0,
      10500.0
     ]
    },
+   "fastest": {
+    "ete_min": 231.1,
+    "fuel_gal": 32.9,
+    "steps": [
+     3000.0,
+     4000.0,
+     8500.0
+    ]
+   },
    "highest": {
-    "ete_min": 228.1,
-    "fuel_gal": 31.5,
+    "ete_min": 232.6,
+    "fuel_gal": 32.1,
     "steps": [
      3500.0,
      10500.0,
@@ -241,7 +239,7 @@
     ]
    },
    "lowest": {
-    "ete_min": 235.2,
+    "ete_min": 235.3,
     "fuel_gal": 33.4,
     "steps": [
      2500.0,
