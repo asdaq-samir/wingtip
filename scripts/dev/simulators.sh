@@ -12,18 +12,20 @@
 # a phone, over the Wi-Fi"), and trust the local authority's ca.pem
 # (infra/local-https/certs, made by make-certs.sh):
 #
-# - iOS: the newest iPhone simulator (as check.sh picks it) is booted, the
+# - iOS: the newest iPhone simulator (the highest model number) is booted, the
 #   engine XCFramework made (build-xcframework.sh takes it from the shared
 #   store when this engine was built before), XcodeGen run, the app built
 #   with WINGTIP_HOST=localhost:8443 (apps/ios/Wingtip/Config.swift reads
-#   the host from Info.plist's WingtipHost, set by that build setting) into
-#   a DerivedData of its own, installed and launched. The simulator is
-#   given the authority with `simctl keychain booted add-root-cert`.
+#   the host from Info.plist's WingtipHost, set by that build setting),
+#   installed and launched. The simulator is given the authority with
+#   `simctl keychain <udid> add-root-cert`. Its window opens in Simulator.app
+#   where this Xcode has one; Xcode 27 ships none (DeviceHub.app instead), and
+#   the simulator runs headless as well.
 # - Android: an arm64 AVD (an existing one, else made with avdmanager on the
 #   newest installed arm64 system image) is started and awaited, the engine
 #   built, the app built with WINGTIP_HOST=localhost:8443
 #   (apps/android/app/build.gradle.kts, BuildConfig.WINGTIP_HOST ->
-#   Config.kt) and installed with `./gradlew installDebug`, launched with
+#   Config.kt), installed with `adb install -r` and launched with
 #   `am start`. The emulator's localhost is not the Mac's, so `adb reverse`
 #   maps its 8443 to the Mac's: the host stays "localhost", a name the
 #   server certificate holds (make-certs.sh: DNS:localhost); 10.0.2.2
@@ -93,12 +95,19 @@ wait_until() {
 }
 
 # --- iOS ---------------------------------------------------------------
-newest_iphone() { # as scripts/dev/check.sh picks it
+# The newest iPhone: the highest model number, and of that model the plain
+# one before the Max or the e ("iPhone 18 Pro" over "iPhone 18 Pro Max").
+# Sorting by name alone, as check.sh does, put "iPhone Air" last, after
+# every numbered model. iPhone Duo is the foldable, tested apart.
+newest_iphone() {
   xcrun simctl list devices available -j | python3 -c '
-import json, sys
+import json, re, sys
 ds = [d for r, ds in json.load(sys.stdin)["devices"].items() if "iOS" in r for d in ds
       if d["name"].startswith("iPhone") and "Duo" not in d["name"]]
-print(sorted(ds, key=lambda d: d["name"])[-1]["udid"] if ds else "")'
+def key(d):
+    m = re.match(r"iPhone (\d+)", d["name"])
+    return (int(m.group(1)) if m else 0, -len(d["name"]))
+print(max(ds, key=key)["udid"] if ds else "")'
 }
 
 sim_booted() { xcrun simctl list devices | grep -q "$1.*(Booted)"; }
@@ -113,7 +122,16 @@ ios() {
   say "iOS: simulator $(xcrun simctl list devices available | grep "$sim" | sed 's/ *(.*//;s/^ *//') ($sim)"
   xcrun simctl boot "$sim" 2>/dev/null || true # already booted is fine
   wait_until "$boot_wait" "the iPhone simulator to boot" sim_booted "$sim"
-  open -a Simulator
+  # Simulator.app shows the window where this Xcode has it; Xcode 27 has
+  # none (DeviceHub.app in its place), so carry on headless: the app still
+  # installs, launches and is seen with `simctl io <udid> screenshot`.
+  if open -a Simulator --args -CurrentDeviceUDID "$sim" 2>/dev/null; then
+    :
+  elif open -a "$DEVELOPER_DIR/../Applications/DeviceHub.app" 2>/dev/null; then
+    say "iOS: no Simulator.app in this Xcode; opened DeviceHub, and the simulator runs headless"
+  else
+    say "iOS: no Simulator.app in this Xcode; the simulator runs headless (xcrun simctl io $sim screenshot <file> to see it)"
+  fi
   # The authority, into the simulator's trust store, so https://localhost:8443
   # is trusted (LOCAL-DEV.md: ca.pem is what a phone installs once).
   xcrun simctl keychain "$sim" add-root-cert "$ca"
@@ -121,16 +139,26 @@ ios() {
   "$turn" "simulators: iOS engine" "$tree/engine/bindings/ffi/build-xcframework.sh"
   xcodegen generate --spec "$tree/apps/ios/project.yml" --project "$tree/apps/ios" --quiet
 
-  # xcodebuild.sh takes its own turn of one-at-a-time.sh, with the shared
-  # compilation cache. The DerivedData named last wins over its own, and is
-  # this script's, so the app's path is known. Signed ad hoc, as check.sh
-  # and native-ios.yml do (the simulator's keychain needs a signature).
-  local dd=$HOME/Library/Developer/Xcode/DerivedData/wingtip-simulators-ios
-  "$tree/scripts/dev/xcodebuild.sh" -quiet -project "$tree/apps/ios/Wingtip.xcodeproj" -scheme Wingtip \
-    -configuration Debug -destination "platform=iOS Simulator,id=$sim" -derivedDataPath "$dd" \
-    CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= \
-    WINGTIP_HOST="$host" build
-  local app=$dd/Build/Products/Debug-iphonesimulator/Wingtip.app bundle
+  # xcodebuild.sh, with the shared compilation cache, builds into the turn's
+  # own DerivedData (wingtip-turn-<slot>) and names it with -derivedDataPath
+  # itself; xcodebuild takes that option once only and printed its usage
+  # (exit 64) when this script named a second. So the build runs inside a
+  # turn of this script's, where xcodebuild.sh runs at once, and the app is
+  # copied out of that DerivedData before the turn ends and another build
+  # takes it. Signed ad hoc, as check.sh and native-ios.yml do (the
+  # simulator's keychain needs a signature).
+  local out=$HOME/Library/Developer/Xcode/DerivedData/wingtip-simulators-ios
+  rm -rf "$out" && mkdir -p "$out"
+  WINGTIP_HOST=$host "$turn" "simulators: iOS app" bash -c '
+    set -euo pipefail
+    tree=$1 sim=$2 out=$3
+    "$tree/scripts/dev/xcodebuild.sh" -quiet -project "$tree/apps/ios/Wingtip.xcodeproj" -scheme Wingtip \
+      -configuration Debug -destination "platform=iOS Simulator,id=$sim" \
+      CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= \
+      WINGTIP_HOST="$WINGTIP_HOST" build
+    ditto "$HOME/Library/Developer/Xcode/DerivedData/wingtip-turn-${ONE_AT_A_TIME_SLOT:?no turn}/Build/Products/Debug-iphonesimulator/Wingtip.app" "$out/Wingtip.app"
+  ' _ "$tree" "$sim" "$out"
+  local app=$out/Wingtip.app bundle
   [ -d "$app" ] || die "the build left no $app."
   bundle=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Info.plist")
   xcrun simctl install "$sim" "$app"
@@ -147,12 +175,17 @@ booted() { [ "$("$adb" -s "$1" shell getprop sys.boot_completed 2>/dev/null | tr
 
 # The AVD to use: an arm64 one that exists (the newest by name), else one
 # made on the newest installed arm64 system image.
+# An AVD's folder is the path its <name>.ini names, not always <name>.avd
+# (Android Studio's "Medium_Phone_API_37.0" lives in Medium_Phone.avd).
+# Each line of the loop ends true, or pipefail made the function fail and
+# set -e stopped the script without a word when the last AVD was not arm64.
 pick_avd() {
-  local name abi dir
+  local name abi dir avds=${ANDROID_AVD_HOME:-$HOME/.android/avd}
   while read -r name; do
-    dir=$HOME/.android/avd/$name.avd
+    dir=$(sed -n 's/^path *= *//p' "$avds/$name.ini" 2>/dev/null || true)
+    dir=${dir:-$avds/$name.avd}
     abi=$(sed -n 's/^abi.type *= *//p' "$dir/config.ini" 2>/dev/null || true)
-    [ "$abi" = arm64-v8a ] && echo "$name"
+    if [ "$abi" = arm64-v8a ]; then echo "$name"; fi
   done < <("$emu" -list-avds | sort) | tail -1
 }
 
@@ -178,13 +211,33 @@ android() {
   ANDROID_NDK_HOME=$sdk/ndk/$("$tree/scripts/build/toolchain.sh" get android-ndk)
   export ANDROID_NDK_HOME
 
+  # adb's server, with its mDNS discovery on, aborted every few seconds on
+  # this Mac (2026-11-12, macOS 27.2, platform-tools 37.0.1: a panic in
+  # adbmdns_bridge parsing a service name on the network, in its crash
+  # report), and each command after started a new one that had lost the
+  # emulator and the reverse mapping. The emulator needs no mDNS, so the
+  # server runs without it, and one started with it is replaced. The
+  # emulator started below inherits the setting for the servers it starts.
+  export ADB_MDNS=0
+  if ! "$adb" mdns check 2>&1 | grep -q disabled; then
+    "$adb" kill-server 2>/dev/null || true
+  fi
+  "$adb" start-server >&2
+
   local serial avd
   serial=$("$adb" devices | awk '/^emulator-.*device$/ {print $1; exit}')
-  if [ -z "$serial" ]; then
+  # An emulator already running but not listed yet (still booting, or the
+  # server new) is waited for below, not started a second time.
+  if [ -z "$serial" ] && pgrep -qf 'qemu-system-[^ ]* .*-avd '; then
+    say "Android: an emulator is running already; waiting for it"
+  elif [ -z "$serial" ]; then
     avd=$(pick_avd)
     [ -n "$avd" ] || avd=$(make_avd)
     say "Android: starting the emulator on $avd (log: ${TMPDIR:-/tmp}/wingtip-emulator.log)"
-    nohup "$emu" -avd "$avd" -no-snapshot-save -no-boot-anim >"${TMPDIR:-/tmp}/wingtip-emulator.log" 2>&1 &
+    # -crash-report-mode never: after an emulator crash the next start asks,
+    # in a dialog, whether to send the report, and waits there without
+    # booting (2026-11-12, "Showing crashdialog to get consent").
+    nohup "$emu" -avd "$avd" -no-snapshot-save -no-boot-anim -crash-report-mode never >"${TMPDIR:-/tmp}/wingtip-emulator.log" 2>&1 &
   fi
 
   # The engine builds while the emulator boots.
@@ -196,12 +249,20 @@ android() {
   fi
   wait_until "$boot_wait" "Android to finish booting (sys.boot_completed)" booted "$serial"
 
-  # The emulator's localhost:8443 is the Mac's, and "localhost" is a name the
-  # server certificate holds.
-  "$adb" -s "$serial" reverse tcp:8443 tcp:8443 >/dev/null
-
   # WINGTIP_HOST is read by build.gradle.kts before its gradle property.
-  WINGTIP_HOST=$host "$turn" "simulators: Android app" bash -c 'cd "$1/apps/android" && ./gradlew --quiet installDebug -PwingtipLocalCa="$2"' _ "$tree" "$ca"
+  # Built by Gradle and installed by adb itself: Gradle's installDebug talks
+  # to the adb server through ddmlib, and failed with "Connection refused"
+  # when that server had gone between the boot and the install
+  # (2026-11-12); adb starts its server again on its own.
+  WINGTIP_HOST=$host "$turn" "simulators: Android app" bash -c 'cd "$1/apps/android" && ./gradlew --quiet assembleDebug -PwingtipLocalCa="$2"' _ "$tree" "$ca"
+  local apk=$tree/apps/android/app/build/outputs/apk/debug/app-debug.apk
+  [ -f "$apk" ] || die "the build left no $apk."
+  wait_until "$boot_wait" "Android to be back after the build" booted "$serial"
+  "$adb" -s "$serial" install -r "$apk" >&2
+  # The emulator's localhost:8443 is the Mac's, and "localhost" is a name the
+  # server certificate holds. Set last: the adb server holds the mapping,
+  # and one that has gone since takes it with it.
+  "$adb" -s "$serial" reverse tcp:8443 tcp:8443 >/dev/null
   local appid
   appid=$(sed -n 's/.*"\(app\.wingtipmaps\.android\.native\)".*/\1/p' "$tree/apps/android/app/build.gradle.kts" | head -1)
   appid=${appid:-app.wingtipmaps.android.native}
