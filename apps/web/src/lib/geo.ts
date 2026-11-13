@@ -1,5 +1,5 @@
-/** Great-circle distance, course and the point a course and distance out,
- *  on the engine's sphere of 3,440.065 nm (engine/crates/core/src/geo.rs):
+/** Distance, course and the point a course and distance out, along the
+ *  geodesic on the WGS-84 ellipsoid (engine/crates/core/src/geo.rs):
  *  the planner (wingtip.geo) and the phones ask the same rules, so a card's
  *  "18 nm NE" is the nav log's figure, worked out in one place (the owner,
  *  2026-11-12: the geo maths moves into the engine). Synchronous, as

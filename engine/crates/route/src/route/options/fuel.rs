@@ -17,7 +17,7 @@
 use super::ask::Reader;
 use super::stops::MIN_RUNWAY_FT;
 use super::words::r1;
-use crate::geo::{self, EARTH_RADIUS_NM};
+use crate::geo;
 use crate::json::{self, Value};
 use wingtip_core::{grid::Point, sort::StableSort};
 
@@ -51,15 +51,6 @@ pub struct Field {
     pub elevation_ft: Option<f64>,
     pub fuel_types: String,
     pub runway_ft: f64,
-}
-
-/// Signed cross-track distance, nm, of a point from the great circle
-/// `start` to `end`, positive right of course (wingtip.geo's): the standard
-/// spherical identity on the bearing and distance from the start.
-pub fn cross_track_nm(lat: f64, lon: f64, start: Point, end: Point) -> f64 {
-    let d13 = geo::distance_nm(start.0, start.1, lat, lon) / EARTH_RADIUS_NM;
-    let offset = (geo::bearing_deg(start.0, start.1, lat, lon) - geo::bearing_deg(start.0, start.1, end.0, end.1)).to_radians();
-    (d13.sin() * offset.sin()).clamp(-1.0, 1.0).asin() * EARTH_RADIUS_NM
 }
 
 /// The fields no more than MAX_ADDED_NM off the straight line from
@@ -171,7 +162,7 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
         return (Vec::new(), Vec::new());
     }
     let quickest = first.iter().map(|&i| trip(i)).fold(f64::INFINITY, f64::min);
-    let off_line: Vec<f64> = at.iter().map(|p| cross_track_nm(p.0, p.1, start, end).abs()).collect();
+    let off_line: Vec<f64> = at.iter().map(|p| geo::track_nm(p.0, p.1, start, end).0.abs()).collect();
     let mut ranked = first.clone();
     let key = |i: usize| (trip(i) > quickest + SAME_MINUTES, off_line[i].round_ties_even(), -least_landing(i), trip(i));
     ranked.stable_sort_by(|&a, &b| key(a).partial_cmp(&key(b)).unwrap_or(std::cmp::Ordering::Equal));

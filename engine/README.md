@@ -71,7 +71,7 @@ Why these lines:
 
 - `core` is the ground: distances, magnetic variation, the grid, dates
   and the JSON and XML every rule reads and writes, used by all. It holds
-  no aviation rule; its sphere's figures are asked by name
+  no aviation rule; its WGS-84 geodesics are asked by name
   (`distance_nm`, `bearing_deg`, `destination`), so no app keeps its own
   great-circle arithmetic.
 - `flight` holds the flight's own rules (the wind triangle, 14 CFR
@@ -134,6 +134,11 @@ itself, with these exceptions, each weighed for its bytes and its build
   CRC-32, the stock crate rather than a table of our own. No system
   library; the web's rules never verify a pack, so it is not in the
   WebAssembly.
+- `geographiclib-rs` (core's `geo`, with `libm` under it): the geodesic
+  on the WGS-84 ellipsoid, Karney's algorithm as GeographicLib and PROJ
+  have it, a georust port, MIT, rather than a Vincenty of our own. Plain
+  Rust; its default `accurate` feature (the polygon area's sums) is off.
+  It is in the WebAssembly, since every app's distance is asked there.
 
 A build-dependency runs on the host when a crate is built and is in no
 build of the engine, so it needs no entry: the facade's `build.rs` reads

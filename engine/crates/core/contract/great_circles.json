@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_core::geo_many::call",
-  "description": "distance_nm and bearing_deg over many legs at once, columns in and columns out: row i is the great circle from (lat1[i], lon1[i]) to (lat2[i], lon2[i]) on the same sphere of 3,440.065 nm (wingtip.geo), its distance in nm and its initial course in degrees true 0 to 360, 0 for two points that coincide. The lists are all as long as each other, so a corridor of points, a route's legs or a map's stops cross into the engine once.",
+  "description": "distance_nm and bearing_deg over many legs at once, columns in and columns out: row i is the geodesic from (lat1[i], lon1[i]) to (lat2[i], lon2[i]) on the WGS-84 ellipsoid (wingtip.geo), its distance in nm and its initial course in degrees true 0 to 360, 0 for two points that coincide. The lists are all as long as each other, so a corridor of points, a route's legs or a map's stops cross into the engine once.",
   "type": "object",
   "properties": {
     "input": {

@@ -1,4 +1,4 @@
-//! The sphere's figures (geo) over many points at once, columns in and
+//! The ellipsoid's figures (geo) over many points at once, columns in and
 //! columns out: the planner's corridors ask a route's start against
 //! thousands of points, and one crossing into the engine for all of them
 //! costs what one crossing costs, where a call a point would cost a
@@ -23,11 +23,11 @@ use crate::json::{self, Value};
 ///   geo::destination.
 pub fn figure(name: &str, a: &[f64]) -> Result<(f64, f64), String> {
     match (name, a) {
-        ("inverse", &[lat1, lon1, lat2, lon2]) => Ok((geo::distance_nm(lat1, lon1, lat2, lon2), geo::bearing_deg(lat1, lon1, lat2, lon2))),
+        ("inverse", &[lat1, lon1, lat2, lon2]) => Ok(geo::distance_and_bearing(lat1, lon1, lat2, lon2)),
         ("track", &[lat, lon, a_lat, a_lon, b_lat, b_lon]) => Ok(geo::track_nm(lat, lon, (a_lat, a_lon), (b_lat, b_lon))),
         ("destination", &[lat, lon, bearing, nm]) => Ok(geo::destination(lat, lon, bearing, nm)),
         ("inverse" | "track" | "destination", _) => Err(format!("{name}: {} numbers a row is not its shape", a.len())),
-        _ => Err(format!("the sphere has no figure called {name:?}")),
+        _ => Err(format!("geo_many has no figure called {name:?}")),
     }
 }
 
@@ -39,11 +39,25 @@ pub fn fill(name: &str, columns: &[&[f64]], first: &mut [f64], second: &mut [f64
         return Err(format!("{name}: the columns and the answers are not all {n} long"));
     }
     let mut row = vec![0.0; columns.len()];
+    // A corridor asks one leg against every point: its course is worked
+    // out once a leg, not once a point (a geodesic inverse saved a row).
+    let mut leg: Option<([f64; 4], f64)> = None;
     for i in 0..n {
         for (cell, column) in row.iter_mut().zip(columns) {
             *cell = column[i];
         }
-        (first[i], second[i]) = figure(name, &row)?;
+        (first[i], second[i]) = match (name, row.as_slice()) {
+            ("track", &[lat, lon, a_lat, a_lon, b_lat, b_lon]) => {
+                let ends = [a_lat, a_lon, b_lat, b_lon];
+                let course = match leg {
+                    Some((known, course)) if known == ends => course,
+                    _ => geo::bearing_deg(a_lat, a_lon, b_lat, b_lon),
+                };
+                leg = Some((ends, course));
+                geo::track_from(lat, lon, (a_lat, a_lon), course)
+            }
+            _ => figure(name, &row)?,
+        };
     }
     Ok(())
 }
@@ -115,7 +129,7 @@ mod tests {
     fn great_circles_by_name() {
         let ask = |text: &str| call("great_circles", &json::parse(text).unwrap());
         let got = ask(r#"{"lat1":[45,42],"lon1":[-93,-88],"lat2":[45,43],"lon2":[-93,-88]}"#).unwrap();
-        assert!(got.starts_with("{\"distance_nm\":[0.0,60.04") && got.ends_with("\"bearing_deg\":[0.0,0.0]}"), "{got}");
+        assert!(got.starts_with("{\"distance_nm\":[0.0,59.98") && got.ends_with("\"bearing_deg\":[0.0,0.0]}"), "{got}");
         assert_eq!(ask(r#"{"lat1":[],"lon1":[],"lat2":[],"lon2":[]}"#).unwrap(), "{\"distance_nm\":[],\"bearing_deg\":[]}");
         assert!(ask(r#"{"lat1":[1],"lon1":[],"lat2":[],"lon2":[]}"#).is_err());
         assert!(ask(r#"{"lat1":[1]}"#).is_err());

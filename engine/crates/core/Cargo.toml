@@ -3,14 +3,18 @@ name = "wingtip-core"
 version = "0.1.0"
 edition = "2024"
 publish = false
-description = "The ground the engine's other crates stand on: great-circle sums, magnetic variation, the grid's straight lines, UTC dates, and the small JSON and XML readers"
+description = "The ground the engine's other crates stand on: WGS-84 geodesics, magnetic variation, the grid's straight lines, UTC dates, and the small JSON and XML readers"
 
 [lib]
 name = "wingtip_core"
 
-# None: the bottom of the engine's crates (engine/README.md), plain Rust,
-# so the phones carry it as it is.
+# The bottom of the engine's crates (engine/README.md): plain Rust, so the
+# phones and the WebAssembly carry it as it is. Its one dependency is the
+# geodesy, geographiclib-rs (MIT, georust; plain Rust over libm), its
+# default `accurate` feature off: that is the polygon area's sums, which
+# geo never asks.
 [dependencies]
+geographiclib-rs = { version = "0.2.7", default-features = false }
 
 [lints]
 workspace = true

@@ -116,8 +116,9 @@ fn a_figure_in_the_webs_words() {
     }
 }
 
-/// Two answers the same to a part in 10^9: the fixture's straight line was
-/// worked on wingtip.geo's sphere by a haversine, the engine's by atan2.
+/// Two answers the same to a part in 10^9: the fixture's straight line is
+/// pyproj's WGS-84 geodesic, the engine's geographiclib-rs's, the same
+/// algorithm (Karney 2013) by another hand.
 fn close(a: &Value, b: &Value) -> bool {
     match (a, b) {
         (Value::Number(x), Value::Number(y)) => {
