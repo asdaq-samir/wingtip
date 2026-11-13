@@ -94,7 +94,8 @@ object EngineClearance : ClearanceRules {
 }
 
 /** The planner's finding of the places a clearance named, as idents
- *  near the route (POST /api/clearance/places, wingtip.spoken). */
+ *  near the route (POST /api/clearance/places, the engine's
+ *  clearance_places rule). */
 object ClearancePlanner {
     suspend fun places(ask: ClearanceAsk): ClearancePlaces = Planner.writes.clearancePlaces(ask).planned()
 }

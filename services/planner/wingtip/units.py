@@ -6,14 +6,15 @@ stays free of the terrain and chart data, wingtip.glmp of everything but its
 GRIB reader) can take them without bringing anything else in.
 """
 
-#: Metres in a foot: the international foot is 0.3048 m exactly (NIST
-#: Handbook 44, Appendix C).
+#: Metres in a foot: the international foot of the 1959 yard and pound
+#: agreement is 0.3048 m exactly (NIST SP 811 B.9).
 M_PER_FT = 0.3048
 
-#: Feet in a metre, 1 / 0.3048 to five places. The terrain tiles, the USGS
-#: and NOAA grids and a TAF station's elevation come in metres; everything a
-#: pilot reads is in feet.
-M_TO_FT = 3.28084
+#: Feet in a metre, worked out from the definition (3.280839895...), as the
+#: engine's core::units does, not the rounded 3.28084. The terrain tiles, the
+#: USGS and NOAA grids and a TAF station's elevation come in metres;
+#: everything a pilot reads is in feet.
+M_TO_FT = 1 / M_PER_FT
 
 #: Metres in a nautical mile: 1,852 exactly by international definition
 #: (NIST Handbook 44, Appendix C).

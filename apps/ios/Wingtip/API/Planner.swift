@@ -163,8 +163,9 @@ enum Planner {
     }
 
     /// An ATC clearance heard: the places it named, found near the route
-    /// (/api/clearance/places, wingtip.spoken). Heard in the air, so it
-    /// waits no longer than inFlight before the packs read it (Engine.hear).
+    /// (/api/clearance/places, the engine's clearance_places rule). Heard in
+    /// the air, so it waits no longer than inFlight before the packs read it
+    /// (Engine.hear).
     static func clearancePlaces(_ ask: ClearanceAsk) async throws -> ClearancePlaces {
         try await call(.inFlight) { try await $0.clearancePlaces(body: .json(ask)).ok.body.json }
     }

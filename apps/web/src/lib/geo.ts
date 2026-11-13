@@ -38,15 +38,18 @@ export function signedTurn(from: number, to: number): number {
   return ((((to - from) % 360) + 540) % 360) - 180;
 }
 
-/** Feet in a nautical mile (1,852 m). */
-export const FT_PER_NM = 6076.12;
-
-/** Metres in a nautical mile, the international one. */
+/** Metres in a nautical mile, the international one (NIST SP 811 B.9). */
 export const M_PER_NM = 1852;
 
-/** Metres in a foot, the international one (exactly 0.3048 m): the one
- *  place the web turns feet to metres, which five files once wrote each. */
+/** Metres in a foot, the international foot of the 1959 yard and pound
+ *  agreement (exactly 0.3048 m, NIST SP 811 B.9): the one place the web
+ *  turns feet to metres, which five files once wrote each. */
 export const M_PER_FT = 0.3048;
+
+/** Feet in a nautical mile, worked out from the two exact definitions
+ *  above (6,076.115 485...), as the engine's core::units does, not the
+ *  rounded 6,076.12. */
+export const FT_PER_NM = M_PER_NM / M_PER_FT;
 
 const ends = (a: LatLon, b: LatLon) => ({ lat1: a.lat, lon1: a.lon, lat2: b.lat, lon2: b.lon });
 
