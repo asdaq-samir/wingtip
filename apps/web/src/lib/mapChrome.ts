@@ -123,6 +123,12 @@ export const GLASS = "liquid-glass";
  *  see-through look (the weather flow's legend and timeline). */
 export const GLASS_CARD = "liquid-glass!";
 
+/** A floating card's material (FloatingCard): the sheet's ground nearly
+ *  whole over a heavy frost (index.css's card-glass, material.card-fill
+ *  and card-blur), nothing under it legible; solid under Reduce
+ *  Transparency or Increase Contrast. */
+export const CARD_GLASS = "card-glass";
+
 /** The same glass for a sheet, frostier -- more of the material, less of
  *  the chart -- as what is on it is read: the console, the dialogs. */
 export const GLASS_SHEET = "bg-[var(--sheet)] shadow-(--depth-sheet)";

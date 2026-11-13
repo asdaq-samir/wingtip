@@ -212,7 +212,26 @@ close does.
   MapLibre's corner controls move on the Drawer's time and curve too
   (`motion.drawer` and `motion.drawer-ease` in design/tokens.json, which
   every web class that runs the Drawer's figures reads).
-- Cards over the sheet are the Drawer's own nested drawers (the owner,
+- Every card but an airport's floats over the map and its sheet (the
+  owner, 2026-11-13; rules.md §1): `components/FloatingCard`, the stock
+  Base UI Dialog (non-modal; You's modal while it is on top), drawn by
+  `components/sheet/FloatingCards` beside the sheet's Drawer, never in
+  it, so Base UI counts none as a drawer nested over the sheet and the
+  sheet's content stays as it was. Its entry in `lib/sheetCards` carries
+  `float`; `coverCard` passes it by (the map's buttons and room follow
+  the riding cards alone), `topCard` decides who hears Escape and a tap
+  outside (`sheet/cardClose`), `floatLayer` stacks the last opened on
+  top (z 41 up, under the menus' 50), and You joins the stack while it
+  is open (`useOwnFloat`) so Settings from the Map card's gear floats
+  over the Map card and a card opened from You over You. Its material is
+  `card-glass` (index.css; `material.card-fill`, `card-blur`), denser
+  than the map's buttons' glass, so the buttons and the search under it
+  are not read through it. Its scroller is `data-floating-scroll`, not
+  the sheet's `data-sheet-scroll`, which index.css stops scrolling at
+  the pill and half.
+- The riding cards -- an airport's (`SheetCard`'s `ride`) and the
+  route's Brief, Nav Log, Profile and Stops (`CardLayer`) -- are the
+  Drawer's own nested drawers over the sheet (the owner,
   2026-11-11; `components/sheet/CardStack`): each with its own snap point
   among the sheet's three sizes, its grabber and its swipe, the sheet's
   swipe the card's while one is up, and its own Escape closing it. Each

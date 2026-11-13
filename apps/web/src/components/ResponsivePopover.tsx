@@ -10,8 +10,8 @@ import { SheetCard } from "./SheetCard";
 import { TEXT } from "../lib/text";
 
 /**
- * A popover from `md` up and, on a phone, a card in the map's panel
- * (SheetCard), behind Popover's own API. A panel that fits beside its
+ * A popover from `md` up and, on a phone, a card floating over the map
+ * (SheetCard, FloatingCards), behind Popover's own API. A panel that fits beside its
  * button stays a popover; on a phone it was a sheet of its own floating
  * over the panel -- the map's settings, the approaches, the fuel's
  * breakdown, an airplane's form -- and is a card in the panel now, as

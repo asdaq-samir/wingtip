@@ -3,8 +3,8 @@ import { setCard, useSheetCards, type CardFrame, type CardState } from "../../li
 import { useShown } from "../../lib/shown";
 
 /**
- * A card's own nested Drawer over the map's sheet (CardStack), held while
- * the caller draws it: the scroller its content is put into, once the
+ * A card's own floating Dialog (FloatingCards, `float`) or nested Drawer
+ * over the map's sheet (CardStack), held while the caller draws it: the scroller its content is put into, once the
  * drawer is there. Open while what it is drawn in is in sight (lib/shown):
  * under a page put away (TabKept) it is kept, closed, and opens again as
  * it was when the page is back. `id` is the card's (useCardSize).
@@ -12,7 +12,10 @@ import { useShown } from "../../lib/shown";
  * Held in a layout effect, so the drawer and the content are on the page
  * in the same frame as the tap, never an empty card for a frame.
  */
-export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: string; open?: boolean }, id: string): HTMLElement | null {
+export function useCardFrame(
+  frame: CardFrame & { fullScreen?: boolean; title?: string; open?: boolean; float?: boolean },
+  id: string,
+): HTMLElement | null {
   // A card kept between its openings (`open`, CardLayer's) is shown only
   // while it is open; one drawn only while open is open while drawn.
   const open = frame.open ?? true;
@@ -23,13 +26,14 @@ export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: 
   useLayoutEffect(() => {
     latest.current = frame;
   });
-  const { fullScreen, title, testId, label, labelledBy } = frame;
+  const { fullScreen, title, testId, label, labelledBy, float } = frame;
   const state: CardState = shown ? "open" : "kept";
-  const opened = useRef({ fullScreen, state });
+  const opened = useRef({ fullScreen, state, float });
   useLayoutEffect(() => {
-    const { fullScreen, state } = opened.current;
+    const { fullScreen, state, float } = opened.current;
     const entry = {
       id,
+      float,
       fullScreen,
       state,
       slot: null,
@@ -47,10 +51,12 @@ export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: 
     // up over it, its focus manager's marks and Escape put back -- and the
     // entry goes once that close is done (CardStack's onOpenChangeComplete).
     // Taken off open, Escape after an airplane's edit cancelled no longer
-    // closed Setup under it, and the focus was left on nothing.
+    // closed Setup under it, and the focus was left on nothing. A drawer
+    // never opened (no size yet) goes at once; a floating card's dialog
+    // opens as it is drawn, and closes as the rest do.
     return () =>
       useSheetCards.setState((s) => ({
-        stack: s.stack.flatMap((e) => (e.id !== id ? [e] : e.at === undefined ? [] : [{ ...e, state: "leaving" as const }])),
+        stack: s.stack.flatMap((e) => (e.id !== id ? [e] : e.at === undefined && !e.float ? [] : [{ ...e, state: "leaving" as const }])),
       }));
   }, [id]);
   useLayoutEffect(() => setCard(id, { state }), [id, state]);

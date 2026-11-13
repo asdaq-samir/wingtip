@@ -186,6 +186,8 @@
   --glass-fill-light: 80%;
   --glass-fill-dark: 85%;
   --sheet-blur: 24px;
+  --card-blur: 40px;
+  --card-fill: 97%;
   --motion-sheet: 0.3s;
   --motion-sheet-least: 0.22s;
   --motion-sheet-most: 0.35s;
@@ -387,6 +389,8 @@
   --glass-fill-light: 100%;
   --glass-fill-dark: 100%;
   --sheet-blur: 0px;
+  --card-fill: 100%;
+  --card-blur: 0px;
   --motion-sheet: 0.2s;
   --motion-sheet-least: 0.2s;
   --motion-sheet-most: 0.2s;
