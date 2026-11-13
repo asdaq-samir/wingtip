@@ -3,7 +3,8 @@
 //! in call.rs with the others, and their shapes in
 //! engine/contract/engine.schema.json.
 
-use super::climbs::{approach_end, with_climbs, with_descents, ApproachFix, End};
+use super::climbs::with_climbs;
+use super::descents::{approach_end, with_descents, ApproachFix, End};
 use super::holds::{hold_on_leg, Held};
 use super::legs::{alternate_leg, assemble_leg, fuel_plan, legs, totals};
 use super::plans::{candidates, join_figures, join_options, Flights, Plan};

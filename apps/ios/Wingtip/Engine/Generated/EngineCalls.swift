@@ -1155,7 +1155,7 @@ extension Engine {
         try Self.rule("navlog_totals", EngineContract.NavlogTotalsInput(legs: legs))
     }
 
-    /// The legs with their climbs flown, from the field (start_altitude_ft; null starts level) and at every step up, at the best rate in each leg's air and the climb speed; each leg's climb_min and the top of climb (toc).
+    /// The legs with their climbs flown, from the field (start_altitude_ft; null starts level) and at every step up, at the best rate in each leg's air and the climb speed; each leg's climb_min and the top of climb (toc). A climb is flown at its own ground speed, the climb speed's wind triangle in the leg's wind; a leg flown wholly in the climb states the climb's TAS, wind correction, headings, ground speed and fuel flow, so its ground speed times its time is its miles; a leg partly climbed keeps the cruise's, the climb's on its toc.
     static func navlogWithClimbs(legs: [EngineContract.NavLogLeg], startAltitudeFt: Double? = nil, profile: EngineContract.NavLogProfile? = nil) throws -> [EngineContract.NavLogLeg] {
         try Self.rule("navlog_with_climbs", EngineContract.NavlogWithClimbsInput(legs: legs, startAltitudeFt: startAltitudeFt, profile: profile))
     }

@@ -38,6 +38,7 @@
 pub mod calls;
 pub mod change;
 pub mod climbs;
+pub mod descents;
 pub mod fuel_stop;
 pub mod holds;
 pub mod legs;
