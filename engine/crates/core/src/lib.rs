@@ -17,6 +17,7 @@
 //! - xml: the small XML reader the weather products share.
 
 pub mod ask;
+pub mod flat;
 pub mod geo;
 pub mod geo_many;
 pub mod grid;

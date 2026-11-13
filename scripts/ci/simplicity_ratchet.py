@@ -32,6 +32,7 @@ import sys
 from pathlib import Path
 
 import changed
+from source_literals import ENGINE_UNIT, MERCATOR, MERCATOR_HOMES, UNIT, code_of, rust_code, text
 
 ROOT = Path(__file__).resolve().parents[2]
 BASELINE = ROOT / "scripts/ci/simplicity_baseline.json"
@@ -45,13 +46,6 @@ SKIP = re.compile(
 def files(prefix: str, suffix: str) -> list[str]:
     out = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z", "--", prefix], capture_output=True, check=True)
     return [p for p in out.stdout.decode().split("\0") if p.endswith(suffix) and not SKIP.search(p)]
-
-
-def text(path: str) -> str:
-    try:
-        return (ROOT / path).read_text(errors="replace")
-    except FileNotFoundError:
-        return ""
 
 
 def occurrences(prefix: str, suffix: str, pattern: str) -> int:
@@ -81,25 +75,6 @@ def allow_total(path: str) -> int:
 
 
 ANDROID = "apps/android/app/src/main"
-UNIT = r"\b(0\.3048|3\.2808\d*|6076(\.\d+)?|1852(\.0)?|1\.9438\d*)\b"
-# The engine's unit literals, set or used inline: the foot, the nautical
-# and statute miles, their rounded ratios (nautical miles in a statute
-# mile, 0.8689...; statute in a nautical, 1.1507...; knots in a metre a
-# second, 1.9438...; metres a second in a knot, 0.5144...) and the
-# kelvin's offset. Each is engine/crates/core/src/units.rs's alone.
-ENGINE_UNIT = re.compile(
-    r"(?<![\w.])(0\.3048|3\.2808\d*|6_?076(\.\d+)?|1_?852(\.0*)?|1\.852|1_?609\.344|5_?280(\.0*)?"
-    r"|1\.9438\d*|0\.5144\d*|0\.8689\d*|1\.1507\d*|273\.15)(?![\w.])"
-)
-RUST_NOT_CODE = re.compile(r'//[^\n]*|/\*.*?\*/|r(#*)".*?"\1|b?"(\\.|[^"\\])*"|\'(\\.|[^\'\\])\'', re.S)
-
-
-def rust_code(source: str) -> str:
-    """A Rust file with its comments, strings and characters taken out:
-    test data written in a string is data, not a factor."""
-    return RUST_NOT_CODE.sub(" ", source)
-
-
 # name -> (how it is counted, what to do when it rises)
 METRICS = {
     # The phones' root screens, the event bus the audit's finding 5 names.
@@ -210,6 +185,20 @@ METRICS = {
             )
         ),
         "tile maths written again on a phone: use TileMath (iPhone) or TileGrid (Android)",
+    ),
+    # The Web Mercator world's size and edge and the earth's radius,
+    # written as a number outside each platform's home, in any language
+    # (round 4's K2 and K7).
+    "mercator_literals": (
+        lambda: sum(
+            len(MERCATOR.findall(code_of(p)))
+            for top in ("apps", "services", "engine")
+            for suffix in (".rs", ".py", ".ts", ".tsx", ".js", ".mjs", ".swift", ".kt", ".java")
+            for p in files(top, suffix)
+            if not p.endswith(MERCATOR_HOMES)
+        ),
+        "the earth's size or Web Mercator's edge written again: take it from lib/map/tileMath.ts, Tiles/TileMath.swift, "
+        "tiles/TileGrid.kt, wingtip/geo.py or the engine's core geo (and tags.rs's TERPS_EARTH_FT)",
     ),
     # The other guards' baselines, their totals (each only shrinks; here
     # for the one trend line).

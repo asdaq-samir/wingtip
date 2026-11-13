@@ -1450,10 +1450,10 @@ def _tile_range(face: Box, zoom: int) -> tuple:
     """(x0, x1, y0, y1), inclusive, of the tiles a face touches."""
     n = 2**zoom
     west, south, east, north = face
-    # Web Mercator ends short of the poles; a face's edge past that
-    # would be off the grid.
-    x0, y0 = tile_xy(max(-85.05, min(85.05, north)), west, zoom)
-    x1, y1 = tile_xy(max(-85.05, min(85.05, south)), east, zoom)
+    # Web Mercator ends short of the poles; tile_xy clamps a face's edge
+    # past that to the grid's.
+    x0, y0 = tile_xy(north, west, zoom)
+    x1, y1 = tile_xy(south, east, zoom)
     return max(0, int(x0)), min(n - 1, int(x1)), max(0, int(y0)), min(n - 1, int(y1))
 
 

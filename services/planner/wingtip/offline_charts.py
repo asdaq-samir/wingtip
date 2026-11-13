@@ -106,8 +106,8 @@ def tiles(region: Region, kind: charts.ChartKind):
     for z in range(kind.min_zoom, kind.max_zoom + 1):
         n = 2**z
         for west, south, east, north in region.boxes:
-            x0, y0 = tile_xy(min(85.05, north), west, z)
-            x1, y1 = tile_xy(max(-85.05, south), east, z)
+            x0, y0 = tile_xy(north, west, z)
+            x1, y1 = tile_xy(south, east, z)
             for x in range(max(0, int(x0)), min(n - 1, int(x1)) + 1):
                 for y in range(max(0, int(y0)), min(n - 1, int(y1)) + 1):
                     found.add((z, x, y))

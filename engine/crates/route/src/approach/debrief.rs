@@ -24,10 +24,11 @@
 //!
 //! The web's lib/approachDebrief, ported line for line with its words.
 
-use super::{Drawing, RunwayPath, FT_PER_M, FT_PER_NM};
+use super::tags::TERPS_EARTH_FT;
+use super::{Drawing, RunwayPath, FT_PER_NM};
 use crate::figures::debrief::{airborne, Point};
 use crate::figures::words::{alt_ft, grouped, js_num, js_round_f, to_fixed};
-use crate::geo::distance_nm;
+use crate::geo::{distance_nm, Flat};
 use crate::motion::rad;
 use crate::{json, sort::StableSort};
 
@@ -65,11 +66,6 @@ pub const GPS_RAMP_NM: f64 = 2.0;
 /// to 1,250 ft down the runway (AIM 1-1-9): 1,000 ft taken here.
 pub const GLIDESLOPE_DEG: f64 = 0.7;
 pub const GLIDESLOPE_ANTENNA_FT: f64 = 1000.0;
-/// The earth's mean radius, ft: a straight glidepath rises above the
-/// curved sea level by d²/2R, 32 ft at 6 nm, which the chart's glide
-/// slope altitude at the final approach fix includes (KBUR's ILS 08: 2,753
-/// ft at BUDDE, 6.0 nm out on 3.00° from 787 ft).
-const EARTH_FT: f64 = 6_371_000.0 * FT_PER_M;
 /// The mean distance off a glidepath, ft, within which the track is
 /// taken to have come down it: two approaches down one final are told
 /// apart by it. The app's.
@@ -339,24 +335,13 @@ struct Path {
     map: usize,
 }
 
-/// Flat about a point: nm east and north of it.
-struct Frame {
-    lat0: f64,
-    lon0: f64,
-    kx: f64,
+/// A point in the flat frame about the missed approach point (core's).
+fn at(frame: &Flat, lat: f64, lon: f64) -> Xy {
+    let (x, y) = frame.nm(lat, lon);
+    Xy { x, y }
 }
 
-impl Frame {
-    fn new(lat0: f64, lon0: f64) -> Frame {
-        Frame { lat0, lon0, kx: rad(lat0).cos() * 60.0 }
-    }
-
-    fn at(&self, lat: f64, lon: f64) -> Xy {
-        Xy { x: (lon - self.lon0) * self.kx, y: (lat - self.lat0) * 60.0 }
-    }
-}
-
-fn path_of(d: &Drawing, frame: &Frame) -> Option<Path> {
+fn path_of(d: &Drawing, frame: &Flat) -> Option<Path> {
     let mut ll: Vec<(f64, f64)> = Vec::new();
     let mut final_from: Option<usize> = None;
     for line in &d.lines {
@@ -380,7 +365,7 @@ fn path_of(d: &Drawing, frame: &Frame) -> Option<Path> {
     if ll.len() < 2 {
         return None;
     }
-    let xy: Vec<Xy> = ll.iter().map(|&(lat, lon)| frame.at(lat, lon)).collect();
+    let xy: Vec<Xy> = ll.iter().map(|&(lat, lon)| at(frame, lat, lon)).collect();
     let mut cum = vec![0.0];
     for i in 1..xy.len() {
         cum.push(cum[i - 1] + (xy[i].x - xy[i - 1].x).hypot(xy[i].y - xy[i - 1].y));
@@ -389,7 +374,7 @@ fn path_of(d: &Drawing, frame: &Frame) -> Option<Path> {
     let mut fixes: Vec<PathFix> = Vec::new();
     let mut from = 0;
     for f in d.fixes.iter().filter(|f| !f.missed) {
-        let p = frame.at(f.lat, f.lon);
+        let p = at(frame, f.lat, f.lon);
         let Some(v) = (from..xy.len()).find(|&i| (xy[i].x - p.x).hypot(xy[i].y - p.y) < 0.1) else { continue };
         fixes.push(PathFix { ident: f.ident.clone(), roles: f.roles.clone(), min_ft: f.min_ft, max_ft: f.max_ft, v });
         from = v;
@@ -519,10 +504,14 @@ fn nm_to(p: &Point, lat: f64, lon: f64) -> f64 {
 
 /// The glidepath's height at a distance from its runway's threshold, nm,
 /// ft MSL: a straight line up from the runway's crossing altitude at its
-/// angle, over the curved earth.
+/// angle, over the curved earth. It rises above the curved sea level by
+/// d²/2R, 32 ft at 6 nm, which the chart's glide slope altitude at the
+/// final approach fix includes (KBUR's ILS 08: 2,753 ft at BUDDE, 6.0 nm
+/// out on 3.00° from 787 ft); R is TERPS's earth (tags.rs, FAA Order
+/// 8260.3G Appendix D), the one the chart's altitudes are built on.
 pub fn glidepath_ft(gp: &RunwayPath, nm_out: f64) -> f64 {
     let d = nm_out * FT_PER_NM;
-    gp.ft + d * rad(gp.deg).tan() + (d * d) / (2.0 * EARTH_FT)
+    gp.ft + d * rad(gp.deg).tan() + (d * d) / (2.0 * TERPS_EARTH_FT)
 }
 
 /// A glide slope's full scale either side, ft, at a distance from its
@@ -543,9 +532,9 @@ pub fn attempts_at(d: &Drawing, points: &[Point]) -> Vec<Attempt> {
         return Vec::new();
     }
     let Some(map) = map_fix(d) else { return Vec::new() };
-    let frame = Frame::new(map.lat, map.lon);
+    let frame = Flat::about(map.lat, map.lon);
     let Some(path) = path_of(d, &frame) else { return Vec::new() };
-    let xy: Vec<Xy> = points.iter().map(|p| frame.at(p.lat, p.lon)).collect();
+    let xy: Vec<Xy> = points.iter().map(|p| at(&frame, p.lat, p.lon)).collect();
     let passes = crossings(&path, path.fixes[path.faf].v, &xy, 0, xy.len());
     (0..passes.len())
         .map(|k| Attempt {
@@ -583,13 +572,13 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
         return None;
     }
     let map_fix = map_fix(d)?;
-    let frame = Frame::new(map_fix.lat, map_fix.lon);
+    let frame = Flat::about(map_fix.lat, map_fix.lon);
     let path = path_of(d, &frame)?;
     let attempt = match attempt {
         Some(a) => a,
         None => *attempts_at(d, points).first()?,
     };
-    let xy: Vec<Xy> = points.iter().map(|p| frame.at(p.lat, p.lon)).collect();
+    let xy: Vec<Xy> = points.iter().map(|p| at(&frame, p.lat, p.lon)).collect();
     let guidance = guidance_of(&d.id);
     let gp = d.runway_path;
     let has_altitude = points.iter().any(|p| p.alt_ft.is_some());

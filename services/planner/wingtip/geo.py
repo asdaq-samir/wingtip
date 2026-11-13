@@ -245,17 +245,25 @@ def box_around(lat: float, lon: float, radius_nm: float) -> tuple[float, float, 
 # The slippy-map grid every tile here is cut on -- the charts, the
 # terrain heights, the chart reader's pixels: spherical Web Mercator
 # (EPSG:3857), 2**zoom tiles a side, x east from 180 W and y south from
-# 85.0511 N. One place for its two formulas, the OpenStreetMap wiki's
+# MAX_LATITUDE. One place for its two formulas, the OpenStreetMap wiki's
 # "Slippy map tilenames", which services/planner/tests_wingtip/test_geo.py pins against PROJ's
 # EPSG:3857. Scalars or arrays, as above.
+
+#: Web Mercator's edge, degrees: the latitude at which the projected square's
+#: top falls, arctan(sinh(pi)), 85.0511... (the same edge as the web's
+#: lib/map/tileMath.ts and MapLibre's).
+MAX_LATITUDE = math.degrees(math.atan(math.sinh(math.pi)))
 
 
 def tile_xy(lat, lon, zoom: int) -> tuple:
     """Where a point falls in the tile grid at `zoom`, as fractional
-    (x, y): the tile is their floor, the place within it the rest."""
+    (x, y): the tile is their floor, the place within it the rest. The
+    latitude is clamped to the projection's edge, so a box reaching past
+    it (or to a pole) takes the grid's top or bottom row."""
     n = 2**zoom
     x = (lon + 180.0) / 360.0 * n
-    y = (1.0 - np.arcsinh(np.tan(np.radians(lat))) / np.pi) / 2.0 * n
+    phi = np.radians(np.clip(lat, -MAX_LATITUDE, MAX_LATITUDE))
+    y = (1.0 - np.arcsinh(np.tan(phi)) / np.pi) / 2.0 * n
     return _plain(x), _plain(y)
 
 

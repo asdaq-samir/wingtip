@@ -3,9 +3,9 @@ import { persist } from "zustand/middleware";
 import { api } from "../../api/client";
 import type { ChartLayer, Course } from "../../api/types";
 import { diagramPicture, diagramRunwaysPicture } from "../../diagram";
-import { rad } from "../../geo";
+import { M_PER_NM, rad } from "../../geo";
 import { kindCycle, tileUrl } from "../sources/tiles";
-import { tileOf } from "../tileMath";
+import { tileOf, WORLD_WIDTH_M } from "../tileMath";
 
 /**
  * The tiles a route needs in the air, fetched now so the service
@@ -40,9 +40,10 @@ interface KeepProgress {
   failed: number;
 }
 
-/** Tile width in nautical miles at a latitude and zoom. */
+/** Tile width in nautical miles at a latitude and zoom: the Web Mercator
+ *  world's width shrunk by the parallel's cosine. */
 function tileNm(lat: number, zoom: number): number {
-  return (21638.8 * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
+  return ((WORLD_WIDTH_M / M_PER_NM) * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
 }
 
 /** The {z, x, y} of every tile within the corridor, per zoom. */

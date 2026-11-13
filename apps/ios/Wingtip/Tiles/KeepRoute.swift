@@ -29,8 +29,9 @@ enum KeepRoute {
         let points = try samples(of: line, everyNm: stepNm)
         var wanted = Set<Tile>()
         for zoom in minZoom...maxZoom {
-            // A tile's width at the equator in nm, 21,600 nm round.
-            let tileNm = 21_600 / pow(2.0, Double(zoom))
+            // A tile's width at the equator in nm: the Web Mercator
+            // world's width (TileMath's) over the tiles across it.
+            let tileNm = 2 * TileMath.halfCircumference / Units.mPerNm / pow(2.0, Double(zoom))
             let reach = max(1, Int((halfWidthNm / tileNm).rounded(.up)))
             for point in points {
                 let centre = tile(lat: point.latitude, lon: point.longitude, zoom: zoom)
