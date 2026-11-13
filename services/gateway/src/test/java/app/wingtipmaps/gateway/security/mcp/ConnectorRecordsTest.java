@@ -156,7 +156,7 @@ class ConnectorRecordsTest {
     void theRecordsAnswerOnlyThePlanner() throws Exception {
         Pilot pilot =
                 pilots.save(new Pilot(UUID.randomUUID() + "@example.com", "Test Pilot", "sub-" + UUID.randomUUID()));
-        aircraft.saveAndFlush(new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null));
+        aircraft.saveAndFlush(new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null));
         String id = String.valueOf(pilot.getId());
 
         mvc.perform(internal(get("/internal/mcp/aircraft")).header("X-Pilot-Id", id))

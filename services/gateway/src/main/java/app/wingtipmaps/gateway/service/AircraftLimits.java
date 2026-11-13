@@ -57,6 +57,8 @@ public class AircraftLimits {
         put(form, "cruisePowerPct", r.cruisePowerPct());
         put(form, "climbTasKt", r.climbTasKt());
         put(form, "climbFuelBurnGph", r.climbFuelBurnGph());
+        put(form, "descentIasKt", r.descentIasKt());
+        put(form, "descentFuelBurnGph", r.descentFuelBurnGph());
         put(form, "usableFuelGal", r.usableFuelGal());
         put(form, "equipment", r.equipment());
         put(form, "surveillance", r.surveillance());

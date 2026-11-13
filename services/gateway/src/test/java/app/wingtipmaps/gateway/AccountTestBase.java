@@ -160,7 +160,7 @@ abstract class AccountTestBase {
         String google = "google-" + UUID.randomUUID();
         Pilot pilot = pilots.save(new Pilot(email, "Test Pilot", google));
         Aircraft plane = aircraft.save(
-                new Aircraft(pilot, "N" + email.substring(0, 5), "C172", 110, 8.5, null, null, null, null));
+                new Aircraft(pilot, "N" + email.substring(0, 5), "C172", 110, 8.5, null, null, null, null, null, null));
         Flight flight = flights.save(new Flight(pilot, plane, "C81", "KDLH")
                 .fileNavLog(
                         List.of(

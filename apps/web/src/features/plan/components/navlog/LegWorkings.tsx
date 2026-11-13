@@ -7,7 +7,7 @@ import Segmented from "../../../../components/Segmented";
 import { Button } from "../../../../components/ui/button";
 import { NumberField } from "../../../../components/ui/number-field";
 import type { Leg } from "../../../../lib/api/types";
-import { ANSWERS, checks, workingsOf, written, type AnswerKey, type Workings } from "./workings";
+import { ANSWERS, checks, workingsOf, written, type AnswerKey, type Phase, type Workings } from "./workings";
 import { TEXT } from "../../../../lib/text";
 import { FINDING_TONE } from "../../../../lib/findings";
 
@@ -75,9 +75,9 @@ function TryIt({ workings }: { workings: Workings }) {
                   : answer.key === "wca"
                     ? "+ right, − left"
                     : answer.key === "ete" || answer.key === "fuel"
-                      ? workings.phase === "climb"
-                        ? "The climb's"
-                        : "Cruise only"
+                      ? workings.phase === "cruise"
+                        ? "Cruise only"
+                        : `The ${workings.phase}'s`
                       : undefined
               }
               data-testid={`try-${answer.key}`}
@@ -122,8 +122,8 @@ function TryIt({ workings }: { workings: Workings }) {
  * its sum -- or, under Try it, the student's own figures checked against
  * them. A popover from `md` up, a sheet on a phone.
  */
-export default function LegWorkings({ leg, climbing = false }: { leg: Leg; climbing?: boolean }) {
-  const workings = workingsOf(leg, climbing);
+export default function LegWorkings({ leg, phase = "cruise" }: { leg: Leg; phase?: Phase }) {
+  const workings = workingsOf(leg, phase);
   const [mode, setMode] = useState("worked");
   if (!workings) return null;
   return (

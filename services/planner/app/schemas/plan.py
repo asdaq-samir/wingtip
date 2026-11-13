@@ -254,6 +254,10 @@ class Leg(BaseModel):
     # leg, and up to a new level where a plan steps -- flown at climb
     # speed and burn, and already in `ete_min` and `fuel_gal`.
     climb_min: float = 0.0
+    # The one phase the leg is flown in whole, the climb or the descent,
+    # its figures then that phase's; None for the cruise or a leg cut by a
+    # top of climb or descent (the engine's NavLogLeg `phase`).
+    phase: Literal["climb", "descent"] | None = None
     # The top of the climb, on the leg it is reached on, and the top of
     # the descent, on the leg it starts on.
     toc: TopOfClimb | None = None
@@ -651,6 +655,10 @@ class AircraftProfile(BaseModel):
     climb_rate_fpm_sea_level: float | None = None
     climb_tas_kt: float | None = None
     climb_fuel_burn_gph: float | None = None
+    #: The descent's indicated airspeed (kt) and fuel flow (gal/h), as a
+    #: handbook gives them; the nav log flies the descent on them.
+    descent_ias_kt: float | None = None
+    descent_fuel_burn_gph: float | None = None
     usable_fuel_gal: float | None = None
     supplemental_oxygen: bool | None = None
     pressurized: bool | None = None

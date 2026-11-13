@@ -41,6 +41,8 @@ public class AircraftService {
             Double cruisePowerPct,
             Double climbTasKt,
             Double climbFuelBurnGph,
+            Double descentIasKt,
+            Double descentFuelBurnGph,
             Double usableFuelGal,
             String equipment,
             String surveillance,
@@ -56,6 +58,8 @@ public class AircraftService {
                                 cruisePowerPct,
                                 climbTasKt,
                                 climbFuelBurnGph,
+                                descentIasKt,
+                                descentFuelBurnGph,
                                 usableFuelGal)
                         .describeForFlightPlan(Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)),
                 figures));
@@ -74,6 +78,8 @@ public class AircraftService {
             Double cruisePowerPct,
             Double climbTasKt,
             Double climbFuelBurnGph,
+            Double descentIasKt,
+            Double descentFuelBurnGph,
             Double usableFuelGal,
             String equipment,
             String surveillance,
@@ -89,6 +95,8 @@ public class AircraftService {
                                         cruisePowerPct,
                                         climbTasKt,
                                         climbFuelBurnGph,
+                                        descentIasKt,
+                                        descentFuelBurnGph,
                                         usableFuelGal)
                                 .describeForFlightPlan(
                                         Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)),

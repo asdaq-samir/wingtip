@@ -79,6 +79,25 @@ function climbPiece(part: Leg, toc: TopOfClimb): Leg {
     wca_deg: toc.wca_deg ?? part.wca_deg,
     true_heading_deg: toc.true_heading_deg ?? part.true_heading_deg,
     magnetic_heading_deg: toc.magnetic_heading_deg ?? part.magnetic_heading_deg,
+    phase: "climb",
+  };
+}
+
+/** The piece of a leg after its top of descent with the descent's own
+ *  figures, where the airplane has them (the engine's descent_phase): its
+ *  speeds, heading and flow, the piece's ground speed its miles over its
+ *  minutes. On the cruise's (`descent_at_cruise`), the piece as it is. */
+function descentPiece(part: Leg, tod: TopOfDescent): Leg {
+  if (tod.descent_at_cruise !== false || tod.tas_kt == null || tod.groundspeed_kt == null) return part;
+  return {
+    ...part,
+    tas_kt: tod.tas_kt,
+    groundspeed_kt: tod.groundspeed_kt,
+    fuel_burn_gph: tod.fuel_burn_gph ?? part.fuel_burn_gph,
+    wca_deg: tod.wca_deg ?? part.wca_deg,
+    true_heading_deg: tod.true_heading_deg ?? part.true_heading_deg,
+    magnetic_heading_deg: tod.magnetic_heading_deg ?? part.magnetic_heading_deg,
+    phase: "descent",
   };
 }
 
@@ -141,7 +160,9 @@ export function navLogRows(ends: RouteEnds | null, selected: Candidate[], legs: 
       }
       from = { nm: point.along_nm, min: point.ete_min, gal: point.fuel_gal ?? 0 };
     }
-    return { leg, part: piece(leg, from, { nm: leg.distance_nm, min: leg.ete_min, gal: leg.fuel_gal }) };
+    // After a top of descent, the descent's own figures (descentPiece).
+    const rest = piece(leg, from, { nm: leg.distance_nm, min: leg.ete_min, gal: leg.fuel_gal });
+    return { leg, part: leg.tod ? descentPiece(rest, leg.tod) : rest };
   };
   const stops = ends.stops ?? [];
   for (let hop = 0; hop <= stops.length; hop++) {
@@ -168,15 +189,11 @@ export function navLogRows(ends: RouteEnds | null, selected: Candidate[], legs: 
  *  the whole leg where nothing cuts it; the departure has none. */
 export const legOf = (row: NavLogRow): Leg | undefined => (row.kind === "departure" ? undefined : (row.part ?? row.leg));
 
-/** Whether a row is flown all in the climb, so its figures are the
- *  climb's (the engine's with_climbs): the piece up to a top of climb, or
- *  a leg that climbs and has no top on it, the climb carrying on past its
- *  end. */
-export function inClimb(row: NavLogRow): boolean {
-  if (row.kind === "toc") return true;
-  const leg = row.kind === "departure" ? undefined : row.leg;
-  return !!leg && (leg.climb_min ?? 0) > 0 && !leg.toc;
-}
+/** The one phase a row is flown in, so its workings are worded for it:
+ *  the piece up to a top of climb or after a top of descent (climbPiece,
+ *  descentPiece), or a leg the engine flew whole in the climb or the
+ *  descent (its `phase`); else the cruise. */
+export const phaseOf = (row: NavLogRow): "climb" | "descent" | "cruise" => legOf(row)?.phase ?? "cruise";
 
 /**
  * The miles a row's leg is flown beyond its own straight line, where it

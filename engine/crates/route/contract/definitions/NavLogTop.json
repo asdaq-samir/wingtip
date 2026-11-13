@@ -50,6 +50,10 @@
     "magnetic_heading_deg": {
       "type": "number"
     },
+    "descent_at_cruise": {
+      "type": "boolean",
+      "description": "A top of descent with an airplane: true where its profile has no descent speed or fuel flow and the descent is flown on the cruise's figures (the app asks for them), false where it is flown at its own."
+    },
     "lat": {
       "type": "number"
     },
@@ -63,5 +67,5 @@
     "altitude_ft"
   ],
   "additionalProperties": true,
-  "description": "A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg. A top of climb also carries the climb's own figures for the piece of its leg up to it: the climb speed, its wind correction, headings and ground speed in the leg's wind, and its fuel flow."
+  "description": "A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg. A top of climb also carries the climb's own figures for the piece of its leg up to it: the climb speed, its wind correction, headings and ground speed in the leg's wind, and its fuel flow. A top of descent with an airplane whose profile gives the descent's figures carries them the same way for the piece of its leg after it, that piece's ground speed its miles over its minutes."
 }

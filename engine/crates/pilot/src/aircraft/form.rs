@@ -59,6 +59,8 @@ pub fn problems(v: &Value) -> Vec<(&'static str, String)> {
         ("fuelBurnGph", "Cruise fuel burn", true),
         ("climbTasKt", "Climb speed", false),
         ("climbFuelBurnGph", "Climb fuel burn", false),
+        ("descentIasKt", "Descent speed", false),
+        ("descentFuelBurnGph", "Descent fuel burn", false),
         ("usableFuelGal", "Usable fuel", false),
     ];
     for (key, label, required) in positive {

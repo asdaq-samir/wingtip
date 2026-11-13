@@ -90,6 +90,7 @@ pub fn with_climbs(legs: &[Obj], start_altitude_ft: Option<f64>, profile: &Profi
                 cruise_min = 0.0;
                 climb_left_min -= climb_min;
                 air.state_on(&mut leg, climb_burn_gph);
+                leg.set("phase", Value::String("climb".to_owned()));
             } else {
                 climb_min = climb_left_min;
                 cruise_min = (distance - climb_nm) / gs * 60.0;
@@ -287,6 +288,7 @@ mod tests {
         assert!((gs * ete / 60.0 - 3.0).abs() < 0.01);
         assert!((first.num("fuel_burn_gph").unwrap() * ete / 60.0 - first.num("fuel_gal").unwrap()).abs() < 1e-9);
         assert_eq!(first.num("tas_kt").unwrap(), 70.0);
+        assert_eq!(first.get("phase"), Some(&Value::String("climb".to_owned())));
         assert_eq!(first.num("climb_min").unwrap(), 3.6);
         assert_eq!(first.get("toc"), Some(&Value::Null));
         // The leg it tops out on keeps the cruise's ground speed, and the

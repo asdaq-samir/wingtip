@@ -40,6 +40,8 @@ export function useDepartureWindow() {
     usable_fuel_gal: aircraft.usableFuelGal ?? null,
     climb_tas_kt: aircraft.climbTasKt ?? null,
     climb_fuel_burn_gph: aircraft.climbFuelBurnGph ?? null,
+    descent_ias_kt: aircraft.descentIasKt ?? null,
+    descent_fuel_burn_gph: aircraft.descentFuelBurnGph ?? null,
     cruise_power_pct: aircraft.cruisePowerPct ?? null,
     service_ceiling_ft: aircraft.serviceCeilingFt ?? null,
     rules,

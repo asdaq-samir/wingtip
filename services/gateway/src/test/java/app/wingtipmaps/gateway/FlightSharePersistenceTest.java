@@ -55,7 +55,17 @@ class FlightSharePersistenceTest {
 
     private Flight newFlight(Pilot pilot) {
         Aircraft plane = aircraft.save(new Aircraft(
-                pilot, "N" + (10000 + (int) (Math.random() * 80000)), "C172", 110, 8.5, null, null, null, 53.0));
+                pilot,
+                "N" + (10000 + (int) (Math.random() * 80000)),
+                "C172",
+                110,
+                8.5,
+                null,
+                null,
+                null,
+                null,
+                null,
+                53.0));
         List<FlightCheckpoint> navLog = List.of(
                 new FlightCheckpoint(0, "KMSN", "departure", 43.1399, -89.3375, 0.0)
                         .withLeg(55.0, 40.0, 42.0, 110.0, 30.0, 4.3),

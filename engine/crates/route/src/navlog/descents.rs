@@ -2,7 +2,8 @@
 //! with_descents, and where a flight landing by an instrument approach
 //! comes down to (approach_end).
 
-use super::{number, object, opt_number, py_round, Obj, R};
+use super::descent_phase::{self, Segment};
+use super::{number, object, opt_number, py_round, Obj, Profile, R};
 use crate::geo::destination;
 use crate::json::Value;
 use crate::motion::profile::DESCENT_FT_PER_NM;
@@ -46,10 +47,14 @@ pub struct End {
 /// at its end (the rate at its ground speed). Where a level-off further
 /// on needs the descent to start sooner, it does, as without the mark.
 ///
-/// The times and fuel are not changed: the descent is flown at the
-/// cruise's ground speed and burn, and what a pilot saves by taking power
-/// off stays in the tanks.
-pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
+/// With an airplane whose profile gives a descent speed and fuel flow
+/// (`profile`), each descent is flown as its own phase at them
+/// (descent_phase): the legs' times and fuel are the descent's over the
+/// miles descended, and its rows state its figures. Without them the
+/// descent is flown at the cruise's ground speed and burn, as a handbook's
+/// cruise figures would fly it, and its top of descent says so
+/// (`descent_at_cruise`) for the app to ask for them.
+pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End, profile: Option<&Profile>) -> R<Vec<Obj>> {
     let mut out: Vec<Obj> = legs
         .iter()
         .map(|l| {
@@ -140,6 +145,7 @@ pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
             tops.push((starts[i] + along, i));
         }
     }
+    let mut flown = Vec::new();
     for (at, i, from_ft, (to_ft, level_at, pattern, fix)) in tods.into_iter().rev() {
         let (mut at, mut i) = (at, i);
         if climbs.iter().any(|(a, b)| *a <= at && at < *b) {
@@ -180,7 +186,11 @@ pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
             ("lon", number(lon)),
         ]);
         out[i].set("tod", tod);
+        flown.push(Segment { at, level_at, from_ft, to_ft, leg: i });
     }
+    // Each descent flown as its own phase where the airplane has its
+    // figures, else on the cruise's and its top of descent says so.
+    descent_phase::fly(&mut out, &starts, &ends, &flown, profile)?;
     for (i, leg) in out.iter_mut().enumerate() {
         if let Some(along) = toc_along(leg)? {
             let (lat, lon) = destination(fixes[i].num("lat")?, fixes[i].num("lon")?, leg.num("true_course_deg")?, along);
@@ -209,7 +219,7 @@ pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
 /// the leg: the leg's time to its end is exact either way, and a top of
 /// descent on a leg that also departs by a pattern -- a flight of one leg
 /// -- is put that many minutes sooner than flown, never later.
-fn flown_at_end(leg: &Obj) -> R<(f64, f64)> {
+pub(super) fn flown_at_end(leg: &Obj) -> R<(f64, f64)> {
     let mut minutes = 0.0;
     let mut gallons = 0.0;
     if let Some(p @ Value::Object(_)) = leg.get("procedure") {

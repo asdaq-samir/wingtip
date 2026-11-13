@@ -47,6 +47,8 @@ def plan_fields(a: dict) -> dict:
         "cruise_power_pct": a.get("cruisePowerPct"),
         "climb_tas_kt": a.get("climbTasKt"),
         "climb_fuel_burn_gph": a.get("climbFuelBurnGph"),
+        "descent_ias_kt": a.get("descentIasKt"),
+        "descent_fuel_burn_gph": a.get("descentFuelBurnGph"),
         "service_ceiling_ft": own.get("serviceCeilingFt"),
         "climb_rate_fpm": own.get("climbRateFpm") or handbook.get("climb_rate_fpm"),
         "taxi_fuel_gal": own.get("taxiFuelGal"),

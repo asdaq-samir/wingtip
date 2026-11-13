@@ -45,6 +45,8 @@ export function ownOfRecord(record: Aircraft): Partial<Record<FigureKey, number>
     usable_fuel_gal: record.usableFuelGal,
     climb_tas_kt: record.climbTasKt,
     climb_fuel_burn_gph: record.climbFuelBurnGph,
+    descent_ias_kt: record.descentIasKt,
+    descent_fuel_burn_gph: record.descentFuelBurnGph,
     climb_rate_fpm: record.figures.climbRateFpm,
     service_ceiling_ft: record.figures.serviceCeilingFt,
     taxi_fuel_gal: record.figures.taxiFuelGal,

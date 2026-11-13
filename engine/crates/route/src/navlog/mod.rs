@@ -38,6 +38,7 @@
 pub mod calls;
 pub mod change;
 pub mod climbs;
+pub mod descent_phase;
 pub mod descents;
 pub mod fuel_stop;
 pub mod holds;
@@ -192,6 +193,8 @@ impl Profile {
                 cruise_altitude_ft: opt("cruise_altitude_ft")?,
                 climb_tas_kt: opt("climb_tas_kt")?,
                 climb_fuel_burn_gph: opt("climb_fuel_burn_gph")?,
+                descent_ias_kt: opt("descent_ias_kt")?,
+                descent_fuel_burn_gph: opt("descent_fuel_burn_gph")?,
                 climb_rate_fpm_sea_level: opt("climb_rate_fpm_sea_level")?,
                 service_ceiling_ft: opt("service_ceiling_ft")?.unwrap_or(f64::NAN),
             },

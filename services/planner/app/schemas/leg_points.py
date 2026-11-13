@@ -35,8 +35,8 @@ class TopOfDescent(LegPoint):
     """Where a descent starts (TOD): down from `altitude_ft` to `to_ft` --
     the pattern altitude of the field landed at, the altitude an
     approach's first fix is crossed at, or the next leg's lower level --
-    at `fpm`, three to one at the leg's ground speed, or steeper where
-    the climb before it left less room (wingtip.navlog.with_descents)."""
+    at `fpm`, three to one at the descent's ground speed, or steeper where
+    the climb before it left less room (the engine's with_descents)."""
 
     to_ft: float
     # Whether `to_ft` is the pattern altitude at the field the flight
@@ -46,3 +46,16 @@ class TopOfDescent(LegPoint):
     # one (plan.approach_end).
     fix: str | None = None
     fpm: float
+    # The descent's own figures for the piece of the leg after the top,
+    # where the airplane's profile gives its descent speed and flow (the
+    # engine's descent_phase): its TAS, wind correction, headings, the
+    # piece's ground speed (its miles over its minutes) and the flow.
+    tas_kt: float | None = None
+    groundspeed_kt: float | None = None
+    fuel_burn_gph: float | None = None
+    wca_deg: float | None = None
+    true_heading_deg: float | None = None
+    magnetic_heading_deg: float | None = None
+    # With an airplane, whether the descent is flown on the cruise's
+    # figures for want of its own (the app asks for them); None with none.
+    descent_at_cruise: bool | None = None

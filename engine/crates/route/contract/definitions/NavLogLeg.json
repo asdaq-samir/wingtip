@@ -111,6 +111,18 @@
         "null"
       ]
     },
+    "phase": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "climb",
+        "descent",
+        null
+      ],
+      "description": "The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase."
+    },
     "toc": {
       "anyOf": [
         {

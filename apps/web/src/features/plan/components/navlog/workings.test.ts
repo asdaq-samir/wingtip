@@ -104,7 +104,7 @@ describe("a row flown all in the climb", () => {
   } as Leg;
 
   test("its airspeed is the climb speed, not a cruise power, and its time and fuel are the climb's", () => {
-    const w = workingsOf(CLIMB, true)!;
+    const w = workingsOf(CLIMB, "climb")!;
     expect(w.phase).toBe("climb");
     expect(w.steps.find((s) => s.name === "True airspeed")).toMatchObject({ sum: "the airplane's climb speed", result: "74 kt" });
     expect(w.steps.find((s) => s.name === "Fuel")?.sum).toContain("the climb's 10.5 gal/h");

@@ -269,6 +269,30 @@
             "title": "Cruise Tas Kt",
             "type": "number"
           },
+          "descent_fuel_burn_gph": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Descent Fuel Burn Gph"
+          },
+          "descent_ias_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Descent Ias Kt"
+          },
           "designator": {
             "anyOf": [
               {
@@ -6631,6 +6655,32 @@
             ],
             "title": "Depart"
           },
+          "descent_fuel_burn_gph": {
+            "anyOf": [
+              {
+                "maximum": 150.0,
+                "minimum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descent Fuel Burn Gph"
+          },
+          "descent_ias_kt": {
+            "anyOf": [
+              {
+                "maximum": 300.0,
+                "minimum": 30.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descent Ias Kt"
+          },
           "dest": {
             "title": "Dest",
             "type": "string"
@@ -10535,6 +10585,32 @@
             ],
             "title": "Depart"
           },
+          "descent_fuel_burn_gph": {
+            "anyOf": [
+              {
+                "maximum": 150.0,
+                "minimum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descent Fuel Burn Gph"
+          },
+          "descent_ias_kt": {
+            "anyOf": [
+              {
+                "maximum": 300.0,
+                "minimum": 30.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descent Ias Kt"
+          },
           "dest": {
             "title": "Dest",
             "type": "string"
@@ -11732,6 +11808,21 @@
               }
             ],
             "title": "Oat C"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "enum": [
+                  "climb",
+                  "descent"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase"
           },
           "power_pct": {
             "anyOf": [
@@ -13865,6 +13956,22 @@
             ],
             "default": null,
             "title": "Oat C"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "enum": [
+                  "climb",
+                  "descent"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Phase"
           },
           "power_pct": {
             "anyOf": [
@@ -22507,7 +22614,7 @@
         "type": "object"
       },
       "TopOfDescent": {
-        "description": "Where a descent starts (TOD): down from `altitude_ft` to `to_ft` --\nthe pattern altitude of the field landed at, the altitude an\napproach's first fix is crossed at, or the next leg's lower level --\nat `fpm`, three to one at the leg's ground speed, or steeper where\nthe climb before it left less room (wingtip.navlog.with_descents).",
+        "description": "Where a descent starts (TOD): down from `altitude_ft` to `to_ft` --\nthe pattern altitude of the field landed at, the altitude an\napproach's first fix is crossed at, or the next leg's lower level --\nat `fpm`, three to one at the descent's ground speed, or steeper where\nthe climb before it left less room (the engine's with_descents).",
         "properties": {
           "along_nm": {
             "title": "Along Nm",
@@ -22516,6 +22623,18 @@
           "altitude_ft": {
             "title": "Altitude Ft",
             "type": "number"
+          },
+          "descent_at_cruise": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Descent At Cruise"
           },
           "ete_min": {
             "title": "Ete Min",
@@ -22537,6 +22656,18 @@
             "title": "Fpm",
             "type": "number"
           },
+          "fuel_burn_gph": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fuel Burn Gph"
+          },
           "fuel_gal": {
             "anyOf": [
               {
@@ -22548,6 +22679,18 @@
             ],
             "title": "Fuel Gal"
           },
+          "groundspeed_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Groundspeed Kt"
+          },
           "lat": {
             "title": "Lat",
             "type": "number"
@@ -22556,13 +22699,61 @@
             "title": "Lon",
             "type": "number"
           },
+          "magnetic_heading_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Magnetic Heading Deg"
+          },
           "pattern": {
             "title": "Pattern",
             "type": "boolean"
           },
+          "tas_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tas Kt"
+          },
           "to_ft": {
             "title": "To Ft",
             "type": "number"
+          },
+          "true_heading_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "True Heading Deg"
+          },
+          "wca_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Wca Deg"
           }
         },
         "required": [
@@ -28208,6 +28399,42 @@
           },
           {
             "in": "query",
+            "name": "descent_ias_kt",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 300,
+                  "minimum": 30,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Descent Ias Kt"
+            }
+          },
+          {
+            "in": "query",
+            "name": "descent_fuel_burn_gph",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 150,
+                  "minimum": 1,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Descent Fuel Burn Gph"
+            }
+          },
+          {
+            "in": "query",
             "name": "cruise_power_pct",
             "required": false,
             "schema": {
@@ -28806,6 +29033,42 @@
                 }
               ],
               "title": "Climb Fuel Burn Gph"
+            }
+          },
+          {
+            "in": "query",
+            "name": "descent_ias_kt",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 300,
+                  "minimum": 30,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Descent Ias Kt"
+            }
+          },
+          {
+            "in": "query",
+            "name": "descent_fuel_burn_gph",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 150,
+                  "minimum": 1,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Descent Fuel Burn Gph"
             }
           },
           {
@@ -29801,7 +30064,7 @@
     },
     "/api/plan": {
       "get": {
-        "description": "The whole plan: course line, every scored candidate, the selected\ncheckpoints, and a nav log leg between each consecutive pair.\n\naltitude_ft is optional. Omitted, wingtip.altitude works out each leg's\nown legal altitudes -- clear of terrain and obstacles, under the\nClass B shelf over that leg alone and the aircraft's service\nceiling, on the hemispheric rule for that leg's own course\n-- and wingtip.navlog makes four plans of them: the lowest, the\nhighest, the fastest for the winds aloft, and the one that burns the\nleast fuel, climb and cruise. altitude_choice picks\nwhich one the legs fly -- the fastest unless asked otherwise, the\nplan a pilot with the winds in hand picks (it was the lowest, as the\npredictable one) -- and the reasoning comes back with it, since\n\"why am I at 6,500\" is a question a pilot will actually ask.\n\naircraft names a stock profile; cruise_tas_kt, fuel_burn_gph,\nusable_fuel_gal, climb_tas_kt, climb_fuel_burn_gph and\ncruise_power_pct (the power the cruise figures are at), when given,\nare a pilot's own aeroplane's numbers laid over it. Each leg flies\nthem in its own air: the cruise figures are the aeroplane's at a\nreference altitude on a standard day, and the forecast temperature\nat the leg's altitude gives the density altitude they are flown at\n(wingtip.performance). depart, an ISO time (UTC when naive), picks the\nwinds-aloft forecast period the legs are flown on -- the 6-, 12- or\n24-hour product, whichever is valid closest to the departure;\nwithout it, the 6-hour product, i.e. about now -- and whether the\nfuel reserve is the day or the night one.",
+        "description": "The whole plan: course line, every scored candidate, the selected\ncheckpoints, and a nav log leg between each consecutive pair.\n\naltitude_ft is optional. Omitted, wingtip.altitude works out each leg's\nown legal altitudes -- clear of terrain and obstacles, under the\nClass B shelf over that leg alone and the aircraft's service\nceiling, on the hemispheric rule for that leg's own course\n-- and wingtip.navlog makes four plans of them: the lowest, the\nhighest, the fastest for the winds aloft, and the one that burns the\nleast fuel, climb and cruise. altitude_choice picks\nwhich one the legs fly -- the fastest unless asked otherwise, the\nplan a pilot with the winds in hand picks (it was the lowest, as the\npredictable one) -- and the reasoning comes back with it, since\n\"why am I at 6,500\" is a question a pilot will actually ask.\n\naircraft names a stock profile; cruise_tas_kt, fuel_burn_gph, usable_fuel_gal,\nclimb_tas_kt, climb_fuel_burn_gph, descent_ias_kt (indicated), descent_fuel_burn_gph and\ncruise_power_pct (the power the cruise figures are at), when given,\nare a pilot's own aeroplane's numbers laid over it. Each leg flies\nthem in its own air: the cruise figures are the aeroplane's at a\nreference altitude on a standard day, and the forecast temperature\nat the leg's altitude gives the density altitude they are flown at\n(wingtip.performance). depart, an ISO time (UTC when naive), picks the\nwinds-aloft forecast period the legs are flown on -- the 6-, 12- or\n24-hour product, whichever is valid closest to the departure;\nwithout it, the 6-hour product, i.e. about now -- and whether the\nfuel reserve is the day or the night one.",
         "operationId": "plan_api_plan_get",
         "parameters": [
           {
@@ -29972,6 +30235,42 @@
                 }
               ],
               "title": "Climb Fuel Burn Gph"
+            }
+          },
+          {
+            "in": "query",
+            "name": "descent_ias_kt",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 300,
+                  "minimum": 30,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Descent Ias Kt"
+            }
+          },
+          {
+            "in": "query",
+            "name": "descent_fuel_burn_gph",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 150,
+                  "minimum": 1,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Descent Fuel Burn Gph"
             }
           },
           {

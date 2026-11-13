@@ -54,6 +54,8 @@ ROUTE_FIELDS = (
     "usable_fuel_gal",
     "climb_tas_kt",
     "climb_fuel_burn_gph",
+    "descent_ias_kt",
+    "descent_fuel_burn_gph",
     "cruise_power_pct",
     "service_ceiling_ft",
     "climb_rate_fpm",

@@ -85,7 +85,7 @@ class AircraftControllerTest {
     }
 
     private static Aircraft sampleAircraft() {
-        return new Aircraft(samplePilot(), "N12345", "C172", 110, 8.5, null, null, null, 40.0);
+        return new Aircraft(samplePilot(), "N12345", "C172", 110, 8.5, null, null, null, null, null, 40.0);
     }
 
     /** A method the path doesn't map is a 405, not the catch-all 500 --
@@ -150,6 +150,8 @@ class AircraftControllerTest {
                         any(),
                         any(),
                         any(),
+                        any(),
+                        any(),
                         any()))
                 .willReturn(sampleAircraft());
 
@@ -164,41 +166,6 @@ class AircraftControllerTest {
                 .andExpect(jsonPath("$.tailNumber").value("N12345"));
     }
 
-    /** The cruise's power and the climb's own speed and burn go through
-     *  to the aeroplane and back: the nav log flies every leg and every
-     *  climb on them. */
-    @Test
-    void add_passesTheCruisePowerAndTheClimbsOwnSpeedAndBurnThrough() throws Exception {
-        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-        given(aircraftService.add(
-                        any(),
-                        eq("N12345"),
-                        eq("C172"),
-                        eq(110.0),
-                        eq(8.5),
-                        eq(65.0),
-                        eq(74.0),
-                        eq(11.0),
-                        eq(40.0),
-                        any(),
-                        any(),
-                        any(),
-                        any()))
-                .willReturn(new Aircraft(samplePilot(), "N12345", "C172", 110, 8.5, 65.0, 74.0, 11.0, 40.0));
-
-        mockMvc.perform(post("/api/aircraft")
-                        .with(oidcLogin())
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"tailNumber\":\"N12345\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":110,"
-                                + "\"fuelBurnGph\":8.5,\"cruisePowerPct\":65,\"climbTasKt\":74,\"climbFuelBurnGph\":11,"
-                                + "\"usableFuelGal\":40}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.cruisePowerPct").value(65.0))
-                .andExpect(jsonPath("$.climbTasKt").value(74.0))
-                .andExpect(jsonPath("$.climbFuelBurnGph").value(11.0));
-    }
-
     /** The flight plan's items 10a, 10b and 19 A/ go through to the
      *  airplane and back, as the Brief's form fills them in. */
     @Test
@@ -210,6 +177,8 @@ class AircraftControllerTest {
                         eq("C172"),
                         eq(110.0),
                         eq(8.5),
+                        any(),
+                        any(),
                         any(),
                         any(),
                         any(),

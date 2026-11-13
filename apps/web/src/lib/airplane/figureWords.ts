@@ -41,6 +41,22 @@ export const FIGURE_WORDS: Record<FigureKey, FigureWords> = {
     max: 5000,
     minExcluded: true,
   },
+  // A descent's speed as its handbook gives it, indicated (the engine
+  // flies it as a true airspeed at the descent's altitude).
+  descent_ias_kt: {
+    label: "Descent speed (IAS)",
+    unit: "kt",
+    ask: (t) => `How fast does ${t} descend (indicated airspeed, as its handbook gives it)?`,
+    min: 30,
+    max: 300,
+  },
+  descent_fuel_burn_gph: {
+    label: "Descent fuel burn",
+    unit: "gal/h",
+    ask: (t) => `How much fuel does ${t} burn in the descent?`,
+    min: 1,
+    max: 150,
+  },
   service_ceiling_ft: { label: "Service ceiling", unit: "ft", ask: (t) => `What is ${t}'s service ceiling?`, min: 1000, max: 30000 },
   taxi_fuel_gal: {
     label: "Start and taxi fuel",

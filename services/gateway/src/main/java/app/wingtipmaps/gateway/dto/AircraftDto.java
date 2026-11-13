@@ -8,7 +8,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /** An aeroplane as the API returns it. The cruise power, the climb's
- *  speed and burn, `usableFuelGal` and the flight plan's items are null
+ *  speed and burn, the descent's, `usableFuelGal` and the flight plan's items are null
  *  when the owner has not said. */
 public record AircraftDto(
         Long id,
@@ -19,6 +19,8 @@ public record AircraftDto(
         @Nullable Double cruisePowerPct,
         @Nullable Double climbTasKt,
         @Nullable Double climbFuelBurnGph,
+        @Nullable Double descentIasKt,
+        @Nullable Double descentFuelBurnGph,
         @Nullable Double usableFuelGal,
         Instant createdAt,
 

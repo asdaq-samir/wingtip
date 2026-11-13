@@ -93,6 +93,14 @@ pub struct Airplane {
     pub climb_fuel_burn_gph: Option<f64>,
     pub climb_rate_fpm_sea_level: Option<f64>,
     pub service_ceiling_ft: f64,
+    /// The descent's indicated airspeed, knots, as a handbook gives it (a
+    /// POH's section 5 descent figures), and its fuel flow, gallons an
+    /// hour: the descent flown as its own phase (wingtip_route's
+    /// descent_phase, which makes the speed a TAS). None where the profile
+    /// gives none: the descent is then flown on the cruise's figures and
+    /// the app asks for them, never another airplane's.
+    pub descent_ias_kt: Option<f64>,
+    pub descent_fuel_burn_gph: Option<f64>,
 }
 
 fn given(v: Option<f64>) -> Option<f64> {
@@ -132,6 +140,13 @@ impl Airplane {
         given(self.climb_rate_fpm_sea_level)?;
         given(Some(self.service_ceiling_ft))?;
         given(self.climb_tas_kt)
+    }
+
+    /// The descent's indicated airspeed and fuel flow, where the profile
+    /// gives both; None, flown on the cruise's figures, where it lacks
+    /// either.
+    pub fn descent(&self) -> Option<(f64, f64)> {
+        Some((given(self.descent_ias_kt)?, given(self.descent_fuel_burn_gph)?))
     }
 
     /// The climb's fuel flow at sea level: the profile's own, or
