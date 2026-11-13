@@ -83,12 +83,31 @@ class DiagnosticsControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(IOS.replace("\"ios\"", "\"watch\"")))
                 .andExpect(status().isBadRequest());
-        mockMvc.perform(post("/api/diagnostics")
-                        .header("X-Forwarded-For", "203.0.113.21")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(IOS.replace("launch_ms_p50", "Position")))
-                .andExpect(status().isBadRequest());
         verify(diagnostics, never()).record(any(), any(), anyString(), anyMap());
+    }
+
+    @Test
+    void aBadVersionIsCleanedAndUnknownKindsAndFiguresAreDroppedNotRefused() throws Exception {
+        mockMvc.perform(post("/api/diagnostics")
+                        .header("X-Forwarded-For", "203.0.113.24")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"platform\": \"ios\", \"version\": \"1.0 <b>(42)</b>" + "9".repeat(60)
+                                + "\", \"device\": \"phone\", \"faults\": ["
+                                + "{\"kind\": \"meltdown\", \"signature\": \"x\"},"
+                                + "{\"kind\": \"crash\", \"signature\": \"EXC_BAD_ACCESS\"}],"
+                                + " \"metrics\": {\"Position\": 1, \"launch_ms_p50\": 812}}"))
+                .andExpect(status().isNoContent());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Fault>> faults = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<Origin> origin = ArgumentCaptor.forClass(Origin.class);
+        verify(diagnostics).record(origin.capture(), faults.capture(), eq("app"), eq(Map.of("launch_ms_p50", 812.0)));
+        assertThat(origin.getValue().version())
+                .hasSize(DiagnosticsController.MAX_VERSION)
+                .startsWith("1.0 b(42)b");
+        assertThat(faults.getValue())
+                .singleElement()
+                .satisfies(f -> assertThat(f.kind()).isEqualTo("crash"));
     }
 
     @Test
