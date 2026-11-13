@@ -18,7 +18,7 @@ enum Log {
 
     /// The app's own life: launch, the session, the scene.
     static let app = Logger(subsystem: subsystem, category: "app")
-    /// The engine (wingtip-engine through its C functions): a rule
+    /// The engine (wingtip-engine through its generated bindings): a rule
     /// refused, a pack that will not read.
     static let engine = Logger(subsystem: subsystem, category: "engine")
     /// The planner and the gateway: a call that failed, in their words.

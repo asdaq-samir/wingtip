@@ -18,11 +18,16 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
   the app compiles to Java 25 bytecode, which AGP 9.6's D8 dexes. Every
   Kotlin and lint warning fails the build, as a Gradle deprecation does
   (`org.gradle.warning.mode=fail`).
-- `app/src/main/cpp`: the JNI shim round the engine, in C
-  (`wingtip_jni.c`), and the CMake file that links the engine's static
-  library for each ABI. The engine itself is built by
-  `engine/bindings/ffi/build-android.sh` into `app/engine/` (not committed; the
-  twin of `build-xcframework.sh`). It uses the NDK `.tool-versions`
+- `app/engine/` (not committed): the engine, built by
+  `engine/bindings/ffi/build-android.sh` (the twin of
+  `build-xcframework.sh`) as a shared library for each ABI
+  (`jniLibs/<abi>/libwingtip_ffi.so`), and the Kotlin UniFFI's
+  uniffi-bindgen writes from it (`generated/`, package
+  `app.wingtipmaps.android.engine.ffi`), which loads it through JNA
+  (`net.java.dev.jna:jna`'s Android archive). Nothing between the Rust
+  and the Kotlin is written by hand: the Rust's `#[uniffi::export]`
+  functions (`engine/bindings/ffi/src/lib.rs`) are the one source, and
+  both are generated again with every build of the engine. It uses the NDK `.tool-versions`
   names (`android-ndk`), the app's `ndkVersion` too: r30, which GitHub's
   ubuntu-26.04 image has installed, so CI downloads no NDK. On a Mac,
   install that version once (Android Studio's SDK Manager, SDK Tools, NDK
@@ -30,8 +35,8 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
   and rustup's cargo when the shell's PATH lacks it.
 - `app/src/main/kotlin/app/wingtipmaps/android`:
   - `engine/Engine.kt`: the engine's one way in, `Engine.call(name,
-    input)` (`wt_call`), with `EngineException` for the engine's own
-    words when it refuses;
+    input)` (the generated `engine.ffi.call`), with `EngineException`
+    for the engine's own words when it refuses;
   - `api/`: the data layer. `Gateway` (the session's cookies, kept by
     `CookieStore` on `SealedShelf`, encrypted under an Android Keystore
     AES-GCM key, since androidx.security's EncryptedSharedPreferences is
@@ -428,11 +433,10 @@ App Bundle sends a phone one ABI's.
 
 - **Keep rules.** Each library brings its own (kotlinx.serialization's
   in its jar, Room 3, AppFunctions, MapLibre, OkHttp, WorkManager, ML
-  Kit), and the stock file keeps every class with a native method under
-  its name with those methods, which is how JNI finds `Engine.callNative`
-  and the `Packs` functions. `app/proguard-rules.pro` adds the one thing
-  only this app knows: the shim throws `EngineException` by its class
-  name through its `String` constructor.
+  Kit). JNA's Android archive brings none, so `app/proguard-rules.pro`
+  holds the rules UniFFI's manual gives: JNA's classes, the `Library`
+  interface and `Structure`s it finds by name, and the engine's generated
+  package, kept whole.
 - **Baseline Profile.** The stock `androidx.baselineprofile` plugin, with
   a generator module, `:baselineprofile` (Google's template: a
   `com.android.test` module driving the app's `benchmarkRelease` build
@@ -460,8 +464,8 @@ App Bundle sends a phone one ABI's.
 - **The engine in the release build.** `ReleaseEngineTest`, on CI's
   nightly emulator, starts the `benchmarkRelease` build (R8 and the
   release's rules, signed with the debug key) and lets the map settle:
-  its first rest asks the engine `distance_nm` through the JNI shim, so a
-  renamed native method, a dropped `EngineException` constructor or a
+  its first rest asks the engine `distance_nm` through the generated
+  bindings, so a JNA interface or `Structure` R8 renamed or a
   stripped serializer shows as an "engine ... failed" line in the log,
   or a crash. The debug build's `EngineTest` holds the rules themselves
   to the shared fixtures.
@@ -524,7 +528,7 @@ of the location type with Android's persistent notification; the path
 flown (OwnTrail); the airplane tracked and its watches (Tracking,
 Traffic); the cycle packs on the device and the engine's in-view readers
 through JNI entries appended to the shim (Packs.kt, CyclePacks,
-InView); the pilot's records in Room 3 (androidx.room3, over the
+InView; since 2026-11-12 the generated UniFFI Kotlin); the pilot's records in Room 3 (androidx.room3, over the
 framework's SQLite driver); and notification channels. The
 map draws own ship as the blue dot and the path under the route, with
 the location button over the map (`ui/MapButtons`) as Apple Maps has

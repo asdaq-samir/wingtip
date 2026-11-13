@@ -1,0 +1,15 @@
+# How uniffi-bindgen names what it writes for each phone (read from the
+# crate's folder in library mode).
+
+# The Swift module the app imports (`import WingtipEngine`, a static
+# framework target of apps/ios/project.yml) over the C module of the
+# XCFramework's header and module map.
+[bindings.swift]
+module_name = "WingtipEngine"
+ffi_module_name = "WingtipEngineFFI"
+ffi_module_filename = "WingtipEngineFFI"
+
+# The Kotlin package beside the app's engine/ wrappers.
+[bindings.kotlin]
+package_name = "app.wingtipmaps.android.engine.ffi"
+cdylib_name = "wingtip_ffi"

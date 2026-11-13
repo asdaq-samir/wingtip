@@ -50,7 +50,7 @@ fi
 # by then (2026-11-12, a worktree built before build-xcframework.sh ran).
 # So no build starts without the framework, and a description that cached
 # the error is dropped (Xcode makes a new one; build.db keeps what is built).
-engine=$here/apps/ios/Frameworks/WingtipEngine.xcframework
+engine=$here/apps/ios/Frameworks/WingtipEngine/WingtipEngineFFI.xcframework
 if [ ! -d "$engine" ]; then
   echo "xcodebuild.sh: no $engine; run engine/bindings/ffi/build-xcframework.sh first" >&2
   exit 1

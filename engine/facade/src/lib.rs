@@ -1,7 +1,7 @@
 //! wingtip-engine: the planner's figures in plain Rust, with no network
 //! and nothing but std, so the same code answers on the planner (through
 //! engine/bindings/py, the wingtip_native module) and on the phones (through
-//! engine/bindings/ffi's C functions: iOS from Swift, Android later from Kotlin).
+//! engine/bindings/ffi, whose Swift and Kotlin UniFFI generates).
 //! It must build for aarch64-apple-ios and aarch64-linux-android as it
 //! is: no Python, no host-only crates, and the cycle pack read from bytes
 //! the caller maps.
@@ -12,7 +12,8 @@
 //! them as before. Only `call` is the facade's own.
 //!
 //! - call: one way in for every host, a rule asked by name with JSON in
-//!   and JSON out (the web app's wasm, wingtip_native.call, wt_call);
+//!   and JSON out (the web app's wasm, wingtip_native.call, the phones'
+//!   generated `call`);
 //! - grid: route options' straight lines over the grid;
 //! - ahead: the alerts ahead of the airplane from the phone's packs;
 //! - airspace: whether an airspace volume holds a point;

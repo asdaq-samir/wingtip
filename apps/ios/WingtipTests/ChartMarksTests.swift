@@ -37,14 +37,13 @@ struct ChartMarksTests {
     }
 
     @Test func thePacksAreAskedThroughTheEngine() throws {
-        let packs = try ["n40w088", "n40w092"].map { name -> Data in
-            let url = try #require(Bundle(for: MarksBundle.self).url(forResource: name, withExtension: "pack"))
-            return try Data(contentsOf: url, options: .alwaysMapped)
+        let packs = try ["n40w088", "n40w092"].map { name -> String in
+            try #require(Bundle(for: MarksBundle.self).url(forResource: name, withExtension: "pack")).path
         }
         // The Chicago cut holds no sua sections or fixes table: none, not a failure.
-        let areas = CyclePacks.inView(CyclePacks.AreasAnswer.self, packs: packs, south: 41.5, west: -88.5, north: 42.5, east: -87.5, wt_special_use_in_view)
+        let areas = CyclePacks.inView(CyclePacks.AreasAnswer.self, packs: packs, south: 41.5, west: -88.5, north: 42.5, east: -87.5, WingtipEngine.specialUseInView)
         #expect(areas?.areas == [])
-        let fixes = CyclePacks.inView(CyclePacks.FixesAnswer.self, packs: packs, south: 41.5, west: -88.5, north: 42.5, east: -87.5, wt_fixes_in_view)
+        let fixes = CyclePacks.inView(CyclePacks.FixesAnswer.self, packs: packs, south: 41.5, west: -88.5, north: 42.5, east: -87.5, WingtipEngine.fixesInView)
         #expect(fixes?.fixes == [])
     }
 }

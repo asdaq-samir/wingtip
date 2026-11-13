@@ -3,7 +3,7 @@ import Testing
 @testable import Wingtip
 
 /// The alerts ahead from packs on the phone (CyclePacks.ahead, the engine's
-/// wt_ahead), on the Chicago cut's phone packs (services/planner/tests_wingtip/fixtures/native/phone):
+/// ahead), on the Chicago cut's phone packs (services/planner/tests_wingtip/fixtures/native/phone):
 /// eastbound at 3,000 ft west of O'Hare, its Class B ahead, as the
 /// planner's /api/airspace/ahead answers it there.
 private final class AheadBundle {}

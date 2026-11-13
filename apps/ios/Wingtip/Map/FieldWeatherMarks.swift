@@ -1,7 +1,7 @@
 import Foundation
 
 /// Each field's weather mark put together from what the planner sent and
-/// what the engine says of it, through wt_call: the barb (wind_barb, calm
+/// what the engine says of it, through its call: the barb (wind_barb, calm
 /// among its answers), whether it is drawn zoomed out and red (wind_arrow,
 /// on the field's least crosswind, least_crosswind, which the planner
 /// works out with the same engine for each field in view), and the ↓

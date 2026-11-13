@@ -48,7 +48,9 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
 
 - A rule the pilot needs offline in flight is computed on the phone by
   the shared engine (`engine/facade`), the same Rust the web app and the
-  planner run, asked by name through `Engine.call` (`wt_call`;
+  planner run, asked by name through `Engine.call` (the engine's `call`,
+  through the Swift UniFFI writes from the Rust: the `WingtipEngine`
+  module, `engine/bindings/ffi/build-xcframework.sh`;
   `engine/facade/src/call.rs` lists every name, and
   `engine/contract/engine.schema.json` types each input and answer). An
   answer the app decodes can use a type generated from that contract,
@@ -63,8 +65,8 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
   `apps/ios/WingtipTests/SharedFixturesTests.swift` (project.yml bundles the
   folder into the test target by its path, not a copy), and
   `BridgeFixturesTests.swift` holds the engine's raw JSON answers to
-  them through the phone's own bridge (`Engine.callText` over
-  `wt_call`), so a bridge that changes a key, a number, a null or a
+  them through the phone's own bridge (`Engine.callText` over the
+  generated `call`), so a bridge that changes a key, a number, a null or a
   character fails CI though the Rust and web tests pass. The few rules still
   in Swift are in the table below with their fixtures; issue #482 moves
   them into the engine. Every other figure

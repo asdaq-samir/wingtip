@@ -8,6 +8,7 @@ import app.wingtipmaps.android.api.CyclePackIndex
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.planned
+import app.wingtipmaps.android.engine.ffi.packVerify
 import app.wingtipmaps.android.engine.generated.distanceNm
 import app.wingtipmaps.android.engine.generated.regionOf
 import kotlinx.coroutines.CancellationException
@@ -21,7 +22,8 @@ import okhttp3.coroutines.executeAsync
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
-import java.nio.channels.FileChannel
+import app.wingtipmaps.android.engine.ffi.ahead as packsAhead
+import app.wingtipmaps.android.engine.ffi.airspaceAt as packAirspaceAt
 
 /**
  * The cycle packs kept on the phone, a region each (wingtip.cycle_pack's
@@ -31,17 +33,13 @@ import java.nio.channels.FileChannel
  * turns or a pack is rebuilt within it. The twin of the iOS app's
  * CyclePacks.swift. Under filesDir, not cacheDir: Android may clear the
  * cache when space is short, as it may the chart's tiles, and the packs
- * are small. Each pack is memory-mapped
- * once and handed to the engine's readers (Packs) as a direct buffer,
- * never copied.
+ * are small. The engine's readers (engine.ffi) take each pack by its
+ * file's path and map it for the call, so a pan reads only the pages it
+ * needs and nothing is copied.
  */
 class CyclePacks(private val root: File) {
     private val indexFile = File(root, "index.json")
     private val lock = Any()
-    /** The packs mapped so far, by file: a map is one syscall and the
-     *  pages come in as the engine reads them, and the same pack is asked
-     *  about every second in flight. Let go when the cycle turns. */
-    private val mapped = HashMap<String, ByteBuffer>()
 
     /** The list the packs on the phone were fetched by; null before the
      *  first keep. */
@@ -50,24 +48,13 @@ class CyclePacks(private val root: File) {
 
     fun path(cycle: String, region: String): File = File(root, "$cycle/$region.pack")
 
-    /** One pack mapped read-only, or null where the phone has not got it. */
-    fun pack(cycle: String, region: String): ByteBuffer? {
-        val file = path(cycle, region)
-        synchronized(lock) {
-            mapped[file.path]?.let { return it }
-            if (!file.isFile) return null
-            val buffer = runCatching {
-                RandomAccessFile(file, "r").use { it.channel.map(FileChannel.MapMode.READ_ONLY, 0, it.length()) }
-            }.getOrNull() ?: return null
-            mapped[file.path] = buffer
-            return buffer
-        }
-    }
+    /** One pack's path, or null where the phone has not got it. */
+    fun pack(cycle: String, region: String): String? = path(cycle, region).takeIf { it.isFile }?.path
 
-    /** The packs of these regions of the kept cycle, those the phone has. */
-    fun packs(regions: Collection<String>): Array<ByteBuffer> {
-        val index = index ?: return emptyArray()
-        return regions.sorted().mapNotNull { pack(index.cycle, it) }.toTypedArray()
+    /** The paths of these regions' packs of the kept cycle, those the phone has. */
+    fun packs(regions: Collection<String>): List<String> {
+        val index = index ?: return emptyList()
+        return regions.sorted().mapNotNull { pack(index.cycle, it) }
     }
 
     /** The packs of these regions fetched where the phone has not got them
@@ -121,15 +108,15 @@ class CyclePacks(private val root: File) {
                 // As a Buffer: ByteBuffer's own flip() only exists from
                 // API 34, and the engine wants a direct buffer, not the array.
                 (direct as java.nio.Buffer).flip()
-                if (Packs.verify(direct) != 1) {
+                if (!packVerify(direct)) {
                     whole = false
                     continue
                 }
-                // A pack rebuilt within the cycle replaces the one mapped:
-                // the old mapping stays whole for whoever holds it, and
-                // the next read maps the new file.
+                // A pack rebuilt within the cycle is renamed over the old
+                // one: a read that has the old file mapped keeps it whole,
+                // and the next read maps the new file.
                 synchronized(lock) {
-                    if (writeWhole(file, bytes)) mapped.remove(file.path) else whole = false
+                    if (!writeWhole(file, bytes)) whole = false
                 }
             }
             // The same cycle, or none kept before: what came is used as it
@@ -141,7 +128,6 @@ class CyclePacks(private val root: File) {
                 // would leave no index, and so no packs, for the air.
                 if (!writeWhole(indexFile, listing.toByteArray())) return@withContext
                 root.listFiles()?.filter { it.isDirectory && it.name != fresh.cycle }?.forEach { it.deleteRecursively() }
-                if (kept?.cycle != fresh.cycle) mapped.clear()
             }
         }
     }
@@ -178,10 +164,10 @@ class CyclePacks(private val root: File) {
     private fun keptRegions(cycle: String): Set<String> =
         File(root, cycle).listFiles()?.filter { it.extension == "pack" }?.map { it.nameWithoutExtension }?.toSet() ?: emptySet()
 
-    /** Every pack the phone keeps of the cycle, mapped: the regions its
+    /** Every pack the phone keeps of the cycle, by path: the regions its
      *  routes cross, for a clearance's places to be found in the air. */
-    fun keptPacks(): Array<ByteBuffer> {
-        val index = index ?: return emptyArray()
+    fun keptPacks(): List<String> {
+        val index = index ?: return emptyList()
         return packs(keptRegions(index.cycle))
     }
 
@@ -192,11 +178,11 @@ class CyclePacks(private val root: File) {
         val index = index ?: return null
         val region = Engine.regionOf(lat, lon).getOrThrow()
         val pack = if (index.regions.none { it.name == region }) null else pack(index.cycle, region) ?: return null
-        val json = Packs.airspaceAt(pack, lat, lon, groundFt ?: Double.NaN) ?: return null
+        val json = packAirspaceAt(pack, lat, lon, groundFt) ?: return null
         return runCatching { Gateway.json.decodeFromString<AirspaceAt>(json) }.getOrNull()
     }
 
-    /** The alerts ahead with no network (wt_ahead): what the planner's
+    /** The alerts ahead with no network (the engine's ahead): what the planner's
      *  /api/airspace/ahead answers, worked out on the phone from the packs
      *  round the airplane. Null where no pack round the point was ever
      *  kept. The obstacles are the planner's alone and the TFRs are not
@@ -210,8 +196,7 @@ class CyclePacks(private val root: File) {
         }
         val packs = packs(names)
         if (packs.isEmpty()) return null
-        val json = Packs.ahead(packs, lat, lon, trackDeg, groundspeedKt, altitudeFt ?: Double.NaN, 0.0, nowMs / 1000, null, Long.MIN_VALUE)
-            ?: return null
+        val json = packsAhead(packs, lat, lon, trackDeg, groundspeedKt, altitudeFt, 0.0, nowMs / 1000, null, null)
         return runCatching { Gateway.json.decodeFromString<Ahead>(json) }.getOrNull()
     }
 

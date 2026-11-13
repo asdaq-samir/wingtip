@@ -9,8 +9,8 @@ import UIKit
 /// and alert areas magenta, a restricted area over a MOA it lies in
 /// (ForeFlight's inks, the owner's of 2026-11-08); each Enroute Low fix a
 /// four-point star in the airspace blue with its ident beside it. From the
-/// phone's cycle packs through the engine (wt_special_use_in_view,
-/// wt_fixes_in_view), with no network: the overlay tiles' PMTiles would
+/// phone's cycle packs through the engine (specialUseInView,
+/// fixesInView), with no network: the overlay tiles' PMTiles would
 /// need a vector tile decoder MapKit does not have, and a planner answer
 /// would not draw in the air with no signal. The VFR waypoints are
 /// MapExtras' own. Nothing here works out a rule: it draws what it is given.

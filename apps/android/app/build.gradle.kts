@@ -3,9 +3,10 @@ import java.util.Properties
 
 // The native Android app (docs/NATIVE-ANDROID.md): Jetpack Compose and
 // Material 3 over the same planner and gateway the website uses, with the
-// shared Rust engine (engine/facade) linked in through a C shim
-// (src/main/cpp). Nothing of the owner's is kept here: the host and the
-// package name come in from outside, as the shell's build takes them.
+// shared Rust engine (engine/facade) through its generated Kotlin
+// (engine/bindings/ffi/build-android.sh). Nothing of the owner's is kept
+// here: the host and the package name come in from outside, as the
+// shell's build takes them.
 plugins {
     // AGP 9 compiles the Kotlin itself (built-in Kotlin): no Kotlin
     // Android plugin.
@@ -59,8 +60,8 @@ val uploadPassword: String? = System.getenv("WINGTIP_UPLOAD_PASSWORD")?.ifEmpty 
 
 android {
     namespace = "app.wingtipmaps.android"
-    // The NDK that builds the JNI shim, .tool-versions' android-ndk (held
-    // there by scripts/build/toolchain.sh), and the one
+    // The NDK that strips the engine's library, .tool-versions'
+    // android-ndk (held there by scripts/build/toolchain.sh), and the one
     // engine/bindings/ffi/build-android.sh builds the engine with: r30, the
     // newest stable NDK GitHub's ubuntu-26.04 image already has
     // (ANDROID_NDK_LATEST_HOME). Left to AGP's default (28.2), every CI run
@@ -99,14 +100,6 @@ android {
         }
     }
 
-    // The JNI shim round the engine's static library (src/main/cpp): one C
-    // file, built by the NDK's CMake for each ABI above.
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-        }
-    }
-
     signingConfigs {
         if (uploadKeystore != null && uploadPassword != null) {
             create("upload") {
@@ -125,7 +118,8 @@ android {
             // 74.8 MB unshrunk (2026-11-10). The libraries bring their own
             // keep rules (kotlinx.serialization, Room 3, AppFunctions,
             // MapLibre, OkHttp, WorkManager); proguard-rules.pro holds only
-            // the JNI shim's, which no library can know of.
+            // JNA's and the engine's generated bindings', which JNA's
+            // Android archive does not bring.
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -171,6 +165,13 @@ android {
         getByName("test") {
             resources.directories.add("../../web/src/lib/fixtures")
         }
+        // The engine (engine/bindings/ffi/build-android.sh, not committed):
+        // its shared library for each ABI, and the Kotlin uniffi-bindgen
+        // writes from it, which loads it through JNA.
+        getByName("main") {
+            jniLibs.directories.add("engine/jniLibs")
+            kotlin.directories.add("engine/generated")
+        }
     }
 }
 
@@ -210,6 +211,9 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+    // The engine's generated Kotlin calls its library through JNA: the
+    // Android archive, which carries JNA's own native part for each ABI.
+    implementation(libs.jna) { artifact { type = "aar" } }
     implementation(libs.okhttp)
     // OkHttp's coroutine call (executeAsync), for every call the app makes.
     implementation(libs.okhttp.coroutines)

@@ -28,6 +28,10 @@ composeBom = "2026.11.00"
 serialization = "1.13.0"
 coroutines = "1.11.0"
 okhttp = "5.5.1"
+# JNA, which the engine's generated Kotlin (uniffi-bindgen, engine/bindings/ffi)
+# loads and calls the engine's library through: its Android archive, the
+# newest (5.19.1), with the 16 KB-page fixes of 5.16 and 5.17.
+jna = "5.19.1"
 maplibre = "2026.11.2-globe"
 material = "1.14.0"
 junit = "4.13.2"
@@ -140,6 +144,7 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 # MapLibre Native: the open native map, no key and no account, which is
 # why it draws the chart rather than Google Maps (docs/NATIVE-ANDROID.md).

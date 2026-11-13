@@ -24,7 +24,7 @@ once and every app gets the same answer.
 | **The engine** | [`engine/`](../engine) (Rust) | Every aviation rule and figure, once: altitudes, winds, runways, fuel, weather limits, Go / No-Go, holds, procedures, the clearance reader, the debrief, currency. No network, no screen, no clock. A facade (`wingtip-engine`) over eleven domain crates; each rule is a name in `engine/facade/src/call.rs`, JSON in and out, typed by `engine/contract/engine.schema.json`. [engine/README.md](../engine/README.md) |
 | **The planner and its services** | [`services/planner`](../services/planner), [`ingest`](../services/ingest), [`weather`](../services/weather), [`jobs`](../services/jobs) (Python) | Work out a flight. The planner fetches the FAA's data, reads the stores the other services fill, scores checkpoints with the chart model, and asks the engine every rule (`wingtip_native.call`). |
 | **The gateway** | [`services/gateway`](../services/gateway) (Spring Boot) | Who the pilot is and what they saved: accounts, sign-in, records, the public API, scheduled mail. No aviation logic: it asks the planner for a figure. [services/gateway/README.md](../services/gateway/README.md) |
-| **The apps** | [`apps/web`](../apps/web), [`apps/ios`](../apps/ios), [`apps/android`](../apps/android) | Get data, keep state, draw (one view model per screen), and ask the engine the rest by name: the web through WebAssembly (`callEngine`), the phones through its C interface (`wt_call`). |
+| **The apps** | [`apps/web`](../apps/web), [`apps/ios`](../apps/ios), [`apps/android`](../apps/android) | Get data, keep state, draw (one view model per screen), and ask the engine the rest by name: the web through WebAssembly (`callEngine`), the phones through the Swift and Kotlin UniFFI generates from it (`call`). |
 
 The owner kept both server languages on this split (2026-11-06): the
 boundary between them is plain HTTP, merging them would give a pilot
@@ -62,7 +62,7 @@ On request only, behind a compose profile:
 ### A request, end to end
 
 ```
-app (web, iOS, Android)   draws; asks the engine (WebAssembly, wt_call) what it draws
+app (web, iOS, Android)   draws; asks the engine (WebAssembly, UniFFI) what it draws
   -> gateway   :8080      serves the page, owns sign-in and records, proxies /api/planner/*
   -> planner   :8084      works out the flight from the stores and the FAA's data; asks the engine every rule
   -> db        :5432      pilots, aircraft, flights, logbook

@@ -57,14 +57,14 @@ private fun difference(got: JsonElement?, want: JsonElement?, path: String = "$"
 }
 
 /**
- * The engine through this app's own bridge (Engine.callNative, the JNI
- * shim in wingtip_jni.c over wt_call) held to the shared fixtures the
+ * The engine through this app's own bridge (Engine.callNative, the
+ * generated UniFFI Kotlin and JNA over the engine's call) held to the shared fixtures the
  * engine's Rust tests (engine/facade/tests) and the web's vitest tests
  * (through the .wasm) hold it to: apps/web/src/lib/fixtures, this test APK's
  * assets by build.gradle.kts. The Rust and web tests never pass through
- * JNI, so a shim that changed a key's case, wrote a number as a string,
- * dropped a null or broke a character outside ASCII (JNI's strings are
- * modified UTF-8) would leave them green; here it fails. The answer is
+ * JNA, so a bridge that changed a key's case, wrote a number as a string,
+ * dropped a null or broke a character outside ASCII (a string crosses as
+ * UTF-8 bytes) would leave them green; here it fails. The answer is
  * compared as the JSON it is, before any of the app's classes decode it
  * (the iOS app's BridgeFixturesTests is the twin).
  *

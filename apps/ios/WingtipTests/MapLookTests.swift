@@ -112,9 +112,8 @@ struct MapLookTests {
     }
 
     @Test func thePacksSayWhichFieldsAreToweredAsThePlannerDoes() throws {
-        let packs = try ["n40w088", "n40w092"].map { name -> Data in
-            let url = try #require(Bundle(for: LookBundle.self).url(forResource: name, withExtension: "pack"))
-            return try Data(contentsOf: url, options: .alwaysMapped)
+        let packs = try ["n40w088", "n40w092"].map { name -> String in
+            try #require(Bundle(for: LookBundle.self).url(forResource: name, withExtension: "pack")).path
         }
         let pins = try #require(CyclePacks.airportsInView(packs: packs, south: 41.8, west: -88.2, north: 42.2, east: -87.6))
         // O'Hare and Chicago Executive have towers (NASR APT_BASE ATCT).

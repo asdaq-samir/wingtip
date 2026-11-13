@@ -15,8 +15,8 @@ import org.junit.runner.RunWith
  * native-android.yml): the app's benchmarkRelease build -- the release's
  * shrinking and keep rules, signed with the debug key -- is started and its
  * map left to settle. The map's first rest asks the engine `distance_nm`
- * through the JNI shim (MapPane's onView), so a native method R8 renamed,
- * EngineException's constructor dropped (the shim throws it by name) or a
+ * through the generated bindings (MapPane's onView), so a JNA interface
+ * or Structure R8 renamed or dropped (proguard-rules.pro keeps them) or a
  * contract class's serializer stripped is logged by Engine.rule as
  * "<rule> failed" under the "engine" tag, or kills the process. Neither
  * may happen.

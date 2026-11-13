@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Wingtip
 
-/// The engine through its C functions (Engine, engine/bindings/ffi), on the
+/// The engine through its generated bindings (Engine, engine/bindings/ffi), on the
 /// Chicago cut's phone packs: at each real tap -- O'Hare, KDPA, Midway and
 /// its shelf, Wheeling under O'Hare's shelf -- the planner's own answer,
 /// band for band (services/planner/tests_wingtip/fixtures/native/phone, bundled by project.yml;
@@ -11,9 +11,13 @@ private final class PackBundle {}
 
 private struct Missing: Error { let name: String }
 
-private func resource(_ name: String, _ ext: String) throws -> Data {
+private func url(_ name: String, _ ext: String) throws -> URL {
     guard let url = Bundle(for: PackBundle.self).url(forResource: name, withExtension: ext) else { throw Missing(name: "\(name).\(ext)") }
-    return try Data(contentsOf: url, options: .alwaysMapped)
+    return url
+}
+
+private func resource(_ name: String, _ ext: String) throws -> Data {
+    try Data(contentsOf: url(name, ext), options: .alwaysMapped)
 }
 
 struct CyclePackTests {
@@ -21,15 +25,15 @@ struct CyclePackTests {
         let expected = try Planner.json.decode([String: AirspaceAt].self, from: try resource("chicago_airspace_at", "json"))
         #expect(expected.count >= 5)
         for (name, want) in expected {
-            let pack = try resource(Engine.region(lat: want.lat, lon: want.lon), "pack")
-            #expect(Engine.verify(pack), "\(name)")
+            let pack = try url(Engine.region(lat: want.lat, lon: want.lon), "pack")
+            #expect(Engine.verify(try Data(contentsOf: pack, options: .alwaysMapped)), "\(name)")
             let got = Engine.airspaceAt(pack: pack, lat: want.lat, lon: want.lon)
             #expect(got == want, "\(name)")
         }
     }
 
     @Test func oHareIsClassBInItsVeil() throws {
-        let pack = try resource(Engine.region(lat: 41.9786, lon: -87.9048), "pack")
+        let pack = try url(Engine.region(lat: 41.9786, lon: -87.9048), "pack")
         let here = try #require(Engine.airspaceAt(pack: pack, lat: 41.9786, lon: -87.9048))
         #expect(here.bands.first?.airspaceClass == "B")
         #expect(here.modeCVeil?.ident == "KORD")

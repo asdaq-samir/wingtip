@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
-# The engine for the Android app: wingtip-ffi built as a static library for
+# The engine for the Android app: wingtip-ffi built as a shared library for
 # the three ABIs Google Play and the emulator want -- 64-bit ARM (every
 # phone sold today), 32-bit ARM (the old ones Play still serves) and
-# x86_64 (the emulator CI tests on) -- and put where the app's CMake build
-# (apps/android/app/src/main/cpp/CMakeLists.txt) links it into the JNI shim,
-# with its C header. The twin of build-xcframework.sh for the iPhone.
+# x86_64 (the emulator CI tests on) -- put where the app's Gradle build
+# packs it (app/engine/jniLibs/<abi>/libwingtip_ffi.so), and the Kotlin
+# uniffi-bindgen writes over it (app/engine/generated, package
+# app.wingtipmaps.android.engine.ffi), which loads it through JNA. Both
+# generated from the Rust's #[uniffi::export] functions each time, never
+# edited. The twin of build-xcframework.sh for the iPhone.
 # Needs rustup and the Android NDK .tool-versions names (android-ndk), the
-# one the app's Gradle build (ndkVersion) compiles its JNI shim with: found
+# one the app's Gradle build (ndkVersion) strips the library with: found
 # at ANDROID_NDK_HOME or ANDROID_NDK_LATEST_HOME when either is that version
 # (GitHub's runner sets both, HOME to an older one), else in the SDK's
 # ndk/<version> ($ANDROID_HOME, ~/Library/Android/sdk on a Mac,
-# ~/Android/Sdk on Linux).
+# ~/Android/Sdk on Linux). The NDK's linker lays out every 64-bit library
+# on 16 KB pages, as Google Play asks (scripts/ci/android_16k.py).
 # Writes apps/android/app/engine/, which is not committed.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
@@ -46,7 +50,7 @@ echo "build-android.sh: using the NDK at $ndk" >&2
 # The NDK is .tool-versions', part of the store's key.
 # shellcheck source=scripts/build/shared-cache.sh
 . "$engine/../scripts/build/shared-cache.sh"
-if engine_store_restore android-libs "$out"; then exit 0; fi
+if engine_store_restore android-engine "$out"; then exit 0; fi
 # The NDK's prebuilt clang for the machine building, and the API level
 # the app's minSdk names (apps/android/app/build.gradle.kts): the engine is
 # linked against the same Android libc the app runs on.
@@ -64,7 +68,8 @@ targets=(
   "x86_64-linux-android x86_64 x86_64-linux-android"
 )
 rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
-lib=libwingtip_ffi.a
+lib=libwingtip_ffi.so
+rm -rf "$out"
 for entry in "${targets[@]}"; do
   read -r target abi triple <<< "$entry"
   clang="$bin/${triple}${api}-clang"
@@ -74,11 +79,14 @@ for entry in "${targets[@]}"; do
   export "CARGO_TARGET_$(echo "$under" | tr '[:lower:]' '[:upper:]')_LINKER=$clang"
   export "CC_$under=$clang"
   export "AR_$under=$bin/llvm-ar"
-  cargo build --release --manifest-path "$engine/Cargo.toml" -p wingtip-ffi --target "$target"
-  mkdir -p "$out/$abi"
-  cp "$engine/target/$target/release/$lib" "$out/$abi/$lib"
+  cargo rustc --release --manifest-path "$engine/Cargo.toml" -p wingtip-ffi --lib --crate-type cdylib --target "$target"
+  mkdir -p "$out/jniLibs/$abi"
+  cp "$engine/target/$target/release/$lib" "$out/jniLibs/$abi/$lib"
 done
-mkdir -p "$out/include"
-cp "$here/include/wingtip_engine.h" "$out/include/wingtip_engine.h"
-engine_store_publish android-libs "$out"
+# The Kotlin read from the phone's library itself (library mode), with no
+# formatter run over it, so the same library always writes the same Kotlin;
+# in a generated folder, which ktlint and detekt pass over.
+(cd "$engine" && cargo run -p wingtip-ffi-bindgen -- generate --no-format \
+  --library "$out/jniLibs/arm64-v8a/$lib" --language kotlin --out-dir "$out/generated")
+engine_store_publish android-engine "$out"
 echo "built $out"

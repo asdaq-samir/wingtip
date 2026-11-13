@@ -155,12 +155,12 @@ final class CyclePacks: @unchecked Sendable {
         return Set(files.filter { $0.pathExtension == "pack" }.map { $0.deletingPathExtension().lastPathComponent })
     }
 
-    /// Every pack the phone keeps of the cycle, mapped: the regions its
-    /// routes cross, for a clearance's places to be found in the air
+    /// Every pack the phone keeps of the cycle, by its file: the regions
+    /// its routes cross, for a clearance's places to be found in the air
     /// (Engine.hear).
-    func keptPacks() -> [Data] {
+    func keptPacks() -> [URL] {
         guard let index else { return [] }
-        return keptRegions(index.cycle).sorted().compactMap { try? Data(contentsOf: path(cycle: index.cycle, region: $0), options: .alwaysMapped) }
+        return keptRegions(index.cycle).sorted().map { path(cycle: index.cycle, region: $0) }
     }
 
     /// The airspace over a point from the packs on the phone; nil where
@@ -172,7 +172,8 @@ final class CyclePacks: @unchecked Sendable {
         guard index.regions.contains(where: { $0.name == region }) else {
             return Engine.airspaceAt(pack: nil, lat: lat, lon: lon)
         }
-        guard let pack = try? Data(contentsOf: path(cycle: index.cycle, region: region), options: .alwaysMapped) else { return nil }
+        let pack = path(cycle: index.cycle, region: region)
+        guard FileManager.default.fileExists(atPath: pack.path) else { return nil }
         return Engine.airspaceAt(pack: pack, lat: lat, lon: lon)
     }
 }

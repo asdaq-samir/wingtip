@@ -11,7 +11,7 @@ rules:
     message: >-
       Great-circle maths (haversine, an initial bearing, a destination
       point, or the Earth's radius) written here. The engine owns it: ask
-      distance_nm, bearing_deg or destination (callEngine on the web, wt_call
+      distance_nm, bearing_deg or destination (callEngine on the web, Engine
       on the phones, wingtip_native.call in Python). Only wingtip.geo and the
       web's lib/geo.ts keep their own, on purpose (simplicity audit
       2026-11-12, G6).
