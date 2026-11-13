@@ -3,7 +3,7 @@ import { cn } from "cn";
 import { ListRow } from "./GroupedList";
 import { useShown } from "../lib/shown";
 import { holdOpenCard } from "../lib/openCards";
-import { useWantedPage } from "./wantedPage";
+import { useWantedPage } from "../lib/navigation/wantedPage";
 import { useScrollPlace } from "../lib/scrollPlace";
 import { CardHeadRow } from "./CardHead";
 import { PAGE_LINK } from "./pageLink";
@@ -197,23 +197,6 @@ export function PageRow({
       onClick={() => pages?.open(page)}
       data-testid={testId}
     />
-  );
-}
-
-/** A page opened by a tap anywhere on a block of the caller's own -- the
- *  account's card in Setup, its details. */
-export function PageButton({ page, label, testId, children }: { page: string; label: string; testId?: string; children: ReactNode }) {
-  const pages = useContext(Pages);
-  return (
-    <button
-      type="button"
-      onClick={() => pages?.open(page)}
-      aria-label={label}
-      data-testid={testId}
-      className="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      {children}
-    </button>
   );
 }
 

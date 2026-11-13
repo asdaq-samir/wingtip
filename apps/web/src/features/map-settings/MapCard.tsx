@@ -1,35 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { ListGroup, ListRow } from "../../components/GroupedList";
 import { FieldError } from "../../components/ui/field";
+import Segmented from "../../components/Segmented";
 import MapPictureChoices from "./MapPictureChoices";
 import MapLayers from "./MapLayers";
-import { BASE_CHARTS, usePreferences, type BaseChart, type MapOverlay } from "../../lib/preferences";
+import { BASE_CHARTS, usePreferences, type BaseChart, type MapOverlay, type OverlayStrength } from "../../lib/preferences";
 import { useShownOverlay } from "../../lib/map/sources/useShownOverlay";
 import { USGS_URL } from "../../lib/map/sources/imagery";
 import { useGoogleSession } from "../../lib/map/sources/googleSession";
 import { googleMapsQuery } from "../../lib/queryClient";
-import { openMapPage } from "../../lib/mapCard";
 import { TEXT } from "../../lib/text";
 
 /**
- * The Map card's first page, what is on the map, one screen at a phone's
- * width with nothing to scroll (the owner's pick, option A of the map
- * settings canvas, 2026-11-13), as Apple Maps' "Choose Map" card is (the
- * owner's pick, 2026-10-27, canvas RZDPvJ6hxfp93UL53LYLec; the owner's
- * screenshot, 2026-11-10): the charts as pictures, the overlay over them,
- * the layers as tiles (MapLayers), and at its foot the Map Settings row,
- * the page of how the map looks and the rest (MapSettingsPage). It was
- * one long card of thirty-odd controls. Since the owner's split
- * (2026-10-27: "Everything else in the overlay"), with no Settings page
- * of the app's, the two are the one home of everything else of the map.
+ * The Map card, what is on the map and nothing else, one screen at a
+ * phone's width with nothing to scroll, as Apple Maps' "Choose Map" card
+ * is (the owner's pick, 2026-10-27, canvas RZDPvJ6hxfp93UL53LYLec; the
+ * owner's screenshot, 2026-11-10): the charts as pictures, the overlay
+ * over them with its strength, the layers as tiles (MapLayers). How the
+ * map behaves -- the airport weather, the glide ring, the alerts, keeping
+ * the charts, where the data comes from -- is the app's Settings, which
+ * the gear at the card's head opens at its Map group (option A of the
+ * account canvas, the owner, 2026-11-13); the Map Settings page that was
+ * here went into it.
  */
 export default function MapCard() {
   const prefs = usePreferences();
-  // A Google choice without a key is none (useShownOverlay).
-  const overlay = useShownOverlay();
-  // Google's only where the deployment has a key for it.
-  const { data: google } = useQuery(googleMapsQuery);
   return (
     <div className="flex flex-col gap-5" data-testid="map-settings-groups">
       {/* The charts first, as Apple Maps' card has its maps. */}
@@ -40,40 +35,76 @@ export default function MapCard() {
         testId="base-chart-select"
         options={BASE_CHARTS.map((b) => ({ value: b.kind, label: b.label, src: chartPicture(b.kind) }))}
       />
-      {/* Over the chart, at the pilot's ask (OverlayTiles): the USGS's
-          aerial imagery, or Google's map or its satellite imagery where
-          this deployment has a Google key; how strongly it covers the
-          chart is the Map Settings page's (Overlay Strength). Google
-          picked here is Google's imagery close in too, past the chart's
-          own detail, where the USGS's public-domain imagery is otherwise
-          (useCloseImagery). */}
-      <div className="flex flex-col gap-2">
-        <MapPictureChoices
-          title="Overlay"
-          value={overlay.startsWith("google") ? "google" : overlay}
-          testId="overlay-select"
-          onChange={(v) => prefs.setOverlay((v === "google" ? "google-map" : v) as MapOverlay)}
-          options={[
-            { value: "none", label: "None", src: chartPicture(prefs.base), faded: true },
-            { value: "usgs", label: "USGS", src: USGS_PICTURE },
-            ...(google ? [{ value: "google", label: "Google", className: "bg-[linear-gradient(135deg,#a8d5f2,#d9ecd1)]" }] : []),
-          ]}
-        />
-        <GoogleProblem />
-      </div>
+      <OverlayChoice />
       <MapLayers />
-      <ListGroup>
-        <ListRow title="Map Settings" chevron onClick={() => openMapPage("settings")} data-testid="map-settings-more" />
-      </ListGroup>
     </div>
   );
 }
 
-/** Where it happens, under the overlay's pictures and the Map Settings
- *  page's Google row alike: a key restricted to another site, the Map
- *  Tiles API off or no quota leave Google's map blank otherwise. One
- *  session query under both (useGoogleSession). */
-export function GoogleProblem() {
+/** The Google swatch: a picture of Google's land and water, not the
+ *  app's look; its satellite's the same, darkened. */
+const GOOGLE_SWATCH = "bg-[linear-gradient(135deg,#a8d5f2,#d9ecd1)]";
+
+/**
+ * Over the chart, at the pilot's ask (OverlayTiles), one row of pictures
+ * (the owner, 2026-11-13): none, the USGS's aerial imagery, or Google's
+ * map or its satellite imagery where this deployment has a Google key --
+ * Google's two its own pictures here, where they were one picture and a
+ * Map or Satellite row on the Map Settings page. Google picked is
+ * Google's imagery close in too, past the chart's own detail, where the
+ * USGS's public-domain imagery is otherwise (useCloseImagery). How
+ * strongly it covers the chart, the route and the marks over it under it,
+ * only while one is picked.
+ */
+function OverlayChoice() {
+  const prefs = usePreferences();
+  // A Google choice without a key is none (useShownOverlay).
+  const overlay = useShownOverlay();
+  // Google's only where the deployment has a key for it.
+  const { data: google } = useQuery(googleMapsQuery);
+  return (
+    <div className="flex flex-col gap-2">
+      <MapPictureChoices
+        title="Overlay"
+        value={overlay}
+        testId="overlay-select"
+        onChange={(v) => prefs.setOverlay(v as MapOverlay)}
+        options={[
+          { value: "none", label: "None", src: chartPicture(prefs.base), faded: true },
+          { value: "usgs", label: "USGS", src: USGS_PICTURE },
+          ...(google
+            ? [
+                { value: "google-map", label: "Google Map", className: GOOGLE_SWATCH },
+                { value: "google-satellite", label: "Google Satellite", className: cn(GOOGLE_SWATCH, "brightness-50 saturate-150") },
+              ]
+            : []),
+        ]}
+      />
+      {overlay !== "none" && (
+        <div className="flex items-center justify-between gap-3 px-1">
+          <span className={cn("text-foreground", TEXT.row)}>Strength</span>
+          <Segmented
+            label="Strength"
+            value={prefs.overlayStrength}
+            onChange={(v) => prefs.setOverlayStrength(v as OverlayStrength)}
+            testId="overlay-strength"
+            options={[
+              { value: "faint", label: "Faint" },
+              { value: "half", label: "Half" },
+              { value: "full", label: "Full" },
+            ]}
+          />
+        </div>
+      )}
+      <GoogleProblem />
+    </div>
+  );
+}
+
+/** Where it happens, under the overlay's pictures: a key restricted to
+ *  another site, the Map Tiles API off or no quota leave Google's map
+ *  blank otherwise (useGoogleSession). */
+function GoogleProblem() {
   const overlay = useShownOverlay();
   const googleSession = useGoogleSession(overlay === "google-satellite" ? "satellite" : "map", overlay.startsWith("google"));
   if (!overlay.startsWith("google") || !googleSession.isError) return null;

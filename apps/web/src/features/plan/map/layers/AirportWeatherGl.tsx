@@ -6,7 +6,7 @@ import { glZoom } from "../../../../lib/map/gl/glStyle";
 import { GL_FONT_BOLD, LABEL_HALO } from "../../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { weatherMarksOf } from "../../../../lib/map/marks/airportWeather";
-import { useAirportWeatherPrefs } from "../../../../lib/map/marks/airportWeatherPrefs";
+import { airportWeatherDrawn, useAirportWeatherPrefs } from "../../../../lib/map/marks/airportWeatherPrefs";
 import { WORSE_ID } from "../../../../lib/map/marks/stationModel";
 import { useDemonstratedCrosswind } from "../../../../lib/map/marks/useDemonstratedCrosswind";
 import { CHART, MAP } from "../../../../lib/tokens";
@@ -109,14 +109,14 @@ const LAYERS = [BARB, LINES, FAR, WORSE];
  * the Aviation Weather Center's map draws them, in place of the arrows),
  * red past the picked airplane's demonstrated crosswind at every zoom,
  * and the amber ↓ at the plan's fields
- * whose weather gets worse by the pilot's time there. The halo and the dot
- * are the airports' own symbols' (glOverlays). Under the airports' layer,
+ * whose weather gets worse by the pilot's time there. The halo is the
+ * airports' own symbols' (glOverlays). Under the airports' layer,
  * so a field's symbol is never covered. The fields are the METARs the map
  * already asks for (AirportsGl), each with its weather.
  */
 export default function AirportWeatherGl({ fields, worse }: { fields: AirportPin[]; worse: string[] }) {
   const { map } = useGlMap();
-  const prefs = useAirportWeatherPrefs();
+  const show = useAirportWeatherPrefs((s) => s.show);
   const demonstrated = useDemonstratedCrosswind();
   useGlLayer("marks", { [SOURCE]: { type: "geojson", data: EMPTY } }, LAYERS, "airports");
   const data = useMemo<GeoJSON.FeatureCollection>(() => {
@@ -137,24 +137,24 @@ export default function AirportWeatherGl({ fields, worse }: { fields: AirportPin
     return { type: "FeatureCollection", features };
   }, [fields, worse, demonstrated]);
   useGlData(SOURCE, data);
-  // The settings on the layers: which are drawn, and from which zoom.
-  const { look, stationClose, windArrows, worseByArrival } = prefs;
+  // Settings' Airport Weather on the layers: which are drawn, and from
+  // which zoom; the amber ↓ always (its switch went, 2026-11-13).
   useEffect(() => {
     if (!map.style) return;
-    const on = look !== "off";
-    const station = on && (look === "station" || stationClose);
+    const { look, stationClose, windArrows } = airportWeatherDrawn(show);
+    const station = look === "station" || stationClose;
     const from = glZoom(look === "station" ? STATION_ALWAYS : STATION_CLOSE);
-    const show = (id: string, shown: boolean) => map.getLayer(id) && map.setLayoutProperty(id, "visibility", shown ? "visible" : "none");
+    const shown = (id: string, on: boolean) => map.getLayer(id) && map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
     for (const id of [BARB.id, LINES.id]) {
-      show(id, station);
+      shown(id, station);
       if (map.getLayer(id)) map.setLayerZoomRange(id, from, 24);
     }
     // Farther out, the barbs the wind earns; close in the station model's
     // own, every wind.
-    show(FAR.id, on && windArrows);
+    shown(FAR.id, windArrows);
     if (map.getLayer(FAR.id)) map.setLayerZoomRange(FAR.id, glZoom(FAR_FROM), station ? from : 24);
-    show(WORSE.id, on && worseByArrival);
-  }, [map, look, stationClose, windArrows, worseByArrival]);
+    shown(WORSE.id, true);
+  }, [map, show]);
   // The specs' view of the marks drawn (data-airport-weather, useGlProbe).
   useGlProbe("airport-weather", [BARB.id, LINES.id, FAR.id, WORSE.id], (f) => ({
     ident: f.properties.ident,

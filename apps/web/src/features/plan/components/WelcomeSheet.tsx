@@ -7,7 +7,6 @@ import { PhoneSheet, PhoneSheetBody, PhoneSheetContent } from "../../../componen
 import { Button } from "../../../components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../../../components/ui/dialog";
 import { useIsMobile } from "../../../hooks/use-mobile";
-import { useNavEdge } from "../../../hooks/use-nav-edge";
 import { askPositionQuietly, ownShipAvailable, useOwnShip } from "../../../lib/map/position/ownShip";
 import { TEXT } from "../../../lib/text";
 
@@ -35,33 +34,32 @@ const ROWS = [
  * "give theme and appearance selection on the welcome screen"); and one
  * way on at its foot, Let's Go Flying (the owner, 2026-11-13: one button,
  * not two). In the app's modal sheet: on a
- * phone the stock Drawer (PhoneSheet) from the navigation bar's edge,
+ * phone the stock Drawer (PhoneSheet) up from the screen's foot,
  * solid; from `md` up the stock Dialog, solid. No close of its own: its
  * foot's buttons (Foot), a swipe down or a tap beside it all go on to the
  * map, the same way (`onGo`).
  */
 export default function WelcomeSheet({ open, onGo }: { open: boolean; onGo: () => void }) {
   const onPhone = useIsMobile();
-  const edge = useNavEdge();
   const change = (next: boolean) => {
     if (!next) onGo();
   };
   if (onPhone)
     return (
-      <PhoneSheet edge={edge} open={open} onOpenChange={change}>
+      <PhoneSheet open={open} onOpenChange={change}>
         {/* Tall, as iOS's welcome sheets stand at the large detent, the
             screen's height less the status bar's room (its safe area, a
             rem at the least) and the sheet's float, its button at its
             foot; the focus taken by none of it, so no keyboard comes up as
             it closes. */}
         <PhoneSheetContent
-          edge={edge}
+         
           data-testid="first-flight"
           initialFocus={false}
           finalFocus={false}
           className="h-[calc(100dvh-max(env(safe-area-inset-top),1rem)-0.5rem)] max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem)-0.5rem)]"
         >
-          <PhoneSheetBody edge={edge} className="flex flex-1 flex-col px-6 pt-4">
+          <PhoneSheetBody className="flex flex-1 flex-col px-6 pt-4">
             <Welcome title={<Drawer.Title className={TITLE}>{TITLE_WORDS}</Drawer.Title>} onGo={onGo} />
           </PhoneSheetBody>
         </PhoneSheetContent>
@@ -210,7 +208,7 @@ function Foot({ onGo }: { onGo: () => void }) {
   );
 }
 
-/** Theme and Appearance as Setup's Layout draws them (lookPicks' tiles,
+/** Theme and Appearance as Settings' Look draws them (lookPicks' tiles,
  *  QuickControls' grid): the same two tiles, side by side. */
 function LookRows() {
   return (

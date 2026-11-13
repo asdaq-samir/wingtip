@@ -40,8 +40,9 @@ import type { AloftPoint } from "./terrain/geometry";
 import { useTerrainView } from "./terrain/useTerrainView";
 
 /** The relief, the 3D ground and the pilot's-eye view (features/plan/map/terrain):
- *  a chunk of its own, loaded only once the Terrain, the 3D button or the dry
- *  run asks for it. */
+ *  a chunk of its own, loaded after the map's first script; the relief is
+ *  always shaded under the 2D chart since the owner took Flat out
+ *  (2026-11-13). */
 const TerrainGl = lazy(() => import("./terrain/TerrainGl"));
 
 export type { GlCandidate, GlCheckpoint, GlEndpoint, GlLeg };
@@ -181,17 +182,15 @@ function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void })
   const flow = useWeatherLayers((s) => s.flow !== "off");
   return (
     <>
-      {terrain.mode !== "flat" && (
-        <Suspense fallback={null}>
-          <TerrainGl
-            mode={terrain.mode}
-            pilot={terrain.pilot}
-            aloft={course ? (p.aloft ?? null) : null}
-            field={p.place?.ident ?? course?.destination.ident ?? null}
-            procedures={p.procedures}
-          />
-        </Suspense>
-      )}
+      <Suspense fallback={null}>
+        <TerrainGl
+          mode={terrain.mode}
+          pilot={terrain.pilot}
+          aloft={course ? (p.aloft ?? null) : null}
+          field={p.place?.ident ?? course?.destination.ident ?? null}
+          procedures={p.procedures}
+        />
+      </Suspense>
       {loop && <WeatherLoopGl />}
       {flow && (
         <Suspense fallback={null}>

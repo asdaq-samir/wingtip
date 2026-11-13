@@ -12,7 +12,7 @@ import { useBackCloses } from "../lib/backNavigation";
 import { FLOAT_PX, insetsOf, sizeAt, snapsOf } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
 import { useDrawn } from "./sheet/useDrawn";
-import { CUT_TOP, FOLLOW, SHEET_BELOW, SheetParts, type PartsProps } from "./sheet/SheetParts";
+import { SHEET_BELOW, SheetParts, type PartsProps } from "./sheet/SheetParts";
 import { SheetGrabber } from "./sheet/SheetGrabber";
 import { CardStack, type StackProps } from "./sheet/CardStack";
 import { SheetDrawer } from "./sheet/SheetDrawer";
@@ -257,7 +257,6 @@ export default function MapPanel(props: Props) {
     grabber: (cardSize, cardAsk) => <SheetGrabber label={label} size={cardSize} ask={cardAsk} at={grabberAt} />,
     look: onPhone ? GLASS_SHEET : "bg-background dark:bg-popover",
     below: SHEET_BELOW,
-    follow: onPhone && !fromBottom ? cn(FOLLOW, CUT_TOP) : undefined,
   };
 
   if (!onPhone)

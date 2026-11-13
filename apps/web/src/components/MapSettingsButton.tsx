@@ -1,16 +1,14 @@
 import { Map as MapIcon } from "lucide-react";
 import IconButton from "./IconButton";
 import { SheetCard } from "./SheetCard";
-import CloseButton from "./CloseButton";
 import SettingsButton from "./SettingsButton";
-import { MapCardBody } from "../features/map-settings";
-import { closeMapPage, mapPageTitle, showMapCard, useMapCard } from "../lib/mapCard";
+import { MapCard } from "../features/map-settings";
+import { showMapCard, useMapCard } from "../lib/mapCard";
 
 /**
  * The map's own button, first among the map's buttons as Maps' is: its
- * card the map's settings -- the chart and its overlay, what is drawn on
- * it, how it looks and where its data comes from -- where Maps keeps its
- * map's, at the pilot's ask. It was Nearest's place; Nearest is
+ * card what is on the map -- the chart, its overlay and the layers --
+ * where Maps keeps its map's, at the pilot's ask. It was Nearest's place; Nearest is
  * Airport's NEAREST now (its pill).
  *
  * Whether the card is open is the Map card's own (lib/mapCard), not the
@@ -41,33 +39,23 @@ export default function MapSettingsButton() {
  * Apple Maps' Choose Map card on the web): its name at the top and its
  * close at the right, which goes back to the sheet and the search as they
  * were, the focus back on the Map button. Drawn by MapControls, beside
- * what rides the sheet, never inside it. Its pages (features/map-settings)
- * are in the same card, each named on its head, whose close goes back one
- * (the app's one close, no Back: the owner, 2026-10-22), as Escape and a
- * device's Back do (SheetCard's `action`).
+ * what rides the sheet, never inside it. The gear at its head's start
+ * opens the app's Settings at its Map group, over this card, its close
+ * back here (the owner, 2026-11-13).
  */
 export function MapSettingsCard() {
   const open = useMapCard((s) => s.open);
-  const pages = useMapCard((s) => s.pages);
   if (!open) return null;
-  const page = pages.at(-1);
   return (
     <SheetCard
-      title={mapPageTitle(page)}
+      title="Map"
       onClose={() => showMapCard(false)}
       testId="map-settings"
       returnFocus={() => document.querySelector<HTMLElement>('[data-testid="map-settings-button"]')}
-      // The app's Settings at the Map's head start (the owner, 2026-11-13),
-      // over the Map card; its pages head with their name and back alone.
-      leading={page ? undefined : <SettingsButton />}
-      closeButton={!page}
-      action={
-        page ? (
-          <CloseButton label={`Back to ${mapPageTitle(pages.at(-2))}`} onClick={closeMapPage} data-back="" data-testid="sheet-card-close" />
-        ) : undefined
-      }
+      leading={<SettingsButton />}
+      closeButton
     >
-      <MapCardBody page={page} />
+      <MapCard />
     </SheetCard>
   );
 }

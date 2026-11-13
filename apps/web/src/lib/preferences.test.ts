@@ -51,10 +51,20 @@ describe("the look", () => {
 });
 
 describe("3D", () => {
-  it("is a switch of its own over the 2D look: a kept 3D is shaded with 3D on, flat and shaded as they were", () => {
-    expect(usePreferences.getInitialState()).toMatchObject({ terrain: "flat", threeD: false });
-    expect(migratePreferences({ terrain: "3d" }, 7)).toMatchObject({ terrain: "shaded", threeD: true });
-    expect(migratePreferences({ terrain: "shaded" }, 7)).toMatchObject({ terrain: "shaded" });
+  it("is a switch of its own over the shaded 2D chart: a kept 3D is 3D on, flat and shaded the shaded chart", () => {
+    expect(usePreferences.getInitialState()).toMatchObject({ threeD: false });
+    expect(migratePreferences({ terrain: "3d" }, 7)).toMatchObject({ threeD: true });
+    expect(migratePreferences({ terrain: "shaded" }, 7)).not.toHaveProperty("threeD");
     expect(migratePreferences({ terrain: "flat" }, 7)).not.toHaveProperty("threeD");
+  });
+});
+
+describe("the settings taken out (2026-11-13)", () => {
+  it("lets go of a kept sheet edge, ground and own ship's look, so each falls back to the one way it is drawn", () => {
+    const kept = migratePreferences({ navBar: "top", terrain: "flat", ownShipLook: "arrow", base: "ifr_low" }, 8);
+    expect(kept).not.toHaveProperty("navBar");
+    expect(kept).not.toHaveProperty("terrain");
+    expect(kept).not.toHaveProperty("ownShipLook");
+    expect(kept).toMatchObject({ base: "ifr_low" });
   });
 });

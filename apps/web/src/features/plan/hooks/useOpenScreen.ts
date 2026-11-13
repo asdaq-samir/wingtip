@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { Address, SetAddress } from "../../../lib/address";
-import { useWantedPage } from "../../../components/wantedPage";
+import { useWantedPage } from "../../../lib/navigation/wantedPage";
 import { openEmergency } from "../../../lib/emergencyStore";
 import { useConsoleOpen, type PanelState } from "../../../lib/mapChrome";
 import { SCREEN_LINK, screenOf, type ScreenId } from "../../../lib/navigation/generated/screens";
@@ -11,20 +11,21 @@ import { usePreferences } from "../../../lib/preferences";
 import type { PanelView } from "./usePanelView";
 import { riseToSee } from "./panelNow";
 
-/** The account page's pages a screen is (the account button's page, which
- *  took Setup's place), as the path of page keys down to it
- *  (components/wantedPage): the page alone is none. */
+/** You's pages a screen is (the account button's card, which took
+ *  Setup's place), as the path of page keys down to it
+ *  (lib/navigation/wantedPage): the card alone is none. The checklists
+ *  under Airplanes, the coach under Training, the guide and about under
+ *  Settings' Help & About (the owner's option A, 2026-11-13). */
 const SETUP_PAGES: Partial<Record<ScreenId, string[]>> = {
   setup: [],
   flights: ["flights"],
   airplanes: ["aircraft"],
   logbook: ["logbook"],
-  // Setup's own rows since 2026-11-09 (SetupRows), two taps from the map.
-  coach: ["coach"],
-  checklists: ["checklists"],
+  coach: ["training", "coach"],
+  checklists: ["aircraft", "checklists"],
   minimums: ["minimums"],
-  guide: ["guide"],
-  about: ["about"],
+  guide: ["settings", "help", "guide"],
+  about: ["settings", "help", "about"],
 };
 
 /** The screens drawn over a route, which wait for one. */

@@ -72,12 +72,10 @@ export interface PartsProps {
  *  variables with `inherits: false`, so under the popup they were 0 and
  *  nothing followed -- a top sheet's search rode off the screen at the
  *  pill (consoles.spec, 2026-11-10). */
-export const FOLLOW =
+const FOLLOW =
   "[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
-/** The body cut off at a bottom sheet's figures, or past a top sheet's
- *  edge, by the same offset. */
+/** The body cut off at a bottom sheet's figures by the same offset. */
 const CUT_BOTTOM = "[clip-path:inset(0_0_max(0px,calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)))_0)]";
-export const CUT_TOP = "[clip-path:inset(0_0_max(0px,calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))_0)]";
 
 /**
  * What the sheet holds, the same in the Drawer and the side panel: one
@@ -103,24 +101,20 @@ export function SheetParts(p: PartsProps) {
   const headerShown = !paged && !p.flying && !cardsUp && (atPill ? !p.barShown : p.top != null || !p.barShown);
   const headContent = atPill ? p.compact : p.top;
   // Where the panel's top-right button sits, one place in every panel.
-  const topSheet = p.onPhone && !fromBottom;
-  const headPad = topSheet ? "max(0.5rem, env(safe-area-inset-top))" : "0.25rem";
-  const bodyPad = topSheet ? "env(safe-area-inset-top)" : "0px";
   const vars = {
     "--corner-line": "calc((2.875rem - 36px) / 2)",
-    "--corner-inset": `calc(${headPad} - ${bodyPad} + (2.875rem - 36px) / 2)`,
+    "--corner-inset": "calc(0.25rem + (2.875rem - 36px) / 2)",
   } as CSSProperties;
   const pillFoot = size === "peek" && !!(p.bar || p.compact);
   // The route's figures the pill's one row on a phone's bottom sheet.
   const figuresPill = pillFoot && footShown && p.onPhone && fromBottom && !p.flying;
   const bandOnly = !!p.bar && p.barShown && !headerShown;
   const barHeight = p.fromBottom ? BAR_ALONE : BAR;
-  const sheetHead = bandOnly ? `calc(${barHeight}${topSheet ? " + env(safe-area-inset-top)" : ""})` : "0px";
+  const sheetHead = bandOnly ? barHeight : "0px";
   // On a phone, what stays in sight at the sheet's free edge while the
   // popup, laid out at its full height, slides: moved back by the Drawer's
   // own offset and the finger's (its CSS variables), on its curve, and the
-  // body cut off where those parts begin. A bottom sheet's figures; a top
-  // sheet's head and body.
+  // body cut off where those parts begin: the sheet's figures.
   const follows = p.onPhone ? FOLLOW : undefined;
 
   const barRow = p.bar && (
@@ -179,7 +173,7 @@ export function SheetParts(p: PartsProps) {
           </header>
         )}
         {shown && !atPill && p.controls && (
-          <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-3 px-3 pt-1 print:hidden", topSheet ? "pb-5" : "pb-1.5")}>
+          <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-3 px-3 pt-1 print:hidden", "pb-1.5")}>
             {p.controls}
           </div>
         )}
@@ -206,7 +200,6 @@ export function SheetParts(p: PartsProps) {
       style={{ "--sheet-head": head, scrollPaddingTop: head } as CSSProperties}
       className={cn(
         "flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible",
-        topSheet && cn(follows, CUT_TOP),
         p.onPhone && fromBottom && cut && CUT_BOTTOM,
       )}
     >
@@ -216,7 +209,7 @@ export function SheetParts(p: PartsProps) {
         // Sticky at the scroller's top, frosted wherever the body runs on
         // up under it, the grabber's room inside it (the owner's iPhone,
         // 2026-11-11: clear, the list showed through the band).
-        className={cn("sticky top-0 flex shrink-0 flex-col", !atPill && "frost-head z-20", topSheet && "pt-[env(safe-area-inset-top)]")}
+        className={cn("sticky top-0 flex shrink-0 flex-col", !atPill && "frost-head z-20")}
       >
         {band}
       </div>

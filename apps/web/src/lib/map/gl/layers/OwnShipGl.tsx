@@ -1,7 +1,6 @@
 import { Marker } from "maplibre-gl";
 import { useEffect, useRef } from "react";
 import { SHEET_SECONDS } from "../../../mapChrome";
-import { usePreferences } from "../../../preferences";
 import { underway } from "../../position/glide";
 import { ownShipHtml } from "../../marks/icons";
 import { useOwnShip } from "../../position/ownShip";
@@ -24,7 +23,6 @@ const LOCAL_ZOOM = 9;
  */
 export function OwnShipGl() {
   const { map } = useGlMap();
-  const look = usePreferences((s) => s.ownShipLook);
   const enabled = useOwnShip((s) => s.enabled);
   const fix = useOwnShip((s) => s.fix);
   const simulated = useOwnShip((s) => s.simulated);
@@ -69,7 +67,7 @@ export function OwnShipGl() {
     // The app's own mark (icons.ts ownShipHtml, with the
     // `data-own-ship` the specs find), turned by the marker to the heading.
     const heading = enabled ? fix.headingDeg : null;
-    const { size, html } = ownShipHtml(heading == null ? null : 0, !enabled, look, enabled && (simulated || underway(fix)));
+    const { size, html } = ownShipHtml(heading == null ? null : 0, !enabled, enabled && (simulated || underway(fix)));
     const el = m.getElement();
     if (drawn.current !== html || el.childElementCount === 0) {
       drawn.current = html;
@@ -79,7 +77,7 @@ export function OwnShipGl() {
     m.setLngLat([fix.lon, fix.lat])
       .setRotation(heading ?? 0)
       .addTo(map);
-  }, [map, fix, enabled, simulated, look]);
+  }, [map, fix, enabled, simulated]);
   useEffect(() => {
     if (!fix || !enabled) return;
     if (flown.current !== recentred) {

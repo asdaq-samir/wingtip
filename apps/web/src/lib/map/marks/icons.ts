@@ -21,7 +21,7 @@ export interface IconLike {
 function divIcon(options: IconLike["options"]): IconLike {
   return { options };
 }
-import { ownShipSvg, type OwnShipLook } from "../position/ownShipLook";
+import { ownShipSvg } from "../position/ownShipLook";
 import { text } from "./airportMark";
 import { MAP_BLUE } from "./chartColors";
 import { CATEGORY_UNKNOWN, CHART } from "../../tokens";
@@ -59,27 +59,22 @@ function made<A extends unknown[]>(make: (...args: A) => IconLike): (...args: A)
 /** Own ship's mark as markup and its box, px, nose up: OwnShipGl's marker
  *  turns it to the heading as it draws it, round through a turn as an
  *  airplane comes round, rather than the mark being made again for each
- *  heading. The arrow with no heading, or off, is a dot. */
-export function ownShipHtml(headingDeg: number | null, off: boolean, look: OwnShipLook, moving: boolean): { size: number; html: string } {
+ *  heading. */
+export function ownShipHtml(headingDeg: number | null, off: boolean, moving: boolean): { size: number; html: string } {
   // Grey where own ship is off: the last position, no longer watched, as
   // Maps greys its dot when it stops knowing where you are. iOS's blue.
   const fill = off ? CATEGORY_UNKNOWN : MAP_BLUE;
-  const plane = look !== "arrow";
-  const beam = plane && moving;
+  const beam = moving;
   // The beam's box twice the plane's, the plane at its middle (ownShipSvg).
-  const size = beam ? 68 : plane ? 34 : 28;
+  const size = beam ? 68 : 34;
   return {
     size,
-    html:
-      !plane && (headingDeg === null || off)
-        ? `<div data-own-ship="${off ? "off" : "on"}" class="absolute left-1/2 top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-white shadow-(--depth-mark)" style="background:${fill}"></div>`
-        : ownShipSvg(
-            look,
-            fill,
-            size,
-            `data-own-ship="${off ? "off" : "on"}" data-look="${look}" data-moving="${beam}" class="absolute left-0 top-0 drop-shadow-md drop-shadow-black/40" style="transform:rotate(${Number(headingDeg ?? 0)}deg)"`,
-            beam,
-          ),
+    html: ownShipSvg(
+      fill,
+      size,
+      `data-own-ship="${off ? "off" : "on"}" data-moving="${beam}" class="absolute left-0 top-0 drop-shadow-md drop-shadow-black/40" style="transform:rotate(${Number(headingDeg ?? 0)}deg)"`,
+      beam,
+    ),
   };
 }
 

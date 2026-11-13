@@ -9,10 +9,10 @@ import type { PullDownOption } from "./PullDown";
 /**
  * The app's look, two picks: Theme (Wingtip, Glass Cockpit, Chart ink,
  * Native; lib/brand) and Appearance (System, Light, Dark, Dark + Bright).
- * One source for both of their homes, Setup's tiles (QuickControls) and
+ * One source for both of their homes, Settings' Look tiles (QuickControls) and
  * the first flight's welcome (WelcomeSheet, the owner, 2026-11-13: "give
  * theme and appearance selection on the welcome screen"): each a
- * PullDown's value, options and setter, drawn as Setup's tile (ThemeTile,
+ * PullDown's value, options and setter, drawn as Settings' tile (ThemeTile,
  * AppearanceTile) in both, so they look the same in each (the owner,
  * 2026-11-13: "Make the appearance and theme the same look as in the
  * settings").

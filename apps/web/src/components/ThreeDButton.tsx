@@ -10,8 +10,7 @@ import { TEXT } from "../lib/text";
  * 2026-11-13: "3d should come out too as another round button below the
  * listening round button, but keep them both round like in Apple Maps"):
  * "3D" while the map is flat, "2D" while it stands, pressed. Off goes back
- * to the 2D look the pilot had (the Map Settings' Terrain, flat or
- * shaded); the preference is the one `threeD` (lib/preferences). The stock
+ * to the 2D chart, its relief shaded; the preference is the one `threeD` (lib/preferences). The stock
  * Toggle (Base UI's, ui/toggle), so it is a pressed or unpressed button to
  * a screen reader; its 44-point area a pseudo-element over the glass's
  * edge round it, never a bigger button.

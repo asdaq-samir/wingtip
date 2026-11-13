@@ -8,7 +8,6 @@ import { ConsoleInPanelContext, useConsoleOpen, insetVars, setMapInsets, type Pa
 import RouteForm from "../../components/RouteForm";
 import { EngineGate } from "../../lib/engine/engineGate";
 import { useNavEdge } from "../../hooks/use-nav-edge";
-import { usePreferences } from "../../lib/preferences";
 import { useWarmAirportIndex } from "../../lib/airportIndex";
 import { useHomeAirportSync } from "../../lib/homeAirport";
 import { LinkSignIn, TvLinkHost } from "../pilot";
@@ -41,7 +40,6 @@ import type { WorkspacePieces } from "./workspace";
  */
 export default function MapPage({ mode }: { mode: Mode }) {
   const { title, panel: panelLabel, console: consoleLabel, Workspace, route } = MODES[mode];
-  const navBar = usePreferences((s) => s.navBar);
   const edge = useNavEdge();
   useShortcuts(useIsDesktop()); // a desktop's keys: / the search, B, N, D, Escape back
   const [address, setAddress] = useAddress();
@@ -225,9 +223,6 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 // is nothing to scroll; the panel and the consoles scroll inside
                 // themselves. On paper the panel flows as a document.
                 className="fixed inset-0 overflow-hidden print:static print:overflow-visible"
-                // The navigation bar's edge, for index.css's `nav-bottom`
-                // variant: "auto" until one is picked, the bottom on a phone.
-                data-nav={navBar ?? "auto"}
                 data-mode={mode}
               >
                 {/* React hoists a rendered <title> into the head: the tab says which page this is. */}

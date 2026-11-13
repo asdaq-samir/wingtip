@@ -22,8 +22,6 @@ export interface StackProps {
   look: string;
   /** Under the body's glass, the shade the sheet's body has (SheetParts). */
   below: string;
-  /** A top sheet's: what stays in sight at its free edge (SheetParts). */
-  follow?: string;
 }
 
 /** A card's drag eased on the Drawer's own curve, never under a finger. */
@@ -53,12 +51,8 @@ const EASE =
  * 8 px in its first frame, then easing down to 476). So a card's drawer
  * opens the render after it mounts (CardDrawer's `open`).
  */
-const SLIDE = {
-  bottom:
-    "data-starting-style:[transform:translateY(calc(100%_-_var(--sheet-base,0px)_+_env(safe-area-inset-bottom)_+_2px))] data-ending-style:[transform:translateY(calc(100%_-_var(--sheet-base,0px)_+_env(safe-area-inset-bottom)_+_2px))] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)]",
-  // A top sheet's card comes down from the screen's top and goes back up.
-  top: "data-starting-style:[transform:translateY(calc(0px_-_100%_-_var(--sheet-base,0px)_-_env(safe-area-inset-top)_-_2px))] data-ending-style:[transform:translateY(calc(0px_-_100%_-_var(--sheet-base,0px)_-_env(safe-area-inset-top)_-_2px))] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)]",
-};
+const SLIDE =
+  "data-starting-style:[transform:translateY(calc(100%_-_var(--sheet-base,0px)_+_env(safe-area-inset-bottom)_+_2px))] data-ending-style:[transform:translateY(calc(100%_-_var(--sheet-base,0px)_+_env(safe-area-inset-bottom)_+_2px))] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)]";
 
 /**
  * The cards over the map's sheet, each Base UI's own nested Drawer (the
@@ -218,9 +212,7 @@ function CardDrawer({
               data-base-ui-swipe-ignore={onPhone ? undefined : ""}
               // Its corners the sheet's: drawn outside the sheet's clip, so it can stand over it.
               style={
-                onPhone
-                  ? { borderRadius: fromBottom ? `${PILL_RADIUS}px ${PILL_RADIUS}px 0 0` : `0 0 ${PILL_RADIUS}px ${PILL_RADIUS}px` }
-                  : undefined
+                onPhone ? { borderRadius: `${PILL_RADIUS}px ${PILL_RADIUS}px 0 0` } : undefined
               }
               className={cn(
                 "group/sheet pointer-events-auto absolute inset-0 flex flex-col text-foreground outline-none print:static",
@@ -232,9 +224,7 @@ function CardDrawer({
                   "[transform:translateY(calc(var(--drawer-snap-point-offset)-var(--sheet-base,0px)+var(--drawer-swipe-movement-y)))] [--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)]",
                 onPhone && p.ready && EASE,
                 // Gone with its content: closed at once, an empty card never slid down.
-                onPhone && (entry.state === "leaving" ? "transition-none" : SLIDE[fromBottom ? "bottom" : "top"]),
-                // A top sheet's card clear of the status bar.
-                onPhone && !fromBottom && "pt-[env(safe-area-inset-top)]",
+                onPhone && (entry.state === "leaving" ? "transition-none" : SLIDE),
                 onPhone && fromBottom && UNDER_INDICATOR,
               )}
             >
@@ -274,7 +264,6 @@ function CardScroller({
   pill,
   raise,
   below,
-  follow,
 }: StackProps & { slot: (node: HTMLElement | null) => void; pill: boolean; raise: () => void }) {
   return (
     // eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to raise the sheet, and the card's own buttons stay focusable
@@ -286,7 +275,7 @@ function CardScroller({
             }
           : undefined
       }
-      className={cn("flex min-h-0 flex-1 flex-col", follow)}
+      className="flex min-h-0 flex-1 flex-col"
       style={{ "--sheet-head": "0px" } as CSSProperties}
     >
       <Drawer.Content

@@ -9,7 +9,7 @@ import { andList } from "./listWords";
  * sent with the map's ages (/api/map/ages `data_cycles`); only the words
  * are here. An old edition is still used -- warn, never limit (the owner,
  * 2026-10-23) -- and said once, where it matters: the Status page's rows,
- * the map settings' Charts row and a line in the Brief.
+ * Settings' Sources' Charts row and a line in the Brief.
  */
 
 /** A day the planner sends ("2026-10-29") as the pilot reads it, "29 Oct

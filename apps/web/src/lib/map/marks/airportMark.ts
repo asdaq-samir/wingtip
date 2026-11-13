@@ -130,13 +130,3 @@ export function sectionalAirportSvg(
 /** The halo's stroke, px: some 4.5 pt, to stay visible in sunlight (the
  *  owner's pick, 2026-11-10). */
 const HALO_WIDTH = 4.5;
-
-/** ForeFlight's dot in place of the chart's symbol (the Map card's
- *  Airport Weather "Dot"): a disc in the field's flight category's colour,
- *  cased in white. */
-export function weatherDotSvg(weather: string): string {
-  return (
-    `<svg width="22" height="22" viewBox="-11 -11 22 22"><circle data-weather="" r="8" fill="${text(weather)}"` +
-    ` stroke="${CHART.casing}" stroke-width="2.5"/></svg>`
-  );
-}

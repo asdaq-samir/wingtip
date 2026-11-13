@@ -1,15 +1,12 @@
 import { Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Plane, Route, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { BookOpen, Plane, Route, Settings, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { cn } from "cn";
 import type { ReactNode } from "react";
 import AboutPanel from "../../components/AboutPanel";
 import StatusPanel from "../../components/StatusPanel";
 import LoadLogPanel from "../../components/LoadLogPanel";
-import { ConsolePages, PageButton, PageLink, PageRow } from "../../components/ConsolePages";
-import { PAGE_LINK } from "../../components/pageLink";
-import { LEGAL_PAGES } from "../../lib/legal";
-import { PillSection } from "../../components/Favorites";
+import { ConsolePages, PageLink, PageRow } from "../../components/ConsolePages";
 import EmptyState from "../../components/EmptyState";
 import { ListGroup } from "../../components/GroupedList";
 import { RowBadge } from "../../components/RowBadge";
@@ -22,7 +19,9 @@ import { shortName } from "../../lib/aircraftChoice";
 import { usePreferences } from "../../lib/preferences";
 import type { Minimums } from "../../lib/minimums";
 import { TEXT } from "../../lib/text";
-import { AircraftPanel, FlightsPanel } from "./AccountPanels";
+import { SettingsPage, type HelpPages } from "../settings";
+import { FlightsPanel } from "./AccountPanels";
+import { AccountFace } from "./AccountFace";
 import { AccountMenu } from "./AccountMenu";
 import { LogbookPanel } from "./LogbookPanel";
 import MinimumsPanel from "./MinimumsPanel";
@@ -30,9 +29,7 @@ import SubscriptionPanel from "./SubscriptionPanel";
 import { standing, subscriptionQuery, useSold } from "../../lib/subscription";
 import PilotGuide from "./PilotGuide";
 import PilotPage from "./PilotPage";
-import SetupPill from "./SetupPill";
-import { ChecklistsRow, CoachRow, EmergencyGroup, PracticeRow, SetupChecklistsPage, SetupCoachPage } from "./SetupRows";
-import PracticePage from "./Practice";
+import { AirplanesPage, EmergencyGroup, TrainingPage, TrainingRow } from "./YouRows";
 import TabPage, { TAB_PAGE_GAP } from "../../components/TabPage";
 
 // Loaded when it is drawn, as PaidPrompt does: imported here it put the
@@ -43,8 +40,9 @@ const SignInModal = lazy(() => import("../../components/SignInModal"));
  *  while the check is in flight, "error" when it failed. */
 type PilotState = Pilot | null | "loading" | "error";
 
-/** The developer's own pages in Setup: the stack's status, and the
- *  guide to training the model in place of the planner's guide. */
+/** The developer's own pages in Settings' Help & About: the stack's
+ *  status, and the guide to training the model in place of the planner's
+ *  guide. */
 export interface DevPages {
   status: ReactNode;
   guide: ReactNode;
@@ -55,7 +53,7 @@ function Personal({
   dev,
 }: {
   pilot: PilotState;
-  /** The developer's Setup (DevPanel): its Status and its own Guide. */
+  /** The developer's: its Status and its own Guide. */
   dev?: DevPages;
 }) {
   // The airplane picked for planning, for a logbook entry's, and said on
@@ -64,10 +62,10 @@ function Personal({
   const minimums = usePreferences((s) => s.minimums);
   const signedIn = pilot !== "loading" && pilot !== "error" && pilot !== null;
   // While the sign-in is checked, or where it could not be, said under
-  // the controls (signed out, its way in is the account's own card).
+  // the head (signed out, its way in is the head's own Sign In).
   const account =
     pilot === "loading" ? (
-      <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>
+      <p role="status" className={cn("px-1 text-center text-muted-foreground", TEXT.note)}>
         Checking your sign-in…
       </p>
     ) : pilot === "error" ? (
@@ -83,10 +81,13 @@ function Personal({
   const { data: entries } = useQuery({ queryKey: ["logbook"], queryFn: api.logbook.list, enabled: signedIn, meta: { silent: true } });
   const hours = entries?.reduce((sum, e) => sum + (e.totalHours ?? 0), 0);
   const settings = minimumsWords(minimums);
-  const pages = {
-    // How old the plan's data is, and what is kept through a dropped
-    // connection, for every pilot (the owner, 2026-11-04); a developer's
-    // has the stack's own status under it.
+  // Settings' Help & About: how old the plan's data is, and what is kept
+  // through a dropped connection, for every pilot (the owner, 2026-11-04),
+  // a developer's with the stack's own status under it; when the map's
+  // layers showed at this device's loads (lib/loadLog, 2026-11-05); the
+  // guide; about.
+  const help: HelpPages = {
+    guide: { title: "Guide", content: dev ? dev.guide : <PilotGuide /> },
     status: {
       title: "Status",
       content: dev ? (
@@ -98,22 +99,18 @@ function Personal({
         <StatusPanel />
       ),
     },
-    // When the map's layers showed at this device's loads (lib/loadLog),
-    // beside Status, at the owner's ask (2026-11-05).
     log: { title: "Log", content: <LoadLogPanel /> },
-    guide: { title: "Guide", content: dev ? dev.guide : <PilotGuide /> },
     about: { title: "About", content: <AboutPanel /> },
-    aircraft: { title: "Airplanes", content: <AircraftPanel /> },
+  };
+  const pages = {
+    aircraft: { title: "Airplanes", content: <AirplanesPage signedIn={signedIn} /> },
     flights: { title: "Flights", content: <FlightsPanel /> },
     logbook: { title: "Logbook", content: <LogbookPanel aircraft={shortName(aircraft.label)} /> },
     minimums: { title: "Minimums", content: <MinimumsPanel /> },
+    training: { title: "Training", content: <TrainingPage signedIn={signedIn} /> },
+    settings: { title: "Settings", content: <SettingsPage help={help} /> },
     subscription: { title: "Subscription", content: <SubscriptionPanel /> },
     pilot: { title: "Pilot details", content: <PilotPage /> },
-    // Setup's rows for what was three or four taps down (SetupRows), the
-    // same pages their deeper homes open; useOpenScreen names two of them.
-    checklists: { title: "Checklists", content: <SetupChecklistsPage aircraft={aircraft} /> },
-    coach: { title: "Coach", content: <SetupCoachPage /> },
-    practice: { title: "Practice", content: <PracticePage /> },
   };
   return (
     <>
@@ -122,109 +119,81 @@ function Personal({
           signed out and show 401s with no word of why. "loading" is left
           out of the key, so the session check finishing does not throw
           away Minimums, which needs no sign-in, or an edit in it. */}
-      <ConsolePages key={pilot === null || pilot === "error" ? "out" : "in"} back="Setup" pages={pages}>
+      <ConsolePages key={pilot === null || pilot === "error" ? "out" : "in"} back="You" pages={pages}>
         <div className={cn("flex flex-col", TAB_PAGE_GAP)}>
-          {/* The Controls first, as Setup's half card is, at the owner's
-              pick of the canvas (2026-10-27, T3): a drag up only adds what
-              is under them -- who is signed in, their things, and the way
-              to the guide and about. The settings that were a page of
-              their own went to the Controls and the map's menu. */}
-          <SetupPill testId="setup-head" />
+          {/* Who the pilot is, then what is theirs, then Settings: You, as
+              Apple Maps' avatar opens yours (the owner's pick, option A of
+              the account canvas, 2026-11-13), where the card was Settings
+              with Setup's tiles on top; the tiles are Settings' Look now. */}
+          <YouHead pilot={signedIn ? pilot : null} />
           {account}
-          {/* A section as the page's others are, so the room between them
-              is the one room every tab's sections keep (tab-consistency). */}
-          <AccountCard pilot={signedIn ? pilot : null}>
-            {/* The pilot's things, a row each with where it stands, as iOS's
-              Settings lists its parts: the account's three greyed until
-              there is one; the minimums are this device's. */}
-            <div data-testid="library-section">
-              <ListGroup>
-                <PageRow
-                  page="aircraft"
-                  title="Airplanes"
-                  disabled={!signedIn}
-                  value={!signedIn ? SIGNED_OUT : aircraft.label ? shortName(aircraft.label) : undefined}
-                  media={
-                    <RowBadge colour={SETTING_BADGE.aircraft}>
-                      <Plane />
-                    </RowBadge>
-                  }
-                />
-                <ChecklistsRow aircraft={aircraft} />
-                <PageRow
-                  page="flights"
-                  title="Flights"
-                  disabled={!signedIn}
-                  value={!signedIn ? SIGNED_OUT : flights ? `${flights.length} saved` : undefined}
-                  media={
-                    <RowBadge colour={SETTING_BADGE.flights}>
-                      <Route />
-                    </RowBadge>
-                  }
-                />
-                <PageRow
-                  page="logbook"
-                  title="Logbook"
-                  disabled={!signedIn}
-                  value={!signedIn ? SIGNED_OUT : hours !== undefined && entries?.length ? `${hours.toFixed(1)} h` : undefined}
-                  media={
-                    <RowBadge colour={SETTING_BADGE.logbook}>
-                      <BookOpen />
-                    </RowBadge>
-                  }
-                />
-                <CoachRow disabled={!signedIn} value={!signedIn ? SIGNED_OUT : undefined} />
-                <PracticeRow />
-                <PageRow
-                  page="minimums"
-                  title="Minimums"
-                  value={settings ?? undefined}
-                  media={
-                    <RowBadge colour={SETTING_BADGE.minimums}>
-                      <ShieldCheck />
-                    </RowBadge>
-                  }
-                />
-              </ListGroup>
-            </div>
-          </AccountCard>
-          <EmergencyGroup />
-          {signedIn && sold && (
+          {/* The pilot's things, a row each with where it stands, as iOS's
+              Settings lists its parts: the account's greyed until there is
+              one; the minimums and the checklists (in Airplanes) are this
+              device's. */}
+          <div data-testid="library-section">
             <ListGroup>
-              <SubscriptionRow />
+              <PageRow
+                page="aircraft"
+                title="Airplanes"
+                value={aircraft.label ? shortName(aircraft.label) : undefined}
+                media={
+                  <RowBadge colour={SETTING_BADGE.aircraft}>
+                    <Plane />
+                  </RowBadge>
+                }
+              />
+              <PageRow
+                page="flights"
+                title="Flights"
+                disabled={!signedIn}
+                value={!signedIn ? SIGNED_OUT : flights ? `${flights.length} saved` : undefined}
+                media={
+                  <RowBadge colour={SETTING_BADGE.flights}>
+                    <Route />
+                  </RowBadge>
+                }
+              />
+              <PageRow
+                page="logbook"
+                title="Logbook"
+                disabled={!signedIn}
+                value={!signedIn ? SIGNED_OUT : hours !== undefined && entries?.length ? `${hours.toFixed(1)} h` : undefined}
+                media={
+                  <RowBadge colour={SETTING_BADGE.logbook}>
+                    <BookOpen />
+                  </RowBadge>
+                }
+              />
+              <PageRow
+                page="minimums"
+                title="Minimums"
+                value={settings ?? undefined}
+                media={
+                  <RowBadge colour={SETTING_BADGE.minimums}>
+                    <ShieldCheck />
+                  </RowBadge>
+                }
+              />
             </ListGroup>
-          )}
-          {/* Status, the guide (its tips with it) and about, links at the
-              foot, at the owner's picks: Status every pilot's since
-              2026-11-04 ("a Status sheet next to About and Guide"); and
-              Privacy, Terms and Legal, off the map's credits row (the owner,
-              2026-11-11: "Can privacy terms etc move next to status log").
-              Sixteen apart and the rows 24, so the links' 44-point hit
-              areas meet; a second line at a large text size. */}
-          <nav aria-label="More" className="flex flex-wrap justify-center gap-x-4 gap-y-6 pb-2" data-testid="settings-foot">
-            <PageLink page="status" testId="status-link">
-              Status
-            </PageLink>
-            <PageLink page="log" testId="log-link">
-              Log
-            </PageLink>
-            <PageLink page="guide" testId="guide-link">
-              Guide
-            </PageLink>
-            <PageLink page="about" testId="about-link">
-              About
-            </PageLink>
-            {LEGAL_PAGES.filter((p) => p.key !== "support").map((p) => (
-              <a key={p.key} href={p.href} target="_blank" rel="noopener" className={PAGE_LINK} data-testid={`settings-${p.key}`}>
-                {p.key === "privacy" ? "Privacy" : "Terms"}
-              </a>
-            ))}
-            {/* About's list of every data source and its licence, as the
-                map's Legal was. */}
-            <PageLink page="about" testId="settings-legal">
-              Legal
-            </PageLink>
-          </nav>
+          </div>
+          <TrainingRow />
+          <EmergencyGroup />
+          <ListGroup>
+            {/* The app's Settings, one page (features/settings): the Map
+                card's gear opens the same page at its Map group. */}
+            <PageRow
+              page="settings"
+              title="Settings"
+              testId="settings-row"
+              media={
+                <RowBadge colour={SETTING_BADGE.settings}>
+                  <Settings />
+                </RowBadge>
+              }
+            />
+            {signedIn && sold && <SubscriptionRow />}
+          </ListGroup>
         </div>
       </ConsolePages>
     </>
@@ -242,71 +211,39 @@ function minimumsWords(m: Minimums): string | null {
   return parts.length ? parts.join(" · ") : null;
 }
 
-/** Who is signed in, under an Account heading as the Controls have theirs
- *  (the owner, 2026-10-28): their initials, their name and address, the
- *  role's menu at its end (sign out, delete). A tap on it opens their
- *  details, for their flight plans. Signed out, the heading with Sign in at
- *  its right, no words under it, at the owner's ask ("no need
- *  to have the description, just simple sign in right aligned"). The
- *  pilot's things are under the same heading, as close under it as the
- *  Controls' tiles are under theirs (the owner, 2026-10-29: "make the
- *  space under Account the same as Controls"). */
-function AccountCard({ pilot, children }: { pilot: Pilot | null; children: ReactNode }) {
-  if (!pilot) {
-    return (
-      <PillSection
-        title="Account"
-        testId="setup-pill-account"
-        right={
-          <>
-            <Suspense fallback={null}>
-              <SignInModal plain />
-            </Suspense>
-            <AccountMenu />
-          </>
-        }
-      >
-        {children}
-      </PillSection>
-    );
-  }
-  const name = pilot.fullName || pilot.displayName;
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((w) => w[0]!)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+/** Who is signed in, at You's top, as Apple Maps' avatar opens yours
+ *  (the owner's pick, option A, 2026-11-13): their initials in a large
+ *  round avatar, their name under it, and Pilot Details, the page of
+ *  their details for their flight plans, with the role's menu beside it
+ *  (sign out, delete). Signed out, the avatar's glyph and Sign In. */
+function YouHead({ pilot }: { pilot: Pilot | null }) {
+  const name = pilot ? pilot.fullName || pilot.displayName : null;
   return (
-    <PillSection title="Account">
-      <div
-        role="group"
-        aria-label="Account"
-        className="flex items-center gap-3 rounded-lg border border-border bg-card pr-3"
-        data-testid="setup-pill-account"
+    <div role="group" aria-label="Account" className="flex flex-col items-center gap-1.5 pt-2" data-testid="setup-pill-account">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "grid size-18 place-items-center rounded-full font-bold [&_svg]:size-8",
+          name ? "bg-tint text-white" : "bg-foreground/8 text-tint",
+          TEXT.hero,
+        )}
       >
-        <PageButton page="pilot" testId="pilot-row" label={`${name}: pilot details`}>
-          <span
-            aria-hidden="true"
-            className={cn(
-              "grid size-10 shrink-0 place-items-center rounded-full bg-primary font-semibold text-primary-foreground",
-              TEXT.row,
-            )}
-          >
-            {initials}
-          </span>
-          <span className="flex min-w-0 flex-col text-left">
-            <span className={cn("truncate font-semibold", TEXT.row)}>{name}</span>
-            {/* The address under the name, where the name is not the address
-              itself (a sign-in by email alone names the pilot by it). */}
-            <span className={cn("truncate text-muted-foreground", TEXT.note)}>{name === pilot.email ? "Pilot details" : pilot.email}</span>
-          </span>
-        </PageButton>
+        <AccountFace name={name} />
+      </span>
+      <span className={cn("max-w-full truncate font-bold text-foreground", TEXT.title)}>{name ?? "You"}</span>
+      <div className="flex min-h-11 items-center gap-4">
+        {pilot ? (
+          <PageLink page="pilot" testId="pilot-row">
+            Pilot Details
+          </PageLink>
+        ) : (
+          <Suspense fallback={null}>
+            <SignInModal plain />
+          </Suspense>
+        )}
         <AccountMenu />
       </div>
-      {children}
-    </PillSection>
+    </div>
   );
 }
 
@@ -328,28 +265,25 @@ function SubscriptionRow() {
 }
 
 /**
- * The pilot's console, opened from the map's Settings button on the
- * planner (MapPage): the guide to the planner (first: where a newcomer
- * starts), Personal: their own airplanes, flights, logbook and minimums,
- * then the settings. The shape is `ConsoleTabs`, shared with the
- * developer's console. Not the nav log or the briefing: those are the
- * panel over the map.
+ * You, the pilot's console, opened from the avatar on the planner
+ * (AccountButton): who they are, their airplanes, flights, logbook,
+ * minimums, training and the emergency assistant, then Settings and the
+ * subscription. Shared with the developer's console. Not the nav log or
+ * the briefing: those are the panel over the map.
  */
 export function PilotPanel({
   dev,
 }: {
-  /** The developer's Setup, at the owner's pick of the dev page's
-   *  redesign: the pilot's, its Status and Guide the developer's, where
-   *  it was a console of tabs of its own (Guide, Status, Account). */
+  /** The developer's, at the owner's pick of the dev page's redesign:
+   *  the pilot's, its Status and Guide the developer's, where it was a
+   *  console of tabs of its own (Guide, Status, Account). */
   dev?: DevPages;
 } = {}) {
   const { data: pilot, isLoading, isError } = useQuery(pilotQuery);
   const pilotState: PilotState = isLoading ? "loading" : (pilot ?? (isError ? "error" : null));
-  // One page, no tabs over it, at the owner's pick of the redesign (S3d
-  // all the way up): the account and its rows, the switches, then the
-  // settings, the guide and about, each a row that opens its page. A tab's
-  // page as the others' are (TabPage), with no head: its first section
-  // where their search bars start.
+  // One page, no tabs over it: who is signed in and their rows, each a
+  // row that opens its page. A tab's page as the others' are (TabPage),
+  // with no head: its first section where their search bars start.
   return (
     <TabPage testId="setup-page" headless>
       <Personal pilot={pilotState} dev={dev} />

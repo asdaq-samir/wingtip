@@ -19,14 +19,9 @@
       "count": 1
     }
   },
-  "src/components/ClearancePhoto.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "src/components/ConsolePages.tsx": {
     "no-restricted-syntax": {
-      "count": 2
+      "count": 1
     }
   },
   "src/components/FavoriteTiles.tsx": {
@@ -95,11 +90,6 @@
     }
   },
   "src/features/chart-labels/components/WaypointPanel.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/document-photo/PhotoSheet.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }

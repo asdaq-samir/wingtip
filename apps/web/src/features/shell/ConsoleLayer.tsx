@@ -61,7 +61,7 @@ export default function ConsoleLayer({
           data-testid={shown ? "console-sheet" : undefined}
           data-edge={edge}
           // A page open in it (Minimums, Airplanes) heads itself with its own
-          // name and close, back to Settings: this row steps aside, one ✕ in
+          // name and close, back to You: this row steps aside, one ✕ in
           // sight, not two (the owner's testing, 2026-11-10).
           // Laid out whole in its drawer's scroller (CardStack), its title row
           // sticky at the top over it.
@@ -77,10 +77,10 @@ export default function ConsoleLayer({
           frosted, at the sheet's smallest size all of it in sight), where it
           drew its own at a drawer's 17 under its pages' 22 (the owner,
           2026-11-11: "Why is the title smaller, isn't it shared code?"). Its
-          close the shared CloseButton, not CardClose: Settings is no card a
+          close the shared CloseButton, not CardClose: You is no card a
           device's Back or the tab bar holds (lib/openCards). */}
           <CardHeadRow
-            name="Settings"
+            name="You"
             slot="layer-head"
             flush
             end={<CloseButton label="Back to the map" onClick={onClose} data-back="" data-testid="console-close" />}

@@ -20,7 +20,7 @@ import type { TerrainMode } from "./useTerrainView";
 const TILT_MS = 600;
 
 /**
- * The ground under the chart (the Map Settings' Terrain and the map's 3D button; useTerrainView): its
+ * The ground under the chart (the map's 3D button; useTerrainView): its
  * relief shaded over the chart, or stood up in 3D -- the map tilted with
  * two fingers up to 75 degrees, the FAA's obstacles stood up over the
  * ground (ObstaclesGl), and the route drawn at its planned altitudes with
@@ -40,7 +40,7 @@ export default function TerrainGl({
   field = null,
   procedures = [],
 }: {
-  mode: Exclude<TerrainMode, "flat">;
+  mode: TerrainMode;
   pilot: boolean;
   aloft: AloftPoint[] | null;
   /** The field whose way in is drawn: the open card's, else the route's

@@ -14,7 +14,6 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, Di
 import CloseButton from "./CloseButton";
 import { PhoneSheet, PhoneSheetBody, PhoneSheetClose, PhoneSheetContent, PhoneSheetHeader, PhoneSheetTrigger } from "./PhoneSheet";
 import { useIsMobile } from "../hooks/use-mobile";
-import { useNavEdge } from "../hooks/use-nav-edge";
 
 /** What the dialog is for: Delete, Set, Sign in. */
 interface SheetDialogAction {
@@ -40,7 +39,7 @@ const FIRST = "input:not(:disabled), textarea:not(:disabled), button:not(:disabl
  * delete, set an altitude, sign in, say something failed -- one way: in
  * the middle of the screen from `md` up (shadcn's AlertDialog for an
  * alert, its Dialog otherwise) and, on a phone, the floating sheet
- * (PhoneSheetContent) from the navigation bar's edge, as iOS asks from
+ * (PhoneSheetContent) up from the screen's foot, as iOS asks from
  * the bottom of the screen (the sheet consolidation, 2026-10-27, where
  * four of them stood in the middle of a phone and three more each made
  * the switch their own way).
@@ -93,7 +92,6 @@ export default function SheetDialog({
   children?: ReactNode;
 }) {
   const onPhone = useIsMobile();
-  const edge = useNavEdge();
   const out = useRef<HTMLButtonElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
   const acts = !!action && (!!action.onClick || !!action.form);
@@ -128,18 +126,18 @@ export default function SheetDialog({
 
   if (onPhone) {
     return (
-      <PhoneSheet edge={edge} open={open} onOpenChange={onOpenChange}>
+      <PhoneSheet open={open} onOpenChange={onOpenChange}>
         {trigger && <PhoneSheetTrigger render={trigger} />}
         <PhoneSheetContent
           ref={sheet}
-          edge={edge}
+         
           data-testid={testId}
           initialFocus={focus}
           // Only an alert's: an undefined role would take Base UI's "dialog" away.
           {...(alert ? { role: "alertdialog" } : {})}
         >
           <PhoneSheetHeader
-            edge={edge}
+           
             title={title}
             description={description}
             leading={
@@ -151,7 +149,7 @@ export default function SheetDialog({
             }
             end={cancel ? actionButton("-mr-1", true) : <PhoneSheetClose render={<CloseButton ref={out} data-testid="sheet-close" />} />}
           />
-          <PhoneSheetBody edge={edge} data-dialog-body="" className="grid gap-4">
+          <PhoneSheetBody data-dialog-body="" className="grid gap-4">
             {children}
             {more}
             {!cancel && acts && actionButton()}

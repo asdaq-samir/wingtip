@@ -11,9 +11,8 @@ import type { AirspaceVolume, VorPin } from "../sources/overlayTypes";
 import { usePreferences } from "../../preferences";
 import { BLUE } from "../../useAirspace";
 import { TOWERED_BLUE, UNTOWERED_MAGENTA } from "../marks/airportMark";
-import type { AirportWeatherLook } from "../marks/airportWeatherPrefs";
 import { stationPictures } from "../marks/stationModel";
-import { AIRPORT_WEATHER, AIRPORT_WEATHER_LOOK, TILE_AIRPORT_ICON, airportPictures, TOWERED } from "./airportIcons";
+import { AIRPORT_WEATHER, TILE_AIRPORT_ICON, airportPictures, TOWERED } from "./airportIcons";
 import { overlaySource } from "../sources/overlayTiles";
 import { SLOTS, drawSvg, slotId, type DrawnImage, type Slot, type Stretch } from "./glLayer";
 import {
@@ -399,12 +398,10 @@ export function setSelectedAirport(map: MlMap, ident: string | null) {
 }
 
 /** Each field's weather halo from its METAR (its flight category's colour,
- *  flightCategory colourOf), joined onto the tile airports by ident; as
- *  the Map card's Airport Weather says: none (Off), a halo (Halo, Station)
- *  or a dot in place of the symbol (Dot). */
-export function setAirportWeather(map: MlMap, colours: Map<string, string>, look: AirportWeatherLook = "halo") {
+ *  flightCategory colourOf), joined onto the tile airports by ident, with
+ *  every one of Settings' Airport Weather. */
+export function setAirportWeather(map: MlMap, colours: Map<string, string>) {
   setState(map, AIRPORT_WEATHER, Object.fromEntries(colours));
-  setState(map, AIRPORT_WEATHER_LOOK, look);
 }
 
 // ---- What a card needs, from a tapped feature ---------------------------

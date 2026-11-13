@@ -13,7 +13,6 @@ import { GL_FONT_BOLD, TAP } from "../../../../lib/map/gl/layers/common";
 import MapMarksList from "./MapMarksList";
 import AirportHover from "./AirportHover";
 import AirportWeatherGl from "./AirportWeatherGl";
-import { useAirportWeatherPrefs } from "../../../../lib/map/marks/airportWeatherPrefs";
 import { CHART } from "../../../../lib/tokens";
 
 const SELECTED = "airport-selected";
@@ -166,12 +165,10 @@ function TileAirports(props: Props) {
     return out;
   }, [alongRoute, inView]);
   const known = useRef(colours);
-  // The Map card's Airport Weather: a halo, a dot or none.
-  const look = useAirportWeatherPrefs((s) => s.look);
   useEffect(() => {
     known.current = colours;
-    setAirportWeather(map, colours, look);
-  }, [map, colours, look]);
+    setAirportWeather(map, colours);
+  }, [map, colours]);
   const reporting = useMemo(() => [...(alongRoute ?? []), ...(inView ?? [])], [alongRoute, inView]);
   useAirportTaps(props, (f) => {
     const p = f.properties;

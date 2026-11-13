@@ -2,7 +2,6 @@ import type { ComponentProps, ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { DIM, GLASS_SHEET, SHEET_CORNERS } from "../lib/mapChrome";
-import type { NavEdge } from "../lib/preferences";
 import { TEXT } from "../lib/text";
 import { keepOpenOn, TOAST } from "./ui/dismiss";
 
@@ -10,18 +9,18 @@ import { keepOpenOn, TOAST } from "./ui/dismiss";
  * A phone's sheet, the box that asks something of the pilot on a phone
  * (SheetDialog): Base UI's stock Drawer (the owner, 2026-11-10: the stock
  * sheet with its own motion, gestures and behaviour, as the map's sheet
- * is, MapPanel), swiped away toward the navigation bar's edge it came
- * from. The Drawer follows the finger, from the grabber, the title row or
+ * is, MapPanel), up from the screen's foot and swiped back down to it,
+ * where a phone's sheet always is (the owner, 2026-11-13). The Drawer follows the finger, from the grabber, the title row or
  * the content scrolled to its start, reads the throw and closes or eases
  * back on its own curve. What is the app's is the look: Liquid Glass
  * eight points in from the screen's sides and its edge, the half sheet's
  * corners and its grabber, the dimming every sheet has (D1 of the sheets
  * audit, 2026-10-17; the sheet consolidation, 2026-10-27).
  */
-export function PhoneSheet({ edge, onOpenChange, ...props }: Drawer.Root.Props & { edge: NavEdge }) {
+export function PhoneSheet({ onOpenChange, ...props }: Drawer.Root.Props) {
   return (
     <Drawer.Root
-      swipeDirection={edge === "bottom" ? "down" : "up"}
+      swipeDirection="down"
       onOpenChange={(open, details) => {
         // A toast is not outside it (ui/dismiss), nor a tap on a sheet's
         // own button as it eases out, which had opened it again.
@@ -43,8 +42,7 @@ export const PhoneSheetClose = Drawer.Close;
  *  recording, 2026-10-28). The keyboard's inset is the Drawer's own
  *  (VirtualKeyboardProvider's --drawer-keyboard-inset on the viewport,
  *  which it also scrolls the field typed into into sight over). */
-export function PhoneSheetContent({ edge, className, style, children, onPointerDown, ...props }: Drawer.Popup.Props & { edge: NavEdge }) {
-  const bottom = edge === "bottom";
+export function PhoneSheetContent({ className, style, children, onPointerDown, ...props }: Drawer.Popup.Props) {
   return (
     <Drawer.VirtualKeyboardProvider>
       <Drawer.Portal>
@@ -59,21 +57,19 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
         <Drawer.Viewport className="pointer-events-none fixed inset-x-0 top-0 z-50" style={{ bottom: "var(--drawer-keyboard-inset, 0px)" }}>
           <Drawer.Popup
             data-slot="sheet-content"
-            data-side={edge}
+            data-side="bottom"
             data-floating=""
             className={cn(
               "pointer-events-auto absolute inset-x-2 flex max-h-[min(calc(85dvh-1rem),calc(100%-1rem))] flex-col overflow-hidden text-sm text-foreground outline-none",
               GLASS_SHEET,
               SHEET_CORNERS,
-              bottom ? "bottom-2" : "top-[max(0.5rem,env(safe-area-inset-top))]",
+              "bottom-2",
               // The Drawer's own motion, as Base UI's drawer has it: with the
               // finger as it is swiped, in from and out to its edge on its
               // curve, out the faster the harder it was thrown.
               "transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) data-swiping:duration-0 data-swiping:select-none",
               "data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*400ms)] motion-reduce:transition-none",
-              bottom
-                ? "[transform:translateY(var(--drawer-swipe-movement-y))] data-starting-style:[transform:translateY(calc(100%_+_1rem))] data-ending-style:[transform:translateY(calc(100%_+_1rem))]"
-                : "[transform:translateY(var(--drawer-swipe-movement-y))] data-starting-style:[transform:translateY(calc(-100%_-_1rem_-_env(safe-area-inset-top)))] data-ending-style:[transform:translateY(calc(-100%_-_1rem_-_env(safe-area-inset-top)))]",
+              "[transform:translateY(var(--drawer-swipe-movement-y))] data-starting-style:[transform:translateY(calc(100%_+_1rem))] data-ending-style:[transform:translateY(calc(100%_+_1rem))]",
               className,
             )}
             style={style}
@@ -87,15 +83,8 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
             }}
             {...props}
           >
-            {/* iOS's grabber, 36 by 5, five points in from the sheet's far edge. */}
-            <div
-              aria-hidden="true"
-              data-swipe-handle=""
-              className={cn(
-                "absolute inset-x-0 z-10 flex h-4 justify-center",
-                bottom ? "top-0 items-start pt-1.25" : "bottom-0 items-end pb-1.25",
-              )}
-            >
+            {/* iOS's grabber, 36 by 5, five points in from the sheet's top. */}
+            <div aria-hidden="true" data-swipe-handle="" className="absolute inset-x-0 top-0 z-10 flex h-4 items-start justify-center pt-1.25">
               <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" />
             </div>
             {children}
@@ -113,13 +102,11 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
  * and what the sheet is about under it.
  */
 export function PhoneSheetHeader({
-  edge,
   title,
   description,
   leading,
   end,
 }: {
-  edge: NavEdge;
   title: ReactNode;
   description?: ReactNode;
   leading?: ReactNode;
@@ -128,7 +115,7 @@ export function PhoneSheetHeader({
   return (
     <div
       data-slot="sheet-header"
-      className={cn("flex flex-row flex-wrap items-center justify-between gap-1.5 p-4 pb-2 text-left", edge === "bottom" && "pt-5")}
+      className="flex flex-row flex-wrap items-center justify-between gap-1.5 p-4 pt-5 pb-2 text-left"
     >
       {leading}
       {/* A sheet's title at the app's size for one (TEXT). */}
@@ -153,14 +140,10 @@ export function PhoneSheetHeader({
  *  up), clear of the grabber at its far edge and of the home indicator
  *  the sheet floats eight points over. The Drawer's content: a mouse's
  *  drag there selects its words rather than swiping the sheet. */
-export function PhoneSheetBody({ edge, className, ...props }: ComponentProps<"div"> & { edge: NavEdge }) {
+export function PhoneSheetBody({ className, ...props }: ComponentProps<"div">) {
   return (
     <Drawer.Content
-      className={cn(
-        "min-h-0 overflow-y-auto px-4",
-        edge === "top" ? "pb-5" : "pb-[max(1rem,calc(env(safe-area-inset-bottom)-0.5rem))]",
-        className,
-      )}
+      className={cn("min-h-0 overflow-y-auto px-4 pb-[max(1rem,calc(env(safe-area-inset-bottom)-0.5rem))]", className)}
       {...props}
     />
   );

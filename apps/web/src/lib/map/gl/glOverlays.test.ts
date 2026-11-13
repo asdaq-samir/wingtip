@@ -143,10 +143,8 @@ describe("the overlay tiles' layers", () => {
         ["KORD", "#1a7f37"],
         ["KDLH", "#b3261e"],
       ]),
-      "dot",
     );
     expect(set.state.get("airportWeather")).toEqual({ KORD: "#1a7f37", KDLH: "#b3261e" });
-    expect(set.state.get("airportWeatherLook")).toBe("dot");
     const airports = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
     expect(JSON.stringify(airports.layout!["icon-image"])).toContain(JSON.stringify(["global-state", "airportWeather"]));
   });
