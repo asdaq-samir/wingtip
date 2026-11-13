@@ -6,7 +6,6 @@ import androidx.datastore.preferences.core.Preferences
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
-import app.wingtipmaps.android.api.generated.client.apis.AssistantApi
 import app.wingtipmaps.android.api.generated.client.apis.GatewayApi
 import app.wingtipmaps.android.api.generated.client.apis.PlannerApi
 import app.wingtipmaps.android.settings
@@ -62,9 +61,6 @@ object NetworkModule {
     @InFlight
     fun plannerInFlight(@ApplicationContext context: Context): PlannerApi = Gateway.attach(context).let { Planner.inFlight }
 
-    @Provides
-    fun assistantApi(@ApplicationContext context: Context): AssistantApi = Gateway.attach(context).let { Planner.assistant }
-
     /** The settings file (Settings.kt), one store a file in a process. */
     @Provides
     fun settings(@ApplicationContext context: Context): DataStore<Preferences> = context.settings
@@ -74,9 +70,6 @@ object NetworkModule {
 
     /** The planner's calls, through the gateway's proxy (Config.plannerPath). */
     fun planner(client: OkHttpClient): PlannerApi = retrofit(Config.gateway + Config.plannerPrefix + "/", client).create()
-
-    /** The assistant's calls, which the gateway's proxy sends on to it. */
-    fun assistant(client: OkHttpClient): AssistantApi = retrofit(Config.gateway + Config.plannerPrefix + "/", client).create()
 
     private fun retrofit(base: String, client: OkHttpClient): Retrofit =
         Retrofit.Builder()

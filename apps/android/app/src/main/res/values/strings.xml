@@ -129,7 +129,7 @@
     <string name="own_ship_denied">Your airplane is not shown: location is off for Wingtip Maps. Allow it here or in Settings.</string>
     <string name="ask">Ask</string>
     <string name="ask_about_flight">Ask About the Flight</string>
-    <string name="ask_help">The figures are the planner\'s; the assistant puts them in words and shows what it read.</string>
+    <string name="ask_help">The figures are the app\'s; Gemini Nano puts them in words on this phone and shows what it read.</string>
 
     <!-- The flight plan. -->
     <string name="departure">Departure</string>
@@ -413,8 +413,6 @@
     <string name="coach_home_none">your home base</string>
     <string name="coach_making">Reading your logbook…</string>
     <string name="coach_reminders">Reminders</string>
-    <string name="coach_wording">Putting your plan into words…</string>
-    <string name="coach_no_words">No words for now: %1$s</string>
     <string name="coach_sessions">Sessions</string>
     <string name="coach_nothing">Nothing to practise for now: every currency is good past the reminders, and no debrief shows a weak area.</string>
     <string name="coach_due">What Is Due</string>
@@ -450,7 +448,7 @@
     <string name="not_a_flight">Not a Flight to Log</string>
     <string name="try_again">Try Again</string>
     <!-- Add from a Photo (documents/): a handbook page or a logbook page
-         read by the assistant and checked by the engine, every item
+         read on the phone and checked by the engine, every item
          confirmed by the pilot before anything is kept. -->
     <string name="add_from_photo">Add from a Photo</string>
     <string name="photo_line_airplane">Cruise, climb and fuel figures from the handbook\'s page</string>
@@ -496,19 +494,6 @@
     <!-- What the microphone is for, both uses named (store audit S1): the radio and voice questions. -->
     <string name="microphone_line">Wingtip listens to the radio to write down your clearance, and hears the questions you ask it by voice. Speech is recognised on this phone and never leaves it.</string>
     <!-- The trip planner (the web's features/tripPlanner words). -->
-    <string name="trip_chip">Plan a trip…</string>
-    <string name="trip_title">Plan a Trip</string>
-    <string name="trip_describe">Describe the trip</string>
-    <string name="trip_send">Plan the trip</string>
-    <string name="trip_stop">Stop</string>
-    <string name="trip_close">Close the trip planner</string>
-    <string name="trip_leave">Leave %1$s</string>
-    <string name="trip_back">Back %1$s</string>
-    <string name="trip_land">land %1$s</string>
-    <string name="trip_window">in the go window %1$s–%2$s</string>
-    <string name="trip_use">Use this plan</string>
-    <string name="trip_use_return">Use return leg</string>
-    <string name="trip_loaded">Loaded</string>
     <!-- Ready to fly (ready/): the engine's own lines are shown as sent. -->
     <string name="ready_all">All Checks</string>
     <string name="ready_fewer">Fewer</string>

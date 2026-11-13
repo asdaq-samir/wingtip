@@ -1,9 +1,9 @@
 package app.wingtipmaps.android.aircraft
 
-import app.wingtipmaps.android.api.generated.assistant.HandbookProfile
 import app.wingtipmaps.android.api.generated.gateway.AircraftDto
 import app.wingtipmaps.android.api.generated.gateway.AircraftRequest
 import app.wingtipmaps.android.documents.HandbookReview
+import app.wingtipmaps.android.documents.model.HandbookProfile
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.aircraftProblems

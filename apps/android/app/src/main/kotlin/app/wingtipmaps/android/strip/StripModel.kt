@@ -156,8 +156,7 @@ class StripModel @Inject constructor() : ViewModel() {
     /** A question put to the assistant as it is (the search's "Ask: …"),
      *  its answer shown as a card over the sheet's content. */
     fun ask(question: String, assistant: AssistantClient, context: AssistantContext): String? {
-        // No model to ask here (AiOffered: no Gemini Nano, and the Claude
-        // features off): the line is said as not found, not sent anywhere.
+        // No model to ask here (AiOffered: no Gemini Nano): the line is said as not found, not sent anywhere.
         if (!AiOffered.known()) return "Nothing found for “$question”."
         assistant.ask(question, context)
         _state.update { it.copy(answerShown = true) }

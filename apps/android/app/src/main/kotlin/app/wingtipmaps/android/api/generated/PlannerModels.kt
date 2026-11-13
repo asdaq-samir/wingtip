@@ -3749,17 +3749,6 @@ data class ForecastWind (
     val validTo: Double
 )
 
-@Serializable
-data class GenerateNotesRequest (
-    @SerialName("departure_ident")
-    val departureIdent: String,
-
-    @SerialName("destination_ident")
-    val destinationIdent: String,
-
-    val stops: List<String>? = null
-)
-
 /**
  * POST /api/go-no-go: the line over the findings and each finding,
  * with what the Brief's Risk and Loading pages show beside them.
@@ -5907,51 +5896,6 @@ data class NotamsRankedAsk (
 )
 
 /**
- * A generated note offered as the shared one: kept (`written`), or
- * the shared one saved meanwhile, which stays (`description` is it).
- */
-@Serializable
-data class NoteSeeded (
-    val description: String,
-    val written: Boolean
-)
-
-/**
- * A route's checkpoints in along-track order, for their notes.
- */
-@Serializable
-data class NotesToWrite (
-    val checkpoints: List<NoteToWrite>,
-
-    @SerialName("departure_ident")
-    val departureIdent: String
-)
-
-/**
- * A route's checkpoint as the assistant writes its note
- * (POST /api/checkpoint-notes/pending): where it is, what it is, the
- * hop its note is kept under, and the note already kept for it -- the
- * pilot's own, else the shared one -- or None, for the assistant to
- * write and seed.
- */
-@Serializable
-data class NoteToWrite (
-    @SerialName("along_track_nm")
-    val alongTrackNm: Double,
-
-    val category: String,
-
-    @SerialName("hop_key")
-    val hopKey: String,
-
-    val id: String,
-    val lat: Double,
-    val lon: Double,
-    val name: String? = null,
-    val saved: String? = null
-)
-
-/**
  * One NTSB case of the airplane (wingtip.history.ntsb), its texts
  * verbatim: where and when (the local date), its phase of flight and
  * highest injury in the NTSB's words, its probable cause once the final
@@ -6922,6 +6866,50 @@ data class RouteChecked (
 )
 
 /**
+ * A route's checkpoints in along-track order, for their notes.
+ */
+@Serializable
+data class RouteNotes (
+    val checkpoints: List<RouteNote>,
+
+    @SerialName("departure_ident")
+    val departureIdent: String
+)
+
+/**
+ * A route's checkpoint with its note (POST /api/checkpoint-notes/route):
+ * where it is, what it is, the hop its note is kept under, and the note
+ * kept for it -- the pilot's own, else the shared one -- or None.
+ */
+@Serializable
+data class RouteNote (
+    @SerialName("along_track_nm")
+    val alongTrackNm: Double,
+
+    val category: String,
+
+    @SerialName("hop_key")
+    val hopKey: String,
+
+    val id: String,
+    val lat: Double,
+    val lon: Double,
+    val name: String? = null,
+    val saved: String? = null
+)
+
+@Serializable
+data class RouteNotesRequest (
+    @SerialName("departure_ident")
+    val departureIdent: String,
+
+    @SerialName("destination_ident")
+    val destinationIdent: String,
+
+    val stops: List<String>? = null
+)
+
+/**
  * The ways to fly a route, the fastest first; what the straight line
  * crosses (`direct`), what is at its ends (`ends`) and what the pilot's
  * own route crosses and passes (`current`, `current_marginal`), by index
@@ -7141,17 +7129,6 @@ data class SaaStatus (
     val next: Double? = null,
     val status: String? = null,
     val until: Double? = null
-)
-
-@Serializable
-data class SeedNoteRequest (
-    val description: String,
-
-    @SerialName("hop_key")
-    val hopKey: String,
-
-    val lat: Double,
-    val lon: Double
 )
 
 @Serializable

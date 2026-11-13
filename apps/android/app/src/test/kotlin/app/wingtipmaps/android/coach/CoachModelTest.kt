@@ -1,28 +1,23 @@
 package app.wingtipmaps.android.coach
 
 import app.wingtipmaps.android.MainRule
-import app.wingtipmaps.android.api.PlanJson
 import app.wingtipmaps.android.api.generated.CoachAsk
 import app.wingtipmaps.android.api.generated.ProficiencyPlan
-import app.wingtipmaps.android.api.generated.assistant.CoachWordsAnswer
 import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
 import app.wingtipmaps.android.api.generated.gateway.EndorsementDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.TrainingDto
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import java.io.IOException
 import java.time.LocalDate
 
 /** The Coach over fakes of the servers: the ask built from what the
- *  gateway keeps, by the certificate picked; the engine's plan shown
- *  with the model's words, a session's line by its id, and the plan
- *  kept where the words fail; each status in words. */
+ *  gateway keeps, by the certificate picked; the engine's plan shown,
+ *  each session's line; each status in words. */
 class CoachModelTest {
     @get:Rule val main = MainRule()
 
@@ -54,14 +49,6 @@ class CoachModelTest {
            "wings":{"area":"Loss of control","acs":"IR.VI.B","note":"May count"}}]}""",
     )
 
-    private val words: CoachWordsAnswer = json.decodeFromString(
-        CoachWordsAnswer.serializer(),
-        """{"model":"stub","sources":[],"unavailable":null,
-        "sentences":[{"text":"Your night currency lapses in 9 days.","sources":["due:night_passengers"]},{"text":"Fly the ILS with an instructor.","sources":["session:2"]}],
-        "session_lines":[{"session":"session:2","text":"Two approaches went unstable under 500 ft.","sources":["session:2","ev:1"]},
-                         {"session":"session:9","text":"A session the plan does not have.","sources":["session:9"]}]}""",
-    )
-
     private fun entry(flownOn: String, approaches: Int) = LogbookEntryDto(
         airHours = 1.2, approaches = approaches, crossCountryHours = 1.0, dayLandings = 2, distanceNm = 40.0, dualHours = 0.0,
         flownOn = flownOn, fromTrack = false, holding = true, id = 1, instrumentHours = 0.5, longestLegNm = 40.0, nightHours = 0.4,
@@ -72,8 +59,6 @@ class CoachModelTest {
         var entries: List<LogbookEntryDto>? = emptyList(),
         var training: TrainingDto? = null,
         val plan: ProficiencyPlan,
-        val words: () -> CoachWordsAnswer,
-        val claude: Boolean = true,
     ) : CoachSource {
         var asked: CoachAsk? = null
         override suspend fun entries() = entries
@@ -84,8 +69,6 @@ class CoachModelTest {
         override suspend fun training() = training
         override suspend fun home() = "KMSN"
         override suspend fun plan(ask: CoachAsk): ProficiencyPlan { asked = ask; return plan }
-        override suspend fun words(plan: ProficiencyPlan) = words()
-        override fun wordsOffered() = claude
     }
 
     private class Kept(var certificate: Certificate? = null) : CertificateKeeper {
@@ -96,17 +79,14 @@ class CoachModelTest {
     private fun model(servers: Servers, kept: Kept = Kept()) = CoachModel(servers, kept) { LocalDate.of(2026, 11, 9) }
 
     @Test
-    fun thePlanShowsWithItsWordsEachLineByItsSession() {
-        val servers = Servers(plan = plan, words = { words })
+    fun thePlanShowsEachSessionsLine() {
+        val servers = Servers(plan = plan)
         val model = model(servers)
         assertTrue(model.state.value.ready)
         assertEquals("KMSN", model.state.value.home)
         model.make()
         val s = model.state.value
         assertEquals(plan, s.plan)
-        assertEquals("Your night currency lapses in 9 days. Fly the ILS with an instructor.", CoachLines.paragraph(s.words))
-        // The line for session:9 names no session of the plan, so it is dropped.
-        assertEquals(mapOf("session:2" to "Two approaches went unstable under 500 ft."), CoachLines.sessionLines(plan, s.words))
         assertEquals("KMSN · About 60 min", CoachLines.session(plan.sessions[0]))
         assertEquals("KMSN, ILS RWY 18 · About 90 min · With an instructor", CoachLines.session(plan.sessions[1]))
         assertNull(CoachLines.wings(plan.sessions[0]))
@@ -120,31 +100,6 @@ class CoachModelTest {
             "2 Nov 2026 at KMSN, ILS Y RWY 08: Below glidepath at 420 ft above the field",
             CoachLines.evidenceLine(plan.evidence[0].copy(procedure = "ILS Y RWY 08")),
         )
-    }
-
-    @Test
-    fun thePlanStaysWhereTheWordsFail() {
-        val model = model(Servers(plan = plan, words = { throw IOException("timed out") }))
-        model.make()
-        val s = model.state.value
-        assertEquals(plan, s.plan)
-        assertNull(s.words)
-        assertEquals("The assistant could not be reached: there is no connection to Wingtip.", s.noWords)
-        assertTrue(!s.wording && !s.making)
-    }
-
-    @Test
-    fun withClaudeOffThePlanStandsAloneAndNoWordsAreAsked() {
-        var asked = 0
-        val model = model(Servers(plan = plan, words = { asked++; words }, claude = false))
-        model.make()
-        val s = model.state.value
-        assertEquals(plan, s.plan)
-        assertEquals(0, asked)
-        // Nothing said of the missing words: nothing is promised.
-        assertNull(s.words)
-        assertNull(s.noWords)
-        assertTrue(!s.wording && !s.making)
     }
 
     @Test
@@ -166,7 +121,7 @@ class CoachModelTest {
             endorsements = listOf(EndorsementDto(code = "A.6", endorsedOn = "2026-09-01")), experience = emptyList(), instructors = emptyList(),
             kinds = emptyList(), knowledgeTestCodes = emptyList(), lessons = emptyList(), reviews = emptyList(), signed = emptyList(),
         )
-        val servers = Servers(entries = listOf(entry("2026-10-01", 2)), training = training, plan = plan, words = { words })
+        val servers = Servers(entries = listOf(entry("2026-10-01", 2)), training = training, plan = plan)
         val kept = Kept()
         val model = model(servers, kept)
         // Endorsements on file: guessed a student until the pilot says.
@@ -200,20 +155,9 @@ class CoachModelTest {
 
     @Test
     fun signedOutAsksToSignIn() {
-        val model = model(Servers(entries = null, plan = plan, words = { words }))
+        val model = model(Servers(entries = null, plan = plan))
         assertEquals("Sign in for your plan.", model.state.value.problem)
         model.make()
         assertNull(model.state.value.plan)
-    }
-
-    @Test
-    fun theWordsAreAskedOfThePlanWithItsNullsWrittenOut() {
-        // The planner's ProficiencyPlan holds place, wings, until and
-        // days_left required though null: a null left out is a 422.
-        val sent = PlanJson.encodeToString(ProficiencyPlan.serializer(), plan)
-        assertTrue(sent.contains("\"wings\":null"))
-        assertTrue(sent.contains("\"approach\":null"))
-        assertTrue(sent.contains("\"days_left\":null"))
-        assertNotNull(json.decodeFromString(ProficiencyPlan.serializer(), sent))
     }
 }

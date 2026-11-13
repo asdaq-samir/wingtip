@@ -689,18 +689,11 @@ data class AccountRecordsDto (
     val subscription: SubscriptionRow? = null
 )
 
-/**
- * One paid feature's uses this month (UTC)
- */
 @Serializable
 data class FeatureUse (
-    /**
-     * The month's allowance
-     */
-    val cap: Int,
-
     val feature: String,
-    val used: Int
+    val month: String,
+    val uses: Int
 )
 
 @Serializable
@@ -868,14 +861,6 @@ data class Capabilities (
      * writes and the developer's workspace are refused.
      */
     val access: String,
-
-    /**
-     * Who has the features Claude writes (the assistant, the written briefing, the readings in
-     * words, checkpoint descriptions, the mock oral, a photographed page read): OFF, the
-     * default, for nobody, whatever else is sold or open -- the apps then use only on-device
-     * models and the engine's own words; DEVELOPERS; or EVERYONE signed in.
-     */
-    val claudeFeatures: String,
 
     /**
      * The OIDC providers with real credentials, by registration id: the sign-in buttons to
@@ -1305,12 +1290,7 @@ data class SubscriptionDto (
     /**
      * When the free month or the paid time runs out; null for FREE and COMPED
      */
-    val until: String? = null,
-
-    /**
-     * This month's uses of each paid feature Claude writes, against its cap
-     */
-    val uses: List<FeatureUse>
+    val until: String? = null
 )
 
 @Serializable

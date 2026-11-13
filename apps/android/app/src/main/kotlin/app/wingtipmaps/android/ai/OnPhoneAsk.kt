@@ -20,8 +20,8 @@ import org.xmlpull.v1.XmlPullParser
  * Ask answered on the phone by Gemini Nano (docs/android-ai.md), with the
  * app's own AppFunctions as its tools (AgentTools): the airport, the
  * route, the NOTAMs, the Brief, the airplanes and logbook, and the app
- * opened where the pilot asks. Its lines are the server assistant's
- * (AssistantLine), so Ask draws either the same; nothing of the question
+ * opened where the pilot asks. Its lines are AssistantLine's, folded
+ * into the conversation Ask draws; nothing of the question
  * leaves the phone except what a tool itself fetches from the planner, as
  * the screens fetch it. Its words pass FigureGuard against what the tools
  * answered, the plan and the question.

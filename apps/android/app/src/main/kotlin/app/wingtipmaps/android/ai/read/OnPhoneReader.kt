@@ -6,13 +6,13 @@ import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.ai.FigureGuard
 import app.wingtipmaps.android.ai.Nano
-import app.wingtipmaps.android.api.generated.assistant.ClearanceNote
-import app.wingtipmaps.android.api.generated.assistant.DocumentRead
-import app.wingtipmaps.android.api.generated.assistant.HandbookCheck
-import app.wingtipmaps.android.api.generated.assistant.HandbookRead
-import app.wingtipmaps.android.api.generated.assistant.LogbookCheck
-import app.wingtipmaps.android.api.generated.assistant.LogbookPageRead
 import app.wingtipmaps.android.documents.Documents
+import app.wingtipmaps.android.documents.model.ClearanceNote
+import app.wingtipmaps.android.documents.model.DocumentRead
+import app.wingtipmaps.android.documents.model.HandbookCheck
+import app.wingtipmaps.android.documents.model.HandbookRead
+import app.wingtipmaps.android.documents.model.LogbookCheck
+import app.wingtipmaps.android.documents.model.LogbookPageRead
 import app.wingtipmaps.android.engine.Engine
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -27,15 +27,13 @@ import kotlinx.serialization.json.jsonObject
 import java.time.LocalDate
 
 /**
- * A photographed page read on the phone (docs/android-ai.md), in place of
- * sending the photo to Wingtip's assistant: ML Kit's text recognizer
- * reads the writing, Gemini Nano puts it into the same read the assistant
- * gives (the generated LogbookPageRead, HandbookRead, ClearanceNote), and
- * the engine checks it on the phone as the server would
- * (logbook_read_check, handbook_read_check). Null where the phone has no
- * Nano, the page gave no text, or Nano's read did not decode: the caller
- * then sends the photo to the server as before. The pilot confirms every
- * item either way; nothing here is saved.
+ * A photographed page read on the phone (docs/android-ai.md): ML Kit's
+ * text recognizer reads the writing, Gemini Nano puts it into the app's
+ * read (documents/model: LogbookPageRead, HandbookRead, ClearanceNote),
+ * and the engine checks it on the phone (logbook_read_check,
+ * handbook_read_check). Null where the phone has no Nano, the page gave
+ * no text, or Nano's read did not decode: the caller then says the page
+ * could not be read. The pilot confirms every item; nothing here is saved.
  */
 object OnPhoneReader {
     const val MODEL = "gemini-nano"
@@ -61,7 +59,7 @@ object OnPhoneReader {
                 Documents.Kind.LOGBOOK -> logbook(text, today)
                 Documents.Kind.PERFORMANCE, Documents.Kind.WEIGHT_BALANCE -> handbook(text, kind)
             }
-            // Said under the read, as the server's notes are: where it was made.
+            // Said under the read, before the read's own notes: where it was made.
             read?.copy(notes = listOf(context.getString(R.string.ai_read_on_phone)) + read.notes.orEmpty())
         } catch (e: CancellationException) {
             throw e

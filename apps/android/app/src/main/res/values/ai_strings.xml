@@ -5,7 +5,6 @@
 <resources>
     <string name="ai_plain_words">In Plain Words</string>
     <string name="ai_made_on_phone">Made on this phone by Gemini Nano. Nothing left it.</string>
-    <string name="ai_made_by_assistant">Made by Wingtip\'s assistant from the figures above.</string>
     <plurals name="ai_left_out">
         <item quantity="one">%d sentence left out: its figure was not the app\'s.</item>
         <item quantity="other">%d sentences left out: their figures were not the app\'s.</item>
@@ -13,9 +12,9 @@
     <string name="ai_draft_remark">Draft a Remark</string>
     <string name="ai_on_phone">On-Phone AI</string>
     <string name="ai_on_phone_ready">Gemini Nano is on this phone. Words, Ask and pages read stay on it.</string>
-    <string name="ai_on_phone_download">Gemini Nano can be added to this phone by Android. Until then, words come from Wingtip\'s assistant when you\'re signed in.</string>
+    <string name="ai_on_phone_download">Gemini Nano can be added to this phone by Android. Until then, the app has no AI words, Ask or page reading here.</string>
     <string name="ai_on_phone_downloading">Android is adding Gemini Nano to this phone…</string>
-    <string name="ai_on_phone_none">This phone has no Gemini Nano. Words come from Wingtip\'s assistant when you\'re signed in.</string>
+    <string name="ai_on_phone_none">This phone has no Gemini Nano, so the app has no AI words, Ask or page reading here.</string>
     <string name="ai_on_phone_checking">Checking for Gemini Nano…</string>
     <string name="ai_get_nano">Add Gemini Nano</string>
     <string name="ai_looking_up">Looking it up on the phone…</string>

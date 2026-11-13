@@ -4,7 +4,6 @@ import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.generated.GoNoGo
 import app.wingtipmaps.android.api.generated.GoNoGoAsk
 import app.wingtipmaps.android.api.generated.RouteProfile
-import app.wingtipmaps.android.api.generated.client.apis.AssistantApi
 import app.wingtipmaps.android.api.generated.client.apis.PlannerApi
 import app.wingtipmaps.android.di.NetworkModule
 import kotlinx.coroutines.Dispatchers
@@ -63,9 +62,6 @@ object Planner {
      *  air, whose whole call waits no longer than IN_FLIGHT_MS. */
     val api: PlannerApi by lazy { NetworkModule.planner(Gateway.client) }
     val inFlight: PlannerApi by lazy { NetworkModule.planner(Gateway.client.newBuilder().callTimeout(IN_FLIGHT_MS, TimeUnit.MILLISECONDS).build()) }
-
-    /** The assistant's generated calls, through the same proxy. */
-    val assistant: AssistantApi by lazy { NetworkModule.assistant(Gateway.streaming) }
 
     /** An answer's body, or the planner's own words why not. Every planner
      *  call goes through here; `timeoutMs` bounds the whole call for those

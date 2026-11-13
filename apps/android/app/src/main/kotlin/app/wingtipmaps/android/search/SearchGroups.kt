@@ -96,7 +96,7 @@ object SearchGroups {
      * the airplane's position is known, the screens the line names (by the
      * field's own words, FieldCommands, and by each screen's title), and
      * last the line asked of the assistant -- only where a model can answer
-     * it (`asked`, AiOffered: Gemini Nano here, or the Claude features on).
+     * it (`asked`, AiOffered: Gemini Nano here).
      */
     fun actions(query: String, routed: Boolean, hasFix: Boolean, first: String?, asked: Boolean = true): List<DoAction> {
         val q = query.trim()
