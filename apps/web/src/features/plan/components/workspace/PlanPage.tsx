@@ -25,7 +25,7 @@ const FLIGHT_RULES = [
 ];
 
 /**
- * The sheet's second page, FPL (SheetPager; the owner, 2026-11-11), under
+ * The sheet's second page, FPL (its tab, SheetTabBar; the owner, 2026-11-13), under
  * the route's row: the route in order (the plan's nav log view), kept
  * mounted under whatever is open over it and on paper; the Brief, the Nav
  * Log, the Profile and the Stops cards of their own over it (the owner,
@@ -34,7 +34,7 @@ const FLIGHT_RULES = [
  * (CardLayer's `open`), built once. With no route, the empty box and the
  * flights saved and the routes planned last under it, nothing between
  * (the owner, 2026-11-11: "We don't need plan a flight either with two
- * buttons"; the search is the first page, a swipe away).
+ * buttons"; the search is the other page, its tab beside FPL's).
  */
 export default function PlanPage({
   vm,
@@ -78,7 +78,7 @@ export default function PlanPage({
   const profileDrawn = useOpenedOnce(profileShown);
   const stopsDrawn = useOpenedOnce(stopsShown);
   return (
-    // Always built: swiped to from the search, it is in sight before it is picked.
+    // Always built: kept while Search is up, as it was left.
     <TabKept away={cardUp}>
       {/* And while a finger takes it up: the pill's own are out of
           sight then (the owner's notice, "Fpl hides Saved while dragging

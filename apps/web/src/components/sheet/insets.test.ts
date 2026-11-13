@@ -22,12 +22,12 @@ describe("insetsOf", () => {
 describe("the snap points", () => {
   it("are the same values every time, in the Drawer's own units", () => {
     expect(snapsOf(true).points).toBe(snapsOf(true).points);
-    expect(snapsOf(true).points).toEqual(["4.75rem", "23rem", 1]);
+    expect(snapsOf(true).points).toEqual(["4.25rem", "23rem", 1]);
     expect(snapsOf(false).points).toEqual(["5.25rem", "23rem", 1]);
   });
 
   it("map the Drawer's point back to a size by identity", () => {
-    expect(sizeAt(true, "4.75rem")).toBe("peek");
+    expect(sizeAt(true, "4.25rem")).toBe("peek");
     expect(sizeAt(true, "23rem")).toBe("half");
     expect(sizeAt(false, 1)).toBe("full");
     expect(sizeAt(true, 0.5)).toBeUndefined();

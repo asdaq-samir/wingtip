@@ -229,8 +229,8 @@ export default function PlanSidebar({
           <NearestCard onOpen={selectPlace} from={nearFrom} onFrom={setNearFrom} onBack={closeNearest} />
         </Waits>
       )}
-      {/* Always built, the sheet's first page (SheetPager): swiped to from
-          the plan, it is in sight before it is picked. */}
+      {/* Always built, the sheet's first page (SheetTabBar's Search tab):
+          kept while FPL is up, as it was left. */}
       <TabKept away={cardUp || view === "traffic" || nearOpen}>
         {favoritesOpen ? (
           <TabPage testId="favorites-page">

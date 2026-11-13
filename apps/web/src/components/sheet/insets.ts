@@ -16,23 +16,24 @@ export const DRAWER_MS = MOTION.drawer * 1000;
  * Fixed values: the Drawer measures its viewport and its popup and puts
  * each where it belongs, and a render never hands it a new number.
  *
- * - The pill: the one search's band with the grabber over it, 4.75 rem on
- *   a bottom sheet (SheetParts' barRowPad: the grabber's 24-point room, the
- *   46-point field, six under); on a top sheet the band's 4.25 rem and the
- *   grabber's own 1 rem row under it, 5.25 rem. One value for every page
- *   and card, never one a page: FPL's pill is the route's figures (the
- *   owner, 2026-11-11), a name's 18-point line over a value's 25, 2.6875
- *   rem, which under the grabber's 1.5 rem and over the sheet's 8-point
- *   edge (where there is no home indicator) is 4.6875 rem: it fits, so the
- *   pill stays the search's 4.75; a card's pill is its title row with its
- *   short line under the name (PinnedHead), as tall.
+ * - The pill: the one search's band with the grabber over it, 4.25 rem on
+ *   a bottom sheet (SheetParts' barRowPad: the grabber's 16-point room, the
+ *   least iOS keeps, the 46-point field, six under: the owner, 2026-11-13,
+ *   "taking minimal space"); on a top sheet the band's 4.25 rem and the
+ *   grabber's own 1 rem row under it, 5.25 rem. Over the tab bar on a phone
+ *   (SheetTabBar), which the Drawer's viewport stands on. One value for
+ *   every page and card, never one a page: FPL's pill is the route's
+ *   figures (the owner, 2026-11-11), a name's 18-point line over a value's
+ *   25, 2.6875 rem, which under the grabber's 1 rem is 3.6875 rem: it
+ *   fits, so the pill stays the search's 4.25; a card's pill is its title
+ *   row with its short line under the name (PinnedHead), as tall.
  * - Half: 23 rem, the owner's ("Let's make the half card this tall", their
  *   iPhone's sheet 368 points tall: the route's box, its chips, the side
  *   view and the figures).
  * - All the way up: 1, the whole of the Drawer's viewport, which the popup's
  *   own height (MapPanel) keeps clear of the status bar.
  */
-const BOTTOM_SNAPS: Readonly<Record<PanelState, Drawer.Root.SnapPoint>> = { peek: "4.75rem", half: "23rem", full: 1 };
+const BOTTOM_SNAPS: Readonly<Record<PanelState, Drawer.Root.SnapPoint>> = { peek: "4.25rem", half: "23rem", full: 1 };
 const TOP_SNAPS: Readonly<Record<PanelState, Drawer.Root.SnapPoint>> = { ...BOTTOM_SNAPS, peek: "5.25rem" };
 const BOTTOM_POINTS = [BOTTOM_SNAPS.peek, BOTTOM_SNAPS.half, BOTTOM_SNAPS.full];
 const TOP_POINTS = [TOP_SNAPS.peek, TOP_SNAPS.half, TOP_SNAPS.full];
@@ -74,6 +75,20 @@ export function halfPx(popupHeight: number) {
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   return Math.min(parseFloat(String(BOTTOM_SNAPS.half)) * rem, popupHeight);
 }
+
+/** The tab bar's height (SheetTabBar), the capsule's and the round search button's: Apple
+ *  Maps' 48-point glass buttons (design/tokens.json size.map-button), the
+ *  compact Liquid Glass bar, the least that holds an icon over its label. */
+export const TAB_BAR_PX = SIZE.mapButton;
+/** Where the bar stands: on the home indicator's inset, as iOS's floating
+ *  bar hugs it, and four points off a screen with none, so its glass edge
+ *  and shade are not cut by the screen's. */
+const FLOOR_PX = 4;
+const TAB_BAR_BASE = `max(env(safe-area-inset-bottom), ${FLOOR_PX}px)`;
+/** What the bar takes at the screen's foot, under the sheet's sizes. */
+export const TAB_BAR_ROOM = `calc(${TAB_BAR_BASE} + ${TAB_BAR_PX}px)`;
+/** The same in px, with the home indicator's inset read (useSafeArea). */
+export const tabBarRoomPx = (safeBottom: number) => TAB_BAR_PX + Math.max(safeBottom, FLOOR_PX);
 
 /** The side panel's width from `md` up (design/tokens.json size.panel),
  *  and a desktop's from 1024 wide (panel-wide). */

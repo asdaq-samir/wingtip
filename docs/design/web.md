@@ -488,49 +488,47 @@ photo that pushes the actions below the half detent.
 [amaps-newsroom], [amaps-shortcuts], [windy-v49], [skyvector-airport],
 [bui-drawer], [bui-releases], [bui-tabs], [apg-tabs], [bui-preview].
 
-### 2a. The sheet's two pages (the owner, 2026-11-11)
+### 2a. The sheet's two pages (the owner, 2026-11-11; a tab bar since 2026-11-13)
 
-The phone's sheet and the desktop's side panel hold two pages side by
-side, Search and FPL ([rules.md](rules.md) §4a): shadcn's Carousel on
-Embla, already the app's for a card's pictures, inside the Drawer's popup
-(`components/sheet/SheetPager`, laid out by `SheetParts`). Its
-`data-base-ui-swipe-ignore="x"` gives a sideways drag to the pager and
-leaves an up or down one to the Drawer, as the app's sideways rows do.
-Each page is its own scroller with its own sticky head (the search's row,
-or the route's row and the controls), so each keeps its place; the page
-out of sight has an inert body. Its viewport is `overflow: clip`, so a
-field focused on the page out of sight never scrolls it under Embla. The
-grabber is the page control, split in two (`SheetGrabber` with `pages`,
-the owner 2026-11-11): Base UI's Tabs, one Tab a bar, Left and Right
-picking pages as they are focused, a tap on the page up's bar and Up and
-Down sizing the sheet as the plain grabber does. It sits in the Drawer's
-popup outside the clip of its corners (`SheetDrawer`'s `grabber`), so
-each bar's 44-point hit area reaches over the sheet's edge rather than
-over the field; the first row keeps its room from before the pages. A
-card's grabber stays the plain one. A page change opens the grabber's
-capsule (`useCapsule`, the owner 2026-11-11): the page's bar gives way to a
-pill with the page's name in it, one per page anchored at its own bar,
-grown on the Drawer's time and curve (`--motion-drawer-ease`) by CSS
-transitions of its width and height, held a second and folded back; a
-page turned while one is out folds that one where it is as the other
-grows (one capsule moved between the sides jumped across the grabber);
-a tap on the other page's bar turns the page only, the size cycle being
-the bar's that was the page up before the press;
-while the pages move it names the page they are heading to, from
-Embla's own `scroll` progress and `settle` event (`SheetPager`, into the
-small `usePageHeading` store), nothing measured of our own. It is
-`aria-hidden` and `pointer-events: none`; a swipe's page is said by a
-polite live region, a bar's by its own focus. Under Reduce Motion it
-keeps its size and fades on `--motion-fade`. The page up
-is the planner's place (`usePanelView`'s `view`: the plan is FPL, the
-search and the traffic are Search); a swipe or a bar picks it as a
-place is picked, so what each kept open comes back with it. The pill is
-the page's one row (the route's figures on FPL); the route's figures sit
-at the foot on FPL alone. The Brief, the Nav Log, the Profile and the
-Stops are cards over FPL (`PlanPage`, `CardLayer`), the last three kept
-between their openings: built at the first, their drawers closed and
-skipped by `content-visibility` after (index.css's kept cards), as a tab
-put away is, so the Nav Log is not built again (0.6 s).
+The phone's sheet and the desktop's side panel hold two peer pages,
+Search and FPL ([rules.md](rules.md) §4a), picked from a tab bar under
+the sheet (the owner, 2026-11-13: tab bar, option A), where a sideways
+pager and a split grabber were. It is the app's shadcn Tabs on Base UI's
+(Root, List, Tab, Panel; the Indicator left out, as FPL's tab and the
+search tab sit in two pieces of glass and iOS moves no mark between them):
+`components/sheet/SheetTabBar`. One Root wraps the Drawer (`MapPanel`),
+so the List -- in the Drawer's portal, under its viewport
+(`SheetDrawer`'s `tabBar`) -- and the two Panels inside the popup
+(`SheetParts`) are tied by context, not by where they are drawn. The
+viewport stands on the bar's room (`TAB_BAR_ROOM` in sheet/insets: the
+48-point bar on the home indicator's inset, 4 points on a screen with
+none), so the Drawer's three snap points sit over it, and the sheet's
+ground runs on behind it to the screen's foot (`UNDER_INDICATOR`'s
+`--sheet-under`); a keyboard that is up covers it. FPL's tab is in a
+glass capsule, Search's an icon in a round glass button at the trailing
+end, each a 44-point tap by its `::after`, never grown; the page up in
+the tint on its wash. A finger on the bar is never the sheet's
+(`data-base-ui-swipe-ignore`). Each Panel is kept (`keepMounted`, its
+`hidden` left off) and skipped by `content-visibility` while the other
+is up (index.css's `tab-page[data-hidden]`), so each page keeps its
+scroller's place; Search's body is cut where the viewport ends, as
+FPL's is at its figures, so nothing hangs behind the bar's glass. The
+grabber is the plain `SheetGrabber` again, its box 16 points tall (the
+owner, 2026-11-13: "minimal space"), its 44-point hit area reaching off
+the sheet's edge over the map. Under a top sheet the bar is still at the
+screen's foot, and the map's room counts it (`tabBarRoomPx`). In the
+side panel the same bar sits at its foot on the panel's own ground. The
+bar goes while flying and under Settings' layer. The page up is the
+planner's place (`usePanelView`'s `view`: the plan is FPL, the search
+and the traffic are Search); a tab picks it as a place is picked, so
+what each kept open comes back with it, and a tab picked under a card
+puts the card away with its page. The pill is the page's one row (the
+route's figures on FPL); the route's figures sit at the foot on FPL
+alone. The Brief, the Nav Log, the Profile and the Stops are cards over
+FPL (`PlanPage`, `CardLayer`), the last three kept between their
+openings: built at the first, their drawers closed and skipped by
+`content-visibility` after (index.css's kept cards), as a tab put away
+is, so the Nav Log is not built again (0.6 s).
 
 ### 3. The flight plan and route editing
 

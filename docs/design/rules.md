@@ -106,11 +106,16 @@ Compose. Nothing here is built by hand where a stock part does it.
     its totals ("65.3 nm · 35m · 9.0 gal"), the Profile its cruise and the
     clearance's verdict ("Cruise FL-055 · clear of terrain"), the Stops how
     many ("2 stops", "None on the route"). With no card open the pill is
-    the page's own: the search on Search, the route's figures on FPL.
-    **The smallest size is one fixed height for every page and card**,
-    never one a page: the web's `"4.75rem"` (sheet/insets), which the
-    search's row, a card's title row with its line, and FPL's figures
-    (2.6875 rem under the grabber's 1.5) all fit.
+    the page's own: the search on Search, the route's figures on FPL, and
+    the tab bar under the sheet stays in sight under it (the owner,
+    2026-11-13: tab bar, option A; §4a). **The smallest size is one fixed
+    height for every page and card**, never one a page: the web's
+    `"4.25rem"` over the tab bar (sheet/insets), which the search's row, a
+    card's title row with its line, and FPL's figures (2.6875 rem under the
+    grabber's 1) all fit. The grabber takes the least room its platform
+    keeps (the owner, 2026-11-13: "grabber and tabs taking minimal space
+    and still meeting their platforms standard"): the web's one 36 by 5
+    bar in a 16-point room, iOS's and Android's the system sheet's own.
 11. **The sheet keeps the size the pilot left it at** (the owner,
     2026-11-11: "I like the stock behavior"). The one size the app gives
     the main sheet is Apple Maps' rule: something new opened while the
@@ -130,7 +135,7 @@ Compose. Nothing here is built by hand where a stock part does it.
 | Back, Escape | Escape is the top card's own nested drawer's, closing it (CardStack); with no card up the sheet's own Escape lowers it to the pill. A device's Back closes the top card the same way (`lib/backNavigation` `closeTopmost`): Android's through the browser's stock CloseWatcher, held only while something is open (`useBackCloses`), a TV remote's by its key; where there is no CloseWatcher (Safari) the browser's Back is left as it is. The browser's history is not the app's, as the planner replaces its address | The stack's Back; the card's close at the right of its bar | System Back closes the top card at once (`MapSheet`'s `lowerOnBack` only with none open); the dry run, the ATC card and the assistant's answer close on Back too |
 | Questions | `SheetDialog`: a bottom sheet on a phone with ✕ or Cancel, centred from `md` up | `.alert` and `.confirmationDialog`, hung on the top of the stack (`TopHosts`) so they always show | `AlertDialog` (`ui/SourceDialog` for a source report) |
 | Emergency | The one full-height card, ✕ at the top right, the map not dimmed | `fullScreenCover`, its close at the top right | Material's full-screen dialog, ✕ at the start of its app bar |
-| One search | The traffic's airplane and Nearest's place are the search scoped to them (`listSearchOf`; Nearest's at its card's top, `nearSearch`, where the card covers the sheet's first row); the route's points ask it for an airport (`askSearchPick`) | The one `.searchable` field | Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`) |
+| One search | Search's page, picked by the round search tab at the tab bar's trailing end (`SheetTabBar`; the owner, 2026-11-13: tab bar, option A); the traffic's airplane and Nearest's place are the search scoped to them (`listSearchOf`; Nearest's at its card's top, `nearSearch`, where the card covers the sheet's first row); the route's points ask it for an airport (`askSearchPick`) | The one `.searchable` field, on the TabView's `Tab(role: .search)` | Search a `NavigationBar` item beside FPL's; Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`) |
 | At the pill | The card's pinned head (`data-sheet-head`: `PinnedHead`, Settings' title row, a console page's head) is all of the card left in sight there (CardStack's scroller), with its short line under its name (`CardHead`'s `sub`); a tap on the row raises the card to half | The system sheet's smallest detent shows the card's bar | The sheet's peek shows the card's bar |
 | By name | `useOpenScreen` through `lib/navigation/wanted` | `RootView.openScreen`, which opens the card by `Navigator.open` | `OpenScreen` through `ScreenRequests` |
 
@@ -166,7 +171,7 @@ there fails each app's build until that app opens it.
 |---|---|---|---|
 | Pinned head | One scroller per sheet (SheetParts' `data-sheet-scroll`), its scroll indicator the browser's own, shown while it scrolls (iOS's transient bar; 2026-11-11), its head band (the search, the route's row) `position: sticky; top: 0` in it and frosted, the grabber's room inside it; tab pages laid out whole in it, nothing measured and no scroller pulled up under the head (2026-11-11); a card has its own nested drawer's scroller (CardStack). `PinnedHead`: one row sticky at the sheet's top from the start (under the search's row, a fixed height, `--sheet-head`, on a tab's list), frosted (index.css `frost-head`: the sheet's ground at the glass fill over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard`, `ListPageHead`, Settings' title row and a console page's head. The airport card's tabs pin directly under it by plain CSS (`PINNED_BELOW`: its room and its 3rem), frosted the same | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport card's section picker pins under the bar | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
 | Grow, then scroll | Base UI's Drawer gives a drag to any scroller that can scroll, so below full the sheet's scroller and any in its body are `overflow-y: hidden` (index.css), which its arbitration skips; a script, the keyboard and a focused row still scroll them, the sheet left at its size | The system sheet's own behaviour, with nothing overriding it; no zoom push inside a resizable sheet, whose pull-down would pop the page | The sheet's nested scroll; every card shown from the search or the map opens at half (`halfWindow`) and grows to full; one pushed inside a card keeps the height |
-| Detents | A card's nested drawer has its own snap point among the sheet's three sizes, the same fixed values in the Drawer's own units (`"4.75rem"`, `"23rem"`, `1`; `components/sheet/insets`), never px worked out from the window: it opens at half, every card but Emergency (`lib/sheetCards`' `cardOpening`), and the sheet under it stays where it was; what is drawn follows the snap point the moment it is set; a swipe moves one size however fast, by the Drawer's own `snapToSequentialPoints` (the owner, 2026-11-11, "enforce the detents, regardless of how fast you swipe") | A thing opens at `.medium`, a page at `.large`; every card grows to `.large`, and the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal | A card from the search or the map opens at half and grows to full; one opened inside a card keeps the height |
+| Detents | A card's nested drawer has its own snap point among the sheet's three sizes, the same fixed values in the Drawer's own units (`"4.25rem"`, `"23rem"`, `1`; `components/sheet/insets`), never px worked out from the window: it opens at half, every card but Emergency (`lib/sheetCards`' `cardOpening`), and the sheet under it stays where it was; what is drawn follows the snap point the moment it is set; a swipe moves one size however fast, by the Drawer's own `snapToSequentialPoints` (the owner, 2026-11-11, "enforce the detents, regardless of how fast you swipe") | A thing opens at `.medium`, a page at `.large`; every card grows to `.large`, and the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal | A card from the search or the map opens at half and grows to full; one opened inside a card keeps the height |
 | Sideways rows | The Embla carousels (`CardPictures`, `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`; every native sideways row `overscroll-x-contain` and, in the sheet, `overflow-y: hidden` (index.css: `overflow-x: auto` alone made it a few points' vertical scroller, which took a drag up at half); the upright altitude Slider and the sortable rows' grips keep `""`, their drag being up and down | No control takes the sheet's drag: the Profile opens at full height for its upright altitude slider, the flown track's chart moves the replay on a tap | A sideways row takes only a sideways drag; the sheet's nested scroll takes the rest |
 | Place kept | A card under a card keeps its place in its own drawer's scroller, and a card opened anew is a new drawer, at its top (CardStack); a kept tab keeps its place in the sheet's one scroller (`TabKept`'s `useKeptScroll`), and a tab's page opened anew starts at its top (`useStartAtTop`); the airport card's tabs each keep their place (`useTabScroll`); a tab not yet seen, picked with the bar pinned, opens at its own top under the bar, and a short one leaves the bar pinned (Apple Maps' place card; the owner's recording, 2026-11-11), Settings' list its place after a page (`lib/scrollPlace`); the suggestions, a sent search's results and its Filters page each have their own scroll box | The stack's own behaviour | Each card is its own back stack entry with its own scroll and title state |
 | Footers | The card's own content | Every footer is the system's bar, `safeAreaBar` (`glassFoot`); a card's toolbar the stock bottom bar | The card's own content |
@@ -219,7 +224,8 @@ the suite prints that reason. What runs when is [docs/CI.md](../CI.md).
 
 ## 4. One search (the owner, 2026-11-09)
 
-The sheet has no tabs. Its first page's first row is one field, "Search airports,
+The sheet's Search page (§4a: its pages picked from a tab bar under the
+sheet, the owner, 2026-11-13) has one field as its first row, "Search airports,
 airplanes, or ask", with the on-device microphone and the account button
 beside it; the account button holds settings and the account, where
 Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXzCV>.
@@ -253,12 +259,16 @@ Tests: [`e2e/one-search.spec.ts`](../../apps/web/e2e/one-search.spec.ts)
 (`@smoke`: an airport picked from the search), `WingtipTests/OneSearchTests`,
 Android's `search/SearchControlTest`.
 
-### 4a. The sheet's two pages, Search and FPL (the owner, 2026-11-11)
+### 4a. The sheet's two pages, Search and FPL (the owner, 2026-11-11; a tab bar since 2026-11-13)
 
 The owner asked "Can we have a sheet carousel? With search and fpl?" and
-chose swipe and dots, always two pages. This amends "The sheet has no
-tabs. Its first row is one field": the sheet has two pages side by side,
-and the one search is still the only field.
+chose swipe and dots, always two pages; on 2026-11-13 the owner picked a
+tab bar under the sheet in their place ("the owner, 2026-11-13: tab bar,
+option A"; the canvas's boards "A · Tab bar",
+<https://claude.ai/artifact/8QhNVP3EeyZCo9ZuFSAzEf>). This amends "The
+sheet has no tabs. Its first row is one field": the sheet has two peer
+pages, picked from a tab bar under it, and the one search is still the
+only field.
 
 1. **Search** (the first page): the search's row (field, microphone,
    account button) and its home list (Favorites, Recents, Nearest,
@@ -272,54 +282,49 @@ and the one search is still the only field.
    buttons"); the first time, the first-flight card asks where to.
    FPL has no field of its own: adding a stop asks the one search.
 
-- **A sideways swipe on the sheet moves a page**; it never moves the
-  sheet up or down, and a drag up or down is still the sheet's (and each
-  page's own scroller's all the way up). Each page keeps its place.
-- **The grabber is the page control** (the owner, 2026-11-11: "Can the
-  grabber itself be split into two to behave as dots do for carousel?"):
-  two short bars side by side, the grabber's width in all, Search's on
-  the left and FPL's on the right, the page up's bar the stronger. A tap
-  on the other bar picks its page and leaves the sheet's size; a tap on
-  the page up's bar sizes the sheet as the grabber always did, and a drag on either moves the sheet.
-  Each bar is a 44-point tap, the two meeting in the middle; said
-  "Search, page 1 of 2", selected or not. Left and Right switch pages,
-  Up and Down size the sheet. No row of dots: the first row sits where
-  it did before the pages. A card's own grabber stays one bar.
-- **The grabber names the page as it changes** (the owner, 2026-11-11:
-  "Can the split grabber dot animate to show search or fpl and then fold
-  to the grabber dot when swiped?"): on a swipe, a tap on a bar or a page
-  the app picks (a route made), the new page's bar grows into a small
-  capsule on its own side, in the grabber's colour with the page's name in
-  it (Search's leftward from the grabber's middle, FPL's rightward: the
-  owner, 2026-11-11, "stay on their sides rather than a shared capsule"),
-  about 20 points tall, the other bar staying; it holds about a second and
-  folds back into its bar, the stronger of the two. Each page has its own
-  capsule: a page turned while one is out folds that one back where it is
-  as the other grows, never one capsule crossing the grabber. While a
-  finger drags the pages it names the page it is heading to. It moves as the Drawer does, on its
-  own time and curve; under Reduce Motion the name fades in and out with
-  no size change. It never moves the sheet or takes a tap, and is not
-  read aloud (the bars say the page; a page changed by a swipe is said
-  once, politely).
+- **A tab bar under the sheet picks the page**, as iOS 26's TabView with
+  a `Tab(role: .search)`: FPL a tab (its icon over its name) in a glass
+  capsule at the leading end, Search the round search tab apart from it
+  at the trailing end, an icon alone. The page up is in the tint on the
+  tint's wash. It is as compact as the platform's own bar (the owner,
+  2026-11-13: "taking minimal space and still meeting their platforms
+  standard"): 48 points tall, standing on the home indicator's inset, no
+  margin of its own over it. Glass, as it floats over the map; the sheet's
+  ground runs on behind it to the screen's foot. Each tab is a 44-point
+  tap by its hit area, never grown. A tab picks its page and leaves the
+  sheet's size; a tab tapped while a card is up puts the card away with
+  its page.
+- **The bar stays in sight at every size, the pill's included**: the
+  sheet's three sizes stand on it. A keyboard that is up covers it. It
+  goes while the airplane flies the route (the flying sheet is the
+  figures alone) and under Settings' layer.
+- **No sideways swipe turns a page.** A drag sideways is the row's under
+  it (Nearest, Favorites, Recents' cards), a drag up or down the sheet's
+  (and each page's own scroller's all the way up). Each page keeps its
+  place while the other is up.
+- **The grabber is one plain bar** again, on the sheet and every card:
+  a drag on it moves the sheet, a tap cycles its sizes, Up and Down step
+  them.
 - **A route made or opened** (Fly Here, a link, Saved) goes to FPL;
   clearing it stays on the page it is on.
 - **Cards** open over both pages as before; ✕ comes back to the page
   they were opened over.
-- **At the pill** the sheet shows the page's own one row, the split
-  grabber over it, and nothing else: on Search the search's row, on FPL
-  the route's figures -- To, Dist, ETE, Fuel -- (the owner, 2026-11-11,
-  the canvas's b, as ForeFlight and Garmin Pilot keep them), the route's
-  row from half up; with no route, FPL's own row. The pill is one fixed
-  height for both (the web's `"4.75rem"` snap point).
+- **At the pill** the sheet shows the page's own one row, the grabber
+  over it and the tab bar under it, and nothing else: on Search the
+  search's row, on FPL the route's figures -- To, Dist, ETE, Fuel -- (the
+  owner, 2026-11-11, the canvas's b, as ForeFlight and Garmin Pilot keep
+  them), the route's row from half up; with no route, FPL's own row. The
+  pill is one fixed height for both (the web's `"4.25rem"` snap point,
+  over the bar).
 - **Links**: `open=search` and `open=fpl` (design/screens.json).
 
 | Web | iPhone | Android |
 |---|---|---|
-| shadcn's Carousel (Embla) with `data-base-ui-swipe-ignore="x"` inside the Drawer, the split grabber Base UI's Tabs (`components/sheet/SheetGrabber`, the pages `SheetPager`; FPL's body `features/plan/components/workspace/PlanPage`) | `TabView` with `.tabViewStyle(.page)` or a paging `ScrollView`, the stock page dots | Compose `HorizontalPager`, two page dots from its `PagerState` under the stock drag handle (Material 3 has no phone page indicator; "make everything native", the owner, 2026-11-12) |
+| shadcn's Tabs on Base UI's (`components/sheet/SheetTabBar`): one Root round the Drawer, its List the tab bar in the Drawer's portal under the sheet's viewport (`SheetDrawer`'s `tabBar`, the viewport standing on `TAB_BAR_ROOM`, sheet/insets), its two Panels the pages' scrollers (`SheetParts`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/plan/components/workspace/PlanPage`. In the side panel the same bar at its foot, on the panel's ground | A `TabView` with FPL's `Tab` and a `Tab(role: .search)`, its Liquid Glass tab bar under the system sheet (or inside it, where the sheet is the tab's content), the sheet's detents above the bar | Material 3 `NavigationBar` under `BottomSheetScaffold`, FPL and Search its two items, the sheet's peek and half over the bar |
 
-Tests: [`e2e/sheet-pages.spec.ts`](../../apps/web/e2e/sheet-pages.spec.ts)
-(`@smoke`: Search to FPL and back by a swipe and by the grabber's bars;
-the capsule naming the page after a swipe, then gone) and, for the cards
+Tests: [`e2e/sheet-tab-bar.spec.ts`](../../apps/web/e2e/sheet-tab-bar.spec.ts)
+(`@smoke`: Search to FPL and back by the tab bar, the size kept; the bar
+in sight at every size; 44-point tabs and the one grabber bar) and, for the cards
 over the pages, [`e2e/sheet-pages-cards.spec.ts`](../../apps/web/e2e/sheet-pages-cards.spec.ts)
 (`@smoke`: Fly Here from an airport's card lands on FPL, live).
 

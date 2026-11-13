@@ -192,7 +192,7 @@ async function panelFull(page: Page) {
  *  gone all the way up) opens the account page (Setup) itself. At the pill,
  *  where the developer's page rests, the page is under the pill's edge. */
 export async function openConsole(page: Page) {
-  await showPage(page, 0); // the account button is the Search page's (SheetPager)
+  await showPage(page, 0); // the account button is the Search page's (SheetTabBar)
   await showTabs(page);
   if (!(await page.getByTestId("account-button").isVisible())) await grabberTo(page, "half");
   await page.getByTestId("account-button").click();
@@ -698,7 +698,7 @@ export async function stripShows(page: Page, menu: "fpl-strip-shows" | "aircraft
 /** The one search, in sight: the sheet's first row, at every height. */
 export async function airportSearch(page: Page) {
   const search = page.getByTestId("search-airports");
-  await showPage(page, 0); // the field is the Search page's (SheetPager)
+  await showPage(page, 0); // the field is the Search page's (SheetTabBar)
   if (!(await search.isVisible())) await showTabs(page);
   await expect(search).toBeVisible();
   // Its results in sight when typed in: typing leaves the sheet where it is.

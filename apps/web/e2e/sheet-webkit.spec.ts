@@ -24,9 +24,9 @@ const at = (page: Page, x: number, y: number) =>
     ([px, py]) => {
       const hit = document.elementFromPoint(px, py);
       return {
-        // The split grabber's bars take a finger a little over the sheet's
-        // top (SheetGrabber's 44-point hit areas): theirs, not the sheet's drawing.
-        inPanel: !!hit?.closest('[data-slot="map-panel"]') && !hit?.closest("[data-page-bar]"),
+        // The grabber takes a finger a little over the sheet's top
+        // (SheetGrabber's 44-point hit area): its, not the sheet's drawing.
+        inPanel: !!hit?.closest('[data-slot="map-panel"]') && !hit?.closest('[data-testid="sidebar-trigger-button"]'),
         inBand: !!hit?.closest("[data-head-band]"),
         inBody: !!hit?.closest("[data-panel-body]"),
         inHead: !!hit?.closest("[data-sheet-head]"),
@@ -45,7 +45,7 @@ test(
     await grabberTo(page, "full");
     await settled(panel(page));
     // Search's page, the one up with no route: each of the sheet's two pages
-    // (SheetPager) has its own scroller and head band.
+    // (SheetTabBar's panels) has its own scroller and head band.
     const search = panel(page).locator('[data-sheet-page="0"]');
     const scroller = search.locator("[data-sheet-scroll]").first();
     await scroller.evaluate((el) => el.scrollTo({ top: 240 }));

@@ -3,19 +3,20 @@ import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
 import TabKept from "../TabKept";
 import { AT_PILL, PILL_BODY } from "./insets";
-import { SheetPager, type SheetPages } from "./SheetPager";
+import { SheetPage, type SheetPages } from "./SheetTabBar";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
  *  in it four from the edge. */
 const ROW_PAD = "pt-2.5";
 /** The one search's row, its 46-point field (OneSearchField) sixteen in
  *  from either side as everything in the sheet is (the sheet audit's
- *  F-P1, F-P2, 2026-11-10): on a bottom sheet clear of the grabber's
- *  24-point hit area over it, 76 (BAR_ALONE_REM); else ten over it and
- *  twelve under, 68 (BAR_REM). The pill is this row alone: the title row
+ *  F-P1, F-P2, 2026-11-10): on a bottom sheet under the grabber's 16-point
+ *  room (SheetGrabber, the least iOS keeps: the owner, 2026-11-13) and six
+ *  over its foot, 68 (BAR_ALONE); else ten over it and twelve under, 68
+ *  (BAR). The pill is this row alone: the title row
  *  over it went for the map's room (the owner, 2026-11-10). */
 function barRowPad(underGrabber: boolean) {
-  if (underGrabber) return "h-[4.75rem] pt-6 pb-1.5";
+  if (underGrabber) return "h-[4.25rem] pt-4 pb-1.5";
   return cn("h-[4.25rem] pb-3", ROW_PAD);
 }
 /** Eight points at a bottom sheet's foot where there is no home indicator
@@ -24,11 +25,11 @@ function barRowPad(underGrabber: boolean) {
  *  keyboard's height, so the room less a thousand times it is the room or
  *  nothing. */
 const EDGE_ROOM = "max(0px, calc(8px - env(safe-area-inset-bottom) - var(--drawer-keyboard-inset, 0px) * 1000))";
-/** A bottom sheet's pill under its grabber's 1.5 rem room: the 4.75 rem
+/** A bottom sheet's pill under its grabber's 1 rem room: the 4.25 rem
  *  snap point's rest (sheet/insets), where the figures sit at the pill. */
 const PILL_BELOW_GRABBER = "3.25rem";
 /** Those rows' heights, for what pins under them (--sheet-head). */
-const BAR_ALONE = "4.75rem";
+const BAR_ALONE = "4.25rem";
 const BAR = "4.25rem";
 
 /** Under the head, the body and the foot a shade darker than the glass
@@ -60,8 +61,12 @@ export interface PartsProps {
   toEdge: boolean;
   panelSize: { size: PanelState; to: (size: PanelState) => void; card: boolean };
   onFootTap: () => void;
-  /** The sheet's two pages, Search and FPL, swiped between (SheetPager). */
+  /** The sheet's two pages, Search and FPL, picked from the tab bar under
+   *  it (SheetTabBar). */
   pages?: SheetPages;
+  /** The tab bar under a phone's sheet: its foot is the bar's, so no edge
+   *  room of its own there. */
+  tabBar?: boolean;
 }
 
 /** Back by the Drawer's snap offset and the finger's movement, on its
@@ -90,9 +95,8 @@ export const CUT_TOP = "[clip-path:inset(0_0_max(0px,calc(-1*(var(--sheet-offset
  * A card, which has the sheet to itself (no search over it), is its own
  * scroller filling the room under an empty head, its title row sticky at
  * its top (PinnedHead) and its tabs under that. With the sheet's pages
- * (SheetPager) each page is such a scroller: Search's head the one search,
- * FPL's the route's row and the controls, the split grabber over both
- * (SheetGrabber) picking them.
+ * each page is such a scroller, a panel of the tab bar's Tabs (SheetPage):
+ * Search's head the one search, FPL's the route's row and the controls.
  */
 export function SheetParts(p: PartsProps) {
   const { atPill, fromBottom, size, footShown, cardsUp } = p;
@@ -121,6 +125,8 @@ export function SheetParts(p: PartsProps) {
   // body cut off where those parts begin. A bottom sheet's figures; a top
   // sheet's head and body.
   const follows = p.onPhone ? FOLLOW : undefined;
+  // Over the tab bar the sheet's foot is the bar's, no edge room of its own.
+  const edgeRoom = p.tabBar ? "0px" : EDGE_ROOM;
 
   const barRow = p.bar && (
     <div
@@ -140,7 +146,7 @@ export function SheetParts(p: PartsProps) {
   // the search, or paged the second page's first row.
   const headBlock = (shown: boolean, alone: boolean, first: boolean) => {
     const keptHere = p.kept != null && shown && headContent === p.kept;
-    const firstPad = first ? (p.fromBottom ? "pt-6" : ROW_PAD) : undefined;
+    const firstPad = first ? (p.fromBottom ? "pt-4" : ROW_PAD) : undefined;
     return (
       <div
         className={cn(
@@ -253,9 +259,7 @@ export function SheetParts(p: PartsProps) {
   );
 
   // The route's figures pinned at the sheet's foot. Paged, FPL's own, at
-  // its page's foot: they slide with it rather than popping in and out as
-  // the pages move, and a swipe on them at the pill turns the page as one
-  // anywhere on it does (the sheet audit, 2026-11-12).
+  // its page's foot, put away with it while Search is up.
   const foot = !!p.foot && (footShown || cardsUp) && (
     // eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to open the sheet, and the figures' own buttons stay focusable
     <div
@@ -268,8 +272,8 @@ export function SheetParts(p: PartsProps) {
         "relative z-10 flex shrink-0 flex-col justify-center border-t print:hidden",
         fromBottom && follows,
         // The figures as the pill's one row (FPL's, not flying): under
-        // the grabber's 1.5 rem room, the rest of the pill's 4.75 rem
-        // (sheet/insets) less the foot's edge room, the figures' 2.6875
+        // the grabber's 1 rem room, the rest of the pill's 4.25 rem
+        // (sheet/insets) less the foot's edge room (none over the tab bar), the figures' 2.6875
         // rem (a name's 18-point line over a value's 25) centred in it.
         figuresPill
           ? "pt-0 pb-0"
@@ -282,7 +286,7 @@ export function SheetParts(p: PartsProps) {
         {
           "--sheet-progress": size === "half" && !p.desktop ? "0" : "1",
           ...(p.toEdge && fromBottom && !pillFoot ? { paddingBottom: "10px" } : {}),
-          ...(figuresPill ? { height: `calc(${PILL_BELOW_GRABBER} - ${EDGE_ROOM})` } : {}),
+          ...(figuresPill ? { height: `calc(${PILL_BELOW_GRABBER} - ${edgeRoom})` } : {}),
         } as CSSProperties
       }
       // In the pill a tap on it opens it half way.
@@ -294,30 +298,25 @@ export function SheetParts(p: PartsProps) {
 
   let content: ReactNode;
   if (p.pages) {
-    const { at, go, second } = p.pages;
+    const { at, second } = p.pages;
     // The second page's first row: the route's from half up; at the pill
     // the route's figures in its place where there are some (the foot,
     // MapPanel's footShown), else the pill's own row.
     const routeShown = !p.flying && !cardsUp && (atPill ? p.compact != null && !footShown : p.top != null);
     const searchAlone = atPill && !p.flying && !p.barShown;
     const routeAlone = atPill && !p.flying && !routeShown && !footShown;
-    // Swiped between in the workspace alone: not flying, no card over it.
-    const swiped = !p.flying && !cardsUp && p.layer === "tab";
+    // Each page a panel of the tab bar's Tabs (SheetTabBar), one up at a
+    // time; the other kept, inert.
     content = (
-      <SheetPager
-        at={at}
-        go={go}
-        drag={swiped}
-        // Each page inert while it is not the one Embla shows (SheetPager's
-        // `shown`), not while it is not the app's: the two were out of step.
-        pages={(shown) => [
-          scroller(barRow, p.children, searchAlone, shown !== 0, sheetHead, false),
-          <>
-            {scroller(headBlock(routeShown, routeAlone, true), second, routeAlone, shown !== 1, "0px", footShown)}
-            {foot}
-          </>,
-        ]}
-      />
+      <div data-testid="sheet-pages" data-page={at} className="flex min-h-0 flex-1 flex-col print:block">
+        {/* Cut off where the Drawer's viewport ends, as FPL's is at its
+            figures: what hung past it showed through the tab bar's glass. */}
+        <SheetPage at={0}>{scroller(barRow, p.children, searchAlone, at !== 0, sheetHead, !!p.tabBar)}</SheetPage>
+        <SheetPage at={1}>
+          {scroller(headBlock(routeShown, routeAlone, true), second, routeAlone, at !== 1, "0px", footShown)}
+          {foot}
+        </SheetPage>
+      </div>
     );
   } else {
     const headAlone = atPill && !p.flying && !p.barShown && !(headerShown && headContent != null);
@@ -341,7 +340,7 @@ export function SheetParts(p: PartsProps) {
       {/* A bottom sheet's eight points at its foot where there is no home
           indicator (in the body where it runs to the edge, toEdge); the
           indicator's own room is under the Drawer's viewport (SheetDrawer). */}
-      {!p.toEdge && p.onPhone && fromBottom && <div className="shrink-0" style={{ height: EDGE_ROOM }} aria-hidden="true" />}
+      {!p.toEdge && !p.tabBar && p.onPhone && fromBottom && <div className="shrink-0" style={{ height: EDGE_ROOM }} aria-hidden="true" />}
     </>
   );
 }

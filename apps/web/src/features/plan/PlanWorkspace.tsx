@@ -30,7 +30,7 @@ import { listSearchOf } from "./components/workspace/listSearch";
 import OneSearchField from "./components/search/OneSearchField";
 import { useOneSearch } from "./hooks/useOneSearch";
 
-/** The sheet's pages' names (SheetPager), for their bars of the split grabber. */
+/** The sheet's pages' names, their tabs' labels (SheetTabBar). */
 const PAGE_NAMES = ["Search", "FPL"] as const;
 
 /**
@@ -422,7 +422,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // an airport's, the airspace's, an airplane's -- over the tab it was
         // opened from, its close back to it.
         sidebar: <PlanSidebar vm={vm} model={search} />,
-        // The pages (SheetPager, the owner 2026-11-11): Search over `sidebar`, FPL's `route` over the plan.
+        // The pages, picked from the tab bar under the sheet (SheetTabBar; the owner, 2026-11-13): Search over `sidebar`, FPL's `route` over the plan.
         pages: {
           at: view === "plan" ? 1 : 0,
           go: pickPage,

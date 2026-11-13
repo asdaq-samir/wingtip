@@ -2,39 +2,30 @@ import { expect, type Page } from "@playwright/test";
 import { airportMarks, searchAirports, sideDrawer, slow } from "./helpers";
 
 /**
- * The sheet's two pages, Search and FPL (SheetPager), for the specs that
- * read which is up: sheet-pages and sheet-fly-here.
+ * The sheet's two pages, Search and FPL, picked from the tab bar under the
+ * sheet (SheetTabBar), for the specs that read which is up: sheet-tab-bar,
+ * sheet-pages-cards and sheet-fly-here.
  */
 
-export const pager = (page: Page) => sideDrawer(page).getByTestId("sheet-pager");
-/** A page's bar of the split grabber (SheetGrabber), outside the sheet's
- *  scroller: the Drawer's popup holds it. */
-export const bar = (page: Page, at: 0 | 1) => page.locator(`[data-page-bar="${at}"]`);
+const pages = (page: Page) => sideDrawer(page).getByTestId("sheet-pages");
+/** A page's tab in the tab bar: 0 Search, 1 FPL. */
+export const tab = (page: Page, at: 0 | 1) => page.locator(`[data-page-tab="${at}"]`);
 
+/** The page `at` up: its tab picked. The bar stays under a card too. */
 export async function expectPage(page: Page, at: 0 | 1) {
-  await expect(pager(page)).toHaveAttribute("data-page", String(at));
-  // The split grabber is the sheet's alone, drawn with no card over it
-  // (MapPanel's `!cardsUp`): a card up brings its own plain grabber.
-  if (await page.locator("[data-sheet-card][data-open]").count()) {
-    await expect(bar(page, 0)).toHaveCount(0);
-    return;
-  }
-  await expect(bar(page, at)).toHaveAttribute("aria-selected", "true");
-  await expect(bar(page, at === 0 ? 1 : 0)).toHaveAttribute("aria-selected", "false");
+  await expect(pages(page)).toHaveAttribute("data-page", String(at));
+  await expect(tab(page, at)).toHaveAttribute("aria-selected", "true");
+  await expect(tab(page, at === 0 ? 1 : 0)).toHaveAttribute("aria-selected", "false");
 }
 
-/** The page `at` is the one in sight and live: its slide where the pager
- *  is, and its body not inert -- the app's page and Embla's in step (the
- *  sheet audit, 2026-11-12: a card's coming and going built Embla again on
- *  its first page, the page in sight inert and nothing on it tappable). */
+/** The page `at` is the one in sight and live: its panel shown, the
+ *  other's kept away, and its body not inert. */
 export async function expectShown(page: Page, at: 0 | 1) {
   await expectPage(page, at);
-  const slide = pager(page).locator(`[data-sheet-page="${at}"]`);
-  await expect(async () => {
-    const [box, of] = [(await slide.boundingBox())!, (await pager(page).boundingBox())!];
-    expect(Math.abs(box.x - of.x), "the page up is the page in sight").toBeLessThan(2);
-  }).toPass();
-  await expect(slide.locator("[data-panel-body]")).not.toHaveAttribute("inert");
+  const shown = pages(page).locator(`[data-sheet-page="${at}"]`);
+  await expect(shown).not.toHaveAttribute("data-hidden");
+  await expect(pages(page).locator(`[data-sheet-page="${at === 0 ? 1 : 0}"]`)).toHaveAttribute("data-hidden");
+  await expect(shown.locator("[data-panel-body]")).not.toHaveAttribute("inert");
 }
 
 /** An airport typed into the one search and its card opened, by a

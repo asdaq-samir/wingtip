@@ -148,7 +148,7 @@ export async function expectBack(page: Page, back: Back) {
   if (back === "search") await expect(page.getByTestId("search-airports")).toBeVisible();
   if (back === "search-home") await expect(panel.getByTestId("search-home").or(page.getByTestId("search-airports")).first()).toBeVisible();
   // FPL: its route's row, or at the pill its figures in the row's place
-  // (the owner, 2026-11-11, the canvas's b; sheet-pages.spec).
+  // (the owner, 2026-11-11, the canvas's b; sheet-tab-bar.spec).
   if (back === "plan")
     await expect(
       panel
