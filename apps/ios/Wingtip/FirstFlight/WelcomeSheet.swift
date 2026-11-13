@@ -123,8 +123,6 @@ enum WelcomeFoot: Equatable {
 /// where the flight plan is, one tap away (the web's FplTip). TipKit's own
 /// popover, shown once.
 struct FplTip: Tip {
-    static let shared = FplTip()
-
     /// A route made: the tip may show.
     @Parameter static var routed: Bool = false
 
