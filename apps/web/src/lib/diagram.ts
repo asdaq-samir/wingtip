@@ -6,7 +6,9 @@
 /** The airport diagram cropped to its runways, for the card's thumbnail
  *  (the planner's /api/airport-diagram/{cycle}/runways). */
 export const diagramRunwaysPicture = (ident: string, cycle: string) =>
-  `/api/planner/airport-diagram/${encodeURIComponent(cycle)}/runways/${encodeURIComponent(ident)}.png`;
+  // "?v=2": the crop's margin grew (2026-11-13), and browsers keep the
+  // tighter picture a cycle (immutable) under the old address.
+  `/api/planner/airport-diagram/${encodeURIComponent(cycle)}/runways/${encodeURIComponent(ident)}.png?v=2`;
 
 export const diagramPicture = (ident: string, cycle: string) =>
   `/api/planner/airport-diagram/${encodeURIComponent(cycle)}/${encodeURIComponent(ident)}.png`;

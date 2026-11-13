@@ -99,7 +99,7 @@ describe("keeping a route's charts", () => {
     const asked = fetch.mock.calls.map(([url]) => url);
     expect(asked.filter((url) => url.includes("/airport-diagram/"))).toEqual([
       "/api/planner/airport-diagram/2610/KDLH.png",
-      "/api/planner/airport-diagram/2610/runways/KDLH.png",
+      "/api/planner/airport-diagram/2610/runways/KDLH.png?v=2",
     ]);
   });
 
