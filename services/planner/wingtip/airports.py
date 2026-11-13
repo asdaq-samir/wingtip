@@ -586,33 +586,42 @@ def places_in(
     return _places_of(chosen)
 
 
-#: How far round a position the nearest fields are looked for first, in
-#: degrees: a box a few minutes' flight across, widened where it is empty.
-_NEAREST_BOX_DEG = (0.75, 2.0, 6.0)
+#: Where the nearest fields are looked for, nm: a radius of a few minutes'
+#: flight, doubled while fewer than the limit lie within it. A box holding
+#: `limit` fields does not hold the `limit` nearest (a degree box at 61 N
+#: missed Valdez, 37 nm east, for a field 41 nm off), so the radius decides
+#: and geo.box_around is its first cut. At the cap, the fields within it
+#: alone, fewer than asked: 640 nm is past any glide or fuel stop. Abroad,
+#: fields only name where a followed flight began or ended.
+_NEAREST_FIRST_NM, _NEAREST_CAP_NM, _ABROAD_CAP_NM = 40.0, 640.0, 40.0
+
+
+def _nearest_in(fields: pd.DataFrame, lat: float, lon: float, limit: int, cap_nm: float) -> list[dict]:
+    """`nearest`'s list from `fields`: a radius is taken once its limit-th
+    field lies within it, as every nearer one then does, so in its box."""
+    radius = min(_NEAREST_FIRST_NM, cap_nm)
+    while True:
+        south, west, north, east = geo.box_around(lat, lon, radius)
+        east_of = (fields["longitude_deg"] - lon + 180) % 360 - 180  # across 180 too, for the Aleutians
+        box = fields[fields["latitude_deg"].between(south, north) & east_of.between(west - lon, east - lon)]
+        lats, lons = box["latitude_deg"].to_numpy(dtype=float), box["longitude_deg"].to_numpy(dtype=float)
+        box = box.assign(_d=geo.distance_nm(lat, lon, lats, lons), _b=geo.bearing_deg(lat, lon, lats, lons))
+        found = box[box["_d"] <= radius].sort_values("_d", kind="stable").drop_duplicates("_display_ident").head(limit)
+        if len(found) >= limit or radius >= cap_nm:
+            break
+        radius = min(radius * 2, cap_nm)
+    return [
+        {**_place_of(r), "distance_nm": round(float(r["_d"]), 1), "bearing_deg": round(float(r["_b"])) % 360} for _, r in found.iterrows()
+    ]
 
 
 def nearest(lat: float, lon: float, limit: int = 10, cache_path: Path = DEFAULT_CACHE_PATH) -> list[dict]:
     """The landing fields nearest a position, the nearest first: each a
     place (as find_place's) with `distance_nm` and `bearing_deg`, true,
     from the position to it -- what a pilot with an engine running rough
-    looks for. Asked in a box round the position, widened until it holds
-    `limit` of them."""
+    looks for (wingtip.emergency.fields_near), within _NEAREST_CAP_NM."""
     df = _us_airports(cache_path)
-    fields = df[df["type"].isin(list(_FIELD_KINDS))]
-    for half in _NEAREST_BOX_DEG:
-        box = fields[
-            fields["latitude_deg"].between(lat - half, lat + half) & fields["longitude_deg"].between(lon - half * 1.5, lon + half * 1.5)
-        ]
-        if len(box) >= limit:
-            break
-    lats, lons = box["latitude_deg"].to_numpy(dtype=float), box["longitude_deg"].to_numpy(dtype=float)
-    distances = geo.distance_nm(lat, lon, lats, lons)
-    bearings = geo.bearing_deg(lat, lon, lats, lons)
-    ordered = box.assign(_d=distances, _b=bearings).sort_values("_d").drop_duplicates("_display_ident").head(limit)
-    return [
-        {**_place_of(row), "distance_nm": round(float(row["_d"]), 1), "bearing_deg": round(float(row["_b"])) % 360}
-        for _, row in ordered.iterrows()
-    ]
+    return _nearest_in(df[df["type"].isin(list(_FIELD_KINDS))], lat, lon, limit, _NEAREST_CAP_NM)
 
 
 @once(maxsize=2)
@@ -629,21 +638,11 @@ def _abroad_of(path: str, _mtime: float) -> pd.DataFrame:
 
 
 def nearest_abroad(lat: float, lon: float, limit: int = 3, cache_path: Path = DEFAULT_CACHE_PATH) -> list[dict]:
-    """As `nearest`, among the fields outside the US: a European airline's
-    flight, followed on the map, named by its own airports (LEBL, EGKK)
-    rather than none."""
+    """As `nearest`, among the fields outside the US within _ABROAD_CAP_NM:
+    a European airline's flight, followed on the map, named by its own
+    airports (LEBL, EGKK) rather than none."""
     path = _ensure_cached(OURAIRPORTS_URL, cache_path)
-    fields = _abroad_of(str(path), path.stat().st_mtime)
-    half = 0.5
-    box = fields[fields["latitude_deg"].between(lat - half, lat + half) & fields["longitude_deg"].between(lon - half * 2, lon + half * 2)]
-    if box.empty:
-        return []
-    lats, lons = box["latitude_deg"].to_numpy(dtype=float), box["longitude_deg"].to_numpy(dtype=float)
-    ordered = box.assign(_d=geo.distance_nm(lat, lon, lats, lons), _b=geo.bearing_deg(lat, lon, lats, lons)).sort_values("_d").head(limit)
-    return [
-        {**_place_of(row), "distance_nm": round(float(row["_d"]), 1), "bearing_deg": round(float(row["_b"])) % 360}
-        for _, row in ordered.iterrows()
-    ]
+    return _nearest_in(_abroad_of(str(path), path.stat().st_mtime), lat, lon, limit, _ABROAD_CAP_NM)
 
 
 def get_runways(ident: str, cache_path: Path = RUNWAYS_CACHE_PATH) -> list[dict]:

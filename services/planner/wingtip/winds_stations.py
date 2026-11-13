@@ -14,9 +14,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-import numpy as np
-
-from . import weather, weather_store
+from . import geo, weather, weather_store
 from .engine import ask
 
 
@@ -75,8 +73,8 @@ def station_rows(station_ids, airports_df):
         candidates = airports_df[airports_df["local_code"].isin(station_ids) & (airports_df["iso_country"] == "US")]
         rows = (
             candidates["local_code"].to_numpy(),
-            np.radians(candidates["latitude_deg"].to_numpy(dtype=float)),
-            np.radians(candidates["longitude_deg"].to_numpy(dtype=float)),
+            candidates["latitude_deg"].to_numpy(dtype=float),
+            candidates["longitude_deg"].to_numpy(dtype=float),
         )
         _STATION_ROWS[key] = rows
     return rows
@@ -86,11 +84,7 @@ def nearest_station(lat: float, lon: float, station_ids, airports_df) -> str | N
     codes, lats, lons = station_rows(station_ids, airports_df)
     if len(codes) == 0:
         return None
-    # Great-circle distance to every station at once, the same formula
-    # as wingtip.geo.distance_nm; the radius cancels out of an argmin.
-    lat0, lon0 = np.radians(lat), np.radians(lon)
-    a = np.sin((lats - lat0) / 2) ** 2 + np.cos(lat0) * np.cos(lats) * np.sin((lons - lon0) / 2) ** 2
-    return str(codes[int(np.argmin(a))])
+    return str(codes[int(geo.nearest([lat], [lon], lats, lons)[0])])
 
 
 def _levels_near(lat: float, lon: float, fcst_hr: str) -> dict | None:
@@ -155,7 +149,7 @@ def wind_points(box: tuple, fcst_hr: str, altitudes: list) -> list[dict]:
     stations = fd_stations(fcst_hr)
     codes, lats, lons = station_rows(set(stations.keys()), airports.load_airports())
     out = []
-    for lat, lon, code in zip(np.degrees(lats), np.degrees(lons), codes):
+    for lat, lon, code in zip(lats, lons, codes):
         winds = []
         for alt in altitudes:
             wind = wind_in_levels(stations[str(code)], float(alt))
