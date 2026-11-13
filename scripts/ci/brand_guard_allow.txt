@@ -3,10 +3,10 @@
 # not a look a token should carry. A file may not pass its count; one that
 # drops below it is said, and its count lowered. Keep this list short.
 apps/web/src/components/icons/GoogleLogo.tsx 4 Google's own "G" in Google's four colours, as its brand rules ask.
-apps/web/src/components/MapSettings.tsx 1 The Google map choice's swatch: a picture of Google's land and water, not the app's look.
 apps/web/src/components/PlaneMarks.tsx 6 SVG masks: white keeps and black cuts out a glyph's window, geometry rather than colour.
 apps/web/src/components/ui/chart.tsx 1 Matches Recharts' own default grid stroke ([stroke='#ccc']) to restyle it in the theme's border.
-apps/web/src/features/plan/map/terrain/dem.ts 5 MapLibre's hillshade light and the sky over a tilted chart: render settings for the 3D ground, set once.
+apps/web/src/features/map-settings/MapCard.tsx 1 The Google map choice's swatch: a picture of Google's land and water, not the app's look.
+apps/web/src/features/plan/map/terrain/dem.ts 2 MapLibre's hillshade light and the sky over a tilted chart: render settings for the 3D ground, set once.
 apps/web/src/features/plan/map/traffic.ts 2 Traffic coloured by its altitude: a hue ramp computed from the data, and its no-altitude grey.
 apps/web/src/index.css 1 The installed app's scrim under the iPhone's status bar: a gradient of black over the chart.
 apps/ios/Wingtip/Views/Kneeboard.swift 6 The printed kneeboard page: fixed point sizes on paper, where Dynamic Type has no reader to follow.

@@ -15,21 +15,13 @@ import { LandWaterGl, OverlayGl } from "../../../lib/map/gl/layers/BaseGl";
 import { ChartGl } from "../../../lib/map/gl/layers/ChartGl";
 import { EmergencyGl } from "./layers/EmergencyGl";
 import { GlideRingGl } from "./layers/GlideRingGl";
-import { AheadGl, ClassBGl } from "./layers/MarksGl";
+import { AheadGl } from "./layers/MarksGl";
+import { ClassBGl } from "../../../lib/map/gl/layers/ClassBGl";
 import { NavaidsGl, WaypointsGl } from "../../../components/map/layers/NavaidsGl";
 import { OwnShipGl } from "../../../lib/map/gl/layers/OwnShipGl";
-import {
-  FuelStopsGl,
-  HoldTracksGl,
-  LegPointsGl,
-  LessonGl,
-  PatternsGl,
-  PickedGl,
-  PlatesGl,
-  ProceduresGl,
-  StopFieldsGl,
-  WaysGl,
-} from "../../../lib/map/gl/layers/RouteExtrasGl";
+import { HoldTracksGl, LegPointsGl, PatternsGl, PickedGl, ProceduresGl, WaysGl } from "../../../lib/map/gl/layers/RouteExtrasGl";
+import { LessonGl } from "../../../lib/map/gl/layers/LessonGl";
+import { FuelStopsGl, StopFieldsGl } from "../../../lib/map/gl/layers/StopMarksGl";
 import { RouteGl, type GlCandidate, type GlCheckpoint, type GlEndpoint } from "../../../lib/map/gl/layers/RouteGl";
 import type { GlLeg } from "../../../lib/map/gl/legTap";
 import { TfrGl } from "./layers/TfrGl";
@@ -39,14 +31,18 @@ import { ForecastRunGl } from "../forecastRun/ForecastRunGl";
 import { TrafficGl } from "./layers/TrafficGl";
 import { WeatherGl } from "./layers/WeatherGl";
 import { WeatherLoopGl } from "../../weather-loop";
+import { FlowGl } from "../../weather-flow";
+import { PlatesGl } from "../../plates";
+import { FaaChart } from "../components/AirportDiagram";
 import { useWeatherLayers } from "../../../lib/map/sources/weatherLayers";
 import { useGlFit } from "./useGlFit";
 import type { AloftPoint } from "./terrain/geometry";
 import { useTerrainView } from "./terrain/useTerrainView";
 
 /** The relief, the 3D ground and the pilot's-eye view (features/plan/map/terrain):
- *  a chunk of its own, loaded only once the Map menu's Terrain or the dry
- *  run asks for it. */
+ *  a chunk of its own, loaded after the map's first script; the relief is
+ *  always shaded under the 2D chart since the owner took Flat out
+ *  (2026-11-13). */
 const TerrainGl = lazy(() => import("./terrain/TerrainGl"));
 
 export type { GlCandidate, GlCheckpoint, GlEndpoint, GlLeg };
@@ -90,7 +86,6 @@ interface GlRouteMapProps {
   procedures: ProcedureDrawing[];
   focusedProcedure: { lat: number; lon: number }[];
   procedureFocus: string | null;
-  procedureCover?: { top: number; bottom: number };
   crossings: Record<string, number>;
   directs: string;
   onProcedureFix?: (field: string, kind: ProcedureDrawing["kind"], fix: string) => void;
@@ -166,26 +161,42 @@ function Layers(p: GlRouteMapProps) {
 function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void }) {
   const { course } = p;
   const dryRunning = usePastFlight((s) => s.hex === DRY_RUN);
-  // The map fitted to what was just picked: a lone departure,
-  // Nearest's fields, the Stops, a procedure or a pattern just picked.
-  useGlFit(p.start ? [p.start] : NONE, !p.place ? (p.start?.ident ?? null) : null, 9);
-  useGlFit(p.nearest ?? NONE, !p.place && p.nearest?.length ? p.nearest.map((a) => a.ident).join(",") : null);
-  useGlFit(p.stopFields, p.stopFields.length ? `stops:${p.stopFields.map((f) => f.ident).join(",")}` : null);
-  useGlFit(p.focusedProcedure, p.focusedProcedure.length ? p.procedureFocus : null, 12, p.procedureCover);
+  // The map fitted to what was just picked, once a pick: a lone
+  // departure, Nearest opened, the Stops, a procedure or a pattern just
+  // picked. Not again as their points change (useGlFit), and not where
+  // the airport's card a pick opened flies the map itself (GlMapShell).
+  const placed = !!p.place;
+  useGlFit(p.start ? [p.start] : NONE, p.start?.ident ?? null, 9, undefined, placed);
+  useGlFit(p.nearest ?? NONE, p.nearest ? "nearest" : null, undefined, undefined, placed);
+  useGlFit(p.stopFields, p.stopFields.length ? "stops" : null);
+  // Framed clear of the sheet as it really is: the map's insets (the
+  // Drawer's own cover, useSheetCover) are its padding already.
+  useGlFit(p.focusedProcedure, p.focusedProcedure.length ? p.procedureFocus : null, 12);
   useGlFit(p.focusedPattern, p.focusedPattern.length ? p.patternFocus : null, 13);
   const route = course ? [course.departure.ident, ...(course.stops ?? []).map((s) => s.ident), course.destination.ident] : [];
   const worse = useWorseByArrival(p.briefing, course);
   const terrain = useTerrainView();
   // The radar and satellite loop under the advisories, while one is on.
   const loop = useWeatherLayers((s) => s.loop !== "off");
+  // The model weather's flow layer, its own chunk, while a field is picked.
+  const flow = useWeatherLayers((s) => s.flow !== "off");
   return (
     <>
-      {terrain.mode !== "flat" && (
+      <Suspense fallback={null}>
+        <TerrainGl
+          mode={terrain.mode}
+          pilot={terrain.pilot}
+          aloft={course ? (p.aloft ?? null) : null}
+          field={p.place?.ident ?? course?.destination.ident ?? null}
+          procedures={p.procedures}
+        />
+      </Suspense>
+      {loop && <WeatherLoopGl />}
+      {flow && (
         <Suspense fallback={null}>
-          <TerrainGl mode={terrain.mode} pilot={terrain.pilot} aloft={course ? (p.aloft ?? null) : null} />
+          <FlowGl />
         </Suspense>
       )}
-      {loop && <WeatherLoopGl />}
       <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />
       <TfrGl />
       {/* A search sent, its fields marked (the one search's results). */}
@@ -201,7 +212,7 @@ function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void })
           {p.onPickWay && p.ways && <WaysGl ways={p.ways} shown={p.wayShown} onPick={p.onPickWay} />}
           <LegHighlightGl course={course} />
           <LegHoverGl />
-          <PlatesGl drawings={p.procedures} />
+          <PlatesGl drawings={p.procedures} viewer={FaaChart} />
           <RouteGl
             course={course}
             checkpoints={p.checkpoints}

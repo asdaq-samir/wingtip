@@ -47,14 +47,20 @@ struct MapLookTests {
         return (Int(pixel[0]), Int(pixel[1]), Int(pixel[2]))
     }
 
-    // MARK: Apple's map close in
+    // MARK: The imagery close in
 
-    @Test func theChartGivesWayToApplesMapOverOneLevelCloseIn() throws {
-        #expect(ChartFade.alpha(zoom: 8) == 1)
-        #expect(ChartFade.alpha(zoom: 13) == 1)
-        #expect(abs(ChartFade.alpha(zoom: 13.5) - 0.5) < 0.001)
-        #expect(ChartFade.alpha(zoom: 14) == 0)
-        #expect(ChartFade.alpha(zoom: 17) == 0)
+    @Test func theChartFadesIntoTheImageryOverOneLevelPastItsOwnLast() throws {
+        // The sectional's last level is 12 (the web's closeZoom).
+        #expect(ChartFade.alpha(zoom: 8, last: 12) == 1)
+        #expect(ChartFade.alpha(zoom: 12, last: 12) == 1)
+        #expect(abs(ChartFade.alpha(zoom: 12.5, last: 12) - 0.5) < 0.001)
+        #expect(ChartFade.alpha(zoom: 13, last: 12) == 0)
+        #expect(ChartFade.alpha(zoom: 17, last: 12) == 0)
+        // The imagery is in over the half level before, so the chart never
+        // fades over nothing.
+        #expect(ChartFade.imagery(zoom: 11.4, last: 12) == 0)
+        #expect(abs(ChartFade.imagery(zoom: 11.75, last: 12) - 0.5) < 0.001)
+        #expect(ChartFade.imagery(zoom: 12, last: 12) == 1)
     }
 
     @Test func aRunwaysSurfaceIsItsOwnWidthBetweenItsEnds() throws {
@@ -99,16 +105,15 @@ struct MapLookTests {
 
     @Test func thePlannersAnswerSaysWhichFieldsAreTowered() throws {
         let json = #"{"ident":"KORD","name":"O'Hare","lat":41.98,"lon":-87.9,"kind":"large","flight_category":null,"military":null,"private":false,"towered":true,"airspace_class":"B","primary_of":"B"}"#
-        let pin = try Planner.snakeCase.decode(AirportPin.self, from: Data(json.utf8))
+        let pin = try Planner.json.decode(AirportPin.self, from: Data(json.utf8))
         #expect(pin.towered == true)
         let older = #"{"ident":"KORD","name":"O'Hare","lat":41.98,"lon":-87.9,"kind":"large"}"#
-        #expect(try Planner.snakeCase.decode(AirportPin.self, from: Data(older.utf8)).towered == nil)
+        #expect(try Planner.json.decode(AirportPin.self, from: Data(older.utf8)).towered == nil)
     }
 
     @Test func thePacksSayWhichFieldsAreToweredAsThePlannerDoes() throws {
-        let packs = try ["n40w088", "n40w092"].map { name -> Data in
-            let url = try #require(Bundle(for: LookBundle.self).url(forResource: name, withExtension: "pack"))
-            return try Data(contentsOf: url, options: .alwaysMapped)
+        let packs = try ["n40w088", "n40w092"].map { name -> String in
+            try #require(Bundle(for: LookBundle.self).url(forResource: name, withExtension: "pack")).path
         }
         let pins = try #require(CyclePacks.airportsInView(packs: packs, south: 41.8, west: -88.2, north: 42.2, east: -87.6))
         // O'Hare and Chicago Executive have towers (NASR APT_BASE ATCT).
@@ -150,6 +155,20 @@ struct MapLookTests {
         // None in sight: no tab.
         let away = MKMapRect(origin: MKMapPoint(CLLocationCoordinate2D(latitude: 30, longitude: -100)), size: MKMapSize(width: 10, height: 10))
         #expect(AirspaceTab.place([ring], centre: centre, in: away) == nil)
+    }
+
+    @Test func aSpecialUseTabShowsTheEnginesWordsAndTurnsUpright() throws {
+        // Brady Low, as the engine writes and places it (sua_tab): the tab
+        // draws its `text` as given (the shared cases are FlowFixturesTests').
+        let tab = ChartMarks.Area.Tab(text: "M-BRADY LOW:\n500AGL-5999", at: [31, -99], angle: 10, side: 1)
+        let area = ChartMarks.Area(type: "MOA", name: "BRADY LOW MOA", floorFt: 500, ceilingFt: 5999, rings: [], label: [31, -99], tab: tab)
+        #expect(SpecialUseTabAnnotation(area)?.text == "M-BRADY LOW:\n500AGL-5999")
+        let empty = ChartMarks.Area.Tab(text: "", at: [31, -99], angle: 10, side: 1)
+        #expect(SpecialUseTabAnnotation(ChartMarks.Area(type: "MOA", name: "X", floorFt: nil, ceilingFt: nil, rings: [], label: [31, -99], tab: empty)) == nil)
+        // Turned with the map and kept upright, the area then on the
+        // text's other side.
+        #expect(SpecialUseTab.turn(angle: 10, side: 1, heading: 0) == (10, 1))
+        #expect(SpecialUseTab.turn(angle: 10, side: 1, heading: 180) == (10, -1))
     }
 
     @Test func theBandWidensAsTheMapComesIn() throws {
@@ -204,8 +223,8 @@ struct MapLookTests {
         let shapes = RunwayShape.of([runway("TURF"), runway("ASPH"), runway("CONC"), runway(nil)])
         #expect(shapes.map(\.soft) == [true, false, false, false])
         let a = CLLocationCoordinate2D(latitude: 42.32, longitude: -88.08), b = CLLocationCoordinate2D(latitude: 42.32, longitude: -88.07)
-        #expect(RunwaySurface.between(a, b, widthFt: 100, soft: true).soft)
-        #expect(!RunwaySurface.between(a, b, widthFt: 100).soft)
+        #expect(RunwaySurface.between(a, b, widthFt: 100, soft: true).soft == true)
+        #expect(RunwaySurface.between(a, b, widthFt: 100).soft == false)
     }
 
     // MARK: Where the map opens

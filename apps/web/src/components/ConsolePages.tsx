@@ -1,15 +1,17 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import { cn } from "cn";
-import { TEXT } from "../lib/text";
 import { ListRow } from "./GroupedList";
 import { useShown } from "../lib/shown";
 import { holdOpenCard } from "../lib/openCards";
-import { useWantedPage } from "./wantedPage";
+import { useWantedPage } from "../lib/navigation/wantedPage";
 import { useScrollPlace } from "../lib/scrollPlace";
+import { CardHeadRow } from "./CardHead";
+import { PAGE_LINK } from "./pageLink";
 import CloseButton from "./CloseButton";
+import { ConsoleLeave } from "./consoleLeave";
+import { Pages } from "./consolePagesContext";
 
 /** The way to open one of a tab's pages, and the page back came from. */
-const Pages = createContext<{ open: (page: string) => void; from: string | null } | null>(null);
 
 /**
  * iOS's navigation inside a console tab, as Settings has it: the tab's
@@ -38,6 +40,9 @@ export function ConsolePages({
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const [from, setFrom] = useState<string | null>(null);
+  // Opened straight from outside (useWantedPage), not from a row here.
+  const [direct, setDirect] = useState(false);
+  const leave = useContext(ConsoleLeave);
   // The tab's own page eases in only coming back to it from a page, as a
   // pop: drawn as Setup opens, it faded in from nothing every time, its
   // switches' icons blinking out and back at each tap on the tab, at the
@@ -50,15 +55,20 @@ export function ConsolePages({
   // brings it into view.
   // The page open is the top of what the close, a swipe back and a
   // device's Back take away, one at a time: a page of a page first.
+  // A page opened straight from outside goes back there, the console
+  // closed with it; one opened from a row here, back to the list.
+  const shut = () => {
+    if (direct && leave) {
+      leave();
+      return;
+    }
+    setPopped(true);
+    setOpen(null);
+  };
+  const shutNow = useEffectEvent(shut);
   useEffect(() => {
     if (!open) return;
-    return holdOpenCard({
-      close: () => {
-        setPopped(true);
-        setOpen(null);
-      },
-      inBar: false,
-    });
+    return holdOpenCard({ close: () => shutNow(), inBar: false });
   }, [open]);
   // Back, the list is where it was (useScrollPlace).
   useScrollPlace(top, !!open);
@@ -80,6 +90,8 @@ export function ConsolePages({
     if (wanted && known.split(" ").includes(wanted)) {
       setFrom(wanted);
       setOpen(wanted);
+      // Asked from inside the console (You's gear), as its row opens it.
+      setDirect(!useWantedPage.getState().inside);
     }
   }
   useEffect(() => {
@@ -111,20 +123,21 @@ export function ConsolePages({
           data-testid="console-page"
           className="space-y-4 [animation-duration:var(--motion-page)] animate-in fade-in slide-in-from-right-4 [&:has([data-slot=console-page])>[data-slot=page-head]]:hidden"
         >
-          <div className="flex items-center gap-2" data-slot="page-head">
-            <h3 ref={title} tabIndex={-1} className={cn("flex-1 font-bold tracking-tight outline-none", TEXT.card)}>
-              {page.title}
-            </h3>
-            <CloseButton
-              label={`Back to ${back}`}
-              className="-mr-1"
-              onClick={() => {
-                setPopped(true);
-                setOpen(null);
-              }}
-              data-testid="console-page-close"
-            />
-          </div>
+          {/* Its name and close pinned at the top, every card's one head row
+              (CardHeadRow), its slot the one a page over it hides. */}
+          <CardHeadRow
+            name={page.title}
+            level="h3"
+            nameRef={title}
+            slot="page-head"
+            end={
+              <CloseButton
+                label={direct && leave ? "Back to the map" : `Back to ${back}`}
+                onClick={shut}
+                data-testid="console-page-close"
+              />
+            }
+          />
           {page.content}
         </div>
       ) : (
@@ -134,6 +147,7 @@ export function ConsolePages({
               open: (p) => {
                 setFrom(p);
                 setOpen(p);
+                setDirect(false);
               },
               from,
             }}
@@ -187,38 +201,13 @@ export function PageRow({
   );
 }
 
-/** A page opened by a tap anywhere on a block of the caller's own -- the
- *  account's card in Setup, its details. */
-export function PageButton({ page, label, testId, children }: { page: string; label: string; testId?: string; children: ReactNode }) {
-  const pages = useContext(Pages);
-  return (
-    <button
-      type="button"
-      onClick={() => pages?.open(page)}
-      aria-label={label}
-      data-testid={testId}
-      className="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      {children}
-    </button>
-  );
-}
-
 /** A page opened from a link in the tint, at a page's foot: Setup's Guide
  *  and About, at the owner's pick (T3). Its 44 points a pseudo-element
  *  round the words, the words not grown. */
 export function PageLink({ page, children, testId }: { page: string; children: ReactNode; testId?: string }) {
   const pages = useContext(Pages);
   return (
-    <button
-      type="button"
-      onClick={() => pages?.open(page)}
-      data-testid={testId}
-      className={cn(
-        "relative rounded-sm text-tint outline-none after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-        TEXT.detail,
-      )}
-    >
+    <button type="button" onClick={() => pages?.open(page)} data-testid={testId} className={PAGE_LINK}>
       {children}
     </button>
   );

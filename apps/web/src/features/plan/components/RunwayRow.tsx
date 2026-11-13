@@ -1,4 +1,6 @@
+import type { ReactNode } from "react";
 import { ListRow } from "../../../components/GroupedList";
+import { Badge } from "../../../components/ui/badge";
 import type { Runway } from "../../../lib/api/types";
 import { cn } from "cn";
 import { runwayWind, surfaceName } from "../format";
@@ -30,7 +32,28 @@ function RunwayGlyph({ headingDeg }: { headingDeg: number | null }) {
  *  surface and lights, its size, and the reported wind on the end it
  *  favours -- in amber where its crosswind is over the pilot's own
  *  minimum (lib/minimums) -- and any end flown with right traffic. */
-export function RunwayRow({ runway }: { runway: Runway }) {
+export function RunwayRow({
+  runway,
+  longest = false,
+  bestWind = false,
+  notam,
+  onClick,
+}: {
+  runway: Runway;
+  /** The field's longest runway open, marked with a badge by its name (the
+   *  airport card's Runways tab; the owner, 2026-11-11: "just put a longest
+   *  badge on the runway in runway tab"). */
+  longest?: boolean;
+  /** The runway most nearly into the reported wind, marked by its name
+   *  (the airport card's Runways tab; the owner, 2026-11-11: "best wind
+   *  runways should get the best wind badge"). */
+  bestWind?: boolean;
+  /** A NOTAM's badge on it (the airport card's NotamBadge), by its name,
+   *  and the row's tap that opens that NOTAM (the owner, 2026-11-11:
+   *  "tapping the affected thing should show the notam"). */
+  notam?: ReactNode;
+  onClick?: () => void;
+}) {
   // An end flown with right traffic is said, as the sectional's "RP 23"
   // says it: the rest are left, as every pattern is unless the FAA says.
   const right = (runway.runway_ends ?? []).filter((e) => e.traffic === "right").map((e) => runwayNumber(e.ident));
@@ -48,8 +71,26 @@ export function RunwayRow({ runway }: { runway: Runway }) {
   const heading = (runway.runway_ends ?? []).find((e) => e.heading_true_deg != null)?.heading_true_deg ?? null;
   return (
     <ListRow
+      onClick={onClick}
+      chevron={!!onClick}
+      data-testid="runway-row"
       media={<RunwayGlyph headingDeg={heading} />}
-      title={`Runway ${runway.ends ?? "—"}`}
+      title={
+        <span className="flex items-center gap-2">
+          {`Runway ${runway.ends ?? "—"}`}
+          {bestWind && (
+            <Badge variant="secondary" data-testid="runway-best-wind">
+              Best Wind
+            </Badge>
+          )}
+          {longest && (
+            <Badge variant="secondary" data-testid="runway-longest">
+              Longest
+            </Badge>
+          )}
+          {notam}
+        </span>
+      }
       description={
         (detail || runway.wind) && (
           <>

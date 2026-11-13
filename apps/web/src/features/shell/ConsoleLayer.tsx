@@ -1,92 +1,94 @@
-import { type CSSProperties, useEffect, useEffectEvent, useRef, type ReactNode } from "react";
+import { ConsoleLeave } from "../../components/consoleLeave";
+import type { ReactNode } from "react";
+import type { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
-import { TEXT } from "../../lib/text";
+import SettingsButton from "../../components/SettingsButton";
+import { HeadGrid } from "../../components/HeadGrid";
+import { PinnedHead } from "../../components/PinnedHead";
+import { Shown } from "../../lib/shown";
+import { CardLayer } from "../../components/sheet/CardLayer";
 
 /** A menu's or a select's trigger whose popup is open (Base UI sets both). */
 const OPEN_POPUP_TRIGGER = '[aria-expanded="true"]:is([aria-haspopup="menu"], [aria-haspopup="listbox"], [aria-haspopup="true"])';
 
 /**
- * Setup's page in the map's panel, a tab's body as the others' are: named
- * for the console it is (a region, no longer a dialog: the focus stays on
- * the tab picked, as it does for the others), hidden while another tab is
- * up, and Escape going back to the tab before it -- heard here, inside
- * the panel, before the panel hears it and lowers itself, and wherever
- * the focus has gone while it is up; not when a menu open in it took the
- * key first.
+ * You, the avatar's card: the stock Drawer's nested drawer over the map's
+ * sheet (CardLayer), as every card on the web is but the welcome (the
+ * owner, 2026-11-13: "For webapp, why don't we make everything a nested
+ * drawer except the welcome one?"), with the sheet's sizes, its grabber
+ * and its swipe, half as it opens. Its one head row: Settings' gear at the
+ * left (the owner, 2026-11-13: "put settings as icon on top left corner"),
+ * the ✕ at the right, and between them nothing, the pilot's name being
+ * the large line under it (YouHead), as Apple Maps' account card has it.
+ * Kept, closed, while it is put away, so the next tap shows it at once;
+ * its drawer's own Escape goes back to the map.
  */
 export default function ConsoleLayer({
   label,
-  detent,
-  edge,
   onClose,
+  finalFocus,
   shown,
   children,
 }: {
   label: string;
-  detent: "medium" | "large";
-  edge: "top" | "bottom";
   onClose: () => void;
-  /** Setup the tab up: put away it is kept, hidden. */
+  /** Where the focus goes as it is put away: the button it was opened from. */
+  finalFocus: () => HTMLElement | null | false;
+  /** Out: put away it is kept, hidden. */
   shown: boolean;
   children: ReactNode;
 }) {
-  const layer = useRef<HTMLElement>(null);
-  // The caller's close at the key, not the one it opened with.
-  const close = useEffectEvent(onClose);
-  useEffect(() => {
-    const node = layer.current;
-    if (!node || !shown) return;
-    const onKey = (event: globalThis.KeyboardEvent) => {
-      // A card over it (SheetCard) is put away first, by its own Escape,
-      // which prevents the default.
-      if (event.key !== "Escape" || event.defaultPrevented) return;
-      // A menu or a list just opened from a control in the layer, the focus
-      // still on its trigger: the popup takes the focus a moment after it
-      // opens, and until then the trigger's own Escape, which closes it and
-      // prevents the default, is heard by React only after this listener on
-      // the layer has. The key is the menu's, as it is once the focus is in
-      // it; the console stays (consoles.spec's role menu, run 42867578624).
-      if (event.target instanceof Element && event.target.closest(OPEN_POPUP_TRIGGER)) return;
-      event.preventDefault();
-      close();
-    };
-    // On the layer first, ahead of the panel's own Escape; on the document
-    // too, for when a tap on the map or on the panel's bare parts has
-    // taken the focus out (the layer is no modal), where the key would
-    // otherwise be lost or lower the panel. A menu's own Escape has
-    // already prevented the default by the time either hears it.
-    node.addEventListener("keydown", onKey);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      node.removeEventListener("keydown", onKey);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [shown]);
+  // Its drawer's Escape, the card on top (CardStack): back to the map --
+  // not while a menu or a list just opened from a control in it still has
+  // the focus on its trigger, the popup taking the focus a moment after it
+  // opens: the key is the menu's (consoles.spec's role menu, run
+  // 42867578624). The rest the Drawer tells it is refused: a tap on the
+  // map leaves it, as it leaves every card.
+  const dismiss = (details: Drawer.Root.ChangeEventDetails) => {
+    details.cancel();
+    if (details.reason !== "escape-key" || details.event.defaultPrevented) return;
+    const at = details.event.target;
+    if (at instanceof Element && at.closest(OPEN_POPUP_TRIGGER)) return;
+    details.event.preventDefault();
+    onClose();
+  };
   return (
-    <section
-      ref={layer}
-      aria-label={label}
-      // Named for the suite only while it is up: put away it is there,
-      // hidden, for the next tap on Setup.
-      data-testid={shown ? "console-sheet" : undefined}
-      data-detent={detent}
-      data-edge={edge}
-      className={cn("min-h-0 flex-1 flex-col print:hidden", shown ? "flex" : "hidden")}
-      // Its pages start under its own title row, not up under the panel's
-      // head as a tab's page does (index.css's under-head, by the panel's
-      // --head-room): pulled up, the page's scroller lay over this row and
-      // took the taps meant for its close (one-search.spec, consoles.spec).
-      style={{ "--head-room": "0px" } as CSSProperties}
-    >
-      {/* Its name and its close, the way back to the sheet under it, at the
-          sheet's top: the page covers the title row and the search, as every
-          page does by the one card rule (the owner, 2026-11-10). */}
-      <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-        <h2 className={cn("flex-1 font-bold", TEXT.title)}>Account and Settings</h2>
-        <CloseButton label="Back to the map" onClick={onClose} data-back="" data-testid="console-close" />
-      </div>
-      {children}
-    </section>
+    // Its drawer open while it is up (CardLayer reads lib/shown).
+    <Shown.Provider value={shown}>
+      <CardLayer label={label} dismiss={dismiss} finalFocus={finalFocus}>
+        <section
+          aria-label={label}
+          // Named for the suite only while it is up: put away it is there,
+          // hidden, for the next tap on the avatar.
+          data-testid={shown ? "console-sheet" : undefined}
+          // A page open in it (Pilot Details, Settings) heads itself with
+          // its own name and close, back to You: this row steps aside, one
+          // ✕ in sight, not two (the owner's testing, 2026-11-10). Laid out
+          // whole in its drawer's scroller (CardStack), its head row sticky
+          // at the top over it.
+          className={cn(
+            "shrink-0 flex-col print:hidden [&:has([data-slot=console-page])>[data-slot=layer-head]]:hidden",
+            shown ? "flex" : "hidden",
+          )}
+        >
+          {/* Every card's one head row (PinnedHead, HeadGrid), at the
+              sheet's corner: its close the shared CloseButton, not
+              CardClose, as You is no card a device's Back or the tab bar
+              holds (lib/openCards). */}
+          <PinnedHead slot="layer-head" flush className="shrink-0">
+            <HeadGrid
+              start={<SettingsButton testId="settings-row" />}
+              middle={null}
+              end={<CloseButton label="Back to the map" onClick={onClose} data-back="" data-testid="console-close" />}
+            />
+          </PinnedHead>
+          {/* A page opened straight from the search or a link closes the
+              card by its own ✕ (ConsolePages), back to where the pilot
+              came from. */}
+          <ConsoleLeave.Provider value={onClose}>{children}</ConsoleLeave.Provider>
+        </section>
+      </CardLayer>
+    </Shown.Provider>
   );
 }

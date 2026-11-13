@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_altitude::altitude::calls::call",
   "description": "The highest altitude that keeps 14 CFR 91.155(a)'s distance below a cloud base (MSL): 500 ft under it, 1,000 ft at or above 10,000 ft MSL.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

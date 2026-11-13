@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_flight::calls::call",
+  "description": "The altitude at which a standard day's air has density sigma.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DensityAltitudeFtInput",
+      "type": "object",
+      "properties": {
+        "sigma": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "sigma"
+      ]
+    },
+    "answer": {
+      "title": "DensityAltitudeFtAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

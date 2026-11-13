@@ -42,6 +42,22 @@ else
   # can be using.
   dd=$derived/wingtip-check-$(basename "$here")-$(echo "$here" | shasum -a 256 | cut -c1-8)
 fi
+# Xcode keeps the build description it made in the DerivedData, under a key
+# that holds the project and the request but not whether the files they
+# name are there. One made while the engine's XCFramework was missing keeps
+# its "There is no XCFramework found" error, and every later build of that
+# checkout in this turn reused it and failed, though the framework was there
+# by then (2026-11-12, a worktree built before build-xcframework.sh ran).
+# So no build starts without the framework, and a description that cached
+# the error is dropped (Xcode makes a new one; build.db keeps what is built).
+engine=$here/apps/ios/Frameworks/WingtipEngine/WingtipEngineFFI.xcframework
+if [ ! -d "$engine" ]; then
+  echo "xcodebuild.sh: no $engine; run engine/bindings/ffi/build-xcframework.sh first" >&2
+  exit 1
+fi
+for d in "$dd"/Build/Intermediates.noindex/XCBuildData/*.xcbuilddata; do
+  if grep -qs "There is no XCFramework found" "$d/description.msgpack"; then rm -rf "$d"; fi
+done
 # .tool-versions' Xcode, as CI's (scripts/ci/select-xcode.sh).
 DEVELOPER_DIR=${DEVELOPER_DIR:-$("$here/scripts/ci/select-xcode.sh")}
 export DEVELOPER_DIR

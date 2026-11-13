@@ -21,7 +21,7 @@ issue #482.
   the engine was one crate (`wingtip_engine::gonogo`, `::pack` ...), so
   `bindings/py`, `bindings/ffi`, `bindings/wasm` and the tests name them
   as before. Plain Rust
-  with no dependencies but its own crates, so it builds as it is for the phones: aarch64-apple-ios
+  with no dependencies but its own crates (its build script's aside, below), so it builds as it is for the phones: aarch64-apple-ios
   (the native iOS app, from Swift) and aarch64-linux-android (the native
   Android app, from Kotlin), both through `bindings/ffi`.
   Keep it that way: no PyO3, no host-only crates, no network, and files
@@ -43,7 +43,7 @@ the Go / No-Go) and a build or a test can take one area alone
 (`cargo test -p wingtip-weather`). The layers come from the modules'
 own uses of each other when the engine was one crate; two that use each
 other share a crate. Like the engine, none has a dependency outside the
-workspace. The table below is held to the crates' Cargo.toml files by
+workspace but the few named below ("Outside the workspace"). The table below is held to the crates' Cargo.toml files by
 `scripts/ci/engine_layers.py` (CI's test job and check.sh's engine area):
 a crate's wingtip-* dependencies must be its "Uses" exactly, "route
 (without its options)" with route's default features off, and a binding
@@ -52,15 +52,15 @@ table, and its why below, in the same commit.
 
 | Crate | Modules | Uses |
 |---|---|---|
-| `core` | base64, geo, wmm, grid, sums, time, json, xml, sort | nothing |
-| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy) | nothing |
-| `weather` | metar, sky (a report's ceiling and its cover, for the station model), taf, winds, forecast (with run: the dry run against the forecast), validity, notam, notam_rank (the NOTAMs that matter to a flight, best first), tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table), ready (ready to fly: what the device holds against the cycles and the weather's age; kept: a kept answer's age), worse (a route's weather worse since the briefing) | core, flight |
-| `procedures` | figures (debrief, diversion, endurance (91.151(a) and 91.167(a)(3)'s reserve kept back), holding, lost comms, words), paths (a procedure's legs as drawn: arcs, CIFP holds, procedure turns) | core, flight |
+| `core` | geo, flat (nm east and north of a point, the small flat frame), wmm, grid, sums, time, json, xml, sort, text (a whole number with its thousands grouped, "12,500"), units (the SI's foot, nautical mile and kelvin, one copy), ask (a rule's input read by its name, for every crate's `call`) | nothing |
+| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy) | core |
+| `weather` | metar, sky (a report's ceiling and its cover, for the station model), taf, winds, forecast (with run: the dry run against the forecast), validity, notam, notam_read (a NOTAM as a pilot reads it: its keyword as a heading, its words written out, its window) over contractions (the FAA's contractions, the one table, which the radio's D-ATIS reads by too), notam_rank (the NOTAMs that matter to a flight, best first), tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table), ready (ready to fly: what the device holds against the cycles and the weather's age; kept: a kept answer's age), worse (a route's weather worse since the briefing) | core, flight |
+| `procedures` | figures (debrief, diversion, endurance (91.151(a) and 91.167(a)(3)'s reserve kept back), holding, lost comms, words), paths (a procedure's legs as drawn: arcs, CIFP holds, procedure turns), occurrence (an accident report, the registry and an ADS-B track as one airplane: the Studio's crash drafts) | core, flight |
 | `radio` | clearance, callsign (our call sign and where it was said, AIM 4-2-3 c, 4-2-4), instruction (an instruction heard in flight read into its items), readback (AIM 4-4-7 b), atc (the ATC copilot's `atc_call` and `readback_check`), atis, datis (a digital ATIS as the tower's data link writes it), mayday (the distress call, AIM 6-3-2), guidance (an emergency's general good practice with no airplane picked) | core, flight, weather, procedures |
 | `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), autolog (a logbook entry drawn from a flown track: 1.1, 61.1(b), 61.57), aircraft (with figures: an airplane's figures and where each comes from, and what a figure lacks), documents (a photographed page's figures checked before the pilot sees them), coach (a pilot's proficiency plan: what is due under 61.56 and 61.57, the weak areas their debriefs show, the sessions) | core, flight, procedures, route (without its options) |
 | `brief` | gonogo, runway (with marks: a field's wind on the map), alternates (91.169's IFR alternate), fields (the best fields to land at: a glide or a diversion), icing_forecast (the AWC's forecast icing on an IFR route), passengers (the passengers' SAFETY briefing, 91.107(a)) | core, flight, procedures |
 | `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours), motion (with along: where the airplane is on the route), approach, navlog | core, flight, weather, procedures |
-| `airspace` | airspace, pack, rules, pack_query, view, spoken, ahead, drills (91.125's light signals and 91.155's minimums as cards and by name) | core, flight, procedures, radio |
+| `airspace` | airspace, pack, rules, pack_query, view, spoken (with spoken_ask: the places a clearance names and its SID and STAR, `clearance_places`), ahead, drills (91.125's light signals and 91.155's minimums as cards and by name) | core, flight, procedures, radio |
 | `wording` | wording (with script: the radio calls' words) | core, procedures, airspace, brief, route (without its options) |
 | `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words, the cautions on a pilot's own altitude, 91.119(b)'s congested areas) | core, flight, weather, procedures |
 | `inflight` | watch, checks, message (`copilot_watch`: the in-flight copilot's ranked messages), fields (its alternative: brief's best_fields in diversion mode, held to its weather and fuel checks) | core, flight, weather, procedures, brief |
@@ -71,11 +71,13 @@ Why these lines:
 
 - `core` is the ground: distances, magnetic variation, the grid, dates
   and the JSON and XML every rule reads and writes, used by all. It holds
-  no aviation rule; its sphere's figures are asked by name
+  no aviation rule; its WGS-84 geodesics are asked by name
   (`distance_nm`, `bearing_deg`, `destination`), so no app keeps its own
   great-circle arithmetic.
 - `flight` holds the flight's own rules (the wind triangle, 14 CFR
-  91.159's cruising altitudes, 91.151's reserve, the atmosphere). It is a
+  91.159's cruising altitudes, 91.151's reserve, the atmosphere), and
+  takes `core` for the JSON and the input reader its rules are asked
+  through and the SI's kelvin its atmosphere is worked in. It is a
   crate of its own, not part of `brief`, because `procedures` (the
   diversion's triangle, the fuel strip's reserve) uses it and `brief`
   sits above `procedures`; `weather` reads it too, for the standard
@@ -86,8 +88,8 @@ Why these lines:
   say along a route (`forecast::route`), a field's hours for the airport
   card (`forecast::hours`) and the winds and temperatures aloft at an
   altitude (winds.rs). The basic VFR minimums its "VFR flight not
-  recommended" reasons are held to are `airspace`'s (rules.rs), so
-  call.rs hands them in.
+  recommended" reasons are held to are `flight`'s (vfr.rs), which
+  `airspace`'s rules.rs uses too.
 - `procedures` sits just above them because its `figures::words` (a number
   written as the web writes it) is shared by the Go / No-Go, runways,
   routes, the airspace rules and the wording.
@@ -117,7 +119,43 @@ Why these lines:
   only `core` (its JSON and Base64): the METARs and TAFs it is sent are
   handed on as sent, for `weather` to read where a screen asks, so it
   sits beside `weather`, not on it.
-- `call.rs` dispatches every rule, so it alone stays in the facade, over all.
+- `call.rs` dispatches every rule, so it alone stays in the facade, over all;
+  it answers none itself: each rule is its crate's function, named in its
+  contract file.
+
+### Outside the workspace
+
+What the phones and the WebAssembly carry is plain Rust the engine holds
+itself, with these exceptions, each weighed for its bytes and its build
+(`scripts/ci/engine_layers.py` holds the crates to this list, its
+`OUTSIDE`):
+
+- `base64` (receiver's `calls`): the bytes a host hands `receiver_read`
+  in JSON, RFC 4648's standard alphabet, the maintained Rust codec rather
+  than one of our own. Its default `simd-unsafe` feature is off, so it is
+  plain safe Rust; the web asks no receiver rule, so it is not in the
+  WebAssembly. GDL 90's own frame check stays receiver's table
+  (`frame::crc`): the specification's Crc16Compute adds each byte after
+  the table, which no catalogued CRC (the `crc` crate's) does.
+- `crc32fast` (airspace's `pack`): the cycle pack's checksum, zlib's
+  CRC-32, the stock crate rather than a table of our own. No system
+  library; the web's rules never verify a pack, so it is not in the
+  WebAssembly.
+- `geographiclib-rs` (core's `geo`, with `libm` under it): the geodesic
+  on the WGS-84 ellipsoid, Karney's algorithm as GeographicLib and PROJ
+  have it, a georust port, MIT, rather than a Vincenty of our own. Plain
+  Rust; its default `accurate` feature (the polygon area's sums) is off.
+  It is in the WebAssembly, since every app's distance is asked there.
+- `similar` (airspace's `spoken`): how alike two sounds are, a word heard
+  and a fix's letters, as a diff's ratio, mitsuhiko's diff crate rather
+  than a port of Python's difflib of our own. Its features are off (no
+  text or Unicode layer); the web asks no clearance's places, so it is
+  not in the WebAssembly.
+
+A build-dependency runs on the host when a crate is built and is in no
+build of the engine, so it needs no entry: the facade's `build.rs` reads
+the rules' contract files with `serde_json`. A dev-dependency is the
+tests' alone.
 
 Inside a crate, the modules under it are used at the root by the names
 they had in the one crate (`use wingtip_core::json;` in its lib.rs), so
@@ -128,11 +166,9 @@ need a crate above its own belongs higher, never in a cycle.
 ## The contract, and adding a rule
 
 Each rule says what it is in one file beside its code:
-`crates/<crate>/contract/<name>.json` (or `facade/contract/<name>.json`
-for the rules `call.rs`'s `rule` answers itself), named for the rule. The
-file is the rule's entry in the contract -- its description, with the
-AIM, 14 CFR or ACS source of each figure, `"x-tool"` where the assistant
-may ask it, and its `input` and `answer` as JSON Schema -- and two members
+`crates/<crate>/contract/<name>.json`, named for the rule; the facade
+answers none itself. The file is the rule's entry in the contract -- its description, with the
+AIM, 14 CFR or ACS source of each figure, and its `input` and `answer` as JSON Schema -- and two members
 for the build: `"x-call"`, the Rust function that answers it (a path
 from the facade, `fn(&str, &Value) -> Result<String, String>`, which gets
 the name, so one function may answer several), and `"x-feature"` where a
@@ -158,8 +194,7 @@ copies: the web's `apps/web/src/lib/engine/contract.ts`
 by name, so a renamed field fails the web's typecheck rather than a screen
 on a phone; the phones' typed calls and answer types
 (`scripts/build/engine-contract-apps.sh`, into `apps/ios/Wingtip/Engine/Generated`
-and `apps/android/.../engine/generated`); and the assistant's tools
-(`scripts/build/assistant-client.sh`, from `"x-tool"`).
+and `apps/android/.../engine/generated`).
 `facade/tests/contract.rs` holds every name's function to answering it
 and the shared fixtures' answers to the schema; `contract.test.ts` holds
 the web's generated file to the schema.
@@ -170,15 +205,10 @@ A rule goes in this way, each step in the same pull request:
    source cited in a comment: a function reading the input `Value` and
    writing JSON, or an arm in the module's existing `call(name, v)`.
 2. Its file, `crates/<crate>/contract/<name>.json`: `"x-call"`, the
-   description with its source, `"x-tool": true` where it is a figure a
-   pilot asks about (an altitude, a wind, a reserve, minimums, currency;
-   its description is then what the model reads), and its `input` and
-   `answer`.
+   description with its source, and its `input` and `answer`.
 3. `cargo run -p wingtip-contract-gen` in `engine/`, then `npm run types`
-   in `apps/web/`, `scripts/build/engine-contract-apps.sh` and, for a
-   tool, `scripts/build/assistant-client.sh` (the planner's `POST
-   /api/engine/{name}`, #569, then answers it with no other code); commit
-   what they write.
+   in `apps/web/` and `scripts/build/engine-contract-apps.sh`; commit what
+   they write.
 4. A test against the shared fixtures in `apps/web/src/lib/fixtures`, so the
    web, the phones and the planner are held to the same examples.
 5. Where the web asks it, `python3 scripts/build/web_rules.py` (the web's
@@ -200,13 +230,14 @@ Then the callers switch to the name and the old copy is deleted.
   to us by its call sign (`crates/radio`, the web's lib/clearance and
   lib/heardCall, held to their fixtures in `apps/web/src/lib/fixtures`), and
   finds the places it names in the phone's kept packs with no signal
-  (`crates/airspace`, wingtip.spoken's matching): `wt_clearance_hear`.
+  (`crates/airspace`, the matcher the planner asks as
+  `clearance_places`): `wt_clearance_hear`.
 - The four pilot pages' figures are the engine's too (`crates/procedures`): a
   flight debriefed against its flown track (ACS PA.VI.A), the diversion
   drill (PA.VI.C), a hold's entry and its legs in the wind (AIM 5-3-8)
   and lost communications' altitudes (14 CFR 91.185), with their words.
   app.figures only carries the dicts across; the phones get the
-  planner's very answers from `wt_call` (`debrief`, `diversion`,
+  planner's very answers from `call` (`debrief`, `diversion`,
   `holding`, `lost_comms`).
 - The Brief's Go / No-Go is the engine's too (`crates/brief`): the seven
   findings and the line over them, the pilot's minimums, icing under IFR,
@@ -215,7 +246,7 @@ Then the callers switch to the name and the old copy is deleted.
   the modules it is fed from). Each is a name in `call.rs`
   (`gonogo_verdict_items`, `gonogo_risk`, `gonogo_runway_checks` ...), asked by
   the web app (callEngine), the planner's app.gonogo (wingtip_native.call)
-  and the phones (wt_call).
+  and the phones (the generated `call`).
 - Runways, the wind on them and the traffic pattern are the engine's too
   (`crates/brief`): a wind along and across a runway and the end it favours,
   the runway flown (the pilot's pick, else into the wind, AC 90-66C
@@ -307,7 +338,8 @@ Then the callers switch to the name and the old copy is deleted.
   gusting, and whether it is red: past the picked airplane's maximum
   demonstrated crosswind, the POH's, never with no airplane or no
   figure) and `wind_barb` (the station model's flags, barbs and
-  half-barbs, FAA-H-8083-28A 25.2.3.4.5), held to the shared fixture
+  half-barbs, FAA-H-8083-28B 25.2.3.4.5; calm under 3 kt, the NWS's
+  table), held to the shared fixture
   `airportWeatherMarks.json`.
 - What the weather does to a flight after the planning is the engine's
   too (`crates/weather`): `weather_worse` (a field's category worse than
@@ -359,21 +391,31 @@ Then the callers switch to the name and the old copy is deleted.
   the web's words (`words_*`) are asked by name from wingtip and
   app.gonogo, held to the planner's answers from before the move in
   `apps/web/src/lib/fixtures/plannerRules.json`.
-- `bindings/ffi` (`wingtip-ffi`): the engine's C functions for the phones
-  (`bindings/ffi/include/wingtip_engine.h`), a static library: the airspace over a
-  point from a phone's cycle pack, as the planner's /api/airspace/at
-  answers it. A plain C interface rather than UniFFI, whose bindgen
-  brings dozens of crates for five functions.
-  `bindings/ffi/build-xcframework.sh` builds it for the iPhone and the simulator
-  into `apps/ios/Frameworks/WingtipEngine.xcframework` (native-ios.yml, on
-  GitHub's macOS runner), which the app imports as `WingtipEngine`.
+- `bindings/ffi` (`wingtip-ffi`): the engine for the phones through
+  Mozilla's UniFFI (proc-macro mode, `#[uniffi::export]` in
+  `bindings/ffi/src/lib.rs`): `call`, every rule by name with JSON in and
+  out, and the readers of the phone's cycle packs (the airspace over a
+  point, what is ahead, the map's view, a clearance heard), which take
+  the packs by their files' paths and map each for the call. The Swift
+  and the Kotlin round it are written by uniffi-bindgen
+  (`bindings/ffi/bindgen`, at the `uniffi` crate's own version) from the
+  built library each time it is built, and never committed or edited
+  (`bindings/ffi/uniffi.toml` names their modules).
+  `bindings/ffi/build-xcframework.sh` builds a static library for the
+  iPhone and the simulator into
+  `apps/ios/Frameworks/WingtipEngine/WingtipEngineFFI.xcframework` with
+  the C header and module map, beside the generated
+  `Generated/WingtipEngine.swift`, which project.yml builds as the `WingtipEngine`
+  module the app imports (native-ios.yml, on GitHub's macOS runner);
+  `bindings/ffi/build-android.sh` a shared library for each ABI and the
+  Kotlin into `apps/android/app/engine/`, loaded through JNA.
 
 - `bindings/wasm` (`wingtip-wasm`): the engine for the web app, as WebAssembly
   with no wasm-bindgen. Every host asks a rule the same way, by name with
-  JSON in and JSON out (`facade/src/call.rs`, which lists the rules and
-  their inputs): the browser through `wt_call` in the module
+  JSON in and JSON out (`facade/src/call.rs`, which looks each name up in
+  the table its contract files give): the browser through `wt_call` in the module
   (`apps/web/src/lib/engine/engine.ts`, `callEngine`), the planner through
-  `wingtip_native.call`, the phones through `wt_call` in the header. A rule
+  `wingtip_native.call`, the phones through the generated `call`. A rule
   moved into the engine needs only a name there. The module's ABI is in
   `bindings/wasm/src/lib.rs`. `scripts/build/build-engine-wasm.sh` builds it in Docker
   (the Rust image pinned by digest, so the bytes are the same anywhere)

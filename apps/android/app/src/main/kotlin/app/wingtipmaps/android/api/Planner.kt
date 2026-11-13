@@ -1,32 +1,33 @@
 package app.wingtipmaps.android.api
 
 import app.wingtipmaps.android.Config
-import app.wingtipmaps.android.api.generated.AircraftProfiles
-import app.wingtipmaps.android.api.generated.AirportSearch
 import app.wingtipmaps.android.api.generated.GoNoGo
 import app.wingtipmaps.android.api.generated.GoNoGoAsk
 import app.wingtipmaps.android.api.generated.RouteProfile
+import app.wingtipmaps.android.api.generated.client.apis.PlannerApi
+import app.wingtipmaps.android.di.NetworkModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Request
+import okhttp3.coroutines.executeAsync
 import java.util.concurrent.TimeUnit
 
 /**
  * The planner, through the gateway's proxy (`/api/planner/…`,
  * PlannerProxyController), with the pilot's session cookie as the
- * website's calls carry it, as the iOS app's Planner.swift has it. Each
- * answer decoded from the document's snake case into its generated model
- * (api/generated, named in Models.kt).
+ * website's calls carry it, as the iOS app's Planner.swift has it. Its
+ * calls are the Retrofit interface generated from its OpenAPI document
+ * (PlannerApi, di/NetworkModule), each answer its generated model
+ * (api/generated, named in Models.kt); `get` and `lines` are for what
+ * that does not cover (a stream, a file's bytes).
  */
 object Planner {
     /** FastAPI's `{"detail": "…"}`, where an answer carries one. */
@@ -55,17 +56,15 @@ object Planner {
      *  fell back. */
     const val IN_FLIGHT_MS = 5_000L
 
-    /** An answer's body, or the planner's own words why not. Every planner
-     *  call goes through here; `timeoutMs` bounds the whole call for those
-     *  made in the air (IN_FLIGHT_MS). */
-    suspend fun fetch(path: String, query: Map<String, String?> = emptyMap(), timeoutMs: Long? = null): String =
-        Gateway.client.newCall(get(path, query)).also { call ->
-            if (timeoutMs != null) call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS)
-        }.await().use { response ->
-            val body = response.body.string()
-            if (response.code != 200) throw Failure(response.code, detail(body))
-            body
-        }
+    /** The planner's generated calls, and the same for those made in the
+     *  air, whose whole call waits no longer than IN_FLIGHT_MS. */
+    val api: PlannerApi by lazy { NetworkModule.planner(Gateway.client) }
+    val inFlight: PlannerApi by lazy { NetworkModule.planner(Gateway.client.newBuilder().callTimeout(IN_FLIGHT_MS, TimeUnit.MILLISECONDS).build()) }
+
+    /** The planner's posts that work a while (the forecast run, the
+     *  clearance's places, a debrief), on the gateway's write limit,
+     *  Gateway.WRITE_TIMEOUT_S, as Gateway.call gave them. */
+    val writes: PlannerApi by lazy { NetworkModule.planner(Gateway.client.newBuilder().callTimeout(Gateway.WRITE_TIMEOUT_S, TimeUnit.SECONDS).build()) }
 
     fun detail(body: String): String? =
         runCatching { (Gateway.json.parseToJsonElement(body) as? JsonObject)?.get("detail")?.jsonPrimitive?.contentOrNull }.getOrNull()
@@ -73,7 +72,7 @@ object Planner {
     /** An answer streamed a line at a time (newline-delimited JSON: the
      *  nav log), each line as sent, the empty ones left out. */
     fun lines(path: String, query: Map<String, String?> = emptyMap()): Flow<String> = flow {
-        Gateway.client.newCall(get(path, query)).execute().use { response ->
+        Gateway.streaming.newCall(get(path, query)).executeAsync().use { response ->
             if (response.code != 200) throw Failure(response.code, detail(response.body.string()))
             val source = response.body.source()
             while (true) {
@@ -89,39 +88,34 @@ object Planner {
         mapOf("dep" to dep, "dest" to dest, "stops" to stops.joinToString(",").ifEmpty { null })
 
     /** Which chart the map draws and where its tiles are (/api/chart). */
-    suspend fun chart(): ChartInfo = Gateway.json.decodeFromString(fetch("/api/chart"))
+    suspend fun chart(): ChartInfo = api.chartInfo().planned()
 
     /** The cycle's overlay tiles' archive (/api/overlay-tiles); null where
      *  the planner has not built it yet (404, after the cycle pack). */
-    suspend fun overlayTiles(): OverlayTiles? =
-        try {
-            Gateway.json.decodeFromString<OverlayTiles>(fetch("/api/overlay-tiles"))
-        } catch (e: Failure) {
-            if (e.status == 404) null else throw e
-        }
+    suspend fun overlayTiles(): OverlayTiles? = api.overlayTiles().plannedOrNone()
 
     /** Fields by ident or name as they are typed (/api/airports/search). */
     suspend fun search(q: String): List<AirportSuggestion> =
-        Gateway.json.decodeFromString<AirportSearch>(fetch("/api/airports/search", mapOf("q" to q))).airports
+        api.airportSearch(q = q).planned().airports
 
     /** A field's card: its weather, runways, frequencies and pattern
      *  (/api/airport/{ident}). */
-    suspend fun place(ident: String): AirportPlace = Gateway.json.decodeFromString(fetch("/api/airport/$ident"))
+    suspend fun place(ident: String): AirportPlace = api.airportPlace(ident).planned()
 
     /** The planner's airplane types (/api/aircraft-profiles), each by
      *  its summary. */
     suspend fun aircraftProfiles(): List<AircraftProfileSummary> =
-        Gateway.json.decodeFromString<AircraftProfiles>(fetch("/api/aircraft-profiles")).profiles
+        api.aircraftProfiles().planned().profiles
 
     /** The route as entered, its ends found and its line (/api/course). */
     suspend fun course(dep: String, dest: String, stops: List<String>): Course =
-        Gateway.json.decodeFromString(fetch("/api/course", route(dep, dest, stops)))
+        api.course(dep, dest, stops.joinToString(",")).planned()
 
     /** The route's side view (/api/route-profile): the ground under it,
      *  and the airspace it passes through, floor to ceiling, as the web's
      *  and the iPhone's profiles draw it. */
     suspend fun routeProfile(dep: String, dest: String, stops: List<String>): RouteProfile =
-        Gateway.json.decodeFromString(fetch("/api/route-profile", route(dep, dest, stops)))
+        api.routeProfile(dep, dest, stops.joinToString(",")).planned()
 
     /** The nav log for a route, line by line as the planner sends them
      *  (/api/navlog), under the flight rules picked (the planner's
@@ -164,5 +158,5 @@ object Planner {
      *  planner plans and briefs it and works the verdict out with the
      *  engine, as the web's Brief has it. */
     suspend fun goNoGo(ask: GoNoGoAsk): GoNoGo =
-        Gateway.json.decodeFromString(Gateway.send("POST", Config.plannerPath("/api/go-no-go"), Gateway.json.encodeToString(ask)))
+        api.goNoGo(ask).planned()
 }

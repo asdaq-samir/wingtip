@@ -1,5 +1,5 @@
-# The jobs' Python suite (charts/tests), run from this directory:
-#   ruff check charts && pytest charts/tests/
+# The jobs' Python suite (charts/tests, crash/tests), run from this directory:
+#   ruff check charts crash && pytest charts/tests crash/tests
 # The planner's guards and settings, as its own two suites have them.
 [tool.pytest.ini_options]
 # "." for the jobs (`from charts import overlays`), ../planner for wingtip

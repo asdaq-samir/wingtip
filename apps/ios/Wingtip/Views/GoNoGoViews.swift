@@ -83,12 +83,14 @@ struct GoNoGoSection: View {
     /// The instructor the pilot asked in, once they accepted, for the
     /// note at the foot.
     @State private var instructor: InstructorLink?
+    /// Said where the instructor's line goes, rather than read as none.
+    @State private var instructorProblem: String?
     @State private var restOpen = false
 
     var body: some View {
-        // With the planner's words out of reach, the glance on this
-        // iPhone first (OnDevice/BriefSummary).
-        if let answer = verdict.answer, let said = riskWords, said.origin != .planner {
+        // The glance on this iPhone first (OnDevice/BriefSummary), once
+        // the words have been asked for.
+        if let answer = verdict.answer, riskWords != nil {
             BriefSummarySection(answer: answer)
         }
         if verdict.answer != nil {
@@ -144,6 +146,8 @@ struct GoNoGoSection: View {
                 }
                 .accessibilityElement(children: .combine)
             }
+            ProblemLine(verdict.pilotProblem)
+            ProblemLine(instructorProblem)
         } header: {
             HStack {
                 Text("Go / No-Go")
@@ -153,8 +157,13 @@ struct GoNoGoSection: View {
         .task(id: session.signedIn) {
             // The instructor's name comes with the training (Gateway);
             // none for a pilot with no instructor, or signed out.
-            guard session.signedIn else { instructor = nil; return }
-            instructor = (try? await Gateway.training())??.instructors.first { $0.accepted }
+            guard session.signedIn else { instructor = nil; instructorProblem = nil; return }
+            do {
+                instructor = (try await Gateway.training())?.instructors.first { $0.accepted }
+                instructorProblem = nil
+            } catch {
+                instructorProblem = "Whether an instructor reviews your flights couldn't be fetched."
+            }
         }
         // The words for the answer on the page; the findings stay as they
         // are while they are written.
@@ -162,15 +171,7 @@ struct GoNoGoSection: View {
             guard let answer = verdict.answer else { riskWords = nil; return }
             writingWords = true
             defer { writingWords = false }
-            let minimums = PersonalMinimums.Key.allCases.compactMap { key in verdict.minimums[key].map { "\(key.title): \(key.words($0))" } }
-            let pilot: [String: String]? = minimums.isEmpty ? nil : ["personal minimums": minimums.joined(separator: ", ")]
-            let ask: WordsAsk
-            do { ask = try WordsAsk(kind: .risk, body: try RiskWordsAsk(answer, pilot: pilot), figures: WordsFigures.risk(answer)) } catch {
-                // Said where the words would be, not left blank.
-                riskWords = SaidWords(words: .none("none", "No words: the question could not be written (\(error.localizedDescription))."), origin: .none)
-                return
-            }
-            let said = await WordsFor().said(ask)
+            let said = await WordsFor().said(WordsAsk(kind: .risk, figures: WordsFigures.risk(answer)))
             guard !Task.isCancelled else { return }
             riskWords = said
         }

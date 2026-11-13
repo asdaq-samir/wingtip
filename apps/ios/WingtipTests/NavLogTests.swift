@@ -19,13 +19,26 @@ struct NavLogTests {
         #expect(e.brief == "Ceiling 11,700 ft" && e.reasons?.count == 1)
     }
 
+    @MainActor @Test func theNavLogSaysWhenItWasPlannedAndWhoseWindsItFlies() throws {
+        let done = #"{"type":"done","totals":{"distance_nm":80.0,"unflyable_legs":0,"legs_without_wind":0,"planned_at":"2026-11-12T12:12:00+00:00","winds":{"label":"AWC winds, 12Z","source":"awc","use_from":"2026-11-12T12:00:00Z","use_to":"2026-11-12T14:00:00Z","valid_at":"2026-11-12T13:00:00Z"}}}"#
+        guard case .done(let t)? = try NavLog.decode(line: Data(done.utf8)) else { Issue.record("not done"); return }
+        #expect(NavLogPage.plannedWords(t) == "Planned 1212Z · AWC winds, 12Z · for use 1200–1400Z")
+        var unnamed = t
+        unnamed.winds?.label = nil
+        #expect(NavLogPage.plannedWords(unnamed) == "Planned 1212Z · winds for use 1200–1400Z")
+        unnamed.winds = nil
+        #expect(NavLogPage.plannedWords(unnamed) == "Planned 1212Z")
+        unnamed.plannedAt = nil
+        #expect(NavLogPage.plannedWords(unnamed) == nil)
+    }
+
     @Test func aLineOfAKindNotYetUsedIsSkipped() throws {
         #expect(try NavLog.decode(line: Data(#"{"type":"checkpoint","ident":"X"}"#.utf8)) == nil)
     }
 
     @Test func theCourseLineBecomesCoordinates() throws {
         let json = #"{"departure":{"ident":"C81","name":"Campbell","lat":42.32,"lon":-88.07},"destination":{"ident":"KDLH","name":"Duluth","lat":46.84,"lon":-92.19},"distance_nm":323.5,"bearing_deg":325.0,"course_line":[[42.32,-88.07],[44.5,-90.0],[46.84,-92.19]],"chart_cycle":"09-03-2026","chart_layers":[],"min_zoom":5,"max_zoom":12}"#
-        let course = try Planner.snakeCase.decode(Course.self, from: Data(json.utf8))
+        let course = try Planner.json.decode(Course.self, from: Data(json.utf8))
         #expect(course.coordinates.count == 3 && course.coordinates[1].latitude == 44.5 && (course.stops ?? []).isEmpty)
     }
 
@@ -64,7 +77,7 @@ struct RouteEditTests {
 struct KeptTests {
     @Test func aPlanKeptComesBackAsItWas() throws {
         let file = FileManager.default.temporaryDirectory.appending(path: "kept-\(UUID().uuidString).json")
-        let course = try Planner.snakeCase.decode(Course.self, from: Data(#"{"departure":{"ident":"C81","name":"Campbell","lat":42.32,"lon":-88.07},"destination":{"ident":"KDLH","name":"Duluth","lat":46.84,"lon":-92.19},"distance_nm":323.5,"bearing_deg":325.0,"course_line":[[42.32,-88.07],[46.84,-92.19]],"chart_cycle":"09-03-2026","chart_layers":[],"min_zoom":5,"max_zoom":12}"#.utf8))
+        let course = try Planner.json.decode(Course.self, from: Data(#"{"departure":{"ident":"C81","name":"Campbell","lat":42.32,"lon":-88.07},"destination":{"ident":"KDLH","name":"Duluth","lat":46.84,"lon":-92.19},"distance_nm":323.5,"bearing_deg":325.0,"course_line":[[42.32,-88.07],[46.84,-92.19]],"chart_cycle":"09-03-2026","chart_layers":[],"min_zoom":5,"max_zoom":12}"#.utf8))
         let kept = Kept(dep: "C81", dest: "KDLH", stops: [], aircraft: "c172", course: course, totals: Totals.preview(distanceNm: 323.5, eteMin: 165), plannedAt: Date(timeIntervalSince1970: 1_800_000_000))
         kept.save(to: file)
         #expect(Kept.load(from: file) == kept)
@@ -87,11 +100,13 @@ struct FlightTests {
     @Test func fuelBurntIsEachLegsShareOfItsMiles() throws {
         let leg = { (to: String, nm: Double, gal: Double) in Leg.preview(from: "A", to: to, distanceNm: nm, altitudeFt: 4500, trueCourseDeg: 0, magneticHeadingDeg: 0, groundspeedKt: 100, eteMin: nm / 100 * 60, fuelGal: gal, tasKt: 100) }
         let legs = [leg("B", 10, 2.0), leg("C", 20, 4.0)]
-        // Due north, a degree of latitude 60.04 nm on the engine's sphere.
+        // Due north, a degree of latitude as the engine measures it on WGS-84
+        // (59.98 nm from 42 N, pyproj's Geod(ellps="WGS84") in geodesic.json).
         let line = [CLLocationCoordinate2D(latitude: 42.0, longitude: -88.0), CLLocationCoordinate2D(latitude: 43.0, longitude: -88.0)]
-        let fifth = try Flight.position(CLLocationCoordinate2D(latitude: 42.0 + 5 / 60.04, longitude: -88.0), line: line, legs: legs)!
+        let degree = try Engine.distanceNm(lat1: 42.0, lon1: -88.0, lat2: 43.0, lon2: -88.0)
+        let fifth = try Flight.position(CLLocationCoordinate2D(latitude: 42.0 + 5 / degree, longitude: -88.0), line: line, legs: legs)!
         #expect(abs(fifth.burntGal - 1.0) < 0.01)
-        let twentieth = try Flight.position(CLLocationCoordinate2D(latitude: 42.0 + 20 / 60.04, longitude: -88.0), line: line, legs: legs)!
+        let twentieth = try Flight.position(CLLocationCoordinate2D(latitude: 42.0 + 20 / degree, longitude: -88.0), line: line, legs: legs)!
         #expect(abs(twentieth.burntGal - 4.0) < 0.01 && twentieth.leg == 1)
     }
 }

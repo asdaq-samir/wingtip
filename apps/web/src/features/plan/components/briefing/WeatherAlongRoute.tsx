@@ -16,11 +16,12 @@ import { phasesOf, type Phase } from "./sections";
 import { categoryAt, nearestStation, ownStation, placesOf, tafReachNm, type Station } from "./fieldWeather";
 import { FINDING_TONE } from "../../../../lib/findings";
 import OnRouteRow from "./OnRouteRow";
+import { useGeo } from "../../../../lib/geo";
 
 type Pirep = Briefing["pireps"][number];
 
 /** How far from a field without a TAF of its own a neighbour's is named
- *  for it. A TAF is for 5 sm round its own airport (FAA-H-8083-28,
+ *  for it. A TAF is for 5 sm round its own airport (FAA-H-8083-28B 27.4.1,
  *  Aviation Weather Handbook), so a neighbour's is not this field's
  *  forecast, and the row says whose it is and how far; past this, none
  *  is offered. The planner's own choice. */
@@ -123,7 +124,11 @@ export default function WeatherAlongRoute({
   unchecked: (source: Briefing["weather_unavailable"][number]) => boolean;
 }) {
   const printing = usePrinting();
-  const places = placesOf(course);
+  // Where each place is along the route is the engine's (lib/geo): none
+  // until its .wasm is there.
+  const geo = useGeo();
+  if (!geo) return null;
+  const places = placesOf(geo, course);
   const stations = briefing.forecast.stations;
   const own = new Map(places.map((p) => [p.ident, ownStation(stations, p.ident)]));
   const owned = new Set([...own.values()].filter(Boolean).map((s) => s!.icaoId));
@@ -147,7 +152,7 @@ export default function WeatherAlongRoute({
     // A field's weather under its own tab's title, Weather; the way between
     // Along the Route.
     <AccordionSection title={phase === "depart" || phase === "arrive" ? "Weather" : "Along the Route"}>
-      <div className="space-y-4" data-testid="weather-places" data-tip="weather-places">
+      <div className="space-y-4" data-testid="weather-places">
         {places.map((place, i) => {
           const metar = briefing.metars[place.ident];
           const station = own.get(place.ident);

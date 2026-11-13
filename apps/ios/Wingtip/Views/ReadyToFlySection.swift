@@ -6,8 +6,9 @@ import SwiftUI
 /// The words, the order and what is missing are the engine's
 /// (`ready_to_fly`); this draws them.
 struct ReadyToFlyRows: View {
+    @Environment(Navigator.self) private var nav
     @Environment(\.lookAccent) private var accent
-    private var model: ReadyToFly { .shared }
+    @Environment(ReadyToFly.self) private var model
     @State private var allOpen = false
 
     var body: some View {
@@ -72,9 +73,9 @@ struct ReadyToFlyRows: View {
     /// (back to it). The rest the model does in place.
     private func run(_ fix: String) {
         switch fix {
-        case "pick_airplane": Navigator.shared.push(.screen(.airplane))
-        case "set_altitude": Navigator.shared.push(.screen(.profile))
-        case "set_route": Navigator.shared.showPlan()
+        case "pick_airplane": nav.push(.screen(.airplane))
+        case "set_altitude": nav.push(.screen(.profile))
+        case "set_route": nav.showPlan()
         default: Task { await model.run(fix) }
         }
     }
@@ -83,15 +84,17 @@ struct ReadyToFlyRows: View {
 /// The Brief's section for it, refreshed as the plan changes and every
 /// minute, as ages grow; the route's NOTAMs fetched for it on the way.
 struct ReadyToFlySection: View {
+    @Environment(KeepForAir.self) private var keepForAir
+    @Environment(Receiver.self) private var receiver
     @Environment(Plan.self) private var plan
-    private var model: ReadyToFly { .shared }
+    @Environment(ReadyToFly.self) private var model
 
     /// What the facts hang on: asked again when any of it changes.
     private var key: String {
-        let keep = KeepForAir.shared
+        let keep = keepForAir
         let keeping = keep.sizeMb.map { "kept \($0)" } ?? keep.keeping.map { $0.kept >= $0.wanted ? "tiles" : "keeping" } ?? ""
         return [ReadyToFly.flightKey(plan), plan.airplaneName ?? "", "\(plan.altitudeFt ?? 0)", "\(plan.briefedAt?.timeIntervalSince1970 ?? 0)",
-                "\(plan.totals?.eteMin ?? 0)", keeping, "\(Receiver.shared.live)"].joined(separator: "|")
+                "\(plan.totals?.eteMin ?? 0)", keeping, "\(receiver.live)"].joined(separator: "|")
     }
 
     var body: some View {
@@ -101,7 +104,7 @@ struct ReadyToFlySection: View {
             Text("Ready to Fly")
         }
         .task(id: key) {
-            if KeepForAir.shared.keeping.map({ $0.kept >= $0.wanted }) == true { await model.chartsKeptChanged() }
+            if keepForAir.keeping.map({ $0.kept >= $0.wanted }) == true { await model.chartsKeptChanged() }
             await model.refresh()
             await model.fetchNotams()
             while !Task.isCancelled {
@@ -115,6 +118,7 @@ struct ReadyToFlySection: View {
 /// The app's models handed to Ready to Fly at the root, so a start from
 /// outside the screen (the Control Center's flight) is answered too.
 struct ReadyToFlyHost: ViewModifier {
+    @Environment(ReadyToFly.self) private var ready
     @Environment(Plan.self) private var plan
     @Environment(Charts.self) private var charts
     @Environment(OwnShip.self) private var ownShip
@@ -122,7 +126,7 @@ struct ReadyToFlyHost: ViewModifier {
     @Environment(Session.self) private var session
 
     func body(content: Content) -> some View {
-        content.task { ReadyToFly.shared.attach(plan: plan, charts: charts, ownShip: ownShip, verdict: verdict, session: session) }
+        content.task { ready.attach(plan: plan, charts: charts, ownShip: ownShip, verdict: verdict, session: session) }
     }
 }
 
@@ -133,9 +137,10 @@ struct ReadyToFlyHost: ViewModifier {
 /// pilot may always fly (warn, never limit); Open the Brief shows the
 /// section with each fix a tap. From the top of the stack (TopHosts).
 struct ReadyToFlyPrompt: ViewModifier {
+    @Environment(Navigator.self) private var nav
     /// Whether this view is the top of the stack, the one that presents.
     let active: Bool
-    private var model: ReadyToFly { .shared }
+    @Environment(ReadyToFly.self) private var model
 
     func body(content: Content) -> some View {
         content
@@ -143,7 +148,7 @@ struct ReadyToFlyPrompt: ViewModifier {
                 Button("Fly Anyway") { model.flyAnyway() }
                 Button("Open the Brief") {
                     model.notYet()
-                    Navigator.shared.open(.screen(.brief))
+                    nav.open(.screen(.brief))
                 }
                 Button("Not Yet", role: .cancel) { model.notYet() }
             } message: {
@@ -163,7 +168,7 @@ struct ReadyToFlyPrompt: ViewModifier {
 /// engine's ranking): the ones said first, each as sent, the rest folded.
 struct NotamsSection: View {
     @Environment(Plan.self) private var plan
-    private var model: ReadyToFly { .shared }
+    @Environment(ReadyToFly.self) private var model
 
     var body: some View {
         if let ranked = model.notams {
@@ -194,7 +199,7 @@ struct NotamsSection: View {
             Text([notam.field, notam.keyword].compactMap { $0 }.joined(separator: " · ")).font(WingtipType.row.weight(.semibold))
             Text(notam.raw).font(WingtipType.note.monospaced()).foregroundStyle(.secondary)
         }
-        .siriSees(SiriSaw.notam(notam.id))
+        .appEntityIdentifier(SiriSaw.notam(notam.id))
         .accessibilityElement(children: .combine)
     }
 }

@@ -1,5 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { openTab, settle, sideDrawer, slow } from "./helpers";
+import { pickAirplane } from "./startState";
+// An airplane, so the legs have their times and a field when it is reached
+// (the setup picks none, and with none there is no time to forecast for).
+test.beforeEach(({ page }) => pickAirplane(page));
 
 /**
  * A field the airplane reaches more than an hour from now has its runway
@@ -53,7 +57,7 @@ test("a runway picked into an earlier wind follows the wind, where one the pilot
   await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-pressed", "true", {
     timeout: slow(60_000),
   });
-  await expect(page).toHaveURL(/[?&]pattern=([^&]*%2C)?KDLH%3A9(%2C|&|$)/);
+  await expect(page).toHaveURL(/[?&]pattern=([^&]*(%2C|,))?KDLH(%3A|:)9(%2C|,|&|$)/);
 
   // Picked by the pilot: an address that says none was picked for the
   // wind (auto "-"); one from before `auto` has its runways picked again
@@ -63,7 +67,7 @@ test("a runway picked into an earlier wind follows the wind, where one the pilot
   await openTab(page, "Nav Log");
   await expect(kdlh.getByTestId("field-wind")).toContainText("090° 14 kt", { timeout: slow(60_000) });
   await expect(kdlh.getByRole("button", { name: /^Runway 27/ })).toHaveAttribute("aria-pressed", "true");
-  await expect(page).not.toHaveURL(/land%3AKDLH/);
+  await expect(page).not.toHaveURL(/land(%3A|:)KDLH/);
 
   await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${depart()}&pattern=KDLH%3A27`);
   await settle(page);
@@ -71,5 +75,5 @@ test("a runway picked into an earlier wind follows the wind, where one the pilot
   await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-pressed", "true", {
     timeout: slow(60_000),
   });
-  await expect(page).toHaveURL(/[?&]auto=[^&]*land%3AKDLH/);
+  await expect(page).toHaveURL(/[?&]auto=[^&]*land(%3A|:)KDLH/);
 });

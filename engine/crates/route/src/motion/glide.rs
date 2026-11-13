@@ -7,7 +7,7 @@ use crate::json::{self, Value};
 
 // The figures themselves are procedures' (figures::glide), which the
 // emergency's best fields glide by too; here by the names they had.
-pub use crate::figures::glide::{nm_per_1000_ft, range_nm, reaches, underway, AIRBORNE_AGL_FT, ARRIVE_AGL_FT, FT_PER_NM};
+pub use crate::figures::glide::{nm_per_1000_ft, range_nm, reaches, underway, AIRBORNE_AGL_FT, ARRIVE_AGL_FT};
 
 /// `glide_range`: nm or null, from `{"altitude_ft"?, "speed_kt"?,
 /// "ground_ft"?, "glide_ratio"?}` -- the ratio the picked airplane's

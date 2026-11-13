@@ -6,8 +6,7 @@ import barlow700 from "@fontsource/barlow/files/barlow-latin-700-normal.woff2?ur
 import interUrl from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import type { ChartInfo } from "./api/types";
 import type { MapOverlay } from "./preferences";
-import { USGS_URL } from "./map/sources/imagery";
-import { GOOGLE } from "./map/sources/googleSession";
+import { GOOGLE, USGS_URL } from "./map/sources/imagery";
 
 /** A font file as the stylesheet's @font-face and the map's style ask for
  *  it: anonymous CORS, so the preload is the request they reuse. */

@@ -8,24 +8,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.toRoute
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.scene.SceneStrategy
+import androidx.navigation3.scene.SinglePaneSceneStrategy
+import androidx.navigation3.ui.NavDisplay
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.OwnAirplanes
-import app.wingtipmaps.android.design.SharedAxisX
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
@@ -36,49 +36,56 @@ import app.wingtipmaps.android.search.SearchPick
 import app.wingtipmaps.android.search.nothingTyped
 
 /**
- * The docked sheet's pages in Navigation Compose's NavHost: Home and the
- * plan under the one search, and every card and page over it (CardRoute,
- * SheetCard), with Material's shared axis between them, which the
- * NavHost seeks with the predictive back gesture (SharedAxisX). The
- * search's row (`head`) is part of Home and the plan, not over the
- * NavHost, so Back from a card shows them coming in with their search, as
- * they will be once it is released.
+ * The docked sheet's pages in Navigation 3's NavDisplay over the map
+ * screen's back stack (SheetNav, MapViewModel): the carousel
+ * (SheetCarousel) of the one search's page and the plan's, and every card
+ * and page over it (SheetCard), with Navigation 3's own transitions
+ * between them and its own predictive back. The search's row (`head`) is
+ * part of the Search page, not over the NavDisplay, so Back from a card
+ * shows it coming in with its search. With no `carousel` (the strip
+ * layout, whose field and timeline are its search and its plan) Home is
+ * the Search page alone.
+ *
+ * `scenes` lays the stack out: one page at a time (none given), or on a tablet or an
+ * unfolded phone Material's list-detail scene (WidePanes), Home in the
+ * list pane and the cards in the detail pane beside it.
  * `backEnabled` false hands Back to what comes first (the expanded sheet
- * lowering under the search, MapSheet; a card in the wide layout's detail
- * pane) through a child of the system's navigation event dispatcher,
- * turned off.
+ * lowering under the search, MapSheet) through a child of the system's
+ * navigation event dispatcher, turned off.
  *
  * Every page sees the activity's own view models -- the one Plan, the
  * session, the assistant, the dry run the map draws -- as it did when the
- * pages were sheets over the map, not a copy of its own per back stack
- * entry.
+ * pages were sheets over the map, not a copy of its own per entry: the
+ * NavDisplay is given no view model store of its own per entry.
  */
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 internal fun SheetPagesHost(
     sheet: SheetNav,
     backEnabled: Boolean,
     modifier: Modifier,
     head: @Composable () -> Unit = {},
+    carousel: Boolean = true,
+    scenes: SceneStrategy<SheetPage>? = null,
     home: @Composable () -> Unit,
     plan: @Composable () -> Unit,
     card: @Composable (SheetPage) -> Unit,
 ) {
     val owner = rememberNavigationEventDispatcherOwner(enabled = backEnabled)
-    val models = checkNotNull(LocalViewModelStoreOwner.current)
+    val single = remember { SinglePaneSceneStrategy<SheetPage>() }
     CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) {
-        val shift = with(LocalDensity.current) { SharedAxisX.Shift.roundToPx() }
-        NavHost(
-            sheet.nav, startDestination = SheetPage.Home, modifier = modifier.fillMaxWidth(),
-            enterTransition = { SharedAxisX.enter(shift, forward = true) },
-            exitTransition = { SharedAxisX.exit(shift, forward = true) },
-            popEnterTransition = { SharedAxisX.enter(shift, forward = false) },
-            popExitTransition = { SharedAxisX.exit(shift, forward = false) },
-        ) {
-            composable<SheetPage.Home> { CompositionLocalProvider(LocalViewModelStoreOwner provides models) { UnderSearch(head, home) } }
-            composable<SheetPage.Plan> { CompositionLocalProvider(LocalViewModelStoreOwner provides models) { UnderSearch(head, plan) } }
-            composable<CardRoute> { entry ->
-                val page = remember(entry) { SheetPage.of(entry.toRoute<CardRoute>().key) }
-                CompositionLocalProvider(LocalViewModelStoreOwner provides models) { card(page) }
+        NavDisplay(
+            backStack = sheet.stack,
+            modifier = modifier.fillMaxWidth(),
+            onBack = sheet::back,
+            sceneStrategies = listOf(scenes ?: single),
+        ) { page ->
+            if (page.covers) {
+                NavEntry(page, contentKey = page.key, metadata = ListDetailSceneStrategy.detailPane()) { card(page) }
+            } else {
+                NavEntry(page, contentKey = page.key, metadata = ListDetailSceneStrategy.listPane()) {
+                    if (carousel) SheetCarousel(sheet.pager, search = { UnderSearch(head, home) }, plan = plan) else UnderSearch(head, home)
+                }
             }
         }
     }
@@ -94,12 +101,14 @@ private fun UnderSearch(head: @Composable () -> Unit, page: @Composable () -> Un
 }
 
 /** Nothing typed: the assistant's answer where there is one, the flight's
- *  card, then Favorites, Recents and Nearest, as the search shows them. */
+ *  card, then Nearest, Favorites and Recents, as the search shows them. */
 @Composable
-internal fun Home(plan: Plan, fix: OwnShip.Fix?, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit, modifier: Modifier = Modifier) {
+internal fun Home(plan: Plan, ownShip: OwnShip, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    // The fix read here, for the nearest fields' rows, rather than by the root.
+    val fix by ownShip.fix.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
-    val search: SearchModel = viewModel()
+    val search: SearchModel = hiltViewModel()
     val found by search.state.collectAsStateWithLifecycle()
     val memory = remember(context) { SearchMemory.of(context) }
     val favorites by memory.favorites.collectAsStateWithLifecycle()

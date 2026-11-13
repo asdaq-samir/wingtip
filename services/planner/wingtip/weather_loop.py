@@ -81,7 +81,7 @@ def _iso(t: float) -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t))
 
 
-def _radar_newest() -> float | None:
+def newest_radar() -> float | None:
     """When the newest radar mosaic was made, on its five-minute step."""
     record = weather_store.read("radar")
     valid = (record.data or {}).get("valid") if record else None
@@ -128,7 +128,7 @@ def frames(kind: Kind) -> dict:
     made by then, and the frame's time the older of the two, so the age
     shown is never younger than what is drawn. A source with nothing
     stored gives no frames of its own."""
-    radar_newest = _radar_newest()
+    radar_newest = newest_radar()
     if kind == "radar":
         if radar_newest is None:
             stamps: list[tuple[float, float | None, float | None]] = []

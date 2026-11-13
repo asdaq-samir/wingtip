@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_weather::forecast::calls::call",
-  "description": "The SIGMETs in force whose area the route crosses (AC 00-45H).",
+  "description": "The SIGMETs in force whose area the route crosses (FAA-H-8083-28B 26.2.4).",
   "type": "object",
   "properties": {
     "input": {

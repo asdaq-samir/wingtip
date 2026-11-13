@@ -22,7 +22,9 @@ from urllib.parse import urlsplit
 
 SITE = Path(__file__).resolve().parent
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
-GATEWAY = ("/app/", "/api/")
+# /delete-account is the gateway's own page (DeleteAccountController), which
+# the privacy policy and support page link to.
+GATEWAY = ("/app/", "/api/", "/delete-account")
 
 
 class Page(HTMLParser):

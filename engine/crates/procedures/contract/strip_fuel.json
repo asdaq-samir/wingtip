@@ -1,0 +1,112 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::fuel",
+  "description": "The fuel figure in the strip at the sheet's foot, web, iPhone and Android alike: the fuel required to the landing of hop `hop` (the first where the route has stops, the tanks filled at each; the whole route's where it has none), less what a flight under way has burnt, never below nothing; and the flights the tanks fall short on, a fuel margin under nothing (14 CFR 91.151, 91.167).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "StripFuelInput",
+      "type": "object",
+      "properties": {
+        "fuel_required_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_margin_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "hops": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "departure": {
+                "type": "string"
+              },
+              "destination": {
+                "type": "string"
+              },
+              "fuel_required_gal": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "fuel_margin_gal": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "departure",
+              "destination"
+            ]
+          }
+        },
+        "hop": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "The hop flown, 0 where left out."
+        },
+        "burnt_gal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Burnt so far by a flight under way."
+        }
+      }
+    },
+    "answer": {
+      "title": "StripFuelAnswer",
+      "type": "object",
+      "properties": {
+        "required_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "short": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "\"C81 → KMSN\"; \"\" for a route with no stops."
+              },
+              "short_gal": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "name",
+              "short_gal"
+            ]
+          }
+        }
+      },
+      "required": [
+        "required_gal",
+        "short"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

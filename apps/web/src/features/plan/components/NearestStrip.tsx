@@ -1,4 +1,5 @@
 import { cn } from "cn";
+import { Button } from "../../../components/ui/button";
 import { ChartMark, PillStrip, SmallTile, TileChartMark } from "../../../components/Favorites";
 import type { NearestAirport } from "../../../lib/api/types";
 import { compassPoint } from "../../../lib/compass";
@@ -33,15 +34,16 @@ export function NearestStrip({
   const setEnabled = useOwnShip((s) => s.setEnabled);
   if (!located) {
     return (
-      <button
-        type="button"
+      <Button
+        variant="link"
+        size="inline"
         onClick={() => setEnabled(true)}
         data-testid="nearest-strip-position"
         // At the left where the tiles start, as every strip's words are (F-L2).
-        className={cn("relative block self-start py-1 text-left text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
+        className={cn("relative self-start py-1 text-left after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
       >
         Show my position
-      </button>
+      </Button>
     );
   }
   if (!fields)

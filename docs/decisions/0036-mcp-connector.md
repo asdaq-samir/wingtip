@@ -32,6 +32,9 @@ OpenAI's directories, the production domain and the privacy review are the
 owner's steps. The design and the sources checked are in
 `docs/design/mcp-connector.md`.
 
+The tools' own source (written by hand or generated) is compared with its
+alternatives in [0039](0039-crash-and-mcp-boundaries.md).
+
 ## Source
 
 The owner, 2026-11-10: "publish Wingtip as an MCP connector that pilots add

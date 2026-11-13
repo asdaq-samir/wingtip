@@ -1,0 +1,50 @@
+{
+  "title": "ClearanceFound",
+  "type": "object",
+  "properties": {
+    "said": {
+      "type": "string"
+    },
+    "ident": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "kind": {
+      "enum": [
+        "airport",
+        "navaid",
+        "fix",
+        null
+      ],
+      "description": "Anything else is read as not known."
+    },
+    "lat": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Where it is, where it was found."
+    },
+    "lon": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "sure": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "True where left out."
+    }
+  }
+}

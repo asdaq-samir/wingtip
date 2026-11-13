@@ -28,7 +28,7 @@ enum FieldFigures {
 
     /// The reported wind across a field's runways. A runway named ("36",
     /// "18L") is worked out by the engine's wind_components on that end's
-    /// true heading against the METAR's wind, also true (AC 00-45H, the METAR's wind group;
+    /// true heading against the METAR's wind, also true (FAA-H-8083-28B 24.4.3.5, the METAR's wind group;
     /// the runway ends' true headings are NASR's), steady and in the gusts;
     /// with none named, each runway's favoured end as the planner gave it
     /// (wingtip.runway_wind, the same rule).

@@ -14,35 +14,15 @@ import kotlinx.serialization.decodeFromString
  *  tiles' airports wear their weather pips from, joined by ident, as the
  *  web's AirportsGl joins them. Up to a thousand, the planner's most. */
 suspend fun Planner.reportingInView(south: Double, west: Double, north: Double, east: Double): List<AirportPin> =
-    Gateway.json.decodeFromString<AirportsInView>(
-        fetch(
-            "/api/airports/in-view",
-            mapOf(
-                "south" to "%.3f".format(java.util.Locale.US, south), "west" to "%.3f".format(java.util.Locale.US, west),
-                "north" to "%.3f".format(java.util.Locale.US, north), "east" to "%.3f".format(java.util.Locale.US, east),
-                "reporting" to "true", "limit" to "1000",
-            ),
-        ),
-    ).airports
+    api.airportsInView(box(south), box(west), box(north), box(east), limit = 1000, reporting = true).planned().airports
 
-/** The deployment's key for Google's Map Tiles API (GoogleMaps). */
-typealias GoogleMaps = app.wingtipmaps.android.api.generated.GoogleMaps
-
-/** The deployment's Google key (/api/map/google), or null where it has
- *  none (404): then nothing is drawn close in and the chart stays,
- *  enlarged, as on the web. */
-suspend fun Planner.googleMaps(): GoogleMaps? =
-    try {
-        Gateway.json.decodeFromString<GoogleMaps>(fetch("/api/map/google"))
-    } catch (e: Planner.Failure) {
-        if (e.status == 404) null else throw e
-    }
+/** A box's edge to a thousandth of a degree, so a map moved a little asks
+ *  the same box and is answered from the cache. */
+private fun box(deg: Double): Double = Math.round(deg * 1000) / 1000.0
 
 /** The route's briefing (/api/briefing), for what the map marks of it:
  *  each field's METAR now and the TAF stations' worst within an hour of
  *  the flight's time there (`forecast.stations`, `eta_*`), the flight
  *  timed from `depart` (now where none) over `eteMin`. */
 suspend fun Planner.routeBriefing(dep: String, dest: String, stops: List<String>, depart: String?, eteMin: Double?): app.wingtipmaps.android.api.generated.Briefing =
-    Gateway.json.decodeFromString(
-        fetch("/api/briefing", route(dep, dest, stops) + mapOf("depart" to depart, "ete_min" to eteMin?.let { "%.1f".format(java.util.Locale.US, it) })),
-    )
+    api.briefing(dep, dest, stops.joinToString(","), depart, eteMin?.let { Math.round(it * 10) / 10.0 }).planned()

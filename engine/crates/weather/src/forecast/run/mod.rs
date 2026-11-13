@@ -35,7 +35,7 @@ use crate::winds::WindAt;
 /// half an hour either side, and none past the last hour issued.
 pub const MODELLED_REACH_S: f64 = 1800.0;
 /// The window round a landing its TAF is read over: an hour either side
-/// of the time the run is in -- the window 14 CFR 91.169(a)(2) reads a
+/// of the time the run is in -- the window 14 CFR 91.169(b)(2)(i) reads a
 /// destination's forecast over ("for at least 1 hour before and for 1
 /// hour after the estimated time of arrival"), the one the FAA uses for
 /// an arrival's forecast -- and from the departure time an hour on.

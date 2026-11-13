@@ -5,15 +5,15 @@ import { aircraftListQuery, currencyQuery, pilotQuery } from "../../../lib/query
 import type { Briefing, Course, Leg, NavLogAltitude, Totals } from "../../../lib/api/types";
 import type { BriefingState } from "./usePlan";
 import { ceilingAndVisibility, PLAN_NAME, reportedWind } from "../format";
-import { feetRange, flightLevel, grouped, localDay, reportedDirection, weekdayDayMonthTime } from "../../../lib/format";
+import { feetRange, flightLevel, grouped, localDay, reportedDirection } from "../../../lib/format";
 import { isAirwayToken } from "../../../lib/identSchema";
 import { useLoad } from "./useLoad";
 import { armText } from "../../../lib/weightBalance";
 import { underMinimums } from "../../../lib/minimums";
 import { usePreferences } from "../../../lib/preferences";
-import { faaWords, gairmetTitle, sigmetHazard, suaAltitudes } from "../../../lib/advisories";
+import { gairmetTitle, sigmetHazard } from "../../../lib/advisories";
 import { passTime, suaWhen, tfrWhen, type SuaWhen } from "../lib/passTimes";
-import { pickedEnd, runwayFlown, runwayNumber } from "../lib/pattern";
+import { runwayNumber } from "../lib/pattern";
 import { useRunwayPicks } from "../lib/useRunwayPicks";
 import { runwayChecks } from "../lib/runwayCheck";
 import { worstOf } from "../../../lib/findings";
@@ -28,7 +28,6 @@ import { alternateFinding, useAlternate } from "./useAlternate";
 import { flowQuery, itwsLines, itwsQuery, liveWhen, programLines, saaQuery } from "../../../lib/liveReports";
 import { icingAtAltitude, icingLine } from "../lib/icing";
 import { useIcingForecast } from "./useIcingForecast";
-import { planFacts } from "../lib/oral";
 import { assess, riskLine, useRisk } from "../../../lib/frat";
 import type { BriefingPart } from "../components/briefing/sections";
 
@@ -129,8 +128,7 @@ export function useFlightBriefing({
 }: FlightBriefingInputs) {
   // The load's weights, for the takeoff and landing distances.
   const { loading, load, result: loaded } = useLoad(nav?.aircraft, totals?.fuel_gal ?? null);
-  // The runways the pilot picked in FPL, flown in the oral's facts and
-  // checked for length (runwayFlown).
+  // The runways the pilot picked in FPL, checked for length (runwayFlown).
   const picks = useRunwayPicks();
   // Every airport the flight lands at, each once: a round trip's
   // departure is its destination.
@@ -252,40 +250,6 @@ export function useFlightBriefing({
         ticked,
       })
     : null;
-  const destStation = briefing?.forecast.stations.find((st) => st.icaoId === dest);
-  // The flight in plain lines, for the mock oral's examiner (features/plan/lib/oral):
-  // what the briefing already holds.
-  const planText = briefing
-    ? planFacts({
-        route: landings
-          .filter((i) => briefing.airports[i])
-          .map((i) => {
-            const a = briefing.airports[i]!;
-            const picked = pickedEnd(picks, i, i === dep ? "takeoff" : "landing", i === dep);
-            const inUse = runwayFlown(a.runways, picked);
-            return {
-              ident: i,
-              name: a.name,
-              airspaceClass: a.airspace_class,
-              patternFt: a.pattern?.altitude_ft,
-              runway: inUse && (picked || inUse.byWind) ? runwayNumber(inUse.end.ident) : null,
-            };
-          }),
-        aircraft: nav?.aircraft?.type ?? nav?.aircraft?.name,
-        cruiseFt: nav?.altitude_ft,
-        distanceNm: totals?.distance_nm ?? course?.distance_nm,
-        eteMin: totals?.ete_min,
-        fuelGal: totals?.fuel_gal,
-        reserveMin: totals?.reserve_min,
-        night: totals?.night,
-        depart: depart ? weekdayDayMonthTime(new Date(depart)) : null,
-        metars: landings.flatMap((i) => (briefing.metars[i]?.raw ? [{ ident: i, raw: briefing.metars[i]!.raw! }] : [])),
-        destinationForecast: destStation ? ceilingAndVisibility(destStation.ceiling_ft, destStation.visibility_sm) : null,
-        hazards: hazardNames,
-        specialUse: specialUse.map(({ area }) => `${faaWords(area.name)} (${area.kind}), ${suaAltitudes(area)}`),
-        tfrs: briefing.tfrs.length,
-      })
-    : "";
   const assessmentKey = assessment ? `${assessment.level}:${assessment.score}:${assessment.factors.map((f) => f.key).join(",")}` : "";
   const publishAssessment = useEffectEvent(() => {
     if (publish) setAssessment(assessment);
@@ -426,10 +390,10 @@ export function useFlightBriefing({
             overFiftyFt: distance ? Math.round(distance.totalFt) : null,
             wind: said === "calm" ? "Calm" : said ? `${said.dir.replace(/T$/, "")}/${said.speed}` : null,
             crosswindKt: check ? Math.round(check.crosswindKt) : null,
+            crosswindOver: !!check?.crosswindOver,
             radio: call ? { to: call.to, mhz: call.mhz! } : null,
-            // A field not checked (no elevation, no runway length) is not known,
-            // never fine; one past the POH's tables is a caution (the engine's
-            // runways finding says the same).
+            // A field not checked (no elevation, no runway length) is not known, never fine; one past
+            // the POH's tables is a caution (the engine's runways finding says the same).
             finding:
               !check || check.unchecked || !distance || distance.unknown
                 ? "unknown"
@@ -552,7 +516,6 @@ export function useFlightBriefing({
     icing,
     icingForecast,
     hazardNames,
-    planText,
     loaded,
     items,
     alternateWhere,

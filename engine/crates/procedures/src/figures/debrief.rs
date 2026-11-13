@@ -16,7 +16,7 @@
 //! saved flight's (the gateway's FlightCheckpointDto) and its points the
 //! track's (TrackDto: `t` in ms since 1970, GPS altitude in feet).
 
-use crate::geo::{angle_between, bearing_deg, distance_nm};
+use crate::geo::{angle_between, bearing_deg, distance_nm, Flat};
 use crate::{json, sort::StableSort};
 
 /// PA.VI.A's tolerances: S7's altitude, and its heading applied to the
@@ -176,11 +176,9 @@ pub fn airborne(points: &[Point]) -> Vec<(usize, usize)> {
 /// right of it (left negative), and how far from it at all. Flat over a
 /// leg, which is near enough at a leg's length.
 fn against(from: &Checkpoint, to: &Checkpoint, p: &Point) -> (f64, f64, f64) {
-    // d * pi / 180 in that order, as the Python's _rad (to_radians
-    // multiplies by pi / 180, a last bit apart).
-    let kx = (from.lat * std::f64::consts::PI / 180.0).cos() * 60.0;
-    let (bx, by) = ((to.lon - from.lon) * kx, (to.lat - from.lat) * 60.0);
-    let (px, py) = ((p.lon - from.lon) * kx, (p.lat - from.lat) * 60.0);
+    let flat = Flat::about(from.lat, from.lon);
+    let (bx, by) = flat.nm(to.lat, to.lon);
+    let (px, py) = flat.nm(p.lat, p.lon);
     let len2 = bx * bx + by * by;
     let t = if len2 > 0.0 { (px * bx + py * by) / len2 } else { 0.0 };
     let right = if len2 > 0.0 { -(bx * py - by * px) / len2.sqrt() } else { px.hypot(py) };

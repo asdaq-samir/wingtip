@@ -1,7 +1,8 @@
 package app.wingtipmaps.android.widget
 
 import android.content.Context
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.format.Format
 import kotlinx.serialization.Serializable
@@ -49,7 +50,7 @@ data class FlightSnapshot(
 
     companion object {
         private const val PREFS = "widget"
-        private const val KEY = "nextFlight"
+        private val KEY = stringPreferencesKey("nextFlight")
         private val json = Json { ignoreUnknownKeys = true }
 
         /** The snapshot of a plan, or null with no route to show. */
@@ -70,7 +71,7 @@ data class FlightSnapshot(
 
         /** The snapshot kept, or null with none (or one that no longer reads). */
         fun read(context: Context): FlightSnapshot? =
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
+            Kept.of(context, PREFS)[KEY]
                 ?.let { runCatching { json.decodeFromString<FlightSnapshot>(it) }.getOrNull() }
 
         /** Keeps `snapshot`, or forgets the one kept with null; true where
@@ -78,8 +79,8 @@ data class FlightSnapshot(
         fun write(context: Context, snapshot: FlightSnapshot?): Boolean {
             val kept = read(context)
             if (kept?.copy(updatedAtMs = 0) == snapshot?.copy(updatedAtMs = 0)) return false
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit {
-                if (snapshot == null) remove(KEY) else putString(KEY, json.encodeToString(FlightSnapshot.serializer(), snapshot))
+            Kept.of(context, PREFS).edit {
+                if (snapshot == null) it.remove(KEY) else it.set(KEY, json.encodeToString(FlightSnapshot.serializer(), snapshot))
             }
             return true
         }

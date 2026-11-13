@@ -1,0 +1,10 @@
+{
+  "title": "TfrPoint",
+  "description": "A point in degrees, WGS-84 (the field, or a TFR's nearest edge to it); null where not known.",
+  "type": ["object", "null"],
+  "properties": {
+    "lat": { "type": "number" },
+    "lon": { "type": "number" }
+  },
+  "required": ["lat", "lon"]
+}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { cn } from "cn";
 import { InlineField } from "../../../../components/InlineField";
+import { Button } from "../../../../components/ui/button";
 import type { Leg, NavLogAltitude } from "../../../../lib/api/types";
 import type { FlightRules } from "../../../../lib/preferences";
 import { TEXT } from "../../../../lib/text";
@@ -124,7 +125,6 @@ export default function AltitudeGroup({
     <InlineField
       label="Cruise altitude"
       testId="altitude-group"
-      tip="altitude"
       widest="FL-000"
       tabular
       placeholder=""
@@ -156,8 +156,12 @@ export default function AltitudeGroup({
         onFocus: (e) => {
           const input = e.currentTarget;
           setEditing(true);
+          const tapped = input.value;
+          // Not once a figure is typed: a key inside that frame had its
+          // figure taken whole and typed over by the next ("075" went in as
+          // FL-75, plans.spec, 2026-11-13).
           const pick = () => {
-            if (document.activeElement === input) input.setSelectionRange(3, input.value.length);
+            if (document.activeElement === input && input.value === tapped) input.setSelectionRange(3, input.value.length);
           };
           pick();
           requestAnimationFrame(pick);
@@ -194,21 +198,26 @@ export default function AltitudeGroup({
               itself not widened for it (its one width, InlineField). */}
           {editing && (
             <span className="relative flex size-0 shrink-0">
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="sm"
                 onMouseDown={(e) => e.preventDefault()}
                 onPointerDown={(e) => e.preventDefault()}
                 // Its blur flies what was typed (the field's onBlur).
                 onClick={() => (document.activeElement as HTMLElement | null)?.blur()}
                 data-testid="altitude-done"
+                // The stock small Button, a card's capsule floating over the
+                // route's buttons: the card's fill and its soft edge. Centred
+                // by its top, not a translate, which the stock press's own
+                // one-point nudge would replace.
                 className={cn(
-                  "absolute top-1/2 left-2 z-20 h-7 -translate-y-1/2 rounded-full bg-card px-3 font-semibold text-tint shadow-sm ring-1 ring-black/5 outline-none dark:ring-white/10",
-                  "after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+                  "absolute top-[calc(50%-0.875rem)] left-2 z-20 h-7 rounded-full border-0 bg-card px-3 font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10",
+                  "after:absolute after:-inset-2 after:content-['']",
                   TEXT.row,
                 )}
               >
                 Done
-              </button>
+              </Button>
             </span>
           )}
         </>

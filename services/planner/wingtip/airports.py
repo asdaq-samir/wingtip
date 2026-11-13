@@ -6,17 +6,15 @@ data -- all backed by OurAirports' free, no-API-key-required dataset
 import bisect
 import gzip
 import json
-import math
-import os
 import threading
 from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import requests
 
-from . import faa_data, geo
+from . import by_airport, faa_data, geo, outside
+from .atomic import atomic_path
 from .config import REQUEST_HEADERS
 from .routecsv import locked
 from .single_flight import once
@@ -60,11 +58,10 @@ def _ensure_cached(url: str, cache_path: Path) -> Path:
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     with locked(cache_path):
         if not cache_path.exists():
-            resp = requests.get(url, headers=REQUEST_HEADERS, timeout=30)
+            resp = outside.get(url, headers=REQUEST_HEADERS, timeout=30)
             resp.raise_for_status()
-            partial = cache_path.with_name(cache_path.name + ".part")
-            partial.write_bytes(resp.content)
-            os.replace(partial, cache_path)
+            with atomic_path(cache_path) as partial:
+                partial.write_bytes(resp.content)
     return cache_path
 
 
@@ -221,19 +218,10 @@ def _faa_listed(faa_path: str, _faa_mtime: float) -> frozenset:
 
 @lru_cache(maxsize=2)
 def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: float = 0.0) -> pd.DataFrame:
-    """The US-only, pre-uppercased slice `search_airports` filters --
-    keyed by path and mtime like `_read_table` (a replaced file is a
-    new entry, and the old one is dropped rather than kept for ever
-    under an `id()` Python may hand to another frame), so this is
-    built once per file, not on every keystroke. Building it fresh
-    each call -- filtering the full 80,000-row table to US-only, then
-    `.str.upper()` over three string columns of the result -- was
-    cheap in isolation but
-    added up to real, measurable CPU under a burst of concurrent
-    searches (every DEP/DEST field firing one on mount), which is
-    exactly the kind of load a page full of Playwright tests, or a
-    pilot just loading the app, produces.
-    """
+    """The US-only, pre-uppercased slice `search_airports` filters, keyed
+    by path and mtime like `_read_table`, so it is built once per file, not
+    on every keystroke: built per call, a burst of searches (every DEP/DEST
+    field firing one on mount) cost real, measurable CPU."""
     df = _read_table(path, _mtime)
     # This app plans against FAA sectional charts and
     # aviationweather.gov data alone -- there's no route it could
@@ -255,6 +243,14 @@ def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: fl
                     on |= us[column].astype(str).fillna("").str.strip().str.upper().isin(listed).to_numpy()
             us = us[on]
     us = us.copy()
+    if faa_path:
+        # The FAA's reference point (NASR APT_BASE's ARP) over OurAirports',
+        # 190 m off at KDEN: the map's marks are NASR's (owner, 2026-11-12).
+        arp = faa_data._read_apt_base_cached(faa_path, _faa_mtime).drop_duplicates("ARPT_ID").set_index("ARPT_ID")
+        local = us["local_code"].astype(str).str.strip().str.upper()
+        for ours, faa in (("latitude_deg", "LAT_DECIMAL"), ("longitude_deg", "LONG_DECIMAL")):
+            if faa in arp.columns:
+                us[ours] = local.map(pd.to_numeric(arp[faa], errors="coerce")).fillna(us[ours])
     us["_ident_upper"] = us["ident"].astype(str).str.upper()
     us["_local_upper"] = us["local_code"].astype(str).str.upper()
     us["_name_upper"] = us["name"].astype(str).str.upper()
@@ -284,13 +280,16 @@ def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: fl
     return us
 
 
-def _nearness(lat: float, lon: float, near: list[tuple[float, float]]) -> float:
-    """How far a field is from the nearest of `near`, as a sort key: the
-    squared degrees, the longitude's shrunk by the latitude's cosine --
-    an order, not a distance; 0 with nothing to be near."""
-    if not near or lat != lat or lon != lon:
-        return 0.0
-    return min((lat - a) ** 2 + ((lon - b) * math.cos(math.radians(a))) ** 2 for a, b in near)
+def _nearness_nm(lats, lons, near: list[tuple[float, float]]) -> np.ndarray:
+    """How far each field is from the nearest of `near`, nm along the
+    great circle (geo.distance_nm, every field against every point at
+    once), as a sort key; 0 with nothing to be near, or no position."""
+    lats, lons = np.asarray(lats, dtype=float), np.asarray(lons, dtype=float)
+    if not near or not lats.size:
+        return np.zeros(lats.shape)
+    to = np.asarray(near, dtype=float)
+    nm = geo.distance_nm(lats[:, None], lons[:, None], to[None, :, 0], to[None, :, 1]).min(axis=1)
+    return np.where(np.isfinite(nm), nm, 0.0)
 
 
 def search_airports(
@@ -329,7 +328,7 @@ def search_airports(
     matches = pd.concat([df[exact].assign(_rank=0), df[ident_hit].assign(_rank=1), df[word_hit].assign(_rank=2)])
     matches = matches.assign(
         _named=~matches["_name_upper"].str.startswith(query),
-        _near=[_nearness(a, b, near or []) for a, b in zip(matches["latitude_deg"], matches["longitude_deg"])],
+        _near=_nearness_nm(matches["latitude_deg"], matches["longitude_deg"], near or []),
     )
     matches = matches.sort_values(["_rank", "_size_rank", "_named", "_near", "_display_ident"]).head(limit)
     return _rows(df, [df.index.get_loc(i) for i in matches.index])
@@ -448,17 +447,11 @@ def _indexed_matches(index: dict, query: str, limit: int, near: list[tuple[float
     exact = index["exact"].get(query, set())
     ident = prefixed(index["idents"]) - exact
     word = prefixed(index["words"]) - exact - ident
+    ranks = [(rank, row) for rank, rows in enumerate((exact, ident, word)) for row in rows]
+    nearness = _nearness_nm([index["lat"][row] for _, row in ranks], [index["lon"][row] for _, row in ranks], near or [])
     ranked = [
-        (
-            rank,
-            index["size"][row],
-            not index["names"][row].startswith(query),
-            _nearness(index["lat"][row], index["lon"][row], near or []),
-            index["display"][row],
-            row,
-        )
-        for rank, rows in enumerate((exact, ident, word))
-        for row in rows
+        (rank, index["size"][row], not index["names"][row].startswith(query), float(nm), index["display"][row], row)
+        for (rank, row), nm in zip(ranks, nearness)
     ]
     return [row for *_, row in sorted(ranked)[:limit]]
 
@@ -593,33 +586,42 @@ def places_in(
     return _places_of(chosen)
 
 
-#: How far round a position the nearest fields are looked for first, in
-#: degrees: a box a few minutes' flight across, widened where it is empty.
-_NEAREST_BOX_DEG = (0.75, 2.0, 6.0)
+#: Where the nearest fields are looked for, nm: a radius of a few minutes'
+#: flight, doubled while fewer than the limit lie within it. A box holding
+#: `limit` fields does not hold the `limit` nearest (a degree box at 61 N
+#: missed Valdez, 37 nm east, for a field 41 nm off), so the radius decides
+#: and geo.box_around is its first cut. At the cap, the fields within it
+#: alone, fewer than asked: 640 nm is past any glide or fuel stop. Abroad,
+#: fields only name where a followed flight began or ended.
+_NEAREST_FIRST_NM, _NEAREST_CAP_NM, _ABROAD_CAP_NM = 40.0, 640.0, 40.0
+
+
+def _nearest_in(fields: pd.DataFrame, lat: float, lon: float, limit: int, cap_nm: float) -> list[dict]:
+    """`nearest`'s list from `fields`: a radius is taken once its limit-th
+    field lies within it, as every nearer one then does, so in its box."""
+    radius = min(_NEAREST_FIRST_NM, cap_nm)
+    while True:
+        south, west, north, east = geo.box_around(lat, lon, radius)
+        east_of = (fields["longitude_deg"] - lon + 180) % 360 - 180  # across 180 too, for the Aleutians
+        box = fields[fields["latitude_deg"].between(south, north) & east_of.between(west - lon, east - lon)]
+        lats, lons = box["latitude_deg"].to_numpy(dtype=float), box["longitude_deg"].to_numpy(dtype=float)
+        box = box.assign(_d=geo.distance_nm(lat, lon, lats, lons), _b=geo.bearing_deg(lat, lon, lats, lons))
+        found = box[box["_d"] <= radius].sort_values("_d", kind="stable").drop_duplicates("_display_ident").head(limit)
+        if len(found) >= limit or radius >= cap_nm:
+            break
+        radius = min(radius * 2, cap_nm)
+    return [
+        {**_place_of(r), "distance_nm": round(float(r["_d"]), 1), "bearing_deg": round(float(r["_b"])) % 360} for _, r in found.iterrows()
+    ]
 
 
 def nearest(lat: float, lon: float, limit: int = 10, cache_path: Path = DEFAULT_CACHE_PATH) -> list[dict]:
     """The landing fields nearest a position, the nearest first: each a
     place (as find_place's) with `distance_nm` and `bearing_deg`, true,
     from the position to it -- what a pilot with an engine running rough
-    looks for. Asked in a box round the position, widened until it holds
-    `limit` of them."""
+    looks for (wingtip.emergency.fields_near), within _NEAREST_CAP_NM."""
     df = _us_airports(cache_path)
-    fields = df[df["type"].isin(list(_FIELD_KINDS))]
-    for half in _NEAREST_BOX_DEG:
-        box = fields[
-            fields["latitude_deg"].between(lat - half, lat + half) & fields["longitude_deg"].between(lon - half * 1.5, lon + half * 1.5)
-        ]
-        if len(box) >= limit:
-            break
-    lats, lons = box["latitude_deg"].to_numpy(dtype=float), box["longitude_deg"].to_numpy(dtype=float)
-    distances = geo.distance_nm(lat, lon, lats, lons)
-    bearings = geo.bearing_deg(lat, lon, lats, lons)
-    ordered = box.assign(_d=distances, _b=bearings).sort_values("_d").drop_duplicates("_display_ident").head(limit)
-    return [
-        {**_place_of(row), "distance_nm": round(float(row["_d"]), 1), "bearing_deg": round(float(row["_b"])) % 360}
-        for _, row in ordered.iterrows()
-    ]
+    return _nearest_in(df[df["type"].isin(list(_FIELD_KINDS))], lat, lon, limit, _NEAREST_CAP_NM)
 
 
 @once(maxsize=2)
@@ -636,21 +638,11 @@ def _abroad_of(path: str, _mtime: float) -> pd.DataFrame:
 
 
 def nearest_abroad(lat: float, lon: float, limit: int = 3, cache_path: Path = DEFAULT_CACHE_PATH) -> list[dict]:
-    """As `nearest`, among the fields outside the US: a European airline's
-    flight, followed on the map, named by its own airports (LEBL, EGKK)
-    rather than none."""
+    """As `nearest`, among the fields outside the US within _ABROAD_CAP_NM:
+    a European airline's flight, followed on the map, named by its own
+    airports (LEBL, EGKK) rather than none."""
     path = _ensure_cached(OURAIRPORTS_URL, cache_path)
-    fields = _abroad_of(str(path), path.stat().st_mtime)
-    half = 0.5
-    box = fields[fields["latitude_deg"].between(lat - half, lat + half) & fields["longitude_deg"].between(lon - half * 2, lon + half * 2)]
-    if box.empty:
-        return []
-    lats, lons = box["latitude_deg"].to_numpy(dtype=float), box["longitude_deg"].to_numpy(dtype=float)
-    ordered = box.assign(_d=geo.distance_nm(lat, lon, lats, lons), _b=geo.bearing_deg(lat, lon, lats, lons)).sort_values("_d").head(limit)
-    return [
-        {**_place_of(row), "distance_nm": round(float(row["_d"]), 1), "bearing_deg": round(float(row["_b"])) % 360}
-        for _, row in ordered.iterrows()
-    ]
+    return _nearest_in(_abroad_of(str(path), path.stat().st_mtime), lat, lon, limit, _ABROAD_CAP_NM)
 
 
 def get_runways(ident: str, cache_path: Path = RUNWAYS_CACHE_PATH) -> list[dict]:
@@ -664,7 +656,7 @@ def get_runways(ident: str, cache_path: Path = RUNWAYS_CACHE_PATH) -> list[dict]
     """
     ident = ident.strip().upper()
     df = _load_table(RUNWAYS_URL, cache_path)
-    rows = df[df["airport_ident"].str.upper() == ident]
+    rows = by_airport.rows(df, ident)
     runways = []
     for _, row in rows.iterrows():
         le, he = row.get("le_ident"), row.get("he_ident")
@@ -754,7 +746,7 @@ def get_frequencies(ident: str, cache_path: Path = FREQUENCIES_CACHE_PATH, faa_c
     ident = ident.strip().upper()
     df = _load_table(FREQUENCIES_URL, cache_path)
     faa = faa_data.airport_frequencies(ident, faa_cache_dir) if faa_cache_dir else None
-    return _with_faa(_frequency_list(df[df["airport_ident"].str.upper() == ident]), faa)
+    return _with_faa(_frequency_list(by_airport.rows(df, ident)), faa)
 
 
 def get_frequencies_for(idents: list[str], cache_path: Path = FREQUENCIES_CACHE_PATH, faa_cache_dir=FAA_CACHE_DIR) -> dict[str, list[dict]]:
@@ -763,8 +755,7 @@ def get_frequencies_for(idents: list[str], cache_path: Path = FREQUENCIES_CACHE_
     scan the whole table once per row; the FAA's first, as get_frequencies'."""
     wanted = {i.strip().upper() for i in idents}
     df = _load_table(FREQUENCIES_URL, cache_path)
-    rows = df[df["airport_ident"].str.upper().isin(wanted)]
-    ours = {ident: _frequency_list(group) for ident, group in rows.groupby(rows["airport_ident"].str.upper())}
+    ours = {ident: _frequency_list(by_airport.rows(df, ident)) for ident in wanted}
     faa = faa_data.airport_frequencies_for(wanted, faa_cache_dir) if faa_cache_dir else {}
     found = {ident: _with_faa(ours.get(ident, []), faa.get(ident)) for ident in wanted}
     return {ident: freqs for ident, freqs in found.items() if freqs}

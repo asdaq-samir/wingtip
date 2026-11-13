@@ -1,5 +1,4 @@
-import { readFileSync } from "node:fs";
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import {
   clearTheRoute,
   closeNavLog,
@@ -7,7 +6,6 @@ import {
   emptyPlan,
   grabberTo,
   inSheet,
-  mapStill,
   navLogSheet,
   openNavLog,
   openPanel,
@@ -15,10 +13,11 @@ import {
   showTabs,
   sideDrawer,
   slow,
-  waypointMarks,
 } from "./helpers";
+import { markWith } from "./marks";
 import { pickAirplane } from "./startState";
-import { fillTime } from "./ariaFields";
+import { departTime, fillTime } from "./ariaFields";
+import { recordedStops } from "./recordedStops";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -32,36 +31,12 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
  * planner's, and so is the chart's edition, so the tiles still draw.
  */
 
-const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
-
 // A recorded route's course is asked for as soon as the route goes in
 // (PlanWorkspace's setRoute), and a test that has what it came for can
 // end with its live half still on the way: it is let go, not failed on.
 test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
-
-async function recordedStops(page: Page) {
-  const course = JSON.parse(fixture("stops-course.json"));
-  await page.route(
-    (url) => url.pathname.endsWith("/course") && url.searchParams.get("stops") === "KMSN",
-    async (route) => {
-      const live = new URL(route.request().url());
-      live.searchParams.delete("stops");
-      const chart = await (await route.fetch({ url: live.toString() })).json();
-      const { departure, destination, stops, distance_nm, bearing_deg, course_line } = course;
-      await route.fulfill({ json: { ...chart, departure, destination, stops, distance_nm, bearing_deg, course_line } });
-    },
-  );
-  await page.route(
-    (url) => url.pathname.endsWith("/checkpoints") && url.searchParams.get("stops") === "KMSN",
-    (route) => route.fulfill({ contentType: "application/json", body: fixture("stops-checkpoints.json") }),
-  );
-  await page.route(
-    (url) => url.pathname.endsWith("/navlog") && url.searchParams.get("stops") === "KMSN",
-    (route) => route.fulfill({ contentType: "application/x-ndjson", body: fixture("stops-navlog.ndjson") }),
-  );
-}
 
 test("a stop added in the panel lands the route there: the capsule, the nav log and a fuel check for each flight", async ({ page }) => {
   await recordedStops(page);
@@ -117,8 +92,8 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   await expect(sideDrawer(page).getByTestId("navlog-to")).toHaveText("KDLH");
   await sideDrawer(page).getByTestId("to-toggle").click();
 
-  // Lowered, the pill's figures under its tabs: the distance among them.
-  await grabberTo(page, "peek");
+  // At half (a phone's pill is one row), the figures: the distance among them.
+  await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+/);
 
   // Taken off again from its menu -- a right-click with a mouse, a press
@@ -141,13 +116,13 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   await settle(page);
   await openPanel(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
-  // In that order, and no cross on any pill.
+  // In that order, each a token of the route's field, no cross on any pill.
   const order = await lines.evaluate((el) =>
     [...el.querySelectorAll("[role=group], [data-testid=route-type], [data-testid=route-arrow]")].map(
       (n) => n.getAttribute("data-testid") ?? "",
     ),
   );
-  expect(order).toEqual(["route-dep", "route-arrow", "stop", "route-arrow", "stop", "route-arrow", "route-dest", "route-type"]);
+  expect(order).toEqual(["route-type", "route-dep", "route-arrow", "stop", "route-arrow", "stop", "route-arrow", "route-dest"]);
   expect(await lines.getByRole("button", { name: /^Remove/ }).count()).toBe(0);
 
   // What is typed after the last point is the new destination, the old
@@ -167,6 +142,8 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   const box = (await kmsn.boundingBox())!;
   const at = { clientX: box.x + 12, clientY: box.y + box.height / 2, pointerType: "touch", pointerId: 7, isPrimary: true, bubbles: true };
   await kmsn.dispatchEvent("pointerdown", at);
+  // The stock ContextMenu's own long press is timed from the touch's start.
+  await kmsn.dispatchEvent("touchstart", { touches: [{ identifier: 7, clientX: at.clientX, clientY: at.clientY }] });
   // Its menu after the hold (the page under it is then hidden from a
   // reader, the pill with it, so the finger is not lifted here).
   await page.getByRole("menuitem", { name: "Remove", exact: true }).click();
@@ -185,7 +162,7 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]dest=/);
   await expect(page).toHaveURL(/[?&]dep=KRYV(&|$)/);
-  await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("placeholder", "Destination");
+  await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("data-placeholder", "Destination");
   // And the last: no route, the plan's box empty to type another in.
   await lines.getByRole("group", { name: "Departure KRYV" }).focus();
   await page.keyboard.press("Delete");
@@ -209,12 +186,12 @@ test("a cleared route's box takes the departure first, then asks for the destina
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/[?&]dep=/);
   const field = sideDrawer(page).getByTestId("route-type");
-  await expect(field).toHaveAttribute("placeholder", "Route");
+  await expect(field).toHaveAttribute("data-placeholder", "Route");
   await field.fill("KMSN");
   await field.press("Enter");
   await expect(page).toHaveURL(/[?&]dep=KMSN(&|$)/);
   await expect(page).not.toHaveURL(/[?&]dest=/);
-  await expect(field).toHaveAttribute("placeholder", "Destination");
+  await expect(field).toHaveAttribute("data-placeholder", "Destination");
 });
 
 // Typed a key at a time, as a phone's keyboard sends it, the suggestions
@@ -230,7 +207,7 @@ test("Return after an ident typed key by key takes the first suggestion", async 
   await expect(page.getByTestId("route-suggestions").getByRole("option").first()).toBeVisible({ timeout: slow(10_000) });
   await field.press("Enter");
   await expect(page).toHaveURL(/[?&]dep=KUGN(&|$)/);
-  await expect(field).toHaveValue("");
+  await expect(field).toHaveAttribute("data-typed", "");
 });
 
 test("a link with a stop opens on the route through it", { tag: "@smoke" }, async ({ page }) => {
@@ -239,7 +216,7 @@ test("a link with a stop opens on the route through it", { tag: "@smoke" }, asyn
   await openPanel(page);
   await expect(sideDrawer(page).getByRole("group", { name: "Stop 1 KMSN" })).toBeVisible({ timeout: slow(15000) });
   // Its airport on the map, as the route's two ends are.
-  await expect(page.locator(".maplibregl-marker", { hasText: "KMSN" }).first()).toBeVisible({ timeout: slow(15000) });
+  await expect.poll(markWith(page, "route-marks", "KMSN"), { timeout: slow(15000) }).not.toBeNull();
 });
 
 test("a stop is left again at the time picked on its Depart step, 30 minutes after it lands until one is", async ({ page }) => {
@@ -270,20 +247,20 @@ test("a stop is left again at the time picked on its Depart step, 30 minutes aft
   await inSheet(page, leaves);
   await leaves.click();
   await expect(page.getByTestId("depart-clear")).toHaveCount(0);
-  await fillTime(page.getByTestId("depart-time"), hhmm(planned + 15));
+  await fillTime(await departTime(page), hhmm(planned + 15));
   await page.getByTestId("depart-done").click();
   await expect(page).toHaveURL(/ground=KMSN%3A45|ground=KMSN:45/);
   await expect.poll(at).toBe(planned + 15);
   // Back to 30 minutes after it lands, the default: the address says
   // nothing of it.
   await leaves.click();
-  await fillTime(page.getByTestId("depart-time"), hhmm(planned));
+  await fillTime(await departTime(page), hhmm(planned));
   await page.getByTestId("depart-done").click();
   await expect(page).not.toHaveURL(/ground=/);
   // Before it lands: brought to the landing, and said so where it was
   // picked (the audit's finding: it snapped back silently).
   await leaves.click();
-  await fillTime(page.getByTestId("depart-time"), hhmm(planned - 60));
+  await fillTime(await departTime(page), hhmm(planned - 60));
   await expect(page.getByTestId("depart-range")).toContainText("From landing");
   await page.getByTestId("depart-done").click();
   await expect(page).toHaveURL(/ground=KMSN%3A0|ground=KMSN:0/);
@@ -549,7 +526,7 @@ test("the route's box is round, one line tall for a short route and the panel's 
   // No "Add stop" after the destination, at the pilot's ask: a reader is
   // told what typing there does.
   const end = sideDrawer(page).getByTestId("route-type");
-  await expect(end).toHaveAttribute("placeholder", "");
+  await expect(end).toHaveAttribute("data-placeholder", "");
   await expect(end).toHaveAccessibleName("Add stop, the new destination");
 
   // A tap on the box's empty room past the destination's pill, short of the
@@ -660,28 +637,6 @@ test("a long route's box is one row that slides sideways to the rest, faded wher
   await expect(destination).toBeInViewport({ ratio: 1 });
 });
 
-test("a stop may be a VFR waypoint, offered after the airports as it is typed and flown through", async ({ page }) => {
-  // Nothing of the route through it is asked of the planner past its
-  // course: its two hops' chart would be read on CI's runner.
-  await page.route(
-    (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname) && url.searchParams.get("stops") === "VPBNG",
-    (route) => route.abort(),
-  );
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  await openPanel(page);
-
-  await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
-  await page.getByTestId("search-airports").fill("VPBNG");
-  const waypoint = page.getByTestId("search-waypoint").filter({ hasText: "VPBNG" }).first();
-  await expect(waypoint).toBeVisible({ timeout: slow(10000) });
-  await waypoint.click();
-  await expect(page).toHaveURL(/[?&]stops=VPBNG(&|$)/);
-
-  // On the map in the sectional's magenta, not as an airport's chip.
-  await expect(page.locator(".maplibregl-marker", { hasText: "VPBNG" }).first()).toBeVisible({ timeout: slow(15000) });
-});
-
 test("a point's menu has its altitude before Remove: an airport's pattern in feet, a waypoint's cruise as a flight level, each the pilot's to set and give back", async ({
   page,
 }) => {
@@ -703,7 +658,10 @@ test("a point's menu has its altitude before Remove: an airport's pattern in fee
   await expect(item).toContainText("Set Altitude…");
   await expect(item).toContainText(/\d,\d00 ft/, { timeout: slow(15000) });
   await item.click();
-  await page.getByTestId("point-altitude-input").fill("2600");
+  // The field once it is the point's (its name in its label): typed into
+  // before then, the figure went into the dialog as it last was, made new
+  // for the point a moment later.
+  await page.getByLabel("Altitude at KDLH, feet").fill("2600");
   await page.getByTestId("point-altitude-set").click();
   await expect(page).toHaveURL(/[?&]altitudes=KDLH%3A2600(&|$)|[?&]altitudes=KDLH:2600(&|$)/);
 
@@ -712,12 +670,16 @@ test("a point's menu has its altitude before Remove: an airport's pattern in fee
   await expect(item).toContainText("Set Altitude…");
   await expect(page.getByTestId("pill-menu-direct")).toContainText("Direct To");
   await item.click();
-  await page.getByTestId("point-altitude-input").fill("055");
+  await page.getByLabel("Altitude at VPBNG, flight level").fill("055");
   await page.getByTestId("point-altitude-set").click();
   await expect(page).toHaveURL(/KDLH(%3A|:)2600(%2C|,)VPBNG(%3A|:)5500(&|$)/);
   await lines.getByRole("group", { name: /VPBNG/ }).click({ button: "right" });
   await expect(item).toContainText("FL-055");
+  // Its Escape once the menu has the focus: pressed as it opened, the key
+  // went to the pill, still focused in the route's field, which keeps it.
+  await expect(page.getByRole("menu")).toBeFocused();
   await page.keyboard.press("Escape");
+  await expect(item).toHaveCount(0);
 
   // Given back to the plan: Duluth's own is gone from the address.
   await lines.getByRole("group", { name: "Destination KDLH" }).click({ button: "right" });
@@ -734,11 +696,12 @@ test("a point's menu has its altitude before Remove: an airport's pattern in fee
 // Add Stop, beside Fly Here, at the pilot's ask: the field the route's
 // next stop, after the ones it makes and before its destination; none on
 // a card of the route's own points; with no route, the first point of one.
-test("an airport's card adds it as the route's next stop; a card of the route's own points has none", async ({ page }) => {
+test("an airport's card adds it as the route's next stop; a card of the route's own points has it greyed, saying why", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KMSN&place=KMSN");
   await expect(page.getByTestId("place-card")).toBeVisible({ timeout: slow(30000) });
   await expect(page.getByTestId("fly-here")).toBeVisible();
-  await expect(page.getByTestId("place-add-stop")).toHaveCount(0);
+  await expect(page.getByTestId("place-add-stop")).toBeDisabled(); // shown, off (0612a82b3)
+  await expect(page.getByTestId("place-add-stop")).toHaveAccessibleName(/already on the route/);
 
   await page.goto("/app/plan?dep=C81&stops=KJVL&dest=KMSN&place=KDLH");
   const add = page.getByTestId("place-add-stop");
@@ -756,77 +719,7 @@ test("an airport's card adds it as the route's next stop; a card of the route's 
   await expect(page).not.toHaveURL(/[?&]dest=/);
   // The route's box, at the pill's size.
   await controlsInSight(page);
-  await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("placeholder", "Destination");
-});
-
-test("a VFR waypoint on the chart is a magenta triangle with its ident, and its card adds it as a stop", async ({ page }) => {
-  // The planner's own, through the gateway: Chicago's VFR waypoints.
-  const answer = await page.request.get("/api/planner/waypoints/in-view?south=41.5&west=-88.5&north=42.5&east=-87.5");
-  expect(answer.ok()).toBe(true);
-  expect((await answer.json()).waypoints.map((w: { ident: string }) => w.ident)).toContain("VPBNG");
-
-  // VPBNG, by Campbell, from the map's overlay tiles. In close enough for
-  // the waypoints' marks -- the wheel over C81, a level at a time.
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  const departure = page.locator(".maplibregl-marker", { hasText: "C81" }).first();
-  await expect(departure).toBeVisible({ timeout: slow(30000) });
-  const box = (await departure.boundingBox())!;
-  // C81 dragged to the middle of the map first: the route's fit leaves it
-  // near the screen's foot, and VPBNG, 4 nm south-west, was zoomed in to
-  // past it, under the bottom edge (2026-11-03).
-  const map = (await page.locator(".maplibregl-map").boundingBox())!;
-  const middle = { x: map.x + map.width / 2, y: map.y + map.height / 2 };
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(middle.x, middle.y, { steps: 12 });
-  await page.mouse.up();
-  await mapStill(page);
-  // A level at a time until it is drawn, from 10 as the GPS waypoints
-  // are, and on the screen: further in, 4 nm off C81 is off the map.
-  const inSight = async () =>
-    (await waypointMarks(page)).filter(
-      (w) => w.x > map.x + 20 && w.x < map.x + map.width - 20 && w.y > map.y + 20 && w.y < map.y + map.height - 20,
-    );
-  for (let i = 0; i < 8 && !(await inSight()).length; i++) {
-    await page.mouse.wheel(0, -60);
-    await page.waitForTimeout(600);
-  }
-  // The waypoint drawn, its magenta triangle and ident (WaypointsLayer).
-  await expect.poll(async () => (await inSight()).map((w) => w.ident), { timeout: slow(20000) }).toContain("VPBNG");
-  // Once the map has stopped: a tap as the zoom eases in landed where the
-  // mark had been.
-  let was = "";
-  await expect(async () => {
-    const now = JSON.stringify(await waypointMarks(page));
-    const still = now === was;
-    was = now;
-    await page.waitForTimeout(300);
-    expect(still).toBe(true);
-  }).toPass({ timeout: slow(10_000) });
-  // Tapped again until its card is up: on CI's runner the plan's stream
-  // finishing could move the map under the first tap.
-  const add = page.getByTestId("waypoint-add-stop");
-  await expect(async () => {
-    if (!(await add.isVisible())) {
-      const [mark] = await waypointMarks(page);
-      await page.mouse.click(mark!.x, mark!.y);
-    }
-    await expect(add).toBeVisible({ timeout: 3000 });
-  }).toPass({ timeout: slow(15000) });
-  // What it is beside its ident, where it is on a line of its own: in its popup over the chart, or
-  // on a phone its card in the map's sheet (MapPopup), its name and line in its head beside its close.
-  const popup = page.locator(".maplibregl-popup, [data-sheet-card]");
-  await expect(popup.getByText("VFR waypoint", { exact: true })).toBeVisible();
-  await expect(popup.getByText("3 nm SW of Campbell", { exact: true })).toBeVisible();
-  // And the map holds still under the open card, once it has panned it
-  // into sight: it crept a point a second as the card was drawn again.
-  await mapStill(page);
-  const pane = () => page.evaluate(() => document.querySelector<HTMLElement>("[data-testid=gl-map]")!.dataset.center);
-  const before = await pane();
-  await page.waitForTimeout(2000);
-  expect(await pane()).toBe(before);
-  await add.click();
-  await expect(page).toHaveURL(/[?&]stops=VPBNG/);
+  await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("data-placeholder", "Destination");
 });
 
 test("the route's airports are marked by their airspace's ring and their weather's dot", async ({ page }) => {

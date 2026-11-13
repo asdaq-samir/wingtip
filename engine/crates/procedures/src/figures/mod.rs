@@ -11,7 +11,9 @@
 //! engine/bindings/wasm), so its lib/holdEntry, lib/lostComms, lib/diversion and
 //! lib/debrief only shape the answers for its pages.
 
+pub mod calls;
 pub mod debrief;
+pub mod debrief_calls;
 pub mod diversion;
 pub mod endurance;
 pub mod glide;

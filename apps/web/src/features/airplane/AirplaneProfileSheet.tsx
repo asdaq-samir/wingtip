@@ -1,22 +1,26 @@
-import { useRef } from "react";
 import { cn } from "cn";
+import { FileTrigger } from "react-aria-components";
+import { Pressable } from "react-aria/Pressable";
 import { SheetCard } from "../../components/SheetCard";
+import { CardAction } from "../../components/CardAction";
+import { ACTION } from "../../lib/cardActions";
 import { LINK } from "../../components/airplane/link";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+import { NumberField } from "../../components/ui/number-field";
 import { FIGURE_WORDS } from "../../lib/airplane/figureWords";
 import { TEXT } from "../../lib/text";
-import { figureText, sourceWords } from "./profileModel";
+import { figureFormat, sourceWords } from "./profileModel";
 import { EnduranceSection } from "./EnduranceSection";
 import { useAirplaneProfile, type AirplaneProfileModel } from "./useAirplaneProfile";
+import { FieldError } from "../../components/ui/field";
 
 /** One figure: its name and where it comes from, its field (typed in place,
  *  kept as the pilot's when it changes), and Reset to book figure where
  *  the pilot's or the photographed page's stands over the book's. */
 function FigureRow({ vm, row }: { vm: AirplaneProfileModel; row: AirplaneProfileModel["rows"][number] }) {
   const words = FIGURE_WORDS[row.key];
-  const typed = vm.drafts[row.key] ?? figureText(row.key, row.value);
+  const shown = row.key in vm.drafts ? (vm.drafts[row.key] ?? null) : row.value;
   const problem = vm.problems[row.key];
   return (
     <div data-figure={row.key}>
@@ -44,30 +48,25 @@ function FigureRow({ vm, row }: { vm: AirplaneProfileModel; row: AirplaneProfile
         }
       >
         <span className="flex items-center gap-1.5">
-          <Input
-            type="text"
-            inputMode="decimal"
-            value={typed}
+          {/* React Aria's number field, read in the pilot's locale (a comma
+              decimal is a decimal), taken as it is left. */}
+          <NumberField
+            value={shown}
             placeholder="—"
-            onChange={(e) => vm.setDraft(row.key, e.target.value.replace(/[^0-9.,]/g, ""))}
-            onBlur={() => vm.commit(row.key)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-            }}
-            disabled={vm.busy === row.key}
+            formatOptions={figureFormat(row.key)}
+            minValue={0}
+            onChange={(value) => vm.change(row.key, value)}
+            isDisabled={vm.busy === row.key}
             aria-label={`${words.label}, ${words.unit.replace(/^: /, "to ")}`}
-            aria-invalid={!!problem}
-            className={cn("h-8 w-24 text-right tabular-nums", TEXT.row)}
+            isInvalid={!!problem}
+            className="h-8 w-24"
+            inputClassName={cn("text-right", TEXT.row)}
             data-testid={`figure-${row.key}`}
           />
           <span className="w-10 text-muted-foreground">{words.unit}</span>
         </span>
       </ListRow>
-      {problem && (
-        <p className={cn("px-4 pb-2 text-destructive-ink", TEXT.detail)} role="alert">
-          {problem}
-        </p>
-      )}
+      {problem && <FieldError className={cn("px-4 pb-2 text-destructive-ink", TEXT.detail)}>{problem}</FieldError>}
     </div>
   );
 }
@@ -76,27 +75,26 @@ function FigureRow({ vm, row }: { vm: AirplaneProfileModel; row: AirplaneProfile
  *  the figures found filled in, the page's words to check them by, and
  *  Save to keep them all. */
 function PhotoRead({ vm }: { vm: AirplaneProfileModel }) {
-  const input = useRef<HTMLInputElement>(null);
   const { busy, words, problem, read } = vm.photo;
   const pending = words.length > 0 && Object.keys(vm.drafts).length > 0;
   return (
     <div className="flex flex-col gap-2">
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
+      {/* React Aria's FileTrigger: the hidden file input, opened by the row. */}
+      <FileTrigger
+        acceptedFileTypes={["image/*"]}
+        defaultCamera="environment"
         data-testid="profile-photo-input"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
+        onSelect={(files) => {
+          const file = files?.[0];
           if (file) void read(file);
         }}
-      />
-      <ListGroup>
-        <ListRow title={busy ? "Reading the page…" : "Read from a Photo"} disabled={busy} onClick={() => input.current?.click()} />
-      </ListGroup>
+      >
+        <ListGroup>
+          <Pressable isDisabled={busy}>
+            <ListRow title={busy ? "Reading the page…" : "Read from a Photo"} disabled={busy} />
+          </Pressable>
+        </ListGroup>
+      </FileTrigger>
       <div className={cn("space-y-0.5 px-1", TEXT.detail)} role="status" data-testid="profile-photo-read">
         {problem && <p className="text-destructive-ink">{problem}</p>}
         {words.length > 0 && <p className="font-semibold">Read from the page: check each against it before saving.</p>}
@@ -130,8 +128,9 @@ export default function AirplaneProfileSheet() {
   return (
     <SheetCard
       title={vm.tail}
+      // Its type under its name, as the airport card has its town there.
+      description={vm.type ?? "Type not known"}
       onClose={vm.close}
-      raise="full"
       testId="airplane-profile"
       // On the figure it was opened for, where it was one.
       initialFocus={() => {
@@ -141,11 +140,20 @@ export default function AirplaneProfileSheet() {
       }}
     >
       <div className="flex flex-col gap-5">
-        {/* First, as the one-search design has it (2026-11-09): this
-            airplane the plan's, and the plan shown. */}
-        <Button type="button" className="h-11 w-full" disabled={vm.flying} onClick={vm.fly} data-testid="fly-this-airplane">
-          {vm.flying ? "Flying This Airplane" : "Fly This Airplane"}
-        </Button>
+        {/* Laid out as the airport card is, Apple Maps' place card: the
+            name and the line under it, then the action row of tiles (the
+            owner, 2026-11-12: "Just do it the native way"). Its one action,
+            this airplane the plan's and the plan shown, the row's width. */}
+        <div className="grid gap-2" data-testid="airplane-actions">
+          <CardAction
+            icon={<ACTION.flyHere.icon />}
+            label={vm.flying ? "Flying This Airplane" : "Fly This Airplane"}
+            filled
+            disabled={vm.flying}
+            onClick={vm.fly}
+            testId="fly-this-airplane"
+          />
+        </div>
         <ListGroup>
           <ListRow title="Registration" value={vm.tail} />
           <ListRow title="Type" value={vm.type ?? "Not known"} data-testid="airplane-profile-type" />

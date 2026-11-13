@@ -1,7 +1,7 @@
 package app.wingtipmaps.android.flight
 
-import android.annotation.SuppressLint
 import android.content.Context
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.FlightStatus
 import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.api.Planner
@@ -20,8 +20,6 @@ import app.wingtipmaps.android.records.WatchKind
 import app.wingtipmaps.android.records.id
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -40,7 +38,7 @@ import kotlinx.coroutines.launch
  * The twin of the iOS app's Tracking.swift, with Room's flows in place
  * of SwiftData's fetches: the lists are read whole as the store changes.
  */
-class Tracking private constructor(
+class Tracking(
     private val context: Context,
     private val dao: RecordsDao,
     private val ticker: Ticker,
@@ -95,7 +93,7 @@ class Tracking private constructor(
         follow.value = true
         _path.value = emptyList()
         _latest.value = plane
-        latestAtMs = plane?.let { System.currentTimeMillis() - ((it.seenS ?: 0.0) * 1000).toLong() }
+        latestAtMs = plane?.let { AppClock.nowMs() - ((it.seenS ?: 0.0) * 1000).toLong() }
     }
 
     /** Today's trace, read once its card has it: the path before the
@@ -120,7 +118,7 @@ class Tracking private constructor(
     fun heard(planes: List<TrafficAircraft>) {
         val hex = _hex.value ?: return
         val plane = planes.firstOrNull { it.hex.lowercase() == hex } ?: return
-        reported(plane, System.currentTimeMillis() - ((plane.seenS ?: 0.0) * 1000).toLong())
+        reported(plane, AppClock.nowMs() - ((plane.seenS ?: 0.0) * 1000).toLong())
     }
 
     // Favorites and Recents
@@ -131,7 +129,7 @@ class Tracking private constructor(
         scope.launch {
             val low = hex.lowercase()
             val had = dao.keptAirplane(low)
-            val now = System.currentTimeMillis()
+            val now = AppClock.nowMs()
             val row = (had ?: KeptAirplane(hex = low, name = name, type = type, addedAt = now))
                 .let { it.copy(favorite = !it.favorite, addedAt = if (!it.favorite) now else it.addedAt) }
             keep(row)
@@ -144,7 +142,7 @@ class Tracking private constructor(
             // The airplane's row with the recent flag; the oldest beyond a
             // dozen leave the Recents, and the store where they were only
             // recent (Keeping.remembered has the rule).
-            for ((before, after) in Keeping.remembered(kept.value, hex.lowercase(), name, type, System.currentTimeMillis())) {
+            for ((before, after) in Keeping.remembered(kept.value, hex.lowercase(), name, type, AppClock.nowMs())) {
                 if (after == null) dao.forgetAirplane(before.hex) else dao.putAirplane(after)
             }
             Records.sync?.changed("recents")
@@ -176,7 +174,7 @@ class Tracking private constructor(
             if (watching(low, kind)) {
                 dao.removeWatch(low, kind.word)
             } else {
-                dao.putWatch(AirplaneWatch(hex = low, name = name, kind = kind.word, setAt = System.currentTimeMillis()))
+                dao.putWatch(AirplaneWatch(hex = low, name = name, kind = kind.word, setAt = AppClock.nowMs()))
                 // A watch is asked for so as to be told: the moment to ask
                 // for notifications, where the pilot sees what they are for.
                 Notifications.allow()
@@ -205,7 +203,7 @@ class Tracking private constructor(
     private suspend fun askTracked() {
         val hex = _hex.value ?: return
         val had = latestAtMs
-        if (had != null && System.currentTimeMillis() - had <= 10_000) return
+        if (had != null && AppClock.nowMs() - had <= 10_000) return
         val status = try {
             Planner.flightStatus(hex)
         } catch (e: CancellationException) {
@@ -214,7 +212,7 @@ class Tracking private constructor(
             return
         }
         val plane = status.aircraft ?: return
-        reported(plane, System.currentTimeMillis() - ((plane.seenS ?: 0.0) * 1000).toLong())
+        reported(plane, AppClock.nowMs() - ((plane.seenS ?: 0.0) * 1000).toLong())
     }
 
     /** Each watched airplane's state, and any watch that goes off on it. */
@@ -252,19 +250,6 @@ class Tracking private constructor(
         /** At most this many points of a tracked flight's path, as the web
          *  app's PATH_POINTS. */
         const val PATH_POINTS = 2000
-
-        // The application's context alone (of), which lives as long as the process.
-        @SuppressLint("StaticFieldLeak")
-        @Volatile
-        private var shared: Tracking? = null
-
-        fun of(context: Context): Tracking =
-            shared ?: synchronized(this) {
-                shared ?: Tracking(
-                    context.applicationContext, Records.database(context).dao(), Ticker.shared,
-                    CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
-                ).also { shared = it }
-            }
 
         /** Whether the airplane is in the air (the engine's `airborne_now`,
          *  the web app's airborneNow): in the air where heard there; on the

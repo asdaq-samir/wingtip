@@ -2,13 +2,12 @@ import { useEffect, type RefObject } from "react";
 import { Search } from "lucide-react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
-import { Command, CommandEmpty, CommandField } from "./ui/command";
+import { Command, CommandField } from "./ui/command";
 import AirportResults, { AirportRow, PickerGroup } from "./AirportResults";
 import { FavoriteTiles } from "./FavoriteTiles";
 import { usePreferences, type RecentAirport } from "../lib/preferences";
 import { useAirportSearch } from "../lib/useAirportSearch";
 import { useIsMobile } from "../hooks/use-mobile";
-import { useKeyboardInset } from "../hooks/use-viewport";
 import CloseButton from "./CloseButton";
 
 /**
@@ -40,7 +39,6 @@ export default function AirportSearch({
   onClose: () => void;
 }) {
   const onPhone = useIsMobile();
-  const keyboard = useKeyboardInset();
   // Enter takes the highlighted row only once the rows answer what is in
   // the box: it used to take it whenever there were rows, so "KD", a
   // pause, then "LH" and a quick Enter set the field to the first "KD..."
@@ -71,8 +69,11 @@ export default function AirportSearch({
       value={query}
       onValueChange={setQuery}
       className="gap-4 overflow-visible bg-transparent"
-      // Room under the last row for the keyboard, so it scrolls above it.
-      style={onPhone && keyboard > 0 ? { paddingBottom: keyboard } : undefined}
+      // Room under the last row for the keyboard, so it scrolls above it:
+      // on a phone this is in a card (ResponsivePopover's SheetCard), inside
+      // the card's Drawer viewport, whose VirtualKeyboardProvider sets the
+      // keyboard's height as --drawer-keyboard-inset (0 with none).
+      style={onPhone ? { paddingBottom: "var(--drawer-keyboard-inset, 0px)" } : undefined}
     >
       {/* The field, and a close beside it, as Maps' search sheet has:
           on a phone the sheet stands over nearly the whole screen.
@@ -121,7 +122,7 @@ export default function AirportSearch({
         answered={!typed || answered}
         onAirport={choose}
         onWaypoint={onPick}
-        empty={typed && <CommandEmpty>No {fixes ? "airport or waypoint" : "airport"} matches; Enter keeps what you typed.</CommandEmpty>}
+        empty={typed && `No ${fixes ? "airport or waypoint" : "airport"} matches; Enter keeps what you typed.`}
       >
         {!typed && recents.length > 0 && (
           <PickerGroup heading="Recents">

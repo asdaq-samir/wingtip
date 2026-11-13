@@ -8,7 +8,6 @@ import org.apache.tomcat.util.net.SSLHostConfigCertificate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.Compression;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
@@ -58,10 +57,10 @@ public class HttpsConnectorConfig {
 
     @Bean
     WebServerFactoryCustomizer<TomcatServletWebServerFactory> httpsConnector(
-            @Value("${app.https.keystore:}") String keystore,
-            @Value("${app.https.keystore-password:changeit}") String password,
-            @Value("${app.https.port:8443}") int port,
-            ObjectProvider<ServerProperties> server) {
+            AppProperties app, ObjectProvider<ServerProperties> server) {
+        String keystore = app.https().keystore();
+        String password = app.https().keystorePassword();
+        int port = app.https().port();
         return httpsConnector(
                 keystore,
                 password,

@@ -1,40 +1,40 @@
 import { test, expect } from "@playwright/test";
-import { openMapSettings, settle } from "./helpers";
+import { inSheet, settle } from "./helpers";
+import { openSettingsPage } from "./mapCard";
 
 /**
- * The Map card's Airport Weather (the owner's pick, 2026-11-10): Off,
- * Halo, Dot or Station, Halo to begin with, and three switches, all on
- * to begin with -- the station model when zoomed in, the wind arrows and
- * the getting-worse badge. Off turns the switches off with it; the look is
- * kept across a reload, as the map's other settings are.
+ * Settings' Airport Weather (the owner, 2026-11-13): one menu of Off, Flight
+ * Category, With Wind and Station Model, With Wind to begin with, where it
+ * was a page of four looks and three switches; the getting-worse badge is
+ * always drawn. The pick is kept across a reload, as the map's other
+ * settings are.
  */
-test("the map's Airport Weather is a halo with its three switches on, kept across a reload", async ({ page }) => {
+test("the map's Airport Weather is one menu of four, Off first, With Wind to begin with, kept across a reload", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
-  await openMapSettings(page);
+  await openSettingsPage(page);
   const look = page.getByTestId("airport-weather-look");
-  await expect(look.getByRole("button")).toHaveText(["Off", "Halo", "Dot", "Station"]);
-  await expect(look.getByRole("button", { name: "Halo" })).toHaveAttribute("aria-pressed", "true");
-  const switches = ["airport-weather-station-close", "airport-weather-arrows", "airport-weather-worse"];
-  for (const id of switches) await expect(page.getByTestId(id)).toHaveAttribute("aria-checked", "true");
+  await inSheet(page, look);
+  await expect(look).toHaveAccessibleName("Airport weather: With Wind");
+  for (const gone of ["airport-weather-station-close", "airport-weather-arrows", "airport-weather-worse"])
+    await expect(page.getByTestId(gone)).toHaveCount(0);
 
-  // Station draws the station model at every zoom: its zoomed-in switch
-  // has nothing more to say.
-  await look.getByRole("button", { name: "Station" }).click();
-  await expect(page.getByTestId("airport-weather-station-close")).toBeDisabled();
+  await look.click();
+  for (const id of ["airport-weather-off", "airport-weather-category", "airport-weather-wind", "airport-weather-station"])
+    await expect(page.getByTestId(id)).toBeVisible();
+  await page.getByTestId("airport-weather-station").click();
+  await expect(look).toHaveAccessibleName("Airport weather: Station Model");
 
-  // Off: no weather on the fields, and the switches off with it.
-  await look.getByRole("button", { name: "Off" }).click();
-  for (const id of switches) {
-    await expect(page.getByTestId(id)).toHaveAttribute("aria-checked", "false");
-    await expect(page.getByTestId(id)).toBeDisabled();
-  }
-
-  // Loaded afresh: Off kept; back to the halo, the switches as they were.
+  // Loaded afresh: the station model kept.
   await page.reload();
   await settle(page);
-  await openMapSettings(page);
-  await expect(look.getByRole("button", { name: "Off" })).toHaveAttribute("aria-pressed", "true");
-  await look.getByRole("button", { name: "Halo" }).click();
-  for (const id of switches) await expect(page.getByTestId(id)).toHaveAttribute("aria-checked", "true");
+  await openSettingsPage(page);
+  await inSheet(page, look);
+  await expect(look).toHaveAccessibleName("Airport weather: Station Model");
+  await look.click();
+  await page.getByTestId("airport-weather-category").click();
+  await expect(look).toHaveAccessibleName("Airport weather: Flight Category");
+  await look.click();
+  await page.getByTestId("airport-weather-off").click();
+  await expect(look).toHaveAccessibleName("Airport weather: Off");
 });

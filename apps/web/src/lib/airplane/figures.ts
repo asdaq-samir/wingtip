@@ -26,6 +26,8 @@ export const FIGURE_FIELDS = {
   climb_tas_kt: "climbTasKt",
   climb_fuel_burn_gph: "climbFuelBurnGph",
   climb_rate_fpm: "climbRateFpm",
+  descent_ias_kt: "descentIasKt",
+  descent_fuel_burn_gph: "descentFuelBurnGph",
   service_ceiling_ft: "serviceCeilingFt",
   taxi_fuel_gal: "taxiFuelGal",
   glide_ratio: "glideRatio",

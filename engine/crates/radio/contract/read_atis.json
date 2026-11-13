@@ -1,0 +1,184 @@
+{
+  "x-call": "wingtip_radio::calls::call",
+  "description": "An ATIS or AWOS/ASOS broadcast heard, read into its figures (AIM 4-1-13); a figure not heard is null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ReadAtisInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "ReadAtisAnswer",
+      "type": "object",
+      "properties": {
+        "information": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The letter."
+        },
+        "time_z": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "wind": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "from_deg": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "kt": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "gust_kt": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "variable": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "from_deg",
+                "kt",
+                "gust_kt",
+                "variable"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "sky": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cover": {
+                "enum": [
+                  "few",
+                  "scattered",
+                  "broken",
+                  "overcast",
+                  "obscured",
+                  "clear"
+                ]
+              },
+              "base_ft": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "cover",
+              "base_ft"
+            ]
+          }
+        },
+        "temp_c": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "dewpoint_c": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "altimeter_inhg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "approach": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runways": {
+          "type": "object",
+          "properties": {
+            "landing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "departing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "landing",
+            "departing"
+          ]
+        },
+        "remarks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "raw": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "information",
+        "time_z",
+        "wind",
+        "visibility_sm",
+        "sky",
+        "temp_c",
+        "dewpoint_c",
+        "altimeter_inhg",
+        "approach",
+        "runways",
+        "remarks",
+        "raw"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

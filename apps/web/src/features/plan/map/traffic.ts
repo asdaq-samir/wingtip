@@ -1,14 +1,15 @@
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { callEngine, type EngineAnswer } from "../../../lib/engine/engine";
-import { M_PER_NM, destination, type LatLon } from "../../../lib/geo";
+import { M_PER_NM, type Geo, type LatLon } from "../../../lib/geo";
 import type { Fix } from "../../../lib/map/position/ownShip";
+import { WORLD_WIDTH_M } from "../../../lib/map/tileMath";
 
 /*
  * The rules here -- the height under an airplane as TCAS writes it, whether
  * it is near own ship's (1,000 ft, 14 CFR 91.159's spacing), which airplane
  * is own ship's own transponder, when and how near one comes -- are the
  * shared engine's (engine/crates/route/src/motion/traffic.rs, through
- * lib/engine), the very code the phones ask (wt_call). What runs
+ * lib/engine), the very code the phones ask (the generated `call`). What runs
  * every frame stays here -- an airplane carried on along its track between
  * reports, its trend line's length at the map's scale, the colours of a
  * flown path.
@@ -21,9 +22,13 @@ type Mark = EngineAnswer<"traffic_marks">[number];
  *  all, as a call an airplane cost 5 ms for 554 of them, each fix. */
 const marked = new WeakMap<TrafficAircraft, { own: number | null; mark: Mark }>();
 
-const heights = (p: Pick<TrafficAircraft, "altitude_ft" | "vertical_fpm">) => ({
+/** What the engine reads of an airplane's height: with whether it is an
+ *  uncorrected pressure altitude, which the engine compares with own
+ *  ship's GNSS height on a wider band (traffic_marks). */
+const heights = (p: Pick<TrafficAircraft, "altitude_ft" | "vertical_fpm" | "pressure_altitude">) => ({
   altitude_ft: p.altitude_ft ?? null,
   vertical_fpm: p.vertical_fpm ?? null,
+  pressure_altitude: p.pressure_altitude ?? null,
 });
 
 /** Works out the label and colour of every airplane in `planes` against
@@ -33,7 +38,7 @@ export function markTraffic(planes: TrafficAircraft[], ownFt: number | null): vo
   planes.forEach((p, i) => marked.set(p, { own: ownFt, mark: marks[i]! }));
 }
 
-function mark(plane: Pick<TrafficAircraft, "altitude_ft" | "vertical_fpm">, own: number | null): Mark {
+function mark(plane: Pick<TrafficAircraft, "altitude_ft" | "vertical_fpm" | "pressure_altitude">, own: number | null): Mark {
   const kept = marked.get(plane as TrafficAircraft);
   if (kept && kept.own === own) return kept.mark;
   return callEngine("traffic_marks", { own_ft: own, planes: [heights(plane)] })[0]!;
@@ -52,7 +57,7 @@ export function trafficLabel(plane: TrafficAircraft, ownFt: number | null): stri
 /** Whether two heights are within 1,000 ft of each other: the map's
  *  traffic coloured so, and the airplane card's closest approach said in
  *  red. */
-export const nearInHeight = (apartFt: number) => mark({ altitude_ft: apartFt }, 0).near;
+export const nearInHeight = (apartFt: number) => mark({ altitude_ft: apartFt, pressure_altitude: false }, 0).near;
 
 /** Whether it is within 1,000 ft of own ship's height. */
 export function nearOwnHeight(plane: TrafficAircraft, ownFt: number | null): boolean {
@@ -107,20 +112,31 @@ const TREND_S = 60;
 /** Where an airplane is `seconds` after its report, carried on along its
  *  track at its ground speed, as ForeFlight carries internet traffic on
  *  between reports; where it was where it gives no track or speed. */
-export function carriedOn(plane: TrafficAircraft, seconds: number): LatLon {
+export function carriedOn(geo: Geo, plane: TrafficAircraft, seconds: number): LatLon {
   const at = { lat: plane.lat, lon: plane.lon };
   if (plane.track_deg == null || plane.speed_kt == null || seconds <= 0) return at;
-  return destination(at, plane.track_deg, (plane.speed_kt * seconds) / 3600);
+  return geo.destination(at, plane.track_deg, (plane.speed_kt * seconds) / 3600);
 }
 
 /** How long its trend line is on the screen, points: TREND_S at its
- *  ground speed, at the map's scale there (Web Mercator's 156,543 m a
- *  point at zoom 0 on the equator), at most 160. */
-export function trendPx(speedKt: number | null | undefined, lat: number, zoom: number): number {
+ *  ground speed, at the map's scale there (the Web Mercator world's
+ *  width over MapLibre's 512-point world at zoom 0 on the equator: its
+ *  camera's tileSize is 512, the world 512 x 2^zoom points wide, not the
+ *  raster tiles' 256), at most `max` (160). */
+export function trendPx(speedKt: number | null | undefined, lat: number, zoom: number, max = 160): number {
   if (!speedKt) return 0;
   const metres = ((speedKt * TREND_S) / 3600) * M_PER_NM;
-  const metresPerPoint = (156543.03392 * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
-  return Math.min(160, metres / metresPerPoint);
+  const metresPerPoint = ((WORLD_WIDTH_M / 512) * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
+  return Math.min(max, metres / metresPerPoint);
+}
+
+/** How far ahead its trend line reaches as the map draws it, seconds:
+ *  TREND_S, less where that would be more than trendPx's 160 points on
+ *  the screen; none with no speed. The line is drawn to where it will be
+ *  then (carriedOn), so it is as long as trendPx says. */
+export function trendSeconds(speedKt: number | null | undefined, lat: number, zoom: number): number {
+  const full = trendPx(speedKt, lat, zoom, Infinity);
+  return full > 0 ? (TREND_S * trendPx(speedKt, lat, zoom)) / full : 0;
 }
 
 /** A flown path's colour by its height, as FlightAware colours a track:

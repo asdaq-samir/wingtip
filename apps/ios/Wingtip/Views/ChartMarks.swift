@@ -9,8 +9,8 @@ import UIKit
 /// and alert areas magenta, a restricted area over a MOA it lies in
 /// (ForeFlight's inks, the owner's of 2026-11-08); each Enroute Low fix a
 /// four-point star in the airspace blue with its ident beside it. From the
-/// phone's cycle packs through the engine (wt_special_use_in_view,
-/// wt_fixes_in_view), with no network: the overlay tiles' PMTiles would
+/// phone's cycle packs through the engine (specialUseInView,
+/// fixesInView), with no network: the overlay tiles' PMTiles would
 /// need a vector tile decoder MapKit does not have, and a planner answer
 /// would not draw in the air with no signal. The VFR waypoints are
 /// MapExtras' own. Nothing here works out a rule: it draws what it is given.
@@ -18,13 +18,27 @@ import UIKit
 final class ChartMarks {
     /// A special-use area as the engine answers it, its rings [lat, lon]
     /// with the area on their left.
-    struct Area: Decodable, Equatable {
+    struct Area: Decodable, Equatable, Sendable {
         let type: String
         let name: String
         let floorFt: Double?
         let ceilingFt: Double?
         let rings: [[[Double]]]
         let label: [Double]
+        /// ForeFlight's tab on its boundary (SpecialUseTab); nil from an
+        /// older engine or a pack with no codes, or limits with no figure.
+        var tab: Tab?
+
+        /// The tab as the engine writes and places it (crate::sua_tab):
+        /// its words as the map draws them, its point [lat, lon] on the
+        /// line, its clockwise turn, and the side of the text the area is
+        /// on (1 below, -1 above).
+        struct Tab: Decodable, Equatable {
+            let text: String
+            let at: [Double]
+            let angle: Double
+            let side: Double
+        }
 
         /// Inked as a restricted area rather than a MOA (wingtip.sua TYPES).
         var restricted: Bool { ["P", "R", "W", "D"].contains(type) }
@@ -32,7 +46,7 @@ final class ChartMarks {
 
     /// A fix as the engine answers it: the Enroute Low chart's (a star) or
     /// a charted VFR waypoint.
-    struct Fix: Decodable, Equatable {
+    struct Fix: Decodable, Equatable, Sendable {
         let ident: String
         let lat: Double
         let lon: Double
@@ -48,9 +62,13 @@ final class ChartMarks {
     private var fixFetch = ViewFetch()
     private var lines: [String: [SpecialUseLine]] = [:]
     private var fixes: [String: FixAnnotation] = [:]
+    /// The areas drawn, and their tabs shown, by the same key.
+    private var areas: [String: Area] = [:]
+    private var tabs: [String: SpecialUseTabAnnotation] = [:]
 
     func attach(to map: MKMapView) {
         map.register(FixMarkView.self, forAnnotationViewWithReuseIdentifier: FixMarkView.reuse)
+        map.register(SpecialUseTabView.self, forAnnotationViewWithReuseIdentifier: SpecialUseTabView.reuse)
     }
 
     func renderer(for overlay: any MKOverlay) -> MKOverlayRenderer? {
@@ -58,40 +76,72 @@ final class ChartMarks {
     }
 
     func view(for annotation: any MKAnnotation, on map: MKMapView) -> MKAnnotationView? {
-        annotation is FixAnnotation ? map.dequeueReusableAnnotationView(withIdentifier: FixMarkView.reuse, for: annotation) : nil
+        if annotation is SpecialUseTabAnnotation { return map.dequeueReusableAnnotationView(withIdentifier: SpecialUseTabView.reuse, for: annotation) }
+        return annotation is FixAnnotation ? map.dequeueReusableAnnotationView(withIdentifier: FixMarkView.reuse, for: annotation) : nil
     }
 
     /// The view moved: each kind off below its zoom, else asked of the
     /// packs where the view wants a new answer.
     func moved(_ map: MKMapView, view: ViewBox, zoom: Double) {
-        let wide = view.widened
         if zoom < Self.areasFrom {
             take([], map: map)
             areaFetch.forget()
-        } else if areaFetch.wants(view, zoom: zoom),
-                  let areas = CyclePacks.shared.specialUseInView(south: wide.south, west: wide.west, north: wide.north, east: wide.east) {
-            _ = areaFetch.ask(view, zoom: zoom)
-            take(areas, map: map)
+        } else if areaFetch.wants(view, zoom: zoom) {
+            let asked = areaFetch.ask(view, zoom: zoom)
+            Task { [weak self, weak map] in
+                let areas = await CyclePacks.shared.specialUseInView(asked)
+                // Taken only while the view still wants this box; no pack
+                // for it, asked again at the next move, as before.
+                guard let self, let map, areaFetch.box == asked else { return }
+                guard let areas else { return areaFetch.forget() }
+                take(areas, map: map)
+                // The tabs of the areas just come, at the zoom the map is at now.
+                let now = MapExtras.zoom(longitudeDelta: map.region.span.longitudeDelta, width: Double(map.bounds.width))
+                showTabs(now >= SpecialUseTab.from, heading: map.camera.heading, map: map)
+            }
         }
+        showTabs(zoom >= SpecialUseTab.from, heading: map.camera.heading, map: map)
         if zoom < Self.fixesFrom {
             takeFixes([], map: map)
             fixFetch.forget()
-        } else if fixFetch.wants(view, zoom: zoom),
-                  let found = CyclePacks.shared.fixesInView(south: wide.south, west: wide.west, north: wide.north, east: wide.east) {
-            _ = fixFetch.ask(view, zoom: zoom)
-            takeFixes(found.filter { !$0.vfr }, map: map)
+        } else if fixFetch.wants(view, zoom: zoom) {
+            let asked = fixFetch.ask(view, zoom: zoom)
+            Task { [weak self, weak map] in
+                let found = await CyclePacks.shared.fixesInView(asked)
+                guard let self, let map, fixFetch.box == asked else { return }
+                guard let found else { return fixFetch.forget() }
+                takeFixes(found.filter { !$0.vfr }, map: map)
+            }
         }
     }
 
     private func take(_ areas: [Area], map: MKMapView) {
         let fresh = Dictionary(areas.map { ("\($0.type)|\($0.name)", $0) }, uniquingKeysWith: { a, _ in a })
         for key in lines.keys where fresh[key] == nil { map.removeOverlays(lines.removeValue(forKey: key) ?? []) }
+        self.areas = fresh
         // MOAs first, so a restricted area's line is drawn over them.
         for area in areas where lines["\(area.type)|\(area.name)"] == nil {
             let made = area.rings.compactMap { SpecialUseLine.of($0, restricted: area.restricted) }
             lines["\(area.type)|\(area.name)"] = made
             map.addOverlays(made, level: .aboveLabels)
         }
+    }
+
+    /// The areas' tabs on (from SpecialUseTab.from) or off, a gone area's
+    /// taken off, and turned again where the map has turned.
+    private func showTabs(_ on: Bool, heading: Double, map: MKMapView) {
+        let wanted = on ? areas : [:]
+        for key in tabs.keys where wanted[key] == nil || wanted[key] != tabs[key]?.area {
+            if let tab = tabs.removeValue(forKey: key) { map.removeAnnotation(tab) }
+        }
+        for (key, area) in wanted where tabs[key] == nil {
+            guard let tab = SpecialUseTabAnnotation(area) else { continue }
+            tabs[key] = tab
+            map.addAnnotation(tab)
+        }
+        guard abs(heading - SpecialUseTabView.heading) > 0.5 else { return }
+        SpecialUseTabView.heading = heading
+        for tab in tabs.values { (map.view(for: tab) as? SpecialUseTabView)?.turn() }
     }
 
     private func takeFixes(_ found: [Fix], map: MKMapView) {

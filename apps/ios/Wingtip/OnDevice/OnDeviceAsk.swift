@@ -1,16 +1,13 @@
 import Foundation
-import os
-#if canImport(FoundationModels)
 import FoundationModels
-#endif
+import os
 
 /// Who wrote an answer the pilot reads, for the caption over it.
 enum AskOrigin: String, Equatable, Sendable {
-    case planner, device, cloud, engine
+    case device, cloud, engine
 
     var caption: String {
         switch self {
-        case .planner: "From the planner"
         case .device: "On this iPhone"
         case .cloud: "Apple's Private Cloud Compute"
         case .engine: "The engine on this iPhone"
@@ -29,8 +26,7 @@ struct OnDeviceAnswer: Equatable, Sendable {
     /// this iPhone · Apple Intelligence is off in Settings."
     var caption: String { why.map { "\(origin.caption) · \($0)" } ?? origin.caption }
 
-    /// The answer as the assistant's stream lines (AssistantConversation
-    /// takes them as it takes the planner's).
+    /// The answer as Ask's stream lines (AssistantConversation takes them).
     var lines: [AssistantLine] { lines(after: StreamedWords()) }
 
     /// The finished answer after what was streamed of it: only the
@@ -83,7 +79,7 @@ protocol AskModel: Sendable {
                    partial: @escaping @Sendable ([WordsSentence]) -> Void) async throws -> [WordsSentence]
 }
 
-/// Apple's on-device model (Foundation Models, iOS 26 with Apple
+/// Apple's on-device model (Foundation Models, with Apple
 /// Intelligence on), its tools the engine's rules (OnDeviceTools).
 struct AppleAskModel: AskModel {
     var unavailableWhy: String? { AppleModels.unavailableWhy }
@@ -113,42 +109,35 @@ struct AppleAskModel: AskModel {
 
     func sentences(_ question: String, earlier: [AssistantTurn], facts: OnDeviceFacts, log: FigureLog,
                    partial: @escaping @Sendable ([WordsSentence]) -> Void) async throws -> [WordsSentence] {
-        #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
-            let plan = log.figures.first { $0.id == "plan:route" }
-            // The phone's model, else Apple's Private Cloud Compute where it
-            // cannot run or fails (AppleModels); where it answered is logged.
-            let (sentences, place) = try await AppleModels.attempt { (place: ModelPlace) async throws -> [WordsSentence] in
-                log.place = place
-                let session = AppleModels.session(place, tools: OnDeviceTools.all(facts, log: log), instructions: Self.instructions)
-                // Streamed (streamResponse), so the first sentence is read
-                // while the rest are written: each snapshot's sentences but
-                // the last are finished, since `text` and `sources` come in
-                // that order and the next sentence begins only after both.
-                let stream = session.streamResponse(to: Self.prompt(question, earlier: earlier, plan: plan), generating: WordsAnswer.self)
-                var finished = 0
-                var last: GeneratedContent?
-                for try await snapshot in stream {
-                    last = snapshot.rawContent
-                    let done = (snapshot.content.sentences ?? []).dropLast().compactMap(Self.sentence)
-                    if done.count > finished {
-                        finished = done.count
-                        partial(done)
-                    }
-                }
-                guard let last else { return [] }
-                return try WordsAnswer(last).sentences.map { WordsSentence(sources: $0.sources, text: $0.text) }
-            }
+        let plan = log.figures.first { $0.id == "plan:route" }
+        // The phone's model, else Apple's Private Cloud Compute where it
+        // cannot run or fails (AppleModels); where it answered is logged.
+        let (sentences, place) = try await AppleModels.attempt { (place: ModelPlace) async throws -> [WordsSentence] in
             log.place = place
-            return sentences
+            let session = AppleModels.session(place, tools: OnDeviceTools.all(facts, log: log), instructions: Self.instructions)
+            // Streamed (streamResponse), so the first sentence is read
+            // while the rest are written: each snapshot's sentences but
+            // the last are finished, since `text` and `sources` come in
+            // that order and the next sentence begins only after both.
+            let stream = session.streamResponse(to: Self.prompt(question, earlier: earlier, plan: plan), generating: WordsAnswer.self)
+            var finished = 0
+            var last: GeneratedContent?
+            for try await snapshot in stream {
+                last = snapshot.rawContent
+                let done = (snapshot.content.sentences ?? []).dropLast().compactMap(Self.sentence)
+                if done.count > finished {
+                    finished = done.count
+                    partial(done)
+                }
+            }
+            guard let last else { return [] }
+            return try WordsAnswer(last).sentences.map { WordsSentence(sources: $0.sources, text: $0.text) }
         }
-        #endif
-        throw AskRefused(why: "Answers on this iPhone need iOS 26.")
+        log.place = place
+        return sentences
     }
 
-    #if canImport(FoundationModels)
     /// A sentence of a snapshot, once both its parts have come.
-    @available(iOS 26, *)
     private static func sentence(_ part: WordsAnswer.Sentence.PartiallyGenerated) -> WordsSentence? {
         guard let text = part.text, let sources = part.sources else { return nil }
         return WordsSentence(sources: sources, text: text)
@@ -164,14 +153,11 @@ struct AppleAskModel: AskModel {
 
     @MainActor
     static func prewarm() {
-        guard #available(iOS 26, *), OnDeviceWords.unavailableWhy == nil else { return }
+        guard OnDeviceWords.unavailableWhy == nil else { return }
         let session = AppleModels.session(.device, tools: OnDeviceTools.all(OnDeviceFacts(), log: FigureLog()), instructions: instructions)
         session.prewarm()
         warmed = session
     }
-    #else
-    @MainActor static func prewarm() {}
-    #endif
 }
 
 /// A question answered on the phone, with no signal: Apple's model with

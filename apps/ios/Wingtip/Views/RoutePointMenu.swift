@@ -4,6 +4,9 @@ import SwiftUI
 /// words wherever its menu is (the web app's PointMenuItems): Direct To,
 /// Set Altitude, a fix off it, a hold, Remove.
 struct RoutePointMenu: View {
+    @Environment(FlightUI.self) private var flightUI
+    @Environment(Navigator.self) private var nav
+    @Environment(\.appCommand) private var appCommand
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(DryRun.self) private var dryRun
@@ -19,9 +22,9 @@ struct RoutePointMenu: View {
             // Its card first, for its weather, frequencies, runways and
             // approaches (tap what you see, docs/navigation.md); the
             // destination's Brief beside it.
-            Button { PendingCommand.shared.command = .weather(ident: ident) } label: { Label("More Info", systemImage: "info.circle") }
+            Button { appCommand(.weather(ident: ident)) } label: { Label("More Info", systemImage: "info.circle") }
             if role == .destination {
-                Button { PendingCommand.shared.command = .open(.brief) } label: { Label("Brief", systemImage: "checklist") }
+                Button { appCommand(.open(.brief)) } label: { Label("Brief", systemImage: "checklist") }
             }
             if role != .departure {
                 Button {
@@ -29,12 +32,17 @@ struct RoutePointMenu: View {
                 } label: {
                     Label(plan.extras.direct == ident ? "Fly as Planned" : "Direct To", systemImage: WingtipIcon.directTo)
                 }
-                Button { FlightUI.shared.altitudeAt = ident } label: {
+                // The Profile, open on this point's Start At / Cross At
+                // popover: the app's one altitude control.
+                Button {
+                    flightUI.altitudeAt = ident
+                    appCommand(.open(.profile))
+                } label: {
                     Label(plan.extras.altitudes[ident.uppercased()].map { "Set Altitude… (\(Format.altitude(Double($0))))" } ?? "Set Altitude…", systemImage: "arrow.up.and.down")
                 }
             }
-            Button { FlightUI.shared.fixFrom = ident } label: { Label("Create a Fix from Here…", systemImage: "scope") }
-            Button { Navigator.shared.push(.hold(ident)) } label: {
+            Button { flightUI.fixFrom = ident } label: { Label("Create a Fix from Here…", systemImage: "scope") }
+            Button { nav.push(.hold(ident)) } label: {
                 Label(plan.hold(at: ident) == nil ? "Hold Here…" : "Change Hold…", systemImage: WingtipIcon.holdHere)
             }
             if role == .stop {

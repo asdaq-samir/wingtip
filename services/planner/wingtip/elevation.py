@@ -20,6 +20,7 @@ import numpy as np
 import requests
 from cachetools import LRUCache
 
+from . import atomic, outside, units
 from .config import REQUEST_HEADERS
 from .geo import destination_point, tile_xy
 from .retry import with_retries
@@ -309,8 +310,7 @@ _TERRAIN_LOCK = threading.Lock()
 # One pool of connections to the tiles' bucket, kept open: a new route's
 # hundreds of tiles each opened their own TLS connection, most of the
 # time a first plan took (2026-10-21, C81-KTPA under IFR).
-_TERRAIN_SESSION = requests.Session()
-_TERRAIN_SESSION.mount("https://", requests.adapters.HTTPAdapter(pool_connections=1, pool_maxsize=16))
+_TERRAIN_SESSION = outside.session(pool=16)
 
 
 #: The lowest ground in North America: Badwater Basin, Death Valley, 282 ft
@@ -320,7 +320,7 @@ _TERRAIN_SESSION.mount("https://", requests.adapters.HTTPAdapter(pool_connection
 #: 14 CFR 91.159's "3,000 feet above the surface" and a floor are taken
 #: from. The grid's lowest was 30,000 ft below the sea off Baja and in the
 #: Gulf of California, where rows of a tile read -12,849 m (2026-11-02).
-LOWEST_GROUND_M = -282 / 3.28084
+LOWEST_GROUND_M = -282 * units.M_PER_FT
 
 
 def terrarium_m(rgb: np.ndarray) -> np.ndarray:
@@ -401,8 +401,8 @@ def _terrain_tile(z: int, x: int, y: int) -> np.ndarray:
         resp = _TERRAIN_SESSION.get(TERRAIN_TILE_URL.format(z=z, x=x, y=y), headers=REQUEST_HEADERS, timeout=20)
         resp.raise_for_status()
         data = resp.content
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(data)
+        with atomic.atomic_path(path, durable=False) as part:  # a tile lost to a power cut is fetched again
+            part.write_bytes(data)
     # Pillow only here, where a tile is decoded: the planner's airspace
     # column is its one caller, and Pillow comes with the planner's chart
     # requirements. wingtip.pipeline imports this module for its elevation

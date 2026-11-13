@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { airplaneFigures, handbookOf } from "../../lib/airplane/figures";
 import { C172, record } from "../../lib/airplane/testAirplanes";
 import { firstKept } from "./useKeepFiguresOffer";
-import { figureText, ownOfRecord, ownWith, resettable, sourceWords, typeWords } from "./profileModel";
+import { figureFormat, ownOfRecord, ownWith, resettable, sourceWords, typeWords } from "./profileModel";
 
 describe("the airplane profile", () => {
   it("labels each figure by its source, and offers the book's back over the pilot's", () => {
@@ -31,9 +31,10 @@ describe("the airplane profile", () => {
   });
 
   it("writes a figure for its field", () => {
-    expect(figureText("glide_ratio", 9)).toBe("9.0");
-    expect(figureText("cruise_tas_kt", 122.04)).toBe("122");
-    expect(figureText("taxi_fuel_gal", null)).toBe("");
+    const written = (key: Parameters<typeof figureFormat>[0], n: number) => new Intl.NumberFormat("en-US", figureFormat(key)).format(n);
+    expect(written("glide_ratio", 9)).toBe("9.0");
+    expect(written("cruise_tas_kt", 122.04)).toBe("122");
+    expect(written("empty_weight_lb", 1663.2)).toBe("1663.2");
   });
 
   it("offers the first N-number this device kept figures for at sign-in", () => {

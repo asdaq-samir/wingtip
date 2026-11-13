@@ -14,9 +14,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.notify.Notifications
 
@@ -78,9 +80,9 @@ class OwnShipControl internal constructor(
 }
 
 @Composable
-fun rememberOwnShipControl(): OwnShipControl {
+fun rememberOwnShipControl(flight: FlightModel = hiltViewModel()): OwnShipControl {
     val context = LocalContext.current
-    val ownShip = remember { OwnShip.of(context) }
+    val ownShip = flight.ownShip
     val on = rememberSaveable { mutableStateOf(false) }
     val following = rememberSaveable { mutableStateOf(false) }
     val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->

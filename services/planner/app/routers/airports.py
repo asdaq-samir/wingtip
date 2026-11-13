@@ -20,6 +20,7 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.responses import FileResponse
 from wingtip import (
     airport_photos,
+    approach_facts,
     airports,
     airspace,
     airspace_primaries,
@@ -27,7 +28,6 @@ from wingtip import (
     faa_data,
     field_facts,
     field_forecast,
-    fixes,
     fuelstops,
     geo,
     geocode,
@@ -35,12 +35,11 @@ from wingtip import (
     map_weather,
     nearby,
     pattern,
-    places,
-    plates,
     procedures,
     publications,
     remarks,
     runway_wind,
+    vfr_waypoints,
     weather,
 )
 
@@ -53,7 +52,6 @@ from ..schemas.airports import (
     ForecastWind,
     ChartPages,
     PlacesFound,
-    PlateOverlay,
     ProcedureDrawing,
     ProcedureList,
     StopFields,
@@ -359,13 +357,7 @@ def waypoints_in_view(
     they are not on a VFR chart."""
     if south > north or west > east:
         raise HTTPException(422, "The box's south is above its north, or its west east of its east.")
-    found = sorted((f for f in fixes.within(south, west, north, east) if f["vfr"]), key=lambda f: f["ident"])
-    return {
-        "waypoints": [
-            {"ident": f["ident"], "lat": f["lat"], "lon": f["lon"], "description": places.describe(f["lat"], f["lon"])}
-            for f in found[:limit]
-        ]
-    }
+    return {"waypoints": vfr_waypoints.in_view(south, west, north, east, limit)}
 
 
 def _notes(ident: str) -> dict:
@@ -382,8 +374,10 @@ def _notes(ident: str) -> dict:
         return {}
     return {
         "lighting": notes["lighting"],
+        "lights": notes["lights"],
+        "light_notes": notes["light_notes"],
         "radio_notes": notes["radio"],
-        "standard_keying": notes["pilot_controlled"] and not notes["explicit_clicks"],
+        "standard_keying": notes["standard_keying"],
     }
 
 
@@ -528,6 +522,7 @@ def airport_services(ident: str, response: Response) -> dict:
         "ident": place["ident"],
         **faa_data.airport_services(place["ident"], altitude.DEFAULT_FAA_CACHE_DIR),
         "fuel_notes": notes["fuel"],
+        "fuel_remarks": notes.get("fuel_as_written", []),
         "courtesy_car": notes["courtesy_car"],
         "ground_notes": notes["ground"],
         **near,
@@ -667,56 +662,18 @@ def airport_procedure(ident: str, procedure: str, transition: str | None = None)
     """One of the field's procedures drawn for the map, with the
     transition picked (`transition`, one of its `transitions`; none for an
     approach from vectors): its lines, holds and fixes, each fix with the
-    altitudes and speed it is crossed at (wingtip.procedures.procedure_drawing)."""
+    altitudes and speed it is crossed at (wingtip.procedures.procedure_drawing);
+    an approach with the CIFP's own figures for its fixes' tags
+    (`approach`, wingtip.approach_facts; the engine's approach_fix_tags)."""
     try:
         drawn = procedures.procedure_drawing(ident, procedure, transition)
     except RuntimeError as err:
         raise HTTPException(503, f"The FAA's procedure file could not be had: {err}") from err
     if drawn is None:
         raise HTTPException(404, f"No procedure {procedure.strip().upper()!r} at {ident.strip().upper()!r}.")
+    if drawn["kind"] == "approach":
+        drawn = {**drawn, "approach": approach_facts.approach_facts(ident, procedure)}
     return drawn
-
-
-@router.get(
-    "/api/airport/{ident}/procedures/{procedure}/plate",
-    response_model=PlateOverlay,
-    responses={
-        404: {"description": "No plate for the approach, or its plate's fixes do not place it"},
-        503: {"description": "The FAA's procedure file could not be had"},
-    },
-    openapi_extra=PUBLIC,
-)
-def airport_procedure_plate(ident: str, procedure: str) -> PlateOverlay:
-    """An approach's plate's plan view placed on the map for the approach
-    picked (wingtip.plates): where its picture goes, made once a cycle from the
-    FAA's d-TPP plate and its own georeference, and whether it publishes
-    circling minimums. 404 where the field has no plate for it, the plate
-    has no georeference, or the FAA cannot be reached."""
-    try:
-        found = plates.plate_overlay(ident, procedure)
-    except RuntimeError as err:
-        raise HTTPException(503, f"The FAA's procedure file could not be had: {err}") from err
-    if found is None:
-        raise HTTPException(404, f"No plate placed for {procedure.strip().upper()!r} at {ident.strip().upper()!r}.")
-    return {k: found[k] for k in ("cycle", "name", "south", "west", "north", "east", "fixes", "circling")}
-
-
-@router.get(
-    "/api/approach-plate/{cycle}/{ident}/{procedure}.png",
-    response_class=FileResponse,
-    responses={200: {"content": {"image/png": {}}}, 404: {"description": "No plate placed for it in that cycle"}},
-    openapi_extra=SHARED,
-)
-def approach_plate(cycle: str, ident: str, procedure: str) -> FileResponse:
-    """The plan view of an approach's plate placed on the map
-    (`airport_procedure_plate`), as a picture: black on clear, north up,
-    for the cycle in force."""
-    if cycle != publications.dtpp_cycle():
-        raise HTTPException(404, f"Not the d-TPP cycle in force: {cycle}.")
-    found = plates.plate_overlay(ident, procedure)
-    if found is None:
-        raise HTTPException(404, f"No plate placed for {procedure.strip().upper()!r} at {ident.strip().upper()!r}.")
-    return FileResponse(found["png"], media_type="image/png", headers={"Cache-Control": DIAGRAM_CACHE})
 
 
 @router.get(

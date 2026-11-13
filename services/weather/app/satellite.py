@@ -19,7 +19,7 @@ import time
 import xml.etree.ElementTree as ET
 
 import requests
-from wingtip import weather_store
+from wingtip import outside, weather_store
 from wingtip.config import REQUEST_HEADERS as HEADERS
 
 #: nowCOAST's satellite WMS: its capabilities list each layer's times.
@@ -70,7 +70,7 @@ def fetch() -> None:
     Raises SatelliteUnavailable where it does not answer or lists none,
     the stored times left in place."""
     try:
-        resp = requests.get(CAPABILITIES_URL, headers=HEADERS, timeout=20)
+        resp = outside.get(CAPABILITIES_URL, headers=HEADERS, timeout=20)
         resp.raise_for_status()
     except requests.RequestException as err:
         raise SatelliteUnavailable(f"nowCOAST did not answer: {err}") from err

@@ -6,6 +6,8 @@
 //! wind triangle (lib/diversion) is held to the same fixture
 //! (apps/web/src/lib/fixtures/flightRules.json).
 
+use wingtip_core::units::{KELVIN_AT_0_C, M_PER_FT};
+
 /// The wind correction angle, degrees, positive to the right: the E6B's
 /// triangle (FAA-H-8083-25C, Pilot's Handbook of Aeronautical Knowledge,
 /// ch. 16, "Wind triangle"). The wind is the direction it blows FROM.
@@ -102,12 +104,13 @@ pub fn reserve_min(ifr: bool, night: bool) -> f64 {
 // density's is one less. wingtip.performance's constants, the same digits.
 pub const ISA_SEA_LEVEL_C: f64 = 15.0;
 pub const ISA_LAPSE_C_PER_FT: f64 = 0.0019812;
-const SEA_LEVEL_K: f64 = 288.15;
+const SEA_LEVEL_K: f64 = ISA_SEA_LEVEL_C + KELVIN_AT_0_C;
 const LAPSE_OVER_T0_PER_FT: f64 = 6.8755856e-6;
 const PRESSURE_EXPONENT: f64 = 5.2558797;
 const LOWEST_FT: f64 = -2000.0;
 const HIGHEST_FT: f64 = 60000.0;
-/// The standard altimeter setting, inches of mercury (PHAK ch. 4).
+/// The standard altimeter setting, inches of mercury: the standard datum
+/// plane (FAA-H-8083-25C ch. 11, "Pressure Altitude").
 pub const STANDARD_INHG: f64 = 29.92;
 
 /// A standard day's temperature at a pressure altitude.
@@ -120,7 +123,7 @@ pub fn isa_temp_c(altitude_ft: f64) -> f64 {
 pub fn density_ratio(altitude_ft: f64, oat_c: f64) -> f64 {
     let altitude_ft = altitude_ft.clamp(LOWEST_FT, HIGHEST_FT);
     let pressure_ratio = (1.0 - LAPSE_OVER_T0_PER_FT * altitude_ft).powf(PRESSURE_EXPONENT);
-    pressure_ratio * SEA_LEVEL_K / (oat_c + 273.15)
+    pressure_ratio * SEA_LEVEL_K / (oat_c + KELVIN_AT_0_C)
 }
 
 /// The altitude at which a standard day's air has density sigma.
@@ -129,7 +132,49 @@ pub fn density_altitude_ft(sigma: f64) -> f64 {
 }
 
 /// Pressure altitude from a field's elevation and its altimeter setting:
-/// a thousand feet an inch from 29.92 (PHAK ch. 4, "Pressure altitude").
+/// the elevation plus the standard atmosphere's height of the setting's
+/// pressure above 29.92 "Hg, (1 - (setting / 29.92)^(1 / 5.2558797)) x
+/// 145,442 ft (ICAO Doc 7488, the ISA constants above), which is FAA-H-
+/// 8083-25C ch. 11's Figure 11-3 table to within 2 ft (30.10 "Hg -165 ft,
+/// 30.8 -803, 28.0 +1,824). A flat 1,000 ft an inch read 15 to 80 ft low
+/// above 29.92, so pressure and density altitude came out a little low,
+/// the unsafe way.
 pub fn pressure_altitude_ft(elevation_ft: f64, altimeter_inhg: f64) -> f64 {
-    elevation_ft + (STANDARD_INHG - altimeter_inhg) * 1000.0
+    elevation_ft + (1.0 - (altimeter_inhg / STANDARD_INHG).powf(1.0 / PRESSURE_EXPONENT)) / LAPSE_OVER_T0_PER_FT
+}
+
+/// The standard sea-level pressure, hPa (ICAO Doc 7488's 1013.25 hPa,
+/// FAA-H-8083-25C ch. 4's 29.92 "Hg).
+pub const ISA_SEA_LEVEL_HPA: f64 = 1013.25;
+/// The tropopause of the standard atmosphere, ft (11,000 m, ICAO Doc
+/// 7488): the formula below holds under it.
+pub const ISA_TROPOPAUSE_FT: f64 = 11_000.0 / M_PER_FT;
+
+/// A standard day's pressure at a pressure altitude, hPa: the same
+/// troposphere formula as density_ratio's, (1 - L h / T0)^(g / R L) of
+/// sea level's, which is what "pressure altitude" means -- the altitude
+/// in the standard atmosphere where this pressure is (FAA-H-8083-25C ch.
+/// 4). Held to the tropopause, which the map's levels (FL360 at most) are
+/// under.
+pub fn isa_pressure_hpa(altitude_ft: f64) -> f64 {
+    let ft = altitude_ft.clamp(LOWEST_FT, ISA_TROPOPAUSE_FT);
+    ISA_SEA_LEVEL_HPA * (1.0 - LAPSE_OVER_T0_PER_FT * ft).powf(PRESSURE_EXPONENT)
+}
+
+#[cfg(test)]
+mod isa_tests {
+    use super::*;
+
+    #[test]
+    fn the_standard_atmospheres_pressures_by_altitude() {
+        // The standard atmosphere's table (FAA-H-8083-25C ch. 4, "Properties
+        // of standard atmosphere"): 29.92 "Hg at sea level, 20.58 at 10,000
+        // ft, 13.75 at 20,000 ft; 1 hPa is 0.02953 "Hg.
+        let inhg = |ft: f64| isa_pressure_hpa(ft) * 0.029_53;
+        assert!((inhg(0.0) - 29.92).abs() < 0.01);
+        assert!((inhg(10_000.0) - 20.58).abs() < 0.02);
+        assert!((inhg(20_000.0) - 13.75).abs() < 0.02);
+        // 500 hPa is about 18,300 ft (FL180 is just below it, 506 hPa).
+        assert!(isa_pressure_hpa(18_000.0) > 500.0 && isa_pressure_hpa(19_000.0) < 500.0);
+    }
 }

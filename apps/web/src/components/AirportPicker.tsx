@@ -106,8 +106,8 @@ export default function AirportPicker({
   }, [shown, oneSearch]);
 
   return (
-    // From the top of a phone's screen, where the keyboard cannot come up
-    // over the field: from the bottom it came up over it, field and all.
+    // On a phone a card at the sheet's size, the keyboard placed by the
+    // Drawer (VirtualKeyboardProvider), never raised for the field.
     <ResponsivePopover
       open={open && !oneSearch}
       onOpenChange={(next) => {
@@ -115,7 +115,6 @@ export default function AirportPicker({
         setOpen(next);
         if (!next) setQuery("");
       }}
-      phoneEdge="top"
     >
       <ResponsivePopoverTrigger asChild>
         <Button

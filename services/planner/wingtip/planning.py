@@ -16,6 +16,7 @@ from . import altitude as altitude_module
 from . import airspace, geo, navlog, weather
 from .config import PLAN_LIMIT_S
 from .engine import ask as engine
+from .winds_aloft import winds_key_for
 
 
 # How long a caller waits on a computation that is already running before
@@ -225,7 +226,7 @@ def flight_totals(
     # When the plan was made and the winds it flies, for the nav log to
     # say: planned for "now", its winds go out of date as the day goes on.
     t["planned_at"] = now().isoformat().replace("+00:00", "Z")
-    t["winds"] = weather.winds_period(forecast_hour_for(depart))
+    t["winds"] = weather.winds_period(winds_key_for(depart))
     depart = now() if depart is None else depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)
     # 14 CFR 1.1's night at the departure, and at the destination on
     # arrival where the time aloft is known: the engine's (sun.rs).
@@ -425,8 +426,7 @@ def altitude_plans(
         aircraft,
         figures.get("cruise_tas_kt"),
         figures.get("fuel_burn_gph"),
-        figures.get("climb_tas_kt"),
-        figures.get("climb_fuel_burn_gph"),
+        *(figures.get(k) for k in ("climb_tas_kt", "climb_fuel_burn_gph", "descent_ias_kt", "descent_fuel_burn_gph")),
         figures.get("cruise_power_pct"),
         fcst_hr,
         departure_elevation_ft,
@@ -440,32 +440,6 @@ def altitude_plans(
         )
 
     return _PLANS_CACHE.get_or_compute(key, compute, COMPUTE_LIMIT_S)
-
-
-def forecast_hour_for(depart: datetime | None) -> str:
-    """The winds forecast period for a departure time -- now, when none
-    is given. A naive time is taken as UTC, the way the API documents.
-
-    The product whose own "for use" window holds the departure: each of
-    the 6-, 12- and 24-hour forecasts is to be used between the FOR USE
-    times its header gives, set by the clock, not by hours ahead (AC
-    00-45H, table 5-21). Planned at 1400Z for 2230Z, eight and a
-    half hours out, the hours-ahead rule flew the 6-hour product (for use
-    1400-2100Z) where the 12-hour one (2100-0600Z) applies. The rule by
-    hours stays where no header can be read."""
-    if depart is None:
-        return weather.forecast_hour(None)
-    if depart.tzinfo is None:
-        depart = depart.replace(tzinfo=timezone.utc)
-    for fcst_hr in ("06", "12", "24"):
-        period = weather.winds_period(fcst_hr)
-        if period and _utc(period["use_from"]) <= depart < _utc(period["use_to"]):
-            return fcst_hr
-    return weather.forecast_hour((depart - datetime.now(timezone.utc)).total_seconds() / 3600)
-
-
-def _utc(text: str) -> datetime:
-    return datetime.fromisoformat(text.replace("Z", "+00:00"))
 
 
 def own_altitude_caution(selection: dict, legs: list, between: tuple[str, str], profile: dict | None = None) -> dict | None:

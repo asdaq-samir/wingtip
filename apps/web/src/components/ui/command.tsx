@@ -113,6 +113,11 @@ function CommandInput({ className, ...props }: AutocompletePrimitive.Input.Props
  *  a card's ident): Base UI's Input with its own props and element. */
 const CommandField = AutocompletePrimitive.Input;
 
+/** The field's clear: Base UI's own, shown while something is typed,
+ *  clearing it through the root's `onValueChange` and keeping the focus
+ *  in the field (drawn as the app's ClearButton by its `render`). */
+const CommandClear = AutocompletePrimitive.Clear;
+
 function CommandList({ className, ...props }: AutocompletePrimitive.List.Props) {
   return (
     <AutocompletePrimitive.List
@@ -123,14 +128,18 @@ function CommandList({ className, ...props }: AutocompletePrimitive.List.Props) 
   );
 }
 
-/** What the list says where it has nothing: drawn by the caller where its
- *  own count is none, as the list is the caller's to fill. */
-function CommandEmpty({ className, ...props }: React.ComponentProps<"div">) {
+/** What the list says where it has nothing: Base UI's Autocomplete.Status,
+ *  which screen readers hear politely as its words change. It stays
+ *  mounted, as Base UI asks (VoiceOver on iOS reads none of a status that
+ *  arrives whole, lib/announce), and the caller fills it only where its
+ *  own count is none; empty, it takes no room. Not Autocomplete.Empty,
+ *  which needs the root's `items`, and the lists here are filtered by
+ *  their callers. */
+function CommandEmpty({ className, ...props }: AutocompletePrimitive.Status.Props) {
   return (
-    <div
+    <AutocompletePrimitive.Status
       data-slot="command-empty"
-      role="status"
-      className={cn("py-6 text-center text-sm pointer-coarse:text-(length:--type-detail)", className)}
+      className={cn("py-6 text-center text-sm pointer-coarse:text-(length:--type-detail) empty:py-0", className)}
       {...props}
     />
   );
@@ -194,6 +203,7 @@ function CommandShortcut({ className, ...props }: React.ComponentProps<"span">) 
 
 export {
   Command,
+  CommandClear,
   CommandDialog,
   CommandEmpty,
   CommandField,

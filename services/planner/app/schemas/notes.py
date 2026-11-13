@@ -16,18 +16,22 @@ class CheckpointNoteSaved(BaseModel):
     note: CheckpointNote
 
 
+class PilotNotes(BaseModel):
+    """A pilot's own notes, for their account's export."""
+
+    notes: list[CheckpointNote]
+
+
 class PilotNotesForgotten(BaseModel):
     """How many of one pilot's own notes went, as their account did."""
 
     removed: int
 
 
-class NoteToWrite(BaseModel):
-    """A route's checkpoint as the assistant writes its note
-    (POST /api/checkpoint-notes/pending): where it is, what it is, the
-    hop its note is kept under, and the note already kept for it -- the
-    pilot's own, else the shared one -- or None, for the assistant to
-    write and seed."""
+class RouteNote(BaseModel):
+    """A route's checkpoint with its note (POST /api/checkpoint-notes/route):
+    where it is, what it is, the hop its note is kept under, and the note
+    kept for it -- the pilot's own, else the shared one -- or None."""
 
     lat: float
     lon: float
@@ -39,16 +43,8 @@ class NoteToWrite(BaseModel):
     saved: str | None = None
 
 
-class NotesToWrite(BaseModel):
+class RouteNotes(BaseModel):
     """A route's checkpoints in along-track order, for their notes."""
 
     departure_ident: str
-    checkpoints: list[NoteToWrite]
-
-
-class NoteSeeded(BaseModel):
-    """A generated note offered as the shared one: kept (`written`), or
-    the shared one saved meanwhile, which stays (`description` is it)."""
-
-    description: str
-    written: bool
+    checkpoints: list[RouteNote]

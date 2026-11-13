@@ -19,9 +19,12 @@ use crate::json::{self, Value};
 /// steeper than a 3° path's 318 ft/nm (6,076 × tan 3°), the angle a VASI is
 /// normally set at (AIM 2-1-2).
 pub const DESCENT_FT_PER_NM: f64 = 1000.0 / 3.0;
-/// Where the pattern altitude is reached before a field: the downwind's
-/// abeam, about a mile out.
-pub const PATTERN_NM: f64 = 1.0;
+/// Where the pattern altitude is reached before a field: where the
+/// 45-degree entry begins, about 1.7 nm out, as the nav log's descent
+/// levels there (AC 90-66C 11.2, 11.3; limits::pattern_entry_start_nm).
+pub fn pattern_nm() -> f64 {
+    wingtip_flight::limits::pattern_entry_start_nm()
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
@@ -207,9 +210,9 @@ pub fn plan_profile(rows: &[Row]) -> (Vec<ProfilePoint>, Vec<Mark>, f64) {
                 level = None;
             }
             _ if row.lands() => {
-                // A landing: the pattern a mile out, the field, and a climb anew.
+                // A landing: the pattern at its entry, the field, and a climb anew.
                 if let Some((to, _, true)) = descent {
-                    point(f64::max(start, along - PATTERN_NM), to);
+                    point(f64::max(start, along - pattern_nm()), to);
                 }
                 point(along, row.elevation_ft.unwrap_or(0.0));
                 descent = None;

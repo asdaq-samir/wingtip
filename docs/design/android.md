@@ -255,10 +255,11 @@ airport weather marks hold on all three apps: [rules.md](rules.md).
   - No back arrow is drawn in a top app bar's navigation slot. That is
     the one place Wingtip departs from Material's top app bar.
   - Back steps down the same ladder as close: lower the sheet
-    (`MapSheet`'s `PredictiveBackHandler`), then a page back (the
-    sheet's Navigation Compose `NavHost`, `ui/PlanSheet`; a card in the
-    wide panes by `NavigableListDetailPaneScaffold`), then leave the
-    app. Overlays are stock `Dialog`s, which Back closes. The
+    (`MapSheet`'s stock `BackHandler`, the sheet's own motion), then a
+    page back (Navigation 3's `NavDisplay` over `MapViewModel`'s back
+    stack, `ui/SheetPages`, with its own transitions and predictive
+    back; a card in the wide panes by Material's
+    `ListDetailSceneStrategy` on the same stack), then leave the app. Overlays are stock `Dialog`s, which Back closes. The
     hand-built shrink-on-back (`design/PredictiveBack`) is gone.
 - **Android 17**: activities are no longer recreated for keyboard,
   navigation-mode or colour-mode changes unless they opt in
@@ -454,6 +455,68 @@ placement wins, and the difference is noted.
   - https://developer.android.com/develop/ui/compose/system/predictive-back-setup
   - https://support.google.com/maps/answer/3092445?hl=en&co=GENIE.Platform%3DAndroid
 
+#### The map's buttons (the owner, 2026-11-11)
+
+- **Where**: just above the search at the right, riding the sheet's
+  top edge as it moves (the owner: "just above the search bar on the
+  right", "similar to how Apple Maps and Google Maps does it"). The
+  position button is the lowest, nearest the thumb; the sparkle (Ask)
+  is over it. All the way up they fade away, as Google Maps' do, since
+  no map is left to act on. Beside a pane, over a fold or in the strip
+  they stay under the status bar at the top right.
+- **Google Maps today** (the 2024-2025 sheet redesign; press reports,
+  not a Google page, so [§4](#4-not-verified) holds): the locate button
+  rides the sheet at the bottom right and the layers button sits at the
+  top right under the search. Ours has no layers button (layers are in
+  the Map menu, one home, 0014), so everything rides the sheet.
+- **Stock parts and wiring**: Material 3 Expressive's
+  `VerticalFloatingToolbar` with the stock `FilledIconToggleButton` and
+  `FilledTonalIconButton` (40 dp, 48-dp touch targets, nothing grown),
+  in `MapSheet`'s `onTop` slot over `BottomSheetScaffold`. A layout
+  modifier places them from the stock `SheetState.requireOffset()` at
+  placement, so a drag or the sheet's spring moves them each frame with
+  no measuring of ours; `AnimatedVisibility` fades them on the sheet's
+  `targetValue`. The lowest button is 24 dp over the sheet
+  (rules.md section 7).
+- **Test**: `androidTest/.../ui/MapButtonsOnSheetTest`.
+
+#### The sheet's carousel: Search and FPL (the owner, 2026-11-11)
+
+- **What**: the sheet has two pages side by side, Search (the one
+  search and what it shows with nothing typed) and FPL (the plan), a
+  sideways swipe apart, with two page dots under the stock drag handle
+  (rules.md records the decision). The FPL page has no field of its
+  own: Add a Stop and Find bring the Search page and open its field.
+  With no route the FPL page is the plan with its empty rows and its ✕,
+  which goes back a level to Search (no "Plan a Flight" of its own, the
+  owner, 2026-11-11). A route made, opened or changed from anywhere
+  (Fly Here, Depart From, Direct To, Add a Stop, a link) brings the FPL
+  page, the route's points its key; a card's route action closes the
+  cards onto it, so Fly Here to the same airport again shows it too;
+  clearing it leaves the page as it is. A page put away gives up the
+  focus, so the keyboard goes down. A card opens over both pages,
+  and ✕ or Back comes back to the page it was opened from. At the peek
+  the sheet shows the dots and the page's first row: the search's, or
+  the plan's bar.
+- **Stock parts and wiring**: Compose foundation's `HorizontalPager`
+  (`ui/SheetCarousel`) as the NavDisplay's Home entry, its
+  `PagerState` held by `SheetNav` so it outlives the cards over it and a
+  rotation; both pages stay composed (`beyondViewportPageCount = 1`), so
+  each keeps its own scroll and the one search still takes an ask made
+  from the plan. The pager takes only a sideways drag; an upward or
+  downward one stays with `BottomSheetScaffold` and the page's list
+  through the stock nested scrolling. Material 3 1.5.0-rc01 has no page
+  indicator for a phone (only Wear's `HorizontalPageIndicator`), so the
+  dots are the pager's state drawn in the theme's colours: each a
+  `selectable` tab, 48 dp a side with an 8 dp dot (nothing grows), read
+  as "Page 1 of 2, Search". The strip layout, whose field and timeline
+  are its search and plan, has no carousel.
+- **Deep links**: `fpl` opens the FPL page; `search` is
+  `TODO(claude/carousel-web)` until that branch's screens.json entry is
+  generated.
+- **Test**: `androidTest/.../ui/SheetCarouselTest`, and `SheetNavTest`
+  for the stack over the carousel.
+
 ### 3.2 The airport card and the airplane card
 
 - **Follow**: Google Maps' place sheet. Its documented parts are the
@@ -580,6 +643,13 @@ placement wins, and the difference is noted.
      happen.
   6. The figure strip at the sheet's foot: To, Dist, ETE and Fuel, with
      only To and Dist when there is no airplane (0011).
+  7. **The alternate** (IFR, 2026-11-10; `alternate/`): the route's
+     `SegmentedListItem`s end, under IFR, with the alternate filed (a tap
+     to its airport card, the card rule) or **Add Alternate**, which
+     opens the Brief's Alternate, where the web files one. The filed
+     alternate is kept beside the plan (`PlanAlternate`, with the
+     destination it is for, so a new destination drops it) and goes to
+     the planner's nav log as `alternate`, as the web's address does.
 - **Primary action**:
   - Brief, on the route box's first line, where the owner put it.
   - On a medium or larger window, a `HorizontalFloatingToolbar` over
@@ -625,6 +695,11 @@ placement wins, and the difference is noted.
   4. The streamed lines fill in as they come
      (`api/NavLog.kt`), each with a `LoadingIndicator` until it is
      answered.
+  5. Under IFR with an alternate filed, the leg on to it after the
+     route's legs (`AlternateLegRow`, the same tabular figures): the
+     planner's, from the engine's `navlog_alternate_leg`, its fuel in the
+     totals (14 CFR 91.167(a)(2)), "in still air" where the winds were
+     not had.
 - **Primary action**: Share, in the top bar's actions. Nothing else
   is a primary on a read-only log.
 - **Type**: the figures use `bodyLarge` with tabular figures
@@ -663,7 +738,17 @@ placement wins, and the difference is noted.
        `FilterChip` in a `LazyRow`, single-select)
      - NOTAMs
      - TFRs
-  6. Detail folded under a tap (a `ListItem` that expands).
+  6. Under IFR, **Alternate** (`alternate/AlternateRows`, the web's
+     AlternateSection): the planner's `/api/alternate` at the nav log's
+     ETA and the airplane's cruise (none asked without an airplane, 0011),
+     every rule the engine's (`ifr_alternate_window`,
+     `ifr_alternate_destination`, `ifr_alternate_check`). `ListItem`s:
+     whether the destination needs one (91.169(b)) with its TAF; the one
+     filed, how it stands at its minimums (91.169(c)), its TAF, its own
+     minimums page and Take It Off; then Alternates That Will Do, each
+     filed with a tap and the route planned again. The Go / No-Go is asked
+     with the alternate, so its 91.169 finding is the planner's.
+  7. Detail folded under a tap (a `ListItem` that expands).
 - **Ready to Fly** (`ready/`): a checklist of what is still missing,
   each a `ListItem` with a leading state glyph and a trailing "Fix"
   `TextButton` (`ReadyFixer`), at the top of the Brief when the plan is
@@ -721,8 +806,9 @@ placement wins, and the difference is noted.
 - **Structure**:
   1. The map, the chart under the NEXRAD in the chart's own scale
      (`color.chart.nexrad-*`).
-  2. The map's buttons on the `VerticalFloatingToolbar`, unchanged in
-     place.
+  2. The map's buttons on the `VerticalFloatingToolbar`, riding the
+     sheet's top at the right, the position button nearest it (see
+     "The map's buttons" under [§3.1](#31-the-one-search-and-its-results)).
   3. At the foot, over the sheet's pill, a `HorizontalFloatingToolbar`
      in the banner's capsule (`radius.banner`):
      - a Play/Pause `IconToggleButton`
@@ -755,19 +841,30 @@ zoom 10 in, a station model adds the wind barb (the engine's `wind_barb`:
 flags, barbs and half-barbs to the nearest 5 kt, a circle for calm,
 FAA-H-8083-28A 25.2.3.4.5) and two lines, the visibility with its weather
 ("2 SM BR") and the ceiling with its cover ("OVC 008", "VV 002", from the
-planner's `ceiling_cover`). At any zoom an arrow shows the way the wind
-blows, with "18G26", where the engine's `wind_arrow` gives one (10 kt or
-more, or gusting); it is red only where the field's `least_crosswind` is
+planner's `ceiling_cover`). Farther out, from zoom 6, the barb is drawn
+only where the engine's `wind_arrow` earns one (10 kt or more, or
+gusting), smaller there and giving way to its neighbours (the owner,
+2026-11-12: barbs in place of the arrows, as the web); a variable wind is
+written "VRB05". The barb is red only where the field's `least_crosswind` is
 more than the picked airplane's demonstrated crosswind (its POH's, on
 `/api/aircraft-profiles`), and never red with no airplane or no figure. An
 amber ↓ marks a plan's field whose TAF for the pilot's time there is worse
-than its METAR now (`weather_worse`). The weather comes on the map's own
+than its METAR now (`weather_worse`), the IFR alternate filed among them:
+its METAR now against its TAF at its own ETA, from the planner's briefing
+of the leg on to it, leaving the destination at its ETA (`map/RouteWorse`). The weather comes on the map's own
 `/api/airports/in-view` answer (`weather`), the same for every app; the
 shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
 screen reader says each field's category and wind ("KJVL, IFR, wind 220
 at 18 gusting 26"). The Map Settings card has Airport
 Weather (Off, Halo, Dot, Station; a `ChoiceGroup`) and three switches,
 all on, kept in DataStore (`AirportWeatherStore`).
+
+A mark whose METAR was heard longer ago than the engine's freshness for a
+METAR (`kept_age`'s "weather", AIM 7-1-28's hourly report) wears the
+chart's grey for a field not known in place of its category's colour, and
+a Material `Badge` at the top of the map, beside the receiver's, says
+"Airport weather: Fetched 1 h 12 min ago" in the caution colour
+(`map/WeatherAge`, the offline audit's gap 7).
 
 ### 3.8 The emergency assistant
 
@@ -789,6 +886,11 @@ all on, kept in DataStore (`AirportWeatherStore`).
        call.
   - The bottom bar is a `FlexibleBottomAppBar` holding one
     full-width filled **Direct To** to the top field.
+- **With no planner** the fields come from the cycle packs on the phone
+  (`emergency/PhoneFields`), ranked by the same `best_fields`, with
+  "From this phone, without weather" under the title: no METAR, runway or
+  frequency is made up, and a field's height is the packs' terrain under
+  it, so the reach errs short. Nearest does the same.
 - **Primary action**: Direct To in the bottom bar, the same place every
   time.
 - **Type**: `headlineMediumEmphasized` for the top field. Nothing
@@ -940,26 +1042,26 @@ all on, kept in DataStore (`AirportWeatherStore`).
   - https://m3.material.io/styles/color/dynamic/choosing-a-source
     **[excerpt]**
 
-### 3.14 The welcome
+### 3.14 The first flight (no welcome)
 
-- **Follow**: plain onboarding pages with one big button at the foot.
-- **Structure** (`welcome/`, `WelcomeSheet`):
-  1. Pages with a picture of the map, a `headlineLargeEmphasized`
-     title, and one `bodyLarge` line each.
-  2. A page indicator.
-  3. At the foot, one full-width filled button ("Continue", then "Start
-     Planning"), with "Skip" as a `TextButton`.
-  4. Location is asked for on the page that explains why, through the
-     system dialog.
-- **No airplane is picked by default** (0011). The last page offers
-  "Add Your Airplane" as a tonal button.
-- **Primary action**: the button at the foot.
-- **Motion**: pages slide with the spatial spring.
-- **Avoid**:
-  - asking for every permission on the first page
-  - a carousel that moves by itself
-- **Sources**:
-  - https://design.google/library/expressive-material-design-google-research
+- **No welcome** (the owner, 2026-11-11, "We don't need the welcome"):
+  a new pilot lands on the map. Each permission is asked where it is
+  needed, by the system's own dialog: location at the position button
+  or the first flight's Plan It, notifications when a watch is set or
+  traffic is near, the microphone at the microphone. Before anything,
+  once, the planning aid's words in a stock `AlertDialog`
+  (`about/PlanningAidNotice`).
+- **The first flight's card** (`firstflight/FirstFlightCard`, the web's
+  FirstFlight): Material's `ElevatedCard` riding the sheet's top under
+  the map's buttons, the first time with no route and no card up: "Your
+  First Flight", its line, a Destination field, Plan It and "Step 1 of 3
+  · Route · Nav Log · Brief", ✕ (Not Now) in its title row. The field is
+  a read-only `OutlinedTextField` that opens the one search to pick the
+  airport (card rule 5; `SearchControl.pickAirport`). Plan It plans from
+  own ship's fix or the phone's position read once (the nearest field),
+  else the home airport, else asks From. Planned, it is gone for good and
+  the nav log opens; Setup's Show First Flight Again brings it back
+  (`FirstFlightMemory`).
 
 ### 3.15 Widgets, Live Updates and shortcuts
 
@@ -1082,6 +1184,31 @@ Ask is not on the screen list, but it sits under every brief.
 
 ---
 
+### 3.18 Offline in the air, and flying with the screen off (2026-11-10)
+
+From the offline and store audits of 2026-11-10:
+
+- **Start Flight.** At flying speed the map asks "Start Flight?" in the
+  stock `AlertDialog` (`flight/StartFlightAsk`); only its yes starts the
+  location foreground service, which stops as the airplane slows below
+  flying speed. Not Now holds for that flight. Never started by itself
+  (Google Play's foreground-service rule; docs/store/foreground-services.md).
+- **A re-plan that fails** puts the plan shown before back whole, with
+  "Not changed: no connection." under the route (`plan/PlanShown`); the
+  page never shows a new route over old legs.
+- **Kept for the air** besides the cards, NOTAMs and Brief: each field's
+  own NOTAMs (the card's key), the route's side view, which also comes
+  back after a relaunch, and the loop's newest frame over the route
+  within 12 MB (`offline/KeptLoopTiles`).
+- **Ask's tools** read the kept copies and the packs' fields when the
+  planner cannot be reached (`ai/functions/WingtipActions`).
+- **The speech recognizer's errors** are said, not looped through in
+  silence (`voice/RecognizerErrors`).
+- **Every call** through the app's client ends after 10 s, a write after
+  60 s; streams and downloads use `Gateway.streaming`.
+- **Sign-out and Delete Account** forget everything the phone kept of the
+  pilot (`account/PhoneWipe`).
+
 ## 4. Not verified
 
 These could not be confirmed from a primary source on 2026-11-09. Check
@@ -1185,7 +1312,6 @@ swapped:
   `selected`/`onClick`), `Surface(onClick)`, `TextButton`, or Compose's
   `LinkAnnotation` for the logbook's N-number. Each list item keeps its
   stock role, press shape and colours.
-- The trip planner's bubbles: `Card`s.
 
 Kept, each still a thin wrapper over stock parts:
 
@@ -1229,8 +1355,8 @@ recommendation", "Let's try the scrolling recommendations"). Where §3 or
 **Cards cover the search, Google Maps' way.** A thing -- a field, an
 airplane, a VOR, a fix, an airspace, traffic, What's Here, a leg of the
 route, the Map Settings -- opens as one card on the docked sheet's own
-stack (`ui/SheetNav`, Navigation Compose's NavHost in
-`ui/SheetPages`; on a wide window the list-detail scaffold's detail
+stack (`ui/MapViewModel`, drawn by Navigation 3's NavDisplay in
+`ui/SheetPages`; on a wide window the list-detail scene's detail
 pane). While it is open its bar takes the search's place: ← and its name,
 its actions, ✕ at the end (`ui/sheet/CardPage`), and the card fills the
 sheet. ← and system Back go back one level; ✕ closes every card, back to
@@ -1269,7 +1395,7 @@ its sheet in place of the strip.
   logbook's N-numbers open it. The old Airplane page and its sheets are
   gone.
 - **One modal family:** `ui/sheet/WingtipSheet`, only for tasks (Add
-  Flight, a flight logged, a photo read, the welcome, a shared flight's
+  Flight, a flight logged, a photo read, a shared flight's
   preview, the Downloads map). `FlexibleSheet`, `CardSheet`, `Over`,
   `OverRequests` and `OverSheet` are gone.
 - **Questions** are the stock `AlertDialog`: Ready to Fly's prompt, a
@@ -1294,8 +1420,7 @@ at half -- the sheet's peek is half the window while a card is open
 scroll taking the drag before the card's list. No pull to refresh in a
 sheet: the airport card, the map's cards and the Brief fetch by
 themselves. The checklists tab scrolls; each page of Settings is its own
-back stack entry, with its own scroll and title state; the welcome
-starts each page at its top. A form with an edit not saved asks before a
+back stack entry, with its own scroll and title state. A form with an edit not saved asks before a
 swipe or Back throws it away (`DiscardDialog`): Add Flight and Your
 Airplanes' form.
 

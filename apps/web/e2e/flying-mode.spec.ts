@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { closeProfile, grabberTo, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { closeProfile, grabberTo, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart, frontSheet } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -30,19 +30,20 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   page,
 }) => {
   await startDryRun(page);
-  // The next checkpoint's card at the top; a dry run keeps the sheet where
-  // it was, its card's controls in sight (a real flight's goes to the pill).
+  // The next checkpoint's card at the top; the sheet stays where it was,
+  // a dry run's or a real flight's alike, the run's card's controls in sight.
   const head = page.getByTestId("flying-head");
   await expect(head).toBeVisible({ timeout: slow(10_000) });
   await expect(head.getByTestId("flying-next-name")).not.toBeEmpty();
   await expect(head.getByTestId("flying-next-figures")).toContainText("nm");
-  await expect(sideDrawer(page)).not.toHaveAttribute("data-panel", "peek");
+  await expect(frontSheet(page)).not.toHaveAttribute("data-panel", "peek");
   await expect(sideDrawer(page).getByTestId("dry-run-close")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-box")).toBeHidden();
   await expect(sideDrawer(page).getByTestId("search-airports")).toBeHidden();
   await expect(page.getByTestId("done-flying")).toBeVisible();
   // The map's buttons: NRST, D→ and the location arrow at the right, the
-  // microphone at the left, each 60 points.
+  // microphone's circle over them in the same column (the owner,
+  // 2026-11-13: the page toggle has its place at the left), each 60 points.
   const buttons = [
     page.getByTestId("flying-nearest"),
     page.getByTestId("flying-direct"),

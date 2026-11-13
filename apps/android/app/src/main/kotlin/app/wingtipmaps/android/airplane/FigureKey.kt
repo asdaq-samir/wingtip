@@ -12,7 +12,8 @@ import java.util.Locale
  * an override, the engine's handbook page's name for it where a
  * photographed page carries it, and its words. Each figure is the
  * airplane's handbook's: cruise and burn its Section 5 cruise table,
- * climb its Section 5 climb chart, the service ceiling where its best
+ * climb its Section 5 climb chart, the descent its Section 5 descent
+ * figures (an indicated speed, as a handbook gives it), the service ceiling where its best
  * climb falls to 100 fpm (FAA-H-8083-25C ch. 11), start and taxi fuel its
  * Section 5 note, the glide ratio its Section 3 "Maximum glide", the empty
  * weight and moment its own weight and balance record (FAA-H-8083-1B).
@@ -32,6 +33,8 @@ enum class FigureKey(
     USABLE("usable_fuel_gal", true, true, "usableFuelGal", R.string.own_usable, R.string.ask_usable, "gal"),
     CLIMB_TAS("climb_tas_kt", true, true, null, R.string.own_climb_tas, R.string.ask_climb_tas, "kt"),
     CLIMB_BURN("climb_fuel_burn_gph", true, true, null, R.string.own_climb_burn, R.string.ask_climb_burn, "gph"),
+    DESCENT_IAS("descent_ias_kt", true, true, null, R.string.own_descent_ias, R.string.ask_descent_ias, "kt"),
+    DESCENT_BURN("descent_fuel_burn_gph", true, true, null, R.string.own_descent_burn, R.string.ask_descent_burn, "gph"),
     CLIMB_RATE("climb_rate_fpm", false, true, null, R.string.own_climb_rate, R.string.ask_climb_rate, "fpm"),
     CEILING("service_ceiling_ft", false, true, null, R.string.own_ceiling, R.string.ask_ceiling, "ft"),
     TAXI("taxi_fuel_gal", false, true, null, R.string.own_taxi, R.string.ask_taxi, "gal"),

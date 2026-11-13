@@ -1,18 +1,23 @@
-// The steps of scripts/build/api-models-apps.sh around quicktype, run in its
-// node container:
+// The steps of scripts/build/api-models-apps.sh around its generators, run
+// in its node container:
 //
-//   node api-models-apps.mjs prep <openapi.json> <out.json> [swift]
-//   node api-models-apps.mjs swift <file> <snake|camel>
+//   node api-models-apps.mjs prep <openapi.json> <out.json>
 //   node api-models-apps.mjs kotlin <file> <openapi.json>
+//   node api-models-apps.mjs client <openapi.json> <models.kt> <planner|gateway> <out dir>
+//   node api-models-apps.mjs openapi <openapi.json> <out.json>
+//   node api-models-apps.mjs aliases <Types+Components+Schemas.swift> <module> <prefix> <out.swift>
 //
 // prep makes the document's enums and consts plain strings and its tuples
 // (prefixItems, a lat/lon pair) arrays of their one type, which quicktype
-// otherwise reads as JSONAny; for Swift it leaves out the few properties
-// whose snake-case words start with a digit ("total_50ft_ft"), since
-// Foundation's .convertFromSnakeCase capitalises those its own way and a
-// key that did not match would fail the whole answer. swift and kotlin
-// put the header on a written file and fit it to the app's coder (the
-// shell script says how).
+// otherwise reads as JSONAny; kotlin puts the header on the written file
+// and fits it to the app's coder (the shell script says how); client
+// readies a server's document for openapi-generator's Kotlin Retrofit
+// client (its operations, one interface a server) and maps each schema to
+// the class quicktype wrote, so the client's calls answer in the same
+// models. openapi is the document swift-openapi-generator reads for the
+// iPhone, and aliases names each of its schemas in the app as the app has
+// always named them, the document's name with the server's prefix
+// (APICourse, GWPilotDto).
 import fs from "node:fs";
 
 const header = (comment) =>
@@ -64,52 +69,6 @@ function int64Names(doc) {
   return names;
 }
 
-// JSONDecoder's .convertFromSnakeCase, as Foundation writes it: the words
-// between underscores joined, each after the first capitalised, the
-// leading and trailing underscores kept.
-function fromSnake(key) {
-  const m = key.match(/^(_*)(.*?)(_*)$/);
-  const words = m[2].split("_").filter((w) => w.length > 0);
-  if (words.length <= 1) return key;
-  for (const w of words.slice(1)) {
-    if (/^[^a-z]/i.test(w)) throw new Error(`"${key}": Foundation capitalises a word that starts with a digit its own way`);
-  }
-  const cap = (w) => w[0].toUpperCase() + w.slice(1).toLowerCase();
-  return m[1] + [words[0].toLowerCase(), ...words.slice(1).map(cap)].join("") + m[3];
-}
-
-function swift(file, keys) {
-  let text = fs.readFileSync(file, "utf8");
-  // quicktype's own notes: how to decode, and the Hashable caveat over
-  // every type.
-  text = text.replace(/^\/\/ This file was generated[\s\S]*?\n\n/, "");
-  text = text.replace(/^\/\/\n\/\/ Hashable or Equatable:\n(\/\/ .*\n){3}\n?/gm, "");
-  // Swift alone: "operator", a keyword Swift takes as a name in backticks,
-  // and "required" and "right", which it takes as they are; quicktype
-  // prefixes each with the type's name instead ("flightDetailOperator").
-  for (const [key, to] of Object.entries({ ...RENAMES, operator: "`operator`", required: "required", right: "right" })) {
-    for (const [, from] of [...text.matchAll(new RegExp(`case (\\w+) = "${key}"$`, "gm"))]) {
-      text = text.replace(new RegExp(`\\b${from}\\b`, "g"), to);
-    }
-  }
-  if (keys === "snake") {
-    text = text.replace(/^(\s*case )(\w+) = "([^"]+)"$/gm, (_, lead, name, key) => {
-      const read = fromSnake(key);
-      return read === name ? `${lead}${name}` : `${lead}${name} = "${read}"`;
-    });
-    // A CodingKeys left with no key of its own says nothing the
-    // synthesized one does not.
-    text = text.replace(/\n\n    enum CodingKeys: String, CodingKey \{\n((?:        case [^=\n]*\n)+)    \}\n/g, "\n");
-  }
-  // A member the document leaves untyped is the app's own JSONValue
-  // (API/JSONValue.swift), not quicktype's JSONAny class written into
-  // each file, which is neither Equatable nor Sendable.
-  text = text.replace(/\n\/\/ MARK: - Encode\/decode helpers[\s\S]*$/, "\n");
-  text = text.replace(/\bJSONAny\b/g, "JSONValue");
-  if (/JSONNull/.test(text)) throw new Error(`${file}: a null-only property quicktype could not type (JSONNull)`);
-  fs.writeFileSync(file, header("//") + text.replace(/\n{3,}/g, "\n\n"));
-}
-
 function kotlin(file, docPath) {
   const longs = int64Names(JSON.parse(fs.readFileSync(docPath, "utf8")));
   let text = fs.readFileSync(file, "utf8");
@@ -128,24 +87,228 @@ function kotlin(file, docPath) {
   fs.writeFileSync(file, header("//") + text);
 }
 
-function withoutDigitWords(doc) {
-  for (const schema of Object.values(doc.components?.schemas ?? {})) {
-    for (const name of Object.keys(schema.properties ?? {})) {
-      if (!/_[0-9]/.test(name)) continue;
-      delete schema.properties[name];
-      if (schema.required) schema.required = schema.required.filter((r) => r !== name);
-    }
-  }
-  return doc;
+// One typealias a schema, in the app's module, of what the generator wrote
+// in the server's (PlannerAPI): its name prefixed (API, GW, AS), so the
+// app's files name a server's type without importing its module.
+function aliases(schemas, module, prefix, out) {
+  const names = [
+    ...fs.readFileSync(schemas, "utf8").matchAll(/^ {8}(?:@frozen )?public (?:indirect )?(?:struct|enum|typealias) (\w+)/gm),
+  ].map((m) => m[1]);
+  const lines = names.map((name) => `typealias ${prefix}${name} = ${module}.Components.Schemas.${name}`);
+  const head = [
+    "// Generated by scripts/build/api-models-apps.sh from the servers' OpenAPI",
+    "// documents (swift-openapi-generator); do not edit. Change the server and run the script.",
+    "",
+    `import ${module}`,
+    "",
+  ];
+  fs.writeFileSync(out, [...head, ...lines, ""].join("\n"));
 }
 
-const [mode, a, b, c] = process.argv.slice(2);
-if (mode === "prep") {
-  const doc = plain(JSON.parse(fs.readFileSync(a, "utf8")));
-  fs.writeFileSync(b, JSON.stringify(c === "swift" ? withoutDigitWords(doc) : doc));
+// Each component schema's type, for a reference made nullable below.
+const refTypes = new Map();
+
+// A schema that may be null (FastAPI's `anyOf: [X, {type: null}]`) as X
+// typed [X's type, "null"], and whether it was: swift-openapi-generator
+// skips a null branch of anyOf, and with it the whole property, but reads
+// a type that includes "null" as an optional, a map's values included
+// (a briefing's METAR of a field with none is null).
+function nullable(schema) {
+  for (const key of ["anyOf", "oneOf"]) {
+    const branches = schema?.[key];
+    if (!Array.isArray(branches) || !branches.some((s) => s.type === "null")) continue;
+    // Branches the plain step made the same (two enums of strings) are one.
+    const rest = [...new Map(branches.filter((s) => s.type !== "null").map((s) => [JSON.stringify(s), s])).values()];
+    const { [key]: _, ...outer } = schema;
+    if (rest.length !== 1) return [{ ...outer, [key]: rest }, true];
+    const one = rest[0];
+    const type = one.type ?? (one.$ref ? refTypes.get(one.$ref) : undefined);
+    return [{ ...outer, ...one, ...(typeof type === "string" ? { type: [type, "null"] } : {}) }, true];
+  }
+  return [schema, false];
 }
+
+// A key as the order of quicktype's camelCase names had it, which the app's
+// calls of each init follow: "fixed_on" before "fix_note".
+const camelSorted = (key) => key.replace(/_+([a-z0-9])/gi, (_, c) => c.toUpperCase()).toLowerCase();
+
+// Every schema in a document made what swift-openapi-generator writes the
+// app's types from: plain (as for quicktype), nullable members optional,
+// and the properties in name order, so each init's arguments are in the
+// order the app has always written them.
+function forGenerator(v) {
+  if (Array.isArray(v)) return v.map(forGenerator);
+  if (!v || typeof v !== "object") return v;
+  const [schema] = nullable(v);
+  const o = {};
+  for (const [k, x] of Object.entries(schema)) {
+    // A schema's required list is written with its properties, below.
+    if (k === "required" && schema.properties) continue;
+    if (k !== "properties") {
+      o[k] = forGenerator(x);
+      continue;
+    }
+    const required = new Set(schema.required ?? []);
+    o.properties = {};
+    for (const name of Object.keys(x).sort((a, b) => camelSorted(a).localeCompare(camelSorted(b)))) {
+      const [p, couldBeNull] = nullable(x[name]);
+      if (couldBeNull) required.delete(name);
+      o.properties[name] = forGenerator(p);
+    }
+    if (schema.required) o.required = schema.required.filter((r) => required.has(r));
+  }
+  return o;
+}
+
+// The document swift-openapi-generator reads (scripts/build/api-models-apps.sh):
+// plain and nullable-free as above, each operation named as its server's
+// code names it, and the gateway's answers, which springdoc gives as "*/*"
+// since its controllers name no type, read as the JSON they are; an
+// answer of plain text ("type": "string") stays a body of bytes.
+function openapi(doc) {
+  for (const [name, schema] of Object.entries(doc.components?.schemas ?? {})) {
+    refTypes.set(`#/components/schemas/${name}`, schema.type ?? (schema.enum || schema.const ? "string" : "object"));
+  }
+  const out = { ...doc, components: { ...doc.components, schemas: forGenerator(plain(doc.components?.schemas ?? {})) } };
+  out.paths = forGenerator(plain(doc.paths ?? {}));
+  // FastAPI's operation ids are the function's name with the path and the
+  // method after it ("course_api_course_get"); each call is named by its
+  // function alone ("course"), where no two operations share one.
+  const named = new Map();
+  for (const [path, item] of Object.entries(out.paths)) {
+    for (const [method, op] of Object.entries(item)) {
+      const tail = `${path.replace(/\W/g, "_")}_${method}`;
+      if (op?.operationId?.endsWith(tail) && op.operationId.length > tail.length) {
+        const name = op.operationId.slice(0, -tail.length);
+        named.set(name, named.has(name) ? null : op);
+      }
+    }
+  }
+  for (const [name, op] of named) if (op) op.operationId = name;
+  // springdoc names an operation by its Java method, numbering the ones
+  // that share a name ("get", "get_1", "get_2"): each of those is named by
+  // its method and path instead ("get_flights_id" for GET /api/flights/{id}).
+  const ops = Object.entries(out.paths).flatMap(([path, item]) => Object.entries(item).map(([method, op]) => ({ path, method, op })));
+  const base = (op) => op.operationId?.replace(/_\d+$/, "");
+  const shared = new Map();
+  for (const { op } of ops) shared.set(base(op), (shared.get(base(op)) ?? 0) + 1);
+  for (const { path, method, op } of ops) {
+    if (!op?.operationId || shared.get(base(op)) < 2) continue;
+    const words = path
+      .split("/")
+      .filter((s) => s && s !== "api")
+      .map((s) => s.replace(/[{}]/g, "").replace(/\W/g, "_"));
+    op.operationId = [method, ...words].join("_");
+  }
+  for (const item of Object.values(out.paths)) {
+    for (const op of Object.values(item)) {
+      for (const [status, response] of Object.entries(op?.responses ?? {})) {
+        // No Content has no body (RFC 9110, 15.3.5), whatever springdoc says.
+        if (status === "204") delete response.content;
+        const content = response.content ?? {};
+        const any = content["*/*"];
+        if (any && any.schema?.type !== "string") response.content = { "application/json": any };
+        // FastAPI's untyped JSON beside a response's real type (a tile's
+        // image/png) is left out;
+        // alone (the nav log's lines), it is the bytes as they come.
+        const json = content["application/json"];
+        const untyped = json && Object.keys(json.schema ?? {}).length === 0;
+        if (untyped && Object.keys(content).length > 1) delete content["application/json"];
+        else if (untyped) response.content = { "*/*": {} };
+      }
+    }
+  }
+  return out;
+}
+
+// The client's names. FastAPI names an operation "{function}{path}_{method}"
+// with every non-word character an underscore; the function's name is
+// what the planner's code calls it. Spring's are the method's, numbered
+// where two controllers share one ("list_2"), which then take their
+// controller's name ("aircraftList").
+function camel(words) {
+  const parts = words.split(/[^A-Za-z0-9]+/).filter(Boolean);
+  return parts.map((w, i) => (i === 0 ? w[0].toLowerCase() + w.slice(1) : w[0].toUpperCase() + w.slice(1))).join("");
+}
+
+// An answer the client reads as a model: one that names a schema, or a
+// list or a number. A bare string (a redirect's page, a plain-text body)
+// or an untyped object is read as nothing (Unit), which Retrofit closes.
+function modelled(schema) {
+  return JSON.stringify(schema).includes('"$ref"') || ["array", "number", "integer", "boolean"].includes(schema.type);
+}
+
+function client(docPath, modelsKt, server, outDir) {
+  const original = JSON.parse(fs.readFileSync(docPath, "utf8"));
+  const doc = plain(original);
+  const tag = server[0].toUpperCase() + server.slice(1);
+  const paths = {};
+  const ops = [];
+  for (const [path, item] of Object.entries(doc.paths)) {
+    // The planner is reached through the gateway's
+    // proxy (UpstreamRoutes), its client's base /api/planner/
+    // (Config.plannerPath); the gateway's proxy is no call of the
+    // gateway's own; a page ("/") is no API.
+    if (!path.startsWith("/api/") || path.startsWith("/api/planner/")) continue;
+    const at = server === "gateway" ? path : path.slice("/api".length);
+    paths[at] = item;
+    for (const [method, op] of Object.entries(item)) {
+      if (!op || typeof op !== "object" || !op.operationId) continue;
+      const fastapi = `${path.replace(/\W/g, "_")}_${method}`;
+      const own = op.operationId.endsWith(fastapi) ? op.operationId.slice(0, -fastapi.length) : op.operationId;
+      ops.push({ op, base: camel(own.replace(/_\d+$/, "")), group: (op.tags?.[0] ?? "").replace(/-controller$/, "") });
+      // A parameter keeps its int64 (an id is a Long), which prep drops
+      // with every format.
+      for (const [i, param] of (op.parameters ?? []).entries()) {
+        if (original.paths[path][method].parameters?.[i]?.schema?.format === "int64") param.schema.format = "int64";
+      }
+      // An ask the document leaves an untyped object is sent as
+      // kotlinx's JsonObject, which serializes as it is.
+      for (const [type, ask] of Object.entries(op.requestBody?.content ?? {})) {
+        if (type.includes("json") && ask.schema && !modelled(ask.schema)) ask.schema = { $ref: "#/components/schemas/JsonObject" };
+      }
+      for (const answer of Object.values(op.responses ?? {})) {
+        const content = Object.values(answer.content ?? {});
+        if (content.length && !content.every((c) => modelled(c.schema ?? {}))) delete answer.content;
+      }
+    }
+  }
+  const counts = {};
+  for (const { base } of ops) counts[base] = (counts[base] ?? 0) + 1;
+  for (const { op, base, group } of ops) {
+    op.operationId = counts[base] > 1 ? camel(`${group} ${base}`) : base;
+    op.tags = [tag];
+  }
+  doc.paths = paths;
+  // A schema is quicktype's class of the same name, matched as quicktype
+  // spells it (its acronyms camel case).
+  const classes = new Map();
+  for (const [, name] of fs.readFileSync(modelsKt, "utf8").matchAll(/^(?:data class|class|typealias|enum class) (\w+)/gm)) {
+    classes.set(name.toLowerCase(), name);
+  }
+  const pkg = { planner: "", gateway: ".gateway" }[server];
+  const schemaMappings = {};
+  for (const name of Object.keys(doc.components?.schemas ?? {})) {
+    const found = classes.get(name.replace(/[^A-Za-z0-9]/g, "").toLowerCase());
+    // One quicktype could not tell apart (FastAPI's "-Input" and
+    // "-Output" halves of a schema) is read as it comes.
+    schemaMappings[name] = found ? `app.wingtipmaps.android.api.generated${pkg}.${found}` : "kotlinx.serialization.json.JsonElement";
+  }
+  // A property of its own, so the generator takes it as a schema to map
+  // rather than a free-form object (kotlin.Any, which nothing serializes).
+  doc.components.schemas.JsonObject = { type: "object", properties: { any: { type: "string" } } };
+  schemaMappings.JsonObject = "kotlinx.serialization.json.JsonObject";
+  fs.writeFileSync(`${outDir}/${server}.client.json`, JSON.stringify(doc));
+  // A number is a Double, as the models have it, not BigDecimal.
+  fs.writeFileSync(`${outDir}/${server}.config.json`, JSON.stringify({ schemaMappings, typeMappings: { number: "kotlin.Double" } }));
+}
+
+const [mode, a, b, c, d] = process.argv.slice(2);
+if (mode === "prep") fs.writeFileSync(b, JSON.stringify(plain(JSON.parse(fs.readFileSync(a, "utf8")))));
+else if (mode === "aliases") aliases(a, b, c, d);
+else if (mode === "openapi") fs.writeFileSync(b, JSON.stringify(openapi(JSON.parse(fs.readFileSync(a, "utf8")))));
 // Every schema's name, for the shell script's quicktype sources.
 else if (mode === "names") console.log(Object.keys(JSON.parse(fs.readFileSync(a, "utf8")).components.schemas).join(" "));
-else if (mode === "swift") swift(a, b);
 else if (mode === "kotlin") kotlin(a, b);
+else if (mode === "client") client(a, b, c, d);
 else throw new Error(`no step "${mode}"`);

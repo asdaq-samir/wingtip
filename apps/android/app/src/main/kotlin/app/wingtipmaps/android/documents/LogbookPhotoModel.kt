@@ -5,10 +5,11 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
-import app.wingtipmaps.android.api.generated.assistant.DocumentRead
+import app.wingtipmaps.android.documents.model.DocumentRead
 import app.wingtipmaps.android.logbook.LogbookChanged
 import app.wingtipmaps.android.logbook.LogbookSource
 import app.wingtipmaps.android.logbook.ServerLogbook
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * "Add from a Photo" for the logbook: a paper logbook page read by the
@@ -24,7 +26,8 @@ import kotlinx.coroutines.launch
  * Flights" posts the confirmed rows to the logbook one at a time, a row
  * that fails said under it and left to try again.
  */
-class LogbookPhotoModel(private val source: LogbookSource = ServerLogbook) : ViewModel() {
+@HiltViewModel
+class LogbookPhotoModel @Inject constructor(private val source: LogbookSource) : ViewModel() {
     data class State(
         val reading: Boolean = false,
         val problem: String? = null,

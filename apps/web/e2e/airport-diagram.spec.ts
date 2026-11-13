@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, settled, sideDrawer, slow } from "./helpers";
+import { grabberTo, settle, settled, sideDrawer, slow, frontSheet } from "./helpers";
 
 // A route's handler still running as the test ends -- the Recents and
 // Saved planned ahead at idle ask the planner then -- found the page
@@ -38,7 +38,9 @@ async function noPhotos(page: Page) {
 /** The card's Charts tab, which takes the panel all the way up. */
 async function toCharts(page: Page) {
   await card(page).getByTestId("place-tab-diagrams").click();
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
+  // A card stays half way on a tab, as it opened (e7bb15ec8, the card
+  // rule's 2): pulled all the way up for the charts, as a pilot would.
+  await grabberTo(page, "full");
 }
 
 async function withDiagram(page: Page, picture: "drawn" | "missing", pdf = true) {
@@ -108,15 +110,18 @@ test("the card's runways are a page of its pictures under its title and actions,
   await settle(page);
   // Half way, as every card opens; no picture over its top, its pictures
   // lower in it (the owner, 2026-11-09).
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   const sketch = card(page).getByTestId("place-runway-sketch");
   // KDLH's runways, named for a screen reader.
   await expect(sketch).toHaveAttribute("aria-label", /^KDLH runways .*09\/27.*, north up\./, { timeout: slow(15000) });
-  // The ident at the top, and under it with nothing to measure
-  // from only the elevation (places.spec has the distance).
+  // The ident at the top, and no line under it for a public field
+  // (places.spec has the distance, in the Details).
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
-  await expect(card(page).getByTestId("place-line")).toHaveText(/^Elevation [\d,]+ ft$/);
-  await expect(sketch.getByTestId("place-diagram-runways")).toHaveAttribute("src", "/api/planner/airport-diagram/2610/runways/KDLH.png");
+  await expect(card(page).getByTestId("place-line")).toHaveCount(0);
+  await expect(sketch.getByTestId("place-diagram-runways")).toHaveAttribute(
+    "src",
+    "/api/planner/airport-diagram/2610/runways/KDLH.png?v=2",
+  );
   await expect(card(page).getByTestId("place-elevation")).toContainText(/^Elevation[\d,]+ ft$/);
   // The title, then the actions, then the pictures lower in the card.
   const [name, call, pictures] = await Promise.all(
@@ -308,7 +313,7 @@ test("a tap on the card's sketch of a field the FAA draws no diagram for shows t
   await expect(viewer.getByTestId("runway-sketch").locator("line").first()).toBeVisible();
   // Not the Runways tab, which the tap used to open: the card still half
   // way, on its first tab.
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   await expect(card(page).getByTestId("place-tab-runways")).not.toHaveAttribute("data-active");
   await viewer.getByTestId("airport-sketch-close").click();
   await expect(viewer).toHaveCount(0);

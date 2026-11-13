@@ -16,7 +16,6 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.service.PilotService;
-import app.wingtipmaps.gateway.service.SubscriptionService;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -76,9 +75,6 @@ class PlannerProxyControllerTest {
     @MockitoBean
     private PilotService pilotService;
 
-    @MockitoBean
-    private SubscriptionService subscriptions;
-
     @BeforeAll
     static void startUpstream() throws IOException {
         upstream = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -114,13 +110,8 @@ class PlannerProxyControllerTest {
     @DynamicPropertySource
     static void plannerUrl(DynamicPropertyRegistry registry) {
         registry.add(
-                "planner-service.base-url",
+                "app.planner.base-url",
                 () -> "http://127.0.0.1:" + upstream.getAddress().getPort());
-        // The assistant on the same fake, under a prefix of its own, so a
-        // test sees which of the two a request was sent to.
-        registry.add(
-                "assistant-service.base-url",
-                () -> "http://127.0.0.1:" + upstream.getAddress().getPort() + "/assistant");
     }
 
     @BeforeEach
@@ -138,7 +129,7 @@ class PlannerProxyControllerTest {
     }
 
     /** Whether the proxy forwards a method and an upstream path: a route
-     *  the planner's or the assistant's document marks. */
+     *  the planner's document marks. */
     private static boolean forwarded(String method, String upstreamPath) {
         return UpstreamRoutes.shipped().find(method, upstreamPath).isPresent();
     }
@@ -156,7 +147,8 @@ class PlannerProxyControllerTest {
     }
 
     @Test
-    void everyClaudeCallGoesToTheAssistantAtTheSameAddressAndTheRestToThePlanner() throws Exception {
+    void theClaudeCallsAreGoneAndAPilotsOwnNoteStillReachesThePlanner() throws Exception {
+        // Taken out with the assistant service (docs/decisions/0041).
         for (String path : new String[] {
             "/assistant",
             "/briefing/narrative",
@@ -165,12 +157,7 @@ class PlannerProxyControllerTest {
             "/oral/question",
             "/oral/grade"
         }) {
-            finish(mockMvc.perform(post("/api/planner" + path)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{}"))
-                    .andExpect(request().asyncStarted())
-                    .andReturn());
-            assertThat(received).contains("POST /assistant/api" + path);
+            assertThat(forwarded("POST", "/api" + path)).as(path).isFalse();
         }
         // A pilot's own note is kept at the planner, which holds the notes.
         finish(mockMvc.perform(post("/api/planner/checkpoint-notes")
@@ -283,21 +270,17 @@ class PlannerProxyControllerTest {
         assertThat(forwarded("GET", "/api/foreflight-pack/C81-KDLH/C81-KDLH-checkpoints.zip"))
                 .isTrue();
         assertThat(forwarded("GET", "/api/foreflight-pack")).isFalse();
-        assertThat(forwarded("POST", "/api/oral/question")).isTrue();
-        assertThat(forwarded("GET", "/api/oral/question")).isFalse();
         assertThat(forwarded("POST", "/api/clearance/places")).isTrue();
         assertThat(forwarded("GET", "/api/clearance/words")).isTrue();
         // Gone with collecting a route: the checkpoints come off the chart.
         assertThat(forwarded("POST", "/api/build")).isFalse();
         assertThat(forwarded("GET", "/api/routes")).isFalse();
-        assertThat(forwarded("POST", "/api/checkpoint-notes/generate")).isTrue();
-        assertThat(forwarded("POST", "/api/words/weather")).isTrue();
-        assertThat(forwarded("POST", "/api/words/risk")).isTrue();
-        assertThat(forwarded("POST", "/api/assistant")).isTrue();
-        // What the assistant service asks the planner for, and nobody else.
+        // A route's notes as the pilot sees them.
+        assertThat(forwarded("POST", "/api/checkpoint-notes/route")).isTrue();
+        // What only the stack asks the planner for, and nobody else.
         assertThat(forwarded("POST", "/api/words/weather/sources")).isFalse();
-        assertThat(forwarded("POST", "/api/checkpoint-notes/pending")).isFalse();
-        assertThat(forwarded("POST", "/api/checkpoint-notes/seed")).isFalse();
+        assertThat(forwarded("GET", "/api/checkpoint-notes/mine")).isFalse();
+        assertThat(forwarded("POST", "/api/engine/wind_triangle")).isFalse();
         assertThat(forwarded("GET", "/api/route-check")).isFalse();
         assertThat(forwarded("GET", "/api/airport/KDLH")).isTrue();
         assertThat(forwarded("GET", "/api/airports/in-view")).isTrue();
@@ -513,15 +496,12 @@ class PlannerProxyControllerTest {
         // The front end's own stream reader reports `detail`; a 502 with
         // an empty body or an HTML error page would show a pilot nothing.
         MockMvc unreachable = unreachablePlanner();
-        MvcResult started = unreachable
-                .perform(get("/api/planner/course"))
-                .andExpect(request().asyncStarted())
-                .andReturn();
-
+        // Answered at once, as a problem (StreamingProxy.problem): no stream starts.
         unreachable
-                .perform(asyncDispatch(started))
+                .perform(get("/api/planner/course"))
+                .andExpect(request().asyncNotStarted())
                 .andExpect(status().is(502))
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.detail").value("planner service unreachable"));
     }
 
@@ -554,15 +534,11 @@ class PlannerProxyControllerTest {
 
     /** A second MockMvc whose planner points at a port nothing is on. */
     private MockMvc unreachablePlanner() {
-        PlannerProxyController controller = new PlannerProxyController(
-                new StreamingProxy(),
-                "http://127.0.0.1:1",
-                "http://127.0.0.1:1",
-                pilotService,
-                subscriptions,
-                40,
-                20,
-                150);
-        return standaloneSetup(controller).build();
+        PlannerProxyController controller =
+                new PlannerProxyController(new StreamingProxy(), "http://127.0.0.1:1", pilotService);
+        // With the app's own handler, which writes a refusal as a problem.
+        return standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 }

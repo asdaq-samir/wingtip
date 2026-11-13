@@ -30,6 +30,46 @@ class NotamReason(BaseModel):
     words: str
 
 
+class TfrPoint(BaseModel):
+    """A point in degrees (WGS-84)."""
+
+    lat: float
+    lon: float
+
+
+class TfrContact(BaseModel):
+    """Whom a TFR's NOTAM names to call, as its XNOTAM file gives them:
+    the name in the FAA's capitals, a telephone, a frequency."""
+
+    name: str
+    phone: str | None = None
+    frequency: str | None = None
+
+
+class TfrFacts(BaseModel):
+    """A TFR as tfr.faa.gov gives it, for the card to read (the engine's
+    tfr_read) and show: its kind, rule, the list's title and its levels;
+    its instructions, a line each, and its NOTAM's text, as sent; the
+    facility it is coordinated through and its point of contact; and, on a
+    field's card, whether its area takes the field in, the field and the
+    nearest point of its areas."""
+
+    kind: str | None = None
+    rule: str | None = None
+    title: str | None = None
+    floor_ft: float | None = None
+    floor_ref: str | None = None
+    ceiling_ft: float | None = None
+    ceiling_ref: str | None = None
+    instructions: list[str] = []
+    text: str | None = None
+    facility: TfrContact | None = None
+    contact: TfrContact | None = None
+    over_field: bool | None = None
+    field: TfrPoint | None = None
+    edge: TfrPoint | None = None
+
+
 class RankedNotam(BaseModel):
     """One NOTAM or TFR, ranked: its place in the list and score, whether it
     is one of the top three said first, whether its score is shared
@@ -53,6 +93,7 @@ class RankedNotam(BaseModel):
     raw: str
     starts: str | None
     ends: str | None
+    tfr: TfrFacts | None = None
 
 
 class NotamsRanked(BaseModel):
@@ -65,3 +106,8 @@ class NotamsRanked(BaseModel):
     top: int
     coverage_since: str | None = None
     unchecked: list[str] = []
+    #: The field's IANA time zone ("America/Chicago"), for its card to say
+    #: its NOTAMs' UTC times (JO 7930.2 3-3-2) in the field's own local
+    #: time beside them (wingtip.time_zone); None for a route's, and where
+    #: no zone is known.
+    time_zone: str | None = None

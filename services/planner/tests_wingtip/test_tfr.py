@@ -3,6 +3,7 @@
 XNOTAM files): which are near a route, in force during it, or over a
 point, and a list kept through an outage."""
 
+import math
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -47,6 +48,24 @@ def test_a_tfr_the_route_goes_through_during_the_flight_is_told(two_tfrs):
     assert found[0]["along_track_nm"] == pytest.approx(30.0, abs=1.0)
 
 
+@pytest.mark.parametrize(("abeam_nm", "listed"), [(4.5, True), (5.5, False)])
+def test_near_is_five_miles_east_and_west_at_the_poleward_end_of_a_long_route(abeam_nm, listed):
+    """The stock audit's bug 2: a buffer of degrees sized at a 25 N to 49 N
+    route's middle reached only cos 49 / cos 37 of 5 nm, 4.1 nm, abeam its
+    north end. Here a TFR's nearest corner is `abeam_nm` east of the
+    meridian at 48.97 N, from the spherical cross-track identity
+    sin(d / R) = cos(lat) sin(dlon) (R 3,440.065 nm), not the code's own."""
+    lat, half = 48.97, 0.005
+    dlon = math.degrees(math.asin(math.sin(abeam_nm / 3440.065) / math.cos(math.radians(lat))))
+    west, south = -86.0 + dlon, lat - 2 * half
+    ring = [[west, south], [west + 2 * half, south], [west + 2 * half, lat], [west, lat], [west, south]]
+    weather_store.write("tfrs", [_tfr("6/3", "ABEAM", "Hazards", [ring])], fetched_at=datetime.now(timezone.utc).timestamp(), until=None)
+    start = datetime(2026, 10, 6, 22, 30, tzinfo=timezone.utc)
+    found = tfr.along_route([(25.0, -86.0), (49.0, -86.0)], start, start + timedelta(hours=9))
+    assert [t["notam_id"] for t in found] == (["6/3"] if listed else [])
+    assert all(not t["crosses"] for t in found)
+
+
 def test_a_tfr_over_before_the_flight_is_not(two_tfrs):
     start = datetime(2026, 10, 7, 2, 0, tzinfo=timezone.utc)
     assert tfr.along_route([(42.0, -88.0), (43.0, -88.0)], start, start + timedelta(hours=2)) == []
@@ -76,3 +95,50 @@ def test_a_list_kept_through_an_outage_leaves_out_the_ended(monkeypatch):
     monkeypatch.setattr(tfr.time, "time", lambda: T0 + tfr.SHAPES_TTL_S + 60)
     assert [t["notam_id"] for t in tfr.all_tfrs()] == ["6/3"]
     assert tfr.fetched_at() == T0 and tfr.failing()
+
+
+def _every_tfr_scanned(lat: float, lon: float, near_nm: float, start, end) -> tuple[list, list]:
+    """at_point and near_point as they were before the shapes were held
+    and indexed: every TFR parsed and tried at each ask."""
+    from shapely.geometry import Point, shape
+    from shapely.ops import nearest_points
+
+    from wingtip.geo import box_around, shape_distance_nm
+
+    point, now = Point(lon, lat), datetime.now(timezone.utc)
+    south, west, north, east = box_around(lat, lon, near_nm)
+    at, near = [], []
+    for t in tfr.all_tfrs():
+        if "geometry" not in t:
+            continue
+        geometry = shape(t["geometry"])
+        if geometry.contains(point):
+            at.append({**t, "active_now": tfr.in_force(t, now, now)})
+        g_west, g_south, g_east, g_north = geometry.bounds
+        if g_east < west or g_west > east or g_north < south or g_south > north:
+            continue
+        if shape_distance_nm(point, geometry, (lat, lon)) <= near_nm and tfr.in_force(t, start, end):
+            edge = nearest_points(geometry, point)[0]
+            near.append(
+                {**t, "crosses": geometry.contains(point), "active_now": tfr.in_force(t, now, now), "edge": {"lat": edge.y, "lon": edge.x}}
+            )
+    return at, near
+
+
+def test_the_held_and_indexed_shapes_answer_as_a_scan_of_them_all():
+    # A grid of overlapping squares, a few with no shape at all, asked at
+    # points in them, between them, on an edge and far off: the same
+    # TFRs, in the same order, as every one parsed and tried.
+    times = {"effective": "2026-10-06T23:00:00Z", "expires": "2026-10-07T01:00:00Z"}
+    found = [
+        _tfr(f"6/{i}{j}", f"T{i}{j}", "Security", _square(42.0 + 0.07 * i, -88.0 + 0.07 * j, half=0.05), **times)
+        for i in range(6)
+        for j in range(6)
+    ]
+    del found[7]["geometry"]
+    weather_store.write("tfrs", found, fetched_at=datetime.now(timezone.utc).timestamp(), until=None)
+    start = datetime(2026, 10, 6, 22, 30, tzinfo=timezone.utc)
+    for lat, lon in [(42.0, -88.0), (42.2, -87.8), (42.035, -87.965), (42.05, -88.0), (41.5, -88.5), (45.0, -80.0)]:
+        at, near = _every_tfr_scanned(lat, lon, tfr.NEAR_NM, start, start + timedelta(hours=2))
+        assert tfr.at_point(lat, lon) == at
+        assert tfr.near_point(lat, lon, start, start + timedelta(hours=2)) == near

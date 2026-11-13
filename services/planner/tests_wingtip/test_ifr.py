@@ -7,7 +7,7 @@ test puts on them, and the obstacles are a real DOF file of a few lines."""
 import numpy as np
 import pytest
 
-from tests_wingtip.test_terrain import _dof_line
+from tests_wingtip.test_terrain import FAR_AWAY, _dof_line
 from wingtip import elevation, faa_data, geo, ifr
 from wingtip.engine import ask as engine
 
@@ -47,7 +47,7 @@ def land(tmp_path, monkeypatch):
     monkeypatch.setattr(elevation, "_terrain_tile", tile)
     monkeypatch.setattr(faa_data, "_OBSTACLES_CACHE", {})
     dof = tmp_path / "DOF.DAT"
-    dof.write_text("", encoding="latin-1")
+    dof.write_text(FAR_AWAY, encoding="latin-1")
     monkeypatch.setattr(faa_data, "ensure_nasr_file", lambda name, cache_dir: dof, raising=False)
 
     class Land:
@@ -55,7 +55,7 @@ def land(tmp_path, monkeypatch):
             peaks.append((point[0], point[1], metres))
 
         def obstacles(self, *lines):
-            dof.write_text("".join(lines), encoding="latin-1")
+            dof.write_text("".join(lines) or FAR_AWAY, encoding="latin-1")
             monkeypatch.setattr(faa_data, "_OBSTACLES_CACHE", {})
 
     return Land()

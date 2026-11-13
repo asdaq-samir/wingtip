@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { slow, settle, openMapSettings } from "./helpers";
+import { chartZoom, grabberTo, openMapSettings, settle, slow } from "./helpers";
+import { markWith } from "./marks";
 
 /**
  * The chart layers the map asks for: the terminal area chart over the
@@ -40,25 +41,31 @@ for (const path of ["/app/dev"] as const) {
     });
     await expect.poll(kinds, { timeout: slow(15000) }).toBe("sec");
 
-    // Wheel-zoom in over the departure marker, well past the sectional's
-    // own zooms; the map zooms about the cursor, so C81 stays under it.
-    const marker = page.locator(".maplibregl-marker", { hasText: "C81" }).first();
-    await expect(marker).toBeVisible();
-    const box = (await marker.boundingBox())!;
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    for (let i = 0; i < 8; i++) {
-      await page.mouse.wheel(0, -60);
-      await page.waitForTimeout(400);
-    }
+    // Wheel-zoom in over the departure marker to the TAC's own levels
+    // (its tiles from z10, ChartGl's data-chart-zoom 11 and on), where
+    // the sectional is at its last detail; the map zooms about the
+    // cursor, so C81 stays under it. Not further: past the TAC's last
+    // level (13) the chart fades into the imagery (closeZoom) and no TAC
+    // tile is asked for, pinned or not. Eight fixed wheel steps from the
+    // route's whole view (zoom 6) came only to 7, short of the TAC.
+    await expect.poll(markWith(page, "route-marks", "C81")).not.toBeNull();
+    const marker = (await markWith(page, "route-marks", "C81")())!;
+    await page.mouse.move(marker.x, marker.y);
+    await expect(async () => {
+      await page.mouse.wheel(0, -120);
+      expect(await chartZoom(page)).toBeGreaterThanOrEqual(11);
+    }).toPass({ timeout: slow(30000) });
     expect(await kinds()).toBe("sec");
     expect(tacDrawn).toBe(0);
 
     // Pinned: both chart layers are asked for, the sectional and the TAC.
     await openMapSettings(page);
+    // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
+    await grabberTo(page, "full");
     const pin = page.getByTestId("tac-toggle");
-    await expect(pin).toHaveAttribute("aria-checked", "false");
+    await expect(pin).toHaveAttribute("aria-pressed", "false");
     await pin.click();
-    await expect(pin).toHaveAttribute("aria-checked", "true");
+    await expect(pin).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press("Escape");
     await expect.poll(kinds, { timeout: slow(10000) }).toBe("sec tac");
     await expect.poll(() => tacDrawn, { timeout: slow(45000) }).toBeGreaterThan(0);
@@ -68,10 +75,11 @@ for (const path of ["/app/dev"] as const) {
     await page.reload();
     await settle(page);
     await openMapSettings(page);
+    await grabberTo(page, "full");
     const toggle = page.getByTestId("tac-toggle");
-    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
     await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
     await page.keyboard.press("Escape");
     await expect.poll(kinds).toBe("sec");
   });
@@ -92,6 +100,7 @@ for (const path of ["/app/dev"] as const) {
     await expect.poll(kinds, { timeout: slow(15000) }).toBe("sec");
 
     await openMapSettings(page);
+    await grabberTo(page, "full");
     await page.getByTestId("base-chart-select").getByRole("button", { name: "IFR low" }).click();
     // The terminal sheet's row is the IFR area chart over the IFR charts.
     await expect(page.getByTestId("map-settings").getByText("IFR Area Charts")).toBeVisible();

@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Check, Mic, Square, TriangleAlert } from "lucide-react";
 import { cn } from "cn";
 import IconButton from "./IconButton";
+import { Toggle } from "@base-ui/react/toggle";
 import ListenThrough from "./ListenThrough";
-import ClearancePhoto from "./ClearancePhoto";
 import { ClearanceElements, Line } from "./ClearanceRead";
 import { ListGroup, ListRow } from "./GroupedList";
 import { Button } from "./ui/button";
@@ -306,20 +306,18 @@ export default function ClearanceCard({
           onOpenChange={openRow("hear")}
           control={
             mic && (
-              <IconButton
-                label={onRadio ? "Stop" : "Listen"}
-                aria-pressed={onRadio}
+              <Toggle
+                pressed={onRadio}
+                onPressedChange={toggle}
                 disabled={listening && !onRadio}
-                onClick={toggle}
-                data-testid="clearance-toggle"
-                className={ROW_MIC}
+                render={<IconButton label={onRadio ? "Stop" : "Listen"} data-testid="clearance-toggle" className={ROW_MIC} />}
               >
                 {onRadio ? (
                   <Square className="size-5" strokeWidth={1.5} aria-hidden="true" />
                 ) : (
                   <Mic className="size-5" strokeWidth={1.5} aria-hidden="true" />
                 )}
-              </IconButton>
+              </Toggle>
             )
           }
         >
@@ -338,8 +336,6 @@ export default function ClearanceCard({
             data-testid="clearance-text"
             className={cn(TEXT.detail, "resize-none font-mono")}
           />
-          {/* A clearance copied down on paper, read into the words above. */}
-          <ClearancePhoto onRead={pick} />
           {/* The clearance element by element as read, a polite live region
               so each new word is said without taking the focus; the one
               tap that changes the plan is Use This Route on the Enter row. */}
@@ -374,20 +370,20 @@ export default function ClearanceCard({
           onOpenChange={openRow("readback")}
           control={
             mic && (
-              <IconButton
-                label={readingBack ? "Stop" : "Read back again"}
-                aria-pressed={readingBack}
+              <Toggle
+                pressed={readingBack}
+                onPressedChange={readbackTap}
                 disabled={!heardIt || (listening && !readingBack)}
-                onClick={readbackTap}
-                data-testid="clearance-readback-mic"
-                className={ROW_MIC}
+                render={
+                  <IconButton label={readingBack ? "Stop" : "Read back again"} data-testid="clearance-readback-mic" className={ROW_MIC} />
+                }
               >
                 {readingBack ? (
                   <Square className="size-5" strokeWidth={1.5} aria-hidden="true" />
                 ) : (
                   <Mic className="size-5" strokeWidth={1.5} aria-hidden="true" />
                 )}
-              </IconButton>
+              </Toggle>
             )
           }
         >

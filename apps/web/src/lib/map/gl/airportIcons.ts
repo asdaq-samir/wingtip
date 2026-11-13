@@ -1,13 +1,11 @@
 import type { ExpressionSpecification } from "maplibre-gl";
-import { sectionalAirportSvg, weatherDotSvg } from "../marks/airportMark";
-import type { AirportWeatherLook } from "../marks/airportWeatherPrefs";
+import { sectionalAirportSvg } from "../marks/airportMark";
 import { colourOf } from "../marks/flightCategory";
 
 /**
  * The tile airports' symbols (glOverlays' airports layer): every picture
- * one can wear -- towered or not, its size, its use, its weather's halo,
- * or the weather's dot in its place (the Map card's Airport Weather) --
- * and the layer's expression choosing one by the tile's fields and each
+ * one can wear -- towered or not, its size, its use, its weather's halo
+ * -- and the layer's expression choosing one by the tile's fields and each
  * field's METAR. Apart from glOverlays, to keep each a size a reader
  * takes in.
  */
@@ -28,11 +26,8 @@ const USES: AirportUse[] = [null, "private", "military", "heliport"];
 const CATEGORY_COLOURS = ["VFR", "MVFR", "IFR", "LIFR"].map((c) => colourOf(c));
 /** Each flight category's halo, and none. */
 const PIPS: (string | null)[] = [null, ...CATEGORY_COLOURS];
-/** The dot drawn for a field in place of its symbol (the look Dot). */
-const dotId = (colour: string) => `apt-dot|${colour}`;
-
 /** Every airport symbol the tiles can ask for: 2 inks, 4 sizes, 5 halos
- *  and 4 uses, 160 small pictures; and the 4 dots. */
+ *  and 4 uses, 160 small pictures. */
 export function airportPictures(): Picture[] {
   const out: Picture[] = [];
   for (const towered of [true, false])
@@ -41,7 +36,6 @@ export function airportPictures(): Picture[] {
         for (const use of USES) {
           out.push([airportMarkId(towered, size, pip, use), () => sectionalAirportSvg(towered, size, use, pip)]);
         }
-  for (const colour of CATEGORY_COLOURS) out.push([dotId(colour), () => weatherDotSvg(colour)]);
   return out;
 }
 
@@ -71,40 +65,32 @@ const TILE_USE: ExpressionSpecification = [
 ];
 export const TOWERED: ExpressionSpecification = ["==", ["get", "towered"], true];
 
-/** The halo's colour by ident: from the METARs, once they are in
- *  (setAirportWeather); none before. */
-function weatherExpression(colours: Map<string, string>): ExpressionSpecification | string {
-  const byColour = new Map<string, string[]>();
-  for (const [ident, colour] of colours) {
-    let idents = byColour.get(colour);
-    if (!idents) byColour.set(colour, (idents = []));
-    idents.push(ident);
-  }
-  if (!byColour.size) return "";
-  const branches = [...byColour].flatMap(([colour, idents]) => [idents, colour]);
-  return ["match", ["get", "ident"], ...branches, ""] as unknown as ExpressionSpecification;
-}
+/** The map's global state the airports' layer reads (MapLibre's
+ *  `global-state` expression, set by glOverlays): each field's weather
+ *  colour by ident, from the METARs once they are in. */
+export const AIRPORT_WEATHER = "airportWeather";
+
+/** This field's weather colour, "" for none: its ident looked up in the
+ *  state's ident → colour object. */
+const WEATHER: ExpressionSpecification = [
+  "string",
+  ["get", ["to-string", ["get", "ident"]], ["object", ["global-state", AIRPORT_WEATHER], ["literal", {}]]],
+  "",
+];
 
 /** The airports' symbol from the tiles: its picture by its ink, size, use
- *  and weather (airportMarkId); with the look Dot, a field with weather
- *  its dot instead (the Map card's Airport Weather). */
-export function tileAirportIcon(colours: Map<string, string>, look: AirportWeatherLook = "halo"): ExpressionSpecification {
-  const symbol = symbolIcon(look === "off" ? new Map() : colours);
-  if (look !== "dot" || !colours.size) return symbol;
-  const weather = weatherExpression(colours);
-  return ["case", ["!=", weather, ""], ["concat", "apt-dot|", weather], symbolIcon(new Map())] as ExpressionSpecification;
-}
-
-function symbolIcon(colours: Map<string, string>): ExpressionSpecification {
-  return [
-    "concat",
-    "apt|",
-    ["case", TOWERED, "t", "u"],
-    "|",
-    TILE_SIZE,
-    "|",
-    weatherExpression(colours),
-    "|",
-    TILE_USE,
-  ] as ExpressionSpecification;
-}
+ *  and weather (airportMarkId), the weather read from the map's state, so
+ *  a new METAR is one state change, not a new expression. The halo with
+ *  every one of Settings' Airport Weather but Off, which sets no colour
+ *  (lib/map/marks/airportWeatherPrefs); the Dot went (the owner, 2026-11-13). */
+export const TILE_AIRPORT_ICON: ExpressionSpecification = [
+  "concat",
+  "apt|",
+  ["case", TOWERED, "t", "u"],
+  "|",
+  TILE_SIZE,
+  "|",
+  WEATHER,
+  "|",
+  TILE_USE,
+];

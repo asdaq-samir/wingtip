@@ -1,38 +1,35 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SetURLSearchParams } from "react-router";
-import type { PanelState } from "../../../lib/mapChrome";
+import type { Address, SetAddress } from "../../../lib/address";
 import { identOf } from "../../../lib/identSchema";
 import { usePreferences, type RecentAirport } from "../../../lib/preferences";
 import { airportQuery, queryClient } from "../../../lib/queryClient";
 import { useTabSearch } from "../lib/tabSearch";
 import { useAirportSearch } from "../../../lib/useAirportSearch";
-import { patched } from "../../../lib/useSearchParamsNow";
 import type { PanelView } from "./usePanelView";
 
 /**
  * The planner's search fields (usePlanWorkspace): the one search, whose
  * airport opens its card or is made Home or a Favorite; the traffic's and
  * Nearest's, whose text lives in features/plan/lib/tabSearch; the Adds
- * that focus them without moving the panel; and Favorites brought in by a
- * link.
+ * that focus them; and Favorites brought in by a link. No field's focus
+ * or typing moves the sheet (the owner, 2026-11-11: "Whenever I try to
+ * type on search bar it takes the card to full screen"): it stays where
+ * the pilot put it, the keyboard placed by the Drawer's
+ * VirtualKeyboardProvider.
  */
 export function useSearchPanel({
   view,
   selectPlace,
   listAway,
-  panel,
-  setPanel,
-  searchParams,
-  setSearchParams,
+  address,
+  setAddress,
 }: {
   view: PanelView;
   selectPlace: (ident: string | null) => void;
   /** A list in full put away, where it is the one open. */
   listAway: (name: "favorites") => void;
-  panel: PanelState;
-  setPanel: (state: PanelState) => void;
-  searchParams: URLSearchParams;
-  setSearchParams: SetURLSearchParams;
+  address: Address;
+  setAddress: SetAddress;
 }) {
   const [query, setQuery] = useState("");
   const [picking, setPicking] = useState<"place" | "home" | "favorite">("place");
@@ -65,35 +62,22 @@ export function useSearchPanel({
     },
     [picking, addRecent, selectPlace, setHomeAirport, toggleFavoriteAirport, favorites],
   );
-  // An Add's focus on a search field leaves the panel the height it is,
-  // at the owner's ask ("Clicking on any button in half card should not
-  // open the full card"): what is typed in it then takes it up, where
-  // the answers are. A finger's own tap on the field takes it up at once.
-  const quietFocus = useRef(false);
-  const focusQuietly = (field: (() => void) | undefined) => {
-    quietFocus.current = true;
-    field?.();
-    quietFocus.current = false;
-  };
   // Favorites' Add, Home's or another's: the search bar asks for the
   // field, focused within the tap so the keyboard comes up.
   const askFor = (what: "home" | "favorite") => {
     setPicking(what);
     listAway("favorites");
-    focusQuietly(() => searchInput.current?.focus());
+    searchInput.current?.focus();
   };
   // Home's, My Airplane's or the airplane Favorites' Add on the pill: the
-  // search asked for it, focused within the tap, the panel where it is.
+  // search asked for it, focused within the tap.
   const addFromPill = (what: "home" | "mine" | "airplane") => {
     if (what === "home") {
       askFor("home");
       return;
     }
     useTabSearch.setState({ pickingMine: what === "mine", pickingFavorite: what === "airplane" });
-    focusQuietly(useTabSearch.getState().focusAircraft ?? undefined);
-  };
-  const upAsTyped = (typed: string) => {
-    if (typed && panel === "peek") setPanel("full");
+    useTabSearch.getState().focusAircraft?.();
   };
 
   // Aircraft's and Nearest's fields, the search bar's shape (SearchField) in
@@ -115,8 +99,8 @@ export function useSearchPanel({
   // to try) arrives on another; the address drops them once read.
   const seeded = useRef(false);
   useEffect(() => {
-    const listed = searchParams.get("favorites");
-    const homeListed = searchParams.get("home");
+    const listed = address.favorites;
+    const homeListed = address.home;
     if (seeded.current || (!listed && !homeListed)) return;
     seeded.current = true;
     const look = (ident: string) =>
@@ -132,14 +116,9 @@ export function useSearchPanel({
       }
       const home = homeListed && (await look(identOf(homeListed)));
       if (home) usePreferences.getState().setHomeAirport(home);
-      setSearchParams(
-        (prev) => {
-          return patched(prev, { favorites: null, home: null });
-        },
-        { replace: true },
-      );
+      void setAddress({ favorites: null, home: null });
     })();
-  }, [searchParams, setSearchParams]);
+  }, [address, setAddress]);
   return {
     query,
     setQuery,
@@ -148,10 +127,8 @@ export function useSearchPanel({
     searchInput,
     search,
     pickPlace,
-    quietFocus,
     askFor,
     addFromPill,
-    upAsTyped,
     aircraftTyped,
     pickingMine,
     pickingFavorite,

@@ -2,17 +2,24 @@ package app.wingtipmaps.android.emergency
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.EmergencyFields
 import app.wingtipmaps.android.checklist.ChecklistSection
+import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -22,12 +29,22 @@ import kotlin.math.roundToLong
  * planner's /api/emergency/fields round own ship, the field picked, the
  * airplane's own emergency checklist opened at the emergency asked
  * (checklist_section), and the MAYDAY filled from all of it
- * (mayday_call). The views only draw what this gives.
+ * (mayday_call). The views only draw what this gives. Where the planner
+ * cannot be reached, the fields come from the cycle packs on the phone
+ * (PhoneFields), ranked by the same engine and said to be the phone's,
+ * without weather (`onPhone`).
  */
+@HiltViewModel
 class EmergencyModel(
     private val source: EmergencySource = PlannerEmergency,
     private val rules: EmergencyRules = EngineEmergency,
+    onPhone: EmergencySource? = null,
+    /** Where the packs are read, off the main thread. */
+    private val work: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
+    /** Hilt's: the planner's fields and the engine's rules, the packs' fields on the phone where the planner cannot be reached. */
+    @Inject
+    constructor(source: EmergencySource, rules: EmergencyRules) : this(source, rules, null, Dispatchers.Default)
     data class State(
         val fix: OwnShip.Fix? = null,
         val ranked: EngineContract.BestFieldsAnswer? = null,
@@ -37,6 +54,9 @@ class EmergencyModel(
         val metar: String? = null,
         val loading: Boolean = false,
         val problem: String? = null,
+        /** The fields are the packs' on this phone, the planner out of
+         *  reach: no METAR, wind, runway or frequency among them. */
+        val onPhone: Boolean = false,
         val airplaneName: String? = null,
         /** No airplane picked: general guidance in place of its checklist
          *  (`emergency_guidance`), and no glide or figure of any airplane's. */
@@ -59,6 +79,7 @@ class EmergencyModel(
     private var glideRatio: Double? = null
     private var callsign: String? = null
     private var trackMagDeg: Double? = null
+    private val phone = onPhone ?: PhoneFields.emergencySource({ CyclePacks.current }, { _state.value.airplaneName })
 
     /** Opened for an airplane (none: no glide is guessed) as the planner
      *  is asked it (a stock type, or "own"), with the pilot's own glide
@@ -88,18 +109,33 @@ class EmergencyModel(
             asking?.cancel()
             _state.update { it.copy(loading = data == null) }
             asking = viewModelScope.launch {
-                try {
-                    data = source.fields(at.first, at.second, at.third, aircraft, glideRatio)
-                    _state.update { it.copy(loading = false, problem = null) }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    _state.update { it.copy(loading = false, problem = if (data == null) "The fields could not be had. Try again." else null) }
-                }
+                ask(at)
                 rank()
             }
         } else {
             rank()
+        }
+    }
+
+    /** The planner's fields, else the phone's; where neither, the fields
+     *  had before stand, and with none the planner's failure is said. */
+    private suspend fun ask(at: Triple<Double, Double, Double?>) {
+        val planner = try {
+            data = source.fields(at.first, at.second, at.third, aircraft, glideRatio)
+            _state.update { it.copy(loading = false, problem = null, onPhone = false) }
+            return
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            e
+        }
+        try {
+            data = withContext(work) { phone.fields(at.first, at.second, at.third, aircraft, glideRatio) }
+            _state.update { it.copy(loading = false, problem = null, onPhone = true) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            _state.update { it.copy(loading = false, problem = if (data == null) Problems.say("The fields could not be had", planner) else null) }
         }
     }
 

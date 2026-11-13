@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_core::geo::call",
-  "description": "The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0), the great circle of FAA-H-8083-25C ch. 16.",
-  "x-tool": true,
+  "description": "The distance between two points, nm (1,852 m), along the geodesic on the WGS-84 ellipsoid (NGA TR8350.2) the FAA's coordinates and GPS are on, by Karney's algorithm (J. Geodesy 87:43-55, 2013) as pyproj's Geod(ellps=\"WGS84\") and a GPS navigator have it: the great circle of FAA-H-8083-25C ch. 16 on the ellipsoid.",
   "type": "object",
   "properties": {
     "input": {

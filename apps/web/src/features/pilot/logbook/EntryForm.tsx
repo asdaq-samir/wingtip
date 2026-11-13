@@ -1,14 +1,17 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, type KeyboardEvent } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useBeforeUnload } from "react-router";
+import { FormDateField } from "../../../components/FormFields";
 import { cn } from "cn";
 import { useConfirm } from "../../../components/useConfirm";
 import TogglePill from "../../../components/TogglePill";
 import { Button } from "../../../components/ui/button";
-import { DateField } from "../../../components/ui/date-field";
 import { Input } from "../../../components/ui/input";
 import { NumberField } from "../../../components/ui/number-field";
 import type { LogbookEntryRequest } from "../../../lib/api/types";
 import { TEXT } from "../../../lib/text";
-import { entryProblems, sameEntry, type EntryProblems } from "./entryChecks";
+import { entryProblems } from "./entryChecks";
+import { FieldError } from "../../../components/ui/field";
 
 /**
  * One entry's form: a paper logbook's columns. In the plus's popover for a
@@ -40,20 +43,38 @@ export default function EntryForm({
    *  popover round it to ask before it closes on it. */
   onDirtyChange?: (dirty: boolean) => void;
 }) {
-  const [entry, setEntry] = useState(initial);
-  const [problems, setProblems] = useState<EntryProblems>({});
-  const form = useRef<HTMLFormElement>(null);
-  const dirty = !sameEntry(entry, initial);
+  // react-hook-form keeps what is typed, whether it differs from what the
+  // form opened on (isDirty), what is missing (the resolver, from
+  // entryProblems) and, on Save, the focus on the first field that needs
+  // something (shouldFocusError). An empty box and none are one to the
+  // pilot, so the form opens on "" where the flight has none.
+  const {
+    control,
+    register,
+    handleSubmit,
+    formState: { isDirty: dirty, errors },
+  } = useForm<LogbookEntryRequest>({
+    defaultValues: blanksAsEmpty(initial),
+    resolver: (values) => {
+      const found = entryProblems(values);
+      const keys = Object.keys(found) as (keyof LogbookEntryRequest)[];
+      return keys.length
+        ? { values: {}, errors: Object.fromEntries(keys.map((key) => [key, { type: "required", message: found[key] }])) }
+        : { values, errors: {} };
+    },
+  });
   useEffect(() => {
     onDirtyChange?.(dirty);
   }, [dirty, onDirtyChange]);
   // The browser's own question before a changed form is left with the page.
-  useEffect(() => {
-    if (!dirty) return;
-    const ask = (e: BeforeUnloadEvent) => e.preventDefault();
-    window.addEventListener("beforeunload", ask);
-    return () => window.removeEventListener("beforeunload", ask);
-  }, [dirty]);
+  useBeforeUnload(
+    useCallback(
+      (e: BeforeUnloadEvent) => {
+        if (dirty) e.preventDefault();
+      },
+      [dirty],
+    ),
+  );
   const [askDiscard, discardDialog] = useConfirm({
     title: "Discard Changes?",
     description: "What you typed in this flight is not saved.",
@@ -78,45 +99,45 @@ export default function EntryForm({
     cancel();
   };
   const field = (key: keyof LogbookEntryRequest, label: string, type: "text" | "number" | "date" = "text") => {
-    const now = entry[key] as string | number | null | undefined;
+    const said = errors[key]?.message;
     // A figure on React Aria's number field and the day on its date
     // field, where the native ones were, each named by its label.
-    const control =
+    const box =
       type === "number" ? (
-        <NumberField
-          aria-label={label}
-          className="h-8"
-          minValue={0}
-          data-testid={`logbook-${key}`}
-          value={now == null || now === "" ? null : Number(now)}
-          onChange={(v) => setEntry({ ...entry, [key]: v ?? 0 })}
-          onKeyDown={escapeAria}
+        <Controller
+          control={control}
+          name={key}
+          render={({ field: bound }) => (
+            <NumberField
+              aria-label={label}
+              className="h-8"
+              minValue={0}
+              data-testid={`logbook-${key}`}
+              value={bound.value == null || bound.value === "" ? null : Number(bound.value)}
+              onChange={(v) => bound.onChange(v ?? 0)}
+              onBlur={bound.onBlur}
+              onKeyDown={escapeAria}
+            />
+          )}
         />
       ) : type === "date" ? (
-        <DateField
+        <FormDateField
+          control={control}
+          name={key}
           aria-label={label}
           className="h-8"
           data-testid={`logbook-${key}`}
-          value={String(now ?? "")}
-          onChange={(day) => setEntry({ ...entry, [key]: day })}
           onKeyDown={escapeAria}
-          isInvalid={!!problems[key]}
+          isInvalid={!!said}
         />
       ) : (
-        <Input
-          className="h-8"
-          data-testid={`logbook-${key}`}
-          value={now ?? ""}
-          onChange={(e) => setEntry({ ...entry, [key]: e.target.value })}
-          onKeyDown={escape}
-        />
+        <Input className="h-8" data-testid={`logbook-${key}`} {...register(key)} onKeyDown={escape} />
       );
-    const said = problems[key];
     return (
       <div data-field={key}>
         <label className={cn("grid grid-cols-[8rem_1fr] items-center gap-2", TEXT.detail)}>
           <span>{label}</span>
-          {control}
+          {box}
         </label>
         {/* Said under its own field, where the eye is (WCAG 3.3.1). */}
         {said && (
@@ -128,26 +149,7 @@ export default function EntryForm({
     );
   };
   return (
-    <form
-      ref={form}
-      className="space-y-2.5"
-      noValidate
-      onSubmit={(e) => {
-        e.preventDefault();
-        const found = entryProblems(entry);
-        setProblems(found);
-        const first = Object.keys(found)[0];
-        if (first) {
-          // The first field that needs something, focused: its input, or
-          // React Aria's first segment.
-          form.current
-            ?.querySelector<HTMLElement>(`[data-field="${first}"] :is(input, [role="spinbutton"], [contenteditable="true"])`)
-            ?.focus();
-          return;
-        }
-        onSave(entry);
-      }}
-    >
+    <form className="space-y-2.5" noValidate onSubmit={(e) => void handleSubmit(onSave)(e)}>
       {field("flownOn", "Date", "date")}
       {field("route", "Route")}
       {field("aircraft", "Airplane")}
@@ -171,25 +173,27 @@ export default function EntryForm({
       <div className={cn("grid grid-cols-[8rem_1fr] items-center gap-2", TEXT.detail)}>
         <span>Also flew</span>
         <span className="flex gap-2">
-          <TogglePill
-            pressed={entry.holding}
-            onPressedChange={(holding) => setEntry({ ...entry, holding })}
-            label="Holding"
-            testId="logbook-holding"
+          <Controller
+            control={control}
+            name="holding"
+            render={({ field: bound }) => (
+              <TogglePill pressed={!!bound.value} onPressedChange={bound.onChange} label="Holding" testId="logbook-holding" />
+            )}
           />
-          <TogglePill
-            pressed={entry.tracking}
-            onPressedChange={(tracking) => setEntry({ ...entry, tracking })}
-            label="Tracking"
-            testId="logbook-tracking"
+          <Controller
+            control={control}
+            name="tracking"
+            render={({ field: bound }) => (
+              <TogglePill pressed={!!bound.value} onPressedChange={bound.onChange} label="Tracking" testId="logbook-tracking" />
+            )}
           />
         </span>
       </div>
       {field("remarks", "Remarks")}
       {problem && (
-        <p role="alert" className={cn("text-destructive", TEXT.note)} data-testid="logbook-problem">
+        <FieldError className={cn("text-destructive", TEXT.note)} data-testid="logbook-problem">
           {problem}
-        </p>
+        </FieldError>
       )}
       <div className="flex justify-end gap-2 pt-1">
         {onCancel && (
@@ -205,4 +209,9 @@ export default function EntryForm({
       {discardDialog}
     </form>
   );
+}
+
+/** The flight with "" where it has none, as the boxes hold an empty one. */
+function blanksAsEmpty(entry: LogbookEntryRequest): LogbookEntryRequest {
+  return Object.fromEntries(Object.entries(entry).map(([key, value]) => [key, value ?? ""])) as LogbookEntryRequest;
 }

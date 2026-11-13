@@ -2,6 +2,7 @@ import NavLogAge from "./NavLogAge";
 import { useAirplaneChosen } from "../../../../lib/preferences";
 import { Fragment, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
+import { Button } from "../../../../components/ui/button";
 import { Badge } from "../../../../components/ui/badge";
 import { zoneName } from "../../../../lib/format";
 import { placeName } from "../../lib/radio";
@@ -249,18 +250,19 @@ export function NavLogList({
                         // The field's name opens its card, as it does on the
                         // map and in the route's list (tap what you see,
                         // docs/navigation.md); the rest of the row selects it.
-                        <button
-                          type="button"
+                        <Button
+                          variant="link"
+                          size="inline"
                           data-testid="navlog-field-open"
                           aria-label={`${name}: open the airport`}
                           onClick={(event) => {
                             event.stopPropagation();
                             wantPlace(field);
                           }}
-                          className="relative text-left text-tint after:absolute after:-inset-y-2 after:inset-x-0 after:content-['']"
+                          className="relative justify-start text-left after:absolute after:-inset-y-2 after:inset-x-0 after:content-['']"
                         >
                           {name}
-                        </button>
+                        </Button>
                       ) : (
                         name
                       )}

@@ -12,6 +12,18 @@
             },
             "type" : "array"
           },
+          "checkpointNotes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PlannerCheckpointNote"
+            },
+            "type" : [ "array", "null" ]
+          },
+          "connectedApps" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ConnectorGrantDto"
+            },
+            "type" : "array"
+          },
           "currency" : {
             "$ref" : "#/components/schemas/CurrencyDto"
           },
@@ -37,11 +49,42 @@
             },
             "type" : "array"
           },
+          "records" : {
+            "$ref" : "#/components/schemas/AccountRecordsDto"
+          },
+          "reminders" : {
+            "$ref" : "#/components/schemas/RemindersDto"
+          },
           "training" : {
             "$ref" : "#/components/schemas/TrainingDto"
           }
         },
-        "required" : [ "account", "airplanes", "currency", "exportedAt", "flights", "format", "instructing", "logbook", "training" ],
+        "required" : [ "account", "airplanes", "checkpointNotes", "connectedApps", "currency", "exportedAt", "flights", "format", "instructing", "logbook", "records", "reminders", "training" ],
+        "type" : "object"
+      },
+      "AccountRecordsDto" : {
+        "properties" : {
+          "featureUses" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FeatureUse"
+            },
+            "type" : "array"
+          },
+          "remindersSent" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SentReminder"
+            },
+            "type" : "array"
+          },
+          "subscription" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/SubscriptionRow"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "featureUses", "remindersSent", "subscription" ],
         "type" : "object"
       },
       "AircraftDto" : {
@@ -70,6 +113,14 @@
           "cruiseTasKt" : {
             "format" : "double",
             "type" : "number"
+          },
+          "descentFuelBurnGph" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "descentIasKt" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
           },
           "dueItems" : {
             "description" : "What else falls due on it as its owner keeps it: ADs (14 CFR 91.417(a)(2)(v)) and other items",
@@ -138,39 +189,39 @@
             "description" : "Its last VOR check for IFR (14 CFR 91.171): when, how, where, the bearing error, and the last day it is good for -- 30 days on, if the error was within the check's limit"
           }
         },
-        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "createdAt", "cruisePowerPct", "cruiseTasKt", "dueItems", "equipment", "figures", "fuelBurnGph", "handbook", "id", "inspections", "openSquawks", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal", "vorCheck" ],
+        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "createdAt", "cruisePowerPct", "cruiseTasKt", "descentFuelBurnGph", "descentIasKt", "dueItems", "equipment", "figures", "fuelBurnGph", "handbook", "id", "inspections", "openSquawks", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal", "vorCheck" ],
         "type" : "object"
       },
       "AircraftRequest" : {
         "properties" : {
           "climbFuelBurnGph" : {
-            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : [ "number", "null" ]
           },
           "climbTasKt" : {
-            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : [ "number", "null" ]
           },
           "colour" : {
-            "maxLength" : 40,
-            "minLength" : 0,
             "type" : [ "string", "null" ]
           },
           "cruisePowerPct" : {
             "format" : "double",
-            "maximum" : 100,
-            "minimum" : 40,
             "type" : [ "number", "null" ]
           },
           "cruiseTasKt" : {
-            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : "number"
           },
+          "descentFuelBurnGph" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "descentIasKt" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
           "equipment" : {
-            "pattern" : "\\s*[A-Za-z0-9]{0,40}\\s*",
             "type" : [ "string", "null" ]
           },
           "figures" : {
@@ -182,31 +233,33 @@
             "description" : "Its own handbook figures, all at once (null in it clears one); left out, they stay as they were"
           },
           "fuelBurnGph" : {
-            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : "number"
           },
           "surveillance" : {
-            "pattern" : "\\s*[A-Za-z0-9]{0,20}\\s*",
             "type" : [ "string", "null" ]
           },
           "tailNumber" : {
-            "maxLength" : 16,
-            "minLength" : 0,
             "type" : "string"
           },
           "typeDesignator" : {
-            "maxLength" : 16,
-            "minLength" : 0,
             "type" : "string"
           },
           "usableFuelGal" : {
-            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : [ "number", "null" ]
           }
         },
-        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "cruisePowerPct", "cruiseTasKt", "equipment", "figures", "fuelBurnGph", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal" ],
+        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "cruisePowerPct", "cruiseTasKt", "descentFuelBurnGph", "descentIasKt", "equipment", "figures", "fuelBurnGph", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal" ],
+        "type" : "object"
+      },
+      "AppleNonceAnswer" : {
+        "properties" : {
+          "nonce" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "nonce" ],
         "type" : "object"
       },
       "AppleToken" : {
@@ -215,9 +268,14 @@
             "maxLength" : 8000,
             "minLength" : 0,
             "type" : "string"
+          },
+          "nonce" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "identityToken" ],
+        "required" : [ "identityToken", "nonce" ],
         "type" : "object"
       },
       "ApproachLessonDto" : {
@@ -425,12 +483,6 @@
             "example" : "SIGN_IN",
             "type" : "string"
           },
-          "claudeFeatures" : {
-            "description" : "Who has the features Claude writes (the assistant, the written briefing, the readings in words, checkpoint descriptions, the mock oral, a photographed page read): OFF, the default, for nobody, whatever else is sold or open -- the apps then use only on-device models and the engine's own words; DEVELOPERS; or EVERYONE signed in.",
-            "enum" : [ "OFF", "DEVELOPERS", "EVERYONE" ],
-            "example" : "OFF",
-            "type" : "string"
-          },
           "providers" : {
             "description" : "The OIDC providers with real credentials, by registration id: the sign-in buttons to offer. Empty where only the emailed link signs in (the local stack).",
             "example" : [ "google", "apple" ],
@@ -445,7 +497,30 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "access", "claudeFeatures", "providers", "subscriptions" ],
+        "required" : [ "access", "providers", "subscriptions" ],
+        "type" : "object"
+      },
+      "ConnectorGrantDto" : {
+        "properties" : {
+          "app" : {
+            "type" : "string"
+          },
+          "at" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "scopes" : {
+            "type" : [ "string", "null" ]
+          },
+          "until" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "app", "at", "kind", "scopes", "until" ],
         "type" : "object"
       },
       "Corner" : {
@@ -723,8 +798,6 @@
             "items" : {
               "$ref" : "#/components/schemas/FaultReport"
             },
-            "maxItems" : 20,
-            "minItems" : 0,
             "type" : "array"
           },
           "metrics" : {
@@ -735,8 +808,6 @@
             "type" : "object"
           },
           "os" : {
-            "maxLength" : 40,
-            "minLength" : 0,
             "type" : "string"
           },
           "page" : {
@@ -748,7 +819,6 @@
             "type" : "string"
           },
           "version" : {
-            "pattern" : "[A-Za-z0-9._ ()+-]{1,40}",
             "type" : "string"
           }
         },
@@ -1023,11 +1093,29 @@
           "flight" : {
             "$ref" : "#/components/schemas/FlightDto"
           },
+          "share" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/FlightShareDto"
+            }, {
+              "type" : "null"
+            } ]
+          },
           "track" : {
-            "$ref" : "#/components/schemas/TrackDto"
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/TrackDto"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "watch" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/FlightWatchDto"
+            }, {
+              "type" : "null"
+            } ]
           }
         },
-        "required" : [ "flight", "track" ],
+        "required" : [ "flight", "share", "track", "watch" ],
         "type" : "object"
       },
       "FaultReport" : {
@@ -1037,17 +1125,13 @@
             "type" : "string"
           },
           "detail" : {
-            "maxLength" : 64000,
-            "minLength" : 0,
             "type" : "string"
           },
           "kind" : {
-            "pattern" : "crash|hang|exit|error|exception|cpu|disk",
             "type" : "string"
           },
           "signature" : {
-            "maxLength" : 2000,
-            "minLength" : 0,
+            "minLength" : 1,
             "type" : "string"
           }
         },
@@ -1055,26 +1139,20 @@
         "type" : "object"
       },
       "FeatureUse" : {
-        "description" : "One paid feature's uses this month (UTC)",
         "properties" : {
-          "cap" : {
-            "description" : "The month's allowance",
-            "example" : 60,
-            "format" : "int32",
-            "type" : "integer"
-          },
           "feature" : {
-            "enum" : [ "NARRATIVE", "CHECKPOINT_NOTES", "ORAL", "ASSISTANT", "WORDS", "DEBRIEF" ],
-            "example" : "NARRATIVE",
             "type" : "string"
           },
-          "used" : {
-            "example" : 3,
+          "month" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "uses" : {
             "format" : "int32",
             "type" : "integer"
           }
         },
-        "required" : [ "cap", "feature", "used" ],
+        "required" : [ "feature", "month", "uses" ],
         "type" : "object"
       },
       "FieldReport" : {
@@ -1820,6 +1898,15 @@
         "required" : [ "briefed", "flown", "quiz" ],
         "type" : "object"
       },
+      "LinkAccount" : {
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "email" ],
+        "type" : "object"
+      },
       "LogbookEntryDto" : {
         "properties" : {
           "airHours" : {
@@ -2193,6 +2280,27 @@
         "required" : [ "developer", "displayName", "email", "fullName", "homeBase", "id", "phone" ],
         "type" : "object"
       },
+      "PlannerCheckpointNote" : {
+        "properties" : {
+          "created_at" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "lat" : {
+            "type" : "number"
+          },
+          "lon" : {
+            "type" : "number"
+          },
+          "route" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "created_at", "description", "lat", "lon", "route" ],
+        "type" : "object"
+      },
       "Quiz" : {
         "properties" : {
           "answers" : {
@@ -2416,6 +2524,27 @@
           }
         },
         "required" : [ "aircraftId", "altitudes", "checkpoints", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "picks", "plannedFor", "risk", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
+        "type" : "object"
+      },
+      "SentReminder" : {
+        "properties" : {
+          "daysBefore" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "dueOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "sentAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "what" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "daysBefore", "dueOn", "sentAt", "what" ],
         "type" : "object"
       },
       "ShareFlightRequest" : {
@@ -2745,16 +2874,40 @@
             "description" : "When the free month or the paid time runs out; null for FREE and COMPED",
             "format" : "date-time",
             "type" : [ "string", "null" ]
-          },
-          "uses" : {
-            "description" : "This month's uses of each paid feature Claude writes, against its cap",
-            "items" : {
-              "$ref" : "#/components/schemas/FeatureUse"
-            },
-            "type" : "array"
           }
         },
-        "required" : [ "entitled", "plan", "state", "store", "trialAvailable", "trialDays", "until", "uses" ],
+        "required" : [ "entitled", "plan", "state", "store", "trialAvailable", "trialDays", "until" ],
+        "type" : "object"
+      },
+      "SubscriptionRow" : {
+        "properties" : {
+          "paidUntil" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "plan" : {
+            "type" : [ "string", "null" ]
+          },
+          "store" : {
+            "type" : [ "string", "null" ]
+          },
+          "storeRef" : {
+            "type" : [ "string", "null" ]
+          },
+          "trialEndsAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "trialStartedAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [ "paidUntil", "plan", "store", "storeRef", "trialEndsAt", "trialStartedAt", "updatedAt" ],
         "type" : "object"
       },
       "TokenRequest" : {
@@ -3475,7 +3628,7 @@
     },
     "/api/auth/apple/native" : {
       "post" : {
-        "description" : "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id) and signs the pilot in on this session. 404 where no iOS app is set up.",
+        "description" : "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.",
         "operationId" : "signIn",
         "requestBody" : {
           "content" : {
@@ -3520,6 +3673,26 @@
           }
         },
         "summary" : "Sign in with Apple from the iOS app",
+        "tags" : [ "apple-native-sign-in-controller" ]
+      }
+    },
+    "/api/auth/apple/native/nonce" : {
+      "post" : {
+        "description" : "Kept by this session, used once. Give Apple its SHA-256 as lowercase hex (ASAuthorizationAppleIDRequest.nonce), then send it as `nonce` with the identity token.",
+        "operationId" : "nonce",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppleNonceAnswer"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "A nonce for Sign in with Apple from the iOS app",
         "tags" : [ "apple-native-sign-in-controller" ]
       }
     },
@@ -3703,6 +3876,61 @@
         },
         "summary" : "Start a magic-link sign-in",
         "tags" : [ "magic-link-controller" ]
+      }
+    },
+    "/api/auth/magic-link/account" : {
+      "post" : {
+        "description" : "The masked address (a•••@icloud.com) a usable magic-link token signs in to, without using it; 404 for a used, expired or unknown token, alike; 429 past the hour's limit.",
+        "operationId" : "account",
+        "requestBody" : {
+          "content" : {
+            "application/x-www-form-urlencoded" : {
+              "schema" : {
+                "properties" : {
+                  "token" : {
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "token" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LinkAccount"
+                }
+              }
+            },
+            "description" : "The link's account, masked"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LinkAccount"
+                }
+              }
+            },
+            "description" : "No usable link with that token"
+          },
+          "429" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LinkAccount"
+                }
+              }
+            },
+            "description" : "Too many asks from this address this hour"
+          }
+        },
+        "summary" : "Whose account a sign-in link is for",
+        "tags" : [ "magic-link-account-controller" ]
       }
     },
     "/api/auth/magic-link/verify" : {
@@ -4911,7 +5139,7 @@
     },
     "/api/me/export" : {
       "get" : {
-        "description" : "The account, airplanes and squawks, flights with nav logs and tracks, logbook, currency, training and instructing, each as its own endpoint answers it; sent as a download.",
+        "description" : "The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.",
         "operationId" : "export",
         "responses" : {
           "200" : {

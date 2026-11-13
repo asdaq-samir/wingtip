@@ -106,7 +106,7 @@ describe("the pattern", () => {
     expect(fromNorthwest.words).toContain("join the 45° to the right downwind for runway 23");
     const fromSoutheast = entryFor(right23, 315);
     expect(fromSoutheast).toMatchObject({ from: "southeast", patternSide: false });
-    expect(fromSoutheast.words).toContain("cross midfield 500 ft above pattern altitude");
+    expect(fromSoutheast.words).toContain("cross midfield at least 500 ft above pattern altitude");
     expect(exitFor(end("27", 270))).toContain("45° left turn");
     expect(compassWord(-90)).toBe("west");
   });

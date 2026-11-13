@@ -15,7 +15,7 @@ import {
   slow,
 } from "./helpers";
 import { pickAirplane } from "./startState";
-import { fillTime } from "./ariaFields";
+import { departTime, fillTime } from "./ariaFields";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -45,9 +45,8 @@ test(
     // Hundreds of feet after "FL", at the owner's pick: FL045 for 4,500 ft.
     await expect(input).toHaveValue(/^FL-\d{3}$/);
     await openProfile(page);
-    // The Profile card: the side view with its slider, the Altitude
-    // Advisor under it (Fastest marked), the flight rules,
-    // and how it was chosen, folded.
+    // The Profile card: the side view with its slider, the Altitude Advisor
+    // under it (Fastest marked), the flight rules, and how it was chosen, folded.
     const popover = page.getByTestId("profile-card");
     await expect(popover).toBeVisible();
     const wheel = popover.getByRole("slider", { name: "Cruise altitude" }); // the stock Slider, a step each altitude
@@ -70,7 +69,7 @@ test(
     await popover.getByTestId("altitude-set").click();
     await expect(page).toHaveURL(/[?&](altitude_ft|altitude_choice)=/, { timeout: slow(10000) });
     await closeCard(page, "profile-close");
-    await expect(popover).toHaveCount(0);
+    await expect(popover).toBeHidden(); // kept, closed, between openings (CardLayer's `open`)
 
     // An altitude typed beside the airplane, three figures of hundreds of
     // feet: the whole log at it. Cleared first, as a pilot types over it: the
@@ -106,11 +105,11 @@ test(
     // ceiling once each, with their reasons (the owner's pick of the
     // redesign): there is no list over the steps that said them again.
     const drawer = sideDrawer(page);
-    await openTab(page, "Nav Log");
+    await openTab(page, "En route"); // the Brief pulled up first: half way, its pages' cards are under its foot
     await openSection(page, "Cruise Altitude");
     const cruise = drawer.locator('[data-title="Cruise Altitude"]');
     await expect(cruise).toBeVisible();
-    await expect(drawer.getByText("14 CFR 91.159")).toBeVisible();
+    await expect(cruise.getByText("14 CFR 91.159")).toBeVisible();
     const steps = cruise.getByTestId("altitude-steps").locator('[data-slot="accordion-trigger"]');
     await expect(steps.first()).toContainText(/^Fastest plan.+(\d+h( \d+m)?|\d+m) · [\d.]+ gal$/);
     await expect(steps.nth(1)).toContainText(/^FloorTerrain and obstacles, with margin[\d,]+ ft$/);
@@ -148,7 +147,7 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   await day.click();
   await expect(page).toHaveURL(/[?&]depart=/);
   // The time under the calendar, and Done.
-  await fillTime(page.getByTestId("depart-time"), "15:00");
+  await fillTime(await departTime(page), "15:00");
   await page.getByTestId("depart-done").click();
   await expect(calendar).toHaveCount(0);
   await expect(page.getByTestId("depart-date")).toContainText("15:00");
@@ -184,6 +183,7 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   // bottom of arrival"), and in full in the Brief.
   await expect(page.getByTestId("fuel-check")).toHaveCount(0);
   await expect(page.getByTestId("fuel-breakdown-open")).not.toHaveAttribute("data-alert");
+  await openTab(page, "Preflight"); // the Brief pulled up first, as above
   await openSection(page, "Fuel");
   const detail = page.getByTestId("fuel-detail");
   await expect(detail.locator("[data-slot=item]", { hasText: "Usable fuel" })).toContainText("40 gal");
@@ -284,9 +284,9 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
   await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
   await expect(page.locator("[data-problem-banner]")).toHaveCount(0);
   await expect(page.locator("[data-slot=toast]", { hasText: "No legal" })).toHaveCount(0);
-  // The figures in the pill, under its profile, at the pilot's ask: the
-  // book's time, marked "≈".
-  await grabberTo(page, "peek");
+  // The figures at half, under its profile (on a phone the pill is the
+  // one row since the fixed snap points): the book's time, marked "≈".
+  await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
 
   // All the way up: the cruising altitude's chip red, and no line under
@@ -488,7 +488,7 @@ test("plan page: an altitude of the pilot's own that breaks a rule is flown as s
   await openProfile(page);
   const cautions = page.getByTestId("own-altitude-cautions");
   await expect(cautions).toContainText("5,500 ft C81 → KDLH");
-  await expect(cautions).toContainText("Westbound above");
+  await expect(cautions).toContainText("flies even thousands plus 500: fly 4,500 or 6,500 ft"); // one line (b4693a549)
   await expect(cautions).toContainText("(14 CFR 91.159)");
 });
 

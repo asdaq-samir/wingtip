@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// What Siri, a Shortcut or a link asked for (PendingCommand), done by the
-/// root view once it is on the screen: its own file, so the root view
+/// What Siri, a Shortcut, a link or a tap in a card asked for (AppCommand),
+/// done by the root view once it is on the screen (CommandHost): its own file, so the root view
 /// stays the map and its sheet.
 extension RootView {
     /// A route to the field, from the route's departure, else from the
@@ -9,16 +9,16 @@ extension RootView {
     /// (Plan.flyHere); with neither, the plan with the destination in for
     /// the pilot to give the departure.
     func route(to ident: String) async {
-        await plan.flyHere(ident, near: ownShip.fix)
+        await flight.plan.flyHere(ident, near: flight.ownShip.fix)
         showPlan()
     }
 
     /// Siri's or a Shortcut's command done in the app: a trip planned to
     /// the field, its Brief, direct to a place, the nearest airports, a
-    /// field's card.
-    func apply(_ command: PendingCommand.Command?) async {
-        guard let command else { return }
-        defer { if let next = PendingCommand.shared.takeThen() { openScreen(next) } }
+    /// field's card; then the screen a link or a card named after it.
+    func apply(_ command: AppCommand, then next: Screen? = nil) async {
+        defer { if let next { openScreen(next) } }
+        let (plan, ownShip) = (flight.plan, flight.ownShip)
         switch command {
         case .planTo(let ident):
             await route(to: ident)
@@ -60,7 +60,7 @@ extension RootView {
             plan.plan()
         case .aircraft(let hex):
             // The airplane's card, tracked from its next report on.
-            Tracking.shared.track(hex)
+            flight.tracking.track(hex)
             nav.open(.traffic(hex.lowercased()))
         case .open(let screen):
             openScreen(screen)
@@ -75,7 +75,7 @@ extension RootView {
         case .sharedFlight(let link):
             // Shown, not planned: the pilot's own plan stays until they
             // tap Use This Plan.
-            SharedFlightModel.shared.open(link)
+            screens.sharedFlight.open(link)
         case .track(let url):
             // A GPX or KML file handed over from Files or Mail: its track
             // flown again on the map (Replay), at the replay's pace, as a
@@ -84,8 +84,8 @@ extension RootView {
             let reading = url.startAccessingSecurityScopedResource()
             defer { if reading { url.stopAccessingSecurityScopedResource() } }
             guard let data = try? Data(contentsOf: url), let points = try? GPXTrack.points(data), !points.isEmpty else { return }
-            Replay.shared.load(Replay.points(points), key: url.lastPathComponent)
-            Replay.shared.play()
+            replay.load(Replay.points(points), key: url.lastPathComponent)
+            replay.play()
             if detent != RootView.pill { detent = RootView.pill }
         }
     }
@@ -94,7 +94,7 @@ extension RootView {
     /// card (the iPad's inspector).
     func openBrief() {
         if layout == .sheet, layoutName == "strip" {
-            BriefAsk.shared.ask()
+            screens.briefAsk.ask()
         } else {
             nav.open(.screen(.brief))
         }

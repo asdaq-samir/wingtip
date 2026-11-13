@@ -1,18 +1,15 @@
 import { startTransition } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, describeError } from "../../../lib/api/client";
-import { keepHandbook } from "../../../lib/api/documents";
-import type { Aircraft, AircraftRequest, HandbookFigures } from "../../../lib/api/types";
+import type { Aircraft, AircraftRequest } from "../../../lib/api/types";
 import { done } from "../../../lib/doneNote";
 import { unsavedId, useOptimisticList } from "../../../lib/optimisticList";
 import { aircraftListQuery } from "../../../lib/queryClient";
 
-/** One save: which airplane (null, a new one), its figures, and the
- *  handbook's figures confirmed from a photo, kept with it. */
+/** One save: which airplane (null, a new one) and its figures. */
 export interface AirplaneSave {
   id: number | null;
   request: AircraftRequest;
-  figures: HandbookFigures | null;
 }
 
 /**
@@ -33,10 +30,7 @@ export function useAirplanes(onRefused: (save: AirplaneSave, problem: string) =>
   const refresh = () => queryClient.invalidateQueries({ queryKey: aircraftListQuery.queryKey });
 
   const save = useMutation({
-    mutationFn: async ({ id, request, figures }: AirplaneSave) => {
-      const saved = id ? await api.aircraft.update(id, request) : await api.aircraft.add(request);
-      return figures ? keepHandbook(saved.id, figures) : saved;
-    },
+    mutationFn: ({ id, request }: AirplaneSave) => (id ? api.aircraft.update(id, request) : api.aircraft.add(request)),
     // Said in the form, opened again (`onRefused`), not as the alert.
     meta: { silent: true },
   });

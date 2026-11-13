@@ -9,8 +9,8 @@ import Foundation
 /// the engine's to say.
 enum RouteWeather {
     static func of(_ briefing: Briefing, lands: Set<String>) -> EngineContract.WeatherReading {
-        let metars = briefing.metars.keys.sorted().compactMap { ident -> EngineContract.WorseField? in
-            guard let m = briefing.metars[ident] ?? nil else { return nil }
+        let metars = briefing.metars.additionalProperties.keys.sorted().compactMap { ident -> EngineContract.WorseField? in
+            guard let m = briefing.metars.additionalProperties[ident] ?? nil else { return nil }
             return EngineContract.WorseField(ident: ident, ceilingFt: m.ceilingFt, visibilitySm: m.visibilitySm, ceilingUnknown: m.ceilingUnknown, arrival: nil)
         }
         var advisories = briefing.hazards.map { h in

@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.service.DiagnosticText;
 import app.wingtipmaps.gateway.service.DiagnosticsService;
 import app.wingtipmaps.gateway.service.DiagnosticsService.Fault;
 import app.wingtipmaps.gateway.service.DiagnosticsService.Origin;
@@ -9,16 +10,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,6 +53,13 @@ import org.springframework.web.bind.annotation.RestController;
  * navigator.sendBeacon, which carries no header, the phones hold no
  * cookie to echo, and a forged report can only add a row the owner reads.
  *
+ * <p>The shape rules are here and nowhere else: a report past the size
+ * limits is cut to them, a version is cleaned to its alphabet and cut, and
+ * a fault of an unknown kind or a figure of an unknown name is dropped,
+ * none of them refused, so the faults in a report are not lost to one bad
+ * field and the apps hold no copy of the rules. What was cut or dropped
+ * is logged.
+ *
  * <p>Reading them back is the developer's (SecurityConfig).
  */
 @RestController
@@ -62,8 +70,36 @@ public class DiagnosticsController {
     /** Reports per caller per hour. */
     static final int PER_HOUR = 30;
 
+    /** The most faults kept from one report; the first ones, as the
+     *  oldest is the likeliest cause of the rest. */
+    static final int MAX_FAULTS = 20;
+
+    /** The longest signature and detail kept, in characters. */
+    static final int MAX_SIGNATURE = 2000;
+
+    static final int MAX_DETAIL = 64000;
+
+    /** The longest system name kept. */
+    static final int MAX_OS = 40;
+
+    /** The most figures kept, and the range each is held to. */
+    static final int MAX_METRICS = 30;
+
+    static final double MAX_METRIC = 100_000_000;
+
+    private static final Logger log = LoggerFactory.getLogger(DiagnosticsController.class);
+
     private static final String NAME = "[a-z][a-z0-9-]{0,39}";
-    private static final String VERSION = "[A-Za-z0-9._ ()+-]{1,40}";
+
+    /** The version's alphabet and its longest length, in characters. */
+    private static final java.util.regex.Pattern NOT_VERSION = java.util.regex.Pattern.compile("[^A-Za-z0-9._ ()+-]");
+
+    static final int MAX_VERSION = 40;
+
+    private static final java.util.regex.Pattern METRIC_NAME = java.util.regex.Pattern.compile("[a-z][a-z0-9_]{0,39}");
+
+    private static final java.util.Set<String> KINDS =
+            java.util.Set.of("crash", "hang", "exit", "error", "exception", "cpu", "disk");
 
     private final DiagnosticsService diagnostics;
     private final SlidingWindowLimiter recent = new SlidingWindowLimiter(Duration.ofHours(1));
@@ -76,31 +112,22 @@ public class DiagnosticsController {
      *  and message, the exit's reason), its detail (a stack, MetricKit's
      *  call tree) and when, where the device knows. */
     public record FaultReport(
-            @NotNull @Pattern(regexp = "crash|hang|exit|error|exception|cpu|disk")
-            String kind,
-
-            @NotBlank @Size(max = 2000) String signature,
-            @Size(max = 64000) String detail,
-            Instant at) {}
+            @NotNull String kind, @NotBlank String signature, String detail, Instant at) {}
 
     /** A device's faults and measurements, with the platform, the app's
      *  version and build, the system's version and the kind of device. */
     public record DiagnosticsReport(
             @NotNull @Pattern(regexp = "web|ios|android") String platform,
-            @NotNull @Pattern(regexp = VERSION) String version,
-            @Size(max = 40) String os,
+            @NotNull String version,
+            String os,
 
             @NotNull @Pattern(regexp = "phone|tablet|desktop")
             String device,
 
             @Pattern(regexp = NAME) String page,
-            @Size(max = 20) List<@Valid @NotNull FaultReport> faults,
+            List<@Valid @NotNull FaultReport> faults,
 
-            @Size(max = 30)
-            Map<
-                            @Pattern(regexp = "[a-z][a-z0-9_]{0,39}") String,
-                            @NotNull @DecimalMin("0") @DecimalMax("100000000") Double>
-                    metrics) {}
+            Map<String, @NotNull Double> metrics) {}
 
     /** A kept fault, as the developer reads it. */
     public record DiagnosticDto(
@@ -125,18 +152,76 @@ public class DiagnosticsController {
     @PostMapping
     public ResponseEntity<Void> report(@Valid @RequestBody DiagnosticsReport report, HttpServletRequest request) {
         if (recent.allow("diagnostics:" + SlidingWindowLimiter.clientOf(request), PER_HOUR, Instant.now())) {
-            List<Fault> faults = report.faults() == null
-                    ? List.of()
-                    : report.faults().stream()
-                            .map(f -> new Fault(f.kind(), f.signature(), f.detail(), f.at()))
-                            .toList();
+            List<FaultReport> allFaults = report.faults() == null ? List.of() : report.faults();
+            List<FaultReport> sent =
+                    allFaults.stream().filter(f -> KINDS.contains(f.kind())).toList();
+            Map<String, Double> allFigures = report.metrics() == null ? Map.of() : report.metrics();
+            Map<String, Double> figures = new LinkedHashMap<>();
+            allFigures.forEach((name, value) -> {
+                if (METRIC_NAME.matcher(name).matches()) {
+                    figures.put(name, value);
+                }
+            });
+            String version = cleanVersion(report.version());
+            List<Fault> faults = sent.stream()
+                    .limit(MAX_FAULTS)
+                    .map(f ->
+                            new Fault(f.kind(), cut(f.signature(), MAX_SIGNATURE), cut(f.detail(), MAX_DETAIL), f.at()))
+                    .toList();
+            Map<String, Double> kept = new LinkedHashMap<>();
+            figures.entrySet().stream()
+                    .limit(MAX_METRICS)
+                    .forEach(e -> kept.put(e.getKey(), Math.max(0, Math.min(MAX_METRIC, e.getValue()))));
+            logTrimmed(
+                    report, version, allFaults.size() - sent.size(), sent, allFigures.size() - figures.size(), figures);
             diagnostics.record(
-                    new Origin(report.platform(), report.version(), report.os(), report.device()),
+                    new Origin(report.platform(), version, cut(report.os(), MAX_OS), report.device()),
                     faults,
                     report.page() == null ? "app" : report.page(),
-                    report.metrics() == null ? Map.of() : report.metrics());
+                    kept);
         }
         return ResponseEntity.noContent().build();
+    }
+
+    /** The version in its alphabet and at most 40 characters; "unknown"
+     *  when nothing of it is left. */
+    private static String cleanVersion(String version) {
+        String clean = NOT_VERSION.matcher(version).replaceAll("");
+        clean = cut(clean, MAX_VERSION);
+        return clean.isEmpty() ? "unknown" : clean;
+    }
+
+    private static String cut(String text, int max) {
+        return text == null || text.length() <= max ? text : text.substring(0, max);
+    }
+
+    /** One line saying how much of an oversized report was cut, so the
+     *  owner sees an app that sends too much. */
+    private static void logTrimmed(
+            DiagnosticsReport report,
+            String version,
+            int unknownKinds,
+            List<FaultReport> sent,
+            int unknownFigures,
+            Map<String, Double> figures) {
+        int faultsDropped = Math.max(0, sent.size() - MAX_FAULTS) + unknownKinds;
+        int figuresDropped = Math.max(0, figures.size() - MAX_METRICS) + unknownFigures;
+        long cutText = sent.stream()
+                        .limit(MAX_FAULTS)
+                        .filter(f -> f.signature().length() > MAX_SIGNATURE
+                                || (f.detail() != null && f.detail().length() > MAX_DETAIL))
+                        .count()
+                + (report.os() != null && report.os().length() > MAX_OS ? 1 : 0)
+                + (version.equals(report.version()) ? 0 : 1);
+        if (faultsDropped > 0 || figuresDropped > 0 || cutText > 0) {
+            log.info(
+                    "{} {} diagnostics report trimmed: {} faults dropped, {} figures dropped, {} long texts cut",
+                    report.platform(),
+                    DiagnosticText.oneLine(report.version(), 80),
+                    faultsDropped,
+                    figuresDropped,
+                    cutText);
+        }
     }
 
     @Operation(

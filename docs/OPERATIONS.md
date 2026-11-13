@@ -31,7 +31,6 @@ Each minute (at :30, UTC; `APP_MONITORING_CRON`), the gateway asks:
 | Service | Asked | Down when |
 |---|---|---|
 | Planner | `GET /` | no 2xx within 10 s |
-| Assistant | `GET /` | the same |
 | Weather service | `GET /` (`WEATHER_SERVICE_URL`; not watched where unset) | the same; its products' freshness is a feed's, below |
 | Gateway's database | the gateway's own `/actuator/health/readiness` | the same |
 

@@ -157,40 +157,6 @@ services:
       SWIM_VPN_SFDPS: ${SWIM_VPN_SFDPS:-}
       SWIM_QUEUE_SFDPS: ${SWIM_QUEUE_SFDPS:-}
 
-  # Every Claude call (services/assistant, issue #535): the only service
-  # given the Anthropic key. It asks the planner for every figure and
-  # keeps nothing in memory but a request's own: about 100 MB resident
-  # (Python, FastAPI, the SDK), capped at 256 MB so it can never take the
-  # planner's or the JVM's share of this 4 GB server. One worker: its
-  # requests wait on Claude and the planner, not on its processor.
-  #
-  # Not started unless COMPOSE_PROFILES names claude, and asked only where
-  # APP_CLAUDE_FEATURES is DEVELOPERS or EVERYONE: the Claude features are
-  # off until the subscription is decided (the owner, 2026-11-10,
-  # docs/decisions/0035), so no request reaches Anthropic.
-  assistant:
-    profiles: ["claude"]
-    <<: *restart
-    image: ${IMAGE_REGISTRY}/assistant:${IMAGE_TAG:-latest}
-    # No access log, as the planner's: a request's body is a pilot's
-    # plan and position, and its line would sit in CloudWatch.
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
-    mem_limit: 256m
-    # The regulations and the AIM the mock oral quotes, fetched once into
-    # data/raw/references and kept across deploys. Only that folder is
-    # mounted (read-write: the service writes its cache there), as this
-    # service holds the Anthropic key and reads nothing else of the data.
-    volumes:
-      - /srv/wingtip/data/raw/references:/workspace/data/raw/references
-    environment:
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      PLANNER_URL: http://planner:8000
-    healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-
   # The weather the planner reads, fetched on a schedule into the weather
   # store on the planner's data folder (services/weather, #535): no
   # pilot's request waits on aviationweather.gov or NOMADS.
@@ -219,9 +185,6 @@ services:
         condition: service_healthy
       planner:
         condition: service_healthy
-      assistant:
-        condition: service_started
-        required: false
     healthcheck:
       test:
         - CMD
@@ -240,9 +203,6 @@ services:
       SPRING_DATASOURCE_USERNAME: wingtip
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       PLANNER_SERVICE_URL: http://planner:8000
-      ASSISTANT_SERVICE_URL: http://assistant:8000
-      # OFF until the subscription is decided (docs/decisions/0035).
-      APP_CLAUDE_FEATURES: ${APP_CLAUDE_FEATURES:-OFF}
       # The monitor's minute check (UptimeWatch, docs/OPERATIONS.md):
       # the weather service watched too, and its alerts mailed by SES to
       # APP_ALERT_EMAILS (the owner's secret), the developers where unset.
@@ -258,8 +218,18 @@ services:
       # (SlidingWindowLimiter.clientOf).
       GATEWAY_TRUSTED_PROXIES: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
       APP_DEVELOPER_EMAILS: ${APP_DEVELOPER_EMAILS:-}
+      # The AI connector (docs/design/mcp-connector.md): off, every one of
+      # its addresses a 404, until it launches. On, it needs
+      # MCP_INTERNAL_TOKEN here and on the planner, and MCP_SIGNING_KEY.
+      MCP_ENABLED: "false"
       # The nightly speed lab's token (SpeedController; CI's SPEED_LAB_TOKEN).
       APP_SPEED_LAB_TOKEN: ${APP_SPEED_LAB_TOKEN:-}
+      # The store reviewers' sign-in (ReviewSignIn, docs/store/listing.md
+      # "Review access"): off unless the owner sets REVIEW_SIGN_IN to true
+      # for a review, with the review account's address and its code.
+      REVIEW_SIGN_IN: ${REVIEW_SIGN_IN:-false}
+      REVIEW_SIGN_IN_EMAIL: ${REVIEW_SIGN_IN_EMAIL:-}
+      REVIEW_SIGN_IN_CODE: ${REVIEW_SIGN_IN_CODE:-}
       MAIL_HOST: ${MAIL_HOST}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME}

@@ -3,6 +3,7 @@ import { Radio } from "lucide-react";
 import Waveform from "./Waveform";
 import { cn } from "cn";
 import IconButton from "./IconButton";
+import { Toggle } from "@base-ui/react/toggle";
 import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "./ResponsivePopover";
 import { useAtcRadio } from "../lib/atcRadio";
 import { useCanListen } from "../lib/speechLocal";
@@ -52,24 +53,30 @@ export default function RadioButton() {
   return (
     <ResponsivePopover open={open} onOpenChange={setOpen}>
       <ResponsivePopoverAnchor asChild>
-        <IconButton
-          label={
-            mode === "once"
-              ? "Stop listening"
-              : mode === "radio"
-                ? "The radio, listening: open the log"
-                : voice
-                  ? "Comms assist: listen"
-                  : "Comms assist"
+        {/* Base UI's Toggle, pressed while it listens; the tap does what
+            the mode asks (tap). */}
+        <Toggle
+          pressed={busy}
+          render={
+            <IconButton
+              label={
+                mode === "once"
+                  ? "Stop listening"
+                  : mode === "radio"
+                    ? "The radio, listening: open the log"
+                    : voice
+                      ? "Comms assist: listen"
+                      : "Comms assist"
+              }
+              data-testid="radio-button"
+              onClick={tap}
+              className={cn(busy && "text-tint", mode === "radio" && "animate-pulse")}
+            />
           }
-          aria-pressed={busy}
-          data-testid="radio-button"
-          onClick={tap}
-          className={cn(busy && "text-tint", mode === "radio" && "animate-pulse")}
         >
           {/* Live: the radio's level where an input is metered (lib/audioInput). */}
           {mode === "once" && busy ? <Waveform live /> : <Radio className="size-5" strokeWidth={1.75} aria-hidden="true" />}
-        </IconButton>
+        </Toggle>
       </ResponsivePopoverAnchor>
       <ResponsivePopoverContent
         title="Radio"

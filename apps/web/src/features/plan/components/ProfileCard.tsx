@@ -1,23 +1,23 @@
 import type { ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { cn } from "cn";
-import { CardHead } from "../../../components/PanelCard";
+import { CardHead } from "../../../components/CardHead";
 import { TEXT } from "../../../lib/text";
 
 /**
- * The route from the side, a card over FPL as the Brief and the nav log
- * are, opened from its button beside the nav log's, at the owner's ask
+ * The route from the side, a card of its own over FPL as the Brief and the
+ * Nav Log are (CardLayer, PlanPage), opened from its button beside the nav log's, at the owner's ask
  * ("profile view can move next to the navlog button and open like brief
  * and navlog opens instead of the swipe"): the side view (MiniProfile) the
- * card's height, its Dry run at its top right, the route's figures under
- * it at the sheet's foot. Its bar's Share where Back was, the route's
+ * card's height, its Dry run at its top right. Its bar's Share where Back was, the route's
  * Share menu, as the Brief's and the nav log's are, at the owner's ask
  * ("Profile needs the share instead of the back button like brief").
  */
 export default function ProfileCard({
   name,
+  sub,
   line,
-  corner,
+  rules,
   cautions = [],
   onClose,
   children,
@@ -26,11 +26,15 @@ export default function ProfileCard({
    *  from and to, the airplane, the altitude and when -- the tab bar over
    *  it says "Profile" already (the owner's "titles appear twice"). */
   name: ReactNode;
+  /** Under its name at every size, the smallest too: the cruise and the
+   *  clearance's verdict (ProfileLine). */
+  sub?: ReactNode;
   line: ReactNode;
-  /** At the head's top right: the flight rules, VFR or IFR, with no label
-   *  of its own, at the owner's ask ("Vfr switch can be on the top right
-   *  corner, don't need the label flight rules"). */
-  corner?: ReactNode;
+  /** The flight rules, VFR or IFR, a segmented control at the top of the
+   *  card's content, with no label of its own (the owner's "don't need the
+   *  label flight rules"): the head keeps its two buttons, Share and ✕
+   *  (rules.md; the owner, 2026-11-11). */
+  rules?: ReactNode;
   /** What the pilot's own altitude breaks, the engine's words with their
    *  rules (own_altitude_caution: over the airplane's service ceiling, the
    *  oxygen 14 CFR 91.211(a) asks: (a)(1) the crew past 30 minutes over
@@ -45,16 +49,25 @@ export default function ProfileCard({
   children: ReactNode;
 }) {
   return (
-    // Half way no taller than half's body (MapPanel's --half-body): the
-    // sheet is laid out at its full height and cut off at its edge, so the
-    // graph's max-h-full is the room in sight only with the card held to it.
+    // Half way no taller than what is in sight of the card: its drawer is
+    // laid out at its full height and slid by the Drawer's own snap offset
+    // (--sheet-offset, CardStack; negative from the top), so the graph's
+    // max-h-full is the room in sight only with the card held to the
+    // height less that offset.
     <div
-      className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] in-data-[panel=half]:max-h-(--half-body) print:hidden"
+      className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] in-data-[panel=half]:max-h-[calc(100%-max(var(--sheet-offset,0px),-1*var(--sheet-offset,0px)))] print:hidden"
       data-testid="profile-card"
     >
-      <CardHead name={name} line={line} nameTestId="profile-name" onClose={onClose} onShare="profile" closeTestId="profile-close">
-        {corner}
-      </CardHead>
+      <CardHead
+        name={name}
+        sub={sub}
+        line={line}
+        nameTestId="profile-name"
+        onClose={onClose}
+        onShare="profile"
+        closeTestId="profile-close"
+      />
+      {rules && <div className="mt-2 flex shrink-0 justify-center">{rules}</div>}
       {cautions.length > 0 && (
         <ul
           className={cn("mt-2 shrink-0 space-y-1 rounded-lg bg-caution-wash px-2.5 py-2 text-caution-ink", TEXT.detail)}

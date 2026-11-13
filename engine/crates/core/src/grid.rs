@@ -66,6 +66,35 @@ pub fn line_cells(g: Geom, a: Point, b: Point) -> Vec<Cell> {
     out
 }
 
+/// The eight ways out of a cell, (rows, columns): rows -1, 0, 1 by
+/// columns -1, 0, 1 without (0, 0), as the planner's _STEPS had them. A
+/// cell's eight groundspeeds (Costs' `gs`) are laid out in this order.
+pub const STEPS: [(i64, i64); 8] = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)];
+
+/// Where (rows, columns) is in STEPS; the first way for (0, 0), which is
+/// none of them.
+pub fn step_index(dr: i64, dc: i64) -> usize {
+    STEPS.iter().position(|&s| s == (dr, dc)).unwrap_or(0)
+}
+
+/// The bearing, radians clockwise from true north, of a step of `d_lat`
+/// degrees north and `d_lon` east taken at latitude `lat`, on a plane of
+/// degrees with longitude shrunk by cos(lat): a degree of longitude is
+/// cos(latitude) of one of latitude. The one copy for a grid step's course
+/// (route options' groundspeeds) and a line's way (way_of).
+pub fn flat_bearing(lat: f64, d_lat: f64, d_lon: f64) -> f64 {
+    (d_lon * lat.to_radians().cos()).atan2(d_lat)
+}
+
+/// The way in STEPS nearest the line a -> b's bearing, on a plane of
+/// degrees with longitude shrunk by the cosine of the mean latitude, each
+/// part rounded as Python's round does (half to even). Its cosine and sine
+/// cannot both round to 0, so the way is always one of the eight.
+pub fn way_of(a: Point, b: Point) -> usize {
+    let bearing = flat_bearing((a.0 + b.0) / 2.0, b.0 - a.0, b.1 - a.1);
+    step_index(bearing.cos().round_ties_even() as i64, bearing.sin().round_ties_even() as i64)
+}
+
 /// The grid's costs: closed and marginal cells (negative where not), the
 /// extra cost of dear and offshore cells, and the groundspeed eight ways
 /// out of each cell; each the grid's size, rows by columns.
@@ -110,14 +139,7 @@ impl<'a> Costs<'a> {
         if nm == 0.0 {
             return 0.0;
         }
-        let bearing = ((b.1 - a.1) * ((a.0 + b.0) / 2.0).to_radians().cos()).atan2(b.0 - a.0);
-        let dr = bearing.cos().round_ties_even() as i64;
-        let dc = bearing.sin().round_ties_even() as i64;
-        // _STEPS: rows -1, 0, 1 by columns -1, 0, 1, without (0, 0).
-        let mut k = ((dr + 1) * 3 + (dc + 1)) as usize;
-        if k > 4 {
-            k -= 1;
-        }
+        let k = way_of(a, b);
         let rates: Vec<f64> = cells
             .iter()
             .map(|&c| {
@@ -228,5 +250,16 @@ mod tests {
         let g = Geom::new(40.0, -100.0, 0.25, 2, 2).unwrap();
         assert_eq!(line_cells(g, (39.0, -101.0), (39.0, -101.0)), vec![(0, 0)]);
         assert!(Geom::new(0.0, 0.0, 0.0, 1, 1).is_none());
+    }
+
+    #[test]
+    fn a_line_takes_the_way_nearest_its_bearing() {
+        // North is a row up, east a column on; north-east both; and the
+        // index is where the way sits in STEPS, the gs layout's order.
+        assert_eq!(STEPS[way_of((40.0, -100.0), (41.0, -100.0))], (1, 0));
+        assert_eq!(STEPS[way_of((40.0, -100.0), (40.0, -99.0))], (0, 1));
+        assert_eq!(STEPS[way_of((40.0, -100.0), (39.0, -101.3))], (-1, -1));
+        assert_eq!(way_of((40.0, -100.0), (40.0, -100.0)), step_index(1, 0));
+        assert_eq!((0..8).map(|k| step_index(STEPS[k].0, STEPS[k].1)).collect::<Vec<_>>(), (0..8).collect::<Vec<_>>());
     }
 }

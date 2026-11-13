@@ -1,5 +1,4 @@
 import { Marker } from "maplibre-gl";
-import { prefersReducedMotion } from "../../motion";
 import type { IconLike } from "../marks/icons";
 
 export type { IconLike };
@@ -9,31 +8,27 @@ export type { IconLike };
  * traffic, the replay's airplane, own ship's), so a mark looks the same
  * and carries the same data attributes on either map. MapLibre places a
  * marker's element in the frame it draws the chart, so it stays on its
- * point through a pinch, at its own size.
+ * point through a pinch, at its own size. An icon with a `rotation` is
+ * turned by MapLibre against the map (`rotationAlignment: "map"`), so an
+ * arrow keeps its bearing as the map turns; the rest stay upright. The
+ * box turns about its middle, which is the icons' anchor.
  */
 export function iconMarker(icon: IconLike, options: { interactive?: boolean } = {}): Marker {
   const el = document.createElement("div");
   setIcon(el, icon);
   if (!options.interactive) el.style.pointerEvents = "none";
-  return new Marker({ element: el, anchor: "top-left" }).setOffset(offsetOf(icon));
-}
-
-/** A mark of what changes over the chart -- an airplane, a PIREP, a wind
- *  barb -- faded in as it first appears, over `ms` (glLayer's
- *  FADE_IN_MS), rather than snapped on; at once under reduced motion. An
- *  animation, not the element's own opacity, which MapLibre sets. */
-export function fadeInMarker(marker: Marker, ms = 250): Marker {
-  const el = marker.getElement();
-  if (!prefersReducedMotion() && typeof el.animate === "function") {
-    el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "ease-out" });
-  }
-  return marker;
+  return turned(new Marker({ element: el, anchor: "top-left" }).setOffset(offsetOf(icon)), icon);
 }
 
 /** The marker's element made again from `icon`, and its anchor. */
 export function setMarkerIcon(marker: Marker, icon: IconLike) {
   setIcon(marker.getElement(), icon);
-  marker.setOffset(offsetOf(icon));
+  turned(marker.setOffset(offsetOf(icon)), icon);
+}
+
+function turned(marker: Marker, icon: IconLike): Marker {
+  const { rotation } = icon.options;
+  return marker.setRotationAlignment(rotation == null ? "viewport" : "map").setRotation(rotation ?? 0);
 }
 
 function setIcon(el: HTMLElement, icon: IconLike) {

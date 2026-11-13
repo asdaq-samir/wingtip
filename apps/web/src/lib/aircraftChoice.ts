@@ -67,6 +67,8 @@ export function choiceOf(a: Aircraft, profiles: AircraftProfileSummary[]): Aircr
     cruisePowerPct: a.cruisePowerPct ?? undefined,
     climbTasKt: a.climbTasKt ?? undefined,
     climbFuelBurnGph: a.climbFuelBurnGph ?? undefined,
+    descentIasKt: a.descentIasKt ?? undefined,
+    descentFuelBurnGph: a.descentFuelBurnGph ?? undefined,
     serviceCeilingFt: own.serviceCeilingFt ?? undefined,
     climbRateFpm: own.climbRateFpm ?? hb?.climb_rate_fpm ?? undefined,
     taxiFuelGal: own.taxiFuelGal ?? undefined,

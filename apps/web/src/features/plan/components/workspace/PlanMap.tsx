@@ -1,7 +1,6 @@
 import { Suspense, lazy, useState } from "react";
 import { cn } from "cn";
 import { RouteMap } from "../../routeMapChunk";
-import TipHost from "../../../../components/TipHost";
 import FirstFlight from "../FirstFlight";
 import { FlyingHead } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
@@ -15,63 +14,38 @@ import { EngineGate } from "../../../../lib/engine/engineGate";
 const AssignedLesson = lazy(() => import("../AssignedLesson"));
 /** What the first screen does not draw, each its own chunk off the first
  *  load (scripts/first-load.mjs's budget): a fix's card and a leg's, from
- *  their first tap on, and the welcome, shown once to a new pilot. */
+ *  their first tap on. */
 const FixCard = lazy(() => import("../FixCard"));
 const RouteLegCard = lazy(() => import("../RouteLegCard"));
-const Welcome = lazy(() => import("../welcome/Welcome"));
 
 /** The map beside the briefing (PlanWorkspace's `map`), with what floats
  *  over it: the next checkpoint in flight, a fix's card, an assigned
- *  approach, the tips and the first flight's. */
+ *  approach, Ready to Fly and the first flight's welcome and tip. */
 export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
   const dryPlaying = usePastFlight((p) => p.hex === DRY_RUN && p.playing);
+  const { panelOpen } = vm.view;
+  const { crossings, routed, setRoute } = vm.route;
+  const { course, s, selected } = vm.plan;
+  const { heldPoint, holdPoint, nearOpen, selectPlaceOnChart } = vm.cards;
   const {
-    closeLeg,
-    closeLesson,
-    course,
-    crossings,
     directTo,
-    dryRunning,
     fitAircraft,
     flownPatterns,
-    flying,
-    fuelStopPins,
-    heldPoint,
-    holdPoint,
-    lessonOpen,
-    lineKey,
     mapDirects,
-    mapLegs,
     mapProcedures,
-    nearOpen,
-    openLeg,
-    nearestPoints,
     openFix,
-    openNavLogCard,
-    panelOpen,
     patternFocus,
-    pickPoint,
-    pickStopField,
-    pickWay,
-    placePin,
-    procedureCover,
     procedureFocus,
-    routeRows,
-    routed,
-    s,
-    selectCandidate,
-    selectPlaceOnChart,
-    selected,
-    selectedPoint,
     setCrossing,
-    setLegAt,
     setOpenFixAt,
-    setRoute,
     showFix,
-    startPin,
-    stopFieldPins,
-    wayLines,
-  } = vm;
+  } = vm.picks;
+  const { nearestPoints, placePin, startPin } = vm.map;
+  const { fuelStopPins } = vm.stops;
+  const { lineKey, pickWay, wayLines } = vm.routeList;
+  const { closeLesson, lessonOpen, pickStopField, stopFieldPins } = vm.fpl;
+  const { dryRunning, flying } = vm.flight;
+  const { closeLeg, mapLegs, openLeg, pickPoint, routeRows, selectCandidate, selectedPoint, setLegAt } = vm.leg;
   // Each card's chunk asked for at its first open, then kept.
   const [fixSeen, setFixSeen] = useState(false);
   if (openFix && !fixSeen) setFixSeen(true);
@@ -101,7 +75,6 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
           patternFocus={patternFocus}
           procedures={mapProcedures}
           procedureFocus={procedureFocus}
-          procedureCover={procedureCover}
           place={placePin}
           start={startPin}
           nearest={nearOpen ? nearestPoints : null}
@@ -144,16 +117,13 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
       )}
       {lessonOpen !== null && (
         <Suspense fallback={null}>
-          <AssignedLesson key={lessonOpen} id={lessonOpen} aircraft={fitAircraft} onClose={closeLesson} />
+          {/* The lesson's track is turned by the engine (lib/geo's bearingDeg). */}
+          <EngineGate>
+            <AssignedLesson key={lessonOpen} id={lessonOpen} aircraft={fitAircraft} onClose={closeLesson} />
+          </EngineGate>
         </Suspense>
       )}
-      {/* What to look for, a tip at a time, the first times (lib/firstRunTips). */}
-      <TipHost />
-      {/* The welcome first, once (useWelcome); then the first flight's card. */}
-      <Suspense fallback={null}>
-        <Welcome routed={routed} onPlan={setRoute} onOpened={openNavLogCard} />
-      </Suspense>
-      <FirstFlight routed={routed} onPlan={setRoute} onPlanned={openNavLogCard} />
+      <FirstFlight routed={routed} onPlan={setRoute} pickView={vm.view.pickView} setPanel={vm.view.setPanel} />
     </div>
   );
 }

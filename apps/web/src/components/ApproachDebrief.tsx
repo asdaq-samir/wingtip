@@ -3,8 +3,9 @@ import { useQueries } from "@tanstack/react-query";
 import { Check, TriangleAlert, X } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "./GroupedList";
-import { Input } from "./ui/input";
-import { api } from "../lib/api/client";
+import { NumberField } from "./ui/number-field";
+import { WHOLE } from "./ui/numberFormats";
+import { procedureQuery, proceduresQuery } from "../lib/queryClient";
 import type { ProcedureDrawing, ProcedureList } from "../lib/api/types";
 import { findApproaches, withMinimums, withTransition, type ApproachDebrief as Debriefed, type Tone } from "./approachDebriefModel";
 import { clockTime } from "../lib/format";
@@ -15,20 +16,9 @@ import { TEXT } from "../lib/text";
 import type { TrackPoint } from "../lib/track";
 import { feet } from "../lib/format";
 
-/** A cycle's procedures hold for its 28 days: as the route's own queries
- *  of them keep them (ProceduresRoute), and under the same keys, so a
- *  drawing the map has is not asked for again. */
-const STALE_MS = 6 * 60 * 60_000;
 /** None picked, one array for every render, so the search is not made
  *  again at each one. */
 const NO_PICKS: PickedProcedure[] = [];
-
-const listQuery = (ident: string) => ({ queryKey: ["procedures", ident], queryFn: () => api.procedures(ident), staleTime: STALE_MS });
-const drawingQuery = (ident: string, id: string, transition: string | null) => ({
-  queryKey: ["procedure", ident, id, transition],
-  queryFn: () => api.procedure(ident, id, transition),
-  staleTime: STALE_MS,
-});
 
 /** A finding's mark, as the debrief's tolerances are marked (FlightPage). */
 function Mark({ tone }: { tone: Tone }) {
@@ -61,7 +51,7 @@ export default function ApproachDebriefs({
   only?: string;
   none?: string;
 }) {
-  const lists = useQueries({ queries: fields.map(listQuery) });
+  const lists = useQueries({ queries: fields.map((f) => proceduresQuery(f)) });
   // Each field's approaches, from vectors to final -- the one picked with
   // its transition -- to find which final the track came down.
   const wanted = fields.flatMap((ident, k) => {
@@ -75,7 +65,7 @@ export default function ApproachDebriefs({
       });
   });
   const drawings = useQueries({
-    queries: wanted.map((w) => drawingQuery(w.ident, w.id, w.transition)),
+    queries: wanted.map((w) => procedureQuery(w)),
     combine: (results) => ({ drawn: results.flatMap((r) => (r.data ? [r.data] : [])), pending: results.some((r) => r.isPending) }),
   });
   const listsPending = lists.some((l) => l.isPending);
@@ -97,7 +87,7 @@ export default function ApproachDebriefs({
     d.transition ? [] : (list?.procedures.find((p) => p.id === d.id)?.transitions ?? []);
   const more = found.flatMap((d) => transitionsOf(d, summaries(d)).map((t) => ({ d, t })));
   const transitions = useQueries({
-    queries: more.map(({ d, t }) => drawingQuery(d.airport, d.id, t)),
+    queries: more.map(({ d, t }) => procedureQuery({ ident: d.airport, id: d.id, transition: t })),
     combine: (results) => ({ drawn: results.flatMap((r) => (r.data ? [r.data] : [])), pending: results.some((r) => r.isPending) }),
   });
   const flown = useMemo(
@@ -152,7 +142,6 @@ function ApproachSection({
   minimumsFt: number | null;
   onMinimums: (ft: number | null) => void;
 }) {
-  const [typed, setTyped] = useState(minimumsFt != null ? String(minimumsFt) : "");
   // The findings again with the minimums typed: the CIFP has none, and
   // the lowest before the MAP is only measured without them.
   const d = useMemo(() => withMinimums(given, minimumsFt), [given, minimumsFt]);
@@ -175,19 +164,19 @@ function ApproachSection({
         <PlanView d={d} />
         {d.hasAltitude && <ProfileView d={d} />}
         <ListRow title={<label htmlFor={`mins-${d.fafAt}`}>Your minimums</label>} description="The DA or MDA you flew to, from the plate">
-          <Input
+          {/* Read in the pilot's locale, the findings again as typed. */}
+          <NumberField
             id={`mins-${d.fafAt}`}
-            value={typed}
-            inputMode="numeric"
+            defaultValue={minimumsFt}
+            onTyped={onMinimums}
+            formatOptions={WHOLE}
+            minValue={0}
+            maxValue={99999}
             placeholder="ft"
             aria-label="Your minimums, feet MSL"
-            className="h-9 w-20 text-right tabular-nums"
+            className="h-9 w-20"
+            inputClassName="text-right"
             data-testid="approach-minimums"
-            onChange={(e) => {
-              const next = e.target.value.replace(/\D/g, "").slice(0, 5);
-              setTyped(next);
-              onMinimums(next ? Number(next) : null);
-            }}
           />
         </ListRow>
       </ListGroup>

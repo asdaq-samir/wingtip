@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.2</version>
+        <version>4.2.0-RC2</version>
         <relativePath/>
     </parent>
 
@@ -22,10 +22,20 @@
              and the eclipse-temurin:25-jre image the Dockerfile runs on.
              26 is a six-month release, out of support once 27 ships. -->
         <java.version>25</java.version>
-        <!-- Newer than Spring Boot 4.1.2 manages (3.15.0 and 3.5.6): the
-             newest stable releases, as the owner asks of every tool. -->
+        <!-- Newer than Spring Boot manages: the newest stable releases, as
+             the owner asks of every tool. The compiler's 4.0 betas need
+             Maven 4, which the build image is not yet. -->
         <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.6.1</maven-surefire-plugin.version>
+        <!-- Newer than Spring Boot 4.2.0-RC2 manages (3.1.8, 2.21.8,
+             3.1.5.RELEASE and 1.67.0), the newest on Maven Central on
+             2026-11-12. Hibernate 8 (CR1) and Flyway 13 are left at
+             Boot's 7.4 and 12.11: each a major past the one Boot 4.2 and
+             Spring Data JPA are built and tested against. -->
+        <jackson-bom.version>3.3.0</jackson-bom.version>
+        <jackson-2-bom.version>2.23.0</jackson-2-bom.version>
+        <thymeleaf.version>3.1.7.RELEASE</thymeleaf.version>
+        <opentelemetry.version>1.68.0</opentelemetry.version>
     </properties>
 
     <dependencies>
@@ -37,6 +47,13 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- The metadata of AppProperties (application.yml's app block),
+             for the IDE's completion and Boot's own checks. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
@@ -44,6 +61,21 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <!-- RestClient and the HTTP interface clients Boot makes of the
+             planner (UpstreamClients, application.yml's
+             spring.http.serviceclient). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-restclient</artifactId>
+        </dependency>
+        <!-- The few pages a pilot sees outside the app (connecting an AI
+             app, deleting an account without it): templates Thymeleaf
+             escapes and Spring Security puts the CSRF field in, not HTML
+             strings built by hand. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
         <!-- Bean Validation (@NotBlank/@Pattern on RouteRequest) and the
              @RestControllerAdvice global exception handler's use of
@@ -156,6 +188,15 @@
             <artifactId>spring-boot-testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- ArchUnit (Apache-2.0), the gateway's architecture as tests
+             (ArchitectureTest; CLAUDE.md, "Simplicity rules"): no aviation
+             maths, and the planner reached through PlannerClient. -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>1.5.1</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-postgresql</artifactId>
@@ -228,6 +269,11 @@
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
                         </path>
+                        <path>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-configuration-processor</artifactId>
+                            <version>${spring-boot.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
@@ -240,31 +286,21 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                         </exclude>
+                        <exclude>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-configuration-processor</artifactId>
+                        </exclude>
                     </excludes>
                 </configuration>
             </plugin>
-            <!-- The assistant's answers this app reads itself (PlannerClient's
-                 changes in words, for the flight watch), generated at
-                 build time from the assistant service's committed
-                 OpenAPI document rather than written out by hand, so a
-                 field the assistant renames or drops fails this build
-                 instead of reading as null in production. Models only:
-                 PlannerClient asks with java.net.http, pinned to
-                 HTTP/1.1 for the reason StreamingProxy gives, which a
-                 generated client would replace. Only the schemas read
-                 here are generated (modelsToGenerate), prefixed Assistant
-                 so "Source" and "Sentence" do not read as this app's own;
-                 the browser's pass-through proxies read nothing and need
-                 none. The Dockerfile copies the document to the same
-                 place relative to the pom. -->
-            <!-- The planner's and the assistant's committed OpenAPI
-                 documents, into the jar at upstreams/{planner,assistant}/:
-                 the routes the proxy forwards and who may call each are
-                 read from their x-gateway extensions (UpstreamRoutes).
+            <!-- The planner's committed OpenAPI document, into the jar at
+                 upstreams/planner/: the routes the proxy forwards and who
+                 may call each are read from its x-gateway extensions
+                 (UpstreamRoutes).
                  Built in rather than fetched from the planner at start, so
                  the jar's rules are the ones it was tested with and do not
-                 wait on the planner being up. The Dockerfile copies both
-                 beside the pom, as it does the assistant's above. -->
+                 wait on the planner being up. The Dockerfile copies it
+                 beside the pom. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -287,24 +323,6 @@
                             </resources>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>upstream-routes-assistant</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/upstreams/assistant</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.basedir}/../assistant</directory>
-                                    <includes>
-                                        <include>openapi.json</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -312,43 +330,14 @@
                 <artifactId>openapi-generator-maven-plugin</artifactId>
                 <version>7.27.0</version>
                 <executions>
-                    <execution>
-                        <id>assistant-models</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/../assistant/openapi.json</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <modelPackage>app.wingtipmaps.gateway.assistant.model</modelPackage>
-                            <modelNamePrefix>Assistant</modelNamePrefix>
-                            <modelsToGenerate>ChangesWords,Sentence,Source</modelsToGenerate>
-                            <generateApis>false</generateApis>
-                            <generateSupportingFiles>false</generateSupportingFiles>
-                            <generateModelTests>false</generateModelTests>
-                            <generateModelDocumentation>false</generateModelDocumentation>
-                            <!-- FastAPI writes an optional field as anyOf
-                                 [type, null] (OpenAPI 3.1): read as a plain
-                                 nullable field, not a wrapper type. -->
-                            <openapiNormalizer>SIMPLIFY_ONEOF_ANYOF=true</openapiNormalizer>
-                            <configOptions>
-                                <useSpringBoot4>true</useSpringBoot4>
-                                <useJackson3>true</useJackson3>
-                                <useJspecify>true</useJspecify>
-                                <generateJsonIncludeAnnotations>false</generateJsonIncludeAnnotations>
-                                <generateJsonSetterNullsAnnotations>false</generateJsonSetterNullsAnnotations>
-                                <openApiNullable>false</openApiNullable>
-                                <useBeanValidation>false</useBeanValidation>
-                                <documentationProvider>none</documentationProvider>
-                                <annotationLibrary>none</annotationLibrary>
-                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
-                            </configOptions>
-                        </configuration>
-                    </execution>
                     <!-- The planner's asks and answers PlannerClient sends and
-                         reads (the pilot's and the airplane's rules),
-                         generated from the planner's committed document
-                         the same way, prefixed Planner: a field the planner
+                         reads (the pilot's and the airplane's rules, the
+                         flight watch's changes), generated at build time
+                         from the planner's committed document rather than
+                         written out by hand, prefixed Planner so "Source"
+                         does not read as this app's own. Models only: the
+                         asking is Spring's HTTP interfaces (upstream/),
+                         which Boot makes into clients: a field the planner
                          renames or drops, or a type it changes, fails this
                          build at the line that uses it. A JSON number stays
                          the generator's BigDecimal: typeMappings number=Double
@@ -365,7 +354,7 @@
                             <generatorName>spring</generatorName>
                             <modelPackage>app.wingtipmaps.gateway.planner.model</modelPackage>
                             <modelNamePrefix>Planner</modelNamePrefix>
-                            <modelsToGenerate>FeedHealth,FeedState,CurrencyAsk,Currency,LogbookEntry,ExperienceAsk,ExperienceItem,EndorsementsAsk,HeldEndorsement,Endorsements,ReviewCheck,EndorsementKind,EndorsementField,EndorsementFillAsk,EndorsementFilled,InspectionsAsk,VorCheckAsk,Inspections,VorCheck-Output</modelsToGenerate>
+                            <modelsToGenerate>CheckpointNote,PilotNotes,FeedHealth,FeedState,CurrencyAsk,Currency,LogbookEntry,ExperienceAsk,ExperienceItem,EndorsementsAsk,HeldEndorsement,Endorsements,ReviewCheck,EndorsementKind,EndorsementField,EndorsementFillAsk,EndorsementFilled,InspectionsAsk,VorCheckAsk,Inspections,VorCheck-Output,StudioDraft,StudioDraftCaptions,StudioDraftCheck,StudioDraftIdentity,StudioDraftNearest,StudioDraftQuote,StudioDraftSource,StudioDraftWindow,WordsSources,WordsSource</modelsToGenerate>
                             <generateApis>false</generateApis>
                             <generateSupportingFiles>false</generateSupportingFiles>
                             <generateModelTests>false</generateModelTests>
@@ -393,7 +382,7 @@
                 <configuration>
                     <!-- Generated, and documented by the planner's own
                          document instead. -->
-                    <excludePackageNames>app.wingtipmaps.gateway.assistant.model:app.wingtipmaps.gateway.planner.model</excludePackageNames>
+                    <excludePackageNames>app.wingtipmaps.gateway.planner.model</excludePackageNames>
                     <!-- Still catches malformed {@link}s, bad HTML, and
                          unknown tags; just doesn't demand a comment on
                          every trivial getter/DI constructor, where one

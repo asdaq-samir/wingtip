@@ -1,3 +1,4 @@
+import { addressParams } from "./address";
 import type { FlightRules } from "./preferences";
 import { LINK_KEYS, SCREEN_LINK } from "./navigation/generated/screens";
 
@@ -101,11 +102,13 @@ export function withoutSharedLink(params: URLSearchParams): URLSearchParams {
  *  of the old plan's kept, as a new route keeps none. (A saved flight's
  *  is lib/flightLink planHrefOf's, with its own altitudes and picks.) */
 export function paramsForSharedPlan(plan: SharedPlan, now = Date.now()): URLSearchParams {
-  const params = new URLSearchParams({ dep: plan.dep, dest: plan.dest });
-  if (plan.stops.length) params.set("stops", plan.stops.join(","));
-  if (plan.altitudeFt != null) params.set("altitude_ft", String(plan.altitudeFt));
-  if (plan.depart && Date.parse(plan.depart) > now) params.set("depart", plan.depart);
-  return params;
+  return addressParams({
+    dep: plan.dep,
+    dest: plan.dest,
+    stops: plan.stops.length ? plan.stops.join(",") : null,
+    altitude_ft: plan.altitudeFt,
+    depart: plan.depart && Date.parse(plan.depart) > now ? plan.depart : null,
+  });
 }
 
 const N_NUMBER = /^N[0-9][0-9A-Z]{0,4}$/;

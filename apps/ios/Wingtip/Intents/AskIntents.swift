@@ -44,8 +44,7 @@ enum NotamWords {
     /// The on-device model's sentences; else the engine's reasons as
     /// they are, saying the model could not run.
     static func said(_ figures: [WordsSource], reasons: [APINotamReason], device: any WordsProvider = OnDeviceWords()) async -> (text: String, origin: String) {
-        if let ask = try? WordsAsk(kind: .notams, body: [String: String](), figures: figures),
-           let words = try? await device.words(ask), !words.sentences.isEmpty {
+        if let words = try? await device.words(WordsAsk(kind: .notams, figures: figures)), !words.sentences.isEmpty {
             return (words.sentences.map(\.text).joined(separator: " "), AskOrigin.device.caption)
         }
         let why = reasons.map(\.words)
@@ -93,7 +92,7 @@ enum ArrivalWords {
         if s.etaCeilingUnknown == true {
             parts.append("the ceiling isn't forecast")
         } else {
-            parts.append(s.etaCeilingFt.map { "ceiling \(IntentLookups.grouped($0)) feet" } ?? "no ceiling")
+            parts.append(s.etaCeilingFt.map { "ceiling \(Format.grouped($0)) feet" } ?? "no ceiling")
         }
         if let vis = s.etaVisibilitySm { parts.append("visibility \(IntentLookups.plain(vis)) miles") }
         let from = s.icaoId.uppercased() == dest.uppercased() ? "\(dest)'s forecast" : "The forecast at \(s.icaoId), the nearest to \(dest),"
@@ -148,10 +147,10 @@ struct BriefApproachIntent: AppIntent {
         let a = approach
         let items: [EngineContract.ApproachBriefAnswerItem]
         do {
-            let data = try await Planner.data(for: Planner.get("/api/airport/\(a.field)/procedures/\(a.procedure)"))
+            let drawing = try await CoachApproaches.drawing(a.field, procedure: a.procedure)
             let frequencies = ((try? await Planner.place(a.field))?.frequencies ?? [])
                 .map { EngineContract.FieldFrequency(type: $0.type, description: $0.description, frequencyMhz: $0.frequencyMhz) }
-            items = try Engine.approachBrief(drawing: CoachApproaches.drawing(data), frequencies: frequencies)
+            items = try Engine.approachBrief(drawing: drawing, frequencies: frequencies)
         } catch {
             return .result(dialog: "The \(a.name) at \(a.field) couldn't be briefed: \(error.localizedDescription)", view: SiriLines(title: a.name, lines: []))
         }
@@ -164,7 +163,7 @@ struct BriefApproachIntent: AppIntent {
 
 /// "Add this approach to my route": the approach put on the route at its
 /// field and the Brief opened, as the procedures row picks one.
-struct AddApproachIntent: AppIntent {
+struct AddApproachIntent: CommandIntent {
     static let title: LocalizedStringResource = "Add an Approach to the Route"
     static let description = IntentDescription("Puts an approach on your route at its airport and opens the Brief.")
     static let openAppWhenRun: Bool = true
@@ -174,9 +173,10 @@ struct AddApproachIntent: AppIntent {
 
     static var parameterSummary: some ParameterSummary { Summary("Add \(\.$approach) to the route") }
 
+    func appCommand() -> AppCommand? { .approach(approach.pick) }
+
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let pick = approach.pick
-        await MainActor.run { PendingCommand.shared.command = .approach(pick) }
         return .result(dialog: "Added the \(pick.name) at \(pick.ident).")
     }
 }

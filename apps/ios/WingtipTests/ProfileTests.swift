@@ -38,9 +38,10 @@ struct ProfileTests {
         var extras = RouteExtras()
         extras.altitudes = ["VPBNG": 6500, "KLVK": 4500]
         extras.starts = ["VPBNG", "GONE"]
-        let query = try extras.query(procedures: [])
-        #expect(query["altitudes"] == "KLVK:4500,VPBNG:6500")
-        #expect(query["altitude_starts"] == "VPBNG", "a start with no altitude of its own is not sent")
+        var query = NavLogQuery(dep: "C81", dest: "KLVK")
+        try extras.apply(to: &query, procedures: [])
+        #expect(query.altitudes == "KLVK:4500,VPBNG:6500")
+        #expect(query.altitudeStarts == "VPBNG", "a start with no altitude of its own is not sent")
     }
 
     @Test func theGroundIsColouredByHowCloseItComes() throws {
@@ -48,7 +49,7 @@ struct ProfileTests {
             ProfileGround(alongNm: 0, groundFt: 1000), ProfileGround(alongNm: 28, groundFt: 3000), ProfileGround(alongNm: 62, groundFt: 2500),
         ])
         let near = try ProfileRules.clearance(altitudeFt: 3500, profile: profile, legs: Self.legs)
-        #expect(near.level == "yellow" && near.redFromFt == 3400 && near.yellowFromFt == 2500)
+        #expect(near.level == "yellow" && near.redFromFt == 3000 && near.yellowFromFt == 2500)
         #expect(near.words == "3,500 ft, terrain within 500 ft near KLVK")
         #expect(try ProfileRules.clearance(altitudeFt: 3050, profile: profile, legs: Self.legs).level == "red")
     }

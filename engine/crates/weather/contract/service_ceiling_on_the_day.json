@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_weather::forecast::calls::call",
   "description": "The service ceiling on the day: the book's service ceiling, a density altitude (where the best climb has fallen to 100 fpm, FAA-H-8083-25C ch. 11), found as an altitude in the forecast's temperatures (wingtip_flight::performance::altitude_at_density_altitude) to the nearest 100 ft; the book figure where the profile is empty.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

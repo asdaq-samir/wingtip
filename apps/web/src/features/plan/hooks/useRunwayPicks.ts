@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import type { SetURLSearchParams } from "react-router";
+import type { Address, SetAddress } from "../../../lib/address";
 import { patternsOf, patternsParam } from "../../../lib/trafficPattern";
-import { patched } from "../../../lib/useSearchParamsNow";
 import { NO_AUTO, autoOf } from "./planAddress";
 
 /**
@@ -10,11 +9,11 @@ import { NO_AUTO, autoOf } from "./planAddress";
  * ("KDLH:27,C81:24", `pattern`), the runways left from (`takeoff`), and
  * which of them were picked into the wind (`auto`).
  */
-export function useRunwayPicks({ searchParams, setSearchParams }: { searchParams: URLSearchParams; setSearchParams: SetURLSearchParams }) {
+export function useRunwayPicks({ address, setAddress }: { address: Address; setAddress: SetAddress }) {
   // The traffic patterns the pilot picked for the route's fields (the
   // route's Procedures), kept in the address as the rest of the plan is:
   // "KDLH:27,C81:24".
-  const patternParam = searchParams.get("pattern");
+  const patternParam = address.pattern;
   const pickedPatterns = useMemo(() => patternsOf(patternParam), [patternParam]);
   // The pattern just picked, for the map to go to it.
   const [patternFocus, setPatternFocus] = useState<string | null>(null);
@@ -29,31 +28,28 @@ export function useRunwayPicks({ searchParams, setSearchParams }: { searchParams
   // the owner's word ("repick runways for best winds"): it could not say
   // which were the pilot's. One with none picked for the wind says so
   // (NO_AUTO), so the pilot's own are kept.
-  const autoParam = searchParams.get("auto");
-  const takeoffNow = searchParams.get("takeoff");
+  const autoParam = address.auto;
+  const takeoffNow = address.takeoff;
   const autoPicked = useMemo(() => autoOf(autoParam, patternParam, takeoffNow), [autoParam, patternParam, takeoffNow]);
   const pickRunway = useCallback(
     (which: "pattern" | "takeoff", ident: string, end: string | null, byWind: boolean) => {
-      setSearchParams(
-        (prev) => {
-          const picked = patternsOf(prev.get(which));
-          const auto = autoOf(prev.get("auto"), prev.get("pattern"), prev.get("takeoff"));
-          const key = `${which === "pattern" ? "land" : "takeoff"}:${ident}`;
-          // A pick into the wind worked out before the pilot's own landed is
-          // dropped: the pilot's stands. KMSN's takeoff runway 36, picked as the
-          // wind came in, was turned to 18 a moment later and marked as the
-          // wind's (stops.spec, 2 runs of 7 on desktop, 2026-10-28).
-          if (byWind && picked.has(ident) && !auto.has(key)) return prev;
-          if (end) picked.set(ident, end);
-          else picked.delete(ident);
-          if (byWind && end) auto.add(key);
-          else auto.delete(key);
-          return patched(prev, { [which]: picked.size ? patternsParam(picked) : null, auto: auto.size ? [...auto].join(",") : NO_AUTO });
-        },
-        { replace: true },
-      );
+      void setAddress((prev) => {
+        const picked = patternsOf(prev[which]);
+        const auto = autoOf(prev.auto, prev.pattern, prev.takeoff);
+        const key = `${which === "pattern" ? "land" : "takeoff"}:${ident}`;
+        // A pick into the wind worked out before the pilot's own landed is
+        // dropped: the pilot's stands. KMSN's takeoff runway 36, picked as the
+        // wind came in, was turned to 18 a moment later and marked as the
+        // wind's (stops.spec, 2 runs of 7 on desktop, 2026-10-28).
+        if (byWind && picked.has(ident) && !auto.has(key)) return {};
+        if (end) picked.set(ident, end);
+        else picked.delete(ident);
+        if (byWind && end) auto.add(key);
+        else auto.delete(key);
+        return { [which]: picked.size ? patternsParam(picked) : null, auto: auto.size ? [...auto].join(",") : NO_AUTO };
+      });
     },
-    [setSearchParams],
+    [setAddress],
   );
   const setPattern = useCallback((ident: string, end: string | null) => pickRunway("pattern", ident, end, false), [pickRunway]);
   const preselectPattern = useCallback((ident: string, end: string) => pickRunway("pattern", ident, end, true), [pickRunway]);

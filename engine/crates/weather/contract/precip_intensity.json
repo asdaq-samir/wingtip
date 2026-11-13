@@ -1,0 +1,65 @@
+{
+  "x-call": "wingtip_weather::model_weather::call",
+  "description": "A precipitation reflectivity's intensity word, AIM 7-1-12's (light under 26 dBZ, moderate 26 to 40, heavy over 40 to 50, extreme over 50), none under 10 dBZ (the app's trace); and with the temperature at 2 m, whether it falls as snow (at or under 0 C) or rain, a simplification said only as a glyph.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PrecipIntensityInput",
+      "type": "object",
+      "properties": {
+        "dbz": {
+          "type": "number"
+        },
+        "temp_c": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "dbz"
+      ]
+    },
+    "answer": {
+      "title": "PrecipIntensityAnswer",
+      "type": "object",
+      "properties": {
+        "word": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "Light",
+            "Moderate",
+            "Heavy",
+            "Extreme",
+            null
+          ]
+        },
+        "falls_as": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "rain",
+            "snow",
+            null
+          ]
+        }
+      },
+      "required": [
+        "word",
+        "falls_as"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

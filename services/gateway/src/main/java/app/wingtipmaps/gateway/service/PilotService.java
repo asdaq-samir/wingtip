@@ -1,12 +1,12 @@
 package app.wingtipmaps.gateway.service;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.security.MagicLinkAuthenticationToken;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -42,10 +42,12 @@ public class PilotService {
     private final Set<String> developerEmails;
 
     /**
-     * @param developerEmails {@code app.developer-emails}: the addresses
-     *     whose pilot is a developer, comma-separated, case ignored
+     * @param pilots the pilots kept
+     * @param app the settings, whose {@code app.developer-emails} lists the
+     *     addresses whose pilot is a developer, comma-separated, case ignored
      */
-    public PilotService(PilotRepository pilots, @Value("${app.developer-emails:}") String developerEmails) {
+    public PilotService(PilotRepository pilots, AppProperties app) {
+        String developerEmails = app.developerEmails();
         this.pilots = pilots;
         this.developerEmails = Typed.addresses(developerEmails);
     }

@@ -1,35 +1,30 @@
 /**
- * The coach's two asks: the pilot's proficiency plan from the planner
- * (POST /api/pilot/coach, the engine's proficiency_plan: what is due and
- * when, what their debriefs show, the sessions) and the plan in words
- * from the assistant (POST /api/words/coach), each through the gateway.
- * The shapes are the services' own, generated from their documents.
+ * The coach's ask: the pilot's proficiency plan from the planner (POST
+ * /api/pilot/coach, the engine's proficiency_plan: what is due and when,
+ * what their debriefs show, the sessions), through the gateway, on the
+ * typed client (lib/api/client), which sends the CSRF header and the
+ * request id and turns a failure into an ApiError. The shapes are the
+ * planner's own, generated from its document.
  */
-import { ApiError, csrfHeaders, failIfNotOk } from "../../../lib/api/client";
-import { requestIdHeaders } from "../../../lib/api/requestId";
+import { ApiError, planner } from "../../../lib/api/client";
 import type { components } from "../../../lib/api/schema";
-import type { components as AssistantComponents } from "../../../lib/api/assistant-schema";
 
 export type CoachAsk = components["schemas"]["CoachAsk"];
 export type CoachDebrief = components["schemas"]["CoachDebrief"];
 export type ProficiencyPlan = components["schemas"]["ProficiencyPlan"];
 export type CoachSession = components["schemas"]["CoachSession"];
 export type CoachDue = components["schemas"]["CoachDue"];
-export type CoachWords = AssistantComponents["schemas"]["CoachWordsAnswer"];
 
-async function post<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(path, {
-    method: "POST",
-    signal,
-    body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json", ...csrfHeaders("POST"), ...requestIdHeaders() },
-  });
-  if (res.status === 401) throw new ApiError("Sign in for your plan", 401);
-  await failIfNotOk(res);
-  return res.json() as Promise<T>;
+/** A 401 said as what to do: the plan is the signed-in pilot's. */
+async function signedIn<T>(asked: Promise<{ data?: T }>): Promise<T> {
+  try {
+    return (await asked).data as T;
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 401) throw new ApiError("Sign in for your plan", 401);
+    throw err;
+  }
 }
 
 export const coachApi = {
-  plan: (ask: CoachAsk, signal?: AbortSignal) => post<ProficiencyPlan>("/api/planner/pilot/coach", ask, signal),
-  words: (plan: ProficiencyPlan, signal?: AbortSignal) => post<CoachWords>("/api/planner/words/coach", plan, signal),
+  plan: (ask: CoachAsk, signal?: AbortSignal) => signedIn(planner.POST("/api/pilot/coach", { body: ask, signal })),
 };

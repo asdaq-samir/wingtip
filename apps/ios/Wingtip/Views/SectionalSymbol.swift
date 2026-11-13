@@ -10,8 +10,7 @@ import UIKit
 /// R, a military one with an M. The field's flight category, where it
 /// reports one, is a ring round the symbol in the category's colour (the
 /// halo, the owner's pick of 2026-11-10), 4.5 points wide so it holds in
-/// sunlight; or, with Dot, ForeFlight's filled dot in the category's
-/// colour in place of the symbol. Drawn once for each look and kept.
+/// sunlight. Drawn once for each look and kept.
 enum SectionalSymbol {
     /// The disc's radius by the field's size, the big fields the biggest
     /// so the small ones don't crowd the chart at a distance (web
@@ -64,15 +63,6 @@ enum SectionalSymbol {
             let middle = CGPoint(x: box / 2, y: box / 2)
             func circle(_ at: CGPoint, _ r: CGFloat) -> CGRect { CGRect(x: at.x - r, y: at.y - r, width: 2 * r, height: 2 * r) }
             let r: CGFloat = use == nil ? radius(kind) : 7
-            if style == .dot, let colour {
-                // ForeFlight's dot: the category's colour where the symbol
-                // was, cased in the chart's white.
-                cg.setFillColor(WingtipColor.Chart.casing.cgColor)
-                cg.fillEllipse(in: circle(middle, r + 2))
-                cg.setFillColor(colour.cgColor)
-                cg.fillEllipse(in: circle(middle, r))
-                return
-            }
             // The halo, 2.5 points past the ring.
             cg.setFillColor(UIColor.white.cgColor)
             cg.fillEllipse(in: circle(middle, r + 2.5))

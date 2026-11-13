@@ -31,14 +31,15 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.ai.AiSources
 import app.wingtipmaps.android.ai.AiTask
 import app.wingtipmaps.android.ai.AiWordsRow
+import app.wingtipmaps.android.alternate.AlternateRows
 import app.wingtipmaps.android.brief.DepartureWindowStrip
 import app.wingtipmaps.android.brief.IcingRows
 import app.wingtipmaps.android.design.LoadingRow
@@ -74,7 +75,7 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * colour, not a blocking screen.
  */
 @Composable
-fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () -> Unit, model: BriefModel = viewModel()) {
+fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () -> Unit, model: BriefModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val plan by planModel.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
@@ -97,6 +98,8 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
                 VerdictBlock(state.verdict, state.actions)
                 // The brief kept for the air, shown with no signal: how old.
                 KeptAgeLine(KeptForAir.GO_NO_GO, state.keptAtMs)
+                // The plan it briefs: when it was made and whose winds it flies.
+                PlannedLine(plan.totals)
                 // "When should I go?": the hours across, under the verdict.
                 DepartureWindowStrip(plan, signedIn)
                 state.risk?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
@@ -117,6 +120,8 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
                         content = { Text(item.label) },
                     )
                 }
+                // Under IFR, the alternate (14 CFR 91.169), filed here.
+                AlternateRows(planModel)
                 // In the weather's adverse conditions: the forecast icing a leg.
                 IcingRows(plan)
             }

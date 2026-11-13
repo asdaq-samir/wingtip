@@ -14,6 +14,7 @@
  */
 import { callEngine, type EngineAnswer } from "./engine/engine";
 import type { Clearance } from "./clearance";
+import { andList } from "./listWords";
 
 /** A part missed or said differently: what the readback had for it
  *  (`said`), null where it was not read back (the engine's contract). */
@@ -71,7 +72,7 @@ export function readbackLines(clearance: Clearance, check: { items: ReadbackItem
   const read = READBACK_PARTS.filter((p) => has.includes(p.item) && !missed.has(p.item)).map((p) => p.name);
   const lines: ReadbackLine[] = [];
   if (read.length) {
-    const list = read.length === 1 ? read[0]! : `${read.slice(0, -1).join(", ")} and ${read.at(-1)}`;
+    const list = andList(read);
     lines.push({ ok: true, words: `${capital(list)} read back` });
   }
   for (const item of check.items) {

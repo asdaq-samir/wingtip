@@ -1,56 +1,20 @@
-import { AttributionControl } from "maplibre-gl";
 import { useEffect, useState } from "react";
-import { LEGAL_PAGES } from "../../legal";
-import { wantScreen } from "../../navigation/wanted";
 import { useGlMap } from "./glLayer";
-import { useCredits } from "./creditStore";
-
-/** The legal links first, as Apple Maps on the web sets Privacy, Terms and
- *  Legal before its imagery's credit; Legal is About, where every data
- *  source and its licence is listed (components/dataSources). */
-const LINKS = [
-  ...LEGAL_PAGES.filter((p) => p.key !== "support").map(
-    (p) => `<a href="${p.href}" target="_blank" rel="noopener">${p.key === "privacy" ? "Privacy" : "Terms"}</a>`,
-  ),
-  '<a href="?open=about" data-open-about="">Legal</a>',
-];
+import { useMapCredit } from "./creditStore";
 
 /**
- * The map's one row of small print at its bottom right, just over the
- * sheet: Privacy | Terms | Legal, then each source's credit while its layer
- * is drawn and the sources' own (the overlay tiles' FAA cycle, the radar
- * loop's), in that order, as Apple Maps on the
- * web has Privacy | Terms | Legal | Imagery (the owner's screenshot,
- * 2026-11-10). One control, where each layer added its own at the bottom
- * left. With the sheet all the way up it gives way (index.css), and the
- * search's page carries the same links at its foot (SheetFooter).
+ * What the map's sources say of themselves -- the overlay tiles' FAA cycle,
+ * the radar and satellite loop's source -- kept with the layers' own
+ * (useMapCredit) for Status, the "On the map" rows. The map draws no row of
+ * small print any more (the owner, 2026-11-11: "Yes status works"):
+ * Privacy, Terms and Legal are at Settings' foot, every source and its
+ * licence in About (components/dataSources), and the cycles in Status. Only
+ * Google's credit stays on the map while its tiles are drawn (BaseGl's
+ * GoogleCredit), as its Map Tiles API's policies ask.
  */
 export function MapCredits() {
-  const { map } = useGlMap();
-  const credits = useCredits((s) => s.credits);
   const sources = useSourceCredits();
-  useEffect(() => {
-    // One string, in the row's order: MapLibre sorts its entries by
-    // length and drops one held in another, so the sources' own come
-    // after the links here and not again before them.
-    const all = [...LINKS, ...Object.values(credits), ...sources.filter((c) => !Object.values(credits).includes(c))];
-    const control = new AttributionControl({ compact: false, customAttribution: all.join(" | ") });
-    map.addControl(control, "bottom-right");
-    return () => {
-      map.removeControl(control);
-    };
-  }, [map, credits, sources]);
-  // Legal opens About in the app, not the page again by its link.
-  useEffect(() => {
-    const el = map.getContainer();
-    const open = (event: MouseEvent) => {
-      if (!(event.target instanceof Element) || !event.target.closest("a[data-open-about]")) return;
-      event.preventDefault();
-      wantScreen("about");
-    };
-    el.addEventListener("click", open);
-    return () => el.removeEventListener("click", open);
-  }, [map]);
+  useMapCredit("sources", sources.length ? sources.join(" · ") : null);
   return null;
 }
 

@@ -37,7 +37,7 @@ PROFILE = {
 @pytest.fixture(autouse=True)
 def _standard_day(monkeypatch):
     """No forecast temperatures: every leg flies a standard day's air."""
-    monkeypatch.setattr(navlog, "temperature_at_altitude", lambda lat, lon, alt, fcst_hr="06": None)
+    monkeypatch.setattr(navlog, "air_at", _winds({}))
 
 
 def test_lowest_legal_altitude_follows_the_hemispheric_rule():
@@ -90,12 +90,13 @@ def _segments(candidates_per_leg):
 
 
 def _winds(by_altitude):
-    """A wind_at_altitude stand-in: the same wind everywhere, keyed by altitude."""
+    """An air_at stand-in: the same wind everywhere, keyed by altitude, on
+    a standard day (no forecast temperatures)."""
 
-    def wind(lat, lon, altitude_ft, fcst_hr="06"):
-        return by_altitude.get(altitude_ft)
+    def air(lat, lon, altitudes, fcst_hr="06"):
+        return [{"wind": by_altitude.get(a), "temp_c": None} for a in altitudes]
 
-    return wind
+    return air
 
 
 def test_fastest_climbs_for_a_tailwind_and_lowest_stays_low(monkeypatch):
@@ -103,7 +104,7 @@ def test_fastest_climbs_for_a_tailwind_and_lowest_stays_low(monkeypatch):
     # 5,500 and 7,500: climbing pays, and lowest ignores it.
     monkeypatch.setattr(
         navlog,
-        "wind_at_altitude",
+        "air_at",
         _winds(
             {
                 3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0},
@@ -132,7 +133,7 @@ def test_economical_climbs_for_a_tailwind_only_when_it_pays_for_the_climbs_fuel(
     own = {**PROFILE, "climb_fuel_burn_gph": 14.0}
     monkeypatch.setattr(
         navlog,
-        "wind_at_altitude",
+        "air_at",
         _winds({3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0}, 9500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 4.0}}),
     )
     plans = navlog.altitude_profiles(FIXES, _segments([[3500.0, 9500.0]] * 2), own, departure_elevation_ft=500.0)
@@ -146,7 +147,7 @@ def test_economical_climbs_for_a_tailwind_only_when_it_pays_for_the_climbs_fuel(
 def test_a_strong_tailwind_pays_for_the_climbs_fuel_too(monkeypatch):
     monkeypatch.setattr(
         navlog,
-        "wind_at_altitude",
+        "air_at",
         _winds({3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0}, 9500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 30.0}}),
     )
     plans = navlog.altitude_profiles(FIXES, _segments([[3500.0, 9500.0]] * 2), PROFILE, departure_elevation_ft=500.0)
@@ -159,7 +160,7 @@ def test_a_shelf_over_the_first_leg_makes_the_plans_step(monkeypatch):
     # lowest stays at 3,500 throughout, since stepping buys it nothing.
     monkeypatch.setattr(
         navlog,
-        "wind_at_altitude",
+        "air_at",
         _winds({3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0}, 5500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 25.0}}),
     )
     plans = navlog.altitude_profiles(FIXES, _segments([[3500.0], [3500.0, 5500.0]]), PROFILE)
@@ -172,7 +173,7 @@ def test_a_shelf_over_the_first_leg_makes_the_plans_step(monkeypatch):
 
 
 def test_a_plan_says_whether_it_needs_oxygen(monkeypatch):
-    monkeypatch.setattr(navlog, "wind_at_altitude", _winds({}))
+    monkeypatch.setattr(navlog, "air_at", _winds({}))
     # The second leg's only legal altitudes are above 12,500 ft, so
     # every plan goes there and says so; the page words the rule.
     plans = navlog.altitude_profiles(FIXES, _segments([[3500.0, 13500.0], [13500.0, 15500.0]]), PROFILE)
@@ -182,14 +183,14 @@ def test_a_plan_says_whether_it_needs_oxygen(monkeypatch):
 
 
 def test_a_leg_with_no_legal_altitude_means_no_plan(monkeypatch):
-    monkeypatch.setattr(navlog, "wind_at_altitude", _winds({}))
+    monkeypatch.setattr(navlog, "air_at", _winds({}))
     assert navlog.altitude_profiles(FIXES, _segments([[3500.0], []]), PROFILE) == {}
 
 
 def test_a_plan_whose_legs_with_a_wind_have_no_length_has_no_tailwind(monkeypatch):
     # A hop of no length (a stop written as the airport after it) left
     # nothing to weigh the tailwind by: none, not a division by zero.
-    monkeypatch.setattr(navlog, "wind_at_altitude", _winds({3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 10.0}}))
+    monkeypatch.setattr(navlog, "air_at", _winds({3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 10.0}}))
     same = [FIXES[0], FIXES[0]]
     plans = navlog.altitude_profiles(same, _segments([[3500.0]]), PROFILE)
     assert plans["lowest"]["tailwind_kt"] is None
@@ -201,7 +202,7 @@ def test_the_route_flown_at_each_altitude_any_leg_may_fly_is_given_for_the_wheel
     legal at its own nearest -- here the second leg, legal at 3,500 alone."""
     monkeypatch.setattr(
         navlog,
-        "wind_at_altitude",
+        "air_at",
         _winds({3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0}, 5500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 30.0}}),
     )
     plans = navlog.altitude_profiles(FIXES, _segments([[3500.0, 5500.0], [3500.0]]), PROFILE)

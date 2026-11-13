@@ -6,14 +6,11 @@ import WatchConnectivity
 /// as the application context, which WatchConnectivity keeps and delivers
 /// when the watch wakes, and the watch's questions answered as messages.
 /// The watch links no engine, so the nearest airports it asks for are
-/// fetched here from the planner (Planner.nearest); the phone's cycle
-/// packs answer the airspace at a point only, not the fields near one,
-/// so with no signal the watch is told so. The messages are the structs
+/// fetched here from the planner, or with no signal from the phone's
+/// cycle packs (Planner.nearestOrPacks), without weather. The messages are the structs
 /// in Shared/WatchMessages.swift.
 @MainActor
 final class WatchLink: NSObject, WCSessionDelegate {
-    static let shared = WatchLink()
-
     /// The airplane's checklist as last read, with the text it was read
     /// from, so the engine reads it again only when the text changes.
     private var checklistText: String?
@@ -21,7 +18,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
     /// The last context sent, so an unchanged one is not sent again.
     private var sentContext: Data?
 
-    override private init() { super.init() }
+    override init() { super.init() }
 
     /// Activated, then kept up: every few seconds the picked airplane's
     /// checklist (kept on this phone) and the fix are sent,
@@ -32,7 +29,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
         let session = WCSession.default
         session.delegate = self
         session.activate()
-        await Ticker.shared.run(every: 5) { [weak self] in await self?.sync(plan: plan, ownShip: ownShip) }
+        await Repeating.every(5) { [weak self] in await self?.sync(plan: plan, ownShip: ownShip) }
     }
 
     private func sync(plan: Plan, ownShip: OwnShip) async {
@@ -95,7 +92,8 @@ final class WatchLink: NSObject, WCSessionDelegate {
 
     nonisolated static func nearest(_ request: NearestRequest) async -> NearestReply {
         do {
-            let fields = try await Planner.nearest(lat: request.lat, lon: request.lon, limit: request.limit)
+            // With no planner, the phone's packs (PackFields), without weather.
+            let fields = try await Planner.nearestOrPacks(lat: request.lat, lon: request.lon, limit: request.limit).fields
             let airports = fields.map {
                 WatchAirport(ident: $0.ident, name: $0.name, lat: $0.lat, lon: $0.lon,
                              distanceNm: $0.distanceNm, bearingDeg: $0.bearingDeg, flightCategory: $0.flightCategory)

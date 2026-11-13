@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { askSearch } from "../lib/oneSearch";
 import { wantScreen } from "../lib/navigation/wanted";
 import type { ScreenId } from "../lib/navigation/generated/screens";
-import { shortcutKey, useShortcutKeys } from "../lib/shortcutKeys";
+import { shortcutKey } from "../lib/shortcutKeys";
 
 /**
  * The keyboard's ways round the planner, as a desktop's web apps have
@@ -11,11 +11,12 @@ import { shortcutKey, useShortcutKeys } from "../lib/shortcutKeys";
  * card, one list or one page (decision 0015) -- wherever the focus is
  * outside a field. A key a field, a menu or a dialog has used is left
  * alone. And the common actions a letter each, as the search's Do shows
- * them: B the Brief, N Nearest, D Direct To (the search, asked for the
- * airport). ⌘K or Ctrl K, the search itself, is the search field's own
- * (OneSearchField), on every screen with a keyboard. The letters and `/`
- * are pressed as the pilot picked in the account page (lib/shortcutKeys:
- * alone, with Alt, or off), WCAG 2.1.4's ask of a one-key shortcut.
+ * them: Alt+B the Brief, Alt+N Nearest, Alt+D Direct To (the search, asked
+ * for the airport), and Alt+/ the search. ⌘K or Ctrl K, the search itself,
+ * is the search field's own (OneSearchField), on every screen with a
+ * keyboard. The letters and `/` are pressed only with Alt (Option on a
+ * Mac; lib/shortcutKeys), never alone, so VoiceOver's quick nav and the
+ * browser's find-as-you-type keep their keys.
  */
 /** The letters for the screens a pilot opens most (lib/navigation). */
 export const SCREEN_KEYS: Partial<Record<ScreenId, string>> = { brief: "B", nearest: "N" };
@@ -67,7 +68,7 @@ export function onShortcut(event: KeyboardEvent): void {
     return;
   }
   if (typing(event.target)) return;
-  const letter = shortcutKey(event, useShortcutKeys.getState().mode);
+  const letter = shortcutKey(event);
   if (!letter) return;
   if (letter === "/") {
     if (focusSearch(doc)) event.preventDefault();
@@ -82,9 +83,10 @@ export function onShortcut(event: KeyboardEvent): void {
 }
 
 /** ⌘K on a Mac, Ctrl K elsewhere: the one search, from a field too (it
- *  is never a typed letter); OneSearchField listens for it. */
+ *  is never a typed letter); OneSearchField listens for it. The physical
+ *  key (`code`), as the letters are read (lib/shortcutKeys). */
 export const isSearchKey = (event: KeyboardEvent): boolean =>
-  (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "k";
+  (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.code === "KeyK";
 
 /** The shortcuts on the page while `on` (a desktop's: useIsDesktop). */
 export function useShortcuts(on: boolean): void {

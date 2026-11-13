@@ -83,7 +83,6 @@ export default function BriefChecks({
         className={cn("flex items-start gap-2 font-semibold", FINDING_TONE[line.finding], TEXT.row)}
         data-testid="verdict-line"
         data-finding={line.finding}
-        data-tip="verdict"
       >
         <FindingIcon finding={line.finding} className="mt-0.5" />
         <span>{line.words}</span>

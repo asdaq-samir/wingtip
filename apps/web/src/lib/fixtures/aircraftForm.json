@@ -1,5 +1,5 @@
 {
-  "about": "The \"Your Airplane\" form's fields as typed and what is wrong with them, by field, in the words shown under each (the engine's aircraft_problems; the gateway's AircraftRequest limits, which its own test holds to these cases). Web: features/pilot/AccountPanels. iOS: AircraftForm in PilotLogic. Android: aircraft/AircraftForm.",
+  "about": "The \"Your Airplane\" form's fields as typed and what is wrong with them, by field, in the words shown under each (the engine's aircraft_problems, which the gateway asks through the planner before a save: services/planner/tests/test_aircraft_form.py holds that to these cases). Web: features/pilot/AccountPanels. iOS: AircraftForm in PilotLogic. Android: aircraft/AircraftForm.",
   "cases": [
     {
       "form": {

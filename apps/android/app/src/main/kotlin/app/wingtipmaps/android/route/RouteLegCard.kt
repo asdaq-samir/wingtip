@@ -23,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,6 +32,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
@@ -40,8 +40,7 @@ import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
-import app.wingtipmaps.android.flight.InFlight
-import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.ui.WingtipIcons
@@ -65,11 +64,11 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * action closes the card, so the route is seen being planned again.
  */
 @Composable
-fun RouteLegCard(index: Int, plan: Plan, ownShipOn: Boolean, exit: CardExit) {
+fun RouteLegCard(index: Int, plan: Plan, ownShipOn: Boolean, exit: CardExit, flight: FlightModel = hiltViewModel()) {
     val state by plan.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val fix by remember(context) { OwnShip.of(context) }.fix.collectAsStateWithLifecycle()
-    val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
+    val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
+    val inFlight by flight.state.collectAsStateWithLifecycle()
     // The point flying mode flies to: the engine's next waypoint on the route.
     val flyingTo = inFlight.progress?.takeIf { ownShipOn && it.onRoute }?.next?.name
     val leg = RouteLegModel.view(index, state, flyingTo)
@@ -104,6 +103,8 @@ fun RouteLegCard(index: Int, plan: Plan, ownShipOn: Boolean, exit: CardExit) {
             val figures = leg.leg
             if (figures != null) {
                 NavLogFigures(figures)
+                // Its tops of climb and descent, each piece's own figures.
+                LegTops(figures, plan)
             } else {
                 Fact(stringResource(R.string.route_leg_distance), leg.distanceNm?.let(Format::distance) ?: Format.NONE, Spoken.distance(leg.distanceNm))
                 Fact(

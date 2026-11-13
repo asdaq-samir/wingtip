@@ -56,7 +56,7 @@ struct AutoLogbookTests {
         let points = try trackFixture().points
         let answer = try Engine.logbookFromTrack(points: points, aircraft: "N3429J", aircraftType: "C150", utcOffsetMin: -360)
         // The engine's answer is the planner's /api/logbook-draft as it sends it.
-        let draft = try Planner.snakeCase.decode(AutoLogbook.Draft.self, from: Engine.encoder.encode(answer))
+        let draft = try Planner.json.decode(AutoLogbook.Draft.self, from: Engine.encoder.encode(answer))
         var edits = AutoLogbook.Edits()
         edits.totalHours = 2.5
         let sent = AutoLogbook.entryRequest(draft, edits: edits, byInstruments: false, flightId: 40)

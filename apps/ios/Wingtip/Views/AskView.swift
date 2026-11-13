@@ -1,35 +1,30 @@
 import SwiftUI
 
-/// Ask: a question about the flight put to the assistant
-/// (AssistantClient), which answers in words with the planner's own
+/// Ask: a question about the flight answered on this iPhone
+/// (AskScreenModel), in words with the engine's and the planner's own
 /// figures and the raw reports it read, each a chip under the answer
 /// that opens the report as sent. The conversation is bubbles, the
-/// assistant's on the left, the pilot's on the right in the tint; while
-/// the assistant looks something up its own words for that stand under
-/// the last bubble, and the answer's text appends as it streams. A
+/// assistant's on the left, the pilot's on the right in the tint, and the
+/// answer's text appends as it streams. A
 /// question is typed, or said once through the microphone (Ask by voice,
 /// VoiceInput), its words appearing in the field as they are said. A card
 /// (SheetPage.ask), from the sparkle button on the map or the one search's
-/// "Ask: …", with Plan, OwnShip, Session and Verdict in the environment as
-/// the root puts them.
+/// "Ask: …", with Plan, OwnShip and InFlight in the environment as the
+/// root puts them.
 struct AskView: View {
+    @Environment(VoiceInput.self) private var voice
+    @Environment(InFlight.self) private var inFlight
     @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
-    @Environment(Session.self) private var session
-    @Environment(Verdict.self) private var verdict
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var client = AssistantClient()
-    /// "Plan a trip…": the trip planner in the conversation's place until
-    /// closed, as the web's Ask has it.
-    @State private var trip: TripPlanner?
+    @State private var client = AskScreenModel()
     @State private var question = ""
     /// The chip tapped, its raw text pushed in this card.
     @State private var source: AssistantSource?
     /// Why the microphone could not be used, under the field.
     @State private var micProblem: String?
     @FocusState private var typing: Bool
-    private var voice: VoiceInput { VoiceInput.shared }
     /// The question the one search sent ("Ask: …"), asked as the sheet
     /// opens; nil opened from the map's sparkle or a link.
     var first: String?
@@ -41,10 +36,6 @@ struct AskView: View {
         "Brief me",
     ]
 
-    private var context: AssistantContext {
-        AssistantContext.make(plan: plan, ownShip: ownShip, session: session, minimums: verdict.minimums)
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             conversation
@@ -52,7 +43,6 @@ struct AskView: View {
             composer
         }
         .navigationTitle("Ask")
-        .toolbar { ToolbarItem(placement: .topBarLeading) { AskWherePicker() } }
         // A chip's report pushed in Ask's own card, with Back.
         .navigationDestination(item: $source) { source in SourceSheet(source: source) }
         .task {
@@ -68,22 +58,12 @@ struct AskView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: WingtipSpace.md) {
-                    if let trip {
-                        TripPlannerView(trip: trip, context: { context }, onUse: use, onSource: { source = $0 }, onClose: { self.trip = nil })
-                    } else if client.turns.isEmpty {
+                    if client.turns.isEmpty {
                         suggestionsList
                     }
                     ForEach(client.turns) { turn in
                         TurnBubble(turn: turn, onSource: { source = $0 })
                             .id(turn.id)
-                    }
-                    if let status = client.status {
-                        HStack(spacing: WingtipSpace.sm) {
-                            ProgressView().controlSize(.small)
-                            Text(status).font(.footnote).foregroundStyle(.secondary)
-                        }
-                        .accessibilityElement(children: .combine)
-                        .id("status")
                     }
                 }
                 .padding(WingtipSpace.lg)
@@ -108,21 +88,6 @@ struct AskView: View {
                 .font(.title3.weight(.semibold))
             Text("The figures are the engine's and the planner's; each answer shows what it read.")
                 .font(.footnote).foregroundStyle(.secondary)
-            // The first chip, as on the web: the trip planner, which is
-            // Claude's (the assistant's) with no free path, so not offered
-            // while the server's Claude features are off (ServerFeatures).
-            if ServerFeatures.shared.claudeOn {
-                Button { trip = TripPlanner() } label: {
-                    HStack {
-                        Text("Plan a trip…")
-                        Spacer()
-                        Image(systemName: "map").accessibilityHidden(true)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, WingtipSpace.sm)
-                }
-                .contentShape(Rectangle().inset(by: -6))
-            }
             ForEach(Self.suggestions, id: \.self) { words in
                 Button { send(words) } label: {
                     HStack {
@@ -182,20 +147,12 @@ struct AskView: View {
         .padding(.vertical, WingtipSpace.sm)
     }
 
-    /// A trip's leg loaded as the route, as the web's applyChange takes the
-    /// assistant's change: its ends, stops and altitude, then planned.
-    private func use(_ leg: TripLeg) {
-        plan.dep = leg.change.dep; plan.dest = leg.change.dest; plan.stops = leg.change.stops
-        plan.ownAltitudeFt = leg.change.altitudeFt
-        plan.plan()
-    }
-
     private func send(_ words: String) {
         let words = words.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !words.isEmpty else { return }
         question = ""
         micProblem = nil
-        client.ask(words, context: context, facts: .make(plan: plan, ownShip: ownShip))
+        client.ask(words, facts: .make(plan: plan, ownShip: ownShip, inFlight: inFlight))
     }
 
     /// One question said: the route's idents are given the recognizer as
@@ -229,7 +186,8 @@ private struct TurnBubble: View {
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .accessibilityLabel("You asked: \(turn.content)")
             } else {
-                // Who wrote it: the planner, or this iPhone with no signal.
+                // Who wrote it: this iPhone's model, Apple's Private Cloud
+                // Compute, or the engine alone.
                 if let origin = turn.origin {
                     Text(origin).font(.caption).foregroundStyle(.secondary)
                 }
@@ -281,8 +239,6 @@ private struct SourceSheet: View {
 
 #Preview("AskView") {
     NavigationStack { AskView() }
-        .environment(Session())
         .environment(Plan())
         .environment(OwnShip())
-        .environment(Verdict())
 }

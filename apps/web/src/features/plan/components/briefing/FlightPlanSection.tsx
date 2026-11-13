@@ -4,7 +4,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import AccordionSection from "../../../../components/AccordionSection";
 import FieldHit from "../../../../components/FieldHit";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
-import { Input } from "../../../../components/ui/input";
+import { NumberField } from "../../../../components/ui/number-field";
+import { WHOLE } from "../../../../components/ui/numberFormats";
 import { formText, personsOnBoard, withPersonsOnBoard, type FlightPlanForm } from "../../lib/flightPlanForm";
 import { showError } from "../../../../lib/problems";
 import { useCopied } from "../../../../lib/share";
@@ -84,17 +85,17 @@ export default function FlightPlanSection({ forms, ifr }: { forms: FlightPlanFor
                   // Item 19's P/: a count, 1 to 999 as Flight Service takes it.
                   <ListRow key={f.key} id={`${personsId}-${i}`} title={f.label} description={f.note}>
                     <FieldHit htmlFor={`${personsId}-${i}`}>
-                      <Input
+                      <NumberField
                         id={`${personsId}-${i}`}
-                        value={persons[key] ?? ""}
+                        defaultValue={persons[key] ? Number(persons[key]) : null}
+                        onTyped={(v) => setPersons(key, v == null ? "" : String(v))}
+                        formatOptions={WHOLE}
+                        minValue={0}
+                        maxValue={999}
                         placeholder="—"
-                        maxLength={3}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        autoComplete="off"
-                        className="h-8 w-16 text-right"
-                        aria-invalid={!!persons[key]?.trim() && f.value == null}
-                        onChange={(e) => setPersons(key, e.target.value)}
+                        className="h-8 w-16"
+                        inputClassName="text-right"
+                        isInvalid={!!persons[key]?.trim() && f.value == null}
                         data-testid="flight-plan-persons"
                       />
                     </FieldHit>

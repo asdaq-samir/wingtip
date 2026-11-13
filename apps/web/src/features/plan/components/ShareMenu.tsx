@@ -1,11 +1,10 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { done } from "../../../lib/doneNote";
-import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, ListOrdered } from "lucide-react";
+import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, ListOrdered, Trash2 } from "lucide-react";
 import RoundButton from "../../../components/RoundButton";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../../components/ResponsivePopover";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -17,6 +16,9 @@ import { foreflightRoute, type PlanPoint } from "../../../lib/flightPlanFiles";
 import { markPackSent, openInForeFlight, packOrigin, packPath, packSent } from "../lib/foreflightPack";
 import { navLogRows } from "./navlog/rows";
 import { useShareLink } from "../hooks/useShareLink";
+import { refreshLive } from "../../../lib/liveRefresh";
+import type { RouteEdit } from "../../../lib/preferences";
+import ShowRouteAs from "./ShowRouteAs";
 
 const SHARE_LABEL: Record<"route" | RouteCard, string> = {
   // The route box's is More, a "…", at the owner's ask ("Don't call it
@@ -47,7 +49,7 @@ interface Planned {
  * specific to that card. So printing briefing should only be in brief
  * card"; "printing navlog should be in navlog"): the route box's has the
  * route -- its link, files, ForeFlight, Save and the review, filing and its
- * clear; the Brief's, its link and Print the briefing; the nav log's, its
+ * clear; the Brief's, its link, Print the briefing and Refresh; the nav log's, its
  * link and the nav log printed (the kneeboard card); the profile's, its
  * link.
  *
@@ -73,11 +75,19 @@ export default function ShareMenu({
   planAgain,
   onShowFuel,
   onNavLog,
+  onClear,
+  showRouteAs,
 }: {
+  /** How FPL shows its route, the route box's menu's view options (the
+   *  owner, 2026-11-13: "I want to move fpl layout to the fpl page"). */
+  showRouteAs?: { value: RouteEdit; onChange: (value: RouteEdit) => void };
   /** The suggested fuel stops taken out of the route box, put back. */
   onShowFuel?: () => void;
   /** The route's nav log opened: the route box's, with a course drawn. */
   onNavLog?: () => void;
+  /** The route cleared: the route box's menu's last item (the owner,
+   *  2026-11-11: "Instead of clear button, move that to the …"). */
+  onClear?: () => void;
   align: "start" | "end";
   /** Its button's: the route box's, or the tab bar's over the Brief and
    *  the nav log (TabBar's `routeShare`). */
@@ -104,11 +114,16 @@ export default function ShareMenu({
   planAgain?: { stale: string[]; onPlan: () => void };
 }) {
   const [askingReview, setAskingReview] = useState(false);
+  // What an item does once the menu has gone, at Base UI's own word that
+  // its close has finished (onOpenChangeComplete), not after a guessed
+  // 150 ms a slow phone ran past: printed, the menu was on the paper.
+  const [afterClose, setAfterClose] = useState<{ then: () => void } | null>(null);
+  const afterMenu = (then: () => void) => () => setAfterClose({ then });
 
   // The plan, to another pilot or an instructor, as a link that opens as
   // a preview (useShareLink): the share sheet where the browser has one
   // (Safari on an iPhone), otherwise copied.
-  const { share, tail, includeTail, setIncludeTail } = useShareLink(planned, altitudeFt);
+  const { share } = useShareLink(planned, altitudeFt);
 
   // The route as the files and ForeFlight's link take it: the departure,
   // each checkpoint, stop and the destination, as the nav log lists them
@@ -167,7 +182,7 @@ export default function ShareMenu({
 
   return (
     // The review's sheet, from the menu's item, placed by the Share
-    // button: the menu has gone by the time it opens (as Print waits).
+    // button: opened once the menu has gone (afterClose), as Print is.
     <ResponsivePopover
       open={askingReview}
       onOpenChange={(open, details) => {
@@ -179,7 +194,13 @@ export default function ShareMenu({
         setAskingReview(open);
       }}
     >
-      <DropdownMenu>
+      <DropdownMenu
+        onOpenChangeComplete={(open) => {
+          if (open || !afterClose) return;
+          setAfterClose(null);
+          afterClose.then();
+        }}
+      >
         <ResponsivePopoverAnchor asChild>
           <DropdownMenuTrigger
             render={
@@ -205,9 +226,9 @@ export default function ShareMenu({
           </DropdownMenuTrigger>
         </ResponsivePopoverAnchor>
         <DropdownMenuContent align={align} className="min-w-56 print:hidden">
-          {/* The nav log, its button's place beside the AI's brief now the
+          {/* The nav log, its button's place beside the Brief now the
               Profile's (the owner, 2026-11-04: "Navlog can be moved to the
-              more button"). The assistant's Ask is the AI brief's own. */}
+              more button"). */}
           {onNavLog && (
             <DropdownMenuItem onClick={onNavLog} data-testid="route-navlog">
               <ListOrdered />
@@ -219,18 +240,6 @@ export default function ShareMenu({
               <Fuel />
               Show Fuel Stops
             </DropdownMenuItem>
-          )}
-          {routed && tail && (
-            // The N-number is the pilot's: sent only when ticked, the menu
-            // kept open for the Share under it.
-            <DropdownMenuCheckboxItem
-              checked={includeTail}
-              onCheckedChange={(on) => setIncludeTail(on === true)}
-              closeOnClick={false}
-              data-testid="share-include-tail"
-            >
-              Include {tail}
-            </DropdownMenuCheckboxItem>
           )}
           {routed && (
             <DropdownMenuItem onClick={() => void share()} data-testid="share-link">
@@ -296,11 +305,16 @@ export default function ShareMenu({
                   <DropdownMenuSeparator />
                 </>
               )}
-              {saving(() => setTimeout(() => setAskingReview(true), 150))}
-              <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
-                <FileText />
-                File flight plan
-              </DropdownMenuItem>
+              {/* Before there is a route, only what applies then: the
+                  route's Show Route As (the owner, 2026-11-13), the rest
+                  left out, not greyed. */}
+              {routed && saving(afterMenu(() => setAskingReview(true)))}
+              {routed && (
+                <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
+                  <FileText />
+                  File flight plan
+                </DropdownMenuItem>
+              )}
               {planAgain && (
                 <DropdownMenuItem onClick={planAgain.onPlan} data-testid="plan-again" data-stale={planAgain.stale.length ? "" : undefined}>
                   <RotateCw />
@@ -315,20 +329,47 @@ export default function ShareMenu({
               kneeboard card -- the nav log, radio and patterns on one
               half-letter page to fly with. */}
           {card === "brief" && (
-            <DropdownMenuItem disabled={!routed} onClick={() => setTimeout(() => window.print(), 150)} data-testid="print-briefing">
+            <DropdownMenuItem disabled={!routed} onClick={afterMenu(() => window.print())} data-testid="print-briefing">
               <Printer />
               Print the briefing
+            </DropdownMenuItem>
+          )}
+          {/* The Brief's live reports asked again now, as the route's
+              Refresh is in its own menu: the head keeps its two buttons
+              (rules.md). Kept fresh by themselves besides (useLiveRefresh). */}
+          {card === "brief" && (
+            <DropdownMenuItem onClick={() => void refreshLive("brief")} data-testid="brief-refresh">
+              <RotateCw />
+              Refresh
             </DropdownMenuItem>
           )}
           {card === "navlog" && !local && (
             <DropdownMenuItem
               disabled={!routed}
               data-testid="print-kneeboard"
-              onClick={() => setTimeout(() => void import("../lib/printKneeboard").then((m) => m.printKneeboard()), 150)}
+              onClick={afterMenu(() => void import("../lib/printKneeboard").then((m) => m.printKneeboard()))}
             >
               <Printer />
               Print the nav log
             </DropdownMenuItem>
+          )}
+          {/* The page's view options after its actions, as iOS's ••• menus
+              put them, the Clear still last. */}
+          {showRouteAs && (
+            <>
+              {/* A band after the route's actions; none over it alone. */}
+              {routed && <DropdownMenuSeparator />}
+              <ShowRouteAs {...showRouteAs} />
+            </>
+          )}
+          {onClear && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={onClear} data-testid="route-clear">
+                <Trash2 />
+                Clear route
+              </DropdownMenuItem>
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>

@@ -14,11 +14,8 @@ enum KeepRoute {
     }
 
     static func tile(lat: Double, lon: Double, zoom: Int) -> Tile {
-        let n = pow(2.0, Double(zoom))
-        let x = Int(((lon + 180) / 360 * n).rounded(.down))
-        let latRad = lat * .pi / 180
-        let y = Int(((1 - log(tan(latRad) + 1 / cos(latRad)) / .pi) / 2 * n).rounded(.down))
-        return Tile(z: zoom, x: min(max(x, 0), Int(n) - 1), y: min(max(y, 0), Int(n) - 1))
+        let t = TileMath.tile(lat: lat, lon: lon, zoom: zoom)
+        return Tile(z: zoom, x: t.x, y: t.y)
     }
 
     /// The tiles a corridor `halfWidthNm` either side of the line needs
@@ -32,8 +29,9 @@ enum KeepRoute {
         let points = try samples(of: line, everyNm: stepNm)
         var wanted = Set<Tile>()
         for zoom in minZoom...maxZoom {
-            // A tile's width at the equator in nm, 21,600 nm round.
-            let tileNm = 21_600 / pow(2.0, Double(zoom))
+            // A tile's width at the equator in nm: the Web Mercator
+            // world's width (TileMath's) over the tiles across it.
+            let tileNm = 2 * TileMath.halfCircumference / Units.mPerNm / pow(2.0, Double(zoom))
             let reach = max(1, Int((halfWidthNm / tileNm).rounded(.up)))
             for point in points {
                 let centre = tile(lat: point.latitude, lon: point.longitude, zoom: zoom)
@@ -117,7 +115,16 @@ enum KeepRoute {
     /// kept as it goes.
     static func keep(_ tiles: Set<Tile>, template: TileTemplate, store: TileStore = .shared, progress: @escaping @Sendable (Int, Int) -> Void) async {
         let all = Array(tiles.union(parents(of: tiles)))
-        let missing = all.filter { store.read(cycle: template.cycle, kind: template.kind, z: $0.z, x: $0.x, y: $0.y, scale: template.scale) == nil }
+        // A tile the map already fetched, under Caches, is copied to the
+        // kept place, which iOS does not clear; only the rest are fetched.
+        var missing: [Tile] = []
+        for t in all where !store.isKept(cycle: template.cycle, kind: template.kind, z: t.z, x: t.x, y: t.y, scale: template.scale) {
+            if let seen = store.read(cycle: template.cycle, kind: template.kind, z: t.z, x: t.x, y: t.y, scale: template.scale) {
+                store.write(seen, cycle: template.cycle, kind: template.kind, z: t.z, x: t.x, y: t.y, scale: template.scale, kept: true)
+            } else {
+                missing.append(t)
+            }
+        }
         var done = all.count - missing.count
         progress(done, all.count)
         await withTaskGroup(of: Bool.self) { group in
@@ -129,7 +136,7 @@ enum KeepRoute {
                     group.addTask {
                         guard let (data, response) = try? await URLSession.shared.data(from: template.url(z: next.z, x: next.x, y: next.y)),
                               (response as? HTTPURLResponse)?.statusCode == 200 else { return false }
-                        store.write(data, cycle: template.cycle, kind: template.kind, z: next.z, x: next.x, y: next.y, scale: template.scale)
+                        store.write(data, cycle: template.cycle, kind: template.kind, z: next.z, x: next.x, y: next.y, scale: template.scale, kept: true)
                         return true
                     }
                 }

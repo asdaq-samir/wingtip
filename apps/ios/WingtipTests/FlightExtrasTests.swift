@@ -9,60 +9,52 @@ import Testing
 struct FlightExtrasDecodingTests {
     @Test func anAirplaneTrackedWithItsTraceAndTheFAAsRecord() throws {
         let json = #"{"hex":"a128b9","registration":"N174HA","type":"C172","description":"CESSNA 172S","operator":"FLIGHT SCHOOL INC","year":"2004","departed":{"ident":"C81","name":"Campbell","at":1761400000},"trail":[{"t":1761400000,"lat":42.32,"lon":-88.07,"alt_ft":null},{"t":1761400060,"lat":42.33,"lon":-88.06,"alt_ft":1500.0}],"faa":{"n_number":"N174HA","manufacturer":"CESSNA","model":"172S","year":2004,"mode_s_hex":"A128B9","status":"Valid","standing":"in effect","co_owners":0,"fractional":false,"horsepower":180,"thrust_lb":null,"owner":"FLIGHT SCHOOL INC","city":"Chicago","state":"IL"}}"#
-        let detail = try Planner.snakeCase.decode(FlightDetail.self, from: Data(json.utf8))
-        #expect(detail.operator == "FLIGHT SCHOOL INC" && detail.departed?.ident == "C81")
+        let detail = try Planner.json.decode(FlightDetail.self, from: Data(json.utf8))
+        #expect(detail.operatorName == "FLIGHT SCHOOL INC" && detail.departed?.ident == "C81")
         #expect(detail.trail?.count == 2 && detail.trail?[0].altFt == nil && detail.trail?[1].altFt == 1500)
         #expect(detail.faa?.nNumber == "N174HA" && detail.faa?.modeSHex == "A128B9" && detail.faa?.horsepower == 180 && detail.faa?.coOwners == 0)
     }
 
     @Test func itsStateAndItsFlights() throws {
         let status = #"{"hex":"a128b9","airborne":false,"aircraft":null,"arrived":{"ident":"KDAW","at":1761400900,"city":"Rochester","name":"Skyhaven","region":"US-NH"},"departed":{"ident":"C81","city":null,"name":"Campbell","region":"US-IL"},"heard_s":120.0}"#
-        let s = try Planner.snakeCase.decode(FlightStatus.self, from: Data(status.utf8))
+        let s = try Planner.json.decode(FlightStatus.self, from: Data(status.utf8))
         #expect(s.arrived?.ident == "KDAW" && s.heardS == 120 && s.aircraft == nil)
         let past = #"{"hex":"a128b9","flights":[{"id":3,"in_air":false,"landed":true,"max_alt_ft":4500.0,"off":1761390000,"on":1761393300,"origin":{"ident":"C81"},"destination":{"ident":"C81","city":"Lake Zurich","region":"US-IL"}}],"next_until":"2026-10-10","type":"C172","unread_days":0}"#
-        let flights = try Planner.snakeCase.decode(PastFlights.self, from: Data(past.utf8))
+        let flights = try Planner.json.decode(PastFlights.self, from: Data(past.utf8))
         #expect(flights.flights[0].maxAltFt == 4500 && flights.flights[0].local == true && flights.nextUntil == "2026-10-10")
         let one = #"{"id":3,"points":[{"t":1761390000,"lat":42.3,"lon":-88.0,"alt_ft":800.0,"gs_kt":60.0,"track_deg":90.0,"vrate_fpm":500.0}]}"#
-        let flight = try Planner.snakeCase.decode(PastFlight.self, from: Data(one.utf8))
+        let flight = try Planner.json.decode(PastFlight.self, from: Data(one.utf8))
         #expect(flight.points[0].gsKt == 60 && flight.points[0].vrateFpm == 500)
     }
 
     @Test func aSearchAFlightNumbersRouteAndWhereTheyAreBased() throws {
         let found = #"{"aircraft":[{"hex":"a1b2c3","lat":42.0,"lon":-88.0,"callsign":"UAL2088","altitude_ft":12000.0,"squawk":"7700"}],"checked":false,"license":"ODbL","registered":null,"source":"adsb.lol"}"#
-        let f = try Planner.snakeCase.decode(TrafficFound.self, from: Data(found.utf8))
+        let f = try Planner.json.decode(TrafficFound.self, from: Data(found.utf8))
         #expect(f.aircraft[0].squawk == "7700" && f.checked == false && f.registered == nil)
         let route = #"{"airports":[{"ident":"TJSJ","location":"San Juan"},{"ident":"KORD","name":"Chicago O'Hare"}],"plausible":true}"#
-        #expect(try Planner.snakeCase.decode(FlightRoute.self, from: Data(route.utf8)).airports.last?.ident == "KORD")
+        #expect(try Planner.json.decode(FlightRoute.self, from: Data(route.utf8)).airports.last?.ident == "KORD")
         // A callsign that is not an airline's: null, read as none.
-        #expect(try Planner.snakeCase.decode(FlightRoute?.self, from: Data("null".utf8)) == nil)
+        #expect(try Planner.json.decode(FlightRoute?.self, from: Data("null".utf8)) == nil)
         let based = #"{"based":{"a1b2c3":{"ident":"C81"},"d4e5f6":null},"pending":["d4e5f6"]}"#
-        let b = try Planner.snakeCase.decode(AircraftBases.self, from: Data(based.utf8))
-        #expect(b.based["a1b2c3"]??.ident == "C81" && b.pending == ["d4e5f6"])
+        let b = try Planner.json.decode(AircraftBases.self, from: Data(based.utf8))
+        #expect(b.based.additionalProperties["a1b2c3"]??.ident == "C81" && b.pending == ["d4e5f6"])
     }
 
     @Test func thePointPressedAndTheAirspaceOverIt() throws {
         let json = #"{"lat":42.4,"lon":-88.1,"ground_ft":820.0,"bands":[{"class":"B","floor_ft":3600.0,"ceiling_ft":10000.0,"entry":"A clearance","name":"Chicago","equipment":"Mode C, ADS-B Out","speed_kt":200,"minimums":null}],"mode_c_veil":null,"point":{"base":"VPBNG","course_deg":95,"distance_nm":14.2,"ident":"VPBNG/095/14.2","name":"14 nm east of VPBNG","radial":false},"special_use":[],"tfrs":[]}"#
-        let here = try Planner.snakeCase.decode(AirspaceAt.self, from: Data(json.utf8))
+        let here = try Planner.json.decode(AirspaceAt.self, from: Data(json.utf8))
         #expect(here.bands[0].airspaceClass == "B" && here.bands[0].floorFt == 3600 && here.groundFt == 820)
         #expect(here.point?.ident == "VPBNG/095/14.2" && here.point?.courseDeg == 95)
     }
 
     @Test func aProceduresFixesWithTheChartsAltitudes() throws {
         let json = #"{"airport":"KELD","cycle":"2610","id":"I22","kind":"approach","name":"ILS RWY 22","transition":null,"fixes":[{"ident":"BXCMB","lat":33.2,"lon":-92.8,"min_ft":2400,"max_ft":null,"missed":false,"roles":["IAF"]},{"ident":"FAFIX","lat":33.21,"lon":-92.81,"min_ft":2000,"max_ft":2000,"missed":false,"roles":["FAF"]}],"holds":[],"lines":[]}"#
-        let drawing = try Planner.snakeCase.decode(ProcedureDrawing.self, from: Data(json.utf8))
+        let drawing = try Planner.json.decode(ProcedureDrawing.self, from: Data(json.utf8))
         #expect(try drawing.fixes[0].charted() == "at or above 2,400 ft")
         #expect(try drawing.fixes[1].charted() == "at 2,000 ft")
     }
 
-    @Test func theNotesAsTheyAreWritten() throws {
-        let lines = [
-            #"{"type":"start","count":2}"#,
-            #"{"type":"checkpoint","id":"c1","lat":42.1,"lon":-88.2,"description":"The water tower west of the lake.","source":"generated"}"#,
-            #"{"type":"checkpoint","id":"c2","lat":42.2,"lon":-88.3,"description":null,"source":"error","detail":"Busy"}"#,
-            #"{"type":"done"}"#,
-        ]
-        let read = try lines.map { try Planner.snakeCase.decode(NoteLine.self, from: Data($0.utf8)) }
-        #expect(read[0].count == 2 && read[1].description?.hasPrefix("The water") == true && read[2].source == "error" && read[3].type == "done")
+    @Test func aCheckpointsNoteIsKeptByWhereItIs() {
         #expect(CheckpointNotesView.key(42.1, -88.2) == "42.10000,-88.20000")
     }
 
@@ -99,17 +91,20 @@ struct RouteEditsTests {
 
     @Test func onlyTheEditsSetGoToTheNavLog() throws {
         var extras = RouteExtras()
-        #expect(try extras.query(procedures: []).isEmpty)
+        let bare = NavLogQuery(dep: "KMSN", dest: "KELD")
+        var query = bare
+        try extras.apply(to: &query, procedures: [])
+        #expect(query == bare)
         extras.altitudes = ["KMSN": 1900, "VPBNG": 4500]
         extras.crossings = ["BXCMB": 3000]
         extras.holds = [Hold(fix: "VPBNG", inbound: 90, right: true, legMin: 1, legNm: nil, turns: 2, minutes: nil)]
         let pick = ProcedurePick(ident: "KELD", id: "I22", kind: "approach", name: "ILS RWY 22")
         extras.procedureDirect = ["KELD:I22": "BXCMB"]
-        let query = try extras.query(procedures: [pick])
-        #expect(query["altitudes"] == "KMSN:1900,VPBNG:4500")
-        #expect(query["crossings"] == "BXCMB:3000")
-        #expect(query["holds"] == "VPBNG:090:R:1M:2T")
-        #expect(query["procedures"] == "KELD:I22::BXCMB")
+        try extras.apply(to: &query, procedures: [pick])
+        #expect(query.altitudes == "KMSN:1900,VPBNG:4500")
+        #expect(query.crossings == "BXCMB:3000")
+        #expect(query.holds == "VPBNG:090:R:1M:2T")
+        #expect(query.procedures == "KELD:I22::BXCMB")
     }
 
     @Test func aPositionAndAFixOffAPointAreWrittenAsTheRouteWritesThem() throws {
@@ -154,6 +149,22 @@ struct RouteEditsTests {
         #expect(plan.hold(at: "kmsn")?.inbound == 180)
         plan.clear()
         #expect(plan.extras == RouteExtras())
+    }
+
+    @Test func aDirectToWithNoConnectionPutsTheRouteBackAndSaysSo() {
+        let plan = Plan()
+        plan.dep = "C81"; plan.dest = "KDLH"; plan.stops = ["KJVL", "KMSN"]
+        let before = plan.routeState
+        plan.directTo("KMSN", from: nil)
+        // Held until the nav log is whole, for the planner's failure.
+        #expect(plan.directFrom == before)
+        plan.undoDirect(before)
+        #expect(plan.stops == ["KJVL", "KMSN"] && plan.extras.direct == nil && plan.extras.was == nil)
+        #expect(plan.directProblem?.hasPrefix("Not changed: no connection") == true)
+        #expect(plan.directFrom == nil)
+        // The next plan clears it.
+        plan.plan()
+        #expect(plan.directProblem == nil)
     }
 }
 

@@ -8,7 +8,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -16,9 +15,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -45,9 +47,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
  *   <li><b>Redirects never followed.</b> A redirect from an upstream is
  *       a misconfiguration to surface, not to chase.
  *   <li><b>One error shape.</b> An upstream that does not answer becomes
- *       a 502, one that is interrupted a 504, both with a
- *       {@code {"detail": ...}} body -- the shape the front end's own
- *       stream reader already reports.
+ *       a 502, one that is interrupted a 504, both problems whose
+ *       {@code detail} the front end's own stream reader already reports.
  * </ul>
  */
 @Component
@@ -105,32 +106,22 @@ public class StreamingProxy {
             // too long answered, slowly -- it was reported as unreachable,
             // and the 504 below was only ever an interrupted thread's.
             log.warn("{} timed out at {}: {}", upstream.name(), request.uri().getPath(), err.toString());
-            return error(504, upstream.timedOutDetail());
+            throw problem(504, upstream.timedOutDetail());
         } catch (IOException err) {
             log.warn("{} unreachable at {}: {}", upstream.name(), request.uri().getPath(), err.toString());
-            return error(502, upstream.unreachableDetail());
+            throw problem(502, upstream.unreachableDetail());
         } catch (InterruptedException err) {
             Thread.currentThread().interrupt();
-            return error(504, upstream.timedOutDetail());
+            throw problem(504, upstream.timedOutDetail());
         }
     }
 
-    /** A {@code {"detail": ...}} response, JSON-escaped for quotes and
-     *  backslashes: a detail carries an upstream's own name and status. */
-    public static ResponseEntity<StreamingResponseBody> error(int status, String detail) {
-        String escaped = detail.replace("\\", "\\\\").replace("\"", "\\\"");
-        return ResponseEntity.status(status)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(json("{\"detail\":\"" + escaped + "\"}"));
-    }
-
-    /** A fixed JSON body, written and flushed. */
-    public static StreamingResponseBody json(String body) {
-        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-        return out -> {
-            out.write(bytes);
-            out.flush();
-        };
+    /** The refusal to throw: GlobalExceptionHandler answers it as a problem
+     *  (RFC 9457), its {@code detail} the words given, which carry an
+     *  upstream's own name and status. */
+    public static ErrorResponseException problem(int status, String detail) {
+        HttpStatusCode code = HttpStatusCode.valueOf(status);
+        return new ErrorResponseException(code, ProblemDetail.forStatusAndDetail(code, detail), null);
     }
 
     /** Copies upstream to the client, flushing each chunk. */

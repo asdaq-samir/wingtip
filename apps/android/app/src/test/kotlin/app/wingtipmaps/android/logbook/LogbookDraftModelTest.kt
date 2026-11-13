@@ -8,6 +8,7 @@ import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
 import app.wingtipmaps.android.flight.OwnShip
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
@@ -151,7 +152,7 @@ class LogbookDraftModelTest {
     fun theRecorderKeepsAPointEachFiveSecondsAcrossLaunches() {
         val file = File(Files.createTempDirectory("rec").toFile(), "flight.json")
         var now = 0L
-        val rec = FlightRecorder(file) { now }
+        val rec = FlightRecorder(file, Dispatchers.Unconfined) { now }
         fun fix(atMs: Long) = OwnShip.Fix(42.0, -88.0, 800.0, 90.0, 0.0, 5.0, atMs)
         rec.took(fix(1_000))
         rec.took(fix(3_000))
@@ -159,7 +160,7 @@ class LogbookDraftModelTest {
         assertEquals(listOf(1_000.0, 6_000.0), rec.recorded.value.points.map { it.t })
         now = 40_000
         rec.asked(600.0)
-        val again = FlightRecorder(file) { now }
+        val again = FlightRecorder(file, Dispatchers.Unconfined) { now }
         assertEquals(2, again.recorded.value.points.size)
         assertEquals(600.0, again.recorded.value.askedTo!!, 0.0)
     }

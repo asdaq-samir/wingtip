@@ -7,6 +7,7 @@ import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { PillSection } from "../../../components/Favorites";
 import { FirstFew } from "../../../components/FirstFew";
 import QueryState from "../../../components/QueryState";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
 import { RowBadge } from "../../../components/RowBadge";
 import type { NearbyPlace } from "../../../lib/api/types";
 import { awayWords, fuelNames, glanceOf, type GlanceItem, type Glanceable } from "../../../lib/stopServices";
@@ -96,11 +97,12 @@ const placeRows = (places: NearbyPlace[], media: ReactNode, testId: string) =>
  */
 export function StopServices({
   ident,
-  withoutFuel = false,
+  fuelNotam,
 }: {
   ident: string;
-  /** Its fuel left to the airport card's details, which show it. */
-  withoutFuel?: boolean;
+  /** A NOTAM on the fuel (the card's NotamBadge, "Not available") by its
+   *  name, and the row's tap that opens it. */
+  fuelNotam?: { badge: ReactNode; onClick: () => void };
 }) {
   const asked = useQuery(servicesQuery(ident));
   const s = asked.data;
@@ -120,7 +122,57 @@ export function StopServices({
     .filter(Boolean)
     .join(", ")
     .replace(/^./, (c) => c.toUpperCase());
+  // Its fuel first among what is on the field (the owner, 2026-11-11:
+  // "Fuel should move to on the field section"), from its Chart Supplement
+  // entry, the remarks in words as the planner gives them (the engine's
+  // remarks_read: self-serve, its hours, the FBO's; the owner, 2026-11-11,
+  // "Decode fuel remarks too") on a row of their own under the Fuel row,
+  // in sight, and as sent folded under As Written, as the card's Lights
+  // (the owner, 2026-11-11: "fuel remarks and as written can be separate
+  // from fuel").
   const field = [
+    <ListRow
+      key="fuel"
+      media={
+        <RowBadge colour={BADGE.fuel}>
+          <Fuel />
+        </RowBadge>
+      }
+      title={fuelNotam ? <span className="flex items-center gap-2">Fuel{fuelNotam.badge}</span> : "Fuel"}
+      onClick={fuelNotam?.onClick}
+      chevron={!!fuelNotam}
+      value={<span className="font-semibold text-foreground">{s.fuel_types.length ? fuelNames(s.fuel_types) : "None listed"}</span>}
+      data-testid="services-fuel"
+    />,
+    s.fuel_notes.length > 0 && (
+      <ListRow
+        key="fuel-notes"
+        title="Fuel remarks"
+        description={s.fuel_notes.map((note) => (
+          <span key={note} className="block" data-testid="services-fuel-note">
+            {note}
+          </span>
+        ))}
+        data-testid="services-fuel-remarks"
+      />
+    ),
+    s.fuel_remarks.length > 0 && (
+      <Collapsible key="fuel-sent">
+        <CollapsibleTrigger render={<ListRow title="As Written" chevron data-testid="services-fuel-sent" />} />
+        <CollapsibleContent>
+          <ListRow
+            title={
+              <span
+                className={cn("font-mono break-words whitespace-pre-wrap text-muted-foreground", TEXT.detail)}
+                data-testid="services-fuel-raw"
+              >
+                {s.fuel_remarks.join("\n")}
+              </span>
+            }
+          />
+        </CollapsibleContent>
+      </Collapsible>
+    ),
     s.courtesy_car && (
       <ListRow
         key="car"
@@ -195,24 +247,6 @@ export function StopServices({
   const near = s.food.length + s.lodging.length + s.cars.length > 0;
   return (
     <div data-testid="place-services">
-      {!withoutFuel && (
-        <Section title="Fuel">
-          <ListRow
-            media={
-              <RowBadge colour={BADGE.fuel}>
-                <Fuel />
-              </RowBadge>
-            }
-            title={s.fuel_types.length ? fuelNames(s.fuel_types) : <span className="text-muted-foreground">None listed</span>}
-            data-testid="services-fuel"
-          />
-          {/* The remarks in plain English as the planner gives them
-              (wingtip.remarks.service_notes): self-serve, its hours, the FBO's. */}
-          {s.fuel_notes.map((note) => (
-            <ListRow key={note} title={note} />
-          ))}
-        </Section>
-      )}
       {field.length > 0 && <FewSection title="On the field" rows={field} />}
       {s.food.length > 0 && (
         <FewSection

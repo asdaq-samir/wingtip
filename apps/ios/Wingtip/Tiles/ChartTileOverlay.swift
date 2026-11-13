@@ -16,10 +16,10 @@ import UIKit
 /// tile's image into its own map rect with Core Graphics puts all its
 /// pixels on the screen, as sharp as ForeFlight's chart.
 ///
-/// Close in, past the chart's own scale, Apple's map is under it
-/// (canReplaceMapContent off) and the chart fades out over a level
-/// (ChartFade), as the web map's street map fades in over it: the
-/// runways (RunwaySurface) then lie on Apple's roads and buildings.
+/// Close in, past the chart's own last level, it fades out over a level
+/// (ChartFade) into the USGS's aerial imagery under it (CloseImagery), as
+/// the web map's does, Apple's map under both (canReplaceMapContent off)
+/// where the USGS has none: the runways (RunwaySurface) lie on the real ones.
 final class ChartTileOverlay: NSObject, MKOverlay, @unchecked Sendable {
     let template: TileTemplate
     /// The day's lift (ChartLift) put on each tile as it is decoded.
@@ -37,8 +37,8 @@ final class ChartTileOverlay: NSObject, MKOverlay, @unchecked Sendable {
     // The whole world: the renderer works out the tiles a rect needs.
     let coordinate = CLLocationCoordinate2D(latitude: 0, longitude: 0)
     let boundingMapRect = MKMapRect.world
-    // Apple's map under the chart, for the close zoom where the chart
-    // fades (ChartFade); its points of interest are off (ChartMap).
+    // Apple's map under the chart and the imagery, where the USGS has
+    // none close in (CloseImagery); its points of interest are off (ChartMap).
     func canReplaceMapContent() -> Bool { false }
 
     init(template: TileTemplate, minZoom: Int, maxZoom: Int, lift: Bool = true, store: TileStore = .shared, cache: TileCache = .shared) {
@@ -320,7 +320,7 @@ final class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendable {
         var data = chart.store.read(cycle: template.cycle, kind: template.kind, z: tile.z, x: tile.x, y: tile.y, scale: template.scale)
         if data == nil, !Task.isCancelled {
             source = "network"
-            if let (fetched, response) = try? await session.data(from: template.url(z: tile.z, x: tile.x, y: tile.y)),
+            if let (fetched, response) = try? await session.data(for: URLRequest(url: template.url(z: tile.z, x: tile.x, y: tile.y), timeoutInterval: Planner.read)),
                (response as? HTTPURLResponse)?.statusCode == 200 {
                 chart.store.write(fetched, cycle: template.cycle, kind: template.kind, z: tile.z, x: tile.x, y: tile.y, scale: template.scale)
                 data = fetched
@@ -400,21 +400,5 @@ enum ChartLift {
         filter.setValue(saturation, forKey: kCIInputSaturationKey)
         guard let output = filter.outputImage else { return nil }
         return context.createCGImage(output, from: input.extent, format: .BGRA8, colorSpace: CGColorSpace(name: CGColorSpace.sRGB))
-    }
-}
-
-/// How much of the chart shows at a zoom (the web map's, in Leaflet's
-/// levels as MapExtras.zoom gives them): all of it to 13, where the
-/// chart's own last level is already enlarged and its runways under a
-/// pixel or two, then less over one level, to none from 14, where Apple's
-/// map under it and the FAA runways (RunwaySurface) are the map, as the
-/// web map's street map fades in over the chart from MapLibre's 12 to 13
-/// (glOverlays' RUNWAYS_FROM; MapLibre's levels are Leaflet's less one).
-enum ChartFade {
-    static let from = 13.0
-    static let to = 14.0
-
-    static func alpha(zoom: Double) -> CGFloat {
-        CGFloat(min(1, max(0, (to - zoom) / (to - from))))
     }
 }

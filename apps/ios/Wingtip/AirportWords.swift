@@ -174,7 +174,7 @@ enum AirportWords {
     /// (logged by Engine.rule): the FAA's own words, in capitals.
     static func faaWords(_ text: String?) -> String {
         guard let text, !text.isEmpty else { return "" }
-        if case .string(let words)? = try? Engine.faaWords(text: text) { return words }
+        if let words = (try? Engine.faaWords(text: text))?.value as? String { return words }
         return text
     }
 
@@ -192,7 +192,7 @@ enum AirportWords {
     static func minimumsLine(_ m: VfrMinimums) -> String {
         if m.clearOfClouds { return "\(plain(m.visibilitySm)) sm, clear of clouds" }
         func ft(_ x: Double?) -> String { x.map(Format.grouped) ?? Format.none }
-        let horizontal = m.horizontalFt == 5280 ? "1 sm" : ft(m.horizontalFt)
+        let horizontal = m.horizontalFt == Units.ftPerSm ? "1 sm" : ft(m.horizontalFt)
         return "\(plain(m.visibilitySm)) sm, \(ft(m.belowFt)) below, \(ft(m.aboveFt)) above, \(horizontal) horizontal"
     }
 
@@ -222,15 +222,17 @@ enum AirportWords {
     /// NASR's fuel codes as the pump is labelled: the jet fuels by name,
     /// the rest (100LL, UL94, MOGAS) as the codes they are (the engine's
     /// `fuel_names`).
-    /// The codes as NASR has them where the engine refuses (logged).
+    /// Where the engine refuses, its problem in their place, so a code is
+    /// never passed off as the fuel's name.
     static func fuelNames(_ types: [String]) -> String {
-        (try? Engine.fuelNames(types: types)) ?? types.joined(separator: ", ")
+        do { return try Engine.fuelNames(types: types) } catch { return "the fuels couldn't be worked out: \(error.localizedDescription)" }
     }
 
     /// How far a place is from the field: the minutes' walk where it is a
     /// walk, else statute miles.
     static func away(_ place: NearbyPlace) -> String {
         if let walk = place.walkMin { return "\(walk) min walk" }
-        return "\(Format.number(Double(place.distanceM) / 1609.344, decimals: 1)) mi"
+        let miles = Measurement(value: Double(place.distanceM), unit: UnitLength.meters).converted(to: .miles)
+        return "\(Format.number(miles.value, decimals: 1)) mi"
     }
 }

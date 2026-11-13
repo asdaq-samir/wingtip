@@ -19,7 +19,7 @@ import { usePreferences } from "../../../lib/preferences";
 import type { StopKind } from "../../../lib/stopKinds";
 import type { StopPin } from "../../../lib/map/marks/stopPins";
 import { inkOn, scoreColor } from "../../../lib/scoreScale";
-import type { NavLogRow, RouteLeg } from "./navlog/rows";
+import { firstFlown, type NavLogRow, type RouteLeg } from "./navlog/rows";
 import { useTerrainView } from "../map/terrain/useTerrainView";
 import { useRouteAloft } from "../hooks/useRouteAloft";
 
@@ -65,10 +65,6 @@ interface Props {
   /** The one just picked ("KBUR:I08-Y:LAX@<when>"), for the map to go to
    *  it once it is drawn. */
   procedureFocus?: string | null;
-  /** How much of the screen's top or foot the Procedures' sheet covers
-   *  while it is out on a phone, for the procedure to be brought in clear
-   *  of it. */
-  procedureCover?: { top: number; bottom: number };
   /** The airport whose card is open, and the way to open one from the
    *  chart (AirportsGl) -- or, with null, to put it away. */
   place: { ident: string; lat: number; lon: number } | null;
@@ -129,7 +125,7 @@ function legFactsOf(selected: Candidate[], legs: Leg[]): Map<string, LegFacts> {
     // The time in the air to it: each leg's time, and any stop's on the
     // ground before it (ground_min).
     const afterMin = legs.slice(0, at + 1).reduce((sum, leg) => sum + (leg.ete_min ?? 0) + (leg.ground_min ?? 0), 0);
-    facts.set(`${c.lat},${c.lon}`, { into: legs[at], out: legs[at + 1], afterMin });
+    facts.set(`${c.lat},${c.lon}`, { into: legs[at], out: firstFlown(legs[at + 1]), afterMin });
   }
   return facts;
 }
@@ -280,7 +276,6 @@ export default memo(function RouteMap({
   patternFocus = null,
   procedures = NO_PROCEDURES,
   procedureFocus = null,
-  procedureCover,
   crossings = NO_CROSSINGS,
   directs = "",
   onProcedureFix,
@@ -438,7 +433,6 @@ export default memo(function RouteMap({
       procedures={procedures}
       focusedProcedure={focusedProcedure}
       procedureFocus={procedureFocus}
-      procedureCover={procedureCover}
       crossings={crossings}
       directs={directs}
       onProcedureFix={onProcedureFix}

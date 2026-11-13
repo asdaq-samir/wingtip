@@ -107,7 +107,7 @@ final class WeatherLoop {
                 // The last list kept, with its age, when there is no signal (KeptForAir).
                 let asked = kind.rawValue
                 let answer = try await KeptForAir.answer(.weatherLoop, key: asked) {
-                    try await Planner.fetch(APIWeatherLoop.self, "/api/weather/loop", ["kind": asked])
+                    try await Planner.call { try await $0.weatherLoopFrames(query: .init(kind: asked)).ok.body.json }
                 }.value
                 if answer.frames.map(\.valid) != frames.map(\.valid) { ready = false }
                 frames = answer.frames
@@ -139,11 +139,8 @@ final class WeatherLoop {
 
     /// iOS 27's ask to scale back live effects (UIApplication's
     /// systemPrefersReducedResourceUsage): the loop then waits for Play
-    /// rather than starting by itself, the newest frame shown. Never so
-    /// before iOS 27.
-    private static var savingResources: Bool {
-        if #available(iOS 27.0, *) { UIApplication.shared.systemPrefersReducedResourceUsage } else { false }
-    }
+    /// rather than starting by itself, the newest frame shown.
+    private static var savingResources: Bool { UIApplication.shared.systemPrefersReducedResourceUsage }
 
     func toggle() {
         started = true

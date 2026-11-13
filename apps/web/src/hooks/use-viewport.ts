@@ -1,14 +1,14 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * The window's height and its safe-area insets, as numbers for the
- * components that need them in JavaScript -- the map panel's sheet,
- * whose detents are pixels -- where everything else reads
- * them in CSS (`env(safe-area-inset-*)`, `dvh`).
+ * The window's safe-area insets, as numbers for what needs them in
+ * JavaScript -- the map's room under the status bar (MapPanel's insets)
+ * -- where everything else reads them in CSS (`env(safe-area-inset-*)`,
+ * `dvh`).
  *
  * The insets come from a probe: an invisible element padded by
  * `env()`, read back through its computed style, since there is no
- * other way to ask the browser for them. Both are re-read on a resize,
+ * other way to ask the browser for them. They are re-read on a resize,
  * which is also what turning a phone fires.
  */
 /** A reading of the window, taken once and again only when one of its
@@ -67,17 +67,12 @@ function readInsets(): string {
 }
 
 const insets = held(readInsets, onResize);
-const windowHeight = held(() => window.innerHeight, onResize);
 
 export function useSafeArea(): { top: number; bottom: number } {
   const [top = 0, bottom = 0] = useSyncExternalStore(insets.subscribe, insets.get, () => "0px|0px")
     .split("|")
     .map((v) => parseFloat(v) || 0);
   return { top, bottom };
-}
-
-export function useWindowHeight(): number {
-  return useSyncExternalStore(windowHeight.subscribe, windowHeight.get, () => 800);
 }
 
 /** The visual viewport, which shrinks when the on-screen keyboard
@@ -100,17 +95,12 @@ const keyboardInset = held(() => {
   const visual = window.visualViewport;
   return visual ? Math.max(0, Math.round(window.innerHeight - visual.height - visual.offsetTop)) : 0;
 }, onVisual);
-const visualHeight = held(() => Math.round(window.visualViewport?.height ?? window.innerHeight), onVisual);
-
 /** How much of the bottom of the window the on-screen keyboard covers:
  *  0 with no keyboard, and where the browser shrinks the window for one
- *  instead (Chrome on Android), since the window's own height says it. */
+ *  instead (Chrome on Android), since the window's own height says it.
+ *  For what is not in a sheet's Drawer (the route's suggestions, a
+ *  popover put on the page's body): what is in one takes the stock
+ *  Drawer's own (VirtualKeyboardProvider's --drawer-keyboard-inset). */
 export function useKeyboardInset(): number {
   return useSyncExternalStore(keyboardInset.subscribe, keyboardInset.get, () => 0);
-}
-
-/** How tall the part of the page in sight is: the window's height, less
- *  the on-screen keyboard while it is up. */
-export function useVisualHeight(): number {
-  return useSyncExternalStore(visualHeight.subscribe, visualHeight.get, () => 800);
 }

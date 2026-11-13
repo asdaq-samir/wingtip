@@ -4,13 +4,7 @@
     "" : {
 
     },
-    " %@" : {
-
-    },
     " · %@" : {
-
-    },
-    " → " : {
 
     },
     "%@" : {
@@ -42,16 +36,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ %2$@ → %3$@"
-          }
-        }
-      }
-    },
-    "%@ %@%@%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ %2$@%3$@%4$@"
           }
         }
       }
@@ -140,6 +124,18 @@
     "%@ frame" : {
 
     },
+    "%@ fuel" : {
+
+    },
+    "%@ fuel flow" : {
+
+    },
+    "%@ groundspeed" : {
+
+    },
+    "%@ hour" : {
+
+    },
     "%@ hours" : {
 
     },
@@ -156,6 +152,9 @@
         }
       }
     },
+    "%@ legend" : {
+
+    },
     "%@ long" : {
 
     },
@@ -163,6 +162,9 @@
 
     },
     "%@ magnetic" : {
+
+    },
+    "%@ magnetic heading" : {
 
     },
     "%@ min" : {
@@ -193,6 +195,12 @@
     "%@ profile" : {
 
     },
+    "%@ time" : {
+
+    },
+    "%@ timeline" : {
+
+    },
     "%@ to %@, C172" : {
       "localizations" : {
         "en" : {
@@ -207,6 +215,9 @@
 
     },
     "%@ transition" : {
+
+    },
+    "%@ true airspeed" : {
 
     },
     "%@ wide" : {
@@ -344,7 +355,7 @@
         }
       }
     },
-    "%@, account and settings" : {
+    "%@, You" : {
 
     },
     "%@, full screen" : {
@@ -384,9 +395,6 @@
       }
     },
     "%@T" : {
-
-    },
-    "%@…" : {
 
     },
     "%lld" : {
@@ -451,6 +459,16 @@
         }
       }
     },
+    "%lld of %lld shown" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld shown"
+          }
+        }
+      }
+    },
     "%lld of 6 approaches%@%@ in the window" : {
       "localizations" : {
         "en" : {
@@ -462,6 +480,9 @@
       }
     },
     "%lld percent flown" : {
+
+    },
+    "%lld percent solid" : {
 
     },
     "%lld/%lld" : {
@@ -495,6 +516,9 @@
     "270" : {
 
     },
+    "2D" : {
+
+    },
     "3 takeoffs and landings in 90 days" : {
 
     },
@@ -507,6 +531,9 @@
     "30 and 7 days before each runs out, your airplanes' too" : {
 
     },
+    "3D" : {
+
+    },
     "90" : {
 
     },
@@ -514,6 +541,9 @@
 
     },
     "987654321CFI" : {
+
+    },
+    "A NOTAM's words and its times" : {
 
     },
     "A Planning Aid" : {
@@ -540,6 +570,9 @@
     "ATC" : {
 
     },
+    "ATC Alerts" : {
+
+    },
     "ATIS at ${airport}" : {
 
     },
@@ -555,15 +588,6 @@
     "Accept" : {
 
     },
-    "Account" : {
-
-    },
-    "Account and Settings" : {
-
-    },
-    "Account, Records, Sync" : {
-
-    },
     "Active Leg" : {
 
     },
@@ -573,7 +597,16 @@
     "Add ${approach} to the route" : {
 
     },
+    "Add Alternate" : {
+
+    },
+    "Add Alternate, Required" : {
+
+    },
     "Add Date" : {
+
+    },
+    "Add Your Name" : {
 
     },
     "Add a Segment" : {
@@ -640,9 +673,6 @@
     "Airport diagram" : {
 
     },
-    "Airport diagram, full screen" : {
-
-    },
     "Airports" : {
 
     },
@@ -661,7 +691,13 @@
     "Alerts" : {
 
     },
+    "All %lld NOTAMs" : {
+
+    },
     "All Nearest" : {
+
+    },
+    "All shown" : {
 
     },
     "Allow" : {
@@ -676,6 +712,18 @@
     "Alt" : {
 
     },
+    "Alternate" : {
+
+    },
+    "Alternate · Destination" : {
+
+    },
+    "Alternate · Filed" : {
+
+    },
+    "Alternates That Will Do" : {
+
+    },
     "Alternating" : {
 
     },
@@ -685,19 +733,22 @@
     "Altitude at %@" : {
 
     },
+    "Altitude in feet above sea level" : {
+
+    },
     "Altitude not read" : {
 
     },
     "An airport's METAR and TAF, as sent." : {
 
     },
+    "An alternate is required" : {
+
+    },
     "And %lld more" : {
 
     },
-    "Answers From" : {
-
-    },
-    "Answers from" : {
+    "Appearance" : {
 
     },
     "Approach" : {
@@ -722,6 +773,9 @@
 
     },
     "As marked on the transmitter, 91.207(c)" : {
+
+    },
+    "As on your certificate" : {
 
     },
     "As on your student pilot certificate" : {
@@ -844,6 +898,9 @@
     "Call 911" : {
 
     },
+    "Call: no phone listed" : {
+
+    },
     "Callsign" : {
 
     },
@@ -886,9 +943,6 @@
     "Chart Edition" : {
 
     },
-    "Chart at Night" : {
-
-    },
     "Charts" : {
 
     },
@@ -896,6 +950,9 @@
 
     },
     "Check your mail: the link opens Wingtip Maps and signs you in." : {
+
+    },
+    "Check, File" : {
 
     },
     "Checked on" : {
@@ -974,7 +1031,13 @@
     "Clear Route" : {
 
     },
+    "Clear Your Path" : {
+
+    },
     "Clearance" : {
+
+    },
+    "Climb" : {
 
     },
     "Climb and Descent" : {
@@ -986,9 +1049,6 @@
     "Close" : {
 
     },
-    "Close the trip planner" : {
-
-    },
     "Clouds" : {
 
     },
@@ -996,6 +1056,9 @@
 
     },
     "Coming Up" : {
+
+    },
+    "Comms Assist" : {
 
     },
     "Confirmed" : {
@@ -1058,7 +1121,7 @@
     "Cruise" : {
 
     },
-    "Cruise altitude, hundreds of feet" : {
+    "Cruise altitude" : {
 
     },
     "Cruise figures at %@, standard day" : {
@@ -1083,6 +1146,15 @@
 
     },
     "Danger ahead" : {
+
+    },
+    "Dark" : {
+
+    },
+    "Dark + Bright" : {
+
+    },
+    "Data" : {
 
     },
     "Data Cycle" : {
@@ -1130,6 +1202,9 @@
     "Demo Flight" : {
 
     },
+    "Density Altitude" : {
+
+    },
     "Departs" : {
 
     },
@@ -1142,10 +1217,7 @@
     "Departure hours" : {
 
     },
-    "Describe the Checkpoints" : {
-
-    },
-    "Describe the trip" : {
+    "Descent" : {
 
     },
     "Destination" : {
@@ -1214,9 +1286,6 @@
     "Dismiss the answer" : {
 
     },
-    "Display" : {
-
-    },
     "Dist" : {
 
     },
@@ -1242,9 +1311,6 @@
 
     },
     "Done" : {
-
-    },
-    "Dot" : {
 
     },
     "Download %@" : {
@@ -1302,6 +1368,9 @@
 
     },
     "Edition" : {
+
+    },
+    "Edits the flight" : {
 
     },
     "Effective" : {
@@ -1397,7 +1466,10 @@
     "FAA Registration" : {
 
     },
-    "FL-045 as 045" : {
+    "FAA charts that move like Maps" : {
+
+    },
+    "FPL, like your EFB" : {
 
     },
     "Favorite" : {
@@ -1416,6 +1488,9 @@
 
     },
     "Fetching the airspace here…" : {
+
+    },
+    "Fetching the destination's forecast…" : {
 
     },
     "Fetching the fields round you…" : {
@@ -1460,6 +1535,9 @@
     "Filed: %@" : {
 
     },
+    "Files it as the alternate" : {
+
+    },
     "Filing…" : {
 
     },
@@ -1476,6 +1554,9 @@
 
     },
     "Find an airplane" : {
+
+    },
+    "Find any airport, town or fix the way you would in Apple or Google Maps." : {
 
     },
     "Finding the nearest fields…" : {
@@ -1512,6 +1593,9 @@
 
     },
     "Flight" : {
+
+    },
+    "Flight Category" : {
 
     },
     "Flight Logged" : {
@@ -1552,6 +1636,9 @@
 
     },
     "Flown Track" : {
+
+    },
+    "Flown at the cruise's speed and fuel flow, for want of the airplane's descent figures." : {
 
     },
     "Flown by Instruments" : {
@@ -1663,6 +1750,9 @@
     "From %@ on" : {
 
     },
+    "From My Position" : {
+
+    },
     "From Your Debriefs" : {
 
     },
@@ -1684,6 +1774,9 @@
     "Fuel Burn" : {
 
     },
+    "Fuel remarks" : {
+
+    },
     "Fuel, Minutes" : {
 
     },
@@ -1691,9 +1784,6 @@
 
     },
     "GS" : {
-
-    },
-    "Getting Worse by Arrival" : {
 
     },
     "Give your name first: your endorsements name you by it" : {
@@ -1720,9 +1810,6 @@
     "Guide" : {
 
     },
-    "Halo" : {
-
-    },
     "Handbook figures confirmed, saved with the airplane" : {
 
     },
@@ -1741,7 +1828,13 @@
     "Heard: %@" : {
 
     },
+    "Help & About" : {
+
+    },
     "Here's the entry from your flight; check it and log it." : {
+
+    },
+    "Hide Plate" : {
 
     },
     "Hide from the Map" : {
@@ -1792,6 +1885,9 @@
     "How the Altitude Was Chosen" : {
 
     },
+    "I Understand" : {
+
+    },
     "I can't tell where you are, so here are the nearest airports." : {
 
     },
@@ -1823,6 +1919,9 @@
     "In Flight" : {
 
     },
+    "In still air: the winds there couldn't be read." : {
+
+    },
     "In the Brief: %@" : {
 
     },
@@ -1844,6 +1943,9 @@
     "Include %@" : {
 
     },
+    "Indicated Airspeed" : {
+
+    },
     "Information %@" : {
 
     },
@@ -1854,6 +1956,9 @@
 
     },
     "Instructing" : {
+
+    },
+    "Instructions" : {
 
     },
     "Instructor" : {
@@ -1874,7 +1979,13 @@
     "Into the Pattern · Within %@ ft" : {
 
     },
+    "Invert Plate Colors" : {
+
+    },
     "It goes from your airplanes and from the nav log's picker. This can't be undone." : {
+
+    },
+    "Its Alternate Minimums" : {
 
     },
     "Its date" : {
@@ -1914,9 +2025,6 @@
 
     },
     "Keep the path this iPhone flew, or put in a GPX file." : {
-
-    },
-    "Keep your airplanes, flights and logbook on every device." : {
 
     },
     "Keeping for the Air: %lld of %lld" : {
@@ -1980,6 +2088,9 @@
     "Layer" : {
 
     },
+    "Layers" : {
+
+    },
     "Leaving" : {
 
     },
@@ -2021,6 +2132,15 @@
 
     },
     "Legs · %@" : {
+
+    },
+    "Let's Go Flying" : {
+
+    },
+    "Level" : {
+
+    },
+    "Light" : {
 
     },
     "Lights" : {
@@ -2070,6 +2190,9 @@
 
     },
     "Loading the map" : {
+
+    },
+    "Location Is Off" : {
 
     },
     "Log" : {
@@ -2171,9 +2294,6 @@
     "Map" : {
 
     },
-    "Map Settings" : {
-
-    },
     "Map: the glide's reach" : {
 
     },
@@ -2200,6 +2320,9 @@
 
     },
     "Model" : {
+
+    },
+    "Model Weather" : {
 
     },
     "Modelled for %@" : {
@@ -2290,6 +2413,9 @@
     "Nearest is from where the airplane is." : {
 
     },
+    "Nearest is from where the airplane is. Put the iPhone where it sees the sky." : {
+
+    },
     "Nearest to you" : {
 
     },
@@ -2349,6 +2475,9 @@
     "No Flights Yet" : {
 
     },
+    "No GPS Position" : {
+
+    },
     "No Legs Yet" : {
 
     },
@@ -2371,6 +2500,9 @@
 
     },
     "No airports" : {
+
+    },
+    "No alternate required" : {
 
     },
     "No answer from the planner." : {
@@ -2434,6 +2566,15 @@
 
     },
     "None for the route" : {
+
+    },
+    "None found within 100 nm. File one you have checked yourself." : {
+
+    },
+    "None heard" : {
+
+    },
+    "None heard since %@" : {
 
     },
     "None here" : {
@@ -2520,7 +2661,13 @@
     "On the clock" : {
 
     },
+    "On to %@" : {
+
+    },
     "Open" : {
+
+    },
+    "Open %@'s Profile" : {
 
     },
     "Open Emergency" : {
@@ -2547,9 +2694,6 @@
     "Open your route in Wingtip Maps first, and I'll check it." : {
 
     },
-    "Opens %@'s NOTAMs" : {
-
-    },
     "Opens %@'s profile" : {
 
     },
@@ -2557,6 +2701,9 @@
 
     },
     "Opens it in Maps" : {
+
+    },
+    "Opens its NOTAM" : {
 
     },
     "Opens its profile, with Fly This Airplane" : {
@@ -2589,7 +2736,7 @@
     "Opens the nav log" : {
 
     },
-    "Opens your account" : {
+    "Opens the profile and the Altitude Advisor" : {
 
     },
     "Opens your logbook." : {
@@ -2605,6 +2752,9 @@
 
     },
     "Or by Email" : {
+
+    },
+    "Or type feet, as 2340" : {
 
     },
     "Other" : {
@@ -2676,6 +2826,9 @@
     "Phone" : {
 
     },
+    "Pick an Airplane" : {
+
+    },
     "Pick an airplane on the iPhone." : {
 
     },
@@ -2688,7 +2841,7 @@
     "Pick one for the time, fuel and groundspeed" : {
 
     },
-    "Pilot" : {
+    "Pilot Details" : {
 
     },
     "Pilot Reports" : {
@@ -2706,9 +2859,6 @@
     "Plan" : {
 
     },
-    "Plan Your First Flight" : {
-
-    },
     "Plan a Trip" : {
 
     },
@@ -2716,9 +2866,6 @@
 
     },
     "Plan a trip to ${airport} leaving ${departure}" : {
-
-    },
-    "Plan a trip…" : {
 
     },
     "Plan and brief your flight in Wingtip Maps first, and I'll tell you." : {
@@ -2731,9 +2878,6 @@
 
     },
     "Plan the route to see it from the side." : {
-
-    },
-    "Plan the trip" : {
 
     },
     "Planned %@" : {
@@ -2791,10 +2935,16 @@
     "Practice Them All" : {
 
     },
+    "Precipitation span" : {
+
+    },
     "Preview" : {
 
     },
     "Previews the airplane's own altitude" : {
+
+    },
+    "Privacy" : {
 
     },
     "Privacy Policy" : {
@@ -2828,9 +2978,6 @@
 
     },
     "Puts an approach on your route at its airport and opens the Brief." : {
-
-    },
-    "Putting your plan into words…" : {
 
     },
     "Radar and Satellite" : {
@@ -2960,6 +3107,9 @@
     "Route" : {
 
     },
+    "Route Box" : {
+
+    },
     "Route Leg" : {
 
     },
@@ -2967,6 +3117,9 @@
 
     },
     "Route, airplane or remarks" : {
+
+    },
+    "Route, nav log, profile and brief, like your EFB. Tap here any time." : {
 
     },
     "Rules" : {
@@ -3044,28 +3197,19 @@
     "Scheduled Route" : {
 
     },
-    "Screen" : {
-
-    },
     "Search" : {
-
-    },
-    "Search NOTAMs" : {
 
     },
     "Search airports, airplanes, or ask" : {
 
     },
-    "Search an Airport" : {
-
-    },
-    "Search for an airport to fly to or from; the chart, the weather and the route follow." : {
+    "Search, like Maps" : {
 
     },
     "Section" : {
 
     },
-    "See a Sample Flight" : {
+    "Sectional and IFR charts you pinch, pan and tap, with the weather on top." : {
 
     },
     "See the Airplane's Figures" : {
@@ -3143,19 +3287,34 @@
     "Show All %lld" : {
 
     },
+    "Show Annotations" : {
+
+    },
     "Show Nearest" : {
 
     },
-    "Show Welcome Again" : {
+    "Show Route As" : {
 
     },
     "Show earlier flights" : {
 
     },
+    "Show flight plan" : {
+
+    },
     "Show on the Map" : {
 
     },
+    "Show search" : {
+
+    },
     "Show the Answer" : {
+
+    },
+    "Show the map flat" : {
+
+    },
+    "Show the map in 3D" : {
 
     },
     "Show the whole route" : {
@@ -3203,6 +3362,9 @@
     "Sign in for your training" : {
 
     },
+    "Sign in to keep your airplanes." : {
+
+    },
     "Sign in to log it: the track is kept on this phone until then." : {
 
     },
@@ -3215,19 +3377,25 @@
     "Signed" : {
 
     },
+    "Signed In" : {
+
+    },
     "Signing…" : {
 
     },
     "Smaller" : {
 
     },
+    "Solid" : {
+
+    },
     "Solo Cross-Countries" : {
 
     },
-    "Sort By" : {
+    "Source: %@" : {
 
     },
-    "Source: %@" : {
+    "Sources" : {
 
     },
     "Speak Alerts Ahead" : {
@@ -3240,6 +3408,9 @@
 
     },
     "Speed, Time and Fuel" : {
+
+    },
+    "Speed, Time and Fuel · %@" : {
 
     },
     "Squawk %@" : {
@@ -3297,7 +3468,7 @@
     "Station" : {
 
     },
-    "Station Model When Zoomed In" : {
+    "Station Model" : {
 
     },
     "Steady" : {
@@ -3357,6 +3528,15 @@
     "Swipe up or down to preview another altitude; Set flies it." : {
 
     },
+    "Switch" : {
+
+    },
+    "System" : {
+
+    },
+    "TFR as Sent" : {
+
+    },
     "TFRs" : {
 
     },
@@ -3364,6 +3544,9 @@
 
     },
     "Take Back" : {
+
+    },
+    "Take It Off" : {
 
     },
     "Takeoff" : {
@@ -3384,7 +3567,13 @@
     "Tell me when it takes off" : {
 
     },
+    "Terms" : {
+
+    },
     "Terms of Use" : {
+
+    },
+    "That's Not Me" : {
 
     },
     "The %@ at %@ couldn't be briefed: %@" : {
@@ -3431,6 +3620,9 @@
     "The Route's Segments" : {
 
     },
+    "The TFR list could not be read: check the FAA's TFRs before flying." : {
+
+    },
     "The airplane · its landings · remarks" : {
 
     },
@@ -3445,9 +3637,6 @@
       }
     },
     "The altitude ATC gave you to cross it at, in feet above sea level." : {
-
-    },
-    "The altitudes couldn't be listed: %@" : {
 
     },
     "The approach plates" : {
@@ -3547,6 +3736,9 @@
     "The route, its Go / No-Go and the departure's weather: the plan on the page or a saved flight." : {
 
     },
+    "The route, nav log, profile and brief, one tap away on the FPL button." : {
+
+    },
     "The route: %@" : {
 
     },
@@ -3557,6 +3749,9 @@
 
     },
     "The weather in words" : {
+
+    },
+    "Theme" : {
 
     },
     "This Month" : {
@@ -3634,6 +3829,9 @@
     "Transcript" : {
 
     },
+    "Transparency" : {
+
+    },
     "Trends" : {
 
     },
@@ -3650,6 +3848,15 @@
 
     },
     "Try Again" : {
+
+    },
+    "Turn On Location" : {
+
+    },
+    "Turn On Location in Settings" : {
+
+    },
+    "Turn off model weather" : {
 
     },
     "Turns" : {
@@ -3694,12 +3901,6 @@
     "Use This Plan" : {
 
     },
-    "Use return leg" : {
-
-    },
-    "Use this plan" : {
-
-    },
     "VFR Flight Not Recommended" : {
 
     },
@@ -3716,6 +3917,9 @@
 
     },
     "Version" : {
+
+    },
+    "View Full Screen" : {
 
     },
     "Void It" : {
@@ -3745,13 +3949,22 @@
     "Weather When I Land" : {
 
     },
+    "Weather and Traffic" : {
+
+    },
     "Weather at ${airport}" : {
 
     },
     "Weather at an Airport" : {
 
     },
+    "Weather on the map" : {
+
+    },
     "Weight & Balance" : {
+
+    },
+    "Welcome to Wingtip Maps" : {
 
     },
     "What Is Due" : {
@@ -3784,13 +3997,16 @@
     "Where" : {
 
     },
+    "Where are you flying to?" : {
+
+    },
     "Where to, or ask" : {
 
     },
     "Where to?" : {
 
     },
-    "Where you are, at %@, the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind." : {
+    "Where you are%@, the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind." : {
 
     },
     "Which NOTAM?" : {
@@ -3823,7 +4039,7 @@
     "Wind" : {
 
     },
-    "Wind Arrows" : {
+    "Wind Level" : {
 
     },
     "Wind correction" : {
@@ -3836,6 +4052,9 @@
 
     },
     "Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight." : {
+
+    },
+    "With Wind" : {
 
     },
     "Within" : {
@@ -3862,29 +4081,16 @@
     "Write the %@" : {
 
     },
-    "Writing %lld of %lld…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Writing %1$lld of %2$lld…"
-          }
-        }
-      }
-    },
     "Writing the glance…" : {
 
     },
     "Writing the words…" : {
 
     },
-    "Writing…" : {
+    "You" : {
 
     },
     "You are here" : {
-
-    },
-    "You are here, tracking %@ true" : {
 
     },
     "You asked: %@" : {
@@ -3894,6 +4100,9 @@
 
     },
     "You took" : {
+
+    },
+    "You're signed in as %@. Your airplanes, flights and logbook are saved to this account." : {
 
     },
     "Your Airplane in the Day's Air" : {
@@ -3929,6 +4138,9 @@
     "Your Read Back" : {
 
     },
+    "Your Wingtip Maps data" : {
+
+    },
     "Your airplane in the day's air" : {
 
     },
@@ -3939,6 +4151,9 @@
 
     },
     "Your endorsements and reviews are kept with your account." : {
+
+    },
+    "Your flight plan is one tap away" : {
 
     },
     "Your flights are kept with your account, on every device." : {

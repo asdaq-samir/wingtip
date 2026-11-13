@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import PlaceAge from "./PlaceAge";
 import { Cloud, CloudSun, Eye, Gauge, Thermometer, Wind } from "lucide-react";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
+import { RefreshNow } from "../../../../components/RefreshButton";
 import { RowBadge } from "../../../../components/RowBadge";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { ago, zuluTime } from "../../../../lib/format";
@@ -31,7 +32,8 @@ function observedLine(at: string): string {
 /**
  * An airport's card's Weather tab (PlaceCard): the weather there hour by
  * hour (G1) over the reports as sent -- its own, else the weather modelled
- * at it and the nearest station's -- and its ATIS, heard or sent.
+ * at it and the nearest station's -- and its ATIS, heard or sent; its
+ * first row ends in the card's Refresh.
  */
 export function PlaceWeatherTab({
   ident,
@@ -86,7 +88,12 @@ export function PlaceWeatherTab({
             }
             value={weatherAge ?? undefined}
             data-testid="place-weather-summary"
-          />
+          >
+            {/* Refresh at the row's right, after the report's age: what
+                the card shows asked again now (the owner, 2026-11-11,
+                "refresh can go in the weather tab itself"). */}
+            {place && <RefreshNow card="airport" label={`Refresh ${place.ident}`} className="size-8" />}
+          </ListRow>
           {place && hourly.hours.length > 0 && (
             <div className="min-w-0">
               <HourlyForecast hours={hourly.hours} arrival={arrival} />

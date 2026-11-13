@@ -2,14 +2,15 @@ import { useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../components/ui/accordion";
 import { usePrinting } from "../lib/usePrinting";
-import type { AltitudeSegment, Leg, NavLogAltitude } from "../../../lib/api/types";
+import type { AltitudeSegment, Leg, NavLogAltitude, Totals } from "../../../lib/api/types";
 import { cruiseReferenceFt } from "../../../lib/performance";
 import { TEXT } from "../../../lib/text";
 import { flightLevel } from "../../../lib/format";
-import { WINDS_MODELLED } from "../../../lib/windsAloft";
+import { WINDS_MODELLED, windsSource } from "../../../lib/windsAloft";
 import { capitalised, faaWords, suaAltitudes } from "../../../lib/advisories";
 import { altFt, bearing, cruiseByAltitude, describeFuel, describeSteps, describeTime, feetBelowClouds, PLAN_NAME } from "../format";
 import { callEngine } from "../../../lib/engine/engine";
+import { andList } from "../../../lib/listWords";
 
 /** The surface-area minimums, "1,000 ft, 3 sm" (14 CFR 91.155(c), (d)),
  *  which the planner holds every route to, the engine's
@@ -32,6 +33,8 @@ interface Props {
    *  they were made. Without it (the Brief) the plan flown comes first,
    *  with its time and fuel, as the answer. */
   plansAbove?: boolean;
+  /** Whose winds the plans fly (the totals'), named as the nav log names them. */
+  winds?: Totals["winds"];
 }
 
 /** One step: its name, the reason in a line under it, and its figure at
@@ -56,12 +59,6 @@ const WESTBOUND = "westbound (180° through 359°)";
  *  a course of 179.6° rounded read "180° is eastbound" -- north as 360,
  *  as every bearing is written (lib/format's bearing). */
 const ruleCourse = (course: number) => bearing(Math.floor(course));
-
-/** "a, b and c" -- the ceiling is the lowest of up to three things. */
-function join(parts: string[]): string {
-  if (parts.length <= 1) return parts[0] ?? "";
-  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
-}
 
 /** What sets the whole route's VFR ceiling, the lowest of three
  *  (wingtip.altitude's band_ceiling): the clouds (14 CFR 91.155's distance
@@ -115,7 +112,7 @@ function ceilingRuns(segments: AltitudeSegment[]): AltitudeSegment[] {
  * (each fact said once): a list of the plan, the floor and the ceiling
  * sat over the steps, which said all three again.
  */
-export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Props) {
+export default function AltitudeReasoning({ nav, legs, plansAbove = false, winds }: Props) {
   const s = nav.altitude_selection;
   // Under IFR the floor, the ceiling and the rule are IFR's (the
   // planner's wingtip.ifr): said in their words below.
@@ -340,7 +337,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
       value: ceilingValue,
       body: (
         <>
-          The lowest of {join(ceilingParts)}.{runsText && ` Leg by leg: ${runsText}. A shelf or a cloud caps only the legs under it.`}
+          The lowest of {andList(ceilingParts)}.{runsText && ` Leg by leg: ${runsText}. A shelf or a cloud caps only the legs under it.`}
           {cloudsLeaveNone && (
             <span className="text-destructive">
               {" "}
@@ -407,10 +404,8 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
               }),
           body: (
             <>
-              {/* The winds named as the nav log names them: the GFS's, modelled
-            (lib/windsAloft). */}
               Lowest and highest keep to the bottom and the top of the legal altitudes; fastest takes the winds aloft,
-              {` ${WINDS_MODELLED}, `}for the least time, and economical for the least fuel, every climb counted.{" "}
+              {` ${windsSource(winds) ?? WINDS_MODELLED}, `}for the least time, and economical for the least fuel, every climb counted.{" "}
               {nav.options
                 .map(
                   (o) =>
@@ -425,7 +420,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
                 )
                 .join(" ")}
               {needOxygen.length > 0 &&
-                ` The ${join(needOxygen)} ${needOxygen.length === 1 ? "plan climbs" : "plans climb"} above the altitude where more than 30 minutes needs supplemental oxygen (14 CFR 91.211).`}
+                ` The ${andList(needOxygen)} ${needOxygen.length === 1 ? "plan climbs" : "plans climb"} above the altitude where more than 30 minutes needs supplemental oxygen (14 CFR 91.211).`}
             </>
           ),
         }
@@ -489,10 +484,10 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
       ? [
           {
             key: "special-use",
-            title: `Special-use airspace: ${join(specialUse.map((a) => a.name))}`,
+            title: `Special-use airspace: ${andList(specialUse.map((a) => a.name))}`,
             body: (
               <>
-                {join(
+                {andList(
                   specialUse.map(
                     (a) =>
                       `${a.name} (${a.kind}, ${suaAltitudes(a, { midSentence: true })}, ${a.along_track_nm} nm out${
@@ -527,13 +522,13 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
             key: "transits",
             // Class B takes a clearance, not a call (14 CFR 91.131(a)(1)): it was
             // headed "A radio call on the way" with the rest.
-            title: `${s.airspace_transits.some((t) => t.class === "B") ? "A clearance on the way" : "A radio call on the way"}: ${join(
+            title: `${s.airspace_transits.some((t) => t.class === "B") ? "A clearance on the way" : "A radio call on the way"}: ${andList(
               s.airspace_transits.map((t) => t.name),
             )}`,
             body: (
               <>
                 Not a ceiling:{" "}
-                {join(
+                {andList(
                   s.airspace_transits.map(
                     (t) =>
                       `${t.name} (Class ${t.class}, ${t.floor_ft_msl ? `floor ${altFt(t.floor_ft_msl)} ft` : "from the surface"}, ${t.along_track_nm} nm out, ${t.requires})`,

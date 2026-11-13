@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "cn";
+import { anchorHiddenRender } from "./anchorHidden";
 import { MENU_CHECK, MENU_CHECK_ITEM, MENU_CONTENT, MENU_ITEM, MENU_LABEL, MENU_SEPARATOR } from "./menuLook";
 import { Menu as DropdownMenuPrimitive } from "@base-ui/react/menu";
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
@@ -24,9 +25,13 @@ function DropdownMenuContent({
   sideOffset = 4,
   collisionPadding,
   anchor,
+  onAnchorHidden,
   ...props
 }: DropdownMenuPrimitive.Popup.Props &
-  Pick<DropdownMenuPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset" | "collisionPadding" | "anchor">) {
+  Pick<DropdownMenuPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset" | "collisionPadding" | "anchor"> & {
+    /** Its trigger out of sight while it is open. */
+    onAnchorHidden?: () => void;
+  }) {
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Positioner
@@ -37,6 +42,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
         anchor={anchor}
+        render={anchorHiddenRender(onAnchorHidden)}
       >
         <DropdownMenuPrimitive.Popup
           data-slot="dropdown-menu-content"

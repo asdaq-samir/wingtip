@@ -1,0 +1,238 @@
+{
+  "why": "The map's model weather in a pilot's words (engine/crates/weather/src/model_weather.rs), held by the engine (engine/facade/tests/model_weather.rs) and the web (features/weather-flow). Each case's expected answer is from its source: AIM 7-1-12's intensity words, AIM 7-1-28's sky cover, the NWS's CAPE categories, the Z-R relation Z = 300 R^1.4, JO 7930.2 3-3-9's 16 compass points, and the sun down from sunset to sunrise (NOAA's solar calculation) for the badge's moon.",
+  "cases": [
+    {
+      "why": "25.9 dBZ is still light (AIM 7-1-12: < 26)",
+      "rule": "precip_intensity",
+      "input": {
+        "dbz": 25.9,
+        "temp_c": 5
+      },
+      "expected": {
+        "word": "Light",
+        "falls_as": "rain"
+      }
+    },
+    {
+      "why": "26 dBZ is moderate (26 to 40)",
+      "rule": "precip_intensity",
+      "input": {
+        "dbz": 26,
+        "temp_c": 5
+      },
+      "expected": {
+        "word": "Moderate",
+        "falls_as": "rain"
+      }
+    },
+    {
+      "why": "40 dBZ is still moderate",
+      "rule": "precip_intensity",
+      "input": {
+        "dbz": 40
+      },
+      "expected": {
+        "word": "Moderate",
+        "falls_as": null
+      }
+    },
+    {
+      "why": "40.5 dBZ is heavy (> 40 to 50)",
+      "rule": "precip_intensity",
+      "input": {
+        "dbz": 40.5,
+        "temp_c": -2
+      },
+      "expected": {
+        "word": "Heavy",
+        "falls_as": "snow"
+      }
+    },
+    {
+      "why": "50.5 dBZ is extreme (> 50)",
+      "rule": "precip_intensity",
+      "input": {
+        "dbz": 50.5,
+        "temp_c": 20
+      },
+      "expected": {
+        "word": "Extreme",
+        "falls_as": "rain"
+      }
+    },
+    {
+      "why": "Under 10 dBZ nothing is said to fall",
+      "rule": "precip_intensity",
+      "input": {
+        "dbz": 9.9,
+        "temp_c": 20
+      },
+      "expected": {
+        "word": null,
+        "falls_as": null
+      }
+    },
+    {
+      "why": "1 and 10 mm/h by Z = 300 R^1.4: 24.77 and 38.77 dBZ; none is 0",
+      "rule": "precip_dbz",
+      "input": {
+        "rates_mm_h": [
+          0,
+          1,
+          10
+        ]
+      },
+      "expected": {
+        "dbz": [
+          0.0,
+          24.77,
+          38.77
+        ]
+      }
+    },
+    {
+      "why": "Half the sky is scattered, 4/8",
+      "rule": "cloud_cover",
+      "input": {
+        "percent": 50
+      },
+      "expected": {
+        "oktas": 4,
+        "cover": "SCT"
+      }
+    },
+    {
+      "why": "Five eighths of the sky is broken (AIM 7-1-28: BKN 5/8-7/8)",
+      "rule": "cloud_cover",
+      "input": {
+        "percent": 62.5
+      },
+      "expected": {
+        "oktas": 5,
+        "cover": "BKN"
+      }
+    },
+    {
+      "why": "A sky 99% covered is still broken, not overcast",
+      "rule": "cloud_cover",
+      "input": {
+        "percent": 99
+      },
+      "expected": {
+        "oktas": 7,
+        "cover": "BKN"
+      }
+    },
+    {
+      "why": "A trace of cloud is FEW, not clear",
+      "rule": "cloud_cover",
+      "input": {
+        "percent": 2
+      },
+      "expected": {
+        "oktas": 1,
+        "cover": "FEW"
+      }
+    },
+    {
+      "why": "999 J/kg is weak instability (NWS: < 1000)",
+      "rule": "cape_category",
+      "input": {
+        "j_kg": 999
+      },
+      "expected": "Weak"
+    },
+    {
+      "why": "1000 J/kg is moderate",
+      "rule": "cape_category",
+      "input": {
+        "j_kg": 1000
+      },
+      "expected": "Moderate"
+    },
+    {
+      "why": "2500 J/kg is strong",
+      "rule": "cape_category",
+      "input": {
+        "j_kg": 2500
+      },
+      "expected": "Strong"
+    },
+    {
+      "why": "4000 J/kg is still strong; extreme is greater than 4000",
+      "rule": "cape_category",
+      "input": {
+        "j_kg": 4000
+      },
+      "expected": "Strong"
+    },
+    {
+      "why": "4500 J/kg is extreme",
+      "rule": "cape_category",
+      "input": {
+        "j_kg": 4500
+      },
+      "expected": "Extreme"
+    },
+    {
+      "why": "0 degrees is north",
+      "rule": "compass_point",
+      "input": {
+        "bearing_deg": 0
+      },
+      "expected": "N"
+    },
+    {
+      "why": "11.25 degrees, a sector's edge, is taken clockwise: NNE",
+      "rule": "compass_point",
+      "input": {
+        "bearing_deg": 11.25
+      },
+      "expected": "NNE"
+    },
+    {
+      "why": "337.5 degrees is NNW",
+      "rule": "compass_point",
+      "input": {
+        "bearing_deg": 337.5
+      },
+      "expected": "NNW"
+    },
+    {
+      "why": "350 degrees is nearer north than NNW",
+      "rule": "compass_point",
+      "input": {
+        "bearing_deg": 350
+      },
+      "expected": "N"
+    },
+    {
+      "why": "-90 degrees is west, any turn",
+      "rule": "compass_point",
+      "input": {
+        "bearing_deg": -90
+      },
+      "expected": "W"
+    },
+    {
+      "why": "Chicago, 2026-03-21 00:20 UTC, twenty minutes after sunset: the sun is down (though 14 CFR 1.1's night waits for civil twilight's end)",
+      "rule": "sun_down",
+      "input": {
+        "lat": 41.88,
+        "lon": -87.63,
+        "at_s": 1774052400
+      },
+      "expected": true
+    },
+    {
+      "why": "Chicago, 2026-03-20 18:00 UTC, early afternoon: the sun is up",
+      "rule": "sun_down",
+      "input": {
+        "lat": 41.88,
+        "lon": -87.63,
+        "at_s": 1774029600
+      },
+      "expected": false
+    }
+  ]
+}

@@ -22,22 +22,25 @@ Functional core, imperative shell, four layers, each with one job
   feeds from the shared store, runs the chart model and chart vision, and
   asks the engine every rule (`wingtip_native.call`). It fetches no
   weather, reads no feed, calls no model and builds no tiles.
-- **The services beside it** (`services/ingest`, `weather`, `assistant`,
-  `jobs`), each its own image on `services/Dockerfile.base`, hold no rule
-  of their own. Ingest and weather write the shared store (the data volume
-  and Postgres); the planner reads it, so no pilot's request waits on a
-  live fetch. The assistant makes every Claude call and asks the planner
-  for every figure. The apps talk only to the gateway, which sends the
-  Claude paths to the assistant and the rest to the planner.
+- **The services beside it** (`services/ingest`, `weather`, `jobs`), each
+  its own image on `services/Dockerfile.base`, hold no rule of their own.
+  Ingest and weather write the shared store (the data volume and
+  Postgres); the planner reads it, so no pilot's request waits on a live
+  fetch. The server makes no model call (decision 0041): the phones' AI
+  runs on the phone, and a pilot's own Claude or ChatGPT reaches the
+  planner through its MCP connector (`services/planner/app/mcp`). The apps
+  talk only to the gateway, which forwards to the planner the
+  `/api/planner/*` paths the planner's document marks `x-gateway`.
 - **Spring Boot** (`services/gateway`) is who the pilot is and what they
   saved: accounts, sign-in, records, the public API, scheduled mail. It
   holds no aviation logic and asks the planner for a figure (`PlannerClient`).
-  AC 61-65K's endorsement texts (`EndorsementKind`) are still Java (#482).
-  Add no new rule there.
+  AC 61-65K's endorsement texts are the engine's (`endorsement_kinds`); the
+  gateway keeps only the pilot's records of them. Add no new rule there.
 - **Each app is a shell that gets data, keeps state and draws**, and asks
   the engine the rest by name: the web through `callEngine`
-  (apps/web/src/lib/engine, the engine built to WebAssembly), the iPhone
-  through `wt_call`, Android through its JNI shim over `wt_call`. A rule
+  (apps/web/src/lib/engine, the engine built to WebAssembly), the phones
+  through the bindings uniffi generates from engine/bindings/ffi
+  (`call(name, json)`), with the typed EngineCalls on top. A rule
   found in a component, a hook, a Swift view, a Java service or a route
   handler is a bug: move it into the engine and delete the copy (#482).
 - **Screens are view and view model** (MVVM): the view draws, one hook (web)
@@ -49,10 +52,38 @@ Functional core, imperative shell, four layers, each with one job
   adding a rule": the Rust in the lowest crate that can hold it, its
   contract file, then `cargo run -p wingtip-contract-gen` in engine/,
   `npm run types` in apps/web, `scripts/build/engine-contract-apps.sh`,
-  `scripts/build/assistant-client.sh` for an `"x-tool"`, its test against
-  the shared fixtures (apps/web/src/lib/fixtures),
+  its test against the shared fixtures (apps/web/src/lib/fixtures),
   `scripts/build/build-engine-wasm.sh` (the `.wasm` is committed), and
   the images that link it rebuilt. CI checks every generated file matches.
+
+## Simplicity rules
+
+Hard rules, checked as you write (the edit-time hook), at the push and in
+`guards` (docs/CI.md, "Simplicity rules"). Each names its one home:
+
+- **Unit factors** (0.3048, 1852, 6076 …) only in each language's units
+  module: `wingtip/units.py`, the web's `lib/geo.ts`, `Format/Units.swift`,
+  `format/Units.kt`. Semgrep (`scripts/ci/semgrep/`).
+- **Map maths**: Mercator and tiles only in `lib/map/tileMath.ts` or
+  `wingtip.geo`; hex-to-RGB only in `rgbOf` (`lib/rgb.ts`). Semgrep.
+- **The planner only through the generated clients**: the web's `lib/api/`,
+  `planner_calls.py`, `PlannerClient`, the phones' API folders; no `/api/`
+  path typed elsewhere. Semgrep, ArchUnit, detekt.
+- **No HTML markers** on the map but the own-ship arrow: draw a layer. Semgrep.
+- **The engine owns every rule and the great-circle maths**: no cited
+  figure outside it (`rules_boundary.py`), no haversine or bearing
+  (Semgrep, ArchUnit); only `wingtip.geo` and the web's `lib/geo.ts` keep
+  their own.
+- **Stock components**: no raw `<button>`, `<details>` or `role="alert"`
+  outside `components/ui` (ESLint).
+- **Feature boundaries**: a web feature only through its `index.ts`
+  (dependency-cruiser); the Python services' `.importlinter` contracts.
+- **No copy-paste** over 100 tokens (jscpd).
+- **New files ≤300 lines**, old ones ≤400 (`file_sizes.py`).
+- **The ratchet only goes down**: `scripts/ci/simplicity_ratchet.py`'s
+  counts (`.shared`, root-screen lines, gateway HTTP clients …) never rise.
+- **Never raise a baseline or an allow list to pass**: fix the code. Each
+  `--write` only lowers one, and CI fails one raised against main.
 
 ## Branches
 
@@ -67,19 +98,35 @@ integration branch"):
 - Each piece of work is a `claude/<topic>` branch, pushed once when the
   code is done, with no pull request yet. Pushing a `claude/` branch
   starts no CI (`claude/native-*` does: don't use that name). Before that
-  push, only a compile or type check of what changed and the generated
-  files it needs; tests are written with the code, not run.
+  push: a compile or type check of what changed, the generated files it
+  needs, and **the change's own tests, run narrowly** (decision 0042):
+  `vitest <files>` or `--changed`, `pytest <paths>`, `cargo test -p
+  <crate>`, `playwright test <spec>` for a spec written or changed,
+  `gradlew … --tests <class>`, `xcodebuild … -only-testing:<class>`. A few
+  minutes, never a whole suite.
 - Work that builds on an unmerged branch merges that branch in; nothing
   waits for a merge. Branches merge into `claude/integration` as they
   finish.
 - **Live for the owner first:** once a wave is merged into
   `claude/integration`, `scripts/dev/go-live.sh` (in
-  `~/Developer/wingtip-live`) tidies the Mac, rebuilds and puts it on the
-  owner's stack for the phone, before any lengthy test or CI. The owner
+  `~/Developer/wingtip-live`) tidies the Mac and moves the live tree to it,
+  before any lengthy test or CI. The stack stays down: the owner is assumed
+  not to be testing and asks for it when he is (2026-11-12); then, or for an
+  agent's screenshots, `go-live.sh --up` rebuilds and starts it. The owner
   is told what to try.
-- **Then one validation pass**, `scripts/dev/validate-wave.sh` on
-  `claude/integration`, its fixes one commit set; then a few grouped pull
-  requests to `main`, which merge by themselves once "CI passed" is green
+- **Web first (decision 0038):** a change a pilot sees is made on the web
+  as the proof of concept; the iPhone and Android follow only on the
+  owner's word for that piece (the hook refuses phone edits and merges
+  until its topic is in `~/.config/wingtip/phones-approved`).
+- **Enforced (decisions 0037, 0042):** `.claude/hooks/guard.py` lets a
+  narrow test run at any time and refuses a whole suite until the live
+  stack runs the current `claude/integration`.
+- **Then one validation pass, on GitHub** (decision 0042): the wave's
+  pull request to `main` and its CI (tier 1, about three minutes), plus
+  the browser specs the wave touched; the full browser suite stays CI's
+  nightly (decision 0034), and the Mac runs no suite for it. A failure is
+  reproduced with its narrow test, fixed in one commit set and pushed
+  once; the pull request merges by itself once "CI passed" is green
   (auto-merge-agents.yml). Nothing merges red. CI failures are fixed in
   that pass, at most once more after it; an asked-for review is put right
   in "Address review:" commits.
@@ -125,8 +172,9 @@ integration branch"):
 
 ## Checks
 
-While writing code, only a compile or type check of what changed; the
-table is the end-of-wave validation, and no test holds up a code change.
+While writing code, a compile or type check and the change's own tests,
+narrowly (decision 0042); the table is what CI runs, and a whole area runs
+on the Mac only to reproduce a CI failure.
 `scripts/dev/check.sh <area>` runs an area, `scripts/dev/check.sh
 all-changed` every area the branch and its uncommitted files touch. It
 runs in Docker (the phones on the host), each area in its own turn of
@@ -142,16 +190,18 @@ without it).
 
 | Area | What it runs | On a pull request / after merge / at night (docs/CI.md) |
 |---|---|---|
-| `web` (`apps/web/`) | `npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip && npx vitest run` | lint in `guards`, the tests the change reaches (`--changed`) and the build / every test, and the `@smoke` browser tests / every browser test |
+| `web` (`apps/web/`) | `npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip && npm run layers && npx vitest run` | lint in `guards`, the tests the change reaches (`--changed`) and the build / every test, and the `@smoke` browser tests / every browser test |
 | `py` (`services/planner/wingtip`, `tests_wingtip/`) | `ruff check wingtip tests_wingtip && lint-imports && pytest tests_wingtip/`, with the engine's wheel | all |
 | `planner` (`services/planner/` app) | `ruff check app tests && lint-imports && pytest tests/` | all |
-| `ingest`, `weather`, `assistant`, `jobs` | each service's ruff and pytest; the assistant's `python -m app.openapi` after a route change | all |
+| `ingest`, `weather`, `jobs` | each service's ruff and pytest | all |
 | `engine` | `scripts/ci/engine_layers.py`, `cargo machete`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --profile ci` over `scripts/ci/engine_affected.py --all` | lint in `guards`, the touched crates, those that use them and the contract test / every crate |
 | `java` (`services/gateway/`) | `mvn -B test` (Docker, for Testcontainers) | all |
 | `ios` (`apps/ios/`) | `xcodegen`, then `scripts/dev/xcodebuild.sh test` (xcodebuild with the shared caches) on the newest iPhone simulator (docs/NATIVE.md) | the build and unit tests on the iPhone / and `CardSmokeTests` / the full suites on the iPhone, iPad and iPhone Duo |
 | `android` (`apps/android/`) | `engine/bindings/ffi/build-android.sh`, then `./gradlew testDebugUnitTest lintDebug assembleDebug` (docs/NATIVE-ANDROID.md) | unit tests and lint / plus the instrumented tests on an emulator |
 | `site` (`apps/site/`) | `python3 apps/site/build.py && python3 apps/site/check.py` | all |
-| `arch` (any source file) | `scripts/ci/file_sizes.py --base origin/main` (no new or grown file over 400 lines), `scripts/build/toolchain.sh --check`, `scripts/ci/brand_guard.py` (no raw style value outside `design/tokens.json`), `scripts/ci/dead_python.sh`; CI adds `scripts/ci/rules_boundary.py` (no aviation figure outside the engine) | all |
+| `sim` (`tools/msfs-agent/`, `infra/sim-trial/`) | the agent's `dotnet build`, `dotnet format --verify-no-changes` and `dotnet test` (Docker), `cfn-lint` on the template, `shellcheck` on its scripts | none: the trial's kit, checked on the Mac |
+| `xplane` (`tools/xplane-driver/`) | `ruff check . && pytest tests`, in the planner's wingtip image | `ruff` in `guards` only; its tests none: the trial's kit, checked on the Mac |
+| `arch` (any source file) | `scripts/ci/file_sizes.py --base origin/main` (no new file over 300 lines, no grown one over 400), `scripts/build/toolchain.sh --check`, `scripts/ci/brand_guard.py` (no raw style value outside `design/tokens.json`), `scripts/ci/dead_python.sh`; CI adds `scripts/ci/rules_boundary.py` (no aviation figure outside the engine), `semgrep_check.py` (one home per constant or helper), `jscpd_check.py` (no new copy-paste), `simplicity_ratchet.py` (no count above its baseline), and on a phone change `phone_lint.sh` (SwiftLint, detekt) | all |
 
 - **Python outside check.sh** wants `pip install -r requirements-dev.txt`
   (the app) or `requirements-dev-wingtip.txt` (wingtip) in `services/planner`.
@@ -159,12 +209,16 @@ without it).
   run `scripts/build/toolchain.sh` (docs/versions.md).
 - **Formatting:** `scripts/dev/format.sh`, one pinned formatter a language;
   `--check` to check.
+- **Edit-time hook** (`.claude/settings.json`, `scripts/dev/simplicity_hook.py`):
+  after each Edit or Write in apps/, services/, engine/ or tools/, the
+  simplicity rules on that file, a second or two; a break comes back to
+  be fixed at once.
 - **Pre-push hook** (`scripts/dev/install-hooks.sh` once per clone): `tsc`,
-  ESLint, ruff, `cargo check` and `format.sh --check` for what a push
-  changes. Skip it with `--no-verify` or `SKIP_HOOKS=1`; it is no
+  ESLint, ruff, `cargo check`, `format.sh --check` and the simplicity
+  rules for what a push changes. Skip it with `--no-verify` or `SKIP_HOOKS=1`; it is no
   substitute for the table.
 - **An API that changes changes its document:** `python -m app.openapi`
-  (the planner, the assistant) or `WRITE_OPENAPI=1 mvn -B test` (the
+  (the planner; then `scripts/build/planner-calls.sh` for the MCP connector's calls) or `WRITE_OPENAPI=1 mvn -B test` (the
   gateway), then `npm run types` and `scripts/build/api-models-apps.sh`;
   commit them all.
 - **Browser tests** (Playwright, `apps/web/e2e`) need the whole stack:
@@ -185,12 +239,17 @@ without it).
   a rule tested once at the lowest level, least privilege, macOS for iOS
   only, and small workflows. `guards` (`scripts/ci/guards.sh`) and `CI
   budget` enforce what a script can check.
-- **On the owner's Mac**, every browser run, suite, image build and
-  measurement goes through `scripts/dev/one-at-a-time.sh "<label>"
-  <command>` (three at once with the live stack down, two with it up;
-  `~/.config/wingtip/one-at-a-time` overrides it; `--alone` for a speed
-  measurement). Never wrap `check.sh` in it. A
-  quick check of a minute or two runs outside it.
+- **On the owner's Mac, full throttle without swapping** (the owner,
+  2026-11-12): every browser run, suite, image build, Xcode or Gradle
+  build and measurement goes through `scripts/dev/one-at-a-time.sh
+  "<label>" <command>`, whose turns the swap watcher sets (6 while the Mac
+  isn't swapping, 3 once it is; `install-swap-watch.sh`, docs/LOCAL-DEV.md);
+  `--alone` for a speed measurement. Never wrap `check.sh` in it. A quick
+  check of a minute or two runs outside it. One simulator and one
+  emulator at most. The live stack runs only while the owner tests or an
+  agent needs it (go-live.sh stops the web build once it has built);
+  scratch stacks, their volumes and an agent's build outputs go when it's
+  done.
 
 ## The app on the phone
 

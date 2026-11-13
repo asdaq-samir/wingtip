@@ -1,4 +1,4 @@
-import { stopOf } from "../../../lib/identSchema";
+import { departureOf, stopOf } from "../../../lib/identSchema";
 import { askSearchPick, useSearchPick } from "../../../lib/oneSearch";
 
 /**
@@ -31,7 +31,8 @@ export function useStopAsked({
       label: departure ? "Departure" : "Stop",
       fixes: !departure,
       onPick: (ident) => {
-        const fresh = stopOf(ident);
+        // The departure may be where the airplane is (the search's My Position).
+        const fresh = (departure && departureOf(ident)) || stopOf(ident);
         if (fresh) change([...points.slice(0, before), fresh, ...points.slice(before)], hasDep || (departure && isEnd(fresh)), hasDest);
       },
     });

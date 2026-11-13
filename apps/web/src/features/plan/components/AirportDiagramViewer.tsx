@@ -1,4 +1,4 @@
-import { Map as GlMap, type LngLatBoundsLike, type StyleSpecification } from "maplibre-gl";
+import { Map as GlMap, type Marker, type LngLatBoundsLike, type StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 // The worker MapLibre parses its sources in (lib/map/gl/worker).
 import "../../../lib/map/gl/worker";
@@ -6,7 +6,9 @@ import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "../../../components/ui/button";
 import { api } from "../../../lib/api/client";
-import { chartPagePicture } from "../../../lib/diagram";
+import { chartPagePicture, type PageMark } from "../../../lib/diagram";
+import { ownShipHtml } from "../../../lib/map/marks/icons";
+import { drawOwnShip, ownShipMarker } from "../../../lib/map/gl/layers/ownShipMarker";
 import { TEXT } from "../../../lib/text";
 import { cn } from "cn";
 import FullScreenViewer from "./FullScreenViewer";
@@ -61,9 +63,16 @@ const bounds = ([w, s, e, n]: Box): LngLatBoundsLike => [
 
 /** The pages on a MapLibre map of their own: a pinch, a drag and a double
  *  tap do what they do on the chart; the first page whole as the furthest
- *  out, however the screen is turned, the rest a drag down. */
-function Pages({ placed, all }: ReturnType<typeof laidOut>) {
+ *  out, however the screen is turned, the rest a drag down. Own ship
+ *  (`mark`) on the first page as a marker, the map's own airplane, which
+ *  the map keeps on its point of the page through a pinch and a drag. */
+function Pages({ placed, all, mark }: ReturnType<typeof laidOut> & { mark: PageMark | null }) {
   const box = useRef<HTMLDivElement>(null);
+  const shown = useRef<GlMap | null>(null);
+  const marker = useRef<Marker | null>(null);
+  // The mark's markup as last written, so a fix a second moves the
+  // element rather than building it again (OwnShipGl's way).
+  const drawn = useRef("");
   useEffect(() => {
     if (!box.current) return;
     const style: StyleSpecification = {
@@ -101,10 +110,33 @@ function Pages({ placed, all }: ReturnType<typeof laidOut>) {
     };
     map.on("load", fit);
     map.on("resize", fit);
+    shown.current = map;
     return () => {
+      marker.current?.remove();
+      marker.current = null;
+      drawn.current = "";
+      shown.current = null;
       map.remove();
     };
   }, [placed, all]);
+  useEffect(() => {
+    const map = shown.current;
+    const page = placed[0];
+    if (!map || !page || !mark) {
+      marker.current?.remove();
+      return;
+    }
+    marker.current ??= ownShipMarker("chart-own-ship");
+    // Nose up in its markup, turned by the marker to the track on the page.
+    drawOwnShip(marker.current, drawn, ownShipHtml(mark.rotationDeg == null ? null : 0, false, mark.moving));
+    // The page's fractions in its box's degrees: across from its west
+    // edge, down from its north one.
+    const [west, , , north] = page.box;
+    marker.current
+      .setLngLat([west + mark.x * page.width * K, north - mark.y * page.height * K])
+      .setRotation(mark.rotationDeg ?? 0)
+      .addTo(map);
+  }, [placed, mark]);
   // Black at night where it is drawn white on black: the canvas inverted.
   return <div ref={box} data-pages={placed.length} className="min-h-0 flex-1 bg-white dark:bg-black dark:[&_canvas]:invert" />;
 }
@@ -124,6 +156,7 @@ export default function ChartViewer({
   loading = false,
   failed = false,
   onRetry,
+  mark = null,
   onClose,
 }: {
   title: string;
@@ -133,13 +166,15 @@ export default function ChartViewer({
   failed?: boolean;
   /** Asks again after a failure, beside the failure. */
   onRetry?: () => void;
+  /** Own ship on the first page (an approach plate's plan view). */
+  mark?: PageMark | null;
   onClose: () => void;
 }) {
   const layout = useMemo(() => (pages.length ? laidOut(pages) : null), [pages]);
   return (
     <FullScreenViewer title={title} testId="airport-diagram-viewer" closeTestId="airport-diagram-close" onClose={onClose}>
       {layout ? (
-        <Pages {...layout} />
+        <Pages {...layout} mark={mark} />
       ) : (
         <div className="flex flex-col items-start gap-2 px-4 pt-4" data-testid="chart-viewer-status">
           <p className={cn("text-muted-foreground", TEXT.prose)}>
@@ -170,7 +205,19 @@ export default function ChartViewer({
 /** One of the FAA's charts by its address (a card's approaches, the
  *  Chart Supplement): its pages asked of the planner (/api/faa-chart),
  *  which draws them and, of a region's booklet, picks the field's. */
-export function FaaChartViewer({ title, url, airport, onClose }: { title: string; url: string; airport: string; onClose: () => void }) {
+export function FaaChartViewer({
+  title,
+  url,
+  airport,
+  mark = null,
+  onClose,
+}: {
+  title: string;
+  url: string;
+  airport: string;
+  mark?: PageMark | null;
+  onClose: () => void;
+}) {
   const { data, isFetching, isError, refetch } = useQuery({
     queryKey: ["faaChart", url, airport],
     queryFn: () => api.faaChart(url, airport),
@@ -187,6 +234,7 @@ export function FaaChartViewer({ title, url, airport, onClose }: { title: string
       onRetry={() => {
         void refetch();
       }}
+      mark={mark}
       onClose={onClose}
     />
   );

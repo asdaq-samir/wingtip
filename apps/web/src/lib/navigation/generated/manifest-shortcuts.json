@@ -56,7 +56,7 @@
     {
       "name": "FPL",
       "short_name": "FPL",
-      "description": "The plan: the route, its altitude and its figures, the sheet's main content under the one search.",
+      "description": "The plan: the route, its altitude and its figures, the sheet's second page (Search, FPL).",
       "url": "/app/plan?open=fpl",
       "icons": [
         {

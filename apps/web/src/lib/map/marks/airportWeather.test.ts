@@ -23,13 +23,13 @@ describe("the airport weather marks, as the shared fixture says", () => {
     for (const c of fixture.leastCrosswind) expect(callEngine("least_crosswind", c.input as never), c.why).toEqual(c.answer);
   });
 
-  it("the arrow shown or not, red or not", () => {
+  it("the barb drawn zoomed out or not, red or not", () => {
     for (const c of fixture.windArrow) {
       const marks = weatherMarksOf(
         pin({ wind_dir_true_deg: 220, wind_speed_kt: c.input.speed_kt, wind_gust_kt: c.input.gust_kt, crosswind_kt: c.input.crosswind_kt }),
         c.input.demonstrated_kt,
       );
-      expect(marks.arrow !== null, c.why).toBe(c.answer.shown);
+      expect(marks.far, c.why).toBe(c.answer.shown);
       expect(marks.over, c.why).toBe(c.answer.over);
     }
   });
@@ -57,13 +57,28 @@ describe("a field's marks", () => {
     expect(ceilingWords(pin({ ceiling_unknown: true }))).toBe("CIG ///");
   });
 
-  it("never red with no airplane, and no arrow for a light wind", () => {
+  it("never red with no airplane, no barb zoomed out for a light wind, and no gust drawn", () => {
     const gusty = pin({ wind_dir_true_deg: 220, wind_speed_kt: 18, wind_gust_kt: 26, crosswind_kt: 17 });
-    expect(weatherMarksOf(gusty, null)).toMatchObject({ arrow: "wx-arrow|ink", over: false, gusts: "18G26" });
-    expect(weatherMarksOf(gusty, 15)).toMatchObject({ arrow: "wx-arrow|over", over: true });
-    expect(weatherMarksOf(pin({ wind_dir_true_deg: 220, wind_speed_kt: 6 }), 15)).toMatchObject({ arrow: null, gusts: "" });
-    // A variable wind: no way to point either, its label still said.
-    expect(weatherMarksOf(pin({ wind_speed_kt: 6, wind_gust_kt: 16 }), 15)).toMatchObject({ arrow: null, barb: null, gusts: "VRB6G16" });
+    // 18 kt is 20, two barbs; the gust is the card's, not the barb's.
+    expect(weatherMarksOf(gusty, null)).toMatchObject({ barb: "wx-barb|0|2|0", far: true, over: false, variable: "" });
+    expect(weatherMarksOf(gusty, 15)).toMatchObject({ barb: "wx-barb|0|2|0|over", far: true, over: true });
+    expect(weatherMarksOf(pin({ wind_dir_true_deg: 220, wind_speed_kt: 6 }), 15)).toMatchObject({ barb: "wx-barb|0|0|1", far: false });
+    // Calm, and a light wind the NWS rounds to 0, the circle, which needs no direction.
+    expect(weatherMarksOf(pin({ wind_speed_kt: 0 }), null)).toMatchObject({ barb: "wx-barb|calm", far: false, variable: "" });
+    expect(weatherMarksOf(pin({ wind_dir_true_deg: 90, wind_speed_kt: 2 }), null)).toMatchObject({ barb: "wx-barb|calm" });
+    // A variable wind: no barb can point it, so it is written as the METAR does.
+    expect(weatherMarksOf(pin({ wind_speed_kt: 6, wind_gust_kt: 16 }), 15)).toMatchObject({ barb: null, far: true, variable: "VRB06" });
+  });
+
+  it("draws a barb's feathers on the clockwise side of a north-pointing stem, a lone half-barb in from the end", () => {
+    const svg = new Map(stationPictures()).get("wx-barb|0|0|1")?.() ?? "";
+    // The stem from 15 to 36 px out, up the page; the half-barb one step
+    // (5 px) in from its end, to the right (east, clockwise from north).
+    expect(svg).toContain('x1="0" y1="-15" x2="0" y2="-36"');
+    expect(svg).toMatch(/x1="0" y1="-31" x2="6"/);
+    const calm = new Map(stationPictures()).get("wx-barb|calm")?.() ?? "";
+    expect(calm).toContain("<circle");
+    expect(calm).not.toContain("<line");
   });
 
   it("are said to a screen reader with the category and the wind", () => {

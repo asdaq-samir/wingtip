@@ -24,15 +24,15 @@ enum CardTests {
         case card(String)
         /// A button on the map or beside the search, by its identifier or label.
         case button(String)
-        /// A row of Settings, by its words.
-        case settingsRow(String)
+        /// A row of You, by its words.
+        case youRow(String)
 
         var description: String {
             switch self {
             case .link(let id): "link \(id)"
             case .card(let kept): "card \(kept)"
             case .button(let id): "button \(id)"
-            case .settingsRow(let words): "Settings' \(words) row"
+            case .youRow(let words): "You's \(words) row"
             }
         }
     }
@@ -42,22 +42,23 @@ enum CardTests {
         let name: String
         let id: String
         let entries: [Entry]
-        /// Sits half way when opened (a thing), else full height (a page).
-        var half = false
     }
 
     /// The table: a new card gets every check by one row here.
     static let cards: [Card] = [
-        Card(name: "Map settings", id: "card-map", entries: [.button("map-settings"), .card("+map"), .settingsRow("Map")], half: true),
-        Card(name: "Airport", id: "card-airport", entries: [.card("@KOSH")], half: true),
-        Card(name: "Nearest", id: "card-nearest", entries: [.link("nearest")], half: true),
+        Card(name: "Map", id: "card-map", entries: [.button("map-settings"), .card("+map")]),
+        Card(name: "Airport", id: "card-airport", entries: [.card("@KOSH")]),
+        Card(name: "Nearest", id: "card-nearest", entries: [.link("nearest")]),
         Card(name: "Brief", id: "card-brief", entries: [.link("brief")]),
         Card(name: "Nav Log", id: "card-navlog", entries: [.link("navlog")]),
         Card(name: "Profile", id: "card-profile", entries: [.link("profile")]),
         Card(name: "Airplane", id: "card-airplane", entries: [.link("airplane")]),
-        Card(name: "Settings", id: "card-setup", entries: [.link("setup"), .button("account-button")]),
+        Card(name: "You", id: "card-setup", entries: [.link("setup"), .button("account-button")]),
         Card(name: "Downloads", id: "card-downloads", entries: [.link("downloads")]),
         Card(name: "Ask", id: "card-ask", entries: [.link("ask"), .button("Ask about this flight")]),
+        // A plate's card, as a tap on its page on the map opens it; offline,
+        // its title from its key and its settings all there.
+        Card(name: "Plate", id: "card-plate", entries: [.card("+plate:KOSH:I36")]),
     ]
 
     @MainActor
@@ -78,14 +79,16 @@ enum CardTests {
         case .card(let kept):
             return launch(["-card", kept], size: size)
         case .button(let handle):
-            let app = launch(["-screen", "fpl"], size: size)
+            // The Search page, where the account button sits beside the
+            // field (the FPL page has no bar of its own).
+            let app = launch(["-screen", "search"], size: size)
             let button = app.buttons[handle]
             XCTAssertTrue(button.waitForExistence(timeout: 20), "no \(handle) button")
             button.tap()
             return app
-        case .settingsRow(let words):
+        case .youRow(let words):
             let app = launch(["-screen", "setup"], size: size)
-            XCTAssertTrue(card(app, "card-setup").waitForExistence(timeout: 20), "Settings did not open")
+            XCTAssertTrue(card(app, "card-setup").waitForExistence(timeout: 20), "You did not open")
             let row = app.buttons[words].firstMatch
             scrollTo(row, in: app)
             row.tap()
@@ -111,6 +114,37 @@ enum CardTests {
     static func grabber(_ app: XCUIApplication) -> XCUIElement {
         let all = app.buttons.matching(identifier: "Sheet Grabber")
         return all.element(boundBy: max(0, all.count - 1))
+    }
+
+    /// Dragged from the element's middle to a point of the screen, given
+    /// as a fraction of its width and height. Held a tenth of a second
+    /// first, so the system takes it for a drag of the thing under the
+    /// finger (the sheet by its grabber, the pages sideways) and not for
+    /// a flick that `swipeUp()` and its kind can leave half done, or a tap.
+    @MainActor
+    static func drag(_ element: XCUIElement, in app: XCUIApplication, to point: CGVector) {
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: point))
+    }
+
+    /// The sheet down to its smallest, by its grabber.
+    @MainActor
+    static func dragDown(_ grabber: XCUIElement, in app: XCUIApplication) {
+        drag(grabber, in: app, to: CGVector(dx: 0.5, dy: 0.98))
+    }
+
+    /// The sheet up to full height, by its grabber.
+    @MainActor
+    static func dragUp(_ grabber: XCUIElement, in app: XCUIApplication) {
+        drag(grabber, in: app, to: CGVector(dx: 0.5, dy: 0.02))
+    }
+
+    /// The element dragged sideways to the screen's edge at its own height:
+    /// to the left, the next page; to the right, the one before.
+    @MainActor
+    static func dragSideways(_ element: XCUIElement, in app: XCUIApplication, left: Bool) {
+        let y = app.frame.height > 0 ? element.frame.midY / app.frame.height : 0.5
+        drag(element, in: app, to: CGVector(dx: left ? 0.02 : 0.98, dy: y))
     }
 
     /// Swiped up on the screen's middle until `element` is hittable, at

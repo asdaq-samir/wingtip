@@ -40,10 +40,9 @@ export const DATA_SOURCES: { name: string; licence: string; href?: string }[] = 
   { name: "Virtual Radar Server flight routes", licence: "CC0", href: "https://creativecommons.org/publicdomain/zero/1.0/" },
 ];
 
-/** The maps and software the web app draws with, and the AI that writes
- *  its words (credits.md's second table; Apple MapKit is the iPhone's). */
+/** The maps and software the web app draws with (credits.md's second
+ *  table; Apple MapKit is the iPhone's). */
 export const SOFTWARE: { name: string; licence: string; href?: string }[] = [
   { name: "MapLibre GL", licence: "BSD 3-Clause", href: "https://github.com/maplibre/maplibre-gl-js/blob/main/LICENSE.txt" },
   { name: "Google Maps Platform map tiles", licence: "Google's terms; its attribution is drawn on the map" },
-  { name: "Claude, by Anthropic", licence: "Anthropic's commercial terms", href: "https://www.anthropic.com/legal/commercial-terms" },
 ];

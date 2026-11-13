@@ -8,7 +8,7 @@ import { EXPANDED_BUTTON } from "./expandedButton";
  * iOS toolbar draws one. The word is on show; an icon alone (a sparkle,
  * a brain) had to be long-pressed on a phone for its name, and nobody
  * does. `label`, when given, is the accessible name -- the longer name
- * ("Briefing narrative"), which starts with the word shown ("Brief").
+ * ("Filters"), which starts with the word shown ("Filter").
  * A stock ghost Button, so it composes like one: a PopoverTrigger or a
  * DropdownMenuTrigger `asChild` outside it, `ref` and every other prop
  * on the button; ringed while what it opened is open.

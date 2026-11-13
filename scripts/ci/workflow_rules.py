@@ -19,6 +19,9 @@ the file and line, and how to put it right:
 - **Mac minutes are scarce.** A job on macOS (`macos-*`, `xcode-*` or the
   MAC_RUNNER variable) is one of MAC_JOBS: the iOS tests, and TestFlight
   on main. Everything else runs on Linux.
+- **The stock linters.** actionlint 1.7.12 and zizmor 1.32.0 (.tool-versions;
+  their settings in .github/actionlint.yaml and .github/zizmor.yml) run over
+  the workflows beside these rules, which are only what they cannot say.
 - **Small configuration.** The workflows' lines in all stay within the
   allow file's `budget`, set at the total when this guard came in; a new
   workflow or step makes room by moving logic into a script.
@@ -32,6 +35,7 @@ from __future__ import annotations
 
 import os
 import re
+import subprocess
 import sys
 
 import workflows
@@ -107,6 +111,31 @@ def budget_sees_all() -> list[str]:
     return [f"ci.yml: the budget job's needs leave out {', '.join(missing)}"] if missing else []
 
 
+def stock_linters() -> list[str]:
+    """actionlint (syntax, expressions, the runs' shell through shellcheck) and
+    zizmor (injection, credentials, permissions, triggers), each at .tool-versions'
+    version through scripts/build/tool.sh; settings in .github/actionlint.yaml and
+    .github/zizmor.yml. Offline for zizmor: its online audits need a token. On a
+    Mac without them it is a note, in CI a failure."""
+    tool = str(workflows.ROOT / "scripts/build/tool.sh")
+
+    def run(*args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run([tool, *args], cwd=workflows.ROOT, capture_output=True, text=True)
+
+    shellcheck = run("--path", "shellcheck")
+    problems = []
+    for name, args in (
+        ("actionlint", ["-shellcheck", shellcheck.stdout.strip()] if shellcheck.returncode == 0 else []),
+        ("zizmor", ["--offline", "--no-progress", "--format", "plain", ".github/workflows"]),
+    ):
+        done = run(name, *args)
+        if done.returncode == 3 and "GITHUB_ACTIONS" not in os.environ:
+            print(f"workflow rules: no {name} here, so not run (CI runs it)")
+        elif done.returncode:
+            problems.append(f"{name} found problems:\n{(done.stdout + done.stderr).strip()}")
+    return problems
+
+
 def main() -> int:
     long_runs, or_true, writers, budget = allowances()
     errors: list[str] = []
@@ -147,6 +176,7 @@ def main() -> int:
                         if not any(f == wf.name and text in line for f, text in or_true):
                             errors.append(f"{wf.name}:{run.line}: `|| true` hides a check's failure: {line[:100]}")
     errors += budget_sees_all()
+    errors += stock_linters()
     for key in sorted(set(long_runs) - seen_long):
         errors.append(f"{ALLOW.name}: {' | '.join(key)} is no longer a long run; drop its line")
     if total > budget:

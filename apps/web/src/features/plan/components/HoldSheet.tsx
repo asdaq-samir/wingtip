@@ -6,7 +6,8 @@ import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } 
 import PullDown from "../../../components/PullDown";
 import Segmented from "../../../components/Segmented";
 import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
+import { NumberField } from "../../../components/ui/number-field";
+import { THREE_FIGURES } from "../../../components/ui/numberFormats";
 import { lengthCode, lengthOfCode, lengthWords, type Hold } from "../lib/routeHolds";
 import { legMinutes } from "../../../lib/holdEntry";
 import { bearing } from "../../../lib/format";
@@ -77,14 +78,16 @@ function HoldForm({ at, onSet }: { at: HoldAt; onSet: (fix: string, hold: Hold |
   // the hold straight ahead, a direct entry (AIM 5-3-8).
   const ahead = was ? was.inbound : (at.arrivalDeg ?? null);
   // In three figures, north as 360 (units.bearing), as the pilot reads it.
-  const [course, setCourse] = useState(ahead === null ? "" : bearing(ahead).replace("°", ""));
+  const first = ahead === null ? null : Number(bearing(ahead).replace("°", ""));
+  // As typed, read in the pilot's locale (React Aria's NumberField).
+  const [course, setCourse] = useState<number | null>(first);
   const [way, setWay] = useState<"in" | "out">("in");
   const [right, setRight] = useState(was?.right ?? true);
   const [timed, setTimed] = useState(was ? "min" in was.leg : true);
   const [legMin, setLegMin] = useState(was && "min" in was.leg ? was.leg.min : legMinutes(at.altitudeFt ?? 0));
   const [legNm, setLegNm] = useState(was && "nm" in was.leg ? was.leg.nm : 4);
   const [length, setLength] = useState(was ? lengthCode(was.length) : "2T");
-  const deg = course.length === 3 ? Number(course) : NaN;
+  const deg = course ?? Number.NaN;
   const valid = deg >= 0 && deg <= 360;
   const set = () => {
     if (!valid) return;
@@ -118,15 +121,17 @@ function HoldForm({ at, onSet }: { at: HoldAt; onSet: (fix: string, hold: Hold |
                 { value: "out", label: "Outbound" },
               ]}
             />
-            <Input
+            <NumberField
               id="hold-course"
-              value={course}
-              onChange={(e) => setCourse(e.target.value.replace(/\D/g, "").slice(0, 3))}
-              inputMode="numeric"
-              autoComplete="off"
+              defaultValue={first}
+              onTyped={setCourse}
+              formatOptions={THREE_FIGURES}
+              minValue={0}
+              maxValue={999}
               placeholder="270"
               aria-label={`The hold's ${way}bound course, magnetic degrees`}
-              className="h-9 w-16 text-right tabular-nums"
+              className="h-9 w-16"
+              inputClassName="text-right"
               data-testid="hold-course"
             />
           </span>

@@ -18,16 +18,16 @@ enum DemoFlight {
 
     /// The flight put on the plan: the airplane set, the pilot's own
     /// altitude, procedures and edits of the last route let go, and the
-    /// route handed to the root view as a shared link's is, which plans
-    /// it and brings the FPL tab up over the map (RootView's apply).
+    /// route given back for the root view to plan as a shared link's is,
+    /// which brings the FPL tab up over the map (RootView's apply).
     @MainActor
-    static func fly(_ plan: Plan, commands: PendingCommand = .shared) {
+    static func fly(_ plan: Plan) -> AppCommand {
         plan.flyType(airplane)
         plan.ownAltitudeFt = nil
         plan.ownAltitudeLegal = false
         plan.altitudeChoice = nil
         plan.procedures = []
         plan.extras = RouteExtras()
-        commands.command = .planRoute(dep: departure, stops: stops, dest: destination)
+        return .planRoute(dep: departure, stops: stops, dest: destination)
     }
 }

@@ -33,7 +33,7 @@ import org.springframework.test.web.servlet.MockMvc;
  * The one door for the apps' faults and speed, through the deployed
  * security rules: a report is taken with no session and no CSRF token, as
  * sendBeacon and the phones send it, within its hour's allowance; one
- * that is not a report is refused; and only the developer reads them.
+ * too big is cut to the limits; one that is not a report is refused; and only the developer reads them.
  */
 @WebMvcTest(DiagnosticsController.class)
 @Import(SecurityConfig.class)
@@ -83,12 +83,67 @@ class DiagnosticsControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(IOS.replace("\"ios\"", "\"watch\"")))
                 .andExpect(status().isBadRequest());
-        mockMvc.perform(post("/api/diagnostics")
-                        .header("X-Forwarded-For", "203.0.113.21")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(IOS.replace("launch_ms_p50", "Position")))
-                .andExpect(status().isBadRequest());
         verify(diagnostics, never()).record(any(), any(), anyString(), anyMap());
+    }
+
+    @Test
+    void aBadVersionIsCleanedAndUnknownKindsAndFiguresAreDroppedNotRefused() throws Exception {
+        mockMvc.perform(post("/api/diagnostics")
+                        .header("X-Forwarded-For", "203.0.113.24")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"platform\": \"ios\", \"version\": \"1.0 <b>(42)</b>" + "9".repeat(60)
+                                + "\", \"device\": \"phone\", \"faults\": ["
+                                + "{\"kind\": \"meltdown\", \"signature\": \"x\"},"
+                                + "{\"kind\": \"crash\", \"signature\": \"EXC_BAD_ACCESS\"}],"
+                                + " \"metrics\": {\"Position\": 1, \"launch_ms_p50\": 812}}"))
+                .andExpect(status().isNoContent());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Fault>> faults = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<Origin> origin = ArgumentCaptor.forClass(Origin.class);
+        verify(diagnostics).record(origin.capture(), faults.capture(), eq("app"), eq(Map.of("launch_ms_p50", 812.0)));
+        assertThat(origin.getValue().version())
+                .hasSize(DiagnosticsController.MAX_VERSION)
+                .startsWith("1.0 b(42)b");
+        assertThat(faults.getValue())
+                .singleElement()
+                .satisfies(f -> assertThat(f.kind()).isEqualTo("crash"));
+    }
+
+    @Test
+    void anOversizedReportIsCutToTheLimitsNotRefused() throws Exception {
+        String faults = String.join(
+                ",",
+                java.util.Collections.nCopies(
+                        DiagnosticsController.MAX_FAULTS + 5,
+                        "{\"kind\": \"error\", \"signature\": \"" + "s".repeat(DiagnosticsController.MAX_SIGNATURE + 9)
+                                + "\", \"detail\": \"" + "d".repeat(DiagnosticsController.MAX_DETAIL + 9) + "\"}"));
+        String figures = java.util.stream.IntStream.range(0, DiagnosticsController.MAX_METRICS + 4)
+                .mapToObj(i -> "\"m" + i + "\": " + (i == 0 ? "1e9" : "1"))
+                .collect(java.util.stream.Collectors.joining(","));
+        mockMvc.perform(post("/api/diagnostics")
+                        .header("X-Forwarded-For", "203.0.113.23")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"platform\": \"android\", \"version\": \"1.0 (1)\", \"os\": \"" + "x".repeat(60)
+                                + "\", \"device\": \"phone\", \"faults\": [" + faults + "], \"metrics\": {" + figures
+                                + "}}"))
+                .andExpect(status().isNoContent());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Fault>> keptFaults = ArgumentCaptor.forClass(List.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Double>> keptFigures = ArgumentCaptor.forClass(Map.class);
+        ArgumentCaptor<Origin> origin = ArgumentCaptor.forClass(Origin.class);
+        verify(diagnostics).record(origin.capture(), keptFaults.capture(), eq("app"), keptFigures.capture());
+        assertThat(origin.getValue().os()).hasSize(DiagnosticsController.MAX_OS);
+        assertThat(keptFaults.getValue())
+                .hasSize(DiagnosticsController.MAX_FAULTS)
+                .allSatisfy(f -> {
+                    assertThat(f.signature()).hasSize(DiagnosticsController.MAX_SIGNATURE);
+                    assertThat(f.detail()).hasSize(DiagnosticsController.MAX_DETAIL);
+                });
+        assertThat(keptFigures.getValue()).hasSize(DiagnosticsController.MAX_METRICS);
+        assertThat(keptFigures.getValue().get("m0")).isEqualTo(DiagnosticsController.MAX_METRIC);
     }
 
     @Test

@@ -5,7 +5,7 @@ import Testing
 
 /// The small rules the app asks the engine rather than keeping its own
 /// copy (the airplane form's limits, traffic's notice and freshness,
-/// paperwork's tone, the drills' boxes, the sphere's figures), each
+/// paperwork's tone, the drills' boxes, the geodesic figures), each
 /// checked against the web's shared fixture of examples as
 /// SharedFixturesTests checks the rest.
 private struct AircraftFormFixture: Decodable {
@@ -19,7 +19,7 @@ private struct AircraftFormFixture: Decodable {
 
 private struct TrafficRulesFixture: Decodable {
     struct Place: Decodable { let lat, lon: Double }
-    struct Plane: Decodable { let lat, lon: Double; let altitudeFt: Double? }
+    struct Plane: Decodable { let lat, lon: Double; let altitudeFt: Double?; let pressureAltitude: Bool? }
     struct Notice: Decodable { let own: Place?; let ownFt: Double?; let plane: Plane; let nm, bearingDeg: Double?; let near, tell: Bool }
     struct Fresh: Decodable { let ageS, seenS: Double?; let fresh: Bool }
     let notice: [Notice]
@@ -37,7 +37,7 @@ private struct DrillNextFixture: Decodable {
     let next: [Case]
 }
 
-private struct SphereFixture: Decodable {
+private struct GeodesicFixture: Decodable {
     struct Distance: Decodable { let lat1, lon1, lat2, lon2, nm: Double }
     struct Bearing: Decodable { let lat1, lon1, lat2, lon2, deg: Double }
     struct Place: Decodable { let lat, lon: Double }
@@ -93,7 +93,8 @@ struct EngineRuleFixturesTests {
         let f = try fixture("traffic", as: TrafficRulesFixture.self, decoder: snakeCase)
         #expect(!f.notice.isEmpty && !f.fresh.isEmpty)
         for c in f.notice {
-            let plane = TrafficAircraft(altitudeFt: c.plane.altitudeFt, hex: "x", lat: c.plane.lat, lon: c.plane.lon)
+            let plane = TrafficAircraft(altitudeFt: c.plane.altitudeFt, hex: "x", lat: c.plane.lat, lon: c.plane.lon,
+                                        pressureAltitude: c.plane.pressureAltitude)
             let own = c.own.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
             let mark = try #require(try Traffic.marks([plane], ownFt: c.ownFt, own: own).first)
             #expect(mark.near == c.near && mark.tell == c.tell, "\(c.plane) against \(String(describing: c.own))")
@@ -121,8 +122,8 @@ struct EngineRuleFixturesTests {
         }
     }
 
-    @Test func theSphereIsTheOneEveryAppAsks() throws {
-        let f = try fixture("sphere", as: SphereFixture.self, decoder: snakeCase)
+    @Test func theGeodesicIsTheOneEveryAppAsks() throws {
+        let f = try fixture("geodesic", as: GeodesicFixture.self, decoder: snakeCase)
         for c in f.distance {
             #expect(roughly(try Engine.distanceNm(lat1: c.lat1, lon1: c.lon1, lat2: c.lat2, lon2: c.lon2), c.nm), "\(c)")
         }

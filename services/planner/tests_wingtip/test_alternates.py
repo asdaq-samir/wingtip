@@ -147,3 +147,25 @@ def test_a_ceiling_of_unknown_height_is_not_taken_as_good(world):
     assert check["required"] is True and "unknown height" in check["reasons"][0]
     alt = alternates.alternate("KALT", ETA)
     assert alt["good"] is None and alt["meets_standard"] is False
+
+
+def test_a_taf_ending_before_the_hour_after_the_eta_asks_for_an_alternate(world):
+    """14 CFR 91.169(b)(2)(i): the forecast must indicate 2,000 and 3 "for
+    at least 1 hour before and for 1 hour after the estimated time of
+    arrival". A TAF ending 30 minutes after the ETA says nothing of the
+    rest, however good its figures."""
+    tafs, charts = world
+    charts["KDST"] = [ILS]
+    tafs["KDST"] = [_period(ETA - 6 * HOUR, ETA + 0.5 * HOUR, ceiling=5000)]
+    check = alternates.destination("KDST", ETA)
+    assert check["required"] is True
+    assert check["reasons"] == ["The TAF for KDST does not cover the whole hour either side of the ETA (14 CFR 91.169(b)(2)(i))."]
+
+
+def test_a_gls_is_a_precision_approach_and_an_lpv_is_not(world):
+    """AIM 5-4-5 a.7: "PAR, ILS, and GLS are precision approaches"; LPV is
+    APV, so an RNAV (GPS) field takes the nonprecision 800-2 (91.169(c)(1)(i))."""
+    tafs, charts = world
+    tafs["KALT"] = [_period(ETA - HOUR, ETA + HOUR, ceiling=700, visibility=2)]
+    charts["KALT"] = [{"kind": "IAP", "name": "GLS RWY 27", "url": "u"}]
+    assert alternates.alternate("KALT", ETA)["minimums"] == {"ceiling_ft": 600, "visibility_sm": 2}

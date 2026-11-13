@@ -7,7 +7,7 @@
  * are worked out here; MapRuler follows the fingers and draws it.
  */
 import { hoursMinutes, duration } from "../../format";
-import { bearingDeg, destination, distanceNm, type LatLon } from "../../geo";
+import type { Geo, LatLon } from "../../geo";
 import { magneticOf, type Declination } from "../../magnetic";
 import { bearing, nm as miles, one } from "../../format";
 
@@ -32,10 +32,10 @@ export function heldStill(from: readonly Point[], now: readonly Point[], px = ST
  * the course at either end (FAA-H-8083-25C, chapter 16). The course back
  * is its reciprocal there.
  */
-export function middleCourse(a: LatLon, b: LatLon): { trueDeg: number; middle: LatLon; nm: number } {
-  const nm = distanceNm(a, b);
-  const middle = destination(a, bearingDeg(a, b), nm / 2);
-  return { trueDeg: bearingDeg(middle, b), middle, nm };
+export function middleCourse(geo: Geo, a: LatLon, b: LatLon): { trueDeg: number; middle: LatLon; nm: number } {
+  const nm = geo.distanceNm(a, b);
+  const middle = geo.destination(a, geo.bearingDeg(a, b), nm / 2);
+  return { trueDeg: geo.bearingDeg(middle, b), middle, nm };
 }
 
 /** Minutes to fly `nm` at `tasKt`, no wind: the ruler's time is the
@@ -60,8 +60,8 @@ interface RulerWords {
  * distance to a tenth of a mile; and the time at the airplane's cruise,
  * where there is one.
  */
-export function rulerWords(left: LatLon, right: LatLon, declination: Declination | null, tasKt: number | null): RulerWords {
-  const { trueDeg, middle, nm } = middleCourse(left, right);
+export function rulerWords(geo: Geo, left: LatLon, right: LatLon, declination: Declination | null, tasKt: number | null): RulerWords {
+  const { trueDeg, middle, nm } = middleCourse(geo, left, right);
   const variation = declination ? declination(middle.lat, middle.lon) : 0;
   const ref = declination ? "M" : "T";
   const there = magneticOf(trueDeg, variation),

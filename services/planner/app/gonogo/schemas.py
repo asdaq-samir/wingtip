@@ -122,6 +122,8 @@ class GoNoGoAsk(BaseModel):
     usable_fuel_gal: float | None = None
     climb_tas_kt: float | None = Field(default=None, gt=0, le=1000)
     climb_fuel_burn_gph: float | None = None
+    descent_ias_kt: float | None = Field(default=None, ge=30, le=300)
+    descent_fuel_burn_gph: float | None = Field(default=None, ge=1, le=150)
     cruise_power_pct: float | None = Field(default=None, ge=40, le=100)
     service_ceiling_ft: float | None = Field(default=None, ge=1000, le=30000)
     #: As PlanQuery's: its own climb rate, start and taxi fuel and glide.

@@ -25,11 +25,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.Session
-import app.wingtipmaps.android.api.AssistantClient
+import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.design.Loading
@@ -47,6 +48,10 @@ import app.wingtipmaps.android.ui.SourceDialog
 import app.wingtipmaps.android.ui.sheet.MapSheet
 import app.wingtipmaps.android.ui.sheet.halfWindow
 import app.wingtipmaps.android.ui.sheet.rememberMapSheetState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 
 /**
  * The strip layout: the map under Material's standard bottom sheet
@@ -77,21 +82,24 @@ fun StripLayout(
     covered: Boolean,
     cards: @Composable (Modifier) -> Unit,
     raise: Int = 0,
-    model: StripModel = viewModel(),
-    assistant: AssistantClient = viewModel(),
-    brief: BriefModel = viewModel(),
+    model: StripModel = hiltViewModel(),
+    assistant: AskScreenModel = hiltViewModel(),
+    brief: BriefModel = hiltViewModel(),
 ) {
     val state by plan.state.collectAsStateWithLifecycle()
     val strip by model.state.collectAsStateWithLifecycle()
     val briefed by brief.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
-    val fix by ownShip.fix.collectAsStateWithLifecycle()
     val conversation by assistant.conversation.collectAsStateWithLifecycle()
     val rows = remember(state.legs, state.dep, state.dest, state.stops) { StripData.rows(state) }
     val points = remember(rows) { StripData.ribbonPoints(rows) }
-    val positionAsked = remember(state.course, state.legs, fix) {
-        StripData.positionAlong(state.course?.courseLine.orEmpty(), state.legs, fix?.lat, fix?.lon)
-    }
+    // Where the airplane is on the route, asked of the engine once a fix
+    // off the main thread; the strip is drawn again only when the answer
+    // changes, not at every fix.
+    val positionAsked by remember(ownShip, state.course, state.legs) {
+        val line = state.course?.courseLine.orEmpty()
+        ownShip.fix.map { fix -> StripData.positionAlong(line, state.legs, fix?.lat, fix?.lon) }.distinctUntilChanged().flowOn(Dispatchers.Default)
+    }.collectAsStateWithLifecycle(Result.success(null))
     val position = positionAsked.getOrNull()
     // Where the engine could not place the airplane on the route, the
     // field's row says so rather than the ribbon showing it nowhere.
@@ -99,7 +107,7 @@ fun StripLayout(
     // When the flight leaves: the plan's time where it has one (Plan.setDepart,
     // a trip leg used), else now; the times down the strip are this plus
     // the planner's minutes.
-    val leaveMs = remember(state.legs, state.depart) { Plan.departMs(state.depart) ?: System.currentTimeMillis() }
+    val leaveMs = remember(state.legs, state.depart) { Plan.departMs(state.depart) ?: AppClock.nowMs() }
     var unfolded by rememberSaveable { mutableStateOf(false) }
     var source by remember { mutableStateOf<AssistantSource?>(null) }
     val verdict = briefed.verdict.takeIf { state.routed }

@@ -1,3 +1,5 @@
+import { PLAN_KEYS } from "../lib/address";
+
 /**
  * Undo and redo for the route, kept from the address (PlanWorkspace keeps
  * the plan in it): the owner's rule is to make the pilot aware and never
@@ -10,32 +12,6 @@
  * address, so watching it catches each one, and the next way added is
  * caught too. The native app keeps the same history (ios PlanHistory).
  */
-
-/** The address's keys that are the plan: the route, what was picked at
- *  its fields (features/plan/lib/fieldLists), its altitude and its Class B choice. Not
- *  the page's own (the card open, the panel, the departure time). */
-const PLAN_KEYS = [
-  "dep",
-  "dest",
-  "stops",
-  "direct",
-  "was",
-  "fuel",
-  "alternate",
-  "altitude_ft",
-  "altitude_nearest",
-  "altitude_choice",
-  "class_b",
-  "class_b_via",
-  "pattern",
-  "takeoff",
-  "auto",
-  "procs",
-  "altitudes",
-  "cross",
-  "ground",
-  "holds",
-] as const;
 
 /** The plan as the address has it: only the keys set. */
 export type PlanState = Readonly<Record<string, string>>;

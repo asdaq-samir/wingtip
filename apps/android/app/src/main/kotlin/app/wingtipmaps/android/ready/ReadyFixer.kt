@@ -11,7 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.navigation.ScreenRequests
@@ -139,11 +139,11 @@ class ReadyFixer internal constructor(
 /** The fixes for this screen; `onSetRoute` where a route can be typed
  *  from it, null where it cannot. */
 @Composable
-fun rememberReadyFixer(plan: Plan, onSetRoute: (() -> Unit)?, model: ReadyToFlyModel = viewModel()): ReadyFixer {
+fun rememberReadyFixer(plan: Plan, onSetRoute: (() -> Unit)?, model: ReadyToFlyModel = hiltViewModel()): ReadyFixer {
     val context = LocalContext.current
-    val brief: BriefModel = viewModel()
-    val downloads: DownloadsModel = viewModel()
-    val keeper: KeepForAirModel = viewModel()
+    val brief: BriefModel = hiltViewModel()
+    val downloads: DownloadsModel = hiltViewModel()
+    val keeper: KeepForAirModel = hiltViewModel()
     val scope = rememberCoroutineScope()
     val done = remember { mutableIntStateOf(0) }
     // Whatever the system answers, the location is read again.

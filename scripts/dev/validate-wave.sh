@@ -10,7 +10,7 @@
 #
 #   scripts/dev/validate-wave.sh [--rebuild] [step...]
 #
-#   steps     web py planner ingest assistant weather jobs engine java ios
+#   steps     web py planner ingest weather jobs engine java ios
 #             android (check.sh's areas), images, e2e, ipad; all by default
 #   --rebuild builds the check images again without BuildKit's layer cache
 #             (check.sh's CHECK_NO_CACHE), for an image whose key missed a
@@ -41,7 +41,7 @@ export ONE_AT_A_TIME_SLOTS=${ONE_AT_A_TIME_SLOTS:-2}
 export ONE_AT_A_TIME_WAIT=${ONE_AT_A_TIME_WAIT:-14400}
 turn="$here/scripts/dev/one-at-a-time.sh"
 
-CHECK_AREAS="web py planner ingest assistant weather jobs engine java ios android"
+CHECK_AREAS="web py planner ingest weather jobs engine java ios android"
 ALL="$CHECK_AREAS images e2e ipad"
 PROJECT=wingtip-wave
 GATEWAY_PORT=18080 MAILPIT_PORT=18025 PLANNER_PORT=18084
@@ -65,10 +65,6 @@ if [ -z "$inner" ]; then
   echo "validate-wave: logs in $out" >&2
 fi
 
-compose() {
-  docker compose -p "$PROJECT" -f "$here/docker-compose.yml" "$@"
-}
-
 # The stack's images, every service a plain `up` starts, built from this
 # checkout under the wave's own project, so the owner's wingtip-* images
 # are never replaced.
@@ -82,19 +78,15 @@ step_images() {
 # iPhone), in the same derived data, so the build is the ios step's.
 step_ipad() {
   local sim
-  sim=$(xcrun simctl list devices available -j | python3 -c '
-import json, sys
-ds = [d for r, ds in json.load(sys.stdin)["devices"].items() if "iOS" in r for d in ds
-      if d["name"].startswith("iPad Pro")]
-print(sorted(ds, key=lambda d: d["name"])[-1]["udid"] if ds else "")')
-  [ -n "$sim" ] || { echo "validate-wave: no iPad Pro simulator in this Xcode"; return 1; }
-  [ -d "$here/apps/ios/Frameworks/WingtipEngine.xcframework" ] || { echo "validate-wave: no engine for the iPad (run the ios step first)"; return 1; }
+  sim=$(xcrun simctl list devices available -j | python3 "$here/scripts/dev/newest_simulator.py" iPad)
+  [ -n "$sim" ] || { echo "validate-wave: no iPad simulator in this Xcode"; return 1; }
+  [ -d "$here/apps/ios/Frameworks/WingtipEngine/WingtipEngineFFI.xcframework" ] || { echo "validate-wave: no engine for the iPad (run the ios step first)"; return 1; }
   xcodegen generate --spec "$here/apps/ios/project.yml" --project "$here/apps/ios" --quiet || return 1
   "$turn" "validate-wave ipad ($(basename "$here"))" \
     xcodebuild -quiet -project "$here/apps/ios/Wingtip.xcodeproj" -scheme Wingtip -configuration Debug \
       -destination "platform=iOS Simulator,id=$sim" \
       -derivedDataPath "$HOME/Library/Developer/Xcode/DerivedData/wingtip-check-$(basename "$here")-$(echo "$here" | shasum -a 256 | cut -c1-8)" \
-      CODE_SIGNING_ALLOWED=NO test
+      CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= test
 }
 
 # The planner's data, as CI's e2e job lays it out ("The planner's data,
@@ -194,6 +186,28 @@ EOF
     -e BASE_URL="http://localhost:$GATEWAY_PORT" -e MAILPIT_URL="http://localhost:$MAILPIT_PORT" \
     -v "$here/apps/web:/w" -v "$vol:/w/node_modules" -w /w "$image" \
     npx playwright test --project=mobile --grep @smoke --reporter=list || status=$?
+  # Then every spec the wave changed, in whole (the owner's efficiency rules,
+  # 2026-11-12): @smoke and what the wave touched here, the whole suite in
+  # CI's nightly run (decision 0034).
+  touched=$(git -C "$here" diff --name-only "$(git -C "$here" merge-base HEAD origin/main)" HEAD -- 'apps/web/e2e/*.spec.ts' |
+    while read -r f; do [ -f "$here/$f" ] && echo "${f#apps/web/}"; done)
+  if [ -n "$touched" ]; then
+    echo "validate-wave: the $(echo "$touched" | wc -l | tr -d ' ') specs the wave changed"
+    # In batches of WAVE_SPEC_BATCH files, one Playwright call each: one
+    # call for a wave's 65 specs ran into CI's 30-minute globalTimeout
+    # (playwright.config.ts) with 205 tests never started (2026-11-12),
+    # and that limit is CI's, not to be raised here.
+    local batch
+    while read -r batch; do
+      [ -n "$batch" ] || continue
+      echo "validate-wave: batch $batch"
+      # shellcheck disable=SC2086 # one argument per spec file
+      docker run --rm --network host -e CI=1 \
+        -e BASE_URL="http://localhost:$GATEWAY_PORT" -e MAILPIT_URL="http://localhost:$MAILPIT_PORT" \
+        -v "$here/apps/web:/w" -v "$vol:/w/node_modules" -w /w "$image" \
+        npx playwright test --project=mobile --reporter=list $batch || status=$?
+    done < <(echo "$touched" | xargs -n "${WAVE_SPEC_BATCH:-15}")
+  fi
   # The stack's whole logs beside the suite's, for a failure to be read.
   wave logs --no-color --timestamps planner gateway weather > "$out/stack.log" 2>&1
   [ "$status" -eq 0 ] || echo "validate-wave: the stack's logs are in $out/stack.log"
@@ -246,13 +260,13 @@ for s in $steps; do
   if [ -f "$out/$s.exit" ]; then
     read -r code secs < "$out/$s.exit"
   else
-    code=? secs=-
+    code="?" secs="-"
   fi
   if [ "$code" = 0 ]; then res=pass; else res=FAIL; failed=1; fi
   printf '%-10s %-6s %8s\n' "$s" "$res" "$secs"
 done
 for s in $steps; do
-  read -r code _ < "$out/$s.exit" 2>/dev/null || code=?
+  read -r code _ < "$out/$s.exit" 2>/dev/null || code="?"
   [ "$code" = 0 ] && continue
   echo
   echo "== $s (exit $code): $out/$s.log"

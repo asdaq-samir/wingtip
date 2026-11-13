@@ -1,9 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import type { SetURLSearchParams } from "react-router";
-import type { PanelState } from "../../../lib/mapChrome";
-import { useIsMobile } from "../../../hooks/use-mobile";
-import { useNavEdge } from "../../../hooks/use-nav-edge";
+import type { Address, SetAddress } from "../../../lib/address";
 import { api } from "../../../lib/api/client";
 import type { ProcedureDrawing } from "../../../lib/api/types";
 import { altitudesOf, altitudesParam } from "../../../lib/identSchema";
@@ -21,11 +18,9 @@ import {
 } from "../../../lib/procedures";
 import { procedureQuery, queryClient } from "../../../lib/queryClient";
 import type { TrafficPattern } from "../../../lib/trafficPattern";
-import { patched } from "../../../lib/useSearchParamsNow";
 import type { OpenFix } from "../components/FixCard";
 import type { ProcedureAirport, ProceduresAt } from "../components/ProceduresRoute";
 import type { RouteProcedure } from "../components/RouteBox";
-import { panelNow } from "./panelNow";
 import { routeBeforeDirect, type PlannedRoute } from "./planAddress";
 
 /** The procedures drawn, the queries that have answered. */
@@ -40,17 +35,15 @@ export const drawnOnly = (results: { data?: ProcedureDrawing }[]) => results.fla
  */
 export function useProcedurePicks({
   planned,
-  searchParams,
-  setSearchParams,
-  setPanel,
+  address,
+  setAddress,
   procedureAirports,
   crossings,
   patterns,
 }: {
   planned: PlannedRoute;
-  searchParams: URLSearchParams;
-  setSearchParams: SetURLSearchParams;
-  setPanel: (state: PanelState) => void;
+  address: Address;
+  setAddress: SetAddress;
   procedureAirports: ProcedureAirport[];
   /** The altitudes ATC gave to cross the procedures' fixes at (`cross`). */
   crossings: Record<string, number>;
@@ -59,29 +52,23 @@ export function useProcedurePicks({
 }) {
   // The instrument procedures picked for the route's fields, kept in the
   // address too: "KBUR:I08-Y:LAX" (lib/procedures).
-  const procedureParam = searchParams.get("procs");
+  const procedureParam = address.procs;
   const pickedProcedures = useMemo(() => proceduresOf(procedureParam), [procedureParam]);
   // The procedure just picked, for the map to go to it once it is drawn.
   const [procedureFocus, setProcedureFocus] = useState<string | null>(null);
-  // The panel's height before the Procedures lowered it (below).
-  const panelBeforeProcedures = useRef<PanelState | null>(null);
   const pickProcedures = useCallback(
-    (next: PickedProcedure[], picked: PickedProcedure | null) => {
+    // The picks, or how to make them from the address's as they are now.
+    (picks: PickedProcedure[] | ((now: PickedProcedure[]) => PickedProcedure[]), picked: PickedProcedure | null) => {
       if (picked) setProcedureFocus(`${proceduresParam([picked])}@${Date.now()}`);
-      // Added: its sheet put away leaves the panel half way, the procedure
-      // on the map above it.
-      if (picked) panelBeforeProcedures.current = null;
-      setSearchParams(
-        (prev) => {
-          // One direct at a time: sent direct to a procedure's fix, a Direct to
-          // a point of the route is given back (directToPoint).
-          const undo = next.some((p) => p.direct) ? routeBeforeDirect(prev) : {};
-          return patched(prev, { ...undo, procs: next.length ? proceduresParam(next) : null });
-        },
-        { replace: true },
-      );
+      void setAddress((prev) => {
+        const next = typeof picks === "function" ? picks(proceduresOf(prev.procs)) : picks;
+        // One direct at a time: sent direct to a procedure's fix, a Direct to
+        // a point of the route is given back (directToPoint).
+        const undo = next.some((p) => p.direct) ? routeBeforeDirect(prev) : {};
+        return { ...undo, procs: next.length ? proceduresParam(next) : null };
+      });
     },
-    [setSearchParams],
+    [setAddress],
   );
   // A SID or a STAR typed in the route box among its points ("KMSP BAEE1
   // BAE ... OSHH2 KATW", as a clearance or a filed route is written):
@@ -93,15 +80,15 @@ export function useProcedurePicks({
       const list = (ident: string) =>
         queryClient.fetchQuery({ queryKey: ["procedures", ident], queryFn: () => api.procedures(ident), staleTime: 6 * 60 * 60_000 });
       const found = await Promise.all(typed.map((t) => typedProcedure(t, route, list)));
-      let next = proceduresOf(new URLSearchParams(window.location.search).get("procs"));
-      let last: PickedProcedure | null = null;
-      for (const hit of found) {
-        if (!hit) continue;
-        const kindOf = (id: string) => hit.list.procedures.find((p) => p.id === id)?.kind;
-        next = [...next.filter((p) => !(sameField(p.ident, hit.picked.ident) && kindOf(p.id) === hit.kind)), hit.picked];
-        last = hit.picked;
-      }
-      if (last) pickProcedures(next, last);
+      // Onto the picks as the address has them once the lists are in.
+      const hits = found.flatMap((hit) => (hit ? [hit] : []));
+      const last = hits.at(-1)?.picked ?? null;
+      const withHits = (now: PickedProcedure[]) =>
+        hits.reduce((next, hit) => {
+          const kindOf = (id: string) => hit.list.procedures.find((p) => p.id === id)?.kind;
+          return [...next.filter((p) => !(sameField(p.ident, hit.picked.ident) && kindOf(p.id) === hit.kind)), hit.picked];
+        }, now);
+      if (last) pickProcedures(withHits, last);
       const missed = typed.filter((_, i) => !found[i]).map((t) => t.name);
       if (missed.length) {
         showError(
@@ -167,17 +154,14 @@ export function useProcedurePicks({
   const showFix = useCallback((field: string, kind: RouteProcedure["kind"], fix: string) => setOpenFixAt({ field, kind, fix }), []);
   const setCrossing = useCallback(
     (fix: string, feet: number | null) => {
-      setSearchParams(
-        (prev) => {
-          const own = altitudesOf(prev.get("cross"));
-          if (feet == null) delete own[fix];
-          else own[fix] = feet;
-          return patched(prev, { cross: altitudesParam(own) || null });
-        },
-        { replace: true },
-      );
+      void setAddress((prev) => {
+        const own = altitudesOf(prev.cross);
+        if (feet == null) delete own[fix];
+        else own[fix] = feet;
+        return { cross: altitudesParam(own) || null };
+      });
     },
-    [setSearchParams],
+    [setAddress],
   );
   const directTo = useCallback(
     (open: OpenFix, direct: boolean) => {
@@ -214,7 +198,6 @@ export function useProcedurePicks({
   // The Procedures' sheet, open at one kind of a field's (ProceduresRoute):
   // from its row in FPL's route, or a procedure's chip in the route's box.
   const [proceduresAt, setProceduresAt] = useState<ProceduresAt>(null);
-  const proceduresOpen = proceduresAt !== null;
   // The procedure on its own page in the Procedures, drawn on the map and
   // brought in above the sheet before it is added to the route, as
   // ForeFlight's Procedure Advisor previews one (the owner's pick); the
@@ -236,36 +219,11 @@ export function useProcedurePicks({
       ? [...procedureDrawings.filter((d) => !(d.kind === preview.kind && sameField(d.airport, preview.airport))), preview]
       : procedureDrawings;
   }, [procedureDrawings, procedurePreview, previewDrawing]);
-  // On a phone the sheet is half the screen (ProceduresRoute), the map
-  // above it the procedure's: the panel lowered half way while it is out
-  // if it was all the way up over the map, and put back as it was unless
-  // a procedure was added, which is then on the map to be seen.
-  const isMobile = useIsMobile();
-  const setProceduresShown = useCallback(
-    (at: ProceduresAt) => {
-      const open = at !== null;
-      setProceduresAt(at);
-      if (!open) setProcedurePreview(null);
-      if (!isMobile) return;
-      if (open && panelNow.current === "full") {
-        panelBeforeProcedures.current = panelNow.current;
-        setPanel("half");
-      } else if (!open && panelBeforeProcedures.current) {
-        setPanel(panelBeforeProcedures.current);
-        panelBeforeProcedures.current = null;
-      }
-    },
-    [isMobile, setPanel],
-  );
+  const setProceduresShown = useCallback((at: ProceduresAt) => {
+    setProceduresAt(at);
+    if (at === null) setProcedurePreview(null);
+  }, []);
   const openProcedures = useCallback((p: RouteProcedure) => setProceduresShown({ ident: p.ident, kind: p.kind }), [setProceduresShown]);
-  // What the sheet covers of the screen, from the navigation bar's edge
-  // it comes from, for the map to bring the procedure in clear of it: its
-  // 55% (the sheet's 55dvh, ProceduresRoute).
-  const navEdge = useNavEdge();
-  const procedureCover = useMemo(() => {
-    const covered = isMobile && proceduresOpen ? Math.round(window.innerHeight * 0.55) : 0;
-    return navEdge === "top" ? { top: covered, bottom: 0 } : { top: 0, bottom: covered };
-  }, [isMobile, proceduresOpen, navEdge]);
   return {
     pickedProcedures,
     procedureFocus,
@@ -285,6 +243,5 @@ export function useProcedurePicks({
     openProcedures,
     previewProcedure,
     mapProcedures,
-    procedureCover,
   };
 }

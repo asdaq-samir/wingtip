@@ -10,6 +10,7 @@ import { trafficPattern } from "../../../../lib/trafficPattern";
 import type { EndFit } from "./runwayFit";
 import { useOpenRunwayLines, type ProcedureAirport } from "../../hooks/useProceduresRoute";
 import { CHIP } from "../routeListStyle";
+import { centre } from "./centreChip";
 
 /** The value of a choice's "None" (no transition), and a runway line's
  *  with none picked yet: a toggle's value is a string. */
@@ -53,36 +54,35 @@ export function Chips({
   children: ReactNode;
 }) {
   const row = useRef<HTMLDivElement>(null);
-  // The chip chosen in the middle of the line, the runways either side of
-  // it in sight, at the owner's ask ("when unfolding runway, make selected
-  // the center one so we can see what's on the left and right"); where the
-  // line does not scroll, as far as it goes. One past the row's end
-  // (O'Hare's 9L of eight runways) came in at the edge before. Sideways
-  // only -- as it is picked, and again
-  // whenever the line or its chips change size after it opens: brought in
-  // once at its first layout, 9L was out of sight again by the time it was
-  // looked for, one run in two (procedures:306). A pilot's own scroll
-  // resizes nothing, so it is never undone.
+  // The chip chosen in the middle of the line, the runways either side in
+  // sight (the owner: "make selected the center one"), as far as it goes
+  // where the line does not scroll. Sideways only, as it is picked and
+  // whenever the line or its chips change size (9L, O'Hare's eighth, was
+  // out of sight again after its first layout, procedures:306); a pilot's
+  // own scroll resizes nothing, so it is never undone.
   useEffect(() => {
     const box = row.current;
     if (!box) return;
+    let gone = false;
     const show = () => {
       const on = box.querySelector<HTMLElement>("[data-pressed]");
       if (!on) return;
-      // Where it lies in the line's scroll, by layout: the chips slide in
-      // as the line opens (`enter`), and their place on screen then was
-      // 24 points off the middle (procedures:307). The group moves as one,
-      // so the chip's place in it holds.
-      const group = on.closest<HTMLElement>("[data-slot=toggle-group]") ?? on.parentElement!;
-      const chip = on.getBoundingClientRect(),
-        its = group.getBoundingClientRect();
-      box.scrollLeft = group.offsetLeft + (chip.left - its.left) + chip.width / 2 - box.clientWidth / 2;
+      // After the chips slide in (`enter`): 24 points off before (procedures:307).
+      const moving = (on.closest<HTMLElement>("[data-slot=toggle-group]") ?? on.parentElement!).getAnimations({ subtree: true });
+      if (moving.length) {
+        void Promise.allSettled(moving.map((a) => a.finished)).then(() => !gone && centre(on, box));
+        return;
+      }
+      centre(on, box);
     };
     show();
     const watch = new ResizeObserver(show);
     watch.observe(box);
     if (box.firstElementChild) watch.observe(box.firstElementChild);
-    return () => watch.disconnect();
+    return () => {
+      gone = true;
+      watch.disconnect();
+    };
   }, [value]);
   return (
     // One line, scrolled sideways where the chips are more than fit, at
@@ -311,6 +311,7 @@ export function PatternChips({
           className={cn(TRAY_BODY, "rounded-l-none")}
         >
           <ToggleGroupItem
+            variant="glass"
             value={c.id}
             onClick={() => setOpen(true)}
             // One line, the wind's mark, the runway and the arrow side by
@@ -318,15 +319,13 @@ export function PatternChips({
             // screenshot, 2026-10-20): laid out in a row here, not left to
             // the chip's own.
             // Its area from the tray's head to the tray's own right edge, the
-            // 3 of padding past the chip: on a finger index.css's touch rule
-            // sizes a button's area to its own 44 across, outside the
-            // utilities' layer, so it stopped at the chip and the tray's
-            // 44-point square, 47 across, lost its two corners there above
-            // and below (the iOS audit's P1, on KDLH's folded runway,
-            // 2026-11-06). Marked important to win over that rule.
+            // 3 of padding past the chip: sized to its own 44 across, it
+            // stopped at the chip and the tray's 44-point square, 47 across,
+            // lost its two corners there above and below (the iOS audit's
+            // P1, on KDLH's folded runway, 2026-11-06), over index.css's rule.
             className={cn(
               CHIP,
-              "inline-flex items-center gap-0.5 whitespace-nowrap after:left-0 after:-right-[3px]! motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-3 motion-safe:duration-300",
+              "inline-flex items-center gap-0.5 whitespace-nowrap after:left-0 after:-right-[3px] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-3 motion-safe:duration-300",
               c.ring,
             )}
             aria-label={`${c.words}${note ? `, ${note}` : ""}, picked: tap for the other runways`}
@@ -347,20 +346,20 @@ export function PatternChips({
     );
   }
   return (
-    // The chips alone, the wind the airport's under its ident and how the
-    // runway picked is flown in its chip's name (the owner's "No need for
-    // info button").
-    <div ref={line} className="flex items-center gap-2" data-testid="procedure-patterns">
-      {a.runways === null ? (
+    // The chips alone, the wind under the ident, how the runway is flown in its chip's name ("No need for info button").
+    <div ref={line} className="flex flex-wrap items-center gap-2" data-testid="procedure-patterns">
+      {a.runways === null || !ends.length ? (
         <>
-          {/* The runways' chips in outline while they come (the style
-              audit, 2026-10-26), their words for a screen reader. */}
-          <span role="status" className={cn("flex items-center gap-2", TRAY_BODY)}>
-            <span className="sr-only">Fetching the runways…</span>
-            {[0, 1, 2].map((k) => (
-              <Skeleton key={k} aria-hidden="true" className="h-8 w-11 rounded-full" />
-            ))}
-          </span>
+          {/* The runways' chips in outline while they come (the style audit, 2026-10-26), their words for a screen
+              reader; none for a field with none to give. The pull-downs wrap under them, never cut to "+ A…". */}
+          {a.runways === null && (
+            <span role="status" className={cn("flex items-center gap-2", TRAY_BODY)}>
+              <span className="sr-only">Fetching the runways…</span>
+              {[0, 1, 2].map((k) => (
+                <Skeleton key={k} aria-hidden="true" className="h-8 w-11 rounded-full" />
+              ))}
+            </span>
+          )}
           {trailing}
         </>
       ) : (
@@ -406,6 +405,7 @@ export function PatternChips({
                 const circleNa = !allowed(c.id);
                 return (
                   <ToggleGroupItem
+                    variant="glass"
                     key={end.ident}
                     value={c.id}
                     disabled={circleNa || (!landing && !drawn)}

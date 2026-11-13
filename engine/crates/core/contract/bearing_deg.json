@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_core::geo::call",
-  "description": "The initial great-circle course from the first point to the second, degrees true 0 to 360, on the same sphere as distance_nm (wingtip.geo.bearing_deg); 0 for two points that coincide.",
+  "description": "The initial course of the geodesic from the first point to the second on the WGS-84 ellipsoid, as distance_nm, degrees true 0 to 360 (wingtip.geo.bearing_deg, pyproj's Geod(ellps=\"WGS84\") forward azimuth); 0 for two points that coincide.",
   "type": "object",
   "properties": {
     "input": {

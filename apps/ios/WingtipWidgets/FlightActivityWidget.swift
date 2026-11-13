@@ -75,26 +75,19 @@ struct ProgressArc: View {
     }
 }
 
-/// The compact island's figure: on iOS 27 its short form when the system
-/// draws the island narrow (FlightActivityLines.compactNarrow), the usual
-/// one otherwise and before iOS 27.
+/// The compact island's figure: its short form when the system draws the
+/// island narrow (FlightActivityLines.compactNarrow), the usual one
+/// otherwise.
 private struct CompactFigure: View {
     let lines: FlightActivityLines
 
     var body: some View {
-        Group {
-            if #available(iOS 27.0, *) {
-                NarrowAwareFigure(lines: lines)
-            } else {
-                Text(lines.compact)
-            }
-        }
-        .font(WingtipType.note.monospacedDigit().weight(.semibold))
-        .accessibilityLabel(lines.spoken)
+        NarrowAwareFigure(lines: lines)
+            .font(WingtipType.note.monospacedDigit().weight(.semibold))
+            .accessibilityLabel(lines.spoken)
     }
 }
 
-@available(iOS 27.0, *)
 private struct NarrowAwareFigure: View {
     let lines: FlightActivityLines
     @Environment(\.isDynamicIslandLimitedInWidth) private var narrow

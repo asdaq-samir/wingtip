@@ -32,7 +32,7 @@ type Kind = ProcedureKind;
 const CHART_CODES: Record<Kind, string[]> = { approach: ["IAP"], arrival: ["STR"], departure: ["DP", "ODP"] };
 
 /** A procedure's data stays good for its cycle's 28 days. */
-export const PROCEDURE_STALE_MS = 6 * 60 * 60_000;
+const PROCEDURE_STALE_MS = 6 * 60 * 60_000;
 /** How far off a field's time must be for its runway to be picked into
  *  the forecast wind rather than the wind now, ms: an hour. */
 const FORECAST_AFTER_MS = 60 * 60_000;

@@ -1,0 +1,48 @@
+{
+  "x-call": "wingtip_pilot::pilot::calls::files",
+  "description": "A handbook specifications page's figures, read from the text off its photo; a figure not found is left out.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "HandbookFiguresInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "HandbookFiguresAnswer",
+      "type": "object",
+      "properties": {
+        "serviceCeilingFt": {
+          "$ref": "#/definitions/HandbookFigure"
+        },
+        "climbTasKt": {
+          "$ref": "#/definitions/HandbookFigure"
+        },
+        "usableFuelGal": {
+          "$ref": "#/definitions/HandbookFigure"
+        },
+        "cruiseTasKt": {
+          "$ref": "#/definitions/HandbookFigure"
+        },
+        "cruisePowerPct": {
+          "$ref": "#/definitions/HandbookFigure"
+        },
+        "fuelBurnGph": {
+          "$ref": "#/definitions/HandbookFigure"
+        }
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

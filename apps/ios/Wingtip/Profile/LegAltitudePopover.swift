@@ -4,7 +4,9 @@ import SwiftUI
 /// profile sets one (the owner's spec of 2026-11-10): the altitude for the
 /// leg from the waypoint, picked from the engine's altitudes, and whether
 /// the climb or descent begins at the waypoint (Start At) or is done by it
-/// (Cross At). The system's popover, kept a popover on the iPhone too
+/// (Cross At). An altitude off the engine's steps -- a field's elevation,
+/// a crossing ATC gave -- is typed in feet in the same popover. The
+/// system's popover, kept a popover on the iPhone too
 /// (`presentationCompactAdaptation`), so the profile stays in sight.
 struct LegAltitudePopover: View {
     let ident: String
@@ -22,12 +24,30 @@ struct LegAltitudePopover: View {
 
     @State private var picked: Double?
     @State private var mode: LegAltitudeMode?
+    /// Feet typed, which win over the menu's pick while they read.
+    @State private var typed = ""
+
+    /// What is typed, read as feet MSL (PointAltitude: under Class A's
+    /// floor, the engine's `altitude_allowed`): nil with nothing typed,
+    /// a failure for what is not an altitude.
+    private var typedFt: Result<Double, any Error>? {
+        guard !typed.isEmpty else { return nil }
+        return Result {
+            guard let feet = try PointAltitude.feet(typed, waypoint: false) else { throw Unreadable() }
+            return Double(feet)
+        }
+    }
+
+    private struct Unreadable: LocalizedError {
+        var errorDescription: String? { "not an altitude below 18,000 ft" }
+    }
 
     var body: some View {
-        let altitude = picked ?? currentFt ?? rows.last ?? 0
+        let typedValue = try? typedFt?.get()
+        let altitude = typedValue ?? picked ?? currentFt ?? rows.last ?? 0
         VStack(alignment: .leading, spacing: WingtipSpace.md) {
             Text(ident).font(.headline.monospaced())
-            Picker("Altitude", selection: Binding(get: { altitude }, set: { picked = $0 })) {
+            Picker("Altitude", selection: Binding(get: { altitude }, set: { picked = $0; typed = "" })) {
                 ForEach(rows, id: \.self) { ft in
                     Text(Format.cruiseAltitude(ft)).monospacedDigit()
                         .accessibilityLabel(Format.spokenAltitude(ft))
@@ -35,6 +55,12 @@ struct LegAltitudePopover: View {
                 }
             }
             .pickerStyle(.menu)
+            TextField("Or type feet, as 2340", text: $typed)
+                .keyboardType(.numberPad)
+                .textFieldStyle(.roundedBorder)
+                .font(WingtipType.row.monospacedDigit())
+                .accessibilityLabel("Altitude in feet above sea level")
+            if let typedFt { ProblemLine(typedFt, "The altitude typed") }
             Picker("Where", selection: Binding(get: { mode ?? startMode }, set: { mode = $0 })) {
                 ForEach(LegAltitudeMode.allCases) { Text($0.label).tag($0) }
             }
@@ -52,6 +78,7 @@ struct LegAltitudePopover: View {
                 Spacer(minLength: 0)
                 Button("Set") { set(Int(altitude), mode ?? startMode) }
                     .glassProminentButton()
+                    .disabled(typedFt.map { (try? $0.get()) == nil } ?? false)
             }
         }
         .padding(WingtipSpace.lg)

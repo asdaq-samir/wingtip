@@ -98,7 +98,7 @@ struct FlightEntity: AppEntity {
     init(id: String) { self.id = id.uppercased() }
 
     /// What planning it again asks of the app; nil for fewer than two fields.
-    var command: PendingCommand.Command? {
+    var command: AppCommand? {
         let f = fields
         guard f.count >= 2, let dep = f.first, let dest = f.last else { return nil }
         return .planRoute(dep: dep, stops: Array(f.dropFirst().dropLast()), dest: dest)
@@ -131,16 +131,16 @@ struct FlightEntityQuery: EntityQuery {
 
 /// A flight opened from Siri, Spotlight or a Shortcut: its route planned
 /// again in the app, as a shared link plans one.
-struct OpenFlightIntent: OpenIntent {
+struct OpenFlightIntent: OpenIntent, CommandIntent {
     static let title: LocalizedStringResource = "Open a Flight"
     static let description = IntentDescription("Plans a flight's route again in the app.")
 
     @Parameter(title: "Flight")
     var target: FlightEntity
 
+    func appCommand() -> AppCommand? { target.command }
+
     func perform() async throws -> some IntentResult {
-        let command = target.command
-        await MainActor.run { PendingCommand.shared.command = command }
         return .result()
     }
 }

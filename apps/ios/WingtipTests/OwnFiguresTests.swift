@@ -1,4 +1,5 @@
 import Foundation
+import OpenAPIRuntime
 import Testing
 @testable import Wingtip
 
@@ -11,10 +12,10 @@ import Testing
 @MainActor
 struct OwnFiguresTests {
     /// A type's book as the planner sends it, the figures the engine reads.
-    static let book: [String: JSONValue] = [
-        "name": .string("c172"), "cruise_tas_kt": .number(122), "fuel_burn_gph": .number(8.4), "taxi_fuel_gal": .number(1.4),
-        "climb_tas_kt": .number(74), "climb_rate_fpm_sea_level": .number(730), "service_ceiling_ft": .number(14000),
-        "glide": .object(["ratio": .number(9)]),
+    static let book: [String: OpenAPIValueContainer] = [
+        "name": "c172", "cruise_tas_kt": 122, "fuel_burn_gph": 8.4, "taxi_fuel_gal": 1.4,
+        "climb_tas_kt": 74, "climb_rate_fpm_sea_level": 730, "service_ceiling_ft": 14000,
+        "glide": try! OpenAPIValueContainer(unvalidatedValue: ["ratio": 9.0]),
     ]
 
     private func defaults(_ name: String) throws -> UserDefaults {
@@ -46,6 +47,22 @@ struct OwnFiguresTests {
         #expect(missing == ["taxi_fuel_gal"])
     }
 
+    @Test func theDescentIsAskedForByItsTwoFigures() throws {
+        // No descent figures in the book or the pilot's: the engine's
+        // airplane_needs names both, and the ask is the speed first.
+        let answer = try #require(Airplanes.answer(book: nil, handbook: nil, own: Figures(cruiseTasKt: 140, fuelBurnGph: 10)))
+        let missing = try Engine.airplaneNeeds(profile: answer.profile, figure: AirplaneNeed.descent.rawValue).missing
+        #expect(missing == ["descent_ias_kt", "descent_fuel_burn_gph"])
+        #expect(AskFigureModel.ask(missing: missing, putOff: [], airplane: "N123AB") == .figure(.descentIasKt))
+        // Given, they are the pilot's and nothing more is asked.
+        let given = try #require(Airplanes.answer(book: nil, handbook: nil,
+                                                  own: Figures(cruiseTasKt: 140, fuelBurnGph: 10, descentIasKt: 120, descentFuelBurnGph: 6)))
+        #expect(Figures(given).descentIasKt == 120 && Figures(given).descentFuelBurnGph == 6)
+        #expect(try Engine.airplaneNeeds(profile: given.profile, figure: AirplaneNeed.descent.rawValue).missing.isEmpty)
+        #expect(OwnFigure.descentIasKt.unit == "kt" && OwnFigure.descentFuelBurnGph.unit == "gal/h")
+        #expect(!OwnFigure.recordFigures.contains(.descentIasKt))
+    }
+
     @Test func theAskIsTheFirstMissingInputNotPutOff() {
         #expect(AskFigureModel.ask(missing: ["airplane"], putOff: [], airplane: "N123AB") == .pick)
         #expect(AskFigureModel.ask(missing: ["taxi_fuel_gal"], putOff: [], airplane: "N123AB") == .figure(.taxiFuelGal))
@@ -60,25 +77,25 @@ struct OwnFiguresTests {
         #expect(OwnFigure.taxiFuelGal.question("N123AB") == "How much fuel does N123AB use to start and taxi?")
     }
 
-    @Test func thePlanAsksForWhatItsAirplaneLacks() {
+    @Test func thePlanAsksForWhatItsAirplaneLacks() throws {
         let airplanes = Airplanes()
         let plan = Plan()
         let model = AskFigureModel()
         // No airplane: the picker.
-        #expect(model.ask([.glide], plan: plan, airplanes: airplanes) == .pick)
+        #expect(try model.ask([.glide], plan: plan, airplanes: airplanes) == .pick)
         // An own airplane of no stock type: its cruise first, planned with
         // no airplane until it has one.
         plan.tail = "N123AB"
         plan.aircraft = Plan.ownAirplane
         #expect(plan.plannerAircraft == nil)
-        #expect(model.ask([.fuelTotals], plan: plan, airplanes: airplanes) == .figure(.cruiseTasKt))
+        #expect(try model.ask([.fuelTotals], plan: plan, airplanes: airplanes) == .figure(.cruiseTasKt))
         plan.figures = Figures(cruiseTasKt: 140, fuelBurnGph: 10)
         #expect(plan.plannerAircraft == Plan.ownAirplane)
-        #expect(model.ask([.fuelTotals], plan: plan, airplanes: airplanes) == .figure(.taxiFuelGal))
-        #expect(model.ask([.glide], plan: plan, airplanes: airplanes) == .figure(.glideRatio))
+        #expect(try model.ask([.fuelTotals], plan: plan, airplanes: airplanes) == .figure(.taxiFuelGal))
+        #expect(try model.ask([.glide], plan: plan, airplanes: airplanes) == .figure(.glideRatio))
         // A stock type whose book is not yet in asks nothing it may have.
         plan.aircraft = "c172"
-        #expect(model.ask([.fuelTotals], plan: plan, airplanes: airplanes) == nil)
+        #expect(try model.ask([.fuelTotals], plan: plan, airplanes: airplanes) == nil)
     }
 
     @Test func aTypeTheEngineCannotMatchFliesOnItsOwnFiguresAlone() {
@@ -102,10 +119,7 @@ struct OwnFiguresTests {
 
     @Test func figuresGoToThePlannerAndTheEngineByTheirKeys() {
         let f = Figures(cruiseTasKt: 140, taxiFuelGal: 1.2, glideRatio: 9, emptyWeightLb: 1700)
-        let q = f.query.compactMapValues { $0 }
-        // The loading's weight is not the plan's.
-        #expect(q == ["cruise_tas_kt": "140.0", "taxi_fuel_gal": "1.2", "glide_ratio": "9.0"])
-        #expect(f.engine.count == OwnFigure.allCases.count && f.engine["fuel_burn_gph"] == .null && f.engine["empty_weight_lb"] == .number(1700))
+        #expect(f.engine.count == OwnFigure.allCases.count && f.engine["fuel_burn_gph"]?.value == nil && f.engine["empty_weight_lb"]?.number == 1700)
         #expect(f.gateway.taxiFuelGal == 1.2 && f.gateway.emptyWeightLb == 1700)
     }
 
@@ -135,6 +149,8 @@ struct OwnFiguresTests {
         // Switched on, the ring is drawn at the airplane's own ratio.
         let d = try defaults("OwnFiguresTests.ring")
         #expect(InFlight.ringRatio(plan: plan, defaults: d, airplanes: airplanes) == nil)
+        // On by itself while the emergency assistant is open, the switch off.
+        #expect(InFlight.ringRatio(plan: plan, emergency: true, defaults: d, airplanes: airplanes) == 9)
         d.set(true, forKey: InFlight.ringKey)
         #expect(InFlight.ringRatio(plan: plan, defaults: d, airplanes: airplanes) == 9)
     }

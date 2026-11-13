@@ -1,0 +1,85 @@
+{
+  "x-call": "wingtip_flight::calls::filed",
+  "description": "Item 15's route between the departure and the destination (AIM Appendix 4: \"DALL3 EIC V18 MEI LGC4\", \"FLACK DCT IRW\"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct. `airways` names which of the stops are airways.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FiledRouteInput",
+      "type": "object",
+      "properties": {
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "airways": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "departure": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "transition": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "arrival": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "transition": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "stops"
+      ]
+    },
+    "answer": {
+      "title": "FiledRouteAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,5 +1,5 @@
 //! Instrument approaches taught and debriefed, one copy for the web app
-//! (callEngine), the planner (wingtip_native.call) and the phones (wt_call),
+//! (callEngine), the planner (wingtip_native.call) and the phones (the generated `call`),
 //! so the iPhone can teach an approach and debrief one flown with no
 //! signal, from the same rules:
 //!
@@ -15,6 +15,11 @@
 //!   path (the TPP's rate of descent table), the approach category (14 CFR
 //!   97.3), the minimums' kind, the missed approach in the plate's words
 //!   (the web's lib/approachLesson);
+//! - `tags`: the tags an approach's fixes carry on the map with its plate
+//!   (crossing altitudes, the glide slope's at the final approach fix, the
+//!   runway's TCH and TDZE) and its final approach segment;
+//! - `scene`: the field's way in for the 3D map -- extended centrelines,
+//!   the glidepath, the approach at its altitudes and the pattern's ring;
 //! - `calls`: the rules by name, as crate::call lists them.
 //!
 //! Both read the procedure as the planner draws it from the FAA's CIFP
@@ -26,11 +31,11 @@
 pub mod calls;
 pub mod debrief;
 pub mod lesson;
+pub mod scene;
+pub mod tags;
 
 use crate::json::Value;
-
-/// Feet in a nautical mile (1,852 m), as the web's lib/geo FT_PER_NM.
-pub const FT_PER_NM: f64 = 6076.12;
+pub(crate) use wingtip_core::units::{FT_PER_M, FT_PER_NM};
 
 /// A fix of the procedure: its place, its roles ("IAF", "IF", "FACF",
 /// "FAF", "MAP", "hold"), its crossing altitudes, and whether it is the

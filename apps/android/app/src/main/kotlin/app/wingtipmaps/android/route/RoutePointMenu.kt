@@ -22,13 +22,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
-import app.wingtipmaps.android.flight.InFlight
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
@@ -46,11 +47,11 @@ import app.wingtipmaps.android.ui.WingtipIcons
  * flies from the airplane while it is under way, else from the departure.
  */
 @Composable
-fun RoutePointMenu(ident: String, plan: Plan, onAddStopAfter: (String) -> Unit) {
+fun RoutePointMenu(ident: String, plan: Plan, onAddStopAfter: (String) -> Unit, flight: FlightModel = hiltViewModel()) {
     val state by plan.state.collectAsStateWithLifecycle()
     val actions = PointActions.of(ident, state)
     if (actions.isEmpty()) return
-    val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
+    val inFlight by flight.state.collectAsStateWithLifecycle()
     val haptics = rememberHaptics()
     var open by rememberSaveable(ident) { mutableStateOf(false) }
     val run: (Action) -> Unit = { action ->

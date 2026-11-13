@@ -111,6 +111,22 @@ def test_a_domestic_notam_is_kept_by_its_number_in_the_words_a_briefing_gives():
     assert notams.since() == NOW
 
 
+def test_the_feeds_html_inside_its_xml_is_read_as_the_text_it_is():
+    # The FAA sends a NOTAM's text as HTML inside the XML: "O&apos;HARE"
+    # once decoded, read as someone's own words for its lower case.
+    feed = message(
+        location="ORD",
+        text="IAP CHICAGO O&amp;apos;HARE INTL",
+        start="202611031515",
+        end="202706152355",
+        domestic="!FDC 6/4918 ORD IAP CHICAGO O&amp;apos;HARE INTL, CHICAGO, IL. ILS Z RWY 10R 2611031515-2706152355",
+        icao_location="KORD",
+    )
+    assert notams.heard(feed, now=NOW) == 1
+    [kept] = notams.at_fields(["KORD"], now=NOW)
+    assert kept["raw"].startswith("!FDC 6/4918 ORD IAP CHICAGO O'HARE INTL")
+
+
 def test_a_notam_is_let_go_once_it_ends_and_one_estimated_says_so():
     notams.heard(RUNWAY, now=NOW)
     assert notams.at_fields(["KORD"], now=NOW + 9 * 3600) == []
@@ -311,3 +327,29 @@ def test_a_store_kept_by_number_alone_is_kept_by_place_and_number(tmp_path):
     assert notams.at_fields(["KAPG"], now=NOW) == []
     assert [n["id"] for n in notams.at_fields(["KBJC"], now=NOW)] == ["KBJC A1643/26"]
     assert [n["id"] for n in notams.at_fields(["KORD"], now=NOW)] == ["ORD 10/709"]
+
+
+def test_an_icao_notam_is_listed_at_the_place_its_own_a_item_names():
+    # Kept before version 1 under another field's location: Shreveport's
+    # A0917/26 with ORD's, listed on KORD's card.
+    feed = message(
+        location="SHV",
+        text="RWY 06/24 CLSD EXC XNG",
+        start="202611010000",
+        end="202611301200",
+        kind="N",
+        series="A",
+        number="0917",
+        icao="A0917/26 NOTAMN\nQ) KZFW/QMRLC////000/999/3226N09349W005\nA) KSHV\nB) 2611010000\nC) 2611301200\nE) RWY 06/24 CLSD EXC XNG",
+        classification="INTL",
+        icao_location="KSHV",
+    )
+    assert notams.heard(feed, now=NOW) == 1
+    with notams._LOCK:
+        notams._connection().execute("UPDATE notams SET location = 'ORD' WHERE id = 'KSHV A0917/26'")
+    assert notams.at_fields(["KORD"], now=NOW) == []
+    assert [n["id"] for n in notams.at_fields(["KSHV"], now=NOW)] == ["KSHV A0917/26"]
+    # Heard again, its location is the feed's.
+    notams.heard(feed, now=NOW)
+    [kept] = notams.at_fields(["KSHV"], now=NOW)
+    assert kept["location"] == "SHV"

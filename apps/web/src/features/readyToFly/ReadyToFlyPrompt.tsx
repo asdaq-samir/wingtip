@@ -1,10 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import SheetDialog from "../../components/SheetDialog";
 import { routeKeyOf, useBriefPlan } from "../../lib/briefPlan";
 import { underway } from "../../lib/map/position/glide";
 import { useOwnShip } from "../../lib/map/position/ownShip";
-import { ReadyAction } from "./ReadyToFly";
 import { useReadyToFly } from "./useReadyToFly";
+
+/** The prompt's actions, the Brief's own rows (ReadyToFly), on the Brief's
+ *  chunk: drawn only once a start finds something to fix, so they are not
+ *  in the first load every pilot waits for (scripts/first-load.mjs). */
+const ReadyAction = lazy(() => import("./ReadyToFly").then((m) => ({ default: m.ReadyAction })));
 
 /** The routes already asked about, this visit: once per route, so a dry
  *  run played again or own ship turned off and on is not asked twice. */
@@ -56,9 +60,11 @@ export function ReadyToFlyPrompt({ dryPlaying }: { /** A dry run playing (the pl
       testId="ready-prompt"
     >
       <div className="flex flex-col gap-2 text-left">
-        {answer.actions.map((item) => (
-          <ReadyAction key={item.key} item={item} ready={ready} onDone={() => setOpen(false)} />
-        ))}
+        <Suspense fallback={null}>
+          {answer.actions.map((item) => (
+            <ReadyAction key={item.key} item={item} ready={ready} onDone={() => setOpen(false)} />
+          ))}
+        </Suspense>
       </div>
     </SheetDialog>
   );

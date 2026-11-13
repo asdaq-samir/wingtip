@@ -5,12 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.ai.AiOffered
-import app.wingtipmaps.android.api.AssistantClient
+import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.api.AssistantContext
-import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.api.Planner
-import app.wingtipmaps.android.api.generated.NearestAirports
+import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -21,23 +20,25 @@ import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.plan.HomeAirport
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.intOrNull
+import javax.inject.Inject
 
 /**
  * What the strip does with a line from the field (FieldCommands.readField
  * says what it means; this does it, as the web's PlanWorkspace.fieldLine
  * does): a route is planned (Plan), a field's card opened, a place looked
  * up through the planner's search and flown to, a screen opened, and
- * anything else asked of the assistant (AssistantClient, the Ask
+ * anything else asked of the assistant (AskScreenModel, the Ask
  * screen's own). Why a line could not be done is said under the field,
  * in the planner's words or the app's, never in a toast.
  *
@@ -48,7 +49,8 @@ import kotlinx.serialization.json.intOrNull
  * (frequency_of, ctaf_of: the CTAF, else a UNICOM that is also the CTAF,
  * else MULTICOM's 122.9, AC 90-66C 9.6), never by this file.
  */
-class StripModel : ViewModel() {
+@HiltViewModel
+class StripModel @Inject constructor() : ViewModel() {
     /** A chip on a field's card: its label in capitals, and the words a
      *  screen reader says ("ATIS 124.8"). */
     data class RadioChip(val label: String, val words: String)
@@ -90,7 +92,7 @@ class StripModel : ViewModel() {
         plan: Plan,
         pilot: Pilot?,
         fix: OwnShip.Fix?,
-        assistant: AssistantClient,
+        assistant: AskScreenModel,
         context: AssistantContext,
         onOpen: (FieldScreen) -> String?,
     ) {
@@ -121,7 +123,7 @@ class StripModel : ViewModel() {
         plan: Plan,
         pilot: Pilot?,
         fix: OwnShip.Fix?,
-        assistant: AssistantClient,
+        assistant: AskScreenModel,
         context: AssistantContext,
         onOpen: (FieldScreen) -> String?,
     ): String? {
@@ -151,9 +153,8 @@ class StripModel : ViewModel() {
 
     /** A question put to the assistant as it is (the search's "Ask: …"),
      *  its answer shown as a card over the sheet's content. */
-    fun ask(question: String, assistant: AssistantClient, context: AssistantContext): String? {
-        // No model to ask here (AiOffered: no Gemini Nano, and the Claude
-        // features off): the line is said as not found, not sent anywhere.
+    fun ask(question: String, assistant: AskScreenModel, context: AssistantContext): String? {
+        // No model to ask here (AiOffered: no Gemini Nano): the line is said as not found, not sent anywhere.
         if (!AiOffered.known()) return "Nothing found for “$question”."
         assistant.ask(question, context)
         _state.update { it.copy(answerShown = true) }
@@ -162,14 +163,13 @@ class StripModel : ViewModel() {
 
     /** The route planned: one ident is the destination, from the route's
      *  departure, else the nearest field to the airplane, else the pilot's
-     *  home base (the account's, else the one given in the welcome). */
+     *  home airport (HomeAirport: the account's, else this phone's). */
     private suspend fun route(command: FieldCommand.Route, plan: Plan, pilot: Pilot?, fix: OwnShip.Fix?): String? {
         var dep = command.dep ?: plan.state.value.dep
         if (dep.isEmpty() && fix != null) {
             dep = runCatching { nearest(fix.lat, fix.lon) }.getOrNull() ?: ""
         }
-        if (dep.isEmpty()) dep = pilot?.homeBase?.trim()?.uppercase() ?: ""
-        if (dep.isEmpty()) dep = FlightChoices.of(plan.getApplication<Application>()).home.value ?: ""
+        if (dep.isEmpty()) dep = HomeAirport.mirrored(pilot?.homeBase, FlightChoices.of(plan.getApplication<Application>()).home.value) ?: ""
         if (dep.isEmpty()) return "Say where from too: \"C81 KDLH\", or turn on Show my airplane."
         if (dep == command.dest && command.stops.isEmpty()) return "${command.dest} is where you are. Say somewhere to fly to."
         plan.plan(dep, command.dest, command.stops)
@@ -177,10 +177,7 @@ class StripModel : ViewModel() {
     }
 
     /** The nearest field to a position, the planner's (/api/airports/nearest). */
-    private suspend fun nearest(lat: Double, lon: Double): String? {
-        val body = Planner.fetch("/api/airports/nearest", mapOf("lat" to lat.toString(), "lon" to lon.toString(), "limit" to "1"))
-        return Gateway.json.decodeFromString<NearestAirports>(body).airports.firstOrNull()?.ident
-    }
+    private suspend fun nearest(lat: Double, lon: Double): String? = Planner.nearest(lat, lon, limit = 1).firstOrNull()?.ident
 
     /** The cards of the route's fields, each asked once. */
     fun loadFields(idents: Collection<String>) {

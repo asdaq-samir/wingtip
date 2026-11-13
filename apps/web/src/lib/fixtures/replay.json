@@ -1,0 +1,22 @@
+{
+  "_note": "A recorded flight made ready to replay (the engine's replay_track, features/replay): a climb at 500 ft/min reported every 5 s in the transponder's 25 ft steps, then two minutes unheard, then level at 5,000 ft. The answer's gap and vertical speed are held in engine/facade/tests/replay.rs and apps/web/src/features/replay/track.test.ts.",
+  "climbThenGap": {
+    "input": {
+      "points": [
+        { "t": 1762790400, "lat": 45.0, "lon": -93.0, "alt_ft": 2000, "gs_kt": 90, "track_deg": 0 },
+        { "t": 1762790405, "lat": 45.002, "lon": -93.0, "alt_ft": 2050, "gs_kt": 90, "track_deg": 0 },
+        { "t": 1762790410, "lat": 45.004, "lon": -93.0, "alt_ft": 2075, "gs_kt": 90, "track_deg": 0 },
+        { "t": 1762790415, "lat": 45.006, "lon": -93.0, "alt_ft": 2125, "gs_kt": 90, "track_deg": 0 },
+        { "t": 1762790420, "lat": 45.008, "lon": -93.0, "alt_ft": 2175, "gs_kt": 90, "track_deg": 0 },
+        { "t": 1762790425, "lat": 45.01, "lon": -93.0, "alt_ft": 2200, "gs_kt": 90, "track_deg": 0 },
+        { "t": 1762790430, "lat": 45.012, "lon": -93.0, "alt_ft": 2250, "gs_kt": 90, "track_deg": 0 },
+        { "t": 1762790550, "lat": 45.06, "lon": -93.0, "alt_ft": 5000, "gs_kt": 100, "track_deg": 0 },
+        { "t": 1762790560, "lat": 45.064, "lon": -93.0, "alt_ft": 5000, "gs_kt": 100, "track_deg": 0 }
+      ]
+    },
+    "gapAfter": 1762790430,
+    "gapUntil": 1762790550,
+    "climbFpmNear": 500,
+    "levelFpm": 0
+  }
+}

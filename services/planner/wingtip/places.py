@@ -33,8 +33,9 @@ import numpy as np
 import requests
 from scipy.spatial import KDTree
 
+from .atomic import atomic_path
 from .config import DATA_DIR
-from .geo import _arc_nm, _unit_sphere, bearing_deg, distance_nm
+from .geo import _unit_sphere, bearing_deg, distance_nm
 from .retry import with_retries
 
 log = logging.getLogger(__name__)
@@ -99,10 +100,8 @@ def _row(row: dict) -> tuple[str, str] | None:
 def prepare(text_lines, out: Path = PLACES_PATH) -> int:
     """The national file's lines boiled down to PLACES_PATH; how many
     places were kept."""
-    out.parent.mkdir(parents=True, exist_ok=True)
     kept = 0
-    tmp = out.with_suffix(".tmp")
-    with open(tmp, "w", newline="", encoding="utf-8") as f:
+    with atomic_path(out) as tmp, open(tmp, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["kind", "name", "lat", "lon"])
         for row in csv.DictReader(text_lines, delimiter="|"):
@@ -117,7 +116,6 @@ def prepare(text_lines, out: Path = PLACES_PATH) -> int:
                 continue
             writer.writerow([*found, lat, lon])
             kept += 1
-    tmp.replace(out)
     return kept
 
 
@@ -174,20 +172,27 @@ def preload(path: Path = PLACES_PATH) -> None:
         _TABLE = _load(path)
 
 
+def loaded() -> dict | None:
+    """The places as loaded (preload, once a process); None before."""
+    return _TABLE
+
+
 def _nearest(table: dict, kind: str, lat: float, lon: float) -> tuple[str, float, float, float] | None:
     part = table[kind]
     if part["tree"] is None:
         return None
-    chord, i = part["tree"].query(_unit_sphere(lat, lon)[0])
-    return part["names"][i], float(_arc_nm(np.array(chord))), float(part["lat"][i]), float(part["lon"][i])
+    # The KD-tree's chord finds the nearest; the engine measures it, on
+    # WGS-84 like every other distance (wingtip.geo.nearest_neighbour_nm).
+    _, i = part["tree"].query(_unit_sphere(lat, lon)[0])
+    return part["names"][i], float(distance_nm(lat, lon, part["lat"][i], part["lon"][i])), float(part["lat"][i]), float(part["lon"][i])
 
 
 def _nearest_few(table: dict, kind: str, lat: float, lon: float, k: int) -> list[tuple[str, float]]:
     part = table[kind]
     if part["tree"] is None:
         return []
-    chords, indices = part["tree"].query(_unit_sphere(lat, lon)[0], k=min(k, len(part["names"])))
-    return [(part["names"][i], float(_arc_nm(np.array(c)))) for c, i in zip(np.atleast_1d(chords), np.atleast_1d(indices))]
+    _, indices = part["tree"].query(_unit_sphere(lat, lon)[0], k=min(k, len(part["names"])))
+    return [(part["names"][i], float(distance_nm(lat, lon, part["lat"][i], part["lon"][i]))) for i in np.atleast_1d(indices)]
 
 
 def checkpoint_name(kind: str, lat: float, lon: float, table: dict | None = None) -> str | None:

@@ -62,4 +62,4 @@ RUN useradd -m appuser
 RUN mkdir -p /live && chown appuser:appuser /live
 # The build fails here if wingtip's own dependencies or its extension do
 # not import, rather than each image that builds on this.
-RUN python -B -c "import wingtip_native, numpy, pandas, requests, cachetools, pyarrow.parquet, shapely.ops, shapefile, pyproj, pydantic_settings, scipy.spatial, pygeomag"
+RUN python -B -c "import wingtip_native, numpy, pandas, requests, cachetools, tenacity, pyarrow.parquet, shapely.ops, shapefile, pyproj, pydantic_settings, scipy.spatial, pygeomag, tzfpy"

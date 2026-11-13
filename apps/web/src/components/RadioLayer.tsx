@@ -17,8 +17,6 @@ import { altitudeWords, readbackCheck } from "../lib/readback";
 import { say } from "../lib/speech";
 import { useAnnounce } from "../lib/announce";
 import { TEXT } from "../lib/text";
-import { useAsk } from "../lib/ask/useAsk";
-import { claudeOnNow } from "../lib/subscription";
 import { openEmergency } from "../lib/emergencyStore";
 
 const capital = (words: string) => words.replace(/\b[a-z]/g, (ch) => ch.toUpperCase());
@@ -52,8 +50,7 @@ function CallActions({
   text: string;
   done: () => void;
   /** The pilot's own words from the map's microphone (RadioPill), not a
-   *  call heard on the radio: words that are no command the app knows
-   *  are offered to the assistant. */
+   *  call heard on the radio: an emergency said aloud opens at once. */
   own?: boolean;
 }) {
   const { directTo, fly, enter, route, nearest, showProcedure, planTo } = useRadioActions();
@@ -63,18 +60,9 @@ function CallActions({
   const [problem, setProblem] = useState<string | null>(null);
   /** What a chip brought, kept in the pill: a field's report. */
   const [note, setNote] = useState<string | null>(null);
-  // The question the Ask chip sent, and its answer as it comes (useAsk): read aloud as it ends, shown here meanwhile.
-  const [askedId, setAskedId] = useState<number | null>(null);
-  const asked = useAsk((s) => (askedId === null ? null : (s.turns.find((t) => t.id === askedId) ?? null)));
   const heard = callOf(text, null);
   const { clearance } = heard;
   const commands = useMemo(() => commandsOf(text), [text]);
-  // No command found and no clearance heard: a question for the assistant, where Claude is on (lib/subscription).
-  const askable = own && !commands.length && !heard.direct && !heardAny(clearance) && claudeOnNow();
-  const askIt = () => {
-    void useAsk.getState().ask(text, { speak: true });
-    setAskedId(useAsk.getState().turns.at(-1)?.id ?? null);
-  };
   const altitude = commands.find((c) => c.kind === "altitude");
   const procedure = commands.find((c) => c.kind === "procedure");
   const weather = commands.find((c) => c.kind === "weather");
@@ -315,28 +303,7 @@ function CallActions({
           </Button>
         )}
         {clearance.squawk && <span className={cn("font-semibold", TEXT.detail)}>Squawk {clearance.squawk}</span>}
-        {askable && !asked && (
-          <Button
-            size="sm"
-            variant="secondary"
-            className={cn(CHIP, "max-w-full")}
-            disabled={!!busy}
-            data-testid="radio-ask"
-            onClick={askIt}
-          >
-            <span className="truncate">Ask: “{text}”</span>
-          </Button>
-        )}
       </div>
-      {asked && (
-        <p
-          className={cn("pt-1 pr-2 tabular-nums whitespace-pre-wrap", asked.error ? "text-destructive-ink" : "", TEXT.note)}
-          role="status"
-          data-testid="radio-ask-answer"
-        >
-          {asked.status ? `${asked.status}…` : (asked.error ?? asked.answer)}
-        </p>
-      )}
       {note && (
         <p className={cn("pt-1 pr-2 font-mono", TEXT.note)} data-testid="radio-note">
           {note}
@@ -366,13 +333,12 @@ function ReadbackLine({ cleared, said }: { cleared: string; said: string }) {
   );
 }
 
+const WORDS = "h-auto min-w-0 flex-1 justify-start px-0 py-1 text-left font-normal whitespace-normal text-foreground";
 /**
- * Comms assist grown into a pill (pick A, 2026-11-02), its circle widened
- * (MapControls): the radio's level, "Listening to the radio…", then
- * "Heard: " and the words -- never the mic's look (features/voice, the
- * owner's split of 2026-11-10); at a pause or a second tap, its chips
- * (CallActions) and ✕. The Radio card, a tap on the words away.
- */
+ * Comms assist grown into a pill (pick A, 2026-11-02), its circle widened (MapControls): the radio's level,
+ * "Listening to the radio…", then "Heard: " and the words -- never the mic's look (features/voice, the owner's
+ * split of 2026-11-10); at a pause or a second tap, its chips (CallActions) and ✕, stock Buttons all. The Radio
+ * card, a tap on the words away: a ghost Button, its words wrapping in the text's colour. */
 export function RadioPill() {
   const pill = useAtcRadio((s) => s.pill)!;
   const input = useAtcRadio((s) => s.input);
@@ -400,9 +366,9 @@ export function RadioPill() {
   return (
     <div className="min-w-0 py-1 px-1" data-testid="radio-pill">
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className={cn("min-w-0 flex-1 py-1 text-left outline-none focus-visible:underline", TEXT.detail)}
+        <Button
+          variant="ghost"
+          className={cn(WORDS, TEXT.detail)}
           aria-label="Open the radio's log"
           data-testid="radio-pill-text"
           onClick={() => useAtcRadio.setState({ cardOpen: true, cardText: pill.text || null })}
@@ -413,7 +379,7 @@ export function RadioPill() {
           >
             {pill.text ? `Heard: ${pill.text}` : pill.error || lost || waiting}
           </span>
-        </button>
+        </Button>
         {!pill.listening && <CloseButton label="Put away" onClick={away} data-testid="radio-pill-close" />}
       </div>
       {/* A readback heard: how it matched, in place of the chips. */}

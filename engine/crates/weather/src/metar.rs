@@ -8,6 +8,8 @@
 //! holds the decoder to the AWC's own decoding of every report in its
 //! current cache and lists where they differ.
 
+use wingtip_core::units::{HPA_PER_INHG, KT_PER_M_S, M_PER_SM};
+
 /// A wind group: "27015G25KT", "VRB03KT", "00000KT", "27015MPS".
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct Wind {
@@ -45,12 +47,8 @@ pub struct Metar {
     pub sky_reported: bool,
 }
 
-/// Knots in a metre a second (WMO No. 306's MPS winds): 1 kt = 1852 m/h.
-const KT_PER_MPS: f64 = 3600.0 / 1852.0;
-/// Statute miles in a metre (5,280 ft of 0.3048 m).
-const SM_PER_M: f64 = 1.0 / 1609.344;
-/// Inches of mercury in a hectopascal (Q groups): 1 inHg = 33.8639 hPa.
-const INHG_PER_HPA: f64 = 1.0 / 33.8639;
+/// Statute miles in a metre, for visibility given in metres.
+const SM_PER_M: f64 = 1.0 / M_PER_SM;
 
 pub(crate) fn wind(group: &str) -> Option<Wind> {
     // A report is ASCII; a group that is not is no group (and is not cut
@@ -62,7 +60,7 @@ pub(crate) fn wind(group: &str) -> Option<Wind> {
         (b, 1.0)
     } else {
         let b = group.strip_suffix("MPS")?;
-        (b, KT_PER_MPS)
+        (b, KT_PER_M_S)
     };
     if body.len() < 5 {
         return None;
@@ -193,8 +191,8 @@ fn tenths(group: &str) -> Option<(f64, Option<f64>)> {
 }
 
 /// The bounds of the flight categories with the visibility known (AIM
-/// 7-1-7, "Categorical Outlooks", and AC 00-45H's flight categories; the
-/// worse of the two decides): LIFR a ceiling under 500 ft or under a mile;
+/// 7-1-7, "Categorical Ceiling and Visibility Conditions", and FAA-H-8083-
+/// 28B 3.4.2.14's flight categories; the worse of the two decides): LIFR a ceiling under 500 ft or under a mile;
 /// IFR under 1,000 or under 3; MVFR 1,000 to 3,000 ft or 3 to 5 miles
 /// inclusive; else VFR. No ceiling (None) is no limit.
 fn category_bounds(ceiling_ft: Option<f64>, visibility_sm: f64) -> &'static str {
@@ -415,7 +413,7 @@ pub fn parse(raw: &str) -> Option<Metar> {
                 inches = true;
             }
             _ if w.len() == 5 && w.starts_with('Q') && w[1..].bytes().all(|b| b.is_ascii_digit()) && !inches => {
-                m.altimeter_inhg = Some((w[1..].parse::<f64>().unwrap() * INHG_PER_HPA * 100.0).round() / 100.0);
+                m.altimeter_inhg = Some((w[1..].parse::<f64>().unwrap() / HPA_PER_INHG * 100.0).round() / 100.0);
             }
             _ => {}
         }

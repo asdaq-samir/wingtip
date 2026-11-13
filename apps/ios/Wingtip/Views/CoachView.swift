@@ -4,8 +4,7 @@ import SwiftUI
 /// pilot's ask: what is due and when (14 CFR 61.56, 61.57), what their
 /// debriefed flights show, and up to four sessions -- what, where, how
 /// long, and where it may count toward WINGS -- all the engine's
-/// (proficiency_plan), with a short paragraph and a line a session from
-/// the assistant. It opens on what to do; the currencies and the evidence
+/// (proficiency_plan). It opens on what to do; the currencies and the evidence
 /// come under it. Every figure is shown as the engine gave it. Laid out
 /// as Apple's Fitness Summary (docs/design/ios.md §10): a large title,
 /// the next lesson first with its one filled button, the trends of the
@@ -50,7 +49,7 @@ struct CoachView: View {
             VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 if let first = model.plan?.sessions.first {
                     Text(first.practise).font(WingtipType.card)
-                    Text(model.sessionLines[first.id] ?? CoachModel.sessionDetail(first)).font(WingtipType.detail).foregroundStyle(.secondary)
+                    Text(CoachModel.sessionDetail(first)).font(WingtipType.detail).foregroundStyle(.secondary)
                 } else {
                     Text("Your Next Lesson").font(WingtipType.card)
                     Text(model.making ? "Reading your logbook…" : "From your logbook and the fields near \(home)")
@@ -114,14 +113,12 @@ struct CoachView: View {
                 }
             }
         }
-        wordsSection
         Section("Sessions") {
             if plan.sessions.isEmpty {
                 Text("Nothing to practise for now: every currency is good past the reminders, and no debrief shows a weak area.")
                     .foregroundStyle(.secondary)
             }
-            let lines = model.sessionLines
-            ForEach(plan.sessions, id: \.id) { s in sessionRow(s, line: lines[s.id]) }
+            ForEach(plan.sessions, id: \.id) { s in sessionRow(s) }
         }
         Section("What Is Due") {
             ForEach(plan.due, id: \.key) { d in
@@ -148,25 +145,13 @@ struct CoachView: View {
         }
     }
 
-    // The words come after the plan; with none, the plan stands as it is.
-    @ViewBuilder private var wordsSection: some View {
-        if model.wording {
-            Section { Text("Putting your plan into words…").font(WingtipType.prose).foregroundStyle(.secondary) }
-        } else if let words = model.words, !words.sentences.isEmpty {
-            Section { Text(words.sentences.map(\.text).joined(separator: " ")).font(WingtipType.prose) }
-        } else if let why = model.wordsProblem {
-            Section { Text(why).font(WingtipType.prose).foregroundStyle(.secondary) }
-        }
-    }
-
-    private func sessionRow(_ s: CoachSession, line: String?) -> some View {
+    private func sessionRow(_ s: CoachSession) -> some View {
         VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
             Text(s.practise).font(WingtipType.row)
             Text(CoachModel.sessionDetail(s)).font(WingtipType.note).foregroundStyle(.secondary)
             if let wings = s.wings {
                 Text("May count toward WINGS: \(wings.area), ACS \(wings.acs)").font(WingtipType.note).foregroundStyle(.secondary)
             }
-            if let line { Text(line).font(WingtipType.detail) }
         }
     }
 

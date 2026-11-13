@@ -86,12 +86,17 @@ final class AirportAnnotation: NSObject, MKAnnotation {
 /// field; the symbol grows a little closer in (SectionalSymbol.scale).
 final class AirportMarkView: MKAnnotationView {
     static let reuse = "airport"
+    /// The symbol, the ident, the ring and the weather, moved together
+    /// within the view where a far barb widens it (`show`).
+    private let content = UIView()
     private let symbol = UIImageView()
     private let label = UILabel()
     /// The ring round the field whose card is open (SelectedHalo).
     private let halo = SelectedHalo()
-    /// The wind, the station model's lines and the ↓ (FieldWeatherLayer).
+    /// The barb, the station model's lines and the ↓ (FieldWeatherLayer).
     private let weatherLayer = FieldWeatherLayer()
+    /// The mark itself within the view, symbol and ident: the tap's area.
+    private var markFrame = CGRect.zero
     /// Settings' Airport Weather, the map's zoom and its heading, as the
     /// coordinator last told them (`weather(_:zoom:heading:on:)`).
     static var choice = AirportWeatherChoice()
@@ -117,10 +122,12 @@ final class AirportMarkView: MKAnnotationView {
         // dark appearance (NightPalette.halo), as the web map's LABEL_HALO.
         label.haloFollowing(self)
         halo.place(round: CGPoint(x: Self.box / 2, y: Self.height / 2))
-        layer.addSublayer(halo)
-        layer.addSublayer(weatherLayer)
-        addSubview(symbol)
-        addSubview(label)
+        content.layer.addSublayer(halo)
+        content.layer.addSublayer(weatherLayer)
+        content.addSubview(symbol)
+        content.addSubview(label)
+        content.isUserInteractionEnabled = false
+        addSubview(content)
         canShowCallout = false
         // A tap opens the field's card, so VoiceOver has it as a button
         // named with its weather, which the halo's colour alone would not
@@ -144,11 +151,12 @@ final class AirportMarkView: MKAnnotationView {
         show()
     }
 
-    /// The tap's area 44 points tall round a mark drawn 30: the view's
-    /// own frame is what MapKit collides, and a taller one dropped more of
-    /// its neighbours.
+    /// The tap's area 44 points tall round a mark drawn 30, the symbol
+    /// and the ident only: the view's own frame is what MapKit collides,
+    /// a far barb's room in it too, and a taller one dropped more of its
+    /// neighbours.
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        bounds.insetBy(dx: 0, dy: -(44 - Self.height) / 2).contains(point)
+        markFrame.insetBy(dx: 0, dy: -(44 - Self.height) / 2).contains(point)
     }
 
     /// The symbol drawn at a zoom's size (SectionalSymbol.scale).
@@ -160,20 +168,35 @@ final class AirportMarkView: MKAnnotationView {
         guard let field = annotation as? AirportAnnotation else { return }
         let ink = SectionalInk.airport(towered: field.towered)
         let choice = Self.choice
-        symbol.image = SectionalSymbol.image(towered: field.towered, kind: field.kind, use: field.use, category: field.category, style: choice.style)
-        label.text = field.ident
+        // A stale report's halo grey (FlightCategory's no-report colour),
+        // its age beside the ident.
+        let stale = field.weather?.heardAgo
+        symbol.image = SectionalSymbol.image(towered: field.towered, kind: field.kind, use: field.use,
+                                             category: stale != nil && field.category != nil ? "STALE" : field.category, style: choice.style)
+        label.text = stale.map { "\(field.ident) · \($0)" } ?? field.ident
         label.textColor = ink
         label.sizeToFit()
         let width = Self.box + Self.gap + label.bounds.width
-        frame.size = CGSize(width: width, height: Self.height)
+        let mark = CGRect(x: 0, y: 0, width: width, height: Self.height)
+        content.frame.size = mark.size
         label.frame.origin = CGPoint(x: Self.box + Self.gap, y: (Self.height - label.bounds.height) / 2)
+        let middle = CGPoint(x: Self.box / 2, y: Self.height / 2)
+        let room = weatherLayer.show(field.weather, choice: choice, station: choice.station(zoom: Self.zoom), far: FarBarb.scale(zoom: Self.zoom),
+                                     heading: Self.heading, middle: middle,
+                                     symbolRadius: SectionalSymbol.reach(kind: field.kind, use: field.use, halo: field.category != nil && choice.style == .halo),
+                                     linesAt: CGPoint(x: Self.box + Self.gap, y: label.frame.maxY - 1))
+        // The view the mark and its far barb's room, so MapKit's collision
+        // has a barb give way to another's, the lesser field's, as the
+        // web's far barbs give way (AirportWeatherGl's icon-allow-overlap
+        // off), rather than piling up; the mark within it moved to suit.
+        let all = room.map { mark.union($0) } ?? mark
+        let shift = CGPoint(x: -all.minX, y: -all.minY)
+        frame.size = all.size
+        content.frame.origin = shift
+        markFrame = mark.offsetBy(dx: shift.x, dy: shift.y)
         // The symbol's middle on the field, the ident running off to its
         // right.
-        centerOffset = CGPoint(x: width / 2 - Self.box / 2, y: 0)
-        let middle = CGPoint(x: Self.box / 2, y: Self.height / 2)
-        weatherLayer.show(field.weather, choice: choice, station: choice.station(zoom: Self.zoom), heading: Self.heading, middle: middle,
-                          symbolRadius: SectionalSymbol.reach(kind: field.kind, use: field.use, halo: field.category != nil && choice.style == .halo),
-                          linesAt: CGPoint(x: Self.box + Self.gap, y: label.frame.maxY - 1))
+        centerOffset = CGPoint(x: all.width / 2 - (middle.x + shift.x), y: all.height / 2 - (middle.y + shift.y))
         accessibilityLabel = field.spoken
         // MapKit drops the lesser of two marks that collide, by these, as
         // the web map's symbol collision does (glOverlays' airportMarksLayer:
@@ -187,10 +210,11 @@ final class AirportMarkView: MKAnnotationView {
     }
 
     /// The weather drawn again on every mark in view, as a setting, the
-    /// zoom's side of the station model's or the map's heading changes;
-    /// nothing done while all three are the same.
+    /// zoom's side of the station model's, the far barbs' size or the
+    /// map's heading changes; nothing done while all are the same.
     static func weather(_ choice: AirportWeatherChoice, zoom: Double, heading: Double, on map: MKMapView) {
         let station = choice.station(zoom: zoom) != Self.choice.station(zoom: Self.zoom)
+            || FarBarb.scale(zoom: zoom) != FarBarb.scale(zoom: Self.zoom)
         let turned = abs(heading - Self.heading) > 0.5
         let changed = choice != Self.choice
         Self.zoom = zoom

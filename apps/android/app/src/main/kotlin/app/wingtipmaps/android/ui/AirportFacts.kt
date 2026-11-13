@@ -16,7 +16,7 @@ import app.wingtipmaps.android.engine.generated.windCalm
  * where there is a start: from own ship, else "From KMSN" (`fromIdent`),
  * but not from the field itself: its own card, the departure, says no
  * "From KMSN 0 nm" with no fix to measure from. The METAR's wind is from the
- * true direction (AC 00-45H, the METAR's wind group). Nothing is worked
+ * true direction (FAA-H-8083-28B 24.4.3.5, the METAR's wind group). Nothing is worked
  * out here: with no airplane there is no time, and with nowhere to start
  * no distance. A rule that fails leaves its figure out.
  */

@@ -10,7 +10,6 @@
 
     <!-- The one search over the sheet (the owner, 2026-11-09), "Airplane"
          the FAA's word (decision 0020). -->
-    <string name="airport">Airport</string>
     <string name="airplane">Airplane</string>
     <string name="settings">Settings</string>
     <!-- The bar's placeholder, one line at every font scale (Material's
@@ -26,7 +25,7 @@
     <string name="voice_radio_busy">The radio is being listened to; stop it to ask by voice.</string>
     <string name="said_clear_search">Clear the search</string>
     <string name="nothing_heard">Nothing was heard.</string>
-    <string name="allow_microphone">Allow the microphone to say it.</string>
+    <string name="allow_microphone">Allow the microphone to ask by voice. What you say is recognised on this phone and never leaves it.</string>
     <string name="your_flight">Your Flight</string>
     <string name="no_flight">No flight yet</string>
     <string name="no_flight_line">Search for where to, or tap to plan one.</string>
@@ -45,8 +44,6 @@
     <string name="waypoint_direct">Direct to it</string>
     <string name="plan_a_route_first">Plan a route first to add %1$s.</string>
     <string name="fly_this_airplane">Fly This Airplane</string>
-    <string name="add_favorite">Add to Favorites</string>
-    <string name="remove_favorite">Remove from Favorites</string>
     <string name="add_a_stop">Add a Stop</string>
     <string name="nav_log">Nav Log</string>
     <string name="route_depart">Depart</string>
@@ -62,7 +59,6 @@
     <string name="section_runways">Runways</string>
     <string name="taf">TAF</string>
     <string name="elevation">Elevation</string>
-    <string name="no_notams">No NOTAMs for this field.</string>
     <string name="runway_closed">Closed</string>
     <string name="runway_lighted">Lighted</string>
     <string name="picture_aerial">Aerial photo</string>
@@ -77,15 +73,6 @@
     <string name="wind_calm">Calm</string>
     <string name="fly_here_in">Fly Here · %1$s</string>
     <string name="fact_from">From %1$s</string>
-    <!-- The field's alert card and its NOTAMs' times (UTC, AIM 5-1-3). -->
-    <string name="field_alerts_open">Opens %1$s\'s NOTAMs</string>
-    <string name="field_alert_tfr">TFR</string>
-    <string name="field_alert_closed">Closed</string>
-    <string name="notam_now">In effect now</string>
-    <string name="notam_now_until">In effect now, until %1$s</string>
-    <string name="notam_from">From %1$s</string>
-    <string name="notam_from_until">%1$s to %2$s</string>
-    <string name="notams_tfrs_unchecked">TFRs couldn\'t be checked just now.</string>
 
     <!-- Sheets and their controls (decision 0015). -->
     <string name="close">Close</string>
@@ -142,7 +129,7 @@
     <string name="own_ship_denied">Your airplane is not shown: location is off for Wingtip Maps. Allow it here or in Settings.</string>
     <string name="ask">Ask</string>
     <string name="ask_about_flight">Ask About the Flight</string>
-    <string name="ask_help">The figures are the planner\'s; the assistant puts them in words and shows what it read.</string>
+    <string name="ask_help">The figures are the app\'s; Gemini Nano puts them in words on this phone and shows what it read.</string>
 
     <!-- The flight plan. -->
     <string name="departure">Departure</string>
@@ -238,13 +225,11 @@
     <string name="layout_plan">Plan</string>
     <string name="layout_strip">Strip</string>
     <string name="theme">Theme</string>
-    <string name="account">Account</string>
     <string name="sign_out">Sign Out</string>
     <string name="email">Email</string>
     <string name="email_sign_in_link">Email Me a Sign-In Link</string>
     <string name="check_email">Check your email: the link opens the app and signs you in.</string>
     <string name="coming_up">Coming Up</string>
-    <string name="map_settings">Map Settings</string>
     <!-- The radar and satellite loop (map/WeatherLoopBar). -->
     <string name="loop_kind">Radar and Satellite</string>
     <string name="loop_speed">Loop Speed</string>
@@ -259,20 +244,20 @@
     <string name="layer_tac">Terminal Area Charts</string>
     <string name="layer_private">Private Fields</string>
     <string name="layer_military">Military Fields</string>
+    <string name="layer_plates">Approach Plates</string>
     <string name="airport_weather">Airport Weather</string>
     <string name="airport_weather_off">Off</string>
-    <string name="airport_weather_halo">Halo</string>
-    <string name="airport_weather_dot">Dot</string>
-    <string name="airport_weather_station">Station</string>
-    <string name="airport_weather_station_close">Station Model When Zoomed In</string>
-    <string name="airport_weather_wind_arrows">Wind Arrows</string>
-    <string name="airport_weather_worse">Getting Worse by Arrival</string>
+    <string name="airport_weather_category">Flight Category</string>
+    <string name="airport_weather_wind">With Wind</string>
+    <string name="airport_weather_station">Station Model</string>
     <string name="speak_alerts">Speak Alerts Ahead</string>
     <string name="passenger_briefing">Passenger Briefing</string>
     <string name="passengers_briefed">Briefed: %1$d of %2$d</string>
     <string name="the_flight">The Flight</string>
     <string name="server">Server</string>
     <string name="cancel">Cancel</string>
+    <string name="sign_in_link_title">Sign In With This Link?</string>
+    <string name="sign_in_link_yes">Sign In</string>
     <!-- The account's own data (account/): given back as a file, or deleted. -->
     <string name="export_my_data">Export My Data</string>
     <string name="export_my_data_line">Everything kept for your account, as one JSON file</string>
@@ -288,6 +273,9 @@
     <string name="about_chart_edition">Chart Edition</string>
     <string name="about_cycle_packs">Cycle Packs</string>
     <string name="about_planning_aid">A Planning Aid</string>
+    <!-- The first launch's notice (about/PlanningAidNotice), the terms' heading. -->
+    <string name="planning_aid_title">A Planning Aid, Not for Navigation</string>
+    <string name="planning_aid_accept">I Understand</string>
     <string name="about_planning_aid_text">Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).</string>
     <string name="about_credits">Credits</string>
     <string name="about_legal">Legal</string>
@@ -295,7 +283,7 @@
     <string name="about_terms">Terms of Use</string>
     <string name="about_support">Support</string>
     <string name="about_demo_flight">Demo Flight</string>
-    <string name="account_and_settings">Account and settings</string>
+    <string name="account_and_settings">You and your account</string>
 
     <!-- Live reports from SWIM on the airport and airspace cards (live/). -->
     <string name="live_programs">Ground Stops and Delays</string>
@@ -368,7 +356,6 @@
     <string name="when_to_go_no_go">No hour with nothing against it before %1$s.</string>
     <string name="when_to_go_leaving">%1$s leaving %2$s</string>
     <!-- The pilot's personal minimums (pilot/) and the flight's choices (plan/). -->
-    <string name="personal_minimums">Personal Minimums</string>
     <string name="minimum_off">Off</string>
     <string name="minimum_ceiling">Ceiling</string>
     <string name="minimum_visibility">Visibility</string>
@@ -415,8 +402,6 @@
     <string name="coach_home_none">your home base</string>
     <string name="coach_making">Reading your logbook…</string>
     <string name="coach_reminders">Reminders</string>
-    <string name="coach_wording">Putting your plan into words…</string>
-    <string name="coach_no_words">No words for now: %1$s</string>
     <string name="coach_sessions">Sessions</string>
     <string name="coach_nothing">Nothing to practise for now: every currency is good past the reminders, and no debrief shows a weak area.</string>
     <string name="coach_due">What Is Due</string>
@@ -452,7 +437,7 @@
     <string name="not_a_flight">Not a Flight to Log</string>
     <string name="try_again">Try Again</string>
     <!-- Add from a Photo (documents/): a handbook page or a logbook page
-         read by the assistant and checked by the engine, every item
+         read on the phone and checked by the engine, every item
          confirmed by the pilot before anything is kept. -->
     <string name="add_from_photo">Add from a Photo</string>
     <string name="photo_line_airplane">Cruise, climb and fuel figures from the handbook\'s page</string>
@@ -485,44 +470,19 @@
         <item quantity="other">Log %1$d Flights</item>
     </plurals>
 
-    <!-- The welcome, once per install (welcome/): one page a step, Skip on
-         each, the system's permission asks only after Allow. -->
-    <string name="welcome">Welcome</string>
-    <string name="welcome_skip">Skip</string>
-    <string name="welcome_next">Next</string>
-    <string name="welcome_airplane">Your Airplane</string>
-    <string name="welcome_airplane_line">Pick the one you fly for times, fuel and headings, or plan with no airplane.</string>
-    <string name="welcome_home">Home Airport</string>
-    <string name="welcome_home_line">Where your flights usually start. You can leave it empty.</string>
-    <string name="welcome_home_is">Home: %1$s</string>
-    <string name="welcome_rules">VFR or IFR</string>
-    <string name="welcome_rules_line">How you usually fly. Change it any time in the plan.</string>
-    <string name="welcome_location">Location</string>
-    <string name="welcome_location_line">Wingtip plans from where you are and shows your airplane on the chart.</string>
-    <string name="welcome_notifications">Notifications</string>
-    <string name="welcome_notifications_line">Wingtip tells you when something on your route changes: a TFR, the weather turning.</string>
-    <string name="welcome_finish">Ready to Fly</string>
-    <string name="welcome_finish_line">See a whole flight first, Madison (KMSN) to Oshkosh (KOSH), with its route, nav log and Brief, or plan your own.</string>
-    <string name="welcome_sample">Open Sample Flight</string>
-    <string name="welcome_own">Plan My Own</string>
-    <string name="welcome_again">Show Welcome Again</string>
+    <!-- Emergency and Nearest worked out from the cycle packs, the planner out of reach (PhoneFields). -->
+    <string name="from_this_phone">From this phone, without weather</string>
+    <!-- Start Flight, at flying speed (flight/StartFlightAsk): the location service only on this tap. -->
+    <string name="start_flight_title">Start Flight?</string>
+    <string name="start_flight_line">You\'re at flying speed. Start Flight keeps your position, the alerts ahead and the path flown going with the screen off until you land, with a notification while it does.</string>
+    <string name="start_flight">Start Flight</string>
+    <!-- The map's grey weather marks, their age in the engine's words (WeatherAge). -->
+    <string name="weather_marks_age">Airport weather: %1$s</string>
     <string name="microphone">Microphone</string>
     <string name="loading">Loading</string>
-    <string name="microphone_line">Wingtip listens to the radio to write down your clearance. Speech is recognised on this phone and never leaves it.</string>
+    <!-- What the microphone is for, both uses named (store audit S1): the radio and voice questions. -->
+    <string name="microphone_line">Wingtip listens to the radio to write down your clearance, and hears the questions you ask it by voice. Speech is recognised on this phone and never leaves it.</string>
     <!-- The trip planner (the web's features/tripPlanner words). -->
-    <string name="trip_chip">Plan a trip…</string>
-    <string name="trip_title">Plan a Trip</string>
-    <string name="trip_describe">Describe the trip</string>
-    <string name="trip_send">Plan the trip</string>
-    <string name="trip_stop">Stop</string>
-    <string name="trip_close">Close the trip planner</string>
-    <string name="trip_leave">Leave %1$s</string>
-    <string name="trip_back">Back %1$s</string>
-    <string name="trip_land">land %1$s</string>
-    <string name="trip_window">in the go window %1$s–%2$s</string>
-    <string name="trip_use">Use this plan</string>
-    <string name="trip_use_return">Use return leg</string>
-    <string name="trip_loaded">Loaded</string>
     <!-- Ready to fly (ready/): the engine's own lines are shown as sent. -->
     <string name="ready_all">All Checks</string>
     <string name="ready_fewer">Fewer</string>
@@ -550,4 +510,15 @@
     <string name="share_route">Share the Route</string>
     <string name="share_include_tail">Include N-number %1$s</string>
     <string name="share_send">Share the flight</string>
+    <!-- An approach plate on the map and its card (plates/PlateCard). -->
+    <string name="plate_hide">Hide Plate</string>
+    <string name="plate_full_screen">View Full Screen</string>
+    <string name="plate_annotations">Show Annotations</string>
+    <string name="plate_invert">Invert Plate Colors</string>
+    <string name="plate_opacity">Plate transparency</string>
+    <string name="plate_clear">Clear</string>
+    <string name="plate_solid">Solid</string>
+    <string name="plate_no_page">The FAA\'s page for this plate could not be had.</string>
+    <string name="plate_show_on_map">Show on Map</string>
+    <string name="plate_not_placed">This plate can\'t be placed on the map.</string>
 </resources>

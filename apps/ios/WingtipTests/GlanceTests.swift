@@ -7,7 +7,7 @@ import Testing
 /// the planner's answer as GoNoGoTests shapes it.
 struct GlanceTests {
     private func answer(_ json: String = GoNoGoTests.answer) throws -> GoNoGoAnswer {
-        try Planner.snakeCase.decode(GoNoGoAnswer.self, from: Data(json.utf8))
+        try Planner.json.decode(GoNoGoAnswer.self, from: Data(json.utf8))
     }
 
     @Test func atMostThreeLinesWorstFirstEachOneSentence() throws {

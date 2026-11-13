@@ -33,14 +33,15 @@ data class CopilotFlight(
 ) {
     companion object {
         /** The plan's flight, once its nav log is whole, under the rules
-         *  it was planned by; the phone's plan has no alternate yet. */
+         *  it was planned by, with the alternate its nav log flies on to
+         *  (PlanAlternate, under IFR). */
         fun of(plan: Plan.State, passengers: Boolean = false): CopilotFlight? {
             val course = plan.course ?: return null
             if (!plan.routed || course.courseLine.size < 2) return null
             val totals = plan.totals
             val ete = totals?.eteMin
             return CopilotFlight(
-                dest = plan.dest, alternate = null, rules = plan.rules.uppercase(), line = course.courseLine,
+                dest = plan.dest, alternate = plan.totals?.alternate?.ident, rules = plan.rules.uppercase(), line = course.courseLine,
                 plannedGsKt = if (totals != null && ete != null && ete > 0) totals.distanceNm / (ete / 60) else null,
                 tasKt = plan.legs.firstNotNullOfOrNull { it.tasKt },
                 burnGph = plan.legs.firstNotNullOfOrNull { it.fuelBurnGph },

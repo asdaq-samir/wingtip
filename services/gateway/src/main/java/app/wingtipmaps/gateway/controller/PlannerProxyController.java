@@ -1,8 +1,7 @@
 package app.wingtipmaps.gateway.controller;
 
-import app.wingtipmaps.gateway.domain.PaidFeature;
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.service.PilotService;
-import app.wingtipmaps.gateway.service.SubscriptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,10 +13,7 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.EnumMap;
-import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -39,13 +35,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
  * arrives here, where the session already exists and one set of rules
  * applies.
  *
- * <p>The assistant service (services/assistant) sits behind the same
- * door: every Claude call -- the assistant, the narrative, the words, the
- * checkpoint notes, the mock oral -- is asked at the same
- * {@code /api/planner/...} address as before and sent there instead, after
- * the same subscription and allowance checks. Which routes there are, and
- * what each needs here, the two services say in their own OpenAPI
- * documents ({@link UpstreamRoutes}).
+ * <p>Which routes there are, and what each needs here, the planner says
+ * in its own OpenAPI document ({@link UpstreamRoutes}).
  *
  * <p>Responses are piped rather than buffered, by {@link StreamingProxy},
  * which also owns the pinned HTTP/1.1 client and the error shape.
@@ -65,20 +56,17 @@ public class PlannerProxyController {
 
     private static final StreamingProxy.Upstream PLANNER =
             new StreamingProxy.Upstream("planner service", "planner service unreachable", "planner service timed out");
-    private static final StreamingProxy.Upstream ASSISTANT = new StreamingProxy.Upstream(
-            "assistant service", "assistant service unreachable", "assistant service timed out");
 
     /** The largest body forwarded on any POST. The biggest sent is a flown
      *  track for its debrief: a three-hour flight logged once a second is
      *  about a megabyte. A String @RequestBody read whatever was sent
      *  before anything here could look, on routes open to anyone. A route
-     *  may say less (x-gateway's bodyLimit): the words and the narrative,
-     *  whose every byte is prompt text a billed Claude call reads. */
+     *  may say less (x-gateway's bodyLimit). */
     static final int BODY_LIMIT = 4 * 1024 * 1024;
 
     /**
-     * Every planner and assistant endpoint the browser may reach, and
-     * nothing else, as the two services' documents mark them.
+     * Every planner endpoint the browser may reach, and nothing else, as
+     * the planner's document marks them.
      *
      * <p>Forwarding {@code /**} whole made every route the planner ever
      * grew public the day it was added, its own API docs included, and
@@ -95,60 +83,17 @@ public class PlannerProxyController {
 
     private final StreamingProxy proxy;
     private final String plannerBaseUrl;
-    private final String assistantBaseUrl;
     private final PilotService pilots;
-    private final SubscriptionService subscriptions;
 
-    /** A day's uses of one paid feature, per pilot (or per address, where
-     *  nobody is signed in), and what the 429 past it says. */
-    private record Allowance(SlidingWindowLimiter limiter, int perDay, String used, String still) {
-        Allowance(int perDay, String used, String still) {
-            this(new SlidingWindowLimiter(Duration.ofDays(1)), perDay, used, still);
-        }
+    @Autowired
+    public PlannerProxyController(StreamingProxy proxy, AppProperties app, PilotService pilots) {
+        this(proxy, app.planner().baseUrl(), pilots);
     }
 
-    /** Each paid feature's daily allowance, counted on its own: each use
-     *  is a Claude call this app pays for, and a signed-in session could
-     *  otherwise ask for them without end. The month's cap
-     *  (SubscriptionService) bounds a month; this bounds a runaway day.
-     *  The mock oral is a developer's and has none. */
-    private final Map<PaidFeature, Allowance> allowances;
-
-    public PlannerProxyController(
-            StreamingProxy proxy,
-            @Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl,
-            @Value("${assistant-service.base-url:http://assistant:8000}") String assistantBaseUrl,
-            PilotService pilots,
-            SubscriptionService subscriptions,
-            @Value("${app.paid-calls.per-day:40}") int paidCallsPerDay,
-            @Value("${app.paid-calls.assistant-per-day:20}") int assistantPerDay,
-            @Value("${app.paid-calls.words-per-day:150}") int wordsPerDay) {
+    public PlannerProxyController(StreamingProxy proxy, String plannerBaseUrl, PilotService pilots) {
         this.proxy = proxy;
         this.plannerBaseUrl = plannerBaseUrl.replaceAll("/+$", "");
-        this.assistantBaseUrl = assistantBaseUrl.replaceAll("/+$", "");
         this.pilots = pilots;
-        this.subscriptions = subscriptions;
-        this.allowances = new EnumMap<>(Map.of(
-                PaidFeature.CHECKPOINT_NOTES,
-                        new Allowance(
-                                paidCallsPerDay,
-                                "checkpoint-note generations used",
-                                "Notes already written still show; more tomorrow."),
-                PaidFeature.NARRATIVE,
-                        new Allowance(
-                                paidCallsPerDay,
-                                "AI narratives used",
-                                "The nav log and briefing still work; narratives are back tomorrow."),
-                PaidFeature.ASSISTANT,
-                        new Allowance(
-                                assistantPerDay,
-                                "questions to the assistant",
-                                "The plan and the Brief still work; the assistant is back tomorrow."),
-                PaidFeature.WORDS,
-                        new Allowance(
-                                wordsPerDay,
-                                "readings in words",
-                                "The Brief's figures still show in full; the words are back tomorrow.")));
     }
 
     @Operation(
@@ -177,7 +122,7 @@ public class PlannerProxyController {
         // would have read all of it before this method could look.
         byte[] bytes = request.getInputStream().readNBytes(BODY_LIMIT + 1);
         if (bytes.length > BODY_LIMIT) {
-            return StreamingProxy.error(
+            throw StreamingProxy.problem(
                     413, "a request to the planner is at most " + (BODY_LIMIT / 1024 / 1024) + " MB");
         }
         return forward(
@@ -196,38 +141,15 @@ public class PlannerProxyController {
         String path = UpstreamRoutes.upstreamPath(request);
         UpstreamRoutes.Route route = routes.find(method, path).orElse(null);
         if (route == null) {
-            return StreamingProxy.error(404, "no such planner endpoint: " + method + " " + path);
+            throw StreamingProxy.problem(404, "no such planner endpoint: " + method + " " + path);
         }
         if (route.bodyLimit() != null
                 && body != null
                 && body.getBytes(StandardCharsets.UTF_8).length > route.bodyLimit()) {
-            return StreamingProxy.error(
+            throw StreamingProxy.problem(
                     413, "a request to " + path + " is at most " + (route.bodyLimit() / 1024) + " KB");
         }
-        PaidFeature paid = route.paid();
-        if (paid != null) {
-            // The subscription (and app.claude-features) before the day's
-            // allowance, so a refusal for want of one spends none of it.
-            var refused =
-                    subscriptions.refusal(SecurityContextHolder.getContext().getAuthentication(), paid);
-            if (refused.isPresent()) {
-                return StreamingProxy.error(
-                        refused.get().status(), refused.get().detail());
-            }
-            Allowance allowance = allowances.get(paid);
-            if (allowance != null
-                    && !allowance
-                            .limiter()
-                            .allow(SlidingWindowLimiter.callerOf(request), allowance.perDay(), Instant.now())) {
-                return StreamingProxy.error(
-                        429,
-                        "That is today's " + allowance.perDay() + " " + allowance.used() + ". " + allowance.still());
-            }
-        }
-        // Every Claude call to the assistant service, everything else to
-        // the planner: the same rules above for both, one address for the apps.
-        boolean toAssistant = route.upstream() == UpstreamRoutes.Upstream.ASSISTANT;
-        URI target = URI.create((toAssistant ? assistantBaseUrl : plannerBaseUrl) + path + query(request));
+        URI target = URI.create(plannerBaseUrl + path + query(request));
 
         HttpRequest.BodyPublisher publisher = body == null
                 ? HttpRequest.BodyPublishers.noBody()
@@ -249,9 +171,17 @@ public class PlannerProxyController {
         if (route.range() && range != null) {
             upstreamBuilder.header(HttpHeaders.RANGE, range);
         }
+        // An answer the same for every pilot (x-gateway's cache) may carry
+        // an ETag (the TFRs' list): the copy the browser holds is named to
+        // the upstream, so an unchanged one comes back a 304 with no body
+        // rather than the whole list again.
+        String ifNoneMatch = request.getHeader(HttpHeaders.IF_NONE_MATCH);
+        if (route.cache() && ifNoneMatch != null) {
+            upstreamBuilder.header(HttpHeaders.IF_NONE_MATCH, ifNoneMatch);
+        }
         HttpRequest upstream = upstreamBuilder.build();
 
-        return proxy.exchange(toAssistant ? ASSISTANT : PLANNER, upstream, response -> {
+        return proxy.exchange(PLANNER, upstream, response -> {
             ResponseEntity.BodyBuilder builder = StreamingProxy.unbuffered(ResponseEntity.status(response.statusCode())
                     .header(HttpHeaders.CONTENT_TYPE, StreamingProxy.contentTypeOf(response)));
             // Forwarded for the chart tiles, the airport diagrams and the
@@ -279,6 +209,13 @@ public class PlannerProxyController {
                         }
                     }
                 });
+                // Its ETag, on the answer and on a 304 (whose status is
+                // passed as it came), for the browser to name next time.
+                if (!route.headers().contains(HttpHeaders.ETAG)) {
+                    response.headers()
+                            .firstValue(HttpHeaders.ETAG)
+                            .ifPresent(value -> builder.header(HttpHeaders.ETAG, value));
+                }
             }
             // What the route passes on as it came (x-gateway's headers):
             // the airport index's gzip encoding, the ForeFlight pack's file

@@ -138,7 +138,7 @@ export default function FlightLine({
     // the pilot's ask: the strip keeps the figures, as soon as there are
     // any, and with none yet their names over dashes -- it keeps its
     // place, as the panel's controls do.
-    <div className="@container/figures relative" data-slot="section-summary" data-tip="flight-line">
+    <div className="@container/figures relative" data-slot="section-summary">
       {/* Each figure centred in its column, at the owner's ask ("Can the
           calculations be center aligned?"), as FigureStrip's are. Two by
           two where the strip is under 16 rem wide, which with every rem
@@ -234,26 +234,28 @@ export default function FlightLine({
                   </ResponsivePopoverContent>
                 </ResponsivePopover>
               ) : f.name === "To" && stops && !local ? (
-                <button
-                  type="button"
+                <Button
+                  variant="link"
+                  size="inline"
                   onClick={() => setToDestination(!toDestination)}
                   data-testid="to-toggle"
                   aria-label={`${f.said}: show the ${toDestination ? "next stop" : "destination"}`}
-                  className="relative inline-flex max-w-full text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+                  className="relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
                   <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
                     {f.value}
                   </span>
-                </button>
+                </Button>
               ) : f.name === "Dist" && !local && !flown ? (
                 // The distance opens the nav log it is the sum of, leg by
                 // leg (tap what you see, docs/navigation.md).
-                <button
-                  type="button"
+                <Button
+                  variant="link"
+                  size="inline"
                   onClick={() => wantScreen("navlog")}
                   data-testid="dist-navlog"
                   aria-label={`${seen(f)}, ${f.said}: open the nav log`}
-                  className="relative inline-flex max-w-full items-baseline text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+                  className="relative max-w-full items-baseline after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
                   <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
                     {f.value}
@@ -264,19 +266,20 @@ export default function FlightLine({
                       {f.unit}
                     </span>
                   )}
-                </button>
+                </Button>
               ) : (f.name === "ETE" || f.name === "ETA") && !local ? (
-                <button
-                  type="button"
+                <Button
+                  variant="link"
+                  size="inline"
                   onClick={() => setArrival(!arrival)}
                   data-testid="ete-eta-toggle"
                   aria-label={`${seen(f)}, ${f.said}: show the ${f.name === "ETE" ? "arrival" : "time en route"}`}
-                  className="relative inline-flex max-w-full text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+                  className="relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
                   <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
                     {f.value}
                   </span>
-                </button>
+                </Button>
               ) : (
                 <>
                   <span key={f.value} aria-hidden className="figure-roll" style={sized("value")} data-fitted={fitted}>

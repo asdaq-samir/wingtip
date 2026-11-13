@@ -3,10 +3,11 @@
 //! each datagram handed over with the last picture, then the traffic, a
 //! field's reports and the NEXRAD drawn from it.
 
+use base64::engine::general_purpose::STANDARD as BASE64;
+use base64::Engine as _;
 use serde_json::{json, Value};
 use std::path::PathBuf;
 use std::sync::OnceLock;
-use wingtip_engine::base64 as core_base64;
 use wingtip_engine::call::call;
 
 fn read(path: &str) -> Value {
@@ -48,7 +49,7 @@ fn pictures(f: &Value) -> Vec<Value> {
     let mut picture = Value::Null;
     let mut out = Vec::new();
     for d in f["datagrams"].as_array().unwrap() {
-        let data = core_base64::encode(&bytes(d["hex"].as_str().unwrap()));
+        let data = BASE64.encode(bytes(d["hex"].as_str().unwrap()));
         picture = ask("receiver_read", json!({ "data": data, "at": d["at"], "picture": picture }));
         out.push(picture.clone());
     }

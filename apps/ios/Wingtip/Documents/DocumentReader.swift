@@ -1,9 +1,9 @@
 import Observation
+import OpenAPIRuntime
 import SwiftUI
 import UIKit
 
-/// What a photographed page is of, as the assistant's POST
-/// /api/read-document names it (ReadAsk.kind).
+/// What a photographed page is of.
 enum DocumentKind: String, CaseIterable, Sendable {
     case pohPerformance = "poh-performance"
     case weightBalance = "weight-balance"
@@ -21,10 +21,42 @@ enum DocumentKind: String, CaseIterable, Sendable {
     }
 }
 
-/// The page read and checked (the assistant's DocumentRead, generated):
-/// the read, the engine's checks of it, a clearance note, what could not
-/// be read.
-typealias DocumentRead = ASDocumentRead
+/// The page read and checked, as OnDeviceDocumentReader.answer writes it
+/// (snake case): the engine's checks of the read, a clearance note, the
+/// model, its notes and what could not be read.
+struct DocumentRead: Codable, Equatable, Sendable {
+    var kind: String
+    var model: String
+    var notes: [String]?
+    var unreadable: String?
+    var clearance: ClearanceNote?
+    var handbookCheck: HandbookCheck?
+    var logbookCheck: LogbookCheck?
+
+    enum CodingKeys: String, CodingKey {
+        case kind, model, notes, unreadable, clearance
+        case handbookCheck = "handbook_check"
+        case logbookCheck = "logbook_check"
+    }
+}
+
+/// A copied clearance: as written, and as the controller said it.
+struct ClearanceNote: Codable, Equatable, Sendable {
+    var written: String
+    var said: String
+}
+
+/// The engine's checks of a read (handbook_read_check,
+/// logbook_read_check), as its contract gives them.
+typealias HandbookCheck = EngineContract.HandbookReadCheckAnswer
+typealias HandbookItem = EngineContract.HandbookReadCheckAnswerItemsItem
+typealias HandbookFigure = EngineContract.HandbookReadCheckAnswerItemsItemFiguresItem
+typealias HandbookFigures = EngineContract.HandbookReadCheckAnswerHandbook
+typealias HandbookProfile = EngineContract.HandbookReadCheckAnswerProfile
+typealias LogbookCheck = EngineContract.LogbookReadCheckAnswer
+typealias LogbookRowCheck = EngineContract.LogbookReadCheckAnswerRowsItem
+typealias LogbookEntryDraft = EngineContract.LogbookReadCheckAnswerRowsItemEntry
+typealias DocumentFlag = EngineContract.DocumentFlag
 
 /// The answer as the screens keep it: the read decoded, and the handbook
 /// read again as the JSON it came as: an edit is made at a figure's
@@ -33,36 +65,32 @@ typealias DocumentRead = ASDocumentRead
 /// model renames or leaves out can be lost on the way.
 struct DocumentAnswer: Equatable, Sendable {
     var read: DocumentRead
-    var handbook: JSONValue?
+    var handbook: OpenAPIValueContainer?
 
-    init(read: DocumentRead, handbook: JSONValue? = nil) {
+    init(read: DocumentRead, handbook: OpenAPIValueContainer? = nil) {
         self.read = read
         self.handbook = handbook
     }
 
     /// The reader's body, both ways.
     init(data: Data) throws {
-        struct Raw: Decodable { var handbook: JSONValue? }
-        read = try Planner.snakeCase.decode(DocumentRead.self, from: data)
+        struct Raw: Decodable { var handbook: OpenAPIValueContainer? }
+        read = try JSONDecoder().decode(DocumentRead.self, from: data)
         let raw = try JSONDecoder().decode(Raw.self, from: data).handbook
-        handbook = raw == .null ? nil : raw
+        handbook = raw?.value == nil ? nil : raw
     }
 }
 
-/// A photographed page read by the assistant: the photo made small enough
-/// to send, the ask, and the answer or the reader's own words why not.
+/// A photographed page read by Apple's models (OnDeviceDocumentReader):
+/// the photo made small enough to read, and the answer or why not.
 /// Nothing is saved anywhere by reading: each screen shows every item for
 /// the pilot to confirm, and saves only what they confirm, on their Save.
 enum DocumentReader {
     /// The photo's long edge at most, in pixels: enough for a handbook's
-    /// small print, and well under the reader's 3.5 MB once a JPEG.
+    /// small print.
     static let longEdge: CGFloat = 2000
     static let quality: CGFloat = 0.85
-    /// How long a read may take: a model reading a full page can take most
-    /// of a minute, past URLSession's own wait.
-    static let timeout: TimeInterval = 120
-
-    /// The photo as the reader takes it: a JPEG no longer than `longEdge`
+    /// The photo as the model is shown it: a JPEG no longer than `longEdge`
     /// on its long side, never made larger. Nil where it cannot be drawn.
     static func jpeg(_ image: UIImage) -> Data? {
         let size = image.size
@@ -79,61 +107,21 @@ enum DocumentReader {
         return drawn.jpegData(compressionQuality: quality)
     }
 
-    /// The ask: the photo in base64, what it is of, and the phone's own
-    /// date, which a logbook row may not be after.
-    static func ask(_ kind: DocumentKind, jpeg: Data, today: String = Day.today()) -> ASReadAsk {
-        ASReadAsk(image: jpeg.base64EncodedString(), kind: kind.rawValue, mediaType: "image/jpeg", today: today)
+    /// The page read on the phone (OnDeviceDocumentReader: Apple's
+    /// on-device model and Vision, else Apple's Private Cloud Compute),
+    /// or why it cannot be.
+    static func read(_ kind: DocumentKind, image: UIImage) async throws -> DocumentAnswer {
+        try await OnDeviceDocumentReader.read(kind, image: image)
     }
 
-    /// The page read on the phone where it can (OnDeviceDocumentReader:
-    /// Apple's on-device model and Vision, iOS 27, the photo never sent),
-    /// else through the gateway as the other assistant calls go;
-    /// CSRF-checked, as it is a paid call made for the pilot.
-    /// While the server's Claude features are off (ServerFeatures, the
-    /// owner's decision of 2026-11-10 in docs/decisions) the assistant is
-    /// never sent the photo: Apple's models read it or nothing does.
-    static func read(_ kind: DocumentKind, image: UIImage, claudeOn: Bool = ServerFeatures.claudeOnNow) async throws -> DocumentAnswer {
-        if OnDeviceDocumentReader.unavailableWhy == nil {
-            do {
-                return try await OnDeviceDocumentReader.read(kind, image: image)
-            } catch {
-                Log.onDevice.notice("the page could not be read on the phone: \(error.localizedDescription, privacy: .public)")
-                if !claudeOn { throw error }
-            }
-        }
-        guard claudeOn else { throw WordsUnavailable(why: OnDeviceDocumentReader.unavailableWhy ?? "This iPhone could not read the page.") }
-        return try await server(kind, image: image)
-    }
+    /// Whether a page can be read here at all, by Apple's models. Where
+    /// not, "From a Photo" is not offered.
+    static var offered: Bool { OnDeviceDocumentReader.unavailableWhy == nil }
 
-    /// Whether a page can be read here at all: by Apple's models, or by
-    /// the assistant while the server's Claude features are this pilot's.
-    /// Where neither, "From a Photo" is not offered.
-    @MainActor static var offered: Bool {
-        OnDeviceDocumentReader.unavailableWhy == nil || ServerFeatures.shared.claudeOn
-    }
-
-    /// The page read by the assistant (Claude), the photo sent.
-    static func server(_ kind: DocumentKind, image: UIImage) async throws -> DocumentAnswer {
-        guard let jpeg = jpeg(image) else { throw Planner.Failure(status: 422, detail: "That photo could not be opened.") }
-        let request = try await Planner.request("POST", "/api/read-document", json: ask(kind, jpeg: jpeg), csrf: true, timeout: timeout)
-        return try DocumentAnswer(data: try await Planner.data(for: request))
-    }
-
-    /// Why a read failed, in words for the screen: the reader's own detail
-    /// where it gave one.
+    /// Why a read failed, in words for the screen.
     static func words(for error: any Error) -> String {
         if let unavailable = error as? WordsUnavailable { return unavailable.why }
-        guard let failure = error as? Planner.Failure else {
-            return (error as? URLError)?.code == .timedOut ? "The page took too long to read. Try again." : "The page could not be sent: \(error.localizedDescription)"
-        }
-        switch failure.status {
-        case 503: return failure.detail ?? "The page reader can't be reached just now. Try again in a minute."
-        case 502: return failure.detail ?? "The figures read could not be checked."
-        case 413: return failure.detail ?? "That photo is too large to send."
-        case 422: return failure.detail ?? "That photo could not be read as an image."
-        case 404: return AssistantClient.notHere
-        default: return failure.localizedDescription
-        }
+        return "The page could not be read: \(error.localizedDescription)"
     }
 }
 
@@ -153,7 +141,7 @@ enum FlagTone: Equatable, Sendable {
 /// One flag under its item, in its tone, with a mark beside the words for
 /// a pilot who does not see the colour.
 struct FlagLine: View {
-    let flag: ASDocumentFlag
+    let flag: DocumentFlag
 
     var body: some View {
         let tone = FlagTone(level: flag.level)

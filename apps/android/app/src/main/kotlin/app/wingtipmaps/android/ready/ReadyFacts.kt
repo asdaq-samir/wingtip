@@ -64,11 +64,12 @@ object ReadyFacts {
      *  the altitude the planner picked for the route; none before a leg. */
     fun cruise(altitudes: List<Double>): Double? = altitudes.maxOrNull()
 
-    /** The fields whose weather is asked: the departure and the
-     *  destination, by the roles ready_to_fly reads. This app's plan has
-     *  no alternate of its own, so none is sent. */
+    /** The fields whose weather is asked: the departure, the destination
+     *  and under IFR the alternate the nav log flies on to (PlanAlternate),
+     *  by the roles ready_to_fly reads, as the web's readyFacts sends them. */
     fun fieldRoles(plan: Plan.State): List<Pair<String, String>> =
-        if (!plan.routed) emptyList() else listOf(plan.dep to "departure", plan.dest to "destination").distinctBy { it.first }
+        if (!plan.routed) emptyList()
+        else (listOf(plan.dep to "departure", plan.dest to "destination") + listOfNotNull(plan.totals?.alternate?.ident?.let { it to "alternate" })).distinctBy { it.first }
 
     /** A field's weather from the planner's card: none where the weather
      *  service could not be asked, since that is not the same as a field

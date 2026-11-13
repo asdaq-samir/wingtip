@@ -3,6 +3,7 @@ import type { Briefing, Course } from "../../../lib/api/types";
 import type { BriefingState } from "../hooks/usePlan";
 import { callEngine } from "../../../lib/engine/engine";
 import { ownStation, placesOf } from "../components/briefing/fieldWeather";
+import { useGeo, type Geo } from "../../../lib/geo";
 
 /** A field's ceiling and visibility as weather_worse reads one. */
 type Reading = { ident: string; ceiling_ft: number | null; visibility_sm: number | null; ceiling_unknown: boolean; arrival?: boolean };
@@ -17,11 +18,11 @@ type Reading = { ident: string; ceiling_ft: number | null; visibility_sm: number
  * the destination; a field with no METAR or no TAF of its own has nothing
  * to compare, and no badge. Off the route, none.
  */
-export function worseByArrival(briefing: Briefing, course: Course): string[] {
+export function worseByArrival(geo: Geo, briefing: Briefing, course: Course): string[] {
   const stations = briefing.forecast.stations;
   const then: Reading[] = [];
   const now: Reading[] = [];
-  for (const place of placesOf(course)) {
+  for (const place of placesOf(geo, course)) {
     const metar = briefing.metars[place.ident];
     const station = ownStation(stations, place.ident);
     if (!metar || !station?.eta) continue;
@@ -49,5 +50,6 @@ const NONE: string[] = [];
 /** worseByArrival of the route's briefing once it is in, none before. */
 export function useWorseByArrival(briefing: BriefingState, course: Course | null): string[] {
   const ready = briefing.state === "ready" ? briefing.data : null;
-  return useMemo(() => (ready && course ? worseByArrival(ready, course) : NONE), [ready, course]);
+  const geo = useGeo();
+  return useMemo(() => (geo && ready && course ? worseByArrival(geo, ready, course) : NONE), [geo, ready, course]);
 }

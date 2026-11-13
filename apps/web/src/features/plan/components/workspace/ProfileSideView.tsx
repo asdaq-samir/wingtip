@@ -17,14 +17,8 @@ const MiniProfile = lazy(() => import("../navlog/MiniProfile"));
 export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
   const {
     acceptClassB,
-    aircraft,
     avoidClassB,
-    changeAltitudeChoice,
     classBClearance,
-    closeProfileCard,
-    course,
-    dryRunReady,
-    dryRunning,
     flightRules,
     flyAltitude,
     local,
@@ -32,18 +26,14 @@ export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
     routeEdit,
     routePoints,
     routed,
-    s,
-    selected,
-    setAddingStop,
-    setNewStopVia,
     setPointAltitude,
     setStops,
-    startDryRun,
-    tightLeg,
-    typeStopAt,
-    unflyable,
-    waypointStops,
-  } = vm;
+  } = vm.route;
+  const { aircraft, changeAltitudeChoice, course, s, selected } = vm.plan;
+  const { setAddingStop, setNewStopVia, typeStopAt, waypointStops } = vm.routeList;
+  const { closeProfileCard } = vm.fpl;
+  const { dryRunReady, dryRunning, startDryRun } = vm.flight;
+  const { tightLeg, unflyable } = vm.brief;
   // The airplane as the engine reads it, for a leg's climb or descent
   // (altitude_change): its type's book figures with the pilot's own over
   // them; none picked, none.
@@ -56,6 +46,7 @@ export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
       <AltitudeProfile
         nav={s.nav}
         legs={s.legs}
+        winds={s.totals?.winds}
         ends={course}
         chart={(preview) => (
           <Suspense fallback={null}>

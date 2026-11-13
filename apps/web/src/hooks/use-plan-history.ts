@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { SetURLSearchParams } from "react-router";
+import { addressParams, loadAddress, type Address, type AddressChange, type SetAddress } from "../lib/address";
 import { toast } from "../lib/toast";
+import { PLAN_KEYS } from "../lib/address";
 import { observed, planStateOf, redone, restored, started, undone, type PlanHistory } from "./planHistory";
 
 /** The route's Undo toast up now, if any: one at a time, the next
@@ -27,9 +28,10 @@ const typing = (target: EventTarget | null) =>
  * keyboard's Cmd-Z or Ctrl-Z undoes any step, Shift with it (or Ctrl-Y)
  * redoes it.
  */
-export function usePlanHistory(searchParams: URLSearchParams, setSearchParams: SetURLSearchParams) {
+export function usePlanHistory(address: Address, setAddress: SetAddress) {
   const history = useRef<PlanHistory | null>(null);
-  const state = useMemo(() => planStateOf(searchParams), [searchParams]);
+  // The plan's keys as text, as the history keeps them.
+  const state = useMemo(() => planStateOf(addressParams(address)), [address]);
 
   const go = useCallback(
     (step: typeof undone) => {
@@ -38,10 +40,12 @@ export function usePlanHistory(searchParams: URLSearchParams, setSearchParams: S
       if (!next) return false;
       history.current = next;
       dismissRouteUndo();
-      setSearchParams((prev) => restored(prev, next.now), { replace: true });
+      // The plan's keys put back, each read by its parser; the page's own left.
+      const back = loadAddress(restored(new URLSearchParams(), next.now));
+      void setAddress(Object.fromEntries(PLAN_KEYS.map((key) => [key, back[key]])) as AddressChange);
       return true;
     },
-    [setSearchParams],
+    [setAddress],
   );
   const undo = useCallback(() => go(undone), [go]);
   const redo = useCallback(() => go(redone), [go]);

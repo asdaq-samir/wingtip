@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.flight
 
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.nearest
@@ -14,8 +15,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -33,7 +38,7 @@ import kotlinx.coroutines.launch
  * A planning aid beside the airplane's own instruments: a phone's GPS is
  * not an approved navigation source (AC 120-76D), and the bar says so.
  */
-class InFlight private constructor() {
+class InFlight {
     /** What the screens read. `problem` is the engine's words where one of
      *  its rules failed for this fix, shown on the instruments bar, so a
      *  figure left out is never taken for one the engine had none of. */
@@ -64,6 +69,11 @@ class InFlight private constructor() {
     @Volatile
     var glideRatio: Double? = null
 
+    /** Whether the map shows the glide ring (GlideRing.shown): the engine
+     *  is asked for it only then, not at every fix for nothing. */
+    @Volatile
+    var ringShown: Boolean = false
+
     /** The nearest field's elevation, the ring's ground where no pack
      *  reaches, asked of the planner now and then while moving. */
     @Volatile
@@ -72,12 +82,17 @@ class InFlight private constructor() {
     private var fieldAsking: Job? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
+    /** Whether the airplane is at flying speed, told only when that
+     *  changes: what the root and the map lay out by, so they are not
+     *  drawn again at every fix. */
+    val underway: StateFlow<Boolean> = state.map { it.underway }.distinctUntilChanged().stateIn(scope, SharingStarted.Eagerly, false)
+
     /** The GPS altitudes of the last seconds, for the vertical speed. */
     private val altitudes = ArrayDeque<Pair<Double, Double>>()
 
     /** The fix taken: the instruments worked out again from it and the
      *  plan. A null fix (own ship off) clears them. */
-    fun took(fix: OwnShip.Fix?, plan: Plan.State, nowMs: Long = System.currentTimeMillis()) {
+    fun took(fix: OwnShip.Fix?, plan: Plan.State, nowMs: Long = AppClock.nowMs()) {
         if (fix == null) {
             altitudes.clear()
             _state.value = State()
@@ -91,7 +106,7 @@ class InFlight private constructor() {
             altitudes.addLast(t to ft)
         }
         val vs = Engine.verticalSpeed(altitudes.map { EngineContract.VerticalSpeedInputSamplesItem(it.first, it.second) })
-        val glide = Engine.glideRing(fix.lat, fix.lon, fix.altitudeFt, fix.groundspeedKt, terrainFt, fieldFt, glideRatio)
+        val glide = if (ringShown) Engine.glideRing(fix.lat, fix.lon, fix.altitudeFt, fix.groundspeedKt, terrainFt, fieldFt, glideRatio) else Result.success(null)
         val progress = progress(fix, plan, nowMs)
         val underway = OwnShip.underway(fix.groundspeedKt)
         // The first rule that failed, in the engine's words (Engine.rule
@@ -137,12 +152,10 @@ class InFlight private constructor() {
          *  field's elevation changes slowly as an airplane flies. */
         const val FIELD_EVERY_MS = 60_000L
 
-        val shared: InFlight by lazy { InFlight() }
-
         /** The engine's `in_flight` for a fix on the plan's route: the
          *  fields in order (the departure, the stops, the destination) are
          *  its waypoints. Null with no route. */
-        fun progress(fix: OwnShip.Fix, plan: Plan.State, nowMs: Long = System.currentTimeMillis()): Result<EngineContract.InFlightAnswer?> {
+        fun progress(fix: OwnShip.Fix, plan: Plan.State, nowMs: Long = AppClock.nowMs()): Result<EngineContract.InFlightAnswer?> {
             val course = plan.course ?: return Result.success(null)
             val line = course.courseLine.filter { it.size == 2 }
             if (line.size < 2) return Result.success(null)

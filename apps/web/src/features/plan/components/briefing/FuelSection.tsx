@@ -64,7 +64,7 @@ export default function FuelSection({ totals }: { totals: Totals | null }) {
               totals.rules === "ifr"
                 ? "IFR reserve (14 CFR 91.167)"
                 : totals.night == null
-                  ? "day reserve (no departure time)"
+                  ? "night reserve (no departure time, so assumed)"
                   : totals.night
                     ? "night reserve"
                     : "day reserve"

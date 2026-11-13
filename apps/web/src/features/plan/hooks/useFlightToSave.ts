@@ -1,27 +1,19 @@
 import { useCallback, useEffect, useMemo } from "react";
-import type { SetURLSearchParams } from "react-router";
-import type { PanelState } from "../../../lib/mapChrome";
+import { addressParams, type Address, type SetAddress } from "../../../lib/address";
 import type { AircraftChoice } from "../../../lib/api/types";
 import { NO_PLAN, useBriefPlan } from "../../../lib/briefPlan";
 import { picksOf } from "../../../lib/flightLink";
 import { identOf } from "../../../lib/identSchema";
-import { patched } from "../../../lib/useSearchParamsNow";
 import { useWindPicks } from "../lib/windPicks";
-import { useAsk } from "../../../lib/ask/useAsk";
 import { useTabAsk } from "../components/navlog/panelTab";
 import { briefingLegs } from "./briefingLegs";
 import type { PlannedRoute } from "./planAddress";
 import type { PlanAnswer, PlanCourse } from "./planTypes";
-import type { useRouteEdits } from "./useRouteEdits";
-
-type RouteEdits = ReturnType<typeof useRouteEdits>;
 
 /**
  * The plan as a flight to save and file (usePlanWorkspace): Save's, the
- * solo cross-country review's and the Brief's Flight Plan; the flight as
- * the Brief reads it (lib/briefPlan) for its Ask, its words and its watch;
- * and the assistant's proposed changes applied through the route's own
- * setters.
+ * solo cross-country review's and the Brief's Flight Plan; and the flight
+ * as the Brief reads it (lib/briefPlan) for its NOTAMs and its watch.
  */
 export function useFlightToSave({
   s,
@@ -32,12 +24,8 @@ export function useFlightToSave({
   depart,
   altitudes,
   localMin,
-  searchParams,
-  setSearchParams,
-  setPanel,
-  setRoute,
-  flyAltitude,
-  changeDepart,
+  address,
+  setAddress,
 }: {
   s: PlanAnswer;
   planned: PlannedRoute;
@@ -49,12 +37,8 @@ export function useFlightToSave({
   altitudes: string;
   /** A local flight's time aloft, in minutes. */
   localMin: number;
-  searchParams: URLSearchParams;
-  setSearchParams: SetURLSearchParams;
-  setPanel: (state: PanelState) => void;
-  setRoute: RouteEdits["setRoute"];
-  flyAltitude: RouteEdits["flyAltitude"];
-  changeDepart: (iso: string) => void;
+  address: Address;
+  setAddress: SetAddress;
 }) {
   // The flight plan filed: the Brief's Flight Plan, where the FAA's form
   // is filled in from the plan and sent where Flight Service is connected
@@ -62,10 +46,10 @@ export function useFlightToSave({
   // one: a route from an airport, its nav log in.
   const fileable = !!identOf(planned.dep) && !!s.totals;
   const fileFlightPlan = useCallback(() => {
-    setSearchParams((prev) => patched(prev, { brief: "1" }), { replace: true });
-    setPanel("full");
-    useTabAsk.getState().go("preflight", "Flight Plan");
-  }, [setSearchParams, setPanel]);
+    void setAddress({ brief: true });
+    // The Brief's own card all the way up for the form (PanelTabs).
+    useTabAsk.getState().go("preflight", "Flight Plan", true);
+  }, [setAddress]);
 
   // The plan as a flight to save: Save's, and the solo cross-country
   // review's, which saves it as it asks.
@@ -91,7 +75,7 @@ export function useFlightToSave({
     aircraftId: aircraft.aircraftId ?? null,
     depart,
     altitudes,
-    picks: picksOf(searchParams),
+    picks: picksOf(addressParams(address)),
   };
   // The flight as the Brief reads it (lib/briefPlan), for its Ask, its
   // words and its watch, which draw outside the route's props: the
@@ -151,22 +135,5 @@ export function useFlightToSave({
     flightToSave.picks,
   ]);
   useEffect(() => () => useBriefPlan.getState().set(NO_PLAN), []);
-  // A change the assistant proposes (useAsk's actions), applied at the
-  // pilot's tap through the route box's own setters -- the route, the
-  // altitude flown, the departure time -- each a change of the address,
-  // which plans again. Registered while the workspace is up; the chip
-  // applies nothing otherwise.
-  useEffect(() => {
-    useAsk.setState({
-      applyChange: (change) => {
-        if (change.dep !== undefined || change.dest !== undefined || change.stops !== undefined) {
-          setRoute({ dep: change.dep ?? planned.dep, stops: change.stops ?? planned.stops, dest: change.dest ?? planned.dest });
-        }
-        if (change.altitude_ft !== undefined) flyAltitude(change.altitude_ft);
-        if (change.depart !== undefined) changeDepart(change.depart);
-      },
-    });
-    return () => useAsk.setState({ applyChange: null });
-  }, [setRoute, flyAltitude, changeDepart, planned.dep, planned.stops, planned.dest]);
   return { fileable, fileFlightPlan, flightToSave };
 }

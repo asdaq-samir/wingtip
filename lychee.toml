@@ -1,0 +1,13 @@
+# lychee's settings for the Markdown's links (scripts/ci/check_links.sh).
+# Files and fragments only, nothing fetched: a moved web page is no fault of
+# the change being checked, and the check must be quick and never flaky.
+offline = true
+include_fragments = "full"
+no_progress = true
+exclude = [
+  # The legal pages are served by the app and the site, where /privacy is a
+  # page there, not a file in the repository.
+  '/(privacy|terms|support|delete-account)$',
+  # A masked address in a sentence ("a•••@icloud.com"), which is no link.
+  'icloud\.com$',
+]

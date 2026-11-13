@@ -14,8 +14,6 @@ import Observation
 @MainActor
 @Observable
 final class OwnTrail {
-    static let shared = OwnTrail()
-
     private static let stepNm = 0.1
     private static let stepS = 10.0
     private static let newFlightS = 10.0 * 60
@@ -25,13 +23,15 @@ final class OwnTrail {
     private(set) var points: [PathPoint] = []
     private var lastWritten: Date = .distantPast
     private var underway = false
+    /// Written off the main actor (BackgroundFile).
+    private let disk = BackgroundFile(OwnTrail.file)
 
-    private static var file: URL {
+    static var file: URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return support.appendingPathComponent("own-trail.json")
     }
 
-    private init() {
+    init() {
         // The path kept from before, unless the last point is over ten
         // minutes old: that was another flight's, and a new one starts.
         if let data = try? Data(contentsOf: Self.file), let kept = try? JSONDecoder().decode([PathPoint].self, from: data),
@@ -66,6 +66,15 @@ final class OwnTrail {
         return true
     }
 
+    /// The path gone from the phone, the file with it: the pilot signed
+    /// out or deleted the account (Session.forgetDevice). Where they flew
+    /// is theirs, not the next person's on this iPhone.
+    func erase() {
+        points = []
+        lastWritten = .distantPast
+        disk.remove()
+    }
+
     /// The path let go: a new flight's starts empty.
     func clear() {
         points = []
@@ -80,6 +89,6 @@ final class OwnTrail {
 
     private func write() {
         lastWritten = Date()
-        if let data = try? JSONEncoder().encode(points) { try? data.write(to: Self.file, options: .atomic) }
+        disk.write(points)
     }
 }

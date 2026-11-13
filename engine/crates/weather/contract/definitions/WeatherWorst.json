@@ -1,6 +1,6 @@
 {
   "title": "WeatherWorst",
-  "description": "The worst a TAF forecasts in a window, TEMPO and PROB groups included.",
+  "description": "The worst a TAF forecasts in a window, TEMPO and PROB groups included, and whether the TAF covers the whole window.",
   "type": "object",
   "properties": {
     "ceiling_ft": {
@@ -17,11 +17,16 @@
         "number",
         "null"
       ]
+    },
+    "covers": {
+      "type": "boolean",
+      "description": "Whether the prevailing periods (the first line and each FM) cover the whole window without a gap: a TAF ending or beginning inside it says nothing of the rest (14 CFR 91.169(b)(2)(i))."
     }
   },
   "required": [
     "ceiling_ft",
     "ceiling_unknown",
-    "visibility_sm"
+    "visibility_sm",
+    "covers"
   ]
 }

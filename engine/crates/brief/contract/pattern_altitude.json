@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_brief::runway::calls::call",
   "description": "A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C).",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

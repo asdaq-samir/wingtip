@@ -1,6 +1,6 @@
 //! Runways, the wind on them and the traffic pattern, one copy for the web
 //! app (callEngine), the planner (wingtip_native.call) and the phones
-//! (wt_call), so none states a rule of its own:
+//! (the generated `call`), so none states a rule of its own:
 //!
 //! - `wind`: a wind along and across a runway, the gust's crosswind, calm,
 //!   the end each runway's reported wind favours, and the end picked into

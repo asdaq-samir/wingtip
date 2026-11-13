@@ -18,6 +18,7 @@ import {
   selectedLegFilter,
   specialUseLayers,
 } from "./glStyle";
+import { CLOSE_MAX_ZOOM, chartFade, imageryFade, imageryForExport, imageryFrom, useCloseImageryDrawn } from "./closeZoom";
 
 const chart = {
   chart_cycle: "10-29-2026",
@@ -46,9 +47,32 @@ describe("chartStyle", () => {
     expect(style.sources.chart).toMatchObject({ minzoom: 3, maxzoom: 12, tileSize: 256 });
     // The region's level under it, while the chart's own tiles come in.
     expect(style.sources["chart-under"]).toMatchObject({ minzoom: 5, maxzoom: 5 });
-    // Two levels past the chart's last, in MapLibre's zoom (the app's less one).
+    // Two levels past the chart's last, in MapLibre's zoom (the app's less
+    // one), where there is no imagery to fade into.
     expect(style.maxZoom).toBe(13);
     expect(style.layers.map((l) => l.id)).toEqual(["chart-under", "chart"]);
+  });
+
+  it("fades the chart out over one level past its own last zoom, into the imagery under it", () => {
+    // The sectional's tiles end at {z} 12, MapLibre's 11: whole there,
+    // gone at 12, the imagery whole before the chart starts to go.
+    expect(chartFade(12)).toEqual(["interpolate", ["linear"], ["zoom"], 11, 1, 12, 0]);
+    expect(imageryFade(12)).toEqual(["interpolate", ["linear"], ["zoom"], 10.5, 0, 11, 1]);
+    expect(imageryFrom(12)).toBe(10.5);
+    // A TAC (13) a level later, IFR low (11) a level sooner.
+    expect(chartFade(13)).toEqual(["interpolate", ["linear"], ["zoom"], 12, 1, 13, 0]);
+    expect(chartFade(11)).toEqual(["interpolate", ["linear"], ["zoom"], 10, 1, 11, 0]);
+    expect(CLOSE_MAX_ZOOM).toBe(17);
+  });
+
+  it("lets the USGS's public-domain imagery, or none, go out in an export, and never Google's", () => {
+    useCloseImageryDrawn.setState({ drawn: null });
+    expect(imageryForExport()).toBe(true);
+    useCloseImageryDrawn.setState({ drawn: "usgs" });
+    expect(imageryForExport()).toBe(true);
+    useCloseImageryDrawn.setState({ drawn: "google" });
+    expect(imageryForExport()).toBe(false);
+    useCloseImageryDrawn.setState({ drawn: null });
   });
 
   it("puts the terminal sheet over the chart only while pinned", () => {

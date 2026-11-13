@@ -36,6 +36,20 @@
         "null"
       ]
     },
+    "descent_ias_kt": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The descent's indicated airspeed, knots, as the POH gives it; flown as a TAS at the descent's middle altitude. Null or left out: the descent is flown on the cruise's figures."
+    },
+    "descent_fuel_burn_gph": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The descent's fuel flow, gallons an hour, from the POH."
+    },
     "climb_rate_fpm_sea_level": {
       "type": [
         "number",

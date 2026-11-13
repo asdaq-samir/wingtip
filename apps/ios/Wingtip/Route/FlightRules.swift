@@ -5,8 +5,7 @@ import Foundation
 /// to the planner's nav log as `rules` where IFR, as the web's client
 /// sends it: the planner then plans 14 CFR 91.177's minimum altitudes,
 /// 91.179's by direction and 91.167's reserve (app/plan_query.py). Set in
-/// the welcome (WelcomeModel) and in the Profile's Altitude, its home as
-/// the web's altitude popover is.
+/// the Profile's Altitude, its home as the web's altitude popover is.
 enum FlightRules: String, CaseIterable, Identifiable, Sendable {
     case vfr, ifr
 

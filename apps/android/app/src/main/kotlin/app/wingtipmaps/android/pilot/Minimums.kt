@@ -1,8 +1,8 @@
 package app.wingtipmaps.android.pilot
 
 import android.content.Context
-import android.content.SharedPreferences
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.engine.generated.EngineContract
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,26 +61,35 @@ data class Minimums(
 
 /** The minimums kept on this phone, so they need no sign-in, as the
  *  web keeps them in the browser. */
-class MinimumsStore(private val prefs: SharedPreferences) {
+class MinimumsStore(private val prefs: Kept) {
     private val _minimums = MutableStateFlow(read())
     val minimums: StateFlow<Minimums> = _minimums.asStateFlow()
 
     fun set(kind: Minimums.Kind, value: Double?) {
-        prefs.edit { if (value == null) remove(kind.name) else putFloat(kind.name, value.toFloat()) }
+        prefs.edit { if (value == null) it.remove(key(kind)) else it.set(key(kind), value.toFloat()) }
         _minimums.value = _minimums.value.with(kind, value)
     }
 
+    /** The pilot's minimums gone: signed out, or the account deleted. */
+    fun forget() {
+        prefs.edit { it.clear() }
+        _minimums.value = Minimums()
+    }
+
     private fun read(): Minimums = Minimums.Kind.entries.fold(Minimums()) { m, kind ->
-        m.with(kind, if (prefs.contains(kind.name)) prefs.getFloat(kind.name, 0f).toDouble() else null)
+        m.with(kind, prefs[key(kind)]?.toDouble())
     }
 
     companion object {
+        /** Each minimum under its kind's name, a float, as it was kept. */
+        private fun key(kind: Minimums.Kind) = floatPreferencesKey(kind.name)
+
         @Volatile
         private var shared: MinimumsStore? = null
 
         fun of(context: Context): MinimumsStore =
             shared ?: synchronized(this) {
-                shared ?: MinimumsStore(context.applicationContext.getSharedPreferences("minimums", Context.MODE_PRIVATE)).also { shared = it }
+                shared ?: MinimumsStore(Kept.of(context, "minimums")).also { shared = it }
             }
     }
 }

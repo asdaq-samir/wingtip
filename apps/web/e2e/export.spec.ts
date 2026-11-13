@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { settle, slow, controlsInSight } from "./helpers";
+import { markWith } from "./marks";
 
 /**
  * The route to ForeFlight, which sends it on to the panel's GPS
@@ -10,7 +11,7 @@ import { settle, slow, controlsInSight } from "./helpers";
 async function routeWithCheckpoints(page: Page) {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await expect(page.locator(".maplibregl-marker", { hasText: /^1$/ }).first()).toBeVisible({ timeout: slow(30000) });
+  await expect.poll(markWith(page, "route-marks", "1"), { timeout: slow(30000) }).not.toBeNull();
   // Share is a round button in the chips' row, all the way up.
   await controlsInSight(page);
 }

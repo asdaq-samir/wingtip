@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { arrow, isBack, leave, tvPlatform } from "./tv";
+import { isBack, tvPlatform } from "./tv";
+import { arrow, leave } from "./tvStart";
 
 const key = (init: KeyboardEventInit & { keyCode?: number }) => {
   const event = new KeyboardEvent("keydown", { cancelable: true, ...init });

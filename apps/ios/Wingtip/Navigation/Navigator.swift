@@ -9,12 +9,11 @@ import SwiftUI
 /// stack, with Back. On the iPhone the card is a sheet the plan's sheet
 /// presents (CardHost), so there is one presenter and one card at a time;
 /// on the iPad the inspector holds it beside the map (SplitLayout) and the
-/// other pages stay in the sidebar's stack.
+/// other pages stay in the sidebar's stack. One for the app, handed down
+/// the views in the environment (WingtipApp).
 @MainActor
 @Observable
 final class Navigator {
-    static let shared = Navigator()
-
     /// The card up, by the page at its root.
     struct Card: Identifiable, Hashable {
         let page: SheetPage
@@ -24,6 +23,9 @@ final class Navigator {
     /// The iPad's layout (SplitLayout): a thing opens in the inspector,
     /// a page on the sidebar's stack.
     var split = false
+    /// The screens' models a card going away lets go of (left); the app
+    /// gives them (WingtipApp), a preview's navigator has none.
+    @ObservationIgnored var screens: ScreenModels?
     /// The sidebar's stack on the iPad, the plan at its root. The iPhone's
     /// plan has no page pushed on it: every page is a card.
     var planPath: [SheetPage] = []
@@ -31,8 +33,17 @@ final class Navigator {
     private(set) var card: Card?
     /// The pages pushed inside the card.
     var cardPath: [SheetPage] = []
-    /// The card's height on the iPhone: half way for a thing, as Maps
-    /// opens a place, full for a page.
+    /// The plan's sheet's page, Search or FPL (SheetPager): kept here so a
+    /// link, Siri and every "show the plan" turn it.
+    var sheetPage: PlanPage = .search
+    /// The field's card the plan was shown from (Fly Here, Depart From,
+    /// Add as Stop): where the empty route box's close goes back to, a
+    /// level back, as the web's clearRoute goes back to the airport flown
+    /// to (`under`).
+    private(set) var planFrom: SheetPage?
+    /// The card's height on the iPhone: half way, as Maps opens a place,
+    /// for every card but the emergency assistant's (SheetPage.opensFull);
+    /// the pilot's drag sets it from there.
     var cardDetent: PresentationDetent = .half
 
     /// The page on top: the card's last, else its root, else the sidebar's.
@@ -89,10 +100,25 @@ final class Navigator {
         set(nil)
     }
 
-    /// The plan in sight: the card closed and the sidebar back to its root.
+    /// The plan in sight: the card closed, the sidebar back to its root and
+    /// the sheet on its FPL page, as a route made or opened shows it (the
+    /// carousel, 2026-11-11).
     func showPlan() {
+        if let page = card?.page, page.airportRoute != nil { planFrom = page }
         close()
         planPath = []
+        sheetPage = .fpl
+    }
+
+    /// The empty route box's close (PlanView), a level back: the field's
+    /// card the plan was shown from, over the Search page, else the Search
+    /// page itself (the web's clearRoute, its second step).
+    func closeEmptyRoute() {
+        sheetPage = .search
+        if let from = planFrom {
+            planFrom = nil
+            open(from)
+        }
     }
 
     /// The card, as the system sheet's item binding sets it: nil once the
@@ -118,28 +144,28 @@ final class Navigator {
     }
 
     /// The card changed: what the one going away held let go of, as its
-    /// own close would (the airplane no longer tracked, the welcome seen,
+    /// own close would (the airplane no longer tracked,
     /// the shared flight not taken, the flight logged later).
     private func set(_ next: Card?) {
         let was = card
         card = next
         guard let was, was != next else { return }
-        Self.left(was.page, for: next?.page)
+        left(was.page, for: next?.page)
     }
 
-    private static func left(_ page: SheetPage, for next: SheetPage?) {
+    private func left(_ page: SheetPage, for next: SheetPage?) {
         switch page {
         case .traffic:
-            if case .traffic = next {} else { Tracking.shared.track(nil) }
-        case .welcome:
-            if WelcomeModel.shared.presented { WelcomeModel.shared.finish() }
+            if case .traffic = next {} else { screens?.flight.tracking.track(nil) }
         case .sharedFlight:
-            if SharedFlightModel.shared.showing { SharedFlightModel.shared.notNow() }
+            if let shared = screens?.sharedFlight, shared.showing { shared.notNow() }
         case .flightLogged:
-            let model = AutoLogbook.shared
+            guard let model = screens?.autoLogbook else { break }
             if model.isOpen { if model.logged != nil { model.close() } else { model.later() } }
         case .clearance:
             ClearanceListener.shared.sheetShown = false
+        case .emergency:
+            if let emergency = screens?.emergency, emergency.open != nil { emergency.close() }
         default:
             break
         }

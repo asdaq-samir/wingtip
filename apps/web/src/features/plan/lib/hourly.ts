@@ -13,7 +13,7 @@ import { altFt } from "../../../lib/format";
  *
  * The hours are the shared engine's (`field_hours`, engine/crates/weather/
  * src/forecast/hours.rs): it reads the TAF as sent and its change groups
- * as AC 00-45H (Aviation Weather Services) sets them out -- the first
+ * as FAA-H-8083-28B 27.4.2.10 (Aviation Weather Handbook) sets them out -- the first
  * line and each FM group the prevailing weather until the next; a BECMG
  * a change somewhere in its window that holds after it, so until it is
  * done the hour is the worse of before and after; a TEMPO, PROB or INTER
@@ -24,7 +24,7 @@ import { altFt } from "../../../lib/format";
  */
 
 const HOUR_MS = 3_600_000;
-/** How many hours after Now: a TAF covers 24 or 30 (AC 00-45H). */
+/** How many hours after Now: a TAF covers 24 or 30 (FAA-H-8083-28B 27.4.1). */
 const HOURS = 24;
 /** How far ahead the sentence looks: a flight's day, not the TAF's end. */
 const SENTENCE_HOURS = 12;
@@ -57,7 +57,7 @@ export interface Hour {
   atTimesThunder: boolean;
   /** The worse weather at times comes only from a PROB group: a chance
    *  of it (30 or 40 per cent), not weather expected now and then as a
-   *  TEMPO's is (AC 00-45H, the TAF's PROB and TEMPO groups). */
+   *  TEMPO's is (FAA-H-8083-28B 27.4.2.10.2, .3, the TAF's TEMPO and PROB groups). */
   atTimesChance: boolean;
 }
 

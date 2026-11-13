@@ -46,6 +46,22 @@ const CODES: [&str; 72] = [
 /// The rest of the radio's codes (the list ran past one array's line).
 const MORE_CODES: [&str; 2] = ["RDO", "ANG"];
 
+/// An instrument procedure's codes as its title on the plate writes them
+/// (AIM 5-4-5, the approach charts' naming; the d-TPP's chart names): the
+/// navigation it is flown by, the approach's levels of service, its
+/// category (CAT I, II, III), and the letter that tells two approaches to
+/// one runway apart ("RNAV (GPS) Z RWY 36"), so "ILS OR LOC RWY 36" reads
+/// "ILS or LOC rwy 36", not "Ils or loc rwy 36". A lone I, X, Y or Z is
+/// never a word of the FAA's other capital text, so it is safe here.
+const PROCEDURE_CODES: [&str; 26] = [
+    "ILS", "LOC", "LDA", "SDF", "BC", "VOR", "VORTAC", "TACAN", "NDB", "DME", "GPS", "RNAV", "RNP", "GLS", "GBAS", "LPV", "LNAV", "VNAV",
+    "PRM", "CAT", "I", "II", "III", "X", "Y", "Z",
+];
+
+fn is_code(word: &str) -> bool {
+    CODES.contains(&word) || MORE_CODES.contains(&word) || PROCEDURE_CODES.contains(&word)
+}
+
 fn day(word: &str) -> Option<&'static str> {
     Some(match word {
         "MON" => "Mon",
@@ -63,7 +79,7 @@ fn day(word: &str) -> Option<&'static str> {
 /// a figure in it as it is, "NOTAMS" as "NOTAMs", a day as a day is
 /// written, the rest in lower case.
 fn sentence_word(word: &str) -> String {
-    if word.bytes().any(|b| b.is_ascii_digit()) || CODES.contains(&word) || MORE_CODES.contains(&word) {
+    if word.bytes().any(|b| b.is_ascii_digit()) || is_code(word) {
         word.to_owned()
     } else if word == "NOTAMS" {
         "NOTAMs".to_owned()
@@ -107,6 +123,16 @@ pub fn faa_words(text: &str) -> String {
             let mut j = i;
             while j < c.len() && c[j].is_ascii_uppercase() {
                 j += 1;
+            }
+            // A circling approach's letter after its navigation (VOR-A,
+            // NDB-B, VOR/DME-C: AIM 5-4-5's naming) is part of its name.
+            let word: String = c[i..j].iter().collect();
+            let letter_after =
+                is_code(&word) && c.get(j + 1).is_some_and(char::is_ascii_uppercase) && c.get(j + 2).is_none_or(|&n| !js_word(n));
+            if c.get(j) == Some(&'-') && letter_after {
+                out.extend(&c[i..j + 2]);
+                i = j + 2;
+                continue;
             }
             if c.get(j) == Some(&'-') && c.get(j + 1).is_some_and(char::is_ascii_digit) {
                 let mut k = j + 2;

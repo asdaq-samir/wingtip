@@ -14,8 +14,14 @@ rust 1.99.1
 nodejs 26
 gradle 9.9.1
 maven 3.10.0
+# The .NET SDK of tools/msfs-agent (the MSFS replay agent): its global.json.
+dotnet 11.0.100
 # Below, tools mise and asdf do not install: read by this repo's scripts only.
 xcode 27.2
+# The Swift of Xcode 27.2, the image scripts/build/api-models-apps.sh
+# builds swift-openapi-generator in, and the generator itself.
+swift 6.4.2
+swift-openapi-generator 1.14.4
 # The Android NDK: the app's ndkVersion and engine/bindings/ffi/build-android.sh.
 # One GitHub's ubuntu-26.04 runner image has installed, so CI downloads none.
 android-ndk 30.0.16248370
@@ -33,3 +39,23 @@ swiftformat 0.64.6
 ktlint 1.8.0
 palantir-java-format 2.103.0
 prettier 3.9.10
+# The release binary scripts/build/tool.sh fetches to install the tools
+# below (mise cannot install itself); its sums are in that script.
+mise 2026.11.7
+# Installed by mise through scripts/build/tool.sh, at these versions, on the
+# Mac, in the pre-push hook and in CI (ci.yml's guards job).
+shellcheck 0.11.0
+actionlint 1.7.12
+zizmor 1.32.0
+lychee 0.24.2
+
+# The simplicity guards (CLAUDE.md, "Simplicity rules"). Semgrep's free
+# command line (LGPL-2.1, metrics off, no login), run by uvx at this version;
+# jscpd (MIT) and dependency-cruiser (MIT) by npx (dependency-cruiser pinned
+# in apps/web/package.json and checked against this line); SwiftLint (MIT)
+# and detekt's command line (Apache-2.0) by scripts/ci/phone_lint.sh.
+semgrep 1.185.0
+jscpd 5.4.3
+dependency-cruiser 18.8.0-beta-2
+swiftlint 0.65.1
+detekt 2.0.0-alpha.6

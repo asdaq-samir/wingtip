@@ -10,9 +10,11 @@
  */
 import { api } from "../../../lib/api/client";
 import type { Flight, FlightSummary, ProcedureDrawing } from "../../../lib/api/types";
-import { callEngine } from "../../../lib/engine/engine";
+import { localDay } from "../../../lib/format";
+import { procedureQuery, proceduresQuery, queryClient } from "../../../lib/queryClient";
 import { findApproaches, type ApproachDebrief } from "../../../components/approachDebriefModel";
 import type { TrackPoint } from "../../../lib/track";
+import { debriefOf } from "../debrief";
 import type { CoachDebrief } from "./coachApi";
 
 /** The newest flights looked at: a few weeks' flying, and each one asks
@@ -24,26 +26,10 @@ const RECENT_MS = 183 * 86_400_000;
 /** A field's approaches drawn at most: the CIFP lists a dozen at a big one. */
 const MOST_APPROACHES = 6;
 
-const enginePoints = (points: TrackPoint[]) => points.map((p) => ({ t: p.t, lat: p.lat, lon: p.lon, alt_ft: p.altFt }));
-
 /** The flight's debrief as the engine gives it, trimmed; null where the
  *  track never flew. `patterns` are its fields' pattern altitudes. */
 function flightDebrief(flight: Flight, points: TrackPoint[], patterns: Record<string, number>, flownOn: string): CoachDebrief | null {
-  const { debrief: d } = callEngine("debrief", {
-    checkpoints: flight.checkpoints.map((c) => ({
-      sequence_no: c.sequenceNo,
-      name: c.name,
-      category: c.category,
-      lat: c.lat,
-      lon: c.lon,
-      along_track_nm: c.alongTrackNm,
-      true_course_deg: c.trueCourseDeg,
-      ete_min: c.eteMin,
-      altitude_ft: c.altitudeFt,
-    })),
-    points: enginePoints(points),
-    patterns,
-  });
+  const { debrief: d } = debriefOf(flight, points, patterns);
   if (!d) return null;
   return {
     kind: "flight",
@@ -74,15 +60,16 @@ export function approachDebrief(a: ApproachDebrief, elevationFt: number | null, 
 }
 
 /** The day a track flew, on the pilot's calendar. */
-const dayOf = (ms: number) => {
-  const d = new Date(ms);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+const dayOf = (ms: number) => localDay(new Date(ms));
 
 async function drawings(ident: string): Promise<ProcedureDrawing[]> {
-  const listed = await api.procedures(ident).catch(() => null);
+  // Through the query cache, under the keys the map and a flight's page
+  // keep them by: a field's approaches already drawn are not asked again.
+  const listed = await queryClient.fetchQuery(proceduresQuery(ident)).catch(() => null);
   const approaches = (listed?.procedures ?? []).filter((p) => p.kind === "approach").slice(0, MOST_APPROACHES);
-  const drawn = await Promise.all(approaches.map((p) => api.procedure(ident, p.id, null).catch(() => null)));
+  const drawn = await Promise.all(
+    approaches.map((p) => queryClient.fetchQuery(procedureQuery({ ident, id: p.id, transition: null })).catch(() => null)),
+  );
   return drawn.filter((d): d is ProcedureDrawing => !!d);
 }
 

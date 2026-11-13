@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { drawn, grabberTo, openMapSettings, openSection, openTab, settle, sideDrawer, slow } from "./helpers";
+import { drawn, grabberTo, openSection, openTab, settle, sideDrawer, slow } from "./helpers";
+import { openSettingsPage } from "./mapCard";
 
 /**
  * Each hazard in the Brief says which legs of the route it is on and when
@@ -79,7 +80,7 @@ test("the map's settings say when the METARs and TFRs were fetched", async ({ pa
   );
   await page.goto("/app/plan");
   await settle(page);
-  await openMapSettings(page);
+  await openSettingsPage(page, "sources");
   await expect(page.getByTestId("metars-age")).toHaveText(/^METARs\s*aviationweather\.gov · \d+m ago$/);
   // Not fetched yet: the source alone, no age made up.
   await expect(page.getByTestId("tfrs-age")).toHaveText(/TFRs\s*tfr\.faa\.gov$/);

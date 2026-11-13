@@ -7,7 +7,7 @@ import Testing
 @MainActor
 struct AirportExtrasTests {
     private func decode<T: Decodable>(_ type: T.Type, _ json: String) throws -> T {
-        try Planner.snakeCase.decode(T.self, from: Data(json.utf8))
+        try Planner.json.decode(T.self, from: Data(json.utf8))
     }
 
     // MARK: Decoding

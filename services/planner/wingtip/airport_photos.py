@@ -17,7 +17,6 @@ from __future__ import annotations
 import html
 import json
 import logging
-import math
 import re
 import time
 from pathlib import Path
@@ -25,7 +24,10 @@ from urllib.parse import unquote
 
 import requests
 
+from . import geo, outside
+from .atomic import atomic_path
 from .config import DATA_DIR
+from .units import M_PER_NM
 
 log = logging.getLogger(__name__)
 
@@ -56,13 +58,12 @@ def aerial_box(lat: float, lon: float, ends: list[tuple[float, float]]) -> tuple
     """(west, south, east, north) round the runways' ends with a margin, or
     round the field's point where none are surveyed, widened to the
     picture's 3:2 so the runways are not stretched."""
-    m_lat = 111_320.0
-    m_lon = m_lat * max(0.2, math.cos(math.radians(lat)))
     if ends:
         lats, lons = [e[0] for e in ends], [e[1] for e in ends]
         cy, cx = (min(lats) + max(lats)) / 2, (min(lons) + max(lons)) / 2
-        w = (max(lons) - min(lons)) * m_lon * (1 + 2 * AERIAL_MARGIN)
-        h = (max(lats) - min(lats)) * m_lat * (1 + 2 * AERIAL_MARGIN)
+        # The runways' extent each way, metres along the great circle.
+        w = geo.distance_nm(cy, min(lons), cy, max(lons)) * M_PER_NM * (1 + 2 * AERIAL_MARGIN)
+        h = geo.distance_nm(min(lats), cx, max(lats), cx) * M_PER_NM * (1 + 2 * AERIAL_MARGIN)
     else:
         cy, cx, w, h = lat, lon, 0.0, 0.0
     w, h = max(w, AERIAL_MIN_M), max(h, AERIAL_MIN_M * AERIAL_PX[1] / AERIAL_PX[0])
@@ -71,7 +72,9 @@ def aerial_box(lat: float, lon: float, ends: list[tuple[float, float]]) -> tuple
         w = h * ratio
     else:
         h = w / ratio
-    dx, dy = w / 2 / m_lon, h / 2 / m_lat
+    # Half of each from the middle, north and east, back in degrees.
+    dy = geo.destination_point(cy, cx, 0.0, h / 2 / M_PER_NM)[0] - cy
+    dx = geo.destination_point(cy, cx, 90.0, w / 2 / M_PER_NM)[1] - cx
     return (round(cx - dx, 6), round(cy - dy, 6), round(cx + dx, 6), round(cy + dy, 6))
 
 
@@ -83,7 +86,7 @@ def aerial(ident: str, lat: float, lon: float, ends: list[tuple[float, float]], 
         return path
     west, south, east, north = aerial_box(lat, lon, ends)
     try:
-        response = requests.get(
+        response = outside.get(
             USGS_EXPORT,
             params={
                 "bbox": f"{west},{south},{east},{north}",
@@ -101,10 +104,8 @@ def aerial(ident: str, lat: float, lon: float, ends: list[tuple[float, float]], 
         raise PhotoUnavailable(f"The USGS imagery could not be had for {ident}: {err}") from err
     if not response.headers.get("content-type", "").startswith("image/"):
         raise PhotoUnavailable(f"The USGS answered {ident} with {response.headers.get('content-type')!r}, not a picture")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    partial = path.with_suffix(".part")
-    partial.write_bytes(response.content)
-    partial.replace(path)
+    with atomic_path(path) as partial:
+        partial.write_bytes(response.content)
     return path
 
 
@@ -116,7 +117,7 @@ def _plain(value: str | None) -> str:
 def _ask_ground_photo(wikipedia_link: str) -> dict | None:
     title = unquote(wikipedia_link.rstrip("/").rsplit("/", 1)[-1]).replace("_", " ")
     pages = (
-        requests.get(
+        outside.get(
             WIKIPEDIA_API,
             params={"action": "query", "format": "json", "prop": "pageimages", "piprop": "name", "titles": title, "redirects": 1},
             headers=HEADERS,
@@ -130,7 +131,7 @@ def _ask_ground_photo(wikipedia_link: str) -> dict | None:
     if not name:
         return None
     files = (
-        requests.get(
+        outside.get(
             COMMONS_API,
             params={
                 "action": "query",
@@ -173,16 +174,14 @@ def ground_photo_file(ident: str, url: str, cache_dir: Path = PHOTO_DIR) -> Path
     if path.exists() and path.stat().st_size > 0:
         return path
     try:
-        response = requests.get(url, headers=HEADERS, timeout=20)
+        response = outside.get(url, headers=HEADERS, timeout=20)
         response.raise_for_status()
     except requests.RequestException as err:
         raise PhotoUnavailable(f"Commons' photo could not be had for {ident}: {err}") from err
     if not response.headers.get("content-type", "").startswith("image/"):
         raise PhotoUnavailable(f"Commons answered {ident}'s photo with {response.headers.get('content-type')!r}")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    partial = path.with_suffix(".part")
-    partial.write_bytes(response.content)
-    partial.replace(path)
+    with atomic_path(path) as partial:
+        partial.write_bytes(response.content)
     return path
 
 

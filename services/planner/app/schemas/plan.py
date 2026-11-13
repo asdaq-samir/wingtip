@@ -7,7 +7,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from .aircraft_figures import DemonstratedCrosswind, DistanceTable, ShortField  # noqa: F401  (re-exported)
 from .common import AltitudeChoice, FlightRules, Hazard, Loading, SpecialUse, Wind
 
+from .leg_points import TopOfClimb, TopOfDescent
 from .route_profile import ProfileAirspace, ProfileGround, ProfileObstacle, RouteProfile  # noqa: F401  (the side view, its own file)
+from .winds_period import WindsPeriod
 
 
 class AirportEnd(BaseModel):
@@ -153,44 +155,6 @@ class Checkpoints(BaseModel):
     selected: list[Candidate]
 
 
-class LegPoint(BaseModel):
-    """A point on a leg that the nav log has a row for, the leg cut there.
-    The miles, minutes and gallons are from the leg's start;
-    `altitude_ft`, the level there."""
-
-    along_nm: float
-    ete_min: float
-    fuel_gal: float | None
-    altitude_ft: float
-    lat: float
-    lon: float
-
-
-class TopOfClimb(LegPoint):
-    """Where a climb tops out (TOC), and the climb's true airspeed and
-    ground speed on the way up to it (wingtip.navlog.with_climbs)."""
-
-    tas_kt: float
-    groundspeed_kt: float
-
-
-class TopOfDescent(LegPoint):
-    """Where a descent starts (TOD): down from `altitude_ft` to `to_ft` --
-    the pattern altitude of the field landed at, the altitude an
-    approach's first fix is crossed at, or the next leg's lower level --
-    at `fpm`, three to one at the leg's ground speed, or steeper where
-    the climb before it left less room (wingtip.navlog.with_descents)."""
-
-    to_ft: float
-    # Whether `to_ft` is the pattern altitude at the field the flight
-    # lands at, rather than a lower level on the way.
-    pattern: bool
-    # The approach's fix `to_ft` is crossed at, where the flight lands by
-    # one (plan.approach_end).
-    fix: str | None = None
-    fpm: float
-
-
 class MissedApproachPath(BaseModel):
     """An approach's missed approach as it is flown, from its missed
     approach point and round its hold once (wingtip.procedure_paths.missed_path),
@@ -290,6 +254,10 @@ class Leg(BaseModel):
     # leg, and up to a new level where a plan steps -- flown at climb
     # speed and burn, and already in `ete_min` and `fuel_gal`.
     climb_min: float = 0.0
+    # The one phase the leg is flown in whole, the climb or the descent,
+    # its figures then that phase's; None for the cruise or a leg cut by a
+    # top of climb or descent (the engine's NavLogLeg `phase`).
+    phase: Literal["climb", "descent"] | None = None
     # The top of the climb, on the leg it is reached on, and the top of
     # the descent, on the leg it starts on.
     toc: TopOfClimb | None = None
@@ -377,23 +345,7 @@ class Totals(BaseModel):
     #: The period of the winds-aloft forecast the legs fly (a route with
     #: stops, its first flight's; each hop has its own): None where it
     #: could not be read.
-    winds: "WindsPeriod | None" = None
-
-
-class WindsPeriod(BaseModel):
-    """The period of the winds and temperatures aloft a plan flies: the
-    GFS model's (fetched by services/weather, read from wingtip.weather_store), since the FB ended with the NAM (NWS
-    Service Change Notice 26-47). Valid at `valid_at`, for use from
-    `use_from` to `use_to` (FAA Order JO 7110.10 TBL 9-3-1's windows round
-    the forecast hour), ISO UTC; `run` the GFS run and `forecast_hour` the
-    hour of it read; `modelled` always true now."""
-
-    valid_at: str
-    use_from: str
-    use_to: str
-    modelled: bool = False
-    run: str | None = None
-    forecast_hour: int | None = None
+    winds: WindsPeriod | None = None
 
 
 class FuelStop(BaseModel):
@@ -703,6 +655,10 @@ class AircraftProfile(BaseModel):
     climb_rate_fpm_sea_level: float | None = None
     climb_tas_kt: float | None = None
     climb_fuel_burn_gph: float | None = None
+    #: The descent's indicated airspeed (kt) and fuel flow (gal/h), as a
+    #: handbook gives them; the nav log flies the descent on them.
+    descent_ias_kt: float | None = None
+    descent_fuel_burn_gph: float | None = None
     usable_fuel_gal: float | None = None
     supplemental_oxygen: bool | None = None
     pressurized: bool | None = None

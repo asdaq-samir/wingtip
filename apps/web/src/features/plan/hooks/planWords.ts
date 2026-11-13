@@ -17,19 +17,13 @@ export function planningWords(stage: string): string {
   return "Planning…";
 }
 
-export function progressWords(
-  navStage: string | null,
-  stage: string | null,
-  briefingLoading: boolean,
-  described: { done: number; total: number } | null,
-): string | null {
+export function progressWords(navStage: string | null, stage: string | null, briefingLoading: boolean): string | null {
   return (
     (navStage ? planningWords(navStage) : null) ??
     (stage === "navlog" ? "Planning…" : null) ??
     (stage === "course" ? "Drawing Route…" : null) ??
     (stage === "checkpoints" ? "Finding Checkpoints…" : null) ??
-    (briefingLoading ? "Fetching Weather…" : null) ??
-    (described ? `Describing Checkpoints ${described.done} of ${described.total}` : null)
+    (briefingLoading ? "Fetching Weather…" : null)
   );
 }
 

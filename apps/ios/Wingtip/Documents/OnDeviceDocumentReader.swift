@@ -1,45 +1,33 @@
 import Foundation
-import UIKit
-#if canImport(FoundationModels)
 import FoundationModels
+import UIKit
 import Vision
-#endif
 
 /// A photographed page read on the phone (iOS 27): Apple's on-device model
 /// shown the photo (an image Attachment) with Vision's text recognition as
-/// a tool (OCRTool), filling the same shapes the assistant's reader fills
-/// (DocumentDrafts), and the engine on the phone checking the figures as
-/// the server's reader has them checked (handbook_read_check,
-/// logbook_read_check). The photo never leaves the phone. Where the phone
-/// cannot (no Apple Intelligence, a model without vision, an iOS before
-/// 27) or the read fails, DocumentReader sends it to the assistant as
-/// before. The owner's privacy ask, 2026-11-09.
+/// a tool (OCRTool), filling the shapes the engine's checks take
+/// (DocumentDrafts), and the engine on the phone checking the figures
+/// (handbook_read_check, logbook_read_check). The photo goes no further
+/// than Apple's own models. Where they cannot (no Apple Intelligence, a
+/// model without vision), the page is not read. The owner's privacy ask,
+/// 2026-11-09.
 enum OnDeviceDocumentReader {
     static let model = "apple-on-device"
 
     /// Where a page can be read by Apple's models, in order: this iPhone's,
     /// then Private Cloud Compute's (AppleModels), each where it takes images.
     static var places: [ModelPlace] {
-        #if canImport(FoundationModels)
-        if #available(iOS 27, *) { return AppleModels.places.filter(AppleModels.reads(images:)) }
-        #endif
-        return []
+        AppleModels.places.filter(AppleModels.reads(images:))
     }
 
     /// Why neither of Apple's models can read a page, else nil.
     static var unavailableWhy: String? {
-        #if canImport(FoundationModels)
-        if #available(iOS 27, *) {
-            if let why = AppleModels.unavailableWhy { return why }
-            return places.isEmpty ? "Apple's models here cannot read photos." : nil
-        }
-        #endif
-        return "Reading photos on this iPhone needs iOS 27."
+        if let why = AppleModels.unavailableWhy { return why }
+        return places.isEmpty ? "Apple's models here cannot read photos." : nil
     }
 
-    /// What the model is told: the assistant's reader's rules
-    /// (services/assistant/app/documents/prompts.py SYSTEM), short, as the
-    /// on-device model's context is small.
+    /// What the model is told, short, as the on-device model's context is
+    /// small.
     static let instructions = """
     You read a photograph of a page a pilot keeps into figures for a flight planning app. Call the text recognition tool \
     to read the printed or written text exactly. Rules: read only what the photograph shows; never fill a figure from what \
@@ -49,7 +37,7 @@ enum OnDeviceDocumentReader {
     the kind of page asked for, say why in unreadable and give no figures.
     """
 
-    /// The ask for each kind of page, as the assistant's (prompts.py ASKS).
+    /// The ask for each kind of page.
     static func ask(_ kind: DocumentKind) -> String {
         switch kind {
         case .pohPerformance:
@@ -63,44 +51,39 @@ enum OnDeviceDocumentReader {
         }
     }
 
-    /// The page read and checked, as the assistant's answer is.
+    /// The page read and checked (DocumentRead).
     static func read(_ kind: DocumentKind, image: UIImage, today: String = Day.today()) async throws -> DocumentAnswer {
         if let why = unavailableWhy { throw WordsUnavailable(why: why) }
-        #if canImport(FoundationModels)
-        if #available(iOS 27, *) {
-            guard let cg = DocumentReader.jpeg(image).flatMap(UIImage.init(data:))?.cgImage else {
-                throw WordsUnavailable(why: "That photo could not be opened.")
-            }
-            // Vision's text recognition as the model's tool, where the SDK
-            // has it: the device SDK's _Vision_FoundationModels overlay;
-            // the simulator's has none, and the model reads the photo alone.
-            let tools: [any Tool] = {
-                #if canImport(_Vision_FoundationModels)
-                return [OCRTool()]
-                #else
-                return []
-                #endif
-            }()
-            let prompt = Prompt {
-                ask(kind)
-                Attachment(cg).label("page")
-            }
-            // This iPhone's model first, then Apple's Private Cloud Compute
-            // (AppleModels); the photo goes to Apple's only where the phone's
-            // cannot read it, and to the assistant only where neither can.
-            return try await AppleModels.attempt(places) { place in
-                let session = AppleModels.session(place, tools: tools, instructions: instructions)
-                let draft: [String: Any]
-                switch kind {
-                case .clearance: draft = try json(try await session.respond(to: prompt, generating: ClearanceDraft.self).content)
-                case .logbookPage: draft = try json(try await session.respond(to: prompt, generating: LogbookPageDraft.self).content)
-                case .pohPerformance, .weightBalance: draft = try json(try await session.respond(to: prompt, generating: HandbookPageDraft.self).content)
-                }
-                return try DocumentAnswer(data: answer(kind, draft: draft, today: today, model: place.model))
-            }.value
+        guard let cg = DocumentReader.jpeg(image).flatMap(UIImage.init(data:))?.cgImage else {
+            throw WordsUnavailable(why: "That photo could not be opened.")
         }
-        #endif
-        throw WordsUnavailable(why: "Reading photos on this iPhone needs iOS 27.")
+        // Vision's text recognition as the model's tool, where the SDK
+        // has it: the device SDK's _Vision_FoundationModels overlay;
+        // the simulator's has none, and the model reads the photo alone.
+        let tools: [any Tool] = {
+            #if canImport(_Vision_FoundationModels)
+            return [OCRTool()]
+            #else
+            return []
+            #endif
+        }()
+        let prompt = Prompt {
+            ask(kind)
+            Attachment(cg).label("page")
+        }
+        // This iPhone's model first, then Apple's Private Cloud Compute
+        // (AppleModels); the photo goes to Apple's only where the phone's
+        // cannot read it.
+        return try await AppleModels.attempt(places) { place in
+            let session = AppleModels.session(place, tools: tools, instructions: instructions)
+            let draft: [String: Any]
+            switch kind {
+            case .clearance: draft = try json(try await session.respond(to: prompt, generating: ClearanceDraft.self).content)
+            case .logbookPage: draft = try json(try await session.respond(to: prompt, generating: LogbookPageDraft.self).content)
+            case .pohPerformance, .weightBalance: draft = try json(try await session.respond(to: prompt, generating: HandbookPageDraft.self).content)
+            }
+            return try DocumentAnswer(data: answer(kind, draft: draft, today: today, model: place.model))
+        }.value
     }
 
     /// A clearance typed or copied as text, in a pilot's shorthand or as a
@@ -109,30 +92,25 @@ enum OnDeviceDocumentReader {
     /// clearance reader (read_clearance) to read. Nil where the model
     /// cannot run; the engine then reads the text as it is.
     static func said(clearance text: String) async throws -> String? {
-        #if canImport(FoundationModels)
-        if #available(iOS 26, *), AppleModels.unavailableWhy == nil {
-            // This iPhone's model, else Apple's Private Cloud Compute.
-            let said = try await AppleModels.attempt(usable: { !$0.isEmpty }) { place in
-                let session = AppleModels.session(place, instructions: instructions)
-                let draft = try await session.respond(to: "\(ask(.clearance))\n\nThe note, as text: \(text)", generating: ClearanceTextDraft.self).content
-                return draft.said.trimmingCharacters(in: .whitespacesAndNewlines)
-            }.value
-            return said.isEmpty ? nil : said
-        }
-        #endif
-        return nil
+        guard AppleModels.unavailableWhy == nil else { return nil }
+        // This iPhone's model, else Apple's Private Cloud Compute.
+        let said = try await AppleModels.attempt(usable: { !$0.isEmpty }) { place in
+            let session = AppleModels.session(place, instructions: instructions)
+            let draft = try await session.respond(to: "\(ask(.clearance))\n\nThe note, as text: \(text)", generating: ClearanceTextDraft.self).content
+            return draft.said.trimmingCharacters(in: .whitespacesAndNewlines)
+        }.value
+        return said.isEmpty ? nil : said
     }
 
-    /// A draft as JSON in snake case, the assistant's and the engine's keys.
+    /// A draft as JSON in snake case, the engine's keys.
     static func json(_ draft: some Encodable) throws -> [String: Any] {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
         return try JSONSerialization.jsonObject(with: encoder.encode(draft)) as? [String: Any] ?? [:]
     }
 
-    /// The answer as the assistant writes it (DocumentRead): the read, the
-    /// engine's check of it from the engine on the phone, the notes and why
-    /// it could not be read. An unreadable page gives no figures.
+    /// The answer (DocumentRead): the read, the engine's check of it from
+    /// the engine on the phone, the notes and why it could not be read. An unreadable page gives no figures.
     static func answer(_ kind: DocumentKind, draft: [String: Any], today: String, model: String = OnDeviceDocumentReader.model) throws -> Data {
         var figures = draft
         let page = figures.removeValue(forKey: "page") as? [String: Any] ?? [:]

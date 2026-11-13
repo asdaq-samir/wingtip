@@ -1,8 +1,12 @@
 import { useId, useState } from "react";
 import SheetDialog from "../../../components/SheetDialog";
 import { useDiscardGuard } from "../../../components/discardGuard";
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "../../../components/ui/input-group";
+import { NumberField } from "../../../components/ui/number-field";
+import { THREE_FIGURES } from "../../../components/ui/numberFormats";
 import { frdIdent } from "../../../lib/identSchema";
+
+/** A distance in nm, to a hundredth at most. */
+const DISTANCE: Intl.NumberFormatOptions = { useGrouping: false, maximumFractionDigits: 2 };
 
 /**
  * The pilot's own point off a point of the route, from its menu's "Create
@@ -27,26 +31,31 @@ export default function FixFromDialog({
   // again each time it is opened.
   const [was, setWas] = useState(from);
   const [shown, setShown] = useState(from);
-  const [course, setCourse] = useState("");
-  const [distance, setDistance] = useState("");
+  // The figures as typed (React Aria's NumberField, read in the pilot's
+  // locale: "12,5" nm is twelve and a half where a comma is the decimal),
+  // and the fields made new at each opening.
+  const [course, setCourse] = useState<number | null>(null);
+  const [distance, setDistance] = useState<number | null>(null);
+  const [opened, setOpened] = useState(0);
   if (from !== was) {
     setWas(from);
     if (from) {
       setShown(from);
-      setCourse("");
-      setDistance("");
+      setCourse(null);
+      setDistance(null);
+      setOpened((n) => n + 1);
     }
   }
   const form = useId();
   const at = shown ?? "";
-  const deg = course.length === 3 ? Number(course) : NaN;
-  const nm = Number(distance);
+  const deg = course ?? Number.NaN;
+  const nm = distance ?? Number.NaN;
   // A course of 001 to 360 (000 is 360), out to 999 nm, as the planner
   // takes one (wingtip.fixes.parse_frd).
   const valid = deg >= 0 && deg <= 360 && nm > 0 && nm <= 999;
   const ident = valid ? frdIdent(at, deg, nm) : null;
   // A course or distance typed is asked about before it is thrown away (useDiscardGuard).
-  const [closing, discard] = useDiscardGuard(course !== "" || distance !== "", onClose);
+  const [closing, discard] = useDiscardGuard(course != null || distance != null, onClose);
   return (
     <>
       {discard}
@@ -69,38 +78,36 @@ export default function FixFromDialog({
           }}
           className="flex gap-2"
         >
-          {/* Each figure with its unit inside the field, the stock input
-            group, as the airplane form's figures have theirs. */}
-          <InputGroup className="h-10 flex-1 font-mono">
-            <InputGroupInput
-              value={course}
-              onChange={(e) => setCourse(e.target.value.replace(/\D/g, "").slice(0, 3))}
-              placeholder="090"
-              inputMode="numeric"
-              spellCheck={false}
-              aria-label={`Magnetic course from ${at}, degrees`}
-              className="font-mono"
-              data-testid="fix-from-course"
-            />
-            <InputGroupAddon align="inline-end">
-              <InputGroupText>°</InputGroupText>
-            </InputGroupAddon>
-          </InputGroup>
-          <InputGroup className="h-10 flex-1 font-mono">
-            <InputGroupInput
-              value={distance}
-              onChange={(e) => setDistance(e.target.value.replace(/[^\d.]/g, "").slice(0, 5))}
-              placeholder="30"
-              inputMode="decimal"
-              spellCheck={false}
-              aria-label={`Distance from ${at}, nautical miles`}
-              className="font-mono"
-              data-testid="fix-from-distance"
-            />
-            <InputGroupAddon align="inline-end">
-              <InputGroupText>nm</InputGroupText>
-            </InputGroupAddon>
-          </InputGroup>
+          {/* Each figure with its unit inside the field, as the airplane
+            form's figures have theirs: the course in three figures (090). */}
+          <NumberField
+            key={`course-${opened}`}
+            defaultValue={null}
+            onTyped={setCourse}
+            formatOptions={THREE_FIGURES}
+            minValue={0}
+            maxValue={999}
+            placeholder="090"
+            unit="°"
+            aria-label={`Magnetic course from ${at}, degrees`}
+            className="h-10 flex-1 font-mono"
+            inputClassName="font-mono"
+            data-testid="fix-from-course"
+          />
+          <NumberField
+            key={`distance-${opened}`}
+            defaultValue={null}
+            onTyped={setDistance}
+            formatOptions={DISTANCE}
+            minValue={0}
+            maxValue={999}
+            placeholder="30"
+            unit="nm"
+            aria-label={`Distance from ${at}, nautical miles`}
+            className="h-10 flex-1 font-mono"
+            inputClassName="font-mono"
+            data-testid="fix-from-distance"
+          />
         </form>
       </SheetDialog>
     </>

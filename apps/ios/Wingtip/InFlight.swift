@@ -17,8 +17,6 @@ import Observation
 @MainActor
 @Observable
 final class InFlight {
-    static let shared = InFlight()
-
     /// The airplane against its route, as `in_flight` answers it (the
     /// engine's contract, Engine/Generated).
     typealias Progress = EngineContract.InFlightAnswer
@@ -59,7 +57,7 @@ final class InFlight {
 
     /// The fix taken: the instruments worked out again from it and the
     /// plan. A nil fix (own ship off, no dry run) clears them.
-    func took(_ fix: OwnShip.Fix?, plan: Plan, now: Date = Date()) {
+    func took(_ fix: OwnShip.Fix?, plan: Plan, emergency: Bool = false, now: Date = Date()) {
         guard let fix else {
             self.fix = nil
             progress = nil
@@ -95,7 +93,7 @@ final class InFlight {
         }
         // The ring only where it is wanted and the airplane's own glide
         // is known (ringRatio): none is drawn on any other airplane's.
-        let ratio = Self.ringRatio(plan: plan)
+        let ratio = Self.ringRatio(plan: plan, emergency: emergency)
         glide = ratio == nil ? nil : asked("glide ring") {
             try Engine.glideRing(lat: at.latitude, lon: at.longitude, altitudeFt: fix.altitudeFt, speedKt: fix.groundspeedKt,
                                  terrainFt: terrainFt, fieldFt: fieldFt, glideRatio: ratio)
@@ -114,8 +112,8 @@ final class InFlight {
     /// an airplane picked whose figures give its glide ratio (its POH's
     /// Section 3: the pilot's own over its type's book, airplane_figures)
     /// -- never another airplane's.
-    static func ringRatio(plan: Plan, defaults: UserDefaults = .standard, airplanes: Airplanes = .shared) -> Double? {
-        guard plan.airplaneChosen, Emergency.shared.open != nil || defaults.bool(forKey: ringKey) else { return nil }
+    static func ringRatio(plan: Plan, emergency: Bool = false, defaults: UserDefaults = .standard, airplanes: Airplanes = .shared) -> Double? {
+        guard plan.airplaneChosen, emergency || defaults.bool(forKey: ringKey) else { return nil }
         return airplanes.value(.glideRatio, plan: plan)
     }
 

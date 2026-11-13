@@ -20,7 +20,8 @@ export const askSearch = (mode: SearchAsk = "all") => useSearchAsk.setState({ as
  * the one search itself, scoped to it, where each picker had a search of
  * its own over the sheet (the one card rule, the owner 2026-11-10: one
  * search field). `label` names what is asked for ("Destination"); the
- * pick goes to `onPick`, the ident as picked or as typed. `fields` counts
+ * pick goes to `onPick`, the ident as picked or as typed; `problem` says
+ * why the last pick would not do, under the field. `fields` counts
  * the one searches drawn: the developer's page has none, and its pickers
  * keep their own search.
  */
@@ -28,6 +29,7 @@ export interface SearchPick {
   label: string;
   fixes: boolean;
   onPick: (ident: string) => void;
+  problem?: string;
 }
 export const useSearchPick = create<{ pick: SearchPick | null; fields: number }>(() => ({ pick: null, fields: 0 }));
 

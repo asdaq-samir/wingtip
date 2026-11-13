@@ -1,17 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
-import {
-  consoleSheet,
-  controlsInSight,
-  grabberTo,
-  library,
-  openBrief,
-  openConsole,
-  openMapSettings,
-  openPanel,
-  showTabs,
-  sideDrawer,
-} from "./helpers";
+import { consoleSheet, controlsInSight, grabberTo, library, openBrief, openConsole, openPanel, showTabs, sideDrawer } from "./helpers";
+import { openSettingsPage } from "./mapCard";
 import { pickAirplane } from "./startState";
+import { showPage } from "./sheetPages";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -60,8 +51,7 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   const filed: Record<string, unknown>[] = [];
   await signedIn(page, filed);
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
-  // Save is in the half panel's Share menu: all the way up the head is
-  // the tab bar.
+  // Save is in the half panel's Share menu.
   await controlsInSight(page);
   const save = page.getByTestId("save-flight-button");
 
@@ -74,6 +64,10 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   await planSettled(page);
   await expect(save).toBeEnabled();
   await save.click();
+  // The menu gone before it is opened again: opened as it was still going,
+  // its focus was handed back to the button after, and the Escape below
+  // was the sheet's, which it lowered.
+  await expect(page.getByRole("menu")).toHaveCount(0);
   await page.getByTestId("share-route").click();
   await expect(save).toHaveAccessibleName("Saved");
   await expect(save).toBeDisabled();
@@ -113,6 +107,10 @@ test("a flight from a present position is filed from that position", async ({ pa
   await planSettled(page);
   await expect(save).toBeEnabled();
   await save.click();
+  // The menu gone before it is opened again: opened as it was still going,
+  // its focus was handed back to the button after, and the Escape below
+  // was the sheet's, which it lowered.
+  await expect(page.getByRole("menu")).toHaveCount(0);
   await page.getByTestId("share-route").click();
   await expect(save).toHaveAccessibleName("Saved");
   expect(filed).toHaveLength(1);
@@ -178,7 +176,7 @@ test("opening a saved flight puts its route in the header, and Load plans that r
   await expect(page).toHaveURL(/dep=KMSP/);
   await expect(page).toHaveURL(/altitude_ft=5500/);
   // And at the altitudes the pilot set at its points: Duluth's pattern.
-  await expect(page).toHaveURL(/altitudes=KDLH%3A2400/);
+  await expect(page).toHaveURL(/altitudes=KDLH(%3A|:)2400/);
 });
 
 test("a saved flight opened from FPL's Saved opens its page, and Open on the map plans it", async ({ page }) => {
@@ -205,8 +203,9 @@ test("a saved flight opened from FPL's Saved opens its page, and Open on the map
     ],
   );
   await page.goto("/app/plan");
-  // The saved flights on the one search's own page, under its Favorites,
-  // Recents and Nearest: all the way up.
+  // The saved flights are FPL's page's (FplStrip; the owner: "We can remove
+  // plan button and saved from search"), all the way up.
+  await showPage(page, 1);
   await grabberTo(page, "full");
   const panel = sideDrawer(page);
   await panel.getByTestId("pill-section-saved-more").click();
@@ -291,8 +290,9 @@ test("a saved flight's ••• and its long press offer Edit, Share and Remove
     await route.fulfill({ status: 204, body: "" });
   });
   await page.goto("/app/plan");
-  // The saved flights on the one search's own page, under its Favorites,
-  // Recents and Nearest: all the way up.
+  // The saved flights are FPL's page's (FplStrip; the owner: "We can remove
+  // plan button and saved from search"), all the way up.
+  await showPage(page, 1);
   await grabberTo(page, "full");
   const panel = sideDrawer(page);
   await panel.getByTestId("pill-section-saved-more").click();
@@ -331,7 +331,7 @@ test("Print is in the Brief's Share menu; Keep for the Air is in the map's menu,
 
   // From the search bar, the route closed.
   await page.goto("/app/plan");
-  await openMapSettings(page);
+  await openSettingsPage(page);
   const keep = page.getByTestId("keep-offline-toggle");
   await expect(keep).toBeVisible();
   // The suite's stack is plain http, where the service worker that keeps

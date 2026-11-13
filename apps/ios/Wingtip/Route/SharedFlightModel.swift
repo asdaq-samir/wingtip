@@ -7,13 +7,11 @@ import Observation
 /// from the gateway by its token, its filed nav log with it; a flight
 /// file's is in the file, its nav log with it where it was saved with one. Use This Plan
 /// plans it through the route command a shared route always took
-/// (PendingCommand.planRoute), then opens its nav log; Not Now leaves the
+/// (AppCommand.planRoute), then opens its nav log; Not Now leaves the
 /// pilot's own plan as it was.
 @MainActor
 @Observable
 final class SharedFlightModel {
-    static let shared = SharedFlightModel()
-
     /// The gateway's call, a test's own in its place.
     struct Calls: Sendable {
         var fetch: @Sendable (String) async throws -> GWSharedFlightDto?
@@ -87,16 +85,17 @@ final class SharedFlightModel {
     /// Use This Plan: the route planned as it was sent, at its altitude and
     /// under its rules where it says them, then its nav log opened. The
     /// airplane stays the pilot's own: the sender's type is never assumed.
-    func use(on route: Plan, commands: PendingCommand = .shared, defaults: UserDefaults = .standard) {
-        guard let shared = plan else { return }
+    /// The route is given back for the root view to plan, the nav log
+    /// opened after it (`.navlog`).
+    func use(on route: Plan, defaults: UserDefaults = .standard) -> AppCommand? {
+        guard let shared = plan else { return nil }
         route.ownAltitudeFt = shared.altitudeFt.map(Double.init)
         route.ownAltitudeLegal = false
         route.altitudeChoice = nil
         route.procedures = []
         route.extras = RouteExtras()
         if let rules = shared.rules { defaults.set(rules.rawValue, forKey: FlightRules.key) }
-        commands.then = .navlog
-        commands.command = .planRoute(dep: shared.dep, stops: shared.stops, dest: shared.dest)
         notNow()
+        return .planRoute(dep: shared.dep, stops: shared.stops, dest: shared.dest)
     }
 }

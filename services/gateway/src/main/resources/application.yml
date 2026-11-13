@@ -1,4 +1,12 @@
 spring:
+  # Each request, each streamed answer piped from the planner and each
+  # scheduled job on a virtual thread (JDK 25, where a thread waiting in
+  # synchronized no longer pins its carrier): a nav log or a detection
+  # stream holds its thread for minutes while it waits on the planner,
+  # and no longer holds one of Tomcat's 200 to do it.
+  threads:
+    virtual:
+      enabled: true
   mvc:
     async:
       # PlannerProxyController's streamed responses (detect/stream,
@@ -35,6 +43,23 @@ spring:
   jackson:
     deserialization:
       fail-on-null-for-primitives: false
+  # The clients this app makes of the planner on its own behalf
+  # (UpstreamClients, Spring's HTTP interfaces): the planner's rules are
+  # milliseconds of the engine's work, so one that takes 20 s is not well;
+  # a briefing reads the weather along the route, so it waits 2 minutes. No redirect is
+  # followed: one from an upstream is a misconfiguration to surface.
+  http:
+    clients:
+      connect-timeout: 10s
+      read-timeout: 30s
+      redirects: dont-follow
+    serviceclient:
+      planner:
+        base-url: ${app.planner.base-url}
+        read-timeout: 20s
+      briefing:
+        base-url: ${app.planner.base-url}
+        read-timeout: 2m
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/wingtip}
     username: ${SPRING_DATASOURCE_USERNAME:wingtip}
@@ -78,19 +103,6 @@ spring:
 # endpoints answer 401 -- closed, not open. The magic-link flow above
 # is independent of this profile entirely.
 
-# The Python planner: chart vision, course, checkpoints and nav log.
-# Reached only through this service, which is what lets it publish no port
-# of its own.
-planner-service:
-  base-url: ${PLANNER_SERVICE_URL:http://localhost:8084}
-
-# The assistant service: every Claude call (the assistant, the narrative,
-# the words, the checkpoint notes, the mock oral), reached as the planner
-# is, at the same /api/planner/... addresses (PlannerProxyController
-# picks which by path).
-assistant-service:
-  base-url: ${ASSISTANT_SERVICE_URL:http://localhost:8085}
-
 server:
   port: 8080
   servlet:
@@ -130,7 +142,7 @@ management:
   # Traces (Micrometer's OpenTelemetry bridge) only where they are asked
   # for: docker-compose sets MANAGEMENT_TRACING_EXPORT_ENABLED from
   # TRACING and the OTLP endpoint (Jaeger's). On, each request is a span
-  # sent to it, and the planner's and the assistant's spans go under it
+  # sent to it, and the planner's spans go under it
   # (TraceHeaders passes the context on); off, nothing is sent.
   # (management.tracing.enabled until Spring Boot 4 renamed it.)
   tracing:
@@ -174,11 +186,17 @@ management:
     mail:
       enabled: false
 
-# Where the front-end bundle is served from -- see WebMvcConfig. The
-# Docker image sets APP_STATIC_LOCATION to a directory beside the jar
-# (front-end changes rebuild the bundle without rebuilding the jar); a
-# local `mvn package` after `vite build` finds it on the classpath.
+# This app's own settings, bound and checked at start (AppProperties).
 app:
+  # The Python planner: chart vision, course, checkpoints and nav log.
+  # Reached only through this service, which is what lets it publish no
+  # port of its own.
+  planner:
+    base-url: ${PLANNER_SERVICE_URL:http://localhost:8084}
+  # Where the front-end bundle is served from -- see WebMvcConfig. The
+  # Docker image sets APP_STATIC_LOCATION to a directory beside the jar
+  # (front-end changes rebuild the bundle without rebuilding the jar); a
+  # local `mvn package` after `vite build` finds it on the classpath.
   static-location: ${APP_STATIC_LOCATION:classpath:/static/app/}
   # A second, HTTPS port for a phone on the same Wi-Fi
   # (HttpsConnectorConfig) -- only when the keystore is named and the
@@ -189,6 +207,41 @@ app:
     keystore: ${APP_HTTPS_KEYSTORE:}
     keystore-password: ${APP_HTTPS_KEYSTORE_PASSWORD:changeit}
     port: ${APP_HTTPS_PORT:8443}
+  # The port the routes only other services call (/internal/**) answer on,
+  # and only there (InternalPortConfig): published by no compose file, so
+  # only the compose network reaches it. 0 opens none.
+  internal:
+    port: ${APP_INTERNAL_PORT:8081}
+  # Sign in with Apple (OAuthClientsConfig, AppleRevocation): the web's
+  # team, key and Services ID and the .p8 key's PEM, its line breaks kept;
+  # whether the iOS app's sign-in must carry its nonce (AppleNonce,
+  # docs/NATIVE.md: off until the app sends one); and where a deleted
+  # pilot's grant is revoked.
+  apple:
+    team-id: ${APPLE_TEAM_ID:}
+    key-id: ${APPLE_KEY_ID:}
+    services-id: ${APPLE_SERVICES_ID:}
+    private-key: ${APPLE_PRIVATE_KEY:}
+    require-nonce: ${APP_APPLE_REQUIRE_NONCE:false}
+    revoke-url: https://appleid.apple.com/auth/revoke
+  # Sign in with Google (OAuthClientsConfig).
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+  # The apps whose links open in them (AppSiteAssociationController,
+  # AssetLinksController) and whose sign-in this app takes
+  # (AppleNativeSignInController): the iOS bundle id; the Android package
+  # and its signing certificates' SHA-256s, comma-separated.
+  ios:
+    bundle-id: ${APP_IOS_BUNDLE_ID:}
+  android:
+    package-name: ${APP_ANDROID_PACKAGE:}
+    cert-sha256: ${APP_ANDROID_CERT_SHA256:}
+  # Where mail goes out (spring.mail's host, blank where none is set up)
+  # and who it is from (Mailer).
+  mail:
+    host: ${spring.mail.host:}
+    from: ${MAIL_FROM:no-reply@wingtipmaps.app}
   # HSTS on by default (right behind that load balancer); off locally,
   # where a browser must not learn to upgrade the plain port.
   hsts: ${APP_HSTS:true}
@@ -215,44 +268,15 @@ app:
   # The emailed link's own throttle (MagicLinkController): requests an
   # hour per address and per caller. docker-compose.yml loosens both for
   # the local stack, where the e2e suite signs in.
-  # The calls this app pays Anthropic for, a day's worth per pilot (or
-  # per address, where nobody is signed in), each counted on its own:
-  # the Brief's narratives and generating a route's checkpoint notes
-  # (per-day each), the assistant (Opus, up to eight tool rounds an ask)
-  # and the readings in words (Haiku; the Brief asks three each time a
-  # route or its weather changes) (PlannerProxyController). Past it, a 429
-  # that says when there are more.
-  paid-calls:
-    per-day: ${APP_PAID_CALLS_PER_DAY:40}
-    assistant-per-day: ${APP_PAID_CALLS_ASSISTANT_PER_DAY:20}
-    words-per-day: ${APP_PAID_CALLS_WORDS_PER_DAY:150}
-  # The subscription to the paid features (SubscriptionService): the free
-  # month's length, once an account; each Claude-written feature's monthly
-  # allowance per subscriber, so the heaviest user costs less than they
-  # pay (the mock oral's 60 calls, 30 questions asked and graded, are
-  # about $0.90 on Opus at the cap); and the addresses given it without
-  # paying, comma-separated (an instructor, a tester). A developer always
-  # has it, uncounted.
-  # Whether this deployment sells the subscription at all: off for the
-  # proof of concept, at the owner's ask -- the page then says nothing of
-  # it, the debrief is everyone's, and the features Claude writes are
-  # claude-features' (OFF, DEVELOPERS or EVERYONE, each within the caps).
-  # OFF by default, and OFF wins over a sold subscription, a developer and
-  # an open machine: no request reaches Anthropic, the assistant service
-  # need not run, and the apps use only on-device models and the engine's
-  # own words. The owner, 2026-11-10: "To keep the cost low, we only add
-  # the claude feature later when we decide about subscription model. For
-  # now just the free siri and gemini." (docs/decisions/0035).
-  claude-features: ${APP_CLAUDE_FEATURES:OFF}
+  # The subscription to the paid features (SubscriptionService): whether
+  # this deployment sells it at all (off for the proof of concept, at the
+  # owner's ask: the page then says nothing of it and the debrief is
+  # everyone's), the free month's length, once an account, and the
+  # addresses given it without paying, comma-separated (an instructor, a
+  # tester). A developer always has it.
   subscription:
     enabled: ${APP_SUBSCRIPTION_ENABLED:false}
     trial-days: ${APP_SUBSCRIPTION_TRIAL_DAYS:30}
-    caps:
-      narrative: ${APP_SUBSCRIPTION_CAP_NARRATIVE:60}
-      checkpoint-notes: ${APP_SUBSCRIPTION_CAP_CHECKPOINT_NOTES:60}
-      oral: ${APP_SUBSCRIPTION_CAP_ORAL:60}
-      assistant: ${APP_SUBSCRIPTION_CAP_ASSISTANT:100}
-      words: ${APP_SUBSCRIPTION_CAP_WORDS:1000}
     comped-emails: ${APP_SUBSCRIPTION_COMPED_EMAILS:}
   # The MCP connector a pilot adds to their own Claude or ChatGPT
   # (docs/design/mcp-connector.md, security/mcp): the MCP server's
@@ -262,15 +286,37 @@ app:
   # Inspector; RedirectUris says the forms); the RSA key, PKCS#8 PEM, its
   # tokens are signed with (blank: one made at start, for a machine of
   # one's own); and the token the planner's tools show to read a pilot's
-  # records (blank: refused).
+  # records (blank: refused, and a gateway with the connector on will not
+  # start). Off unless MCP_ENABLED: then its authorization server, /mcp and
+  # the records routes are all 404s (ConnectorOff), as in production until
+  # the connector launches.
   mcp:
+    enabled: ${MCP_ENABLED:false}
     resource: ${MCP_RESOURCE_URL:}
     redirect-uris: ${MCP_REDIRECT_URIS:https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector_platform_oauth_redirect,https://chatgpt.com/connector/oauth/*,http://localhost,http://127.0.0.1}
     signing-key: ${MCP_SIGNING_KEY:}
     internal-token: ${MCP_INTERNAL_TOKEN:}
+    # Open registration held back (RegistrationLimit): so many an address
+    # an hour; and clients nobody connected through let go this many days
+    # after they registered, each night (ConnectorHousekeeping; "-" off).
+    registrations-per-client-per-hour: ${MCP_REGISTRATIONS_PER_CLIENT_PER_HOUR:10}
+    unused-client-days: ${MCP_UNUSED_CLIENT_DAYS:1}
+    housekeeping-cron: ${MCP_HOUSEKEEPING_CRON:0 45 3 * * *}
   magic-link:
     per-address-per-hour: ${APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR:5}
     per-client-per-hour: ${APP_MAGIC_LINK_PER_CLIENT_PER_HOUR:20}
+    # Asks of whose account a link is for (MagicLinkAccountController).
+    account-per-client-per-hour: ${APP_MAGIC_LINK_ACCOUNT_PER_CLIENT_PER_HOUR:30}
+  # The store reviewers' sign-in (ReviewSignIn, docs/store/listing.md
+  # "Review access"): with it on, the one review account below may sign
+  # in with a fixed code in place of an emailed link, since a reviewer
+  # has no access to its inbox. Off unless REVIEW_SIGN_IN=true; the owner
+  # turns it on while a build is in review and off after. Only that
+  # address, only that code (at least 20 characters), nobody else.
+  review-sign-in:
+    enabled: ${REVIEW_SIGN_IN:false}
+    email: ${REVIEW_SIGN_IN_EMAIL:}
+    code: ${REVIEW_SIGN_IN_CODE:}
   # Where the chart tiles come from when they are published to a CDN
   # (the AWS stack sets this to its CloudFront domain, and the planner
   # tells the browser the same base): the content security policy has
@@ -285,8 +331,8 @@ app:
     provider: ${APP_FLIGHT_SERVICE_PROVIDER:none}
 
   # The launch's monitor (UptimeWatch, docs/OPERATIONS.md): each minute
-  # (cron, UTC; "-" turns it off) the planner, the assistant, the weather
-  # service and this app's readiness are asked whether they are up, and the
+  # (cron, UTC; "-" turns it off) the planner, the weather service and
+  # this app's readiness are asked whether they are up, and the
   # planner which live feeds have gone stale; one down for down-after, or a
   # feed the planner calls alerting, is mailed to alert-emails (the
   # developer-emails where none are given), and again when it is back.
@@ -298,10 +344,17 @@ app:
     alert-emails: ${APP_ALERT_EMAILS:}
     weather-url: ${WEATHER_SERVICE_URL:}
 
+  # The Studio's crash drafts (CrashDraftMail, docs/STUDIO-PIPELINE.md):
+  # every five minutes (cron, UTC; "-" turns it off) the planner is asked
+  # which ready drafts nobody has been mailed about, and each is mailed to
+  # the developer-emails with its link under public-base-url.
+  studio:
+    drafts-cron: ${APP_STUDIO_DRAFTS_CRON:0 */5 * * * *}
+
 # The flight watch (FlightWatchService): how often the watched flights
 # departing within the window are re-briefed and the planner asked what
-# changed, an ISO duration. Each check is a briefing and one Claude call
-# a watch, so this is also what the watch costs.
+# changed, an ISO duration. Each check is a briefing and the planner's
+# changes a watch, so this is also what the watch costs.
 wingtip:
   watch:
     every: ${WINGTIP_WATCH_EVERY:PT30M}

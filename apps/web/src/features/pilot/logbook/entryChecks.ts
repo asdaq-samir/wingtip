@@ -15,13 +15,3 @@ export function entryProblems(entry: LogbookEntryRequest): EntryProblems {
   if (!entry.flownOn) problems.flownOn = "Enter the day you flew.";
   return problems;
 }
-
-/** Whether two forms hold the same flight: nothing typed to lose. */
-export function sameEntry(a: LogbookEntryRequest, b: LogbookEntryRequest): boolean {
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)] as (keyof LogbookEntryRequest)[]);
-  for (const key of keys) {
-    // An empty box and none are the same to the pilot.
-    if ((a[key] ?? "") !== (b[key] ?? "")) return false;
-  }
-  return true;
-}

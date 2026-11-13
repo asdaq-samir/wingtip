@@ -8,6 +8,7 @@ use serde_json::{json, Value};
 use std::path::PathBuf;
 use wingtip_engine::call::call;
 use wingtip_engine::geo::distance_nm;
+use wingtip_engine::units::{FT_PER_M, FT_PER_NM};
 
 fn ask(name: &str, input: Value) -> Value {
     let text = call(name, &input.to_string()).unwrap_or_else(|e| panic!("{name}: {e}"));
@@ -208,11 +209,6 @@ fn alerts_go_off_once_as_it_happens() {
     assert_eq!(fires(json!({ "kind": "near", "plane": { "lat": 42.9, "lon": -88.3 }, "to": galt, "limit_nm": 10 }))["fires"], json!(false));
 }
 
-// --- Glide ------------------------------------------------------------------
-
-// The c172 profile's 9 to 1 (its POH, figure 3-1), feet in a nm.
-const FT_PER_NM: f64 = 1852.0 / 0.3048;
-
 // --- In flight (#218) ---------------------------------------------------------
 
 #[test]
@@ -359,7 +355,7 @@ fn c81_kdlh(legs: &[Value]) -> Value {
 // --- The plan from the side --------------------------------------------------
 
 #[test]
-fn the_plan_climbs_to_its_top_holds_and_descends_to_the_pattern_a_mile_out() {
+fn the_plan_descends_to_the_pattern_by_its_45_degree_entry_ac_90_66c_11_3() {
     let mut l = leg();
     l["toc"]["lat"] = json!(42.1);
     let p = ask("plan_profile", json!({ "rows": c81_kdlh(&[l]) }));
@@ -367,7 +363,7 @@ fn the_plan_climbs_to_its_top_holds_and_descends_to_the_pattern_a_mile_out() {
         norm(&p["points"]),
         norm(&json!([
             { "along_nm": 0, "plan_ft": 800 }, { "along_nm": 8, "plan_ft": 5500 }, { "along_nm": 48, "plan_ft": 5500 },
-            { "along_nm": 59, "plan_ft": 1500 }, { "along_nm": 60, "plan_ft": 500 },
+            { "along_nm": 58.27640462279747, "plan_ft": 1500 }, { "along_nm": 60, "plan_ft": 500 }, // statute mile 1,609.344 / 1,852 nm
         ]))
     );
     assert_eq!(p["marks"].as_array().unwrap().iter().map(|m| m["kind"].as_str().unwrap()).collect::<Vec<_>>(), ["TOC", "TOD"]);
@@ -698,7 +694,7 @@ fn a_gpx_track_is_read_in_time_order_its_heights_in_feet() {
         read["points"],
         json!([
             { "t": 1790859540000.0, "lat": 42.4, "lon": -88.4, "alt_ft": null },
-            { "t": 1790863200000.0, "lat": 42.1, "lon": -88.1, "alt_ft": 250.5 * 3.28084 },
+            { "t": 1790863200000.0, "lat": 42.1, "lon": -88.1, "alt_ft": 250.5 * FT_PER_M },
             { "t": 1790863205250.0, "lat": 42.2, "lon": -88.2, "alt_ft": null },
         ])
     );
@@ -714,7 +710,7 @@ fn a_kml_track_log_is_read_from_its_whens_and_coords() {
     ));
     let points = read["points"].as_array().unwrap();
     assert_eq!(points.len(), 3);
-    assert_eq!(norm(&points[0]), json!({ "t": 1790863200000.0, "lat": 42.1, "lon": -88.1, "alt_ft": 300.0 * 3.28084 }));
+    assert_eq!(norm(&points[0]), json!({ "t": 1790863200000.0, "lat": 42.1, "lon": -88.1, "alt_ft": 300.0 * FT_PER_M }));
     assert_eq!(points[1]["alt_ft"], Value::Null);
     assert_eq!(points[2]["lat"], json!(42.3));
 }

@@ -1,22 +1,25 @@
-"""What the FAA says about an airport in words, in plain English: the
-remarks behind its Chart Supplement entry (NASR's APT_RMK, the same
-text) that a pilot acts on from the cockpit -- the runway lights turned
-on by keying the mic on the CTAF, and the weather some fields read out
-on so many clicks of it.
+"""What the FAA says about an airport in words: the remarks behind its
+Chart Supplement entry (NASR's APT_RMK, the same text) that a pilot acts
+on from the cockpit -- the runway lights turned on by keying the mic on
+the CTAF, read by the engine into each system and how it is turned on
+(lighting_read), and the weather some fields read out on so many clicks
+of it, in words (the engine's remarks_read).
 
 3CK, Lake in the Hills, for one: "ACTVT REIL RWY 08 & 26; PAPI RWY 08
-& 26; MIRL RWY 08/26 - CTAF." and "WX ADZY - CTAF 5 CLICKS OR
-815-444-1729." -- here "Activate REIL runway 08 & 26; PAPI runway 08 &
-26; MIRL runway 08/26 - CTAF." and "Weather advisory - CTAF 5 clicks or
-815-444-1729."
+& 26; MIRL RWY 08/26 - CTAF." -- the REIL, the PAPI and the MIRL, each
+"Key the mic on CTAF" -- and "WX ADZY - CTAF 5 CLICKS OR 815-444-1729.",
+here "Weather advisory - CTAF 5 clicks or 815-444-1729."
 """
 
 from __future__ import annotations
 
 import csv
+import json
 import re
 import threading
 from pathlib import Path
+
+import wingtip_native
 
 from . import faa_data
 from .config import DATA_DIR
@@ -24,142 +27,11 @@ from .single_flight import once
 
 FAA_CACHE_DIR = DATA_DIR / "raw" / "faa_nasr"
 
-# The remarks' own contractions, in words. The lighting systems' names
-# (MIRL, REIL, PAPI, MALSR...) and the radio's (CTAF, UNICOM, AWOS) are
-# what a pilot reads on the chart and hears on the radio, so they stay.
-WORDS = {
-    "ACTVT": "activate",
-    "ACTVTD": "activated",
-    "RWY": "runway",
-    "RY": "runway",
-    "RWYS": "runways",
-    "RYS": "runways",
-    "LGT": "light",
-    "LGTS": "lights",
-    "LGTD": "lighted",
-    "LGTG": "lighting",
-    "INTST": "intensity",
-    "INTS": "intensity",
-    "INCR": "increase",
-    "DECR": "decrease",
-    "CONSLY": "continuously",
-    "CONT": "continuous",
-    "BCN": "beacon",
-    "OPR": "operates",
-    "OPER": "operates",
-    "OPRS": "operates",
-    "OPS": "operations",
-    "CLSD": "closed",
-    "ATCT": "the tower",
-    "TWR": "tower",
-    "ROTG": "rotating",
-    "RTG": "rotating",
-    "SS": "sunset",
-    "SR": "sunrise",
-    "TWY": "taxiway",
-    "TWYS": "taxiways",
-    "PERI": "perimeter",
-    "HR": "hour",
-    "HRS": "hours",
-    "MIN": "minute",
-    "MINS": "minutes",
-    "SECS": "seconds",
-    "AVBL": "available",
-    "UNAVBL": "unavailable",
-    "MED": "medium",
-    "AFT": "after",
-    "NSTD": "non-standard",
-    "REQ": "request",
-    "AMGR": "the airport manager",
-    "ARPT": "airport",
-    "FREQ": "frequency",
-    "CTC": "contact",
-    "OTS": "out of service",
-    "CTL": "control",
-    "PCL": "pilot-controlled lighting",
-    "WX": "weather",
-    "RDO": "radio",
-    "DALGT": "daylight",
-    "DURG": "during",
-    "DRG": "during",
-    "OTR": "other",
-    "PPR": "prior permission required",
-    "NGT": "night",
-    "FM": "from",
-    "EXTN": "extension",
-    "LCL": "local",
-    "ADZY": "advisory",
-    "INDEFLY": "indefinitely",
-    "WI": "within",
-    "TEMP": "temperature",
-    "ALT": "altitude",
-    "BTN": "between",
-    "ANNC": "announce",
-    "TKOFF": "takeoff",
-    "INFO": "information",
-    "REBCST": "rebroadcast",
-    "THLD": "threshold",
-    "APCH": "approach",
-    "PRESET": "preset",
-    # A navaid's (NAV_RMK): where its signal cannot be used.
-    "UNUSBL": "unusable",
-    "BYD": "beyond",
-    "BLW": "below",
-    "ABV": "above",
-    "RESTR": "restricted",
-}
-KEEP = {
-    "CTAF",
-    "UNICOM",
-    "AWOS",
-    "ASOS",
-    "ATIS",
-    "MIRL",
-    "MIRLS",
-    "HIRL",
-    "LIRL",
-    "REIL",
-    "REILS",
-    "PAPI",
-    "PAPIS",
-    "VASI",
-    "MALSR",
-    "MALSF",
-    "MALS",
-    "ODALS",
-    "ALSF",
-    "SSALR",
-    "RLLS",
-    "PCL",
-    "FSS",
-    "ATC",
-    "GCO",
-    "AIM",
-    "AGL",
-    "MSL",
-    "VFR",
-    "IFR",
-    "VOR",
-    "DME",
-    "TACAN",
-    "VORTAC",
-    "NDB",
-    "ILS",
-    "GPS",
-    "NOTAM",
-    # The fuel and who sells it, as the pump and the sign say: 100LL's
-    # letters, the FBO.
-    "LL",
-    "FBO",
-}
-
-# Which of an airport's remarks are about its lights, and which about the
-# radio: a remark on the lighting schedule, and a click count anywhere.
-LIGHTING = ("LGT_SKED", "BCN_LGT_SKED")
+# Which of an airport's remarks are about its lights -- its lighting
+# schedule and its beacon's -- and which about the radio: a click count
+# anywhere else.
+LIGHTS, BEACON = "LGT_SKED", "BCN_LGT_SKED"
 _CLICKS = re.compile(r"\bCLICKS?\b")
-# A light the pilot turns on: "ACTVT ... - CTAF" or "... - 122.8".
-_ACTIVATED = re.compile(r"\b(ACTVT|ACTIVATE|PCL|KEY)\b|\bCLICKS?\b")
-_EXPLICIT_CLICKS = re.compile(r"\b(\d+|THREE|FOUR|FIVE|SEVEN)[ -]CLICKS?\b")
 
 _LOCK = threading.Lock()
 
@@ -184,38 +56,36 @@ def _all_remarks(cache_dir=FAA_CACHE_DIR) -> dict:
         return _remarks_of(str(path), Path(path).stat().st_mtime)
 
 
-def plain(remark: str) -> str:
-    """A remark in plain English: its contractions spelled out, the rest
-    in lower case but for the names a pilot reads and hears as they are,
-    each sentence started with a capital."""
-
-    def word(match: re.Match) -> str:
-        token = match.group(0)
-        if token in WORDS:
-            return WORDS[token]
-        return token if token in KEEP or not token.isalpha() else token.lower()
-
-    text = re.sub(r"[A-Za-z][A-Za-z']*", word, remark.strip().upper())
-    text = re.sub(r"\s+", " ", text)
-    return re.sub(r"(^|[.!?]\s+)([a-z])", lambda m: m.group(1) + m.group(2).upper(), text)
+def read(texts: list[str]) -> list[str]:
+    """Remarks in words, a line each in their order: the engine's
+    remarks_read, the Chart Supplement's Abbreviations and JO 7340.2R's
+    contractions written out, codes, figures and telephone numbers kept."""
+    if not texts:
+        return []
+    return json.loads(wingtip_native.call("remarks_read", json.dumps({"remarks": texts})))["lines"]
 
 
 def airport_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> dict:
-    """What an airport's remarks say about its lights and its radio, in
-    plain English (`plain`): `lighting`, its lighting schedule; `radio`,
-    every other remark that counts mic clicks (the weather read out on
-    the CTAF, a radio check); `pilot_controlled`, whether a light is
-    turned on from the cockpit; and `explicit_clicks`, whether the
-    remarks say how many clicks -- where they do not, the standard
-    keying (AIM 2-1-9, Pilot Control of Airport Lighting) is what applies."""
+    """What an airport's remarks say about its lights and its radio:
+    `lighting`, its lighting remarks and its beacon's as sent; `lights`,
+    each system they name, its runways and how it is turned on, and
+    `light_notes`, what the engine could not read, said as written
+    (lighting_read: the Chart Supplement legend, AIM 2-1); `radio`, every
+    other remark that counts mic clicks (the weather read out on the
+    CTAF, a radio check) in words (`read`); and `standard_keying`,
+    where a light is the pilot's and the remarks give no count of clicks:
+    AIM 2-1-8's (Pilot Control of Airport Lighting) 7, 5 and 3 apply."""
     remarks = _all_remarks(cache_dir).get(faa_id.strip().upper(), [])
-    lighting = [text for column, text, _ in remarks if column in LIGHTING]
-    radio = [text for column, text, _ in remarks if column not in LIGHTING and _CLICKS.search(text.upper())]
+    lighting = [text for column, text, _ in remarks if column == LIGHTS]
+    beacon = [text for column, text, _ in remarks if column == BEACON]
+    radio = [text for column, text, _ in remarks if column not in (LIGHTS, BEACON) and _CLICKS.search(text.upper())]
+    lit = json.loads(wingtip_native.call("lighting_read", json.dumps({"lighting": lighting, "beacon": beacon})))
     return {
-        "lighting": [plain(t) for t in lighting],
-        "radio": [plain(t) for t in radio],
-        "pilot_controlled": any(_ACTIVATED.search(t.upper()) for t in lighting),
-        "explicit_clicks": any(_EXPLICIT_CLICKS.search(t.upper()) for t in lighting),
+        "lighting": lighting + beacon,
+        "lights": lit["systems"],
+        "light_notes": lit["notes"],
+        "radio": read(radio),
+        "standard_keying": lit["standard_keying"],
     }
 
 
@@ -225,25 +95,15 @@ def airport_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> dict:
 # into town: a courtesy car, as 49 fields' remarks offer one.
 _FUEL = re.compile(r"\b(FUEL|FUELING|100LL|JET A|SELF[- ]SERVE?|SELF[- ]SVC|FBO)\b")
 _CAR = re.compile(r"\b(COURTESY|CRS|CREW)\s+CARS?\b")
-_SERVICE_WORDS = {
-    "SVC": "service",
-    "SVCS": "service",
-    "OPN": "operation",
-    "PSGR": "passenger",
-    "PROVDD": "provided",
-    "SKED": "scheduled",
-    "UNSKED": "unscheduled",
-    "AMGR": "the airport manager",
-    "ATNDD": "attended",
-    "ATNDT": "attendant",
-    "THRU": "through",
-}
 
 
 def service_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> dict:
-    """What an airport's remarks say about its services, in plain English
-    (`plain`): `fuel`, each about its fuel and its FBO's hours; `ground`,
-    each that offers a courtesy car; and `courtesy_car`, whether one does."""
+    """What an airport's remarks say about its services: `fuel`, each about
+    its fuel and its FBO's hours, and `ground`, each that offers a courtesy
+    car, in words by the engine (remarks_read: the Chart Supplement's
+    Abbreviations and JO 7340.2's contractions written out, codes and
+    telephone numbers kept); `fuel_as_written`, the fuel's as sent; and
+    `courtesy_car`, whether one is offered."""
     remarks = _all_remarks(cache_dir).get(faa_id.strip().upper(), [])
     fuel, ground = [], []
     for column, text, _ in remarks:
@@ -252,14 +112,8 @@ def service_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> dict:
             ground.append(text)
         elif column == "FUEL_TYPE" or _FUEL.search(upper):
             fuel.append(text)
-
-    def spoken(text: str) -> str:
-        # "O/R" is on request, as KRPD's "AIRPORT ATNDD OTHER HOURS O/R THRU FBO."
-        text = re.sub(r"\bO/R\b", "ON REQUEST", text.upper())
-        text = re.sub(r"\b[A-Z]+\b", lambda m: _SERVICE_WORDS.get(m.group(0), m.group(0)), text)
-        return re.sub(r"\bcrs car", "courtesy car", plain(text), flags=re.IGNORECASE)
-
-    return {"fuel": [spoken(t) for t in fuel], "ground": [spoken(t) for t in ground], "courtesy_car": bool(ground)}
+    lines = read(fuel + ground)
+    return {"fuel": lines[: len(fuel)], "fuel_as_written": fuel, "ground": lines[len(fuel) :], "courtesy_car": bool(ground)}
 
 
 # Which part of a runway is turf, where the remarks say: the Chart

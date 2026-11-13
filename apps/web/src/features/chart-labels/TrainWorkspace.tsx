@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router";
+import { ADDRESS_CLEARED, useAddress } from "../../lib/address";
 import { identOf, routeOf } from "../../lib/identSchema";
 import { statusQuery } from "../../lib/queryClient";
 import { useProgressToast } from "../../lib/useProgressToast";
@@ -32,11 +32,11 @@ type DevChunk = typeof import("./dev/DevPanel") & { PilotPanel: PilotPanelPart }
  * typed into its form; this owns everything about the labels.
  */
 export default function TrainWorkspace({ dep, dest, panel, setPanel, children }: WorkspaceProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [address, setAddress] = useAddress();
   // The address is the route the labels are for -- what the queries
   // read, and what a load writes; the header's form is a draft until
   // then. The default corridor when it names none.
-  const planned = { dep: identOf(searchParams.get("dep")) || "C81", dest: identOf(searchParams.get("dest")) || "KDLH" };
+  const planned = { dep: identOf(address.dep) || "C81", dest: identOf(address.dest) || "KDLH" };
   const store = useTraining(planned.dep, planned.dest);
   // Named, not read as `store.x` inside the hooks below: each hook then
   // lists exactly what it reads, and the actions are stable (useTraining
@@ -205,8 +205,13 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   // Skipped while a field has focus, and for a press a stock layer
   // already used (its own list walks with the same arrows), which it
   // marks by preventing the default or keeping focus inside itself.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+  // Heard on the window, and on the drawer's list itself: the stock Drawer's
+  // popup keeps the arrows it uses from going further (Base UI's
+  // COMPOSITE_KEYS), so on a phone, where the list is in the sheet, Down
+  // from a row never reached the window (dev-page.spec, 2026-11-13). The
+  // first to take a press prevents its default, which the other then skips.
+  const onKey = useCallback(
+    (e: KeyboardEvent) => {
       const target = e.target instanceof HTMLElement ? e.target : null;
       const tag = target?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
@@ -217,20 +222,25 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
         return;
       }
       if (/^[0-5]$/.test(e.key) && point && !isEndpoint(point)) {
+        e.preventDefault();
         void rate(Number(e.key) as Rating).then(() => step(1));
       }
-    };
+    },
+    [point, rate, step],
+  );
+  useEffect(() => {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [point, rate, step]);
+  }, [onKey]);
 
   // Loading a route writes the address, which is what the queries key
   // on -- the same route again costs nothing, being kept.
   const submit = useCallback(() => {
     const route = routeOf(dep, dest);
     if (!route) return;
-    setSearchParams(route, { replace: true });
-  }, [dep, dest, setSearchParams]);
+    // The address this route alone.
+    void setAddress({ ...ADDRESS_CLEARED, dep: route.dep, dest: route.dest });
+  }, [dep, dest, setAddress]);
 
   // Stable identities for ChartMap's own effects, which list them as
   // dependencies (see its comment) -- an inline arrow at the call site
@@ -292,13 +302,16 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
           <div className="h-40" />
         )
       ) : (
-        <WaypointPanel
-          entries={walk}
-          selected={point}
-          onFocus={focus}
-          departureIdent={store.course?.departure.ident ?? ""}
-          destinationIdent={store.course?.destination.ident ?? ""}
-        />
+        // eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the list's own keys, caught as they bubble, before the sheet's Drawer keeps them from the window.
+        <div className="contents" onKeyDown={(e) => onKey(e.nativeEvent)}>
+          <WaypointPanel
+            entries={walk}
+            selected={point}
+            onFocus={focus}
+            departureIdent={store.course?.departure.ident ?? ""}
+            destinationIdent={store.course?.destination.ident ?? ""}
+          />
+        </div>
       ),
     // Perf's head the model serving and Retrain (PerfHead), the route's
     // form being Train's.

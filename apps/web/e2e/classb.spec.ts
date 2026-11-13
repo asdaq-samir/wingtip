@@ -1,5 +1,7 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { beforeTheRoute, chartZoom, openMapSettings, sideDrawer, slow, tapNear } from "./helpers";
+import { chartZoom, grabberTo, openMapSettings, sideDrawer, slow, tapNear } from "./helpers";
+import { beforeTheRoute } from "./mapCard";
+import { markWith, tapMark } from "./marks";
 
 /**
  * The Class B airports on the map.
@@ -17,16 +19,22 @@ import { beforeTheRoute, chartZoom, openMapSettings, sideDrawer, slow, tapNear }
 // service worker for the whole suite.
 
 const PLAN = "/app/plan?dep=C81&dest=KDLH";
-// The Class B fields' marks (airportMarkIcon), in the marker pane with
-// the route's own C81 and KDLH, which are not Class B: counting them
-// counts the Class B airports.
-const chips = (page: Page) => page.locator(".maplibregl-marker").filter({ has: page.locator('[data-airspace="B"]') });
+// The Class B fields' marks (ClassBGl), every one given, in sight or
+// not, with its weather's colour: the map's data-class-b-fields.
+const chips = async (page: Page) =>
+  JSON.parse((await page.getByTestId("gl-map").first().getAttribute("data-class-b-fields")) ?? "[]") as {
+    ident: string;
+    weather: string;
+  }[];
+const chip = async (page: Page, ident: string) => (await chips(page)).find((c) => c.ident === ident) ?? null;
+/** KORD's mark drawn on the map's canvas, where it is on the page. */
+const ord = (page: Page) => markWith(page, "class-b-fields", "KORD");
 
-/** The route on the map: its destination chip drawn, which is after
- *  the course has arrived and the markers laid out. It used to be a
- *  flat four seconds a test. */
+/** The route on the map: its destination drawn, which is after the
+ *  course has arrived and the marks laid out. It used to be a flat four
+ *  seconds a test. */
 async function routeDrawn(page: Page) {
-  await expect(page.locator(".maplibregl-marker", { hasText: "KDLH" }).first()).toBeVisible({ timeout: 20000 });
+  await expect.poll(markWith(page, "route-marks", "KDLH"), { timeout: 20000 }).not.toBeNull();
 }
 
 const FIXTURE = {
@@ -81,13 +89,18 @@ async function mockClassB(page: Page) {
 
 async function showClassB(page: Page) {
   await openMapSettings(page);
+  // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
+  await grabberTo(page, "full");
   await page.getByTestId("class-b-toggle").click();
   await page.keyboard.press("Escape");
 }
 
 /** On, from the planner's search bar, before the route is loaded. */
 async function showClassBFirst(page: Page) {
-  await beforeTheRoute(page, () => page.getByTestId("class-b-toggle").click());
+  await beforeTheRoute(page, async () => {
+    await grabberTo(page, "full");
+    await page.getByTestId("class-b-toggle").click();
+  });
 }
 
 test("off until asked for: a route does not come covered in them", async ({ page }) => {
@@ -96,7 +109,7 @@ test("off until asked for: a route does not come covered in them", async ({ page
   await page.goto(PLAN);
   await routeDrawn(page);
   await page.waitForTimeout(500); // a moment for any chips that were coming
-  await expect(chips(page)).toHaveCount(0);
+  expect(await chips(page)).toHaveLength(0);
 });
 
 test("switched on, every Class B is on the map by name", { tag: "@smoke" }, async ({ page }) => {
@@ -104,8 +117,8 @@ test("switched on, every Class B is on the map by name", { tag: "@smoke" }, asyn
   await page.goto(PLAN);
   await routeDrawn(page);
   // The real planner: thirty is what the FAA's own shapefile yields.
-  await expect.poll(() => chips(page).count(), { timeout: 20000 }).toBe(30);
-  await expect(chips(page).filter({ hasText: "KORD" })).toHaveCount(1);
+  await expect.poll(async () => (await chips(page)).length, { timeout: 20000 }).toBe(30);
+  expect((await chips(page)).filter((c) => c.ident === "KORD")).toHaveLength(1);
 });
 
 test("the marker's weather dot is the field's own flight category", async ({ page }) => {
@@ -114,17 +127,10 @@ test("the marker's weather dot is the field's own flight category", async ({ pag
   await page.goto(PLAN);
   await routeDrawn(page);
 
-  const ord = chips(page).filter({ hasText: "KORD" }).first();
-  const msp = chips(page).filter({ hasText: "KMSP" }).first();
-  await expect(ord).toBeVisible({ timeout: 15000 });
-
   // IFR is red. A field with no report is grey, deliberately not the
-  // green one: "unknown" must not look like "fine". Asked of the
-  // locator, which retries: Leaflet redraws a marker's icon as the
-  // layer settles, and a colour read once off the element it had just
-  // replaced came back "" (a detached node has no computed style).
-  await expect(ord.locator("[data-weather]")).toHaveCSS("fill", "rgb(179, 38, 30)");
-  await expect(msp.locator("[data-weather]")).toHaveCSS("fill", "rgb(143, 163, 176)");
+  // green one: "unknown" must not look like "fine".
+  await expect.poll(async () => (await chip(page, "KORD"))?.weather.toLowerCase(), { timeout: 15000 }).toBe("#b3261e");
+  expect((await chip(page, "KMSP"))?.weather.toLowerCase()).toBe("#8fa3b0");
 });
 
 test("tapping one opens its card in the panel, with Fly Here, as any airport on the chart does", async ({ page }) => {
@@ -136,12 +142,17 @@ test("tapping one opens its card in the panel, with Fly Here, as any airport on 
   await page.goto(PLAN);
   await routeDrawn(page);
 
-  const ord = chips(page).filter({ hasText: "KORD" }).first();
-  await expect(ord).toBeVisible({ timeout: 15000 });
-  await ord.click();
+  // At the route's whole view O'Hare's mark is little more than a finger
+  // from C81's chip, which the map's one tap takes first within its reach
+  // (TAP.rank): closer in round O'Hare, so the tap is plainly its.
+  await expect.poll(ord(page), { timeout: slow(30000) }).not.toBeNull();
+  const at = (await ord(page)())!;
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.wheel(0, -600);
+  await tapMark(page, "class-b-fields", "KORD");
   await expect(page).toHaveURL(/[?&]place=KORD/);
   // The live card, unmocked: the class-b fixture is only the chips.
-  await expect(page.getByTestId("place-where")).toContainText("O'Hare", { timeout: 15000 });
+  await expect(page.getByTestId("place-full-name")).toContainText("O'Hare", { timeout: 15000 });
   await expect(page.getByTestId("fly-here")).toBeVisible();
   await expect(page.locator(".maplibregl-popup")).toHaveCount(0);
 });
@@ -155,7 +166,8 @@ test("a tap a little off one's mark opens its card, as off any airport on the ch
   // Chicago Executive's card, O'Hare's chip some 65 points south of it.
   await page.goto("/app/plan?place=KPWK");
   await expect(sideDrawer(page).getByTestId("place-card")).toBeVisible({ timeout: slow(15000) });
-  await tapNear(page, chips(page).filter({ hasText: "KORD" }).first(), /[?&]place=KORD(&|$)/);
+  await expect.poll(ord(page), { timeout: 15000 }).not.toBeNull();
+  await tapNear(page, ord(page), /[?&]place=KORD(&|$)/);
 });
 
 test("on the training map, which has no card, a tap goes to the field at its terminal chart's zoom", async ({ page }) => {
@@ -165,13 +177,12 @@ test("on the training map, which has no card, a tap goes to the field at its ter
   await mockClassB(page);
   await page.goto("/app/dev?dep=C81&dest=KDLH");
   await showClassB(page);
-  const ord = chips(page).filter({ hasText: "KORD" }).first();
-  await expect(ord).toBeVisible({ timeout: 20000 });
+  await expect.poll(ord(page), { timeout: 20000 }).not.toBeNull();
 
   // The chart's tile level drawn (ChartGl's data-chart-zoom).
   const tileZoom = () => chartZoom(page);
   const before = await tileZoom();
-  await ord.click();
+  await tapMark(page, "class-b-fields", "KORD");
   await expect.poll(tileZoom, { timeout: 20000 }).toBeGreaterThanOrEqual(10);
   expect(before).toBeLessThan(10);
   await expect(page.locator(".maplibregl-popup")).toHaveCount(0);
@@ -187,14 +198,13 @@ test("on an IFR base, the settings' TAC draws the IFR area chart at a Class B fi
   await mockClassB(page);
   await page.goto("/app/dev?dep=C81&dest=KDLH");
   await openMapSettings(page);
+  await grabberTo(page, "full");
   await page.getByTestId("base-chart-select").getByRole("button", { name: "IFR low" }).click();
   await page.getByTestId("class-b-toggle").click();
   await expect(page.getByTestId("map-settings").getByText("IFR Area Charts")).toBeVisible();
   await page.getByTestId("tac-toggle").click();
   await page.keyboard.press("Escape");
 
-  const ord = chips(page).filter({ hasText: "KORD" }).first();
-  await expect(ord).toBeVisible({ timeout: 20000 });
-  await ord.click();
+  await tapMark(page, "class-b-fields", "KORD");
   await expect.poll(() => areaTiles.length, { timeout: 20000 }).toBeGreaterThan(0);
 });

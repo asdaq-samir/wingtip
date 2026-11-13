@@ -19,14 +19,19 @@ final class CardScrollTests: XCTestCase {
     @MainActor
     func testTheTitleAndCloseStayInSightScrolledToTheEnd() throws {
         for size in CardTests.sizes {
-            for (entry, id, title) in [(CardTests.Entry.link("setup"), "card-setup", "Settings"), (.card("+map"), "card-map", "Map")] {
-                let context = "\(title) at \(size.name)"
+            // You signed out has no title in its bar, its gear stands for it.
+            for (entry, id, title) in [(CardTests.Entry.link("setup"), "card-setup", nil), (.card("+map"), "card-map", "Map")] {
+                let context = "\(title ?? "You") at \(size.name)"
                 let app = CardTests.open(entry, size: size.arguments)
                 XCTAssertTrue(CardTests.card(app, id).waitForExistence(timeout: 20), "\(context): did not open")
                 for _ in 0..<8 { app.swipeUp() }
                 let close = CardTests.close(app)
                 XCTAssertTrue(close.exists && close.isHittable, "\(context): the close scrolled away")
-                XCTAssertTrue(app.navigationBars[title].exists, "\(context): the title left the bar")
+                if let title {
+                    XCTAssertTrue(app.navigationBars[title].exists, "\(context): the title left the bar")
+                } else {
+                    XCTAssertTrue(app.buttons["settings-gear"].isHittable, "\(context): the gear left the bar")
+                }
                 app.terminate()
             }
         }
@@ -45,7 +50,7 @@ final class CardScrollTests: XCTestCase {
             CardTests.settled(grabber)
             XCTAssertNotEqual(grabber.value as? String, "Expanded", "the Map card did not open half way at \(size.name)")
             let title = app.navigationBars["Map"]
-            let firstRow = app.switches.firstMatch
+            let firstRow = app.descendants(matching: .any)["layer-traffic"]
             let rowY = firstRow.frame.minY - title.frame.minY
             card.swipeUp()
             CardTests.settled(grabber)
@@ -58,27 +63,31 @@ final class CardScrollTests: XCTestCase {
         }
     }
 
-    /// Settings' last row reached and tapped; Back returns to it in place,
-    /// and Settings opened afresh starts at its top.
+    /// Settings' last row, pushed from You's gear, reached and tapped; Back
+    /// returns to it in place, and You opened afresh starts at its top.
     @MainActor
     func testTheLastRowIsReachedAndTheListKeepsItsPlace() throws {
         for size in CardTests.sizes {
             let app = CardTests.launch(["-screen", "setup"], size: size.arguments)
-            XCTAssertTrue(CardTests.card(app, "card-setup").waitForExistence(timeout: 20), "Settings did not open at \(size.name)")
-            let about = app.buttons["About"].firstMatch
-            CardTests.scrollTo(about, in: app)
-            let at = about.frame.minY
-            about.tap()
-            XCTAssertTrue(app.navigationBars["About"].waitForExistence(timeout: 10), "About did not open at \(size.name)")
+            XCTAssertTrue(CardTests.card(app, "card-setup").waitForExistence(timeout: 20), "You did not open at \(size.name)")
+            app.buttons["settings-gear"].tap()
+            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), "the gear did not open Settings at \(size.name)")
+            let help = app.buttons["help-row"].firstMatch
+            CardTests.scrollTo(help, in: app)
+            let at = help.frame.minY
+            help.tap()
+            XCTAssertTrue(app.navigationBars["Help & About"].waitForExistence(timeout: 10), "Help & About did not open at \(size.name)")
             app.navigationBars.buttons.element(boundBy: 0).tap()
-            XCTAssertTrue(about.waitForExistence(timeout: 10) && about.isHittable, "Back lost the list's place at \(size.name)")
-            XCTAssertEqual(about.frame.minY, at, accuracy: 4, "Back moved the list at \(size.name)")
+            XCTAssertTrue(help.waitForExistence(timeout: 10) && help.isHittable, "Back lost the list's place at \(size.name)")
+            XCTAssertEqual(help.frame.minY, at, accuracy: 4, "Back moved the list at \(size.name)")
+            app.navigationBars.buttons.element(boundBy: 0).tap()
             CardTests.close(app).tap()
             let account = app.buttons["account-button"]
             XCTAssertTrue(account.waitForExistence(timeout: 10), "no account button at \(size.name)")
             account.tap()
-            XCTAssertTrue(app.staticTexts["Sign In"].waitForExistence(timeout: 10) && app.staticTexts["Sign In"].isHittable,
-                          "Settings opened again did not start at its top at \(size.name)")
+            let signIn = app.buttons["you-sign-in"]
+            XCTAssertTrue(signIn.waitForExistence(timeout: 10) && signIn.isHittable,
+                          "You opened again did not start at its top at \(size.name)")
             app.terminate()
         }
     }
@@ -99,10 +108,22 @@ final class CardScrollTests: XCTestCase {
             app.navigationBars["Clearance"].swipeDown(velocity: .fast)
             XCTAssertTrue(card.exists, "a swipe threw the edit away at \(size.name)")
             app.navigationBars.buttons["Cancel"].tap()
+            let asked = app.staticTexts["Discard your changes?"]
+            XCTAssertTrue(asked.waitForExistence(timeout: 10), "Cancel did not ask at \(size.name)")
+            XCTAssertTrue(app.buttons["Discard Changes"].exists, "the question has no Discard Changes at \(size.name)")
+            // Keep Editing, the dialog's cancel: a button where the dialog
+            // is an action sheet, and a tap outside it where iOS 26 shows
+            // it as a popover from Cancel, which leaves its cancel out.
             let keep = app.buttons["Keep Editing"]
-            XCTAssertTrue(keep.waitForExistence(timeout: 10), "Cancel did not ask at \(size.name)")
-            keep.tap()
+            // Outside it is the popover's own dismiss region (UIKit's
+            // "dismiss popup"), at its middle, under the popover and above
+            // the keyboard still up for the field being typed in.
+            if keep.exists { keep.tap() } else { app.otherElements["PopoverDismissRegion"].tap() }
+            XCTAssertTrue(asked.waitForNonExistence(timeout: 5), "Keep Editing did not put the question away at \(size.name)")
             XCTAssertTrue(card.exists, "Keep Editing put the form away at \(size.name)")
+            // Once the pilot leaves the field, the words read as a clearance
+            // fold into its Transcript, the field with them.
+            if !field.exists { app.buttons["Transcript"].tap() }
             XCTAssertTrue((field.value as? String ?? "").contains("KOSH"), "Keep Editing lost the words at \(size.name)")
             app.terminate()
         }

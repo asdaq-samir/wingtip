@@ -1,35 +1,11 @@
 import type { MapPirep, WeatherArea } from "../../../lib/api/types";
 import { callEngine } from "../../../lib/engine/engine";
-import { bearingDeg, destination, distanceNm, type LatLon } from "../../../lib/geo";
+import type { Geo, LatLon } from "../../../lib/geo";
 import { hundreds, mapLevel } from "../../../lib/format";
-import { CHART, WEATHER } from "../../../lib/tokens";
+import { WEATHER } from "../../../lib/tokens";
 
-// A wind barb's ink and the white it is cased in, the chart's own.
-const INK = CHART.fixInk;
-const CASING = CHART.casing;
-
-/** Each area's colour by what it warns of, as aviationweather.gov's own
- *  map tells them apart: convective red-orange, icing blue, turbulence
- *  amber, IFR and mountains obscured violet and stone, the winds teal. */
-const AREA_COLOURS: Record<string, string> = {
-  convective: WEATHER.convective,
-  Icing: WEATHER.icing,
-  ICE: WEATHER.icing,
-  Turbulence: WEATHER.turbulence,
-  TURB: WEATHER.turbulence,
-  "IFR conditions": WEATHER.ifr,
-  IFR: WEATHER.ifr,
-  "Mountains obscured": WEATHER.mountains,
-  "MTN OBSCN": WEATHER.mountains,
-  "Low-level wind shear": WEATHER.shear,
-  "Strong surface winds": WEATHER.wind,
-  ASH: WEATHER.ash,
-};
-
-export function areaColour(area: Pick<WeatherArea, "kind" | "hazard">): string {
-  if (area.kind === "convective") return AREA_COLOURS.convective!;
-  return AREA_COLOURS[area.hazard ?? ""] ?? WEATHER.other;
-}
+// The areas' colours, shared with the flow layer's G-AIRMETs.
+export { areaColour } from "../../../lib/map/weatherColours";
 
 /** What an area is, in words: its title ("G-AIRMET · Icing", "Convective
  *  SIGMET") and its altitudes ("Freezing level to FL160"). */
@@ -71,6 +47,7 @@ export function inside(point: LatLon, ring: number[][]): boolean {
  *  walked a mile at a time), and whether the planned altitude is under,
  *  in or over its altitudes there; null where it does not cross. */
 export function routeThrough(
+  geo: Geo,
   area: WeatherArea,
   line: [number, number][],
   altitudeFt: number | null,
@@ -79,9 +56,9 @@ export function routeThrough(
   for (let i = 1; i < line.length; i++) {
     const a = { lat: line[i - 1]![0], lon: line[i - 1]![1] },
       b = { lat: line[i]![0], lon: line[i]![1] };
-    const length = distanceNm(a, b),
-      course = bearingDeg(a, b);
-    for (let s = 0.5; s < length; s += 1) if (inside(destination(a, course, s), area.coords)) nm += Math.min(1, length - s + 0.5);
+    const length = geo.distanceNm(a, b),
+      course = geo.bearingDeg(a, b);
+    for (let s = 0.5; s < length; s += 1) if (inside(geo.destination(a, course, s), area.coords)) nm += Math.min(1, length - s + 0.5);
   }
   if (nm < 0.5) return null;
   if (altitudeFt == null || area.from_freezing_level) return { nm, relation: null };
@@ -99,35 +76,4 @@ export function pirepMark(p: MapPirep): { glyph: string; colour: string; level: 
   if (p.turbulence && !/NEG|NONE/i.test(p.turbulence)) return { glyph: "⌁\uFE0E", colour: WEATHER.turbulence, level };
   if (p.icing && !/NEG|NONE/i.test(p.icing)) return { glyph: "❄\uFE0E", colour: WEATHER.icing, level };
   return { glyph: "☁\uFE0E", colour: WEATHER.ash, level };
-}
-
-/**
- * A wind barb, as a station model draws one (the NWS's): the staff points
- * where the wind comes from, a pennant for each 50 kt, a full barb each 10
- * and a half barb for 5; under 3 kt, a circle, calm. Its SVG, 44 square,
- * the station at its middle.
- */
-export function barbSvg(dirTrueDeg: number, speedKt: number): string {
-  const c = 22;
-  if (speedKt < 3)
-    return `<svg width="44" height="44" viewBox="0 0 44 44"><circle cx="${c}" cy="${c}" r="5" fill="none" stroke="${INK}" stroke-width="2"/></svg>`;
-  let left = Math.round(speedKt / 5) * 5;
-  const marks: string[] = [];
-  let y = c - 20;
-  while (left >= 50) {
-    marks.push(`<path d="M${c} ${y} L${c + 10} ${y + 3} L${c} ${y + 6} Z" fill="${INK}"/>`);
-    y += 7;
-    left -= 50;
-  }
-  while (left >= 10) {
-    marks.push(`<line x1="${c}" y1="${y}" x2="${c + 10}" y2="${y - 4}" stroke="${INK}" stroke-width="2"/>`);
-    y += 4;
-    left -= 10;
-  }
-  if (left >= 5) marks.push(`<line x1="${c}" y1="${y}" x2="${c + 5}" y2="${y - 2}" stroke="${INK}" stroke-width="2"/>`);
-  return (
-    `<svg width="44" height="44" viewBox="0 0 44 44"><g transform="rotate(${Math.round(dirTrueDeg)} ${c} ${c})" stroke-linecap="round">` +
-    `<line x1="${c}" y1="${c}" x2="${c}" y2="${c - 20}" stroke="${CASING}" stroke-width="4"/><line x1="${c}" y1="${c}" x2="${c}" y2="${c - 20}" stroke="${INK}" stroke-width="2"/>` +
-    `${marks.join("")}</g><circle cx="${c}" cy="${c}" r="2.5" fill="${INK}"/></svg>`
-  );
 }

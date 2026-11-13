@@ -1,14 +1,15 @@
 package app.wingtipmaps.android.documents
 
-import app.wingtipmaps.android.api.generated.assistant.HandbookFigure
-import app.wingtipmaps.android.api.generated.assistant.HandbookFigures
-import app.wingtipmaps.android.api.generated.assistant.HandbookRead
-import app.wingtipmaps.android.api.generated.assistant.LogbookEntryDraft
-import app.wingtipmaps.android.api.generated.assistant.LogbookRowCheck
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
+import app.wingtipmaps.android.documents.model.HandbookFigure
+import app.wingtipmaps.android.documents.model.HandbookFigures
+import app.wingtipmaps.android.documents.model.HandbookRead
+import app.wingtipmaps.android.documents.model.LogbookEntryDraft
+import app.wingtipmaps.android.documents.model.LogbookRowCheck
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Locale
+import kotlin.math.roundToInt
 import app.wingtipmaps.android.api.generated.gateway.Corner as GatewayCorner
 import app.wingtipmaps.android.api.generated.gateway.Cruise as GatewayCruise
 import app.wingtipmaps.android.api.generated.gateway.Distance as GatewayDistance
@@ -92,7 +93,8 @@ object HandbookReview {
  * The logbook page's review: a row is logged only with a date read
  * (14 CFR 61.51(b)(1)(i) asks the date of each flight), so a row without
  * one cannot be confirmed; a confirmed row is the gateway's
- * LogbookEntryRequest, its counts and hours as the engine drew them.
+ * LogbookEntryRequest, its counts and hours as the engine drew them
+ * (the engine writes a count as a number, made whole here).
  */
 object LogbookReview {
     fun canConfirm(row: LogbookRowCheck): Boolean = !row.entry.flownOn.isNullOrBlank()
@@ -102,27 +104,27 @@ object LogbookReview {
         return LogbookEntryRequest(
             aircraft = e.aircraft,
             aircraftType = e.aircraftType,
-            airHours = e.airHours ?: 0.0,
-            approaches = e.approaches ?: 0,
-            crossCountryHours = e.crossCountryHours ?: 0.0,
-            dayLandings = e.dayLandings ?: 0,
-            distanceNm = e.distanceNm ?: 0.0,
-            dualHours = e.dualHours ?: 0.0,
+            airHours = e.airHours,
+            approaches = e.approaches.roundToInt(),
+            crossCountryHours = e.crossCountryHours,
+            dayLandings = e.dayLandings.roundToInt(),
+            distanceNm = e.distanceNm,
+            dualHours = e.dualHours,
             flightId = null,
             flownOn = day,
             fromTrack = false,
-            holding = e.holding ?: false,
-            instrumentHours = e.instrumentHours ?: 0.0,
-            longestLegNm = e.longestLegNm ?: 0.0,
-            nightHours = e.nightHours ?: 0.0,
-            nightLandings = e.nightLandings ?: 0,
+            holding = e.holding,
+            instrumentHours = e.instrumentHours,
+            longestLegNm = e.longestLegNm,
+            nightHours = e.nightHours,
+            nightLandings = e.nightLandings.roundToInt(),
             remarks = e.remarks,
             route = e.route,
-            soloHours = e.soloHours ?: 0.0,
-            totalHours = e.totalHours ?: 0.0,
-            touchAndGoes = e.touchAndGoes ?: 0,
-            toweredLandings = e.toweredLandings ?: 0,
-            tracking = e.tracking ?: false,
+            soloHours = e.soloHours,
+            totalHours = e.totalHours,
+            touchAndGoes = e.touchAndGoes.roundToInt(),
+            toweredLandings = e.toweredLandings.roundToInt(),
+            tracking = e.tracking,
         )
     }
 }

@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
@@ -65,12 +66,12 @@ import app.wingtipmaps.android.ui.sheet.CardPage
 @Composable
 fun CoachScreen(exit: CardExit) {
     val context = LocalContext.current
-    val model = viewModel { CoachModel(keeper = CertificatePreference.of(context)) }
+    val model = hiltViewModel<CoachModel, CoachModel.Factory> { it.create(CertificatePreference.of(context)) }
     val state by model.state.collectAsStateWithLifecycle()
     CardPage(title = stringResource(R.string.coach), exit = exit) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = WingtipSpace.Lg), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
             item(key = "make") { MakeCard(state, model) }
-            state.plan?.let { plan(it, state) }
+            state.plan?.let { plan(it) }
         }
     }
 }
@@ -95,7 +96,7 @@ private fun MakeCard(state: CoachModel.State, model: CoachModel) {
     }
 }
 
-private fun LazyListScope.plan(plan: ProficiencyPlan, state: CoachModel.State) {
+private fun LazyListScope.plan(plan: ProficiencyPlan) {
     if (plan.reminders.isNotEmpty()) {
         item { SectionTitle(stringResource(R.string.coach_reminders)) }
         items(plan.reminders, key = { "r:" + it.key }) {
@@ -103,23 +104,15 @@ private fun LazyListScope.plan(plan: ProficiencyPlan, state: CoachModel.State) {
         }
     }
     item {
-        val paragraph = CoachLines.paragraph(state.words)
-        when {
-            state.wording -> Muted(stringResource(R.string.coach_wording))
-            paragraph != null -> Text(paragraph, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = WingtipSpace.Md))
-            state.noWords != null -> Muted(stringResource(R.string.coach_no_words, state.noWords))
-        }
         SectionTitle(stringResource(R.string.coach_sessions))
         if (plan.sessions.isEmpty()) Muted(stringResource(R.string.coach_nothing))
     }
-    val lines = CoachLines.sessionLines(plan, state.words)
     items(plan.sessions, key = { "s:" + it.id }) { s ->
         ListItem(
             supportingContent = {
                 Column {
                     Text(CoachLines.session(s))
                     CoachLines.wings(s)?.let { Text(it) }
-                    lines[s.id]?.let { Text(it, color = MaterialTheme.colorScheme.onSurface) }
                 }
             },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),

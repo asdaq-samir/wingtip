@@ -1,5 +1,5 @@
-"""What every test of ingest shares: a live store of its own, and fresh
-settings either side of each test."""
+"""What every test of ingest shares: a live store of its own, no history
+thread, and fresh settings either side of each test."""
 
 import pytest
 from wingtip import live_reports
@@ -18,6 +18,8 @@ def _own_store_and_settings(monkeypatch, tmp_path):
     monkeypatch.setattr(live_reports, "STORE", tmp_path / "reports.sqlite")
     # The health check reads the store's path from the settings.
     monkeypatch.setenv("LIVE_STORE", str(tmp_path / "live.sqlite"))
+    # No history thread: it would ask the NTSB over the internet.
+    monkeypatch.setenv("HISTORY", "0")
     get_settings.cache_clear()
     wingtip_settings.cache_clear()
     yield

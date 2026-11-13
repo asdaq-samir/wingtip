@@ -15,6 +15,13 @@ struct StripAir: View {
 
     private var next: StripPoint? { StripData.nextPoint(points, position: position) }
 
+    /// The miles from the airplane to the next point; nil with no fix or
+    /// no place for the point.
+    private func toGo(_ next: StripPoint) -> Result<Double, any Error>? {
+        guard let fix, let at = next.coordinate else { return nil }
+        return Result { try Flight.distanceNm(fix.coordinate, at) }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: WingtipSpace.md) {
             RibbonLine(points: points, position: position).padding(.horizontal, WingtipSpace.xs)
@@ -40,9 +47,8 @@ struct StripAir: View {
                         .accessibilityLabel("Magnetic heading \(SpokenFigures.degrees(heading))")
                     }
                     // The miles to go are the engine's (`distance_nm`); where
-                    // it cannot say them, the strip shows none.
-                    if let fix, let at = next.coordinate,
-                       let nm = try? Engine.distanceNm(lat1: fix.coordinate.latitude, lon1: fix.coordinate.longitude, lat2: at.latitude, lon2: at.longitude) {
+                    // it cannot say them, that is said under the row.
+                    if case .success(let nm)? = toGo(next) {
                         VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
                             Text("To go").condensedCaps(.caption).foregroundStyle(ink.muted)
                             Text(Format.number(nm, decimals: nm < 10 ? 1 : 0)).font(ChartInk.figure(28))
@@ -53,6 +59,7 @@ struct StripAir: View {
                 }
                 .padding(WingtipSpace.lg)
                 .inkCard()
+                if let toGo = toGo(next) { ProblemLine(toGo, "The miles to go") }
             }
             FiguresStrip()
                 .padding(.vertical, WingtipSpace.sm)

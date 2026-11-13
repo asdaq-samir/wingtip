@@ -3,7 +3,8 @@
 //! in call.rs with the others, and their shapes in
 //! engine/contract/engine.schema.json.
 
-use super::climbs::{approach_end, with_climbs, with_descents, ApproachFix, End};
+use super::climbs::with_climbs;
+use super::descents::{approach_end, with_descents, ApproachFix, End};
 use super::holds::{hold_on_leg, Held};
 use super::legs::{alternate_leg, assemble_leg, fuel_plan, legs, totals};
 use super::plans::{candidates, join_figures, join_options, Flights, Plan};
@@ -111,7 +112,10 @@ fn answer(name: &str, v: &Value) -> R<String> {
             format!("{{\"minutes\":{},\"gallons\":{}}}", write(&Value::Number(c.minutes)), write(&Value::Number(c.gallons)))
         }
         "navlog_leg" => {
-            let p = opt_profile(name, v)?;
+            let p = match v.get("profile") {
+                None | Some(Value::Null) => None,
+                Some(_) => Some(profile(name, v)?),
+            };
             if let Some(p) = &p {
                 p.need(name, &["cruise_tas_kt", "fuel_burn_gph"])?;
             }
@@ -126,7 +130,10 @@ fn answer(name: &str, v: &Value) -> R<String> {
             write(&leg.value())
         }
         "navlog_legs" => {
-            let p = opt_profile(name, v)?;
+            let p = match v.get("profile") {
+                None | Some(Value::Null) => None,
+                Some(_) => Some(profile(name, v)?),
+            };
             if let Some(p) = &p {
                 p.need(name, &["cruise_tas_kt", "fuel_burn_gph"])?;
             }
@@ -139,16 +146,31 @@ fn answer(name: &str, v: &Value) -> R<String> {
             write_objs(with_climbs(&objs(name, v, "legs")?, opt_num(name, v, "start_altitude_ft")?, &p, &Climber::new(&p.airplane))?)
         }
         "navlog_with_descents" => {
-            let end = End {
-                altitude_ft: opt_num(name, v, "end_altitude_ft")?,
-                before_nm: opt_num(name, v, "end_before_nm")?.unwrap_or(0.0),
-                fix: match v.get("end_fix") {
-                    None | Some(Value::Null) => None,
-                    Some(Value::String(s)) => Some(s.clone()),
-                    Some(_) => return Err(format!("{name}: \"end_fix\" is not a string")),
-                },
+            let fix = match v.get("end_fix") {
+                None | Some(Value::Null) => None,
+                Some(Value::String(s)) => Some(s.clone()),
+                Some(_) => return Err(format!("{name}: \"end_fix\" is not a string")),
             };
-            write_objs(with_descents(&objs(name, v, "legs")?, &objs(name, v, "fixes")?, &end)?)
+            // Down to the pattern, the descent is finished where the
+            // 45-degree entry begins, not over the field: AC 90-66C 11.2
+            // and 11.3 have an arriving airplane level at pattern altitude
+            // well clear of the pattern before entering it
+            // (limits::pattern_entry_start_nm). An approach's is its fix's.
+            let before_nm = opt_num(name, v, "end_before_nm")?.unwrap_or_else(|| {
+                if fix.is_none() {
+                    wingtip_flight::limits::pattern_entry_start_nm()
+                } else {
+                    0.0
+                }
+            });
+            let end = End { altitude_ft: opt_num(name, v, "end_altitude_ft")?, before_nm, fix };
+            // The airplane, for the descent's own speed and flow; none (left
+            // out or null) is no airplane, the legs untimed.
+            let p = match v.get("profile") {
+                None | Some(Value::Null) => None,
+                Some(_) => Some(profile(name, v)?),
+            };
+            write_objs(with_descents(&objs(name, v, "legs")?, &objs(name, v, "fixes")?, &end, p.as_ref())?)
         }
         "navlog_approach_end" => {
             let fixes = objs(name, v, "fixes")?
@@ -176,7 +198,10 @@ fn answer(name: &str, v: &Value) -> R<String> {
         }
         "navlog_totals" => write(&totals(&objs(name, v, "legs")?)?),
         "navlog_fuel_plan" => {
-            let p = opt_profile(name, v)?;
+            let p = match v.get("profile") {
+                None | Some(Value::Null) => None,
+                Some(_) => Some(profile(name, v)?),
+            };
             if let Some(p) = &p {
                 p.need(name, &["fuel_burn_gph"])?;
             }
@@ -199,7 +224,10 @@ fn answer(name: &str, v: &Value) -> R<String> {
             ))
         }
         "navlog_alternate_leg" => {
-            let p = opt_profile(name, v)?;
+            let p = match v.get("profile") {
+                None | Some(Value::Null) => None,
+                Some(_) => Some(profile(name, v)?),
+            };
             if let Some(p) = &p {
                 p.need(name, &["cruise_tas_kt", "fuel_burn_gph"])?;
             }
@@ -212,7 +240,10 @@ fn answer(name: &str, v: &Value) -> R<String> {
             write(&alternate_leg(name, dest, alternate, num(name, v, "altitude_ft")?, p.as_ref(), air.as_ref().map(|(a, var)| (a, *var)))?)
         }
         "navlog_candidates" => {
-            let p = opt_profile(name, v)?;
+            let p = match v.get("profile") {
+                None | Some(Value::Null) => None,
+                Some(_) => Some(profile(name, v)?),
+            };
             let count = num(name, v, "legs")?;
             match candidates(list(name, v, "segments")?, count as usize, p.as_ref())? {
                 None => "null".to_owned(),
@@ -220,7 +251,10 @@ fn answer(name: &str, v: &Value) -> R<String> {
             }
         }
         "navlog_plans" => {
-            let p = opt_profile(name, v)?;
+            let p = match v.get("profile") {
+                None | Some(Value::Null) => None,
+                Some(_) => Some(profile(name, v)?),
+            };
             let air = read_leg_air(name, v)?;
             match plan(name, v, p.as_ref(), &air)? {
                 None => "{\"plans\":{},\"by_altitude\":[]}".to_owned(),
@@ -228,7 +262,10 @@ fn answer(name: &str, v: &Value) -> R<String> {
             }
         }
         "navlog_legs_at" => {
-            let p = opt_profile(name, v)?;
+            let p = match v.get("profile") {
+                None | Some(Value::Null) => None,
+                Some(_) => Some(profile(name, v)?),
+            };
             let air = read_leg_air(name, v)?;
             match plan(name, v, p.as_ref(), &air)? {
                 None => return Err(format!("{name}: some leg has no legal altitude, so no altitude can be flown on all of them")),

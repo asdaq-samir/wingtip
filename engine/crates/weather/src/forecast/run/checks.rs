@@ -18,9 +18,9 @@ pub enum Kind {
     VfrMinimums,
     /// Forecast weather under the pilot's personal minimums.
     PilotMinimums,
-    /// A SIGMET or convective SIGMET in force then (AC 00-45H).
+    /// A SIGMET or convective SIGMET in force then (FAA-H-8083-28B 26.2.4).
     Sigmet,
-    /// A G-AIRMET snapshot for then (AC 00-45H, Graphical AIRMET).
+    /// A G-AIRMET snapshot for then (FAA-H-8083-28B 26.3.1.1).
     Gairmet,
     /// The Storm Prediction Center's Day 1 convective outlook.
     Outlook,
@@ -82,7 +82,7 @@ fn text<'a>(v: &'a Value, key: &str) -> Option<&'a str> {
     v.get(key).and_then(Value::as_str)
 }
 
-/// A SIGMET's hazard in words (AC 00-45H's SIGMET hazards).
+/// A SIGMET's hazard in words (FAA-H-8083-28B 26.2.4.1.1's SIGMET criteria).
 fn sigmet_words(a: &Value) -> String {
     let hazard = text(a, "hazard").unwrap_or("");
     if hazard.contains("CONVECTIVE") || text(a, "type").is_some_and(|t| t.to_uppercase().contains("CONVECTIVE")) {
@@ -170,7 +170,10 @@ pub fn areas_at(areas: &[Area], s: &Sample) -> Vec<usize> {
 /// distance below the clouds are Class C, D and E's (91.155(a): 3 sm and
 /// 500 ft under 10,000 ft MSL; 5 sm and 1,000 ft at or above), never
 /// Class G's day 1 sm; and a ceiling under 1,000 ft is held to 91.155(c)'s
-/// surface-area floor everywhere, as the briefing holds the route.
+/// surface-area floor everywhere, as the briefing holds the route. The
+/// cloud distance is measured from the ceiling (BKN, OVC) alone, not from
+/// a FEW or SCT base, which a TAF's figures here do not carry: a stated
+/// simplification, not one toward safety.
 pub fn under_vfr(m: &Met, alt_ft: Option<f64>) -> Vec<String> {
     let high = alt_ft.is_some_and(|a| a >= vfr::HIGH_FROM_MSL_FT);
     let (need_sm, below_ft) =

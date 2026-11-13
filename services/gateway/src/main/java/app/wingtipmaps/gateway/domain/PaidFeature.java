@@ -6,45 +6,28 @@ package app.wingtipmaps.gateway.domain;
  * altitudes, fuel, weather, airspace, the Go / No-Go -- are free and are
  * none of these: nothing that keeps a pilot legal or safe is paid for.
  *
- * <p>{@code capped} is whether each use is a Claude call this app pays
- * for, counted against a monthly allowance (SubscriptionService); the
- * debrief is measured on the device and costs nothing a use.
+ * <p>The features Claude wrote (the written briefing, checkpoint
+ * descriptions, the mock oral, the assistant, the readings in words) were
+ * taken out on the owner's word of 2026-11-12 (docs/decisions/0041); the
+ * debrief, measured on the device, is what is left.
  */
 public enum PaidFeature {
-    NARRATIVE("The written briefing comes", "written briefings", true),
-    CHECKPOINT_NOTES("Checkpoint descriptions come", "checkpoint descriptions", true),
-    ORAL("The mock oral comes", "mock-oral questions and grades", true),
-    ASSISTANT("The assistant comes", "questions to the assistant", true),
-    WORDS("The readings in words come", "readings in words", true),
-    DEBRIEF("The debrief comes", "debriefs", false);
+    DEBRIEF("The debrief comes");
 
     private final String comes;
-    private final String counted;
-    private final boolean capped;
 
-    PaidFeature(String comes, String counted, boolean capped) {
+    PaidFeature(String comes) {
         this.comes = comes;
-        this.counted = counted;
-        this.capped = capped;
     }
 
-    /** "The written briefing comes", a sentence's start, its verb agreeing. */
+    /** "The debrief comes", a sentence's start, its verb agreeing. */
     public String comes() {
         return comes;
     }
 
-    /** "the written briefing", as a sentence's object. */
+    /** "the debrief", as a sentence's object. */
     public String object() {
         String title = comes.substring(0, comes.lastIndexOf(' '));
         return Character.toLowerCase(title.charAt(0)) + title.substring(1);
-    }
-
-    /** "written briefings", as a month's count of it is said. */
-    public String counted() {
-        return counted;
-    }
-
-    public boolean capped() {
-        return capped;
     }
 }

@@ -1,7 +1,9 @@
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { PillSection } from "./Favorites";
 import { ListGroup } from "./GroupedList";
+import { ItemSeparator } from "./ui/item";
+import { CollapsibleContent } from "./ui/collapsible";
 import { TEXT } from "../lib/text";
 
 /** How many rows a section shows before its title opens the rest. */
@@ -13,7 +15,9 @@ const FIRST_ROWS = 3;
  * Frequencies were first, and then every section of lists on it, at the
  * owner's ask (2026-10-29: "I like the frequencies only show 3 and then
  * rest can be seen by clicking on it. Can we do similar to other
- * sections?"). Opened, it stays open while the card is.
+ * sections?"). Opened, its title closes it again, its chevron turned
+ * down while it is open (the owner, 2026-11-11: "how do you go back to
+ * shorter list once it's expanded?").
  */
 export function FirstFew({
   title,
@@ -33,16 +37,37 @@ export function FirstFew({
   testId?: string;
 }) {
   const [all, setAll] = useState(open);
-  const more = !all && rows.length > FIRST_ROWS;
+  const long = rows.length > FIRST_ROWS;
+  const more = !all && long;
+  // The rows past the first few in the stock Collapsible's content, held
+  // with the last of them so the group draws no line before it closed;
+  // each a line of its own inside, as the group draws between its rows.
+  const shown = long
+    ? [
+        ...rows.slice(0, FIRST_ROWS - 1),
+        <Fragment key="rest">
+          {rows[FIRST_ROWS - 1]}
+          <CollapsibleContent className="flex flex-col">
+            {rows.slice(FIRST_ROWS).map((row, i) => (
+              <Fragment key={i}>
+                <ItemSeparator className="my-0" />
+                {row}
+              </Fragment>
+            ))}
+          </CollapsibleContent>
+        </Fragment>,
+      ]
+    : rows;
   return (
     <PillSection
       title={title}
       testId={testId}
-      onMore={more ? () => setAll(true) : undefined}
+      onMore={long ? () => setAll(!all) : undefined}
+      expanded={long ? all : undefined}
       right={more ? <span className={cn("text-muted-foreground", TEXT.note)}>{`${FIRST_ROWS} of ${rows.length}`}</span> : undefined}
     >
       <ListGroup>
-        {more ? rows.slice(0, FIRST_ROWS) : rows}
+        {shown}
         {after}
       </ListGroup>
     </PillSection>

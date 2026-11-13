@@ -2,8 +2,7 @@
 
 The planner: it works out a flight, over HTTP. Fetches the FAA's data
 and the weather, reads FAA sectional tiles, scores the checkpoints with
-the chart model in its own process, puts the nav log together and runs
-the AI assistant, and asks the Rust engine every aviation rule by name
+the chart model in its own process, puts the nav log together, and asks the Rust engine every aviation rule by name
 (`wingtip_native.call`; [`engine/README.md`](../../engine/README.md)). It
 is one of four layers: under it the engine, beside it Spring Boot
 (accounts and saved records, which asks this service when it needs a
@@ -28,9 +27,8 @@ calls and returns, and never imports another: `lint-imports` holds that
 (`.importlinter`: no router imports another, only `app/main.py` imports
 the routers, and `wingtip` never imports `app`), in check.sh's py and
 planner areas and in CI. The legs themselves are
-`wingtip.navlog`'s. The planner calls no model: every Claude call is the
-`assistant` service's (services/assistant), which asks the endpoints
-here for its figures.
+`wingtip.navlog`'s. The planner calls no model; the pilot's own AI app reaches it through
+the MCP connector (`app/mcp`).
 Every response, streamed lines included, is a model in `app/schemas/` (one module per router,
 `common.py` for those shared):
 FastAPI validates against it and publishes it in `openapi.json`,
@@ -166,7 +164,7 @@ as due, draws every tile again (serving the old ones meanwhile), and
 bumps the tile revision at the end, as `unmask` does below.
 
 The planner keeps up with the 56-day cycle by itself: at start-up and
-once an hour it asks the FAA's products page which cycle is current
+once an hour it asks the FAA's APRA (wingtip.apra) which cycle is current
 and, if that cycle's pyramid is not complete on disk, starts the charts
 job's `charts` container through the dev-services sidecar (prepare,
 render, pack, then delete the previous cycle; `docker compose create

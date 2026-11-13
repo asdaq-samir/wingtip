@@ -1,0 +1,42 @@
+{
+  "x-call": "wingtip_weather::gairmet_window::call",
+  "description": "The time a G-AIRMET snapshot stands for: three hours either side of its valid time (UNIX seconds). AIM 7-1-6: G-AIRMETs are \"valid at discrete times no more than 3 hours apart\", and \"the user should assume the hazardous weather condition is occurring between the snap shots unless informed otherwise\" (a hazard at 03 and none at 00 or 06 exists from 0001 to 0559), so a snapshot stands for the whole gap either side, erring toward telling of the hazard.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GairmetWindowInput",
+      "type": "object",
+      "properties": {
+        "valid": {
+          "type": "number",
+          "description": "The snapshot's valid time, UNIX seconds."
+        }
+      },
+      "required": [
+        "valid"
+      ]
+    },
+    "answer": {
+      "title": "GairmetWindowAnswer",
+      "type": "object",
+      "properties": {
+        "valid_from": {
+          "type": "number"
+        },
+        "valid_to": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "valid_from",
+        "valid_to"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

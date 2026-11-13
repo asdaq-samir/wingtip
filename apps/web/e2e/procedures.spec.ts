@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { cardClose, drawn, grabberTo, openTab, settle, settled, sideDrawer, slow } from "./helpers";
+import { procedureRuns as runs, tapMarkApart } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -246,7 +247,7 @@ test("a field's approach is picked on its own page with its transition, drawn on
   await page.getByTestId("procedure-option").filter({ hasText: "ILS RWY 09" }).click();
   await expect(page.getByRole("heading", { name: "KDLH ILS RWY 09" })).toBeVisible();
   await expect.poll(() => asked, { timeout: slow(10000) }).toContain("/api/planner/airport/KDLH/procedures/I09");
-  await expect(page.locator("path.instrument-procedure").first()).toBeAttached({ timeout: slow(10000) });
+  await expect.poll(() => runs(page, "line"), { timeout: slow(10000) }).toBeGreaterThan(0);
   await expect(page).not.toHaveURL(/[?&]procs=/);
   // Its fixes as they are flown, with the altitudes they are crossed at.
   const fixes = page.getByTestId("procedure-fixes");
@@ -272,10 +273,10 @@ test("a field's approach is picked on its own page with its transition, drawn on
 
   // On the map: the transition and the final, the missed approach dashed,
   // its hold, and the fixes with their altitudes.
-  await expect(page.locator("path.instrument-procedure")).toHaveCount(2, { timeout: slow(10000) });
-  await expect(page.locator("path.instrument-procedure-missed")).toHaveCount(1);
-  await expect(page.locator("path.instrument-procedure-hold")).toHaveCount(1);
-  await expect(page.locator("[data-procedure-fix]")).toHaveCount(3);
+  await expect.poll(() => runs(page, "line"), { timeout: slow(10000) }).toBe(2);
+  await expect.poll(() => runs(page, "missed")).toBe(1);
+  await expect.poll(() => runs(page, "hold")).toBe(1);
+  await expect.poll(async () => (await drawn(page, "procedure-fixes")).length).toBe(3);
   // Said in the route's box after the destination's pill, and a tap there
   // opens the Procedures.
   const chip = sideDrawer(page).getByTestId("route-procedure");
@@ -307,7 +308,7 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // Put away by its own close.
   await cardClose(page, "procedures-close").click();
   await expect(page.getByTestId("procedure-add")).toHaveCount(0);
-  await expect(page.locator("path.instrument-procedure")).toHaveCount(0);
+  await expect.poll(() => runs(page)).toBe(0);
 });
 
 /**
@@ -371,10 +372,10 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await openTab(page, "Nav Log");
   // The plate switched off from the approach's pull-down, and on again.
   await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
-  // The one picked is the stock radio list's checked choice, as a reader
+  // The one picked is the stock listbox's selected option, as a reader
   // hears it; the arrow keys move between the choices without picking.
-  const ils = page.getByTestId("procedure-menu").getByRole("radio", { name: /^ILS/ }).first();
-  await expect(ils).toHaveAttribute("aria-checked", "true");
+  const ils = page.getByTestId("procedure-menu").getByRole("option", { name: /^ILS/ }).first();
+  await expect(ils).toHaveAttribute("aria-selected", "true");
   await ils.focus();
   await page.keyboard.press("ArrowDown");
   await expect(page.getByTestId("procedure-menu")).toBeVisible();
@@ -729,9 +730,8 @@ test("a procedure's fixes branch off the route, each sent direct to or given an 
   await expect(page).not.toHaveURL(/[?&]cross=/);
   await cardClose(page, "fix-card-close").click();
   await expect(card).toHaveCount(0);
-  // The same card from the fix on the map: a tap's click on its mark, under
-  // the sheet here, as the map's marks are tapped in the other specs.
-  await page.locator('[data-procedure-fix="FAKER"]').dispatchEvent("click");
+  await grabberTo(page, "peek"); // the same card from the fix on the map, the sheet down
+  await tapMarkApart(page, "procedure-fixes", "FAKER", "OFOFO"); // at the route's zoom KDLH lies by them
   await expect(page.getByTestId("fix-card")).toBeVisible();
   await expect(page.getByTestId("fix-card-direct")).toContainText("as Charted");
 });

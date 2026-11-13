@@ -42,6 +42,14 @@ fn the_faas_capitals_in_sentence_case_keep_the_codes_and_figures() {
     assert_eq!(faa("SEE NOTAMS. THEN MORE!  CLOSED? NO"), "See NOTAMs. Then more!  Closed? No");
     assert_eq!(faa("ÉCOLE CLASS C"), "École Class C");
     assert_eq!(faa("X_CLASS B"), "X_class b");
+    // An approach's title keeps its codes, the plate's card's title (AIM 5-4-5).
+    assert_eq!(faa("ILS OR LOC RWY 36"), "ILS or LOC rwy 36");
+    assert_eq!(faa("RNAV (GPS) Z RWY 36"), "RNAV (GPS) Z rwy 36");
+    assert_eq!(faa("ILS RWY 9R (CAT II - III)"), "ILS rwy 9R (CAT II - III)");
+    assert_eq!(faa("LOC/DME BC RWY 13"), "LOC/DME BC rwy 13");
+    assert_eq!(faa("VOR-A"), "VOR-A");
+    assert_eq!(faa("VOR/DME-C"), "VOR/DME-C");
+    assert_eq!(faa("NDB OR GPS-B"), "NDB or GPS-B");
     assert_eq!(text("faa_words", "{}"), "");
     assert_eq!(text("faa_words", r#"{"text": null}"#), "");
     assert_eq!(call("faa_words", r#"{"texts": ["CHICAGO CLASS B", null, "Mixed"]}"#).unwrap(), r#"["Chicago Class B","","Mixed"]"#);
@@ -175,9 +183,12 @@ fn a_vors_radial_its_morse_and_its_service_volume() {
     let radial = |var: &str, lat: f64, lon: f64| {
         call("radial_of", &format!("{{\"station\": {}, \"at\": {{\"lat\": {lat}, \"lon\": {lon}}}}}", jot(var))).unwrap()
     };
-    // Due north of a 2° E VOR is its 358 radial, 178 to fly to it, 30 nm.
+    // Due north of a 2° E VOR is its 358 radial, 178 to fly to it, and half
+    // a degree of latitude: 29.99 nm on the WGS-84 meridian at 41.8° N
+    // (M = a(1-e²)/(1-e²sin²φ)^1.5 = 6,363,806 m, × 0.5° = 55,535 m), where
+    // the sphere before 7fd7fa026 gave 30.02.
     let north = radial("2", JOT.0 + 0.5, JOT.1);
-    assert!(north.starts_with(r#"{"radial":358.0,"to_course":178.0,"nm":30.02"#), "{north}");
+    assert!(north.starts_with(r#"{"radial":358.0,"to_course":178.0,"nm":29.98"#), "{north}");
     // A west declination the other way: 4° W puts due east on its 094.
     let east = radial("-4", JOT.0, JOT.1 + 0.5);
     assert!(east.starts_with(r#"{"radial":93.8"#), "{east}");

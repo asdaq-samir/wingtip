@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
+import type { Plugin } from "vite";
 import type { ManifestOptions } from "vite-plugin-pwa";
+import { BRAND } from "../src/lib/tokens.ts";
 
 // The installed app's shortcuts (a long press on its icon, a desktop
 // taskbar's menu), generated from design/screens.json by
@@ -53,8 +55,8 @@ export const MANIFEST: Partial<ManifestOptions> = {
   ...(SCREENSHOTS.length ? { screenshots: SCREENSHOTS } : {}),
   display: "standalone",
   // Android's launch ground for the installed app: color.brand.launch.
-  background_color: "#ffffff",
-  theme_color: "#ffffff",
+  background_color: BRAND.launch,
+  theme_color: BRAND.launch,
   icons: [
     // docs/brand/appicon.svg drawn by scripts/build/app-icons.sh: rounded
     // as shown (192, 512), full bleed where masked (maskable 192/512,
@@ -68,4 +70,24 @@ export const MANIFEST: Partial<ManifestOptions> = {
     { src: "icon-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
     { src: "icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
   ],
+};
+
+/** The page's two theme-color metas, the browser's bar in the launch
+ *  ground by day and the night navy at night (design/tokens.json's
+ *  color.brand.launch and launch-night), by the device's scheme before
+ *  the script runs; the look and Setup's theme take over from there
+ *  (lib/brand's BrandLook). */
+export const themeColor: Plugin = {
+  name: "theme-color",
+  transformIndexHtml: () =>
+    (
+      [
+        ["light", BRAND.launch],
+        ["dark", BRAND.launchNight],
+      ] as const
+    ).map(([scheme, content]) => ({
+      tag: "meta",
+      attrs: { name: "theme-color", media: `(prefers-color-scheme: ${scheme})`, content },
+      injectTo: "head" as const,
+    })),
 };

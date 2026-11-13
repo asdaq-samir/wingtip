@@ -7,6 +7,7 @@ import { chipFillOf } from "../../../../lib/map/marks/flightCategory";
 import { visibilityWords } from "../../../../lib/map/marks/airportWeather";
 import { clockTime } from "../../../../lib/format";
 import { TEXT } from "../../../../lib/text";
+import { NO_CONNECTION } from "../../../../lib/problems";
 import { nmAway } from "../../../../lib/useAway";
 import { windLine } from "../../format";
 import { SURFACE_WORDS, type Surface } from "../../lib/searchFilters";
@@ -99,7 +100,7 @@ export default function SearchResultsPage() {
   const sent = useSearchResults((s) => s.sent);
   const filtering = useSearchResults((s) => s.draft !== null);
   const open = useSearchResults((s) => s.open);
-  const { rows, all, loading, failed } = useSearchResultRows();
+  const { rows, all, loading, failed, onDevice, offline } = useSearchResultRows();
   // The Filters page starts at its top; closed, the list is where it was.
   const anchor = useRef<HTMLSpanElement>(null);
   useScrollPlace(anchor, filtering);
@@ -114,7 +115,9 @@ export default function SearchResultsPage() {
   const note = loading
     ? "Searching…"
     : failed
-      ? "The fields near there couldn't be fetched."
+      ? offline
+        ? `${NO_CONNECTION}.`
+        : "The fields near there couldn't be fetched."
       : rows.length === 0
         ? all > 0
           ? "No field nearby fits these filters."
@@ -125,7 +128,10 @@ export default function SearchResultsPage() {
     <div className="flex flex-col gap-3 pt-2 pb-4" data-testid="search-results">
       <span ref={anchor} hidden />
       <FilterChips />
-      <p className={cn("text-muted-foreground", TEXT.note)}>Near {sent.near.label}</p>
+      <p className={cn("text-muted-foreground", TEXT.note)}>
+        Near {sent.near.label}
+        {onDevice && <span data-testid="search-on-device"> · From this device, without weather</span>}
+      </p>
       {note ? (
         <p role="status" className={cn("py-6 text-center text-muted-foreground", TEXT.prose)}>
           {note}

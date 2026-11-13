@@ -15,10 +15,15 @@ pilot asks, and nothing the pilot waits on is a live fetch.
 The tables:
 - radar: each airplane's latest report from the FAA's radar, by address,
   with its place and time; kept while it is fresh (STALE_S).
-- looked: the places the map has asked for traffic round lately.
-- followed: the airplanes whose card has been opened, kept for good.
+- looked: the regions (adsb.lol's cells, never a view's own middle) the
+  map has asked for traffic round in the last minute (radar.LOOKED_S).
+- followed: the airplanes whose card has been opened, each with when it
+  was last opened; dropped FOLLOW_KEEP_S after that (recorded.py).
 - points: each recorded airplane's track, a point a row, kept as long as
   RECORD_KEEP_S (wingtip.traffic.recorded).
+Nothing in any table names a pilot or an account. The planner prunes all
+three on a schedule (wingtip.traffic.radar.prune, from app.main), not
+only when ingest or a request happens to write.
 - beats: what ingest last said of each feed and of itself (its health).
 """
 
@@ -122,7 +127,8 @@ def radar_forget(before: float) -> int:
 
 
 def look(place: str, lat: float, lon: float, radius_nm: float, at: float) -> None:
-    """The map's view round a place (one row a place, its latest view)."""
+    """The map's view round a region (one row a region, its latest ask);
+    `lat` and `lon` are the region's middle, not the view's."""
     _write(
         "INSERT INTO looked (place, lat, lon, radius, at) VALUES (?, ?, ?, ?, ?) "
         "ON CONFLICT (place) DO UPDATE SET lat = excluded.lat, lon = excluded.lon, radius = excluded.radius, at = excluded.at",
@@ -130,19 +136,38 @@ def look(place: str, lat: float, lon: float, radius_nm: float, at: float) -> Non
     )
 
 
+def forget_looks(before: float) -> int:
+    """The regions not asked about since `before` dropped; how many."""
+    return _write("DELETE FROM looked WHERE at < ?", (before,))
+
+
 def looked(since: float) -> list[tuple[float, float, float]]:
     """The views asked for since `since`, each (lat, lon, radius nm), in
     the order their places were first looked at; older ones dropped."""
-    _write("DELETE FROM looked WHERE at < ?", (since,))
+    forget_looks(since)
     return [tuple(row) for row in _query("SELECT lat, lon, radius FROM looked ORDER BY rowid")]
 
 
 # The followed airplanes and their recorded tracks.
 
 
-def follow(hex_id: str, at: float) -> bool:
-    """An airplane followed from now on; False where it already was."""
-    return _write("INSERT OR IGNORE INTO followed (hex, since) VALUES (?, ?)", (hex_id, at)) > 0
+def follow(hex_id: str, at: float) -> None:
+    """An airplane followed from now on, or still: `since` is when its card
+    was last opened, which its expiry counts from."""
+    _write("INSERT INTO followed (hex, since) VALUES (?, ?) ON CONFLICT (hex) DO UPDATE SET since = excluded.since", (hex_id, at))
+
+
+def unfollow_before(before: float) -> int:
+    """The airplanes whose card has not been opened since `before` followed
+    no more; how many. Their tracks age out on their own (forget_points)."""
+    return _write("DELETE FROM followed WHERE since < ?", (before,))
+
+
+def forget_points(before: float) -> int:
+    """Every track's points older than `before` dropped, whether or not
+    its airplane is still heard (record() prunes only the one it adds to);
+    how many."""
+    return _write("DELETE FROM points WHERE t < ?", (before,))
 
 
 def is_followed(hex_id: str) -> bool:

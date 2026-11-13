@@ -14,7 +14,8 @@ extension EngineContract.AtcItem {
     var words: String {
         func capital(_ s: String) -> String { s.prefix(1).uppercased() + s.dropFirst() }
         func three(_ d: Int) -> String { String(d).leftPadded(to: 3) }
-        func altitude(_ ft: Int?) -> String { ft.map { (try? Engine.altitudeSaid(ft: Double($0))) ?? Format.altitude(Double($0)) } ?? "" }
+        // Altitudes.said: the engine's problem in the altitude's place where it refuses.
+        func altitude(_ ft: Int?) -> String { ft.map { Altitudes.said(Double($0)) } ?? "" }
         let points = ["north": "N", "northeast": "NE", "east": "E", "southeast": "SE", "south": "S", "southwest": "SW", "west": "W", "northwest": "NW"]
         switch kind {
         case "altitude":

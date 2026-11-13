@@ -3,33 +3,32 @@ at..." filter (the one search's Filters page, 2026-11-10): the TAF that
 speaks for the field, read at that time, all by the engine's rules.
 
 Which TAF is the engine's `field_taf`: the field's own, else the nearest
-within its reach (25 nm, AC 00-45H's vicinity and the planner's reach
+within its reach (25 nm, FAA-H-8083-28B 24.4.3.8.2's vicinity and the planner's reach
 past it). What it forecasts then is `taf_window`'s worst at that moment,
-TEMPO and PROB groups included (AC 00-45H's change groups) -- a filter
+TEMPO and PROB groups included (FAA-H-8083-28B 27.4.2.10's change groups) -- a filter
 that keeps a field as VFR keeps it only where nothing in its forecast
 then says otherwise. The category is `flight_category`'s (AIM 7-1-7,
 the ceiling 14 CFR 1.1's). Nothing here works a figure out.
 """
 
-import math
-
 from . import weather
 from .engine import ask as _ask
+from .geo import box_around
 
-#: How far round a field the TAF stations are handed to the engine, in
-#: degrees of latitude: past field_taf's 25 nm reach (0.42 degrees), so
-#: the engine, not this box, decides which one speaks for it.
-_BOX_DEG = 0.5
+#: How far round a field the TAF stations are handed to the engine, nm:
+#: past field_taf's 25 nm reach, so the engine, not this box, decides
+#: which one speaks for it.
+_BOX_NM = 30.0
 
 
 def _near(stations: list, lat: float, lon: float) -> list:
     """The stations in a box round a point, for the engine to choose from:
     the national set is some seven hundred."""
-    across = _BOX_DEG / max(math.cos(math.radians(lat)), 0.1)
+    south, west, north, east = box_around(lat, lon, _BOX_NM)
     return [
         s
         for s in stations
-        if s.get("lat") is not None and s.get("lon") is not None and abs(s["lat"] - lat) <= _BOX_DEG and abs(s["lon"] - lon) <= across
+        if s.get("lat") is not None and s.get("lon") is not None and south <= s["lat"] <= north and west <= s["lon"] <= east
     ]
 
 

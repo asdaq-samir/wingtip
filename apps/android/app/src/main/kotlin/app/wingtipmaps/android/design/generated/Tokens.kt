@@ -140,6 +140,27 @@ object WingtipColors {
         /** A pattern leg's name ground, a step darker: white words on it 5.2:1, where the line's teal is 3.95:1 (WCAG 1.4.3). */
         val PatternLabel = Color(0xFF0B7A75)
         const val PATTERN_LABEL_HEX = "#0b7a75"
+        /** An approach's final segment, its final approach fix to its missed approach point, over its plate on the map: the cyan ForeFlight marks it in (the owner's screenshot, 2026-11-11), apart from the procedure's indigo and the course's magenta. A chart colour, so the same in every look and at night. */
+        val FinalApproach = Color(0xFF00B4E6)
+        const val FINAL_APPROACH_HEX = "#00b4e6"
+        /** The sky over the tilted 3D map by day, the chart's pale blue (features/plan/map/terrain/SkyGl). */
+        val Sky = Color(0xFFA9CBE8)
+        const val SKY_HEX = "#a9cbe8"
+        /** The sky's pale band at the horizon by day, and the haze the far ground fades into. */
+        val SkyHorizon = Color(0xFFE6EEF6)
+        const val SKY_HORIZON_HEX = "#e6eef6"
+        /** The 3D map's sky over the dimmed chart at night: dark, so it does not glare over a chart dimmed for the cockpit. */
+        val SkyNight = Color(0xFF0D1828)
+        const val SKY_NIGHT_HEX = "#0d1828"
+        /** The horizon's band and the far ground's haze at night, a step lighter than the night sky so the horizon still reads. */
+        val SkyHorizonNight = Color(0xFF26354A)
+        const val SKY_HORIZON_NIGHT_HEX = "#26354a"
+        /** A runway's extended centreline on the ground in the 3D view, white over the chart and the satellite imagery alike, as a runway's own centreline is painted. */
+        val Centreline = Color(0xFFFFFFFF)
+        const val CENTRELINE_HEX = "#ffffff"
+        /** The glidepath in the air to a runway's threshold in the 3D view: the final approach segment's cyan, as it is the same descent. */
+        val Glidepath = Color(0xFF00B4E6)
+        const val GLIDEPATH_HEX = "#00b4e6"
         /** An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red. */
         val Obstacle = Color(0xFF7A1F1F)
         const val OBSTACLE_HEX = "#7a1f1f"
@@ -257,6 +278,132 @@ object WingtipColors {
         /** An urgent PIREP (UUA). */
         val Urgent = Color(0xFFDC2626)
         const val URGENT_HEX = "#dc2626"
+        /** The flow layer's wind streaks (features/weather-flow), white with a breath of blue as Apple Weather's wind map draws them, the owner's screenshot (2026-11-11). */
+        val FlowStreak = Color(0xFFF4F8FF)
+        const val FLOW_STREAK_HEX = "#f4f8ff"
+        /** The wind's field, one hue deepening with speed, the map tinted rather than a rainbow (Apple Weather's wind map): calm. */
+        val FlowWindCalm = Color(0xFF3A6DB0)
+        const val FLOW_WIND_CALM_HEX = "#3a6db0"
+        /** 25 kt. */
+        val FlowWindBreeze = Color(0xFF4A62C4)
+        const val FLOW_WIND_BREEZE_HEX = "#4a62c4"
+        /** 50 kt. */
+        val FlowWindStrong = Color(0xFF6A4FC6)
+        const val FLOW_WIND_STRONG_HEX = "#6a4fc6"
+        /** 75 kt and more. */
+        val FlowWindGale = Color(0xFF9A3FB4)
+        const val FLOW_WIND_GALE_HEX = "#9a3fb4"
+        /** Precipitation by intensity, blue to violet to magenta to yellow (Apple Weather's precipitation map): light. */
+        val FlowRainLight = Color(0xFF3F8CF2)
+        const val FLOW_RAIN_LIGHT_HEX = "#3f8cf2"
+        /** Moderate. */
+        val FlowRainModerate = Color(0xFF7A52E0)
+        const val FLOW_RAIN_MODERATE_HEX = "#7a52e0"
+        /** Heavy. */
+        val FlowRainHeavy = Color(0xFFD53FB2)
+        const val FLOW_RAIN_HEAVY_HEX = "#d53fb2"
+        /** Extreme. */
+        val FlowRainExtreme = Color(0xFFF6C445)
+        const val FLOW_RAIN_EXTREME_HEX = "#f6c445"
+        /** The strongest returns. */
+        val FlowRainExtremeTop = Color(0xFFFFF4B8)
+        const val FLOW_RAIN_EXTREME_TOP_HEX = "#fff4b8"
+        /** Cloud cover, the same grey-white thicker with cover. */
+        val FlowCloud = Color(0xFFEEF2F6)
+        const val FLOW_CLOUD_HEX = "#eef2f6"
+        /** The ceiling, by AIM 7-1-7's categories in the airport marks' own colours (category.lifr and the rest), strongest where it is lowest: under 500 ft. */
+        val FlowCeilingLifr = Color(0xFFA371F7)
+        const val FLOW_CEILING_LIFR_HEX = "#a371f7"
+        /** 500 to under 1,000 ft. */
+        val FlowCeilingIfr = Color(0xFFB3261E)
+        const val FLOW_CEILING_IFR_HEX = "#b3261e"
+        /** 1,000 to 3,000 ft. */
+        val FlowCeilingMvfr = Color(0xFF1F6FEB)
+        const val FLOW_CEILING_MVFR_HEX = "#1f6feb"
+        /** Over 3,000 ft, fading to clear where there is none. */
+        val FlowCeilingVfr = Color(0xFF1A7F37)
+        const val FLOW_CEILING_VFR_HEX = "#1a7f37"
+        /** Thunderstorm energy, surface CAPE, by the NWS's categories, yellow through orange and red to magenta as the SPC's mesoanalysis draws it: weak, from a few hundred J/kg. */
+        val FlowCapeWeak = Color(0xFFE8D44D)
+        const val FLOW_CAPE_WEAK_HEX = "#e8d44d"
+        /** Moderate, 1,000 J/kg. */
+        val FlowCapeModerate = Color(0xFFF08A24)
+        const val FLOW_CAPE_MODERATE_HEX = "#f08a24"
+        /** Strong, 2,500 J/kg. */
+        val FlowCapeStrong = Color(0xFFD62B2B)
+        const val FLOW_CAPE_STRONG_HEX = "#d62b2b"
+        /** Extreme, over 4,000 J/kg. */
+        val FlowCapeExtreme = Color(0xFFC02BB8)
+        const val FLOW_CAPE_EXTREME_HEX = "#c02bb8"
+        /** The 2 m temperature, violet through blue, teal, green and yellow to red (Apple Weather's temperature map): -30 C. */
+        val FlowTempFrigid = Color(0xFF5A4FCF)
+        const val FLOW_TEMP_FRIGID_HEX = "#5a4fcf"
+        /** -10 C. */
+        val FlowTempCold = Color(0xFF3E8DDB)
+        const val FLOW_TEMP_COLD_HEX = "#3e8ddb"
+        /** 0 C. */
+        val FlowTempFreezing = Color(0xFF46C0B4)
+        const val FLOW_TEMP_FREEZING_HEX = "#46c0b4"
+        /** 10 C. */
+        val FlowTempCool = Color(0xFF98D36A)
+        const val FLOW_TEMP_COOL_HEX = "#98d36a"
+        /** 20 C. */
+        val FlowTempMild = Color(0xFFF1C64B)
+        const val FLOW_TEMP_MILD_HEX = "#f1c64b"
+        /** 30 C. */
+        val FlowTempWarm = Color(0xFFEF893C)
+        const val FLOW_TEMP_WARM_HEX = "#ef893c"
+        /** 40 C. */
+        val FlowTempHot = Color(0xFFD5443C)
+        const val FLOW_TEMP_HOT_HEX = "#d5443c"
+        /** Visibility, a slate veil that clears as it rises: the least. */
+        val FlowVisLow = Color(0xFF4B4D7A)
+        const val FLOW_VIS_LOW_HEX = "#4b4d7a"
+        /** Ten miles, where the veil has gone. */
+        val FlowVisHigh = Color(0xFFC9CCDC)
+        const val FLOW_VIS_HIGH_HEX = "#c9ccdc"
+        /** AWC's icing severity (IFI), pale to deep blue as aviationweather.gov's Icing map shades it: trace. */
+        val FlowIcingTrace = Color(0xFF9FD3F5)
+        const val FLOW_ICING_TRACE_HEX = "#9fd3f5"
+        /** Light. */
+        val FlowIcingLight = Color(0xFF4FA3E8)
+        const val FLOW_ICING_LIGHT_HEX = "#4fa3e8"
+        /** Moderate. */
+        val FlowIcingModerate = Color(0xFF2A5FD6)
+        const val FLOW_ICING_MODERATE_HEX = "#2a5fd6"
+        /** Heavy. */
+        val FlowIcingHeavy = Color(0xFF5B2BB0)
+        const val FLOW_ICING_HEAVY_HEX = "#5b2bb0"
+        /** AWC's turbulence (GTG, EDR), green to amber to red to magenta as its Turbulence map shades it: light. */
+        val FlowTurbLight = Color(0xFFB9D86A)
+        const val FLOW_TURB_LIGHT_HEX = "#b9d86a"
+        /** Moderate. */
+        val FlowTurbModerate = Color(0xFFF0B429)
+        const val FLOW_TURB_MODERATE_HEX = "#f0b429"
+        /** Severe. */
+        val FlowTurbSevere = Color(0xFFD6402B)
+        const val FLOW_TURB_SEVERE_HEX = "#d6402b"
+        /** Extreme. */
+        val FlowTurbExtreme = Color(0xFFB0217E)
+        const val FLOW_TURB_EXTREME_HEX = "#b0217e"
+        /** The freezing level, ft MSL, blue where it is low (at the surface) to warm where it is high: the surface. */
+        val FlowFrzLow = Color(0xFF3A52C4)
+        const val FLOW_FRZ_LOW_HEX = "#3a52c4"
+        /** 8,000 ft. */
+        val FlowFrzMid = Color(0xFF42B8A6)
+        const val FLOW_FRZ_MID_HEX = "#42b8a6"
+        /** 16,000 ft and up. */
+        val FlowFrzHigh = Color(0xFFE2A63A)
+        const val FLOW_FRZ_HIGH_HEX = "#e2a63a"
+        /** AWC's cloud tops, ft MSL, grey-white deepening to slate as they rise: low tops. */
+        val FlowTopsLow = Color(0xFFD5DBE4)
+        const val FLOW_TOPS_LOW_HEX = "#d5dbe4"
+        /** FL400 and up. */
+        val FlowTopsHigh = Color(0xFF5A6478)
+        const val FLOW_TOPS_HIGH_HEX = "#5a6478"
+        /** The thin diagonal lines over where the layer has no data, as Apple Weather hatches it. */
+        val FlowHatch = Color(0xFF7B8494)
+        const val FLOW_HATCH_HEX = "#7b8494"
     }
     object Score {
         /** Under 3. */
@@ -972,6 +1119,8 @@ object WingtipMotion {
     const val SHEET_MOST_MS = 350
     val SheetEase = CubicBezierEasing(0f, 0f, 0.58f, 1f)
     val SheetBackEase = CubicBezierEasing(0.2f, 0.9f, 0.3f, 1f)
+    const val DRAWER_MS = 450
+    val DrawerEase = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
     const val FADE_MS = 200
     const val QUICK_MS = 150
     const val PAGE_MS = 250
@@ -989,6 +1138,43 @@ object WingtipHaptic {
     val WARNING: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
     /** The sheet settling at a detent (pill, half, full). */
     const val DETENT = HapticFeedbackConstants.CONTEXT_CLICK
+}
+
+/** The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees. */
+object WingtipMap {
+    const val PITCH_OPEN = 50
+    const val PITCH_MAX = 75
+    const val PITCH_FLAT_MAX = 60
+    const val ZOOM_STATION_CLOSE = 10
+    const val ZOOM_STATION_ALWAYS = 7
+    const val ZOOM_BARB_FAR_FROM = 6
+    const val ZOOM_BARB_FULL = 9
+    const val ZOOM_WORLD_WIND = 4
+    const val ZOOM_STREAK_NEAR = 7
+}
+
+/** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */
+object WingtipFlow {
+    class Stop(val at: Double, val colour: Color, val alpha: Int)
+    val RAMP_WIND = listOf(Stop(0.0, WingtipColors.Weather.FlowWindCalm, 40), Stop(25.0, WingtipColors.Weather.FlowWindBreeze, 140), Stop(50.0, WingtipColors.Weather.FlowWindStrong, 190), Stop(75.0, WingtipColors.Weather.FlowWindGale, 220))
+    val RAMP_STREAK = listOf(Stop(0.0, WingtipColors.Weather.FlowStreak, 90), Stop(15.0, WingtipColors.Weather.FlowStreak, 180), Stop(40.0, WingtipColors.Weather.FlowStreak, 250))
+    val RAMP_CLOUD = listOf(Stop(0.0, WingtipColors.Weather.FlowCloud, 0), Stop(50.0, WingtipColors.Weather.FlowCloud, 110), Stop(100.0, WingtipColors.Weather.FlowCloud, 215))
+    val RAMP_TEMP = listOf(Stop(-60.0, WingtipColors.Weather.FlowTempFrigid, 235), Stop(-30.0, WingtipColors.Weather.FlowTempFrigid, 235), Stop(-10.0, WingtipColors.Weather.FlowTempCold, 235), Stop(0.0, WingtipColors.Weather.FlowTempFreezing, 235), Stop(10.0, WingtipColors.Weather.FlowTempCool, 235), Stop(20.0, WingtipColors.Weather.FlowTempMild, 235), Stop(30.0, WingtipColors.Weather.FlowTempWarm, 235), Stop(40.0, WingtipColors.Weather.FlowTempHot, 235), Stop(45.0, WingtipColors.Weather.FlowTempHot, 235))
+    val RAMP_VIS = listOf(Stop(0.0, WingtipColors.Weather.FlowVisLow, 200), Stop(5.0, WingtipColors.Weather.FlowVisHigh, 90), Stop(10.0, WingtipColors.Weather.FlowVisHigh, 0))
+    val RAMP_FRZLVL = listOf(Stop(0.0, WingtipColors.Weather.FlowFrzLow, 200), Stop(8000.0, WingtipColors.Weather.FlowFrzMid, 180), Stop(16000.0, WingtipColors.Weather.FlowFrzHigh, 170))
+    val RAMP_TOPS = listOf(Stop(0.0, WingtipColors.Weather.FlowTopsLow, 120), Stop(40000.0, WingtipColors.Weather.FlowTopsHigh, 220))
+    val ALPHA_RAIN = listOf(0, 160, 190, 215, 235, 245)
+    val ALPHA_CEILING = listOf(220, 200, 170, 110)
+    val ALPHA_CAPE = listOf(0, 130, 170, 200, 225)
+    val ALPHA_ICING = 210
+    val ALPHA_TURB = 200
+    val ALPHA_BLOCK = 220
+    const val COVER_TINT = 0.6f
+    const val COVER_WASH = 0.75f
+    const val COVER_HAZARD = 0.8f
+    const val COVER_SOLID = 0.9f
+    val SCALE_WIND_TICKS = listOf(0.0, 25.0, 50.0, 75.0)
+    const val SCALE_RAIN_HEADROOM = 15.0
 }
 
 object WingtipSize {

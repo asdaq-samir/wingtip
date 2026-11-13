@@ -4,6 +4,7 @@ floor read from it (wingtip.terrain.floor_profile)."""
 import numpy as np
 import pytest
 
+from tests_wingtip.test_terrain import FAR_AWAY
 from wingtip import congested, elevation, faa_data, geo, ground_grid, terrain
 
 START, END = (45.0, -90.0), (45.0, -89.0)  # due east, about 42.4 nm
@@ -25,7 +26,7 @@ def grid(monkeypatch, tmp_path):
     # Over a town everywhere: 14 CFR 91.119(b)'s 1,000 ft (wingtip.congested).
     monkeypatch.setattr(congested, "congested", lambda lats, lons: np.ones(len(lats), dtype=bool))
     dof = tmp_path / "DOF.DAT"
-    dof.write_text("", encoding="latin-1")
+    dof.write_text(FAR_AWAY, encoding="latin-1")
     monkeypatch.setattr(faa_data, "ensure_nasr_file", lambda name, cache_dir: dof, raising=False)
     return high, low
 
@@ -69,7 +70,7 @@ def test_every_cell_the_line_crosses_holds_a_point(grid):
 def test_a_tiles_pixels_go_into_their_cells_highest_and_lowest(monkeypatch):
     high = np.full((ground_grid.ROWS, ground_grid.COLS), ground_grid.NONE, dtype=np.int16)
     low = high.copy()
-    x, y = int(ground_grid._tile_x(-90.0)), int(ground_grid._tile_y(45.0))
+    x, y = (int(v) for v in geo.tile_xy(45.0, -90.0, ground_grid.ZOOM))
     heights = np.full((256, 256), 100.0)
     heights[10, 10] = 500.0  # one high pixel
     heights[200, 200] = -20.0  # one low one
@@ -88,6 +89,7 @@ def test_a_grid_built_after_the_planner_started_is_taken_up(monkeypatch, tmp_pat
     monkeypatch.setattr(ground_grid, "LOW_PATH", tmp_path / "low.npy")
     monkeypatch.setattr(ground_grid, "DONE_PATH", tmp_path / "done.json")
     monkeypatch.setattr(ground_grid, "_HELD", {})
+    ground_grid._NOT_BUILT.clear()
     assert ground_grid._grids() is None
     np.save(tmp_path / "high.npy", np.zeros((2, 2), dtype=np.int16))
     np.save(tmp_path / "low.npy", np.zeros((2, 2), dtype=np.int16))
@@ -116,7 +118,7 @@ def test_a_terrarium_void_is_no_height_and_the_sea_floor_the_seas_surface():
 def test_a_void_or_an_impossible_peak_counts_for_nothing_in_a_cell(monkeypatch):
     high = np.full((ground_grid.ROWS, ground_grid.COLS), ground_grid.NONE, dtype=np.int16)
     low = high.copy()
-    x, y = int(ground_grid._tile_x(-80.45)), int(ground_grid._tile_y(26.41))
+    x, y = (int(v) for v in geo.tile_xy(26.41, -80.45, ground_grid.ZOOM))
     heights = np.full((256, 256), 3.0)
     heights[100:110, 100:110] = np.nan  # a void
     heights[50, 50] = 4933.0  # 16,184 ft: a ringing pixel

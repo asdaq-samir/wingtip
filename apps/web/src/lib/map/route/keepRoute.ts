@@ -3,8 +3,9 @@ import { persist } from "zustand/middleware";
 import { api } from "../../api/client";
 import type { ChartLayer, Course } from "../../api/types";
 import { diagramPicture, diagramRunwaysPicture } from "../../diagram";
-import { rad } from "../../geo";
+import { M_PER_NM, rad } from "../../geo";
 import { kindCycle, tileUrl } from "../sources/tiles";
+import { tileOf, WORLD_WIDTH_M } from "../tileMath";
 
 /**
  * The tiles a route needs in the air, fetched now so the service
@@ -39,29 +40,10 @@ interface KeepProgress {
   failed: number;
 }
 
-const TILE_PX = 256;
-
-/** Web Mercator clamps latitude here: the latitude at which the
- *  projected square's top edge falls. */
-const MAX_LATITUDE = 85.0511287798;
-
-/** The {x, y} of the tile a point falls in, by the Web Mercator
- *  projection (EPSG:3857) the map uses to decide which tiles to ask for,
- *  so these are the URLs it will ask for later. Written out here, not
- *  taken from the map, so that this module -- reached by the page's first
- *  script through the Keep button -- does not pull MapLibre into it
- *  (issue #87); keepRoute.test pins it to the slippy-map scheme's own definition. */
-function tileOf(lat: number, lon: number, zoom: number): { x: number; y: number } {
-  const phi = (Math.max(Math.min(lat, MAX_LATITUDE), -MAX_LATITUDE) * Math.PI) / 180;
-  const scale = TILE_PX * 2 ** zoom;
-  const x = ((lon + 180) / 360) * scale;
-  const y = ((1 - Math.asinh(Math.tan(phi)) / Math.PI) / 2) * scale;
-  return { x: Math.floor(x / TILE_PX), y: Math.floor(y / TILE_PX) };
-}
-
-/** Tile width in nautical miles at a latitude and zoom. */
+/** Tile width in nautical miles at a latitude and zoom: the Web Mercator
+ *  world's width shrunk by the parallel's cosine. */
 function tileNm(lat: number, zoom: number): number {
-  return (21638.8 * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
+  return ((WORLD_WIDTH_M / M_PER_NM) * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
 }
 
 /** The {z, x, y} of every tile within the corridor, per zoom. */

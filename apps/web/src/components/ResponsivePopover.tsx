@@ -16,8 +16,8 @@ import { TEXT } from "../lib/text";
  * over the panel -- the map's settings, the approaches, the fuel's
  * breakdown, an airplane's form -- and is a card in the panel now, as
  * Maps opens everything in its one sheet, at the owner's ask ("let's have
- * consistency and common code", 2026-10-27): the panel up half way for
- * it, its close going back to what was there.
+ * consistency and common code", 2026-10-27): a card half way up at the
+ * least, its close going back to what was there.
  */
 type OnPhoneCard = {
   open: boolean;
@@ -25,8 +25,6 @@ type OnPhoneCard = {
   /** The control that opens it, for the focus to go back to. */
   setTrigger: (node: HTMLElement | null) => void;
   trigger: () => HTMLElement | null;
-  /** A search: the panel all the way up for it, as Maps' search is. */
-  search: boolean;
 };
 
 /** The card's open state on a phone; from `md` up, none (Base UI's). */
@@ -51,14 +49,10 @@ export function ResponsivePopover({
   children,
   open,
   onOpenChange,
-  phoneEdge,
 }: {
   children: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean, details?: CloseDetails) => void;
-  /** "top" for a search typed into, whose card comes all the way up, clear
-   *  of the keyboard; else a card half way. */
-  phoneEdge?: "top" | "bottom";
 }) {
   const isMobile = useIsMobile();
   // Open as the caller says where it says (`open`), else its own, as
@@ -92,7 +86,6 @@ export function ResponsivePopover({
     },
     setTrigger,
     trigger: () => trigger,
-    search: phoneEdge === "top",
   };
   return <OnPhone.Provider value={phone}>{children}</OnPhone.Provider>;
 }
@@ -239,7 +232,6 @@ export function ResponsivePopoverContent({
       action={action}
       closeButton={closeButton}
       onClose={() => phone.setOpen(false)}
-      raise={phone.search ? "full" : "half"}
       testId={testId}
       returnFocus={phone.trigger}
       initialFocus={initialFocus}

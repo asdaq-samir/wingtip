@@ -29,7 +29,7 @@ struct EmergencyTests {
     }
 
     private func answer() throws -> APIEmergencyFields {
-        try Planner.snakeCase.decode(APIEmergencyFields.self, from: Data(json.utf8))
+        try Planner.json.decode(APIEmergencyFields.self, from: Data(json.utf8))
     }
 
     @Test func thePlannersFieldsAreRankedByTheEngine() throws {
@@ -60,7 +60,7 @@ struct EmergencyTests {
         // East is least: 090° true with 10° E is 080° magnetic; 005° with 10° E, 355°.
         #expect(Emergency.magnetic(90, variationDeg: 10) == 80 && Emergency.magnetic(5, variationDeg: 10) == 355)
         #expect(Emergency.magnetic(90, variationDeg: nil) == nil)
-        #expect(Emergency.section(["Engine fire during start", "Engine failure in flight", "Electrical fire"]) == 1)
+        #expect(try Emergency.section(["Engine fire during start", "Engine failure in flight", "Electrical fire"]) == 1)
         #expect(Emergency.key(fix, aircraft: "c172") == Emergency.key(fix, aircraft: "c172"))
     }
 

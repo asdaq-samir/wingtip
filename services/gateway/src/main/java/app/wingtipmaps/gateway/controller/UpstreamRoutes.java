@@ -1,13 +1,11 @@
 package app.wingtipmaps.gateway.controller;
 
-import app.wingtipmaps.gateway.domain.PaidFeature;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -21,30 +19,27 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Every planner and assistant endpoint the browser may reach, and what
- * this app must do for each, read from the two services' own OpenAPI
- * documents.
+ * Every planner endpoint the browser may reach, and what this app must do
+ * for each, read from the planner's own OpenAPI document.
  *
- * <p>Each service marks the operations a browser or a phone may call with
+ * <p>The planner marks the operations a browser or a phone may call with
  * an {@code x-gateway} extension, set where it declares the route
- * (services/planner/app/gateway.py says what each key means, and
- * services/assistant/app/gateway.py has the same): who may call it, and
- * whether its Cache-Control, a few response headers, the Range asked or
- * the signed-in pilot are passed on, whether it is a paid feature, and
- * the largest body it takes. An operation without it is internal -- what
- * the assistant asks the planner, the planner's own API docs -- and a 404
- * here, the upstream never asked. That was a hand-written list in
+ * (services/planner/app/gateway.py says what each key means): who may
+ * call it, and whether its Cache-Control, a few response headers, the
+ * Range asked or the signed-in pilot are passed on, and the largest body
+ * it takes. An operation without it is internal -- what this app asks the
+ * planner on its own behalf, the planner's own API docs -- and a 404
+ * here, the planner never asked. That was a hand-written list in
  * PlannerProxyController and another in SecurityConfig, and most changes
  * to the planner's routes had to change both.
  *
- * <p>The documents are the committed services/planner/openapi.json and
- * services/assistant/openapi.json, copied into the jar as it is built
- * (pom.xml's upstream-routes execution; the Dockerfile copies them beside
- * the pom). Read from the jar rather than fetched from the planner at
+ * <p>The document is the committed services/planner/openapi.json, copied
+ * into the jar as it is built (pom.xml's upstream-routes execution; the
+ * Dockerfile copies it beside the pom). Read from the jar rather than fetched from the planner at
  * start: the gateway starts and refuses or admits the same way whether or
  * not the planner is up yet (compose starts them together, and on AWS the
  * planner can be minutes behind on a cold chart cache), and a jar is
- * tested with the very routes it serves. The services' own tests keep each
+ * tested with the very routes it serves. The planner's own tests keep its
  * document equal to its code (tests/test_openapi.py), so a route added
  * there is reachable here once both are built from the same commit.
  */
@@ -60,19 +55,11 @@ public final class UpstreamRoutes {
         DEVELOPER
     }
 
-    /** The service a route is answered by. */
-    public enum Upstream {
-        PLANNER,
-        ASSISTANT
-    }
-
-    /** One operation a browser may call, as its service declared it. */
+    /** One operation a browser may call, as the planner declared it. */
     public record Route(
             String method,
             PathPattern pattern,
-            Upstream upstream,
             Access access,
-            PaidFeature paid,
             Integer bodyLimit,
             boolean csrf,
             boolean cache,
@@ -85,18 +72,15 @@ public final class UpstreamRoutes {
         }
     }
 
-    /** Where the build puts each service's document in the jar. */
-    static final Map<Upstream, String> DOCUMENTS = Map.of(
-            Upstream.PLANNER, "upstreams/planner/openapi.json",
-            Upstream.ASSISTANT, "upstreams/assistant/openapi.json");
+    /** Where the build puts the planner's document in the jar. */
+    static final String DOCUMENT = "upstreams/planner/openapi.json";
 
     /** The keys x-gateway may have: one this does not know is a typo, and
      *  refused at start rather than read as off. */
-    private static final Set<String> KEYS =
-            Set.of("access", "cache", "headers", "range", "csrf", "pilot", "paid", "bodyLimit");
+    private static final Set<String> KEYS = Set.of("access", "cache", "headers", "range", "csrf", "pilot", "bodyLimit");
 
-    /** Where the apps reach both services: /api/planner/course is the
-     *  planner's /api/course. */
+    /** Where the apps reach the planner: /api/planner/course is its
+     *  /api/course. */
     static final String PREFIX = "/api/planner";
 
     private final List<Route> routes;
@@ -115,47 +99,26 @@ public final class UpstreamRoutes {
     }
 
     private static UpstreamRoutes fromClasspath() {
-        Map<Upstream, JsonNode> documents = new EnumMap<>(Upstream.class);
-        ObjectMapper mapper = new ObjectMapper();
-        DOCUMENTS.forEach((upstream, resource) -> {
-            try (InputStream in = UpstreamRoutes.class.getClassLoader().getResourceAsStream(resource)) {
-                if (in == null) {
-                    throw new IllegalStateException(resource + " is not in the jar: pom.xml copies it from services/"
-                            + upstream.name().toLowerCase(Locale.ROOT) + "/openapi.json as it builds");
-                }
-                documents.put(upstream, mapper.readTree(in));
-            } catch (IOException e) {
-                throw new UncheckedIOException(resource, e);
+        try (InputStream in = UpstreamRoutes.class.getClassLoader().getResourceAsStream(DOCUMENT)) {
+            if (in == null) {
+                throw new IllegalStateException(DOCUMENT
+                        + " is not in the jar: pom.xml copies it from services/planner/openapi.json as it builds");
             }
-        });
-        return of(documents);
+            return of(new ObjectMapper().readTree(in));
+        } catch (IOException e) {
+            throw new UncheckedIOException(DOCUMENT, e);
+        }
     }
 
-    /** The routes the documents mark, the most specific pattern first (a
+    /** The routes the document marks, the most specific pattern first (a
      *  tile's {y}@2x.png before {y}.png, though both say the same). */
-    static UpstreamRoutes of(Map<Upstream, JsonNode> documents) {
+    static UpstreamRoutes of(JsonNode document) {
         List<Route> routes = new ArrayList<>();
-        documents.forEach((upstream, document) -> {
-            for (Map.Entry<String, JsonNode> path : document.path("paths").properties()) {
-                for (Map.Entry<String, JsonNode> operation : path.getValue().properties()) {
-                    JsonNode spec = operation.getValue().get("x-gateway");
-                    if (spec != null) {
-                        routes.add(route(upstream, operation.getKey().toUpperCase(Locale.ROOT), path.getKey(), spec));
-                    }
-                }
-            }
-        });
-        for (Route route : routes) {
-            for (Route other : routes) {
-                if (route != other
-                        && route.upstream() != other.upstream()
-                        && route.method().equals(other.method())
-                        && route.pattern()
-                                .getPatternString()
-                                .equals(other.pattern().getPatternString())) {
-                    throw new IllegalStateException(
-                            route.method() + " " + route.pattern().getPatternString()
-                                    + " is declared by both the planner and the assistant");
+        for (Map.Entry<String, JsonNode> path : document.path("paths").properties()) {
+            for (Map.Entry<String, JsonNode> operation : path.getValue().properties()) {
+                JsonNode spec = operation.getValue().get("x-gateway");
+                if (spec != null) {
+                    routes.add(route(operation.getKey().toUpperCase(Locale.ROOT), path.getKey(), spec));
                 }
             }
         }
@@ -163,8 +126,8 @@ public final class UpstreamRoutes {
         return new UpstreamRoutes(List.copyOf(routes));
     }
 
-    private static Route route(Upstream upstream, String method, String path, JsonNode spec) {
-        String where = method + " " + path + " (" + upstream.name().toLowerCase(Locale.ROOT) + ")";
+    private static Route route(String method, String path, JsonNode spec) {
+        String where = method + " " + path;
         if (!path.startsWith("/api/")) {
             throw new IllegalStateException(where + ": only /api/ routes are reached through " + PREFIX);
         }
@@ -185,9 +148,7 @@ public final class UpstreamRoutes {
         return new Route(
                 method,
                 PathPatternParser.defaultInstance.parse(path),
-                upstream,
                 access,
-                spec.hasNonNull("paid") ? PaidFeature.valueOf(spec.get("paid").asString()) : null,
                 spec.hasNonNull("bodyLimit") ? spec.get("bodyLimit").asInt() : null,
                 spec.path("csrf").asBoolean(true),
                 spec.path("cache").asBoolean(false),

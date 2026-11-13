@@ -1,0 +1,164 @@
+import { Suspense, useMemo, type ReactNode } from "react";
+import { CardHead } from "../../../../components/CardHead";
+import type { BriefingPart } from "../briefing/sections";
+import { BriefingNotices, FlightBriefingView, NavLogView } from "../../routePanelParts";
+import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
+import { EngineGate } from "../../../../lib/engine/engineGate";
+import FiguresLine from "./FiguresLine";
+
+/**
+ * The plan's two nav logs (PlanWorkspace): FPL's own list -- the route in
+ * order, with on paper the whole briefing and, out of sight, what the
+ * briefing publishes and the kneeboard -- and the Nav Log card's legs
+ * (PlanPage's NavLogCard), each made once for the same plan.
+ */
+export function useNavLogs(
+  vm: PlanWorkspaceModel,
+  { tabContent, routeList, kneeboard }: { tabContent: (part: BriefingPart) => ReactNode; routeList: ReactNode; kneeboard: ReactNode },
+) {
+  const { drawerOpen } = vm.view;
+  const { depart, planned, routeEdit } = vm.route;
+  const { aircraft, course, s } = vm.plan;
+  const { briefShown, closeNavLogCard, navLogShown } = vm.fpl;
+  const { dryRunning } = vm.flight;
+  const { deselectPoint, selectPointAt, selectedPoint } = vm.leg;
+  const { briefLine, estimate, landedStops, marks, metarColour, unflyableBrief } = vm.brief;
+
+  // What the Nav Log under the route and the Nav Log card both show.
+  const shared = useMemo(
+    () => ({
+      totals: s.totals,
+      nav: s.nav,
+      legs: s.legs,
+      depart,
+      dep: planned.dep,
+      dest: planned.dest,
+      ends: course,
+      selected: s.logSelected,
+      descriptions: s.descriptions,
+      onSaveDescription: s.saveDescription,
+      selectedPoint,
+      onSelectPoint: selectPointAt,
+      onDeselectPoint: deselectPoint,
+      dryRun: dryRunning,
+      aircraftLabel: aircraft.label,
+      marks,
+      tabContent,
+      local: s.local,
+      metarColourOf: metarColour,
+    }),
+    [
+      s.totals,
+      s.nav,
+      s.legs,
+      depart,
+      planned.dep,
+      planned.dest,
+      course,
+      s.logSelected,
+      s.descriptions,
+      s.saveDescription,
+      selectedPoint,
+      selectPointAt,
+      deselectPoint,
+      dryRunning,
+      aircraft.label,
+      marks,
+      tabContent,
+      s.local,
+      metarColour,
+    ],
+  );
+
+  const navLog = useMemo(
+    () => (
+      <Suspense fallback={<div className="min-h-0 flex-1" />}>
+        <NavLogView
+          {...shared}
+          // In sight all the way up, the Brief not over it: a row picked is
+          // brought into sight as it comes back.
+          drawerOpen={drawerOpen && !briefShown}
+          // Route Cards with one end only: its card is the end's own (RouteEnds),
+          // not again under it as the list's row (the owner's screenshot,
+          // 2026-11-05: C81 typed as the departure, there twice).
+          route={routeEdit === "plan" && !(planned.dep && planned.dest) ? undefined : routeList}
+          notice={<BriefingNotices briefing={s.briefing} />}
+        >
+          {/* Out of the tabs, drawing nothing: the risk assessment and the
+          Go / No-Go's findings published once, for Save and the tabs' marks;
+          after the engine is in, as it asks it (radio_call_sign) from the
+          page's first paint (firstDraw.test, 2026-11-11). */}
+          <EngineGate>
+            <FlightBriefingView
+              part={null}
+              publish
+              nav={s.nav}
+              legs={s.legs}
+              dep={planned.dep}
+              dest={planned.dest}
+              stops={landedStops}
+              briefing={s.briefing}
+              course={course}
+              totals={s.totals}
+              depart={depart}
+              problem={unflyableBrief}
+            />
+          </EngineGate>
+          {kneeboard}
+        </NavLogView>
+      </Suspense>
+    ),
+    [
+      shared,
+      s.totals,
+      s.nav,
+      s.legs,
+      depart,
+      planned.dep,
+      planned.dest,
+      course,
+      s.briefing,
+      landedStops,
+      unflyableBrief,
+      kneeboard,
+      drawerOpen,
+      briefShown,
+      routeList,
+      routeEdit,
+    ],
+  );
+  // The Nav Log, a card of its own over FPL (the owner, 2026-11-11), its
+  // legs in it: drawn from its first opening on and kept between its
+  // openings (PlanPage's NavLogCard), so it is built once.
+  const navLogCard = useMemo(
+    () => (
+      <Suspense fallback={<div className="min-h-0 flex-1" />}>
+        <NavLogView
+          {...shared}
+          // A row picked is brought into sight while the card is open.
+          drawerOpen={navLogShown}
+          cardHead={
+            <CardHead
+              // Its own name, and at its smallest size too the totals under
+              // it (the canvas's Nav Log card): the line the route's figures
+              // carried at the sheet's foot.
+              name="Nav Log"
+              sub={
+                <EngineGate>
+                  <FiguresLine input={{ totals: s.totals, estimate, local: s.local, destination: `${planned.dest}`, depart }} />
+                </EngineGate>
+              }
+              line={briefLine}
+              nameTestId="navlog-name"
+              onClose={closeNavLogCard}
+              onShare="navlog"
+              closeTestId="navlog-close"
+            />
+          }
+        />
+      </Suspense>
+    ),
+    [shared, estimate, s.totals, s.local, planned.dest, depart, navLogShown, briefLine, closeNavLogCard],
+  );
+  return { navLog, navLogCard };
+}

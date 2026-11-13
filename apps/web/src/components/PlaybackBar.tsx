@@ -2,9 +2,10 @@ import type { ComponentProps, KeyboardEvent, ReactElement, ReactNode } from "rea
 import { Pause, Play } from "lucide-react";
 import { cn } from "cn";
 import { Toolbar } from "@base-ui/react/toolbar";
-import { Toggle } from "@base-ui/react/toggle";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { ROUND_BUTTON } from "../lib/mapChrome";
+import { Toggle } from "./ui/toggle";
+import { DropdownMenu, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { PickItems } from "./MenuPick";
+import { Button } from "./ui/button";
 import { TEXT } from "../lib/text";
 import { playbackKey } from "./playbackKeys";
 
@@ -50,9 +51,9 @@ export function PlaybackButton({ render, ...props }: { render: ReactElement } & 
 }
 
 /** One of the bar's on-or-off buttons -- Play, the pilot's view, forecast
- *  mode -- as the stock Base UI Toggle (aria-pressed) in the toolbar's
- *  roving focus, in RoundButton's round glass, filled in the tint while
- *  it is on. */
+ *  mode -- as the stock Toggle (aria-pressed) in the toolbar's roving
+ *  focus, in its glass variant, round as RoundButton is: filled in the
+ *  tint while it is on, the variant's own pressed look. */
 export function PlaybackToggle({
   pressed,
   onPressedChange,
@@ -72,14 +73,11 @@ export function PlaybackToggle({
     <Toolbar.Button
       render={
         <Toggle
+          variant="glass"
           pressed={pressed}
           onPressedChange={onPressedChange}
           aria-label={label}
-          className={cn(
-            "inline-flex size-9 shrink-0 items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-            ROUND_BUTTON,
-            pressed && "bg-tint text-white hover:bg-tint/90 hover:text-white",
-          )}
+          className="size-9 shrink-0 rounded-full px-0"
         />
       }
       disabled={disabled}
@@ -131,35 +129,19 @@ export function SpeedMenu<T extends string | number>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        // The stock Button in its glass variant, in the toolbar's roving
+        // focus (Toolbar.Button's render), a capsule the bar's height.
         render={
           <Toolbar.Button
             aria-label={`${name}: ${label}`}
             data-testid={testId}
-            className={cn(
-              "inline-flex h-9 shrink-0 items-center justify-center px-2 font-semibold tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              ROUND_BUTTON,
-              TEXT.note,
-            )}
+            render={<Button variant="glass" className={cn("rounded-full px-2 font-semibold tabular-nums", TEXT.note)} />}
           />
         }
       >
         {label}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuRadioGroup
-          value={String(value)}
-          onValueChange={(v: string) => {
-            const picked = choices.find((c) => String(c.value) === v);
-            if (picked) onPick(picked.value);
-          }}
-        >
-          {choices.map((c) => (
-            <DropdownMenuRadioItem key={c.value} value={String(c.value)} data-testid={`${testId}-${c.value}`}>
-              {c.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
+      <PickItems value={value} choices={choices} onPick={onPick} testId={testId} />
     </DropdownMenu>
   );
 }

@@ -1,10 +1,12 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, useEffectEvent } from "react";
+import { lazy, Suspense, useEffect, useId, useMemo, useState, useEffectEvent } from "react";
 import { usePrefetchQuery, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
 import { useKeptAirport } from "../../../lib/preferences";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { shareOrCopy } from "../../../lib/share";
-import { CardHead, PanelCard } from "../../../components/PanelCard";
+import { CardHead } from "../../../components/CardHead";
+import { SheetCard } from "../../../components/SheetCard";
+import { PINNED_BELOW } from "../../../components/PinnedHead";
 import { CardTitle } from "../../../components/CardTitle";
 import { CardPictures, type CardSlide } from "../../../components/CardPictures";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
@@ -13,11 +15,10 @@ import { Tabs } from "../../../components/ui/tabs";
 import { useCardTab } from "../lib/cardTab";
 import { useTabScroll } from "../lib/tabScroll";
 import PlaceActions from "./place/PlaceActions";
-import PlaceSubtitle from "./place/PlaceSubtitle";
 import { ApiError } from "../../../lib/api/client";
 import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
 import { compassPoint } from "../../../lib/compass";
-import { distanceNm, type LatLon } from "../../../lib/geo";
+import { useGeo, type Geo, type LatLon } from "../../../lib/geo";
 import { awayFrom } from "../../../lib/useAway";
 import { chipFillOf } from "../../../lib/map/marks/flightCategory";
 import { inkOn } from "../../../lib/scoreScale";
@@ -30,6 +31,7 @@ import { TEXT } from "../../../lib/text";
 import { diagramRunwaysPicture } from "../../../lib/diagram";
 import { ago } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
+import { prefersReducedMotion } from "../../../lib/motion";
 import { arrivalHour, hoursOf, sentenceOf } from "../lib/hourly";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery, photosQuery, servicesQuery } from "../../../lib/queryClient";
@@ -39,7 +41,7 @@ import { PlaceChartsTab } from "./place/PlaceChartsTab";
 import { PlaceInfoTab } from "./place/PlaceInfoTab";
 import { PlaceRunwaysTab } from "./place/PlaceRunwaysTab";
 import { PlaceWeatherTab } from "./place/PlaceWeatherTab";
-import { PlaceAlerts } from "./place/PlaceNotams";
+import { PlaceSubtitle } from "./place/PlaceSubtitle";
 import { useShown } from "../../../lib/shown";
 import { Badge } from "../../../components/ui/badge";
 
@@ -48,38 +50,30 @@ const SketchViewer = lazy(() => import("./SketchViewer"));
 const PictureViewer = lazy(() => import("./AirportDiagramViewer"));
 
 /** "18 nm NE", from wherever the card is measured from. */
-function away(from: LatLon, to: LatLon): string {
-  return distanceNm(from, to) < 0.5 ? "here" : awayFrom(from, to);
+function away(geo: Geo, from: LatLon, to: LatLon): string {
+  return geo.distanceNm(from, to) < 0.5 ? "here" : awayFrom(geo, from, to);
 }
 
-/** The line under the name, how far the field is at the pilot's ask --
- *  "18 nm NE of C81" -- and whether it may be landed at without asking.
- *  Nothing where there is nothing to measure from, nor where the start is
- *  the field itself: the departure's own card, with no fix, said "here of KMSN", as the phones said "From KMSN 0 nm". */
-function subtitleOf(place: AirportPlace, from: { point: LatLon; name: string | null } | null): string {
-  const itself = !!from?.name && (sameField(from.name, place.ident) || distanceNm(from.point, place) < 0.5);
-  return [
-    from && !itself ? (from.name ? `${away(from.point, place)} of ${from.name}` : away(from.point, place)) : null,
-    // Its elevation beside the distance, at the owner's ask (2026-10-29):
-    // the field's from the FAA's airport file (NASR APT_BASE ELEV, feet MSL), what a pilot sets the pattern altitude from.
-    place.elevation_ft != null ? `Elevation ${feet(place.elevation_ft)}` : null,
-    // A field the armed services own (the FAA's airport file): one most pilots may not land at without the service's permission, or a civil
-    // airport sharing it -- not a description, a field to keep out of.
-    place.military === "military"
-      ? "Military, permission required"
-      : place.military === "joint"
-        ? "Joint use"
-        : place.private
-          ? "Private, permission required"
-          : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+/** How far the field is, for the Info tab's Details (the owner,
+ *  2026-11-11: "Add distance to details") -- "18 nm NE of C81". Nothing
+ *  where there is nothing to measure from, nor where the start is the
+ *  field itself: the departure's own card, with no fix, said "here of
+ *  KMSN", as the phones said "From KMSN 0 nm". */
+function distanceOf(geo: Geo | null, place: AirportPlace, from: { point: LatLon; name: string | null } | null): string | null {
+  const itself = !!from?.name && (sameField(from.name, place.ident) || (geo?.distanceNm(from.point, place) ?? Infinity) < 0.5);
+  if (!geo || !from || itself) return null;
+  return from.name ? `${away(geo, from.point, place)} of ${from.name}` : away(geo, from.point, place);
 }
 
-/** How long the panel takes to come all the way up before the tabs' bar or
- *  the approaches are scrolled to: the Drawer's settle (DRAWER_MS) and a frame. */
-const RISEN_MS = 520;
+/** What the field is, beside its name in brackets where it is not a
+ *  public-use one (the owner, 2026-11-11: "For private airport, just say
+ *  private in () next to airport name instead of a second line"): one the
+ *  armed services own, or a civil airport sharing it (NASR APT_BASE), or
+ *  a private one -- not a description, a field to keep out of. */
+function kindOf(place: AirportPlace | undefined): string | null {
+  if (!place) return null;
+  return place.military === "military" ? "Military" : place.military === "joint" ? "Joint use" : place.private ? "Private" : null;
+}
 
 /** How old a report is, "14m ago", for the weather's line. */
 function ageOf(at: string | null | undefined): string | null {
@@ -117,8 +111,9 @@ const CARD_TABS: { value: CardTab; label: string }[] = [
  * An airport's card in the panel, as a place's is in Maps, laid out at
  * the owner's pick of its redesign (A2, 2026-10-29): the field's pictures
  * across its top -- its runways, from the air, from the ground -- its ident
- * large over them with its name and town; four things to do under them --
- * fly there, land there on the way, call it, keep it as a Favorite -- and
+ * large over them with its name and town, its star beside its Share; four
+ * things to do under them -- fly there, land there on the way, call it,
+ * find it in Maps (the owner, 2026-11-11) -- and
  * right under them its four tabs, back at the owner's ask: Info (its
  * details, frequencies, lights and services), Weather (the weather there
  * hour by hour, G1, over the reports as sent), Runways and Charts. Opened
@@ -133,10 +128,8 @@ export default function PlaceCard({
   from,
   onClose,
   onFlyHere,
-  onDepartFrom,
   onAddStop,
-  onExpand,
-  onLower,
+  addStopOff,
   startOn,
   onStarted,
   stop,
@@ -148,17 +141,12 @@ export default function PlaceCard({
   from: { point: LatLon; name: string | null } | null;
   onClose: () => void;
   onFlyHere: (place: AirportPlace) => void;
-  /** Depart From: the field the route's departure, the rest kept. */
-  onDepartFrom: (place: AirportPlace) => void;
-  /** Add as Stop: the field the route's next stop, before its destination
+  /** Add Stop: the field the route's next stop, before its destination
    *  (or the end a half route lacks, or the first point of a new one);
    *  none where it is in the route already. */
   onAddStop?: (place: AirportPlace) => void;
-  /** The panel all the way up, as a tab is picked. */
-  onExpand: () => void;
-  /** Back down half way: the open tab tapped again with the panel all the
-   *  way up, as the route's tabs do (PanelTabs). */
-  onLower: () => void;
+  /** Why Add Stop is greyed (on the route already, the route full). */
+  addStopOff?: string;
   /** Opened on a part of a tab: the route's Approaches opens the
    *  destination's on its approaches. `onStarted` once it has. */
   startOn?: "approaches";
@@ -186,62 +174,41 @@ export default function PlaceCard({
   // address on a page just loaded, read its ident alone over an empty
   // card while its answer queued behind the page's first requests.
   const kept = useKeptAirport(ident);
-  // How far, from own ship's fix as it is, where there is one: the card's
-  // own, drawn again at each, where the page under it is not (its
-  // useOwnShipNear) -- tenths of a mile from a fix a hundredth of a degree
-  // old would be wrong.
-  const ship = useOwnShip((o) => (o.enabled ? o.fix : null));
-  const measured = ship ? { point: { lat: ship.lat, lon: ship.lon }, name: null } : from;
-  const tabsRef = useRef<HTMLDivElement>(null);
+  // How far, from own ship's fix as it is (not useOwnShipNear's, a hundredth
+  // of a degree old), as words, so the card redraws only when they change.
+  const geo = useGeo();
+  const distance = useOwnShip((o) => (place ? distanceOf(geo, place, o.enabled && o.fix ? { point: o.fix, name: null } : from) : null));
   // Fly Here tapped: the tile says so at once, a frame before the route
   // is drawn (PlanWorkspace's flyHere), which is a moment of a phone's --
   // the tap looked lost under it, at the pilot's ask for no lag. The card
   // goes with the route; it is a new card (keyed by its ident) after.
   const [flying, setFlying] = useState(false);
 
-  // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the
-  // card opens on its approaches; each tab its own place in the scroll (useTabScroll).
+  // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the card opens on its approaches; each tab its own place in the scroll (useTabScroll).
   const [tab, setPicked] = useCardTab<CardTab>(`place:${ident}`, "radio", startOn ? "diagrams" : null);
-  useTabScroll(tabsRef, tab);
-  // A tab picked takes the panel all the way up, as the route's tabs do;
-  // the bar back in sight if the card was scrolled past it, once the panel
-  // is up, clear of the name's bar over the card (PhotoHead).
-  const isUp = () => tabsRef.current?.closest("[data-panel]")?.getAttribute("data-panel") === "full";
-  const raise = () => {
-    const up = isUp();
-    onExpand();
-    window.setTimeout(() => tabsRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }), up ? 50 : RISEN_MS);
-  };
-  // Opened on its approaches (the route's Approaches): the panel all the
-  // way up and, once the answer is in and the panel has risen, Charts open
-  // on the approaches.
-  // The callbacks the page's, made again at each of its draws: effect
-  // events, so the panel rising draws nothing that restarts this.
+  const [tabBar, setTabBar] = useTabScroll(tab);
+  // Opened on its approaches (the route's Approaches): at half as every
+  // card opens (the owner, 2026-11-11), Charts open on the approaches once
+  // the answer is in; the pilot swipes up for the plates. The card may
+  // already be open on another tab (it does not remount), and an inactive
+  // tab's groups are not drawn: switch, and look the frame after it has drawn.
   const placeIn = !!place;
-  const expand = useEffectEvent(() => onExpand());
+  const cardId = useId();
   const started = useEffectEvent(() => onStarted?.());
   useEffect(() => {
     if (startOn !== "approaches" || !placeIn) return;
-    expand();
-    // The card may already be open on another tab (it does not remount),
-    // and an inactive tab's groups are not drawn: switch, and look a frame
-    // or so after it has drawn.
-    let look = 0;
-    const scroll = window.setTimeout(() => {
-      setPicked("diagrams");
-      look = window.setTimeout(() => {
-        tabsRef.current
-          ?.closest('[data-testid="place-card"]')
-          ?.querySelector('[data-chart-group="Approaches"]')
-          ?.scrollIntoView({ block: "start", behavior: "smooth" });
-        started();
-      }, 50);
-    }, RISEN_MS);
-    return () => {
-      window.clearTimeout(scroll);
-      window.clearTimeout(look);
-    };
-  }, [startOn, placeIn, setPicked]);
+    setPicked("diagrams");
+    const look = requestAnimationFrame(() => {
+      tabBar
+        ?.closest('[data-testid="place-card"]')
+        ?.querySelector('[data-chart-group="Approaches"]')
+        // Smooth only where motion is welcome: CSS's Reduce Motion rule
+        // (index.css) cannot reach a script's own behavior.
+        ?.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+      started();
+    });
+    return () => cancelAnimationFrame(look);
+  }, [startOn, placeIn, setPicked, tabBar]);
   // The runways, sketched or the FAA's diagram cropped to them, a page of
   // the pictures: a tap shows it full screen -- the FAA's diagram, or for
   // a field the FAA draws none for the sketch (SketchViewer).
@@ -258,22 +225,16 @@ export default function PlaceCard({
   // Asked for with the field itself, not after it: they waited for the
   // card's first answer and went 0.6 s after the tap (the 23 Oct timings).
   const { data: photos } = useQuery(photosQuery(ident));
-  // The services asked for with it too: the fuel is the details', the
-  // rest the Services' at the Info tab's foot (StopServices).
-  const { data: services } = useQuery(servicesQuery(ident));
+  // The services asked for with it, for the Info tab's foot (StopServices:
+  // the fuel first in its On the field).
   usePrefetchQuery(servicesQuery(ident));
   const [picture, setPicture] = useState<"aerial" | "photo" | null>(null);
   const [noRunwaysPicture, setNoRunwaysPicture] = useState(false);
   // The state as the FAA writes it ("MN"), not ISO's region ("US-MN").
   const where = place ? [place.municipality, place.region?.replace(/^US-/, "")].filter(Boolean).join(", ") : null;
   const name = place?.name ?? known?.name ?? kept?.name ?? null;
-  const line = place
-    ? subtitleOf(place, measured)
-    : error
-      ? error instanceof ApiError && error.status === 404
-        ? "Not found"
-        : "Could not be looked up"
-      : "…";
+  const kind = kindOf(place);
+  const line = place ? null : error ? (error instanceof ApiError && error.status === 404 ? "Not found" : "Could not be looked up") : "…";
   const metar = place?.metar ?? null;
   const weather = place
     ? { status: place.weather_unavailable ? "unavailable" : metar ? "reported" : "no-report", category: metar?.flight_category ?? null }
@@ -460,7 +421,9 @@ export default function PlaceCard({
   const share = () =>
     void shareOrCopy({ title: place?.name ?? ident, url: `${location.origin}/app/plan?place=${place?.ident ?? ident}` }).catch(() => {});
   return (
-    <PanelCard testId="place-card">
+    // Half way as it opens, from the map, the search or a list alike (the
+    // card rule's 2); its own drawer, sized from here (useCardSize).
+    <SheetCard head={false} testId="place-card" cardId={cardId}>
       {place || !error ? (
         <>
           {/* The head and the actions from the first frame, live once the
@@ -471,17 +434,13 @@ export default function PlaceCard({
             testId="place-head"
             titleTestId="place-name"
             subtitleTestId="place-where"
-            twoLines
-            subtitle={name && name !== ident4 ? <PlaceSubtitle name={name} where={where} place={place ?? null} /> : where || " "}
-            line={
-              <>
-                {line && (
-                  <p className={cn("line-clamp-2 text-muted-foreground", TEXT.note)} data-testid="place-line">
-                    {line}
-                  </p>
-                )}
-              </>
-            }
+            // Its full name the head row's second line, centred under the
+            // ident and fitted to it, in sight at the card's smallest size
+            // too (the owner, 2026-11-11, after Apple Maps' "Buttermilk Cafe /
+            // Breakfast and Brunch Restaurant"), "(Private)" after it where
+            // it is (kindOf), a NOTAM's badge after it where one closes the
+            // field or a TFR is near (PlaceSubtitle); nothing under it.
+            sub={<PlaceSubtitle ident={ident} place={place} name={name && name !== ident4 ? name : null} kind={kind} />}
             onClose={onClose}
             onShare={share}
             closeTestId="place-close"
@@ -524,15 +483,14 @@ export default function PlaceCard({
           )}
           <PlaceActions
             place={place ?? null}
+            ident={kept?.ident ?? ident}
             flying={flying}
             onFlyHere={(p) => {
               setFlying(true);
               onFlyHere(p);
             }}
-            onDepartFrom={onDepartFrom}
             onAddStop={onAddStop}
-            onWeather={() => (setPicked("weather"), raise())}
-            favoriteIdent={kept?.ident ?? ident}
+            addStopOff={addStopOff}
           />
           {/* The field from the air, its runways and from the ground, a row
               of large tiles under the actions, as Apple Maps' place card
@@ -547,8 +505,6 @@ export default function PlaceCard({
               />
             </div>
           )}
-          {/* Closures and TFRs near it first, as Maps' live cards (PlaceNotams). */}
-          <PlaceAlerts ident={ident} onOpen={() => setPicked("radio")} />
           {place && stop && <StopStrip ident={place.ident} stop={stop} />}
         </>
       ) : (
@@ -572,20 +528,14 @@ export default function PlaceCard({
           tapped again there back half way (CardTabBar). */}
       {!(error && !place) && (
         <Tabs value={tab} onValueChange={(next) => setPicked(next as typeof tab)} className="gap-0">
-          <CardTabBar
-            tabs={CARD_TABS}
-            value={tab}
-            onPick={setPicked}
-            activateOnFocus
-            testIdPrefix="place-tab"
-            disabled={!place}
-            raise={{ onExpand: raise, onLower }}
-            barRef={tabsRef}
-            // Pinned under the card's 48-point compact head (PinnedCardBar) as it scrolls, its sections a tap away.
-            className="sticky top-[calc(var(--head-room,0px)-var(--under-pad,0px)+48px)] z-10 mt-3 scroll-mt-28 bg-background py-1 in-data-[sheet]:bg-[var(--sheet)]"
-          />
+          {/* Pinned directly under the card's head (PINNED_BELOW, plain CSS), frosted as it is, edge to edge, the
+              control at the card's margins: on the control itself the -mx-4 kept its 100% width, so it began at
+              the sheet's edge and stopped 32 short of the other, the content showing through (the owner's KORD). */}
+          <div ref={setTabBar} className={cn("frost-head sticky z-10 -mx-4 mt-3 scroll-mt-28 px-4 py-1", PINNED_BELOW)}>
+            <CardTabBar tabs={CARD_TABS} value={tab} onPick={setPicked} activateOnFocus testIdPrefix="place-tab" disabled={!place} />
+          </div>
           <CardTabPanel value="radio" className="space-y-0">
-            {place && <PlaceInfoTab place={place} where={where} services={services} />}
+            {place && <PlaceInfoTab place={place} where={where} distance={distance} />}
           </CardTabPanel>
           <CardTabPanel value="weather" className="space-y-0">
             <PlaceWeatherTab
@@ -624,6 +574,6 @@ export default function PlaceCard({
           </ListGroup>
         </div>
       )}
-    </PanelCard>
+    </SheetCard>
   );
 }

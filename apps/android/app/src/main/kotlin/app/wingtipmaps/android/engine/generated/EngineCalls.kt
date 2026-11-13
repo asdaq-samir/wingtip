@@ -31,10 +31,10 @@ fun Engine.airborneNow(before: Boolean? = null, airborne: Boolean? = null, arriv
     rule("airborne_now", EngineContract.AirborneNowInput(before = before, airborne = airborne, arrived = arrived, heardS = heardS))
 
 /**
- * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
+ * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's, the descent's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
  */
-fun Engine.aircraftProblems(tailNumber: String? = null, typeDesignator: String? = null, cruiseTasKt: String? = null, fuelBurnGph: String? = null, cruisePowerPct: String? = null, climbTasKt: String? = null, climbFuelBurnGph: String? = null, usableFuelGal: String? = null, equipment: String? = null, surveillance: String? = null, colour: String? = null): Result<EngineContract.AircraftProblemsAnswer> =
-    rule("aircraft_problems", EngineContract.AircraftProblemsInput(tailNumber = tailNumber, typeDesignator = typeDesignator, cruiseTasKt = cruiseTasKt, fuelBurnGph = fuelBurnGph, cruisePowerPct = cruisePowerPct, climbTasKt = climbTasKt, climbFuelBurnGph = climbFuelBurnGph, usableFuelGal = usableFuelGal, equipment = equipment, surveillance = surveillance, colour = colour))
+fun Engine.aircraftProblems(tailNumber: String? = null, typeDesignator: String? = null, cruiseTasKt: String? = null, fuelBurnGph: String? = null, cruisePowerPct: String? = null, climbTasKt: String? = null, climbFuelBurnGph: String? = null, descentIasKt: String? = null, descentFuelBurnGph: String? = null, usableFuelGal: String? = null, equipment: String? = null, surveillance: String? = null, colour: String? = null): Result<EngineContract.AircraftProblemsAnswer> =
+    rule("aircraft_problems", EngineContract.AircraftProblemsInput(tailNumber = tailNumber, typeDesignator = typeDesignator, cruiseTasKt = cruiseTasKt, fuelBurnGph = fuelBurnGph, cruisePowerPct = cruisePowerPct, climbTasKt = climbTasKt, climbFuelBurnGph = climbFuelBurnGph, descentIasKt = descentIasKt, descentFuelBurnGph = descentFuelBurnGph, usableFuelGal = usableFuelGal, equipment = equipment, surveillance = surveillance, colour = colour))
 
 /**
  * An airplane's figures, each with where it comes from: its pilot's own where they differ from the book's ("pilot"), else its photographed handbook page's ("handbook"), else its type's stock profile's ("book"); a figure none has is null, never another airplane's (the owner, 2026-11-09). The empty weight and moment are the pilot's alone (a stock profile's are its handbook's sample airplane's). `profile` is the book's with the picked figures over it, the airplane every other rule takes; null with no book, handbook or own figures (no airplane).
@@ -43,7 +43,7 @@ fun Engine.airplaneFigures(book: Map<String, JsonElement>? = null, handbook: Map
     rule("airplane_figures", EngineContract.AirplaneFiguresInput(book = book, handbook = handbook, own = own))
 
 /**
- * The inputs a figure needs that the airplane's profile lacks, by name, so the app asks for them where the figure would be (the owner, 2026-11-09): the legs their cruise speed and burn; the fuel totals also the start, taxi and takeoff allowance; the glide its glide ratio; the climb its climb speed, sea-level rate and service ceiling; a weight and balance its loading envelope and its own empty weight and moment; takeoff and landing their charts. ["airplane"] with no airplane.
+ * The inputs a figure needs that the airplane's profile lacks, by name, so the app asks for them where the figure would be (the owner, 2026-11-09): the legs their cruise speed and burn; the fuel totals also the start, taxi and takeoff allowance; the glide its glide ratio; the climb its climb speed, sea-level rate and service ceiling; the descent its indicated speed and fuel flow; a weight and balance its loading envelope and its own empty weight and moment; takeoff and landing their charts. ["airplane"] with no airplane.
  */
 fun Engine.airplaneNeeds(profile: Map<String, JsonElement>? = null, figure: String): Result<EngineContract.AirplaneNeedsAnswer> =
     rule("airplane_needs", EngineContract.AirplaneNeedsInput(profile = profile, figure = figure))
@@ -59,6 +59,12 @@ fun Engine.airspaceColumn(groundFt: Double? = null, inVeil: Boolean? = null, vol
  */
 fun Engine.airspaceEntryRules(`class`: String): Result<EngineContract.AirspaceEntryRulesAnswer> =
     rule("airspace_entry_rules", EngineContract.AirspaceEntryRulesInput(`class` = `class`))
+
+/**
+ * How high a 3D map stands an airspace volume: its floor and top in feet MSL, from its limits as the FAA's data gives them (each its figure in feet, a flight level times 100, its CODE SFC, AGL, MSL, STD or UNLTD and its DESC TI, TNI or ANI), read as special_use_tab reads them: SFC above 0 is that height above the ground, a ceiling "to but not including" a foot under its figure (FL180 TNI 17,999 ft MSL), a floor "above but not including" a foot over it. A floor above the ground stands on the lowest of `ground`, a ceiling on its highest; the surface is 0 ft MSL with `surface` true; a flight level is drawn as if MSL; no ceiling, or one above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)), a drawing bound. Null where nothing is left to draw, or where a limit above the ground has no `ground`.
+ */
+fun Engine.airspaceVolumeSpan(floor: EngineContract.SpecialUseTabLimit? = null, ceiling: EngineContract.SpecialUseTabLimit? = null, ground: EngineContract.AirspaceVolumeSpanInputGround? = null): Result<EngineContract.AirspaceVolumeSpanAnswer?> =
+    rule("airspace_volume_span", EngineContract.AirspaceVolumeSpanInput(floor = floor, ceiling = ceiling, ground = ground))
 
 /**
  * An airway segment's minimum IFR altitude (14 CFR 91.177(a)(1)): its MEA, else its GNSS MEA; null where it publishes neither.
@@ -97,10 +103,10 @@ fun Engine.altitudeAnyway(selection: Map<String, JsonElement>): Result<Double?> 
     rule("altitude_anyway", EngineContract.AltitudeAnywayInput(selection = selection))
 
 /**
- * A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its climb speed scaled by the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.
+ * A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its own ground speed, the wind triangle at the climb speed in the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.
  */
-fun Engine.altitudeChange(profile: EngineContract.NavLogProfile? = null, alongNm: Double, fromFt: Double, toFt: Double, mode: String, groundspeedKt: Double? = null, tasKt: Double? = null, fuelBurnGph: Double? = null, oatC: Double? = null): Result<EngineContract.AltitudeChangeAnswer> =
-    rule("altitude_change", EngineContract.AltitudeChangeInput(profile = profile, alongNm = alongNm, fromFt = fromFt, toFt = toFt, mode = mode, groundspeedKt = groundspeedKt, tasKt = tasKt, fuelBurnGph = fuelBurnGph, oatC = oatC))
+fun Engine.altitudeChange(profile: EngineContract.NavLogProfile? = null, alongNm: Double, fromFt: Double, toFt: Double, mode: String, groundspeedKt: Double? = null, tasKt: Double? = null, fuelBurnGph: Double? = null, oatC: Double? = null, trueCourseDeg: Double? = null, windDirTrueDeg: Double? = null, windSpeedKt: Double? = null): Result<EngineContract.AltitudeChangeAnswer> =
+    rule("altitude_change", EngineContract.AltitudeChangeInput(profile = profile, alongNm = alongNm, fromFt = fromFt, toFt = toFt, mode = mode, groundspeedKt = groundspeedKt, tasKt = tasKt, fuelBurnGph = fuelBurnGph, oatC = oatC, trueCourseDeg = trueCourseDeg, windDirTrueDeg = windDirTrueDeg, windSpeedKt = windSpeedKt))
 
 /**
  * The altitudes a flight may be planned at: no lower than 500 ft (14 CFR 91.119(c)), VFR up to 17,500 ft (91.159(a)'s highest under Class A, which begins at 18,000 ft MSL, 71.33(a), and takes IFR only, 91.135), IFR up to FL410 (the highest 91.179(b)(4) names); flight levels from 18,000 ft (91.121(a)(2)); 91.159's cruising altitudes 500 ft apart.
@@ -175,6 +181,12 @@ fun Engine.approachFind(drawings: List<EngineContract.ProcedureDrawing>? = null,
     rule("approach_find", EngineContract.ApproachFindInput(drawings = drawings, points = points, picked = picked, minimumsFt = minimumsFt))
 
 /**
+ * The tags an approach's fixes carry on the map with its plate, ForeFlight's way: each fix's crossing altitude and its sense (ARINC 424-18 5.29); at the final approach fix the ILS's glide slope altitude as the CIFP codes it, or an LPV or LNAV/VNAV approach's glidepath altitude worked out from its angle, threshold and TCH (FAA Order 8260.3G formula 2-6-4); at a runway missed approach point its threshold crossing height and touchdown zone elevation (no DA or MDA: the minimums are the plate's alone); and the final approach segment, FAF to MAP.
+ */
+fun Engine.approachFixTags(drawing: EngineContract.ProcedureDrawing): Result<EngineContract.ApproachFixTagsAnswer> =
+    rule("approach_fix_tags", EngineContract.ApproachFixTagsInput(drawing = drawing))
+
+/**
  * How the approach is flown, by its CIFP id (ARINC 424-18 5.10): "localizer", "gps" or "other".
  */
 fun Engine.approachGuidance(id: String? = null): Result<String> =
@@ -211,6 +223,12 @@ fun Engine.approachQuiz(drawing: EngineContract.ProcedureDrawing, gsKt: Double):
     rule("approach_quiz", EngineContract.ApproachQuizInput(drawing = drawing, gsKt = gsKt))
 
 /**
+ * A field's way in as the 3D map stands it up: each runway end's extended centreline on the ground, out to the picked approach's final approach fix or 5 nm (past a VASI's 4 NM and a PAPI's 3.4, AIM 2-1-2); the glidepath to the threshold in the air, the approach's own angle and threshold crossing height where the CIFP codes them (ARINC 424-18 5.67, 5.68, 5.70), else 3.00 degrees (FAA Order 8260.3G 2-6-3, AIM 2-1-2) over the threshold at 40 ft (8260.3G Table 10-1-1, height group 1) from the field's elevation, its heights by 8260.3G formula 2-6-4; the picked approach's path, each fix at its crossing altitude (ARINC 424-18 5.29) and down the glidepath from the final approach fix, stopping where no altitude follows; and a ring (its middle and radius) at the pattern altitude (the FAA's TPA, else 1,000 ft above the field, AIM 4-3-3) as far out as the downwind is drawn past half the longest runway. With an approach picked, its runway's glidepath alone.
+ */
+fun Engine.approachScene(lat: Double, lon: Double, elevationFt: Double? = null, patternFt: Double? = null, runways: List<EngineContract.ApproachSceneInputRunwaysItem>, drawing: EngineContract.ProcedureDrawing? = null): Result<EngineContract.ApproachSceneAnswer> =
+    rule("approach_scene", EngineContract.ApproachSceneInput(lat = lat, lon = lon, elevationFt = elevationFt, patternFt = patternFt, runways = runways, drawing = drawing))
+
+/**
  * The transition's debrief, or null, from the vectors' debrief's figures.
  */
 fun Engine.approachTransition(drawings: List<EngineContract.ProcedureDrawing>? = null, points: List<EngineContract.TrackPoint>? = null, fafAt: Double, passed: Int, minimumsFt: Double? = null): Result<EngineContract.ApproachDebrief?> =
@@ -227,6 +245,12 @@ fun Engine.arrivalCircuit(runway: EngineContract.CircuitRunwayIn, endIdent: Stri
  */
 fun Engine.atcCall(text: String, tail: String? = null, prior: EngineContract.AtcCallInputPrior? = null): Result<EngineContract.AtcCallAnswer> =
     rule("atc_call", EngineContract.AtcCallInput(text = text, tail = tail, prior = prior))
+
+/**
+ * The Aviation Weather Center's words for its icing and turbulence grids (aviationweather.gov GFA help, read 2026-11-12): icing severity by category, 0 none, 1 trace, 2 light, 3 moderate, 4 heavy; turbulence by EDR, (m^2/s^3)^1/3, from each word's threshold in the weight class's row: light (< 15,500 lb) 0.13, 0.16, 0.36, 0.64; medium 0.15, 0.20, 0.44, 0.79; heavy 0.17, 0.24, 0.54, 0.96.
+ */
+fun Engine.aviationGridBands(): Result<EngineContract.AviationGridBandsAnswer> =
+    rule("aviation_grid_bands", EngineContract.AviationGridBandsInput())
 
 /**
  * The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
@@ -265,7 +289,7 @@ fun Engine.bareField(ident: String): Result<String> =
     rule("bare_field", EngineContract.BareFieldInput(ident = ident))
 
 /**
- * The initial great-circle course from the first point to the second, degrees true 0 to 360, on the same sphere as distance_nm (wingtip.geo.bearing_deg); 0 for two points that coincide.
+ * The initial course of the geodesic from the first point to the second on the WGS-84 ellipsoid, as distance_nm, degrees true 0 to 360 (wingtip.geo.bearing_deg, pyproj's Geod(ellps="WGS84") forward azimuth); 0 for two points that coincide.
  */
 fun Engine.bearingDeg(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Result<Double> =
     rule("bearing_deg", EngineContract.BearingDegInput(lat1 = lat1, lon1 = lon1, lat2 = lat2, lon2 = lon2))
@@ -287,6 +311,12 @@ fun Engine.bestFields(mode: String? = null, at: EngineContract.BestFieldsInputAt
  */
 fun Engine.callPattern(tail: String): Result<String?> =
     rule("call_pattern", EngineContract.CallPatternInput(tail = tail))
+
+/**
+ * A surface CAPE's category (NWS, "Severe Weather Topics: CAPE"): weak under 1,000 J/kg, moderate 1,000 to 2,500, strong 2,500 to 4,000, extreme over 4,000. The energy a storm could draw on, not a forecast of storms.
+ */
+fun Engine.capeCategory(jKg: Double): Result<String> =
+    rule("cape_category", EngineContract.CapeCategoryInput(jKg = jKg))
 
 /**
  * A report's ceiling, ft above the ground: the lowest broken, overcast or obscured layer (14 CFR 1.1), an obscured sky's at its vertical visibility; null where there is none or it is not known (sky_ceiling tells them apart).
@@ -343,6 +373,12 @@ fun Engine.classBEntered(start: List<Double>, end: List<Double>, altitudeFt: Dou
     rule("class_b_entered", EngineContract.ClassBEnteredInput(start = start, end = end, altitudeFt = altitudeFt, shelves = shelves))
 
 /**
+ * The places an ATC clearance heard named, found as idents among the places given, put nearest to the route's points (`near`) first, so of two alike the one by the route is taken (nothing is fetched): a navaid by its name ("Gopher" is GEP, NASR NAV_BASE's NAME), a fix said as a word by its sound ("pickla" is PYKLA, offered unsure for the pilot to check), an airport by its name followed by "airport", as AIM 4-4-3 a gives a clearance limit ("cleared to the Duluth airport": an airport and its navaid often share a name), or the field the planner's search found for the limit's name (`limit_airports`), and anything spelled by its ident. Each phrase of the route is its places in order, the longest names first; a word that names nothing is kept, unfound. The SID and STAR by their name and number among the field's own procedures ("Bunyan One departure" is BUNYN1), their transition by its fix's name or sound.
+ */
+fun Engine.clearancePlaces(places: List<EngineContract.SpokenCandidate>, near: List<List<Double>>? = null, limit: String? = null, limitAirports: Map<String, EngineContract.SpokenCandidate>? = null, route: List<String>? = null, departure: EngineContract.ClearancePlacesInputDeparture? = null, arrival: EngineContract.ClearancePlacesInputArrival? = null): Result<EngineContract.ClearancePlacesAnswer> =
+    rule("clearance_places", EngineContract.ClearancePlacesInput(places = places, near = near, limit = limit, limitAirports = limitAirports, route = route, departure = departure, arrival = arrival))
+
+/**
  * The route a clearance gives, from the words heard, the planner's places found for them (ClearancePlaces) and the route planned.
  */
 fun Engine.clearedRoute(text: String, found: EngineContract.ClearedRouteInputFound? = null, planned: EngineContract.ClearanceRoute): Result<EngineContract.ClearedRouteAnswer> =
@@ -359,6 +395,18 @@ fun Engine.closestApproach(own: EngineContract.OwnShipFix, plane: EngineContract
  */
 fun Engine.cloudClearanceAtFt(altitudeFt: Double): Result<Double> =
     rule("cloud_clearance_at_ft", EngineContract.CloudClearanceAtFtInput(altitudeFt = altitudeFt))
+
+/**
+ * A cloud cover in percent as eighths of the sky, the nearest eighth (none only at 0, eight only at 100: WMO code table 2700), and its METAR contraction (AIM 7-1-28: SKC 0/8, FEW to 2/8, SCT 3/8-4/8, BKN 5/8-7/8, OVC 8/8).
+ */
+fun Engine.cloudCover(percent: Double): Result<EngineContract.CloudCoverAnswer> =
+    rule("cloud_cover", EngineContract.CloudCoverInput(percent = percent))
+
+/**
+ * A bearing, degrees true, as the nearest of the 16 points of the compass as FAA Order JO 7930.2 3-3-9 abbreviates them (N, NNE, NE, ... NNW), each the middle of its 22.5-degree sector, an edge taken clockwise. The map's value bubble says a wind's direction this way, where it blows from.
+ */
+fun Engine.compassPoint(bearingDeg: Double): Result<String> =
+    rule("compass_point", EngineContract.CompassPointInput(bearingDeg = bearingDeg))
 
 /**
  * A bearing as one of the eight compass points.
@@ -445,7 +493,7 @@ fun Engine.departureWindow(start: List<Double>, end: List<Double>, airplane: Boo
     rule("departure_window", EngineContract.DepartureWindowInput(start = start, end = end, airplane = airplane, minimums = minimums, risk = risk, hours = hours))
 
 /**
- * Where a great circle from each point on its true course reaches its distance out, on the same sphere as distance_nm, the longitude within -180 to 180: the phones' traffic carried on along its track between reports, a list so a map's airplanes cross once.
+ * Where the geodesic from each point on its true course reaches its distance out, on the WGS-84 ellipsoid as distance_nm, the longitude within -180 to 180: the phones' traffic carried on along its track between reports, a list so a map's airplanes cross once.
  */
 fun Engine.destination(points: List<EngineContract.DestinationInputPointsItem>): Result<List<EngineContract.DestinationAnswerItem>> =
     rule("destination", EngineContract.DestinationInput(points = points))
@@ -481,7 +529,7 @@ fun Engine.directOf(text: String): Result<String?> =
     rule("direct_of", EngineContract.DirectOfInput(text = text))
 
 /**
- * The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0), the great circle of FAA-H-8083-25C ch. 16.
+ * The distance between two points, nm (1,852 m), along the geodesic on the WGS-84 ellipsoid (NGA TR8350.2) the FAA's coordinates and GPS are on, by Karney's algorithm (J. Geodesy 87:43-55, 2013) as pyproj's Geod(ellps="WGS84") and a GPS navigator have it: the great circle of FAA-H-8083-25C ch. 16 on the ellipsoid.
  */
 fun Engine.distanceNm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Result<Double> =
     rule("distance_nm", EngineContract.DistanceNmInput(lat1 = lat1, lon1 = lon1, lat2 = lat2, lon2 = lon2))
@@ -583,13 +631,13 @@ fun Engine.faaIds(ident: String): Result<List<String>> =
     rule("faa_ids", EngineContract.FaaIdsInput(ident = ident))
 
 /**
- * The FAA's capitals in sentence case, its codes kept (AIM 3-2-1's "Class B"): one string from text, or each of texts as a list (a null row answers "").
+ * The FAA's capitals in sentence case, its codes kept (AIM 3-2-1's "Class B"; an approach's title as AIM 5-4-5 names it, "ILS or LOC rwy 36"): one string from text, or each of texts as a list (a null row answers "").
  */
 fun Engine.faaWords(text: String? = null, texts: List<String?>? = null): Result<JsonElement> =
     rule("faa_words", EngineContract.FaaWordsInput(text = text, texts = texts))
 
 /**
- * A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as AC 00-45H sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
+ * A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as FAA-H-8083-28B 27.4.2.10 sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
  */
 fun Engine.fieldHours(metar: Map<String, JsonElement>? = null, taf: String? = null, now: Double, count: Double? = null): Result<List<EngineContract.FieldHour>> =
     rule("field_hours", EngineContract.FieldHoursInput(metar = metar, taf = taf, now = now, count = count))
@@ -601,7 +649,7 @@ fun Engine.fieldRelation(plane: EngineContract.FieldRelationInputPlane, field: E
     rule("field_relation", EngineContract.FieldRelationInput(plane = plane, field = field))
 
 /**
- * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (AC 00-45H).
+ * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (FAA-H-8083-28B 27.4.1, 24.4.3.8.2).
  */
 fun Engine.fieldTaf(ident: String, at: EngineContract.FieldTafInputAt? = null, stations: List<EngineContract.FieldTafInputStationsItem>): Result<EngineContract.FieldTafAnswer> =
     rule("field_taf", EngineContract.FieldTafInput(ident = ident, at = at, stations = stations))
@@ -685,7 +733,31 @@ fun Engine.floorCaution(segment: Map<String, JsonElement>, altitudeFt: Double): 
     rule("floor_caution", EngineContract.FloorCautionInput(segment = segment, altitudeFt = altitudeFt))
 
 /**
- * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, AC 00-45H).
+ * How far either side of the course the VFR floor counts the ground's obstacles: 5 nm, wider than 14 CFR 91.119(b)'s 2,000 ft and 91.177(a)(2)'s 4 nm, so the floor tolerates the airplane off its line. The 3D map colours the ground against the plan within it.
+ */
+fun Engine.floorCorridorNm(): Result<Double> =
+    rule("floor_corridor_nm", EngineContract.FloorCorridorNmInput())
+
+/**
+ * The four pixels of a Model Weather picture (the weather service's flow_grid: a latitude-longitude grid, north row first, `bounds` [west, south, east, north] its pixels' outer edges) round a point, by index row by row from the north, north-west, north-east, south-west and south-east of it, and how far east (`fx`) and south (`fy`) of the first the point is, each 0 to 1, for flow_sample to read. Within half a pixel of the edge, the edge's pixels. Null off the picture.
+ */
+fun Engine.flowCell(bounds: List<Double>, width: Int, height: Int, lat: Double, lon: Double): Result<EngineContract.FlowCellAnswer?> =
+    rule("flow_cell", EngineContract.FlowCellInput(bounds = bounds, width = width, height = height, lat = lat, lon = lon))
+
+/**
+ * The map's model weather levels by field, as the Aviation Weather Center names them ("060" is 6,000 ft MSL, "180" FL180; "sfc" the surface, "max" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).
+ */
+fun Engine.flowLevels(): Result<EngineContract.FlowLevelsAnswer> =
+    rule("flow_levels", EngineContract.FlowLevelsInput())
+
+/**
+ * A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes), each byte a 255th of `unscale` [least, most] a step. The wind and the temperature, continuous, are read between them linearly, as weatherlayers-gl's LINEAR reading does. Every field with a worse end is read as its worst of the pixels the point is read from (all four between their middles, a pixel's own on its middle), never between: a straight line reads a figure no pixel holds, better than the worst, and a pilot is never told better weather than the data holds. The lowest (`field` "ceiling", "vis" or "frzlvl", or `ceiling` true): the ceiling and the visibility, on which AIM 7-1-7's categories step ("LIFR (Low IFR). Ceiling less than 500 feet and/or visibility less than 1 mile"; a straight line between a 500 ft ceiling and none reads about 6,600 ft, VFR beside LIFR), and the freezing level, as icing begins round it (AIM 7-1-19: icing in visible precipitation "between +02 and -10 degrees Celsius"). The highest (`field` "gust", "precip", "cape", "cloud", "tops", "icing" or "turb"): icing's categories (AIM 7-1-19, trace to severe), turbulence (AIM 7-1-21, light to extreme), the precipitation (AIM 7-1-12, "LIGHT" (< 26 dBZ) to "EXTREME" (> 50 dBZ)), CAPE, gusts, the cloud cover (AIM 7-1-28's eighths, BKN a ceiling by 14 CFR 1.1) and the cloud tops, which a pilot reads to clear (14 CFR 91.155(a): "1,000 feet above" in Class C, D and E). For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true) come from those parts, the vector average, so the same point reads the same wind on every app. A wind under 1 kt is calm (`calm` true, `from_deg` null): FMH-1 (FCM-H1-2019) Table 5-1 gives under a knot as "Calm; smoke rises vertically", reported as calm with no direction, 00000KT (5.5.2, 12.6.5 d), so the apps write "Calm" rather than a direction the picture's rounding made up. `calm` is false for a scalar field. For the ceiling (app.flow_grid's picture of feet above the ground, 50 ft a step to 12,750) `no_ceiling` is true only where every pixel read is at its top: the picture writes a ceiling at or over its top, and none at all, as the top, and either is no ceiling 14 CFR 1.1's definition or AIM 7-1-7's categories (VFR: "Ceiling greater than 3,000 feet") turn on, so the apps write "None" rather than a figure. `no_ceiling` is false for any other field. Null where a pixel the point is read from has no value (alpha 0).
+ */
+fun Engine.flowSample(pixels: List<List<Double>>, fx: Double, fy: Double, unscale: List<Double>, vector: Boolean, ceiling: Boolean? = null, field: String? = null): Result<EngineContract.FlowSampleAnswer?> =
+    rule("flow_sample", EngineContract.FlowSampleInput(pixels = pixels, fx = fx, fy = fy, unscale = unscale, vector = vector, ceiling = ceiling, field = field))
+
+/**
+ * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).
  */
 fun Engine.forecastHour(hoursAhead: Double? = null): Result<String> =
     rule("forecast_hour", EngineContract.ForecastHourInput(hoursAhead = hoursAhead))
@@ -757,7 +829,7 @@ fun Engine.fuelStops(start: List<Double>, end: List<Double>, fuelPerNm: Double, 
     rule("fuel_stops", EngineContract.FuelStopsInput(start = start, end = end, fuelPerNm = fuelPerNm, minPerNm = minPerNm, usableGal = usableGal, taxiGal = taxiGal, reserveGal = reserveGal, groundMin = groundMin, skip = skip, fields = fields))
 
 /**
- * The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (AC 00-45H).
+ * The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (FAA-H-8083-28B 26.3.1.1); and each hazard's short label on the map's outline, as AWC's map labels it (SfcWind, IFR, Mtn Obsc, Turb, LLWS, Ice).
  */
 fun Engine.gairmetHazards(): Result<EngineContract.GairmetHazardsAnswer> =
     rule("gairmet_hazards", EngineContract.GairmetHazardsInput())
@@ -769,10 +841,22 @@ fun Engine.gairmetTitle(hazard: String? = null, severity: String? = null): Resul
     rule("gairmet_title", EngineContract.GairmetTitleInput(hazard = hazard, severity = severity))
 
 /**
- * The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (AC 00-45H).
+ * The time a G-AIRMET snapshot stands for: three hours either side of its valid time (UNIX seconds). AIM 7-1-6: G-AIRMETs are "valid at discrete times no more than 3 hours apart", and "the user should assume the hazardous weather condition is occurring between the snap shots unless informed otherwise" (a hazard at 03 and none at 00 or 06 exists from 0001 to 0559), so a snapshot stands for the whole gap either side, erring toward telling of the hazard.
+ */
+fun Engine.gairmetWindow(valid: Double): Result<EngineContract.GairmetWindowAnswer> =
+    rule("gairmet_window", EngineContract.GairmetWindowInput(valid = valid))
+
+/**
+ * The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (FAA-H-8083-28B 26.3.1.1).
  */
 fun Engine.gairmetsAlongRoute(advisories: List<Map<String, JsonElement>>, path: List<List<Double>>, start: Double, end: Double): Result<List<Map<String, JsonElement>>> =
     rule("gairmets_along_route", EngineContract.GairmetsAlongRouteInput(advisories = advisories, path = path, start = start, end = end))
+
+/**
+ * AWC's GFA cloud text and cover at points (aviationweather.gov's cloud layers: "OVC035/TOP 050", "SCT021/OVC040/TOP FL280/CI ABV", "Cirrus", "SKC"; heights hundreds of feet MSL; cover CLR, FEW, SCT, BKN, OVC for clouds below FL180) as each point's cover in percent, the most of its band's eighths (AIM 7-1-28: FEW 2/8, SCT 4/8, BKN 6/8, OVC 8/8, so cloud_cover reads the same cover back), and its highest top, ft MSL, null where the text gives none.
+ */
+fun Engine.gfaCloudLayers(layers: List<String>, covers: List<String>): Result<EngineContract.GfaCloudLayersAnswer> =
+    rule("gfa_cloud_layers", EngineContract.GfaCloudLayersInput(layers = layers, covers = covers))
 
 /**
  * Still-air glide range, nm, at the picked airplane's own glide ratio (glide_ratio: feet forward for each foot down, its POH's Section 3 maximum glide, as its profile gives it), or null on the ground, with no height, or with no glide ratio: no airplane, or none in its profile, has no glide worked out.
@@ -937,6 +1021,12 @@ fun Engine.gonogoWithAlternate(items: List<EngineContract.GonogoWithAlternateInp
     rule("gonogo_with_alternate", EngineContract.GonogoWithAlternateInput(items = items, found = found))
 
 /**
+ * distance_nm and bearing_deg over many legs at once, columns in and columns out: row i is the geodesic from (lat1[i], lon1[i]) to (lat2[i], lon2[i]) on the WGS-84 ellipsoid (wingtip.geo), its distance in nm and its initial course in degrees true 0 to 360, 0 for two points that coincide. The lists are all as long as each other, so a corridor of points, a route's legs or a map's stops cross into the engine once.
+ */
+fun Engine.greatCircles(lat1: List<Double>, lon1: List<Double>, lat2: List<Double>, lon2: List<Double>): Result<EngineContract.GreatCirclesAnswer> =
+    rule("great_circles", EngineContract.GreatCirclesInput(lat1 = lat1, lon1 = lon1, lat2 = lat2, lon2 = lon2))
+
+/**
  * The nav log's ground speed once the heading holds the course: the airspeed's share along it less the wind's.
  */
 fun Engine.groundspeedKt(trueCourseDeg: Double, windFromDeg: Double, windKt: Double, tasKt: Double, wcaDeg: Double): Result<Double> =
@@ -1027,13 +1117,19 @@ fun Engine.icingForecastRoute(levelsFt: List<Double>, legs: List<EngineContract.
     rule("icing_forecast_route", EngineContract.IcingForecastRouteInput(levelsFt = levelsFt, legs = legs))
 
 /**
- * Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach, 800 and 2 without; `good` null where the pilot has to look (its own minimums, no approach, no TAF).
+ * AWC's icing severity category (0 to 4) in its words: None, Trace, Light, Moderate, Heavy (aviationweather.gov GFA help); null for any other value. Not a PIREP's severity (AWC: "not synonymous").
+ */
+fun Engine.icingSeverity(category: Double): Result<String?> =
+    rule("icing_severity", EngineContract.IcingSeverityInput(category = category))
+
+/**
+ * Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility).
  */
 fun Engine.ifrAlternateCheck(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = null): Result<EngineContract.IfrAlternateCheck> =
     rule("ifr_alternate_check", EngineContract.IfrAlternateIn(ident = ident, approaches = approaches, forecast = forecast))
 
 /**
- * Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast an hour either side of the ETA under 2,000 ft and 3 sm, TEMPO and PROB included; no TAF needs one.
+ * Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast that does not indicate at least 2,000 ft and 3 sm for an hour either side of the ETA (TEMPO and PROB included; a TAF not covering the whole window, a ceiling of unknown height or no visibility does not); no TAF needs one.
  */
 fun Engine.ifrAlternateDestination(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = null): Result<EngineContract.IfrAlternateDestinationAnswer> =
     rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident = ident, approaches = approaches, forecast = forecast))
@@ -1117,6 +1213,12 @@ fun Engine.legalCruisingAltitudes(floorFt: Double, ceilingFt: Double? = null, ma
     rule("legal_cruising_altitudes", EngineContract.LegalCruisingAltitudesInput(floorFt = floorFt, ceilingFt = ceilingFt, magneticCourseDeg = magneticCourseDeg, ruleFromFt = ruleFromFt, rules = rules))
 
 /**
+ * A field's lighting remarks read for a pilot (the Chart Supplement's, NASR APT_RMK.csv LGT_SKED and BCN_LGT_SKED): each system named, by its code in the Chart Supplement legend (Airport Lighting, Visual Glideslope Indicators) and its name in AIM 2-1 (approach lights 2-1-1, visual glideslope indicators 2-1-2, REIL 2-1-3, runway edge lights by intensity 2-1-4, in-runway lighting 2-1-5, the beacon 2-1-9, taxiway lights 2-1-10), the runways it serves as written, and how it is turned on: keying the mic on the CTAF or a frequency (AIM 2-1-8, Pilot Control of Airport Lighting), when the tower is closed, at a preset intensity a pilot turns up, on a schedule (sunset to sunrise), or on all the time; the contractions written out (JO 7340.2 and the Chart Supplement's Abbreviations). A sentence not read in full is a note, its known contractions written out and every other word kept as written, never guessed. standard_keying where a light is the pilot's and the remarks give no count of clicks of their own: AIM 2-1-8's 7 (highest), 5 (medium or lower) and 3 (lowest) within 5 seconds.
+ */
+fun Engine.lightingRead(lighting: List<String>, beacon: List<String>? = null): Result<EngineContract.LightingReadAnswer> =
+    rule("lighting_read", EngineContract.LightingReadInput(lighting = lighting, beacon = beacon))
+
+/**
  * A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them. Air time (not a 61.51(b) column) is this logbook's AirTime, else ForeFlight's TimeOff to TimeOn, else 0 (not known); an entry read from a file is never from a track.
  */
 fun Engine.logbookCsvRead(text: String): Result<EngineContract.LogbookCsvReadAnswer> =
@@ -1177,6 +1279,18 @@ fun Engine.modeCVeil(lat: Double, lon: Double, airports: List<EngineContract.Mod
     rule("mode_c_veil", EngineContract.ModeCVeilInput(lat = lat, lon = lon, airports = airports))
 
 /**
+ * The bands the map's model weather is coloured and labelled by: precipitation's intensity words by reflectivity, dBZ (AIM 7-1-12: light under 26, moderate 26 to 40, heavy over 40 to 50, extreme over 50; drawn from 10 dBZ, the app's least), the ceiling's by AIM 7-1-7's categories, ft above the ground (14 CFR 1.1), and CAPE's, J/kg (NWS: weak under 1,000, moderate to 2,500, strong to 4,000, extreme over).
+ */
+fun Engine.modelWeatherBands(): Result<EngineContract.ModelWeatherBandsAnswer> =
+    rule("model_weather_bands", EngineContract.ModelWeatherBandsInput())
+
+/**
+ * The GFS's pressure levels at a station (the weather service's model winds, from NOMADS' GRIB2 HGT, TMP, UGRD and VGRD) in the units the winds aloft are kept in, as the FB's columns were (FAA-H-8083-28B 27.2.1.1.1): the geopotential height in feet by the international foot (0.3048 m, NIST SP 811 B.9), the temperature in degrees Celsius (kelvin less 273.15, NIST SP 811 4.2.1.1), and the wind's east and north parts in metres a second turned into knots (1,852 m a nautical mile, NIST SP 811 B.9) and the direction it blows from, degrees true (360 for no wind at all), and its speed. Unrounded, in the levels' order; a level with any figure missing is left out.
+ */
+fun Engine.modelWindLevels(levels: List<EngineContract.ModelWindLevelsInputLevelsItem>): Result<List<EngineContract.ModelWindLevelsAnswerItem>> =
+    rule("model_wind_levels", EngineContract.ModelWindLevelsInput(levels = levels))
+
+/**
  * A navaid's ident in Morse code (AIM 1-1-3), the letters two spaces apart.
  */
 fun Engine.morse(ident: String? = null): Result<String> =
@@ -1213,7 +1327,7 @@ fun Engine.navlogCandidates(segments: List<EngineContract.NavLogSegment>, legs: 
     rule("navlog_candidates", EngineContract.NavlogCandidatesInput(segments = segments, legs = legs, profile = profile))
 
 /**
- * The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
+ * The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), and 45 where `night` is null (no departure time: night cannot be ruled out, so the larger is assumed), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
  */
 fun Engine.navlogFuelPlan(totalFuelGal: Double? = null, profile: EngineContract.NavLogProfile? = null, night: Boolean? = null, rules: String? = null, alternateGal: Double? = null): Result<EngineContract.NavlogFuelPlanAnswer> =
     rule("navlog_fuel_plan", EngineContract.NavlogFuelPlanInput(totalFuelGal = totalFuelGal, profile = profile, night = night, rules = rules, alternateGal = alternateGal))
@@ -1273,16 +1387,16 @@ fun Engine.navlogTotals(legs: List<EngineContract.NavLogLeg>): Result<EngineCont
     rule("navlog_totals", EngineContract.NavlogTotalsInput(legs = legs))
 
 /**
- * The legs with their climbs flown, from the field (start_altitude_ft; null starts level) and at every step up, at the best rate in each leg's air and the climb speed; each leg's climb_min and the top of climb (toc).
+ * The legs with their climbs flown, from the field (start_altitude_ft; null starts level) and at every step up, at the best rate in each leg's air and the climb speed; each leg's climb_min and the top of climb (toc). A climb is flown at its own ground speed, the climb speed's wind triangle in the leg's wind; a leg flown wholly in the climb states the climb's TAS, wind correction, headings, ground speed and fuel flow, so its ground speed times its time is its miles; a leg partly climbed keeps the cruise's, the climb's on its toc.
  */
 fun Engine.navlogWithClimbs(legs: List<EngineContract.NavLogLeg>, startAltitudeFt: Double? = null, profile: EngineContract.NavLogProfile? = null): Result<List<EngineContract.NavLogLeg>> =
     rule("navlog_with_climbs", EngineContract.NavlogWithClimbsInput(legs = legs, startAltitudeFt = startAltitudeFt, profile = profile))
 
 /**
- * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before; the times and fuel unchanged.
+ * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude where the 45-degree entry begins, about 1.7 nm before the end (AC 90-66C 11.2, 11.3: level at pattern altitude before entering), to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before. With a profile giving the descent's speed and fuel flow, each descent is flown as its own phase (its wind triangle at the descent's TAS, its flow), the legs' times and fuel changed by it and each row stating its phase's figures; else the times and fuel unchanged, the descent on the cruise's. A top of descent's minutes and gallons are those flown to it: what a leg flies beyond its line, counted at its end (its procedure's more_min and more_gal, a hold with at_end), comes after it.
  */
-fun Engine.navlogWithDescents(legs: List<EngineContract.NavLogLeg>, fixes: List<EngineContract.NavLogFix>, endAltitudeFt: Double? = null, endBeforeNm: Double? = null, endFix: String? = null): Result<List<EngineContract.NavLogLeg>> =
-    rule("navlog_with_descents", EngineContract.NavlogWithDescentsInput(legs = legs, fixes = fixes, endAltitudeFt = endAltitudeFt, endBeforeNm = endBeforeNm, endFix = endFix))
+fun Engine.navlogWithDescents(legs: List<EngineContract.NavLogLeg>, fixes: List<EngineContract.NavLogFix>, endAltitudeFt: Double? = null, endBeforeNm: Double? = null, endFix: String? = null, profile: EngineContract.NavLogProfile? = null): Result<List<EngineContract.NavLogLeg>> =
+    rule("navlog_with_descents", EngineContract.NavlogWithDescentsInput(legs = legs, fixes = fixes, endAltitudeFt = endAltitudeFt, endBeforeNm = endBeforeNm, endFix = endFix, profile = profile))
 
 /**
  * Whether a flight is at night leaving `start` at `depart_s` or arriving at `end` at `arrive_s` (14 CFR 1.1; 91.151(a)'s reserve).
@@ -1303,16 +1417,34 @@ fun Engine.noAltitude(selection: Map<String, JsonElement>, between: List<String>
     rule("no_altitude", EngineContract.NoAltitudeInput(selection = selection, between = between, via = via, where = where))
 
 /**
+ * A NOTAM read for a pilot, beside its text as sent: its keyword (FAA Order JO 7930.2 1-2-1) as a plain heading, or the ICAO Q) code's subject (Appendix B); its words with the FAA's contractions written out (JO 7340.2; JO 7930.2 3-3-1 and TBL 3-3-1) in sentence case, its codes (ILS, PAPI, VOR, RNAV, LPV) and idents kept, runways and taxiways as designated (3-3-5, 3-3-6), heights MSL unless AGL is stated (4-2-1), distances and compass points from a place, coordinates and fix-radial-distances written out; and its start of activity and end of validity in UTC (YYMMDDHHMM, 3-3-2), with EST (an estimate) and PERM (permanent) (4-2-1). Its what and where in our words where its subject's words say them (the airport card's lines). The keyword AD, JO 7930.2's aerodrome, is headed "Airport", the FAA's word for pilots (the AIM). A word it does not know is kept as written, never guessed.
+ */
+fun Engine.notamRead(text: String, idents: List<String>? = null): Result<EngineContract.NotamReadAnswer> =
+    rule("notam_read", EngineContract.NotamReadInput(text = text, idents = idents))
+
+/**
+ * What one NOTAM addresses on an airport's card, from its text as sent (FAA Order JO 7930.2, the domestic form of 4-2-1 and the ICAO form of chapter 8), matched to the card's own rows: the field (AD AP CLSD), a runway by its designation (RWY, 1-2-1 and 3-3-5; never a runway a taxiway's NOTAM names, 3-3-6), a light on it (PAPI, VASI, REIL, the approach lights, the edge lights, the beacon; AIM 2-1), the approaches an ILS, LOC, LDA or SDF serves (NAV) or the procedure an FDC IAP NOTAM titles (7-1-3), a frequency by its MHz or its facility (COM), the fuel (SVC), and a TFR near the field. Each with its badge's word (Closed, Closed at times, Part closed, Restricted, Out of service, Not available, Not authorized (NA, JO 7340.2), Changed, NOTAM, TFR) and how bad (unusable: closed, or a procedure not authorized; caution: the rest). CLSD EXC XNG or EXC TAX is still closed to landing and takeoff, said in the label. A NOTAM it cannot place answers no badge, never a guess.
+ */
+fun Engine.notamSubject(text: String, tfr: Boolean? = null, idents: List<String>? = null, runways: List<String>? = null, lights: List<EngineContract.NotamSubjectInputLightsItem>? = null, approaches: List<String>? = null, frequencies: List<EngineContract.NotamSubjectInputFrequenciesItem>? = null): Result<EngineContract.NotamSubjectAnswer> =
+    rule("notam_subject", EngineContract.NotamSubjectInput(text = text, tfr = tfr, idents = idents, runways = runways, lights = lights, approaches = approaches, frequencies = frequencies))
+
+/**
  * The NOTAMs of one FAA NOTAM System (FNS) message, AIXM 5.1, as wingtip.notams keeps them: each by its domestic place and number, else its place and ICAO number; `ends` the sooner of its own end and its feature lifetime's. None where the message is not XML.
  */
 fun Engine.notamsFns(text: String): Result<List<EngineContract.NotamsFnsAnswerItem>> =
     rule("notams_fns", EngineContract.NotamsFnsInput(text = text))
 
 /**
- * A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. The top three in force are said first; none is dropped.
+ * A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. Every one in force comes before every one that is not, whatever its points, then best first. The top three in force are said first; none is dropped.
  */
 fun Engine.notamsRanked(notams: List<EngineContract.NotamsRankedInputNotamsItem>, fields: List<EngineContract.NotamsRankedInputFieldsItem>? = null, from: String? = null, until: String? = null, cruiseFt: Double? = null, airspaces: List<String>? = null): Result<EngineContract.NotamsRankedAnswer> =
     rule("notams_ranked", EngineContract.NotamsRankedInput(notams = notams, fields = fields, from = from, until = until, cruiseFt = cruiseFt, airspaces = airspaces))
+
+/**
+ * Whether an accident or incident report (the FAA's statement or preliminary notice, or the NTSB's record), the FAA's aircraft registry and an ADS-B track are one airplane at one time and place: the identity check a Studio crash draft is held to. The report's N-number must be in the registry with a Mode S code (the registry's MASTER file, MODE S CODE HEX), the track must be that address's (adsb.lol's '~' pseudo-addresses never are), and the track must have a report in the window the report's local time gives -- 60 minutes before it to 15 after, at each UTC offset the place may have that day, or the whole local day without a time; with no offset given, every US offset, UTC-11 to UTC+10 (49 CFR part 71) -- within 20 nm of a town's point or 10.5 nm of a point the NTSB gives (10 nm for the receivers' coverage lost low before the place, plus the place's own doubt; ADS-B's own fix is within 0.05 nm, 14 CFR 91.227(c)(1)(i)). The tolerances are this check's judgment, not a regulation. Verdict: confirmed where all agree; no_track where the registry agrees and the track has no report in the window (a draft of the place alone, never a guessed path); needs_human for anything else.
+ */
+fun Engine.occurrenceIdentity(report: EngineContract.OccurrenceIdentityInputReport, registry: EngineContract.OccurrenceIdentityInputRegistry? = null, track: EngineContract.OccurrenceIdentityInputTrack? = null): Result<EngineContract.OccurrenceIdentityAnswer> =
+    rule("occurrence_identity", EngineContract.OccurrenceIdentityInput(report = report, registry = registry, track = track))
 
 /**
  * Whether a transmission is said to the airplane `tail` (AIM 4-2-4).
@@ -1441,13 +1573,31 @@ fun Engine.planningFigures(): Result<EngineContract.PlanningFiguresAnswer> =
     rule("planning_figures", EngineContract.PlanningFiguresInput())
 
 /**
+ * Where a position is drawn on an approach plate's page, for own ship on the plate full screen as an EFB's geo-referenced plates draw it: the latitude and longitude through the plate's Lambert conformal conic projection on NAD 83's GRS 80 (Snyder, USGS Professional Paper 1395, eqs. 14-1, 14-2, 14-4, 14-15, 15-7 to 15-10) and the page's affine from its GeoPDF viewport (ISO 32000-2 12.9, as the planner fits it: PlateGeoreference), as fractions of the page's width from the left and its height from the top, with a true track turned onto the page (degrees clockwise from the page's up, null without a track). Null outside the plan view's box or inside an inset cut from it, the only part of a d-TPP plate drawn to scale being the plan view.
+ */
+fun Engine.platePagePoint(lat: Double, lon: Double, trackDeg: Double? = null, georeference: EngineContract.PlatePagePointInputGeoreference): Result<EngineContract.PlatePagePointAnswer?> =
+    rule("plate_page_point", EngineContract.PlatePagePointInput(lat = lat, lon = lon, trackDeg = trackDeg, georeference = georeference))
+
+/**
  * What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.
  */
 fun Engine.pointKind(text: String): Result<String?> =
     rule("point_kind", EngineContract.PointKindInput(text = text))
 
 /**
- * Pressure altitude from a field's elevation and its altimeter setting, a thousand feet an inch from 29.92 (PHAK ch. 4).
+ * Precipitation rates, mm/h, as the reflectivity a radar would see for each by the WSR-88D's default Z-R relation, Z = 300 R^1.4 (NWS), dBZ to the hundredth; 0 where none falls. So a model's rate and the radar's echo are read against the same intensity words.
+ */
+fun Engine.precipDbz(ratesMmH: List<Double>): Result<EngineContract.PrecipDbzAnswer> =
+    rule("precip_dbz", EngineContract.PrecipDbzInput(ratesMmH = ratesMmH))
+
+/**
+ * A precipitation reflectivity's intensity word, AIM 7-1-12's (light under 26 dBZ, moderate 26 to 40, heavy over 40 to 50, extreme over 50), none under 10 dBZ (the app's trace); and with the temperature at 2 m, whether it falls as snow (at or under 0 C) or rain, a simplification said only as a glyph.
+ */
+fun Engine.precipIntensity(dbz: Double, tempC: Double? = null): Result<EngineContract.PrecipIntensityAnswer> =
+    rule("precip_intensity", EngineContract.PrecipIntensityInput(dbz = dbz, tempC = tempC))
+
+/**
+ * Pressure altitude from a field's elevation and its altimeter setting: the standard atmosphere's height of the setting above 29.92 "Hg, (1 - (setting/29.92)^(1/5.2558797)) x 145,442 ft (ICAO Doc 7488), FAA-H-8083-25C ch. 11 Figure 11-3's conversion factor to within 2 ft (30.10 "Hg: -165).
  */
 fun Engine.pressureAltitudeFt(elevationFt: Double, altimeterInhg: Double): Result<Double> =
     rule("pressure_altitude_ft", EngineContract.PressureAltitudeFtInput(elevationFt = elevationFt, altimeterInhg = altimeterInhg))
@@ -1501,7 +1651,7 @@ fun Engine.proficiencyPlan(today: String, entries: List<EngineContract.LogbookEn
     rule("proficiency_plan", EngineContract.ProficiencyPlanInput(today = today, entries = entries, flightReviewOn = flightReviewOn, medicalExpiresOn = medicalExpiresOn, ipcOn = ipcOn, ratings = ratings, held = held, debriefs = debriefs, places = places, remindDays = remindDays))
 
 /**
- * The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red within 100 ft of it or above it and yellow within 1,000 ft -- ForeFlight's Hazard Advisor display defaults (ForeFlight Pilot's Guide), not a regulation; the legal minimums over the ground are 14 CFR 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack ("3,500 ft, terrain within 500 ft near KXYZ").
+ * The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red where they come within less than 500 ft of it or above it (14 CFR 91.119(c)'s 500 ft above the surface and from any structure; exactly 500 ft meets it) and yellow within 1,000 ft (91.119(b)'s height over a congested area, the town not known here) -- the legal floors themselves are 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack ("3,500 ft, terrain within 500 ft near KXYZ").
  */
 fun Engine.profileClearance(altitudeFt: Double, alongNm: List<Double>, groundFt: List<Double>, obstacles: List<EngineContract.ProfileClearanceInputObstaclesItem>? = null, points: List<EngineContract.ProfileClearanceInputPointsItem>? = null): Result<EngineContract.ProfileClearanceAnswer> =
     rule("profile_clearance", EngineContract.ProfileClearanceInput(altitudeFt = altitudeFt, alongNm = alongNm, groundFt = groundFt, obstacles = obstacles, points = points))
@@ -1607,6 +1757,18 @@ fun Engine.regionOf(lat: Double, lon: Double): Result<String> =
  */
 fun Engine.registeredProfile(manufacturer: String? = null, model: String? = null, year: Double? = null): Result<String?> =
     rule("registered_profile", EngineContract.RegisteredProfileInput(manufacturer = manufacturer, model = model, year = year))
+
+/**
+ * An airport's remarks in words (the Chart Supplement's, NASR APT_RMK.csv): its fuel's, its FBO's, its courtesy car's and its radio's (the weather read out on the CTAF), and a navaid's (NAV_RMK.csv, where its signal is unusable), each a line. Each contraction of one meaning written out, by the Chart Supplement's General Information Abbreviations first (CUST customs, TSNT transient, avbl available, hr hour, O/R on request, thru through) and FAA Order JO 7340.2R's decode after it, to which it defers; a code (FBO, CBP, CTAF, 100LL, Jet A), a figure, a time and a telephone number kept as written; a contraction of more than one meaning (OPR, OPN, FM) and any word not known kept as written, never guessed; the rest in sentence case. A remark with any lower case is someone's own writing, as sent.
+ */
+fun Engine.remarksRead(remarks: List<String>): Result<EngineContract.RemarksReadAnswer> =
+    rule("remarks_read", EngineContract.RemarksReadInput(remarks = remarks))
+
+/**
+ * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those within 10 s each side, at the report's own time (a transponder's 25 ft steps, DO-260B) and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
+ */
+fun Engine.replayTrack(points: List<EngineContract.ReplayTrackInputPointsItem>, gapS: Double? = null): Result<EngineContract.ReplayTrackAnswer> =
+    rule("replay_track", EngineContract.ReplayTrackInput(points = points, gapS = gapS))
 
 /**
  * The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).
@@ -1723,10 +1885,16 @@ fun Engine.sigmetHazard(hazard: String? = null, kind: String? = null): Result<St
     rule("sigmet_hazard", EngineContract.SigmetHazardInput(hazard = hazard, kind = kind))
 
 /**
- * The SIGMETs in force whose area the route crosses (AC 00-45H).
+ * The SIGMETs in force whose area the route crosses (FAA-H-8083-28B 26.2.4).
  */
 fun Engine.sigmetsAlongRoute(advisories: List<Map<String, JsonElement>>, from: List<Double>, to: List<Double>, corridorNm: Double? = null, now: Double): Result<List<Map<String, JsonElement>>> =
     rule("sigmets_along_route", EngineContract.SigmetsAlongRouteInput(advisories = advisories, from = from, to = to, corridorNm = corridorNm, now = now))
+
+/**
+ * A recorded flight made ready (replay_track) made ready for a flight simulator's replay: each run of reports between two gaps its own segment, nothing drawn across a gap; the path between reports a cubic Hermite spline through each report with its sent velocity as the slope (de Boor 1978, ch. IV), the height the same with the vertical speed, `rate_hz` frames a second (10 where not given, at most 60); pressure altitude set on the airplane's own altimeter setting where it sent one below 18,000 ft (14 CFR 91.121(a)(1); FAA-H-8083-25C ch. 11), else left as sent and the segment's `msl` false; on the ground, the ground's height. Estimated, as ADS-B sends none of them: bank from the turn, tan(bank) = V x turn rate / g (FAA-H-8083-25C ch. 5), pitch the flight path angle, each and the heading averaged over 2.5 s each side so the airplane rolls in before the heading moves (FAA-H-8083-15B ch. 7, a lead of half the bank); heading the track (no wind known), and magnetic by the WMM; gear and flaps by phase (FAA-H-8083-3C ch. 6, retracted once climbing; down below 1,000 ft above the ground descending, AC 120-108); lights by AIM 4-3-24 and 14 CFR 91.209.
+ */
+fun Engine.simFlight(points: List<EngineContract.SimFlightInputPointsItem>, settings: List<EngineContract.SimFlightInputSettingsItem>? = null, ground: List<EngineContract.SimFlightInputGroundItem>? = null, pressure: Boolean? = null, from: Double? = null, to: Double? = null, rateHz: Double? = null): Result<EngineContract.SimFlightAnswer> =
+    rule("sim_flight", EngineContract.SimFlightInput(points = points, settings = settings, ground = ground, pressure = pressure, from = from, to = to, rateHz = rateHz))
 
 /**
  * A student's 61.87(n) solo endorsement on the instructor's list: the days to its last good day and its standing, caution within 7 days (the owner's choice).
@@ -1739,6 +1907,12 @@ fun Engine.soloStanding(until: String? = null, today: String): Result<EngineCont
  */
 fun Engine.soloXcDeterminations(): Result<List<EngineContract.SoloXcDeterminationsAnswerItem>> =
     rule("solo_xc_determinations", EngineContract.SoloXcDeterminationsInput())
+
+/**
+ * The tab ForeFlight writes on a special-use area's boundary, its words: the area's name cut to nine characters after the type's letter ("M-BRADY NOR*"), its floor and ceiling as figures with their references (SFC, AGL, MSL, FL, UNL), and the tab's finished words as the map writes them ("M-BRADY NOR*:" over "3600-17999": whole feet MSL, 500AGL, FL230, SFC, UNL), from the FAA's special use airspace data (ADDS: each limit's VAL in feet, a flight level times 100, its CODE SFC, MSL, STD or UNLTD and its DESC TI, TNI or ANI). Written as the FAA's CIFP writes the same areas: a ceiling "to but not including" FL180 is 17,999 ft MSL, as Class A begins at 18,000 ft MSL (14 CFR 71.33); another ceiling TNI a foot under its figure, a floor ANI a foot over it; SFC above 0 is that height AGL. Null for a piece the FAA cuts out of its area (EXCLUSION 1), or where a limit has no figure.
+ */
+fun Engine.specialUseTab(name: String, type: String? = null, floor: EngineContract.SpecialUseTabLimit? = null, ceiling: EngineContract.SpecialUseTabLimit? = null, excluded: Boolean? = null): Result<EngineContract.SpecialUseTabAnswer?> =
+    rule("special_use_tab", EngineContract.SpecialUseTabInput(name = name, type = type, floor = floor, ceiling = ceiling, excluded = excluded))
 
 /**
  * What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.
@@ -1759,7 +1933,13 @@ fun Engine.suaAltitudes(floorFt: Double? = null, floorRef: String? = null, ceili
     rule("sua_altitudes", EngineContract.SuaAltitudesInput(floorFt = floorFt, floorRef = floorRef, ceilingFt = ceilingFt, ceilingRef = ceilingRef, midSentence = midSentence))
 
 /**
- * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (AC 00-45H).
+ * Whether the sun is down at a point and an instant: after sunset and before sunrise, the sun's centre 0.833 degrees below the horizon (its upper limb on it; NOAA's solar calculation, the Naval Observatory's definition). Not 14 CFR 1.1's night, which begins only at the end of evening civil twilight: this is the sky as a pilot sees it, the map's day or night glyph.
+ */
+fun Engine.sunDown(lat: Double, lon: Double, atS: Double): Result<Boolean> =
+    rule("sun_down", EngineContract.SunDownInput(lat = lat, lon = lon, atS = atS))
+
+/**
+ * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
  */
 fun Engine.tafWindow(fcsts: List<EngineContract.TafPeriod>, start: Double, end: Double? = null): Result<EngineContract.TafWindowAnswer> =
     rule("taf_window", EngineContract.TafWindowInput(fcsts = fcsts, start = start, end = end))
@@ -1795,10 +1975,16 @@ fun Engine.terrainWayRound(start: List<Double>, end: List<Double>, ceilingFt: Do
     rule("terrain_way_round", EngineContract.TerrainWayRoundInput(start = start, end = end, ceilingFt = ceilingFt, terrainFt = terrainFt, fields = fields))
 
 /**
- * A TFR's detail from the FAA's TFR XML: its NOTAM, times, altitudes and areas; null where it holds no NOTAM. Not XML is refused.
+ * A TFR's detail from the FAA's TFR XML (tfr.faa.gov's XNOTAM file): its times, the rule it is issued under, its purpose, its lowest floor and highest ceiling over its areas, its instructions and its NOTAM's text as sent, and who it names to call: the facility it is coordinated through and its point of contact, each with a telephone or frequency, from their own fields or, where the template left them empty, the sentence that calls one the coordination facility. Null where it holds no NOTAM. Not XML is refused.
  */
-fun Engine.tfrDetailRead(text: String): Result<Map<String, JsonElement>?> =
+fun Engine.tfrDetailRead(text: String): Result<EngineContract.TfrDetailReadAnswer?> =
     rule("tfr_detail_read", EngineContract.TfrDetailReadInput(text = text))
+
+/**
+ * A TFR read for a pilot, on the lines a NOTAM's row has, from what tfr.faa.gov gives of it: its kind as a heading ("Security TFR"), what it is with the rule it is issued under ("Security TFR, 14 CFR 99.7": 14 CFR 91.137-91.145, 99.7; 49 U.S.C. 44812), where it is (its floor to its ceiling in whole feet, rounded outward, each MSL or AGL as its XNOTAM gives it, the ground said as surface; and over the field, or how far its nearest edge is from the field and which way, to a tenth of a mile rounded down, on JO 7930.2 3-3-9's 16 points), and its place's name from the list's title, its dates off (the card says them once). A kind or rule it does not know is said as given, never guessed.
+ */
+fun Engine.tfrRead(kind: String? = null, rule: String? = null, title: String? = null, floorFt: Double? = null, floorRef: String? = null, ceilingFt: Double? = null, ceilingRef: String? = null, overField: Boolean? = null, field: EngineContract.TfrPoint? = null, edge: EngineContract.TfrPoint? = null): Result<EngineContract.TfrReadAnswer> =
+    rule("tfr_read", EngineContract.TfrReadInput(kind = kind, rule = rule, title = title, floorFt = floorFt, floorRef = floorRef, ceilingFt = ceilingFt, ceilingRef = ceilingRef, overField = overField, field = field, edge = edge))
 
 /**
  * At most `most` (4,000 where not given) of `points`, even steps through, the first and last kept; each point as it came.
@@ -1831,7 +2017,7 @@ fun Engine.trafficKind(category: String? = null): Result<String> =
     rule("traffic_kind", EngineContract.TrafficKindInput(category = category))
 
 /**
- * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
+ * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159), 2,000 ft for an airplane whose height is an uncorrected pressure altitude (pressure_altitude: the two are not on one reference); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
  */
 fun Engine.trafficMarks(ownFt: Double? = null, planes: List<EngineContract.TrafficMarksInputPlanesItem>, own: EngineContract.TrafficMarksInputOwn? = null): Result<List<EngineContract.TrafficMarksAnswerItem>> =
     rule("traffic_marks", EngineContract.TrafficMarksInput(ownFt = ownFt, planes = planes, own = own))
@@ -1855,10 +2041,22 @@ fun Engine.trafficReach(): Result<EngineContract.TrafficReachAnswer> =
     rule("traffic_reach", EngineContract.TrafficReachInput())
 
 /**
+ * An EDR, (m^2/s^3)^1/3, as AWC's turbulence word for an aircraft weight class (light < 15,500 lb, medium, heavy; aviationweather.gov GFA help's thresholds): the highest it reaches of Light, Moderate, Severe, Extreme; null under light's.
+ */
+fun Engine.turbulenceCategory(edr: Double, weightClass: String): Result<String?> =
+    rule("turbulence_category", EngineContract.TurbulenceCategoryInput(edr = edr, weightClass = weightClass))
+
+/**
  * Whether own ship moves at flying speed.
  */
 fun Engine.underway(speedKt: Double? = null): Result<Boolean> =
     rule("underway", EngineContract.UnderwayInput(speedKt = speedKt))
+
+/**
+ * Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.
+ */
+fun Engine.velocityTrack(velocities: List<EngineContract.VelocityTrackInputVelocitiesItem>): Result<List<EngineContract.VelocityTrackAnswerItem>> =
+    rule("velocity_track", EngineContract.VelocityTrackInput(velocities = velocities))
 
 /**
  * The vertical speed in feet a minute from GPS altitudes: the least-squares slope of the last 10 seconds of samples; null with fewer than three of them or under 2 seconds.
@@ -1903,28 +2101,34 @@ fun Engine.vorCheckLimitDeg(kind: String): Result<Double> =
     rule("vor_check_limit_deg", EngineContract.VorCheckLimitDegInput(kind = kind))
 
 /**
- * When a weather report stops counting, Unix seconds UTC, or null where nothing says: a routine METAR an hour after it was observed (AIM 7-1-28, "METAR-hourly"; FMH-1 ch. 2), a SPECI when the next routine report is due, a TAF, the FB winds or an advisory at the end of the valid time its header gives (AC 00-45H).
+ * When a weather report stops counting, Unix seconds UTC, or null where nothing says: a routine METAR an hour after it was observed (AIM 7-1-28, "METAR-hourly"; FMH-1 ch. 2), a SPECI when the next routine report is due, a TAF, the FB winds or an advisory at the end of the valid time its header gives (FAA-H-8083-28B 27.4.1, Table 27-2, 26.2-26.3).
  */
 fun Engine.weatherExpiresAt(product: String, observed: Double? = null, lastRoutine: Double? = null, validTo: Double? = null): Result<Double?> =
     rule("weather_expires_at", EngineContract.WeatherExpiresAtInput(product = product, observed = observed, lastRoutine = lastRoutine, validTo = validTo))
 
 /**
- * To when a stored copy may be served when later fetches fail, by its product's own validity (AC 00-45H): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
+ * To when a stored copy may be served when later fetches fail, by its product's own validity (FAA-H-8083-28B 24.4.1, 26.2-26.3, 27.4.1): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
  */
 fun Engine.weatherHeldUntil(product: String, data: JsonElement? = null, fetched: Double): Result<Double?> =
     rule("weather_held_until", EngineContract.WeatherHeldUntilInput(product = product, data = data, fetched = fetched))
 
 /**
- * Whether a weather report still counts at now: before it expires (weather_expires_at), and, for a forecast, from when its valid time starts, since a TAF's later hours are not today's weather (AC 00-45H).
+ * Whether a weather report still counts at now: before it expires (weather_expires_at), and, for a forecast, from when its valid time starts, since a TAF's later hours are not today's weather (FAA-H-8083-28B 27.4.1).
  */
 fun Engine.weatherInForce(product: String, now: Double, observed: Double? = null, lastRoutine: Double? = null, validFrom: Double? = null, validTo: Double? = null): Result<Boolean> =
     rule("weather_in_force", EngineContract.WeatherInForceInput(product = product, now = now, observed = observed, lastRoutine = lastRoutine, validFrom = validFrom, validTo = validTo))
 
 /**
- * What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there. A caution, never a limit; each change keyed so an app tells it once.
+ * What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there; and either with a ceiling of unknown height now (OVC///) where it had a known one, a ceiling not known to be high enough (14 CFR 1.1). A caution, never a limit; each change keyed so an app tells it once.
  */
 fun Engine.weatherWorse(then: EngineContract.WeatherReading, now: EngineContract.WeatherReading): Result<EngineContract.WeatherWorseAnswer> =
     rule("weather_worse", EngineContract.WeatherWorseInput(then = then, now = now))
+
+/**
+ * The wind and temperature at an altitude and a time from the winds-aloft grid's columns at a place, one column an hour (AWC's GFA levels, an altitude MSL under 18,000 ft and a flight level from FL180, 14 CFR 71.33; each level's wind as its east and north parts, kt): each hour's column read at the altitude as a station's levels are (the direction the short way round, the speed and temperature linear in altitude, clamped past the ends, the temperature keeping its difference from a standard day; FAA-H-8083-28B 27.2.1.1.1), then the two hours round the time weighed by how near each is, the nearest hour's outside them. A level with no wind (under the ground) is left out. Null where the grid has none. A list for "altitudes".
+ */
+fun Engine.windAloftAt(hours: List<EngineContract.WindAloftAtInputHoursItem>, atS: Double, altitudeFt: Double? = null, altitudes: List<Double>? = null): Result<JsonElement> =
+    rule("wind_aloft_at", EngineContract.WindAloftAtInput(hours = hours, atS = atS, altitudeFt = altitudeFt, altitudes = altitudes))
 
 /**
  * Whether a field's wind earns its arrow on the map (10 kt or more, or gusting: the owner's pick, 2026-11-10) and whether it warns: its least crosswind more than the airplane's maximum demonstrated crosswind (the POH's, 14 CFR 23.233(a) before amendment 23-64). Never over with no airplane or no figure.
@@ -1939,7 +2143,7 @@ fun Engine.windAtAltitude(levels: Map<String, EngineContract.WindAtAltitudeInput
     rule("wind_at_altitude", EngineContract.WindAtAltitudeInput(levels = levels, altitudeFt = altitudeFt, altitudes = altitudes))
 
 /**
- * A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28A, 25.2.3.4.5).
+ * A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm, under 3 kt (FAA-H-8083-28B, 25.2.3.4.5; the NWS's wind barb table, weather.gov/hfo/windbarbinfo, 0-2 kt rounded to 0).
  */
 fun Engine.windBarb(speedKt: Double): Result<EngineContract.WindBarbAnswer> =
     rule("wind_barb", EngineContract.WindBarbInput(speedKt = speedKt))

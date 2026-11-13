@@ -6,8 +6,8 @@ import SwiftUI
 /// bands in the sectional's airspace blue and magenta, the altitude flown
 /// across them in the tint, and the previewed altitude as a dashed rule.
 /// The ground the engine finds within 1,000 ft of the preview is drawn in
-/// the chart's caution amber and within 100 ft (or above it) in its
-/// warning red, ForeFlight's display defaults (`profile_clearance`). Each
+/// the chart's caution amber and within 500 ft (or above it) in its
+/// warning red, 14 CFR 91.119(c)'s least height (`profile_clearance`). Each
 /// waypoint is a mark a tap opens (`onWaypoint`), the nearest within
 /// 22 pt either side, a 44 pt target (HIG Buttons). Swift Charts gives
 /// VoiceOver its Audio Graph; every figure is also in the rows (HIG
@@ -52,7 +52,7 @@ struct ProfileChart: View {
                 }
                 if let clearance {
                     band(profile, from: clearance.yellowFromFt, colour: WingtipColor.Chart.caution, name: "Within 1,000 ft")
-                    band(profile, from: clearance.redFromFt, colour: WingtipColor.Chart.warning, name: "Within 100 ft")
+                    band(profile, from: clearance.redFromFt, colour: WingtipColor.Chart.warning, name: "Within 500 ft")
                 }
                 ForEach(Array(flown.enumerated()), id: \.offset) { _, point in
                     LineMark(x: .value("Along", point.nm), y: .value("Altitude", point.ft), series: .value("Line", "Altitude"))

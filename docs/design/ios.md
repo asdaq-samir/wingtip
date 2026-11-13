@@ -78,6 +78,11 @@ Companion docs:
     capsule, Map, My Position and Ask stacked in it with a hairline
     between, each 48 points (`size.map-button`) as Maps' are, in place
     of three separate 44-point circles (`MapButtons`).
+  - **Where (owner, 2026-11-11):** the group rides the sheet's top at
+    the right, 24 points over it, just above the search row, following
+    the sheet between its detents and under a finger, and fades out as
+    the sheet goes on to full (`MapButtonsDock`; rules.md §7). Beside the
+    iPad's sidebar it stays at the top right.
   - Rows, cards and figures sit on solid grounds.
   - The clear variant only goes over the chart. If the chart under it
     is bright, add a 35% dimming layer ([HIG Materials][hig-materials]).
@@ -145,7 +150,8 @@ view without dismissing the sheet").
 - **Code.** `presentationDetents([pill, .half, .large], selection: $detent)`,
   with `presentationBackgroundInteraction(.enabled(upThrough: .half))`
   and a grabber (`presentationDragIndicator(.visible)`).
-  - `pill` is `.height(132)` today (`RootView.pill`).
+  - `pill` is `.height(132)` for the page's first row plus the page
+    dots' 28-point row (`RootView.pill`, `PageDots.row`).
   - **Half height (owner decision 2026-11-10).** `.half` is
     `.fraction(0.45)` (`Navigation/Detents.swift`), 45% of the screen as
     Maps' half covers it, in place of the stock `.medium`'s 53.5% (the
@@ -158,6 +164,37 @@ view without dismissing the sheet").
     (`sheetAtPill`, PlanSheet).
   - The HIG asks for a grabber on a resizable sheet. Tapping it cycles
     through the detents, and VoiceOver reads it ([HIG Sheets][hig-sheets]).
+- **Two pages, Search and FPL (owner decision 2026-11-11, the
+  carousel; docs/design/rules.md).** The sheet's content is SwiftUI's own
+  pager, `TabView` with `.tabViewStyle(.page(indexDisplayMode: .never))`
+  (`SheetPager`), so the swipe is the system's: sideways it turns the
+  page and never moves the sheet; up and down stays the sheet's drag and
+  each page's List keeps its own scroll.
+  - **Search** is the one search in the bar (field, microphone, account)
+    over Favorites, Recents, Find Nearby and Nearest (`BrowseSections`).
+  - **FPL** is the plan (`PlanView`) with the bar hidden, so its first
+    row is the route's own; with no route, the route box empty (the
+    owner, 2026-11-11: "We don't need plan a flight either"), its glass
+    close a level back: to the field's card Fly Here came from, else to
+    Search (`Navigator.closeEmptyRoute`, the web's clearRoute). The
+    figures strip is the foot on FPL alone.
+  - Fly Here (to the same field again too), Depart From, Add as Stop and
+    the map's Direct To land on FPL; a card opened over Search (Find
+    Nearby's Stops) closes back to Search; leaving Search puts the search
+    and its keyboard away.
+  - **The dots** are UIKit's stock `UIPageControl` under the grabber
+    (`PageDots`; SwiftUI has no page control of its own in the iOS 27.2
+    SDK, only TabView's dots at its foot): a tap moves the page, and
+    VoiceOver hears "Page 1 of 2, Search". Their row is 28 points and
+    so is the control: its taps stay out of the system grabber's strip
+    above and the bar below (a 44-point frame there took the grabber's
+    drags; the iPhone stock audit, 2026-11-12). It spans the row's width
+    instead, where nothing else is, so nothing grows for the hit area.
+  - The page is `Navigator.sheetPage`: every "show the plan" (a route
+    made, Fly Here, a link, a saved flight, `-screen fpl`) turns it to
+    FPL, the search coming up (Add a Stop, ⌘F, the microphone) turns it
+    to Search, and clearing the route leaves it. A card opens over both
+    pages and its close comes back to the one it was opened on.
 - **Content changes with the detent.** The owner checked Apple Maps on
   2026-11-09:
   - A place card shows its header photo only at the large detent.
@@ -296,6 +333,16 @@ view without dismissing the sheet").
 - **No assumed airplane.** A figure that needs an airplane (ETE, fuel,
   the performance) shows an em dash and a "Pick an Airplane" row until
   one is picked. It never shows a default type's numbers.
+- **No signal says so, in place.** What the iPhone answers from its
+  own packs says it: "From this iPhone, without weather" over Nearest's
+  and Emergency's fields, "No connection: airports from the chart data
+  on this iPhone only" over the search. An edit the planner must make
+  (Direct To, a diversion) is not half made: the route is put back and
+  "Not changed: no connection" said where it was asked. A kept answer
+  says its age (`KeptAgeLine`); a stale weather mark is greyed with its
+  age by the ident. Never a spinner with nothing asked: with no GPS fix
+  a list says so after ten seconds and what to do (docs/NATIVE.md, "In
+  the air with no signal").
 
 ---
 
@@ -652,9 +699,10 @@ figures anywhere depend on a default type.
      (owner's rule; positions unchanged).
 2. **The figure strip:** To, Dist, ETE and Fuel, in `type.figure`
    digits, from the engine. The fuel is a dash without an airplane.
-3. **Cruise:** the altitude field in FL-045 form; the Profile's
-   Altitude Advisor is where the cruise is chosen (see
-   [The profile](#the-profile-foreflights-way)).
+3. **Cruise:** the altitude in FL-045 form, a button that opens the
+   Profile: its slider and Altitude Advisor are the one place the cruise
+   is set (see [The profile](#the-profile-foreflights-way)). There is no
+   typed cruise field: one control, one source of truth (2026-11-10).
 4. **Route options**, after Routes: up to four cards (Direct, Fastest,
    Most Filed, Economical). Each shows its time, distance and fuel and
    has its own **Use** button, as Maps' route cards each carry Go.
@@ -676,7 +724,8 @@ figures anywhere depend on a default type.
 navigation verbs in order:
 
 1. Direct To
-2. Set Altitude…
+2. Set Altitude…, which opens the Profile on that waypoint's Start At /
+   Cross At popover (no typed alert of its own)
 3. Hold Here…
 4. Add a Stop After
 5. Remove, last and destructive
@@ -741,8 +790,10 @@ view model (`ProfileModel`), every figure the engine's (`ProfileRules`:
 - **A waypoint.** A tap within 22 pt of one (a 44 pt target) opens a
   `.popover`, kept a popover on the iPhone
   (`presentationCompactAdaptation(.popover)`): the altitude as a menu
-  `Picker`, **Start At** or **Cross At** as a segmented control, Set and
-  Reset. VoiceOver reaches each waypoint as an accessibility action of
+  `Picker`, or typed in feet for an altitude off the engine's steps (a
+  field's elevation), **Start At** or **Cross At** as a segmented
+  control, Set and Reset. A stop's "Set Altitude…" opens the Profile on
+  this popover; it is the only way a point's altitude is set. VoiceOver reaches each waypoint as an accessibility action of
   the chart ("Altitude at KLVK").
 - **The Altitude Advisor.** The cruise is chosen from a `List` section:
   one row per altitude, highest first, with time, fuel and the head or
@@ -813,6 +864,23 @@ nautical miles". Swift Charts gives Audio Graphs ([HIG Charts][hig-charts]).
 ---
 
 ## 5. Brief, Go / No-Go and Ready to Fly
+
+**The alternate, under IFR (2026-11-10, as the web's).** The plan's
+Route section has an **Alternate** row after the destination: the one
+filed (marked "Under minimums" in the problem ink where it is), or "Add
+Alternate" (amber, "Required", where the destination needs one). It
+opens the alternate's page, the same `List` sections the Brief shows
+after its forecast: the destination's check (14 CFR 91.169(b), the
+engine's `ifr_alternate_destination` over the window `ifr_alternate_window`
+gives), the one filed against its minimums at the ETA there (91.169(c),
+`ifr_alternate_check`) with its published minimums' page and Take It
+Off, and the fields that will do, each filed with a tap. All of it is the
+planner's `/api/alternate`, its reasons shown in the engine's words. The
+filed alternate goes to the nav log as `alternate` (the leg on to it,
+`navlog_alternate_leg`, is the nav log's Alternate section and its fuel
+is in the totals, 91.167(a)(2)) and to the Go / No-Go with `rules=ifr`.
+With no airplane the section asks for one (no stock cruise speed), and
+with no nav log yet it says it waits for the ETA.
 
 **Follow:**
 
@@ -1026,7 +1094,9 @@ more, or gusting); it is red only where the field's `least_crosswind` is
 more than the picked airplane's demonstrated crosswind (its POH's, on
 `/api/aircraft-profiles`), and never red with no airplane or no figure. An
 amber ↓ marks a plan's field whose TAF for the pilot's time there is worse
-than its METAR now (`weather_worse`). The weather comes on the map's own
+than its METAR now (`weather_worse`); under IFR the alternates (the one
+filed and those offered) wear it too, their TAF at the ETA there (the
+planner's `/api/alternate`) against the map's own METAR of the field. The weather comes on the map's own
 `/api/airports/in-view` answer (`weather`), the same for every app; the
 shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
 screen reader says each field's category and wind ("KJVL, IFR, wind 220
@@ -1068,7 +1138,12 @@ third):**
    tap, and VoiceOver says them in full.
 4. **The nearest fields**, a `List`. Each row is ident, distance and
    bearing, the longest runway, and the flight category. Each row has
-   one filled **Direct To** button, the row's primary action.
+   one filled **Direct To** button, the row's primary action. With no
+   planner the fields are the cycle packs' (`PackFields`), ranked by the
+   engine, under one row: "From this iPhone, without weather". A Direct
+   To with no connection is not made, and "Not changed: no connection"
+   is said under the list; the rows keep the engine's heading and
+   distance. With no fix the section says so, never a spinner forever.
 5. **The checklist** for the airplane picked. With none picked it is
    the generic one, labelled as such: never a type assumed.
 
@@ -1166,7 +1241,7 @@ draft from the auto-logbook is pre-filled and says so.
 3. **Trends:** approaches flown, landings and debrief scores, each with
    an up or down arrow and one line of coaching words. A trend needs
    enough flights before it shows; until then it says how many more.
-4. **Practice:** quizzes, mock oral and drills, as rows with badges.
+4. **Practice:** quizzes and drills, as rows with badges.
 5. **Debriefs:** past flights, each opening its debrief.
 6. **Instructor:** the CFI invited, endorsements, and the 61.93
    solo cross-country review.
@@ -1364,7 +1439,7 @@ people take an explicit action to save", [HIG File management][hig-files]).
 
 ---
 
-## 14. The welcome / first run
+## 14. The first run
 
 **Follow:**
 
@@ -1377,17 +1452,27 @@ people take an explicit action to save", [HIG File management][hig-files]).
 - **HIG Alerts:** "Avoid showing an alert when your app starts"
   ([HIG Alerts][hig-alerts]).
 
+**The one exception: the planning-aid notice.** The very first launch
+puts up one stock alert, "A Planning Aid, Not for Navigation", with the
+planning-aid words and the listing's not-for-navigation paragraph and
+one button, I Understand (`Navigation/PlanningAidNotice`). It is the
+pilot-safety position the terms take and what App Review 5.1.5 looks for
+in a moving-map app, so it is said before anything else, once, and
+About keeps the words.
+
 **Structure.**
 
 1. **The launch screen** is the brand's ground (`color.brand.launch`,
    or `launch-night`) with the mark only.
-2. **The map** opens at once on the chart. The sheet is at medium, with
-   one welcome card in place of the tab content:
-   - the title "Plan your first flight"
-   - one line
-   - one filled button, **Search an Airport**, which focuses the one
-     search
-   - "Not Now" below, plain
+2. **The map** opens at once on the chart, the sheet at medium. With
+   no route, the first time, "Your First Flight" is the first section of
+   both pages (`FirstFlightSection`, the web's FirstFlight card; the
+   owner, 2026-11-11: "We don't need the welcome"): one line, a
+   Destination field with the planner's airport search under it, Plan
+   It, the three steps (Route, Nav Log, Brief) and Not Now. A List
+   Section, not TipKit: a tip holds no text field. Planned, it is gone
+   for good and the nav log opens over FPL; Setup > Guide > Show First
+   Flight Again brings it back.
 3. **Asks come only when needed.**
    - Location is asked the first time the pilot taps the position
      button or a "Nearest" figure.
@@ -1618,6 +1703,17 @@ behaviour; only the content, its order and the brand tokens are ours.
 | Haptics off under Reduce Motion | The system's haptics switch alone decides; a tap is not motion |
 | `SaveLabel`'s drawn-on checkmark | The button's own words ("Saving…"), the saved flight showing in the list |
 
+**Replaced (2026-11-12, the iPhone stock audit).**
+
+| Was hand-built | Now |
+|---|---|
+| `ActivityView` (`UIActivityViewController` in a sheet) | `ShareLink`; a file it sends is made when the share sheet asks for it (`SharedFile`, a `FileRepresentation`), and a saved flight's link by the gateway likewise (`SharedLink`). Save as File below iOS 27 is a `ShareLink` of the file (`SaveFileLink`) |
+| `TextBadge`'s drawn capsules (NOTAM Active and Inactive, a NOTAM's mark, Best Wind, Longest) | A coloured stock `Label` (`StatusLabel`), as the status capsules above |
+| `onTapGesture` with a hand-added `.isButton` (the logbook's row, the figures strip) | `Button` with `.buttonStyle(.plain)` |
+| The NOTAMs header's chevron | The first three rows, then a `DisclosureGroup` of all of them by kind |
+| The Watch's stopwatch redrawn each second (`TimelineView`) | `Text(timerInterval:pauseTime:countsDown:showsHours:)`, counted by the system |
+| The airport diagram's own pinch and pan over a picture of the page (`DiagramOwnShip`) | PDFKit's `PDFView` of the FAA's PDF, vector-sharp at any zoom, own ship a `PDFAnnotation` on the page (`DiagramPDFView`). The other charts stay in `UIScrollView` (`PagesScrollView`): the planner serves them as page pictures, not PDFs |
+
 The altitude is picked in the profile, ForeFlight's way (see
 [The profile](#the-profile-foreflights-way)): the system `Slider` turned
 upright beside the chart, the system `.popover` on a waypoint, and a
@@ -1629,7 +1725,7 @@ are gone.
 | Component | Why there is no stock one |
 |---|---|
 | `RibbonLine` (the strip's route schematic) | A transit-map line of the route's points with the airplane riding it; no system control draws one |
-| `DiagramOwnShip`, `HoldDiagram`, the runway sketch (`Canvas`) | Aviation diagrams: the airport diagram with own ship, a hold's entry sectors, the runways' layout. Swift Charts has no geometry for them |
+| `HoldDiagram`, the runway sketch (`Canvas`) | Aviation diagrams: a hold's entry sectors, the runways' layout. Swift Charts has no geometry for them |
 | `DepartureWindowSection`'s hour tiles | An hourly strip of verdicts, as Weather's hourly forecast; SwiftUI has no hourly-forecast control |
 | Checklist ticks (checklists, emergency, passenger briefing) | iOS has no checkbox (`ToggleStyle.checkbox` is macOS only); the circle-and-tick row is what Reminders draws by hand too |
 | `FactsRow` | Maps' facts row (a caption over each value, four across) has no public SwiftUI view; it is a `Grid`/`HStack` of `Text` |
@@ -1649,7 +1745,7 @@ The iOS speed audit measured three things; what changed for each:
     is missing, come at once (`OnDeviceAsk.answer`).
   - Apple's model is warmed (`LanguageModelSession.prewarm()`, its name
     in the iOS 27.2 SDK) when the one search takes focus and when Ask
-    opens, unless the planner will answer (`AskRouter.prewarm`).
+    opens (`AskRouter.prewarm`).
   - The answer streams (`streamResponse`). A sentence is shown once it
     is finished and has passed the same id and number checks as the
     whole answer, so every figure is still the engine's from the first

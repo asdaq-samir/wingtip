@@ -1,0 +1,35 @@
+{
+  "x-call": "wingtip_flight::calls::filed",
+  "description": "Item 19's endurance in whole minutes: the fuel aboard at the cruise burn, to the minute below (AIM Appendix 4); null where the burn is not a positive figure.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FiledEnduranceInput",
+      "type": "object",
+      "properties": {
+        "fuel_gal": {
+          "type": "number"
+        },
+        "burn_gph": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "fuel_gal",
+        "burn_gph"
+      ]
+    },
+    "answer": {
+      "title": "FiledEnduranceAnswer",
+      "type": [
+        "integer",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -46,6 +46,7 @@ from pathlib import Path
 
 import numpy as np
 
+from .atomic import atomic_path
 from .single_flight import once
 
 log = logging.getLogger(__name__)
@@ -399,7 +400,9 @@ def write(
     ident (airport_sizes), gives the airports table its SIZE column."""
     import shapely
 
-    sources = {"airspace": source_key(shp_path)}
+    from . import sua
+
+    sources = {"airspace": source_key(shp_path), "sua": sua.FIELDS}
     if urban_path is not None:
         sources["urban"] = source_key(urban_path)
     meta = {
@@ -415,10 +418,8 @@ def write(
     for layer, has_attr in (("airspace", True), ("sua", True), ("urban", False)):
         names += [f"{layer}.box", f"{layer}.off", f"{layer}.wkb"] + ([f"{layer}.attr"] if has_attr else [])
     names += list(tables)
-    pack_dir.mkdir(parents=True, exist_ok=True)
     path = pack_dir / f"wingtip-{cycle}.pack"
-    part = path.with_suffix(".part")
-    with _BUILD_LOCK, open(part, "w+b") as f:
+    with _BUILD_LOCK, atomic_path(path) as part, open(part, "w+b") as f:
         w = _Writer(f, names)
         w.put("meta", json.dumps(meta, separators=(",", ":")).encode())
         _layer(w, "airspace", *_airspace(shp_path))
@@ -433,7 +434,6 @@ def write(
         for name, (file, columns) in tables.items():
             w.put(name, _table(file, columns, sizes if name == "airports" else None))
         w.finish(cycle, time.time())
-    part.replace(path)
     for old in pack_dir.glob("wingtip-*.pack"):
         if old != path:
             old.unlink(missing_ok=True)
@@ -442,9 +442,10 @@ def write(
 
 def ensure(cache_dir, pack_dir=None) -> Path | None:
     """The pack built where the one on disk is not of the files the
-    planner holds now: a new NASR cycle, a new airspace file or a new
-    urban areas file. None where it already is."""
-    from . import airspace, congested
+    planner holds now: a new NASR cycle, a new airspace file, a new urban
+    areas file or special-use areas read with other fields (sua.FIELDS).
+    None where it already is."""
+    from . import airspace, congested, sua
 
     pack = current(pack_dir)
     shp_path = airspace.ensure_class_airspace_shapefile(cache_dir)
@@ -453,6 +454,7 @@ def ensure(cache_dir, pack_dir=None) -> Path | None:
         and pack.cycle == cycle_of(cache_dir)
         and matches(pack, "airspace", shp_path)
         and matches(pack, "urban", congested.URBAN_AREAS_PATH)
+        and (pack.meta.get("sources") or {}).get("sua") == sua.FIELDS
     ):
         return None
     return build(cache_dir, pack_dir)
@@ -720,6 +722,7 @@ def write_phone(pack: Pack, out_dir: Path, veil: list[dict]) -> dict:
         # The ground grid the terrain was read from: a new one (its voids
         # read as no height, 2026-11-02) builds the phones' packs again.
         "ground_grid": ground_grid_version(),
+        "sources": pack.meta.get("sources"),
         "regions": [],
     }
     for region in sorted(regions):
@@ -880,21 +883,16 @@ def ground_grid_version() -> str | None:
 
 
 def ensure_phone(pack_dir=None) -> dict | None:
-    """The phones' packs built from the planner's pack where they are not
-    of its cycle; None where they already are, or there is no pack."""
+    """The phones' packs built anew where not of the planner's pack's cycle
+    and sources (sua.FIELDS too); None where they are, or there is no pack."""
     from . import airspace_at
 
     pack = current(pack_dir)
     if pack is None:
         return None
-    index = phone_index(pack_dir)
-    if (
-        index is not None
-        and index.get("cycle") == pack.cycle
-        and index.get("tolerance_deg") == PHONE_TOLERANCE_DEG
-        and index.get("terrain_pool") == TERRAIN_POOL
-        and index.get("ground_grid") == ground_grid_version()
-    ):
+    index = phone_index(pack_dir) or {}
+    wanted = {"cycle": pack.cycle, "tolerance_deg": PHONE_TOLERANCE_DEG, "terrain_pool": TERRAIN_POOL, "ground_grid": ground_grid_version()}
+    if index and all(index.get(k) == v for k, v in {**wanted, "sources": pack.meta.get("sources")}.items()):
         return None
     started = time.monotonic()
     index = write_phone(pack, Path(pack_dir or PACK_DIR) / "phone", list(airspace_at.mode_c_airports()))

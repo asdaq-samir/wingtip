@@ -2,24 +2,24 @@ import type { AirspaceClass } from "../../preferences";
 import { BLUE, MAGENTA } from "../../useAirspace";
 import { CHART } from "../../tokens";
 
-// Apart from icons.ts, which holds every map mark: Nearest's rows draw
+// Apart from the map's mark pictures (markPictures): Nearest's rows draw
 // this one too, and so would have kept all of them in the page's first
 // script.
 
-/** Anything interpolated into the markup here or in icons.ts is a chart colour or an
+/** Anything interpolated into the markup here or in the map's marks is a chart colour or an
  *  airport ident, but it comes from the planner rather than from here,
  *  so it is escaped like any other untrusted text. */
 export function text(value: string | number): string {
   return String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
 
-/** An airport mark's symbol across (airportMarkIcon). */
+/** An airport mark's symbol across (markPictures' fieldMarkPicture). */
 export const AIRPORT_MARK = 26;
 
 /** The sectional's ink for a mark whose class is not known yet. */
 const UNKNOWN_GREY = CHART.fieldUnknown;
 
-/** The mark itself, as an SVG's markup (airportMarkIcon's, without the
+/** The mark itself, as an SVG's markup (the map's field marks, without the
  *  ident beside it): the same symbol off the map, as Nearest's rows lead
  *  with it. */
 export function airportMarkSvg(
@@ -130,13 +130,3 @@ export function sectionalAirportSvg(
 /** The halo's stroke, px: some 4.5 pt, to stay visible in sunlight (the
  *  owner's pick, 2026-11-10). */
 const HALO_WIDTH = 4.5;
-
-/** ForeFlight's dot in place of the chart's symbol (the Map card's
- *  Airport Weather "Dot"): a disc in the field's flight category's colour,
- *  cased in white. */
-export function weatherDotSvg(weather: string): string {
-  return (
-    `<svg width="22" height="22" viewBox="-11 -11 22 22"><circle data-weather="" r="8" fill="${text(weather)}"` +
-    ` stroke="${CHART.casing}" stroke-width="2.5"/></svg>`
-  );
-}

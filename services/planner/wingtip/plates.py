@@ -13,6 +13,9 @@ and drawn black on clear, its white let through to the chart under it. A
 plate without a georeference is not placed: a picture put a mile out
 would be worse than none.
 
+The whole page is kept beside it (wingtip.plate_page), for the map to lay
+the plate on the chart as ForeFlight does, its plan view in place.
+
 A reference to fly the dry run and the route against, not a chart to
 navigate by: the plate itself, in the d-TPP, is that.
 """
@@ -22,7 +25,6 @@ from __future__ import annotations
 import io
 import json
 import logging
-import os
 import re
 import threading
 from datetime import date
@@ -34,7 +36,8 @@ import pypdfium2.raw as pdfium_c
 import pyproj
 from PIL import Image
 
-from . import procedures, publications
+from . import plate_page, procedures, publications
+from .atomic import atomic_path
 
 log = logging.getLogger(__name__)
 
@@ -113,13 +116,16 @@ class Georeference:
         ground = np.array([self._to.transform(lon, lat) for lat, lon in zip(gpts[::2], gpts[1::2])])
         fitted, *_ = np.linalg.lstsq(page, ground, rcond=None)
         self._page_to_ground = np.vstack([fitted.T, [0.0, 0.0, 1.0]])
-        self._ground_to_page = np.linalg.inv(self._page_to_ground)
+        self.ground_to_page = np.linalg.inv(self._page_to_ground)
+        # Kept for the engine's plate_page_point (plate_page.georeference):
+        # the projection's parameters and the very inverse page_of works.
+        self.projection = {k: projection[k] for k in LCC_PARAMETERS}
 
     def page_of(self, lat: float, lon: float) -> tuple:
         """Where on the page a point on the ground is drawn, in points
         from the page's bottom left."""
         x, y = self._to.transform(lon, lat)
-        px, py, _ = self._ground_to_page @ (x, y, 1.0)
+        px, py, _ = self.ground_to_page @ (x, y, 1.0)
         return float(px), float(py)
 
     def ground_of(self, x: float, y: float) -> tuple:
@@ -233,11 +239,11 @@ def corner_boxes(across: list, down: list, box: tuple, airport: tuple) -> list:
 
 
 def _plan_view(pdf: bytes, fixes: dict, airport: tuple) -> tuple | None:
-    """The plate's plan view drawn black on clear (PNG bytes), and its
-    corners on the ground {south, west, north, east, fixes: the
-    approach's fixes inside it}; None where the plate has no
-    georeference, or its airport (`airport`, (lat, lon)) would be off
-    the page."""
+    """The plate's plan view drawn black on clear (PNG bytes), its corners
+    on the ground {south, west, north, east, fixes: the approach's fixes
+    inside it, page: the whole page's corners (plate_page)}, and the whole
+    page (PNG bytes, or None); None where the plate has no georeference,
+    or its airport (`airport`, (lat, lon)) would be off the page."""
     geo = georeference_of(pdf)
     if geo is None:
         return None
@@ -255,6 +261,7 @@ def _plan_view(pdf: bytes, fixes: dict, airport: tuple) -> tuple | None:
             left, bottom, right, top = plan_view_box(across, down, (x, y), (width, height))
             others = corner_boxes(across, down, (left, bottom, right, top), (x, y))
             image = page.render(scale=PLATE_SCALE, grayscale=True).to_pil().convert("L")
+            turned = page.get_rotation() != 0
         finally:
             document.close()
     # Inside the box's own lines, a point in.
@@ -282,7 +289,9 @@ def _plan_view(pdf: bytes, fixes: dict, airport: tuple) -> tuple | None:
     north, east = geo.ground_of(right - 1, top - 1)
     drawn = {f: geo.page_of(*at) for f, at in fixes.items()}
     inside = [f for f, (fx, fy) in drawn.items() if left < fx < right and bottom < fy < top]
-    return out.getvalue(), {"south": south, "west": west, "north": north, "east": east, "fixes": inside}
+    whole = None if turned else plate_page.page_picture(image, geo, (width, height), (left, bottom, right, top), others)
+    corners = {"south": south, "west": west, "north": north, "east": east, "fixes": inside, "page": whole and whole[1]}
+    return out.getvalue(), corners, whole and whole[0]
 
 
 def circling_of(pdf: bytes) -> bool:
@@ -316,18 +325,21 @@ def _fixes_of(ident: str, procedure: str) -> dict:
 
 def _kept(meta: Path) -> dict | None:
     """What plate_overlay kept for a plate this cycle, or None to make it
-    (again): never made, or not placed by an older way of placing."""
+    (again): never made, not placed by an older way of placing, or placed
+    before the whole page, and then its georeference, was kept with it."""
     if not meta.exists():
         return None
     kept = json.loads(meta.read_text())
-    return kept if kept["placed"] or kept.get("fit") == PLACING_VERSION else None
+    placed = kept["placed"] and "page" in kept and (kept["page"] is None or "georeference" in kept["page"])
+    return kept if placed or (not kept["placed"] and kept.get("fit") == PLACING_VERSION) else None
 
 
 def plate_overlay(ident: str, procedure: str, on: date | None = None) -> dict | None:
     """An approach's plate's plan view placed on the map, made once a
     cycle and kept: {"cycle", "name" (the plate's title), "south",
     "west", "north", "east", "circling" (circling_of), "png" (its
-    picture's path on disk)}; None
+    picture's path on disk), "page" (the whole page's corners and size,
+    plate_page, or None), "page_png" (its picture's path)}; None
     where the field has no such plate, the plate cannot be placed, or the
     FAA cannot be reached (nothing kept then, so the next ask tries
     again)."""
@@ -344,24 +356,14 @@ def plate_overlay(ident: str, procedure: str, on: date | None = None) -> dict | 
         return None
     stem = f"{Path(source[2]).stem}-{summary['id']}"
     folder = publications.CACHE_DIR / "plates" / cycle
-    meta, png = folder / f"{stem}.json", folder / f"{stem}.png"
+    meta, png, page_png = folder / f"{stem}.json", folder / f"{stem}.png", folder / f"{stem}-page.png"
     with _LOCK:
         lock = _MAKING.setdefault(meta, threading.Lock())
     with lock:
         # A plate kept as not placed is None, as when it was made: its
-        # meta has no corners to answer with. One kept before circling
-        # was read has it read now, from the PDF kept on disk.
+        # meta has no corners to answer with.
         if (kept := _kept(meta)) is not None:
-            if kept["placed"] and "circling" not in kept:
-                try:
-                    pdf = publications._pdf_of(*source)
-                except publications.FaaUnreachable:
-                    pdf = None
-                if pdf is not None:
-                    kept["circling"] = circling_of(pdf)
-                    meta.with_name(meta.name + ".part").write_text(json.dumps(kept))
-                    os.replace(meta.with_name(meta.name + ".part"), meta)
-            return {"circling": False, **kept, "png": png} if kept["placed"] else None
+            return {**kept, "png": png, "page_png": page_png} if kept["placed"] else None
         try:
             pdf = publications._pdf_of(*source)
         except publications.FaaUnreachable:
@@ -383,12 +385,14 @@ def plate_overlay(ident: str, procedure: str, on: date | None = None) -> dict | 
         }
         folder.mkdir(parents=True, exist_ok=True)
         if made is not None:
-            picture, corners = made
-            png.with_name(png.name + ".part").write_bytes(picture)
-            os.replace(png.with_name(png.name + ".part"), png)
+            picture, corners, page_picture = made
+            for path, data in ((png, picture), (page_png, page_picture)):
+                if data is not None:
+                    with atomic_path(path) as part:
+                        part.write_bytes(data)
             found.update(corners)
         # Kept either way: a plate that does not place is not tried again
         # this cycle, until the placing changes.
-        meta.with_name(meta.name + ".part").write_text(json.dumps(found))
-        os.replace(meta.with_name(meta.name + ".part"), meta)
-    return {**found, "png": png} if found["placed"] else None
+        with atomic_path(meta) as part:
+            part.write_text(json.dumps(found))
+    return {**found, "png": png, "page_png": page_png} if found["placed"] else None

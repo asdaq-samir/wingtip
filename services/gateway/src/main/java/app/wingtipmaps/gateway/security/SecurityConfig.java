@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.security;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.controller.UpstreamRoutes;
 import app.wingtipmaps.gateway.service.PilotService;
 import jakarta.servlet.Filter;
@@ -7,7 +8,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,9 +26,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfFilter;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.savedrequest.NullRequestCache;
@@ -71,12 +68,10 @@ public class SecurityConfig {
     // connect-src too, as MapLibre fetches a raster tile to read its caching headers.
     private static final String WEATHER_TILES = "https://mesonet.agron.iastate.edu https://nowcoast.noaa.gov";
 
-    private static final String OVERLAY_IMAGES =
+    // MapLibre fetches its raster tiles (the USGS's too), so img-src and connect-src list the same hosts.
+    private static final String OVERLAY_TILES =
             "https://basemap.nationalmap.gov https://tile.googleapis.com " + WEATHER_TILES;
-    private static final String OVERLAY_CONNECT = "https://tile.googleapis.com " + WEATHER_TILES;
-    // An airplane's photo on its card (apps/web/src/features/plan/lib/planePhoto.ts): asked of
-    // Planespotters.net's API by the browser, as its terms have an app's
-    // pages do, and its thumbnail shown from Planespotters' own server.
+    // An airplane's photo (planePhoto.ts): Planespotters' API and image server, per its terms.
     private static final String PHOTO_IMAGES = "https://t.plnspttrs.net";
     private static final String PHOTO_CONNECT = "https://api.planespotters.net";
 
@@ -95,13 +90,12 @@ public class SecurityConfig {
 
     private final SignInOptions signIn;
 
-    SecurityConfig(
-            Optional<ClientRegistrationRepository> clientRegistrations,
-            @Value("${spring.mail.host:}") String mailHost,
-            @Value("${app.chart-tiles-origin:}") String chartTilesOrigin,
-            @Value("${app.hsts:true}") boolean hsts,
-            @Value("${app.open-writes:false}") boolean openWrites,
-            @Value("${app.public-base-url:}") String publicBaseUrl) {
+    SecurityConfig(Optional<ClientRegistrationRepository> clientRegistrations, AppProperties app) {
+        String mailHost = app.mail().host();
+        String chartTilesOrigin = app.chartTilesOrigin();
+        boolean hsts = app.hsts();
+        boolean openWrites = app.openWrites();
+        String publicBaseUrl = app.publicBaseUrl();
         this.hsts = hsts;
         this.httpsHost =
                 publicBaseUrl.startsWith("https://") ? URI.create(publicBaseUrl).getHost() : null;
@@ -157,16 +151,14 @@ public class SecurityConfig {
                         case OPEN -> (authentication, context) -> new AuthorizationDecision(true);
                         case CLOSED -> (authentication, context) -> new AuthorizationDecision(false);
                     };
-                    // Which of the planner's and the assistant's routes are
-                    // whose, as the two services mark each in its OpenAPI
-                    // document (UpstreamRoutes, x-gateway's access): the
-                    // developer's first, so the stack's status and its
-                    // services are not read by anyone who asks. Picks are
-                    // the model's training labels, so writing one is
-                    // training the next model; the mock oral is a billed
-                    // Claude call, the developer's until a CFI has reviewed
-                    // what it says; the training page's chart reads are
-                    // chart-vision jobs the planner runs and keeps.
+                    // Which of the planner's routes are whose, as it marks
+                    // each in its OpenAPI document (UpstreamRoutes,
+                    // x-gateway's access): the developer's first, so the
+                    // stack's status and its services are not read by
+                    // anyone who asks. Picks are the model's training
+                    // labels, so writing one is training the next model;
+                    // the training page's chart reads are chart-vision
+                    // jobs the planner runs and keeps.
                     UpstreamRoutes upstream = UpstreamRoutes.shipped();
                     auth.requestMatchers(upstream.matcher(UpstreamRoutes.Access.DEVELOPER))
                             .access(developer)
@@ -184,10 +176,8 @@ public class SecurityConfig {
                     // ForeFlight's, for the checkpoints' pack.
                     auth.requestMatchers(HttpMethod.HEAD, "/api/planner/foreflight-pack/**")
                             .permitAll();
-                    // Writing through the planner -- a checkpoint note, the
-                    // Brief's narrative, the assistant, the words (a real
-                    // billed Claude call every time) -- and any address no
-                    // document marks (a 404 from the proxy) need a session
+                    // Writing through the planner -- a checkpoint note, a
+                    // proficiency plan -- and any address no document marks (a 404 from the proxy) need a session
                     // as soon as this deployment offers any way to get one.
                     //
                     // Where nothing does, they are open only when the
@@ -213,8 +203,8 @@ public class SecurityConfig {
                             .requestMatchers("/api/auth/magic-link/**")
                             .permitAll()
                             // The iOS app's native Apple sheet, before any
-                            // session exists (AppleNativeSignInController).
-                            .requestMatchers(HttpMethod.POST, "/api/auth/apple/native")
+                            // session exists, and its nonce (AppleNativeSignInController).
+                            .requestMatchers(HttpMethod.POST, "/api/auth/apple/native/**")
                             .permitAll()
                             // A TV asking for its code and whether it has
                             // been typed in, before it has a session; the
@@ -268,9 +258,11 @@ public class SecurityConfig {
                 // front end can echo them back in a header. Session
                 // authentication means the browser attaches credentials
                 // automatically, which is exactly the condition CSRF
-                // exploits, so this stays on.
-                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                // exploits, so this stays on. Spring Security 7's own
+                // single-page setup: the XSRF-TOKEN cookie written on every
+                // request (no filter of ours forcing it any more), the
+                // header read as sent and a form's field as masked.
+                .csrf(csrf -> csrf.spa()
                         // sendBeacon carries no header, and a forged report only adds a row the
                         // owner reads (DiagnosticsController) or a sample to the speed trend; the
                         // lab run has no session to forge, only its token (SpeedController).
@@ -281,11 +273,6 @@ public class SecurityConfig {
                         // planner marks so (x-gateway's csrf: false).
                         .ignoringRequestMatchers("/api/diagnostics", "/api/speed/field", "/api/speed/lab")
                         .ignoringRequestMatchers(UpstreamRoutes.shipped().csrfExempt()))
-                // The handler above resolves the token lazily and nothing
-                // server-rendered ever forces it, so without this filter
-                // the XSRF-TOKEN cookie is never written and every POST
-                // or DELETE fails CSRF validation. See CsrfCookieFilter.
-                .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
 
                 // An API answers an unauthenticated call with 401. The
                 // default is a 302 to a login page, which a fetch() sees
@@ -335,14 +322,16 @@ public class SecurityConfig {
                         // (and every other page's query string) entirely.
                         .referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.NO_REFERRER))
                         .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; "
-                                + "img-src 'self' data:" + chartTilesOrigin + " " + OVERLAY_IMAGES + " " + PHOTO_IMAGES
+                                + "img-src 'self' data:" + chartTilesOrigin + " " + OVERLAY_TILES + " " + PHOTO_IMAGES
                                 + "; "
                                 + "style-src 'self' 'unsafe-inline'; "
                                 // 'wasm-unsafe-eval': WebAssembly compiled from
                                 // this origin's own files, the page reader's
                                 // engine (web features/plan/lib/readPage); no script eval.
                                 + "script-src 'self' 'wasm-unsafe-eval'; "
-                                + "connect-src 'self' " + OVERLAY_CONNECT + " " + PHOTO_CONNECT + "; "
+                                + "connect-src 'self' " + OVERLAY_TILES + " " + PHOTO_CONNECT + " "
+                                + ModelHosts.CONNECT
+                                + "; "
                                 + "object-src 'none'; "
                                 + "base-uri 'self'; "
                                 + "frame-ancestors 'none'")));

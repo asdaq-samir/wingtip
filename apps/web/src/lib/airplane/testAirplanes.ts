@@ -27,6 +27,8 @@ export function record(over: Partial<Aircraft> = {}): Aircraft {
     cruisePowerPct: null,
     climbTasKt: null,
     climbFuelBurnGph: null,
+    descentIasKt: null,
+    descentFuelBurnGph: null,
     usableFuelGal: null,
     equipment: null,
     surveillance: null,

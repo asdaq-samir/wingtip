@@ -34,7 +34,7 @@ pub const CONUS_HOLD_S: f64 = 2.0 * 900.0;
 /// still be of use, and its age is shown with it: a METAR two routine
 /// hours (FMH-1's hourly observations; the airport card calls it old
 /// after the first, weather::validity), a TAF its longest valid period
-/// (30 hours, AC 00-45H), winds aloft their 12-hour update interval
+/// (30 hours, FAA-H-8083-28B 27.4.1), winds aloft their 12-hour update interval
 /// (TBL 4-5-9), a PIREP an hour, and a NOTAM, TFR, AIRMET or SIGMET an
 /// hour -- a cancelled one goes at once. Design choices, all of them
 /// erring toward showing an old product, marked old, over showing none.

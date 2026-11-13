@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.service;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.CrossCountryReview;
 import app.wingtipmaps.gateway.domain.Endorsement;
 import app.wingtipmaps.gateway.domain.Flight;
@@ -38,7 +39,6 @@ import java.util.stream.Stream;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;
@@ -100,7 +100,7 @@ public class InstructorService {
             ApproachLessonRepository lessons,
             Mailer mail,
             PlannerClient planner,
-            @Value("${app.public-base-url:}") String publicBaseUrl) {
+            AppProperties app) {
         this.pilots = pilots;
         this.links = links;
         this.signed = signed;
@@ -111,7 +111,7 @@ public class InstructorService {
         this.lessons = lessons;
         this.mail = mail;
         this.planner = planner;
-        this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
+        this.publicBaseUrl = app.publicBaseUrl().replaceAll("/+$", "");
     }
 
     // ---- The student's side
@@ -528,7 +528,7 @@ public class InstructorService {
         try {
             mail.send(message);
         } catch (RuntimeException failed) {
-            log.warn("Instructor email to {} not sent: {}", to, failed.toString());
+            log.warn("Instructor email not sent: {}", failed.getClass().getSimpleName());
         }
     }
 }

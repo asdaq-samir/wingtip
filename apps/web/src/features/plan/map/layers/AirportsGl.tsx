@@ -1,3 +1,4 @@
+import { useWeatherAgeCredit } from "../../../../lib/map/marks/weatherAge";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { CircleLayerSpecification, MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useRef } from "react";
@@ -11,8 +12,8 @@ import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { GL_FONT_BOLD, TAP } from "../../../../lib/map/gl/layers/common";
 import MapMarksList from "./MapMarksList";
 import AirportHover from "./AirportHover";
-import AirportWeatherGl from "./AirportWeatherGl";
 import { useAirportWeatherPrefs } from "../../../../lib/map/marks/airportWeatherPrefs";
+import AirportWeatherGl from "./AirportWeatherGl";
 import { CHART } from "../../../../lib/tokens";
 
 const SELECTED = "airport-selected";
@@ -56,6 +57,8 @@ const SELECTED_IDENT: SymbolLayerSpecification = {
 };
 /** Ten minutes, as a METAR's colour can change by the hour. */
 const WEATHER_EVERY_MS = 10 * 60_000;
+/** The marks' weather's address, as the worker marks an answer it kept. */
+const IN_VIEW_PATH = "/api/planner/airports/in-view";
 
 type Props = {
   selected: { ident: string; lat: number; lon: number } | null;
@@ -148,7 +151,13 @@ function TileAirports(props: Props) {
     setSelectedAirport(map, selectedIdent);
   }, [map, selectedIdent]);
   const { box, level } = useGlView();
-  const { data: inView } = useQuery({ ...airportsQuery(box, level), refetchInterval: WEATHER_EVERY_MS, placeholderData: keepPreviousData });
+  const { data: inView, dataUpdatedAt } = useQuery({
+    ...airportsQuery(box, level),
+    refetchInterval: WEATHER_EVERY_MS,
+    placeholderData: keepPreviousData,
+  });
+  // Their age in the map's small print once it is old (weatherAge).
+  useWeatherAgeCredit(IN_VIEW_PATH, dataUpdatedAt);
   const alongRoute = useAlongRoute(route);
   const colours = useMemo(() => {
     const out = new Map<string, string>();
@@ -156,13 +165,13 @@ function TileAirports(props: Props) {
       for (const a of list ?? []) if (a.flight_category) out.set(a.ident, colourOf(a.flight_category));
     return out;
   }, [alongRoute, inView]);
+  const off = useAirportWeatherPrefs((s) => s.show) === "off";
   const known = useRef(colours);
-  // The Map card's Airport Weather: a halo, a dot or none.
-  const look = useAirportWeatherPrefs((s) => s.look);
   useEffect(() => {
     known.current = colours;
-    setAirportWeather(map, colours, look);
-  }, [map, colours, look]);
+    // Off: no colour for any field, so each keeps the chart's plain symbol.
+    setAirportWeather(map, off ? new Map() : colours);
+  }, [map, colours, off]);
   const reporting = useMemo(() => [...(alongRoute ?? []), ...(inView ?? [])], [alongRoute, inView]);
   useAirportTaps(props, (f) => {
     const p = f.properties;

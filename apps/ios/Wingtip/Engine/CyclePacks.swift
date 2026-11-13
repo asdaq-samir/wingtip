@@ -25,7 +25,8 @@ struct CyclePackIndex: Codable, Equatable, Sendable {
 /// The cycle packs kept on the phone, a region each (wingtip.cycle_pack's
 /// write_phone), so the airspace over a point is answered with no
 /// connection: kept along a route with its chart (KeepForAir),
-/// and fetched again for the regions kept when the FAA's cycle turns.
+/// and fetched again for the regions kept when the FAA's cycle turns or
+/// a pack is rebuilt within it.
 /// Under Application Support, not Caches: iOS may not clear them when
 /// space is short, as it may the chart's tiles, and they are small.
 final class CyclePacks: @unchecked Sendable {
@@ -33,6 +34,9 @@ final class CyclePacks: @unchecked Sendable {
 
     let root: URL
     private let lock = NSLock()
+    /// index.json as last read or written, so a pan's queries do not read
+    /// and decode it again each time (nil: not read yet).
+    private var known: CyclePackIndex??
 
     init(root: URL? = nil) {
         self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -41,10 +45,15 @@ final class CyclePacks: @unchecked Sendable {
 
     private var indexFile: URL { root.appending(path: "index.json") }
 
-    /// The list the packs on the phone were fetched by.
+    /// The list the packs on the phone were fetched by, read from disk
+    /// once and kept as `keep` writes it.
     var index: CyclePackIndex? {
-        guard let data = try? Data(contentsOf: indexFile) else { return nil }
-        return try? Planner.snakeCase.decode(CyclePackIndex.self, from: data)
+        lock.withLock {
+            if let known { return known }
+            let read = (try? Data(contentsOf: indexFile)).flatMap { try? Planner.snakeCase.decode(CyclePackIndex.self, from: $0) }
+            known = .some(read)
+            return read
+        }
     }
 
     func path(cycle: String, region: String) -> URL {
@@ -69,7 +78,11 @@ final class CyclePacks: @unchecked Sendable {
 
     /// The packs of these regions fetched where the phone has not got
     /// them for the planner's cycle, and the regions already kept fetched
-    /// again where the cycle has turned. The phone moves to the new cycle,
+    /// again where the cycle has turned or where a pack's contents have
+    /// changed within it (its crc32 in the list is not the one in the
+    /// header of the pack on disk: a pack rebuilt with more of the FAA's
+    /// fields, as the special-use areas' limits were on 2026-11-12, keeps
+    /// its cycle's name). The phone moves to the new cycle,
     /// and the older one is removed, only once every region it wants of
     /// the new one is on disk: a pack that failed to come leaves the old
     /// cycle's packs in use, so a pilot is never left with no airspace
@@ -77,21 +90,26 @@ final class CyclePacks: @unchecked Sendable {
     /// cannot be reached: the next keep tries again, and finds the packs
     /// already fetched in the new cycle's folder.
     func keep(regions wanted: Set<String>) async {
-        guard let data = try? await Planner.data(for: Planner.get("/api/cycle-packs")),
-              let fresh = try? Planner.snakeCase.decode(CyclePackIndex.self, from: data) else { return }
+        // The planner's index, read as the phone keeps it (in camel case).
+        guard let answer = try? await Planner.call(.usual, { try await $0.cyclePacks().ok.body.json }),
+              let fresh: CyclePackIndex = try? Engine.recoded(answer, decoder: Planner.snakeCase) else { return }
         let kept = index
         var names = wanted
-        if let kept, kept.cycle != fresh.cycle {
+        if let kept {
             names.formUnion(keptRegions(kept.cycle))
         }
         let listed = Dictionary(uniqueKeysWithValues: fresh.regions.map { ($0.name, $0) })
         try? FileManager.default.createDirectory(at: root.appending(path: fresh.cycle), withIntermediateDirectories: true)
         var whole = true
         for name in names.sorted() {
-            guard listed[name] != nil else { continue }
+            guard let region = listed[name] else { continue }
             let file = path(cycle: fresh.cycle, region: name)
-            if FileManager.default.fileExists(atPath: file.path) { continue }
+            if Self.crc32(of: file) == UInt32(truncatingIfNeeded: region.crc32) { continue }
+            // The crc32 in the address: the pack is kept as long as its
+            // cycle by the phone's cache and the edge's, which a pack
+            // rebuilt within the cycle would otherwise be answered from.
             let address = Config.gateway.appending(path: Config.plannerPath("/api/cycle-pack/\(fresh.cycle)/\(name).pack"))
+                .appending(queryItems: [URLQueryItem(name: "crc32", value: String(region.crc32))])
             guard let (bytes, response) = try? await URLSession.shared.data(from: address),
                   (response as? HTTPURLResponse)?.statusCode == 200, Engine.verify(bytes),
                   (try? bytes.write(to: file, options: .atomic)) != nil else {
@@ -103,7 +121,9 @@ final class CyclePacks: @unchecked Sendable {
         // with nothing older to fall back on. A new cycle only when whole.
         if let kept, kept.cycle != fresh.cycle, !whole { return }
         lock.withLock {
-            try? data.write(to: indexFile, options: .atomic)
+            try? JSONEncoder().encode(answer).write(to: indexFile, options: .atomic)
+            // Read again at the next ask, as written (the same keys).
+            known = nil
             if let editions = try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil) {
                 for edition in editions where edition.hasDirectoryPath && edition.lastPathComponent != fresh.cycle {
                     try? FileManager.default.removeItem(at: edition)
@@ -112,7 +132,19 @@ final class CyclePacks: @unchecked Sendable {
         }
     }
 
-    /// The packs kept again for a new cycle where the phone has any.
+    /// The crc32 a pack on disk was written with: its header's, at byte
+    /// 36, little-endian (wingtip.cycle_pack's write_phone, which lists
+    /// the same figure in /api/cycle-packs). Nil where there is no pack.
+    static func crc32(of file: URL) -> UInt32? {
+        guard let handle = try? FileHandle(forReadingFrom: file) else { return nil }
+        defer { try? handle.close() }
+        guard (try? handle.seek(toOffset: 36)) != nil,
+              let bytes = try? handle.read(upToCount: 4), bytes.count == 4 else { return nil }
+        return bytes.reversed().reduce(0) { $0 << 8 | UInt32($1) }
+    }
+
+    /// The packs kept again for a new cycle, or changed within it, where
+    /// the phone has any.
     func refresh() async {
         guard let kept = index, !keptRegions(kept.cycle).isEmpty else { return }
         await keep(regions: [])
@@ -123,12 +155,12 @@ final class CyclePacks: @unchecked Sendable {
         return Set(files.filter { $0.pathExtension == "pack" }.map { $0.deletingPathExtension().lastPathComponent })
     }
 
-    /// Every pack the phone keeps of the cycle, mapped: the regions its
-    /// routes cross, for a clearance's places to be found in the air
+    /// Every pack the phone keeps of the cycle, by its file: the regions
+    /// its routes cross, for a clearance's places to be found in the air
     /// (Engine.hear).
-    func keptPacks() -> [Data] {
+    func keptPacks() -> [URL] {
         guard let index else { return [] }
-        return keptRegions(index.cycle).sorted().compactMap { try? Data(contentsOf: path(cycle: index.cycle, region: $0), options: .alwaysMapped) }
+        return keptRegions(index.cycle).sorted().map { path(cycle: index.cycle, region: $0) }
     }
 
     /// The airspace over a point from the packs on the phone; nil where
@@ -140,7 +172,8 @@ final class CyclePacks: @unchecked Sendable {
         guard index.regions.contains(where: { $0.name == region }) else {
             return Engine.airspaceAt(pack: nil, lat: lat, lon: lon)
         }
-        guard let pack = try? Data(contentsOf: path(cycle: index.cycle, region: region), options: .alwaysMapped) else { return nil }
+        let pack = path(cycle: index.cycle, region: region)
+        guard FileManager.default.fileExists(atPath: pack.path) else { return nil }
         return Engine.airspaceAt(pack: pack, lat: lat, lon: lon)
     }
 }

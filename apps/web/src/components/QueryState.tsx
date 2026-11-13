@@ -3,12 +3,20 @@ import { Skeleton } from "./ui/skeleton";
 import { ListRow } from "./GroupedList";
 import { FINDING_TONE } from "../lib/findings";
 import { TEXT } from "../lib/text";
+import { NO_CONNECTION, noConnection } from "../lib/problems";
+import { FieldError } from "./ui/field";
 
 /** What a query says of itself (TanStack Query's own flags). */
 interface Asked {
   isLoading: boolean;
   isError: boolean;
   isFetching: boolean;
+  error?: unknown;
+  /** The last try's failure while TanStack's retries go on. */
+  failureReason?: unknown;
+  /** "paused": waiting on a connection, which a skeleton would wait on
+   *  for good. */
+  fetchStatus?: "fetching" | "paused" | "idle";
   refetch: () => unknown;
 }
 
@@ -35,10 +43,15 @@ export default function QueryState({
   failed: string;
   row?: boolean;
 }) {
-  if (query.isError && !query.isFetching) {
+  // No connection: said so, not a skeleton for ever (a query paused for
+  // one drew nothing at all) nor "could not be fetched" as if the server
+  // were at fault; asked again by TanStack's retries once the phone is
+  // back (lib/queryRetry), and Try again for the pilot meanwhile.
+  const offline = noConnection(query);
+  if ((query.isError && !query.isFetching) || offline) {
     const words = (
       <>
-        {failed}{" "}
+        {offline ? `${NO_CONNECTION}.` : failed}{" "}
         <button
           type="button"
           onClick={() => void query.refetch()}
@@ -58,9 +71,7 @@ export default function QueryState({
         }
       />
     ) : (
-      <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.note)}>
-        {words}
-      </p>
+      <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.note)}>{words}</FieldError>
     );
   }
   // While it comes: the shape of what is coming, its words for a screen

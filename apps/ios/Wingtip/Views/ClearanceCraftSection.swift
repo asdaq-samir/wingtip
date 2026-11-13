@@ -75,7 +75,7 @@ struct ClearanceCraftSection: View {
             }
         }
         if clearance.asFiled { parts.append(Text("as filed")) }
-        return parts.enumerated().reduce(Text("")) { all, part in part.offset == 0 ? part.element : all + Text(" → ") + part.element }
+        return parts.enumerated().reduce(Text("")) { all, part in part.offset == 0 ? part.element : Text("\(all) → \(part.element)") }
     }
 
     /// The altitudes in one line: "Maintain 5,000 ft, expect 9,000 ft 10

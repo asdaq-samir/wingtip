@@ -39,7 +39,9 @@ struct LegFigureSections: View {
                         .accessibilityValue(SpokenFigures.degrees(heading))
                 }
             }
-            Section("Speed, Time and Fuel") {
+            // A leg flown whole in the climb or the descent states that
+            // phase's figures (the engine's `phase`), and its section says so.
+            Section(LegPhase.of(leg).map { "Speed, Time and Fuel · \($0.word)" } ?? "Speed, Time and Fuel") {
                 LabeledContent("Altitude", value: Format.altitude(leg.altitudeFt))
                     .accessibilityValue(Format.spokenAltitude(leg.altitudeFt))
                 if let tas = leg.tasKt { LabeledContent("True airspeed", value: Format.speed(tas)).accessibilityValue(SpokenFigures.knots(tas)) }
@@ -50,12 +52,9 @@ struct LegFigureSections: View {
                 if let fuel = leg.fuelGal { LabeledContent("Fuel", value: Format.fuel(fuel)).accessibilityValue(SpokenFigures.gallons(fuel)) }
                 if let climb = leg.climbMin, climb > 0 { LabeledContent("Climbing", value: Format.duration(climb)).accessibilityValue(SpokenFigures.minutes(climb)) }
             }
-            if leg.toc != nil || leg.tod != nil {
-                Section("Climb and Descent") {
-                    if let along = leg.toc?.alongNm { LabeledContent("Top of climb", value: "\(Format.distance(along)) along") }
-                    if let along = leg.tod?.alongNm { LabeledContent("Top of descent", value: "\(Format.distance(along)) along") }
-                }
-            }
+            // Where the climb tops out and the descent starts, each piece in
+            // its own phase's figures (LegPhase).
+            LegTopsSection(leg: leg)
         }
     }
 }

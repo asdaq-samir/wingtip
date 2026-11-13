@@ -1,13 +1,23 @@
-import type { MapGeoJSONFeature } from "maplibre-gl";
+import type { Map as GlMap, MapGeoJSONFeature, MapSourceDataEvent } from "maplibre-gl";
 import { useEffect, useEffectEvent } from "react";
 import { useGlMap } from "./glLayer";
+import { loadLogLooking } from "../../loadLog";
+
+/** Whether a test drives this browser (navigator.webdriver), as lib/speed
+ *  asks: the probes are for the browser tests, and each one queries the
+ *  map's drawn features and projects them at every idle, which a pilot's
+ *  phone pays for nothing. */
+const testDriven = () => typeof navigator !== "undefined" && navigator.webdriver === true;
 
 /**
  * What a layer has drawn, where, for the browser tests: an empty element
  * in the map's container carrying `data-<name>` as JSON -- each feature
  * drawn, its `fields` and its place in the map's own points -- written
- * each time the map is idle (data-airport-marks, data-navaid-marks): a
- * canvas drawn by WebGL has no elements for a test to find.
+ * each time the map is idle (data-airport-marks, data-navaid-marks), and
+ * while it moves as tiles come in: a canvas drawn by WebGL has no
+ * elements for a test to find. Written only in a browser a test drives,
+ * and for Setup's Log while it times the load (lib/loadLog), never after
+ * on a pilot's device.
  */
 export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSONFeature) => Record<string, unknown>) {
   const { map } = useGlMap();
@@ -21,6 +31,7 @@ export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSO
     el.setAttribute(attr, "[]");
     map.getContainer().appendChild(el);
     const write = () => {
+      if (!testDriven() && !loadLogLooking()) return;
       const present = ids.split(",").filter((l) => map.getLayer(l));
       const seen = new Set<string>();
       const out: Record<string, unknown>[] = [];
@@ -65,11 +76,40 @@ export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSO
       el.setAttribute(attr, JSON.stringify(out));
     };
     map.on("idle", write);
+    // MapLibre fires no idle until a gesture ends (Map.isMoving counts a
+    // finger held down after a pan), while the tiles that came in under it
+    // are already drawn: written again a quarter second after one comes,
+    // once its marks are placed (map.spec's airports under a finger's pan).
+    let timer = 0;
+    const came = (e: MapSourceDataEvent) => {
+      if (!e.tile || timer || !map.isMoving() || (!testDriven() && !loadLogLooking())) return;
+      timer = window.setTimeout(() => {
+        timer = 0;
+        write();
+      }, 250);
+    };
+    map.on("sourcedata", came);
     return () => {
       map.off("idle", write);
+      map.off("sourcedata", came);
+      window.clearTimeout(timer);
       el.remove();
     };
   }, [map, name, ids]);
+}
+
+/** The map's layers bottom to top on `el` (data-layers), for the browser
+ *  tests alone: the whole style copied at every idle (getStyle) is a cost
+ *  a pilot's phone need not pay (GlMapShell). */
+export function probeLayers(map: GlMap, el: HTMLElement) {
+  if (!testDriven()) return;
+  map.on("idle", () => {
+    el.dataset.layers = map
+      .getStyle()
+      .layers.map((l) => l.id)
+      .filter((id) => !id.startsWith("slot-"))
+      .join(" ");
+  });
 }
 
 /** The middle of a ring's box, [lon, lat]. */

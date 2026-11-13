@@ -7,15 +7,6 @@ import SwiftUI
 /// thing once they are in (the reveal).
 /// MKMapView rather than SwiftUI's Map, for the tile overlay and the
 /// renderers the route and the marks need.
-/// A procedure's path, told from the course line by its class.
-final class ProcedurePolyline: MKPolyline {}
-
-/// The thin edge round the course's magenta, so it keeps its contrast on
-/// the chart (the web's route-edge). The green casing is drawn only on the
-/// leg whose sheet is open (RouteLegLayer), as ForeFlight shows it on a
-/// selected course (the owner, 2026-11-09).
-final class CourseEdgePolyline: MKPolyline {}
-
 struct ChartMap: UIViewRepresentable {
     let template: TileTemplate?
     let minZoom: Int
@@ -58,6 +49,8 @@ struct ChartMap: UIViewRepresentable {
     /// Setup's Military fields and Private fields.
     @AppStorage(MapExtrasInput.Keys.military) var militaryFields = false
     @AppStorage(MapExtrasInput.Keys.privateFields) var privateFields = false
+    /// The Map card's Terrain: flat, or MapKit's 3D (RaisedMapView).
+    @AppStorage(MapTerrain.key) var terrain = MapTerrain.flat.rawValue
     /// Settings' Airport Weather, and the plan's part of the marks: the ↓
     /// fields and the airplane's crosswind (FieldWeatherState).
     var airportWeather = AirportWeatherSetting()
@@ -78,25 +71,18 @@ struct ChartMap: UIViewRepresentable {
     static let revealCap: Duration = .milliseconds(2500)
 
     func makeUIView(context: Context) -> MKMapView {
-        let map = MKMapView()
+        // Apple's muted map under the chart, flat, or its 3D ground (RaisedMapView, the Terrain).
+        let map = RaisedMapView()
         map.delegate = context.coordinator
         map.showsUserLocation = true
         map.showsCompass = true
         map.showsScale = true
         map.pointOfInterestFilter = .excludingAll
-        map.isPitchEnabled = false
         map.register(AirportMarkView.self, forAnnotationViewWithReuseIdentifier: AirportMarkView.reuse)
         map.register(CheckpointMarkView.self, forAnnotationViewWithReuseIdentifier: CheckpointMarkView.reuse)
         map.register(TrafficMarkView.self, forAnnotationViewWithReuseIdentifier: TrafficMarkView.reuse)
         context.coordinator.extras.attach(to: map)
         context.coordinator.overlays.attach(to: map)
-        // Apple's map is under the chart and shows close in, where the
-        // chart fades (ChartFade): muted, with no points of interest or
-        // traffic, so the FAA's runways read over its roads.
-        let config = MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)
-        config.pointOfInterestFilter = .excludingAll
-        config.showsTraffic = false
-        map.preferredConfiguration = config
         // Where the map opens is set once it has its size and the sheet's
         // (Coordinator.open); the map shows at the cap at the latest.
         let coordinator = context.coordinator
@@ -109,7 +95,7 @@ struct ChartMap: UIViewRepresentable {
         let flight = FlightMapLayer()
         flight.attach(map)
         context.coordinator.flight = flight
-        context.coordinator.legLayer.attach(map)
+        context.coordinator.attachLegs(map)
         return map
     }
 
@@ -149,9 +135,9 @@ struct ChartMap: UIViewRepresentable {
             let overlay = ChartTileOverlay(template: template, minZoom: minZoom, maxZoom: maxZoom, lift: lift)
             let coordinator = context.coordinator
             overlay.onTile = { coordinator.chartTile() }
-            // Under everything else drawn over Apple's map: the airspace, the
-            // runways, the course.
+            // Under everything else drawn over Apple's map but the imagery under it close in.
             map.insertOverlay(overlay, at: 0, level: .aboveLabels)
+            CloseImagery.shared.place(on: map, under: overlay)
             context.coordinator.overlay = overlay
         }
         if context.coordinator.checkpointsShown != checkpoints {
@@ -222,6 +208,7 @@ struct ChartMap: UIViewRepresentable {
             }
         }
         context.coordinator.legLayer.update(map, routeLegs, night: shade > 0, below: context.coordinator.courseEdge)
+        (map as? RaisedMapView)?.use(MapTerrain(rawValue: terrain) ?? .flat, field: course?.destination.ident)
     }
 
     /// Whether two paths are the same points, to the metre: a procedure's
@@ -303,6 +290,7 @@ struct ChartMap: UIViewRepresentable {
         }
         var onRegion: ((CLLocationCoordinate2D, Double) -> Void)?
         private var trafficShown: [String: TrafficAnnotation] = [:]
+        private var trafficDrawn: (planes: [TrafficAircraft], ownFt: Double?)?
         var setFollowing: ((Bool) -> Void)?
         var setRouteAway: ((Bool) -> Void)?
         var fitted = 0
@@ -351,12 +339,13 @@ struct ChartMap: UIViewRepresentable {
             if let chart = overlay as? ChartTileOverlay {
                 let renderer = ChartTileRenderer(chart: chart)
                 renderer.shade = shade
-                renderer.alpha = ChartFade.alpha(zoom: Self.zoom(of: mapView))
+                renderer.alpha = ChartFade.alpha(zoom: Self.zoom(of: mapView), last: chart.maxZoom)
                 tiles = renderer
                 return renderer
             }
+            if let imagery = overlay as? CloseImageryOverlay { return MainActor.assumeIsolated { CloseImagery.shared.renderer(imagery, zoom: Self.zoom(of: mapView)) } }
             if let tiles = overlay as? MKTileOverlay { return MKTileOverlayRenderer(tileOverlay: tiles) }
-            if let plate = overlay as? PlateMapOverlay { return PlateRenderer(overlay: plate) }
+            if let renderer = MainActor.assumeIsolated({ extras.plates.renderer(for: overlay) }) { return renderer }
             if let edge = overlay as? CourseEdgePolyline {
                 let renderer = MKPolylineRenderer(polyline: edge)
                 renderer.strokeColor = NightPalette.routeEdge(night: shade > 0)
@@ -554,7 +543,7 @@ struct ChartMap: UIViewRepresentable {
         func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {
             MainActor.assumeIsolated {
                 let zoom = Self.zoom(of: mapView)
-                tiles?.alpha = ChartFade.alpha(zoom: zoom)
+                CloseImagery.shared.fade(chart: tiles, last: overlay?.maxZoom, zoom: zoom)
                 // The chart's loads of tiles gone out of view stopped.
                 if mapView.visibleMapRect.width > 0 {
                     tiles?.keep(visible: mapView.visibleMapRect, zoomScale: MKZoomScale(Double(mapView.bounds.width) / mapView.visibleMapRect.width))
@@ -578,9 +567,13 @@ struct ChartMap: UIViewRepresentable {
                 weather.moved(mapView, zoom: zoom)
                 let view = ViewBox(mapView.region)
                 guard liveAirports.wants(view, zoom: zoom) else { return }
-                let wide = view.widened
-                if let pins = CyclePacks.shared.airportsInView(south: wide.south, west: wide.west, north: wide.north, east: wide.east) {
-                    _ = liveAirports.ask(view, zoom: zoom)
+                let asked = liveAirports.ask(view, zoom: zoom)
+                // Off the main actor (CyclePacks.airportsInView), taken back
+                // only while the view still wants this box.
+                Task { @MainActor [weak self, weak mapView] in
+                    let pins = await CyclePacks.shared.airportsInView(asked)
+                    guard let self, let mapView, liveAirports.box == asked else { return }
+                    guard let pins else { return liveAirports.forget() }
                     self.pins = pins
                     showFields(on: mapView)
                 }
@@ -617,8 +610,8 @@ struct ChartMap: UIViewRepresentable {
             }
             fetching?.cancel()
             let region = mapView.region
-            let (c, span) = (region.center, region.span) // The miles to the corner the engine's (distance_nm), else the last kept.
-            if let nm = try? Engine.distanceNm(lat1: c.latitude, lon1: c.longitude, lat2: c.latitude + span.latitudeDelta / 2, lon2: c.longitude + span.longitudeDelta / 2) { onRegion?(c, nm) }
+            let (c, span) = (region.center, region.span) // The miles to the corner the engine's (distance_nm), else the last view's kept: a real one, not a guess.
+            if let nm = try? Flight.distanceNm(c, CLLocationCoordinate2D(latitude: c.latitude + span.latitudeDelta / 2, longitude: c.longitude + span.longitudeDelta / 2)) { onRegion?(c, nm) }
             fetching = Task { [weak self, weak mapView] in
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled, let self, let mapView else { return }
@@ -647,6 +640,10 @@ struct ChartMap: UIViewRepresentable {
         /// heard taken off, the new ones added.
         @MainActor
         func show(_ planes: [TrafficAircraft], ownFt: Double?, on map: MKMapView) {
+            // The map's update runs at every fix; the traffic and own ship's
+            // height as last drawn need no engine call (traffic_marks) again.
+            guard trafficDrawn?.planes != planes || trafficDrawn?.ownFt != ownFt else { return }
+            trafficDrawn = (planes, ownFt)
             let fresh = Dictionary(planes.map { ($0.hex, $0) }, uniquingKeysWith: { a, _ in a })
             let gone = trafficShown.filter { fresh[$0.key] == nil }
             map.removeAnnotations(Array(gone.values))
@@ -677,8 +674,6 @@ struct ChartMap: UIViewRepresentable {
             }
         }
 
-        /// The marks changed, not every mark drawn again: the ones gone
-        /// out of view removed, the new ones added, the rest left be.
         @MainActor
         /// The fields in the view as the planner gave them, and which of
         /// them Setup draws.
@@ -711,6 +706,7 @@ struct ChartMap: UIViewRepresentable {
             showFields(on: map)
         }
 
+        /// The marks changed, not every mark drawn again: the ones gone out of view removed, the new ones added, the rest left be.
         private func show(_ fields: [AirportAnnotation], on map: MKMapView) {
             let fresh = Dictionary(fields.map { ($0.ident, $0) }, uniquingKeysWith: { a, _ in a })
             let gone = shown.filter { fresh[$0.key] == nil }.map(\.value)

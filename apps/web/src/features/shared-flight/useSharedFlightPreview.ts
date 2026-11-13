@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { loadAddress, useAddress } from "../../lib/address";
 import { ApiError } from "../../lib/api/client";
 import { sharedFlights } from "../../lib/api/sharedFlights";
 import type { SharedFlight } from "../../lib/api/types";
@@ -6,7 +7,6 @@ import { planHrefOf } from "../../lib/flightLink";
 import { wantScreen } from "../../lib/navigation/wanted";
 import { usePreferences } from "../../lib/preferences";
 import { paramsForSharedPlan, type SharedLink, type SharedPlan } from "../../lib/sharedFlight";
-import { useSearchParamsNow } from "../../lib/useSearchParamsNow";
 import { closeSharedLink } from "./store";
 
 /** A saved flight's share read as the preview shows a plan. */
@@ -34,7 +34,7 @@ function planOfShared(f: SharedFlight): SharedPlan {
  * receiver's plan as it was. Nothing changes before one is chosen.
  */
 export function useSharedFlightPreview(link: SharedLink) {
-  const [, setSearchParams] = useSearchParamsNow();
+  const [, setAddress] = useAddress();
   const setFlightRules = usePreferences((p) => p.setFlightRules);
   // The receiver's own airplane, which the plan is flown with: the type
   // sent is shown, never picked for them (no assumed airplane).
@@ -56,8 +56,9 @@ export function useSharedFlightPreview(link: SharedLink) {
     if (!plan) return;
     const params = saved ? new URLSearchParams(planHrefOf(saved).split("?")[1]) : paramsForSharedPlan(plan);
     if (plan.rules) setFlightRules(plan.rules);
-    // A new entry, so Back and Undo give the receiver's plan back.
-    setSearchParams(params);
+    // The address this plan alone, a new entry, so Back and Undo give the
+    // receiver's plan back.
+    void setAddress(loadAddress(params), { history: "push" });
     wantScreen("navlog");
     closeSharedLink();
   };

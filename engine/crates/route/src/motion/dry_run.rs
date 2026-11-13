@@ -170,7 +170,7 @@ fn on_path(path: &[LatLon], at: &[f64], s: f64) -> (LatLon, f64) {
     (between(a, b, f), bearing_deg(a.0, a.1, b.0, b.1))
 }
 
-/// The height at `along` on a line of heights, held past its ends.
+/// The height at `along` on a line of heights, held past its ends; the fraction first, so a point's height comes back whole.
 fn height_on(line: &[ProfilePoint], along: f64) -> Option<f64> {
     let first = line.first()?;
     if along <= first.along_nm {
@@ -180,7 +180,7 @@ fn height_on(line: &[ProfilePoint], along: f64) -> Option<f64> {
         let (a, b) = (w[0], w[1]);
         if along <= b.along_nm {
             return Some(if b.along_nm > a.along_nm {
-                a.plan_ft + ((b.plan_ft - a.plan_ft) * (along - a.along_nm)) / (b.along_nm - a.along_nm)
+                a.plan_ft + (b.plan_ft - a.plan_ft) * ((along - a.along_nm) / (b.along_nm - a.along_nm))
             } else {
                 b.plan_ft
             });

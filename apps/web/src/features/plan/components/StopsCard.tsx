@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { cn } from "cn";
-import { CardClose } from "../../../components/PanelCard";
+import { CardClose, CardHeadRow } from "../../../components/CardHead";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import QueryState from "../../../components/QueryState";
 import { ADD_CAPSULE } from "../../../lib/mapChrome";
@@ -139,7 +139,8 @@ function StopFieldCard({
 }
 
 /**
- * The map's Stops, one sheet near the pilot and along a route (the
+ * The map's Stops, one card (CardLayer, PlanPage; the owner, 2026-11-11)
+ * near the pilot and along a route (the
  * owner's pick of the Stops canvas, H1 and H2, 2026-10-27), where Fly-in
  * Food was: its title, beside it how far to look -- Along Route, where
  * there is a route, or Within 10, 25, 50 or 100 nm round the pilot --
@@ -188,45 +189,34 @@ export default function StopsCard({
     const row = list.current?.querySelector(`[data-ident="${picked}"]`)?.closest('[data-testid="stops-field"]');
     if (!row) return;
     row.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" });
-    // Half way the list is cut off at the sheet's edge, not scrolled: the
-    // sheet comes up if the row is under it (MapPanel's sheetreveal). A
-    // frame on: a pin's tap sends the sheet up from the pill in MapPanel's
-    // own effect, which runs after this one, and the sheet must know where
-    // it is going before it hears of the row.
-    const frame = requestAnimationFrame(() => row.dispatchEvent(new Event("sheetreveal", { bubbles: true })));
-    return () => cancelAnimationFrame(frame);
   }, [picked, pickedShown]);
   return (
-    // Up under the panel's head from its corner, as every card is (under-head; one scrolling rule).
+    // From the panel's corner, as every card is (its room over its head the
+    // grabber's, --pinned-room, as SheetCard's); its list scrolls under its head.
     <div
-      className="under-head flex min-h-0 flex-1 flex-col px-4 [--under-pad:var(--corner-inset,0.75rem)] print:hidden"
+      className="flex min-h-0 flex-1 flex-col px-4 pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
       data-testid="stops-card"
     >
-      <div className="flex items-center gap-3">
-        <h2 className={cn("font-bold tracking-tight", TEXT.card)} data-testid="stops-name">
-          Stops
-        </h2>
-        <PullDown
-          label="Where to look"
-          value={along ? "route" : `${radius}`}
-          align="start"
-          testId="stops-distance"
-          onChange={(value) => {
-            if (value === "route") {
-              onScope("route");
-              return;
-            }
-            setRadius(Number(value));
-            onScope("near");
-          }}
-          options={[
-            ...(route ? [{ value: "route", label: "Along Route", testId: "stops-distance-option" }] : []),
-            ...STOP_RADII.map((nm) => ({ value: `${nm}`, label: `Within ${nm} nm`, testId: "stops-distance-option" })),
-          ]}
-        />
-        {/* Its close at the head's end, inline with its name (CardClose). */}
-        <CardClose onClose={onClose} testId="stops-close" className="ml-auto -mr-1" />
-      </div>
+      {/* Every card's one head row (CardHeadRow), pinned, all of the card in
+          sight at the sheet's smallest size: its name, and under it at every
+          size how many it found (the owner, 2026-11-11: "None on the route",
+          "2 stops"), centred, and the close at its end (CardClose): two
+          buttons at most (rules.md), so how far to look is the list's own
+          filter, at its top. */}
+      <CardHeadRow
+        name="Stops"
+        nameTestId="stops-name"
+        sub={
+          data && pending === 0
+            ? fields.length === 0
+              ? along
+                ? "None on the route"
+                : `None within ${radius} nm`
+              : `${fields.length} ${fields.length === 1 ? "stop" : "stops"}`
+            : undefined
+        }
+        end={<CardClose onClose={onClose} testId="stops-close" />}
+      />
       {/* Sideways past the card's edge, as Maps' filter pills scroll. One
           kind at a time, so the stock ToggleGroup: to VoiceOver a group
           of toggles, the one picked pressed, the arrow keys moving between
@@ -254,6 +244,28 @@ export default function StopsCard({
         ))}
       </ToggleGroup>
       <div ref={list} className="mt-1.5 min-h-0 flex-1 overflow-y-auto pb-3">
+        {/* How far to look, the list's filter at its top right, as a
+            section's filter menu is (the stock pull-down menu). */}
+        <div className="flex justify-end px-1 pb-2">
+          <PullDown
+            label="Where to look"
+            value={along ? "route" : `${radius}`}
+            align="end"
+            testId="stops-distance"
+            onChange={(value) => {
+              if (value === "route") {
+                onScope("route");
+                return;
+              }
+              setRadius(Number(value));
+              onScope("near");
+            }}
+            options={[
+              ...(route ? [{ value: "route", label: "Along Route", testId: "stops-distance-option" }] : []),
+              ...STOP_RADII.map((nm) => ({ value: `${nm}`, label: `Within ${nm} nm`, testId: "stops-distance-option" })),
+            ]}
+          />
+        </div>
         {!along && !at && (
           <ListGroup>
             <ListRow

@@ -19,8 +19,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.design.Loading
@@ -30,9 +30,8 @@ import app.wingtipmaps.android.ui.WingtipIcons
 
 /**
  * "In Plain Words" under a screen's figures (docs/android-ai.md): a tap
- * in the tint asks for the figures in words -- on the phone where Gemini
- * Nano is, else from Wingtip's assistant -- and the words come under it
- * with where they were made, and how many sentences were left out for a
+ * in the tint asks for the figures in words -- on the phone, by Gemini
+ * Nano -- and the words come under it, said as made on the phone, and how many sentences were left out for a
  * figure the app did not give. The figures above stay as they are; the
  * words are beside them, never in place of them. Shown only where words
  * can be had; `sources` are read at the tap, and a change in `key`
@@ -40,7 +39,7 @@ import app.wingtipmaps.android.ui.WingtipIcons
  */
 @Composable
 fun AiWordsRow(task: AiTask, key: String, sources: () -> List<AssistantSource>, modifier: Modifier = Modifier) {
-    val model: AiWordsModel = viewModel(key = "ai-words-${task.name}-$key")
+    val model: AiWordsModel = hiltViewModel(key = "ai-words-${task.name}-$key")
     val state by model.state.collectAsStateWithLifecycle()
     LaunchedEffect(key) { model.sourcesAre(key) }
     if (!state.offered) return
@@ -56,8 +55,7 @@ fun AiWordsRow(task: AiTask, key: String, sources: () -> List<AssistantSource>, 
                 answer.text, style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             )
-            val where = stringResource(if (answer.where == AiWords.Where.PHONE) R.string.ai_made_on_phone else R.string.ai_made_by_assistant)
-            Text(where, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.ai_made_on_phone), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (answer.dropped > 0) {
                 Text(
                     pluralStringResource(R.plurals.ai_left_out, answer.dropped, answer.dropped),

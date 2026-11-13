@@ -299,7 +299,7 @@
       "readOnlyHint": true,
       "title": "My saved flights"
     },
-    "description": "The flights the signed-in pilot saved in Wingtip, newest first: route, airplane, cruise altitude, distance, time and fuel, when planned for, the risk assessment saved with it, its name and notes.",
+    "description": "The flights the signed-in pilot saved in Wingtip, newest first, as a route summary: its name, route, airplane, cruise altitude, distance, time and fuel, and when planned for. Not its notes or risk assessment.",
     "inputSchema": {
       "properties": {
         "limit": {

@@ -1,0 +1,87 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::fuel",
+  "description": "The fuel in the tanks at each point of the route and whether it is under the reserve: full at the departure, the start, taxi and takeoff allowance and each leg's burn taken from them after, filled again at each field landed at, as the planner checks each flight; null at a point past a leg whose burn is not known, until the next fill.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FuelInTanksInput",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "departure": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "fuel_gal": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "The burn of the leg to it."
+              },
+              "refuel": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "The tanks filled on landing there."
+              }
+            }
+          }
+        },
+        "usable_gal": {
+          "type": "number"
+        },
+        "taxi_gal": {
+          "type": "number"
+        },
+        "reserve_gal": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "points",
+        "usable_gal",
+        "taxi_gal",
+        "reserve_gal"
+      ]
+    },
+    "answer": {
+      "title": "FuelInTanksAnswer",
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "gal": {
+                "type": "number"
+              },
+              "low": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "gal",
+              "low"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{page :: head('Connect')}"></head>
+<body>
+<h1 th:text="'Sign in to connect ' + ${clientName}">Sign in to connect</h1>
+<p th:text="'Sign in to Wingtip Maps, and ' + ${clientName} + ' can then plan with your airplanes and flights.'"></p>
+<p class="muted" th:if="${!#strings.isEmpty(notice)}" th:text="${notice}"></p>
+<a th:each="provider : ${providers}" class="button plain" th:href="@{/oauth2/authorization/{p}(p=${provider})}"
+   th:text="'Continue with ' + ${#strings.capitalize(provider)}">Continue</a>
+<form method="post" th:action="@{/api/auth/magic-link}">
+  <label for="email">Email</label>
+  <input id="email" type="email" name="email" required autocomplete="email">
+  <button class="button" type="submit">Email Me a Sign-In Link</button>
+</form>
+<p class="muted">Open the link on this device, in this browser, and you come back here to finish.</p>
+</body>
+</html>

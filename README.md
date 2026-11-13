@@ -70,7 +70,7 @@ every app gets the same answer.
 | Layer | What it does | More |
 |---|---|---|
 | **Engine** (Rust, `engine/`) | Every aviation rule and figure: altitudes, winds, fuel, weather limits, Go / No-Go, procedures. No network, no screen, no clock. Runs inside the planner, the browser (WebAssembly) and both phones. | [engine/README.md](engine/README.md) |
-| **Planner and services** (Python, `services/`) | The planner works out a flight and asks the engine every rule; `ingest` reads the live FAA feeds, `weather` fetches the weather, `assistant` makes every Claude call, and the jobs draw each chart cycle. | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| **Planner and services** (Python, `services/`) | The planner works out a flight and asks the engine every rule; `ingest` reads the live FAA feeds, `weather` fetches the weather, and the jobs draw each chart cycle. | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | **Gateway** (Spring Boot, `services/gateway/`) | Who the pilot is and what they saved: accounts, sign-in, records, the public API, mail. No aviation logic. | [gateway](services/gateway/README.md) |
 | **Apps** (`apps/`) | Web (React, MapLibre), iOS (SwiftUI) and Android (Compose): get data, keep state, draw, and ask the engine the rest. | [web](apps/web/README.md), [iOS](docs/NATIVE.md), [Android](docs/NATIVE-ANDROID.md) |
 
@@ -107,10 +107,11 @@ Container" uses `.devcontainer/`
    fetches the FAA's data, so give the planner a few minutes.
 2. To sign in, enter an address in the app, then open the link from the
    local inbox at [localhost:8025](http://localhost:8025) (Mailpit).
-3. The Claude features are off ([decision 0035](docs/decisions/0035-claude-off-until-subscription.md)).
-   To try them on your machine, `.env.example` names the three settings
-   (the key, `APP_CLAUDE_FEATURES` and `COMPOSE_PROFILES=claude`).
-   Everything else works without them.
+3. The server makes no model call: the server's Claude features were
+   taken out ([decision 0041](docs/decisions/0041-claude-taken-out.md)).
+   The phones' AI runs on the phone, and a pilot's own Claude or
+   ChatGPT reaches Wingtip through its connector
+   ([decision 0036](docs/decisions/0036-mcp-connector.md)).
 
 On a phone over the Wi-Fi: `infra/local-https/make-certs.sh <your Mac's
 address>`, three lines in `.env`, and `https://<address>:8443/app`
@@ -122,10 +123,12 @@ stack goes live with `scripts/dev/go-live.sh`.
 ```
 apps/        web/ (React), ios/ (SwiftUI), android/ (Compose)
 engine/      the Rust engine: facade/, crates/ (thirteen domains), contract/, bindings/
-services/    planner/, ingest/, weather/, assistant/, gateway/, jobs/, Dockerfile.base
+services/    planner/, ingest/, weather/, gateway/, jobs/, Dockerfile.base
 ml/          the notebooks and their image
-infra/       AWS CloudFormation, the server's compose file, CI's, local HTTPS
+infra/       AWS CloudFormation, the server's compose file, CI's, local HTTPS, sim-trial/ (MSFS on EC2)
+tools/       msfs-agent/ (the MSFS 2024 replay agent for infra/sim-trial)
 scripts/     build/ (WebAssembly, the phones' models), ci/, dev/ (checks, go-live, tidy)
+tools/       xplane-driver/ (the X-Plane 12 trial's replay plugin, docs/XPLANE-TRIAL.md)
 data/        fetched and made data (mostly gitignored); stock aircraft profiles
 docs/        the docs below, and the architecture diagrams
 ```

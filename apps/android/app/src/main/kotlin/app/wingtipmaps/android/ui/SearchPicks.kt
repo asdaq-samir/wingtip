@@ -15,13 +15,18 @@ import app.wingtipmaps.android.search.SearchPick
  * with no route; an airplane opens its profile, where Fly This Airplane
  * is; an action runs. Opened for Add a Stop (`addingStop`), a field or a
  * fix picked is the route's next stop, before the destination (or after
- * the point it was opened from, `stopAfter`), and the plan shows it. Route edits are Plan's, with their Undo.
+ * the point it was opened from, `stopAfter`), and the plan shows it.
+ * Opened for an airport field (`pickAirport`, the first flight's), a
+ * field picked is handed to it. Route edits are Plan's, with their Undo.
  */
 class SearchPicks(
     private val plan: Plan,
-    private val fix: OwnShip.Fix?,
+    /** The fix now, read at the pick rather than held, so the screen that
+     *  makes this is not drawn again at every fix. */
+    private val fix: () -> OwnShip.Fix?,
     private val addingStop: Boolean,
     private val stopAfter: String?,
+    private val pickAirport: ((String) -> Unit)?,
     private val onAirport: (String) -> Unit,
     private val onPlan: () -> Unit,
     private val ask: (String) -> Unit,
@@ -30,15 +35,22 @@ class SearchPicks(
 ) {
     fun pick(picked: SearchPick) {
         when (picked) {
-            is SearchPick.Airport -> if (addingStop) addStop(picked.ident) else onAirport(picked.ident)
-            is SearchPick.Waypoint -> when {
-                addingStop || plan.state.value.routed -> addStop(picked.ident)
-                fix != null -> directTo(picked.ident, fix)
-                else -> say(noRoute(picked.ident))
+            is SearchPick.Airport -> when {
+                pickAirport != null -> pickAirport(picked.ident)
+                addingStop -> addStop(picked.ident)
+                else -> onAirport(picked.ident)
+            }
+            is SearchPick.Waypoint -> {
+                val now = fix()
+                when {
+                    addingStop || plan.state.value.routed -> addStop(picked.ident)
+                    now != null -> directTo(picked.ident, now)
+                    else -> say(noRoute(picked.ident))
+                }
             }
             is SearchPick.Airplane -> ProfileOpen.open(picked.tail, type = picked.type)
             is SearchPick.Do -> when (val action = picked.action) {
-                is DoAction.DirectTo -> fix?.let { directTo(action.ident, it) }
+                is DoAction.DirectTo -> fix()?.let { directTo(action.ident, it) }
                 is DoAction.Open -> ScreenRequests.ask(action.screen)
                 is DoAction.Ask -> ask(action.question)
             }

@@ -26,7 +26,7 @@ variable "PUSH" {
 # Every image, for a bake with no target named -- and the list the
 # Promote workflow walks, promoting each this commit built.
 group "default" {
-  targets = ["base", "ml", "retrain", "charts", "planner", "ingest", "assistant", "weather", "gateway"]
+  targets = ["base", "ml", "retrain", "charts", "planner", "ingest", "weather", "gateway"]
 }
 
 function "image" {
@@ -113,16 +113,6 @@ target "ingest" {
   output     = image("ingest").output
 }
 
-# Every Claude call (services/assistant), on wingtip's base like the planner.
-target "assistant" {
-  context    = "."
-  dockerfile = "services/assistant/Dockerfile"
-  contexts   = { wingtip-base = "target:base" }
-  tags       = image("assistant").tags
-  cache-from = image("assistant").cache-from
-  cache-to   = image("assistant").cache-to
-  output     = image("assistant").output
-}
 
 # The weather service (services/weather), on the same base as the planner.
 target "weather" {

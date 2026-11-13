@@ -16,8 +16,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.aircraft.AircraftFormFields
 import app.wingtipmaps.android.design.ChoiceGroup
@@ -37,7 +37,7 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
  * page gives.
  */
 @Composable
-fun HandbookPhotoSheet(type: String, onClose: () -> Unit, model: HandbookPhotoModel = viewModel()) {
+fun HandbookPhotoSheet(type: String, onClose: () -> Unit, model: HandbookPhotoModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()

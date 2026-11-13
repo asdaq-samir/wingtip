@@ -75,7 +75,9 @@ These hold on every screen below and win over any reference app.
   the issue (decision 0013). Where this reference differs from today's
   placement it is a proposal for the owner, not an instruction.
 - **Close goes back one level**; there are no Back buttons (decision 0015).
-- **One home per control**; there is no Settings page (decision 0014).
+- **One home per control**: You, Settings and the Map card
+  ([rules.md](rules.md) §8; the owner, 2026-11-13), Settings one page
+  and the one thing so named (decision 0014's no-second-home, kept).
 - **Discrete settings are menus or segmented controls**, not sliders
   (decision 0017).
 - **Errors show where they happen** (`lib/problems`), never in a toast.
@@ -83,6 +85,10 @@ These hold on every screen below and win over any reference app.
   `toast.undo`), the web's stock pattern, and a control's own
   confirmation ("Copied") an anchored Base UI Toast by that control
   (`lib/doneNote`), at the owner's word (2026-11-10).
+- **The browser's defaults stay** (the overrides audit, approved
+  2026-11-11): text is selectable, so a METAR, a NOTAM or a frequency is
+  copied with a long press, and only buttons, tabs and the map take no
+  selection (`index.css`).
 - **Words:** "airplane" (decision 0020), Title Case labels (0021), no
   explanatory footnotes (0019), FAA text in sentence case with its codes
   kept, raw reports as sent.
@@ -96,7 +102,22 @@ These hold on every screen below and win over any reference app.
   panel is a side panel the window's height, beside the map. An iPad held
   wide, all touch, keeps the phone's layout.
 - **Phone** (and touch tablets) is the map with one sheet over it, at three
-  detents (pill, half, full), as decision 0018 sets. The sheet is solid at
+  detents (pill, half, full), as decision 0018 sets. They are the stock
+  Drawer's own snap points, fixed values in its own units, the same for
+  the sheet and every card (`components/sheet/insets` `snapsOf`; the owner,
+  2026-11-11, the detents felt buggy as px worked out from the window's
+  height, which Safari's toolbar changes): the pill `"4.75rem"` (the one
+  search's band with the grabber over it; a top sheet's `"5.25rem"`, the
+  band and the grabber's row under it), half `"23rem"`, all the way up `1`.
+  Nothing is computed from the window, the visual viewport, the safe areas
+  or the content: the Drawer measures its viewport, which a bottom sheet's
+  ends over the home indicator (its ground carried on under it), and the
+  popup, kept clear of the status bar in CSS. `snapPoint` is set from the
+  same constants by size and a drag maps back by identity. The pill is one
+  row: on FPL the route's figures (and while flying), the route's row from
+  half up (SheetParts' `figuresPill`, 3.25 rem under the grabber's room);
+  on Search the search; the map's room is read from the Drawer's own
+  `--drawer-snap-point-offset` (`useSheetCover`). The sheet is solid at
   every size (`GLASS_SHEET`, the look's `--sheet`), not glass; only the
   map's floating buttons are frosted (owner decision 2026-11-10
   (decisions page), the sheet audit's F-L1).
@@ -134,11 +155,15 @@ close does.
   assistive technology's and the browser's own keys (address bar, reload,
   find) unless the app's use is frequent and the browser's rare
   ([APG keyboard interface][apg-keyboard]).
-- **Single-key shortcuts** (Wingtip's `/`, `1`–`4`, `B`, `N`, `D` in
-  `hooks/use-shortcuts.ts`) must be possible to turn off or remap to
-  include a modifier, or be active only while their component has focus:
-  WCAG 2.1.4, Level A ([WCAG 2.1.4][wcag-214]). Today they cannot be turned
-  off; a switch in the Map menu (one home per control) is needed.
+- **No single-key shortcuts.** Wingtip's letters (`hooks/use-shortcuts.ts`:
+  `/` the search, `B` the Brief, `N` Nearest, `D` Direct To; a card's `F`
+  and `S`, `useCardKeys`) fire only with Alt held, Option on a Mac, read
+  from the physical key (`event.code`, `lib/shortcutKeys`), never a bare
+  letter (the owner, 2026-11-11: "I like the stock behavior"), so
+  VoiceOver's quick nav, the browser's find-as-you-type and a speech
+  user's words keep their keys; with a modifier always held WCAG 2.1.4
+  (Level A, [WCAG 2.1.4][wcag-214]) asks for no switch, and Settings has
+  none. Their hints and `aria-keyshortcuts` say "Alt+F".
 - Show shortcuts where the action is, as Raycast's Action Panel shows each
   action's shortcut at its right so people learn them
   ([Raycast Action Panel][raycast-actions]); shadcn ships a `Kbd` for it
@@ -169,9 +194,75 @@ close does.
 ### Motion
 
 - Sheets and side panels: the stock Drawer's own slide, 0.45 s on
-  `cubic-bezier(0.32, 0.72, 0, 1)`, no spring, transform only, one detent
-  per throw (decision 0018; the owner kept the stock sheet's motion,
-  2026-11-10, MapPanel).
+  `cubic-bezier(0.32, 0.72, 0, 1)`, transform only: the Drawer's
+  behaviour as it comes, nothing set over it (decision 0018; the owner,
+  2026-11-10 and 2026-11-11, "Just let the drawer do what it does"), with
+  one of its own options on: `snapToSequentialPoints`, so a swipe moves
+  one size however fast (the owner, 2026-11-11).
+- What the sheet shows follows its snap point the moment it is set: the
+  grabber, the radio's and the map's buttons on its top, the body's layout
+  for the size, the pill's row, the figures' compact form, the map's room
+  (MapPanel). Nothing is held until the slide ends, nothing laid out ahead
+  in a transition, nothing raises the sheet on a focus; the keyboard's
+  inset and a focused field's scroll are `VirtualKeyboardProvider`'s.
+  The one thing handed over at a slide's end is the map's buttons between
+  the sheet and a card: they move onto a card once its drawer says it has
+  come up (`onOpenChangeComplete`, `sheetTopSlot`'s `useRidingCard`) and
+  back as it starts to close, so they never ride a card off the screen.
+  MapLibre's corner controls move on the Drawer's time and curve too
+  (`motion.drawer` and `motion.drawer-ease` in design/tokens.json, which
+  every web class that runs the Drawer's figures reads).
+- Cards over the sheet are the Drawer's own nested drawers (the owner,
+  2026-11-11; `components/sheet/CardStack`), every card but the welcome
+  (the owner, 2026-11-13: "For webapp, why don't we make everything a
+  nested drawer except the welcome one?"): `SheetCard` for a thing's
+  card, the Map card, an airplane's profile and Emergency; `CardLayer`
+  for the route's Brief, Nav Log, Profile and Stops and for You
+  (`features/shell/ConsoleLayer`, its one head row Settings' gear and
+  the ✕, Settings and its pages inside it). Each with its own snap point
+  among the sheet's three sizes, its grabber and its swipe, the sheet's
+  swipe the card's while one is up, and its own Escape closing it. Each
+  card sizes its own drawer (the owner, 2026-11-11): its snap point is its
+  entry's `at` in `lib/sheetCards`, set as it opens -- half, every card,
+  whatever it covers (`cardOpening`; the owner, 2026-11-11: "I thought
+  stock was to open each card medium by default"), Emergency alone all the
+  way up (`SheetCard`'s `fullScreen`) -- then where the pilot drags it or
+  the card asks through
+  `useCardSize()` (the stock controlled `snapPoint` and its change, from
+  the card's context or by the `cardId` its own component gives it). The
+  page's `setPanel` sizes the main sheet alone, its `data-panel` the
+  sheet's own under a card too, each card's `data-panel` on its own
+  drawer; what is in sight (the top card's, else the sheet's) is read for
+  `<body>`'s `data-map-panel` and the map's room. No field's focus or
+  typing sizes either. The page sizes the main sheet only by Apple Maps'
+  one rule (the owner, 2026-11-11: "I like the stock behavior"):
+  something new opened at the pill rises it to half (`riseToSee` in
+  `features/plan/hooks/panelNow`); otherwise it keeps the size the pilot
+  left it at, never lowered and never taken all the way up, a page put
+  away leaving it where it is (`e2e/sheet-size.spec.ts`). They are put inside the sheet's popup
+  (`Drawer.Portal`'s `container`), outside its corners' clip, placed from
+  the sheet's snap offset to their own. A card comes up where the front
+  sheet's top is (the sheet's, or the card's under it that the map's
+  buttons ride), as Apple Maps' place card takes over its sheet, and
+  eases to its own size: its popup placed at the front's snap offset
+  under `[data-starting-style]` (`--card-from`, `sheetTopSlot`'s
+  `frontOffset`), and faded out under `[data-ending-style]`. The map's
+  buttons move onto its top in the commit it opens in, and glide (Web
+  Animations, on the Drawer's time and curve) only when handed to a top
+  at another height (Base UI writes the snap offset as 0 until it has
+  measured, so without a starting place a card slid from full to half). What the sheet
+  holds fades under a card as Base UI's nested drawers demo has it:
+  opacity 0 under `[data-nested-drawer-open]`, back under
+  `[data-nested-drawer-swiping]`, hidden once faded; its ground, edge and
+  shadow the same on the Drawer's curve (`SheetDrawer`). A card's content stays drawn where
+  its caller is (its providers) and is put in its drawer's scroller
+  (`useCardFrame`); touches on it are handed to its drawer's viewport
+  (`SheetViewport`): Base UI 1.9 gives the viewport its touchstart,
+  touchend and pointerdown as React props, and React sends a portal's
+  events to its React parents, not to the viewport it sits in on the page.
+- The keyboard: `Drawer.VirtualKeyboardProvider` on the sheet, each card
+  and each question (`PhoneSheet`), its `--drawer-keyboard-inset` the
+  viewport's bottom, in place of a `visualViewport` reading.
 - Base UI animates with CSS transitions on `[data-starting-style]` and
   `[data-ending-style]`, which can reverse mid-way; `onOpenChangeComplete`
   fires once the animation ends ([Base UI animation][bui-animation]).
@@ -222,7 +313,8 @@ close does.
   [shadcn React Aria][shadcn-aria], [shadcn Drawer][shadcn-drawer],
   [shadcn Toast][shadcn-toast]). Wingtip's toasts are Base UI's
   (`components/ui/toast.tsx`, `lib/toast.ts`): progress, Undo, and the
-  anchored confirmations.
+  anchored confirmations, on Base UI's own 5 seconds, held under a
+  touch or the pointer and swiped away (2026-11-11).
 - **React Aria Components 1.22** adds a swipeable Sheet and positions
   overlays round the virtual keyboard ([React Aria 1.22][ra-122]). Its drag
   and drop works by keyboard (Enter to start, Tab between targets, arrows,
@@ -347,10 +439,16 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
 
 **Structure, airport card, top to bottom.**
 1. Head (sticky in the panel): ident tile, name, city, the flight
-   category chip and the METAR's age; Share at the left of the bar, close
-   at the right (going back one level).
-2. Actions row: Fly Here (filled, first), Add Stop, Call, Address
-   (`lib/cardActions`; `docs/design/icons.md`).
+   category chip and the METAR's age; Share at the bar's start, the name
+   centred, and close (going back one level) at its end: two buttons at
+   most (the owner, 2026-11-11).
+2. Actions row, one row of equal tiles and no others (the owner,
+   2026-11-11): Fly Here (filled, first), Add as Stop (where the field can
+   be one; else the row holds three), Call, Favorite (the star, on or off,
+   in Address's place: the address is the town link and the Info tab's
+   row; the owner, 2026-11-11) (`lib/cardActions`;
+   `docs/design/icons.md`). Refresh is at the right of the Weather tab's
+   first row.
 3. Facts row: elevation, longest runway, the frequencies a pilot needs
    first (each copies on click), fuel.
 4. Tabs: the card's sections as today (`CardTabs`), the airport diagram
@@ -402,6 +500,61 @@ photo that pushes the actions below the half detent.
 [amaps-newsroom], [amaps-shortcuts], [windy-v49], [skyvector-airport],
 [bui-drawer], [bui-releases], [bui-tabs], [apg-tabs], [bui-preview].
 
+### 2a. The sheet's two pages (the owner, 2026-11-11; one toggle button since 2026-11-13)
+
+The phone's sheet and the desktop's side panel hold two peer pages,
+Search and FPL ([rules.md](rules.md) §4a), turned by one round glass
+button riding the sheet's top (the owner, 2026-11-13: "Why
+not make the same tab on the right toggle between search and fpl"), on
+a phone at the left under the 3D, in the radio's button's place (the
+owner, 2026-11-13: "Let's replace the radio button on the left with the
+fpl toggle but below 3d"),
+where a tab bar under the sheet, and before it a sideways pager and a
+split grabber, were. It is the app's shadcn Toggle on Base UI's, never
+pressed (`aria-pressed="false"`: a tap goes somewhere, it turns nothing
+on), its name where it goes: `components/PageToggle`. It shows the page a
+tap goes to, as Apple Maps' 2D/3D button does -- lucide's Route on
+Search ("Show flight plan"), the magnifier on FPL ("Show search") -- in
+a glass circle of its own the size of the 3D and microphone circles (a
+36-point button in 4 points of glass), its 44-point area its `::after`
+out to the glass's edge, never grown. On a phone it is the last of the
+left-hand column (`MapControls`), so on a bottom sheet it rides the
+sheet's top through `OnSheetTop`, 8 under the 3D circle and level with
+the map's buttons' group at the right; the radio's button, drawn only
+while Comms Assist is on (a switch of Settings' ATC page, `comms-assist-toggle`,
+off by default; the owner, 2026-11-13), is then a
+circle of its own over that group, as from md up, its listening pill
+widening to the left across the screen less its margins (in flight its
+circle grown to 60 over NRST, D→ and the arrow). Beside the side panel
+the toggle is the last of the right-hand column, under the map's
+buttons at the bottom right. The pages
+live in `MapPanel` and the button with the map's, apart in the tree, so
+`MapPanel` tells it the page up and the way to turn it
+(`sheet/pageToggle`), or nothing while they cannot be turned. The
+sheet's sizes stand on the screen's foot again (the home indicator's
+inset), the bar's 48 points and its 4-point floor given back. Each page
+(`sheet/SheetPages`' `SheetPage`) is kept, inert and skipped by
+`content-visibility` while the other is up (index.css's
+`tab-page[data-hidden]`), so each keeps its scroller's place. The
+grabber is the plain `SheetGrabber`, its box 16 points tall (the owner,
+2026-11-13: "minimal space"), its 44-point hit area reaching off the
+sheet's edge over the map. The toggle gives way with the map's buttons
+all the way up and while a card slides (index.css), goes while flying,
+and rides a card's top while one is up, any card (the owner,
+2026-11-13: "airport card hides the fpl toggle"). The
+first flight's tip (`FplTip`) points at it while it shows FPL. The page up is the
+planner's place (`usePanelView`'s `view`: the plan is FPL, the search
+and the traffic are Search); the toggle picks it as a place is picked
+(`pickPage`), and tapped with cards up it closes them all first
+(`lib/openCards`' `closeEveryCard`, and You), as Android's
+`SheetNav.show` does, none of them kept to come back with its page. The pill is the page's one row (the
+route's figures on FPL); the route's figures sit at the foot on FPL
+alone. The Brief, the Nav Log, the Profile and the Stops are cards over
+FPL (`PlanPage`, `CardLayer`), the last three kept between their
+openings: built at the first, their drawers closed and skipped by
+`content-visibility` after (index.css's kept cards), as a tab put away
+is, so the Nav Log is not built again (0.6 s).
+
 ### 3. The flight plan and route editing
 
 **Reference.** ForeFlight Web: "Rubberbanding is fully supported on the
@@ -435,12 +588,18 @@ by clicking the map, typing an address or a name, up to 9 stops in all
    (`toast.undo`).
 
 **Stock parts.** The rows: React Aria GridList with `useDragAndDrop` and
-`onReorder`, a `<Button slot="drag">` handle per row, keyboard drag and
-screen reader announcements built in ([React Aria GridList][ra-gridlist],
-[React Aria DnD][ra-dnd]). Wingtip's `SortableRows` uses dnd-kit today;
-**a choice for the owner:** keep dnd-kit or move to the GridList already
-installed with react-aria-components, which would also drop dnd-kit's
-roughly 48 KB (`SortableRows.tsx`'s own note). Each row's menu: Base UI
+`onReorder`, a `<Button slot="drag">` handle per typed point, keyboard
+drag and screen reader announcements built in ([React Aria
+GridList][ra-gridlist], [React Aria DnD][ra-dnd]): FPL's list is
+`procedures/RouteGrid` (the stock audit's W3, the owner 2026-11-11), as
+Favorites' rows are `SortableRows`. Only the typed points are dragged and
+only between them (`getDropOperation`), the move made by `onReorder`'s
+keys; where it will go is the stock `DropIndicator`, a tint line between
+the rows (the owner's pick of the line over a ring round the row). The
+route box's pills are not dragged: a horizontal ListBox's options cannot
+hold the pill's own picker and menu (nested interactive), so a pill is
+moved by its menu's Move Up and Move Down, or by its row in FPL's list.
+Each row's menu: Base UI
 Menu (Direct To, Set Altitude…, Hold Here…, Add a Stop After, Move Up,
 Move Down, Remove). The map's point menu: Base UI Context Menu on desktop
 right-click, the point card on touch. The string: shadcn Input Group.
@@ -450,8 +609,10 @@ right-click, the point card on touch. The string: shadcn Input Group.
 button: every change is saved as it is made, with Undo in place.
 
 **Keyboard and hover.** The rows are a grid with one tab stop; arrows
-between rows; Enter on a handle starts a keyboard drag, arrows move it,
-Enter drops, Escape cancels ([React Aria DnD][ra-dnd]). Move Up and Move
+between rows, Tab through a row's own controls (`keyboardNavigationBehavior`
+"tab", so its text boxes keep their keys); Enter on a handle starts a
+keyboard drag, arrows move it, Enter drops, Escape cancels ([React Aria
+DnD][ra-dnd]). Move Up and Move
 Down in each row's menu are the single-pointer alternative WCAG 2.5.7
 names ([WCAG 2.5.7][wcag-257]); the APG has no drag-and-drop pattern of its
 own ([APG patterns][apg-patterns]). Delete or Backspace on a focused row
@@ -459,9 +620,9 @@ removes it, with Undo in place. On desktop: hovering a row outlines its
 leg on the map; hovering the route line shows a grab cursor where a drag
 will insert a point; right-click opens the point menu.
 
-**Motion.** A dragged row lifts with a shadow; the others move with a
-150 ms transform; a dropped rubber-band line settles with no bounce. None
-under reduced motion.
+**Motion.** The browser's own drag image; the row dragged dimmed and the
+drop line shown where it goes, as React Aria draws them, nothing of our
+own.
 
 **Avoid.** Dragging as the only way to add or reorder (2.5.7); a figure
 worked out in the row component instead of from the engine; blocking an
@@ -537,11 +698,9 @@ are designed ([Vercel guidelines][vercel-guidelines]).
 **Structure, top to bottom** (decision 0012, verdict first).
 1. The verdict, as the engine words it, and at most three one-line
    actions.
-2. The Ask field.
-3. The risk in words, then the glance cards (weather, NOTAMs, TFRs,
-   airplane, pilot currency).
-4. The detail, folded under each card.
-5. Ready to Fly: the checks left before departure, each with its source.
+2. The glance cards (weather, NOTAMs, TFRs, airplane, pilot currency).
+3. The detail, folded under each card.
+4. Ready to Fly: the checks left before departure, each with its source.
 
 **Stock parts.** Base UI Accordion for the folded detail (its keyboard
 follows the APG since 1.6, [Base UI releases][bui-releases]); shadcn Card,
@@ -554,8 +713,8 @@ the glance cards two columns wide by container query.
 **Primary action.** The first of the three actions, as a filled button
 under the verdict. Ready to Fly's primary is the next unchecked item.
 
-**Keyboard and hover.** `B` opens the Brief (switchable, WCAG 2.1.4); Tab
-through the actions, then Ask, then the cards. A card's hover on desktop
+**Keyboard and hover.** Alt+B opens the Brief (WCAG 2.1.4); Tab
+through the actions, then the cards. A card's hover on desktop
 outlines what it refers to on the map (a TFR, a field).
 
 **Motion.** The verdict appears with no animation; folded detail opens
@@ -582,6 +741,34 @@ decoded and lets them be marked read ([Windy v49][windy-v49]).
 when empty, decision 0023); a filter row (category, active now / later,
 read); the ranked list (`features/notamRanking`), each NOTAM's plain
 words first and its raw text as sent beneath, folded; pinned first.
+
+**On the airport card** (the Info tab, `place/PlaceNotams`): the
+engine's first three in its order (`notams_ranked`), as every list on
+the card shows three, how many in all at the title's right, and the
+title, "NOTAMs ›", the way to every one on a card over it with the same
+rows. Each row is the engine's reading (`notam_read`, the owner
+2026-11-11: "can we decipher them better?"): its keyword as a heading
+(Runway, Obstacle, Instrument approach, Temporary flight restriction
+...), its words with the FAA's contractions written out (FAA JO 7340.2;
+JO 7930.2 TBL 3-3-1) and its codes kept ("Runway 27 PAPI out of
+service."), heights MSL unless AGL is stated ("1,047 ft MSL (210 ft above
+ground)", JO 7930.2 4-2-1); its window in UTC, as the NOTAM gives it,
+with an estimated end or a permanent one said, and in the device's own
+time with its zone named; and "As Sent" folded. A word the engine does
+not know stays as written.
+
+**The airport card's Lights** (the Info tab, `place/PlaceLights`) read
+the same way, by the planner (the engine's `lighting_read`, the owner
+2026-11-11: "Also decode the lights information"): a row a system its
+Chart Supplement remark names, its name in AIM 2-1 with the legend's
+code as the title ("Approach lights (MALSR)", "Runway edge lights, high
+intensity (HIRL)"), its runways under it, and how it is turned on
+("Key the mic on CTAF when the tower is closed", "Preset low, sunset to
+sunrise; key the mic on CTAF for more", "On all the time"); a sentence
+the engine could not read in full a row of its words, never a guess;
+the first three, "Lights ›" opening the rest; the Keying row where the
+remarks give no count of their own (7 high, 5 medium, 3 low, AIM
+2-1-8); and the remarks "As Written" folded.
 
 **Stock parts.** Filters: Base UI Toggle Group or a Menu with checkbox
 items (menus, not sliders); the list: shadcn Item rows; the raw text:
@@ -664,9 +851,10 @@ than its METAR now (`weather_worse`). The weather comes on the map's own
 `/api/airports/in-view` answer (`weather`), the same for every app; the
 shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
 screen reader says each field's category and wind ("KJVL, IFR, wind 220
-at 18 gusting 26"). The Map card's Airport Weather is a segmented control (Off,
-Halo, Dot, Station; `Segmented`, shadcn's ToggleGroup) with three switches: the station model when zoomed
-in, the wind arrows, and getting worse by arrival, all on to begin with.
+at 18 gusting 26"). Settings' Airport Weather is one menu (`PullDown`,
+`airport-weather-look`) of Flight Category, With Wind (the default) and
+Station Model (`lib/map/marks/airportWeatherPrefs`); the getting-worse
+badge is always drawn (the owner, 2026-11-13).
 
 ### 8. The emergency assistant
 
@@ -744,23 +932,21 @@ a warning.
 ### 10. The coach
 
 **Reference.** No leading app's training coach could be verified; the
-coach is the assistant with a lesson around it, so it follows the Brief's
-verdict-first shape (decision 0012) and the Ask field.
+coach follows the Brief's verdict-first shape (decision 0012).
 
 **Structure, top to bottom (proposed).** What to practise next (one line and Start);
 the lessons assigned (by an instructor) and suggested; the drill in
 progress; the debrief of the last.
 
 **Stock parts.** shadcn Card and Item; Base UI Progress for a lesson's
-steps; Base UI Radio Group for quiz answers; the assistant's NDJSON
-stream into `WordsSection`.
+steps; Base UI Radio Group for quiz answers.
 
 **Primary action.** Start (or Continue), filled, at the top.
 
 **Keyboard and hover.** Radio Group arrows for answers; Enter submits.
 A status line announces each new step without taking focus (WCAG 4.1.3).
 
-**Motion.** Streamed words appear with no animation.
+**Motion.** A new step appears with no animation.
 
 **Avoid.** A chat-bubble layout for teaching; a score that blocks the next
 lesson.
@@ -837,24 +1023,28 @@ may need a cognitive test such as remembering a password unless there is
 an alternative or help ([WCAG 2.2][wcag22]).
 
 **Structure, top to bottom.** A tap on the account button (the avatar
-at the right of the sheet's title row) opens the account and settings
-page itself, with no menu between (the owner, 2026-11-10: "When tapping
-the avatar just open the settings"; `AccountButton`, still named
-"Account and settings"). Its rows are the pilot's own screens (Airplanes,
-Checklists, Flights, Logbook, Coach, Practice, Minimums, Status, Guide,
-About, from `design/screens.json`) and the look (Wingtip, Glass Cockpit,
-Chart ink, Native); signing in and out, the mode, a copy of the data and
-deleting the account are in the page's own Account menu. The map's
-switches are the Map card's, which the map's own Map button opens over
-the search (§15a). Sign-in by an emailed code or link.
+at the search row's end, beside the field, as on iOS and Android) opens
+You (`PilotPanel`, `lib/openSettings` `openYou`; the owner's option A,
+2026-11-13, [rules.md](rules.md) §8), as Apple Maps' avatar opens yours:
+a centred avatar, the name, Pilot Details and the account's menu
+(signing in and out, the mode, a copy of the data, deleting the
+account), then Airplanes (the checklists inside), Flights, Logbook,
+Minimums, Training (Coach, Practice), the Emergency Assistant, Settings
+and Subscription. Settings (`features/settings`) is one page pushed over
+You (`ConsolePages`): Look (Sunlight, Theme, Appearance), Map, In Flight
+(Alerts; ATC), Data and Help & About (Guide, Status, Log, About,
+Sources, the legal links); `openSettings` is the one way in, and the Map
+card's gear opens it at its Map group with the card raised. The map's
+layers are the Map card's, which the map's own Map button opens over the
+search (§15a). Sign-in by an emailed code or link.
 
 **Stock parts.** Base UI Menu (the page's Account menu); Base UI OTP Field for an
 emailed code (stable since 1.6, [Base UI releases][bui-releases]); shadcn
 Field; Base UI Switch for on/off; Select or Toggle Group for discrete
 choices (decision 0017).
 
-**Primary action.** Per screen; Sign In in the welcome and in the
-Account menu when signed out.
+**Primary action.** Per screen; Sign In in the Account menu when
+signed out.
 
 **Keyboard and hover.** The APG menu button and menu: Enter, Space or Down
 open on the first item, typeahead, Home/End, Escape back to the button
@@ -870,32 +1060,34 @@ second home for a control that already has one.
 
 ### 14. The welcome
 
-**Reference.** Chrome's richer install dialog shows the app's description
-and screenshots ([web.dev richer install UI][webdev-richer-install]), so a
-welcome need not explain installing. Vercel: every screen offers a next
-step ([Vercel guidelines][vercel-guidelines]).
-
-**Structure, top to bottom.** The map behind; a short card: what Wingtip
-is (one line), Pick Your Airplane (optional, with Skip: no airplane is
-assumed), Plan a Flight (focuses the search), Sign In.
-
-**Stock parts.** A `SheetCard` in the map's sheet over the search, with
-its ✕, on a phone as on a desktop (the one card rule, 2026-11-10; on a
-phone it was a dimmed sheet): non-modal, the map usable, the sheet at half.
-
-**Primary action.** Plan a Flight, filled.
-
-**Keyboard and hover.** Focus on the dialog's title; Escape closes it and
-leaves the map ready ([APG dialog][apg-dialog]).
-
-**Motion.** Fade in once; none under reduced motion.
-
-**Avoid.** A tour of several pages; a welcome that must be finished before
-the map works; weight on the first load (on a signed-out first visit the
-"Before you fly" dialog is open as the page first paints, measured
-2026-10-10).
-
-**Sources.** [webdev-richer-install], [vercel-guidelines], [apg-dialog].
+A welcome sheet again, the owner's option A (2026-11-13: "highlight that
+it's a simple app with search like Apple/Google and a plan page like an
+EFB that can be easily accessed"), where the 2026-11-11 word had left none.
+The first time the planner opens with no route on a device
+(`features/plan/components/FirstFlight`, `useFirstFlight`, kept in
+`lib/firstRunTips`), Apple's welcome layout in the app's modal sheet
+(`WelcomeSheet`: the stock Drawer on a phone, the stock Dialog from `md`
+up, solid): "Welcome to Wingtip Maps", three rows (Search, like Maps; FPL,
+like your EFB; FAA charts that move like Maps), Theme and Appearance on
+Settings' own two Look tiles (`components/lookPicks`, `MenuTile`, applied
+as they are picked, the sheet and the map changing behind it; the owner,
+2026-11-13), and at its foot Apple's permission priming (the owner,
+2026-11-13): with the browser's question still to come, Turn On Location
+(asked at the tap, never on load) and Later, each going on to the map;
+allowed already, Let's Go Flying alone; refused before, the same two,
+Turn On Location asking again and, refused once more with no question,
+how to allow it in the browser's settings under it, the welcome kept. Each, a swipe down or a tap beside
+the sheet goes on to the map with the one search ready: Search up
+at half (rule 11),
+its field asking for the destination (`useSearchPick`, as the route's own
+pickers ask) but not focused, so no keyboard jumps up until the pilot taps
+it; no field of its own. The airport picked is planned to from own ship's
+nearest field, else the last
+departure or Home, else the search asks for the departure. FPL comes up
+and one tip (`FplTip`, the stock Popover anchored to the FPL tab with its
+arrow) says the flight plan lives there, once. Settings' Guide, Show First
+Flight Again, brings both back. The airplane is picked when it is needed,
+never assumed (decision 0011).
 
 ### 15. Installable web app specifics
 
@@ -922,7 +1114,12 @@ the map works; weight on the first load (on a signed-out first visit the
   [MDN share_target][mdn-share-target], [MDN file_handlers][mdn-file-handlers]).
 
 **What Wingtip's manifest has** (`apps/web/vite.config.ts`): `display:
-standalone`, `theme_color`, the icons and maskable icons. **Proposed,
+standalone`, `theme_color` (the launch token), the icons and maskable
+icons. The page's own `theme-color` is two metas, the launch ground by
+day and the night navy by the device's scheme (`vite-plugins/manifest`
+`themeColor`, from the tokens), then the page's ground once the look and
+Settings' Theme are on (`lib/brand` `BrandLook`), so the browser's bar is
+dark at night (2026-11-11). **Proposed,
 generated rather than hand-written:**
 1. `id` set to the app's path, so a later `start_url` change does not
    make a second app.
@@ -952,6 +1149,36 @@ bar: the panel's head carries Share, and the browser's Back is the close.
 
 **Avoid.** An install banner of Wingtip's own over the map; asking for
 notifications before a tap; a different app per `start_url`.
+
+**In the air, with no connection (the offline audit, 2026-11-10).** The
+service worker (Workbox, `vite.config.ts`) holds the app, the engine's
+WebAssembly and what Keep for the Air fetched; the page asks it first.
+- Every query is asked with no connection (TanStack Query's `networkMode:
+  "offlineFirst"`, `lib/queryClient`), so the worker's kept answer
+  reaches the page; one it did not keep says "No connection" in place
+  (`QueryState`, `lib/problems`), never a blank or a skeleton for good.
+- Emergency's best fields and Nearest rank the fields round the airplane
+  on the device when the planner cannot be had: the airport index the
+  browser keeps, the engine's `best_fields` (`lib/fieldsOnDevice`), said
+  "From this device, without weather".
+- Direct To works its leg out on the device (the engine's `navlog_leg`
+  and `navlog_totals`, `features/plan/hooks/directOnDevice`), "Worked out
+  on this device" under the Direct strip; where it cannot, the route is
+  left as it was and "Not changed: no connection" is said.
+- Keep for the Air keeps the map's overlay archive whole once a cycle,
+  where the browser has room (`overlay-archive`, answered in ranges by
+  Workbox's range-requests plugin), the route's side view, and the
+  newest radar frame over the corridor (`radar-frames`, capped).
+- The glide ring keeps the last field elevation it was given (within 20
+  nm of that field).
+- Ages: the airport weather marks say "Field weather 45m old" in the
+  map's credits past half an hour; the briefing's age is the network's,
+  after a reload too.
+- In flying mode a read waits 4 s on the network before the kept answer
+  (15 s on the ground), and a request that sends data fails "No answer in
+  time" after 10 s.
+- Safari's captions offline say "Speech needs a connection in this
+  browser".
 
 **Sources.** [webdev-install], [webdev-richer-install], [safari-26],
 [webkit-push], [mdn-id], [mdn-wco], [mdn-launch-handler],
@@ -986,37 +1213,37 @@ The owner's rule: a screenshot of another app means ours should show this.
 
 | Apple Maps on the web | Wingtip |
 |---|---|
-| Sheet at rest: grabber, "Maps BETA" title row, full-width white search field on a light grey sheet | Grabber, the title row (`SheetTitle`: the mark and "Wingtip Maps", `Wordmark`, with the account button at its right end, moved from beside the field), the one search full width with the microphone as its trailing button. The phone's sheet is `GLASS_SHEET` (the look's `--sheet`: `#f2f2f7` in Wingtip, the paper in Chart ink, Canvas in Native) and the field `bg-card` |
-| All the way up: the title gone, the field pinned with a hairline under it | The title row goes at the full detent (MapPanel `titleShown`), kept while the search is in use, as Apple's is while typing; a hairline under the field |
+| Sheet at rest: grabber, "Maps BETA" title row, full-width white search field on a light grey sheet | Grabber and the one search with the microphone as its trailing button and the account button at the row's end. No title row: the mark and "Wingtip Maps" were taken out for more map (owner decision 2026-11-10: "delete the logo from webapp to have more space"), so the pill is the search row alone; the mark stays the tab's and Home Screen's icon and About's, and "Wingtip Maps" the page's heading for a screen reader. The phone's sheet is `GLASS_SHEET` (the look's `--sheet`: `#f2f2f7` in Wingtip, the paper in Chart ink, Canvas in Native) and the field `bg-card` |
+| All the way up: the title gone, the field pinned with a hairline under it | The field pinned with a hairline under it |
 | Large bold section titles, picture cards sliding sideways, a white card with a question and art | The search's page (`SearchHome`): Favorites, Recents and Nearest titled as every section is, 20 points medium in the text's colour with the chevron in the tint (`PillSection`, decision 0021; owner decision 2026-11-10 (decisions page): one heading style, not Apple's bold); the Recents as picture cards of the sectional round each field (`RecentCards`, the chart's own tile, shadcn Carousel); Plan a Flight, "Where do you want to fly?", the mark as its art (`FlightSummary`) |
 | Sheet's foot: Privacy \| Terms \| Legal \| Imagery, the copyright | `SheetFooter`: Privacy \| Terms \| Legal (About, every data source and licence), "© year Wingtip Maps". No "manage your business" line: no page for schools or clubs exists |
-| One rounded card at the top right: map button over location | `MapControls`: the map's settings, the location arrow, the flown track and full screen in one rounded glass card at the top right under a bottom sheet (bottom right under a top sheet); the map's banners keep clear of it |
-| One round button at the bottom left (Look Around) | The radio's microphone, where it already was |
+| One rounded card at the top right: map button over location | `MapControls`: the map's settings, the location arrow, the flown track and full screen in one rounded glass card at the right just over a bottom sheet's search row, riding its top as the 3D and the page toggle do at the left, the radio's button a circle over it (`OnSheetTop`; the owner, 2026-11-11: "keep the top right map button to just above the search bar on the right"), not at the top right where Apple Maps on the web has it; bottom right under a top sheet or beside the side panel |
+| One round button at the bottom left (Look Around) | The 3D button, and under it the page toggle (the owner, 2026-11-13) |
 | Privacy \| Terms \| Legal \| Imagery at the map's bottom right, over the sheet | `MapCredits`: one MapLibre AttributionControl at the bottom right, riding the sheet's top, Privacy \| Terms \| Legal then each drawn source's credit (imagery, Google, the traffic, the overlay tiles' FAA cycle); gone all the way up, where the footer has them |
-| A place picked: its card is the whole sheet, no search | Any card (a field, an airplane, a point, the Brief, the Map card) hides the title row and the search; its ✕ goes back to the search with the query kept |
-| A place card scrolled: its title and ✕ stay in sight | `PinnedCardBar`: as a card's head scrolls out, its large title folds away and its name and ✕ come in pinned at the card's top on the sheet's colour, scroll-linked where the browser runs scroll-driven animations (index.css `card-pinned`, `card-title-fold`), else once the head has gone; a line of no height until then, taking no room or tap. Every card with a head has it: `CardTitle` (airport, airplane, Stops), `CardHead` (Brief, Nav Log, Profile, Nearest, airspace, past flight), `SheetCard` (Map card and the cards in the sheet) and the lists in full (`ListPageHead`). The airport card's tabs pin under it, each tab keeping its own place in the scroll (`useTabScroll`) |
-| Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · town" with the town a link, Share and ✕, Fly Here (filled), Depart From, Add as Stop, Weather; the pictures as a sliding row |
-| Typing: top hit with inline action pills, suggestion rows, places | `OneSearchResults`: one white group, the top hit with Fly Here and Depart From pills, Search Nearby and Ask as suggestions, the match in bold |
-| One search field (the one card rule, 2026-11-10) | The traffic's airplane and Nearest's place are the one search's field scoped to them (`listSearchOf`, OneSearchField's `list`); the route's points, the route box's arrow between two points (a stop there, `useStopAsked`) and the traffic's airport ask it for an airport (`askSearchPick`, AirportPicker), its placeholder what they ask for; the developer's page, with no one search, keeps the picker's own |
+| A place picked: its card is the whole sheet, no search | Any card (a field, an airplane, a point, the Brief, the Map card) hides the search; its ✕ goes back to the search with the query kept |
+| A place card scrolled: its title and ✕ stay in sight | `PinnedHead` (owner decision 2026-11-10: one pinned frosted head, no large title): the card's head is one row, its name, Share and ✕, pinned at the sheet's top under the grabber from the start, the content scrolling under it blurred through its frost (`frost-head`), solid where there is no backdrop-filter and under Reduce Transparency. It replaced a large title folding into a compact bar, which on an iPhone stuck partway down the sheet with the card scrolling above it. Every card with a head has it, one row for all (`CardHeadRow`, the card rule's 8): `SheetCard`'s own (Map card and the cards in the sheet), `CardTitle`'s (airport, airplane), `CardHead`'s (Brief, Nav Log, Profile, Nearest, airspace, past flight); the lists in full (`ListPageHead`), the Stops' row (its distance a filter at its list's top), Settings (`flush`, its scroller unpadded) and its pages (`ConsolePages`) draw the same row, its name and line centred across the card, Share at its start and ✕ alone at its end, two buttons at most (the Brief's Refresh in its ••• menu, the Profile's VFR/IFR in its content), as Apple Maps' place card (`HeadGrid`; the owner, 2026-11-11: "let's move the title in the middle"); what scrolls under the head (an airport's name and town line, `CardHead`'s `line`) stays left-aligned (owner-reported 2026-11-11: Settings' title was its own, at 17 points under its pages' 22; `scripts/ci/shared_parts_guard.py` now fails a head drawn by hand). The airport card's tabs pin under it, each tab keeping its own place in the scroll (`useTabScroll`) |
+| Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · town" with the town a link, Share and ✕, Fly Here (filled), Add as Stop, Call, Favorite; the pictures as a sliding row |
+| Typing: top hit with inline action pills, suggestion rows, places | `OneSearchResults`: one white group, the top hit with Fly Here and Depart From pills, Search Nearby as a suggestion, the match in bold |
+| One search field (the one card rule, 2026-11-10) | The traffic's airplane and Nearest's place are the one search's field scoped to them (`listSearchOf`, OneSearchField's `list`; Nearest's at its card's top, `nearSearch`, as the card covers the sheet's first row); the route's points, the route box's arrow between two points (a stop there, `useStopAsked`) and the traffic's airport ask it for an airport (`askSearchPick`, AirportPicker), its placeholder what they ask for; the developer's page, with no one search, keeps the picker's own |
 | Questions over the page | Ready to Fly's prompt and a source's report as sent are SheetDialog's: from the bottom on a phone with their ✕, centred from `md` up |
 | Typing, scrolled: the title and the field go up with the list, nothing pinned, the keyboard up | `sheet/useScrollAway`: all the way up with the search in use, the head pulled up by as much as the list has scrolled, back at its top; the field never leaves the page, so it keeps its focus |
-| A sent search: ✕ on the title row, chips, rows with thumbnails, Filters page, numbered map marks | The sent search's list, its chips and Filters page on one filter state (VFR now and VFR at a time, towered, public, an instrument approach, fuel, runway surface and length, distance: the planner's Nearest with `wingtip.field_facts` and `field_forecast`; no fuel price, which the app has no source for), each row its METAR wind and visibility and what the field has, and the results as their own clustered MapLibre layer over the chart (the chart's own airport symbols untouched) |
-| Map-type button: "Choose Map" card in the sheet, picture tiles | The Map card in the sheet (`MapSettingsButton`), chart picture tiles from committed crops (`public/map-tiles/`), every setting of the old menu under it |
+| A sent search: Cancel beside the field, chips, rows with thumbnails, Filters page, numbered map marks | The sent search's list, its chips and Filters page on one filter state (VFR now and VFR at a time, towered, public, an instrument approach, fuel, runway surface and length, distance: the planner's Nearest with `wingtip.field_facts` and `field_forecast`; no fuel price, which the app has no source for), each row its METAR wind and visibility and what the field has, and the results as their own clustered MapLibre layer over the chart (the chart's own airport symbols untouched) |
+| Map-type button: "Choose Map" card in the sheet, picture tiles | The Map card in the sheet (`MapSettingsButton`): chart picture tiles from committed crops (`public/map-tiles/`), the overlay's four pictures with Strength under them while one is picked, and the layers; the rest of the old menu is Settings', the card's gear opening it at Map (the owner, 2026-11-13) |
 
 **The one scrolling rule (the owner, 2026-11-10).** Every card, page and
 sheet scrolls one way on a phone:
 
-- The title and ✕ always in view, the large title folding into the
-  pinned head (above).
+- The title and ✕ always in view: one pinned frosted head, no large
+  title (owner decision 2026-11-10, above).
 - At the pill and half way a drag up on the body raises the sheet; the
   body scrolls only all the way up, a drag down from its top lowering it.
   Base UI's Drawer hands a drag to any scroller under the finger that can
   scroll, and lets the sheet have it only toward its closing edge, so
   below full the body's scrollers are made no scrollers (`overflow-y:
   hidden`, which its arbitration skips; index.css). A script, the keyboard
-  and a row brought into view still scroll them, and a row focused under
-  the sheet's edge raises the sheet (MapPanel). Nothing sits below the
-  screen to be scrolled to at half.
+  and a row brought into view still scroll them; the sheet stays at the
+  size the pilot left it. Nothing sits below the screen to be scrolled to
+  at half.
 - Sideways rows scroll sideways only: the Embla carousels (`CardPictures`,
   `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`
   (an up or down drag the sheet's), and every native sideways row
@@ -1032,7 +1259,7 @@ sheet scrolls one way on a phone:
   went with the keyboard, the field and the keyboard with it).
 
 **Desktop.** Apple Maps on the web uses a left side panel there; Wingtip
-keeps its side panel, with the same title row over the same search.
+keeps its side panel, with the same search row at its top.
 
 ### 16. Desktop versus phone
 
@@ -1074,12 +1301,14 @@ the owner's call (decision 0013). Never let the hidden panel take focus
 Read from the code on `claude/integration`, 2026-11-09; each is a
 proposal, not done here.
 
-1. Single-key shortcuts cannot be turned off (WCAG 2.1.4, Level A).
+1. Done 2026-11-11: no single-key shortcuts; every letter takes Alt
+   (WCAG 2.1.4, Level A; "Keyboard").
 2. The manifest has no `id`, `shortcuts`, `screenshots` or
    `description` (section 15).
 3. Done 2026-11-10: the toasts are Base UI's ("The stock parts").
-4. Route rows use dnd-kit; React Aria's GridList, already installed, does
-   keyboard drag with announcements (owner's choice, section 3).
+4. Done 2026-11-11: FPL's route rows are React Aria's GridList with its
+   drag and drop (section 3); the route box's pills are moved by their
+   menu.
 5. Base UI Tabs default to manual activation; the APG prefers automatic
    for panels already loaded (section 2).
 
@@ -1098,7 +1327,7 @@ progress (Progress), the dry run's on-or-off buttons (Toggle) and the
 caution boxes (Alert). Code that re-implemented what a stock part does
 went with them: the sheet's frame loop following the Drawer (its parts
 now follow the Drawer's own CSS variables), its measured heights (fixed
-snap points: the pill's parts, 23 rem, the room), its landing timer (the
+snap points in the Drawer's own units: the pill's rem, 23 rem, 1), its landing timer (the
 Drawer's own transition end), its own Escape listener (the Drawer's
 `escape-key`), the head's frosting, the input's own clear and Done on
 Enter, the search's hidden native clear, its first-row and ⌘Enter
@@ -1127,12 +1356,16 @@ its reason:
   are the stock way, and each moves as its section is next changed.
 - **Map gestures** (the ruler's two-finger hold, the zoom banner): on
   MapLibre's canvas, where no stock component reaches.
-- **The map's buttons on the sheet's top** (`sheet/sheetCover`): outside
-  the Drawer's tree, so its CSS variables do not reach them; set once per
-  snap point on the Drawer's curve. Under a finger they wait for the
-  throw.
+- **The map's buttons, the radio's, the 3D and the page toggle on the sheet's top**
+  (`sheet/sheetTop`, `OnSheetTop`): a portal into a slot in the Drawer's
+  popup just over its top edge (`bottom: 100%`), so they move with the
+  sheet under a finger and on its curve; the popup's corners are clipped
+  on an inner box, not the popup, which they stand outside of. Base UI has
+  no prop for parts riding a drawer; this uses only its popup's own box.
 - **The side panel's Escape** (MapPanel, from `md` up): a plain region,
-  not a Drawer, so no stock component hears the key for it.
+  not a Drawer, so no stock component hears the key for it. On a phone
+  each card's own drawer closes it on Escape, and the sheet's own
+  `escape-key`, with no card up, lowers it to the pill.
 - **The departure hours' semantics:** Base UI's ToggleGroup gives pressed
   buttons in a group with arrow-key focus, not `role="radio"`; the stock
   behaviour is kept rather than overriding its ARIA.

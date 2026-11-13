@@ -5,6 +5,7 @@ import app.wingtipmaps.android.api.ChartLayer
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.generated.OverlayTilesLayer
 import app.wingtipmaps.android.map.MapStyle
+import app.wingtipmaps.android.map.SpecialUseLayers
 import app.wingtipmaps.android.tiles.TileTemplate
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -78,6 +79,7 @@ class MapStyleTest {
                 "runway-surface", "runway-centreline", "runway-ends",
                 "sua-band", "sua-line",
                 "airspace-D-band", "airspace-D", "airspace-C-band", "airspace-C", "airspace-B-band", "airspace-B", "airspace-labels",
+                "sua-labels",
                 MapStyle.ROUTE_SLOT,
                 "navaids", "navaids-idents", "fixes", "fixes-idents", "vfr-waypoints", "vfr-waypoints-idents",
                 "airports",
@@ -137,9 +139,30 @@ class MapStyleTest {
     fun theSpecialUseAreasAreALineAndAHatchedBand() {
         val s = style(tiles("special_use"))
         val band = layer(s, "sua-band")["paint"]!!.jsonObject
-        assertTrue(band["line-pattern"].toString().contains(MapStyle.SUA_HATCH_RESTRICTED))
+        assertTrue(band["line-pattern"].toString().contains(SpecialUseLayers.HATCH_RESTRICTED))
         val line = layer(s, "sua-line")["paint"]!!.jsonObject
-        assertTrue(line["line-color"].toString().contains(MapStyle.SUA_RESTRICTED_INK))
+        assertTrue(line["line-color"].toString().contains(SpecialUseLayers.RESTRICTED_INK))
+    }
+
+    @Test
+    fun aSpecialUseAreasTabIsItsNameOverItsAltitudesTurnedAlongItsSide() {
+        // From the archive's tab points: the name, then the limits, turned.
+        val tab = layer(style(tiles("special_use", "special_use_labels")), SpecialUseLayers.LABELS)
+        assertEquals("special_use_labels", tab["source-layer"]!!.jsonPrimitive.content)
+        assertEquals("7.0", tab["minzoom"]!!.jsonPrimitive.content)
+        val layout = tab["layout"]!!.jsonObject
+        assertEquals(SpecialUseLayers.TAB_TEXT, layout["text-field"])
+        assertEquals("""["get","angle"]""", layout["text-rotate"].toString())
+        assertTrue(layout["icon-image"].toString().contains(SpecialUseLayers.TAB_RESTRICTED))
+        assertEquals("both", layout["icon-text-fit"]!!.jsonPrimitive.content)
+        // "M-BRADY NOR*:" over "3600-17999": the engine's words, which the
+        // charts job writes into the tiles as `tab`; the name alone in an
+        // archive from before them.
+        assertEquals("""["coalesce",["get","tab"],["get","label"]]""", SpecialUseLayers.TAB_TEXT.toString())
+        // An older archive: the name alone along the boundary.
+        val older = layer(style(tiles("special_use")), SpecialUseLayers.LABELS)
+        assertEquals("special_use", older["source-layer"]!!.jsonPrimitive.content)
+        assertEquals("line", older["layout"]!!.jsonObject["symbol-placement"]!!.jsonPrimitive.content)
     }
 
     @Test

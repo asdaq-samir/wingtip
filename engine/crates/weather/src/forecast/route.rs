@@ -21,20 +21,13 @@ fn prefix(s: &str, n: usize) -> &str {
     s.get(..n).unwrap_or(s)
 }
 
-/// The worst a TAF forecasts in a window: the lowest ceiling and
-/// visibility, and whether any period forecasts a ceiling of no height.
-#[derive(Clone, Debug, PartialEq, Default)]
-pub struct Worst {
-    pub ceiling_ft: Option<f64>,
-    pub ceiling_unknown: bool,
-    pub visibility_sm: Option<f64>,
-}
+pub use super::covers::Worst;
 
 /// Every period of a TAF's (`fcsts`, awc.rs's shape) that says something
 /// about [start, end]: the prevailing periods and TEMPO and PROB groups
 /// overlapping it, and a BECMG group that began before its end -- a
-/// BECMG's change lasts past its own window to the next FM (AC 00-45H,
-/// the TAF's change groups), and the AWC's feed carries no prevailing
+/// BECMG's change lasts past its own window to the next FM (WMO No. 306;
+/// FAA-H-8083-28B 27.4.2.10), and the AWC's feed carries no prevailing
 /// period after it.
 pub fn periods_in_window(fcsts: &[Value], start: f64, end: f64) -> Vec<&Value> {
     let overlaps = |p: &Value| num(p, "timeFrom").is_some_and(|f| f <= end) && num(p, "timeTo").is_some_and(|t| t > start);
@@ -57,7 +50,7 @@ pub fn periods_in_window(fcsts: &[Value], start: f64, end: f64) -> Vec<&Value> {
 /// 1/2SM FG" read as VFR. None where the TAF says nothing of the window.
 /// `ceiling_unknown` where any period forecasts a ceiling of no height
 /// (14 CFR 1.1; metar.rs sky_ceiling_of): the lowest known ceiling is then
-/// not the worst the forecast allows.
+/// not the worst the forecast allows. `covers`: covers::covers_window.
 pub fn worst_in_window(fcsts: &[Value], start: f64, end: f64) -> Option<Worst> {
     let periods = periods_in_window(fcsts, start, end);
     if periods.is_empty() {
@@ -68,6 +61,7 @@ pub fn worst_in_window(fcsts: &[Value], start: f64, end: f64) -> Option<Worst> {
         ceiling_ft: least("ceiling_ft"),
         ceiling_unknown: periods.iter().any(|p| p.get("ceiling_unknown") == Some(&Value::Bool(true))),
         visibility_sm: least("visibility_sm"),
+        covers: super::covers::covers_window(fcsts, start, end),
     })
 }
 
@@ -80,7 +74,7 @@ pub fn current_period(fcsts: &[Value], at: f64) -> Option<&Value> {
 
 /// The prevailing forecast at `at` for its wind: the first line or FM
 /// period covering it, or a BECMG begun by then (it lasts to the next
-/// change), never a TEMPO or PROB group (AC 00-45H). None where no period
+/// change), never a TEMPO or PROB group (FAA-H-8083-28B 27.4.2.10). None where no period
 /// covers `at` at all.
 pub fn prevailing_at(fcsts: &[Value], at: f64) -> Option<&Value> {
     current_period(fcsts, at)?;
@@ -174,20 +168,7 @@ pub fn tafs_along_route(tafs: &[Value], a: (f64, f64), b: (f64, f64), corridor_n
 
 /// A whole number of feet with thousands commas, "1,200" (Python's ",.0f").
 pub(crate) fn feet(v: f64) -> String {
-    let n = v.round() as i64;
-    let digits = n.unsigned_abs().to_string();
-    let mut out = String::new();
-    for (i, c) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i).is_multiple_of(3) {
-            out.push(',');
-        }
-        out.push(c);
-    }
-    if n < 0 {
-        format!("-{out}")
-    } else {
-        out
-    }
+    crate::text::grouped_int(v.round() as i64)
 }
 
 /// A visibility as Python's "g" writes it: "3", "1.5", "0.25".

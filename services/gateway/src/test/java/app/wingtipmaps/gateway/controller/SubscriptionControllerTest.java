@@ -9,13 +9,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import app.wingtipmaps.gateway.domain.PaidFeature;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.SubscriptionDto;
 import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.SubscriptionService;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,14 +47,7 @@ class SubscriptionControllerTest {
 
     private static SubscriptionDto trial() {
         return new SubscriptionDto(
-                SubscriptionDto.State.TRIAL,
-                true,
-                Instant.parse("2026-11-10T12:00:00Z"),
-                false,
-                30,
-                null,
-                null,
-                List.of(new SubscriptionDto.FeatureUse(PaidFeature.NARRATIVE, 3, 60)));
+                SubscriptionDto.State.TRIAL, true, Instant.parse("2026-11-10T12:00:00Z"), false, 30, null, null);
     }
 
     @Test
@@ -66,15 +57,14 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void thePilotsSubscriptionWithTheMonthsUses() throws Exception {
+    void thePilotsSubscription() throws Exception {
         given(pilots.current(any())).willReturn(Optional.of(PILOT));
         given(subscriptions.status(any())).willReturn(trial());
         mockMvc.perform(get("/api/subscription").with(oidcLogin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("TRIAL"))
                 .andExpect(jsonPath("$.entitled").value(true))
-                .andExpect(jsonPath("$.uses[0].feature").value("NARRATIVE"))
-                .andExpect(jsonPath("$.uses[0].used").value(3));
+                .andExpect(jsonPath("$.until").value("2026-11-10T12:00:00Z"));
     }
 
     @Test
@@ -88,12 +78,14 @@ class SubscriptionControllerTest {
                 .andExpect(jsonPath("$.until").value("2026-11-10T12:00:00Z"));
         mockMvc.perform(post("/api/subscription/trial").with(oidcLogin()).with(csrf()))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("Your free month has already been used."));
+                .andExpect(jsonPath("$.detail").value("Your free month has already been used."));
     }
 
     @Test
     void a_deployment_that_sells_none_says_nothing_of_one() throws Exception {
         given(subscriptions.sold()).willReturn(false);
+        // A signed-in pilot: signed out is CurrentPilot's 401 before the controller is asked.
+        given(pilots.current(any())).willReturn(Optional.of(PILOT));
         mockMvc.perform(get("/api/subscription").with(oidcLogin())).andExpect(status().isNotFound());
         mockMvc.perform(post("/api/subscription/trial").with(oidcLogin()).with(csrf()))
                 .andExpect(status().isNotFound());

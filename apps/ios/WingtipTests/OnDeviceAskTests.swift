@@ -5,8 +5,7 @@ import Testing
 /// Ask with no signal (Wingtip/OnDevice): the figures the tools hand the
 /// model are the engine's, through the phone's own bridge; a sentence
 /// citing a figure not handed over, or a number not in what it cites, is
-/// dropped; with no model the engine's own words answer; and the router
-/// falls from the planner to the phone. The model is a fake here: the
+/// dropped; and with no model the engine's own words answer. The model is a fake here: the
 /// simulator may have none.
 struct OnDeviceAskTests {
     static let metarRaw = "KMSN 031853Z 27008G18KT 10SM FEW045 12/03 A3012"
@@ -15,8 +14,8 @@ struct OnDeviceAskTests {
         let runways = #"[{"closed":false,"lighted":true,"runway_ends":[{"ident":"18","heading_true_deg":180},{"ident":"36","heading_true_deg":360}],"wind":{"end":"36","headwind_kt":0,"crosswind_kt":-8,"gust_crosswind_kt":-18}}]"#
         var facts = OnDeviceFacts(dep: "KMSN", dest: "KDLH")
         facts.fields["KMSN"] = OnDeviceFacts.Field(ident: "KMSN", name: "Dane County Rgnl", elevationFt: 887,
-                                                   runways: try Planner.snakeCase.decode([APIRunway].self, from: Data(runways.utf8)),
-                                                   metar: try Planner.snakeCase.decode(Metar.self, from: Data(metar.utf8)),
+                                                   runways: try Planner.json.decode([APIRunway].self, from: Data(runways.utf8)),
+                                                   metar: try Planner.json.decode(Metar.self, from: Data(metar.utf8)),
                                                    taf: "TAF KMSN 031720Z 0318/0418 27010KT P6SM FEW050")
         facts.figures = Figures(cruiseTasKt: 110, fuelBurnGph: 8.4, usableFuelGal: 53)
         // The stock c172 picked, with its profile's own glide (9 to 1, its

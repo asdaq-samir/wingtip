@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,30 +30,20 @@ export function PullDownMenu<V extends string>({
   // Open only while its trigger is in sight: the sheet it is on lowered
   // to the pill under an open menu left the menu over the tab bar, its
   // first choice alone above the screen's foot (the owner's screenshot,
-  // 2026-10-27: Setup's Theme menu, "System", over the tabs). An
-  // IntersectionObserver counts the sheet's clip as out of sight.
+  // 2026-10-27: Setup's Theme menu, "System", over the tabs). Base UI's
+  // Positioner says when its anchor is hidden, the sheet's clip counted.
   const [open, setOpen] = useState(defaultOpen);
-  const button = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    const el = button.current;
-    if (!open || !el || typeof IntersectionObserver === "undefined") return;
-    const watch = new IntersectionObserver(([seen]) => {
-      if (seen && !seen.isIntersecting) setOpen(false);
-    });
-    watch.observe(el);
-    return () => watch.disconnect();
-  }, [open]);
+  const close = useCallback(() => setOpen(false), []);
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger
-        ref={button}
         render={
           trigger ?? (
             <PullDownWords label={label} value={value} options={options} placeholder={placeholder} testId={testId} className={className} />
           )
         }
       />
-      <DropdownMenuContent align={align} className={contentClassName}>
+      <DropdownMenuContent align={align} className={contentClassName} onAnchorHidden={close}>
         {top && (
           <>
             {top}

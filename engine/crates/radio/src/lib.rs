@@ -22,6 +22,7 @@
 
 pub mod atc;
 pub mod atis;
+pub mod calls;
 pub mod callsign;
 pub mod clearance;
 pub mod datis;
@@ -32,4 +33,4 @@ pub mod readback;
 
 // The modules below this crate by the names they had when the engine was
 // one crate, so the code reads them as crate::json.
-use wingtip_core::json;
+use wingtip_core::{json, text};

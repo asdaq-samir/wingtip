@@ -33,7 +33,7 @@ export const glZoom = (appZoom: number) => appZoom - 1;
 /** The app's level from MapLibre's zoom. */
 export const appZoomOf = (glZoomLevel: number) => glZoomLevel + 1;
 
-/** The chart enlarged two levels past its own last zoom. */
+/** The chart enlarged two levels past its own last zoom, with no imagery (closeZoom). */
 const OVERZOOM = 2;
 /** A region's level of the chart under it, where the
  *  chart's own tiles are not in yet. */
@@ -54,8 +54,8 @@ export const DAY_SATURATION = 0.1;
 export interface ChartStyle {
   sources: Record<string, RasterSourceSpecification>;
   layers: RasterLayerSpecification[];
-  /** The map's furthest zoom, MapLibre's: the chart's own last plus
-   *  OVERZOOM. */
+  /** The map's furthest zoom without imagery, MapLibre's: the chart's
+   *  own last plus OVERZOOM (closeZoom's CLOSE_MAX_ZOOM with it). */
   maxZoom: number;
 }
 
@@ -145,7 +145,7 @@ export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number
 /** From which zoom each class is drawn, in the app's levels:
  *  B from 6, C from 7, D (and E) and every label from 8. */
 const AIRSPACE_FROM: Record<AirspaceClass, number> = { B: 6, C: 7, D: 8, E: 8 };
-const AIRSPACE_LABELS_FROM = 8;
+export const AIRSPACE_LABELS_FROM = 8;
 
 /** A height in the tab's words: the surface "SFC", else its feet MSL
  *  whole, "2300", as ForeFlight writes them. */
@@ -319,7 +319,7 @@ const SUA_MOA = ["MOA", "A"];
 export const suaHatch = (ink: keyof typeof SUA_INK) => `sua|hatch|${ink}`;
 /** From the app's zoom 7, a few states across, as Class C. */
 const SUA_FROM = 7;
-export const SUA_LAYERS = ["sua-band", "sua-line"];
+export const SUA_LAYERS = ["sua-band", "sua-line", "sua-labels"];
 
 /** The special-use areas from the tiles' `special_use` layer: each
  *  boundary a solid line with a hatched band of short diagonal ticks

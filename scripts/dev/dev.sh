@@ -81,6 +81,25 @@ doctor() {
   else
     ok ".env is there"
   fi
+  local_secrets
+}
+
+# This machine's own secrets, written into .env once and never shared: the
+# planner's connector shows the gateway MCP_INTERNAL_TOKEN for a pilot's
+# records, and a value committed to the repository would be every checkout's
+# (the security audit's M2, 2026-11-10). Kept when .env already has one.
+local_secrets() {
+  if grep -Eq '^MCP_INTERNAL_TOKEN=.+' .env; then
+    ok "MCP_INTERNAL_TOKEN is set"
+    return
+  fi
+  token=$(openssl rand -hex 32 2>/dev/null || od -An -N32 -tx1 /dev/urandom | tr -d ' \n')
+  if grep -Eq '^MCP_INTERNAL_TOKEN=' .env; then
+    sed -i.bak -E "s/^MCP_INTERNAL_TOKEN=.*/MCP_INTERNAL_TOKEN=$token/" .env && rm -f .env.bak
+  else
+    printf '\n# The connector'"'"'s shared secret (docs/MCP-CONNECTOR.md), made by dev.sh.\nMCP_INTERNAL_TOKEN=%s\n' "$token" >>.env
+  fi
+  ok "MCP_INTERNAL_TOKEN written into .env (a random one, this machine's own)"
 }
 
 up() {
@@ -101,7 +120,7 @@ up() {
     say "" >&2
     say "The stack did not become healthy in time. What is running:" >&2
     docker compose ps >&2 || true
-    say "Look at a service's log with: make logs s=<service>   (planner, gateway, ingest, weather, assistant, db)" >&2
+    say "Look at a service's log with: make logs s=<service>   (planner, gateway, ingest, weather, db)" >&2
     exit 1
   fi
   scripts/dev/pg-refresh-collation.sh

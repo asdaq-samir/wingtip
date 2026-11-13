@@ -1,11 +1,12 @@
-import { useId, useLayoutEffect, useRef, type ReactNode } from "react";
+import { useId, useLayoutEffect, useRef } from "react";
 import { create } from "zustand";
 import { ArrowLeftRight, ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import RoundButton from "../../../components/RoundButton";
 import CloseButton from "../../../components/CloseButton";
-import { GLASS_BUTTON } from "../../../lib/mapChrome";
-import { ListChoices, ListGroup, ListRow } from "../../../components/GroupedList";
+import { Button } from "../../../components/ui/button";
+import { ListGroup, ListRow } from "../../../components/GroupedList";
+import { ListPicks, type ListPick } from "../../../components/ListPicks";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../components/ResponsivePopover";
 import { Switch } from "../../../components/ui/switch";
 import type { ProcedureList, ProcedureSummary } from "../../../lib/api/types";
@@ -120,43 +121,18 @@ export default function ProcedureMenu({
     toggle(false);
   };
   const runwayName = (r: string) => (r === "Circling" ? "Circling" : `Runway ${r}${r === windward ? " · into the wind" : ""}`);
-  // Each list's one choice the stock radio list (ListChoices), as the
-  // app's other lists are: a reader hears the one picked and its place
-  // ("selected, 2 of 5"), where each row was a button with aria-pressed
-  // and a tick drawn by hand. The arrow keys move between the choices
-  // without picking one: a radio group picks the one they reach (Base UI's,
-  // as the WAI-ARIA radio pattern has it), and a pick here plans the
-  // route again and closes the menu. A tap or Space picks.
-  const arrowing = useRef(false);
-  const choices = (value: string, label: string, rows: ReactNode) => (
-    <div
-      className="contents"
-      onKeyDownCapture={(event) => {
-        if (event.key.startsWith("Arrow")) arrowing.current = true;
-      }}
-      onKeyUpCapture={() => {
-        arrowing.current = false;
-      }}
-    >
-      <ListChoices value={value} onChange={() => undefined} label={label}>
-        {rows}
-      </ListChoices>
-    </div>
-  );
-  const tapped = (act: () => void) => () => {
-    if (!arrowing.current) act();
-  };
-  const item = (p: ProcedureSummary, name: string) => (
+  // Each list's one choice React Aria's ListBox (ListPicks), as a reader
+  // hears it ("selected, 2 of 5"): the arrow keys move between the choices
+  // without picking one, since a pick here plans the route again and
+  // closes the menu. A tap, Space or Enter picks.
+  const item = (p: ProcedureSummary, name: string): ListPick => ({
     // Its transitions a page where it has any; else picked at a tap.
-    <ListRow
-      key={p.id}
-      radio={p.id}
-      title={name}
-      chevron={p.transitions.length > 0}
-      onClick={tapped(() => (p.transitions.length > 0 ? push({ procedure: p, name }) : pick({ id: p.id, transition: null })))}
-      data-testid="procedure-menu-item"
-    />
-  );
+    id: p.id,
+    title: name,
+    chevron: p.transitions.length > 0,
+    testId: "procedure-menu-item",
+    act: () => (p.transitions.length > 0 ? push({ procedure: p, name }) : pick({ id: p.id, transition: null })),
+  });
   const NO_CHOICE = "-";
   // An approach's by runway: the runway landed on first, open; the rest a
   // page each, in the runways' order; one circling only under Circling.
@@ -210,24 +186,27 @@ export default function ProcedureMenu({
             <span className="sr-only">{label ?? SHORT[kind]}</span>
           </RoundButton>
         ) : (
-          <button
-            type="button"
+          // The stock Button's glass, a kind to add as one picked, at the
+          // owner's pick of the sketches ("B"): it was a dashed outline.
+          <Button
+            variant="glass"
             data-testid="procedure-kind"
             data-kind={kind}
             data-look={look}
             className={cn(
-              "relative flex min-w-0 shrink items-center gap-0.5 text-left font-semibold outline-none",
-              "after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-              // The buttons' glass, a kind to add as one picked, at the
-              // owner's pick of the sketches ("B"): it was a dashed outline.
-              GLASS_BUTTON,
-              look === "add" ? cn("h-8 rounded-full px-3", TEXT.detail) : cn("h-8 max-w-[10rem] rounded-full px-2.5", TEXT.detail),
+              "relative h-8 justify-start gap-0.5 rounded-full text-left font-semibold",
+              "after:absolute after:-inset-1.5 after:content-['']",
+              // A kind to add whole, "+ Approach", the row wrapping it under
+              // where it has no room: shrunk, it read "+ A…" at the owner's
+              // text size (2026-11-13). A picked one's name kept to a chip.
+              look === "add" ? "shrink-0 px-3" : "min-w-0 shrink max-w-[10rem] px-2.5",
+              TEXT.detail,
             )}
             aria-label={`${ident} ${TITLE[kind].toLowerCase()}: ${label ?? "none picked"}`}
           >
-            {look === "add" ? <span className="truncate">+ {TITLE[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
+            {look === "add" ? <span>+ {TITLE[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
             {look !== "add" && <ChevronDown className="size-4 shrink-0" aria-hidden />}
-          </button>
+          </Button>
         )}
       </ResponsivePopoverTrigger>
       <ResponsivePopoverContent
@@ -252,46 +231,36 @@ export default function ProcedureMenu({
         }}
       >
         {page && "procedure" in page ? (
-          choices(
-            picked?.id === page.procedure.id ? (picked.transition ?? NO_CHOICE) : "",
-            `${page.procedure.name} transition`,
-            <ListGroup>
-              {[null, ...page.procedure.transitions].map((t) => (
-                <ListRow
-                  key={t ?? NO_CHOICE}
-                  radio={t ?? NO_CHOICE}
-                  title={transitionWords(kind, t)}
-                  onClick={tapped(() => pick({ id: page.procedure.id, transition: t }))}
-                  data-testid="procedure-menu-transition"
-                />
-              ))}
-            </ListGroup>,
-          )
+          <ListPicks
+            label={`${page.procedure.name} transition`}
+            selected={picked?.id === page.procedure.id ? (picked.transition ?? NO_CHOICE) : null}
+            picks={[null, ...page.procedure.transitions].map((t) => ({
+              id: t ?? NO_CHOICE,
+              title: transitionWords(kind, t),
+              testId: "procedure-menu-transition",
+              act: () => pick({ id: page.procedure.id, transition: t }),
+            }))}
+          />
         ) : page && "direct" in page && picked ? (
           // A fix ATC sent the airplane to, at the owner's ask ("the ability
           // to go direct to a fix as told by ATC"): the procedure flown from
           // there, straight to it (wingtip.procedure_paths), or as charted.
-          choices(
-            picked.direct ?? NO_CHOICE,
-            "Direct to",
-            <ListGroup>
-              {[null, ...fixes].map((f) => (
-                <ListRow
-                  key={f ?? NO_CHOICE}
-                  radio={f ?? NO_CHOICE}
-                  title={f ?? "As charted"}
-                  onClick={tapped(() => pick({ id: picked.id, transition: picked.transition, direct: f }))}
-                  data-testid="procedure-menu-direct-fix"
-                />
-              ))}
-            </ListGroup>,
-          )
+          <ListPicks
+            label="Direct to"
+            selected={picked.direct ?? NO_CHOICE}
+            picks={[null, ...fixes].map((f) => ({
+              id: f ?? NO_CHOICE,
+              title: f ?? "As charted",
+              testId: "procedure-menu-direct-fix",
+              act: () => pick({ id: picked.id, transition: picked.transition, direct: f }),
+            }))}
+          />
         ) : page && "runway" in page ? (
-          choices(
-            picked?.id ?? "",
-            runwayName(page.runway),
-            <ListGroup>{(byRunway.get(page.runway) ?? []).map((p) => item(p, shortName(p)))}</ListGroup>,
-          )
+          <ListPicks
+            label={runwayName(page.runway)}
+            selected={picked?.id ?? null}
+            picks={(byRunway.get(page.runway) ?? []).map((p) => item(p, shortName(p)))}
+          />
         ) : (
           <>
             {all.length === 0 && (
@@ -301,11 +270,12 @@ export default function ProcedureMenu({
             )}
             {kind === "approach" && first !== null && (
               <>
-                {choices(
-                  picked?.id ?? "",
-                  runwayName(first),
-                  <ListGroup title={runwayName(first)}>{byRunway.get(first)!.map((p) => item(p, shortName(p)))}</ListGroup>,
-                )}
+                <ListPicks
+                  label={runwayName(first)}
+                  title={runwayName(first)}
+                  selected={picked?.id ?? null}
+                  picks={byRunway.get(first)!.map((p) => item(p, shortName(p)))}
+                />
                 {others.length > 0 && (
                   <ListGroup title="Other runways">
                     {others.map((r) => (
@@ -322,9 +292,9 @@ export default function ProcedureMenu({
                 )}
               </>
             )}
-            {kind !== "approach" &&
-              all.length > 0 &&
-              choices(picked?.id ?? "", TITLE[kind], <ListGroup>{all.map((p) => item(p, p.name))}</ListGroup>)}
+            {kind !== "approach" && all.length > 0 && (
+              <ListPicks label={TITLE[kind]} selected={picked?.id ?? null} picks={all.map((p) => item(p, p.name))} />
+            )}
             {picked && fixes.length > 0 && (
               <ListGroup>
                 <ListRow

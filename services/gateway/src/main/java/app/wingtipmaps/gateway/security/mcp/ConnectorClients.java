@@ -25,7 +25,8 @@ import org.springframework.security.oauth2.server.authorization.settings.TokenSe
  * register as a pilot first connects) may be, and what it is made.
  *
  * <p>Refused: a callback the allowlist does not have ({@link RedirectUris},
- * RFC 7591's invalid_redirect_uri), and a scope that is not one of
+ * RFC 7591's invalid_redirect_uri), a name or callbacks longer than a
+ * client's ever are ({@link RegistrationLimit} bounds the rest), and a scope that is not one of
  * {@link ConnectorSettings#SCOPES} (invalid_client_metadata).
  *
  * <p>Made, whatever it asked: a public client (no secret: Claude's and
@@ -42,6 +43,16 @@ final class ConnectorClients {
 
     /** A month without use, as the app's own sign-in lasts. */
     static final Duration REFRESH_TOKEN = Duration.ofDays(30);
+
+    /** The longest client name kept: Claude's and ChatGPT's are a word or
+     *  two, and the consent page shows it. */
+    static final int NAME_LIMIT = 100;
+
+    /** How many callbacks, and how long each: a connector registers one or
+     *  two, and V40's column holds them joined in 1,000 characters. */
+    static final int REDIRECT_URIS_LIMIT = 4;
+
+    static final int REDIRECT_URI_LENGTH = 200;
 
     private static final String RFC_7591 = "https://datatracker.ietf.org/doc/html/rfc7591#section-3.2.2";
 
@@ -61,7 +72,19 @@ final class ConnectorClients {
         Consumer<OAuth2ClientRegistrationAuthenticationContext> ours = context -> {
             OAuth2ClientRegistrationAuthenticationToken registration = context.getAuthentication();
             OAuth2ClientRegistration asked = registration.getClientRegistration();
+            String name = asked.getClientName();
+            if (name != null && name.length() > NAME_LIMIT) {
+                throw refused("invalid_client_metadata", "client_name: at most " + NAME_LIMIT + " characters");
+            }
             List<String> uris = asked.getRedirectUris();
+            if (uris != null
+                    && (uris.size() > REDIRECT_URIS_LIMIT
+                            || uris.stream().anyMatch(uri -> uri.length() > REDIRECT_URI_LENGTH))) {
+                throw refused(
+                        OAuth2ErrorCodes.INVALID_REDIRECT_URI,
+                        "redirect_uris: at most " + REDIRECT_URIS_LIMIT + ", each at most " + REDIRECT_URI_LENGTH
+                                + " characters");
+            }
             if (uris == null || uris.isEmpty() || !uris.stream().allMatch(redirectUris::allows)) {
                 throw refused(
                         OAuth2ErrorCodes.INVALID_REDIRECT_URI,

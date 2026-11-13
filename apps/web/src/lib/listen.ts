@@ -38,32 +38,13 @@ interface WebRecognition {
   onresult: ((event: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
-  /** With a track where the browser takes one (takesTrack); Safari's
+  /** With a track where the browser takes one (lib/speechLocal's takesTrack); Safari's
    *  declares start() alone, so under WebIDL the extra argument is
    *  ignored there without an error. */
   start(track?: MediaStreamTrack): void;
   stop(): void;
 }
 type WebRecognitionClass = new () => WebRecognition;
-
-/**
- * Whether the browser's recognizer hears the track it is handed
- * (start(track)): Chrome and Edge 135+ on Windows, Mac and Linux, and
- * Firefox 160 on the desktop, each with the unprefixed SpeechRecognition
- * (MDN's compat data, start's audioTrack). Safari names its recognizer
- * webkitSpeechRecognition alone and declares only start() (WebKit's
- * SpeechRecognition.idl), and Chrome for Android has no such start
- * (Chromium's MediaStreamTrackWebSpeech is desktop only): both record
- * whatever input is the default, given a track or not.
- */
-export function takesTrack(): boolean {
-  // ChromeOS too has the unprefixed recognizer without the track: Chromium's
-  // MediaStreamTrackWebSpeech flag is stable on Linux, Mac and Windows
-  // only (runtime_enabled_features.json5), and start(track) falls back to
-  // start() under WebIDL elsewhere.
-  if (typeof window === "undefined" || /Android|CrOS/.test(navigator.userAgent)) return false;
-  return typeof (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition === "function";
-}
 
 /** No microphone could be had, and what to try, by where. A Bluetooth
  *  panel or headset may simply have gone. Safari on iOS 26.3 to 26.6
@@ -86,6 +67,10 @@ export function noMicrophone(): string {
 /** Why nothing listens: speech cannot be recognised on this device. */
 const NOT_HERE = "Speech can't be recognised on this device; type the clearance instead.";
 
+/** Why nothing listens: this browser's recognizer is a server's, and
+ *  there is no connection to it. */
+export const NEEDS_CONNECTION = "Speech needs a connection in this browser; type the clearance instead.";
+
 /** The recognizer's refusal or failure in a pilot's words. A refusal is
  *  undone where it was given, in the browser's settings for the site: a
  *  website has no entry of its own in iOS's Settings, and words saying
@@ -96,9 +81,11 @@ function errorWords(code: string): string {
     const safari = /Safari\//.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|EdgiOS|Edg\//.test(ua);
     return `Microphone or speech recognition access was refused; allow it in ${safari ? "Safari's" : "the browser's"} settings for this website.`;
   }
-  // On the device a network failure should not happen; the words say
-  // what is true either way, and never suggest a server.
-  if (code === "network" || code === "language-not-supported") return NOT_HERE;
+  // Safari's recognizer is Apple's server's, not the device's: with no
+  // connection it fails with "network", which was said as the device
+  // being unable to (the offline audit, 2026-11-10). Said as what it is.
+  if (code === "network") return NEEDS_CONNECTION;
+  if (code === "language-not-supported") return NOT_HERE;
   if (code === "audio-capture") return noMicrophone();
   return code;
 }

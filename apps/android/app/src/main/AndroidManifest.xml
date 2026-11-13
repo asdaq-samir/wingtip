@@ -110,8 +110,7 @@
 
         <!-- Google's Map Tiles key for this app (build.gradle.kts's
              GOOGLE_MAPS_ANDROID_KEY), where Google's own libraries look for
-             one; empty until the owner adds it. CloseMap reads the same
-             key from BuildConfig. -->
+             one; empty until the owner adds it. -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${googleMapsAndroidKey}" />
@@ -143,8 +142,9 @@
             android:resource="@xml/app_functions_metadata" />
         <!-- The foreground service that keeps the fixes coming with the
              screen off while the airplane is flying (flight/OwnShip.kt);
-             started and stopped by OwnShip as the airplane reaches and
-             leaves flying speed, never by anything outside the app. -->
+             started only by the pilot's Start Flight at flying speed
+             (flight/StartFlightAsk.kt) and stopped as the airplane slows
+             below it, never by itself or anything outside the app. -->
         <service
             android:name=".flight.OwnShipService"
             android:exported="false"

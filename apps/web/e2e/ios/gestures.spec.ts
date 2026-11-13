@@ -60,7 +60,7 @@ test("the imagery over the chart comes in under a finger's pan, before it lifts"
   await page.goto("/app/plan");
   await settle(page);
   await openMapSettings(page);
-  await page.getByTestId("overlay-select").getByRole("button", { name: "Imagery" }).click();
+  await page.getByTestId("overlay-select").getByRole("button", { name: "USGS" }).click();
   await page.keyboard.press("Escape");
   await expect.poll(() => asked, { timeout: slow(15_000) }).toBeGreaterThan(0);
   await mapStill(page);

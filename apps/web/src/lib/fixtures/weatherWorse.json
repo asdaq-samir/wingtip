@@ -1,5 +1,5 @@
 {
-  "about": "What counts as a route's weather getting worse between the briefing a pilot had and a later reading (the engine's weather_worse, wingtip-weather's worse.rs): a field's METAR in a worse flight category and worse than VFR (AIM 7-1-7), a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6), and a TAF where the flight lands forecasting a worse category for the flight's time there. Each case gives both readings and the keys and lines the engine answers, in order. Read by the engine's tests (engine/facade/tests/weather_worse.rs) and the iPhone's (WeatherWatchTests).",
+  "about": "What counts as a route's weather getting worse between the briefing a pilot had and a later reading (the engine's weather_worse, wingtip-weather's worse.rs): a field's METAR in a worse flight category and worse than VFR (AIM 7-1-7), a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6), a TAF where the flight lands forecasting a worse category for the flight's time there, and either with a ceiling of unknown height now where it had a known one (14 CFR 1.1). Each case gives both readings and the keys and lines the engine answers, in order. Read by the engine's tests (engine/facade/tests/weather_worse.rs) and the iPhone's (WeatherWatchTests).",
   "cases": [
     {
       "why": "KMSN's METAR goes from VFR to IFR; KDLH's improves and is not told.",
@@ -229,7 +229,7 @@
       ]
     },
     {
-      "why": "A TAF whose ceiling is sent with no height now (OVC///) is not known, not worse, unless its visibility settles it (14 CFR 1.1).",
+      "why": "A TAF whose ceiling is sent with no height now (OVC///) where it had one (VFR, 4,000 ft): a ceiling not known to be high enough (14 CFR 1.1 'ceiling') is no longer VFR for sure, so it is told, as a ceiling of unknown height rather than a category.",
       "input": {
         "then": {
           "tafs": [
@@ -253,8 +253,12 @@
           ]
         }
       },
-      "keys": [],
-      "lines": []
+      "keys": [
+        "taf:KDLH:ceiling-unknown"
+      ],
+      "lines": [
+        "KDLH's TAF for your arrival has a ceiling of unknown height now; it was VFR at the briefing"
+      ]
     },
     {
       "why": "Nothing changed: nothing to tell.",
@@ -296,6 +300,48 @@
       },
       "keys": [],
       "lines": []
+    },
+    {
+      "why": "KMSN's METAR goes from VFR (BKN050 10SM) to OVC/// 10SM: no category, but a ceiling not known to be high enough (14 CFR 1.1 'ceiling'), so it is worse and told; KDLH unknown both times is not.",
+      "input": {
+        "then": {
+          "metars": [
+            {
+              "ident": "KMSN",
+              "ceiling_ft": 5000,
+              "visibility_sm": 10
+            },
+            {
+              "ident": "KDLH",
+              "ceiling_ft": null,
+              "ceiling_unknown": true,
+              "visibility_sm": 10
+            }
+          ]
+        },
+        "now": {
+          "metars": [
+            {
+              "ident": "KMSN",
+              "ceiling_ft": null,
+              "ceiling_unknown": true,
+              "visibility_sm": 10
+            },
+            {
+              "ident": "KDLH",
+              "ceiling_ft": null,
+              "ceiling_unknown": true,
+              "visibility_sm": 10
+            }
+          ]
+        }
+      },
+      "keys": [
+        "metar:KMSN:ceiling-unknown"
+      ],
+      "lines": [
+        "KMSN has a ceiling of unknown height now; it was VFR at the briefing"
+      ]
     }
   ]
 }

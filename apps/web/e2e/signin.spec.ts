@@ -41,7 +41,7 @@ test("signed out, the planner opens on the map, and the sign-in is in the pilot 
 
   await showTabs(page);
   await openConsole(page);
-  await expect(consoleSheet(page).getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(consoleSheet(page).getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
 });
 
 test("signed out, Personal says once what signing in keeps, its minimums need none, and the dialog offers only the providers registered", async ({
@@ -52,20 +52,26 @@ test("signed out, Personal says once what signing in keeps, its minimums need no
   await openConsole(page);
   const sheet = consoleSheet(page);
   await consolePage(sheet, "Account");
-  // Signed out: Sign in at the Account's heading, no line saying so (the
-  // owner's "no need to show Not Signed in").
-  await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  // Signed out: Sign In, the head's large line, said once, no line saying
+  // so (the owner's "no need to show Not Signed in"; "just say sign in
+  // once", 2026-11-13).
+  await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign In", exact: true })).toHaveCount(1);
   // The minimums are kept on the device: no sign-in for them; the
-  // account's three wait for one.
-  await expect(sheet.getByTestId("library-section").getByRole("button", { name: "Airplanes" })).toBeDisabled();
+  // account's Flights and Logbook wait for one (Airplanes opens, for the
+  // checklists inside it).
+  // Greyed with no word of their own: the head's one Sign In says it, in
+  // the name's place, no "You" over it (the owner, 2026-11-13).
+  await expect(sheet.getByTestId("library-section").getByRole("button", { name: /^Flights/ })).toBeDisabled();
+  await expect(sheet.getByTestId("library-section")).not.toContainText("Sign In to Use");
+  await expect(sheet.getByTestId("setup-pill-account")).not.toContainText("You");
   await library(sheet, "Minimums");
   await expect(sheet.getByTestId("minimum-ceilingFt")).toBeVisible();
-  await sheet.getByRole("button", { name: "Back to Setup", exact: true }).click();
+  await sheet.getByRole("button", { name: "Back to You", exact: true }).click();
   // Signed out: Sign in at the Account's heading, no line saying so (the
   // owner's "no need to show Not Signed in").
-  await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
   // This stack registers neither Google nor Apple: their buttons opened a blank 401.
-  await sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in", exact: true }).click();
+  await sheet.getByTestId("setup-page").getByRole("button", { name: "Sign In", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Sign in to Wingtip Maps" });
   await expect(dialog.getByLabel("Email address")).toBeVisible();
   await expect(dialog.getByRole("link", { name: /Continue with/ })).toHaveCount(0);
@@ -78,7 +84,7 @@ test("signed out, Personal says once what signing in keeps, its minimums need no
   await page.reload();
   await showTabs(page);
   await openConsole(page);
-  await consoleSheet(page).getByTestId("setup-page").getByRole("button", { name: "Sign in", exact: true }).click();
+  await consoleSheet(page).getByTestId("setup-page").getByRole("button", { name: "Sign In", exact: true }).click();
   await expect(dialog.getByRole("link", { name: "Continue with Google" })).toBeVisible();
   await expect(dialog.getByRole("link", { name: "Continue with Apple" })).toHaveCount(0);
 });
@@ -92,7 +98,9 @@ test("signed out, the dev page sends you to the planner", async ({ page }) => {
   await closeConsole(page);
 });
 
-test("the emailed link opens the app's own sign-in dialog, over the planner, and a spent link says so", async ({ page }, testInfo) => {
+test("the emailed link opens the app's own sign-in dialog, over the planner, naming its account, and a spent link says so", async ({
+  page,
+}, testInfo) => {
   // It used to open a bare server page with one button. The button
   // stays -- a mail scanner fetching the link must not spend it -- but
   // it is the app's dialog now, and the token never leaves the fragment.
@@ -106,6 +114,8 @@ test("the emailed link opens the app's own sign-in dialog, over the planner, and
   // dialog has the token by then, and checking the address for it was
   // a race the test lost once the page got quicker.)
   await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  // It names the account the link signs in to, masked, before it is used.
+  await expect(page.getByRole("dialog")).toContainText(`${address[0]}•••${address.slice(address.indexOf("@"))}`);
   // The planner under it, its one search there.
   await expect(page.getByTestId("search-airports")).toBeVisible();
   expect(new URL(page.url()).search).not.toContain("signin");
@@ -121,9 +131,10 @@ test("the emailed link opens the app's own sign-in dialog, over the planner, and
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toHaveCount(0);
 
+  // Spent: said before anything is pressed, and nothing to press.
   await page.goto(link);
-  await page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("dialog").getByRole("alert")).toContainText("expired or was already used");
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true })).toBeDisabled();
 });
 
 test("a pilot's link lands on the planner, with no dev switch, and the pilot console logs out", async ({ page }, testInfo) => {
@@ -150,13 +161,13 @@ test("a pilot's link lands on the planner, with no dev switch, and the pilot con
   await expect(page.getByRole("menu")).toHaveCount(0);
   await consoleSheet(page).getByTestId("role-menu").click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
-  await expect(consoleSheet(page).getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(consoleSheet(page).getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
   await expect(consoleSheet(page).getByTestId("role-menu")).toHaveCount(0);
   await page.reload();
   await expect(consoleSheet(page)).toHaveCount(0);
   await showTabs(page);
   await openConsole(page);
-  await expect(consoleSheet(page).getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(consoleSheet(page).getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
 });
 
 test("a developer's link lands in dev mode, and the dev console logs out to the planner", async ({ page }, testInfo) => {

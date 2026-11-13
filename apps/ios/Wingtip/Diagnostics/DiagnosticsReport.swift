@@ -1,70 +1,44 @@
 import Foundation
 
-/// What the gateway's POST /api/diagnostics takes (DiagnosticsController's
-/// DiagnosticsReport): the app's faults and speed from this phone, with
-/// nothing of the pilot's in it -- no account, no position, no N-number,
-/// no route. The version, the system and the kind of device say which
-/// build a crash is in; the gateway scrubs what slips into a call stack
-/// (queries, addresses, home paths, ids) before it keeps a fault 30 days.
-/// Built from plain values, so the rules of the body are tested without
-/// MetricKit's payloads, which a test cannot make (DiagnosticsReporter
-/// reads those).
-struct DiagnosticsReport: Codable, Equatable, Sendable {
-    struct Fault: Codable, Equatable, Sendable {
-        /// The gateway's kinds: crash, hang, exit, error, exception, cpu, disk.
-        let kind: String
-        /// One line naming the fault, as the gateway groups faults by it.
-        let signature: String
-        /// MetricKit's call stack tree, as its JSON.
-        let detail: String?
-        let at: Date?
-    }
-
-    var platform = "ios"
-    let version: String
-    let os: String
-    let device: String
-    var faults: [Fault] = []
-    var metrics: [String: Double] = [:]
-
-    // The gateway's limits (DiagnosticsController), kept here so a report
-    // is never refused whole for one long field.
-    static let maxFaults = 20
-    static let maxMetrics = 30
-    static let maxSignature = 2000
-    static let maxDetail = 64000
-    static let maxOs = 40
-
-    /// The report for this build on this kind of device.
+/// What the gateway's POST /api/diagnostics takes, its generated
+/// GWDiagnosticsReport (DiagnosticsController's DiagnosticsReport, from
+/// services/gateway/openapi.json): the app's faults and speed from this
+/// phone, with nothing of the pilot's in it -- no account, no position, no
+/// N-number, no route. The version, the system and the kind of device say
+/// which build a crash is in; the gateway scrubs what slips into a call
+/// stack (queries, addresses, home paths, ids) before it keeps a fault 30
+/// days. Built from plain values, so the rules of the body are tested
+/// without MetricKit's payloads, which a test cannot make
+/// (DiagnosticsReporter reads those).
+extension GWDiagnosticsReport {
+    /// The report for this build on this kind of device, from the app as
+    /// a whole (the gateway's page "app").
     init(version: String, os: String, tablet: Bool) {
-        self.version = version
-        self.os = String(os.prefix(Self.maxOs))
-        self.device = tablet ? "tablet" : "phone"
+        self.init(device: tablet ? "tablet" : "phone", faults: [], metrics: .init(), os: os,
+                  page: "app", platform: "ios", version: version)
     }
 
-    /// A fault added within the gateway's limits: one line, cut to its
-    /// length; past twenty, the rest wait for no one (the gateway would
-    /// refuse the report).
-    mutating func add(kind: String, signature: String, detail: String?, at: Date?) {
-        guard faults.count < Self.maxFaults else { return }
+    /// A fault added as one line. The gateway holds the size limits and
+    /// cuts a report to them. `at` is the instant as the gateway reads it,
+    /// ISO-8601.
+    mutating func add(kind: String, signature: String, detail: String?, at: Date) {
         let line = signature.split(whereSeparator: \.isNewline).joined(separator: " ").trimmingCharacters(in: .whitespaces)
-        faults.append(Fault(kind: kind, signature: String((line.isEmpty ? kind : line).prefix(Self.maxSignature)),
-                            detail: detail.map { String($0.prefix(Self.maxDetail)) }, at: at))
+        faults.append(GWFaultReport(at: at.formatted(.iso8601), detail: detail ?? "", kind: kind,
+                                    signature: line.isEmpty ? kind : line))
     }
 
-    /// A figure added where it is one the gateway keeps: a finite number
-    /// from 0 to 100,000,000, under thirty names.
+    /// A figure added where it is a finite number (JSON has no other);
+    /// the gateway holds its range and the count.
     mutating func measure(_ name: String, _ value: Double?) {
-        guard let value, value.isFinite, value >= 0, value <= 100_000_000, metrics.count < Self.maxMetrics else { return }
-        metrics[name] = value
+        guard let value, value.isFinite else { return }
+        metrics.additionalProperties[name] = value
     }
 
-    var isEmpty: Bool { faults.isEmpty && metrics.isEmpty }
+    var isEmpty: Bool { faults.isEmpty && metrics.additionalProperties.isEmpty }
 
-    /// The body as the gateway reads it: ISO-8601 instants.
+    /// The body as the gateway reads it.
     func json() throws -> Data {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = .sortedKeys
         return try encoder.encode(self)
     }
@@ -129,10 +103,6 @@ struct AppVersion: Equatable, Sendable {
 
     static let current = AppVersion(info: Bundle.main.infoDictionary)
 
-    /// "1.0 (1)", cut to the gateway's 40 characters of its own alphabet.
-    var text: String {
-        let allowed = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._ ()+-")
-        let clean = String(String.UnicodeScalarView("\(short) (\(build))".unicodeScalars.filter { allowed.contains($0) }))
-        return String(clean.prefix(40))
-    }
+    /// "1.0 (1)", as it is; the gateway cleans and cuts it.
+    var text: String { "\(short) (\(build))" }
 }

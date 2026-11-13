@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 import {
-  closeConsole,
   closeSidebarWithTheStockKey,
   consoleSheet,
   expectDrawerClosed,
@@ -69,20 +68,14 @@ test(
     await openConsole(page);
     const pilot = consoleSheet(page);
     await expect(pilot).toBeVisible();
-    // The account page, from the account button's menu beside the search:
-    // on a phone the panel's layer, under the search, its own close at its
-    // head.
-    const phone = page.viewportSize()!.width < 768;
-    await showTabs(page);
+    // You, from the account button beside the search: its own close at its top.
     await expect(pilot.getByTestId("console-close")).toBeVisible();
-    if (phone) expect(await pilot.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
-    // The role, a menu, in Personal's Account row, at the owner's ask: Pilot
-    // (chosen here), Developer for a developer, and Sign out last; who is
-    // signed in beside it.
-    // Setup is a tab's page, named for the console, no dialog over the panel
-    // (on a phone the panel is itself the Drawer's dialog, named for its page).
+    // A card over the map's sheet, its nested drawer as every card is
+    // (ConsoleLayer's CardLayer; the owner, 2026-11-13), not a dialog of its own.
+    expect(await pilot.evaluate((el) => !!el.closest('[data-slot="map-panel"] [data-sheet-card]'))).toBe(true);
+    // The role, a menu, in Pilot Details: Pilot (chosen here), Developer for
+    // a developer, and Sign out last; who is signed in beside it.
     await expect(pilot).toHaveAccessibleName("Pilot");
-    await expect(page.getByRole("dialog", { name: "Pilot" }).and(page.locator(':not([data-slot="map-panel"])'))).toHaveCount(0);
     await openAccount(page);
     await expect(pilot.getByTestId("role-menu")).toHaveText("Pilot");
     // Who is signed in, the role menu's title.
@@ -106,10 +99,12 @@ test(
     await expect(pilot.getByRole("region", { name: "Airplanes", exact: true })).toBeVisible();
     await library(pilot, "Flights");
     await expect(pilot.getByRole("region", { name: "Flights", exact: true })).toBeVisible();
-    // Guide and About as links at the page's foot, no Settings page.
+    // Settings the gear at You's top left, Guide and About rows of its Help & About
+    // (the owner's option A, 2026-11-13).
     await consolePage(pilot, "Account");
-    for (const link of ["guide-link", "about-link"]) await expect(pilot.getByTestId("setup-page").getByTestId(link)).toBeVisible();
-    await expect(pilot.getByTestId("setup-page").getByRole("button", { name: /^Settings/ })).toHaveCount(0);
+    await pilot.getByTestId("settings-row").click();
+    await pilot.getByTestId("help-row").click();
+    for (const link of ["guide-link", "about-link"]) await expect(pilot.getByTestId(link)).toBeVisible();
     // The personal minimums are Personal's, with no sign-in needed.
     await library(pilot, "Minimums");
     await expect(pilot.getByTestId("minimum-ceilingFt")).toBeVisible();
@@ -125,130 +120,58 @@ test(
   },
 );
 
-test("the navigation bar's edge is a setting: the panel moves to it, the map's buttons take the other, the console comes from it, and it is remembered", async ({
+test("You is a card over the map's sheet as every card is: its nested drawer, half as it opens, the sheet under it left as it was", async ({
   page,
 }) => {
-  // By default the bottom on a phone and the top from md up; the other
-  // edge picked in the settings moves the panel there, the map's
-  // buttons to the edge away from it, and the console in from it.
-  await page.goto("/app/plan");
-  await settle(page);
-  const viewport = page.viewportSize();
-  if (!viewport) throw new Error("no viewport configured");
-  const phone = viewport.width < 768;
-  await openSetup(page);
-  await pickControl(page, "nav-bar-select", phone ? "nav-bar-top" : "nav-bar-bottom");
-  await closeConsole(page);
-  await expect(page.locator("[data-slot=sheet-content], [data-slot=popover-content], [data-testid=console-sheet]")).toHaveCount(0);
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  // Once the panel has come to rest: it measures its head and eases to
-  // its height after a load, and the reload below is compared with this.
-  await settled(page.locator('[data-slot="map-panel"]'));
-
-  // The panel at rest is the tabs' pill (no head of its own): where the
-  // panel is, its box.
-  const header = (await page.locator('[data-slot="map-panel"]').boundingBox())!;
-  const buttons = (await page.locator("[data-map-controls] > *").first().boundingBox())!;
-  if (phone) {
-    expect(header.y).toBeLessThan(40);
-    expect(buttons.y).toBeGreaterThan(viewport.height / 2);
-  } else {
-    expect(header.y + header.height).toBeGreaterThan(viewport.height / 2);
-    expect(buttons.y).toBeLessThan(viewport.height / 2);
-  }
-
-  // The console, its tab, comes in from the same edge: on a phone the
-  // panel's layer, the panel half way down from the top, in from the
-  // screen's edges.
-  await page.goto("/app/plan");
-  await settle(page);
-  await showTabs(page);
-  await openConsole(page);
-  const pilot = consoleSheet(page);
-  await expect(
-    pilot
-      .getByTestId("setup-page")
-      .or(pilot.getByRole("tab", { name: "Guide" }))
-      .first(),
-  ).toBeVisible();
-  // An animation cancelled on the way (a transition replaced by the next)
-  // rejects its `finished`; it has stopped all the same.
-  await pilot.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))));
-  const box = (await (phone ? page.locator('[data-slot="map-panel"]') : pilot).boundingBox())!;
-  // All the way up: the sheet to the screen's edge (MapPanel's "edge").
-  if (phone) expect(Math.round(box.y)).toBeLessThanOrEqual(8);
-  // Beside a desktop's map, Setup is the panel's (MapPage's inPanel), and
-  // the panel runs the window's height, its float (FLOAT_PX, 16) in from
-  // the screen's foot.
-  else {
-    expect(await pilot.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
-    const panel = (await page.locator('[data-slot="map-panel"]').boundingBox())!;
-    expect(box.y + box.height).toBeLessThanOrEqual(panel.y + panel.height + 1);
-    expect(viewport.height - Math.round(panel.y + panel.height)).toBeLessThanOrEqual(17);
-  }
-  await page.keyboard.press("Escape");
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  await expect(pilot).toHaveCount(0);
-
-  // Remembered per browser: the route opened again (a reload would
-  // forget it, features/shell/freshLoad).
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  // To the pixel, once the panel has settled: it measures its head and
-  // eases to its height after a load.
-  await expect.poll(async () => Math.abs((await page.locator('[data-slot="map-panel"]').boundingBox())!.y - header.y)).toBeLessThan(1);
-});
-
-test("the console is the panel's own: up from the bottom of a phone's screen, in the panel beside a desktop's map", async ({ page }) => {
-  // The planner's Setup is a layer of the map's panel on every screen
-  // (MapPage's inPanel), at the owner's ask: a phone's from the bottom
-  // edge, the panel's height; from `md` up in the panel's column.
+  // The stock Drawer's nested drawer over the sheet (ConsoleLayer's
+  // CardLayer; the owner, 2026-11-13: "For webapp, why don't we make
+  // everything a nested drawer except the welcome one?"): the sheet's
+  // sizes, half as it opens, its one head row the gear and the ✕.
   await page.goto("/app/plan");
   await settle(page);
   const panel = page.locator('[data-slot="map-panel"]');
-  // Opened as the tabs alone: half way up first, the height compared.
-  await grabberTo(page, "full");
-  // Measured once it has come to rest, not on its way up from the tabs.
+  await grabberTo(page, "half");
   await settled(panel);
-  const half = (await panel.boundingBox())!;
-  await openConsole(page);
+  const before = (await panel.boundingBox())!;
+  await page.getByTestId("account-button").click();
   const pilot = consoleSheet(page);
-  await expect(
-    pilot
-      .getByTestId("setup-page")
-      .or(pilot.getByRole("tab", { name: "Guide" }))
-      .first(),
-  ).toBeVisible();
-  await pilot.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
-  const viewport = page.viewportSize();
-  if (!viewport) throw new Error("no viewport configured");
-  const box = (await pilot.boundingBox())!;
-  if (viewport.width < 768) {
-    // A layer of the map's panel, at the half every panel has, as the
-    // search was: in from the screen's sides and its foot by eight.
-    await expect(panel).toHaveAttribute("data-panel", "full");
-    await settled(panel);
-    const now = (await panel.boundingBox())!;
-    expect(Math.abs(now.y - half.y)).toBeLessThan(1);
-    expect(Math.abs(now.height - half.height)).toBeLessThan(1);
-    // All the way up, the sheet to the screen's sides.
-    expect(Math.round(box.x)).toBe(0);
-    expect(Math.abs(box.width - viewport.width)).toBeLessThanOrEqual(1);
-    // To the sheet's foot, less the room it keeps under its body for the home
-    // indicator all the way up.
-    expect(Math.abs(box.y + box.height - (now.y + now.height))).toBeLessThan(40);
-  } else {
-    // Inside the panel, as the other tabs are, not a sheet of its own.
-    const now = (await panel.boundingBox())!;
-    expect(box.y).toBeGreaterThanOrEqual(now.y - 1);
-    expect(box.y + box.height).toBeLessThanOrEqual(now.y + now.height + 1);
+  await expect(pilot.getByTestId("setup-page")).toBeVisible();
+  const card = page.locator("[data-sheet-card]").filter({ has: pilot });
+  await expect(card).toHaveCount(1);
+  expect(await card.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
+  const viewport = page.viewportSize()!;
+  if (viewport.width < 768) await expect(card).toHaveAttribute("data-panel", "half");
+  // The sheet under it where it was.
+  await expect(panel).toHaveAttribute("data-panel", "half");
+  const now = (await panel.boundingBox())!;
+  expect(Math.abs(now.y - before.y)).toBeLessThan(1);
+  // Its one head row: the gear at the left, level with the ✕ at the right.
+  const gear = (await pilot.getByTestId("settings-row").boundingBox())!;
+  const close = (await pilot.getByTestId("console-close").boundingBox())!;
+  expect(Math.abs(gear.y - close.y)).toBeLessThan(2);
+  expect(gear.x).toBeLessThan(close.x);
+  // The name large and the address smaller under it, as Apple's card
+  // (the owner, 2026-11-13); an address is never the large line -- with
+  // no name given it asks for one.
+  const name = pilot.getByTestId("you-name");
+  const address = pilot.getByTestId("you-address");
+  await expect(address).toContainText("@");
+  await expect(name).not.toContainText("@");
+  const size = (el: typeof name) => el.evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+  expect(await size(name)).toBeGreaterThan(await size(address));
+  // With no name, Add Your Name opens Pilot Details and its close goes
+  // back to You, as the row's does, not out of the card.
+  if ((await name.textContent()) === "Add Your Name") {
+    await name.click();
+    await expect(pilot.getByTestId("pilot-name")).toBeVisible();
+    await pilot.getByTestId("console-page-close").first().click();
+    await expect(pilot.getByTestId("you-name")).toBeVisible();
   }
-  // Setup is one page now, no tabs of its own to change (PilotPanel).
 });
 
-test("Setup's Appearance control is system, light or dark, a menu of all three, and the choice survives a reload", async ({ page }) => {
+test("Setup's Appearance control is system, light, dark or dark with the chart bright, a menu of all four, and the choice survives a reload", async ({
+  page,
+}) => {
   await page.goto("/app/plan");
   await settle(page);
   await openSetup(page);
@@ -259,7 +182,7 @@ test("Setup's Appearance control is system, light or dark, a menu of all three, 
   await pickControl(page, "theme-select", "theme-dark");
   await expect(html).toHaveClass(/dark/);
   // The one already chosen, picked again, stays chosen: a menu of one of
-  // three, not a set of toggles that can all be off.
+  // four, not a set of toggles that can all be off.
   await pickControl(page, "theme-select", "theme-dark");
   await expect(theme).toHaveAccessibleName("Appearance: Dark");
   await page.reload();

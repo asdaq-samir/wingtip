@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 /**
- * A card's ident takes what was typed on Return, and a suggestion only once
- * an arrow has chosen it (a row lit by itself, as cmdk lit the first, must
- * not stand in for the pilot's typing).
+ * A card's ident takes the first suggestion on Return, as the route box
+ * and the one search do (Base UI's autoHighlight), and what was typed where
+ * it is a row's own ident or no list is offered.
  */
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
@@ -29,19 +29,33 @@ const rows = [
   { kind: "airport", ident: "KOSU", name: "Ohio State", city: "Columbus", state: "OH", lat: 0, lon: 0 },
 ];
 
-function setup(props: Partial<ComponentProps<typeof CardIdent>> = {}) {
-  search.mockReturnValue({ typed: "KOS", rows, answered: true });
+function setup(props: Partial<ComponentProps<typeof CardIdent>> = {}, typed = "kos") {
+  search.mockReturnValue({ typed: typed.toUpperCase(), rows, answered: true });
   const onCommit = vi.fn();
   render(<CardIdent value="KUGN" label="Ident" testId="ident" onCommit={onCommit} {...props} />);
   const field = screen.getByTestId("ident");
   field.focus();
-  fireEvent.change(field, { target: { value: "kos" } });
+  fireEvent.change(field, { target: { value: typed } });
   return { field, onCommit };
 }
 
 describe("CardIdent", () => {
-  test("Return takes what was typed, not the row lit by default", () => {
+  test("Return takes the first suggestion, as the other searches do", () => {
     const { field, onCommit } = setup();
+    fireEvent.keyDown(field, { key: "Enter" });
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith("KOSH");
+  });
+
+  test("Return takes what was typed where it is a suggestion's own ident", () => {
+    const { field, onCommit } = setup({}, "kosu");
+    fireEvent.keyDown(field, { key: "Enter" });
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith("KOSU");
+  });
+
+  test("Return takes what was typed where no list is offered (a rename)", () => {
+    const { field, onCommit } = setup({ suggest: false });
     fireEvent.keyDown(field, { key: "Enter" });
     expect(onCommit).toHaveBeenCalledTimes(1);
     expect(onCommit).toHaveBeenCalledWith("KOS");

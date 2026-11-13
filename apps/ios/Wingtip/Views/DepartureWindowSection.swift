@@ -67,7 +67,7 @@ struct DepartureWindowSection: View {
             Label("\(DepartureWindow.word(hour.verdict)) leaving \(DepartureWindow.clock(hour.depart))", systemImage: Self.symbol(hour.verdict))
                 .fontWeight(.semibold).foregroundStyle(Self.ink(hour.verdict))
             ForEach(hour.reasons) { reason in
-                (Text(reason.label).fontWeight(.medium) + Text(" · \(reason.detail)")).font(.subheadline)
+                Text("\(Text(reason.label).fontWeight(.medium)) · \(reason.detail)").font(.subheadline)
             }
             if hour.night {
                 Text("At night (14 CFR 1.1)" + (hour.nightPassengers ? "; with passengers, three full-stop landings in the last 90 days in 61.57(b)'s night period" : ""))

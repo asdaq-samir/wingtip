@@ -136,6 +136,12 @@ object Format {
         return "${if (whole != 0 || part.isEmpty()) whole.toString() else ""}$part sm"
     }
 
+    /** A forecast's ceiling and visibility, as the web's
+     *  ceilingAndVisibility writes them: "800 ft · 2 sm", "no ceiling · 6 sm". */
+    fun ceilingAndVisibility(ceilingFt: Double?, visibilitySm: Double?): String =
+        (if (ceilingFt == null) "no ceiling" else String.format(Locale.US, "%,d ft", ceilingFt.roundToLong())) + " · " +
+            (visibilitySm?.let(::visibility) ?: NONE)
+
     /** A temperature in whole degrees Celsius: "15 °C", "−3 °C". */
     fun temperature(c: Double): String {
         val whole = c.roundToInt()

@@ -54,31 +54,32 @@ from wingtip import (
     water,
     weather,
 )
-from wingtip import airspace_at, congested, cycle_pack, data_cycles
+from wingtip import airspace_at, congested, cycle_pack, data_cycles, traffic as traffic_store
 from wingtip import airports as airport_table
 
-from . import chart_model, chart_refresh, errors, mcp, openapi_document, tracing
+from . import chart_model, chart_refresh, errors, openapi_document, tracing
+from .mcp import server as mcp
 from .chart_cycle import check as chart_cycle
 from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
 from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
-from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words
-from .routers import engine as engine_router, forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
+from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words, plates
+from .routers import aircraft_form, studio, studio_drafts, studio_history, weather_flow
+from .routers import forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
 from .schemas.common import Index
 from .settings import get_settings
 
 # Nothing else in the process configured logging, so every log.info() in
 # this codebase -- this file's own, and every one already written in
 # wingtip/weather.py and wingtip/charts.py before this -- was going nowhere:
-# Python's root logger defaults to WARNING, and uvicorn's own
-# --log-level only reaches its own uvicorn.access/uvicorn.error
-# loggers, not a plain logging.getLogger(__name__) anywhere else in the
-# process. Found while adding the timing lines in wingtip.altitude and
-# app.routers.classb (2026-09-23) and running one
-# live to see it -- nothing appeared. LOG_LEVEL, not a hardcoded INFO,
-# so a noisy deploy can be turned back down without a code change.
+# Python's root logger defaults to WARNING, and uvicorn's own --log-level
+# only reaches its own uvicorn.access/uvicorn.error loggers, not a plain
+# logging.getLogger(__name__) anywhere else in the process. Found while
+# adding the timing lines in wingtip.altitude and app.routers.classb
+# (2026-09-23) and running one live to see it -- nothing appeared.
+# LOG_LEVEL, not a hardcoded INFO, so a noisy deploy can be turned down.
 # The environment is read and checked here at the latest (wingtip.config
 # reads it on import): a malformed value -- a word where a number goes --
 # stops the planner at boot with SettingsError naming the variable,
@@ -109,8 +110,7 @@ FAA_DATA_AUTO_REFRESH = get_settings().faa_data_auto_refresh
 CYCLE_PACK = get_settings().cycle_pack
 # Set once the reference data below is loaded: the health probe reports
 # it, so a test run against a fresh stack can wait for a planner that
-# answers at full speed rather than one still parsing airspace under
-# its first requests.
+# answers at full speed rather than one still parsing airspace under its first requests.
 WARM = threading.Event()
 
 
@@ -267,8 +267,7 @@ def _warm_reference_data() -> None:
     # day; a card before it is in shows no registration. Its own switch
     # (REGISTRY_REFRESH), not the charts': the server draws no charts
     # (CHARTS_AUTO_REFRESH=0 there too), and gated on that, it never read
-    # the registry at all. Off on a test stack, which downloads nothing it
-    # need not.
+    # the registry at all. Off on a test stack, which downloads nothing it need not.
     if REGISTRY_REFRESH:
         try:
             registry.refresh()
@@ -355,12 +354,10 @@ def _warm_reference_data() -> None:
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     threading.Thread(target=_warm_reference_data, name="reference-data-warm-up", daemon=True).start()
-    # The live feeds (the FAA's SWIM radar, NOTAMs and flight plans, and
-    # the followed airplanes' adsb.fi rounds) are read by ingest
-    # (services/ingest) into the stores the planner reads: none here. What
-    # is watched here is whether they, and the weather service's
-    # products, are still coming in (app.feeds): a check a minute.
+    # The live feeds are read by ingest into the stores the planner reads: none here. Watched here: whether they and the
+    # weather's still come in (app.feeds), a check a minute; the live store pruned (wingtip.traffic.prune).
     threading.Thread(target=feeds_watch.watch_forever, name="feed-watch", daemon=True).start()
+    threading.Thread(target=traffic_store.prune_forever, name="live-store-prune", daemon=True).start()
     yield
 
 
@@ -406,43 +403,16 @@ def index() -> Index:
     return Index(service="planner", ui="served by the gateway at /app", warm=WARM.is_set())
 
 
-for module in (
-    plan,
-    chart,
-    briefing,
-    notes,
-    devml,
-    system,
-    classb,
-    devservices,
-    airports,
-    airspace_router,
-    traffic,
-    basemaps,
-    route_options,
-    gonogo,
-    figures,
-    clearance,
-    packs,
-    words,
-    weather_map,
-    weather_loop,
-    forecast_run,
-    pilot,
-    live,
-    feeds,
-    terrain,
-    window,
-    emergency,
-    copilot,
-    engine_router,
-    logbook_draft,
-    notam_rank,
-    offline,
-    coach,
-    mcp,
-):
-    app.include_router(module.router)
-
+# Every router, here and not inside another (.importlinter's routers-independent), in the
+# order their paths are matched and the OpenAPI document lists them; a few to a line.
+ROUTERS = (
+    (plan, chart, briefing, notes, devml, system, classb, devservices, airports, airspace_router, traffic, basemaps),
+    (route_options, gonogo, figures, clearance, packs, words, weather_map, weather_flow, weather_loop, forecast_run),
+    (pilot, live, feeds, terrain, window, emergency, copilot, logbook_draft, notam_rank, offline, coach),
+    (mcp, plates, studio_history, studio, studio_drafts, aircraft_form),
+)
+for group in ROUTERS:
+    for module in group:
+        app.include_router(module.router)
 
 app.openapi = openapi_document.with_streams(app)

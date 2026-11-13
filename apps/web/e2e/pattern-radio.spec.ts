@@ -68,7 +68,7 @@ test("each field's pattern for the runway into the wind, and its calls in order"
   await expect(phases.nth(1).getByTestId("pattern-diagram")).toBeVisible();
   // Arriving from the south-southeast: the pattern's side of 27 right is
   // the north, so the way in is over the field.
-  await expect(phases.nth(1).getByTestId("pattern-entry")).toContainText("cross midfield 500 ft above pattern altitude");
+  await expect(phases.nth(1).getByTestId("pattern-entry")).toContainText("cross midfield at least 500 ft above pattern altitude");
 
   // A stock airplane has no registration: the call sign says so.
   const leaving = phases.nth(0).getByTestId("radio-call");

@@ -1,8 +1,36 @@
-"""The next chart cycle's line in /api/status (charts.next)."""
+"""The charts' lines in /api/status: each kind's tile pyramid (charts.pyramid,
+charts.building) and the next chart cycle (charts.next). Kept here, apart
+from app.schemas.system, which imports them: system importing this module
+and this one importing system's pyramid models made each fail to import
+first on its own (a circular import)."""
 
 from pydantic import BaseModel
 
-from ..schemas.system import PyramidProgress
+
+class PyramidPass(BaseModel):
+    """A pass of the charts job's `pyramid` under way: sheets done of
+    the sheets it set out to render, and the one it is on."""
+
+    started_at: str
+    done: int
+    total: int
+    current: str | None
+
+
+class PyramidProgress(BaseModel):
+    """One kind of chart's tile pyramid for a cycle. What finished passes
+    have left -- the sheets rendered, when the last finished, the tiles
+    written -- and the pass under way, if any. `complete` is every sheet
+    the FAA publishes of the kind rendered; `missing` names the rest."""
+
+    kind: str
+    zooms: list[int]
+    sheets: list[str]
+    finished_at: str | None
+    tiles: int
+    current_pass: PyramidPass | None = None
+    complete: bool
+    missing: list[str] = []
 
 
 class NextCycle(BaseModel):

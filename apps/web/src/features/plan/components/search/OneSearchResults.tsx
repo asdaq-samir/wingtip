@@ -1,21 +1,23 @@
 import { Fragment, type ReactNode } from "react";
-import { BookOpenCheck, Diamond, LocateFixed, MoveUpRight, Plane, Search, Siren, SquareArrowOutUpRight } from "lucide-react";
+import { BookOpenCheck, Diamond, LocateFixed, MoveUpRight, Navigation, Plane, Search, Siren, SquareArrowOutUpRight } from "lucide-react";
 import { cn } from "cn";
-import { CommandList, CommandShortcut } from "../../../../components/ui/command";
+import { CommandEmpty, CommandList, CommandShortcut } from "../../../../components/ui/command";
 import { TEXT } from "../../../../lib/text";
 import { PreviewCard, PreviewCardContent, PreviewCardTrigger } from "../../../../components/ui/preview-card";
 import { usePointerHover } from "../../../../hooks/use-pointer-hover";
-import { useKeyHint } from "../../../../lib/shortcutKeys";
+import { keyHint } from "../../../../lib/shortcutKeys";
 import type { AirportSearchRow } from "../../../../lib/useAirportSearch";
 import AirportPreview from "../preview/AirportPreview";
 import type { AirplaneHit, DoHit, OneSearchModel } from "../../hooks/useOneSearch";
 import { useVoiceInput } from "../../../voice";
 import { AirportIcon, Matched, QuickAction, ResultGroup, ResultRow, RoundIcon, RowLine } from "./ResultRows";
+import { FieldError } from "../../../../components/ui/field";
 
-/** A Do row's glyph: the arrow for Direct To, the Brief's, Nearest's, the
- *  emergency's in red, the traffic's, a screen's. */
+/** A Do row's glyph: the arrow for Direct To, My Position's filled one,
+ *  the Brief's, Nearest's, the emergency's in red, the traffic's, a screen's. */
 function doGlyph(hit: DoHit) {
   if (hit.key.startsWith("direct")) return <MoveUpRight />;
+  if (hit.key === "my-position") return <Navigation className="fill-current" />;
   if (hit.key === "screen-brief") return <BookOpenCheck />;
   if (hit.key === "screen-nearest") return <LocateFixed />;
   if (hit.key === "screen-emergency") return <Siren className="text-destructive-ink" />;
@@ -38,8 +40,8 @@ function lined<T>(items: T[], key: (item: T) => string, row: (item: T) => ReactN
  * laid out as Apple Maps on the web lays out a search typed (the owner's
  * screenshot, 2026-11-10): one white group, the top hit first with its
  * quick actions in it (an airport's Fly Here and Depart From, one of the
- * pilot's airplanes' Fly This Airplane), then the suggestion -- the
- * question for the assistant, on a grey magnifier -- then the rest: the
+ * pilot's airplanes' Fly This Airplane), then the suggestion -- the words
+ * sent round a place, on a grey magnifier -- then the rest: the
  * airports, the waypoints and navaids, the airplanes and what can be done,
  * each on its round icon, a hairline between rows. Every row is still Base
  * UI Autocomplete's item in a named group, so the field's arrows and Enter
@@ -54,12 +56,9 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
   // A mouse resting on an airport's row: its preview beside the panel
   // (the owner, 2026-11-09: hover previews on pointer devices only).
   const hover = usePointerHover();
-  // A row's key as the pilot presses it (lib/shortcutKeys), none when off.
-  const hint = useKeyHint();
-  // The suggestions: the words sent round a place (Search Nearby), then
-  // the question for the assistant.
-  const asks = does.filter((d) => d.kind === "ask" || d.kind === "nearby");
-  const rest = does.filter((d) => d.kind !== "ask" && d.kind !== "nearby");
+  // The suggestion: the words sent round a place (Search Nearby).
+  const asks = does.filter((d) => d.kind === "nearby");
+  const rest = does.filter((d) => d.kind !== "nearby");
   // The top hit: the first airport, else the first airplane.
   const topAirport = airports[0] ?? null;
   const topAirplane = topAirport ? null : (airplanes[0] ?? null);
@@ -136,15 +135,15 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
     <ResultRow
       key={hit.key}
       value={hit.key}
-      icon={<RoundIcon>{hit.kind === "ask" || hit.kind === "nearby" ? <Search /> : doGlyph(hit)}</RoundIcon>}
+      icon={<RoundIcon>{hit.kind === "nearby" ? <Search /> : doGlyph(hit)}</RoundIcon>}
       title={hit.kind === "nearby" ? <Matched text={hit.label} typed={typed} /> : hit.label}
-      detail={hit.kind === "ask" ? "Ask the assistant" : hit.kind === "nearby" ? "Search Nearby" : undefined}
+      detail={hit.kind === "nearby" ? "Search Nearby" : undefined}
       onSelect={hit.run}
       testId={`search-do-${hit.key}`}
-      // What is done in the tint, as a button's words are; the question
-      // a suggestion, in the text's colour as Apple's are.
-      tint={hit.kind !== "ask" && hit.kind !== "nearby"}
-      end={hint(hit.keys) ? <CommandShortcut className="self-center">{hint(hit.keys)}</CommandShortcut> : undefined}
+      // What is done in the tint, as a button's words are; the
+      // suggestion in the text's colour as Apple's are.
+      tint={hit.kind !== "nearby"}
+      end={hit.keys ? <CommandShortcut className="self-center">{keyHint(hit.keys)}</CommandShortcut> : undefined}
     />
   );
 
@@ -208,14 +207,14 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
     // more put the list 32 in (the sheet audit's F-P1).
     <div className="flex flex-col gap-2 pt-2 pb-4" data-testid="one-search-results">
       {problem && (
-        <p role="alert" className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-problem">
+        <FieldError className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-problem">
           {problem}
-        </p>
+        </FieldError>
       )}
       {unheard && (
-        <p role="alert" className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-voice-problem">
+        <FieldError className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-voice-problem">
           {unheard}
-        </p>
+        </FieldError>
       )}
       <CommandList
         className={cn("max-h-none overflow-hidden rounded-2xl bg-card p-0", none && "bg-transparent", !answered && "opacity-60")}
@@ -228,11 +227,11 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
             <ResultGroup heading={g.heading}>{g.rows}</ResultGroup>
           </Fragment>
         ))}
-        {none && (
-          <p role="status" className={cn("px-1 py-6 text-center text-muted-foreground", TEXT.prose)}>
-            {direct && !typed ? "Type an airport's ident or name." : answered ? "Nothing found." : "Searching…"}
-          </p>
-        )}
+        {/* Base UI's status, kept mounted so VoiceOver hears "Nothing
+            found" as it comes; empty while there are rows. */}
+        <CommandEmpty className={cn("px-1 text-muted-foreground", TEXT.prose)}>
+          {none && (direct && !typed ? "Type an airport's ident or name." : answered ? "Nothing found." : "Searching…")}
+        </CommandEmpty>
       </CommandList>
     </div>
   );

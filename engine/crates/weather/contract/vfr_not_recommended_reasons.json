@@ -1,0 +1,43 @@
+{
+  "x-call": "wingtip_weather::calls::call",
+  "description": "\"VFR flight not recommended\" (AIM 7-1-5) as its reasons, in briefing order: either end reporting IFR or LIFR or a ceiling of unknown height, then the forecast along the route under 14 CFR 91.155(c), (d)'s basic minimums or of unknown height.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "VfrNotRecommendedReasonsInput",
+      "type": "object",
+      "properties": {
+        "idents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metars": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "forecast": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "VfrNotRecommendedReasonsAnswer",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

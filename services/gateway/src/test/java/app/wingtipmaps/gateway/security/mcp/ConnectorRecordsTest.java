@@ -16,7 +16,9 @@ import app.wingtipmaps.gateway.repository.PilotRepository;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -29,10 +31,18 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.OAuth2RefreshToken;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2ClientRegistration;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -42,12 +52,15 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * came, and the pilot's records read and written by the planner's tools
  * with the token the two share -- refused, as a 404, to anyone without it.
  */
-@SpringBootTest(properties = "app.mcp.internal-token=" + ConnectorRecordsTest.TOKEN)
+@SpringBootTest(properties = {"app.mcp.enabled=true", "app.mcp.internal-token=" + ConnectorRecordsTest.TOKEN})
 @AutoConfigureMockMvc
 @Testcontainers
 class ConnectorRecordsTest {
 
     static final String TOKEN = "planner-and-gateway";
+
+    /** app.internal.port's default. */
+    static final int INTERNAL_PORT = 8081;
 
     @Container
     @ServiceConnection
@@ -106,7 +119,7 @@ class ConnectorRecordsTest {
     @DynamicPropertySource
     static void plannerUrl(DynamicPropertyRegistry registry) {
         registry.add(
-                "planner-service.base-url",
+                "app.planner.base-url",
                 () -> "http://127.0.0.1:" + planner.getAddress().getPort());
     }
 
@@ -143,26 +156,33 @@ class ConnectorRecordsTest {
     void theRecordsAnswerOnlyThePlanner() throws Exception {
         Pilot pilot =
                 pilots.save(new Pilot(UUID.randomUUID() + "@example.com", "Test Pilot", "sub-" + UUID.randomUUID()));
-        aircraft.saveAndFlush(new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null));
+        aircraft.saveAndFlush(new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null));
         String id = String.valueOf(pilot.getId());
 
-        mvc.perform(get("/internal/mcp/aircraft").header("X-Pilot-Id", id)).andExpect(status().isNotFound());
-        mvc.perform(get("/internal/mcp/aircraft").header("X-Pilot-Id", id).header("X-Internal-Token", "guess"))
+        mvc.perform(internal(get("/internal/mcp/aircraft")).header("X-Pilot-Id", id))
                 .andExpect(status().isNotFound());
-        mvc.perform(get("/internal/mcp/aircraft").header("X-Pilot-Id", "999999").header("X-Internal-Token", TOKEN))
+        mvc.perform(internal(get("/internal/mcp/aircraft"))
+                        .header("X-Pilot-Id", id)
+                        .header("X-Internal-Token", "guess"))
                 .andExpect(status().isNotFound());
-        mvc.perform(get("/internal/mcp/aircraft").header("X-Pilot-Id", id).header("X-Internal-Token", TOKEN))
+        mvc.perform(internal(get("/internal/mcp/aircraft"))
+                        .header("X-Pilot-Id", "999999")
+                        .header("X-Internal-Token", TOKEN))
+                .andExpect(status().isNotFound());
+        mvc.perform(internal(get("/internal/mcp/aircraft"))
+                        .header("X-Pilot-Id", id)
+                        .header("X-Internal-Token", TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].tailNumber").value("N12345"))
                 .andExpect(jsonPath("$[0].cruiseTasKt").value(110.0));
 
-        mvc.perform(post("/internal/mcp/flights")
+        mvc.perform(internal(post("/internal/mcp/flights"))
                         .header("X-Pilot-Id", id)
                         .header("X-Internal-Token", TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"not an ident\"}"))
                 .andExpect(status().isBadRequest());
-        mvc.perform(post("/internal/mcp/flights")
+        mvc.perform(internal(post("/internal/mcp/flights"))
                         .header("X-Pilot-Id", id)
                         .header("X-Internal-Token", TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -170,10 +190,89 @@ class ConnectorRecordsTest {
                                 + "\"stops\":[\"KDSM\"]}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.destinationIdent").value("KDLH"));
-        mvc.perform(get("/internal/mcp/flights").header("X-Pilot-Id", id).header("X-Internal-Token", TOKEN))
+        mvc.perform(internal(get("/internal/mcp/flights"))
+                        .header("X-Pilot-Id", id)
+                        .header("X-Internal-Token", TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].stops[0]").value("KDSM"));
+    }
+
+    /** As the planner reaches the records: on the gateway's internal port. */
+    static MockHttpServletRequestBuilder internal(MockHttpServletRequestBuilder request) {
+        return request.with(asked -> {
+            asked.setLocalPort(INTERNAL_PORT);
+            return asked;
+        });
+    }
+
+    /** Not on the public port, with the right token or without: the
+     *  internet never reaches them (InternalPortConfig). */
+    @Test
+    void theRecordsAreNotOnThePublicPort() throws Exception {
+        mvc.perform(get("/internal/mcp/aircraft").header("X-Pilot-Id", "1").header("X-Internal-Token", TOKEN))
+                .andExpect(status().isNotFound());
+        mvc.perform(get(URI.create("/%69nternal/mcp/aircraft"))
+                        .header("X-Pilot-Id", "1")
+                        .header("X-Internal-Token", TOKEN))
+                .andExpect(status().isNotFound());
+        // Nor is anything else on the internal port.
+        mvc.perform(internal(get("/api/me"))).andExpect(status().isNotFound());
+    }
+
+    @Autowired
+    private RegisteredClientRepository clients;
+
+    @Autowired
+    private OAuth2AuthorizationService authorizations;
+
+    /** Asked before every MCP call (L4): live while the pilot is connected,
+     *  not once they disconnect or delete their account. */
+    @Test
+    void aConnectionIsLiveUntilItIsRevokedOrTheAccountGoes() throws Exception {
+        Pilot pilot =
+                pilots.save(new Pilot(UUID.randomUUID() + "@example.com", "Test Pilot", "sub-" + UUID.randomUUID()));
+        RegisteredClient client = ConnectorClients.registered(OAuth2ClientRegistration.builder()
+                .clientName("Claude")
+                .redirectUri("https://claude.ai/api/mcp/auth_callback")
+                .build());
+        clients.save(client);
+        Instant now = Instant.now();
+        OAuth2RefreshToken refresh = new OAuth2RefreshToken("r-" + UUID.randomUUID(), now, now.plusSeconds(3600));
+        OAuth2Authorization connection = OAuth2Authorization.withRegisteredClient(client)
+                .principalName(String.valueOf(pilot.getId()))
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .refreshToken(refresh)
+                .build();
+        authorizations.save(connection);
+        String id = String.valueOf(pilot.getId());
+
+        mvc.perform(connection(id, client.getClientId())).andExpect(status().isNoContent());
+        mvc.perform(connection(id, "another-client")).andExpect(status().isNotFound());
+        mvc.perform(connection("999999", client.getClientId())).andExpect(status().isNotFound());
+
+        // Disconnected: its refresh token revoked.
+        authorizations.save(
+                OAuth2Authorization.from(connection).invalidate(refresh).build());
+        mvc.perform(connection(id, client.getClientId())).andExpect(status().isNotFound());
+
+        // Connected again, then the account deleted.
+        authorizations.save(OAuth2Authorization.withRegisteredClient(client)
+                .id(UUID.randomUUID().toString())
+                .principalName(id)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .refreshToken(new OAuth2RefreshToken("r-" + UUID.randomUUID(), now, now.plusSeconds(3600)))
+                .build());
+        mvc.perform(connection(id, client.getClientId())).andExpect(status().isNoContent());
+        grants.forget(pilot.getId());
+        mvc.perform(connection(id, client.getClientId())).andExpect(status().isNotFound());
+    }
+
+    private static MockHttpServletRequestBuilder connection(String pilotId, String clientId) {
+        return internal(get("/internal/mcp/connection"))
+                .header("X-Internal-Token", TOKEN)
+                .header("X-Pilot-Id", pilotId)
+                .header("X-Client-Id", clientId);
     }
 
     @Autowired

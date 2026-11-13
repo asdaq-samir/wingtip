@@ -1,7 +1,9 @@
 import { MutationCache, QueryCache, QueryClient, queryOptions } from "@tanstack/react-query";
-import { ApiError, api, describeError, isDropped, isUnknownPlace } from "./api/client";
+import { api, describeError, isDropped, isUnknownPlace } from "./api/client";
+import { retryable, retryDelay, retryOnServerFailure } from "./queryRetry";
 import type { ChartInfo } from "./api/types";
 import { keptStore } from "./storage";
+import { signedInPilot } from "./pilotCache";
 import { clearProblem, raiseProblem, showError } from "./problems";
 
 declare module "@tanstack/react-query" {
@@ -23,12 +25,24 @@ declare module "@tanstack/react-query" {
  * alert, and neither page threads error strings around to say so. The
  * exceptions are marked on the query or mutation itself (`meta`).
  *
- * No retries and no refetch on focus: the planner's calls are chart
- * reads, model inferences and streams of legs, and a pilot switching
- * back to the tab does not want the nav log recomputed under them.
+ * TanStack's own refetch on focus, which asks again only what is stale:
+ * the map's weather is current as the phone wakes, the nav log, course and
+ * checkpoints (staleTime Infinity) never recomputed. Its own retries, where
+ * they could answer (lib/queryRetry), a lost connection's for as long as
+ * the query is wanted, paused while the page is hidden or the phone
+ * offline; the streams each say `retry: false`.
+ *
+ * Asked with no connection too ("offlineFirst"), so the service worker's
+ * kept answers reach the page in the air; TanStack's "online" paused them
+ * unasked (the offline audit's gap 1). What it did not keep fails at once,
+ * "No connection" in place (QueryState); a mutation, into its alert.
  */
 export const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+  defaultOptions: {
+    // None in the unit tests, as TanStack's testing guide has it.
+    queries: { retry: import.meta.env.MODE === "test" ? false : retryOnServerFailure, retryDelay, networkMode: "offlineFirst" },
+    mutations: { networkMode: "offlineFirst" },
+  },
   queryCache: new QueryCache({
     onError: (error, query) => {
       const silent = query.meta?.silent;
@@ -39,25 +53,13 @@ export const queryClient = new QueryClient({
       // errors for internet loss specially in no coverage up in the
       // air"). The page keeps what it had (TanStack keeps a query's data
       // through a failed refetch, the service worker its answers), and
-      // the query is asked again once the phone is back: a second after
-      // the first drop, then every half minute, not every second all
-      // flight. The Status page says what is being shown from the cache.
-      if (isDropped(error) || globalThis.navigator?.onLine === false) {
-        const again = askedAgain.has(query.queryHash);
-        askedAgain.add(query.queryHash);
-        whenBack(
-          () => void queryClient.refetchQueries({ predicate: (q) => q.queryHash === query.queryHash }),
-          document,
-          again ? 30_000 : 1000,
-        );
-        return;
-      }
+      // a query with retries of its own is asked again by them
+      // (lib/queryRetry); one that ends here failed with `retry: false`.
+      // The Status page says what is being shown from the cache.
+      if (isDropped(error) || globalThis.navigator?.onLine === false) return;
       failingWith.set(query.queryHash, failed(describeError(error), retryable(error)));
     },
-    onSuccess: (_data, query) => {
-      askedAgain.delete(query.queryHash);
-      forget(query.queryHash);
-    },
+    onSuccess: (_data, query) => forget(query.queryHash),
   }),
   // A mutation is something the pilot just did: its failure is the
   // alert's, with OK (lib/problems).
@@ -83,42 +85,10 @@ export const queryClient = new QueryClient({
 /** Which problem each failing query raised: a query's hash to its id. */
 const failingWith = new Map<string, string>();
 
-/**
- * A query whose connection dropped, asked again by itself once before it
- * is said: Safari drops a page's requests as the phone locks or the app
- * goes behind another (its "Load failed"), and a pilot coming back found
- * "The connection dropped" over a route the planner answers in two
- * seconds (the owner's screenshot, 2026-10-22). Asked again once the page
- * is in sight and the phone online, a second after; said only if that
- * fails too.
- */
-const askedAgain = new Set<string>();
-
-export function whenBack(
-  run: () => void,
-  doc: Pick<Document, "visibilityState" | "addEventListener" | "removeEventListener"> = document,
-  afterMs = 1000,
-) {
-  const ready = () => doc.visibilityState === "visible" && globalThis.navigator?.onLine !== false;
-  const done = () => {
-    doc.removeEventListener("visibilitychange", go);
-    globalThis.removeEventListener?.("online", go);
-  };
-  function go() {
-    if (!ready()) return;
-    done();
-    setTimeout(run, afterMs);
-  }
-  doc.addEventListener("visibilitychange", go);
-  globalThis.addEventListener?.("online", go);
-  go();
-}
-
 /** A failure's problem goes once every query it was about answers, or
  *  is no longer asked for: a route changed or closed. With no close of
  *  its own, a problem left behind by a route long gone stayed. */
 function forget(hash: string) {
-  askedAgain.delete(hash);
   const id = failingWith.get(hash);
   failingWith.delete(hash);
   if (id !== undefined && ![...failingWith.values()].includes(id)) clearProblem(id);
@@ -139,15 +109,6 @@ function failed(message: string, retry: boolean): string {
   return id;
 }
 
-/** Whether asking again could answer differently: not for what the
- *  request itself got wrong -- a 4xx, a route with no legal altitude
- *  (lib/api/streams) -- where Try again only showed the same toast
- *  again; a timeout or a rate limit can pass. */
-function retryable(error: unknown): boolean {
-  if (!(error instanceof ApiError)) return true;
-  return error.status < 400 || error.status >= 500 || error.status === 408 || error.status === 429;
-}
-
 /*
  * The queries more than one component observes, defined once. TanStack
  * Query keeps one set of options per query, and each observer that
@@ -158,12 +119,11 @@ function retryable(error: unknown): boolean {
  * what is its own (`enabled`, `placeholderData`).
  */
 
-/** Who is signed in, if anyone. Never a toast: the pilot console shows
+/** Who is signed in, if anyone (signedInPilot). Never a toast: the pilot console shows
  *  a failed check in place ("Retry sign-in check"), and the header's
  *  Dev switch, which observes it too, simply stays hidden. */
-// Fresh for a minute: every tab of the planning panel reads it, and each
-// switch asked again (/api/me, measured on every one).
-export const pilotQuery = queryOptions({ queryKey: ["pilot"], queryFn: () => api.me(), staleTime: 60_000, meta: { silent: true } });
+// Fresh for a minute: every tab of the planning panel reads it (/api/me, measured on each).
+export const pilotQuery = queryOptions({ queryKey: ["pilot"], queryFn: signedInPilot, staleTime: 60_000, meta: { silent: true } });
 
 /** The planner's snapshot of the stack, which the Developer console
  *  and the training drawer's Retrain button poll together. Fresh for
@@ -178,20 +138,24 @@ export const statusQuery = queryOptions({ queryKey: ["status"], queryFn: () => a
 export const capabilitiesQuery = queryOptions({
   queryKey: ["signInCapabilities"],
   queryFn: () => api.capabilities(),
-  retry: false,
   staleTime: Infinity,
   meta: { silent: true },
 });
+
+/** The chart's cycle (chartQuery's, else the one kept here), in the course's
+ *  and checkpoints' key and address as in the tiles': a new cycle is never
+ *  served the service worker's answer kept from the last. */
+export const chartCycle = () => queryClient.getQueryData(chartQuery.queryKey)?.chart_cycle ?? keptChart()?.chart.chart_cycle;
 
 /** A route's course: its airports, any stops among them, and the line
  *  through them, the same answer for as long as the page is open. A
  *  course that fails is the page's first news that the planner is down;
  *  but a point the planner does not know is said on its pill in the
  *  route box (usePlan's `unknownPlace`), not as a system problem. */
-export const courseQuery = (dep: string, dest: string, stops: string[] = []) =>
+export const courseQuery = (dep: string, dest: string, stops: string[] = [], cycle = chartCycle()) =>
   queryOptions({
-    queryKey: ["course", dep, dest, stops.join(",")],
-    queryFn: ({ signal }) => api.course(dep, dest, stops, signal),
+    queryKey: ["course", dep, dest, stops.join(","), cycle],
+    queryFn: ({ signal }) => api.course(dep, dest, stops, signal, cycle),
     staleTime: Infinity,
     meta: { silent: isUnknownPlace },
   });
@@ -205,10 +169,10 @@ export const courseQuery = (dep: string, dest: string, stops: string[] = []) =>
  *  HTTP/1.1 a browser's six connections to the page filled with them --
  *  a card, the next route's course and the tiles waited behind
  *  (2026-10-07). The planner's read goes on and is kept either way. */
-export const checkpointsQuery = (dep: string, dest: string, stops: string[] = []) =>
+export const checkpointsQuery = (dep: string, dest: string, stops: string[] = [], cycle = chartCycle()) =>
   queryOptions({
-    queryKey: ["checkpoints", dep, dest, stops.join(",")],
-    queryFn: ({ signal }) => api.checkpoints(dep, dest, stops, signal),
+    queryKey: ["checkpoints", dep, dest, stops.join(","), cycle],
+    queryFn: ({ signal }) => api.checkpoints(dep, dest, stops, signal, false, cycle),
     staleTime: Infinity,
     // A point not known, the course's to say (courseQuery).
     meta: { silent: isUnknownPlace },
@@ -359,15 +323,24 @@ export const classBQuery = queryOptions({
 export const airportQuery = (ident: string) =>
   queryOptions({ queryKey: ["airport", ident], queryFn: () => api.airport(ident), staleTime: 5 * 60_000, meta: { silent: true } });
 
+/** A cycle's procedures hold for its 28 days. */
+const PROCEDURE_STALE_MS = 6 * 60 * 60_000;
+
+/** A field's procedures from the FAA's CIFP (api.procedures): the route's
+ *  Procedures, a debrief's approaches and a lesson's pick alike. */
+export const proceduresQuery = (ident: string) =>
+  queryOptions({ queryKey: ["procedures", ident], queryFn: () => api.procedures(ident), staleTime: PROCEDURE_STALE_MS });
+
 /** A procedure picked, drawn as the planner draws it (wingtip.procedures):
- *  one query for the map's drawing, the planner's descent and the approach
- *  lesson (ApproachLesson) alike. */
-export const procedureQuery = (p: { ident: string; id: string; transition: string | null }) => ({
-  queryKey: ["procedure", p.ident, p.id, p.transition],
-  queryFn: () => api.procedure(p.ident, p.id, p.transition),
-  // A cycle's procedures hold for its 28 days.
-  staleTime: 6 * 60 * 60_000,
-});
+ *  one query for the map's drawing, its page in the Procedures, the
+ *  planner's descent, a debrief and the approach lesson (ApproachLesson)
+ *  alike. */
+export const procedureQuery = (p: { ident: string; id: string; transition: string | null }) =>
+  queryOptions({
+    queryKey: ["procedure", p.ident, p.id, p.transition],
+    queryFn: () => api.procedure(p.ident, p.id, p.transition),
+    staleTime: PROCEDURE_STALE_MS,
+  });
 
 /** What a field offers on the ground (api.airportServices): the stop's
  *  card's and a suggested stop's row's. The FAA's cycle and Overture's
@@ -446,7 +419,7 @@ export const plateQuery = (airport: string, id: string) =>
 export const flightsQuery = queryOptions({ queryKey: ["flights"], queryFn: () => api.flights.list(), meta: { silent: true } });
 
 /** The pilot's training record: the logbook's, the checkride's, the
- *  Brief's mock oral and solo review's, a flight's page's. */
+ *  Brief's solo review's, a flight's page's. */
 export const trainingQuery = queryOptions({ queryKey: ["training"], queryFn: () => api.training.get() });
 
 /** The pilot's own airplanes, for the aircraft chips, the Brief and

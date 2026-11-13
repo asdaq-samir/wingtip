@@ -8,9 +8,13 @@ description = "The airspace and the cycle packs: whether a volume holds a point,
 [lib]
 name = "wingtip_airspace"
 
-# Only the engine's own crates, below this one (engine/README.md):
-# plain Rust, so the phones carry it as it is.
+# The engine's own crates, below this one (engine/README.md), and
+# crc32fast for the cycle pack's checksum (pack.rs): plain Rust with no
+# system library, so the phones carry it as it is; similar for how alike
+# two sounds are (spoken.rs), its diff alone, with none of its features.
 [dependencies]
+crc32fast = "1.5.5"
+similar = { version = "3.2.1", default-features = false }
 wingtip-core = { path = "../core" }
 wingtip-flight = { path = "../flight" }
 wingtip-procedures = { path = "../procedures" }

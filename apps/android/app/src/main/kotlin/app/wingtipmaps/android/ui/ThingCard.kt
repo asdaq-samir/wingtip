@@ -17,20 +17,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.graphics.toColorInt
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.name
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.Tracking
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.format.Format
@@ -52,9 +52,13 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * off it, each from the tapped feature's own fields or the engine
  * (MapRules), and the card kind's actions (CardActionRow), the same set
  * as the web's.
+ *
+ * @param onRouted every card closed and the FPL page shown: after an
+ *   action that changes the route (Direct To, Add to Route, Hold Here), as
+ *   a field's Fly Here shows it (the web's 4ff53c010).
  */
 @Composable
-fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit) {
+fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit, onRouted: () -> Unit) {
     val title = when (pick) {
         is MapPick.Airspace -> stringResource(R.string.airspace_class, pick.airspaceClass)
         is MapPick.Vor -> pick.ident
@@ -64,13 +68,14 @@ fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit) {
         // A field's and a leg's cards are their own (SheetPage.of).
         is MapPick.Airport -> pick.ident
         is MapPick.RouteLeg -> stringResource(R.string.route_leg)
+        is MapPick.Plate -> pick.ident
     }
     val actions = rememberRouteActions(plan)
-    // An action that changes the route closes the card, so the route is
-    // seen being planned; Call, Address and Copy leave it open.
+    // An action that changes the route closes the card onto the FPL page,
+    // so the route is seen being planned; Call, Address and Copy leave it open.
     val act: (CardAction, () -> Unit) -> Unit = { action, run ->
         run()
-        if (action != CardAction.CALL && action != CardAction.ADDRESS && action != CardAction.COPY) exit.close()
+        if (action != CardAction.CALL && action != CardAction.ADDRESS && action != CardAction.COPY) onRouted()
     }
     CardPage(title = title, exit = exit) { padding ->
         // Traffic is heard again by itself; no pull to refresh in a sheet.
@@ -99,7 +104,7 @@ fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit) {
                         HereCard(pick.lat, pick.lon)
                         SpecialUseRows(pick.lat, pick.lon)
                     }
-                    is MapPick.Airport, is MapPick.RouteLeg -> {}
+                    is MapPick.Airport, is MapPick.RouteLeg, is MapPick.Plate -> {}
                 }
             }
         }
@@ -146,10 +151,9 @@ internal fun ink(hex: String) = Color(hex.toColorInt())
  *  its speed and track, and Track, which follows it (Tracking) and keeps
  *  it ringed on the map. */
 @Composable
-private fun PlaneCard(hex: String) {
-    val context = LocalContext.current
-    val traffic = remember(context) { Traffic.of(context) }
-    val tracking = remember(context) { Tracking.of(context) }
+private fun PlaneCard(hex: String, flight: FlightModel = hiltViewModel()) {
+    val traffic = flight.traffic
+    val tracking = flight.tracking
     val planes by traffic.planes.collectAsStateWithLifecycle()
     val marks by traffic.marks.collectAsStateWithLifecycle()
     val trafficProblem by traffic.problem.collectAsStateWithLifecycle()

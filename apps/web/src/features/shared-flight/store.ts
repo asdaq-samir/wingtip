@@ -11,13 +11,14 @@ export const closeSharedLink = () => useSharedLink.setState({ link: null });
  * (main.tsx), before the planner reads its route from it: the web's plan
  * is its address, so a link's `dep` and `dest` left there would plan the
  * shared route at once. Kept here instead for the preview, which plans it
- * only on Use This Plan; the rest of the address is the receiver's own.
+ * only on Use This Plan; the rest of the address is the receiver's own,
+ * given back for the router to put in its place (React Router's navigate,
+ * replacing) and for the first load to read; null with no link in it.
  */
-export function takeSharedLinkFromAddress(): void {
-  const params = new URLSearchParams(window.location.search);
+export function takeSharedLinkFrom(search: string): URLSearchParams | null {
+  const params = new URLSearchParams(search);
   const link = sharedLinkOf(params);
-  if (!link) return;
-  const rest = withoutSharedLink(params).toString();
-  window.history.replaceState(window.history.state, "", `${window.location.pathname}${rest ? `?${rest}` : ""}${window.location.hash}`);
+  if (!link) return null;
   useSharedLink.setState({ link });
+  return withoutSharedLink(params);
 }

@@ -5,6 +5,7 @@ import AlertsBanner from "./AlertsBanner";
 import ProblemBanner from "./ProblemBanner";
 import SunlightBanner from "./SunlightBanner";
 import ZoomBanner from "./ZoomBanner";
+import WeatherAgeBanner from "./WeatherAgeBanner";
 import { useAtcRadio } from "../lib/atcRadio";
 import { useAtcListen } from "../lib/atc/listenSetting";
 import { cn } from "cn";
@@ -99,6 +100,9 @@ function MapBannersDrawn({ map }: { map: GlMap | null }) {
         </Suspense>
       )}
       <AircraftAlerts />
+      {/* The airport weather marks' age while it is old: a warning on the
+          map, not small print. */}
+      <WeatherAgeBanner />
       <ProblemBanner />
       {/* The radar or satellite loop's bar while one is on, last: it stays
           while the lines above come and go. */}

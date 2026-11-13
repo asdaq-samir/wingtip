@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The map's 3D view and its model weather (map/Map3dLayer, map/flow), the
+     web's words (features/plan/map/terrain, features/weather-flow). -->
+<resources>
+    <!-- The round 3D map button: what a tap goes to, as Apple Maps' and
+         the web's 3D circle say it, and its name for TalkBack. -->
+    <string name="map_3d">3D</string>
+    <string name="map_2d">2D</string>
+    <string name="map_3d_button">3D map</string>
+
+    <!-- The Map card's Model Weather tile. -->
+    <string name="model_weather">Model Weather</string>
+    <string name="model_weather_off">Off</string>
+    <string name="flow_wind">Wind</string>
+    <string name="flow_gust">Gusts</string>
+    <string name="flow_precip">Precipitation</string>
+    <string name="flow_cloud">Clouds</string>
+    <string name="flow_ceiling">Ceiling</string>
+    <string name="flow_cape">Thunderstorm energy</string>
+    <string name="flow_temp">Temperature</string>
+    <string name="flow_vis">Visibility</string>
+    <string name="flow_icing">Icing</string>
+    <string name="flow_turb">Turbulence</string>
+    <string name="flow_frzlvl">Freezing level</string>
+    <string name="flow_tops">Cloud tops</string>
+
+    <!-- The legend's titles, each field's name and unit. -->
+    <string name="flow_title_wind">Wind (kt)</string>
+    <string name="flow_title_gust">Gusts (kt)</string>
+    <string name="flow_title_precip">Precipitation</string>
+    <string name="flow_title_cloud">Cloud cover (%)</string>
+    <string name="flow_title_ceiling">Ceiling (ft above ground)</string>
+    <string name="flow_title_cape">CAPE (J/kg)</string>
+    <string name="flow_title_temp">Temperature (°C)</string>
+    <string name="flow_title_vis">Visibility (SM)</string>
+    <string name="flow_title_icing">Icing severity</string>
+    <string name="flow_title_turb">Turbulence, under 15,500 lb</string>
+    <string name="flow_title_frzlvl">Freezing level (MSL)</string>
+    <string name="flow_title_tops">Cloud tops (MSL)</string>
+
+    <!-- The timeline's toolbar and the legend. -->
+    <string name="flow_level">Level</string>
+    <string name="flow_surface">Surface</string>
+    <string name="flow_max">Max</string>
+    <string name="flow_now">Now</string>
+    <string name="flow_hours_ahead">+%1$d h</string>
+    <string name="flow_hours_back">%1$d h</string>
+    <string name="flow_hour">Model weather hour</string>
+    <string name="flow_play">Play</string>
+    <string name="flow_pause">Pause</string>
+    <string name="flow_span_1h">1h</string>
+    <string name="flow_span_12h">12h</string>
+    <string name="flow_fetching">Fetching the model weather…</string>
+    <string name="flow_unavailable">The model weather isn\'t available now.</string>
+    <string name="flow_radar_observed">Radar, observed</string>
+    <string name="flow_in_place_of_awc">%1$s in place of AWC</string>
+
+    <!-- The value read where the pilot tapped. -->
+    <string name="flow_reading">Value here</string>
+    <string name="flow_no_value">–</string>
+    <string name="flow_wind_reading">%1$03d° %2$d kt</string>
+    <string name="flow_no_ceiling">No ceiling</string>
+    <string name="flow_none">None</string>
+    <string name="flow_reading_failed">The value there couldn\'t be worked out.</string>
+    <string name="flow_freezing_surface">Freezing at the surface</string>
+</resources>

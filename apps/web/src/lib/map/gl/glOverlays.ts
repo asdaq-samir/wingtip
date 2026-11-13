@@ -11,9 +11,8 @@ import type { AirspaceVolume, VorPin } from "../sources/overlayTypes";
 import { usePreferences } from "../../preferences";
 import { BLUE } from "../../useAirspace";
 import { TOWERED_BLUE, UNTOWERED_MAGENTA } from "../marks/airportMark";
-import type { AirportWeatherLook } from "../marks/airportWeatherPrefs";
 import { stationPictures } from "../marks/stationModel";
-import { airportPictures, tileAirportIcon, TOWERED } from "./airportIcons";
+import { AIRPORT_WEATHER, TILE_AIRPORT_ICON, airportPictures, TOWERED } from "./airportIcons";
 import { overlaySource } from "../sources/overlayTiles";
 import { SLOTS, drawSvg, slotId, type DrawnImage, type Slot, type Stretch } from "./glLayer";
 import {
@@ -28,6 +27,7 @@ import {
   suaHatch,
 } from "./glStyle";
 import { GL_FONT_BOLD, LABEL_HALO } from "./layers/common";
+import { SUA_TAB_PICTURES, specialUseLabelLayer } from "./glSuaLabels";
 import { CHART } from "../../tokens";
 
 export { OVERLAY_SOURCE };
@@ -101,17 +101,19 @@ const AIRSPACE_TAB_PICTURES: Picture[] = (["B", "C", "D"] as const).map((c) => [
  *  in the area's ink on a faint wash of it, repeated along the band
  *  (specialUseLayers' line-pattern), as ForeFlight and the sectional
  *  hatch the inside of the boundary. */
-const SUA_PICTURES: Picture[] = (Object.keys(SUA_INK) as (keyof typeof SUA_INK)[]).map((ink) => [
-  suaHatch(ink),
-  () =>
-    `<svg width="7" height="10" viewBox="0 0 7 10"><rect width="7" height="10" fill="${SUA_INK[ink]}" fill-opacity="0.14"/><path d="M1.5 9.5L5.5 0.5" stroke="${SUA_INK[ink]}" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.9"/></svg>`,
-]);
+const SUA_PICTURES: Picture[] = (Object.keys(SUA_INK) as (keyof typeof SUA_INK)[])
+  .map((ink): Picture => [
+    suaHatch(ink),
+    () =>
+      `<svg width="7" height="10" viewBox="0 0 7 10"><rect width="7" height="10" fill="${SUA_INK[ink]}" fill-opacity="0.14"/><path d="M1.5 9.5L5.5 0.5" stroke="${SUA_INK[ink]}" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.9"/></svg>`,
+  ])
+  .concat(SUA_TAB_PICTURES); // and their tabs (glSuaLabels)
 
 let drawn: Promise<Map<string, DrawnImage>> | null = null;
 /** Every picture the overlay layers wear, drawn once a page at the
- *  screen's density, for the map to take in its own `styleimagemissing`
- *  as a tile first asks for one (synchronously, so no symbol is laid out
- *  without its picture). */
+ *  screen's density, for the map to take in its missing-image resolver
+ *  as a tile first asks for one (MapLibre waits on it, so no symbol is
+ *  laid out without its picture). */
 export function overlayPictures(): Promise<Map<string, DrawnImage>> {
   drawn ??= Promise.all(
     [...airportPictures(), ...stationPictures(), ...NAVAID_PICTURES, ...AIRSPACE_TAB_PICTURES, ...SUA_PICTURES].map(([id, svg, stretch]) =>
@@ -134,14 +136,23 @@ const AIRPORTS_FARTHEST_ZOOM = 4;
  *  ident beside it in bold, the field's ink (the sectional sets an
  *  airport's name in the symbol's colour, Chart User's Guide, Airports),
  *  kept apart by MapLibre's collision in `rank` order. */
-function airportMarksLayer(from: { source: string; "source-layer"?: string }, icon: ExpressionSpecification): SymbolLayerSpecification {
+function airportMarksLayer(from: { source: string; "source-layer"?: string }): SymbolLayerSpecification {
   return {
     id: "airports",
     type: "symbol",
     ...from,
     minzoom: glZoom(AIRPORTS_FARTHEST_ZOOM),
+    // The armed services' own fields and private ones unless asked for (a
+    // joint-use field always drawn), and none the route draws itself: read
+    // from the map's state, which the settings and the route set.
+    filter: [
+      "all",
+      ["any", ["boolean", ["global-state", SHOW_MILITARY], false], ["!=", ["get", "military"], "military"]],
+      ["any", ["boolean", ["global-state", SHOW_PRIVATE], false], ["!=", ["get", "use"], "private"]],
+      notOwn(ROUTE_AIRPORTS),
+    ],
     layout: {
-      "icon-image": icon,
+      "icon-image": TILE_AIRPORT_ICON,
       // Smaller out at a state's width, a field's own size closer in: the
       // small fields don't crowd the chart, and the size follows a pinch frame by frame (a zoom expression, not the page's state).
       "icon-size": ["interpolate", ["linear"], ["zoom"], glZoom(AIRPORTS_FARTHEST_ZOOM), 0.7, glZoom(10), 1, glZoom(13), 1.25],
@@ -158,13 +169,13 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }, ic
       "text-optional": true,
       "text-padding": 1,
     },
-    paint: { "text-color": ["case", TOWERED, TOWERED_BLUE, UNTOWERED_MAGENTA], ...LABEL_HALO },
+    paint: { "text-color": ["case", TOWERED, TOWERED_BLUE, UNTOWERED_MAGENTA], ...LABEL_HALO, "text-opacity": SELECTED_HIDDEN },
   };
 }
 
 /** The mark, its ident beside it on whichever side is clear: MapLibre's
- *  variable anchor and collision, where declutter.ts picked a VOR's tag
- *  side by hand. A VOR's ident and frequency on its blue tag, "GCO
+ *  variable anchor and collision, where a VOR's tag side was once
+ *  picked by hand. A VOR's ident and frequency on its blue tag, "GCO
  *  (108.25)" as ForeFlight writes it; a fix's and a waypoint's bold, dark
  *  or green on a white halo. `kind` is the feature's ("vor", "fix",
  *  "vfr"), or the one kind every feature of a tile layer is. */
@@ -218,12 +229,12 @@ const FIX_ZOOM = 10;
 /** The VORs a pilot tunes (wingtip.fixes.VOR_KINDS, NASR NAV_TYPE). */
 const VOR_KINDS = ["VORTAC", "VOR/DME", "VOR"];
 
-/** From MapLibre's 12, where the chart is only enlarged (BaseGl's
- *  CLOSE_FROM): before it a runway is under a pixel or two wide and the
+/** From MapLibre's 12, where the sectional has faded into the imagery
+ *  (closeZoom): before it a runway is under a pixel or two wide and the
  *  chart's own airport symbol says more. */
 const RUNWAYS_FROM = 12;
 
-/** The runways' look, as ForeFlight draws them over its street map: a
+/** The runways' look, as ForeFlight draws them over its base map: a
  *  dark grey surface (a soft one lighter), a dashed white centreline, and
  *  each end's number in bold white on a dark halo, turned to read from
  *  the approach end (text-rotate is the end's true heading, so the
@@ -280,7 +291,6 @@ export const AIRSPACE_TILE_LAYERS = [
   ...SUA_LAYERS,
 ];
 const NAVAID_TILE_LAYERS = ["navaids", "navaids-idents", "fixes", "fixes-idents"];
-const WAYPOINT_TILE_LAYERS = ["vfr-waypoints", "vfr-waypoints-idents"];
 
 /** The overlay tiles' source and layers, by the slot each is drawn under
  *  (glLayer's SLOTS), for the map's first style; the layers of a layer the
@@ -295,6 +305,7 @@ export function overlayStyle(
     ...(has.has("runways") ? runwayLayers() : []),
     ...(has.has("special_use") ? specialUseLayers() : []),
     ...(has.has("airspace") ? airspaceLayers(GL_FONT_BOLD, has.has("airspace_labels")) : []),
+    ...(has.has("special_use") ? [specialUseLabelLayer(GL_FONT_BOLD, has.has("special_use_labels"))] : []),
   ];
   const marks: LayerSpecification[] = [
     ...(has.has("navaids")
@@ -309,10 +320,13 @@ export function overlayStyle(
             filter: ["all", ["==", ["get", "enroute_low"], true], ["!=", ["get", "vfr"], true]],
             minzoom: glZoom(FIX_ZOOM),
           }),
-          ...navaidMarks("vfr-waypoints", from("fixes"), "vfr", { filter: ["==", ["get", "vfr"], true], minzoom: glZoom(FIX_ZOOM) }),
+          ...navaidMarks("vfr-waypoints", from("fixes"), "vfr", {
+            filter: ["all", ["==", ["get", "vfr"], true], notOwn(ROUTE_WAYPOINTS)],
+            minzoom: glZoom(FIX_ZOOM),
+          }),
         ]
       : []),
-    ...(has.has("airports") ? [airportMarksLayer(from("airports"), tileAirportIcon(new Map()))] : []),
+    ...(has.has("airports") ? [airportMarksLayer(from("airports"))] : []),
   ];
   return { source: overlaySource(tiles, origin), layers: { lines, marks } };
 }
@@ -334,85 +348,60 @@ export function addOverlays(map: MlMap, tiles: OverlayTiles, origin?: string) {
 
 // ---- What changes over them ----------------------------------------------
 
-interface Changes {
-  airports: string[];
-  waypoints: string[];
-  weather: Map<string, string>;
-  look: AirportWeatherLook;
-  selected: string | null;
-}
-const changes = new WeakMap<MlMap, Changes>();
-const changesOf = (map: MlMap) => {
-  let kept = changes.get(map);
-  if (!kept) changes.set(map, (kept = { airports: [], waypoints: [], weather: new Map(), look: "halo", selected: null }));
-  return kept;
-};
+// The map's global state the tile layers read (MapLibre's `global-state`
+// expression): each change one setGlobalStateProperty, which MapLibre
+// skips when the value is the same and applies to the layers that read
+// it, rather than a filter or expression built again by hand.
+const ROUTE_AIRPORTS = "routeAirports";
+const ROUTE_WAYPOINTS = "routeWaypoints";
+const SELECTED_AIRPORT = "selectedAirport";
+// The open card's ident hidden in paint (AirportsGl writes it larger): a tap repaints, not a re-layout of every tile.
+const SELECTED_HIDDEN: ExpressionSpecification = ["case", ["==", ["get", "ident"], ["global-state", SELECTED_AIRPORT]], 0, 1];
+const SHOW_MILITARY = "showMilitary";
+const SHOW_PRIVATE = "showPrivate";
 
-const notIn = (idents: string[]): ExpressionSpecification[] =>
-  idents.length ? [["!", ["in", ["get", "ident"], ["literal", idents]]]] : [];
+/** Not one of the idents the route draws itself, held in the state (an
+ *  unset state is none: MapLibre's `in` is false for a null list). */
+function notOwn(key: string): ExpressionSpecification {
+  return ["!", ["in", ["get", "ident"], ["global-state", key]]];
+}
+
+/** The state set where the map has the overlays' layers to read it. */
+function setState(map: MlMap, key: string, value: unknown) {
+  if (map.style) map.setGlobalStateProperty(key, value);
+}
 
 /** The settings on the tile layers: Airspace, VORs and Fixes on or off,
- *  the armed services' own fields and private ones hidden unless asked
- *  for (a joint-use field always drawn), and the fields and waypoints the
- *  route draws itself left to it. */
+ *  and the armed services' own fields and private ones shown or not. */
 export function applyOverlayFilters(map: MlMap) {
   if (!map.style) return;
   const prefs = usePreferences.getState();
-  const own = changesOf(map);
   const visible = (ids: string[], on: boolean) => {
     for (const id of ids) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
   };
   visible(AIRSPACE_TILE_LAYERS, prefs.airspace);
   visible(NAVAID_TILE_LAYERS, prefs.navaids);
-  if (map.getLayer("airports")) {
-    map.setFilter("airports", [
-      "all",
-      ...(prefs.military ? [] : [["!=", ["get", "military"], "military"] as ExpressionSpecification]),
-      ...(prefs.privateFields ? [] : [["!=", ["get", "use"], "private"] as ExpressionSpecification]),
-      ...notIn(own.airports),
-    ]);
-  }
-  for (const id of WAYPOINT_TILE_LAYERS) {
-    if (map.getLayer(id)) map.setFilter(id, ["all", ["==", ["get", "vfr"], true], ...notIn(own.waypoints)]);
-  }
+  setState(map, SHOW_MILITARY, prefs.military);
+  setState(map, SHOW_PRIVATE, prefs.privateFields);
 }
 
 /** The idents the route draws itself (its fields' chips, its waypoints),
  *  left off the tile layers. */
 export function setOverlayExclusion(map: MlMap, kind: "airports" | "waypoints", idents: string[]) {
-  const own = changesOf(map);
-  const sorted = [...new Set(idents)].sort();
-  if (sorted.join() === own[kind].join()) return;
-  own[kind] = sorted;
-  applyOverlayFilters(map);
+  setState(map, kind === "airports" ? ROUTE_AIRPORTS : ROUTE_WAYPOINTS, [...new Set(idents)].sort());
 }
 
 /** The field whose card is open: its ident left off the tile layer,
  *  which the ring's own layer writes larger (AirportsGl). */
 export function setSelectedAirport(map: MlMap, ident: string | null) {
-  const own = changesOf(map);
-  if (own.selected === ident || !map.style || !map.getLayer("airports")) return;
-  own.selected = ident;
-  map.setLayoutProperty("airports", "text-field", selectedIdentLeftOut(ident));
-}
-
-/** The tile airports' idents, the open card's field's left out: the
- *  selected layer writes it larger (AirportsGl's SELECTED_IDENT). */
-function selectedIdentLeftOut(ident: string | null): ExpressionSpecification {
-  return ident ? ["case", ["==", ["get", "ident"], ident], "", ["get", "ident"]] : ["get", "ident"];
+  setState(map, SELECTED_AIRPORT, ident);
 }
 
 /** Each field's weather halo from its METAR (its flight category's colour,
- *  flightCategory colourOf), joined onto the tile airports by ident; as
- *  the Map card's Airport Weather says: none (Off), a halo (Halo, Station)
- *  or a dot in place of the symbol (Dot). */
-export function setAirportWeather(map: MlMap, colours: Map<string, string>, look: AirportWeatherLook = "halo") {
-  const own = changesOf(map);
-  const same = own.look === look && own.weather.size === colours.size && [...colours].every(([k, v]) => own.weather.get(k) === v);
-  if (same || !map.style || !map.getLayer("airports")) return;
-  own.weather = new Map(colours);
-  own.look = look;
-  map.setLayoutProperty("airports", "icon-image", tileAirportIcon(own.weather, look));
+ *  flightCategory colourOf), joined onto the tile airports by ident, with
+ *  every one of Settings' Airport Weather. */
+export function setAirportWeather(map: MlMap, colours: Map<string, string>) {
+  setState(map, AIRPORT_WEATHER, Object.fromEntries(colours));
 }
 
 // ---- What a card needs, from a tapped feature ---------------------------

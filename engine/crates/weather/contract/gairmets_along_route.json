@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_weather::forecast::calls::call",
-  "description": "The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (AC 00-45H).",
+  "description": "The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (FAA-H-8083-28B 26.3.1.1).",
   "type": "object",
   "properties": {
     "input": {

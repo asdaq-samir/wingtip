@@ -103,16 +103,17 @@ extension Atis {
     /// The layers as said, the ceiling marked: the engine's ceiling
     /// (ceiling_visibility, 14 CFR 1.1's definition: the lowest broken or
     /// overcast layer, or an obscuration), as the web's. Where the engine
-    /// cannot say (logged by Engine.rule), the layers are said with no
-    /// ceiling marked: the words stay what was heard.
+    /// cannot say (logged by Engine.rule), the layers are said as heard
+    /// and the ceiling said to be unknown, never left unmarked as if none.
     static func skyWords(_ sky: [Layer]) -> String {
         if sky.isEmpty { return "—" }
         let found = try? Engine.ceilingVisibility(layers: sky.map { .init(cover: metarCover[$0.cover] ?? $0.cover, baseFt: $0.baseFt.map(Double.init)) })
         let ceiling = found?.ceilingFt.flatMap { ft in sky.lastIndex { $0.baseFt.map(Double.init) == ft } }
-        return sky.enumerated().map { k, l in
+        let layers = sky.enumerated().map { k, l in
             let cover = l.cover.prefix(1).uppercased() + l.cover.dropFirst()
             let base = l.baseFt.map { " \(Format.altitude(Double($0)))" } ?? ""
             return cover + base + (k == ceiling ? " (ceiling)" : "")
-        }.joined(separator: " · ")
+        }
+        return (layers + (found == nil ? ["ceiling unknown"] : [])).joined(separator: " · ")
     }
 }

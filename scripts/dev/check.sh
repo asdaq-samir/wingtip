@@ -5,8 +5,8 @@
 # scripts/dev/one-at-a-time.sh, and warm from the first run of any worktree.
 #
 #   scripts/dev/check.sh <area>...       an area of scripts/areas.yml (the table of areas, their
-#                                    paths and checks): web py planner ingest assistant
-#                                    weather jobs engine java ios android site arch
+#                                    paths and checks): web py planner ingest weather
+#                                    jobs engine java ios android site sim xplane arch
 #   scripts/dev/check.sh all-changed     the areas `git diff origin/main...` and
 #                                    the uncommitted files touch, in parallel
 #   scripts/dev/check.sh --areas         reads paths on stdin, prints their areas
@@ -210,16 +210,12 @@ run_py() {
   local dir=$1 dev=$2 py=$3 lint=$4 tests=$5 extra=${6:-} tag
   tag=$(py_image "$dir" "$dev" "$py" "$extra")
   docker run --rm -v "$here:/repo" -v wingtip-check-raw:/repo/data/raw -w "/repo/$dir" "$tag" \
-    sh -c "ruff check $lint $tests && { [ ! -f .importlinter ] || lint-imports; } && pytest $tests/ -q -p no:cacheprovider"
+    sh -c "ruff check $lint $tests && { [ ! -f .importlinter ] || PYTHONPATH=../planner lint-imports; } && pytest $tests/ -q -p no:cacheprovider"
 }
 
-# The newest iPhone this Xcode has, by its id (native-ios.yml's pick).
+# The newest iPhone this Xcode has, by its id (scripts/dev/newest_simulator.py).
 newest_iphone() {
-  xcrun simctl list devices available -j | python3 -c '
-import json, sys
-ds = [d for r, ds in json.load(sys.stdin)["devices"].items() if "iOS" in r for d in ds
-      if d["name"].startswith("iPhone") and "Duo" not in d["name"]]
-print(sorted(ds, key=lambda d: d["name"])[-1]["udid"] if ds else "")'
+  xcrun simctl list devices available -j | python3 "$here/scripts/dev/newest_simulator.py" iPhone
 }
 
 run_area() {
@@ -237,9 +233,8 @@ run_area() {
     py) run_py services/planner requirements-dev-wingtip.txt "$PYTHON" wingtip tests_wingtip ;;
     planner) run_py services/planner requirements-dev.txt "$PYTHON" app tests ;;
     ingest) run_py services/ingest requirements-dev.txt "$PYTHON" ingest tests ;;
-    assistant) run_py services/assistant requirements-dev.txt "$PYTHON" app tests ;;
     weather) run_py services/weather requirements-dev.txt "$PYTHON" app tests ;;
-    jobs) run_py services/jobs requirements-dev-jobs.txt "$PYTHON" charts charts/tests ;;
+    jobs) run_py services/jobs requirements-dev-jobs.txt "$PYTHON" "charts crash" "charts/tests crash/tests" ;;
     engine)
       # The crates' layering, as engine/README.md's table gives it (seconds).
       python3 "$here/scripts/ci/engine_layers.py"
@@ -275,9 +270,9 @@ run_area() {
         "rustup component add clippy 2>/dev/null && RUSTC_WRAPPER= cargo clippy -q --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings && $cmd"
       ;;
     java)
-      # The whole repository, not the gateway alone: the pom generates the
-      # assistant's answers from ../assistant/openapi.json, and the tests
-      # read the shared fixtures in apps/web/src/lib/fixtures.
+      # The whole repository, not the gateway alone: the pom reads the
+      # planner's ../planner/openapi.json, and the tests read the shared
+      # fixtures in apps/web/src/lib/fixtures.
       docker run --rm -v "$here":/repo -v /repo/services/gateway/target -v fp-m2:/root/.m2 \
         -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
         -w /repo/services/gateway "maven:$MAVEN-eclipse-temurin-$JAVA" mvn -B -q test
@@ -293,9 +288,11 @@ run_area() {
       sim=$(newest_iphone)
       [ -n "$sim" ] || { echo "check: no iPhone simulator in this Xcode" >&2; return 1; }
       # The turn's DerivedData and Xcode's compilation cache, shared with
-      # every worktree (scripts/dev/xcodebuild.sh).
+      # every worktree (scripts/dev/xcodebuild.sh). Signed ad hoc, as
+      # native-ios.yml signs it: an unsigned app has no keychain on the
+      # simulator, so the session's Keychain tests could not pass.
       "$here/scripts/dev/xcodebuild.sh" -quiet -project "$here/apps/ios/Wingtip.xcodeproj" -scheme Wingtip -configuration Debug \
-        -destination "platform=iOS Simulator,id=$sim" CODE_SIGNING_ALLOWED=NO test
+        -destination "platform=iOS Simulator,id=$sim" CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= test
       ;;
     android)
       local sdk=$HOME/Library/Android/sdk
@@ -307,6 +304,10 @@ run_area() {
       # build-android.sh looks in the SDK for it whatever this says.
       ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$(tool android-ndk)
       export ANDROID_NDK_HOME
+      # adb's server with no mDNS bridge: on macOS 27.2 with platform-tools
+      # 37.0.1 it panics there every few seconds and drops the emulator
+      # (simulators.sh); a server Gradle starts reads this too.
+      export ADB_MDNS=0
       "$here/engine/bindings/ffi/build-android.sh"
       (cd "$here/apps/android" && ./gradlew --quiet testDebugUnitTest lintDebug assembleDebug)
       ;;
@@ -314,6 +315,24 @@ run_area() {
       # The website: built, then its pages, links and hosts checked (seconds).
       python3 "$here/apps/site/build.py"
       python3 "$here/apps/site/check.py"
+      ;;
+    sim)
+      # The MSFS replay agent: built (without the SDK's SimConnect, which
+      # only the trial's instance has), its format checked and its tests
+      # run (scripts/ci/sim_suite.sh, which CI runs too); then the
+      # trial's template (cfn-lint) and scripts (shellcheck).
+      "$here/scripts/ci/sim_suite.sh"
+      docker run --rm -v "$here/infra/sim-trial:/data" -w /data "python:$PYTHON-slim" \
+        sh -c 'pip install -q --root-user-action=ignore cfn-lint && cfn-lint template.yaml'
+      docker run --rm -v "$here:/mnt" -w /mnt koalaman/shellcheck:stable infra/sim-trial/trial.sh tools/msfs-agent/prepare-track.sh
+      ;;
+    xplane)
+      # The X-Plane trial's plugin (tools/xplane-driver): its plain parts,
+      # and the player against a stub of XPPython3 (seconds). The planner's
+      # wingtip image has the ruff and pytest it needs.
+      tag=$(py_image services/planner requirements-dev-wingtip.txt "$PYTHON" "")
+      docker run --rm -v "$here:/repo" -w /repo/tools/xplane-driver "$tag" \
+        sh -c 'ruff check . && pytest tests -q -p no:cacheprovider'
       ;;
     arch)
       # No new or grown source file over 400 lines (seconds); the allow-list
@@ -326,6 +345,9 @@ run_area() {
       # No raw colour, type size, padding or corner outside the design
       # tokens, past the allow-list (seconds).
       python3 "$here/scripts/ci/brand_guard.py"
+      # No card head, section title or close drawn by hand where a shared
+      # component draws it, past the allow-list (seconds).
+      python3 "$here/scripts/ci/shared_parts_guard.py"
       # No unused Python (vulture, with its list of what it cannot see used).
       "$here/scripts/ci/dead_python.sh"
       ;;

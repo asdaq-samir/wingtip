@@ -1,8 +1,5 @@
 package app.wingtipmaps.android.ui
 
-import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.toRoute
 import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.map.MapPick
 import kotlinx.serialization.Serializable
@@ -10,14 +7,15 @@ import kotlinx.serialization.json.Json
 
 /**
  * What the docked sheet shows (the card rule, the owner, 2026-11-10):
- * under the one search, what it shows with nothing typed (Home) or the
- * plan; over it, one card for a thing -- a field, an airplane, a fix, a
- * VOR, an airspace, traffic, a leg of the route, the map's settings --
- * or a page -- the Brief, Nearest, Ask, Settings and its pages, a
- * checklist -- each with its name and ← where the search was (CardPage).
- * Each is a route of the sheet's NavHost (SheetPagesHost) or, on a wide
- * window, of the detail pane, so the system keeps the stack across a
- * rotation and Back steps down it.
+ * the carousel's two pages, the one search and what it shows with nothing
+ * typed (Home), and the plan (Plan, the FPL page beside it); over them, one card for a thing -- a field, an airplane, a fix, a
+ * VOR, an airspace, traffic, a leg of the route, the Map card --
+ * or a page -- the Brief, the Nav Log, Nearest, Ask, You, Settings and
+ * their pages, a checklist, Emergency -- each with its name and ← where the search was (CardPage).
+ * Each card is a key of the sheet's back stack (MapViewModel), drawn by
+ * Navigation 3's NavDisplay (SheetPagesHost) -- on a wide window in the
+ * list-detail scene's detail pane -- so the stack outlives a rotation and
+ * Back steps down it.
  */
 @Serializable
 sealed interface SheetPage {
@@ -47,6 +45,10 @@ sealed interface SheetPage {
     @Serializable
     data class Leg(val index: Int) : SheetPage
 
+    /** An approach plate on the map: its card, how it is drawn (PlateCard). */
+    @Serializable
+    data class Plate(val ident: String, val procedure: String) : SheetPage
+
     @Serializable
     data object MapSettings : SheetPage
 
@@ -59,8 +61,28 @@ sealed interface SheetPage {
     @Serializable
     data object Ask : SheetPage
 
+    /** The pilot's own card, the avatar's (the owner, 2026-11-13: three
+     *  homes, You, Settings and the Map card). */
+    @Serializable
+    data object You : SheetPage
+
+    /** You's first row: the account, its sign-in and its role's actions. */
+    @Serializable
+    data object PilotDetails : SheetPage
+
+    @Serializable
+    data object Minimums : SheetPage
+
     @Serializable
     data object Settings : SheetPage
+
+    /** Settings' ATC: Comms Assist, the ATC alerts and the copilot. */
+    @Serializable
+    data object Atc : SheetPage
+
+    /** Settings' Help & About. */
+    @Serializable
+    data object Help : SheetPage
 
     @Serializable
     data object Logbook : SheetPage
@@ -84,6 +106,16 @@ sealed interface SheetPage {
     @Serializable
     data object Profile : SheetPage
 
+    /** The route's legs and totals, a card of its own rather than a part
+     *  of the plan's page (the card rule's 3, the owner, 2026-11-11). */
+    @Serializable
+    data object NavLog : SheetPage
+
+    /** The emergency assistant: on the sheet's stack as every card is,
+     *  the one opened at the sheet's full height (the owner, 2026-11-13). */
+    @Serializable
+    data object Emergency : SheetPage
+
     @Serializable
     data object YourAirplanes : SheetPage
 
@@ -92,10 +124,14 @@ sealed interface SheetPage {
     @Serializable
     data class Checklist(val airplane: String, val kind: String) : SheetPage
 
-    /** A card or a page, which takes the search's place at the sheet's
-     *  head (or the wide window's detail pane); Home and the plan sit
-     *  under the search. */
+    /** A card or a page, which takes the carousel's place at the sheet's
+     *  head (or the wide window's detail pane); Home and the plan are the
+     *  carousel's pages. */
     val covers: Boolean get() = this != Home && this != Plan
+
+    /** Whether it opens at the sheet's full height rather than at half:
+     *  Emergency alone (the card rule's 2 and 4). */
+    val opensFull: Boolean get() = this == Emergency
 
     /** The card's stable test id, the same whatever opened it (the card
      *  rule's UI tests: "card-airport", "card-settings"). */
@@ -116,19 +152,8 @@ sealed interface SheetPage {
         fun of(pick: MapPick): SheetPage = when (pick) {
             is MapPick.Airport -> Airport(pick.ident)
             is MapPick.RouteLeg -> Leg(pick.index)
+            is MapPick.Plate -> Plate(pick.ident, pick.procedure)
             else -> Thing(pick)
         }
     }
-}
-
-/** A card or a page on the NavHost's stack, by its key (SheetPage.key):
- *  one route for them all, so a new card needs no route of its own. */
-@Serializable
-internal data class CardRoute(val key: String)
-
-/** The page a back stack entry of the sheet's NavHost shows. */
-internal fun NavBackStackEntry.page(): SheetPage = when {
-    destination.hasRoute<SheetPage.Plan>() -> SheetPage.Plan
-    destination.hasRoute<CardRoute>() -> SheetPage.of(toRoute<CardRoute>().key)
-    else -> SheetPage.Home
 }

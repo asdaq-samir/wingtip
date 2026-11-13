@@ -1,10 +1,11 @@
-"""The obstacle table's Parquet cache beside DOF.DAT: a fresh process
-reads it back instead of re-parsing the national text file, and a new
-data cycle rebuilds it."""
+"""wingtip.faa_data: each NASR file downloaded on its own from the
+edition APRA names, and the tables read from them. The obstacle file's
+reader is tests_wingtip/test_dof.py."""
 
 import io
 import os
 import zipfile
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -13,81 +14,12 @@ import pytest
 from wingtip import faa_data
 
 
-def _dof_line(city: str, agl: int = 350) -> str:
-    """One fixed-column DOF.DAT record, laid out by _DOF_COLUMNS."""
-    line = [" "] * 130
-    fields = {
-        "city": city,
-        "lat_deg": "41",
-        "lat_min": "30",
-        "lat_sec": "00.00",
-        "lat_hem": "N",
-        "lon_deg": "093",
-        "lon_min": "40",
-        "lon_sec": "00.00",
-        "lon_hem": "W",
-        "type": "TOWER",
-        "agl": f"{agl:05d}",
-        "amsl": f"{agl + 1100:05d}",
-        "lt": "R",
-    }
-    for name, text in fields.items():
-        start, end = faa_data._DOF_COLUMNS[name]
-        line[start:end] = list(text[: end - start].ljust(end - start))
-    return "".join(line) + "\n"
-
-
-def _write_dof(path, cities) -> None:
-    path.write_text("".join(_dof_line(city) for city in cities), encoding="latin-1")
-
-
-def test_obstacles_round_trip_through_the_parquet_cache(tmp_path, monkeypatch):
-    dof = tmp_path / "DOF.DAT"
-    _write_dof(dof, ["DES MOINES", "AMES"])
-    monkeypatch.setattr(faa_data, "_OBSTACLES_CACHE", {})
-
-    parsed = faa_data._load_all_obstacles(dof)
-
-    assert list(parsed["city"]) == ["DES MOINES", "AMES"]
-    assert parsed["lat"].iloc[0] == pytest.approx(41.5) and parsed["lon"].iloc[0] == pytest.approx(-93.6667, abs=1e-4)
-    assert faa_data._obstacle_cache_path(dof).exists()
-
-    # A fresh process: nothing in memory, the Parquet copy answers, and
-    # the text file is not walked again.
-    monkeypatch.setattr(faa_data, "_OBSTACLES_CACHE", {})
-    monkeypatch.setattr(faa_data, "_parse_dof", lambda path: pytest.fail("parsed instead of reading the cache"))
-    cached = faa_data._load_all_obstacles(dof)
-
-    pd.testing.assert_frame_equal(cached, parsed, check_dtype=False)
-
-
-def test_a_new_dof_cycle_rebuilds_the_cache(tmp_path, monkeypatch):
-    dof = tmp_path / "DOF.DAT"
-    _write_dof(dof, ["DES MOINES"])
-    monkeypatch.setattr(faa_data, "_OBSTACLES_CACHE", {})
-    faa_data._load_all_obstacles(dof)
-
-    # The next cycle: a re-downloaded file with different content.
-    _write_dof(dof, ["DES MOINES", "OMAHA"])
-    later = os.stat(dof).st_mtime + 100
-    os.utime(dof, (later, later))
-    parses = []
-    real_parse = faa_data._parse_dof
-    monkeypatch.setattr(faa_data, "_parse_dof", lambda path: parses.append(path) or real_parse(path))
-    monkeypatch.setattr(faa_data, "_OBSTACLES_CACHE", {})
-
-    rebuilt = faa_data._load_all_obstacles(dof)
-
-    assert parses == [dof]
-    assert list(rebuilt["city"]) == ["DES MOINES", "OMAHA"]
-
-
 # --- each NASR file on its own ---
 
 
 def test_a_file_already_there_costs_no_download(tmp_path, monkeypatch):
     (tmp_path / "DOF.DAT").write_text("x")
-    monkeypatch.setattr(faa_data, "find_current_cycle_page", lambda url: pytest.fail("scraped the NASR index"))
+    monkeypatch.setattr(faa_data, "nasr_zip_url", lambda table, cycle=None: pytest.fail("asked where the zip is"))
     monkeypatch.setattr(faa_data, "download_and_extract", lambda url, dest, **_: pytest.fail("downloaded"))
 
     assert faa_data.ensure_nasr_file("DOF.DAT", tmp_path) == tmp_path / "DOF.DAT"
@@ -98,8 +30,7 @@ def test_an_evicted_airport_file_fails_only_the_airports(tmp_path, monkeypatch):
     terrain floor, which reads only DOF.DAT."""
     (tmp_path / "DOF.DAT").write_text("x")
     (tmp_path / ".APT_BASE.csv.icloud").write_text("placeholder")
-    monkeypatch.setattr(faa_data, "find_current_cycle_page", lambda url: "page")
-    monkeypatch.setattr(faa_data, "find_download_link", lambda page, pattern: "https://example/APT_CSV.zip")
+    monkeypatch.setattr(faa_data, "nasr_zip_url", lambda table, cycle=None: f"https://example/{table}_CSV.zip")
     monkeypatch.setattr(faa_data, "download_and_extract", lambda url, dest, **_: None)  # iCloud takes it straight back
 
     with pytest.raises(RuntimeError, match="iCloud evicted APT_BASE.csv"):
@@ -113,19 +44,15 @@ def test_the_three_together_keep_their_order(tmp_path):
     assert faa_data.ensure_nasr_data(tmp_path) == (tmp_path / "NAV_BASE.csv", tmp_path / "APT_BASE.csv", tmp_path / "DOF.DAT")
 
 
-def test_load_obstacles_is_the_typed_dof_columns_filtered(tmp_path, monkeypatch):
-    """It used to rebuild every row into a checkpoint-shaped record with
-    a dict of tags, which its one caller unpacked again."""
-    dof = tmp_path / "DOF.DAT"
-    dof.write_text(_dof_line("TALL", agl=350) + _dof_line("SHORT", agl=150), encoding="latin-1")
-    monkeypatch.setattr(faa_data, "_OBSTACLES_CACHE", {})
+def test_a_nasr_zip_is_the_apra_editions_and_the_obstacles_their_pages(monkeypatch):
+    """APRA names the NASR edition (fixtures/apra/nasr_info_current.json);
+    the CSV zips and the shapes are nfdc's beside it, by that date."""
+    monkeypatch.setattr(faa_data.apra, "nasr_cycle", lambda: date(2026, 10, 29))
+    monkeypatch.setattr(faa_data.dof, "dof_link", lambda: "https://aeronav.faa.gov/Obst_Data/DOF_260927.zip")
 
-    tall = faa_data.load_obstacles(dof, (41.0, -94.0, 42.0, -93.0), min_agl_ft=200)
-    assert list(tall["city"]) == ["TALL"]
-    assert tall["amsl_ft"].iloc[0] == 350 + 1100
-
-    elsewhere = faa_data.load_obstacles(dof, (45.0, -90.0, 46.0, -89.0), min_agl_ft=0)
-    assert elsewhere.empty and "amsl_ft" in elsewhere.columns
+    assert faa_data.nasr_zip_url("APT") == "https://nfdc.faa.gov/webContent/28DaySub/extra/29_Oct_2026_APT_CSV.zip"
+    assert faa_data.nasr_zip_url("Class_Airspace") == "https://nfdc.faa.gov/webContent/28DaySub/2026-10-29/class_airspace_shape_files.zip"
+    assert faa_data.nasr_zip_url("DOF") == "https://aeronav.faa.gov/Obst_Data/DOF_260927.zip"
 
 
 def test_a_pattern_is_the_faas_where_published_and_1000_ft_where_not(tmp_path):

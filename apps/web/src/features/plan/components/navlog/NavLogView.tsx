@@ -1,6 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { cn } from "cn";
-import { WandSparkles } from "lucide-react";
 import {
   type CellData,
   type ColumnDef,
@@ -16,32 +15,31 @@ import { usePrinting } from "../../lib/usePrinting";
 import { LEGS, type PanelTab } from "./panelTab";
 import { SectionPane } from "../../../../components/SectionPane";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
-import IconButton from "../../../../components/IconButton";
-import { Popover, PopoverContent, PopoverTrigger } from "../../../../components/ui/popover";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../../../components/ui/table";
-import type { Candidate, Leg, NavLogAltitude, Totals, TopOfClimb, TopOfDescent } from "../../../../lib/api/types";
-import { feet, magneticVariation, windCorrection } from "../../../../lib/format";
+import type { Candidate, Leg, NavLogAltitude, Totals } from "../../../../lib/api/types";
+import { magneticVariation, windCorrection } from "../../../../lib/format";
 import { routeName } from "../../../../lib/identSchema";
 import { revealRow } from "../../../../lib/revealRow";
 import { GROUP_HEADING, TEXT } from "../../../../lib/text";
 import { type Description, descriptionKey } from "../../hooks/useCheckpointNotes";
 import { altFt, bearing, clockTime, etaAt, feetBelowClouds, legsWithoutWind, one, plannedWords, windAloft } from "../../format";
 import type { BriefingPart } from "../briefing/sections";
-import { flownNmOf, isLegPoint, legOf, navLogRows, rowPoint, type NavLogRow, type RouteEnds } from "./rows";
+import { flownNmOf, isLegPoint, legOf, navLogRows, phaseOf, rowPoint, type NavLogRow, type RouteEnds } from "./rows";
 import LegWorkings from "./LegWorkings";
+import type { Phase } from "./workings";
 import DiversionDrill from "./DiversionDrill";
 import RouteProfileSection from "./RouteProfileSection";
 import { dryRunRow, type DryRun } from "./dryRun";
 import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
 import { PointMark } from "./PointMark";
 import { NavLogList } from "./NavLogList";
+import { LegPointNote } from "./LegPointNote";
 import { DescriptionCell } from "./DescriptionCell";
 import { NavLogTotals } from "./NavLogTotals";
 import NavLogAge from "./NavLogAge";
 import { useIsDesktop } from "../../../../hooks/use-desktop";
 import { hoverLeg } from "../../../../lib/map/marks/mapHover";
 import { useAirplaneChosen } from "../../../../lib/preferences";
-import { Spinner } from "../../../../components/ui/spinner";
 
 // TanStack Table's own extension point for arbitrary per-column data --
 // used below to carry each numeric column's shared className (bordered,
@@ -73,9 +71,6 @@ const AIRPLANE = new Set(["mh", "gs", "ete", "fuel"]);
 
 interface Props {
   totals: Totals | null;
-  /** Why the checkpoints' descriptions could not be written, for the log
-   *  to say over its rows with a Try again (the wand's run). */
-  descriptionError: string | null;
   nav: NavLogAltitude | null;
   /** The departure time as an ISO instant, or "" for about now --
    *  set here, where its ETAs show; changing it re-plans, since the
@@ -108,19 +103,7 @@ interface Props {
   /** Resolves once the note is saved; the box keeps a pilot's typing
    *  until then, and keeps it if the save fails. */
   onSaveDescription: (lat: number, lon: number, text: string) => Promise<unknown>;
-  /** The nav log section's own one-shot "generate now" for every
-   *  checkpoint's description at once -- descriptions are visible
-   *  (and editable) in every row regardless of whether this has ever
-   *  been clicked. */
-  onGenerateDescriptions: () => void;
-  descriptionsLoading: boolean;
-  /** Where the pilot has no subscription, what the wand shows in place of
-   *  writing descriptions (PaidPrompt): they come with it. */
-  descriptionsPaywall?: ReactNode;
-  /** The descriptions not offered in this deployment: no wand at all. */
-  descriptionsHidden: boolean;
-  /** The briefing's pages (FlightBriefingView's parts, and the Brief's
-   *  narrative), printed after the legs: on screen they are the Brief's
+  /** The briefing's pages (FlightBriefingView's parts), printed after the legs: on screen they are the Brief's
    *  card's (BriefCard). */
   tabContent: (part: BriefingPart) => ReactNode;
   /** Beside the log, out of sight: Print's kneeboard card. */
@@ -129,9 +112,8 @@ interface Props {
   marks?: Partial<Record<PanelTab, "stop" | "caution">>;
   /** The briefing's warnings, over its pages on paper. */
   notice?: ReactNode;
-  /** The nav log as a card over FPL, its head (CardHead) over the log, at
-   *  the owner's ask ("make Navlog open like brief does instead of a
-   *  separate card"): the log in the route list's place. */
+  /** The Nav Log card's view (PlanPage's; the owner 2026-11-11), its head
+   *  over the legs: on screen only, FPL's view is the paper (`paper`). */
   cardHead?: ReactNode;
   /** A local flight, one airport to itself: no legs, so the section is
    *  "Local Flight" -- the time aloft, the time back and the fuel, and
@@ -159,8 +141,8 @@ interface Props {
   dryRun: DryRun | null;
   /** FPL's own list in the nav log's place on screen: the route in order
    *  (ProceduresRoute), at the owner's ask ("I want to replace navlog with
-   *  procedures", 2026-10-18). The nav log is then a card of its own in
-   *  the main sheet, this view drawn again without the route. */
+   *  procedures", 2026-10-18). The legs are the Nav Log card's, this view
+   *  drawn again there without the route (`cardHead`). */
   route?: ReactNode;
 }
 
@@ -177,8 +159,8 @@ interface Props {
  * This panel is the briefing, in tabs: the nav log's own first -- the
  * totals above the table, the fuel check and the route's profile under
  * it -- and the briefing's parts in the others, from PlanWorkspace
- * (`tabContent`: FlightBriefingView's parts and the Brief's narrative). The two inputs the log is computed from, the
- * airplane and the departure time, are the panel's controls
+ * (`tabContent`: FlightBriefingView's parts). The two inputs the log is
+ * computed from, the airplane and the departure time, are the panel's controls
  * (FlightInputs). The briefing
  * used to draw its own read-only copy of the table, and the two
  * drifted; then the drawer had two widths, the table alone and the
@@ -200,15 +182,7 @@ interface Props {
  *  its value at the rows' own size; it was a run of "TC 327° Wind
  *  220°/28 WCA ..." breaking wherever the line ran out. (Their whole
  *  names were tried, two across, and the pilot kept the shorthand.) */
-/** What a top of climb or descent's row says under it: the level, or
- *  the rate down and what to. */
-function legPointNote(point: TopOfClimb | TopOfDescent, descent: TopOfDescent | null): string {
-  if (!descent) return `Top of climb: level at ${feet(point.altitude_ft)}.`;
-  const to = descent.pattern ? ", the pattern" : descent.fix ? ` by ${descent.fix}, the approach's first fix` : "";
-  return `Top of descent: ${descent.fpm} fpm down to ${feet(descent.to_ft)}${to}.`;
-}
-
-function LegLine({ leg, at }: { leg: Leg; at: { name: string; lat: number; lon: number } }) {
+function LegLine({ leg, at, phase }: { leg: Leg; at: { name: string; lat: number; lon: number }; phase: Phase }) {
   const figures: [string, string][] = [
     ["TC", bearing(leg.true_course_deg)],
     ["Wind", leg.wind ? windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt) : "no data"],
@@ -238,7 +212,7 @@ function LegLine({ leg, at }: { leg: Leg; at: { name: string; lat: number; lon: 
           reaches 11 pt past its 22 pt line, so the lines sit 22 pt apart
           for the areas to meet rather than overlap. */}
       <div className="flex flex-wrap gap-x-4 gap-y-5.5">
-        <LegWorkings leg={leg} />
+        <LegWorkings leg={leg} phase={phase} />
         <DiversionDrill leg={leg} at={at} />
       </div>
     </div>
@@ -278,7 +252,6 @@ export default function NavLogView({
   totals,
   nav,
   depart,
-  descriptionError,
   legs,
   dep,
   dest,
@@ -286,10 +259,6 @@ export default function NavLogView({
   selected,
   descriptions,
   onSaveDescription,
-  onGenerateDescriptions,
-  descriptionsLoading,
-  descriptionsPaywall,
-  descriptionsHidden,
   tabContent,
   children,
   marks,
@@ -364,51 +333,10 @@ export default function NavLogView({
   // view and the rest off its edge. On paper, every column. The heading
   // kept is the one a pilot steers: it was the true heading, with the
   // magnetic one only under the row.
-  const wand = (
-    <IconButton
-      // relative z-10: its 44-point hit area (index.css) over the
-      // "Waypoint" beside it, which painted over the area's right.
-      // -ml-2: the button's own clear padding laid over the cell's,
-      // so its glyph lines up with the names under it and the
-      // column is no wider than it was with a 24-point button --
-      // the phone's five columns still fit their drawer.
-      label="Generate descriptions"
-      className="relative z-10 -ml-2 print:hidden"
-      onClick={descriptionsPaywall ? undefined : onGenerateDescriptions}
-      disabled={descriptionsLoading || selected.length === 0}
-      data-testid="generate-descriptions-button"
-    >
-      {/* The icon buttons' one size, 20 in 36 (it was 20 in 24, crowded). */}
-      {descriptionsLoading ? <Spinner className="size-5" aria-hidden /> : <WandSparkles className="size-5" />}
-    </IconButton>
-  );
-  // Without the subscription the wand says what it would do and how to
-  // have it, beside it (PaidPrompt), rather than writing.
-  const wandSlot = descriptionsHidden ? null : descriptionsPaywall ? (
-    <Popover>
-      <PopoverTrigger render={wand} />
-      <PopoverContent className="w-80 p-0" data-testid="descriptions-paywall">
-        {descriptionsPaywall}
-      </PopoverContent>
-    </Popover>
-  ) : (
-    wand
-  );
   const columns: ColumnDef<typeof navLogTableFeatures, NavLogRow>[] = [
     {
       id: "waypoint",
-      // The wand that fills the blank notes in -- one for the whole
-      // log -- sits in this heading, beside the names it writes for,
-      // rather than as a button of its own above the table. A wand,
-      // not the narrative's own sparkles: this one acts on the rows,
-      // where the narrative in the drawer's header writes a text of
-      // its own.
-      header: () => (
-        <span className="inline-flex items-center">
-          {wandSlot}
-          Waypoint
-        </span>
-      ),
+      header: () => <span className="inline-flex items-center">Waypoint</span>,
       // The name after the point's mark as the map draws it (PointMark):
       // a checkpoint's numbered dot, an airport's symbol, a top of climb's
       // tag. No more: a leg the clouds leave no legal altitude on is the
@@ -630,7 +558,7 @@ export default function NavLogView({
     const leg = legOf(r);
     return (
       <>
-        {leg && <LegLine leg={leg} at={rowPoint(r)} />}
+        {leg && <LegLine leg={leg} at={rowPoint(r)} phase={phaseOf(r)} />}
         {r.kind === "departure" ? (
           // The departure airport's own name, not editable and never
           // AI-generated -- there's no "how to spot it" for an airport and
@@ -639,7 +567,7 @@ export default function NavLogView({
           // description sits in, so the pair still reads as one group.
           (r.airport.name ?? "—")
         ) : isLegPoint(r) ? (
-          legPointNote(r.point, r.kind === "tod" ? r.point : null)
+          <LegPointNote point={r.point} descent={r.kind === "tod" ? r.point : null} />
         ) : r.kind === "checkpoint" ? (
           <DescriptionCell
             description={descriptions[r.key]}
@@ -782,8 +710,7 @@ export default function NavLogView({
   );
 
   // On screen the log a line a point (NavLogList), under a heading of its
-  // own with the wand that writes the checkpoints' descriptions; the table
-  // above is the printed page's.
+  // own; the table above is the printed page's.
   const checkpointCount = data.filter((r) => r.kind === "checkpoint").length;
   const navLogList =
     data.length === 0 ? (
@@ -794,7 +721,6 @@ export default function NavLogView({
           <span className={GROUP_HEADING}>
             {checkpointCount} checkpoint{checkpointCount === 1 ? "" : "s"}
           </span>
-          <span className="mr-0.5 flex items-center">{wandSlot}</span>
         </div>
         <NavLogList
           rows={data}
@@ -825,20 +751,10 @@ export default function NavLogView({
   // table is the rest, as the pilot asked. (The altitude, which opens how
   // it was chosen, is the Alt column's head.)
   const cloudsUnplaced = !!nav && !nav.altitude_selection.cloud_clearance_kept && !perLeg;
-  const summary = (!!noWind || cloudsUnplaced || !!descriptionError) && (
+  const summary = (!!noWind || cloudsUnplaced) && (
     <div className="mb-3" data-testid="navlog-summary">
       <ListGroup>
         {noWind && <ListRow title={<span className="text-destructive">{noWind}</span>} />}
-        {descriptionError && (
-          <ListRow
-            title={<span className="text-destructive">The descriptions could not all be written</span>}
-            description={descriptionError}
-            data-testid="navlog-descriptions-error"
-          />
-        )}
-        {descriptionError && !descriptionsLoading && (
-          <ListRow title="Try again" onClick={onGenerateDescriptions} data-testid="navlog-descriptions-retry" />
-        )}
         {/* The clouds forecast near a leg leave it no legal altitude (14
             CFR 91.155): the plan still stands, over the band without
             them, and the briefing says so (Current Conditions, the
@@ -870,9 +786,10 @@ export default function NavLogView({
     dest,
     ends?.stops?.map((s) => s.ident),
   );
+  const paper = printing && !cardHead;
   return (
     <>
-      {printing ? (
+      {paper ? (
         // On paper the whole briefing, as it always printed: every page in
         // turn, the legs first in En route's, under the briefing's title.
         <PanelTabs
@@ -921,22 +838,22 @@ export default function NavLogView({
           }}
         />
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 flex-col">
           {/* The drawer's name for a screen reader: on screen it is the
               tab's, said once there. */}
           <span className="sr-only" data-testid="drawer-title">
             Flight Planning
           </span>
           {/* The bottom inset clears the home indicator on an installed
-              app, so the last row is not under it. */}
+              app; laid out whole in the sheet's one scroller (SheetParts). */}
           <div
-            className="@container under-head min-h-0 flex-1 overflow-auto pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))]"
-            data-testid="navlog-scroller"
+            className="@container pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))]"
+            data-testid={cardHead ? "navlog-card-scroller" : "navlog-scroller"}
           >
-            {cardHead && <div className="pt-[var(--corner-inset,0.75rem)] pb-2">{cardHead}</div>}
+            {cardHead}
             <section
               aria-label={local ? "Local Flight" : route ? "Route" : "Nav Log"}
-              className={TEXT.prose}
+              className={cn(TEXT.prose, cardHead && "pt-2")}
               data-testid={cardHead ? "navlog-sheet" : undefined}
             >
               {legsSection}

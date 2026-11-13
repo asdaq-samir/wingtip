@@ -1,0 +1,57 @@
+# The engine owns the sphere's figures (CLAUDE.md, "Architecture": every
+# aviation rule or figure lives in the Rust engine once; decision 0001).
+# Distance, bearing and the point a distance along a bearing are the
+# engine's distance_nm, bearing_deg and destination; the apps ask it. Two
+# hosts keep their own on purpose, and only they: the planner's wingtip.geo
+# (pyproj, which the engine's core::geo is tested against) and the web map's
+# lib/geo.ts (MapLibre's drawing between frames). The simplicity audit of
+# 2026-11-12 found a new copy on Android (ApproachScene3d.kt:73-86, G6).
+rules:
+  - id: great-circle-outside-engine
+    message: >-
+      Great-circle maths (haversine, an initial bearing, a destination
+      point, or the Earth's radius) written here. The engine owns it: ask
+      distance_nm, bearing_deg or destination (callEngine on the web, Engine
+      on the phones, wingtip_native.call in Python). Only wingtip.geo and the
+      web's lib/geo.ts keep their own, on purpose (simplicity audit
+      2026-11-12, G6).
+    severity: ERROR
+    languages: [typescript, javascript, kotlin, java, swift]
+    paths:
+      exclude: ["apps/web/src/lib/geo.ts"]
+    pattern-either:
+      - pattern: Math.asin(Math.sqrt($X))
+      - pattern: asin(sqrt($X))
+      - pattern: Math.atan2(Math.sqrt($A), Math.sqrt($B))
+      - pattern: atan2(sqrt($A), sqrt($B))
+      - pattern: Math.atan2(Math.sin($A) * Math.cos($B), $C)
+      - pattern: atan2(sin($A) * cos($B), $C)
+      - pattern: Math.asin(Math.sin($A) * Math.cos($B) + $C)
+      - pattern: asin(sin($A) * cos($B) + $C)
+      - patterns:
+          - pattern: $N
+          - metavariable-regex:
+              metavariable: $N
+              # The mean Earth radius in km, m and NM.
+              regex: ^(6371(\.0+)?|6371008\.8|6371000(\.0+)?|3440\.0\d*|3440\.1)$
+  - id: great-circle-outside-geo-python
+    message: >-
+      Great-circle maths written here. In Python it lives once, in wingtip.geo
+      (services/planner/wingtip/geo.py, pyproj); the engine's
+      destination and distance_nm answer the rest (simplicity audit
+      2026-11-12, G6).
+    severity: ERROR
+    languages: [python]
+    paths:
+      exclude: ["services/planner/wingtip/geo.py"]
+    pattern-either:
+      - pattern: math.asin(math.sqrt($X))
+      - pattern: math.atan2(math.sqrt($A), math.sqrt($B))
+      - pattern: math.atan2(math.sin($A) * math.cos($B), $C)
+      - pattern: math.asin(math.sin($A) * math.cos($B) + $C)
+      - pattern: $NP.arcsin($NP.sqrt($X))
+      - patterns:
+          - pattern: $N
+          - metavariable-regex:
+              metavariable: $N
+              regex: ^(6371(\.0+)?|6371008\.8|6371000(\.0+)?|3440\.0\d*|3440\.1)$

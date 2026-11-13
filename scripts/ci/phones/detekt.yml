@@ -1,0 +1,39 @@
+# detekt's command line (Apache-2.0, .tool-versions' version, a pre-release
+# as the newest) over the Android app, run by scripts/ci/phone_lint.sh
+# android on the Kotlin files a change touches. Only the rules below: the
+# layout is ktlint's (scripts/dev/format.sh) and the cross-language bans
+# (unit constants, Mercator, hand HTTP to the planner, great-circle maths)
+# are Semgrep's, once for every language (scripts/ci/semgrep/; CLAUDE.md,
+# "Simplicity rules"). What is here is the dead code detekt sees without a
+# build, and no HTTP client library outside the app's api/ folder. Today's
+# findings are held in detekt-baseline.xml, which only shrinks.
+config:
+  validation: true
+  warningsAsErrors: true
+style:
+  active: true
+  UnusedImport:
+    active: true
+  UnusedParameter:
+    active: true
+    allowedNames: '^(ignored|expected|_.*)$'
+  UnusedPrivateClass:
+    active: true
+  UnusedPrivateFunction:
+    active: true
+  UnusedPrivateProperty:
+    active: true
+    allowedNames: '^(_.*|ignored|expected|serialVersionUID)$'
+  UnusedVariable:
+    active: true
+    allowedNames: '^(_.*|ignored)$'
+  ForbiddenImport:
+    active: true
+    # The planner and the gateway through api/'s clients over the
+    # generated models (the simplicity audit of 2026-11-12, finding 6).
+    forbiddenImports:
+      - value: 'okhttp3.Request'
+        reason: 'Call the planner through api/ (Planner.kt, Gateway.kt) and the generated models.'
+      - value: 'java.net.HttpURLConnection'
+        reason: 'Call the planner through api/ (Planner.kt, Gateway.kt) and the generated models.'
+    excludes: ['**/api/**', '**/test/**', '**/androidTest/**']

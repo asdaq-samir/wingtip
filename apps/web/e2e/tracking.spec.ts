@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { closeCard, drawn, grabberTo, settle, showSearch, showTraffic, sideDrawer, slow, stripShows } from "./helpers";
+import { closeCard, drawn, frontSheet, grabberTo, inSheet, settle, settled, showTraffic, sideDrawer, slow, stripShows } from "./helpers";
+import { FAA } from "./faaRecord";
 
 /**
  * Tracking an airplane, as FlightAware and ForeFlight do, at the pilot's
@@ -38,35 +39,6 @@ const CESSNA = {
   vertical_fpm: 0,
   seen_s: 0.3,
   squawk: "1200",
-};
-const FAA = {
-  n_number: "N14511",
-  mode_s_hex: "a0b7d8",
-  serial: "11775",
-  manufacturer: "Airbus S A S",
-  model: "A321-271NX",
-  year: 2024,
-  aircraft_type: "Fixed wing multi engine",
-  engines: 2,
-  seats: 246,
-  engine: "IAE PW1133G-JM",
-  engine_type: "Turbo-fan",
-  horsepower: null,
-  thrust_lb: 33110,
-  owner: "United Airlines Inc",
-  owner_type: "Corporation",
-  co_owners: 0,
-  city: "Chicago",
-  state: "IL",
-  country: "US",
-  certificate_issued: "2024-04-05",
-  expires: "2031-04-30",
-  airworthiness: "Standard (transport)",
-  airworthiness_date: "2024-04-08",
-  kit: null,
-  fractional: false,
-  status: "Valid",
-  standing: "valid",
 };
 const ROUTE = {
   airports: [
@@ -174,7 +146,7 @@ test("the traffic, from the one search's Do, finds an airplane by its callsign, 
   await expect(card.getByTestId("faa-engine")).toContainText("2 engines · Turbo-fan · 33,110 lb thrust");
   await expect(card.getByTestId("flight-follow")).toHaveAttribute("aria-pressed", "true");
   // Ringed on the map, its path behind it in its heights' colours.
-  await expect(page.locator("[data-traffic-tracked]")).toHaveCount(1);
+  await expect.poll(async () => (await drawn(page, "traffic-marks")).filter((m) => m.tracked).length).toBe(1);
   await expect.poll(async () => (await drawn(page, "tracked-path")).length).toBeGreaterThan(0);
   // Put away: the list again, as an airport's card over Nearest.
   await closeCard(page, "flight-close");
@@ -194,11 +166,12 @@ test("an airplane is found by its callsign, and a tap on one on the map tracks i
   // No field it took off from in its track: no Departed row.
   await expect(page.getByTestId("flight-name")).toHaveText("UAL2088");
   await expect(page.getByTestId("flight-departed")).toHaveCount(0);
-  // One tapped on the map: the Cessna, the second heard.
+  // One tapped on the map where its probe says it is: the Cessna, the second heard.
   await closeCard(page, "flight-close");
-  const hits = page.locator("[data-traffic-hit]");
-  await expect(hits).toHaveCount(2);
-  await hits.nth(1).dispatchEvent("click");
+  await expect.poll(async () => (await drawn(page, "traffic-marks")).length).toBe(2);
+  const cessna = (await drawn(page, "traffic-marks")).find((m) => m.hex === "a128b9") as { x: number; y: number };
+  const box = (await page.locator(".maplibregl-map").first().boundingBox())!;
+  await page.mouse.click(box.x + cessna.x, box.y + cessna.y);
   await expect(page).toHaveURL(/[?&]flight=a128b9/);
   await expect(page.getByTestId("flight-name")).toHaveText("N174HA");
 });
@@ -347,7 +320,7 @@ test("in the air, own ship's path flown is drawn behind it", async ({ page }) =>
           accuracy: 10,
           heading: 90,
           speed: 360 / 1.943844,
-          altitude: 3000 / 3.28084,
+          altitude: 3000 * 0.3048, // 3,000 ft in metres, by the international foot (0.3048 m exactly)
           altitudeAccuracy: 10,
           toJSON() {
             return this;
@@ -444,7 +417,9 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   await expect(flight.getByTestId("past-flight-off")).toContainText("LCI");
   await expect(flight.getByTestId("past-flight-on")).toContainText("LWM");
   await expect(flight.getByTestId("past-flight-flown")).toContainText(/\d+ nm/);
-  await expect(page.locator("path.past-flight-path").first()).toBeAttached({ timeout: slow(10_000) });
+  // Drawn as MapLibre's own line layer (TracksGl's PastFlightGl, read
+  // through its probe), not the SVG path it was before the map was MapLibre.
+  await expect.poll(async () => (await drawn(page, "past-flight")).length, { timeout: slow(10_000) }).toBeGreaterThan(0);
   // All the way up, the controls and the whole graph, its time axis too,
   // in sight: the axis was cut off on the owner's phone.
   await grabberTo(page, "full");
@@ -458,25 +433,22 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   await flight.getByTestId("track-log-all").click();
   await expect(flight.getByTestId("track-log").locator("tbody tr")).toHaveCount(80);
   // Played at 200 times: where the airplane is, said under the controls.
-  await flight.getByTestId("replay-speed").getByText("200×").click();
+  await flight.getByTestId("replay-speed").click();
+  await page.getByTestId("replay-speed-200").click();
   await flight.getByTestId("replay-play").click();
   await expect(flight.getByTestId("replay-now")).toContainText(/ft · 100 kt · S/);
-  // The search and back to the traffic, at the owner's ask: the past
-  // flight still out over the traffic, its replay on where it was.
-  await showSearch(page);
-  await expect(flight).toHaveCount(0);
-  await showTraffic(page);
-  await expect(page).toHaveURL(/[?&]past=\d+/);
-  await expect(flight.getByTestId("replay-now")).toContainText(/ft · 100 kt · S/);
-  // Its controls all the way up.
-  await grabberTo(page, "full");
+  // The cards are a stack over the sheet now, as Apple Maps' are (7e8aa7b29):
+  // the search and the pager's bars are under it until its close, so the
+  // past flight kept over the traffic while the search is up is
+  // usePanelView.test's to prove, not a journey here (the owner's ask of
+  // 5fa10bde7, "the cards should stay where they are when coming back").
   await flight.getByTestId("replay-stop").click();
   await expect(flight.getByTestId("replay-now")).toHaveCount(0);
   // Closed: back to the airplane's card, the path put away.
   await closeCard(page, "past-flight-close");
   await expect(page).not.toHaveURL(/[?&]past=/);
   await expect(card.getByTestId("flight-earlier")).toBeVisible();
-  await expect(page.locator("path.past-flight-path")).toHaveCount(0);
+  await expect.poll(async () => (await drawn(page, "past-flight")).length).toBe(0);
 });
 
 test("an airplane's last flights found are listed, the ones before them on asking, and from a day picked", async ({ page }) => {
@@ -693,20 +665,21 @@ test("an airplane's card is laid out as an airport's: its pictures across the to
   expect(line.y + line.height).toBeLessThanOrEqual(head.y + head.height);
 });
 
-test("an airplane's card has Follow, Alert and Debrief in a row, Share at the left of its pictures and the star beside the close, its flight's state and height in its summary, and its airport a tap away", async ({
+test("an airplane's card has Follow, Alert, Debrief and Favorite in a row, Share and the close alone in its head, its flight's state and height in its summary, and its airport a tap away", async ({
   page,
 }) => {
   // The owner's pick of the redesign (A2): the actions a row under the
-  // pictures, Follow filled, as Maps' are under a place's -- three since
-  // the owner moved the star beside the close and Share to the pictures'
-  // top left (2026-10-29, 3d3fc388), as the airport card's are.
+  // pictures, Follow filled, as Maps' are under a place's -- four since the
+  // star became a tile, the head holding Share and the close alone
+  // (2026-11-11), as the airport card's.
   await sky(page, { ...DETAIL, departed: { ident: "C81", name: "Campbell Airport", at: Date.now() / 1000 - 3600 } });
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
   const card = page.getByTestId("flight-card");
   await expect(card.getByTestId("flight-follow")).toBeVisible({ timeout: slow(15_000) });
+  await settled(frontSheet(page)); // measured once it has slid up, not on its way
   const row = await Promise.all(
-    ["flight-follow", "flight-alert", "flight-debrief"].map(async (id) => (await card.getByTestId(id).boundingBox())!),
+    ["flight-follow", "flight-alert", "flight-debrief", "flight-favorite"].map(async (id) => (await card.getByTestId(id).boundingBox())!),
   );
   for (let i = 1; i < row.length; i++) {
     expect(Math.abs(row[i]!.y - row[0]!.y), "one row").toBeLessThan(1);
@@ -716,19 +689,18 @@ test("an airplane's card has Follow, Alert and Debrief in a row, Share at the le
   // Following it as it opens, said on its action.
   await expect(card.getByTestId("flight-follow")).toHaveAttribute("aria-pressed", "true");
   await expect(card.getByTestId("flight-follow")).toContainText("Following");
-  // Share, the star and the close on the pictures, the bar's out of the
-  // pill: Share at the left, the star beside the close at the right.
+  // Share and the close alone in the head, the bar's out of the pill: Share
+  // at the left, the close at the right, the star a tile (2026-11-11).
   const head = (await card.getByTestId("flight-head").boundingBox())!;
-  const [share, star, close] = await Promise.all(
-    ["flight-share", "flight-favorite", "flight-close"].map(async (id) => {
+  const [share, close] = await Promise.all(
+    ["flight-share", "flight-close"].map(async (id) => {
       const button = (await card.getByTestId(id).boundingBox())!;
       expect(button.y >= head.y && button.y + button.height <= head.y + head.height, `${id} on the pictures`).toBe(true);
       return button;
     }),
   );
   expect(share!.x + share!.width, "Share at the left").toBeLessThan(head.x + head.width / 2);
-  expect(star!.x, "the star at the right").toBeGreaterThan(head.x + head.width / 2);
-  expect(star!.x + star!.width, "the star before the close").toBeLessThanOrEqual(close!.x);
+  expect(close!.x, "the close at the right").toBeGreaterThan(head.x + head.width / 2);
   await expect(card.getByTestId("flight-share")).toHaveAccessibleName("Share UAL2088");
   // Descending 1,200 ft a minute, at 7,000 ft and 250 kt: said in its summary.
   await expect(card.getByTestId("flight-state")).toHaveText("DES");
@@ -837,7 +809,9 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
   await expect(link).toHaveAttribute("target", "_blank");
   await expect(link).not.toHaveAttribute("rel", /nofollow/);
   // Lower in the card, under its details; the photo the strip's first.
-  await link.scrollIntoViewIfNeeded();
+  // At half a card's body does not scroll (index.css, the one scrolling
+  // rule): pulled up to it, as a finger would (inSheet).
+  await inSheet(page, link);
   await expect(photo).toBeInViewport({ ratio: 0.9 });
   // The stock carousel's own next page (PictureSlides), as a swipe is.
   await card

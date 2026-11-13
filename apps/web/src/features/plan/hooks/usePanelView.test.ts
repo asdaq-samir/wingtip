@@ -1,21 +1,19 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
-import { useState } from "react";
-import type { SetURLSearchParams } from "react-router";
+import { withNuqsTestingAdapter } from "nuqs/adapters/testing";
 import { describe, expect, it, vi } from "vitest";
+import { useAddress } from "../../../lib/address";
 import { useAddressCards, usePanelView } from "./usePanelView";
 
 /** The two hooks over an address of their own, as the planner has them. */
 function setUp(start: string, hasRoute: boolean) {
   return renderHook(
     ({ route }) => {
-      const [params, setParams] = useState(() => new URLSearchParams(start));
-      const set: SetURLSearchParams = (next) =>
-        setParams((prev) => new URLSearchParams((typeof next === "function" ? next(prev) : next) as URLSearchParams));
-      const cards = useAddressCards(params, set, vi.fn());
-      return { params, ...usePanelView({ cards, route, hasRoute: route !== "", searchParams: params, setSearchParams: set }) };
+      const [address, setAddress] = useAddress();
+      const cards = useAddressCards(address, setAddress, vi.fn());
+      return { address, ...usePanelView({ cards, route, hasRoute: route !== "", address, setAddress }) };
     },
-    { initialProps: { route: hasRoute ? "KMSN||KOSH" : "" } },
+    { initialProps: { route: hasRoute ? "KMSN||KOSH" : "" }, wrapper: withNuqsTestingAdapter({ searchParams: start, hasMemory: true }) },
   );
 }
 
@@ -40,12 +38,50 @@ describe("the place under the one search", () => {
     expect(hook.result.current.view).toBe("plan");
   });
 
+  it("goes back to the plan when the same route is asked for again (Fly Here, Plan Again)", () => {
+    const hook = setUp("dep=KMSN&dest=KOSH", true);
+    hook.rerender({ route: "KMSN||KOSH|1" });
+    act(() => hook.result.current.pickView("search"));
+    expect(hook.result.current.view).toBe("search");
+    hook.rerender({ route: "KMSN||KOSH|2" });
+    expect(hook.result.current.view).toBe("plan");
+  });
+
   it("opens the traffic in the address, and keeps a card for the place it was open over", () => {
     const hook = setUp("dep=KMSN&dest=KOSH&place=KOSH", true);
     act(() => hook.result.current.pickView("traffic"));
-    expect(hook.result.current.params.get("aircraft")).toBe("1");
-    expect(hook.result.current.params.get("place")).toBeNull();
+    expect(hook.result.current.address.aircraft).toBe(true);
+    expect(hook.result.current.address.place).toBeNull();
     act(() => hook.result.current.pickView("plan"));
-    expect(hook.result.current.params.get("place")).toBe("KOSH");
+    expect(hook.result.current.address.place).toBe("KOSH");
+  });
+
+  it("keeps an airplane's past flight over the traffic while the search is up, and gives it back", () => {
+    // The owner's ask (5fa10bde7): "if ... aircraft track is being played it
+    // should show that when coming back". The cards over the sheet hide the
+    // search in the browser now, so the hook's the place to prove it.
+    const hook = setUp("aircraft=1&flight=a0b7d8&past=1794536008", false);
+    act(() => hook.result.current.pickView("search"));
+    expect(hook.result.current.address.flight).toBeNull();
+    expect(hook.result.current.address.past).toBeNull();
+    act(() => hook.result.current.pickView("traffic"));
+    expect(hook.result.current.address.flight).toBe("a0b7d8");
+    expect(hook.result.current.address.past).toBe(1794536008);
+  });
+
+  it("turns back to the traffic on the first page where that is what was left there", () => {
+    // The sheet audit, 2026-11-12: swiped to FPL and back, the traffic came back as the plain search.
+    const hook = setUp("dep=KMSN&dest=KOSH&aircraft=1", true);
+    expect(hook.result.current.view).toBe("traffic");
+    act(() => hook.result.current.pickPage(1));
+    expect(hook.result.current.view).toBe("plan");
+    act(() => hook.result.current.pickPage(0));
+    expect(hook.result.current.view).toBe("traffic");
+    expect(hook.result.current.address.aircraft).toBe(true);
+    // And the search where the search was.
+    act(() => hook.result.current.pickView("search"));
+    act(() => hook.result.current.pickPage(1));
+    act(() => hook.result.current.pickPage(0));
+    expect(hook.result.current.view).toBe("search");
   });
 });

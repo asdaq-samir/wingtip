@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.LoopFrame
+import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CancellationException
@@ -22,7 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
 import app.wingtipmaps.android.api.generated.WeatherLoop as LoopAnswer
 
 /** The loop's five, as the owner listed them (2026-11-09); `kind` is the planner's. */
@@ -102,7 +102,11 @@ class WeatherLoop private constructor(private val context: Context, private val 
                 // Kept as it comes, and the kept list where the network fails
                 // (KeptForAir): its frames' tiles the map's cache may hold.
                 val had = KeptForAir.had(KeptForAir.WEATHER_LOOP, kind.kind, LoopAnswer.serializer()) { fetch(kind) }
-                val answer = had.value
+                // From the kept list, only the frames whose tiles were kept
+                // over the route (KeptLoopTiles), where any were: the others
+                // would play blank.
+                val tiled = if (had.kept) Gateway.loopTiles.frames() else emptySet()
+                val answer = had.value.let { a -> if (tiled.isEmpty()) a else a.copy(frames = a.frames.filter { it.valid in tiled }) }
                 _state.update {
                     val same = it.frames.map(LoopFrame::valid) == answer.frames.map(LoopFrame::valid)
                     it.copy(
@@ -183,7 +187,7 @@ class WeatherLoop private constructor(private val context: Context, private val 
         /** The planner's frame list for a pick (/api/weather/loop): the
          *  loop's own ask, and Keep for the Air's. */
         suspend fun fetch(kind: LoopKind): LoopAnswer =
-            Gateway.json.decodeFromString<LoopAnswer>(Planner.fetch("/api/weather/loop", mapOf("kind" to kind.kind)))
+            Planner.api.weatherLoopFrames(kind.kind).planned()
 
         private val KIND = stringPreferencesKey("weather_loop")
         private val SPEED = stringPreferencesKey("weather_loop_speed")

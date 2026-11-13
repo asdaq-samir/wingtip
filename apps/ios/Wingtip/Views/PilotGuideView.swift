@@ -5,6 +5,9 @@ import SwiftUI
 /// the nav log flies the airplane; and the holding entries, which the
 /// planner works out (GET /api/holding).
 struct PilotGuideView: View {
+    @Environment(FirstFlightModel.self) private var firstFlight
+    /// Show First Flight Again tapped: said, and not tapped twice.
+    @State private var askedFirstFlight = false
     // The checkpoints' bands, as CheckpointAnnotation colours them.
     private static let buckets: [(score: Double, words: String)] = [
         (4.5, "4.5 and up: you will see it and know it"),
@@ -16,6 +19,20 @@ struct PilotGuideView: View {
 
     var body: some View {
         List {
+            // The first flight's card offered again (FirstFlightModel), at
+            // the guide's top as the web's Guide has it (TipsGroup): Setup's
+            // one home for it.
+            Section {
+                Button {
+                    firstFlight.again()
+                    askedFirstFlight = true
+                } label: {
+                    SettingsLabel(askedFirstFlight ? "The Welcome Will Show Again" : "Show the Welcome Again",
+                                  systemImage: "lightbulb", colour: WingtipColor.Badge.rule)
+                }
+                .disabled(askedFirstFlight)
+                .accessibilityIdentifier("first-flight-again")
+            }
             Section("Checkpoint Colours") {
                 ForEach(Self.buckets, id: \.score) { b in
                     Label {

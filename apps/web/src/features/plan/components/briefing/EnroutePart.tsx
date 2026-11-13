@@ -4,8 +4,8 @@ import { Alert, AlertDescription, AlertTitle } from "../../../../components/ui/a
 import AccordionSection from "../../../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { TEXT } from "../../../../lib/text";
-import { WINDS_MODELLED_LABEL } from "../../../../lib/windsAloft";
-import type { Course, Leg } from "../../../../lib/api/types";
+import { WINDS_MODELLED_LABEL, windsSource } from "../../../../lib/windsAloft";
+import type { Course, Leg, Totals } from "../../../../lib/api/types";
 import type { FlightBriefing } from "../../hooks/useFlightBriefing";
 import { altFt, ceilingAndVisibility, clockTime, windAloft } from "../../format";
 import OnRouteRow from "./OnRouteRow";
@@ -21,12 +21,14 @@ interface Props {
   course: Course | null;
   legs: Leg[];
   depart: string;
+  /** Whose winds the plan flies (the totals'), named as the nav log names them. */
+  winds?: Totals["winds"];
 }
 
 /** En route, under the legs and the side view: the weather on the way --
  *  adverse conditions first (AIM 7-1-5), then stretch by stretch, then
  *  the winds. */
-export default function EnroutePart({ vm, course, legs, depart }: Props) {
+export default function EnroutePart({ vm, course, legs, depart, winds }: Props) {
   const { briefing, briefingPendingMessage, unchecked, opened } = vm;
   return (
     <>
@@ -47,7 +49,7 @@ export default function EnroutePart({ vm, course, legs, depart }: Props) {
         </AccordionSection>
       )}
 
-      <WindsAloft vm={vm} legs={legs} />
+      <WindsAloft vm={vm} legs={legs} winds={winds} />
     </>
   );
 }
@@ -194,17 +196,20 @@ function AdverseConditions({ vm, legs }: { vm: FlightBriefing; legs: Leg[] }) {
 /** The route's winds and temperatures by stretch: consecutive legs that
  *  fly in the same forecast at the same altitude, one row each. The
  *  temperature is what the legs' true airspeeds are worked out from. */
-function WindsAloft({ vm, legs }: { vm: FlightBriefing; legs: Leg[] }) {
+function WindsAloft({ vm, legs, winds }: { vm: FlightBriefing; legs: Leg[]; winds?: Totals["winds"] }) {
   const { stretches } = vm;
   return (
-    // Whose winds, under the title as the nav log says it: the GFS's,
-    // modelled, since the FB ended (lib/windsAloft).
-    <AccordionSection title="Winds Aloft" description={stretches.some((st) => st.wind) ? WINDS_MODELLED_LABEL : undefined}>
+    // Whose winds, under the title as the nav log says it: AWC's the map
+    // draws, or the GFS's, modelled (lib/windsAloft).
+    <AccordionSection
+      title="Winds Aloft"
+      description={stretches.some((st) => st.wind) ? (windsSource(winds) ?? WINDS_MODELLED_LABEL) : undefined}
+    >
       {!stretches.some((st) => st.wind) ? (
         <p>{legs.length ? "No winds-aloft data available for this route." : "Waiting on the nav log's legs…"}</p>
       ) : (
         // The forecast winds and temperatures each stretch of legs is
-        // flown in, from the nearest winds-aloft station.
+        // flown in, at each leg's place and time.
         <ListGroup>
           {stretches.map((st, i) => (
             <ListRow

@@ -1,11 +1,10 @@
 import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { SetURLSearchParams } from "react-router";
+import type { Address, AddressChange, SetAddress } from "../../../lib/address";
 import { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists } from "../lib/fieldLists";
 import { identOf } from "../../../lib/identSchema";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
-import { patched } from "../../../lib/useSearchParamsNow";
 import { renamed, type PlannedRoute } from "./planAddress";
 import { procedureKind } from "./useRouteEdits";
 
@@ -15,15 +14,7 @@ import { procedureKind } from "./useRouteEdits";
  * at fields the route no longer has let go. With whether the destination
  * has any approach, from its card.
  */
-export function useRouteTidy({
-  planned,
-  searchParams,
-  setSearchParams,
-}: {
-  planned: PlannedRoute;
-  searchParams: URLSearchParams;
-  setSearchParams: SetURLSearchParams;
-}) {
+export function useRouteTidy({ planned, address, setAddress }: { planned: PlannedRoute; address: Address; setAddress: SetAddress }) {
   // The ident as a string of its own (`${…}`): the route's object's field
   // handed straight to a function counted, to the React Compiler, as the
   // object handed over and maybe changed, and it gave up every memo after.
@@ -44,8 +35,10 @@ export function useRouteTidy({
       [typedDest, named(destNamed, typedDest)],
     ].flatMap(([typed, card]) => (typed && card ? [[typed, card] as const] : []));
     if (!swaps.length) return;
-    setSearchParams((prev) => swaps.reduce((params, [typed, card]) => renamed(params, typed, card), prev), { replace: true });
-  }, [depNamed, destNamed, typedDep, typedDest, setSearchParams]);
+    void setAddress((prev) =>
+      swaps.reduce<AddressChange>((change, [typed, card]) => ({ ...change, ...renamed({ ...prev, ...change }, typed, card) }), {}),
+    );
+  }, [depNamed, destNamed, typedDep, typedDest, setAddress]);
   // Whatever changed the route -- a stop added from a card, the Class B
   // detour taken out, a link opened with picks for fields it no longer
   // has -- the picks at fields it no longer has go (features/plan/lib/fieldLists), as
@@ -57,16 +50,14 @@ export function useRouteTidy({
   useEffect(() => {
     if (prunedFor.current === prunedRoute) return;
     prunedFor.current = prunedRoute;
-    if (searchParams.has("was") || (!planned.dep && !planned.dest)) return;
+    if (address.was !== null || (!planned.dep && !planned.dest)) return;
     const route = { dep: planned.dep, stops, dest: planned.dest };
-    const lists = fieldListsOf(searchParams);
+    const lists = fieldListsOf(address);
     const now = fieldListParams(lists);
     const kept = fieldListParams(prunedFieldLists(lists, route, procedureKind));
     if (FIELD_LIST_KEYS.every((key) => kept[key] === now[key])) return;
-    setSearchParams((prev) => patched(prev, fieldListParams(prunedFieldLists(fieldListsOf(prev), route, procedureKind))), {
-      replace: true,
-    });
-  }, [prunedRoute, searchParams, planned.dep, planned.dest, stops, setSearchParams]);
+    void setAddress((prev) => fieldListParams(prunedFieldLists(fieldListsOf(prev), route, procedureKind)));
+  }, [prunedRoute, address, planned.dep, planned.dest, stops, setAddress]);
   // Greyed only once its card says it has none; a planner older than the
   // list says nothing, and the button stays.
   const noApproaches = !!destCard?.procedures && !destCard.procedures.some((c) => c.kind === "IAP");

@@ -12,7 +12,7 @@ import Observation
 final class Traffic {
     /// The planner asks adsb.lol about a region at most every five
     /// seconds (wingtip.traffic), so no sooner than that; twice that with the
-    /// app put away (Ticker).
+    /// app put away (Repeating).
     static let everyS: TimeInterval = 5
     var on: Bool = UserDefaults.standard.object(forKey: "traffic") as? Bool ?? true {
         didSet { UserDefaults.standard.set(on, forKey: "traffic"); if !on { planes = [] } }
@@ -45,13 +45,13 @@ final class Traffic {
     /// The airplanes near own ship at the last answer, each told once.
     private var nearHexes: Set<String> = []
 
-    /// Ask again and again while the map is shown, on the app's one clock,
+    /// Ask again and again while the map is shown, on Swift's clock (Repeating),
     /// about own ship where there is a fix (its height tells which
     /// airplanes are near), else about the middle of the map.
     func run(near ownShip: @escaping @MainActor () -> OwnShip.Fix?) async {
         // The receiver's airplanes merged as each second's bytes are read.
         Receiver.shared.onRead = { [weak self] in self?.merge() }
-        await Ticker.shared.run(every: Self.everyS) { [weak self] in
+        await Repeating.every(Self.everyS) { [weak self] in
             await self?.ask(near: ownShip())
         }
     }
@@ -160,7 +160,8 @@ final class Traffic {
     static func marks(_ planes: [TrafficAircraft], ownFt: Double?, own: CLLocationCoordinate2D? = nil) throws -> [Mark] {
         try Engine.trafficMarks(
             ownFt: ownFt,
-            planes: planes.map { .init(altitudeFt: $0.altitudeFt, verticalFpm: $0.verticalFpm, lat: $0.lat, lon: $0.lon) },
+            planes: planes.map { .init(altitudeFt: $0.altitudeFt, verticalFpm: $0.verticalFpm, lat: $0.lat, lon: $0.lon,
+                                       pressureAltitude: $0.pressureAltitude) },
             own: own.map { .init(lat: $0.latitude, lon: $0.longitude) })
     }
 

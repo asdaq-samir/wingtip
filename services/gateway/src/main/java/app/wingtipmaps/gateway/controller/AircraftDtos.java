@@ -43,6 +43,8 @@ final class AircraftDtos {
                 a.getCruisePowerPct(),
                 a.getClimbTasKt(),
                 a.getClimbFuelBurnGph(),
+                a.getDescentIasKt(),
+                a.getDescentFuelBurnGph(),
                 a.getUsableFuelGal(),
                 a.getCreatedAt(),
                 AircraftController.vorCheckOf(a, due),

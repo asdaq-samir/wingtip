@@ -9,7 +9,7 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0001 | [Every aviation rule lives once, in the Rust engine](0001-engine-is-the-home-of-rules.md) | 2026-11-03 | Accepted |
 | 0002 | [Functional core, imperative shell, four layers](0002-functional-core-four-layers.md) | 2026-11-03 | Accepted |
 | 0003 | [All new work follows the modular architecture](0003-modular-architecture.md) | 2026-11-09 | Accepted |
-| 0004 | [Spring Boot for accounts, FastAPI and the engine for aviation; services split by job](0004-server-split.md) | 2026-11-06 | Accepted |
+| 0004 | [Spring Boot for accounts, FastAPI and the engine for aviation; services split by job](0004-server-split.md) | 2026-11-06 | Accepted; the assistant superseded by 0041 |
 | 0005 | [Code first, validate at the end, fewest and grouped pull requests](0005-code-first-waves-grouped-prs.md) | 2026-11-08 | Accepted |
 | 0006 | [A wave goes live on the owner's stack before any lengthy test or CI](0006-live-first-testing.md) | 2026-11-08 | Accepted |
 | 0007 | [Nothing is in production: break and rename freely](0007-break-freely-until-launch.md) | 2026-11-07 | Accepted |
@@ -40,5 +40,11 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0032 | [An architecture change updates the diagram too](0032-docs-include-diagrams.md) | 2026-11-07 | Accepted |
 | 0033 | [One card rule and one scrolling rule on every platform](0033-one-card-rule-one-scroll-rule.md) | 2026-11-10 | Accepted |
 | 0034 | [CI stays lean, and the guards hold it there](0034-ci-stays-lean.md) | 2026-11-10 | Accepted |
-| 0035 | [The Claude features are off until the subscription is decided](0035-claude-off-until-subscription.md) | 2026-11-10 | Accepted |
+| 0035 | [The Claude features are off until the subscription is decided](0035-claude-off-until-subscription.md) | 2026-11-10 | Superseded by 0041 |
 | 0036 | [Wingtip reaches Claude and ChatGPT as the pilot's own connector](0036-mcp-connector.md) | 2026-11-10 | Accepted |
+| 0037 | [The order of a wave is enforced, not remembered](0037-order-enforced.md) | 2026-11-11 | Accepted |
+| 0038 | [Web first; the phones on the owner's word](0038-web-first.md) | 2026-11-11 | Accepted |
+| 0039 | [The crash pipeline's schedule and the MCP tools' source, weighed against their alternatives](0039-crash-and-mcp-boundaries.md) | 2026-11-12 | Accepted |
+| 0040 | [The iPhone app's oldest iOS is 27, and the Watch's watchOS 27](0040-ios-27-floor.md) | 2026-11-12 | Accepted |
+| 0041 | [The server's Claude features are taken out](0041-claude-taken-out.md) | 2026-11-12 | Accepted |
+| 0042 | [Each change runs its own tests; the wave is validated on GitHub](0042-fast-checks.md) | 2026-11-13 | Accepted |

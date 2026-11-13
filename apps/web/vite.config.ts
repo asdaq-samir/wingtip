@@ -1,85 +1,16 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, join, relative } from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { IN_FLIGHT_READS, OVERLAY_ARCHIVE, RADAR_FRAMES, markFromCache } from "./vite-plugins/workboxRules";
 import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
-import { MANIFEST } from "./vite-plugins/manifest.ts";
+import { MANIFEST, themeColor } from "./vite-plugins/manifest.ts";
 import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
-
-// Under docker-compose.yml's web-build watch, VITE_PUBLISH_DIR names the
-// directory the gateway serves (apps/web/dist). A phone that loaded the
-// page while vite was writing into it got an index.html whose chunks were
-// not all there yet -- "Importing a module script failed", and the page's
-// "Part of the app didn't load" (2026-11-08) -- so a build is written
-// whole into STAGING first, which vite empties at every build, and only
-// then moved into the served directory a file at a time by rename, which
-// a reader sees either before or after, never half done: the hashed
-// chunks first, which nothing yet names, then the service worker, and
-// index.html last. The files of builds replaced within the last hour stay
-// beside them, for pages already open that have yet to load a lazy chunk
-// (main.tsx reloads a page whose chunk has gone, on vite:preloadError);
-// PUBLISHED lists each build's files and when it was replaced. The service
-// worker's precache is this build's files alone, since STAGING holds
-// nothing else. Unset (the image's build, CI), vite writes dist as usual.
-const publishDir = process.env.VITE_PUBLISH_DIR;
-
-const STAGING = ".dist-next";
-const PUBLISHED = ".published.json";
-const STALE_MS = 60 * 60 * 1000;
-type Published = { files: string[]; replacedAt?: number }[];
-
-function filesUnder(dir: string): string[] {
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir, { recursive: true, withFileTypes: true })
-    .filter((e) => e.isFile())
-    .map((e) => relative(dir, join(e.parentPath, e.name)));
-}
-
-// What a page asks for first goes in last: index.html names the entry
-// chunk, and the service worker names every file it precaches.
-const moveOrder = (file: string) =>
-  file === "index.html" ? 2 : /^(sw\.js|registerSW\.js|manifest\.webmanifest|[^/]+\.html)$/.test(file) ? 1 : 0;
-
-function publishBuild(staging: string, served: string, now = Date.now()) {
-  const files = filesUnder(staging).sort((a, b) => moveOrder(a) - moveOrder(b));
-  if (files.length === 0) return;
-  const ledger = join(served, PUBLISHED);
-  // The first build into a directory without a ledger: whatever is there
-  // is the build this one replaces.
-  let builds: Published = existsSync(ledger) ? JSON.parse(readFileSync(ledger, "utf8")) : [{ files: filesUnder(served) }];
-  for (const file of files) {
-    mkdirSync(dirname(join(served, file)), { recursive: true });
-    renameSync(join(staging, file), join(served, file));
-  }
-  for (const build of builds) build.replacedAt ??= now;
-  builds = [...builds.filter((b) => now - (b.replacedAt ?? now) < STALE_MS), { files }];
-  const keep = new Set(builds.flatMap((b) => b.files));
-  for (const file of filesUnder(served)) {
-    if (file !== PUBLISHED && !keep.has(file)) rmSync(join(served, file));
-  }
-  writeFileSync(`${ledger}.tmp`, JSON.stringify(builds));
-  renameSync(`${ledger}.tmp`, ledger);
-}
-
-// After every other plugin's closeBundle, vite-plugin-pwa's (which writes
-// the service worker) included, at every build of the watch.
-const publish: Plugin = {
-  name: "publish-build",
-  apply: "build",
-  closeBundle: {
-    order: "post",
-    sequential: true,
-    handler(error?: Error) {
-      if (!publishDir || error) return;
-      publishBuild(STAGING, publishDir);
-    },
-  },
-};
+import { STAGING, publish, publishDir } from "./vite-plugins/publishBuild.ts";
 
 // The page reader's files (features/airplane/lib/readPage), from node_modules into the
 // build's tesseract/ under their own names, where tesseract.js asks for
@@ -103,23 +34,6 @@ const tesseractFiles: Plugin = {
   },
 };
 
-// An answer the service worker gives from its cache rather than the
-// network, marked so the page can say so (lib/fromCache): the header
-// carries when the network gave it, the response's own Date, which the
-// planner and the gateway send on every answer. Only on the NetworkFirst
-// caches below, where the cache answers only when the network has not --
-// the steady ones answer from the cache every time, by design. Written
-// out whole inside the function: Workbox copies it into the generated
-// worker as text, so it can use nothing from this file.
-const markFromCache = {
-  cachedResponseWillBeUsed: async ({ cachedResponse }: { cachedResponse?: Response | null }) => {
-    if (!cachedResponse) return null;
-    const headers = new Headers(cachedResponse.headers);
-    headers.set("X-From-Cache", cachedResponse.headers.get("date") ?? "");
-    return new Response(cachedResponse.body, { status: cachedResponse.status, statusText: cachedResponse.statusText, headers });
-  },
-};
-
 // Built into Spring Boot's static resources, which is what makes it the
 // only public surface: the bundle and the API it calls arrive from one
 // origin, so there is one session, one set of access rules, and no second
@@ -130,6 +44,7 @@ export default defineConfig({
     publish,
     tesseractFiles,
     preloadEngine,
+    themeColor,
     react(),
     // The React Compiler, memoising each component and hook as it builds
     // them, at the owner's pick of the audit's recommendation: only its
@@ -151,16 +66,17 @@ export default defineConfig({
     // handler serves a real file as itself), scoped to /app/. Installs
     // only on a secure origin: https, or localhost.
     VitePWA({
-      // "autoUpdate": a new build takes the page over as soon as its
-      // worker has installed -- the page reloads itself, with no prompt
-      // (main.tsx asks the server for a new worker every minute, so an
-      // open page finds one within that). "prompt" was tried, with a
-      // toast offering the reload, and dropped: the pilot wants the
-      // latest build at once, not a question. The cost is a reload
-      // under whoever is on the page at that moment.
-      registerType: "autoUpdate",
+      // "prompt", the plugin's default: a new build's worker waits, as
+      // the browser's own would, and the page takes it only while it is
+      // away, with no question asked (features/shell/newBuild). The
+      // owner wants the latest build without a prompt; "autoUpdate"
+      // gave it, but by reloading under whoever was using the page.
+      registerType: "prompt",
       manifest: MANIFEST,
       workbox: {
+        // The first worker claims its page: an uncontrolled page's keep for
+        // the air cached nothing. A new build still waits (no skipWaiting).
+        clientsClaim: true,
         navigateFallback: "/app/index.html",
         navigateFallbackAllowlist: [/^\/app\//],
         // The legal pages are files, not routes of the app: a miss in
@@ -175,12 +91,14 @@ export default defineConfig({
         // Not kept ahead for every pilot, at the first load and after each
         // deploy: Inter's non-Latin subsets (170 KB), fetched by the browser
         // only for a glyph they hold, the developer's pages (77 KB), and the
-        // page reader's 15 MB (tesseract/), kept by tesseract.js itself.
-        // Asked for when needed, as any request.
+        // page reader's 15 MB (tesseract/), kept by tesseract.js itself,
+        // and the Studio's speech to words (its worker and ONNX Runtime's
+        // 27 MB, features/replay/captions). Asked for when needed.
         globIgnores: [
           "**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2",
           "**/{DevPanel,TrainWorkspace}-*.js",
           "tesseract/**",
+          "**/{ort-wasm-*,transcribe.worker-*}",
         ],
         runtimeCaching: [
           {
@@ -232,6 +150,10 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          // The map's overlay archive and the radar's pictures, kept for the
+          // air (vite-plugins/workboxRules).
+          OVERLAY_ARCHIVE,
+          RADAR_FRAMES,
           {
             // What a field offers on the ground and its pictures' list: the network when there is one, the last answer
             // when there is not, in a cache of their own so a route's forty
@@ -352,6 +274,8 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          // In flight, a shorter wait on the network (vite-plugins/workboxRules).
+          IN_FLIGHT_READS,
           {
             // The planner's answers: the network when there is one
             // (the winds change), the last answer when there is not --
@@ -382,7 +306,7 @@ export default defineConfig({
     // has served since the image built its own: a build in a container
     // that mounted the whole repo left a stale copy there for every grep.
     // Into STAGING under docker-compose.yml's web-build watch, moved into
-    // the served directory from there whole (publishBuild, above).
+    // the served directory from there whole (vite-plugins/publishBuild).
     outDir: publishDir ? STAGING : "dist",
     emptyOutDir: true,
     // A warning fails the build (vite-plugins/strictBuild.ts).

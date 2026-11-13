@@ -1,0 +1,221 @@
+{
+  "_note": "A departure for the simulator exports (the engine's sim_flight, lib/replay/simExport): 10 s taxiing north at 20 kt, a climb at 1,500 ft/min from 700 ft pressure altitude with the crew's altimeter setting 1022.4 hPa sent twice, then 140 s unheard (a gap) and level at 5,000 ft with no setting. Held in engine/facade/tests/sim.rs and apps/web/src/lib/replay/simExport/simExport.test.ts.",
+  "departureThenGap": {
+    "reports": [
+      {
+        "t": 1794272400,
+        "lat": 41.9786,
+        "lon": -87.9048,
+        "alt_ft": null,
+        "gs_kt": 20.0,
+        "track_deg": 0.0,
+        "ground": true
+      },
+      {
+        "t": 1794272405,
+        "lat": 41.979063,
+        "lon": -87.9048,
+        "alt_ft": null,
+        "gs_kt": 20.0,
+        "track_deg": 0.0,
+        "ground": true
+      },
+      {
+        "t": 1794272410,
+        "lat": 41.979525,
+        "lon": -87.9048,
+        "alt_ft": null,
+        "gs_kt": 20.0,
+        "track_deg": 0.0,
+        "ground": true
+      },
+      {
+        "t": 1794272415,
+        "lat": 41.982764,
+        "lon": -87.9048,
+        "alt_ft": 700,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false,
+        "qnh_hpa": 1022.4
+      },
+      {
+        "t": 1794272420,
+        "lat": 41.986002,
+        "lon": -87.9048,
+        "alt_ft": 825,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272425,
+        "lat": 41.989241,
+        "lon": -87.9048,
+        "alt_ft": 950,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272430,
+        "lat": 41.99248,
+        "lon": -87.9048,
+        "alt_ft": 1075,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272435,
+        "lat": 41.995718,
+        "lon": -87.9048,
+        "alt_ft": 1200,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272440,
+        "lat": 41.998957,
+        "lon": -87.9048,
+        "alt_ft": 1325,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false,
+        "qnh_hpa": 1022.4
+      },
+      {
+        "t": 1794272445,
+        "lat": 42.002195,
+        "lon": -87.9048,
+        "alt_ft": 1450,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272450,
+        "lat": 42.005434,
+        "lon": -87.9048,
+        "alt_ft": 1575,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272455,
+        "lat": 42.008672,
+        "lon": -87.9048,
+        "alt_ft": 1700,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272460,
+        "lat": 42.011911,
+        "lon": -87.9048,
+        "alt_ft": 1825,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272600,
+        "lat": 42.10259,
+        "lon": -87.9048,
+        "alt_ft": 5000,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272605,
+        "lat": 42.105829,
+        "lon": -87.9048,
+        "alt_ft": 5000,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272610,
+        "lat": 42.109068,
+        "lon": -87.9048,
+        "alt_ft": 5000,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272615,
+        "lat": 42.112306,
+        "lon": -87.9048,
+        "alt_ft": 5000,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272620,
+        "lat": 42.115545,
+        "lon": -87.9048,
+        "alt_ft": 5000,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272625,
+        "lat": 42.118783,
+        "lon": -87.9048,
+        "alt_ft": 5000,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272630,
+        "lat": 42.122022,
+        "lon": -87.9048,
+        "alt_ft": 5000,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272635,
+        "lat": 42.12526,
+        "lon": -87.9048,
+        "alt_ft": 5000,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      },
+      {
+        "t": 1794272640,
+        "lat": 42.128499,
+        "lon": -87.9048,
+        "alt_ft": 5000,
+        "gs_kt": 140.0,
+        "track_deg": 0.0,
+        "ground": false
+      }
+    ],
+    "ground": [
+      {
+        "along_nm": 0,
+        "ground_ft": 672
+      },
+      {
+        "along_nm": 10,
+        "ground_ft": 672
+      }
+    ],
+    "segments": 2,
+    "firstRows": 601,
+    "secondRows": 401,
+    "settingHpa": 1022.4
+  }
+}

@@ -1,7 +1,11 @@
 import { describe, expect, test } from "vitest";
 import type { WeatherArea } from "../../../lib/api/types";
 import { mapLevel } from "../../../lib/format";
-import { areaWords, barbSvg, inside, pirepMark, routeThrough } from "./weatherMap";
+import { areaWords, inside, pirepMark, routeThrough } from "./weatherMap";
+import { geoLoaded } from "../../../lib/geo";
+
+// The engine's geodesic rules, loaded by the setup file (vitestSetup).
+const geo = await geoLoaded;
 
 const square = [
   [42, -90],
@@ -46,15 +50,16 @@ describe("the weather drawn on the map", () => {
       [43, -92],
       [43, -85],
     ];
-    const through = routeThrough(turb, line, 4500)!;
+    const through = routeThrough(geo, turb, line, 4500)!;
     expect(through.nm).toBeGreaterThan(125);
     expect(through.nm).toBeLessThan(140);
     expect(through.relation).toBe("below");
-    expect(routeThrough(turb, line, 9500)!.relation).toBe("in");
+    expect(routeThrough(geo, turb, line, 9500)!.relation).toBe("in");
     // From the freezing level: no altitude to say it against.
-    expect(routeThrough(icing, line, 4500)!.relation).toBeNull();
+    expect(routeThrough(geo, icing, line, 4500)!.relation).toBeNull();
     expect(
       routeThrough(
+        geo,
         turb,
         [
           [45, -92],
@@ -72,14 +77,5 @@ describe("the weather drawn on the map", () => {
     });
     expect(pirepMark({ lat: 0, lon: 0, altitude_ft: 4500, icing: "LGT", urgent: false })).toMatchObject({ glyph: "❄\uFE0E", level: "045" });
     expect(pirepMark({ lat: 0, lon: 0, altitude_ft: 3000, urgent: true })).toMatchObject({ glyph: "!" });
-  });
-
-  test("draws a wind barb with a pennant for each 50 kt, a barb each 10 and a half for 5", () => {
-    const svg = barbSvg(270, 65);
-    expect(svg.match(/<path /g)).toHaveLength(1);
-    expect(svg.match(/x2="32"/g)).toHaveLength(1);
-    expect(svg.match(/x2="27"/g)).toHaveLength(1);
-    expect(svg).toContain("rotate(270 22 22)");
-    expect(barbSvg(0, 2)).toContain("<circle");
   });
 });

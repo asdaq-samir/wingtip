@@ -14,11 +14,19 @@ import { refreshLive, useLiveRefresh, type LiveCard } from "../lib/liveRefresh";
  */
 export default function RefreshButton({ card, label = "Refresh" }: { card: LiveCard; label?: string }) {
   useLiveRefresh(card);
+  return <RefreshNow card={card} label={label} />;
+}
+
+/** The button alone, for a card that keeps itself fresh (useLiveRefresh)
+ *  where the button is not always on the screen: an airport's, whose
+ *  Refresh is in its Weather tab (the owner, 2026-11-11). */
+export function RefreshNow({ card, label = "Refresh", className }: { card: LiveCard; label?: string; className?: string }) {
   const [busy, setBusy] = useState(false);
   return (
     <RoundButton
       label={label}
       aria-busy={busy || undefined}
+      className={className}
       onClick={() => {
         if (busy) return;
         setBusy(true);

@@ -4,7 +4,9 @@
 //! triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16;
 //! cruising altitudes, 14 CFR 91.159 and 91.179; fuel reserves, 91.151 and
 //! 91.167; VFR weather minimums, 91.155; hold entries, AIM 5-3-8; glide
-//! reach at a ratio, FAA-H-8083-3C ch. 3), and to the shared fixtures that
+//! reach at a ratio, FAA-H-8083-3C ch. 3; the IFR alternate, 91.169;
+//! oxygen, 91.211; endurance; lost comms, 91.185; pressure and density
+//! altitude, FAA-H-8083-25C ch. 11), and to the shared fixtures that
 //! already carry the same rules (altitude.json's cruising altitudes,
 //! holds.json's leg timing). CI's "Flight-critical" job runs this file on
 //! every change, and the phones run the same cases through their bridges.
@@ -70,7 +72,11 @@ fn every_rule_the_golden_set_names_is_covered() {
     // The set is the one place these rules' worked examples live; a rule
     // dropped from it would leave the job green and the rule untested.
     let cases = fixture("flightCritical.json")["cases"].as_array().unwrap().clone();
-    for rule in ["wind_triangle", "navlog_leg", "legal_cruising_altitudes", "reserve_min", "vfr_minimums", "hold_entry", "glide_range"] {
+    for rule in [
+        "wind_triangle", "navlog_leg", "legal_cruising_altitudes", "reserve_min", "vfr_minimums", "hold_entry", "glide_range",
+        "ifr_alternate_destination", "taf_window", "own_altitude_caution", "below_vfr_minimums", "navlog_fuel_plan",
+        "pressure_altitude_ft", "gonogo_density_altitude", "endurance", "lost_comms",
+    ] {
         assert!(cases.iter().any(|c| c["rule"] == rule), "no worked example for {rule}");
     }
 }

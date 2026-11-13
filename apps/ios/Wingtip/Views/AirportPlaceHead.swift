@@ -6,9 +6,10 @@ import SwiftUI
 /// material, its ident on a tile over the fade, the name large and
 /// centred with what and where it is under it, a row of four actions --
 /// Fly Here filled, with the flight's time there when it is the plan's
-/// destination -- and a row of four facts. Every figure is the planner's
+/// destination, Add Stop, Call and Favorite -- and a row of four facts. Every figure is the planner's
 /// or the engine's, as sent; none is worked out here.
 struct AirportPlaceHead: View {
+    @Environment(AirportShelf.self) private var shelf
     let place: AirportPlace
     let photos: AirportPhotos?
     @Binding var shown: ShownPicture?
@@ -21,6 +22,8 @@ struct AirportPlaceHead: View {
     /// alone, as Maps' does, and comes in as the sheet is pulled up.
     @Environment(\.cardExpanded) private var expanded
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.undoManager) private var undoManager
+    @Environment(FieldNotams.self) private var notams
     @ScaledMetric(relativeTo: .title) private var tile = 84.0
 
     var body: some View {
@@ -40,8 +43,11 @@ struct AirportPlaceHead: View {
             }
             titles
             actions
-            AirportFacts(place: place, distance: AirportDistance.of(lat: place.lat, lon: place.lon, ident: place.ident,
-                                                                    fix: ownShip.fix?.coordinate, departure: plan.course?.departure))
+            let distance = Result { try AirportDistance.of(lat: place.lat, lon: place.lon, ident: place.ident,
+                                                           fix: ownShip.fix?.coordinate, departure: plan.course?.departure) }
+            // A failure is said under the facts, so the "—" is not read as no distance.
+            AirportFacts(place: place, distance: try? distance.get())
+            ProblemLine(distance, "The distance").padding(.horizontal, WingtipSpace.lg)
         }
         .padding(.bottom, WingtipSpace.md)
         .padding(.top, expanded ? 0 : WingtipSpace.xl)
@@ -94,7 +100,7 @@ struct AirportPlaceHead: View {
                 .accessibilityAddTraits(.isHeader)
                 // The UI tests' sign the card is up (WingtipUITests/FlowTests).
                 .accessibilityIdentifier("airport-card-head")
-                .siriSees(SiriSaw.airport(place.ident))
+                .appEntityIdentifier(SiriSaw.airport(place.ident))
             // What it is and where, a tap from Apple's Maps, as Maps'
             // subtitle opens the place's whereabouts.
             Link(destination: AirportCard.mapsLink(place)) {
@@ -116,6 +122,15 @@ struct AirportPlaceHead: View {
             if let restriction = AirportHead.restriction(place) {
                 Text(restriction).font(.subheadline).foregroundStyle(WingtipInk.caution)
             }
+            // A NOTAM in force that closes the field, or a TFR near it, its
+            // badge under the name, a tap opening it (the owner, 2026-11-11:
+            // "tapping the affected thing should show the notam").
+            if let mark = notams.marks.field {
+                Button { notams.opened = mark.open } label: { NotamMarkBadge(mark: mark) }
+                    .buttonStyle(.plain)
+                    .hitArea()
+                    .accessibilityHint("Opens its NOTAM")
+            }
             KeptAgeLine(kind: .airports, key: place.ident)
         }
         .padding(.horizontal, WingtipSpace.lg)
@@ -129,12 +144,19 @@ struct AirportPlaceHead: View {
         return town.isEmpty ? kind : "\(kind) · \(town)"
     }
 
-    /// Four equal actions, the first filled: Fly Here (the time there, the
-    /// planner's, when this is the plan's destination), Depart, Add Stop
-    /// and the airport diagram.
+    /// Four equal actions and no more, the first filled, as the web's
+    /// (PlaceActions; the owner, 2026-11-11: "fly here, add stop, call and
+    /// address ... no need for other buttons", Favorite in Address's place
+    /// since): Fly Here (the time there, the planner's, when this is the
+    /// plan's destination), Add Stop (greyed where it can't be one), Call
+    /// (the FAA's phone for the field, greyed where it lists none) and
+    /// Favorite. Depart From is in the foot's Add to Plan, the diagram the
+    /// first picture tile.
     private var actions: some View {
         let here = plan.dest == place.ident
         let ete = here ? plan.totals?.eteMin.map(Format.duration) : nil
+        let call = place.phone.flatMap { URL(string: "tel:" + $0.filter { !$0.isWhitespace }) }
+        let kept = shelf.isFavorite(place.ident)
         return HStack(spacing: WingtipSpace.sm) {
             Button { Task { await plan.flyHere(place.ident, near: ownShip.fix); done() } } label: {
                 ActionFace(systemImage: CardAction.flyHere.systemImage, title: ete ?? CardAction.flyHere.title)
@@ -142,29 +164,28 @@ struct AirportPlaceHead: View {
             .glassProminentButton()
             .accessibilityLabel(ete.map { "Fly Here, \($0)" } ?? "Fly Here")
             .accessibilityIdentifier("fly-here")
-            Button { plan.departFrom(place.ident); done() } label: {
-                ActionFace(systemImage: CardAction.departFrom.systemImage, title: "Depart")
-            }
-            .glassButton()
-            .accessibilityLabel(CardAction.departFrom.title)
             Button { plan.addStop(place.ident); done() } label: {
                 ActionFace(systemImage: CardAction.addStop.systemImage, title: "Add Stop")
             }
             .glassButton()
             .disabled(!plan.canAddStop(place.ident))
-            .accessibilityLabel(CardAction.addStop.title)
-            Button {
-                if let cycle = place.airportDiagramCycle {
-                    shown = .paths("\(place.ident) airport diagram", [Planner.diagramPath(ident: place.ident, cycle: cycle)])
-                } else {
-                    shown = AirportChartsTab.sketch(place)
-                }
-            } label: {
-                ActionFace(systemImage: "map", title: "Diagram")
+            .accessibilityLabel(plan.canAddStop(place.ident) ? CardAction.addStop.title : "\(CardAction.addStop.title): already on the route")
+            .accessibilityIdentifier("place-add-stop")
+            Group {
+                let face = ActionFace(systemImage: CardAction.call.systemImage, title: CardAction.call.title)
+                if let call { Link(destination: call) { face } } else { Button {} label: { face }.disabled(true) }
             }
             .glassButton()
-            .disabled(place.airportDiagramCycle == nil && RunwaySketch.strips(place.runways).isEmpty)
-            .accessibilityLabel("Airport diagram, full screen")
+            .accessibilityLabel(place.phone.map { "Call \($0)" } ?? "Call: no phone listed")
+            .accessibilityIdentifier("place-call")
+            Toggle(isOn: Binding(get: { kept }, set: { _ in shelf.toggleFavorite(KeptAirport(place), undo: undoManager) })) {
+                ActionFace(systemImage: kept ? "\(WingtipIcon.favorite).fill" : WingtipIcon.favorite, title: CardAction.favorite.title,
+                           symbolColour: kept ? Color(uiColor: WingtipColor.Brand.taxiwayYellow) : nil)
+            }
+            .toggleStyle(.button)
+            .glassButton()
+            .accessibilityLabel(kept ? "Remove from Favorites" : "Add to Favorites")
+            .accessibilityIdentifier("place-favorite")
         }
         .glassGroup(spacing: WingtipSpace.sm)
         .padding(.horizontal, WingtipSpace.lg)
@@ -184,10 +205,12 @@ struct AirportPlaceHead: View {
 struct ActionFace: View {
     let systemImage: String
     let title: String
+    /// The glyph's own colour, where it says a state (a Favorite's star).
+    var symbolColour: Color?
 
     var body: some View {
         VStack(spacing: WingtipSpace.xxs) {
-            Image(systemName: systemImage).font(.title3)
+            Image(systemName: systemImage).font(.title3).foregroundStyle(symbolColour.map(AnyShapeStyle.init) ?? AnyShapeStyle(.foreground))
             Text(title).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, minHeight: 52)

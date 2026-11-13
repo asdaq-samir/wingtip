@@ -52,6 +52,7 @@ limit: a pilot's own altitude under 91.119's minimum is flown with a
 caution (the engine's floor_caution).
 """
 
+import math
 import threading
 from pathlib import Path
 
@@ -73,7 +74,10 @@ DEFAULT_FAA_CACHE_DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "
 def _route_sample_points(route_start: tuple, route_end: tuple, interval_nm: float) -> list:
     total_nm = geo.distance_nm(route_start[0], route_start[1], route_end[0], route_end[1])
     bearing = geo.bearing_deg(route_start[0], route_start[1], route_end[0], route_end[1])
-    n_samples = max(2, int(total_nm // interval_nm) + 1)
+    # Never farther apart than the interval: a floor reads only the ground
+    # it samples, so the spacing rounds down, not up (42 N to 43 N is
+    # 59.98 nm on WGS-84, 31 samples 1.999 nm apart, not 30 at 2.07).
+    n_samples = max(2, math.ceil(total_nm / interval_nm) + 1)
     return [
         geo.destination_point(route_start[0], route_start[1], bearing, d)
         for d in (i * total_nm / (n_samples - 1) for i in range(n_samples))

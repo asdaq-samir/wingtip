@@ -11,14 +11,25 @@ struct EmergencyFieldsSection: View {
     let ownShipOff: Bool
     /// Direct To the field: each row's one filled action.
     var directTo: (String) -> Void = { _ in }
-    private var model: Emergency { .shared }
+    @Environment(Emergency.self) private var model
+    /// Set once the GPS has given nothing for `waitS`: "Finding" no longer
+    /// says what is happening, and the pilot is told what to do instead.
+    @State private var noFixYet = false
+    /// How long a first fix is waited for before saying there is none:
+    /// a phone's GPS gives a first fix in seconds under open sky.
+    static let waitS: Double = 10
 
     var body: some View {
         Section {
             if fix == nil {
-                CardRow(title: ownShipOff ? "Your position is off" : "Finding your position…",
-                        detail: "The fields within a glide are worked out from it")
+                noPosition
             } else if let ranked = model.ranked {
+                if model.from == .device {
+                    // The packs hold no weather, elevation or runway: said
+                    // over the list, so no field reads as checked for them.
+                    CardRow(title: "From this iPhone, without weather",
+                            detail: "The planner can't be reached: the fields are the chart data kept here, ranked by distance\(ranked.glide == nil ? "" : " and still-air glide"), with no runways or weather weighed")
+                }
                 if ranked.needsAirplane {
                     // No airplane, or one with no glide ratio: the nearest
                     // first, and the glide ratio asked for in place, never
@@ -29,7 +40,7 @@ struct EmergencyFieldsSection: View {
                     VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                         Button { model.pickedIdent = field.ident } label: { row(field, picked: field.ident == model.picked?.ident) }
                             .buttonStyle(.plain)
-                            .siriSees(SiriSaw.airport(field.ident))
+                            .appEntityIdentifier(SiriSaw.airport(field.ident))
                             .accessibilityAddTraits(field.ident == model.picked?.ident ? .isSelected : [])
                         // The row's one primary action, full width and large.
                         Button { directTo(field.ident) } label: {
@@ -41,8 +52,11 @@ struct EmergencyFieldsSection: View {
                 }
             } else if let problem = model.problem {
                 ProblemLine(problem)
-            } else {
+            } else if model.asking {
                 ProgressView("Fetching the fields round you…")
+            } else {
+                // Never a spinner with nothing being asked.
+                CardRow(title: "No fields yet", detail: "They are asked as the next GPS fix comes in")
             }
         } header: {
             Text(model.ranked?.glide.map { "Best Fields · Glide About \(Format.distance($0.stillAirNm, decimals: 0))" } ?? "Best Fields")
@@ -53,6 +67,25 @@ struct EmergencyFieldsSection: View {
         .onChange(of: model.ranked?.fields.first?.ident, initial: true) { _, ident in
             guard ident != nil, let best = model.ranked?.fields.first else { return }
             Announce.alert(Self.spokenBest(best), urgent: true)
+        }
+    }
+
+    /// With no fix: the position off, being found, or not found after
+    /// waitS, each saying what the pilot can do, never a spinner forever.
+    @ViewBuilder private var noPosition: some View {
+        if ownShipOff {
+            CardRow(title: "Location is off for Wingtip Maps", detail: "The fields within a glide are worked out from your position")
+            if let settings = URL(string: UIApplication.openSettingsURLString) {
+                Link("Turn On Location in Settings", destination: settings)
+            }
+        } else if noFixYet {
+            CardRow(title: "No GPS position", detail: "The fields within a glide need one. Put the iPhone where it sees the sky; use the radio and 7700 meanwhile")
+        } else {
+            CardRow(title: "Finding your position…", detail: "The fields within a glide are worked out from it")
+                .task {
+                    try? await Task.sleep(for: .seconds(Self.waitS))
+                    if !Task.isCancelled { noFixYet = true }
+                }
         }
     }
 
@@ -75,7 +108,7 @@ struct EmergencyFieldsSection: View {
                 .symbolSwap()
                 .foregroundStyle(picked ? accent : Color.secondary)
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                (Text(field.ident).fontWeight(.semibold) + Text(" \(field.name)")).font(.title3).foregroundStyle(Color.primary)
+                Text("\(Text(field.ident).fontWeight(.semibold)) \(field.name)").font(.title3).foregroundStyle(Color.primary)
                 ForEach(Array(field.reasons.enumerated()), id: \.offset) { i, reason in
                     let lead = i == 0 && field.reach != "unknown"
                     Text(reason.text).font(.body)
@@ -117,7 +150,7 @@ struct EmergencyRadioSections: View {
     let mayday: Result<Emergency.Mayday, any Error>
     let phoneIdent: String?
     let phone: String?
-    private var model: Emergency { .shared }
+    @Environment(Emergency.self) private var model
 
     var body: some View {
         if case .success(let call) = mayday {

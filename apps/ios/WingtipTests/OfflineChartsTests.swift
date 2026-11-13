@@ -142,8 +142,8 @@ struct OfflineChartsTests {
     }
 
     @Test func aTapPicksTheSmallestSheetUnderIt() {
-        let big = APIOfflineRegion(boxes: [[-93, 40, -84, 44]], group: "sheet", id: "Chicago", name: "Chicago", sizes: [:])
-        let small = APIOfflineRegion(boxes: [[-88.5, 41.5, -87, 42.5]], group: "sheet", id: "box", name: "Box", sizes: [:])
+        let big = APIOfflineRegion(boxes: [[-93, 40, -84, 44]], group: "sheet", id: "Chicago", name: "Chicago", sizes: .init())
+        let small = APIOfflineRegion(boxes: [[-88.5, 41.5, -87, 42.5]], group: "sheet", id: "box", name: "Box", sizes: .init())
         #expect(DownloadsMapView.sheet(at: CLLocationCoordinate2D(latitude: 42, longitude: -87.9), in: [big, small])?.id == "box")
         #expect(DownloadsMapView.sheet(at: CLLocationCoordinate2D(latitude: 43, longitude: -90), in: [big, small])?.id == "Chicago")
         #expect(DownloadsMapView.sheet(at: CLLocationCoordinate2D(latitude: 30, longitude: -90), in: [big, small]) == nil)

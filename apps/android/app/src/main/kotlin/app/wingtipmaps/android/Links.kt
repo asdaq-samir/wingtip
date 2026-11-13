@@ -36,7 +36,14 @@ object Links {
      *  never planned by itself over the receiver's own plan. */
     data class Shared(val plan: SharedPlan?, val token: String?) : Link
 
-    fun parse(url: String?): Link? {
+    /**
+     * `url` read, a sign-in link only as `https` on `host`, the app's own
+     * (the verified App Link's): any app can send MainActivity a link, and
+     * one carrying another account's token on another host, or on the
+     * app's own scheme, would sign the pilot in to it (the security
+     * audit's M1, 2026-11-10). Even then it is asked first (Session.open).
+     */
+    fun parse(url: String?, host: String = Config.host): Link? {
         if (url.isNullOrBlank()) return null
         val uri = runCatching { URI(url) }.getOrNull() ?: return null
         val query = query(uri.rawQuery)
@@ -44,6 +51,7 @@ object Links {
         if (uri.scheme == Screen.SCHEME) return if (uri.host == Screen.SCHEME_HOST) planner(query, screen) else null
         val path = uri.path ?: return null
         if (path.endsWith("/api/auth/magic-link/verify")) {
+            if (uri.scheme != "https" || !uri.rawAuthority.equals(host, ignoreCase = true) || path != "/api/auth/magic-link/verify") return null
             return query["token"]?.takeIf { it.isNotEmpty() }?.let { SignIn(it) }
         }
         if (path != Screen.LINK_PATH && !path.startsWith("${Screen.LINK_PATH}/")) return null

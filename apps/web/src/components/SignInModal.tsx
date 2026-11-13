@@ -5,7 +5,7 @@ import { cn } from "cn";
 import AppleLogo from "./icons/AppleLogo";
 import GoogleLogo from "./icons/GoogleLogo";
 import { Button, buttonVariants } from "./ui/button";
-import SheetDialog from "./SheetDialog";
+import SheetDialog from "./SheetDialogBody";
 import { Input } from "./ui/input";
 import { Spinner } from "./ui/spinner";
 import { ApiError, api } from "../lib/api/client";
@@ -15,6 +15,7 @@ import { TEXT } from "../lib/text";
 import { tvPlatform } from "../lib/tv";
 import TvCode from "./TvCode";
 import { Separator } from "./ui/separator";
+import { FieldError } from "./ui/field";
 
 /**
  * Three ways in, the standard shape every "sign in" prompt (Auth.js,
@@ -29,12 +30,13 @@ import { Separator } from "./ui/separator";
  * registers neither, both did.
  */
 export default function SignInModal({
-  plain = false,
+  hero = false,
   inline = false,
 }: {
-  /** A tinted word, as a row's action (Setup's Account group), not a
-   *  bordered button. */
-  plain?: boolean;
+  /** You's large line while no one is signed in, in the name's place: a
+   *  tinted Sign In at the hero size, said once (the owner, 2026-11-13:
+   *  "Instead of saying you, just say sign in once"). */
+  hero?: boolean;
   /** A tinted link inside a sentence ("Sign in to keep the flights you
    *  plan", FPL's Saved), its 44-point area round it. */
   inline?: boolean;
@@ -92,14 +94,16 @@ export default function SignInModal({
           >
             Sign in
           </button>
-        ) : plain ? (
+        ) : hero ? (
           <Button
-            variant="ghost"
-            size="sm"
+            variant="link"
             data-testid="sign-in"
-            className={cn("relative -mr-2 px-2 font-normal text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
+            className={cn(
+              "relative h-auto p-0 font-bold tracking-tight text-tint after:absolute after:-inset-y-2 after:inset-x-0",
+              TEXT.hero,
+            )}
           >
-            Sign in
+            Sign In
           </Button>
         ) : (
           <Button variant="outline" size="sm">
@@ -180,9 +184,9 @@ export default function SignInModal({
                 </Button>
               </div>
               {linkFailure && (
-                <p className={`text-destructive ${TEXT.prose}`} role="alert" data-testid="sign-in-error">
+                <FieldError className={`text-destructive ${TEXT.prose}`} data-testid="sign-in-error">
                   {linkFailure}
-                </p>
+                </FieldError>
               )}
             </form>
           )}

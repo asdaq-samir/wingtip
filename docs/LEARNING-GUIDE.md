@@ -29,8 +29,7 @@ The project has four layers, each with one job. The Rust engine
 no screen and no clock. The planner (`planner` over
 `services/planner/wingtip`, FastAPI) works out a flight: it reads the data the
 `ingest` and `weather` services keep, runs the chart model, and asks the
-engine every rule; the `assistant` service makes every Claude call over
-the planner's figures. Spring
+engine every rule. Spring
 Boot (`gateway`) is who the pilot is and what they saved, with no aviation
 logic of its own. The apps (web, iOS, Android) get data, keep state and
 draw, and ask the engine the rest. §4 says why it is cut this way.
@@ -57,9 +56,7 @@ flowchart LR
     apps([web · iOS · Android]) --> gateway
     apps --> engine
 
-    gateway --> assistant["§5 assistant<br/>(every Claude call)"]
-    assistant -->|figures| planner
-    assistant -->|"Anthropic SDK"| claude([Claude API])
+    aiapp(["§5 the pilot's own AI app<br/>(the MCP connector)"]) --> gateway
     ingest["ingest<br/>(SWIM, adsb.fi)"] --> stores[("the stores<br/>live · weather")]
     weatherSvc["weather<br/>(METAR, TAF, GFS)"] --> stores
     stores --> planner
@@ -239,15 +236,16 @@ Per service, four keys matter most:
   type into your browser; the right side is what the app inside actually
   binds to.
 - `environment:` — env vars injected into the container. Notice
-  `${ANTHROPIC_API_KEY:-}` on `assistant`: `:-` means
-  "empty if unset". Its sibling `${VAR:?message}` means "fail immediately
-  with this message if unset", and this file used that until it was tried
-  from a clean checkout — Compose interpolates the *whole* file before it
-  decides which services to start, so one required-variable marker failed
-  every command, including `docker compose up gateway` and even
-  `docker compose config`. A worked lesson in where a check belongs: the
-  assistant's Claude features now find the key missing when they are used,
-  and say so, so the failure reaches only the people using them.
+  `${POSTGRES_PASSWORD:-wingtip}` on `gateway`: `:-` means "this default
+  if unset". Its sibling `${VAR:?message}` means "fail immediately with
+  this message if unset", and the file once used that for an API key
+  until it was tried from a clean checkout — Compose interpolates the
+  *whole* file before it decides which services to start, so one
+  required-variable marker failed every command, including
+  `docker compose up gateway` and even `docker compose config`. A worked
+  lesson in where a check belongs: a feature that needs a key should find
+  it missing when it is used, and say so, so the failure reaches only the
+  people using it.
 - `profiles:` — a service with a profile is left out of a plain
   `docker compose up`. `--profile notebooks` includes `ml`, and naming the
   service directly enables its profile too.
@@ -522,7 +520,7 @@ and what they saved). Under both, and under every app, is the engine.
   (`engine/contract/engine.schema.json`) types the boundary, and each
   app's types are generated from it.
 - **The planner** does what needs the network and the big data: the
-  FAA's files, the weather, the chart tiles, the chart model, Claude.
+  FAA's files, the weather, the chart tiles, the chart model.
 - **Spring Boot** does identity and persistence: sign-in, sessions,
   Flyway's schema, the pilot's records, scheduled mail. When it needs a
   figure it asks the planner, which asks the engine.
@@ -679,46 +677,50 @@ endpoints, on purpose.
 
 ## 5. The Gen AI layer
 
-Every Claude call in this project is made from the `assistant` service
-(`services/assistant`) with the Anthropic Python SDK directly — no agent
-framework in between. The owner's rule (2026-11-06): the project is a
-product, not a framework showcase, and every feature a framework offered
-here was one SDK call.
+The server calls no language model. The Claude features it once had (a
+written briefing, Ask, the words beside the Brief's figures, checkpoint
+descriptions, a mock oral, a photographed page read), all in an
+`assistant` service, were taken out on 2026-11-12
+([decision 0041](decisions/0041-claude-taken-out.md)): they had been off
+since 2026-11-10 while the subscription that would pay for them was
+undecided. What is left is AI that costs the app nothing per use:
+
+- **On the phone.** Apple's Foundation Models on the iPhone and Gemini
+  Nano on Android write Ask's answers, the words beside a figure, a
+  drafted logbook remark and the reading of a photographed page
+  ([ios-27-ai.md](ios-27-ai.md), [android-ai.md](android-ai.md)).
+- **The pilot's own AI app.** The planner's MCP connector
+  (`services/planner/app/mcp`, [decision 0036](decisions/0036-mcp-connector.md))
+  lets a pilot's own Claude or ChatGPT ask Wingtip's tools: the airports,
+  the weather, a route's nav log and briefing. The pilot's app runs the
+  model and pays for it; Wingtip only answers the tool calls.
 
 ### What "an agent" actually means here
 
-The written briefing (the assistant service's [`app/narrative.py`](../services/assistant/app/narrative.py),
-`POST /api/briefing/narrative`) is the clearest case. Everything a pilot
-reads in it — the checkpoints, each leg's legal cruising altitude from
-real terrain/airspace/weather constraints, the dead-reckoning legs with
-their climbs and the fuel check — is worked out by deterministic code
-first, and the page already has it on screen. The *only* place an LLM is
-called is the last step: turning those figures into plain prose. That's
-worth internalizing: "AI-powered" doesn't mean "the LLM does everything,"
-it usually means "deterministic code does the heavy lifting, and an LLM
-handles the part that's genuinely about language."
+Every figure a pilot reads is worked out by deterministic code first —
+the checkpoints, each leg's legal cruising altitude from real
+terrain/airspace/weather constraints, the dead-reckoning legs with their
+climbs and the fuel check — and the page already has it on screen. A
+model is asked only for the last step: turning those figures into plain
+words. That's worth internalizing: "AI-powered" doesn't mean "the LLM
+does everything," it usually means "deterministic code does the heavy
+lifting, and an LLM handles the part that's genuinely about language."
+On the phones every sentence a model writes is checked against the
+engine's figures (`Words.checked`, `NumberGuard` on the iPhone,
+`FigureGuard` on Android), and one quoting a number the engine did not
+give is dropped.
 
-The call itself is short: one `client.messages.stream(...)` with the
-prompt built from the nav log, each text delta written out as a line of
-newline-delimited JSON as it arrives, so the first sentence reaches the
-phone in a second or two rather than the whole briefing after ten. A
-failure (no key, a limit, the token cap reached mid-sentence) ends the
-stream with an `error` line instead of half a briefing — a cut-off
-briefing could end before its weather, and a pilot would take it as
-whole.
+### When the model does choose: tools
 
-### When the model does choose: the tool runner
-
-The pilot's assistant ([`app/assistant.py`](../services/assistant/app/assistant.py))
-is the one place the model decides what to do next. It is given the
-planner's own functions as tools (the plan, the weather at a field, the
-briefing, the Go / No-Go, a hold's entry, a diversion) and the SDK's
-tool runner loops: the model asks for a tool, the runner calls the
-Python function and hands back the answer, until the model has what it
-needs to write. Every figure in the answer still comes from the
-planner's functions; the model chooses which to ask for and writes the
-words. That is the whole of what an agent framework would add here, and
-the SDK does it in one call.
+Ask on the phone is the one place a model decides what to do next. It is
+given the app's own functions as tools (the plan, the weather at a field,
+the NOTAMs, opening a screen), and the platform's session loops: the
+model asks for a tool, the app calls the function and hands back the
+answer, until the model has what it needs to write. The connector is the
+same shape from the other side: the pilot's AI app holds the loop, and
+each tool is one of the planner's endpoints. Every figure in the answer
+still comes from the engine; the model chooses which to ask for and
+writes the words.
 
 ---
 
@@ -804,7 +806,7 @@ problem you'll meet in any real deployment
   never draws a tile. On Fargate Spot (up to 70% cheaper, interruptible),
   because a run that is stopped simply runs again the next day.
 - **No NAT gateway.** The server and the task sit in a public subnet with
-  public addresses and reach the FAA, Anthropic and AWS directly; a NAT
+  public addresses and reach the FAA, NOAA and AWS directly; a NAT
   gateway for a private subnet would cost more than the server.
 - **Keep the state off the server.** The server is Spot capacity in an
   Auto Scaling group of one, so AWS may take it back at any time; what

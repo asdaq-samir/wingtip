@@ -22,6 +22,25 @@ DULUTH = {
 }
 
 
+# The engine's reading of "ACTVT MIRL RWY 09/27 - CTAF." (lighting_read).
+MIRL = {
+    "code": "MIRL",
+    "name": "Runway edge lights, medium intensity",
+    "runways": ["09/27"],
+    "pilot_controlled": True,
+    "frequency": "CTAF",
+    "clicks": None,
+    "tower_closed": False,
+    "preset": None,
+    "brighter": False,
+    "schedule": None,
+    "continuous": False,
+    "nonstandard": False,
+    "how": "Key the mic on CTAF",
+    "as_written": "ACTVT MIRL RWY 09/27 - CTAF.",
+}
+
+
 def stub_place(monkeypatch, place=DULUTH, frequencies=(), runways=(), metar=None, surface_class="C", nearby=None, modelled=None, taf=None):
     monkeypatch.setattr(airports, "find_place", lambda ident: place if ident.upper() in ("KDLH", "DLH") else None)
     monkeypatch.setattr(airports, "get_frequencies", lambda ident: list(frequencies))
@@ -32,10 +51,11 @@ def stub_place(monkeypatch, place=DULUTH, frequencies=(), runways=(), metar=None
         remarks,
         "airport_notes",
         lambda faa_id: {
-            "lighting": ["Activate MIRL runway 09/27 - CTAF."] if faa_id == "DLH" else [],
+            "lighting": ["ACTVT MIRL RWY 09/27 - CTAF."] if faa_id == "DLH" else [],
+            "lights": [MIRL] if faa_id == "DLH" else [],
+            "light_notes": [],
             "radio": [],
-            "pilot_controlled": faa_id == "DLH",
-            "explicit_clicks": False,
+            "standard_keying": faa_id == "DLH",
         },
     )
     monkeypatch.setattr(remarks, "runway_turf", lambda faa_id: {})
@@ -87,7 +107,8 @@ def test_an_airports_card_names_its_class_tower_runways_radio_and_weather(monkey
     assert body["weather_unavailable"] is False
     # Its lights, by the FAA's own identifier (DLH): turned on from the
     # cockpit, with no count of clicks of their own.
-    assert body["lighting"] == ["Activate MIRL runway 09/27 - CTAF."]
+    assert body["lighting"] == ["ACTVT MIRL RWY 09/27 - CTAF."]
+    assert [(light["code"], light["how"]) for light in body["lights"]] == [("MIRL", "Key the mic on CTAF")]
     assert body["standard_keying"] is True
 
 
@@ -459,33 +480,6 @@ def test_the_procedures_say_when_the_faas_file_cannot_be_had(monkeypatch):
     monkeypatch.setattr(procedures, "procedures_at", unreachable)
     got = client.get("/api/airport/KBUR/procedures")
     assert got.status_code == 503 and "could not be had" in got.json()["detail"]
-
-
-def test_an_approachs_plate_is_placed_on_the_map_and_its_picture_served(monkeypatch, tmp_path):
-    from wingtip import plates, publications
-
-    picture = tmp_path / "plate.png"
-    picture.write_bytes(b"\x89PNG\r\n\x1a\n")
-    placed = {
-        "cycle": publications.dtpp_cycle(),
-        "name": "RNAV (GPS) RWY 3",
-        "south": 46.6,
-        "west": -92.5,
-        "north": 47.0,
-        "east": -91.6,
-        "fixes": ["OMARY", "AMLIY", "CLIPH"],
-        "circling": True,
-        "png": picture,
-    }
-    monkeypatch.setattr(plates, "plate_overlay", lambda ident, procedure: placed if procedure == "R03" else None)
-    got = client.get("/api/airport/KDLH/procedures/R03/plate")
-    assert got.status_code == 200
-    assert got.json() == {k: v for k, v in placed.items() if k != "png"}
-    png = client.get(f"/api/approach-plate/{placed['cycle']}/KDLH/R03.png")
-    assert png.status_code == 200 and png.headers["content-type"] == "image/png"
-    # None placed, or another cycle's: none to show.
-    assert client.get("/api/airport/KDLH/procedures/I09/plate").status_code == 404
-    assert client.get("/api/approach-plate/2001/KDLH/R03.png").status_code == 404
 
 
 def test_a_fields_forecast_wind_for_a_time_is_its_tafs_or_none(monkeypatch):

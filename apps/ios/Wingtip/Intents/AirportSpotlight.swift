@@ -40,7 +40,7 @@ extension AirportEntity: IndexedEntity {
 
 /// A field opened from Spotlight or a Shortcut: its card, for its
 /// weather, its runways and its frequencies (RootView's `.weather`).
-struct OpenAirportIntent: OpenIntent {
+struct OpenAirportIntent: OpenIntent, CommandIntent {
     static let title: LocalizedStringResource = "Open an Airport"
     static let description = IntentDescription("Opens an airport's card: its weather, runways and frequencies.")
 
@@ -48,11 +48,11 @@ struct OpenAirportIntent: OpenIntent {
     var target: AirportEntity
 
     /// What the app is left to do for the field: its card.
-    static func command(_ target: AirportEntity) -> PendingCommand.Command { .weather(ident: target.id) }
+    static func command(_ target: AirportEntity) -> AppCommand { .weather(ident: target.id) }
+
+    func appCommand() -> AppCommand? { Self.command(target) }
 
     func perform() async throws -> some IntentResult {
-        let command = Self.command(target)
-        await MainActor.run { PendingCommand.shared.command = command }
         return .result()
     }
 }

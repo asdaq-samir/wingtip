@@ -9,6 +9,7 @@ import SwiftUI
 /// veil, the special-use areas and the TFRs over it. Every rule is the
 /// planner's answer; the card writes it.
 struct AirspaceCard: View {
+    @Environment(Navigator.self) private var nav
     let lat: Double
     let lon: Double
     @Environment(Plan.self) private var plan
@@ -54,7 +55,7 @@ struct AirspaceCard: View {
                         .disabled(!plan.routed)
                         Button {
                             plan.drop(named.ident, at: at, then: .hold, from: nil)
-                            Navigator.shared.push(.hold(named.ident))
+                            nav.push(.hold(named.ident))
                         } label: {
                             CardActionLabel(.holdHere)
                         }
@@ -207,8 +208,7 @@ struct BandRow: View {
                 .overlay(RoundedRectangle(cornerRadius: WingtipRadius.badge).strokeBorder(ink.colour, style: StrokeStyle(lineWidth: 2, dash: ink.dashed ? [3, 2] : [])))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: WingtipSpace.xs) {
-                Text("Class \(band.airspaceClass)").fontWeight(.semibold)
-                    + Text(band.name.map { " · " + AirportWords.shortAirspaceName($0) } ?? "").foregroundStyle(.secondary)
+                Text("\(Text("Class \(band.airspaceClass)").fontWeight(.semibold))\(Text(band.name.map { " · " + AirportWords.shortAirspaceName($0) } ?? "").foregroundStyle(.secondary))")
                 Text(AirportWords.bandRange(band, ground: ground)).fontWeight(.semibold).monospacedDigit()
                 ForEach(Array(Self.rules(band).enumerated()), id: \.offset) { _, rule in
                     Label(rule.text, systemImage: rule.symbol).font(.subheadline).foregroundStyle(.secondary)

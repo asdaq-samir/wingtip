@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import { useContext, useEffect, useRef, type InputHTMLAttributes, type ReactNode } from "react";
 import { cn } from "cn";
-import { Group, Input, NumberField as AriaNumberField, type NumberFieldProps } from "react-aria-components";
+import { Group, Input, NumberField as AriaNumberField, NumberFieldStateContext, type NumberFieldProps } from "react-aria-components";
 
 /** The stock Input's look (ui/input), on the box round the figure. */
 const BOX =
@@ -10,6 +10,21 @@ const BOX =
  *  finger (lib/text). */
 const FIGURE =
   "h-full w-full min-w-0 bg-transparent py-1 text-base tabular-nums outline-none placeholder:text-muted-foreground md:text-sm pointer-coarse:text-(length:--type-row)";
+
+/** The figure as it is typed, each change: React Aria's own reading of the
+ *  text (its state's numberValue, parsed in the locale), for a button
+ *  whose sense hangs on it (Add, Set) before the field is left. */
+function Typed({ onTyped }: { onTyped: (value: number | null) => void }) {
+  const state = useContext(NumberFieldStateContext);
+  const n = state?.numberValue ?? Number.NaN;
+  const was = useRef(n);
+  useEffect(() => {
+    if (Object.is(n, was.current)) return;
+    was.current = n;
+    onTyped(Number.isNaN(n) ? null : n);
+  }, [n, onTyped]);
+  return null;
+}
 
 /**
  * React Aria's number field, where `<input type="number">` and the
@@ -22,7 +37,14 @@ const FIGURE =
  *
  * Its value is a number, null for none (React Aria's NaN). The test id and
  * the id are on the figure itself, so a label's htmlFor (FieldHit's 44)
- * and a test's fill reach it. `unit` is said inside the box, at its end.
+ * and a test's fill reach it. `unit` is said inside the box, at its end,
+ * `lead` at its start ("FL").
+ *
+ * The locale is the browser's: the app sets no I18nProvider, so React
+ * Aria reads navigator.language, and a pilot whose phone writes 12,5 has
+ * it read as twelve and a half, where a hand filter of the text read 125.
+ * `onTyped` gives the figure as it is typed, for an uncontrolled field
+ * (`defaultValue`) whose Add or Set needs it at once.
  */
 function NumberField({
   value,
@@ -31,6 +53,9 @@ function NumberField({
   id,
   placeholder,
   unit,
+  lead,
+  onTyped,
+  enterKeyHint,
   className,
   inputClassName,
   formatOptions,
@@ -43,6 +68,9 @@ function NumberField({
   id?: string;
   placeholder?: string;
   unit?: ReactNode;
+  lead?: ReactNode;
+  onTyped?: (value: number | null) => void;
+  enterKeyHint?: InputHTMLAttributes<HTMLInputElement>["enterKeyHint"];
   className?: string;
   inputClassName?: string;
   "data-testid"?: string;
@@ -57,8 +85,10 @@ function NumberField({
       data-slot="number-field"
       className="min-w-0"
     >
+      {onTyped && <Typed onTyped={onTyped} />}
       <Group className={cn(BOX, className)}>
-        <Input id={id} placeholder={placeholder} data-testid={testId} className={cn(FIGURE, inputClassName)} />
+        {lead != null && <span className="shrink-0 text-sm text-muted-foreground">{lead}</span>}
+        <Input id={id} placeholder={placeholder} enterKeyHint={enterKeyHint} data-testid={testId} className={cn(FIGURE, inputClassName)} />
         {unit != null && <span className="shrink-0 text-sm text-muted-foreground">{unit}</span>}
       </Group>
     </AriaNumberField>

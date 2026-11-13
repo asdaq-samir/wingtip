@@ -3,13 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api/client";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { type AircraftFilter, filtering, inEmergency, keptFilter, matches, relationTo, sameField } from "../../../lib/fbo";
-import { distanceNm, type LatLon } from "../../../lib/geo";
+import { useGeo, type Geo, type LatLon } from "../../../lib/geo";
 import { squawkMeaning } from "../lib/squawks";
 import { nmAway } from "../../../lib/useAway";
 import { usePreferences } from "../../../lib/preferences";
 import { grouped } from "../../../lib/format";
 import { airportQuery } from "../../../lib/queryClient";
 import { callEngine } from "../../../lib/engine/engine";
+import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import { useShown } from "../../../lib/shown";
 
 const NONE: TrafficAircraft[] = [];
@@ -73,13 +74,18 @@ export function useFilteredAircraft(seen: TrafficAircraft[], from: LatLon | null
   // The traffic the place asks for: round the airport, or near the pilot;
   // the map's own where it is the map.
   const center = filter.place === "airport" ? (field ? { lat: field.lat, lon: field.lon } : null) : filter.place === "near" ? from : null;
+  // The strip draws at once on a fresh open, before the engine's .wasm:
+  // what it measures (the reach, how far each airplane is, lib/geo) is
+  // the engine's, so it keeps none until it is there, as useAway does.
+  const engine = useEngineReady();
+  const geo = useGeo();
   // Round an airport, the engine's reach for an airplane inbound or
   // departing (`traffic_reach`, the figure field_relation judges by).
-  const radius = filter.place === "airport" ? callEngine("traffic_reach", {}).relation_nm : filter.nearNm;
+  const radius = filter.place !== "airport" ? filter.nearNm : engine ? callEngine("traffic_reach", {}).relation_nm : null;
   const { data: around } = useQuery({
     queryKey: ["trafficFilter", center ? Math.round(center.lat * 20) / 20 : null, center ? Math.round(center.lon * 20) / 20 : null, radius],
-    queryFn: () => api.traffic({ lat: center!.lat, lon: center!.lon, radius }),
-    enabled: !!center,
+    queryFn: () => api.traffic({ lat: center!.lat, lon: center!.lon, radius: radius! }),
+    enabled: !!center && radius !== null,
     refetchInterval: FILTER_REFRESH_MS,
     // Not while the Airplane strip is hidden; asked on its return (lib/shown).
     subscribed: shown,
@@ -88,12 +94,13 @@ export function useFilteredAircraft(seen: TrafficAircraft[], from: LatLon | null
   const aroundPlanes = around?.aircraft;
   const pool = useMemo(() => (filter.place === "map" ? seen : (aroundPlanes ?? NONE)), [filter.place, seen, aroundPlanes]);
   const placed = useMemo(() => {
-    if (filter.place === "near" && from) return pool.filter((p) => distanceNm(from, p) <= filter.nearNm);
+    if (!engine || !geo) return NONE;
+    if (filter.place === "near" && from) return pool.filter((p) => geo.distanceNm(from, p) <= filter.nearNm);
     if (filter.place !== "airport" || !field) return filter.place === "airport" ? [] : pool;
     const at = { lat: field.lat, lon: field.lon, elevationFt: field.elevation_ft ?? 0 };
     if (filter.relation === "based") return pool;
     return pool.filter((p) => relationTo(p, at)[filter.relation as "around" | "inbound" | "departing"]);
-  }, [pool, filter.place, filter.nearNm, filter.relation, field, from]);
+  }, [engine, geo, pool, filter.place, filter.nearNm, filter.relation, field, from]);
   // Based at the field: where each about it keeps to (wingtip.traffic.based),
   // asked again while some are still being looked up.
   const basedAsk = filter.place === "airport" && filter.relation === "based" && field ? placed.map((p) => p.hex).slice(0, 60) : [];
@@ -127,15 +134,17 @@ type Field = LatLon & { elevation_ft?: number | null };
  * 4-3-3); minutes out, soonest first, at its ground speed; how far out
  * from the field; the code squawked (7700, 7600, 7500: AIM 6-2-2, 6-4-2,
  * 6-3-4). Height above the field is the airplane's reported altitude less
- * the field's elevation: a band to look by, GNSS or pressure as sent.
+ * the field's elevation: a band to look by, GNSS or pressure as sent. No
+ * distances until the engine is there (`geo` null).
  */
 export function strip(
+  geo: Geo | null,
   q: Question,
   planes: TrafficAircraft[],
   from: LatLon | null,
   field: Field | null | undefined,
 ): { plane: TrafficAircraft; detail: string }[] {
-  const nm = (a: LatLon | null | undefined, p: TrafficAircraft) => (a ? distanceNm(a, p) : Infinity);
+  const nm = (a: LatLon | null | undefined, p: TrafficAircraft) => (a && geo ? geo.distanceNm(a, p) : Infinity);
   const miles = (n: number) => (Number.isFinite(n) ? nmAway(n) : "");
   const rows = planes.map((plane) => {
     if (q === "near") return { plane, key: nm(from, plane), detail: miles(nm(from, plane)) };

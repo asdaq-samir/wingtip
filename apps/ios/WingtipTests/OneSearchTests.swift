@@ -70,6 +70,8 @@ struct OneSearchTests {
     }
 
     @Test func theAirportCardsActionsAreTheDesignsInOrder() throws {
-        #expect(CardKind.airport.actions.prefix(3).map(\.title) == ["Fly Here", "Depart From", "Add as Stop"])
+        // The web's four in the head; Depart From is in the foot's Add to
+        // Plan menu since the airport card took the web's actions.
+        #expect(CardKind.airport.actions.map(\.title) == ["Fly Here", "Add as Stop", "Call", "Favorite"])
     }
 }

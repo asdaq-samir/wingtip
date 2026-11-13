@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
 export { closeProfile, openProfile, pressDryRunStart } from "./dryRun";
-import { planFromSearch } from "./oneSearch";
+import { planFromSearch, showPage } from "./oneSearch";
 export { emptyPlan, firstRow, searchAirports, showPlan, showSearch, showTraffic } from "./oneSearch";
 
 /**
@@ -13,15 +13,17 @@ export { emptyPlan, firstRow, searchAirports, showPlan, showSearch, showTraffic 
 
 export const PAGES = ["/app/plan", "/app/dev"] as const;
 
-/** The first-run tips (lib/firstRunTips) marked seen, every one, in the page's
+/** The seen-once keys (lib/firstRunTips: the first flight's welcome and FPL tip, the sunlight banner) marked seen, every one, in the page's
  *  storage: for page.evaluate, or page.addInitScript where a spec starts
  *  with none of the suite's saved session. */
 export function noTips() {
   localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["*"] }, version: 0 }));
   // The route's VFR checkpoints on, as a student has them: off by default
-  // (lib/preferences), and most specs read the route through them.
+  // (lib/preferences), and most specs read the route through them; Comms
+  // Assist on, off by default (2026-11-13), as the radio's specs need it.
   if (!localStorage.getItem("wingtip.preferences"))
     localStorage.setItem("wingtip.preferences", JSON.stringify({ state: { waypoints: true }, version: 1 }));
+  if (localStorage.getItem("wingtip.commsAssist") === null) localStorage.setItem("wingtip.commsAssist", "true");
 }
 
 /** An explicit wait, doubled in CI: playwright.config.ts doubles the
@@ -40,16 +42,16 @@ export async function settle(page: Page) {
   await page.waitForFunction(() => performance.getEntriesByName("chart-drawn").length > 0, null, { timeout: 1500 }).catch(() => {});
 }
 
-/** The panel over the map (MapPanel): a sheet up from the bottom of a
- *  phone, a card over the chart otherwise. Out or not is its
- *  `data-panel`: peek at rest, half or full when it is out. */
+/** The panel over the map (MapPanel): a phone's sheet, else a side panel.
+ *  Its `data-panel` is its own size, under a card too (a card's is on its
+ *  own drawer, frontSheet): peek at rest, half or full when it is out. */
 export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]');
+/** The sheet in front: the top card's own drawer (CardStack), else the map's. */
+export const frontSheet = (page: Page) => page.locator('[data-slot="map-panel"], [data-sheet-card][data-open]').last();
 
-/** The first row in sight: the sheet's, static over a card, at the pill
- *  too. */
+/** The first row in sight: the sheet's, static over a card, at the pill too. */
 export async function showTabs(page: Page) {
-  // From the sheet at rest (settling to the pill it keeps the half's layout until it lands, MapPanel). The
-  // first row: the one search, scoped to the traffic or Nearest where one is up; or the developer's places.
+  // From the sheet at rest. The first row: the one search, scoped to the traffic or Nearest where one is up; or the developer's places.
   await settled(sideDrawer(page));
   const first = page.getByTestId("search-airports").or(page.getByTestId("aircraft-search")).or(page.getByTestId("nearest-from"));
   if (!(await first.or(page.getByTestId("dev-tabs")).first().isVisible())) await grabberTo(page, "half");
@@ -61,28 +63,27 @@ export async function showTabs(page: Page) {
 export async function openPanel(page: Page) {
   const panel = sideDrawer(page);
   await panel.waitFor();
-  // Once it has come to rest: on its way down to the pill it is not the
-  // capsule yet, and was taken for one out already.
+  // Once it has come to rest: on its way down to the pill it is not the capsule yet, and was taken for one out already.
   await settled(panel);
   if ((await panel.getAttribute("data-capsule")) === null) return;
   await grabberTo(page, "half");
 }
 
-/** The route cleared, by the route box's own ✕ (the menu's Clear went,
- *  the owner, 2026-10-27). */
+/** The route cleared by its ••• menu's Clear route (the owner, 2026-11-11). */
 export async function clearTheRoute(page: Page) {
   await openPanel(page);
   await controlsInSight(page);
-  await sideDrawer(page).getByTestId("route-box-clear").click();
+  await sideDrawer(page).getByTestId("share-route").click();
+  await page.getByTestId("route-clear").click();
 }
 
 const RANK = { peek: 0, half: 1, full: 2 } as const;
 
-/** The panel to a height by its grabber (MapPanel): the pill, half and all
- *  the way up, a step at a time by the grabber's arrow keys, as a keyboard
- *  and VoiceOver move it. Each step waited on. */
+/** The sheet in front to a height by its grabber (a card's, the map's):
+ *  the pill, half and all the way up, a step at a time by its arrow keys,
+ *  as a keyboard and VoiceOver move it. Each step waited on. */
 export async function grabberTo(page: Page, state: "peek" | "half" | "full") {
-  const panel = sideDrawer(page);
+  const panel = frontSheet(page);
   await panel.waitFor();
   const grabber = page.getByTestId("sidebar-trigger-button");
   const size = async () => (await panel.getAttribute("data-panel")) as keyof typeof RANK;
@@ -106,16 +107,24 @@ export async function grabberTo(page: Page, state: "peek" | "half" | "full") {
   await settled(panel);
 }
 
-/** A row of the sheet's in sight before it is tapped. Half way the sheet's
- *  body is cut off at its edge, as Apple Maps' is, and a row under that
- *  edge is reached by pulling the sheet up, not by scrolling (the owner,
- *  2026-11-05); a click there landed on the map. All the way up when it
- *  is under the edge, then scrolled to, as a pilot's finger would. */
+/** The sheet half way from the pill, as a pilot pulls it up to type: typing
+ *  leaves it where it is (5db1f8b10), its results under the pill's edge. */
+export async function sheetUpToType(page: Page) {
+  if ((await sideDrawer(page).getAttribute("data-panel")) === "peek") await grabberTo(page, "half");
+}
+
+/** A row of the sheet's, or of a card's over it, in sight before it is
+ *  tapped. Half way the sheet's body is cut off at its edge, as Apple
+ *  Maps' is, and a row under that edge is reached by pulling the sheet up,
+ *  not by scrolling (the owner, 2026-11-05); a click there landed on the
+ *  map. A card opens half way too (6d7eba6d7), its rows under the edge
+ *  alike. All the way up when it is under the edge, then scrolled to, as a
+ *  pilot's finger would. */
 export async function inSheet(page: Page, locator: Locator) {
-  const panel = sideDrawer(page);
+  const panel = frontSheet(page);
   await locator.waitFor();
   const under = await locator.evaluate((el) => {
-    const sheet = el.closest("[data-slot=map-panel]");
+    const sheet = el.closest("[data-sheet-card], [data-slot=map-panel]");
     if (!sheet || sheet.getAttribute("data-panel") === "full") return false;
     const box = sheet.getBoundingClientRect();
     // A bottom sheet's edge is the screen's foot; a top sheet's, its own;
@@ -173,7 +182,7 @@ async function closeBrief(page: Page) {
  *  grabber to the screen's far edge from half; from the pill, the
  *  grabber's arrow keys. */
 async function panelFull(page: Page) {
-  const panel = sideDrawer(page);
+  const panel = frontSheet(page);
   await panel.waitFor();
   if ((await panel.getAttribute("data-panel")) === "full") return;
   // By the grabber, as a keyboard and VoiceOver take it.
@@ -185,25 +194,26 @@ async function panelFull(page: Page) {
  *  gone all the way up) opens the account page (Setup) itself. At the pill,
  *  where the developer's page rests, the page is under the pill's edge. */
 export async function openConsole(page: Page) {
+  await showPage(page, 0); // the account button is the Search page's (PageToggle)
   await showTabs(page);
   if (!(await page.getByTestId("account-button").isVisible())) await grabberTo(page, "half");
   await page.getByTestId("account-button").click();
-  await grabberTo(page, "full");
-  await expect(page.getByTestId("console-sheet")).toBeVisible();
+  await expect(page.getByTestId("console-sheet")).toBeVisible(); // there before it is raised
+  await expandConsole(page);
 }
 
-/** Setup's page all the way out, its Controls on top (QuickControls):
- *  the one home of the alerts, offline charts, layout and theme since the
- *  Settings page went (the owner, 2026-10-27). Escape closes it again. */
+/** Settings, You's row, all the way out, its Look tiles on top
+ *  (QuickControls; the owner's option A, 2026-11-13). Escape closes it. */
 export async function openSetup(page: Page) {
   await openConsole(page);
+  await page.getByTestId("settings-row").click();
   await expect(page.getByTestId("quick-controls").first()).toBeVisible();
   await expandConsole(page);
 }
 
-/** One of Setup's Controls set from its menu: its tile, then the item. */
-export async function pickControl(page: Page, control: "nav-bar-select" | "theme-select", item: string) {
-  await page.getByTestId("setup-page").getByTestId(control).click();
+/** One of Settings' Look tiles set from its menu: its tile, then the item. */
+export async function pickControl(page: Page, control: "theme-select" | "sunlight-select", item: string) {
+  await page.getByTestId("settings-page").getByTestId(control).click();
   await page.getByTestId(item).click();
 }
 
@@ -211,49 +221,21 @@ export async function pickControl(page: Page, control: "nav-bar-select" | "theme
  *  as Apple Maps' Choose Map card is. Escape puts it away. */
 export async function openMapSettings(page: Page) {
   // The map's buttons are under a phone's sheet all the way up: the pill.
-  if ((page.viewportSize()?.width ?? 0) < 768 && (await sideDrawer(page).getAttribute("data-panel")) === "full")
+  if ((page.viewportSize()?.width ?? 0) < 768 && (await frontSheet(page).getAttribute("data-panel")) === "full")
     await grabberTo(page, "peek");
   await page.locator("[data-map-controls]").getByTestId("map-settings-button").click();
   await expect(page.getByTestId("map-settings")).toBeVisible();
 }
 
-/** A map setting changed on the planner before a route is loaded --
- *  remembered per browser -- and the route loaded after, for a route's
- *  map that should show it. */
-export async function beforeTheRoute(page: Page, change: () => Promise<void>) {
-  await page.goto("/app/plan");
-  await openMapSettings(page);
-  await change();
-  await page.keyboard.press("Escape");
-  await expect(page.getByTestId("map-settings")).toHaveCount(0);
-}
-
-/** The console all the way out. On a phone it is a layer of the map's
- *  panel (MapPage), opened half way with the rest of its tab out of a
- *  click's reach: its grabber brings the panel all the way, as a finger's
- *  drag does. Elsewhere it has one height, and this does nothing. */
+/** The console all the way out. On a phone it is a card of its own over
+ *  the map's sheet (ConsoleLayer's CardLayer, the stock Drawer's nested
+ *  drawer, as every card is; the owner, 2026-11-13), opened half way as
+ *  every card is: its grabber brings it all the way, as a finger's drag
+ *  does. From `md` up the side panel has one height, and this does nothing. */
 export async function expandConsole(page: Page) {
-  const sheet = page.getByTestId("console-sheet");
-  if ((await sheet.getAttribute("data-detent")) !== "medium") return;
-  if (await sheet.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))) {
-    await grabberTo(page, "full");
-    await expect(sheet).toHaveAttribute("data-detent", "large");
-    await sideDrawer(page).evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))));
-    return;
-  }
-  // Once it has slid in.
-  await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
-  const box = (await sheet.boundingBox())!;
-  const away = (await sheet.getAttribute("data-edge")) === "top" ? 1 : -1;
-  const x = box.x + box.width / 2,
-    y = box.y + 20;
-  await page.mouse.move(x, y);
-  await page.mouse.down();
-  await page.mouse.move(x, y + away * 100, { steps: 5 });
-  await page.mouse.move(x, y + away * 400, { steps: 10 });
-  await page.mouse.up();
-  await expect(sheet).toHaveAttribute("data-detent", "large");
-  await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+  if (page.viewportSize()!.width >= 768) return;
+  await expect(page.getByTestId("console-sheet")).toBeVisible();
+  await grabberTo(page, "full");
 }
 
 /** The console's title, a menu of roles -- Pilot, Developer for whoever
@@ -265,9 +247,8 @@ export async function roleMenu(page: Page) {
   const sheet = page.getByTestId("console-sheet");
   if (!(await sheet.isVisible())) await openConsole(page);
   await expect(sheet).toBeVisible();
-  // In the Account row (AccountMenu), first on Setup's page (the developer's
-  // console has it on its Account tab).
-  await consolePage(sheet, "Account");
+  // In Pilot Details (AccountGroup), You's first row.
+  await openAccount(page);
   const trigger = sheet.getByTestId("role-menu");
   // The menu comes with who is signed in, or dev mode, once known.
   await trigger.waitFor({ timeout: 3000 }).catch(() => {});
@@ -297,15 +278,17 @@ export const consoleSheet = (page: Page) => page.getByTestId("console-sheet");
 export async function library(scope: Page | Locator, section: "Airplanes" | "Flights" | "Logbook" | "Minimums") {
   await consolePage(scope, "Account");
   const list = scope.getByTestId("library-section");
-  const back = scope.getByRole("button", { name: "Back to Setup", exact: true });
-  await expect(list.or(back)).toBeVisible();
-  if (!(await list.isVisible())) await back.click();
-  await list.getByRole("button", { name: new RegExp(`^${section}`) }).click();
+  await expect(list).toBeVisible();
+  // Setup opens half way, as every card does (e7bb15ec8): a row under its
+  // edge is reached by pulling it up.
+  const row = list.getByRole("button", { name: new RegExp(`^${section}`) });
+  await inSheet("page" in scope ? scope.page() : scope, row); // Setup opens half way
+  await row.click();
 }
 
 /** At rest: only its head in sight. */
 export async function expectDrawerClosed(page: Page) {
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
   // And come to rest there: easing down it is still the half's layout and
   // height, over what a tap next would be aimed at. The panel's own
   // easing, not what is in it: a button's easing in the body, put out of
@@ -315,7 +298,7 @@ export async function expectDrawerClosed(page: Page) {
 
 /** Out: all the way up. */
 export async function expectDrawerOpen(page: Page) {
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
 }
 
 /** Lowering the panel is one shape everywhere: Escape, pressed in it.
@@ -340,7 +323,7 @@ export async function closeSidebarWithTheStockKey(page: Page) {
  *  rejects, with an AbortError, and Promise.all used to take that for
  *  the whole wait failing (the Model Training drawer, its table drawn
  *  at once from the planner's kept read, three times running on CI).
- *  Nor one out of sight in a tab not up (PanelTabs' tab-away,
+ *  Nor one out of sight in a tab not up (PanelTabs' data-hidden page,
  *  content-visibility: hidden) or scrolled out of sight under
  *  content-visibility: auto: the browser stops updating it there, and
  *  its `finished` never comes -- the nav log's rows, arriving as the
@@ -400,10 +383,6 @@ export async function openBriefing(page: Page) {
   await expectDrawerOpen(page);
 }
 
-/** One of the planning panel's tabs: Nav Log (Local, for one airport to
- *  itself), Brief, Weather, Performance or Airports. The Brief asks for its
- *  narrative as it opens -- a real, billed Claude call -- so here it is
- *  answered with a line of its own. */
 /** The planning panel's tabs by the names they had before they were the
  *  flight's phases (the owner's pick of the redesign, "C"): the Brief's
  *  go / no-go is Preflight's, the weather on the way En route's, the
@@ -412,6 +391,8 @@ export async function openBriefing(page: Page) {
 const PHASE_OF = { Brief: "Preflight", Weather: "En route", Performance: "Depart" } as const;
 type PhaseTab = "Preflight" | "Depart" | "En route" | "Arrive";
 
+/** One of the planning panel's tabs: Nav Log (Local, for one airport to
+ *  itself), or one of the Brief's pages. */
 export async function openTab(page: Page, name: keyof typeof PHASE_OF | PhaseTab | "Nav Log" | "Local") {
   if (name === "Nav Log" || name === "Local") {
     await closeBrief(page);
@@ -423,17 +404,6 @@ export async function openTab(page: Page, name: keyof typeof PHASE_OF | PhaseTab
   // line: all the way out, as a finger drags it, to reach them.
   await panelFull(page);
   const phase: PhaseTab = name in PHASE_OF ? PHASE_OF[name as keyof typeof PHASE_OF] : (name as PhaseTab);
-  if (phase === "Preflight") {
-    await page.route(
-      (url) => url.pathname.endsWith("/api/planner/briefing/narrative"),
-      (route) =>
-        route.fulfill({
-          status: 200,
-          contentType: "application/x-ndjson",
-          body: JSON.stringify({ type: "done", briefing: "A test narrative." }) + "\n",
-        }),
-    );
-  }
   // On the Brief's cards (BriefGlance), the page's card; then its tab.
   await briefPage(page, phase);
   // Not the tab up already: tapped again all the way up, it lowers the
@@ -443,9 +413,9 @@ export async function openTab(page: Page, name: keyof typeof PHASE_OF | PhaseTab
   await expect(tab).toHaveAttribute("aria-selected", "true");
 }
 
-/** The nav log, in its own sheet from the route's ••• menu (NavLogView),
- *  FPL all the way up under it: FPL lists the route in order in its place
- *  (ProceduresRoute), at the owner's ask. */
+/** The Nav Log, its own card from the route's ••• menu (PlanPage), FPL all
+ *  the way up under it: FPL lists the route in order (ProceduresRoute), at
+ *  the owner's ask. */
 export async function openNavLog(page: Page) {
   await openTab(page, "Nav Log");
   const sheet = navLogSheet(page);
@@ -464,11 +434,7 @@ export async function openNavLog(page: Page) {
 /** The nav log's card over FPL (the owner's "make Navlog open like brief
  *  does"), and what scrolls in it. */
 export const navLogSheet = (page: Page) => page.getByTestId("navlog-sheet");
-export const navLogScroller = (page: Page) =>
-  page
-    .getByTestId("navlog-scroller")
-    .filter({ has: navLogSheet(page) })
-    .last();
+export const navLogScroller = (page: Page) => page.getByTestId("navlog-card-scroller");
 
 /** The nav log's card put away, FPL under it again: its close, kept for a
  *  keyboard and a screen reader (CardClose), the tab bar's Back's twin. */
@@ -477,11 +443,12 @@ export async function closeNavLog(page: Page) {
     await page.getByTestId("navlog-close").focus();
     await page.keyboard.press("Enter");
   }
-  await expect(navLogSheet(page)).toHaveCount(0);
+  // Kept between its openings, closed (CardLayer's `open`).
+  await expect(navLogSheet(page)).toBeHidden();
 }
 
 /** The planning panel's own tabs. */
-export const panelTabs = (page: Page) => sideDrawer(page).locator('[role="tablist"][data-tip="tabs"]');
+export const panelTabs = (page: Page) => sideDrawer(page).getByTestId("panel-tabs");
 
 const PAGE_OF: Record<PhaseTab, string> = { Preflight: "preflight", Depart: "depart", "En route": "enroute", Arrive: "arrive" };
 
@@ -510,12 +477,13 @@ export async function openSection(page: Page, title: string) {
     return;
   }
   await openBrief(page);
+  await panelFull(page); // its page cards are past the half card's foot, as in openTab
   const here = panel.locator(`[role="tabpanel"]:not([inert]) [data-title="${title}"]`).first();
   if (!(await here.isVisible().catch(() => false))) {
     await briefPage(page, "Preflight");
     // Round the phases again until it is on one: a section drawn once the
-    // plan is in -- the Flight Plan with the nav log's totals, the Mock
-    // Oral with the briefing -- is on none of them for as long as a cold
+    // plan is in -- the Flight Plan with the nav log's totals -- is on
+    // none of them for as long as a cold
     // planner takes, and one round of 3 s a phase gave up first (CI's
     // flight-plan and oral specs, 2026-10-28).
     await expect(async () => {
@@ -579,14 +547,14 @@ export async function tapTheChart(page: Page) {
     .evaluate((map) => {
       const r = map.getBoundingClientRect();
       // Clear of every mark by more than a near miss (a 44-point target),
-      // which a tap there would select: the markers', and those drawn on the
-      // canvas -- the airports, the VORs and fixes, the checkpoints -- each a
-      // mark's 26 across round where its probe says it is (useGlProbe).
+      // which a tap there would select: the markers' (own ship), and those drawn on the canvas -- the airports, the VORs
+      // and fixes, the route's own marks, the weather's -- each a mark's 26
+      // across round where its probe says it is (useGlProbe).
       const marks = [...map.querySelectorAll(".maplibregl-marker")].map((m) => m.getBoundingClientRect());
-      for (const probe of map.querySelectorAll<HTMLElement>("[data-airport-marks], [data-navaid-marks], [data-checkpoint-marks]")) {
+      for (const probe of map.querySelectorAll<HTMLElement>("[data-gl-probe]")) {
         const name = probe.dataset.glProbe!;
-        for (const m of JSON.parse(probe.getAttribute(`data-${name}`) ?? "[]") as { x: number; y: number }[]) {
-          marks.push(new DOMRect(r.left + m.x - 13, r.top + m.y - 13, 26, 26));
+        for (const m of JSON.parse(probe.getAttribute(`data-${name}`) ?? "[]") as { x?: number; y?: number }[]) {
+          if (typeof m.x === "number" && typeof m.y === "number") marks.push(new DOMRect(r.left + m.x - 13, r.top + m.y - 13, 26, 26));
         }
       }
       // And clear of the course, whose legs a tap within 22 opens (RouteGl's
@@ -684,13 +652,19 @@ export async function closeCard(page: Page, closeTestId: string) {
 /** The console's Personal tab, where who is signed in and the mode are
  *  (AccountMenu), at the owner's ask: they were the console's title row. */
 export async function openAccount(page: Page) {
-  await consolePage(page.getByTestId("console-sheet"), "Account");
+  const sheet = page.getByTestId("console-sheet");
+  await consolePage(sheet, "Account");
+  // Pilot Details, where the role's menu is (AccountGroup; the You card,
+  // 2026-11-13), once the sign-in is known: greyed signed out with no dev
+  // mode, You's own head then the way in (its Sign In).
+  await expect(sheet.getByText("Checking your sign-in…")).toHaveCount(0);
+  const row = sheet.getByTestId("pilot-row");
+  if (await row.isEnabled()) await row.click();
 }
 
 /** One of the console's places by name: the developer's console's tab of
- *  that name; the pilot's console is one page now (Setup, at the owner's
- *  pick of the redesign), its account first and Settings, Guide and About
- *  rows that open their pages -- Account is the page itself. */
+ *  that name; the pilot's console is You, Account the page itself, Guide,
+ *  About and Status rows of Settings' Help & About (the owner, 2026-11-13). */
 export async function consolePage(scope: Page | Locator, name: "Account" | "Guide" | "About" | "Status") {
   const tab = scope.getByRole("tab", { name, exact: true });
   const setup = scope.getByTestId("setup-page");
@@ -699,15 +673,19 @@ export async function consolePage(scope: Page | Locator, name: "Account" | "Guid
     await tab.click();
     return;
   }
-  // Back to the page's list from a page open on it, by its close.
-  const back = scope.getByRole("button", { name: "Back to Setup", exact: true });
-  if (await back.isVisible()) await back.click();
-  if (name !== "Account") await setup.getByRole("button", { name: new RegExp(`^${name}`) }).click();
+  // Back to You from the pages open on it, one close at a time.
+  const back = scope.getByRole("button", { name: /^Back to (?!the map)/ }).locator("visible=true");
+  while (await back.count()) await back.first().click();
+  if (name === "Account") return;
+  for (const id of ["settings-row", "help-row", `${name.toLowerCase()}-link`]) {
+    const row = scope.getByTestId(id);
+    await inSheet("page" in scope ? scope.page() : scope, row);
+    await row.click();
+  }
 }
 
-/** A strip set to show one of its lists -- the flights' Saved or Recents
- *  (the one search's own page), the traffic's Favorites, Recents or a
- *  question -- from the filter menu at its heading's right (StripSection). */
+/** A strip set to show one of its lists -- the flights' Saved or Recents, the traffic's Favorites,
+ *  Recents or a question -- from the filter menu at its heading's right (StripSection). */
 export async function stripShows(page: Page, menu: "fpl-strip-shows" | "aircraft-question", item: string) {
   await sideDrawer(page).getByTestId(menu).click();
   await page.getByTestId(item).click();
@@ -716,9 +694,11 @@ export async function stripShows(page: Page, menu: "fpl-strip-shows" | "aircraft
 /** The one search, in sight: the sheet's first row, at every height. */
 export async function airportSearch(page: Page) {
   const search = page.getByTestId("search-airports");
-  if (await search.isVisible()) return search;
-  await showTabs(page);
+  await showPage(page, 0); // the field is the Search page's (PageToggle)
+  if (!(await search.isVisible())) await showTabs(page);
   await expect(search).toBeVisible();
+  // Its results in sight when typed in: typing leaves the sheet where it is.
+  await sheetUpToType(page);
   return search;
 }
 

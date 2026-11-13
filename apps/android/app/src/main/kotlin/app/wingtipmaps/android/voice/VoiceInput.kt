@@ -37,6 +37,10 @@ class VoiceInput private constructor(private val context: Context) {
     private val _words = MutableStateFlow("")
     /** The words so far, for the field to show as they are said. */
     val words: StateFlow<String> = _words.asStateFlow()
+    private val _problem = MutableStateFlow<String?>(null)
+    /** Why the last ask heard nothing, where the recognizer said why
+     *  (RecognizerErrors); null where it was only silence. */
+    val problem: StateFlow<String?> = _problem.asStateFlow()
 
     private var recognizer: SpeechRecognizer? = null
     private var answer: CompletableDeferred<String?>? = null
@@ -54,6 +58,7 @@ class VoiceInput private constructor(private val context: Context) {
         val done = CompletableDeferred<String?>()
         answer = done
         _words.value = ""
+        _problem.value = null
         _listening.value = true
         val r = SpeechRecognizer.createOnDeviceSpeechRecognizer(context).also {
             it.setRecognitionListener(callback)
@@ -93,6 +98,8 @@ class VoiceInput private constructor(private val context: Context) {
         }
 
         override fun onError(error: Int) {
+            // Said where it is more than silence, so the field can say why.
+            _problem.value = RecognizerErrors.of(error).words?.let { it.replaceFirstChar(Char::uppercaseChar) + "." }
             answer?.complete(_words.value.ifBlank { null })
         }
 

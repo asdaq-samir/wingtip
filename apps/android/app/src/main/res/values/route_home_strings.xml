@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The pilot's home airport in Setup (HomeAirportRows) and the route's
+     own menu with Clear Route (route/RouteMenu), the web's and the
+     iPhone's words. -->
+<resources>
+    <!-- Setup's Home Airport: the account's home base, else this phone's. -->
+    <string name="home_airport">Home Airport</string>
+    <string name="home_airport_none">None</string>
+    <string name="home_airport_clear">Clear Home Airport</string>
+    <string name="home_airport_pick">Your home airport</string>
+    <string name="home_airport_unsaved">Your home airport could not be saved to your account</string>
+
+    <!-- The plan's ••• menu, and the Undo after Clear Route. -->
+    <string name="route_menu">Route actions</string>
+    <string name="clear_route">Clear Route</string>
+    <string name="undo_cleared">Cleared %1$s</string>
+</resources>

@@ -7,6 +7,7 @@ import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
 import app.wingtipmaps.gateway.dto.ExperienceItemDto;
+import app.wingtipmaps.gateway.upstream.Upstreams;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 /** The gateway asks the planner for a pilot's currency and a student's
  *  61.109 experience (the engine works them out, tested there): the
@@ -36,13 +38,15 @@ class PlannerClientPilotTest {
     void startPlanner() throws IOException {
         planner = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         planner.createContext("/api/pilot/", exchange -> {
-            asked.add(PlannerClient.DATES.readTree(exchange.getRequestBody()));
+            asked.add(JsonMapper.shared().readTree(exchange.getRequestBody()));
             if (dropped > 0) {
                 dropped--;
                 exchange.close();
                 return;
             }
             byte[] body = answer.getBytes(StandardCharsets.UTF_8);
+            // As FastAPI answers: without it, Spring reads the body as octet-stream.
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(status, body.length);
             exchange.getResponseBody().write(body);
             exchange.close();
@@ -56,8 +60,8 @@ class PlannerClientPilotTest {
     }
 
     private PlannerClient client() {
-        // The rules are the planner's; the assistant is not asked here.
-        return new PlannerClient("http://127.0.0.1:" + planner.getAddress().getPort() + "/", "http://127.0.0.1:1");
+        return Upstreams.plannerClient(
+                "http://127.0.0.1:" + planner.getAddress().getPort());
     }
 
     private static List<LogbookEntry> logbook() {

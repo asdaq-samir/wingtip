@@ -9,7 +9,7 @@ from __future__ import annotations
 import time
 
 import requests
-from wingtip import weather_store
+from wingtip import outside, weather_store
 from wingtip.config import REQUEST_HEADERS as HEADERS
 
 #: The radar mosaic's own record of when it was made (IEM's n0q JSON).
@@ -24,7 +24,7 @@ def fetch() -> None:
     """IEM's record read and its time stored. Raises RadarUnavailable where
     it does not answer, the stored time left in place."""
     try:
-        resp = requests.get(RADAR_META_URL, headers=HEADERS, timeout=10)
+        resp = outside.get(RADAR_META_URL, headers=HEADERS, timeout=10)
         resp.raise_for_status()
         valid = resp.json().get("meta", {}).get("valid")
     except (requests.RequestException, ValueError) as err:

@@ -1,0 +1,122 @@
+{
+  "about": "Model Weather's reading of a field's picture at a point (the engine's flow_cell and flow_sample), held by the engine (engine/facade/tests/flow_sample.rs) and the web (features/weather-flow/flowTexture.test.ts), and to be by the phones' FlowGrid. The picture as the weather service's flow_grid writes it: bounds its pixels' outer edges, north row first; each pixel [red, green, alpha] bytes, a 255th of unscale a step, the wind's east part in red and north in green.",
+  "cells": [
+    {
+      "about": "Between four pixel middles: half way east, a quarter south",
+      "input": { "bounds": [0, 0, 4, 2], "width": 4, "height": 2, "lat": 1.25, "lon": 1 },
+      "answer": { "pixels": [0, 1, 4, 5], "fx": 0.5, "fy": 0.25 }
+    },
+    {
+      "about": "On a pixel's middle",
+      "input": { "bounds": [0, 0, 4, 2], "width": 4, "height": 2, "lat": 1.5, "lon": 0.5 },
+      "answer": { "pixels": [0, 1, 4, 5], "fx": 0.0, "fy": 0.0 }
+    },
+    {
+      "about": "Off the picture",
+      "input": { "bounds": [0, 0, 4, 2], "width": 4, "height": 2, "lat": 2.1, "lon": 1 },
+      "answer": null
+    }
+  ],
+  "samples": [
+    {
+      "about": "A westerly of 50 kt beside an easterly of 50 kt, half way: calm, where an average of the speeds would read 50",
+      "input": { "pixels": [[255, 127.5, 255], [0, 127.5, 255], [255, 127.5, 255], [0, 127.5, 255]], "fx": 0.5, "fy": 0, "unscale": [-50, 50], "vector": true },
+      "answer": { "value": 0.0, "from_deg": null, "calm": true, "no_ceiling": false }
+    },
+    {
+      "about": "A wind from the west at 50 kt",
+      "input": { "pixels": [[255, 127.5, 255], [255, 127.5, 255], [255, 127.5, 255], [255, 127.5, 255]], "fx": 0, "fy": 0, "unscale": [-50, 50], "vector": true },
+      "answer": { "value": 50.0, "from_deg": 270.0, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "Calm: half a knot from the west is under FMH-1 Table 5-1's knot, so calm and no direction (FMH-1 5.5.2, 00000KT)",
+      "input": { "pixels": [[128, 127.5, 255], [128, 127.5, 255], [128, 127.5, 255], [128, 127.5, 255]], "fx": 0, "fy": 0, "unscale": [-127.5, 127.5], "vector": true },
+      "answer": { "value": 0.5, "from_deg": null, "calm": true, "no_ceiling": false }
+    },
+    {
+      "about": "A scalar a quarter of the way from 0 to 100",
+      "input": { "pixels": [[0, 0, 255], [255, 0, 255], [0, 0, 255], [255, 0, 255]], "fx": 0.25, "fy": 0.5, "unscale": [0, 100], "vector": false },
+      "answer": { "value": 25.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "The ceiling's picture at its top (app.flow_grid: 0 to 12,750 ft, 50 ft a step): a ceiling over it or none, either no ceiling (AIM 7-1-7's highest bound is 3,000 ft)",
+      "input": { "pixels": [[255, 0, 255], [255, 0, 255], [255, 0, 255], [255, 0, 255]], "fx": 0, "fy": 0, "unscale": [0, 12750], "vector": false, "ceiling": true },
+      "answer": { "value": 12750.0, "from_deg": null, "calm": false, "no_ceiling": true }
+    },
+    {
+      "about": "Between the ceiling's top and the step under it, the step under it: no ceiling only where every pixel read is at the top",
+      "input": { "pixels": [[254, 0, 255], [255, 0, 255], [254, 0, 255], [255, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 12750], "vector": false, "ceiling": true },
+      "answer": { "value": 12700.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "A ceiling a step under the top is a ceiling, 12,700 ft",
+      "input": { "pixels": [[254, 0, 255], [254, 0, 255], [254, 0, 255], [254, 0, 255]], "fx": 0, "fy": 0, "unscale": [0, 12750], "vector": false, "ceiling": true },
+      "answer": { "value": 12700.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "A ceiling read between 3,000 and 3,050 ft (AIM 7-1-7's MVFR bound) is the lower, 3,000",
+      "input": { "pixels": [[60, 0, 255], [61, 0, 255], [60, 0, 255], [61, 0, 255]], "fx": 0.25, "fy": 0, "unscale": [0, 12750], "vector": false, "ceiling": true },
+      "answer": { "value": 3000.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "No ceiling (the top) beside a 500 ft ceiling (AIM 7-1-7's IFR floor), half way: 500 ft, the lowest, where a straight line reads 6,625 ft, VFR",
+      "input": { "pixels": [[255, 0, 255], [10, 0, 255], [255, 0, 255], [10, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 12750], "vector": false, "field": "ceiling" },
+      "answer": { "value": 500.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "The same asked with `ceiling` true: 500 ft",
+      "input": { "pixels": [[255, 0, 255], [10, 0, 255], [255, 0, 255], [10, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 12750], "vector": false, "ceiling": true },
+      "answer": { "value": 500.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "Visibility 10 SM beside 0.5 SM (under AIM 7-1-7's LIFR 1 mile), half way: 0.5 SM, the lowest, where a straight line reads 5.25 SM, VFR",
+      "input": { "pixels": [[255, 0, 255], [12.75, 0, 255], [255, 0, 255], [12.75, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 10], "vector": false, "field": "vis" },
+      "answer": { "value": 0.5, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "Freezing level 8,000 ft beside 2,000 ft MSL, half way: 2,000 ft, the lowest, as icing begins round it (AIM 7-1-19: +02 to -10 C), where a straight line reads 5,000",
+      "input": { "pixels": [[80, 0, 255], [20, 0, 255], [80, 0, 255], [20, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 25500], "vector": false, "field": "frzlvl" },
+      "answer": { "value": 2000.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "No icing beside category 3 (AIM 7-1-19's moderate), half way: 3, the highest, never the 1.5 a straight line makes, a category neither pixel holds",
+      "input": { "pixels": [[0, 0, 255], [150, 0, 255], [0, 0, 255], [150, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 5.1], "vector": false, "field": "icing" },
+      "answer": { "value": 3.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "Precipitation 0 beside 60 dBZ (AIM 7-1-12's EXTREME, > 50 dBZ), a quarter of the way: 60 dBZ, where a straight line reads 15, LIGHT",
+      "input": { "pixels": [[0, 0, 255], [204, 0, 255], [0, 0, 255], [204, 0, 255]], "fx": 0.25, "fy": 0, "unscale": [0, 75], "vector": false, "field": "precip" },
+      "answer": { "value": 60.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "Cloud tops 8,000 ft beside FL240, half way: 24,000 ft, the top to clear (14 CFR 91.155(a): 1,000 ft above), where a straight line reads 16,000",
+      "input": { "pixels": [[40, 0, 255], [120, 0, 255], [40, 0, 255], [120, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 51000], "vector": false, "field": "tops" },
+      "answer": { "value": 24000.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "Gusts none beside 40 kt, half way: 40 kt, the highest",
+      "input": { "pixels": [[0, 0, 255], [102, 0, 255], [0, 0, 255], [102, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 100], "vector": false, "field": "gust" },
+      "answer": { "value": 40.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "Cloud cover clear beside 80% (AIM 7-1-28's BroKeN, a ceiling), half way: 80%, where a straight line reads 40%, ScaTtered",
+      "input": { "pixels": [[0, 0, 255], [204, 0, 255], [0, 0, 255], [204, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 100], "vector": false, "field": "cloud" },
+      "answer": { "value": 80.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "On the clear pixel's own middle, its own value: the higher pixel is not read",
+      "input": { "pixels": [[0, 0, 255], [150, 0, 255], [0, 0, 255], [150, 0, 255]], "fx": 0, "fy": 0, "unscale": [0, 5.1], "vector": false, "field": "icing" },
+      "answer": { "value": 0.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "The temperature, continuous, still reads between: half way from 0 to 10 C",
+      "input": { "pixels": [[0, 0, 255], [255, 0, 255], [0, 0, 255], [255, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 10], "vector": false, "field": "temp" },
+      "answer": { "value": 5.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "None where a pixel it is read from has none",
+      "input": { "pixels": [[0, 0, 255], [0, 0, 0], [0, 0, 255], [0, 0, 0]], "fx": 0.25, "fy": 0.5, "unscale": [0, 100], "vector": false },
+      "answer": null
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.diagnostics
 
+import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.api.generated.gateway.FaultReport
 import java.io.File
 import java.time.Instant
 
@@ -19,14 +21,14 @@ object CrashCatcher {
         val file = File(folder, FILE_NAME)
         val before = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, error ->
-            runCatching { file.writeText(write(error, Instant.now())) }
+            val _ = runCatching { file.writeText(write(error, AppClock.javaNow())) }
             before?.uncaughtException(thread, error)
         }
     }
 
     /** The crash kept from the last run, and its file to delete once it
      *  is sent; null where the last run did not crash. */
-    fun kept(folder: File): Pair<Fault, File>? {
+    fun kept(folder: File): Pair<FaultReport, File>? {
         val file = File(folder, FILE_NAME)
         if (!file.exists()) return null
         val fault = runCatching { read(file.readText()) }.getOrNull()
@@ -39,13 +41,13 @@ object CrashCatcher {
 
     /** The file's text: when, then the signature, then the stack. */
     fun write(error: Throwable, at: Instant): String =
-        "$at\n${signatureOf(error)}\n${error.stackTraceToString().take(DiagnosticsBodies.MAX_DETAIL)}"
+        "$at\n${signatureOf(error)}\n${error.stackTraceToString()}"
 
-    fun read(text: String): Fault? {
+    fun read(text: String): FaultReport? {
         val lines = text.split('\n', limit = 3)
         if (lines.size < 2) return null
         val at = runCatching { Instant.parse(lines[0].trim()) }.getOrNull() ?: return null
-        return Fault("crash", lines[1], lines.getOrElse(2) { "" }, at.toString())
+        return FaultReport(kind = "crash", signature = lines[1], detail = lines.getOrElse(2) { "" }, at = at.toString())
     }
 
     /** The one line the server groups crashes by: the throwable's class

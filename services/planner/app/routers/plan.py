@@ -2,9 +2,8 @@
 for these in order: the course draws immediately, the checkpoints land
 a tenth of a second later, and the nav log -- which needs terrain,
 obstacles, airspace and weather -- arrives when it can without holding
-up the map. /api/plan returns all of it at once, for the assistant
-(app.assistant) and anything else that wants the whole plan in one
-answer.
+up the map. /api/plan returns all of it at once, for the MCP connector's tools
+(app.mcp) and anything else that wants the whole plan in one answer.
 
 A route may land at stops on the way (`stops`, "KDSM,KLNK"): each flight
 between two landings -- a hop -- is planned as a route of its own, with
@@ -28,7 +27,7 @@ from wingtip.engine import ask as engine
 from wingtip.planning import route_line
 from wingtip.profile import route_profile as side_view
 
-from .. import chart_model, foreflight, prefetch
+from .. import chart_model, cycle_in_address, foreflight, prefetch
 from ..router_basics import CHART_CACHE, line, load_route, ndjson, resolve, resolve_stop, stops_of
 from ..schemas.plan import (
     ChartLayer,
@@ -120,8 +119,8 @@ def route_check(dep: str = "", dest: str = "", stops: str = "") -> RouteChecked:
     """Whether a route would plan, checked as a typed one is (load_route):
     a 404 naming an ident that is not one, a 422 for a stop at the point
     before it or too many stops. With an end missing, each ident given is
-    checked alone. Nothing is read or planned. For the assistant's
-    proposals of a change to the plan; the gateway forwards no app here."""
+    checked alone. Nothing is read or planned. The gateway forwards
+    no app here."""
     if dep and dest:
         load_route(dep, dest, stops)
     else:
@@ -131,7 +130,7 @@ def route_check(dep: str = "", dest: str = "", stops: str = "") -> RouteChecked:
     return RouteChecked(stops=stops_of(stops))
 
 
-@router.get("/api/course", openapi_extra=PUBLIC)
+@router.get("/api/course", dependencies=[Depends(cycle_in_address.in_address)], openapi_extra=PUBLIC)
 def course(dep: str, dest: str, stops: str = "") -> Course:
     """Just the course line and its endpoints, through any stops.
 
@@ -188,7 +187,7 @@ async def _read_ahead(
     chart_model.READ_AHEAD.set(ahead)
 
 
-@router.get("/api/checkpoints", dependencies=[Depends(_read_ahead)], openapi_extra=PUBLIC)
+@router.get("/api/checkpoints", dependencies=[Depends(_read_ahead), Depends(cycle_in_address.in_address)], openapi_extra=PUBLIC)
 def checkpoints(dep: str, dest: str, stops: str = "") -> Checkpoints:
     """Scored candidates and the subset worth flying, hop by hop along
     the whole route: fast once each hop's chart has been read, a few
@@ -259,8 +258,8 @@ def plan(q: Annotated[PlanQuery, Depends()]) -> Plan:
     predictable one) -- and the reasoning comes back with it, since
     "why am I at 6,500" is a question a pilot will actually ask.
 
-    aircraft names a stock profile; cruise_tas_kt, fuel_burn_gph,
-    usable_fuel_gal, climb_tas_kt, climb_fuel_burn_gph and
+    aircraft names a stock profile; cruise_tas_kt, fuel_burn_gph, usable_fuel_gal,
+    climb_tas_kt, climb_fuel_burn_gph, descent_ias_kt (indicated), descent_fuel_burn_gph and
     cruise_power_pct (the power the cruise figures are at), when given,
     are a pilot's own aeroplane's numbers laid over it. Each leg flies
     them in its own air: the cruise figures are the aeroplane's at a

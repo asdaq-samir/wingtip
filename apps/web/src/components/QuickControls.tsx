@@ -1,59 +1,40 @@
-import type { ReactNode } from "react";
-import { ChevronsUpDown, ListOrdered, Rows2, Monitor, Moon, Palette, PanelBottom, PanelTop, Route, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-import { cn } from "cn";
-import PullDown, { type PullDownOption } from "./PullDown";
-import { usePreferences, type Brand, type NavEdge, type RouteEdit } from "../lib/preferences";
-import { BRANDS } from "../lib/brand";
-import { useNavEdge } from "../hooks/use-nav-edge";
-import { TEXT } from "../lib/text";
+import { Sun, SunDim, SunMedium } from "lucide-react";
+import MenuTile from "./MenuTile";
+import { usePreferences, type ChartLight } from "../lib/preferences";
+import { AppearanceTile, ThemeTile } from "./lookPicks";
 
 /**
- * Setup's Controls, the only home of the four things a pilot changes in
- * the cockpit, at the owner's split (2026-10-27): "Controls can be alerts,
- * offline, layout, theme", everything else in the map's menu, and no
- * Settings page; App Look in Offline's place since (the owner, the same
- * day), the charts kept offline in the map's menu. Four big tiles, as iOS's Control Center lays its out, at
- * the owner's pick of the Setup canvas (T3): each a round mark filled in
- * the tint while on, its name, and its setting under it. Alerts, Layout
- * and Theme are a pick of a few, a tap their menu, as Apple Maps' voice
- * is -- not a cycle a pilot cannot foresee; Offline is on or off.
- *
- * Traffic went to the map's menu, a layer of the map's, and Dark became
- * Theme, keeping System, which a Dark switch could not say. Since
- * 2026-11-05 FPL in Alerts' place, how its route is changed once it is
- * whole, and the alerts in the map's menu (MapSettings), at the owner's
- * ask ("Instead of alerts we can have fpl, and alerts can go to overlay
- * settings"); the section named Layout, as the owner renamed it.
+ * The app's look, three big tiles, as iOS's Control Center lays its out:
+ * Settings' Look group (features/settings; the owner's option A,
+ * 2026-11-13), where they were Setup's Layout on the avatar's card. Each
+ * a round mark filled in the tint while on, its name, and its setting
+ * under it; a tap its menu, as Apple Maps' voice is -- not a cycle a pilot
+ * cannot foresee. Sunlight took FPL's place on 2026-11-13, and Appearance
+ * took in the map settings' Chart at Night as a fourth pick, Dark +
+ * Bright; Position, the sheet at the top or the bottom, went the same day
+ * (the sheet is always at a phone's foot).
  */
 export default function QuickControls() {
-  const brand = usePreferences((s) => s.brand);
-  const setBrand = usePreferences((s) => s.setBrand);
-  const setNavBar = usePreferences((s) => s.setNavBar);
-  const routeEdit = usePreferences((s) => s.routeEdit);
-  const setRouteEdit = usePreferences((s) => s.setRouteEdit);
-  const edge = useNavEdge();
-  const { theme, setTheme } = useTheme();
-  const picked = theme === "light" || theme === "dark" ? theme : "system";
+  const chartLight = usePreferences((s) => s.chartLight);
+  const setChartLight = usePreferences((s) => s.setChartLight);
   return (
     <>
-      <div className="grid grid-cols-2 gap-2" data-testid="quick-controls">
-        {/* How FPL's route is changed once it is whole (lib/preferences
-          RouteEdit), at the owner's asks ("I want to have a toggle between
-          A and B in settings"; "Instead of alerts we can have fpl",
-          2026-11-05): its box as it was, folded to one line, or the
-          plan's own rows. */}
-        <MenuTile<RouteEdit>
-          label="FPL"
-          value={routeEdit}
-          onChange={setRouteEdit}
-          on={false}
-          testId="route-edit-select"
-          icon={routeEdit === "plan" ? <ListOrdered /> : routeEdit === "folded" ? <Rows2 /> : <Route />}
+      <div className="grid grid-cols-2 gap-2 [&>:last-child:nth-child(odd)]:col-span-2" data-testid="quick-controls">
+        {/* The chart in bright sunlight (lib/sunlight): from the phone's
+          light sensor where the browser has one, or by hand -- in the
+          cockpit, where a pilot needs it at a tap. Its mark in the tint
+          while On, as Control Center's tiles show theirs. */}
+        <MenuTile<ChartLight>
+          label="Sunlight"
+          value={chartLight}
+          onChange={setChartLight}
+          on={chartLight === "on"}
+          testId="sunlight-select"
+          icon={chartLight === "on" ? <Sun /> : chartLight === "off" ? <SunDim /> : <SunMedium />}
           options={[
-            { value: "box", label: "Route Box", testId: "route-edit-box" },
-            { value: "folded", label: "Route Line", testId: "route-edit-folded" },
-            { value: "plan", label: "Route Cards", testId: "route-edit-plan" },
+            { value: "auto", label: "Auto", testId: "sunlight-auto" },
+            { value: "on", label: "On", testId: "sunlight-on" },
+            { value: "off", label: "Off", testId: "sunlight-off" },
           ]}
         />
         {/* The app's look, Wingtip, Glass Cockpit, Chart ink or Native (lib/brand), its Theme, where
@@ -62,113 +43,16 @@ export default function QuickControls() {
           It was "App Look", put here at the owner's ask ("instead of
           offline, let's have app look"); the charts kept offline went to
           the map's menu. */}
-        <MenuTile<Brand>
-          label="Theme"
-          value={brand}
-          onChange={setBrand}
-          on={false}
-          testId="brand-select"
-          icon={<Palette />}
-          options={BRANDS.map((b) => ({ value: b.value, label: b.label, testId: `brand-${b.value}` }))}
-        />
-        {/* The edge the route panel is on, which the sheets come from too
-          and the map's buttons keep clear of (useNavEdge). Position, where
-          it was Layout, the section's name since (the owner, 2026-11-05). */}
-        <MenuTile<NavEdge>
-          label="Position"
-          value={edge}
-          onChange={setNavBar}
-          on={false}
-          testId="nav-bar-select"
-          icon={edge === "top" ? <PanelTop /> : <PanelBottom />}
-          options={[
-            { value: "top", label: "Top", testId: "nav-bar-top" },
-            { value: "bottom", label: "Bottom", testId: "nav-bar-bottom" },
-          ]}
-        />
+        {/* Shared with the first flight's welcome (lookPicks). */}
+        <ThemeTile />
         {/* Light or dark, Appearance as iOS names it (Display & Brightness),
           next-themes keeping it and following the phone on System: a
           pilot planning at night wants the page as dim as the panel
-          lights. */}
-        <MenuTile<"system" | "light" | "dark">
-          label="Appearance"
-          value={picked}
-          onChange={setTheme}
-          on={false}
-          testId="theme-select"
-          icon={picked === "dark" ? <Moon /> : picked === "light" ? <Sun /> : <Monitor />}
-          options={[
-            { value: "system", label: "System", testId: "theme-system" },
-            { value: "light", label: "Light", testId: "theme-light" },
-            { value: "dark", label: "Dark", testId: "theme-dark" },
-          ]}
-        />
+          lights. Dark dims the chart's tiles too, for night vision; Dark +
+          Bright keeps them as printed, the map settings' Chart at Night
+          folded in (the owner, 2026-11-13; lookPicks' APPEARANCES). */}
+        <AppearanceTile />
       </div>
     </>
-  );
-}
-
-/** A control's tile: a rounded card, its mark at the left, its name over
- *  its setting. Its own height is past 44, so it needs no area of its
- *  own. */
-const TILE = cn(
-  "group flex h-auto min-h-14 w-full min-w-0 items-center justify-start gap-2.5 rounded-2xl bg-card px-2.5 py-2 text-left outline-none",
-  "hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 data-pressed:bg-card",
-);
-
-function Face({ icon, label, value, menu = false }: { icon: ReactNode; label: string; value: string; menu?: boolean }) {
-  return (
-    <>
-      <span
-        aria-hidden="true"
-        className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-foreground group-data-pressed:bg-primary group-data-pressed:text-primary-foreground [&_svg]:size-4"
-      >
-        {icon}
-      </span>
-      <span className="flex min-w-0 flex-col">
-        <span className={cn("truncate font-semibold text-foreground", TEXT.detail)}>{label}</span>
-        <span className={cn("flex items-center gap-0.5 truncate", menu ? "text-tint" : "text-muted-foreground", TEXT.note)}>
-          {value}
-          {menu && <ChevronsUpDown className="size-3 shrink-0" aria-hidden />}
-        </span>
-      </span>
-    </>
-  );
-}
-
-/** A tile that is a pick of a few: a tap its menu (PullDown), the one
- *  picked under its name. */
-function MenuTile<V extends string>({
-  label,
-  value,
-  onChange,
-  options,
-  icon,
-  on,
-  testId,
-}: {
-  label: string;
-  value: V;
-  onChange: (value: V) => void;
-  options: PullDownOption<V>[];
-  icon: ReactNode;
-  /** Its mark filled in the tint, as a toggle's while on. */
-  on: boolean;
-  testId: string;
-}) {
-  const words = String(options.find((o) => o.value === value)?.label ?? "");
-  return (
-    <PullDown
-      label={label}
-      value={value}
-      onChange={onChange}
-      options={options}
-      align="start"
-      trigger={
-        <button type="button" aria-label={`${label}: ${words}`} data-testid={testId} data-pressed={on ? "" : undefined} className={TILE}>
-          <Face icon={icon} label={label} value={words} menu />
-        </button>
-      }
-    />
   );
 }

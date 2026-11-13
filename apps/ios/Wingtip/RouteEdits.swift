@@ -98,6 +98,18 @@ struct RouteExtras: Equatable, Sendable {
     /// The point flown direct to now, and the route before it.
     var direct: String?
     var was: RouteWas?
+    /// The IFR alternate filed (14 CFR 91.169), its ident: sent under IFR,
+    /// where the planner adds the leg on to it and its fuel (91.167(a)(2),
+    /// the engine's navlog_alternate_leg) to the totals, as the web's
+    /// `alternate` does.
+    var alternate: String?
+
+    /// The alternate as the planner takes it: only under IFR, VFR having
+    /// none to file.
+    func filedAlternate(rules: FlightRules) -> String? {
+        guard rules == .ifr, let alternate = self.alternate, !alternate.isEmpty else { return nil }
+        return alternate
+    }
 
     /// "IDENT:FEET" pairs, as the planner reads `altitudes` and `crossings`.
     static func pairs(_ feet: [String: Int]) -> String? {
@@ -108,17 +120,16 @@ struct RouteExtras: Equatable, Sendable {
     /// written again only where one is flown direct, "KELD:I22::BXCMB"
     /// (PlanQuery.procedures: the fix after a fourth colon). Thrown where
     /// the engine cannot write a hold or a procedure.
-    func query(procedures: [ProcedurePick]) throws -> [String: String?] {
-        var query: [String: String?] = [:]
-        if let altitudes = Self.pairs(altitudes) { query["altitudes"] = altitudes }
-        if let crossings = Self.pairs(crossings) { query["crossings"] = crossings }
+    func apply(to query: inout NavLogQuery, procedures: [ProcedurePick], rules: FlightRules = .saved()) throws {
+        if let altitudes = Self.pairs(altitudes) { query.altitudes = altitudes }
+        if let crossings = Self.pairs(crossings) { query.crossings = crossings }
         let started = starts.filter { altitudes[$0] != nil }.sorted()
-        if !started.isEmpty { query["altitude_starts"] = started.joined(separator: ",") }
-        if !holds.isEmpty { query["holds"] = try holds.map { try $0.text() }.joined(separator: ",") }
+        if !started.isEmpty { query.altitudeStarts = started.joined(separator: ",") }
+        if !holds.isEmpty { query.holds = try holds.map { try $0.text() }.joined(separator: ",") }
         if !procedureDirect.isEmpty, !procedures.isEmpty {
-            query["procedures"] = try ProcedurePick.text(procedures, direct: procedureDirect)
+            query.procedures = try ProcedurePick.text(procedures, direct: procedureDirect)
         }
-        return query
+        if let alternate = filedAlternate(rules: rules) { query.alternate = alternate }
     }
 
     /// Where the airplane is, as a route's point (the web app's
@@ -175,12 +186,21 @@ extension Plan {
     func directTo(_ ident: String, from fix: OwnShip.Fix?) {
         let was = extras.was ?? current
         guard let route = RouteExtras.directed(was, to: ident, from: fix.map(RouteExtras.position)) else { return }
+        let before = routeState
         dep = route.dep; stops = route.stops; dest = route.dest
         extras.was = was
         extras.direct = ident
         extras.procedureDirect = [:]
         Feel.tap(.directTo)
+        planDirect(before)
+    }
+
+    /// A Direct to planned, the route before it held until the nav log is
+    /// whole: with no connection it is put back and said so (Plan's
+    /// undoDirect), as the phone can't give the new route's legs alone.
+    private func planDirect(_ before: RouteState) {
         plan()
+        directFrom = before
     }
 
     /// The Direct to taken back: the route as it was.
@@ -197,12 +217,13 @@ extension Plan {
     /// it was kept for Cancel.
     func divert(to ident: String, from fix: OwnShip.Fix) {
         let was = extras.was ?? current
+        let before = routeState
         dep = RouteExtras.position(fix); stops = []; dest = ident
         extras.was = was
         extras.direct = ident
         extras.procedureDirect = [:]
         Feel.tap(.directTo)
-        plan()
+        planDirect(before)
     }
 
     /// A hold set at a point, changed, or (nil) taken off: one a point.
@@ -220,6 +241,13 @@ extension Plan {
         let key = ident.uppercased()
         extras.altitudes[key] = feet
         if feet != nil, mode == .startAt { extras.starts.insert(key) } else { extras.starts.remove(key) }
+        plan()
+    }
+
+    /// The IFR alternate filed, or (nil) taken off: planned again, so the
+    /// nav log's totals carry the fuel on to it. Undo puts it back.
+    func setAlternate(_ ident: String?) {
+        extras.alternate = ident?.uppercased()
         plan()
     }
 
@@ -273,6 +301,7 @@ extension Plan {
             best = stops.count
         }
         let index = min(stops.count, best)
+        let before = routeState
         if then == .direct {
             let was = extras.was ?? current
             if let fix { dep = RouteExtras.position(fix) }
@@ -281,9 +310,10 @@ extension Plan {
             extras.direct = ident
             extras.procedureDirect = [:]
             Feel.tap(.directTo)
+            planDirect(before)
         } else {
             stops.insert(ident, at: index)
+            plan()
         }
-        plan()
     }
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import { flushSync } from "react-dom";
-import type { SetURLSearchParams } from "react-router";
+import { ADDRESS_CLEARED, type AddressChange, type SetAddress } from "../../../lib/address";
 import type { PanelState } from "../../../lib/mapChrome";
 import type { AircraftChoice, AirportPlace } from "../../../lib/api/types";
 import { api } from "../../../lib/api/client";
@@ -8,9 +8,9 @@ import { isPosition, positionIdent } from "../../../lib/identSchema";
 import { feel } from "../../../lib/haptics";
 import { positionNow, useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../lib/preferences";
-import { checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
+import { chartCycle, checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
 import { loadRoutePanel } from "../routePanelParts";
-import { panelNow } from "./panelNow";
+import { panelNow, riseToSee } from "./panelNow";
 import type { PlannedRoute } from "./planAddress";
 import { navlogQuery, type PlanParams } from "./usePlan";
 
@@ -65,7 +65,7 @@ export function useFlyHere({
   showWaypoints,
   flightRules,
   setPanel,
-  setSearchParams,
+  setAddress,
 }: {
   planned: PlannedRoute;
   /** The airport whose card is open. */
@@ -80,7 +80,7 @@ export function useFlyHere({
   showWaypoints: boolean;
   flightRules: "vfr" | "ifr";
   setPanel: (state: PanelState) => void;
-  setSearchParams: SetURLSearchParams;
+  setAddress: SetAddress;
 }) {
   // Fly Here, as an EFB's Direct-To, at the pilot's ask: the card's
   // airport as the destination, from where the pilot is now -- own ship's
@@ -161,7 +161,7 @@ export function useFlyHere({
         ahead({
           // usePlanAhead's key for the same read ahead.
           queryKey: ["checkpoints-ahead", from, place, ""],
-          queryFn: ({ signal }: { signal: AbortSignal }) => api.checkpoints(from, place, [], signal, true),
+          queryFn: ({ signal }: { signal: AbortSignal }) => api.checkpoints(from, place, [], signal, true, chartCycle()),
         });
       }
       ahead(navlogQuery(flyHerePlan(from, place, { depart, aircraft, load, showWaypoints, flightRules }), showWaypoints, true));
@@ -182,7 +182,8 @@ export function useFlyHere({
       feel("directTo");
       flownTo.current = to.ident;
       const from = await fromFor(to.ident, await positionNow());
-      const next: Record<string, string> = { dest: to.ident };
+      // The address this route alone: the rest of the plan left behind.
+      const next: AddressChange = { ...ADDRESS_CLEARED, dest: to.ident };
       if (from) next.dep = from;
       if (depart) next.depart = depart;
       // The route a layer over the card, at the height the card was, as
@@ -220,12 +221,13 @@ export function useFlyHere({
       flushSync(() => {
         setLoad((n) => n + 1);
         setUnder(to.ident);
-        // The route half way, its profile and figures in sight.
-        if (panelNow.current !== "full") setPanel("half");
-        setSearchParams(next, { replace: true, flushSync: true });
+        // The route in sight: half way up from the pill, else where the
+        // pilot left the sheet.
+        riseToSee(setPanel);
+        void setAddress(next);
       });
     },
-    [fromFor, depart, setSearchParams, setPanel, showWaypoints, aircraft, load, flightRules, setLoad, setUnder],
+    [fromFor, depart, setAddress, setPanel, showWaypoints, aircraft, load, flightRules, setLoad, setUnder],
   );
   return { flyHere };
 }

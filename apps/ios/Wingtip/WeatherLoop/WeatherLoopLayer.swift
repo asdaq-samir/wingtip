@@ -21,22 +21,25 @@ final class LoopTileOverlay: MKTileOverlay, @unchecked Sendable {
         maximumZ = radar ? 10 : 9
     }
 
-    /// Half the earth's circumference in web Mercator metres (EPSG:3857).
-    private static let half = Double.pi * 6_378_137
-
     override func url(forTilePath path: MKTileOverlayPath) -> URL {
         guard let template = urlTemplate, template.contains("{bbox-epsg-3857}") else { return super.url(forTilePath: path) }
-        let size = 2 * Self.half / pow(2, Double(path.z))
-        let west = -Self.half + Double(path.x) * size, north = Self.half - Double(path.y) * size
-        let box = "\(west),\(north - size),\(west + size),\(north)"
+        let m = TileMath.metres(z: path.z, x: path.x, y: path.y)
+        let box = "\(m.west),\(m.south),\(m.east),\(m.north)"
         return URL(string: template.replacingOccurrences(of: "{bbox-epsg-3857}", with: box)) ?? super.url(forTilePath: path)
     }
 
     override func loadTile(at path: MKTileOverlayPath, result: @escaping @Sendable (Data?, (any Error)?) -> Void) {
         LoopTiles.shared.began()
+        let address = url(forTilePath: path)
         super.loadTile(at: path) { data, error in
             LoopTiles.shared.ended()
-            result(data, error)
+            // With no signal, the radar's newest frame as Keep for the Air
+            // kept it along the route (KeepRadar), where it was.
+            if data == nil, let kept = KeptForAir.picture(KeepRadar.key(address)) {
+                result(kept, nil)
+            } else {
+                result(data, error)
+            }
         }
     }
 }

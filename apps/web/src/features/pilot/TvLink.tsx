@@ -1,23 +1,18 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQueryState } from "nuqs";
 import SheetDialog from "../../components/SheetDialog";
 import { Button } from "../../components/ui/button";
 import { ApiError, api } from "../../lib/api/client";
 import { pilotQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
 import { TV_CODE_LENGTH, fromTvAddress, tvCode } from "./tvCode";
+import { FieldError } from "../../components/ui/field";
 
 // Loaded when it is drawn: the sign-in sheet out of the first load.
 const SignInModal = lazy(() => import("../../components/SignInModal"));
 // The code's slots (Base UI's OTP Field), with the sheet.
 const TvCodeField = lazy(() => import("./TvCodeField"));
-
-/** Takes the TV's mark off the address, so a reload does not ask again. */
-function forgetTvAddress() {
-  const url = new URL(window.location.href);
-  url.searchParams.delete("tv-link");
-  window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
-}
 
 /**
  * Signing a TV in from the phone (#207, TvCode the TV's half): opened by
@@ -42,10 +37,13 @@ export default function TvLink() {
     setShort(code.length < TV_CODE_LENGTH);
     if (code.length === TV_CODE_LENGTH) approve.mutate(tvCode(code));
   };
-  // Off the address at once, so a reload does not open the box again.
+  // Off the address at once, so a reload does not open the box again, the
+  // rest of the address kept: its one key, the TV's link's own.
+  const [tvLink, setTvLink] = useQueryState("tv-link");
+  const marked = open && tvLink !== null;
   useEffect(() => {
-    if (open) forgetTvAddress();
-  }, [open]);
+    if (marked) void setTvLink(null);
+  }, [marked, setTvLink]);
   if (!open) return null;
   const close = () => setOpen(false);
   return (
@@ -89,14 +87,14 @@ export default function TvLink() {
             />
           </Suspense>
           {short && (
-            <p role="alert" className={`text-destructive-ink ${TEXT.prose}`} data-testid="tv-link-short">
+            <FieldError className={`text-destructive-ink ${TEXT.prose}`} data-testid="tv-link-short">
               Enter all {TV_CODE_LENGTH} characters the TV shows.
-            </p>
+            </FieldError>
           )}
           {approve.isError && (
-            <p role="alert" className={`text-destructive ${TEXT.prose}`} data-testid="tv-link-error">
+            <FieldError className={`text-destructive ${TEXT.prose}`} data-testid="tv-link-error">
               {approve.error instanceof ApiError ? approve.error.message : "Couldn't reach the server. Try again."}
-            </p>
+            </FieldError>
           )}
           <Button type="submit" disabled={approve.isPending} aria-busy={approve.isPending} data-testid="tv-link-approve">
             Sign in the TV

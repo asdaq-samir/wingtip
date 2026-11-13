@@ -205,19 +205,21 @@ class FlightPersistenceTest {
     @Test
     void aPilotCannotRegisterTheSameTailNumberTwice() {
         Pilot pilot = newPilot();
-        aircraft.saveAndFlush(new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null));
+        aircraft.saveAndFlush(new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null));
 
         assertThatThrownBy(() -> aircraft.saveAndFlush(
-                        new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null)))
+                        new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null)))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     /** Two pilots may each have an N12345; the constraint is per pilot. */
     @Test
     void differentPilotsMayHoldTheSameTailNumber() {
-        aircraft.saveAndFlush(new Aircraft(newPilot(), "N12345", "C172", 110.0, 8.5, null, null, null, null));
+        aircraft.saveAndFlush(
+                new Aircraft(newPilot(), "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null));
 
-        assertThat(aircraft.saveAndFlush(new Aircraft(newPilot(), "N12345", "C172", 110.0, 8.5, null, null, null, null))
+        assertThat(aircraft.saveAndFlush(new Aircraft(
+                                newPilot(), "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null))
                         .getId())
                 .isNotNull();
     }
@@ -229,8 +231,8 @@ class FlightPersistenceTest {
     @Test
     void deletingAnAircraftKeepsTheFlightsFlownInIt() {
         Pilot pilot = newPilot();
-        Aircraft plane =
-                aircraft.saveAndFlush(new Aircraft(pilot, "N54321", "C172", 110.0, 8.5, null, null, null, 40.0));
+        Aircraft plane = aircraft.saveAndFlush(
+                new Aircraft(pilot, "N54321", "C172", 110.0, 8.5, null, null, null, null, null, 40.0));
         Flight saved = flights.saveAndFlush(new Flight(pilot, plane, "C81", "KDLH"));
 
         aircraft.deleteById(plane.getId());

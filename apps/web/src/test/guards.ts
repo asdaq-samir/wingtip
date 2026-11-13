@@ -4,6 +4,15 @@
 // different test each run; these catch it in the test that left it.
 import { afterAll, afterEach, vi } from "vitest";
 
+// A menu or popover closes itself when its trigger goes out of sight
+// (ui/anchorHidden, Floating UI's hide middleware). jsdom lays nothing out,
+// every box 0 by 0 in a 0 by 0 page, so a trigger always read hidden and an
+// open menu shut whenever that check landed before a test's tap on a choice
+// (ClearanceCard's Listen through, six runs in eight). Mocked here, not in
+// a test file: the popups' chunk is loaded below, before a test file's own
+// vi.mock could reach it. Out of sight is a browser's to measure.
+vi.mock("../components/ui/anchorHidden", () => ({ anchorHiddenRender: () => undefined }));
+
 // Testing Library unmounts what a test rendered only when vitest's
 // globals are on, which they are not here: without this, a component
 // stayed mounted after its test, and its debounce timer

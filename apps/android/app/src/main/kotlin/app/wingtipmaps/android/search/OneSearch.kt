@@ -45,8 +45,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.account.AccountButton
@@ -73,7 +73,7 @@ import kotlinx.coroutines.launch
  * While a card is
  * open its bar takes this row's place (CardPage). Tapped, the bar opens
  * full screen, as Material's does: with nothing typed the flight's card,
- * Favorites, Recents and Nearest; typing, the results grouped (Airports,
+ * Nearest, Favorites and Recents; typing, the results grouped (Airports,
  * Waypoints and Navaids, Airplanes, Do), each one tap (SearchPick, done by
  * the root). The keyboard's search key does the line as the strip's field
  * did (FieldCommands: a route, a field, a screen's word, else a question).
@@ -101,7 +101,7 @@ fun OneSearch(
     onPick: (SearchPick) -> Unit,
     onProblem: (String) -> Unit,
     modifier: Modifier = Modifier,
-    model: SearchModel = viewModel(),
+    model: SearchModel = hiltViewModel(),
 ) {
     val searchBarState = rememberSearchBarState()
     val textFieldState = rememberTextFieldState()
@@ -157,7 +157,7 @@ fun OneSearch(
     val nothingHeard = stringResource(R.string.nothing_heard)
     val allowMic = stringResource(R.string.allow_microphone)
     val radioBusy = stringResource(R.string.voice_radio_busy)
-    val hearOnce = {
+    val hearOnce: () -> Unit = {
         scope.launch {
             // The radio has the microphone while it is listened to.
             if (RadioListener.of(context).listening.value) {
@@ -166,7 +166,8 @@ fun OneSearch(
             }
             textFieldState.clearText()
             val words = speech.hear()
-            if (!words.isNullOrBlank()) submit(words) else onProblem(nothingHeard)
+            // Nothing heard: why, where the recognizer said (RecognizerErrors).
+            if (!words.isNullOrBlank()) submit(words) else onProblem(speech.problem.value ?: nothingHeard)
         }
     }
     // The microphone asked for from the tap, as Android's guidance has it.
@@ -181,6 +182,7 @@ fun OneSearch(
         stringResource(
             when {
                 listening -> R.string.voice_speak
+                control.picking != null -> control.pickHint
                 control.addingStop -> R.string.search_add_stop
                 flying && voice -> R.string.search_hint_flying
                 else -> R.string.search_hint

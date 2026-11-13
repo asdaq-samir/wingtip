@@ -30,6 +30,7 @@ import { ExperienceGroup, KnowledgeCodes } from "./CheckridePage";
 import { acDay, inForce, reviewRoute, said } from "../../lib/endorsements";
 import { GoodTo, SignedRow, SignForm } from "./Endorsements";
 import StudentLessons from "./LessonAssign";
+import { FieldError } from "../../components/ui/field";
 
 /** Minutes as a nav log writes them: "1:35". */
 
@@ -161,11 +162,7 @@ function CertificateForm({ instructor, onDone }: { instructor: Instructor; onDon
         />
         {onDone && <ListRow title="Cancel" onClick={onDone} />}
       </ListGroup>
-      {save.error && (
-        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
-          {save.error.message}
-        </p>
-      )}
+      {save.error && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{save.error.message}</FieldError>}
     </>
   );
 }
@@ -295,11 +292,7 @@ function ReviewSection({
           />
         </ListGroup>
       )}
-      {decline.error && (
-        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
-          {decline.error.message}
-        </p>
-      )}
+      {decline.error && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{decline.error.message}</FieldError>}
     </div>
   );
 }
@@ -319,9 +312,7 @@ function StudentPage({ row, instructor }: { row: StudentRow; instructor: Instruc
   const [signing, setSigning] = useState<EndorsementKind | null>(null);
   if (error)
     return (
-      <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
-        Their record could not be fetched ({error.message}).
-      </p>
+      <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>Their record could not be fetched ({error.message}).</FieldError>
     );
   if (!training)
     return (
@@ -430,12 +421,7 @@ export default function InstructorPage() {
   const leave = useMutation({ mutationFn: api.instructor.leave, onSuccess: keep });
   const voidOne = useMutation({ mutationFn: api.instructor.voidEndorsement, onSuccess: keep });
   const stop = useMutation({ mutationFn: api.instructor.stop, onSuccess: keep });
-  if (error)
-    return (
-      <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
-        Could not fetch it ({error.message}).
-      </p>
-    );
+  if (error) return <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>Could not fetch it ({error.message}).</FieldError>;
   if (!instructor)
     return (
       <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>
@@ -555,11 +541,7 @@ export default function InstructorPage() {
             />
           </ListGroup>
         )}
-        {problem && (
-          <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
-            {problem}
-          </p>
-        )}
+        {problem && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{problem}</FieldError>}
       </div>
     </ConsolePages>
   );

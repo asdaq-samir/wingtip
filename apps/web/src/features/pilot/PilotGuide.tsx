@@ -144,11 +144,10 @@ export default function PilotGuide() {
   );
 }
 
-/** The first-run tips (lib/firstRunTips), offered again from the start, the
- *  welcome with them (its one key among theirs; Setup's one home for it): the
- *  guide's short version, at its top, at the owner's ask (2026-10-27,
- *  "Tips can move to guide"), where they were a group of the Settings
- *  page. */
+/** The first flight's welcome and its FPL tip (lib/firstRunTips), offered again (Setup's one
+ *  home for it): the guide's short
+ *  version, at its top, at the owner's ask (2026-10-27, "Tips can move to
+ *  guide"). The pointing tips it brought back too are gone (2026-11-11). */
 function TipsGroup() {
   const reset = useTips((s) => s.reset);
   const [asked, setAsked] = useState(false);
@@ -160,7 +159,7 @@ function TipsGroup() {
             <Lightbulb />
           </RowBadge>
         }
-        title={asked ? "Welcome and Tips Will Show Again" : "Show Welcome and Tips Again"}
+        title={asked ? "First Flight Will Show Again" : "Show First Flight Again"}
         disabled={asked}
         onClick={() => {
           reset();

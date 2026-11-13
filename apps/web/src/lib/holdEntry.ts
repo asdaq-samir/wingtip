@@ -10,7 +10,7 @@
  *
  * Worked out by the shared engine (engine/crates/procedures/src/figures/holding.rs,
  * through lib/engine), the very code behind the planner's /api/holding and
- * the phones' wt_call("holding"): the rules and their AIM sources live there. Only
+ * the phones' `call`("holding"): the rules and their AIM sources live there. Only
  * the shapes the pages read are made here.
  */
 import { callEngine } from "./engine/engine";

@@ -17,6 +17,7 @@ struct NavLogPage: View {
             if width == .regular, !plan.legs.isEmpty {
                 VStack(spacing: 0) {
                     totals.padding(.vertical, WingtipSpace.md)
+                    plannedLine.padding(.horizontal, WingtipSpace.lg).padding(.bottom, WingtipSpace.sm)
                     NavLogTable(legs: plan.legs)
                 }
             } else {
@@ -27,6 +28,12 @@ struct NavLogPage: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .pinnedTrailing) { ShareMenu() }
+        }
+        // Why its Share sent nothing, under the bar it was asked from.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if let shareProblem = plan.shareProblem {
+                ProblemLine(shareProblem).padding(.horizontal, WingtipSpace.lg)
+            }
         }
         // A long list: its rows soften under the bar, and
         // the bar folds away while it scrolls down (iOS 27).
@@ -44,23 +51,30 @@ struct NavLogPage: View {
             } else {
                 Section {
                     totals.listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
+                } footer: {
+                    plannedLine
                 }
+                if let leg = plan.totals?.alternate { AlternateLegRow(leg: leg) }
                 Section("Profile") {
                     // Read only, the ground coloured against the altitude flown
                     // as the Profile card colours it (`profile_clearance`).
-                    ProfileChart(profile: plan.profile, legs: plan.legs, previewFt: nil,
-                                 clearance: plan.altitudeFt.flatMap { ft in plan.profile.flatMap { try? ProfileRules.clearance(altitudeFt: ft, profile: $0, legs: plan.legs) } })
+                    let clear = plan.altitudeFt.flatMap { ft in plan.profile.map { p in Result { try ProfileRules.clearance(altitudeFt: ft, profile: p, legs: plan.legs) } } }
+                    ProfileChart(profile: plan.profile, legs: plan.legs, previewFt: nil, clearance: try? clear?.get())
                         .frame(height: 180)
                         .listRowInsets(EdgeInsets())
+                    ProblemLine(plan.sideProblems[.profile])
+                    // The ground left uncoloured is said, never taken for clear.
+                    if let clear { ProblemLine(clear, "The ground's clearance") }
                 }
                 Section {
                     // The nav log kept, shown with no signal, with its age.
                     KeptAgeLine(kind: .plan, key: ReadyToFly.flightKey(plan))
+                    ProblemLine(plan.sideProblems[.checkpoints])
                     ForEach(Array(plan.legs.enumerated()), id: \.element.id) { i, leg in
                         // The one Route Leg card, pushed in the nav log's own card.
                         let index = RouteLegModel.index(of: leg, at: i, plan: plan)
                         NavigationLink(value: SheetPage.leg(index)) { LegRow(leg: leg, number: i + 1) }
-                            .siriSees(SiriSaw.waypoint(leg.to))
+                            .appEntityIdentifier(SiriSaw.waypoint(leg.to))
                     }
                 } header: {
                     // The page is titled Nav Log; its section says at what.
@@ -68,6 +82,36 @@ struct NavLogPage: View {
                 }
             }
         }
+    }
+
+    /// When the plan was made and whose winds aloft it flies, for when
+    /// (Self.plannedWords), under the totals as the web's nav log says it.
+    @ViewBuilder private var plannedLine: some View {
+        if let words = Self.plannedWords(plan.totals) {
+            Text(words)
+                .font(WingtipType.note)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("navlog-planned")
+        }
+    }
+
+    /// When a plan was made and the winds-aloft forecast it flies, as paper
+    /// says them and as the web's nav log does (plannedWords): "Planned
+    /// 1212Z · AWC winds, 12Z · for use 1200–1400Z", the winds named by the
+    /// planner (`winds.label`, wingtip.winds_aloft) and their "for use"
+    /// window its own (FAA Order JO 7110.10 TBL 9-3-1 for the GFS's FB
+    /// stations); "Planned 1212Z · winds for use …" with no name; nil where
+    /// the totals do not say when.
+    static func plannedWords(_ totals: Totals?) -> String? {
+        guard let at = AirportWords.date(totals?.plannedAt) else { return nil }
+        let planned = "Planned \(Format.zulu(at))"
+        guard let winds = totals?.winds, let from = AirportWords.date(winds.useFrom), let to = AirportWords.date(winds.useTo) else {
+            return planned
+        }
+        let forUse = "for use \(Format.zulu(from).prefix(4))–\(Format.zulu(to))"
+        if let label = winds.label, !label.isEmpty { return "\(planned) · \(label) · \(forUse)" }
+        return "\(planned) · \(winds.modelled == true ? "modelled winds" : "winds") \(forUse)"
     }
 
     /// The route's totals as the planner gave them: distance, time, fuel
@@ -83,6 +127,30 @@ struct NavLogPage: View {
             .init(label: "Reserve", value: t?.reserveMin.map(Format.navLogTime) ?? "—", spoken: t?.reserveMin.map(SpokenFigures.minutes)),
         ])
         .padding(.horizontal, WingtipSpace.lg)
+    }
+}
+
+/// Under IFR with an alternate filed, the leg on to it (14 CFR
+/// 91.167(a)(2)), as the planner worked it out with the engine's
+/// navlog_alternate_leg: at the route's last altitude in its winds, or in
+/// still air where they could not be read, which it says. With no
+/// airplane, the miles alone.
+struct AlternateLegRow: View {
+    let leg: APIAlternateLeg
+
+    var body: some View {
+        Section("Alternate") {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                Text("On to \(leg.ident)").font(.headline)
+                Text([Format.distance(leg.distanceNm, decimals: 0), Format.cruiseAltitude(leg.altitudeFt),
+                      leg.eteMin.map(Format.navLogTime), leg.fuelGal.map { Format.fuel($0) }].compactMap { $0 }.joined(separator: " · "))
+                    .font(WingtipType.detail.monospacedDigit()).foregroundStyle(.secondary)
+                if leg.stillAir == true {
+                    Text("In still air: the winds there couldn't be read.").font(.footnote).foregroundStyle(WingtipInk.caution)
+                }
+            }
+            .accessibilityElement(children: .combine)
+        }
     }
 }
 
@@ -136,7 +204,14 @@ struct LegRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: WingtipSpace.xs) {
-                Text(leg.to).font(WingtipType.title)
+                HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.sm) {
+                    Text(leg.to).font(WingtipType.title)
+                    // A leg flown whole in the climb or the descent: its
+                    // figures are that phase's (the engine's `phase`).
+                    if let phase = LegPhase.of(leg) {
+                        Text(phase.word).font(WingtipType.note).foregroundStyle(.secondary)
+                    }
+                }
                 HStack(spacing: WingtipSpace.md) {
                     // No heading without an airplane (the wind's correction
                     // is at its speed): the leg's magnetic course in its
@@ -173,11 +248,12 @@ struct LegRow: View {
     /// heading zero nine zero degrees magnetic, ninety-eight knots, wind
     /// two seven zero degrees true at twelve knots, twenty nautical miles,
     /// twelve minutes, one point four gallons". The winds aloft are given
-    /// from true north (FAA Aviation Weather Handbook, FAA-H-8083-28, the
+    /// from true north (FAA Aviation Weather Handbook, FAA-H-8083-28B 27.2.1.1.1, the
     /// winds and temperatures aloft forecast), the nav log's heading and
     /// course magnetic, so each says which.
     static func spoken(_ leg: Leg, number: Int?) -> String {
         var parts = [number.map { "Leg \($0), \(leg.from) to \(leg.to)" } ?? "\(leg.from) to \(leg.to)"]
+        if let phase = LegPhase.of(leg) { parts.append(phase == .climb ? "in the climb" : "in the descent") }
         if let heading = leg.magneticHeadingDeg {
             parts.append("heading \(Format.spokenHeadingMagnetic(heading))")
         } else {

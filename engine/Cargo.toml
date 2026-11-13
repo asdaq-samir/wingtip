@@ -1,10 +1,11 @@
 # Wingtip's Rust: the engine (facade/, wingtip-engine, over its domain
 # crates in crates/, layered as README.md says), the same answers
 # on the planner and the phones, and its Python face (bindings/py,
-# wingtip_native), which the planner imports, and its C face for the
-# phones (bindings/ffi, wingtip-ffi), and its WebAssembly for the web app
-# (bindings/wasm, wingtip-wasm); and the tool that writes the engine's
-# contract from each rule's own contract file (contract/gen).
+# wingtip_native), which the planner imports, and its UniFFI face for the
+# phones (bindings/ffi, wingtip-ffi, and its generator, bindings/ffi/bindgen),
+# and its WebAssembly for the web app (bindings/wasm, wingtip-wasm); and
+# the tool that writes the engine's contract from each rule's own contract
+# file (contract/gen).
 [workspace]
 members = [
     "facade",
@@ -23,6 +24,7 @@ members = [
     "crates/receiver",
     "bindings/py",
     "bindings/ffi",
+    "bindings/ffi/bindgen",
     "bindings/wasm",
     "contract/gen",
 ]

@@ -11,6 +11,7 @@
  * with them on old wind, and a field that became the departure kept an
  * approach that locked its takeoff runway (the 19 and 20 Oct audits).
  */
+import type { Address } from "../../../lib/address";
 import { altitudesOf, altitudesParam, groundOf } from "../../../lib/identSchema";
 import { holdsOf, holdsParam, type Hold } from "./routeHolds";
 import { proceduresOf, proceduresParam, sameField, type PickedProcedure } from "../../../lib/procedures";
@@ -31,19 +32,20 @@ interface FieldLists {
 }
 
 /** The lists from the address. */
-export function fieldListsOf(params: URLSearchParams): FieldLists {
+export function fieldListsOf(address: Pick<Address, FieldListKey>): FieldLists {
   return {
-    pattern: patternsOf(params.get("pattern")),
-    takeoff: patternsOf(params.get("takeoff")),
-    procs: proceduresOf(params.get("procs")),
-    altitudes: altitudesOf(params.get("altitudes")),
-    cross: altitudesOf(params.get("cross")),
-    ground: groundOf(params.get("ground")),
-    holds: holdsOf(params.get("holds")),
+    pattern: patternsOf(address.pattern),
+    takeoff: patternsOf(address.takeoff),
+    procs: proceduresOf(address.procs),
+    altitudes: altitudesOf(address.altitudes),
+    cross: altitudesOf(address.cross),
+    ground: groundOf(address.ground),
+    holds: holdsOf(address.holds),
   };
 }
 
-/** And back, for `patched()`: null where a list is empty, so its key goes. */
+/** And back, as a change of the address: null where a list is empty, so
+ *  its key goes. */
 export function fieldListParams(lists: FieldLists): Record<FieldListKey, string | null> {
   return {
     pattern: patternsParam(lists.pattern) || null,

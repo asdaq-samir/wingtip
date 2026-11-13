@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
@@ -24,10 +25,17 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.emergency.PhoneFields
+import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+/** As many fields as Nearest lists. */
+private const val NEAREST = 10
 
 /**
  * Nearest, one tap from the bar (#218), a page over the search with ← and
@@ -39,22 +47,35 @@ import kotlinx.coroutines.CancellationException
  * (no airplane, or none in its profile) no field is said to be within a
  * glide. The rows are the one search's Nearest rows too (nearestRows).
  * A tap opens the field's card on the page's own stack, so Back comes
- * back to the list.
+ * back to the list. With the planner out of reach, the fields are the
+ * cycle packs' on the phone (PhoneFields), said to be without weather.
  */
 @Composable
 fun NearestPage(ownShip: OwnShip, plan: Plan, exit: CardExit, onOpen: (String) -> Unit) {
     val fix by ownShip.fix.collectAsStateWithLifecycle()
     var fields by remember { mutableStateOf<List<NearestAirport>?>(null) }
     var problem by remember { mutableStateOf<String?>(null) }
+    var onPhone by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     LaunchedEffect(fix == null) {
         val at = fix ?: return@LaunchedEffect
         try {
-            fields = Planner.nearest(at.lat, at.lon, limit = 10)
+            fields = Planner.nearest(at.lat, at.lon, limit = NEAREST)
             problem = null
+            onPhone = false
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            problem = Problems.say("The nearest fields could not be found", e)
+            // The planner out of reach: the packs' fields on the phone,
+            // said so (PhoneFields); with none kept here, the failure.
+            val near = withContext(Dispatchers.Default) { PhoneFields.near(CyclePacks.of(context), at.lat, at.lon, NEAREST) }
+            if (near.isNullOrEmpty()) {
+                problem = Problems.say("The nearest fields could not be found", e)
+            } else {
+                fields = PhoneFields.nearestRows(near)
+                problem = null
+                onPhone = true
+            }
         }
     }
     CardPage(title = stringResource(R.string.nearest), exit = exit) { padding ->
@@ -63,6 +84,7 @@ fun NearestPage(ownShip: OwnShip, plan: Plan, exit: CardExit, onOpen: (String) -
                 fix == null -> Text("Finding your position…", style = MaterialTheme.typography.bodyMedium)
                 problem != null -> ProblemLine(problem)
                 fields == null -> Text("Fetching the nearest fields…", style = MaterialTheme.typography.bodyMedium)
+                onPhone -> Text(stringResource(R.string.from_this_phone), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             // The airplane's glide ratio asked for where it is missing.
             AskFigures(rememberAirplaneNow(plan), "glide")

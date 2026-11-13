@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_core::geo::call",
-  "description": "Where a great circle from each point on its true course reaches its distance out, on the same sphere as distance_nm, the longitude within -180 to 180: the phones' traffic carried on along its track between reports, a list so a map's airplanes cross once.",
+  "description": "Where the geodesic from each point on its true course reaches its distance out, on the WGS-84 ellipsoid as distance_nm, the longitude within -180 to 180: the phones' traffic carried on along its track between reports, a list so a map's airplanes cross once.",
   "type": "object",
   "properties": {
     "input": {

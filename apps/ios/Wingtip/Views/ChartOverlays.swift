@@ -88,59 +88,6 @@ struct VorPin: Decodable, Equatable, Sendable {
     let lon: Double
 }
 
-// MARK: - When to ask again
-
-/// The view's box as south, west, north, east.
-struct ViewBox: Equatable, Sendable {
-    var south, west, north, east: Double
-
-    init(south: Double, west: Double, north: Double, east: Double) {
-        (self.south, self.west, self.north, self.east) = (south, west, north, east)
-    }
-
-    init(_ region: MKCoordinateRegion) {
-        self.init(south: region.center.latitude - region.span.latitudeDelta / 2,
-                  west: region.center.longitude - region.span.longitudeDelta / 2,
-                  north: region.center.latitude + region.span.latitudeDelta / 2,
-                  east: region.center.longitude + region.span.longitudeDelta / 2)
-    }
-
-    /// The box grown by half of itself on every side: what is asked for,
-    /// so a pan within it asks nothing.
-    var widened: ViewBox {
-        let dLat = (north - south) / 2, dLon = (east - west) / 2
-        return ViewBox(south: max(-90, south - dLat), west: max(-180, west - dLon), north: min(90, north + dLat), east: min(180, east + dLon))
-    }
-
-    func holds(_ other: ViewBox) -> Bool {
-        other.south >= south && other.north <= north && other.west >= west && other.east <= east
-    }
-}
-
-/// What was last asked for the view, as the web map's useGlView asks during
-/// a gesture: again when the whole level changes or the view leaves the
-/// box asked for, at most once a frame, and not otherwise.
-struct ViewFetch: Equatable, Sendable {
-    private(set) var box: ViewBox?
-    private(set) var level: Int?
-
-    /// Whether a view at this zoom wants a new answer.
-    func wants(_ view: ViewBox, zoom: Double) -> Bool {
-        guard let box, let level else { return true }
-        return Int(zoom.rounded(.down)) != level || !box.holds(view)
-    }
-
-    /// The box to ask for, kept as asked.
-    mutating func ask(_ view: ViewBox, zoom: Double) -> ViewBox {
-        let wide = view.widened
-        box = wide
-        level = Int(zoom.rounded(.down))
-        return wide
-    }
-
-    mutating func forget() { box = nil; level = nil }
-}
-
 // MARK: - Airspace
 
 /// From which Leaflet zoom each class is drawn, the web map's
@@ -452,15 +399,16 @@ final class VorMarkView: MKAnnotationView {
 /// planner's field answers them), drawn by MapKit's own polygon renderer
 /// (a renderer of the app's own drawing was never asked to draw).
 final class RunwaySurface: MKPolygon {
-    /// Turf, grass, dirt or gravel, drawn in the soft runway's olive.
-    private(set) var soft = false
+    /// Turf, grass, dirt or gravel, drawn in the soft runway's olive; nil
+    /// where the engine could not class the surface.
+    private(set) var soft: Bool? = false
 
     /// The rectangle's corners, each end moved half the width either side
-    /// of the centreline in map points (a foot is 0.3048 m exactly).
-    static func between(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D, widthFt: Double, soft: Bool = false) -> RunwaySurface {
+    /// of the centreline in map points (Foundation's foot, exactly 0.3048 m).
+    static func between(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D, widthFt: Double, soft: Bool? = false) -> RunwaySurface {
         let pa = MKMapPoint(a), pb = MKMapPoint(b)
         let length = max(1e-9, hypot(pb.x - pa.x, pb.y - pa.y))
-        let half = widthFt * 0.3048 / 2 * MKMapPointsPerMeterAtLatitude((a.latitude + b.latitude) / 2)
+        let half = Measurement(value: widthFt, unit: UnitLength.feet).converted(to: .meters).value / 2 * MKMapPointsPerMeterAtLatitude((a.latitude + b.latitude) / 2)
         let nx = -(pb.y - pa.y) / length * half, ny = (pb.x - pa.x) / length * half
         let corners = [MKMapPoint(x: pa.x + nx, y: pa.y + ny), MKMapPoint(x: pb.x + nx, y: pb.y + ny),
                        MKMapPoint(x: pb.x - nx, y: pb.y - ny), MKMapPoint(x: pa.x - nx, y: pa.y - ny)]
@@ -474,7 +422,7 @@ final class RunwaySurface: MKPolygon {
 final class RunwayCentreline: MKPolyline {}
 
 /// From which Leaflet zoom the runways are drawn: 13, where the chart's
-/// own last level is passed and Apple's map shows (ChartFade), the web
+/// own last level is passed and the imagery shows (ChartFade), the web
 /// map's MapLibre 12 (glOverlays' RUNWAYS_FROM); the ends' numbers half a
 /// level later.
 enum RunwayZoom {
@@ -542,34 +490,6 @@ final class RunwayEndView: MKAnnotationView {
     }
 }
 
-/// A field's runways as the map draws them, from its card's answer.
-struct RunwayShape: Equatable, Sendable {
-    struct End: Equatable, Sendable { let ident: String; let lat: Double; let lon: Double; let headingTrueDeg: Double? }
-    let a: End
-    let b: End
-    let widthFt: Double?
-    /// Turf, grass, dirt or gravel by its surface (the planner's field,
-    /// OurAirports' or NASR's code), as the engine reads it for the
-    /// short-field figures (gonogo_soft_surface).
-    var soft = false
-
-    /// The runways with both ends placed; a helipad (no heading) or a
-    /// runway with an end the data does not place is not drawn.
-    static func of(_ runways: [Runway]) -> [RunwayShape] {
-        runways.compactMap { runway in
-            let ends = (runway.runwayEnds ?? []).compactMap { end -> End? in
-                guard let lat = end.lat, let lon = end.lon, end.headingTrueDeg != nil else { return nil }
-                return End(ident: end.ident, lat: lat, lon: lon, headingTrueDeg: end.headingTrueDeg)
-            }
-            guard ends.count == 2 else { return nil }
-            // Drawing only: a surface the engine cannot class is drawn
-            // paved (logged by Engine.rule); the card says the surface.
-            let soft = (try? Engine.gonogoSoftSurface(surface: runway.surface)) ?? false
-            return RunwayShape(a: ends[0], b: ends[1], widthFt: runway.widthFt.map(Double.init), soft: soft)
-        }
-    }
-}
-
 // MARK: - The overlays on the map
 
 /// The airspace, the VORs, the runways and the marks on the map, kept with the view, on the main actor as the map is.
@@ -628,7 +548,10 @@ struct RunwayShape: Equatable, Sendable {
             // ForeFlight's dark grey with a white edge, olive for a soft
             // one (glOverlays' runwayLayers).
             let renderer = MKPolygonRenderer(polygon: surface)
-            renderer.fillColor = (surface.soft ? SectionalInk.softRunway : SectionalInk.runway).withAlphaComponent(0.95)
+            // A surface the engine could not class is drawn in the chart's
+            // unknown grey, neither paved nor soft (RunwayShape).
+            let fill = surface.soft.map { $0 ? SectionalInk.softRunway : SectionalInk.runway } ?? WingtipColor.Chart.fieldUnknown
+            renderer.fillColor = fill.withAlphaComponent(0.95)
             renderer.strokeColor = .white
             renderer.lineWidth = 1
             return renderer
@@ -680,19 +603,23 @@ struct RunwayShape: Equatable, Sendable {
     // Airspace
 
     private func askAirspace(_ map: MKMapView, view: ViewBox, zoom: Double, chart: (any MKOverlay)?, live: Bool) {
-        let wide = view.widened
-        if let data = CyclePacks.shared.airspaceInView(south: wide.south, west: wide.west, north: wide.north, east: wide.east) {
-            struct Answer: Decodable { let volumes: [AirspaceVolume] }
-            _ = airspaceFetch.ask(view, zoom: zoom)
-            if let answer = try? Planner.snakeCase.decode(Answer.self, from: data) {
-                take(answer.volumes, map: map, zoom: zoom, chart: chart)
+        let asked = airspaceFetch.ask(view, zoom: zoom)
+        Task { [weak self, weak map] in
+            // Off the main actor (CyclePacks.airspaceVolumesInView), taken
+            // back only while the view still wants this box.
+            let found = await CyclePacks.shared.airspaceVolumesInView(asked)
+            guard let self, let map, airspaceFetch.box == asked else { return }
+            guard let found else {
+                // No pack for the box: asked again at the next move. The
+                // airspace comes from the packs alone (the planner's
+                // /api/airspace/in-view is gone, the web drawing it from
+                // the overlay tiles), so the reveal waits for nothing here.
+                airspaceFetch.forget()
+                return firstAnswer()
             }
-            return
+            let now = MapExtras.zoom(longitudeDelta: map.region.span.longitudeDelta, width: Double(map.bounds.width))
+            if let found { take(found, map: map, zoom: now, chart: chart) }
         }
-        // No pack for the box: the airspace comes from the packs alone
-        // (the planner's /api/airspace/in-view is gone, the web drawing it
-        // from the overlay tiles), so the reveal waits for nothing here.
-        firstAnswer()
     }
 
     private func take(_ fresh: [AirspaceVolume], map: MKMapView, zoom: Double, chart: (any MKOverlay)?) {
@@ -786,15 +713,16 @@ struct RunwayShape: Equatable, Sendable {
     // VORs
 
     private func askVors(_ map: MKMapView, view: ViewBox, zoom: Double, live: Bool) {
-        let wide = view.widened
-        if let data = CyclePacks.shared.navaidsInView(south: wide.south, west: wide.west, north: wide.north, east: wide.east) {
-            struct Answer: Decodable { let vors: [VorPin] }
-            _ = vorFetch.ask(view, zoom: zoom)
-            if let answer = try? Planner.snakeCase.decode(Answer.self, from: data) { takeVors(answer.vors, map: map) }
-            return
+        let asked = vorFetch.ask(view, zoom: zoom)
+        Task { [weak self, weak map] in
+            let found = await CyclePacks.shared.vorsInView(asked)
+            guard let self, let map, vorFetch.box == asked else { return }
+            // No pack for the box: no VORs, as the planner's
+            // /api/navaids/in-view is gone (the packs alone answer it);
+            // asked again at the next move.
+            guard let found else { return vorFetch.forget() }
+            if let found { takeVors(found, map: map) }
         }
-        // No pack for the box: no VORs, as the planner's
-        // /api/navaids/in-view is gone (the packs alone answer it).
     }
 
     private func takeVors(_ found: [VorPin], map: MKMapView) {
@@ -857,9 +785,9 @@ struct RunwayShape: Equatable, Sendable {
                             CLLocationCoordinate2D(latitude: shape.b.lat, longitude: shape.b.lon)]
                 return [RunwaySurface.between(ends[0], ends[1], widthFt: width, soft: shape.soft), RunwayCentreline(coordinates: ends, count: 2)]
             }
-            // Over Apple's roads and under its labels, where the chart has
-            // given way (ChartFade).
-            map.addOverlays(lines, level: .aboveRoads)
+            // Just over the chart, so over the imagery it fades into (CloseImagery) and under the rest.
+            let onChart = chart.map { c in map.overlays.contains { $0 === c } } == true
+            if let chart, onChart { lines.forEach { map.insertOverlay($0, above: chart) } } else { map.addOverlays(lines, level: .aboveRoads) }
             runwayLines[ident] = lines
         }
         if ends, (runwayEnds[ident] ?? []).isEmpty {

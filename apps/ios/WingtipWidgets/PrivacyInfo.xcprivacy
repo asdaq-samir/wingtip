@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- The widget extension's own privacy manifest: every bundle that calls a
+     required-reason API needs one (the store audit's B2). The extension
+     collects nothing itself; what it shows comes from the app or from
+     the gateway as the pilot (the app's manifest declares those). -->
+<plist version="1.0">
+<dict>
+    <key>NSPrivacyTracking</key>
+    <false/>
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <!-- UserDefaults: the App Group's suite the app writes and these
+             widgets read, the next flight's snapshot and the saved flights
+             and fields (Wingtip/Shared: WidgetSnapshot, WidgetStore);
+             1C8F.1, Apple's reason for an App Group's defaults. -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>1C8F.1</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>

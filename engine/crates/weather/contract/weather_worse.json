@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_weather::worse::call",
-  "description": "What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there. A caution, never a limit; each change keyed so an app tells it once.",
+  "description": "What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there; and either with a ceiling of unknown height now (OVC///) where it had a known one, a ceiling not known to be high enough (14 CFR 1.1). A caution, never a limit; each change keyed so an app tells it once.",
   "type": "object",
   "properties": {
     "input": {

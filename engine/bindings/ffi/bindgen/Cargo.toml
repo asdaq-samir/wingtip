@@ -1,0 +1,18 @@
+[package]
+name = "wingtip-ffi-bindgen"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "uniffi-bindgen at the version wingtip-ffi is built with: writes the phones' Swift and Kotlin from the built library (build-xcframework.sh, build-android.sh)"
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/main.rs"
+
+# A crate of its own so the generator's own crates (its CLI, templates and
+# object-file reader) are built for the Mac alone, never into a phone's library.
+[dependencies]
+uniffi = { version = "0.32.2", features = ["cli"] }
+
+[lints]
+workspace = true

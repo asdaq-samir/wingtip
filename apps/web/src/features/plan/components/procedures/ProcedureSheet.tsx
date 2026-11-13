@@ -5,17 +5,18 @@ import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { Button } from "../../../../components/ui/button";
 import { ToggleGroupItem } from "../../../../components/ui/toggle-group";
-import { api } from "../../../../lib/api/client";
 import type { ProcedureDrawing, ProcedureList, ProcedureSummary } from "../../../../lib/api/types";
-import { distanceNm } from "../../../../lib/geo";
+import { useGeo } from "../../../../lib/geo";
 import { runwayNumber, type WindPick } from "../../lib/pattern";
 import { transitionWords, type PickedProcedure } from "../../../../lib/procedures";
 import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../../../lib/format";
-import { PROCEDURE_STALE_MS, type ProcedureKind } from "../../hooks/useProceduresRoute";
+import type { ProcedureKind } from "../../hooks/useProceduresRoute";
+import { procedureQuery } from "../../../../lib/queryClient";
 import { Chips, NONE } from "./PatternChips";
 import { CHIP } from "../routeListStyle";
 import { KIND_TITLE } from "./procedureWords";
+import { FieldError } from "../../../../components/ui/field";
 
 // The procedures sheet's pages (ProceduresRoute): a kind's list, and one
 // procedure's own page.
@@ -47,11 +48,7 @@ export function ProcedurePicker({
   onOpen: (procedure: ProcedureSummary) => void;
 }) {
   if (failed)
-    return (
-      <p role="alert" className="px-1 text-muted-foreground">
-        The FAA's procedures could not be had
-      </p>
-    );
+    return <FieldError className={cn("px-1 text-muted-foreground", TEXT.prose)}>The FAA's procedures could not be had</FieldError>;
   if (!list)
     return (
       <p role="status" className="px-1 text-muted-foreground">
@@ -142,11 +139,7 @@ export function ProcedurePage({
   }, [ident, procedure.id, transition, onPreview]);
   // The same drawing the map is given (PlanWorkspace's preview), its
   // fixes listed here: one request for both.
-  const { data: drawing } = useQuery({
-    queryKey: ["procedure", ident, procedure.id, transition],
-    queryFn: () => api.procedure(ident, procedure.id, transition),
-    staleTime: PROCEDURE_STALE_MS,
-  });
+  const { data: drawing } = useQuery(procedureQuery({ ident, id: procedure.id, transition }));
   const inRoute = !!chosen && chosen.transition === transition;
   return (
     <div className="space-y-5">
@@ -154,11 +147,11 @@ export function ProcedurePage({
         <div className="space-y-2">
           <h4 className={cn("px-1 font-semibold", TEXT.detail)}>Transition</h4>
           <Chips label="Transition" value={transition ?? NONE} onChange={(v) => setTransition(v === NONE ? null : v)}>
-            <ToggleGroupItem value={NONE} className={CHIP} data-testid="procedure-transition">
+            <ToggleGroupItem variant="glass" value={NONE} className={CHIP} data-testid="procedure-transition">
               {transitionWords(kind, null)}
             </ToggleGroupItem>
             {procedure.transitions.map((t) => (
-              <ToggleGroupItem key={t} value={t} className={CHIP} data-testid="procedure-transition">
+              <ToggleGroupItem variant="glass" key={t} value={t} className={CHIP} data-testid="procedure-transition">
                 {transitionWords(kind, t)}
               </ToggleGroupItem>
             ))}
@@ -212,6 +205,7 @@ const FIX_ROLES = ["IAF", "IF", "FAF", "MAP"];
  * at both where they are one.
  */
 function FixLadder({ drawing }: { drawing: ProcedureDrawing }) {
+  const geo = useGeo();
   const flown = drawing.fixes.filter((f) => !f.missed && !(f.roles.length === 1 && f.roles[0] === "hold"));
   if (flown.length === 0) return null;
   const hold = drawing.holds.find((h) => h.missed);
@@ -224,7 +218,7 @@ function FixLadder({ drawing }: { drawing: ProcedureDrawing }) {
             {from && (
               <li aria-hidden="true" className="grid grid-cols-[2.75rem_1fr] items-center gap-x-2.5">
                 <span className="mx-auto h-5 w-0.5 rounded-full bg-tint" />
-                <span className={cn("text-muted-foreground", TEXT.note)}>{`${distanceNm(from, f).toFixed(1)} nm`}</span>
+                <span className={cn("text-muted-foreground", TEXT.note)}>{geo ? `${geo.distanceNm(from, f).toFixed(1)} nm` : ""}</span>
               </li>
             )}
             <li className="grid min-h-10 grid-cols-[2.75rem_1fr_auto] items-center gap-x-2.5">

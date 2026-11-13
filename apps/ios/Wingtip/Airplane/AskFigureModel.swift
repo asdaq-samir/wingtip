@@ -47,9 +47,10 @@ final class AskFigureModel {
     static func airplane(_ plan: Plan) -> String { plan.airplaneName ?? "this airplane" }
 
     /// What to ask on the plan's airplane for these screens' figures, the
-    /// first of them that lacks one.
-    func ask(_ needs: [AirplaneNeed], plan: Plan, airplanes: Airplanes = .shared) -> Ask? {
-        let missing = needs.flatMap { airplanes.missing($0, plan: plan) }
+    /// first of them that lacks one; thrown where the engine cannot say
+    /// what the airplane lacks.
+    func ask(_ needs: [AirplaneNeed], plan: Plan, airplanes: Airplanes = .shared) throws -> Ask? {
+        let missing = try needs.flatMap { try airplanes.missing($0, plan: plan) }
         var seen = Set<String>()
         return Self.ask(missing: missing.filter { seen.insert($0).inserted }, putOff: Self.notNow, airplane: Self.airplane(plan))
     }

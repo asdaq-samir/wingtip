@@ -8,8 +8,8 @@ export interface AlongPoint {
 }
 
 /** The side view's ground against `altitude_ft`, the engine's
- *  (profile_clearance): red within 100 ft of it or above, yellow within
- *  1,000 ft -- ForeFlight's display defaults, not a rule -- where the route
+ *  (profile_clearance): red under 500 ft of it or above, 14 CFR
+ *  91.119(c)'s least height, yellow within 1,000 ft, 91.119(b)'s -- where the route
  *  first meets it, and the words a screen reader says. Null with no ground
  *  sampled. The planner's side view samples the ground along the route's
  *  line and the DOF's obstacles within a mile of it (wingtip.profile). */

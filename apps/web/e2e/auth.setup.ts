@@ -1,5 +1,5 @@
 import { test as setup, expect } from "@playwright/test";
-import { DEVELOPER, DEVELOPER_STATE, signInByEmail } from "./emailSignIn";
+import { DEVELOPER, DEVELOPER_STATE, blankHomeBase, signInByEmail } from "./emailSignIn";
 import { noTips, roleMenu, consolePage } from "./helpers";
 
 /**
@@ -9,7 +9,7 @@ import { noTips, roleMenu, consolePage } from "./helpers";
  * mode, Developer the role in the console's title.
  */
 setup("the developer signs in from the pilot console, and lands in dev mode", async ({ page }) => {
-  // The first-run tips seen before the page loads, as every spec starts
+  // The first flight seen before the page loads, as every spec starts
   // with them seen (the session saved below).
   await page.addInitScript(noTips);
   await page.goto("/app/plan");
@@ -23,8 +23,9 @@ setup("the developer signs in from the pilot console, and lands in dev mode", as
   await page.keyboard.press("Escape");
   await consolePage(page.getByTestId("console-sheet"), "Guide");
   await page.keyboard.press("Escape");
-  // The first-run tips (lib/firstRunTips) seen, every one: a tip over a control
-  // takes the click a spec meant for it. tips.spec offers them afresh.
+  // The first flight's welcome and FPL tip (lib/firstRunTips) seen: over
+  // the map they take the click a spec meant for it. first-flight.spec
+  // offers them afresh.
   await page.evaluate(noTips);
   // FPL's fields opened at first (ProceduresRoute's fieldsOpenAtFirst): the
   // specs work on their runways and procedures; route-fields.spec folds
@@ -33,5 +34,11 @@ setup("the developer signs in from the pilot console, and lands in dev mode", as
   // No airplane picked, as a pilot starts (the owner, 2026-11-09: nothing
   // assumes one): a spec that reads an airplane's times, fuel or figures
   // picks it itself (helpers' pickAirplane).
+  // No home airport either, as a new account has none. The developer's
+  // account lives on in the stack's Postgres from run to run, and a spec
+  // of old set Home on it (KMSN), which the page then brought to every
+  // spec's device (lib/homeAirport). A spec that wants Home keeps its own
+  // to its page (oneSearch's ownHomeBase).
+  await blankHomeBase(page);
   await page.context().storageState({ path: DEVELOPER_STATE });
 });

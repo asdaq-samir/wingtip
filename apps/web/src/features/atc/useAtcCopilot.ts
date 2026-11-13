@@ -4,6 +4,7 @@ import { useFlying } from "../../lib/mapChrome";
 import { useLatestAtcCall } from "../../lib/atc/latestCall";
 import { useAtcListen } from "../../lib/atc/listenSetting";
 import { listenOnce, startRadio, stopRadio } from "../../lib/atcListening";
+import { useCommsAssist } from "../../lib/atc/commsAssist";
 import { useAtcRadio, useRadioActions } from "../../lib/atcRadio";
 import { useCanListen } from "../../lib/speechLocal";
 import { callPattern } from "../../lib/heardCall";
@@ -53,7 +54,7 @@ function onRadio(s: ReturnType<typeof useAtcRadio.getState>) {
 /** What the card offers, each a tap: never done by itself (the owner's
  *  rule, warn never limit; 14 CFR 91.3 leaves the pilot to decide). */
 interface AtcCopilot {
-  /** The ATC copilot is on (the Map menu's Alerts, ATC). */
+  /** The ATC copilot is on (Settings' ATC page, ATC Alerts). */
   on: boolean;
   card: AtcCard | null;
   /** Listening was meant to start and has not: a tap starts it, as
@@ -85,7 +86,9 @@ export function useAtcCopilot(): AtcCopilot {
   // The copilot listens or is not there: where the browser has no
   // recognizer it is off, whatever the setting says.
   const voice = useCanListen();
-  const on = useAtcListen((s) => s.value === "flying") && voice;
+  // Comms Assist is a switch of Settings' ATC page, off until turned on (the owner, 2026-11-13).
+  const commsAssist = useCommsAssist((s) => s.value);
+  const on = useAtcListen((s) => s.value === "flying") && voice && commsAssist;
   const flying = useFlying((s) => s.flying);
   const tail = useAtcRadio((s) => s.tail);
   const listening = useAtcRadio((s) => s.listening);

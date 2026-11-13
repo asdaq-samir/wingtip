@@ -1,0 +1,52 @@
+{
+  "x-call": "wingtip_flight::calls::night",
+  "description": "Whether a flight is at night leaving `start` at `depart_s` or arriving at `end` at `arrive_s` (14 CFR 1.1; 91.151(a)'s reserve).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NightAtEitherEndInput",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon]"
+        },
+        "depart_s": {
+          "type": "number"
+        },
+        "end": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon]"
+        },
+        "arrive_s": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "start",
+        "depart_s",
+        "end",
+        "arrive_s"
+      ]
+    },
+    "answer": {
+      "title": "NightAtEitherEndAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

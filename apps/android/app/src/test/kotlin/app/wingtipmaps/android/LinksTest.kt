@@ -26,7 +26,21 @@ class LinksTest {
 
     @Test
     fun theSignInLinkGivesItsToken() {
-        assertEquals(Links.SignIn("abc123"), Links.parse("https://wingtipmaps.app/api/auth/magic-link/verify?token=abc123"))
+        assertEquals(Links.SignIn("abc123"), Links.parse("https://wingtipmaps.app/api/auth/magic-link/verify?token=abc123", host = "wingtipmaps.app"))
+    }
+
+    /** M1: a sign-in link only as https on the app's own host, so another
+     *  app's link cannot sign the pilot in to someone else's account. */
+    @Test
+    fun aSignInLinkElsewhereIsNoLink() {
+        val host = "wingtipmaps.app"
+        assertNull(Links.parse("https://evil.example/api/auth/magic-link/verify?token=abc123", host))
+        assertNull(Links.parse("http://wingtipmaps.app/api/auth/magic-link/verify?token=abc123", host))
+        assertNull(Links.parse("wingtipmaps://plan/api/auth/magic-link/verify?token=abc123", host))
+        assertNull(Links.parse("https://wingtipmaps.app@evil.example/api/auth/magic-link/verify?token=abc123", host))
+        assertNull(Links.parse("https://wingtipmaps.app.evil.example/api/auth/magic-link/verify?token=abc123", host))
+        assertNull(Links.parse("https://wingtipmaps.app/x/api/auth/magic-link/verify?token=abc123", host))
+        assertEquals(Links.SignIn("abc123"), Links.parse("https://WingtipMaps.app/api/auth/magic-link/verify?token=abc123", host))
     }
 
     @Test
@@ -51,7 +65,7 @@ class LinksTest {
         assertNull(Links.parse(""))
         assertNull(Links.parse("https://wingtipmaps.app/app/plan"))
         assertNull(Links.parse("https://wingtipmaps.app/app/plan?dep=KUGN"))
-        assertNull(Links.parse("https://wingtipmaps.app/api/auth/magic-link/verify"))
+        assertNull(Links.parse("https://wingtipmaps.app/api/auth/magic-link/verify", host = "wingtipmaps.app"))
         assertNull(Links.parse("https://wingtipmaps.app/about"))
     }
 }

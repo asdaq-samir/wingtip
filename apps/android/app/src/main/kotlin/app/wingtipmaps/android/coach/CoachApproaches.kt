@@ -6,13 +6,15 @@ import app.wingtipmaps.android.api.SavedTrack
 import app.wingtipmaps.android.api.generated.CoachDebrief
 import app.wingtipmaps.android.api.generated.CoachFinding
 import app.wingtipmaps.android.api.generated.CoachProfilePoint
-import app.wingtipmaps.android.api.generated.ProcedureList
+import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.approachFind
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
 
 /**
  * The approaches a saved flight's track flew into its destination, for the
@@ -61,11 +63,17 @@ object CoachApproaches {
 
     /** The field's approaches, drawn; one that cannot be had is left out. */
     suspend fun drawings(ident: String): List<EngineContract.ProcedureDrawing> {
-        val listed = quietly { Gateway.json.decodeFromString<ProcedureList>(Planner.fetch("/api/airport/$ident/procedures")) } ?: return emptyList()
+        val listed = quietly { Planner.api.airportProcedures(ident).planned() } ?: return emptyList()
         return listed.procedures.filter { it.kind == "approach" }.take(MOST_APPROACHES).mapNotNull { p ->
-            quietly { drawing(Planner.fetch("/api/airport/$ident/procedures/${p.id}")) }
+            quietly { drawn(ident, p.id) }
         }
     }
+
+    /** A procedure as the planner draws it (/api/airport/{ident}/procedures/{id}),
+     *  its generated answer read across as the engine's contract has it,
+     *  as the clearance's places are (ClearanceRules). */
+    suspend fun drawn(ident: String, procedure: String): EngineContract.ProcedureDrawing =
+        Engine.json.decodeFromJsonElement(Gateway.json.encodeToJsonElement(Planner.api.airportProcedure(ident, procedure).planned()))
 
     /** The approaches the track flew into [destination], debriefed and
      *  trimmed; none where the field's approaches cannot be had. */

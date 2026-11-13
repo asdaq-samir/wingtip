@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::written",
+  "description": "Ceiling and visibility as a briefer says them, \"3,500 ft · 6 sm\", \"no ceiling · —\".",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WordsCeilingAndVisibilityInput",
+      "type": "object",
+      "properties": {
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "WordsCeilingAndVisibilityAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -133,8 +133,6 @@ class SecurityRulesWithSignInTest {
                 .andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/planner/picks").with(oidcLogin()).with(csrf()))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/planner/oral/question").with(oidcLogin()).with(csrf()))
-                .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/planner/dev/services/ml/start")
                         .with(oidcLogin())
                         .with(csrf()))
@@ -153,8 +151,6 @@ class SecurityRulesWithSignInTest {
                 .andExpect(notRefused());
         mockMvc.perform(post("/api/planner/picks").with(oidcLogin()).with(csrf()))
                 .andExpect(notRefused());
-        mockMvc.perform(post("/api/planner/oral/grade").with(oidcLogin()).with(csrf()))
-                .andExpect(notRefused());
         mockMvc.perform(get("/api/planner/status").with(oidcLogin())).andExpect(notRefused());
         mockMvc.perform(get("/api/planner/dev/services").with(oidcLogin())).andExpect(notRefused());
         mockMvc.perform(get("/api/planner/detect/stream").with(oidcLogin())).andExpect(notRefused());
@@ -170,24 +166,6 @@ class SecurityRulesWithSignInTest {
         // Each corridor read is a chart-vision job the planner runs and keeps.
         mockMvc.perform(get("/api/planner/detect/stream")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/planner/classify")).andExpect(status().isUnauthorized());
-    }
-
-    /** The assistant and the readings in words are billed Claude calls. */
-    @Test
-    void theAssistantAndTheWordsNeedASession() throws Exception {
-        mockMvc.perform(post("/api/planner/assistant").with(csrf())).andExpect(status().isUnauthorized());
-        mockMvc.perform(post("/api/planner/words/notams").with(csrf())).andExpect(status().isUnauthorized());
-    }
-
-    /** Every narrative is a real, billed Claude call. */
-    @Test
-    void aNarrativeNeedsASession() throws Exception {
-        mockMvc.perform(post("/api/planner/briefing/narrative").with(csrf())).andExpect(status().isUnauthorized());
-        signedInAs(PilotRole.PILOT);
-        mockMvc.perform(post("/api/planner/briefing/narrative")
-                        .with(oidcLogin())
-                        .with(csrf()))
-                .andExpect(notRefused());
     }
 
     private void signedInAs(PilotRole role) {

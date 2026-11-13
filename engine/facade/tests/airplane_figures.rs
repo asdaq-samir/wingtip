@@ -7,6 +7,7 @@
 use serde_json::{json, Value};
 use std::path::PathBuf;
 use wingtip_engine::call::call;
+use wingtip_engine::units::FT_PER_NM;
 
 fn ask(name: &str, input: Value) -> Value {
     let text = call(name, &input.to_string()).unwrap_or_else(|e| panic!("{name}: {e}"));
@@ -32,7 +33,6 @@ fn c172() -> Value {
 
 // The Cessna 172S's 9 to 1 (its POH, Section 3 and figure 3-1, the c172
 // profile's glide.ratio): 9,000 ft forward for each 1,000 down, 1.48 nm.
-const FT_PER_NM: f64 = 1852.0 / 0.3048;
 
 #[test]
 fn the_glide_is_the_airplanes_own_ratio_in_the_air() {

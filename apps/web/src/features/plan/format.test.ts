@@ -183,6 +183,14 @@ describe("plannedWords and windsOutOfDate", () => {
     expect(plannedWords(gfs)).toBe("Planned 0812Z · modelled winds (GFS 06Z +6 h) for use 0900–1800Z");
   });
 
+  it("says the winds by the planner's name for them, AWC's the map draws", () => {
+    const awc = {
+      ...totals,
+      winds: { ...totals.winds!, label: "AWC winds, 12Z", use_from: "2026-10-20T08:00:00Z", use_to: "2026-10-20T10:00:00Z" },
+    } as Totals;
+    expect(plannedWords(awc)).toBe("Planned 0812Z · AWC winds, 12Z · for use 0800–1000Z");
+  });
+
   it("has the winds out of date only past their period's end", () => {
     expect(windsOutOfDate(totals, Date.parse("2026-10-20T17:59:00Z"))).toBe(false);
     expect(windsOutOfDate(totals, Date.parse("2026-10-20T18:01:00Z"))).toBe(true);

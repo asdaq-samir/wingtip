@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
@@ -30,7 +30,7 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
  *  scanner, "Reading the page…", then the note as written and as said
  *  in a sheet, with Use It and Cancel. */
 @Composable
-fun ClearancePhotoRow(onUse: (String) -> Unit, model: ClearancePhotoModel = viewModel()) {
+fun ClearancePhotoRow(onUse: (String) -> Unit, model: ClearancePhotoModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scan = rememberPageScanner(onPage = { model.read(context, it) }, onProblem = model::problem)

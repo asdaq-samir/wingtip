@@ -1,0 +1,629 @@
+{
+  "_note": "The places an ATC clearance heard named, found among those given: the engine's clearance_places (engine/crates/airspace/src/spoken.rs and spoken_ask.rs), which the planner's POST /api/clearance/places asks with the navaids, fixes and airports it finds near the route (NASR) and the fields' own SIDs and STARs (the CIFP), and the iPhone asks offline with its packs' (clearance_hear). The places are round KMSP and KDLH as NASR names them. engine/facade/tests/clearance_places.rs asks the engine each case.",
+  "cases": [
+    {
+      "about": "A limit that is an airport said by its name and \"airport\" is the field, not its navaid (AIM 4-4-3 a), found among the places near the route; a route said with no commas is its places in order, the longest names first, a fix said as a word found by its sound and unsure, a word that names nothing kept unfound; the SID by its fix's sound (unsure) and its transition by its navaid's name, the STAR by its navaid's name outright",
+      "input": {
+        "places": [
+          {
+            "ident": "GEP",
+            "name": "Gopher",
+            "what": "navaid",
+            "lat": 45.15,
+            "lon": -93.37
+          },
+          {
+            "ident": "DLH",
+            "name": "Duluth",
+            "what": "navaid",
+            "lat": 46.8,
+            "lon": -92.2
+          },
+          {
+            "ident": "FSD",
+            "name": "Sioux Falls",
+            "what": "navaid",
+            "lat": 43.65,
+            "lon": -96.78
+          },
+          {
+            "ident": "PYKLA",
+            "name": null,
+            "what": "fix",
+            "lat": 46.83,
+            "lon": -91.85
+          },
+          {
+            "ident": "KVUSI",
+            "name": null,
+            "what": "fix",
+            "lat": 45.8,
+            "lon": -92.9
+          },
+          {
+            "ident": "BUNYN",
+            "name": null,
+            "what": "fix",
+            "lat": 45.3,
+            "lon": -93.1
+          },
+          {
+            "ident": "KDLH",
+            "name": "Duluth International Airport",
+            "what": "airport",
+            "lat": 46.84,
+            "lon": -92.19
+          }
+        ],
+        "limit": "the Duluth airport",
+        "route": [
+          "Gopher Sioux Falls pickla wibble"
+        ],
+        "departure": {
+          "name": "bunyan",
+          "number": "1",
+          "transition": "Duluth",
+          "procedures": [
+            {
+              "id": "BUNYN1",
+              "kind": "departure",
+              "transitions": [
+                "DLH",
+                "KVUSI"
+              ]
+            },
+            {
+              "id": "SNOWZ1",
+              "kind": "departure",
+              "transitions": [
+                "DABOY"
+              ]
+            },
+            {
+              "id": "GEP1",
+              "kind": "arrival",
+              "transitions": [
+                "AXN",
+                "FAR"
+              ]
+            }
+          ]
+        },
+        "arrival": {
+          "name": "Gopher",
+          "number": "1",
+          "transition": null,
+          "procedures": [
+            {
+              "id": "BUNYN1",
+              "kind": "departure",
+              "transitions": [
+                "DLH",
+                "KVUSI"
+              ]
+            },
+            {
+              "id": "SNOWZ1",
+              "kind": "departure",
+              "transitions": [
+                "DABOY"
+              ]
+            },
+            {
+              "id": "GEP1",
+              "kind": "arrival",
+              "transitions": [
+                "AXN",
+                "FAR"
+              ]
+            }
+          ]
+        }
+      },
+      "answer": {
+        "limit": {
+          "said": "the Duluth airport",
+          "ident": "KDLH",
+          "name": "Duluth International Airport",
+          "kind": "airport",
+          "lat": 46.84,
+          "lon": -92.19,
+          "sure": true
+        },
+        "route": [
+          [
+            {
+              "said": "gopher",
+              "ident": "GEP",
+              "name": "Gopher",
+              "kind": "navaid",
+              "lat": 45.15,
+              "lon": -93.37,
+              "sure": true
+            },
+            {
+              "said": "sioux falls",
+              "ident": "FSD",
+              "name": "Sioux Falls",
+              "kind": "navaid",
+              "lat": 43.65,
+              "lon": -96.78,
+              "sure": true
+            },
+            {
+              "said": "pickla",
+              "ident": "PYKLA",
+              "name": null,
+              "kind": "fix",
+              "lat": 46.83,
+              "lon": -91.85,
+              "sure": false
+            },
+            {
+              "said": "wibble",
+              "ident": null,
+              "name": null,
+              "kind": null,
+              "lat": null,
+              "lon": null,
+              "sure": false
+            }
+          ]
+        ],
+        "departure": {
+          "id": "BUNYN1",
+          "transition": "DLH",
+          "sure": false
+        },
+        "arrival": {
+          "id": "GEP1",
+          "transition": null,
+          "sure": true
+        }
+      }
+    },
+    {
+      "about": "A navaid's name said alone is the navaid, before the airport the planner's search found for the name: an airport and its navaid often share a name, and only \"airport\" says the field (AIM 4-4-3 a)",
+      "input": {
+        "places": [
+          {
+            "ident": "GEP",
+            "name": "Gopher",
+            "what": "navaid",
+            "lat": 45.15,
+            "lon": -93.37
+          },
+          {
+            "ident": "DLH",
+            "name": "Duluth",
+            "what": "navaid",
+            "lat": 46.8,
+            "lon": -92.2
+          },
+          {
+            "ident": "FSD",
+            "name": "Sioux Falls",
+            "what": "navaid",
+            "lat": 43.65,
+            "lon": -96.78
+          },
+          {
+            "ident": "PYKLA",
+            "name": null,
+            "what": "fix",
+            "lat": 46.83,
+            "lon": -91.85
+          },
+          {
+            "ident": "KVUSI",
+            "name": null,
+            "what": "fix",
+            "lat": 45.8,
+            "lon": -92.9
+          },
+          {
+            "ident": "BUNYN",
+            "name": null,
+            "what": "fix",
+            "lat": 45.3,
+            "lon": -93.1
+          },
+          {
+            "ident": "KDLH",
+            "name": "Duluth International Airport",
+            "what": "airport",
+            "lat": 46.84,
+            "lon": -92.19
+          }
+        ],
+        "limit": "Duluth",
+        "limit_airports": {
+          "DULUTH": {
+            "ident": "KDLH",
+            "name": "Duluth International Airport",
+            "what": "airport",
+            "lat": 46.84,
+            "lon": -92.19
+          }
+        }
+      },
+      "answer": {
+        "limit": {
+          "said": "Duluth",
+          "ident": "DLH",
+          "name": "Duluth",
+          "kind": "navaid",
+          "lat": 46.8,
+          "lon": -92.2,
+          "sure": true
+        },
+        "route": [],
+        "departure": null,
+        "arrival": null
+      }
+    },
+    {
+      "about": "A limit said as an airport's name with no navaid of the name is the field the planner's search found, beyond the places near the route",
+      "input": {
+        "places": [
+          {
+            "ident": "GEP",
+            "name": "Gopher",
+            "what": "navaid",
+            "lat": 45.15,
+            "lon": -93.37
+          },
+          {
+            "ident": "PYKLA",
+            "name": null,
+            "what": "fix",
+            "lat": 46.83,
+            "lon": -91.85
+          },
+          {
+            "ident": "KVUSI",
+            "name": null,
+            "what": "fix",
+            "lat": 45.8,
+            "lon": -92.9
+          },
+          {
+            "ident": "BUNYN",
+            "name": null,
+            "what": "fix",
+            "lat": 45.3,
+            "lon": -93.1
+          }
+        ],
+        "limit": "Duluth",
+        "limit_airports": {
+          "DULUTH": {
+            "ident": "KDLH",
+            "name": "Duluth International Airport",
+            "what": "airport",
+            "lat": 46.84,
+            "lon": -92.19
+          }
+        }
+      },
+      "answer": {
+        "limit": {
+          "said": "Duluth",
+          "ident": "KDLH",
+          "name": "Duluth International Airport",
+          "kind": "airport",
+          "lat": 46.84,
+          "lon": -92.19,
+          "sure": true
+        },
+        "route": [],
+        "departure": null,
+        "arrival": null
+      }
+    },
+    {
+      "about": "Of two fixes with the consonants said, the one with its vowels too; a word nothing near sounds like is unfound rather than guessed",
+      "input": {
+        "places": [
+          {
+            "ident": "PCKLE",
+            "name": null,
+            "what": "fix",
+            "lat": 46.9,
+            "lon": -91.9
+          },
+          {
+            "ident": "GEP",
+            "name": "Gopher",
+            "what": "navaid",
+            "lat": 45.15,
+            "lon": -93.37
+          },
+          {
+            "ident": "DLH",
+            "name": "Duluth",
+            "what": "navaid",
+            "lat": 46.8,
+            "lon": -92.2
+          },
+          {
+            "ident": "FSD",
+            "name": "Sioux Falls",
+            "what": "navaid",
+            "lat": 43.65,
+            "lon": -96.78
+          },
+          {
+            "ident": "PYKLA",
+            "name": null,
+            "what": "fix",
+            "lat": 46.83,
+            "lon": -91.85
+          },
+          {
+            "ident": "KVUSI",
+            "name": null,
+            "what": "fix",
+            "lat": 45.8,
+            "lon": -92.9
+          },
+          {
+            "ident": "BUNYN",
+            "name": null,
+            "what": "fix",
+            "lat": 45.3,
+            "lon": -93.1
+          },
+          {
+            "ident": "KDLH",
+            "name": "Duluth International Airport",
+            "what": "airport",
+            "lat": 46.84,
+            "lon": -92.19
+          }
+        ],
+        "limit": "pickla",
+        "route": [
+          "zebra"
+        ]
+      },
+      "answer": {
+        "limit": {
+          "said": "pickla",
+          "ident": "PYKLA",
+          "name": null,
+          "kind": "fix",
+          "lat": 46.83,
+          "lon": -91.85,
+          "sure": false
+        },
+        "route": [
+          [
+            {
+              "said": "zebra",
+              "ident": null,
+              "name": null,
+              "kind": null,
+              "lat": null,
+              "lon": null,
+              "sure": false
+            }
+          ]
+        ],
+        "departure": null,
+        "arrival": null
+      }
+    },
+    {
+      "about": "A navaid's name comes before a fix spelled as the word (\"Flint\" is the Flint VOR, FNT); said with \"intersection\", the fix (AIM 4-4-3 a); a name's marks are not said (Wilkes-Barre)",
+      "input": {
+        "places": [
+          {
+            "ident": "FLINT",
+            "name": null,
+            "what": "fix",
+            "lat": 43.01,
+            "lon": -83.71
+          },
+          {
+            "ident": "FNT",
+            "name": "Flint",
+            "what": "navaid",
+            "lat": 42.97,
+            "lon": -83.74
+          },
+          {
+            "ident": "LVZ",
+            "name": "Wilkes-Barre",
+            "what": "navaid",
+            "lat": 41.27,
+            "lon": -75.69
+          }
+        ],
+        "limit": "flint intersection",
+        "route": [
+          "Wilkes Barre Flint"
+        ]
+      },
+      "answer": {
+        "limit": {
+          "said": "flint intersection",
+          "ident": "FLINT",
+          "name": null,
+          "kind": "fix",
+          "lat": 43.01,
+          "lon": -83.71,
+          "sure": true
+        },
+        "route": [
+          [
+            {
+              "said": "wilkes barre",
+              "ident": "LVZ",
+              "name": "Wilkes-Barre",
+              "kind": "navaid",
+              "lat": 41.27,
+              "lon": -75.69,
+              "sure": true
+            },
+            {
+              "said": "flint",
+              "ident": "FNT",
+              "name": "Flint",
+              "kind": "navaid",
+              "lat": 42.97,
+              "lon": -83.74,
+              "sure": true
+            }
+          ]
+        ],
+        "departure": null,
+        "arrival": null
+      }
+    },
+    {
+      "about": "The number said is the procedure's: Bunyan Two is not published, so none is found",
+      "input": {
+        "places": [
+          {
+            "ident": "GEP",
+            "name": "Gopher",
+            "what": "navaid",
+            "lat": 45.15,
+            "lon": -93.37
+          },
+          {
+            "ident": "DLH",
+            "name": "Duluth",
+            "what": "navaid",
+            "lat": 46.8,
+            "lon": -92.2
+          },
+          {
+            "ident": "FSD",
+            "name": "Sioux Falls",
+            "what": "navaid",
+            "lat": 43.65,
+            "lon": -96.78
+          },
+          {
+            "ident": "PYKLA",
+            "name": null,
+            "what": "fix",
+            "lat": 46.83,
+            "lon": -91.85
+          },
+          {
+            "ident": "KVUSI",
+            "name": null,
+            "what": "fix",
+            "lat": 45.8,
+            "lon": -92.9
+          },
+          {
+            "ident": "BUNYN",
+            "name": null,
+            "what": "fix",
+            "lat": 45.3,
+            "lon": -93.1
+          },
+          {
+            "ident": "KDLH",
+            "name": "Duluth International Airport",
+            "what": "airport",
+            "lat": 46.84,
+            "lon": -92.19
+          }
+        ],
+        "departure": {
+          "name": "bunyan",
+          "number": "2",
+          "procedures": [
+            {
+              "id": "BUNYN1",
+              "kind": "departure",
+              "transitions": [
+                "DLH",
+                "KVUSI"
+              ]
+            },
+            {
+              "id": "SNOWZ1",
+              "kind": "departure",
+              "transitions": [
+                "DABOY"
+              ]
+            },
+            {
+              "id": "GEP1",
+              "kind": "arrival",
+              "transitions": [
+                "AXN",
+                "FAR"
+              ]
+            }
+          ]
+        }
+      },
+      "answer": {
+        "limit": null,
+        "route": [],
+        "departure": null,
+        "arrival": null
+      }
+    },
+    {
+      "about": "Of two fixes that sound alike, the one by the route's points (`near`) is taken, whichever was given first: \"pickla\" on a route from KMSP to KDLH is PYKLA by Duluth, not PICLE (its place here illustrative, in Iowa)",
+      "input": {
+        "places": [
+          {
+            "ident": "PICLE",
+            "name": null,
+            "what": "fix",
+            "lat": 41.62,
+            "lon": -93.66
+          },
+          {
+            "ident": "PYKLA",
+            "name": null,
+            "what": "fix",
+            "lat": 46.83,
+            "lon": -91.85
+          }
+        ],
+        "near": [
+          [
+            44.88,
+            -93.22
+          ],
+          [
+            46.84,
+            -92.19
+          ]
+        ],
+        "limit": null,
+        "route": [
+          "pickla"
+        ]
+      },
+      "answer": {
+        "limit": null,
+        "route": [
+          [
+            {
+              "said": "pickla",
+              "ident": "PYKLA",
+              "name": null,
+              "kind": "fix",
+              "lat": 46.83,
+              "lon": -91.85,
+              "sure": false
+            }
+          ]
+        ],
+        "departure": null,
+        "arrival": null
+      }
+    }
+  ]
+}

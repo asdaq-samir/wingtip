@@ -47,8 +47,7 @@ def _air(monkeypatch, wind=_wind):
     """The air the nav log's legs are flown in (wingtip.navlog's lookups),
     the engine working the legs out of it: `wind`, 4 degC aloft and 3
     degrees west variation."""
-    monkeypatch.setattr(navlog, "wind_at_altitude", wind)
-    monkeypatch.setattr(navlog, "temperature_at_altitude", lambda lat, lon, altitude_ft, fcst_hr="06": 4.0)
+    monkeypatch.setattr(navlog, "air_at", lambda lat, lon, alts, key="06": [{"wind": wind(lat, lon, a, key), "temp_c": 4.0} for a in alts])
     monkeypatch.setattr(navlog, "magnetic_variation_deg", lambda lat, lon, on=None: -3.0)
 
 
@@ -173,12 +172,11 @@ def test_a_departure_time_picks_the_winds_forecast_period(monkeypatch, messages)
 
 
 def test_the_winds_product_is_the_one_whose_for_use_window_holds_the_departure(monkeypatch):
-    """AC 00-45H table 5-21, the 1200Z run: the 6-hour product for use
+    """FAA-H-8083-28B Table 27-2, the 1200Z run: the 6-hour product for use
     1400-2100Z, the 12-hour 2100-0600Z, the 24-hour 0600-1800Z."""
     from datetime import datetime, timezone
 
-    from wingtip import planning
-    from wingtip import weather
+    from wingtip import weather, winds_stations
 
     periods = {
         "06": {"valid_at": "2026-10-20T18:00:00Z", "use_from": "2026-10-20T14:00:00Z", "use_to": "2026-10-20T21:00:00Z"},
@@ -187,10 +185,10 @@ def test_the_winds_product_is_the_one_whose_for_use_window_holds_the_departure(m
     }
     monkeypatch.setattr(weather, "winds_period", lambda fcst_hr="06": periods[fcst_hr])
     at = lambda h, m=0, day=20: datetime(2026, 10, day, h, m, tzinfo=timezone.utc)  # noqa: E731
-    assert planning.forecast_hour_for(at(15)) == "06"
+    assert winds_stations.station_period_for(at(15)) == "06"
     # Eight and a half hours from 1400Z: the 12-hour product, not the 6-hour.
-    assert planning.forecast_hour_for(at(22, 30)) == "12"
-    assert planning.forecast_hour_for(at(6, 30, day=21)) == "24"
+    assert winds_stations.station_period_for(at(22, 30)) == "12"
+    assert winds_stations.station_period_for(at(6, 30, day=21)) == "24"
 
 
 def test_totals_say_when_the_plan_was_made_and_the_winds_it_flies(messages, monkeypatch):
@@ -205,7 +203,7 @@ def test_totals_say_when_the_plan_was_made_and_the_winds_it_flies(messages, monk
     # A period with no model run behind it is not marked as modelled.
     assert (t["planned_at"], t["winds"], asked) == (
         "2026-09-22T17:00:00Z",
-        {**period, "modelled": False, "run": None, "forecast_hour": None},
+        {**period, "modelled": False, "run": None, "forecast_hour": None, "label": None, "source": None, "fallback": False, "stale": False},
         ["06"],
     )
     assert planning.now().isoformat().startswith("2026-09-22T17:00")

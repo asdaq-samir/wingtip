@@ -4,6 +4,7 @@ import { forgetChecklists } from "../../lib/checklists";
 import { forgetPilot } from "../../lib/preferences";
 import { forgetKeptRecord } from "../keptForAir";
 import { pilotQuery } from "../../lib/queryClient";
+import { forgetPilotCache } from "../../lib/pilotCache";
 
 /** Logging out: the session ended on the server, then the pilot and
  *  everything that was theirs (their airplanes, their flights)
@@ -16,6 +17,9 @@ export function useLogout() {
   return useMutation({
     mutationFn: api.logout,
     onSuccess: () => {
+      // Signed out first, so forgetting their home airport here is not
+      // taken for a pick to write to the account (lib/homeAirport).
+      queryClient.setQueryData(pilotQuery.queryKey, null);
       forgetPilot();
       forgetChecklists();
       // Which route was kept for the air is theirs; the briefing, NOTAMs,
@@ -24,8 +28,7 @@ export function useLogout() {
       // The service worker's copy of their account, airplanes and
       // flights (vite.config.ts, pilot-own), which a start with no
       // signal would otherwise show the next person to pick up the phone.
-      if ("caches" in globalThis) void caches.delete("pilot-own").catch(() => undefined);
-      queryClient.setQueryData(pilotQuery.queryKey, null);
+      forgetPilotCache();
       queryClient.removeQueries({ queryKey: ["aircraft"] });
       queryClient.removeQueries({ queryKey: ["flights"] });
       void queryClient.invalidateQueries({ queryKey: pilotQuery.queryKey });

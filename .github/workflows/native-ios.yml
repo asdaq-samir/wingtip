@@ -73,6 +73,8 @@ jobs:
     timeout-minutes: ${{ (inputs.full || github.event_name == 'schedule') && 100 || 25 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       # Before anything builds: the engine's Apple targets link against its
       # SDK too, and iPhone Duo's own layout needs the iOS 27.1 SDK.
       - name: The Xcode .tool-versions names
@@ -89,7 +91,7 @@ jobs:
         id: engine
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
-          path: apps/ios/Frameworks/WingtipEngine.xcframework
+          path: apps/ios/Frameworks/WingtipEngine
           key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         if: steps.engine.outputs.cache-hit != 'true'
@@ -98,7 +100,7 @@ jobs:
         if: steps.engine.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
-          path: apps/ios/Frameworks/WingtipEngine.xcframework
+          path: apps/ios/Frameworks/WingtipEngine
           key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The Xcode project, from project.yml
         run: |
@@ -130,18 +132,10 @@ jobs:
         id: sim
         run: |
           # The newest iPhone the runner's Xcode has, and at night an iPad
-          # (a Pro where there is one) and iPhone Duo, each by its id.
+          # (a Pro where there is one) and iPhone Duo, each by its id, picked
+          # as on the Mac (scripts/dev/newest_simulator.py).
           pick() {
-            xcrun simctl list devices available -j | python3 -c '
-          import json, sys
-          kind = sys.argv[1]
-          devices = [d for runtime, ds in json.load(sys.stdin)["devices"].items() if "iOS" in runtime for d in ds if d["name"].startswith(kind)]
-          devices = [d for d in devices if ("Duo" in d["name"]) == (kind == "iPhone Duo")]
-          if not devices:
-              sys.exit(0)
-          pros = [d for d in devices if "Pro" in d["name"]] if kind == "iPad" else []
-          best = sorted(pros or devices, key=lambda d: d["name"])[-1]
-          print(best["udid"])' "$1"
+            xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "$1"
           }
           echo "iphone=$(pick iPhone)" >> "$GITHUB_OUTPUT"
           if [ "$FULL" = true ]; then
@@ -168,7 +162,7 @@ jobs:
           fi
           xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme "$scheme" -configuration Debug "${dest[@]}" \
             -derivedDataPath "$RUNNER_TEMP/derived" -resultBundlePath "$RUNNER_TEMP/Wingtip.xcresult" "${only[@]}" \
-            CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" \
+            CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= COMPILER_INDEX_STORE_ENABLE=NO WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" \
             test > "$RUNNER_TEMP/xcodebuild.log" 2>&1 || true
           # Each error with the line after it (a cause), the tests, the verdict.
           grep -nE "error:|error\b|Could not|Test (Case|Suite)|Executed|\*\* (BUILD|TEST)" -A6 "$RUNNER_TEMP/xcodebuild.log" | tail -200 || true
@@ -195,12 +189,15 @@ jobs:
         # picture, not a check.
         if: env.FULL == 'true'
         continue-on-error: true
+        env:
+          IPHONE: ${{ steps.sim.outputs.iphone }}
+          IPAD: ${{ steps.sim.outputs.ipad }}
+          DUO: ${{ steps.sim.outputs.duo }}
         run: |
           app="$RUNNER_TEMP/derived/Build/Products/Debug-iphonesimulator/Wingtip.app"
           mkdir -p "$RUNNER_TEMP/screens"
-          pairs=("iphone:${{ steps.sim.outputs.iphone }}" "ipad:${{ steps.sim.outputs.ipad }}")
-          duo=${{ steps.sim.outputs.duo }}
-          [ -n "$duo" ] && pairs+=("iphone-duo:$duo")
+          pairs=("iphone:$IPHONE" "ipad:$IPAD")
+          [ -n "$DUO" ] && pairs+=("iphone-duo:$DUO")
           for pair in "${pairs[@]}"; do
             name=${pair%%:*}; id=${pair#*:}
             xcrun simctl boot "$id" 2>/dev/null || true
@@ -211,11 +208,10 @@ jobs:
             sleep 25
             xcrun simctl io "$id" screenshot "$RUNNER_TEMP/screens/$name.png"
           done
-          ipad=${{ steps.sim.outputs.ipad }}
-          xcrun simctl terminate "$ipad" "$WINGTIP_BUNDLE_ID" || true
-          xcrun simctl launch "$ipad" "$WINGTIP_BUNDLE_ID" -screen airport
+          xcrun simctl terminate "$IPAD" "$WINGTIP_BUNDLE_ID" || true
+          xcrun simctl launch "$IPAD" "$WINGTIP_BUNDLE_ID" -screen airport
           sleep 15
-          xcrun simctl io "$ipad" screenshot "$RUNNER_TEMP/screens/ipad-search.png"
+          xcrun simctl io "$IPAD" screenshot "$RUNNER_TEMP/screens/ipad-search.png"
       - name: The screens
         if: always() && env.FULL == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
@@ -246,6 +242,8 @@ jobs:
       KEY_P8: ${{ secrets.APP_STORE_KEY_P8 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - name: The Xcode .tool-versions names
         run: scripts/ci/select-xcode.sh
       # The test job kept it a moment ago.
@@ -253,7 +251,7 @@ jobs:
         id: engine
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
-          path: apps/ios/Frameworks/WingtipEngine.xcframework
+          path: apps/ios/Frameworks/WingtipEngine
           key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         if: steps.engine.outputs.cache-hit != 'true'
@@ -263,25 +261,6 @@ jobs:
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate --spec apps/ios/project.yml --project apps/ios
       - name: Archived, signed and uploaded to TestFlight
-        run: |
-          key="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
-          trap 'rm -f "$key"' EXIT
-          printf '%s' "$KEY_P8" > "$key"
-          host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")
-          auth=(-allowProvisioningUpdates -authenticationKeyPath "$key" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
-          xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -configuration Release \
-            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Wingtip.xcarchive" "${auth[@]}" \
-            DEVELOPMENT_TEAM="$TEAM" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" WINGTIP_HOST="$host" \
-            CURRENT_PROJECT_VERSION="${{ github.run_number }}" archive | tail -40
-          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0"><dict>
-            <key>method</key><string>app-store-connect</string>
-            <key>destination</key><string>upload</string>
-            <key>teamID</key><string>$TEAM</string>
-            <key>signingStyle</key><string>automatic</string>
-          </dict></plist>
-          PLIST
-          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Wingtip.xcarchive" \
-            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" "${auth[@]}"
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+        run: scripts/ci/ios_testflight.sh

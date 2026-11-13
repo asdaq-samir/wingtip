@@ -1,4 +1,4 @@
-import { useRef, type ReactNode, type RefObject } from "react";
+import type { ReactNode } from "react";
 import { cn } from "cn";
 import { TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
@@ -29,12 +29,9 @@ interface CardTabSpec<T extends string> {
 
 export function CardTabBar<T extends string>({
   tabs,
-  value,
   onPick,
   testIdPrefix,
   disabled,
-  raise,
-  barRef,
   className,
   activateOnFocus,
 }: {
@@ -46,10 +43,6 @@ export function CardTabBar<T extends string>({
   testIdPrefix: string;
   /** Greyed, as a card's actions are until its answer comes. */
   disabled?: boolean;
-  /** The panel raised as a tab is picked, and lowered as the open one is
-   *  tapped again all the way up. */
-  raise?: { onExpand: () => void; onLower: () => void };
-  barRef?: RefObject<HTMLDivElement | null>;
   className?: string;
   /** The tab shown as the arrow keys reach it, where every tab's content
    *  is already in hand (one answer fills them all): the APG's automatic
@@ -58,13 +51,8 @@ export function CardTabBar<T extends string>({
    *  root's onValueChange is then what picks it. */
   activateOnFocus?: boolean;
 }) {
-  // Which tab was open as this one was pressed, read at the click: the
-  // tab is picked by then (Base UI's on its click, ahead of this one), so
-  // the click alone cannot tell "the open one tapped again".
-  const openWhenPressed = useRef<T | null>(null);
-  const isUp = () => barRef?.current?.closest("[data-panel]")?.getAttribute("data-panel") === "full";
   return (
-    <TabsList ref={barRef} activateOnFocus={activateOnFocus} className={cn(SEGMENTED, className)}>
+    <TabsList activateOnFocus={activateOnFocus} className={cn(SEGMENTED, className)}>
       {tabs.map((t) => (
         <TabsTrigger
           key={t.value}
@@ -72,30 +60,10 @@ export function CardTabBar<T extends string>({
           className="pointer-coarse:text-(length:--type-detail)"
           disabled={disabled}
           data-testid={`${testIdPrefix}-${t.value}`}
-          onPointerDown={() => {
-            openWhenPressed.current = value;
-          }}
-          onKeyDown={() => {
-            openWhenPressed.current = value;
-          }}
-          onPointerCancel={() => {
-            openWhenPressed.current = null;
-          }}
-          onBlur={() => {
-            openWhenPressed.current = null;
-          }}
-          onClick={() => {
-            // Read once and cleared: a click with no press before it
-            // (VoiceOver's activate, a switch) must not find an earlier
-            // press's tab.
-            const was = openWhenPressed.current;
-            openWhenPressed.current = null;
-            if (raise && was === t.value && isUp()) raise.onLower();
-            else {
-              onPick(t.value);
-              raise?.onExpand();
-            }
-          }}
+          // A tap picks the tab and nothing else: the sheet keeps the size it
+          // was dragged to (the owner, 2026-11-11, "Just let the drawer do
+          // what it does"; the open tab tapped again no longer lowers it).
+          onClick={() => onPick(t.value)}
         >
           {t.label}
         </TabsTrigger>

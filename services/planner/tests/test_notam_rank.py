@@ -4,6 +4,7 @@ field's time and runway in use, and every one back, best first, with its
 text as sent. The feed, the TFRs and the airspace are stood in for; the
 ranking is the engine's own."""
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -101,7 +102,8 @@ def test_the_tfrs_unread_are_said_and_nothing_heard_is_nothing_ranked(monkeypatc
 
     monkeypatch.setattr(tfr, "along_route", unavailable)
     body = client.post("/api/notams/ranked", json={"dep": "C81", "dest": "KMSN"}).json()
-    assert body == {"notams": [], "top": 0, "coverage_since": "2025-11-01", "unchecked": ["tfrs"]}
+    # A route's list has no one field's time zone (NotamsRanked.time_zone).
+    assert body == {"notams": [], "top": 0, "coverage_since": "2025-11-01", "unchecked": ["tfrs"], "time_zone": None}
 
 
 def test_each_field_is_timed_round_when_the_flight_is_there():
@@ -149,6 +151,44 @@ def test_a_fields_card_gets_its_own_notams_and_the_tfrs_near_it(monkeypatch):
     assert only["id"] == "MSN 11/040" and only["field"] == "KMSN" and only["role"] == "stop"
     assert only["in_force"] is True and only["closed"] and only["raw"].startswith("!MSN 11/040")
     assert body["unchecked"] == []
+    # Madison's zone, for the card's local times beside the NOTAMs' UTC.
+    assert body["time_zone"] == "America/Chicago"
+
+
+def test_a_tfr_near_the_field_carries_what_the_card_reads_it_by(monkeypatch):
+    """KSJT's security TFR as the weather service keeps it (FDC 6/2478,
+    2026-11-12): its kind, rule, title, levels, instructions, NOTAM text and
+    facility passed through for the card's engine (tfr_read), and the field
+    and its nearest edge beside them; its NOTAM's text is what was sent."""
+    _feed(monkeypatch, [])
+    sjt = {
+        "notam_id": "6/2478",
+        "title": "SAN ANGELO, TX, Sunday, November 1, 2026 through Sunday, March 14, 2027 Local",
+        "kind": "Security",
+        "effective": "2026-11-01T07:00:00Z",
+        "expires": "2027-03-14T08:00:00Z",
+        "rule": "special security instructions (99.7)",
+        "floor_ft": 3500.0,
+        "floor_ref": "MSL",
+        "ceiling_ft": 18000.0,
+        "ceiling_ref": "MSL",
+        "instructions": ["4. FORT WORTH ARTCC, TELEPHONE 817-858-7503, IS THE FAA COORDINATION FACILITY."],
+        "text": "!FDC 6/2478 ZFW TX..AIRSPACE SAN ANGELO, TX..TEMPORARY FLIGHT RESTRICTIONS.",
+        "facility": {"name": "Fort Worth ARTCC", "phone": "817-858-7503", "frequency": None},
+        "contact": None,
+        "crosses": False,
+        "edge": {"lat": 43.0, "lon": -89.3},
+    }
+    monkeypatch.setattr(tfr, "near_point", lambda lat, lon, start, end: [sjt])
+    resp = client.get("/api/airport/kmsn/notams")
+    assert resp.status_code == 200, resp.text
+    only = resp.json()["notams"][0]
+    assert only["kind"] == "tfr" and only["raw"] == sjt["text"]
+    facts = only["tfr"]
+    assert (facts["kind"], facts["rule"], facts["floor_ft"], facts["ceiling_ref"]) == ("Security", sjt["rule"], 3500.0, "MSL")
+    assert facts["facility"] == sjt["facility"] and facts["instructions"] == sjt["instructions"]
+    assert facts["over_field"] is False and facts["edge"] == {"lat": 43.0, "lon": -89.3}
+    assert facts["field"]["lat"] == pytest.approx(43.14, abs=0.05)
 
 
 def test_a_field_no_one_knows_is_a_404(monkeypatch):

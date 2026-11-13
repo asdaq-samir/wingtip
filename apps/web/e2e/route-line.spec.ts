@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openPanel, settle, sideDrawer, slow } from "./helpers";
+import { drawn, openPanel, settle, sideDrawer, slow } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -120,7 +120,10 @@ test("FPL's route line folds to the way picked, As typed at first, and a chip ta
   // Folded to one row over the fields (the owner's K1, 2026-10-29): None,
   // the route as typed, planned at once, with its time; what it meets said.
   await expect(picked).toHaveText(/^As typed/, { timeout: slow(30_000) });
-  await expect(line.getByTestId("route-line-toggle")).toHaveAccessibleName(/As typed, the route as typed, .*crosses storms, 2 more/);
+  // What it shows first, then what it is (WCAG 2.5.3, Label in Name: RouteLine's label).
+  await expect(line.getByTestId("route-line-toggle")).toHaveAccessibleName(
+    /^As typed .*2 more, Routes: As typed, the route as typed, .*crosses storms/,
+  );
   // Over the route's fields, not among them.
   const lineBox = (await line.boundingBox())!,
     fields = (await sideDrawer(page).getByTestId("procedures").boundingBox())!;
@@ -136,7 +139,8 @@ test("FPL's route line folds to the way picked, As typed at first, and a chip ta
   // from its nav log.
   await expect(chips).toHaveText([/As typed\d+ nm/, /Avoid Weather/, /Fastest/]);
   await expect(chips.nth(1).getByTestId("route-line-figures")).toHaveText(/\d+ nm · \d+\.\d gal/);
-  await expect(page.locator("[data-route-way]")).toHaveCount(2);
+  // On the map's canvas, as the chips' probe says (WaysGl).
+  await expect.poll(async () => (await drawn(page, "route-way-chips")).length).toBe(2);
 
   // A chip tapped: the route at once, its fuel stop named, and planned.
   await chips.filter({ hasText: "Avoid Weather" }).click();
@@ -164,9 +168,9 @@ test("the routes stay open until their row folds them, to the way picked", async
   // folded after two seconds.
   await page.waitForTimeout(3000);
   await expect(line.getByTestId("route-line-chip")).toHaveCount(3);
-  await expect(page.locator("[data-route-way]")).not.toHaveCount(0);
+  await expect.poll(async () => (await drawn(page, "route-way-chips")).length).toBeGreaterThan(0);
   await line.getByTestId("route-line-toggle").click();
   await expect(line.getByTestId("route-line-picked")).toHaveText(/^Fastest/);
   await expect(line.getByTestId("route-line-chip")).toHaveCount(0);
-  await expect(page.locator("[data-route-way]")).toHaveCount(0);
+  await expect.poll(async () => (await drawn(page, "route-way-chips")).length).toBe(0);
 });

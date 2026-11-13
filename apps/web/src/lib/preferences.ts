@@ -13,13 +13,12 @@ export type RouteWeather = "personal" | "legal";
 import { sameField } from "./procedures";
 import type { StopPick } from "./stopKinds";
 import type { Load } from "./weightBalance";
-import type { OwnShipLook } from "./map/position/ownShipLook";
 
 /**
  * Everything remembered per browser, in one zustand store persisted to
  * localStorage by its own middleware: which charts the map draws, the
- * airplane the nav log is computed for, the training filters, which
- * tab each console was last on, and which edge the header is on. Components read a slice with
+ * airplane the nav log is computed for, the training filters and which
+ * tab each console was last on. Components read a slice with
  * the hook (`usePreferences(s => s.base)`); code outside React -- the
  * map's chart layers -- reads `getState()` and `subscribe()`.
  *
@@ -43,21 +42,18 @@ export type OverlayStrength = "faint" | "half" | "full";
 
 /** The screen edge the map panel is on -- and so what the consoles and
  *  panels come in from, and which edge the map's buttons keep clear
- *  of (useNavEdge). */
+ *  of (useNavEdge): the bottom on a phone, always (the owner, 2026-11-13,
+ *  Position taken out of the settings), the top from `md` up. */
 export type NavEdge = "top" | "bottom";
 
 /** The FAA chart in the dark theme: as printed, or dimmed for night
- *  vision (index.css's chart-tiles). */
+ *  vision (index.css's chart-tiles); set by Setup's Appearance. */
 export type ChartNight = "normal" | "dimmed";
 /** The chart in bright sunlight (lib/sunlight): its tiles at higher
  *  contrast, the course and the sheets solid white with black figures.
  *  Auto turns it on from the phone's light sensor where the browser has
  *  one; On and Off are the pilot's own. */
 export type ChartLight = "auto" | "on" | "off";
-/** The ground under the chart (lib/map/gl/layers/TerrainGl): the chart as
- *  printed, its relief shaded over it, or the relief stood up in 3D, the
- *  map tilted with two fingers. */
-export type Terrain = "flat" | "shaded" | "3d";
 /** The app's look (lib/brand): Wingtip, the brand's blue and the
  *  default (the owner, 2026-11-09), Glass Cockpit or Chart ink (kept
  *  2026-11-04), or Native, stock out of the box (2026-11-10); Sectional,
@@ -75,7 +71,8 @@ export type FlightRules = "vfr" | "ifr";
  *  route's box folded to one line, a tap opening it again (A); `plan`, no
  *  box, the route's name over the plan, whose rows are dragged and added
  *  to (B); both folded from the start, no route yet too, the box opened
- *  from the head. In Setup's Layout. */
+ *  from the head. In the route's ••• menu, Show Route As (ShowRouteAs),
+ *  Setup's Layout until 2026-11-13. */
 export type RouteEdit = "box" | "folded" | "plan";
 
 /** The stock Cessna 172 as a pilot picks it, and as the demo flight
@@ -201,20 +198,17 @@ interface Preferences {
   tailFigures: Record<string, TailFigures>;
   /** The training map's filters: which points are drawn and walked. */
   filters: Filters;
-  /** The navigation bar's edge, once one has been picked; until then
-   *  the bottom on a phone and the top from md up. */
-  navBar: NavEdge | null;
   /** The chart in the dark theme (ChartGl), dimmed unless the pilot
    *  asks for it as printed. */
   chartNight: ChartNight;
   /** The chart in sunlight (lib/sunlight): from the light sensor, on, or off. */
   chartLight: ChartLight;
-  /** The ground under the chart: flat, shaded or 3D (TerrainGl). */
-  terrain: Terrain;
+  /** The map stood up in 3D, the map's 3D button (ThreeDButton); off,
+   *  the 2D chart with its relief shaded over it, always (TerrainGl; the
+   *  owner, 2026-11-13, Flat taken out of the settings). */
+  threeD: boolean;
   /** The app's look: its tint, its typeface and its corners (lib/brand). */
   brand: Brand;
-  /** How own ship is drawn on the chart (lib/map/position/ownShipLook). */
-  ownShipLook: OwnShipLook;
   /** The flight rules every route is planned under, kept: a pilot who
    *  files IFR files it flight after flight. */
   flightRules: FlightRules;
@@ -293,12 +287,10 @@ interface Preferences {
   setAircraft: (aircraft: AircraftChoice) => void;
   setTailFigures: (tail: string, figures: TailFigures) => void;
   setFilter: (key: FilterKey, on: boolean) => void;
-  setNavBar: (navBar: NavEdge) => void;
   setChartNight: (chartNight: ChartNight) => void;
   setChartLight: (chartLight: ChartLight) => void;
-  setTerrain: (terrain: Terrain) => void;
+  setThreeD: (threeD: boolean) => void;
   setBrand: (brand: Brand) => void;
-  setOwnShipLook: (ownShipLook: OwnShipLook) => void;
   setFlightRules: (flightRules: FlightRules) => void;
   setRouteEdit: (routeEdit: RouteEdit) => void;
   addRecentAirport: (airport: RecentAirport) => void;
@@ -336,13 +328,23 @@ const RECENTS = 8;
 /** What a browser kept under an older version, brought up to this one
  *  (the versions are listed where usePreferences is made). */
 export function migratePreferences(kept: unknown, from: number): Preferences {
+  // 9: the sheet's edge, the flat ground and own ship's look let go, none a
+  // setting now (2026-11-13): a browser's kept top, flat or arrow falls
+  // back to the bottom, the shaded ground and the airplane, unsaid.
+  const {
+    navBar: _navBar,
+    terrain,
+    ownShipLook: _ownShipLook,
+    ...rest
+  } = kept as { navBar?: unknown; terrain?: string; ownShipLook?: unknown };
   return {
-    ...(kept as object),
+    ...rest,
     ...(from < 6 && isStockDefault((kept as { aircraft?: AircraftChoice }).aircraft) ? { aircraft: NO_AIRPLANE } : {}),
     ...(from < 1 ? { waypoints: false } : {}),
     ...(from < 2 ? { airspace: true, navaids: true } : {}),
     ...(from < 3 ? { chartLight: "auto" } : {}),
     ...(from < 7 && (kept as { brand?: string }).brand !== "ink" ? { brand: "wingtip" } : {}),
+    ...(from < 8 && terrain === "3d" ? { threeD: true } : {}),
   } as Preferences;
 }
 
@@ -374,14 +376,10 @@ export const usePreferences = create<Preferences>()(
       keepOffline: false,
       aircraft: NO_AIRPLANE,
       filters: DEFAULT_FILTERS,
-      navBar: null,
       chartNight: "dimmed",
       chartLight: "auto",
-      // Flat, as the chart is printed, until the pilot asks for relief.
-      terrain: "flat",
+      threeD: false,
       brand: "wingtip",
-      // A plane, at the owner's ask, where it was the arrow.
-      ownShipLook: "single",
       flightRules: "vfr",
       // The box as it was, till the pilot picks another.
       routeEdit: "box",
@@ -454,12 +452,10 @@ export const usePreferences = create<Preferences>()(
       setAircraft: (aircraft) => set({ aircraft }),
       setTailFigures: (tail, figures) => set((s) => ({ tailFigures: { ...s.tailFigures, [tail.toUpperCase()]: figures } })),
       setFilter: (key, on) => set((s) => ({ filters: { ...s.filters, [key]: on } })),
-      setNavBar: (navBar) => set({ navBar }),
       setChartNight: (chartNight) => set({ chartNight }),
       setChartLight: (chartLight) => set({ chartLight }),
-      setTerrain: (terrain) => set({ terrain }),
+      setThreeD: (threeD) => set({ threeD }),
       setBrand: (brand) => set({ brand }),
-      setOwnShipLook: (ownShipLook) => set({ ownShipLook }),
       setFlightRules: (flightRules) => set({ flightRules }),
       setRouteEdit: (routeEdit) => set({ routeEdit }),
       addRecentAirport: (airport) =>
@@ -490,23 +486,18 @@ export const usePreferences = create<Preferences>()(
     }),
     {
       name: "wingtip.preferences",
-      // 1: the VFR checkpoints off unless turned on, once for every
-      // browser that had them on by the old default (the owner's ask).
-      // 2: the airspace and the VORs drawn over the chart, on for every
-      // browser as for a new one (the owner's pick of the map's looks).
-      // 3: the chart in sunlight from the light sensor (Auto), for every
-      // browser as for a new one.
-      // 4: a look no longer offered (Sectional, Windsock, Clear Sky) is
-      // the Glass Cockpit, the default now.
-      // 5: the tabs for everyone, the strip and the field over the tabs
-      // taken out of Setup (the owner, 2026-11-04: "I like the tab, I
-      // don't want the strip or field, remove it from settings").
-      // 6: no airplane, not the stock C172, until one is picked (the
-      // owner, 2026-11-08): the C172 kept as the default is let go.
-      // 7: the Wingtip look for every browser, the default now (the
-      // owner, 2026-11-09); Glass Cockpit was the default before, so a
-      // browser that has it never picked it.
-      version: 7,
+      // 1: the VFR checkpoints off unless turned on (the owner's ask). 2:
+      // the airspace and the VORs on for every browser (the map's looks).
+      // 3: the sunlit chart from the light sensor (Auto). 4: a look no
+      // longer offered is the Glass Cockpit. 5: the tabs for everyone, the
+      // strip and the field taken out of Setup (the owner, 2026-11-04). 6:
+      // no airplane until one is picked; the stock C172 let go (2026-11-08).
+      // 7: the Wingtip look, the default, for a browser on the old default
+      // (Glass Cockpit, never picked; 2026-11-09). 8: 3D a switch of its
+      // own, the map's button (2026-11-13); a kept "3d" is shaded in it.
+      // 9: Position, Terrain and You on the Map taken out (2026-11-13):
+      // what was kept of them let go (migratePreferences).
+      version: 9,
       migrate: migratePreferences,
       // The functions are not state; only the values are written.
       partialize: (s) => ({
@@ -533,12 +524,10 @@ export const usePreferences = create<Preferences>()(
         aircraft: s.aircraft,
         tailFigures: s.tailFigures,
         filters: s.filters,
-        navBar: s.navBar,
         chartNight: s.chartNight,
         chartLight: s.chartLight,
-        terrain: s.terrain,
+        threeD: s.threeD,
         brand: s.brand,
-        ownShipLook: s.ownShipLook,
         flightRules: s.flightRules,
         routeEdit: s.routeEdit,
         listenInput: s.listenInput,

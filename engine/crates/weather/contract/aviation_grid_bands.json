@@ -1,0 +1,115 @@
+{
+  "x-call": "wingtip_weather::aviation_grids::call",
+  "description": "The Aviation Weather Center's words for its icing and turbulence grids (aviationweather.gov GFA help, read 2026-11-12): icing severity by category, 0 none, 1 trace, 2 light, 3 moderate, 4 heavy; turbulence by EDR, (m^2/s^3)^1/3, from each word's threshold in the weight class's row: light (< 15,500 lb) 0.13, 0.16, 0.36, 0.64; medium 0.15, 0.20, 0.44, 0.79; heavy 0.17, 0.24, 0.54, 0.96.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AviationGridBandsInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "title": "AviationGridBandsAnswer",
+      "type": "object",
+      "properties": {
+        "icing": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "word": {
+                "type": "string"
+              },
+              "from": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "word",
+              "from"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "turbulence": {
+          "type": "object",
+          "properties": {
+            "light": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "word": {
+                    "type": "string"
+                  },
+                  "from": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "word",
+                  "from"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "medium": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "word": {
+                    "type": "string"
+                  },
+                  "from": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "word",
+                  "from"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "heavy": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "word": {
+                    "type": "string"
+                  },
+                  "from": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "word",
+                  "from"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "light",
+            "medium",
+            "heavy"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "icing",
+        "turbulence"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

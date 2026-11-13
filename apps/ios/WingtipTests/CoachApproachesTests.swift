@@ -25,22 +25,20 @@ private func finalLine(_ id: String) throws -> [(lat: Double, lon: Double)] {
     let final = try #require(lines.first { $0["role"] as? String == "final" }?["points"] as? [[Double]])
     let line = final.map { (lat: $0[0], lon: $0[1]) }
     let (a, b) = (line[0], line[1])
-    let k = 2 / nm(a, b)
+    let k = try 2 / nm(a, b)
     return [(lat: a.lat - (b.lat - a.lat) * k, lon: a.lon - (b.lon - a.lon) * k)] + line
 }
 
-/// Great-circle distance, nm (a mean earth of 3,440.065 nm): the test's
-/// own measure of where along the line a point is, not the app's.
-private func nm(_ a: (lat: Double, lon: Double), _ b: (lat: Double, lon: Double)) -> Double {
-    let r = Double.pi / 180
-    let h = pow(sin((b.lat - a.lat) * r / 2), 2) + cos(a.lat * r) * cos(b.lat * r) * pow(sin((b.lon - a.lon) * r / 2), 2)
-    return 2 * 3440.065 * asin(sqrt(h))
+/// The engine's distance, nm, on WGS-84 (distance_nm): where along the
+/// line a point is, by the one measure every app asks.
+private func nm(_ a: (lat: Double, lon: Double), _ b: (lat: Double, lon: Double)) throws -> Double {
+    try Engine.distanceNm(lat1: a.lat, lon1: a.lon, lat2: b.lat, lon2: b.lon)
 }
 
 /// The line flown at 120 kt, a point a second, at `alt(toGo)` ft; then
 /// `after` seconds on past its end at `afterAlt(s)`.
-private func fly(_ line: [(lat: Double, lon: Double)], alt: (Double) -> Double, after: Int, afterAlt: (Int) -> Double) -> [EngineContract.TrackPoint] {
-    let legs = zip(line, line.dropFirst()).map { (a: $0, b: $1, nm: nm($0, $1)) }
+private func fly(_ line: [(lat: Double, lon: Double)], alt: (Double) -> Double, after: Int, afterAlt: (Int) -> Double) throws -> [EngineContract.TrackPoint] {
+    let legs = try zip(line, line.dropFirst()).map { (a: $0, b: $1, nm: try nm($0, $1)) }
     let total = legs.reduce(0) { $0 + $1.nm }
     let t0 = 1_793_372_400_000.0
     var points: [EngineContract.TrackPoint] = []
@@ -55,7 +53,7 @@ private func fly(_ line: [(lat: Double, lon: Double)], alt: (Double) -> Double, 
         s += 1
     }
     let (a, b) = (line[line.count - 2], line[line.count - 1])
-    let per = 120.0 / 3600 / nm(a, b)
+    let per = try 120.0 / 3600 / nm(a, b)
     for k in 1...after {
         let f = 1 + per * Double(k)
         points.append(EngineContract.TrackPoint(t: t0 + (s + Double(k) - 1) * 1000, lat: a.lat + (b.lat - a.lat) * f,
@@ -80,8 +78,8 @@ struct CoachApproachesTests {
             let d = toGo * 6076.12
             return gp.ft + d * tan(gp.deg * .pi / 180) + d * d / (2 * earthFt)
         }
-        return fly(try finalLine("I08-Y"), alt: { min(glidepath($0), $0 > 11 ? 3700 : 3000) }, after: 120,
-                   afterAlt: { $0 <= 12 ? gp.ft : gp.ft + Double($0 - 12) * 1000 / 60 })
+        return try fly(try finalLine("I08-Y"), alt: { min(glidepath($0), $0 > 11 ? 3700 : 3000) }, after: 120,
+                       afterAlt: { $0 <= 12 ? gp.ft : gp.ft + Double($0 - 12) * 1000 / 60 })
     }
 
     @Test func aProcedureAsThePlannerDrawsItIsReadAsTheEngineHasIt() throws {

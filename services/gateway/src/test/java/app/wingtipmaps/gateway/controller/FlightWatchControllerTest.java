@@ -128,7 +128,7 @@ class FlightWatchControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departAt\":\"2026-11-04T14:00:00Z\"}"))
                 .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.error").value("the planner could not be reached for the briefing"));
+                .andExpect(jsonPath("$.detail").value("the planner could not be reached for the briefing"));
     }
 
     @Test

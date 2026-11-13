@@ -2,7 +2,8 @@ import { useId, useState } from "react";
 import SheetDialog from "../../../components/SheetDialog";
 import { useDiscardGuard } from "../../../components/discardGuard";
 import { Button } from "../../../components/ui/button";
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "../../../components/ui/input-group";
+import { NumberField } from "../../../components/ui/number-field";
+import { THREE_FIGURES, WHOLE } from "../../../components/ui/numberFormats";
 import { callEngine } from "../../../lib/engine/engine";
 import { TEXT } from "../../../lib/text";
 import { altFt, flightLevel } from "../../../lib/format";
@@ -53,10 +54,14 @@ export default function PointAltitudeDialog({
   // figure for each point opened: what was typed for the last is not
   // this one's.
   const [shown, setShown] = useState(point);
+  // As typed (React Aria's NumberField), and the field made new for each
+  // point opened.
   const [typed, setTyped] = useState(() => figure(point));
+  const [opened, setOpened] = useState(0);
   if (point && point !== shown) {
     setShown(point);
     setTyped(figure(point));
+    setOpened((n) => n + 1);
   }
   const form = useId();
   const { ident, waypoint, altitude, elevationFt } = shown ?? {
@@ -65,7 +70,7 @@ export default function PointAltitudeDialog({
     altitude: { feet: null, own: false } as PointAltitude,
   };
   // A waypoint's in hundreds of feet, three figures; an airport's in feet.
-  const feet = typed ? Number(typed) * (waypoint ? 100 : 1) : NaN;
+  const feet = typed != null ? typed * (waypoint ? 100 : 1) : Number.NaN;
   // Under Class A and at least 500 ft (the engine's altitude_allowed;
   // 14 CFR 71.33, 91.135, 91.119(c)), as the address takes one.
   const valid = Number.isFinite(feet) && callEngine("altitude_allowed", { ft: feet });
@@ -116,29 +121,22 @@ export default function PointAltitudeDialog({
               ))}
             </ul>
           )}
-          {/* The figure with its unit inside the field, the stock input group. */}
-          <InputGroup className="h-10 font-mono">
-            {waypoint && (
-              <InputGroupAddon>
-                <InputGroupText>FL</InputGroupText>
-              </InputGroupAddon>
-            )}
-            <InputGroupInput
-              value={typed}
-              onChange={(e) => setTyped(e.target.value.replace(/\D/g, "").slice(0, waypoint ? 3 : 5))}
-              placeholder={waypoint ? "---" : "-----"}
-              inputMode="numeric"
-              spellCheck={false}
-              aria-label={waypoint ? `Altitude at ${ident}, flight level` : `Altitude at ${ident}, feet`}
-              className="font-mono"
-              data-testid="point-altitude-input"
-            />
-            {!waypoint && (
-              <InputGroupAddon align="inline-end">
-                <InputGroupText>ft</InputGroupText>
-              </InputGroupAddon>
-            )}
-          </InputGroup>
+          {/* The figure with its unit inside the field. */}
+          <NumberField
+            key={opened}
+            defaultValue={figure(shown)}
+            onTyped={setTyped}
+            formatOptions={waypoint ? THREE_FIGURES : WHOLE}
+            minValue={0}
+            maxValue={waypoint ? 999 : 99999}
+            placeholder={waypoint ? "---" : "-----"}
+            lead={waypoint ? "FL" : undefined}
+            unit={waypoint ? undefined : "ft"}
+            aria-label={waypoint ? `Altitude at ${ident}, flight level` : `Altitude at ${ident}, feet`}
+            className="h-10 font-mono"
+            inputClassName="font-mono"
+            data-testid="point-altitude-input"
+          />
         </form>
       </SheetDialog>
     </>
@@ -146,9 +144,9 @@ export default function PointAltitudeDialog({
 }
 
 /** The figure a point's altitude is typed as: a waypoint's flight level's
- *  three figures, an airport's feet. */
-function figure(point: EditedPoint | null): string {
+ *  three figures (045), an airport's feet. */
+function figure(point: EditedPoint | null): number | null {
   const feet = point?.altitude.feet ?? null;
-  if (feet === null) return "";
-  return point!.waypoint ? flightLevel(feet).slice(3) : String(Math.round(feet));
+  if (feet === null) return null;
+  return point!.waypoint ? Number(flightLevel(feet).slice(3)) : Math.round(feet);
 }

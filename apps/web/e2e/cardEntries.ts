@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { mapStill, searchAirports, settle, showTabs, sideDrawer, slow } from "./helpers";
+import { mapStill, searchAirports, settle, sheetUpToType, showTabs, sideDrawer, slow } from "./helpers";
 import type { Back } from "./cardTable";
 import { noCheckpoints } from "./startState";
 
@@ -76,6 +76,7 @@ export async function go(page: Page, url: string) {
 export async function pick(page: Page, typed: string, row: "airport" | "waypoint") {
   await go(page, "/app/plan");
   await showTabs(page);
+  await sheetUpToType(page);
   await page.getByTestId("search-airports").fill(typed);
   const rows = row === "airport" ? searchAirports(page) : sideDrawer(page).getByTestId("search-waypoint");
   await expect(rows.first()).toBeVisible({ timeout: slow(10_000) });
@@ -96,11 +97,23 @@ export async function tapLeg(page: Page) {
       const rows = JSON.parse(map.querySelector("[data-route-legs]")?.getAttribute("data-route-legs") ?? "[]") as {
         legs: { ends: number[][] }[];
       }[];
-      // The marks a tap would take: shown, and taking taps (a wind's arrow takes none).
+      // The marks a tap would take: the markers' (own ship), and the app's
+      // own drawn on the canvas, each a mark's 26 across round its point
+      // (useGlSymbols' probes; one MapLibre's collision left out is not).
       const marks = [...map.querySelectorAll<HTMLElement>(".maplibregl-marker")]
-        .filter((m) => m.dataset.declutter !== "hidden" && getComputedStyle(m).pointerEvents !== "none")
         .map((m) => m.getBoundingClientRect())
         .filter((b) => b.width > 0);
+      for (const name of ["route-marks", "leg-points", "fuel-stops", "stop-fields", "procedure-fixes", "route-way-chips", "wx-marks"]) {
+        const probe = map.querySelector<HTMLElement>(`[data-gl-probe="${name}"]`);
+        for (const m of JSON.parse(probe?.getAttribute(`data-${name}`) ?? "[]") as { x: number; y: number }[])
+          marks.push(new DOMRect(r.left + m.x - 13, r.top + m.y - 13, 26, 26));
+      }
+      // And the chart's airports (AirportsGl's probe), within a near
+      // miss's reach: a tap by one opened its card under the leg's, which
+      // then took the tap on the head.
+      const fields = (
+        JSON.parse(map.querySelector("[data-airport-marks]")?.getAttribute("data-airport-marks") ?? "[]") as { x: number; y: number }[]
+      ).map((m) => ({ x: r.left + m.x, y: r.top + m.y }));
       // What of the map is not under the panel: a phone's sheet, a desktop's side panel.
       const panel = document.querySelector<HTMLElement>('[data-slot="map-panel"]')?.getBoundingClientRect();
       const under = (x: number, y: number) =>
@@ -121,7 +134,11 @@ export async function tapLeg(page: Page) {
             y = a[1]! + (b[1]! - a[1]!) * f + ny * 16;
           if (x < 8 || x > innerWidth - 8 || y < 8 || y > innerHeight - 8 || under(x, y)) continue;
           // Clear of each by more than a near miss's reach (22) round its box.
-          if (marks.every((m) => x < m.left - 30 || x > m.right + 30 || y < m.top - 30 || y > m.bottom + 30)) out.push({ x, y });
+          if (
+            marks.every((m) => x < m.left - 30 || x > m.right + 30 || y < m.top - 30 || y > m.bottom + 30) &&
+            fields.every((m) => Math.hypot(x - m.x, y - m.y) > 24)
+          )
+            out.push({ x, y });
         }
       }
       return out;
@@ -140,18 +157,34 @@ export async function expectBack(page: Page, back: Back) {
   const panel = sideDrawer(page);
   if (back === "search") await expect(page.getByTestId("search-airports")).toBeVisible();
   if (back === "search-home") await expect(panel.getByTestId("search-home").or(page.getByTestId("search-airports")).first()).toBeVisible();
-  if (back === "plan") await expect(panel.getByTestId("route-box").or(panel.getByTestId("route-line")).first()).toBeVisible();
+  // FPL: its route's row, or at the pill its figures in the row's place
+  // (the owner, 2026-11-11, the canvas's b; sheet-page-toggle.spec).
+  if (back === "plan")
+    await expect(
+      panel
+        .getByTestId("route-box")
+        .or(panel.getByTestId("route-line"))
+        .or(page.getByTestId("panel-foot"))
+        .filter({ visible: true })
+        .first(),
+    ).toBeVisible();
   if (back === "console") await expect(page.getByTestId("console-sheet")).toBeVisible();
   if (back === "traffic") await expect(page.getByTestId("aircraft-search")).toBeVisible();
   if (back === "profile") await expect(page.getByTestId("profile-card")).toBeVisible();
 }
 
-/** The scroller of a card: the card itself or the first element in it that scrolls up and down. */
+/** The scroller of a card: the first element in it that scrolls up and
+ *  down (a list of its own, StopsCard's), else the one scroller it is laid
+ *  out in -- its own drawer's (CardStack's data-sheet-scroll, inside the
+ *  card's popup where the test id is on the popup, a SheetCard's), or the
+ *  sheet's for a page of the plan (SheetParts'). */
 export async function scrollOf(page: Page, card: string, to?: number | "end") {
   return page.getByTestId(card).evaluate((root, y) => {
     const all = [root, ...root.querySelectorAll<HTMLElement>("*")];
     const box =
-      all.find((el) => ["auto", "scroll"].includes(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1) ?? null;
+      all.find((el) => ["auto", "scroll"].includes(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1) ??
+      root.closest<HTMLElement>("[data-sheet-scroll]") ??
+      root.querySelector<HTMLElement>("[data-sheet-scroll]");
     if (!box) return { top: -1, max: 0 };
     if (y != null) box.scrollTo({ top: y === "end" ? box.scrollHeight : y });
     return { top: box.scrollTop, max: box.scrollHeight - box.clientHeight };
@@ -171,4 +204,30 @@ export async function hittable(page: Page, ids: string[]) {
     }
     return null;
   }, ids);
+}
+
+/** The top of the scroller a card is laid out in (scrollOf's), where its
+ *  pinned head sticks: its own drawer's, or the sheet's. */
+export async function contentTop(page: Page, card: string) {
+  return page
+    .getByTestId(card)
+    .first()
+    .evaluate((root) => {
+      const box = root.closest("[data-sheet-scroll]") ?? root.querySelector("[data-sheet-scroll]");
+      return box ? box.getBoundingClientRect().y : Number.NaN;
+    });
+}
+
+/** Whether a card is a nested drawer over the map's sheet: in a card's
+ *  popup (CardStack's data-sheet-card) inside the sheet's, which Base UI
+ *  marks while a nested drawer is open. */
+export async function nestedOverSheet(page: Page, card: string) {
+  return page
+    .getByTestId(card)
+    .first()
+    .evaluate((root) => {
+      const frame = root.closest("[data-sheet-card]");
+      const sheet = frame?.parentElement?.closest('[data-slot="map-panel"]');
+      return !!frame && !!sheet && sheet.hasAttribute("data-nested-drawer-open");
+    });
 }

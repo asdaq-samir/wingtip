@@ -88,7 +88,7 @@ def test_the_diagram_is_drawn_once_a_cycle_by_either_ident_and_kept(monkeypatch,
     (tmp_path / "dtpp-charts-2610.json").write_text(DLH_CHARTS)
     asked = []
     pdf = _blank_pdf(396, 594)
-    monkeypatch.setattr(publications.requests, "get", lambda url, **kw: asked.append(url) or _Answer(pdf))
+    monkeypatch.setattr(publications.outside, "get", lambda url, **kw: asked.append(url) or _Answer(pdf))
     on = date(2026, 10, 3)
 
     assert publications.airport_diagram_cycle("KDLH", on) == "2610"
@@ -108,7 +108,7 @@ def test_no_diagram_for_another_cycle_a_field_without_one_or_while_the_faa_is_do
     monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
     monkeypatch.setattr(publications, "_HELD", {})
     (tmp_path / "dtpp-charts-2610.json").write_text(DLH_CHARTS)
-    monkeypatch.setattr(publications.requests, "get", lambda url, **kw: _Answer(fail=True))
+    monkeypatch.setattr(publications.outside, "get", lambda url, **kw: _Answer(fail=True))
     on = date(2026, 10, 3)
 
     assert publications.airport_diagram_png("KDLH", "2609", on) is None
@@ -178,7 +178,7 @@ def test_a_booklets_pages_are_the_ones_naming_the_field_and_a_charts_its_own(mon
     booklet = _pdf_with(["KENOSHA (ENW)", "MADISON DANE COUNTY RGNL/TRUAX FLD (MSN)", "MSN CONTINUED (MSN)", "MILWAUKEE (MKE)"])
     approach = _pdf_with(["ILS OR LOC RWY 18"])
     answers = {"EC3TO.PDF": booklet, "00245IL18.PDF": approach}
-    monkeypatch.setattr(publications.requests, "get", lambda url, **kw: _Answer(answers[url.rsplit("/", 1)[1]]))
+    monkeypatch.setattr(publications.outside, "get", lambda url, **kw: _Answer(answers[url.rsplit("/", 1)[1]]))
     on = date(2026, 10, 3)
     pages = publications.chart_pages("https://aeronav.faa.gov/d-tpp/2610/EC3TO.PDF", "KMSN", on)
     assert [p["page"] for p in pages] == [2, 3]
@@ -199,7 +199,7 @@ def test_a_booklets_pages_are_the_ones_naming_the_field_and_a_charts_its_own(mon
 
 def test_only_the_faas_charts_in_force_are_read(monkeypatch, tmp_path):
     monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
-    monkeypatch.setattr(publications.requests, "get", lambda url, **kw: pytest.fail(f"asked for {url}"))
+    monkeypatch.setattr(publications.outside, "get", lambda url, **kw: pytest.fail(f"asked for {url}"))
     on = date(2026, 10, 3)
     for url in (
         "https://example.com/d-tpp/2610/X.PDF",
@@ -225,7 +225,7 @@ def test_the_faa_not_answering_is_told_from_a_chart_it_does_not_have(monkeypatch
             return _Answer(status=404)
         raise publications.requests.ConnectionError("down")
 
-    monkeypatch.setattr(publications.requests, "get", get)
+    monkeypatch.setattr(publications.outside, "get", get)
     with pytest.raises(publications.FaaUnreachable):
         publications.chart_pages("https://aeronav.faa.gov/d-tpp/2610/00245IL19.PDF", "KMSN", on)
     with pytest.raises(publications.FaaUnreachable):

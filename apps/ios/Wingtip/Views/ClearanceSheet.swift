@@ -12,18 +12,19 @@ import SwiftUI
 /// read back. The raw transcript, typed or heard, folds under them.
 /// Nothing heard changes the plan before Enter.
 struct ClearanceSheet: View {
+    @Environment(ClearanceListener.self) private var listener
+    @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(\.look) private var look
-    private var listener: ClearanceListener { ClearanceListener.shared }
     /// The words read: the newest transmission settled while listening,
     /// until the pilot picks one from the log or types.
     @State private var text = ""
     @State private var following = true
-    @State private var words: [String] = []
-    @State private var found: ClearancePlaces?
-    @State private var foundFor: String?
-    @State private var lookupProblem: String?
+    @State private var lookup = ClearanceLookup()
+    private var words: [String] { lookup.words }
+    private var found: ClearancePlaces? { lookup.found }
+    private var foundFor: String? { lookup.foundFor }
     /// The pilot's read back: the first transmission settled after Read
     /// back again was tapped, or typed in the transcript.
     @State private var readback = ""
@@ -32,6 +33,11 @@ struct ClearanceSheet: View {
     /// next one settled is the read back, not a new clearance.
     @State private var readbackAfter = -1
     @State private var transcriptOpen = false
+    /// The clearance's field while the pilot types in it: it stays where it
+    /// is until they leave it, rather than folding into the transcript as
+    /// soon as the first words read as a clearance and taking the keyboard
+    /// with it mid-word.
+    @FocusState private var typing: Bool
     @State private var askingCancel = false
     /// Words heard or typed, or a read back: Cancel asks before they go.
     private var edited: Bool { !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !readback.isEmpty }
@@ -101,10 +107,10 @@ struct ClearanceSheet: View {
         Form {
             Section {
                 ClearanceStepsRow(heard: clearance.heardAny, readBack: !readback.isEmpty, ready: ready)
-                if !clearance.heardAny {
+                if !clearance.heardAny || typing {
                     heardField
                 }
-                if let problem = listener.problem ?? lookupProblem ?? engineProblem {
+                if let problem = listener.problem ?? lookup.problem ?? lookup.wordsProblem ?? engineProblem {
                     ProblemLine(problem)
                 }
             } header: {
@@ -134,7 +140,7 @@ struct ClearanceSheet: View {
                 }
                 Section {
                     DisclosureGroup("Transcript", isExpanded: $transcriptOpen) {
-                        heardField
+                        if !typing { heardField }
                         TextField("Your read back, as said", text: $readback, axis: .vertical)
                             .lineLimit(2...6)
                         heardLog
@@ -153,7 +159,7 @@ struct ClearanceSheet: View {
             // (HIG Sheets: Cancel leading, Done trailing); listening goes
             // on with the sheet put away: the captions over the map carry
             // it, and Stop ends it.
-            FormCancel(edited: edited, cancel: { Navigator.shared.finish(.clearance) }, asking: $askingCancel)
+            FormCancel(edited: edited, cancel: { nav.finish(.clearance) }, asking: $askingCancel)
             // Done enters the route, as Enter the route does: nothing
             // heard reaches the plan before one of them.
             ToolbarItem(placement: .confirmationAction) { Button("Done") { enter() }.disabled(!ready) }
@@ -169,7 +175,7 @@ struct ClearanceSheet: View {
             }
         }
         .task {
-            words = (try? await Planner.clearanceWords(near: near, dep: plan.dep)) ?? []
+            await lookup.loadWords(near: near, dep: plan.dep)
         }
         // A clearance read in full is felt as a success; one with a
         // place the reader is unsure of, as a warning, once each. In
@@ -192,25 +198,7 @@ struct ClearanceSheet: View {
             let heard = text
             try? await Task.sleep(for: .milliseconds(400))
             guard !Task.isCancelled else { return }
-            do {
-                found = try await Planner.clearancePlaces(try Clearance.read(heard).asked(near: near, dep: plan.dep, dest: plan.dest))
-                foundFor = heard
-                lookupProblem = nil
-            } catch {
-                // No signal: found by the engine among the places of
-                // the regions kept for the air, SIDs and STARs left
-                // as said.
-                let packs = CyclePacks.shared.keptPacks()
-                let offline = Engine.hear(heard, tail: nil, packs: packs, near: nearPoints,
-                                          dep: plan.dep, stops: plan.stops, dest: plan.dest)
-                if let offline, !packs.isEmpty {
-                    found = offline.found
-                    foundFor = heard
-                    lookupProblem = "No signal: places found among the regions kept for the air."
-                } else {
-                    lookupProblem = "The places in it could not be looked up; check the connection and try again."
-                }
-            }
+            await lookup.lookUp(heard, near: near, nearPoints: nearPoints, dep: plan.dep, stops: plan.stops, dest: plan.dest)
         }
     }
 
@@ -218,6 +206,7 @@ struct ClearanceSheet: View {
     @ViewBuilder private var heardField: some View {
         TextField("Tap Listen and hold the phone to the speaker, or type the clearance.",
                   text: Binding(get: { text }, set: { text = $0; following = false }), axis: .vertical).lineLimit(3...6)
+            .focused($typing)
         ClearancePhotoRow { said in text = said; following = false }
         // The words said in full by the on-device model, where the engine
         // reads more from them (ClearanceInFull); in only on the tap.
@@ -268,7 +257,7 @@ struct ClearanceSheet: View {
             plan.ownAltitudeLegal = false
         }
         plan.plan()
-        Navigator.shared.finish(.clearance)
+        nav.finish(.clearance)
     }
 }
 

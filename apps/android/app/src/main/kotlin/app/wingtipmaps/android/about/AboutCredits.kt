@@ -2,9 +2,10 @@ package app.wingtipmaps.android.about
 
 /**
  * What About credits, in docs/legal/credits.md's order and words: the data
- * the app is made from, then the maps and software Android draws and
- * writes with (MapLibre GL, Google's tiles, Claude; Apple MapKit is the
- * iPhone's). Change credits.md first, then the web's
+ * the app is made from (the USGS's, the aerial imagery close in,
+ * CloseMap), then the maps and software the apps draw and write with
+ * (MapLibre GL, Google's tiles, which only the web's overlay draws;
+ * Apple MapKit is the iPhone's). Change credits.md first, then the web's
  * components/dataSources.ts, the iPhone's AboutView.swift and this, so the
  * three say the same. Each line says whose it is and the terms it is used
  * under, as the licences ask (ODbL 4.3 for adsb.lol, CDLA for Overture).
@@ -37,6 +38,5 @@ object AboutCredits {
     val software: List<Credit> = listOf(
         Credit("MapLibre GL", "BSD 3-Clause"),
         Credit("Google Maps Platform map tiles", "Google's terms; its attribution is drawn on the map"),
-        Credit("Claude, by Anthropic", "Anthropic's commercial terms"),
     )
 }

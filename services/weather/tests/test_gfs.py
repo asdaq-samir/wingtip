@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 import numpy as np
 import pytest
-from wingtip import weather, weather_store
+from wingtip import weather, weather_store, winds_stations
 
 from app import gfs
 
@@ -85,7 +85,7 @@ def test_a_period_is_stored_at_the_stations_to_the_end_of_its_window(monkeypatch
     record = weather_store.read("winds-06")
     assert record.until == datetime(2026, 11, 7, 21, tzinfo=timezone.utc).timestamp()
     assert record.data["period"]["use_to"] == "2026-11-07T21:00:00Z"
-    stations = weather._fd_stations("06")
+    stations = winds_stations.fd_stations("06")
     assert set(stations) == set(gfs.STATIONS)
     assert stations["DLH"][round(5574 * 3.28084)] == {"wind_dir_true_deg": 270, "wind_speed_kt": 19, "temp_c": -8}
     assert stations.modelled and stations.period["forecast_hour"] == 6

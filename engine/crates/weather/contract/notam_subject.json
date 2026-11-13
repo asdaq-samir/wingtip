@@ -1,0 +1,165 @@
+{
+  "x-call": "wingtip_weather::notam_subject::call",
+  "description": "What one NOTAM addresses on an airport's card, from its text as sent (FAA Order JO 7930.2, the domestic form of 4-2-1 and the ICAO form of chapter 8), matched to the card's own rows: the field (AD AP CLSD), a runway by its designation (RWY, 1-2-1 and 3-3-5; never a runway a taxiway's NOTAM names, 3-3-6), a light on it (PAPI, VASI, REIL, the approach lights, the edge lights, the beacon; AIM 2-1), the approaches an ILS, LOC, LDA or SDF serves (NAV) or the procedure an FDC IAP NOTAM titles (7-1-3), a frequency by its MHz or its facility (COM), the fuel (SVC), and a TFR near the field. Each with its badge's word (Closed, Closed at times, Part closed, Restricted, Out of service, Not available, Not authorized (NA, JO 7340.2), Changed, NOTAM, TFR) and how bad (unusable: closed, or a procedure not authorized; caution: the rest). CLSD EXC XNG or EXC TAX is still closed to landing and takeoff, said in the label. A NOTAM it cannot place answers no badge, never a guess.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NotamSubjectInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The NOTAM as sent, domestic or ICAO form."
+        },
+        "tfr": {
+          "type": "boolean",
+          "description": "The planner's kind \"tfr\": a TFR within 5 nm of the field."
+        },
+        "idents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The field's idents (DLH, KDLH), kept as written in the label."
+        },
+        "runways": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The card's runways as it names them (\"09/27\", \"18L/36R\"), in its order."
+        },
+        "lights": {
+          "type": "array",
+          "items": {
+            "title": "NotamSubjectLight",
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "runways": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "code",
+              "name",
+              "runways"
+            ]
+          },
+          "description": "The card's lights as lighting_read names them, in its order."
+        },
+        "approaches": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The card's approach charts by their titles (\"ILS OR LOC RWY 09\"), in its order."
+        },
+        "frequencies": {
+          "type": "array",
+          "items": {
+            "title": "NotamSubjectFrequency",
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "mhz": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "mhz"
+            ]
+          },
+          "description": "The card's frequencies, their type (TWR, ATIS, AWOS) and MHz, in its order."
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "NotamSubjectAnswer",
+      "type": "object",
+      "properties": {
+        "badges": {
+          "type": "array",
+          "items": {
+            "title": "NotamBadge",
+            "type": "object",
+            "properties": {
+              "on": {
+                "type": "string",
+                "enum": [
+                  "field",
+                  "runway",
+                  "light",
+                  "approach",
+                  "frequency",
+                  "fuel"
+                ],
+                "description": "What the badge goes next to."
+              },
+              "index": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Its row in the list the card gave (runways, lights, approaches, frequencies); null for the field and the fuel."
+              },
+              "word": {
+                "type": "string",
+                "description": "The badge's word, in sentence case."
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "unusable",
+                  "caution"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "description": "What it says, for the badge's label: the NOTAM's words (notam_read), or what a closure leaves open."
+              }
+            },
+            "required": [
+              "on",
+              "index",
+              "word",
+              "severity",
+              "label"
+            ]
+          }
+        }
+      },
+      "required": [
+        "badges"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

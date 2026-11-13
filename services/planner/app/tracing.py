@@ -1,7 +1,7 @@
 """Traces of the planner, when there is somewhere to send them: with
 OTEL_EXPORTER_OTLP_ENDPOINT set (docker-compose sets it to Jaeger's with
 TRACING=1), every request the planner answers is a span, under the
-gateway's or the assistant's where they sent a traceparent, and under it
+gateway's where it sent a traceparent, and under it
 each source asked with requests, each rule asked of the engine and each
 weather product read (wingtip.tracing), so a slow plan is one trace from
 the page's call down. The page's request id (X-Request-Id, which the

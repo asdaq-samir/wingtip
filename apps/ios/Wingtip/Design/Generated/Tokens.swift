@@ -92,6 +92,20 @@ enum WingtipColor {
         static let pattern = rgb(0x0E8F8A)
         /// A pattern leg's name ground, a step darker: white words on it 5.2:1, where the line's teal is 3.95:1 (WCAG 1.4.3).
         static let patternLabel = rgb(0x0B7A75)
+        /// An approach's final segment, its final approach fix to its missed approach point, over its plate on the map: the cyan ForeFlight marks it in (the owner's screenshot, 2026-11-11), apart from the procedure's indigo and the course's magenta. A chart colour, so the same in every look and at night.
+        static let finalApproach = rgb(0x00B4E6)
+        /// The sky over the tilted 3D map by day, the chart's pale blue (features/plan/map/terrain/SkyGl).
+        static let sky = rgb(0xA9CBE8)
+        /// The sky's pale band at the horizon by day, and the haze the far ground fades into.
+        static let skyHorizon = rgb(0xE6EEF6)
+        /// The 3D map's sky over the dimmed chart at night: dark, so it does not glare over a chart dimmed for the cockpit.
+        static let skyNight = rgb(0x0D1828)
+        /// The horizon's band and the far ground's haze at night, a step lighter than the night sky so the horizon still reads.
+        static let skyHorizonNight = rgb(0x26354A)
+        /// A runway's extended centreline on the ground in the 3D view, white over the chart and the satellite imagery alike, as a runway's own centreline is painted.
+        static let centreline = rgb(0xFFFFFF)
+        /// The glidepath in the air to a runway's threshold in the 3D view: the final approach segment's cyan, as it is the same descent.
+        static let glidepath = rgb(0x00B4E6)
         /// An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red.
         static let obstacle = rgb(0x7A1F1F)
     }
@@ -165,6 +179,90 @@ enum WingtipColor {
         static let other = rgb(0x9333EA)
         /// An urgent PIREP (UUA).
         static let urgent = rgb(0xDC2626)
+        /// The flow layer's wind streaks (features/weather-flow), white with a breath of blue as Apple Weather's wind map draws them, the owner's screenshot (2026-11-11).
+        static let flowStreak = rgb(0xF4F8FF)
+        /// The wind's field, one hue deepening with speed, the map tinted rather than a rainbow (Apple Weather's wind map): calm.
+        static let flowWindCalm = rgb(0x3A6DB0)
+        /// 25 kt.
+        static let flowWindBreeze = rgb(0x4A62C4)
+        /// 50 kt.
+        static let flowWindStrong = rgb(0x6A4FC6)
+        /// 75 kt and more.
+        static let flowWindGale = rgb(0x9A3FB4)
+        /// Precipitation by intensity, blue to violet to magenta to yellow (Apple Weather's precipitation map): light.
+        static let flowRainLight = rgb(0x3F8CF2)
+        /// Moderate.
+        static let flowRainModerate = rgb(0x7A52E0)
+        /// Heavy.
+        static let flowRainHeavy = rgb(0xD53FB2)
+        /// Extreme.
+        static let flowRainExtreme = rgb(0xF6C445)
+        /// The strongest returns.
+        static let flowRainExtremeTop = rgb(0xFFF4B8)
+        /// Cloud cover, the same grey-white thicker with cover.
+        static let flowCloud = rgb(0xEEF2F6)
+        /// The ceiling, by AIM 7-1-7's categories in the airport marks' own colours (category.lifr and the rest), strongest where it is lowest: under 500 ft.
+        static let flowCeilingLifr = rgb(0xA371F7)
+        /// 500 to under 1,000 ft.
+        static let flowCeilingIfr = rgb(0xB3261E)
+        /// 1,000 to 3,000 ft.
+        static let flowCeilingMvfr = rgb(0x1F6FEB)
+        /// Over 3,000 ft, fading to clear where there is none.
+        static let flowCeilingVfr = rgb(0x1A7F37)
+        /// Thunderstorm energy, surface CAPE, by the NWS's categories, yellow through orange and red to magenta as the SPC's mesoanalysis draws it: weak, from a few hundred J/kg.
+        static let flowCapeWeak = rgb(0xE8D44D)
+        /// Moderate, 1,000 J/kg.
+        static let flowCapeModerate = rgb(0xF08A24)
+        /// Strong, 2,500 J/kg.
+        static let flowCapeStrong = rgb(0xD62B2B)
+        /// Extreme, over 4,000 J/kg.
+        static let flowCapeExtreme = rgb(0xC02BB8)
+        /// The 2 m temperature, violet through blue, teal, green and yellow to red (Apple Weather's temperature map): -30 C.
+        static let flowTempFrigid = rgb(0x5A4FCF)
+        /// -10 C.
+        static let flowTempCold = rgb(0x3E8DDB)
+        /// 0 C.
+        static let flowTempFreezing = rgb(0x46C0B4)
+        /// 10 C.
+        static let flowTempCool = rgb(0x98D36A)
+        /// 20 C.
+        static let flowTempMild = rgb(0xF1C64B)
+        /// 30 C.
+        static let flowTempWarm = rgb(0xEF893C)
+        /// 40 C.
+        static let flowTempHot = rgb(0xD5443C)
+        /// Visibility, a slate veil that clears as it rises: the least.
+        static let flowVisLow = rgb(0x4B4D7A)
+        /// Ten miles, where the veil has gone.
+        static let flowVisHigh = rgb(0xC9CCDC)
+        /// AWC's icing severity (IFI), pale to deep blue as aviationweather.gov's Icing map shades it: trace.
+        static let flowIcingTrace = rgb(0x9FD3F5)
+        /// Light.
+        static let flowIcingLight = rgb(0x4FA3E8)
+        /// Moderate.
+        static let flowIcingModerate = rgb(0x2A5FD6)
+        /// Heavy.
+        static let flowIcingHeavy = rgb(0x5B2BB0)
+        /// AWC's turbulence (GTG, EDR), green to amber to red to magenta as its Turbulence map shades it: light.
+        static let flowTurbLight = rgb(0xB9D86A)
+        /// Moderate.
+        static let flowTurbModerate = rgb(0xF0B429)
+        /// Severe.
+        static let flowTurbSevere = rgb(0xD6402B)
+        /// Extreme.
+        static let flowTurbExtreme = rgb(0xB0217E)
+        /// The freezing level, ft MSL, blue where it is low (at the surface) to warm where it is high: the surface.
+        static let flowFrzLow = rgb(0x3A52C4)
+        /// 8,000 ft.
+        static let flowFrzMid = rgb(0x42B8A6)
+        /// 16,000 ft and up.
+        static let flowFrzHigh = rgb(0xE2A63A)
+        /// AWC's cloud tops, ft MSL, grey-white deepening to slate as they rise: low tops.
+        static let flowTopsLow = rgb(0xD5DBE4)
+        /// FL400 and up.
+        static let flowTopsHigh = rgb(0x5A6478)
+        /// The thin diagonal lines over where the layer has no data, as Apple Weather hatches it.
+        static let flowHatch = rgb(0x7B8494)
     }
     enum Score {
         /// Under 3.
@@ -814,6 +912,8 @@ enum WingtipMotion {
     static let sheetMost: TimeInterval = 0.35
     static let sheetEase = Animation.timingCurve(0, 0, 0.58, 1, duration: 0.3)
     static let sheetBackEase = Animation.timingCurve(0.2, 0.9, 0.3, 1, duration: 0.3)
+    static let drawer: TimeInterval = 0.45
+    static let drawerEase = Animation.timingCurve(0.32, 0.72, 0, 1, duration: 0.3)
     static let fade: TimeInterval = 0.2
     static let quick: TimeInterval = 0.15
     static let page: TimeInterval = 0.25
@@ -832,6 +932,43 @@ enum WingtipHaptic {
     static let warning: SensoryFeedback = .warning
     /// The sheet settling at a detent (pill, half, full).
     static let detent: SensoryFeedback = .impact(weight: .light)
+}
+
+/// The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees.
+enum WingtipMap {
+    static let pitchOpen: Double = 50
+    static let pitchMax: Double = 75
+    static let pitchFlatMax: Double = 60
+    static let zoomStationClose: Double = 10
+    static let zoomStationAlways: Double = 7
+    static let zoomBarbFarFrom: Double = 6
+    static let zoomBarbFull: Double = 9
+    static let zoomWorldWind: Double = 4
+    static let zoomStreakNear: Double = 7
+}
+
+/// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.
+enum WingtipFlow {
+    typealias Stop = (at: Double, colour: UIColor, alpha: UInt8)
+    static let rampWind: [Stop] = [(0, WingtipColor.Weather.flowWindCalm, 40), (25, WingtipColor.Weather.flowWindBreeze, 140), (50, WingtipColor.Weather.flowWindStrong, 190), (75, WingtipColor.Weather.flowWindGale, 220)]
+    static let rampStreak: [Stop] = [(0, WingtipColor.Weather.flowStreak, 90), (15, WingtipColor.Weather.flowStreak, 180), (40, WingtipColor.Weather.flowStreak, 250)]
+    static let rampCloud: [Stop] = [(0, WingtipColor.Weather.flowCloud, 0), (50, WingtipColor.Weather.flowCloud, 110), (100, WingtipColor.Weather.flowCloud, 215)]
+    static let rampTemp: [Stop] = [(-60, WingtipColor.Weather.flowTempFrigid, 235), (-30, WingtipColor.Weather.flowTempFrigid, 235), (-10, WingtipColor.Weather.flowTempCold, 235), (0, WingtipColor.Weather.flowTempFreezing, 235), (10, WingtipColor.Weather.flowTempCool, 235), (20, WingtipColor.Weather.flowTempMild, 235), (30, WingtipColor.Weather.flowTempWarm, 235), (40, WingtipColor.Weather.flowTempHot, 235), (45, WingtipColor.Weather.flowTempHot, 235)]
+    static let rampVis: [Stop] = [(0, WingtipColor.Weather.flowVisLow, 200), (5, WingtipColor.Weather.flowVisHigh, 90), (10, WingtipColor.Weather.flowVisHigh, 0)]
+    static let rampFrzlvl: [Stop] = [(0, WingtipColor.Weather.flowFrzLow, 200), (8000, WingtipColor.Weather.flowFrzMid, 180), (16000, WingtipColor.Weather.flowFrzHigh, 170)]
+    static let rampTops: [Stop] = [(0, WingtipColor.Weather.flowTopsLow, 120), (40000, WingtipColor.Weather.flowTopsHigh, 220)]
+    static let alphaRain: [UInt8] = [0, 160, 190, 215, 235, 245]
+    static let alphaCeiling: [UInt8] = [220, 200, 170, 110]
+    static let alphaCape: [UInt8] = [0, 130, 170, 200, 225]
+    static let alphaIcing: UInt8 = 210
+    static let alphaTurb: UInt8 = 200
+    static let alphaBlock: UInt8 = 220
+    static let coverTint: CGFloat = 0.6
+    static let coverWash: CGFloat = 0.75
+    static let coverHazard: CGFloat = 0.8
+    static let coverSolid: CGFloat = 0.9
+    static let scaleWindTicks: [Double] = [0, 25, 50, 75]
+    static let scaleRainHeadroom: Double = 15
 }
 
 enum WingtipSize {

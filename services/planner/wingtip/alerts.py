@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 import requests
-from shapely.geometry import shape
+from shapely.geometry import box as envelope
 
 from . import airports, airspace, elevation, faa_data, saa, sua, terrain, tfr
 from .engine import ask as engine
@@ -49,7 +49,10 @@ def _ground_under(geometry, refs: tuple) -> float | None:
     miles from a ridge or valley the area may lie over. None where the
     area has no AGL height or the ground cannot be read (the engine then
     takes the airplane's)."""
-    if "AGL" not in refs:
+    # The FAA's special use airspace data codes a height above the ground
+    # SFC with its figure (Brady Low MOA's 500 FT SFC), which the engine
+    # reads as AGL (its sua_tab::limit), so SFC wants the ground too.
+    if "AGL" not in refs and "SFC" not in refs:
         return None
     point = geometry.representative_point()
     return _ground_ft(point.y, point.x)
@@ -86,6 +89,10 @@ def _special_use(box: tuple) -> list | None:
             "floor_ref": area["floor_ref"],
             "ceiling_ft": area["ceiling_ft"],
             "ceiling_ref": area["ceiling_ref"],
+            # "To but not including" and "above but not including", which
+            # the engine reads a foot inside the figure.
+            "floor_desc": area.get("floor_desc"),
+            "ceiling_desc": area.get("ceiling_desc"),
             "times_of_use": area["times_of_use"],
             "ground_ft": _ground_under(geometry, (area["floor_ref"], area["ceiling_ref"])),
             "polygons": _polygons(geometry),
@@ -94,17 +101,19 @@ def _special_use(box: tuple) -> list | None:
     ]
 
 
-def _tfrs() -> list | None:
+def _tfrs(box: tuple) -> list | None:
+    """The TFRs whose areas reach `box` (south, west, north, east), the
+    box round the look-ahead's track: the engine's alerts_ahead finds one
+    only where the track goes into it (ahead.rs, tfr_alerts), so one
+    further off gives none, and its ground is not read. Their shapes are
+    parsed once a copy of the list (wingtip.tfr.with_shapes)."""
+    south, west, north, east = box
     try:
-        found = tfr.all_tfrs()
+        found = tfr.with_shapes(envelope(west, south, east, north))
     except tfr.TfrUnavailable:
         return None
     out = []
-    for restriction in found:
-        try:
-            geometry = shape(restriction["geometry"])
-        except (KeyError, TypeError, ValueError):
-            continue
+    for restriction, geometry in found:
         out.append(
             {
                 "notam_id": restriction["notam_id"],
@@ -183,7 +192,7 @@ def ahead(
     with ThreadPoolExecutor(max_workers=4) as pool:
         ground = pool.submit(_ground_ft, lat, lon)
         special_use = pool.submit(_special_use, box)
-        tfrs = pool.submit(_tfrs)
+        tfrs = pool.submit(_tfrs, box)
         volumes = _volumes(shp_path, box)
         given = {
             **own,

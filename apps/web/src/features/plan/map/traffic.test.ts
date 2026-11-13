@@ -1,8 +1,23 @@
 import { describe, expect, it } from "vitest";
 import type { TrafficAircraft } from "../../../lib/api/types";
-import { agedBy, carriedOn, closestApproach, colourRuns, heightColour, ownShipHex, nearOwnHeight, trafficLabel, trendPx } from "./traffic";
+import {
+  agedBy,
+  carriedOn,
+  closestApproach,
+  colourRuns,
+  heightColour,
+  ownShipHex,
+  nearOwnHeight,
+  trafficLabel,
+  trendPx,
+  trendSeconds,
+} from "./traffic";
 import type { Fix } from "../../../lib/map/position/ownShip";
 import trafficFixture from "../../../lib/fixtures/traffic.json";
+import { geoLoaded } from "../../../lib/geo";
+
+// The engine's geodesic rules, loaded by the setup file (vitestSetup).
+const geo = await geoLoaded;
 
 const plane = (over: Partial<TrafficAircraft> = {}): TrafficAircraft => ({
   hex: "a128b9",
@@ -86,31 +101,41 @@ describe("ownShipHex", () => {
 
 describe("carriedOn", () => {
   it("carries an airplane on along its track at its speed", () => {
-    // 120 kt east for 30 s: a mile, 0.0224 degrees of longitude at 42 N.
-    const there = carriedOn(plane({ lat: 42, lon: -88, track_deg: 90, speed_kt: 120 }), 30);
+    // 120 kt east for 30 s: a mile, 0.02235 degrees of longitude at 42 N on
+    // WGS-84 (pyproj's Geod.fwd, as the engine's geodesic gives it).
+    const there = carriedOn(geo, plane({ lat: 42, lon: -88, track_deg: 90, speed_kt: 120 }), 30);
     expect(there.lat).toBeCloseTo(42, 4);
-    expect(there.lon).toBeCloseTo(-88 + 1 / (60 * Math.cos((42 * Math.PI) / 180)), 4);
+    expect(there.lon).toBeCloseTo(-87.977647, 5);
   });
 
   it("leaves it where it was with no track or speed, or no time gone", () => {
-    expect(carriedOn(plane({ track_deg: null }), 30)).toEqual({ lat: 42.3246, lon: -88.0741 });
-    expect(carriedOn(plane({ speed_kt: null }), 30)).toEqual({ lat: 42.3246, lon: -88.0741 });
-    expect(carriedOn(plane(), 0)).toEqual({ lat: 42.3246, lon: -88.0741 });
+    expect(carriedOn(geo, plane({ track_deg: null }), 30)).toEqual({ lat: 42.3246, lon: -88.0741 });
+    expect(carriedOn(geo, plane({ speed_kt: null }), 30)).toEqual({ lat: 42.3246, lon: -88.0741 });
+    expect(carriedOn(geo, plane(), 0)).toEqual({ lat: 42.3246, lon: -88.0741 });
   });
 });
 
 describe("trendPx", () => {
   it("is a minute at its speed at the map's scale", () => {
-    // 120 kt for a minute is 2 nm, 3,704 m; at zoom 10 at 42 N a point is
-    // 113.6 m.
-    expect(trendPx(120, 42, 10)).toBeCloseTo(32.6, 0);
-    expect(trendPx(120, 42, 11)).toBeCloseTo(65.2, 0);
+    // 120 kt for a minute is 2 nm, 3,704 m; at zoom 10 at 42 N a point of
+    // MapLibre's 512-point world is 56.8 m.
+    expect(trendPx(120, 42, 10)).toBeCloseTo(65.2, 0);
+    expect(trendPx(120, 42, 11)).toBeCloseTo(130.4, 0);
   });
 
   it("is nothing standing still, and no longer than 160 points", () => {
     expect(trendPx(0, 42, 10)).toBe(0);
     expect(trendPx(null, 42, 10)).toBe(0);
     expect(trendPx(500, 42, 14)).toBe(160);
+  });
+});
+
+describe("trendSeconds", () => {
+  it("is the minute where the line fits in 160 points, and shorter where it would not", () => {
+    expect(trendSeconds(120, 42, 10)).toBe(60);
+    // 500 kt at zoom 14 is some 2,170 points a minute: cut to 160.
+    expect(trendSeconds(500, 42, 14)).toBeCloseTo((60 * 160) / trendPx(500, 42, 14, Infinity), 6);
+    expect(trendSeconds(null, 42, 10)).toBe(0);
   });
 });
 

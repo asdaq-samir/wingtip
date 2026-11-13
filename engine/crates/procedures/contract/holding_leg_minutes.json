@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::hold",
+  "description": "The inbound leg's minutes (AIM 5-3-8 j.4(a)): 1 at or below 14,000 ft MSL, 1.5 above.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "HoldingLegMinutesInput",
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "HoldingLegMinutesAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

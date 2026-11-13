@@ -13,13 +13,11 @@
 use crate::json::{self, Value};
 use crate::xml::{self, Element};
 use crate::{metar, sort::StableSort, time, validity};
-
-/// Feet in a metre (the international foot, 0.3048 m).
-const FT_PER_M: f64 = 1.0 / 0.3048;
+use wingtip_core::units::FT_PER_M;
 
 /// How old a PIREP is still told: the conditions it reports move on. A
 /// design choice -- a PIREP has no period of validity (AIM chapter 7,
-/// section 1, Pilot Weather Reports; AC 00-45H describes them).
+/// section 1, Pilot Weather Reports; FAA-H-8083-28B 24.5.1 describes them).
 pub const PIREP_MAX_AGE_S: i64 = 90 * 60;
 /// The highest a PIREP is told for: a light airplane's sky under Class A
 /// (18,000 ft MSL, 14 CFR 71.33), not the airliners' reports from the
@@ -28,8 +26,8 @@ pub const PIREP_MAX_ALT_FT: f64 = wingtip_flight::limits::CLASS_A_FLOOR_FT;
 /// How far either side of the route a PIREP is told (a design choice).
 pub const PIREP_CORRIDOR_NM: f64 = 30.0;
 
-/// The G-AIRMET hazards a VFR flight is told of, in words (AC 00-45H,
-/// Graphical AIRMET: Sierra's IFR and mountain obscuration, Tango's
+/// The G-AIRMET hazards a VFR flight is told of, in words (FAA-H-8083-28B
+/// 26.3.1.1, AIRMETs over the CONUS: Sierra's IFR and mountain obscuration, Tango's
 /// low-level turbulence, strong surface winds and low-level wind shear,
 /// Zulu's icing). High-level turbulence (TURB-HI, above FL180) and the
 /// freezing-level contours are not: the one is above the flight, the
@@ -43,7 +41,7 @@ pub const GAIRMET_HAZARDS: [(&str, &str); 6] = [
     ("SFC_WND", "Strong surface winds"),
 ];
 /// A G-AIRMET is a snapshot valid at its time, three hours apart out to
-/// 12 hours from issue (AC 00-45H, Graphical AIRMET): one is told when it
+/// 12 hours from issue (FAA-H-8083-28B 26.3.1.1): one is told when it
 /// is valid within this of some time of the flight, half the gap.
 pub const GAIRMET_SNAPSHOT_S: i64 = 90 * 60;
 
@@ -198,7 +196,7 @@ pub fn tafs(text: &str) -> Result<String, String> {
             json::string(&mut p, &change);
             p.push_str(",\"probability\":");
             json::opt_number(&mut p, num(f.text_at(&["probability"])));
-            // The wind from true north, as a TAF gives it (AC 00-45H, the
+            // The wind from true north, as a TAF gives it (FAA-H-8083-28B 27.4.2.5, the
             // TAF), for the runway a flight finds in use; VRB has no direction.
             for (key, tag) in
                 [("wind_dir_true_deg", "wind_dir_degrees"), ("wind_speed_kt", "wind_speed_kt"), ("wind_gust_kt", "wind_gust_kt")]
@@ -430,15 +428,15 @@ fn secs(v: &Value, key: &str) -> Option<i64> {
 /// To when a stored copy of `product` may be served when later fetches
 /// fail (Unix seconds; None, no limit), by its product's own validity:
 ///
-/// - "metars": none. A METAR is an observation; AC 00-45H gives it no
+/// - "metars": none. A METAR is an observation; FAA-H-8083-28B 24.4.1 gives it no
 ///   period of validity, only its time, which every report carries and
 ///   the screens show, so the last set heard is served however long the
 ///   outage, as "the latest reports, made at ..." (the owner, 2026-11-04);
 /// - "tafs": the end of the latest valid period in it (24 or 30 hours
-///   from issue, AC 00-45H's TAF; validity.rs);
+///   from issue, FAA-H-8083-28B 27.4.1; validity.rs);
 /// - "airsigmets": the latest "valid until" of them (up to 4 hours for a
 ///   SIGMET, 6 for volcanic ash or a tropical cyclone, 2 for a convective
-///   SIGMET, 6 for an AIRMET; AC 00-45H);
+///   SIGMET, 6 for an AIRMET; FAA-H-8083-28B 26.2.4, 26.2.5, 26.3.3);
 /// - "pireps": PIREP_MAX_AGE_S after the newest report, past which a held
 ///   set would read as "no reports along the route" where the truth is
 ///   "none could be had";

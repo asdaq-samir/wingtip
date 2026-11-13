@@ -11,6 +11,7 @@
 
 pub mod awc;
 pub mod calls;
+pub mod covers;
 pub mod field;
 pub mod hours;
 pub mod route;
@@ -62,8 +63,9 @@ pub struct Hour {
     pub at_times_chance: bool,
 }
 
-/// One hour of a TAF from the groups in force then, as AC 00-45H (Aviation
-/// Weather Services) sets the change groups out: the forecast's first line
+/// One hour of a TAF from the groups in force then, as FAA-H-8083-28B
+/// 27.4.2.10 (Aviation Weather Handbook) sets the change groups out, BECMG
+/// as WMO No. 306 has it (the handbook names it only in joint-use TAFs): the forecast's first line
 /// and each FM group the prevailing weather until the next; a BECMG a
 /// change that happens somewhere in its window and holds after it, so
 /// while it is `becoming` the hour is the worse of `before` and after (a

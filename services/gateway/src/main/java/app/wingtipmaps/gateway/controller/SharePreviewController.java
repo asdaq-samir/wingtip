@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.dto.SharedFlightDto;
 import app.wingtipmaps.gateway.service.FlightShareService;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -13,7 +14,6 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.CacheControl;
@@ -51,10 +51,8 @@ public class SharePreviewController {
     private final ResourceLoader resources;
     private final String staticLocation;
 
-    public SharePreviewController(
-            FlightShareService shares,
-            ResourceLoader resources,
-            @Value("${app.static-location:classpath:/static/app/}") String staticLocation) {
+    public SharePreviewController(FlightShareService shares, ResourceLoader resources, AppProperties app) {
+        String staticLocation = app.staticLocation();
         this.shares = shares;
         this.resources = resources;
         this.staticLocation = staticLocation;

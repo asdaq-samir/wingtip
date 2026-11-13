@@ -22,7 +22,6 @@ from __future__ import annotations
 import io
 import json
 import logging
-import os
 import re
 import threading
 import xml.etree.ElementTree as ET
@@ -32,10 +31,12 @@ from pathlib import Path
 import numpy as np
 import pypdfium2
 import requests
+import wingtip_native
 from PIL import Image
 from scipy import ndimage
 
-from . import data_cycles
+from . import data_cycles, outside
+from .atomic import atomic_path
 from .config import DATA_DIR
 from .config import FAA_HEADERS as HEADERS
 from .single_flight import once
@@ -118,16 +119,14 @@ def _index(name: str, edition: str, url: str, parse) -> dict:
             index = json.loads(path.read_text())
         else:
             try:
-                resp = requests.get(url, headers=HEADERS, timeout=120)
+                resp = outside.get(url, headers=HEADERS, timeout=120)
                 resp.raise_for_status()
                 index = parse(resp.content)
             except (requests.RequestException, ET.ParseError) as err:
                 log.warning("No %s index for %s: %s", name, edition, err)
                 return {}
-            CACHE_DIR.mkdir(parents=True, exist_ok=True)
-            partial = path.with_name(path.name + ".part")
-            partial.write_text(json.dumps(index))
-            os.replace(partial, path)
+            with atomic_path(path) as partial:
+                partial.write_text(json.dumps(index))
         _HELD[key] = index
         return index
 
@@ -228,16 +227,14 @@ def airport_diagram_png(ident: str, cycle: str, on: date | None = None) -> Path 
         if path.exists():
             return path
         try:
-            resp = requests.get(url, headers=HEADERS, timeout=60)
+            resp = outside.get(url, headers=HEADERS, timeout=60)
             resp.raise_for_status()
             png = _drawn(resp.content)
         except (requests.RequestException, pypdfium2.PdfiumError) as err:
             log.warning("No airport diagram for %s in %s: %s", ident, cycle, err)
             return None
-        path.parent.mkdir(parents=True, exist_ok=True)
-        partial = path.with_name(path.name + ".part")
-        partial.write_bytes(png)
-        os.replace(partial, path)
+        with atomic_path(path) as partial:
+            partial.write_bytes(png)
     return path
 
 
@@ -285,7 +282,7 @@ def _pdf_of(source: str, edition: str, name: str) -> bytes | None:
             return path.read_bytes()
         base = DTPP_BASE if source == "dtpp" else DCS_BASE
         try:
-            resp = requests.get(f"{base}/{edition}/{name}", headers=HEADERS, timeout=60)
+            resp = outside.get(f"{base}/{edition}/{name}", headers=HEADERS, timeout=60)
             if resp.status_code in (403, 404):
                 # S3, which serves the FAA's files, answers 403 for a key that is not there.
                 with _LOCK:
@@ -297,10 +294,8 @@ def _pdf_of(source: str, edition: str, name: str) -> bytes | None:
         except requests.RequestException as err:
             log.warning("No %s %s in %s: %s", source, name, edition, err)
             raise FaaUnreachable(str(err)) from err
-        path.parent.mkdir(parents=True, exist_ok=True)
-        partial = path.with_name(path.name + ".part")
-        partial.write_bytes(resp.content)
-        os.replace(partial, path)
+        with atomic_path(path) as partial:
+            partial.write_bytes(resp.content)
         return resp.content
 
 
@@ -403,10 +398,8 @@ def chart_page_png(source: str, edition: str, name: str, page: int, on: date | N
         except (pypdfium2.PdfiumError, IndexError) as err:
             log.warning("No page %s of %s %s in %s: %s", page, source, name, edition, err)
             return None
-        path.parent.mkdir(parents=True, exist_ok=True)
-        partial = path.with_name(path.name + ".part")
-        partial.write_bytes(png)
-        os.replace(partial, path)
+        with atomic_path(path) as partial:
+            partial.write_bytes(png)
     return path
 
 
@@ -418,32 +411,26 @@ _DMS = re.compile(r"(\d{1,3})\s*°?\s*(\d{1,2}(?:\.\d+)?)\s*['’]\s*([NSEW])")
 def _graticule(page) -> tuple | None:
     """Where latitude and longitude fall on a north-up diagram's page, from
     its own labels: (y = a * lat + b, x = c * lon + d) in the page's points
-    from its top left, as least squares over two labels of each at the
-    least. None where the diagram has too few, or is turned on its page
-    (its scale north-south and east-west then disagree): KCRQ's and
+    from its top left. The labels are found and placed here, from the
+    page's text; the fit and its checks are the engine's
+    diagram_graticule. None where the diagram has too few, or is turned on
+    its page (its scales then disagree, or north is not up): KCRQ's and
     KORD's have none."""
     textpage = page.get_textpage()
     text = textpage.get_text_bounded()
     height = page.get_height()
-    lats, lons = [], []
+    labels = []
     for match in _DMS.finditer(text):
         boxes = [textpage.get_charbox(i) for i in range(match.start(), match.end())]
         x = (min(b[0] for b in boxes) + max(b[2] for b in boxes)) / 2
         y = height - (min(b[1] for b in boxes) + max(b[3] for b in boxes)) / 2
-        degrees = int(match.group(1)) + float(match.group(2)) / 60
-        if match.group(3) in "SW":
-            degrees = -degrees
-        (lats if match.group(3) in "NS" else lons).append((degrees, x, y))
-    if len({d for d, _, _ in lats}) < 2 or len({d for d, _, _ in lons}) < 2:
+        labels.append({"text": match.group(0), "x": x, "y": y})
+    grid = json.loads(wingtip_native.call("diagram_graticule", json.dumps({"labels": labels})))
+    # The crop places the runways on a north-up page only, latitude down
+    # the page and longitude across it.
+    if grid is None or grid["lat_on_x"] or grid["north_deg"] != 0:
         return None
-    a, b = np.polyfit([d for d, _, _ in lats], [y for _, _, y in lats], 1)
-    c, d = np.polyfit([d for d, _, _ in lons], [x for _, x, _ in lons], 1)
-    # North up: y falls as latitude rises, x grows as longitude does, and a
-    # degree of latitude is a degree of longitude over its cosine.
-    mid = np.mean([deg for deg, _, _ in lats])
-    if a >= 0 or c <= 0 or not 0.85 < (c / np.cos(np.radians(mid))) / -a < 1.15:
-        return None
-    return a, b, c, d
+    return grid["a"], grid["b"], grid["c"], grid["d"]
 
 
 def _thick_strokes(image) -> tuple | None:
@@ -502,8 +489,8 @@ def _runways_drawn(pdf: bytes, ends: list) -> bytes | None:
     if not box:
         return None
     x0, y0, x1, y1 = box
-    # A little round the runways' ends, for their numbers: the box is small.
-    pad = 0.03 * max(x1 - x0, y1 - y0) + 4 * DIAGRAM_SCALE
+    # Room for the taxiways and ramps too (the owner, 2026-11-13: "zoom out").
+    pad = 0.15 * max(x1 - x0, y1 - y0) + 4 * DIAGRAM_SCALE
     crop = (int(max(0, x0 - pad)), int(max(0, y0 - pad)), int(min(image.width, x1 + pad)), int(min(image.height, y1 + pad)))
     # Most of the sheet is no crop -- the thick strokes found a legend's or
     # an inset's too (KLAX's): the card's own sketch serves better then.
@@ -530,7 +517,7 @@ def airport_diagram_runways_png(ident: str, cycle: str, ends: list, on: date | N
     # What is drawn depends on the ends: with none the sheet's strokes
     # alone place the crop, and that must not stand in for the labels'
     # once NASR's ends are there.
-    kind = "runways" if ends else "runways-noends"
+    kind = "runways-wide" if ends else "runways-wide-noends"  # wider margin, 2026-11-13
     path = CACHE_DIR / "diagrams" / cycle / f"{Path(url).stem}-{kind}.png"
     none = path.with_suffix(".none")
     if path.exists():
@@ -558,9 +545,8 @@ def airport_diagram_runways_png(ident: str, cycle: str, ends: list, on: date | N
             # at every card for the rest of the cycle.
             none.touch()
             return None
-        partial = path.with_name(path.name + ".part")
-        partial.write_bytes(png)
-        os.replace(partial, path)
+        with atomic_path(path) as partial:
+            partial.write_bytes(png)
     return path
 
 

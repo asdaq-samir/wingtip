@@ -66,10 +66,9 @@ def find_note(notes: list, lat: float, lon: float, pilot: str | None = None) -> 
     return None
 
 
-def _append(route: str, lat: float, lon: float, description: str, pilot: str, path: Path, if_absent: bool) -> tuple[dict, bool]:
-    """(the note in force at the place, whether it is the one written
-    now). Decided under the file's lock, against the file as it is --
-    not a snapshot taken earlier by the caller.
+def _append(route: str, lat: float, lon: float, description: str, pilot: str, path: Path) -> dict:
+    """The note written. Decided under the file's lock, against the file
+    as it is -- not a snapshot taken earlier by the caller.
 
     The row is placed at the note already nearest it on the route, when
     one is within SAME_PLACE_NM: a checkpoint's coordinates shift by a
@@ -82,8 +81,6 @@ def _append(route: str, lat: float, lon: float, description: str, pilot: str, pa
         nearest = min(on_route, key=lambda n: distance_nm(n["lat"], n["lon"], lat, lon), default=None)
         if nearest is not None and distance_nm(nearest["lat"], nearest["lon"], lat, lon) < SAME_PLACE_NM:
             lat, lon = nearest["lat"], nearest["lon"]
-        if if_absent and (held := find_note(on_route, lat, lon, pilot)) is not None:
-            return held, False
         row = {
             "route": route,
             "lat": lat,
@@ -101,25 +98,23 @@ def _append(route: str, lat: float, lon: float, description: str, pilot: str, pa
             if not (n["route"] == route and n["pilot"] == pilot and distance_nm(n["lat"], n["lon"], lat, lon) < SAME_PLACE_NM)
         ]
         write_rows(path, COLUMNS, [*kept, row])
-    return row, True
+    return row
 
 
 def save_note(route: str, lat: float, lon: float, description: str, pilot: str | None = None, path: Path | None = None) -> dict:
     """Save one note, replacing the same pilot's earlier one at that place
     (the file keeps the latest only, so it cannot be grown without limit).
     `pilot` makes it that pilot's own; None is the shared note."""
-    row, _ = _append(route, lat, lon, description, pilot or "", path or NOTES_PATH, if_absent=False)
-    return row
+    return _append(route, lat, lon, description, pilot or "", path or NOTES_PATH)
 
 
-def seed_note(route: str, lat: float, lon: float, description: str, path: Path | None = None) -> tuple[dict, bool]:
-    """The generated shared note, written only where the place has no
-    shared note yet: (the note in force, whether it is this one).
-    Generation used to check a snapshot taken when its stream began and
-    then write regardless, so a shared edit saved meanwhile -- where
-    nobody signs in, every edit is shared -- was buried under the
-    generated text."""
-    return _append(route, lat, lon, description, "", path or NOTES_PATH, if_absent=True)
+def pilots_notes(pilot: str, path: Path | None = None) -> list[dict]:
+    """Every note one pilot wrote for themselves, oldest first: their copy
+    of what is kept for them (the gateway's Export My Data). The shared
+    notes are nobody's and are not in it."""
+    if not pilot:
+        raise ValueError("a pilot's id, not the shared notes' empty one")
+    return [n for n in load_notes(path=path) if n["pilot"] == pilot]
 
 
 def forget_pilot(pilot: str, path: Path | None = None) -> int:

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Ban, Cloud, Gauge, KeyRound, Radio, ShieldAlert } from "lucide-react";
 import { ACTION, CARD_ACTIONS } from "../../../lib/cardActions";
@@ -11,7 +11,9 @@ import { degreesMinutes, minimumsLine, shortAirspaceName } from "../../../lib/ai
 import type { LatLon } from "../../../lib/geo";
 import { altFt } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
-import { CardHead, PanelCard } from "../../../components/PanelCard";
+import { CardHead } from "../../../components/CardHead";
+import { SheetCard } from "../../../components/SheetCard";
+import { useCardSize } from "../../../lib/sheetCards";
 import { CardAction } from "../../../components/CardAction";
 import { RowBadge } from "../../../components/RowBadge";
 import { BADGE } from "../../../lib/rowBadges";
@@ -110,7 +112,6 @@ export default function AirspaceCard({
   point,
   onClose,
   summary = false,
-  onExpand,
   onAdd,
   onDirect,
   onHold,
@@ -128,8 +129,10 @@ export default function AirspaceCard({
   /** At the panel's minimal size, as a held point opens: its first
    *  layers, the rest a swipe up (the airport card's summary). */
   summary?: boolean;
-  onExpand?: () => void;
 }) {
+  // Its own drawer, sized from here: all the way up for the rest of its layers.
+  const cardId = useId();
+  const card = useCardSize(cardId);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["airspaceAt", point.lat, point.lon],
     queryFn: () => api.airspaceAt(point.lat, point.lon),
@@ -147,7 +150,8 @@ export default function AirspaceCard({
     ? CARD_ACTIONS.point.map((name) => ({ ...ACTION[name], go: handlers[name], testId: testIds[name] })).filter((a) => a.go)
     : [];
   return (
-    <PanelCard testId="airspace-card">
+    // Half way as a point held on the chart opens it (the card rule's 2).
+    <SheetCard head={false} testId="airspace-card" cardId={cardId}>
       <CardHead
         // The point itself as the card's name, its name off the nearest
         // fix where it has one: the sheet's own title already says
@@ -196,7 +200,7 @@ export default function AirspaceCard({
           stays as it was (the owner's ask). */}
       {data && (
         <div className="pt-3">
-          <PillSection title="Airspace here" onMore={summary ? onExpand : undefined} testId="airspace-summary">
+          <PillSection title="Airspace here" onMore={summary ? () => card?.setSize("full") : undefined} testId="airspace-summary">
             {/* Feet MSL (each range says so), from the FAA's airspace file
                 and the ground's height there: the chart is the authority. */}
             <ListGroup>
@@ -303,6 +307,6 @@ export default function AirspaceCard({
           )}
         </div>
       )}
-    </PanelCard>
+    </SheetCard>
   );
 }

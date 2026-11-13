@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_weather::notam_rank::call",
-  "description": "A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. The top three in force are said first; none is dropped.",
+  "description": "A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. Every one in force comes before every one that is not, whatever its points, then best first. The top three in force are said first; none is dropped.",
   "type": "object",
   "properties": {
     "input": {

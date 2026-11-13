@@ -80,36 +80,6 @@ final class WaypointMarkView: MKAnnotationView {
 /// The pin a held finger drops, where the airspace card is for.
 final class HeldAnnotation: MKPointAnnotation {}
 
-/// An approach plate's plan view laid on the chart where the planner
-/// places it by the FAA's georeference (wingtip.plates), on its white sheet,
-/// the procedure's own lines over it: a sketch to fly the dry run
-/// against, not the chart to navigate by.
-final class PlateMapOverlay: NSObject, MKOverlay {
-    let key: String
-    let image: UIImage
-    let boundingMapRect: MKMapRect
-    let coordinate: CLLocationCoordinate2D
-
-    init(key: String, plate: PlateOverlay, image: UIImage) {
-        self.key = key
-        self.image = image
-        let northWest = MKMapPoint(CLLocationCoordinate2D(latitude: plate.north, longitude: plate.west))
-        let southEast = MKMapPoint(CLLocationCoordinate2D(latitude: plate.south, longitude: plate.east))
-        boundingMapRect = MKMapRect(x: northWest.x, y: northWest.y, width: southEast.x - northWest.x, height: southEast.y - northWest.y)
-        coordinate = CLLocationCoordinate2D(latitude: (plate.north + plate.south) / 2, longitude: (plate.west + plate.east) / 2)
-    }
-}
-
-final class PlateRenderer: MKOverlayRenderer {
-    override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
-        guard let plate = overlay as? PlateMapOverlay else { return }
-        let rect = self.rect(for: plate.boundingMapRect)
-        UIGraphicsPushContext(context)
-        plate.image.draw(in: rect)
-        UIGraphicsPopContext()
-    }
-}
-
 /// What the root view hands the map for these: the pin, the switches
 /// from Setup, the approaches picked, and what a hold or a waypoint's
 /// actions do.
@@ -121,6 +91,12 @@ struct MapExtrasInput {
     var classB = false
     var plates = true
     var approaches: [ProcedurePick] = []
+    /// The plates taken off the map from their card (HiddenPlates).
+    var hiddenPlates: Set<String> = []
+    /// How the plates are drawn, from their card (PlateLook).
+    var plateLook = PlateLook()
+    /// A plate's page tapped: its card, by the plate's key.
+    var onPlate: ((String) -> Void)?
     var onHold: ((CLLocationCoordinate2D) -> Void)?
     /// A waypoint's card's action (CardKind.navaid): Direct To, Add to
     /// Route, Copy.
@@ -142,7 +118,7 @@ struct MapExtrasInput {
 
 /// The map's coordinator's part for these, kept apart from the rest of
 /// it: the held finger, the waypoints asked for as the map rests, the
-/// Class B fields, the plates. On the main actor, as the map is; the
+/// Class B fields, the plates (PlateLayer). On the main actor, as the map is; the
 /// coordinator's delegate calls come in through MainActor.assumeIsolated.
 @MainActor
 final class MapExtrasState: NSObject {
@@ -151,26 +127,25 @@ final class MapExtrasState: NSObject {
     private var held: HeldAnnotation?
     private var showWaypoints = false
     private var showClassB = false
-    private var plateKeys: [String] = []
     private var waypointMarks: [String: WaypointAnnotation] = [:]
     private var classBMarks: [AirportAnnotation] = []
-    private var plates: [PlateMapOverlay] = []
+    let plates = PlateLayer()
     private var waypointTask: Task<Void, Never>?
     private var classBTask: Task<Void, Never>?
-    private var plateTask: Task<Void, Never>?
 
     override nonisolated init() { super.init() }
 
     /// A finger held on the map asks what is there, as Maps drops a pin.
     func attach(to map: MKMapView) {
         map.register(WaypointMarkView.self, forAnnotationViewWithReuseIdentifier: WaypointMarkView.reuse)
+        plates.attach(to: map)
         let hold = UILongPressGestureRecognizer(target: self, action: #selector(held(_:)))
         hold.minimumPressDuration = 0.5
         map.addGestureRecognizer(hold)
         // The airports, checkpoints and traffic in view in VoiceOver's rotor,
         // and to Siri as what is on the screen (View Annotations).
         map.accessibilityCustomRotors = MapRotors.rotors(for: map)
-        if #available(iOS 18.4, *) { ChartMapSiri.attach(to: map) }
+        ChartMapSiri.attach(to: map)
         // The held finger for VoiceOver, which cannot hold a point: the
         // same ask, of the map's centre (Apple's HIG: every gesture has an
         // accessible way to do the same).
@@ -216,12 +191,9 @@ final class MapExtrasState: NSObject {
             showClassB = input.classB
             refreshClassB(map)
         }
-        let picks = input.plates ? input.approaches.filter { $0.kind == "approach" } : []
-        let keys = picks.map { "\($0.ident):\($0.id)" }
-        if keys != plateKeys {
-            plateKeys = keys
-            refreshPlates(map, picks: picks, tiles: tiles)
-        }
+        plates.onPlate = input.onPlate
+        plates.update(map, picks: PlateLayer.shown(plates: input.plates, approaches: input.approaches, hidden: input.hiddenPlates),
+                      look: input.plateLook, tiles: tiles)
     }
 
     /// The map rested: the waypoints in view asked for again.
@@ -244,7 +216,7 @@ final class MapExtrasState: NSObject {
             view.accessibilityLabel = "The point held, whose airspace the card shows"
             return view
         }
-        return nil
+        return plates.view(for: annotation, on: map)
     }
 
     /// The navaid card's actions in a row, the first filled: Direct To and
@@ -311,30 +283,6 @@ final class MapExtrasState: NSObject {
             guard let fields = try? await Planner.classB(), !Task.isCancelled, let self, let map else { return }
             classBMarks = fields.map { AirportAnnotation(MapExtras.pin($0)) }
             map.addAnnotations(classBMarks)
-        }
-    }
-
-    private func refreshPlates(_ map: MKMapView, picks: [ProcedurePick], tiles: (any MKOverlay)?) {
-        plateTask?.cancel()
-        map.removeOverlays(plates)
-        plates = []
-        guard !picks.isEmpty else { return }
-        plateTask = Task { @MainActor [weak self, weak map] in
-            for pick in picks {
-                // A plate without a georeference draws nothing: the coded
-                // lines alone.
-                guard let plate = try? await Planner.plate(pick.ident, procedure: pick.id),
-                      [plate.south, plate.west, plate.north, plate.east].allSatisfy(\.isFinite),
-                      let image = try? await PictureCache.image(Planner.platePicturePath(cycle: plate.cycle, ident: pick.ident, procedure: pick.id)),
-                      !Task.isCancelled, let self, let map else { continue }
-                let overlay = PlateMapOverlay(key: "\(pick.ident):\(pick.id)", plate: plate, image: image)
-                plates.append(overlay)
-                if let tiles, map.overlays.contains(where: { $0 === tiles }) {
-                    map.insertOverlay(overlay, above: tiles)
-                } else {
-                    map.addOverlay(overlay, level: .aboveLabels)
-                }
-            }
         }
     }
 }

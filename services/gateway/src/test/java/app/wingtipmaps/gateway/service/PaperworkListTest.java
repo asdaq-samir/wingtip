@@ -31,6 +31,8 @@ class PaperworkListTest {
                 null,
                 null,
                 null,
+                null,
+                null,
                 40.0);
         a.recordInspections(
                 LocalDate.of(2025, 11, 20),

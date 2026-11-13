@@ -39,8 +39,8 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -72,7 +72,7 @@ import java.time.format.DateTimeParseException
  *   back to the Logbook, as Settings' pages come back to Settings.
  */
 @Composable
-fun LogbookScreen(exit: CardExit, onCoach: () -> Unit, model: LogbookModel = viewModel()) {
+fun LogbookScreen(exit: CardExit, onCoach: () -> Unit, model: LogbookModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     var photo by remember { mutableStateOf(false) }
     // The Coach asked for by its name (OpenScreen), once the Logbook is open.

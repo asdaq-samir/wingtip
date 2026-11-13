@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { FitInputs, ProcedureAirport } from "../components/ProceduresRoute";
+import { routeOf } from "../../../lib/identSchema";
 import { sameField } from "../../../lib/procedures";
 import { departurePattern, trafficPattern, type TrafficPattern } from "../../../lib/trafficPattern";
 import { runwayNumber } from "../lib/pattern";
@@ -34,6 +35,13 @@ export function useFieldPatterns({
   // The route's fields for its Procedures, with their runways from the
   // briefing once it is in.
   const briefed = briefing.state === "ready" ? briefing.data.airports : null;
+  // Whether they are coming: a briefing asked for or about to be. Half a
+  // route (no departure: "Departure → HSKEL → KJAX", the owner's
+  // screenshot, 2026-11-13) is planned by nothing and briefed by nothing,
+  // nor is a route whose briefing failed, and their fields' runways were
+  // the loading outlines for good, three empty chips under KJAX.
+  const coming =
+    briefing.state === "loading" || (briefing.state === "waiting" && routeOf(planned.dep, planned.dest, planned.stops) !== null);
   const procedureAirports = useMemo<ProcedureAirport[]>(() => {
     // Each field's role from its place in the whole route, a present
     // position's start (Fly Here's "@lat,lon") counted as the departure
@@ -60,11 +68,11 @@ export function useFieldPatterns({
     return once.map(({ ident, role }) => ({
       ident,
       role,
-      runways: briefed ? (briefed[ident]?.runways ?? []) : null,
+      runways: briefed ? (briefed[ident]?.runways ?? []) : coming ? null : [],
       patternAltitudeFt: briefed?.[ident]?.pattern?.altitude_ft ?? null,
       elevationFt: fieldsOfCourse.find((f) => sameField(f.ident, ident))?.elevation_ft ?? null,
     }));
-  }, [planned.dep, planned.dest, planned.stops, briefed, course]);
+  }, [planned.dep, planned.dest, planned.stops, briefed, coming, course]);
   // The airplane's figures and weights each runway's fit is worked from
   // (features/plan/components/procedures/runwayFit), the Brief's own load (useLoad).
   const fitAircraft = nav?.aircraft ?? null;

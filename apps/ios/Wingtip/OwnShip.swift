@@ -24,6 +24,9 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
 
     private(set) var fix: Fix?
     private(set) var denied = false
+    /// The position's permission as iOS last said it, for the welcome's
+    /// foot (WelcomeFoot).
+    private(set) var authorization: CLAuthorizationStatus = .notDetermined
     /// What the track runs into in the next minutes, from the planner.
     private(set) var ahead: [AheadAlert] = []
     /// The ground under the airplane from the packs kept on the phone,
@@ -32,15 +35,22 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
 
     private let manager = CLLocationManager()
     private var asking: Task<Void, Never>?
-    /// The ahead question's place on the app's clock (Ticker), while the
-    /// position is being read.
-    private var aheadEvery: Ticker.Registration?
+    /// The ahead question asked again (Repeating), while the position is
+    /// being read.
+    private var aheadEvery: Task<Void, Never>?
     /// How often what is ahead is asked while moving, s; the planner looks
     /// five minutes along the track (wingtip.alerts), so twice this with the
     /// app put away still leaves minutes.
     static let aheadEveryS: TimeInterval = 10
 
-    override init() {
+    /// The path flown (OwnTrail) and the flight recorder's track (the
+    /// automatic logbook's), each fix given to both (took).
+    let trail: OwnTrail
+    let recorder: FlightRecorder
+
+    init(trail: OwnTrail = OwnTrail(), recorder: FlightRecorder = FlightRecorder()) {
+        self.trail = trail
+        self.recorder = recorder
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
@@ -62,7 +72,7 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         // Fly (askLocation). Until then the updates simply bring nothing.
         manager.startUpdatingLocation()
         if aheadEvery == nil {
-            aheadEvery = Ticker.shared.every(Self.aheadEveryS) { [weak self] in self?.askAhead() }
+            aheadEvery = Task { [weak self] in await Repeating.every(Self.aheadEveryS) { self?.askAhead() } }
         }
     }
 
@@ -83,18 +93,25 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let last = locations.last else { return }
+        // Core Location's altitude is metres above mean sea level and its
+        // speed metres a second; the foot is Foundation's exact one, the
+        // knot Units' (UnitSpeed.knots is rounded).
         let fix = Fix(
             coordinate: last.coordinate,
-            altitudeFt: last.verticalAccuracy >= 0 ? last.altitude * 3.28084 : nil,
+            altitudeFt: last.verticalAccuracy >= 0
+                ? Measurement(value: last.altitude, unit: UnitLength.meters).converted(to: .feet).value : nil,
             trackDeg: last.course >= 0 ? last.course : nil,
-            groundspeedKt: last.speed >= 0 ? last.speed * 1.943844 : nil,
+            groundspeedKt: last.speed >= 0 ? last.speed * Units.ktPerMS : nil,
             accuracyM: last.horizontalAccuracy, at: last.timestamp)
         Task { @MainActor in self.took(fix) }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         let denied = status == .denied || status == .restricted
-        Task { @MainActor in self.denied = denied }
+        Task { @MainActor in
+            self.denied = denied
+            self.authorization = status
+        }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {}
@@ -107,13 +124,13 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         // The flight recorder (the automatic logbook) keeps it in the
         // background past the flying speed too, until the engine finds
         // the airplane landed and at rest: 1.1's flight time ends there.
-        let recording = FlightRecorder.shared.took(fix)
-        let flying = OwnTrail.shared.took(fix) || recording
+        let recording = recorder.took(fix)
+        let flying = trail.took(fix) || recording
         if manager.allowsBackgroundLocationUpdates != flying { manager.allowsBackgroundLocationUpdates = flying }
     }
 
     /// What is ahead, asked of the latest fix every ten seconds while the
-    /// airplane is at flying speed (the clock's, Ticker): the planner looks
+    /// airplane is at flying speed (Repeating): the planner looks
     /// five minutes along the track (wingtip.alerts). Flying speed is the
     /// engine's `underway` (Flight.underway), the speed the engine's own
     /// look ahead starts at, so a taxiing airplane asks nothing it would
@@ -129,7 +146,8 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
             let alerts: [AheadAlert]
             // The packs' answer is asked either way, for the ground under
             // the airplane the glide ring stands on, network or none.
-            let offline = CyclePacks.shared.ahead(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt)
+            // Off the main actor (CyclePacks.aheadOffMain).
+            let offline = await CyclePacks.shared.aheadOffMain(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt)
             self?.groundFt = offline?.groundFt
             if let online = try? await Planner.ahead(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt) {
                 alerts = online

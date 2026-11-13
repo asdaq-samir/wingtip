@@ -1,0 +1,35 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::written",
+  "description": "JavaScript's toFixed: the nearest, a tie to the larger magnitude, on the float's exact value.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WordsToFixedInput",
+      "type": "object",
+      "properties": {
+        "n": {
+          "type": "number"
+        },
+        "digits": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "0 to 20; 1 where missing."
+        }
+      },
+      "required": [
+        "n"
+      ]
+    },
+    "answer": {
+      "title": "WordsToFixedAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from wingtip import weather, weather_store
+from wingtip import weather, weather_store, winds_stations
 from wingtip.weather import WeatherServiceError, metar_for_idents
 
 T0200Z = datetime(2026, 9, 20, 2, 0, tzinfo=timezone.utc).timestamp()
@@ -47,7 +47,7 @@ def test_the_stored_copy_is_served_while_its_product_is_valid_and_not_after(monk
 
 def test_metars_have_no_limit_and_keep_their_own_times(monkeypatch):
     """A METAR has no period of validity, only the time it was made, which
-    each report carries (AC 00-45H): the last set heard is served, its age
+    each report carries (FAA-H-8083-28B 24.4.1): the last set heard is served, its age
     said."""
     _store("metars", {"KORD": {"flight_category": "IFR", "observed_at": "2026-09-20T01:51:00.000Z"}})
     monkeypatch.setattr(weather_store.time, "time", lambda: T0200Z + 6 * 3600)
@@ -76,19 +76,26 @@ def test_the_winds_are_the_stored_periods_with_their_levels_by_altitude():
         {"stations": {"DLH": {"9000": {"wind_dir_true_deg": 270, "wind_speed_kt": 30, "temp_c": -8}}}, "period": period},
         until=time.time() + 3600,
     )
-    stations = weather._fd_stations("06")
+    stations = winds_stations.fd_stations("06")
     assert stations == {"DLH": {9000: {"wind_dir_true_deg": 270, "wind_speed_kt": 30, "temp_c": -8}}}
     assert stations.period == period and stations.modelled
-    assert weather._fd_stations("06") is stations  # made once per copy
-    assert weather.winds_period("06") == {**period, "modelled": True}
+    assert winds_stations.fd_stations("06") is stations  # made once per copy
+    assert weather.winds_period("06") == {
+        **period,
+        "modelled": True,
+        "source": "gfs-stations",
+        "label": "NOAA GFS, 18Z +11 h",
+        "fallback": False,
+        "stale": False,
+    }
 
 
 def test_winds_past_their_window_or_never_stored_are_a_weather_service_error_in_a_pilots_words():
     _store("winds-12", {"stations": {}, "period": {}}, until=time.time() - 1)
     with pytest.raises(WeatherServiceError, match="Winds aloft"):
-        weather._fd_stations("12")
+        winds_stations.fd_stations("12")
     with pytest.raises(WeatherServiceError, match="Winds aloft"):
-        weather._fd_stations("24")
+        winds_stations.fd_stations("24")
     assert weather.winds_period("24") is None
 
 
@@ -153,8 +160,8 @@ def test_a_freezing_level_below_the_lowest_reading_says_so(monkeypatch):
     temperature: the freezing level is there or lower, not at 6,000."""
     from wingtip import airports
 
-    monkeypatch.setattr(weather, "_fd_stations", lambda fcst_hr: {"DLH": {6000: {"temp_c": -2}, 9000: {"temp_c": -8}}})
-    monkeypatch.setattr(weather, "_nearest_station", lambda lat, lon, ids, df: "DLH")
+    monkeypatch.setattr(winds_stations, "fd_stations", lambda fcst_hr: {"DLH": {6000: {"temp_c": -2}, 9000: {"temp_c": -8}}})
+    monkeypatch.setattr(winds_stations, "nearest_station", lambda lat, lon, ids, df: "DLH")
     monkeypatch.setattr(airports, "load_airports", lambda: None)
 
     assert weather.freezing_level(46.8, -92.2) == {"ft": 6000.0, "at_or_below": True}
@@ -163,8 +170,8 @@ def test_a_freezing_level_below_the_lowest_reading_says_so(monkeypatch):
 def test_a_freezing_level_between_readings_is_interpolated(monkeypatch):
     from wingtip import airports
 
-    monkeypatch.setattr(weather, "_fd_stations", lambda fcst_hr: {"DLH": {6000: {"temp_c": 4}, 9000: {"temp_c": -2}}})
-    monkeypatch.setattr(weather, "_nearest_station", lambda lat, lon, ids, df: "DLH")
+    monkeypatch.setattr(winds_stations, "fd_stations", lambda fcst_hr: {"DLH": {6000: {"temp_c": 4}, 9000: {"temp_c": -2}}})
+    monkeypatch.setattr(winds_stations, "nearest_station", lambda lat, lon, ids, df: "DLH")
     monkeypatch.setattr(airports, "load_airports", lambda: None)
 
     assert weather.freezing_level(46.8, -92.2) == {"ft": 8000.0, "at_or_below": False}
@@ -176,9 +183,9 @@ def test_the_temperature_between_two_reports_is_interpolated_and_below_them_laps
     from wingtip import airports
 
     monkeypatch.setattr(
-        weather, "_fd_stations", lambda fcst_hr: {"DLH": {3000: {"temp_c": None}, 6000: {"temp_c": 4}, 9000: {"temp_c": -2}}}
+        winds_stations, "fd_stations", lambda fcst_hr: {"DLH": {3000: {"temp_c": None}, 6000: {"temp_c": 4}, 9000: {"temp_c": -2}}}
     )
-    monkeypatch.setattr(weather, "_nearest_station", lambda lat, lon, ids, df: "DLH")
+    monkeypatch.setattr(winds_stations, "nearest_station", lambda lat, lon, ids, df: "DLH")
     monkeypatch.setattr(airports, "load_airports", lambda: None)
     assert weather.temperatures_aloft(46.8, -92.2) == [(6000.0, 4), (9000.0, -2)]
     assert weather.temperature_at_altitude(46.8, -92.2, 7500.0) == pytest.approx(1.0)
@@ -279,6 +286,9 @@ def test_a_field_with_no_report_is_given_the_nearest_and_told_whether_it_is_near
         "KNEAR": {"flight_category": "MVFR", "lat": 42.4, "lon": -88.0, "observed_at": now},
         "KFAR": {"flight_category": "VFR", "lat": 42.3, "lon": -88.0 + 12 / 60 / 0.7396, "observed_at": now},
         "KNONE": {"flight_category": "VFR", "lat": None, "lon": None, "observed_at": now},
+        # The METAR table's empty cell, a NaN: argmin took it as the least
+        # and C81's card answered 500 ("cannot convert float NaN to integer").
+        "KNAN": {"flight_category": "VFR", "lat": float("nan"), "lon": float("nan"), "observed_at": now},
     }
     monkeypatch.setattr(weather, "_dataset", lambda name: reports)
     near = weather.nearest_report(42.3, -88.0)

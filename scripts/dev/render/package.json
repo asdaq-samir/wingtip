@@ -1,0 +1,8 @@
+{
+  "name": "wingtip-studio-render",
+  "private": true,
+  "description": "Playwright for scripts/dev/studio-render.mjs on the Mac host, kept apart from apps/web's node_modules, which the Linux web-build container mounts",
+  "dependencies": {
+    "@playwright/test": "1.65.0"
+  }
+}

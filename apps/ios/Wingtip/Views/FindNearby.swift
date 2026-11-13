@@ -54,7 +54,7 @@ extension Planner {
     /// The public fields round a point with fuel, food, repair or a flight
     /// school, nearest first (/api/stops/near), out to `nm`.
     static func stopsNear(lat: Double, lon: Double, nm: Double = 25) async throws -> APIStopFields {
-        try await fetch(APIStopFields.self, "/api/stops/near", ["lat": String(lat), "lon": String(lon), "nm": String(Int(nm))])
+        try await call { try await $0.stopsNear(query: .init(lat: lat, lon: lon, nm: nm.rounded(.towardZero))).ok.body.json }
     }
 }
 

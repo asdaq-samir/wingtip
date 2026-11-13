@@ -18,6 +18,9 @@ final class FieldWeatherFeed {
     static let most = 6000
 
     private(set) var reports: [String: AirportPin] = [:]
+    /// When each field's report was last heard from the planner, for its
+    /// mark's age once it is stale (FieldWeatherMarks.aged).
+    private(set) var heardAt: [String: Date] = [:]
     private var asked: Box?
     private var askedAt = Date.distantPast
     private var asking: Task<Void, Never>?
@@ -54,6 +57,9 @@ final class FieldWeatherFeed {
                                                         limit: 1000, reporting: true)
                 guard !Task.isCancelled, let self else { return }
                 self.reports = Self.merged(self.reports, fields)
+                let now = Date()
+                for pin in fields { self.heardAt[pin.ident] = now }
+                self.heardAt = self.heardAt.filter { self.reports[$0.key] != nil }
                 heard()
             } catch {
                 // No signal or the planner down: what was heard stands,

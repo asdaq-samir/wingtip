@@ -13,11 +13,6 @@ object Config {
     /** The gateway: accounts, flights, the planner's proxy. */
     val gateway: String get() = "https://$host"
 
-    /** Google's Map Tiles key for this app (an Android-restricted key,
-     *  build.gradle.kts), or null where the build has none: the planner's
-     *  key is used then (CloseMap). */
-    val googleMapsAndroidKey: String? = BuildConfig.GOOGLE_MAPS_ANDROID_KEY.trim().ifEmpty { null }
-
     /** The planner's operation paths are `/api/…`; through the gateway
      *  they are `/api/planner/…` (PlannerPath rewrites them). */
     const val plannerPrefix = "/api/planner"

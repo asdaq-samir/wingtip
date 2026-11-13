@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.security.mcp;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.service.PilotService;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
@@ -21,7 +22,6 @@ import org.springframework.security.oauth2.server.authorization.JdbcOAuth2Author
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationProvider;
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
@@ -60,8 +60,13 @@ public class AuthorizationServerConfig {
             ConnectorSettings settings,
             PilotService pilots,
             RegisteredClientRepository clients,
-            OAuth2TokenGenerator<?> tokens)
+            OAuth2TokenGenerator<?> tokens,
+            AppProperties app)
             throws Exception {
+        int registrationsPerHour = app.mcp().registrationsPerClientPerHour();
+        if (!settings.enabled()) {
+            return ConnectorOff.chain(http);
+        }
         OAuth2AuthorizationServerConfigurer server = new OAuth2AuthorizationServerConfigurer();
         http.securityMatcher(server.getEndpointsMatcher())
                 .with(
@@ -72,14 +77,11 @@ public class AuthorizationServerConfig {
                                         .authenticationProviders(ConnectorClients.configure(settings.redirectUris())))
                                 .authorizationEndpoint(authorize -> authorize
                                         .consentPage("/oauth2/consent")
-                                        .authenticationProviders(providers -> providers.forEach(provider -> {
-                                            if (provider
-                                                    instanceof
-                                                    OAuth2AuthorizationCodeRequestAuthenticationProvider code) {
-                                                code.setAuthenticationValidator(
-                                                        AuthorizeRequests.validator(settings.resource()));
-                                            }
-                                        })))
+                                        // Spring Security 7.2 checks a request twice, before
+                                        // sign-in (its pre-validation filter) and in the
+                                        // provider; this one validator is used for both.
+                                        .authorizationCodeRequestAuthenticationValidator(
+                                                AuthorizeRequests.validator(settings.resource())))
                                 .clientAuthentication(client -> client.authenticationConverters(
                                                 converters -> converters.addFirst(PublicRefresh.converter()))
                                         .authenticationProviders(
@@ -104,6 +106,7 @@ public class AuthorizationServerConfig {
                 // ChatGPT do it from their servers. No cookie is read on
                 // those endpoints, so any origin may ask.
                 .cors(cors -> cors.configurationSource(anyOrigin()))
+                .addFilterBefore(new RegistrationLimit(registrationsPerHour), SecurityContextHolderFilter.class)
                 .addFilterAfter(new PilotPrincipalFilter(pilots), SecurityContextHolderFilter.class);
         return ConnectorSecurityConfig.headersFirst(http.build());
     }
@@ -120,7 +123,7 @@ public class AuthorizationServerConfig {
 
     @Bean
     OAuth2AuthorizationService authorizationService(JdbcOperations jdbc, RegisteredClientRepository clients) {
-        return new JdbcOAuth2AuthorizationService(jdbc, clients);
+        return new RotatedRefreshTokens(new JdbcOAuth2AuthorizationService(jdbc, clients), jdbc);
     }
 
     @Bean

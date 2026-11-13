@@ -1,4 +1,5 @@
 import Observation
+import OpenAPIRuntime
 import UIKit
 
 /// The airplane form's "Add from a Photo": the page asked for, read, and
@@ -10,10 +11,10 @@ final class HandbookPhotoModel {
     let reader = DocumentReadModel()
     var kind: DocumentKind = .pohPerformance
     /// The read as the reader sent it, with the pilot's edits written in.
-    private(set) var page: JSONValue?
+    private(set) var page: OpenAPIValueContainer?
     /// The engine's check of `page`: the reader's at first, the phone's own
     /// once a figure is edited.
-    private(set) var check: ASHandbookCheck?
+    private(set) var check: HandbookCheck?
     /// The items the pilot confirmed against the page, by key ("cruise.2").
     private(set) var confirmed: Set<String> = []
     /// What the engine could not check, said in the review.
@@ -59,7 +60,7 @@ final class HandbookPhotoModel {
 
     /// The engine's answer for the confirmed items alone: its profile for
     /// the form, its figures to save with the airplane.
-    func confirmedCheck() throws -> ASHandbookCheck {
+    func confirmedCheck() throws -> HandbookCheck {
         guard let page else { throw Engine.Refused(message: "No page was read.") }
         return try HandbookReview.check(HandbookReview.confirmedOnly(page, keys: confirmed))
     }

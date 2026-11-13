@@ -23,12 +23,12 @@ import org.junit.Test
  * The airport weather marks the map asks the engine for, held to the
  * shared fixtures (apps/web/src/lib/fixtures/airportWeatherMarks.json, on
  * the test's classpath by build.gradle.kts): the app hands each rule the
- * fixture's input and draws its answer -- the arrow shown or not
- * (`wind_arrow`), red or not, the barb (`wind_barb`), and the ↓ at a plan's
+ * fixture's input and draws its answer -- the barb drawn zoomed out or
+ * not (`wind_arrow`), red or not, the barb and calm (`wind_barb`), and the ↓ at a plan's
  * field (`weather_worse`). The engine itself does not load on the JVM, so
  * the rules here answer from the fixture, and each checks it was asked
  * what the fixture asks; AirportWeatherEngineTest runs the engine itself
- * through the JNI shim on the same file.
+ * through the generated bindings on the same file.
  */
 class StationMarksTest {
     private val json = Json { ignoreUnknownKeys = true }
@@ -45,7 +45,6 @@ class StationMarksTest {
         val arrowIn: JsonObject? = null,
         val arrowOut: EngineContract.WindArrowAnswer? = null,
         val barbOut: EngineContract.WindBarbAnswer? = null,
-        val calmOut: Boolean? = null,
     ) : StationMarks.Rules {
         override fun barb(speedKt: Double) = barbOut
 
@@ -59,50 +58,62 @@ class StationMarksTest {
         }
 
         override fun worse(now: List<EngineContract.WorseField>, atEta: List<EngineContract.WorseField>) = emptySet<String>()
-
-        override fun calm(speedKt: Double) = calmOut
     }
+
+    private val oneBarb = EngineContract.WindBarbAnswer(calm = false, flags = 0, barbs = 1, halfBarbs = 0)
+    private val calm = EngineContract.WindBarbAnswer(calm = true, flags = 0, barbs = 0, halfBarbs = 0)
 
     private fun field(speed: Double?, gust: Double?, crosswind: Double?, from: Double? = 220.0) =
         FieldWx("KJVL", 42.62, -89.04, "IFR", from, speed, gust, crosswind, "2 sm BR", "CIG 008")
 
     @Test
-    fun theArrowIsShownAndRedAsTheEngineSays() {
+    fun theBarbIsDrawnFarOutAndRedAsTheEngineSays() {
         for (case in cases("windArrow")) {
             val input = case.getValue("input").jsonObject
             val answer = json.decodeFromJsonElement<EngineContract.WindArrowAnswer>(case.getValue("answer"))
-            val rules = FixtureRules(arrowIn = input, arrowOut = answer, barbOut = EngineContract.WindBarbAnswer(calm = false, flags = 0, barbs = 1, halfBarbs = 0))
+            val rules = FixtureRules(arrowIn = input, arrowOut = answer, barbOut = oneBarb)
             val mark = StationMarks.mark(field(input.num("speed_kt"), input.num("gust_kt"), input.num("crosswind_kt")), input.num("demonstrated_kt"), emptySet(), rules)
             val why = case.getValue("why").jsonPrimitive.content
-            assertEquals(why, answer.shown, mark.arrow != null)
-            assertEquals(why, answer.over, mark.arrow?.red == true)
+            // A field with no steady wind (a gust alone) has no barb to draw.
+            assertEquals(why, answer.shown && input.num("speed_kt") != null, mark.far)
+            assertEquals(why, answer.over, mark.over)
+            if (input.num("speed_kt") != null) assertEquals(why, answer.over, mark.barb!!.endsWith("|over"))
         }
     }
 
     @Test
-    fun theArrowPointsTheWayTheWindBlowsWithItsFigures() {
+    fun theBarbIsTurnedToWhereTheWindIsFrom() {
         val rules = FixtureRules(
             arrowIn = JsonObject(mapOf("speed_kt" to JsonPrimitive(18), "gust_kt" to JsonPrimitive(26), "crosswind_kt" to JsonPrimitive(17))),
             arrowOut = EngineContract.WindArrowAnswer(shown = true, over = false),
+            barbOut = oneBarb,
         )
-        val arrow = StationMarks.mark(field(18.0, 26.0, 17.0), null, emptySet(), rules).arrow!!
-        assertEquals(40.0, arrow.toDeg, 0.0)
-        assertEquals("18G26", arrow.figures)
-        assertFalse(arrow.red)
-        assertEquals("18", StationMarks.figures(18.0, null))
-        assertEquals("6", StationMarks.figures(6.0, 6.0))
+        val mark = StationMarks.mark(field(18.0, 26.0, 17.0), null, emptySet(), rules)
+        assertEquals("wx|barb|0|1|0", mark.barb)
+        assertEquals(220.0, mark.fromDeg!!, 0.0)
+        assertTrue(mark.far)
+        assertNull(mark.variable)
     }
 
     @Test
-    fun aVariableWindHasNoArrowToPoint() {
+    fun aVariableWindIsWrittenVrbForNoBarbCanPointIt() {
         val rules = FixtureRules(
             arrowIn = JsonObject(mapOf("speed_kt" to JsonPrimitive(6), "gust_kt" to JsonPrimitive(16), "crosswind_kt" to JsonPrimitive(16))),
-            arrowOut = EngineContract.WindArrowAnswer(shown = true, over = false),
-            barbOut = EngineContract.WindBarbAnswer(calm = false, flags = 0, barbs = 1, halfBarbs = 0),
+            arrowOut = EngineContract.WindArrowAnswer(shown = true, over = true),
+            barbOut = oneBarb,
         )
         val mark = StationMarks.mark(field(6.0, 16.0, 16.0, from = null), null, emptySet(), rules)
-        assertNull(mark.arrow)
         assertNull(mark.barb)
+        assertEquals("VRB06", mark.variable)
+        assertTrue(mark.far && mark.over)
+        // Calm needs no direction: its ring, not "VRB00".
+        val still = StationMarks.mark(field(2.0, null, null, from = null), null, emptySet(), FixtureRules(
+            arrowIn = JsonObject(mapOf("speed_kt" to JsonPrimitive(2))),
+            arrowOut = EngineContract.WindArrowAnswer(shown = false, over = false),
+            barbOut = calm,
+        ))
+        assertEquals(StationPictures.CALM, still.barb)
+        assertNull(still.variable)
     }
 
     @Test
@@ -110,7 +121,10 @@ class StationMarksTest {
         val ids = cases("windBarb").associate {
             it.getValue("why").jsonPrimitive.content to StationPictures.barbId(json.decodeFromJsonElement(it.getValue("answer")))
         }
-        assertEquals(listOf(StationPictures.CALM, "wx|barb|0|0|1", "wx|barb|0|1|0", "wx|barb|0|2|0", "wx|barb|1|1|1"), ids.values.toList())
+        // 0 and 2 kt both calm, as the NWS's table rounds 0-2 kt to 0.
+        assertEquals(listOf(StationPictures.CALM, StationPictures.CALM, "wx|barb|0|0|1", "wx|barb|0|1|0", "wx|barb|0|2|0", "wx|barb|1|1|1"), ids.values.toList())
+        assertEquals("wx|barb|0|1|0|over", StationPictures.barbId(oneBarb, over = true))
+        assertEquals(StationPictures.CALM, StationPictures.barbId(calm, over = true))
     }
 
     @Test
@@ -144,21 +158,26 @@ class StationMarksTest {
     }
 
     @Test
-    fun theBadgeAndArrowFollowTheirSwitches() {
-        val mark = FieldMark("KJVL", 42.0, -89.0, "wx|barb|0|2|0", 220.0, "2 sm BR", FieldMark.Arrow(40.0, true, "18G26"), worse = true)
+    fun theFarBarbIsWithWindsAndTheBadgeEveryChoiceButOff() {
+        val mark = FieldMark("KJVL", 42.0, -89.0, "wx|barb|0|2|0|over", 220.0, "2 sm BR", worse = true, far = true, over = true)
         val all = StationLayer.geoJson(listOf(mark), AirportWeather())
-        assertTrue(all, all.contains("\"arrow\":\"wx|arrow|red\"") && all.contains("\"worse\":true") && all.contains("\"barb\""))
-        val none = StationLayer.geoJson(listOf(mark), AirportWeather(windArrows = false, worse = false))
-        assertFalse(none, none.contains("\"arrow\"") || none.contains("\"worse\""))
+        assertTrue(all, all.contains("\"far\":true") && all.contains("\"over\":true") && all.contains("\"worse\":true") && all.contains("\"barb\""))
+        val none = StationLayer.geoJson(listOf(mark), AirportWeather(AirportWeatherMode.CATEGORY))
+        assertFalse(none, none.contains("\"far\""))
+        // Getting worse by arrival is always drawn but with the weather off.
+        assertTrue(none, none.contains("\"worse\":true"))
+        // The station model's barb stays with the far one off.
+        assertTrue(none, none.contains("\"barb\""))
         assertFalse(StationLayer.geoJson(listOf(mark), AirportWeather(AirportWeatherMode.OFF)).contains("KJVL"))
     }
 
     @Test
     fun talkBackReadsTheCategoryAndWind() {
-        // Whether it is calm is the engine's `wind_calm`, answered here.
-        val windy = FixtureRules(calmOut = false)
+        // Whether it is calm is the engine's `wind_barb`, answered here, so
+        // what is said is what the barb draws (2 kt is calm).
+        val windy = FixtureRules(barbOut = oneBarb)
         assertEquals("IFR, wind 220 at 18 gusting 26", StationMarks.said(field(18.0, 26.0, 17.0), windy))
-        assertEquals("IFR, wind calm", StationMarks.said(field(0.0, null, null), FixtureRules(calmOut = true)))
+        assertEquals("IFR, wind calm", StationMarks.said(field(2.0, null, null), FixtureRules(barbOut = calm)))
         assertEquals("IFR, wind variable at 6", StationMarks.said(field(6.0, null, null, from = null), windy))
         // Where the engine cannot say, the figures are said.
         assertEquals("IFR, wind 220 at 0", StationMarks.said(field(0.0, null, null), FixtureRules()))

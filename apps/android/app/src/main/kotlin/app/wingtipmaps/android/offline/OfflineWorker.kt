@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.CacheControl
 import okhttp3.Request
+import okhttp3.coroutines.executeAsync
 import java.io.File
 import java.io.FileOutputStream
 
@@ -39,7 +40,7 @@ class OfflineWorker(context: Context, params: WorkerParameters) : CoroutineWorke
         val request = Request.Builder().url(url).cacheControl(CacheControl.Builder().noStore().build())
             .apply { if (from > 0) header("Range", "bytes=$from-") }.build()
         val outcome = runCatching {
-            Gateway.client.newCall(request).execute().use { response ->
+            Gateway.streaming.newCall(request).executeAsync().use { response ->
                 val append = from > 0 && response.code == 206
                 if (response.code != 200 && !append) error("the planner answered ${response.code}")
                 val body = response.body

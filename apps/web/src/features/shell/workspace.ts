@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { PanelState } from "../../lib/mapChrome";
+import type { SheetPages } from "../../components/sheet/SheetPages";
 
 /**
  * What a workspace (the pilot's planner, the developer's training)
@@ -46,10 +47,6 @@ export interface WorkspacePieces {
   /** The sheet's first row, and at rest its pill: the planner's one search
    *  (OneSearchField), the developer's places (MapPanel's `bar`). */
   bar?: ReactNode;
-  /** Over the first row: the app's name and the account button
-   *  (MapPanel's `title`), and whether it stays all the way up. */
-  title?: ReactNode;
-  titleAtFull?: boolean;
   /** What the panel is drawn inside, where its first row and its body are
    *  one control: the one search's Autocomplete root, its field the first
    *  row and its list in the body. */
@@ -64,6 +61,10 @@ export interface WorkspacePieces {
   /** The airplane flying the route (useFlyingMode): the panel's first
    *  row and top row put away and its foot grown (MapPanel's `flying`). */
   flying?: boolean;
+  /** The sheet's two pages, Search (`bar` over `sidebar`) and FPL (`route`
+   *  over its own body), turned by the toggle on the sheet's top
+   *  (MapPanel's `pages`, PageToggle). */
+  pages?: SheetPages;
 }
 
 export interface WorkspaceProps {

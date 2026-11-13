@@ -22,14 +22,14 @@ import org.maplibre.android.maps.Style
  * VFR Terms and Symbols, Airports) as ForeFlight rings them, the VOR's
  * hexagon, a fix's blue four-point star, a VFR waypoint's green triangle,
  * the VOR's blue ident tag and the airspace's dark altitude tab, the last
- * two stretched to their text, and the special-use areas' hatch.
+ * two stretched to their text, and the special-use areas' hatch and tabs.
  */
 object OverlayPictures {
     /** Every picture added to a style being built, before it loads, so no
      *  symbol is laid out without its picture. [density] is the screen's
      *  pixels to a dp. */
     fun addTo(builder: Style.Builder, density: Float) {
-        // 2 inks, 4 sizes, 9 pips and 4 uses: 288 small pictures.
+        // 2 inks, 4 sizes, 6 pips and 4 uses: 192 small pictures.
         for (towered in listOf(true, false)) {
             for (size in MapStyle.SIZES) {
                 for (pip in AirportWeatherMarks.PIPS) {
@@ -46,61 +46,18 @@ object OverlayPictures {
         for (cls in listOf("B", "C", "D")) {
             stretched(builder, MapStyle.airspaceTab(cls), airspaceTab(ink(MapStyle.AIRSPACE_INK.getValue(cls).colour), density), 4f, density)
         }
-        builder.withImage(MapStyle.SUA_HATCH_RESTRICTED, hatch(ink(MapStyle.SUA_RESTRICTED_INK), density))
-        builder.withImage(MapStyle.SUA_HATCH_MOA, hatch(ink(MapStyle.SUA_MOA_INK), density))
+        builder.withImage(SpecialUseLayers.HATCH_RESTRICTED, hatch(ink(SpecialUseLayers.RESTRICTED_INK), density))
+        builder.withImage(SpecialUseLayers.HATCH_MOA, hatch(ink(SpecialUseLayers.MOA_INK), density))
+        // The special-use areas' tabs: the airspace's, bordered in their ink.
+        stretched(builder, SpecialUseLayers.TAB_RESTRICTED, airspaceTab(ink(SpecialUseLayers.RESTRICTED_INK), density), 4f, density)
+        stretched(builder, SpecialUseLayers.TAB_MOA, airspaceTab(ink(SpecialUseLayers.MOA_INK), density), 4f, density)
         for (near in listOf(true, false)) {
             for (hasTrack in listOf(true, false)) {
                 builder.withImage(MapStyle.trafficIconId(near, hasTrack), airplane(near, hasTrack, density))
             }
         }
         stretched(builder, MapStyle.TRAFFIC_TAG, trafficTag(density), 4f, density)
-        builder.withImage(MapStyle.OWN_SHIP_ICON, ownShip(hasTrack = true, density))
-        builder.withImage(MapStyle.OWN_SHIP_DOT, ownShip(hasTrack = false, density))
     }
-
-    /** Own ship: an airplane seen from above, nose up for the layer to turn
-     *  to the track, in the tint with a white casing, 28 dp across, larger
-     *  than the traffic so it is never taken for one; the tint's dot in a
-     *  white ring where the phone gives no track. */
-    private fun ownShip(hasTrack: Boolean, density: Float): Bitmap = picture(OWN_SHIP_MARK + 4f, density, origin = 2f) {
-        val colour = ink(MapStyle.TINT)
-        val scale = OWN_SHIP_MARK / 24f
-        scale(scale, scale)
-        val casing = 2f / scale
-        if (hasTrack) {
-            // Material's `flight` glyph, pointing up.
-            val plane = Path().apply {
-                moveTo(12f, 1.5f)
-                cubicTo(11.2f, 1.5f, 10.5f, 2.2f, 10.5f, 3f)
-                lineTo(10.5f, 8.5f)
-                lineTo(2f, 13.5f)
-                lineTo(2f, 15.5f)
-                lineTo(10.5f, 13f)
-                lineTo(10.5f, 18.5f)
-                lineTo(8f, 20.3f)
-                lineTo(8f, 22f)
-                lineTo(12f, 21f)
-                lineTo(16f, 22f)
-                lineTo(16f, 20.3f)
-                lineTo(13.5f, 18.5f)
-                lineTo(13.5f, 13f)
-                lineTo(22f, 15.5f)
-                lineTo(22f, 13.5f)
-                lineTo(13.5f, 8.5f)
-                lineTo(13.5f, 3f)
-                cubicTo(13.5f, 2.2f, 12.8f, 1.5f, 12f, 1.5f)
-                close()
-            }
-            drawPath(plane, stroke(Color.WHITE, casing * 2))
-            drawPath(plane, fill(colour))
-        } else {
-            drawCircle(12f, 12f, 7f, fill(Color.WHITE))
-            drawCircle(12f, 12f, 5f, fill(colour))
-        }
-    }
-
-    /** Own ship's size, dp. */
-    private const val OWN_SHIP_MARK = 28f
 
     /** A picture `inset` dp each way kept as drawn and the middle
      *  stretched to the text (the web's Stretch, MapLibre's stretch and
@@ -151,8 +108,7 @@ object OverlayPictures {
      *  private field the guide's circle with an "R", a military one with
      *  an "M", a heliport with an "H". Its weather (AirportWeatherMarks,
      *  `pip`) a ring in its flight category's colour round the white halo,
-     *  WEATHER_RING dp wide so it holds in sunlight, or ForeFlight's dot
-     *  in the colour in place of the symbol. */
+     *  WEATHER_RING dp wide so it holds in sunlight. */
     private fun airport(towered: Boolean, size: String, pip: String, use: String, density: Float): Bitmap {
         val colour = ink(if (towered) MapStyle.BLUE else MapStyle.MAGENTA)
         val letter = when (use) {
@@ -164,11 +120,6 @@ object OverlayPictures {
         val r = if (letter != null) 7f else RADIUS[size] ?: 6f
         val weather = AirportWeatherMarks.inkOf(pip)?.let(::ink)
         return picture(30f, density, origin = 15f) {
-            if (weather != null && AirportWeatherMarks.isDot(pip)) {
-                drawCircle(0f, 0f, DOT, fill(weather))
-                drawCircle(0f, 0f, DOT, stroke(Color.WHITE, 1.5f))
-                return@picture
-            }
             // The halo: white, 1.2 dp past the ring, and the weather's ring
             // round it.
             drawCircle(0f, 0f, r + if (weather != null) 1.2f else 2.5f, fill(Color.WHITE))
@@ -191,9 +142,6 @@ object OverlayPictures {
     /** The weather's ring round a symbol, dp: about 4.5 points, the
      *  owner's pick (2026-11-10), wide enough to read in sunlight. */
     private const val WEATHER_RING = 4.5f
-
-    /** ForeFlight's weather dot in place of the symbol, its radius, dp. */
-    private const val DOT = 7f
 
     /** How big a traffic airplane is drawn, dp (the web's TRAFFIC_MARK, 16
      *  at the owner's ask, 2026-10-28), the chevron in its 22-unit box. */

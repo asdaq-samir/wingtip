@@ -4,7 +4,9 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from .airport_lights import LightingNote, LightingSystem
 from .common import Frequency, Metar, Runway, TrafficPattern
+from .plates import ApproachFacts
 
 
 class ForecastWind(BaseModel):
@@ -275,25 +277,9 @@ class ProcedureDrawing(BaseModel):
     #: (the approach debrief); None where the missed approach point is not
     #: a runway's.
     runway_path: ProcedureRunwayPath | None = None
-
-
-class PlateOverlay(BaseModel):
-    """An approach's plate's plan view placed on the map (wingtip.plates): the
-    FAA's plate of `name` in d-TPP cycle `cycle`, its picture at
-    /api/approach-plate/{cycle}/{ident}/{procedure}.png, black on clear,
-    north up between these latitudes and longitudes, as the plate's own
-    georeference places it; `fixes` the approach's fixes inside it;
-    `circling` whether the plate publishes circling minimums, so a pilot
-    flying the approach may circle to land on another runway."""
-
-    cycle: str
-    name: str
-    south: float
-    west: float
-    north: float
-    east: float
-    fixes: list[str]
-    circling: bool
+    #: An approach's own figures beside its legs, for the tags its fixes
+    #: carry (the engine's approach_fix_tags); None for another procedure.
+    approach: ApproachFacts | None = None
 
 
 class ChartPage(BaseModel):
@@ -339,13 +325,16 @@ class AirportPlace(BaseModel):
     #: pilot who taps the R needs to know to ask the owner first.
     private: bool = False
     towered: bool
-    # Its remarks a pilot acts on from the cockpit, in plain English
-    # (wingtip.remarks): the lighting schedule -- lights turned on by keying
-    # the mic -- and the other remarks that count mic clicks, such as the
-    # weather read out on the CTAF. `standard_keying` where the lights
-    # are the pilot's and the remarks do not say how many clicks: AIM
-    # 4-1-9's 7, 5 and 3 apply.
+    # Its remarks a pilot acts on from the cockpit (wingtip.remarks): its
+    # lighting remarks as sent (`lighting`), read by the engine into each
+    # system and how it is turned on (`lights`) and what it could not read
+    # (`light_notes`); the other remarks that count mic clicks, such as the
+    # weather read out on the CTAF, in plain English. `standard_keying`
+    # where the lights are the pilot's and the remarks do not say how many
+    # clicks: AIM 2-1-8's 7, 5 and 3 apply.
     lighting: list[str] = []
+    lights: list[LightingSystem] = []
+    light_notes: list[LightingNote] = []
     radio_notes: list[str] = []
     standard_keying: bool = False
     pattern: TrafficPattern | None = None
@@ -431,8 +420,10 @@ class AirportServices(BaseModel):
 
     ident: str
     fuel_types: list[str] = []
-    #: The remarks on its fuel and FBO's hours, in plain English.
+    #: The remarks on its fuel and FBO's hours in words (the engine's
+    #: remarks_read), and as sent (NASR APT_RMK), in the same order.
     fuel_notes: list[str] = []
+    fuel_remarks: list[str] = []
     landing_fee: bool | None = None
     tie_down: bool = False
     hangar: bool = False
@@ -440,7 +431,7 @@ class AirportServices(BaseModel):
     powerplant_repair: Literal["major", "minor"] | None = None
     oxygen: bool = False
     courtesy_car: bool = False
-    #: The remarks offering the courtesy car, in plain English.
+    #: The remarks offering the courtesy car, in words (remarks_read).
     ground_notes: list[str] = []
     food: list[NearbyPlace] = []
     lodging: list[NearbyPlace] = []

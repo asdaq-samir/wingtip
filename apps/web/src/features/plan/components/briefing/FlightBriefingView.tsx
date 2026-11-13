@@ -1,5 +1,5 @@
 import KeptAge from "../../../../components/KeptAge";
-import { memo, type ReactNode } from "react";
+import { memo } from "react";
 import { cn } from "cn";
 import { CloudOff } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../../../../components/ui/alert";
@@ -57,12 +57,6 @@ interface Props {
    *  applies, rather than making a failed briefing indistinguishable
    *  from a slow one. */
   briefing: BriefingState;
-  /** The narrative's text, once the pilot has had it written -- read-only
-   *  here, only for `BriefingNarrativePrintBlock` (BriefingBits). Writing
-   *  it is the Brief tab's (BriefNarrative), not this component's. */
-  narrativeText: string | null;
-  /** The Brief's narrative (BriefNarrative), under its Go / No-Go. */
-  narrative?: ReactNode;
   /** No VFR altitude fits the route, in a line (usePlan's Unflyable). */
   problem?: string | null;
 }
@@ -74,7 +68,7 @@ interface Props {
  * sections' titles in every tab:
  *
  * - The Brief: the Go / No-Go over every tab's findings (lib/verdict),
- *   the narrative, the TFRs and special-use airspace the route meets
+ *   the TFRs and special-use airspace the route meets
  *   when it meets them, the risk assessment, and preflight action (14
  *   CFR 91.103) to tick off, with what is not fetched here -- NOTAMs, ATC
  *   delays -- as links to where a pilot gets them.
@@ -100,20 +94,7 @@ const NO_STOPS: string[] = [];
 // Drawn again only when its plan changes (memo): every tab is one of
 // these, and the page draws again at every row picked in the nav log.
 export default memo(function FlightBriefingView(props: Props) {
-  const {
-    part,
-    nav,
-    legs,
-    dep,
-    dest,
-    stops = NO_STOPS,
-    course = null,
-    totals = null,
-    depart = "",
-    briefing: briefingState,
-    narrativeText,
-    narrative,
-  } = props;
+  const { part, nav, legs, dep, dest, stops = NO_STOPS, course = null, totals = null, depart = "", briefing: briefingState } = props;
   const vm = useFlightBriefing(props);
   const { briefing, briefingPendingMessage, unchecked, opened, landings, ownCallSign, loaded, ifr, alternateWhere } = vm;
 
@@ -149,18 +130,7 @@ export default memo(function FlightBriefingView(props: Props) {
 
       {/* Preflight: the go / no-go first, then what is done before
           leaving -- the airspace, the risk, the paperwork, the loading. */}
-      {part === "preflight" && (
-        <PreflightPart
-          vm={vm}
-          nav={nav}
-          totals={totals}
-          dep={dep}
-          dest={dest}
-          depart={depart}
-          narrativeText={narrativeText}
-          narrative={narrative}
-        />
-      )}
+      {part === "preflight" && <PreflightPart vm={vm} nav={nav} totals={totals} dep={dep} dest={dest} depart={depart} />}
 
       {/* Depart: only what leaving needs, in the order it is used -- the
           field's weather, the takeoff, then the field: its radio, its
@@ -207,14 +177,18 @@ export default memo(function FlightBriefingView(props: Props) {
         // under it, the steps the FL chip's popover shows (AltitudeReasoning).
         // From `nav.altitude_selection`, which arrives with the nav log.
         <AccordionSection title="Cruise Altitude">
-          {!nav ? <Pending>Waiting on the nav log&apos;s altitude…</Pending> : <AltitudeReasoning nav={nav} legs={legs} />}
+          {!nav ? (
+            <Pending>Waiting on the nav log&apos;s altitude…</Pending>
+          ) : (
+            <AltitudeReasoning nav={nav} legs={legs} winds={totals?.winds} />
+          )}
         </AccordionSection>
       )}
 
       {/* En route, under the legs and the side view: the weather on the way
           -- adverse conditions first (AIM 7-1-5), then stretch by stretch,
           then the winds -- and any stops. */}
-      {part === "enroute" && <EnroutePart vm={vm} course={course} legs={legs} depart={depart} />}
+      {part === "enroute" && <EnroutePart vm={vm} course={course} legs={legs} depart={depart} winds={totals?.winds} />}
 
       {part === "enroute" && stops.length > 0 && (
         <>

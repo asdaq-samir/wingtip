@@ -3,9 +3,11 @@ import AccordionSection from "../../../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { describeError } from "../../../../lib/api/client";
 import type { AlternateCheck } from "../../../../lib/api/types";
-import { patched, useSearchParamsNow } from "../../../../lib/useSearchParamsNow";
+import { useAddressKey } from "../../../../lib/address";
 import { ceilingAndVisibility } from "../../format";
 import { useAlternate, type AlternateWhere } from "../../hooks/useAlternate";
+import { FieldError } from "../../../../components/ui/field";
+import { TEXT } from "../../../../lib/text";
 
 function standing(check: AlternateCheck): string {
   return check.good === true
@@ -25,8 +27,8 @@ function standing(check: AlternateCheck): string {
  */
 export default function AlternateSection(where: AlternateWhere) {
   const { filed, data, isPending, error } = useAlternate(where);
-  const [, setParams] = useSearchParamsNow();
-  const file = (ident: string | null) => setParams((prev) => patched(prev, { alternate: ident }), { replace: true });
+  const [, setAlternate] = useAddressKey("alternate");
+  const file = (ident: string | null) => void setAlternate(ident || null);
   return (
     <AccordionSection title="Alternate">
       <div className="space-y-4" data-testid="alternate">
@@ -37,9 +39,7 @@ export default function AlternateSection(where: AlternateWhere) {
             Fetching the destination&apos;s forecast…
           </p>
         ) : error ? (
-          <p className="text-destructive" role="alert">
-            The alternate could not be checked: {describeError(error)}
-          </p>
+          <FieldError className={cn("text-destructive", TEXT.prose)}>The alternate could not be checked: {describeError(error)}</FieldError>
         ) : (
           data && (
             <>

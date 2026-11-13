@@ -7,6 +7,7 @@
  */
 import { createContext, useEffect, useRef, useEffectEvent, type ReactNode } from "react";
 import { create } from "zustand";
+import { useShown } from "./shown";
 
 /** The cards of the route whose Share is a menu of the route's things,
  *  each its own (ShareMenu's `card`). */
@@ -84,6 +85,14 @@ export function setCardPill(entry: OpenCard, pill: PillHead | undefined) {
   useOpenCards.setState(counted());
 }
 
+/** Every card closed, the top one first: the sheet's page toggle tapped
+ *  with cards over the page (PageToggle; the owner, 2026-11-13: "airport
+ *  card hides the fpl toggle"), as Android's SheetNav.show closes the
+ *  cards over the search before it turns the page. */
+export function closeEveryCard() {
+  for (const entry of [...open].reverse()) entry.close();
+}
+
 /** The top card closed; whether there was one. */
 export function closeTopCard(): boolean {
   const top = open[open.length - 1];
@@ -107,7 +116,12 @@ export function useHeldCard(onClose: () => void, onShare?: CardShare, picture = 
   });
   const shares = typeof onShare === "string" ? onShare : !!onShare;
   const held = useRef<OpenCard | null>(null);
+  // Held only while in sight (lib/shown): a card kept closed between its
+  // openings (CardLayer's `open`), or under a card over it, is not the one
+  // a Back closes.
+  const shown = useShown();
   useEffect(() => {
+    if (!shown) return;
     const entry: OpenCard = {
       close: () => close(),
       share: typeof shares === "string" ? shares : shares ? () => share() : undefined,
@@ -119,7 +133,7 @@ export function useHeldCard(onClose: () => void, onShare?: CardShare, picture = 
       held.current = null;
       drop();
     };
-  }, [shares, picture]);
+  }, [shares, picture, shown]);
   // The pill's line and picture changed in place, by their strings, not
   // the card held again: held again it would go to the top, over a card
   // opened over it, and a new object each render would set the store at
@@ -132,10 +146,10 @@ export function useHeldCard(onClose: () => void, onShare?: CardShare, picture = 
     const entry = held.current;
     if (!entry) return;
     setCardPill(entry, given ? { line, picture: url, tint } : undefined);
-  }, [given, line, url, tint, shares, picture]);
+  }, [given, line, url, tint, shares, picture, shown]);
 }
 
 /** The route's Share menu for one of its cards -- the Brief, the nav
  *  log, the profile -- given by the planner (PlanWorkspace), for the head's
- *  Share where a card's share is the route's (PanelCard's CardClose). */
+ *  Share where a card's share is the route's (CardHead's CardClose). */
 export const RouteShareMenu = createContext<((card: RouteCard) => ReactNode) | null>(null);

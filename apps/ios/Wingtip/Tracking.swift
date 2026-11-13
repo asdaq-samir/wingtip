@@ -37,8 +37,6 @@ struct AirplaneWatch: Codable, Hashable, Sendable, Identifiable {
 @MainActor
 @Observable
 final class Tracking {
-    static let shared = Tracking()
-
     private(set) var hex: String?
     /// The map keeps it in the middle until the pilot drags the map.
     var follow = true
@@ -62,6 +60,8 @@ final class Tracking {
     /// memory) was freed under it, SwiftData trapping at the next insert.
     @ObservationIgnored private let container: ModelContainer
     @ObservationIgnored private var remote: Task<Void, Never>?
+    /// The voice a watch going off is said in, the flight's (FlightSession).
+    @ObservationIgnored private let spoken: SpokenAlerts
     /// The last watch that went off, for the banner over the map.
     var fired: String?
     /// Why the watches could not be checked just now (the engine refused),
@@ -79,8 +79,9 @@ final class Tracking {
     /// The app's store, and the UserDefaults the lists were in before
     /// it, taken in on the first launch after the change; a test gives
     /// its own of each.
-    init(container: ModelContainer = Records.container, defaults: UserDefaults = .standard) {
+    init(container: ModelContainer = Records.container, defaults: UserDefaults = .standard, spoken: SpokenAlerts = SpokenAlerts()) {
         self.container = container
+        self.spoken = spoken
         context = container.mainContext
         Records.migrate(from: defaults, into: context)
         reload()
@@ -285,15 +286,11 @@ final class Tracking {
     /// While the map is shown: the tracked airplane's state every ten
     /// seconds, where the map's own answers do not have it (it is out of
     /// their radius), and each watched airplane's every fifteen; both on
-    /// the app's one clock (Ticker), twice as slow with the app put away.
+    /// Swift's clock (Repeating), twice as slow with the app put away.
     func run() async {
-        let tracked = Ticker.shared.every(5) { [weak self] in await self?.askTracked() }
-        let watched = Ticker.shared.every(15) { [weak self] in await self?.askWatched() }
-        defer {
-            tracked.cancel()
-            watched.cancel()
-        }
-        await Ticker.untilCancelled()
+        async let tracked: Void = Repeating.every(5) { [weak self] in await self?.askTracked() }
+        async let watched: Void = Repeating.every(15) { [weak self] in await self?.askWatched() }
+        _ = await (tracked, watched)
     }
 
     /// The tracked airplane's report, where none has come in ten seconds.
@@ -335,7 +332,7 @@ final class Tracking {
                     // The banner over the map and the voice in the app; a
                     // time-sensitive notification with the app put away.
                     fired = words
-                    SpokenAlerts.shared.say("\(words).", force: true)
+                    spoken.say("\(words).", force: true)
                     Notifications.tell(watch.kind == .takeoff ? "Took off" : "Landed", words, id: watch.id)
                     remove(watch)
                     saved()

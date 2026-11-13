@@ -3,7 +3,7 @@ import { cn } from "cn";
 import RoundButton from "../../components/RoundButton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
-import type { RankedNotam } from "../../lib/api/types";
+import type { RankedNotam } from "./engineRanking";
 import { TEXT } from "../../lib/text";
 import { useNotamMarks } from "./notamMarks";
 
@@ -26,7 +26,6 @@ export default function NotamLine({ notam, testId }: { notam: RankedNotam; testI
       className="flex gap-2"
       data-testid={testId}
       data-notam={notam.id}
-      data-worded={notam.worded ? "1" : undefined}
       data-pinned={pinned ? "" : undefined}
       data-read={read ? "" : undefined}
     >

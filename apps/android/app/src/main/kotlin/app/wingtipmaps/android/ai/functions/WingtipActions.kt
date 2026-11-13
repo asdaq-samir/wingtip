@@ -1,19 +1,26 @@
 package app.wingtipmaps.android.ai.functions
 
 import android.app.Application
+import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.aircraft
 import app.wingtipmaps.android.api.generated.GoNoGo
+import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.api.generated.NotamsRankedAsk
 import app.wingtipmaps.android.api.logbook
 import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.api.notamsRanked
-import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.emergency.PhoneFields
+import app.wingtipmaps.android.engine.CyclePacks
+import app.wingtipmaps.android.flight.FlightSession
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.plan.KeptPlan
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.Instant
 
 /**
@@ -21,16 +28,22 @@ import java.time.Instant
  * (WingtipFunctions), Gemini Nano through the on-phone Ask's tools
  * (AgentTools) -- in one place, so both get the same answers. Each reads
  * what the screens read: the planner for a field and the route's NOTAMs,
- * the gateway for the pilot's airplanes and logbook, the plan kept on the
- * phone, and the Brief kept for the air. Nothing here works a figure out:
+ * else the copies kept for the air (KeptForAir) and the cycle packs'
+ * fields (PhoneFields) with no signal; the gateway for the pilot's
+ * airplanes and logbook, the plan kept on the phone, and the Brief kept
+ * for the air. Nothing here works a figure out:
  * every number is the planner's or the engine's as it came. An action
  * that changes the screen only says which link opens it; the caller opens
  * it (a PendingIntent for Gemini, the activity for the app's own Ask).
  */
 class WingtipActions(private val app: Application) {
+    /** The flight's one owner, from Hilt's component: neither the
+     *  AppFunctions service nor the on-phone Ask is built by Hilt. */
+    private val flight by lazy { FlightSession.from(app) }
+
     /** A field's card, by its ident. */
     suspend fun airport(ident: String): AirportEntity {
-        val p = Planner.place(clean(ident))
+        val p = place(ident)
         val runways = p.runways.map { r ->
             listOfNotNull(r.ends, r.lengthFt?.let { "%,d ft".format(it) }, r.surface?.lowercase(), "closed".takeIf { r.closed }).joinToString(" ")
         }
@@ -51,23 +64,32 @@ class WingtipActions(private val app: Application) {
             )
         }
 
-    /** The fields nearest the airplane's last position, nearest first. */
+    /** The fields nearest the airplane's last position, nearest first:
+     *  the planner's, else the cycle packs' on the phone (PhoneFields), with
+     *  no flight category or runway. */
     suspend fun nearest(): List<NearestEntity> {
-        val (lat, lon) = OwnShip.of(app).lastPosition ?: throw NoAnswer("The phone has no position yet.")
-        return Planner.nearest(lat, lon, MAX_LIST).map { n ->
+        val (lat, lon) = flight.ownShip.lastPosition ?: throw NoAnswer("The phone has no position yet.")
+        val fields = try {
+            Planner.nearest(lat, lon, MAX_LIST)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            withContext(Dispatchers.Default) { PhoneFields.near(CyclePacks.of(app), lat, lon, MAX_LIST) }?.let(PhoneFields::nearestRows)?.ifEmpty { null } ?: throw e
+        }
+        return fields.map { n ->
             NearestEntity(n.ident, n.name, n.distanceNm, n.bearingDeg, n.flightCategory, n.longestRunwayFt, AgentLinks.place(n.ident))
         }
     }
 
     suspend fun frequencies(ident: String): List<FrequencyEntity> {
-        val p = Planner.place(clean(ident))
+        val p = place(ident)
         return p.frequencies.mapNotNull { f ->
             f.frequencyMhz?.let { FrequencyEntity(p.ident, f.description ?: f.type.orEmpty(), Format.frequency(it)) }
         }
     }
 
     suspend fun approaches(ident: String): List<ApproachEntity> {
-        val p = Planner.place(clean(ident))
+        val p = place(ident)
         return p.procedures.orEmpty().map { ApproachEntity(p.ident, it.name, it.kind) }
     }
 
@@ -87,16 +109,19 @@ class WingtipActions(private val app: Application) {
      *  it puts on top first. */
     suspend fun notams(): List<NotamEntity> {
         val r = route()
-        val ranked = Planner.notamsRanked(
-            NotamsRankedAsk(altitudeFt = r.altitudeFt, dep = r.dep, dest = r.dest, stops = r.waypoints.drop(1).dropLast(1).map { it.ident }.ifEmpty { null }),
-        )
+        val stops = r.waypoints.drop(1).dropLast(1).map { it.ident }
+        // Kept for the air under the flight's key (Keep for the Air, Ready
+        // to fly), and read from there with no signal.
+        val ranked = KeptForAir.had(KeptForAir.NOTAMS, flightKey(r.dep, stops, r.dest), NotamsRanked.serializer()) {
+            Planner.notamsRanked(NotamsRankedAsk(altitudeFt = r.altitudeFt, dep = r.dep, dest = r.dest, stops = stops.ifEmpty { null }))
+        }.value
         return ranked.notams.sortedBy { it.rank }.take(MAX_LIST).map { NotamEntity(it.id, it.field, it.keyword, it.closed, it.rank, it.raw) }
     }
 
     /** The Brief's verdict last worked out for the route on the page. */
     fun brief(): BriefEntity {
         val r = route()
-        val key = listOf(r.dep, r.waypoints.drop(1).dropLast(1).joinToString(",") { it.ident }, r.dest).joinToString("|")
+        val key = flightKey(r.dep, r.waypoints.drop(1).dropLast(1).map { it.ident }, r.dest)
         val entry = KeptForAir.of(app).read(KeptForAir.GO_NO_GO, key) ?: throw NoAnswer("The Brief has not been worked out for this route yet.")
         val brief = Gateway.json.decodeFromString(GoNoGo.serializer(), entry.body)
         return BriefEntity(
@@ -141,6 +166,14 @@ class WingtipActions(private val app: Application) {
     class NoAnswer(message: String) : Exception(message)
 
     private fun clean(ident: String): String = ident.trim().uppercase()
+
+    /** A field's card: the planner's, kept as it comes, else the one kept
+     *  on the phone (the airport card's and Keep for the Air's). */
+    private suspend fun place(ident: String): AirportPlace =
+        clean(ident).let { id -> KeptForAir.had(KeptForAir.AIRPORTS, id, AirportPlace.serializer()) { Planner.place(id) }.value }
+
+    /** The flight's key, as Ready to fly keeps its answers (ReadyFacts.flightKey). */
+    private fun flightKey(dep: String, stops: List<String>, dest: String): String = listOf(dep, stops.joinToString(","), dest).joinToString("|")
 
     companion object {
         /** The most a list answers with: what an agent can read out. */

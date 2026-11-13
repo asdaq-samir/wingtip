@@ -6,10 +6,9 @@ name: wingtip
 
 # Shared, not copy-pasted into each service below -- the Python
 # services (planner and, once, model-service and the agents) had
-# byte-identical healthcheck timing and the identical required-env
-# line for ANTHROPIC_API_KEY, which meant a change to either (say, a
-# longer start_period, or a reworded failure message) only actually
-# landing wherever someone remembered to also paste it. `x-` prefixed
+# byte-identical healthcheck timing, which meant a change to it (say, a
+# longer start_period) only actually landing wherever someone
+# remembered to also paste it. `x-` prefixed
 # keys are Compose's own convention for a block that exists purely to
 # be referenced by anchor -- ignored as a service definition, kept for
 # `<<`/`*` to pull from.
@@ -19,26 +18,17 @@ x-python-healthcheck: &python-healthcheck
   retries: 10
   start_period: 10s
 
-# `:-` rather than `:?`, which this was until it was tried from a clean
-# checkout. Compose interpolates the whole file before it decides what to
-# start, so a required-variable marker anywhere in it fails every command
-# -- `docker compose up gateway`, and even `docker compose config`. That
-# put an Anthropic key in front of the map, the planner and the chart
-# tiles, none of which call an LLM at all. The planner's Claude features
-# (the narrative, checkpoint notes, the assistant, the words) answer
-# without one by saying the model cannot be reached. They are off unless
-# APP_CLAUDE_FEATURES says otherwise and the claude profile starts the
-# assistant (the owner, 2026-11-10, docs/decisions/0035).
-x-anthropic-api-key: &anthropic-api-key ${ANTHROPIC_API_KEY:-}
-
 # The gateway's public address, said once: where its emailed links point,
 # and the issuer of the connector's tokens that the planner checks
 # (docs/design/mcp-connector.md). The gateway's environment below says why
 # it is worked out this way.
 x-public-base-url: &public-base-url ${PHONE_BASE_URL:-${PUBLISH_ADDRESS:+${PHONE_BASE_URL:?set PHONE_BASE_URL=https://<this Mac's LAN address>:8443 in .env}}${APP_PUBLIC_BASE_URL:-http://localhost:8080}}
 # The secret the planner's connector shows the gateway's /internal/mcp
-# records with: this machine's own, and a real one in production.
-x-mcp-internal-token: &mcp-internal-token ${MCP_INTERNAL_TOKEN:-local-connector-secret}
+# records with: no default, so none is shared by every checkout. `make dev`
+# (scripts/dev/dev.sh doctor) writes a random one of this machine's own into
+# .env; the gateway will not start with the connector on (MCP_ENABLED) and
+# none set.
+x-mcp-internal-token: &mcp-internal-token ${MCP_INTERNAL_TOKEN:-}
 
 # Every long-running service below restarts with Docker (restart:
 # unless-stopped): after a reboot, Docker Desktop brings back whatever
@@ -65,13 +55,12 @@ x-mcp-internal-token: &mcp-internal-token ${MCP_INTERNAL_TOKEN:-local-connector-
 #     refuses to start without them. See infra/local-https for the
 #     certificate.
 #   The developer's doors from another device:
-#     DEV_PUBLISH_ADDRESS=0.0.0.0 the planner's port (8084) and Jupyter's
-#                                 (8888), which answer without
-#                                 authentication -- Jupyter runs code --
+#     DEV_PUBLISH_ADDRESS=0.0.0.0 Jupyter's port (8888), which answers
+#                                 without authentication and runs code,
 #                                 so a network you control, for as long as
-#                                 you need it. The database and the
-#                                 assistant (8085, which holds the Claude
-#                                 key and has no sign-in) are never
+#                                 you need it. The database, the planner
+#                                 (8084, whose developer routes the
+#                                 gateway alone checks) are never
 #                                 published beyond loopback.
 #   Front-end work without rebuilding the image:
 #     COMPOSE_PROFILES=web-dev    starts web-build (vite --watch into
@@ -196,6 +185,31 @@ services:
       - .:/workspace
       - /tmp:/host-tmp
 
+  # The crash-leads job (services/jobs/crash, docs/STUDIO-PIPELINE.md):
+  # the FAA's statements and notices read into the Studio's crash leads,
+  # each checked against the FAA's registry and an ADS-B track, and a kit
+  # made for each confirmed one, into the live-store volume the planner
+  # reads (wingtip.crash_drafts). It keeps its own schedule (`every`): a
+  # run each CRASH_LEADS_EVERY_MIN, none with CRASH_LEADS_AUTO=0, which
+  # ends it and leaves it ended. One run by hand, `docker compose run
+  # --rm crash-leads poll` (or `parse-check`).
+  crash-leads:
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: services/jobs/crash/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    command: ["every"]
+    environment:
+      LIVE_STORE: /live/live.sqlite
+      NOTAM_STORE: /live/notams.sqlite
+      CRASH_LEADS_AUTO: ${CRASH_LEADS_AUTO:-1}
+      CRASH_LEADS_EVERY_MIN: ${CRASH_LEADS_EVERY_MIN:-30}
+    volumes:
+      - .:/workspace
+      - live-store:/live
+
   db:
     restart: unless-stopped
     # Plain Postgres: the pgvector image was for the removed briefing
@@ -266,8 +280,13 @@ services:
       dockerfile: services/planner/Dockerfile
       additional_contexts:
         wingtip-base: service:base
+    # Loopback only, whatever DEV_PUBLISH_ADDRESS says: the planner answers
+    # without sign-in, its developer routes (/api/retrain,
+    # /api/dev/services/*) and X-Pilot-Id among them, which the gateway
+    # puts behind its developer check (DeveloperOnly); from the Wi-Fi it
+    # would skip that check. Another device reaches it through the gateway.
     ports:
-      - "${DEV_PUBLISH_ADDRESS:-127.0.0.1}:8084:8000"
+      - "127.0.0.1:8084:8000"
     # docker-control as well as the default network: the only service
     # besides dev-services itself that can reach the sidecar.
     networks: [default, docker-control]
@@ -392,56 +411,6 @@ services:
       interval: 30s
       test: ["CMD", "python", "-m", "ingest.health"]
 
-  # Every Claude call the app makes (services/assistant, issue #535): the
-  # pilot's assistant, the Brief's narrative, the readings in words, the
-  # checkpoint notes and the mock oral. It holds the Anthropic key and
-  # the model settings, and asks the planner for every figure; the
-  # browser reaches it only through gateway's /api/planner/* proxy, at
-  # the same addresses as before. Mounts the project for its code, as the
-  # planner does, and for data/raw/references, the regulations and the
-  # AIM the mock oral quotes. A few HTTP calls at a time and no data of
-  # its own in memory: 256 MB is room and to spare.
-  #
-  # Off by default (the owner, 2026-11-10: "To keep the cost low, we only
-  # add the claude feature later when we decide about subscription model.
-  # For now just the free siri and gemini."; docs/decisions/0035): it is
-  # started only with the claude profile, and asked only where the
-  # gateway's APP_CLAUDE_FEATURES is DEVELOPERS or EVERYONE --
-  # COMPOSE_PROFILES=claude and APP_CLAUDE_FEATURES=EVERYONE in .env.
-  assistant:
-    profiles: ["claude"]
-    restart: unless-stopped
-    build:
-      context: .
-      dockerfile: services/assistant/Dockerfile
-      additional_contexts:
-        wingtip-base: service:base
-    ports:
-      # Loopback only, whatever DEV_PUBLISH_ADDRESS says: the assistant
-      # holds the Claude key and has no session, subscription or allowance
-      # of its own (those are the gateway's), which reaches it over the
-      # compose network.
-      - "127.0.0.1:8085:8000"
-    mem_limit: 256m
-    volumes:
-      - .:/workspace
-    environment:
-      PYTHONPATH: /workspace/services/assistant
-      PLANNER_URL: http://planner:8000
-      ANTHROPIC_API_KEY: *anthropic-api-key
-      # The models, each by its own name, as services/assistant/app/settings.py
-      # declares them; unset, its defaults.
-      ASSISTANT_MODEL: ${ASSISTANT_MODEL:-claude-opus-5-5}
-      ASSISTANT_FALLBACKS: ${ASSISTANT_FALLBACKS:-0}
-      # Traces to Jaeger with TRACING=1 (the jaeger service below); unset,
-      # it sends none and loads none of OpenTelemetry (app.tracing).
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
-      TRACING: ${TRACING:-}
-      OTEL_SERVICE_NAME: assistant
-    healthcheck:
-      <<: *python-healthcheck
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
-
   # The weather the planner reads, fetched on a schedule (services/weather):
   # METARs, TAFs, SIGMETs, PIREPs and G-AIRMETs from aviationweather.gov,
   # the GFS's winds aloft and GLMP from NOMADS, TFRs from tfr.faa.gov and
@@ -551,12 +520,6 @@ services:
         condition: service_healthy
       planner:
         condition: service_healthy
-      # Started with it, not waited for: nothing in the gateway's start
-      # asks the assistant. Not required: it runs only with the claude
-      # profile, and the gateway asks it only with the Claude features on.
-      assistant:
-        condition: service_started
-        required: false
       mailpit:
         condition: service_started
     # Ready means Spring's readiness group (the app and its database)
@@ -584,12 +547,8 @@ services:
       SPRING_DATASOURCE_USERNAME: wingtip
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-wingtip}
       PLANNER_SERVICE_URL: http://planner:8000
-      ASSISTANT_SERVICE_URL: http://assistant:8000
-      # Who has the Claude features (SubscriptionService): OFF, the
-      # default, asks Anthropic nothing (docs/decisions/0035).
-      APP_CLAUDE_FEATURES: ${APP_CLAUDE_FEATURES:-OFF}
       # The monitor's minute check (UptimeWatch, docs/OPERATIONS.md): the
-      # weather service watched beside the planner and the assistant, and
+      # weather service watched beside the planner, and
       # its alerts mailed to an address of their own in the local inbox,
       # where the e2e suite's sign-in links never meet them; APP_ALERT_EMAILS
       # in .env sends them to yours.
@@ -607,8 +566,7 @@ services:
       # this proxy never runs hot enough locally to miss C2. The AWS
       # task definition sets neither.
       JAVA_TOOL_OPTIONS: -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=/cds/gateway.jsa -XX:TieredStopAtLevel=1
-      # Sign-in with Google/Apple, optional unlike ANTHROPIC_API_KEY
-      # above: `docker compose up` must still work with none of these
+      # Sign-in with Google/Apple, optional: `docker compose up` must still work with none of these
       # set (the `oauth` Spring profile stays inactive and OIDC sign-in
       # is just not offered), but real values in the shell or a .env
       # file now actually reach OAuthClientsConfig instead of going
@@ -639,9 +597,12 @@ services:
       # PUBLISH_ADDRESS publishes the gateway (the :? inside is read
       # only then).
       APP_PUBLIC_BASE_URL: *public-base-url
-      # The connector's authorization server (security/mcp): the secret its
-      # internal records ask for, and its signing key (blank: one made at
-      # start, so a restart signs Claude and ChatGPT out until they refresh).
+      # The connector's authorization server (security/mcp): off unless
+      # MCP_ENABLED=true (docs/MCP-CONNECTOR.md); the secret its internal
+      # records ask for, on the internal port 8081 that nothing publishes
+      # (InternalPortConfig); and its signing key (blank: one made at start,
+      # so a restart signs Claude and ChatGPT out until they refresh).
+      MCP_ENABLED: ${MCP_ENABLED:-false}
       MCP_INTERNAL_TOKEN: *mcp-internal-token
       MCP_SIGNING_KEY: ${MCP_SIGNING_KEY:-}
       # Whose pilot is a developer: the address the e2e suite signs in
@@ -655,16 +616,6 @@ services:
       # would meet the deployed limits of 5 and 20 an hour.
       APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR: "60"
       APP_MAGIC_LINK_PER_CLIENT_PER_HOUR: "200"
-      # The paid calls' daily allowance (narratives, generating notes),
-      # loose here for the same reason: the e2e suite asks for notes on
-      # most runs, though for a collected route they are already written
-      # and cost nothing. Deployed, 40 a day each per pilot.
-      APP_PAID_CALLS_PER_DAY: "500"
-      # The assistant's and the readings in words' own, the same way: the
-      # Brief asks three readings each time it opens on a route, and the
-      # suite opens it often. Deployed, 20 and 150 a day per pilot.
-      APP_PAID_CALLS_ASSISTANT_PER_DAY: "500"
-      APP_PAID_CALLS_WORDS_PER_DAY: "5000"
       # The HTTPS port for a phone on the same Wi-Fi (HttpsConnectorConfig):
       # the certificate infra/local-https/make-certs.sh writes, read
       # only once that file exists. HSTS off: this machine's plain port
@@ -704,8 +655,7 @@ services:
 
   # Traces of a request from the page's call through the gateway, the
   # planner (each engine rule, each weather product read, each source
-  # asked) and the assistant (each Claude call, with its model and
-  # tokens), and of the weather service's fetches and ingest's rounds, in
+  # asked), and of the weather service's fetches and ingest's rounds, in
   # Jaeger's UI on http://localhost:16686 (docs/LOCAL-DEV.md, "Tracing"):
   #
   #   TRACING=1 docker compose --profile tracing up -d

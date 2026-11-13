@@ -23,7 +23,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The cockpit receiver's GDL 90 read on the phone, through the JNI bridge
+ * The cockpit receiver's GDL 90 read on the phone, through the generated bridge
  * and the generated types, against the shared fixture
  * (apps/web/src/lib/fixtures/gdl90.json, this test APK's assets): the
  * picture, the traffic merged into the planner's TrafficAircraft, a

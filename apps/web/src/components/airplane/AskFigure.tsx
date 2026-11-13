@@ -1,13 +1,14 @@
 import { useId } from "react";
 import { cn } from "cn";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
+import { NumberField } from "../ui/number-field";
 import { LINK } from "./link";
 import { FIGURE_WORDS, tablesWords } from "../../lib/airplane/figureWords";
 import type { NeedsFigure } from "../../lib/airplane/figures";
 import { useAskFigure } from "../../lib/airplane/useAskFigure";
 import { requestAirplanePick } from "../../lib/pickAirplane";
 import { TEXT } from "../../lib/text";
+import { FieldError } from "../ui/field";
 
 /**
  * Where an airplane figure is needed and the airplane has none, the one ask
@@ -64,25 +65,25 @@ export function AskFigure({
       >
         <label htmlFor={id}>{words.ask(vm.tail)}</label>
         <span className="flex items-center gap-2">
-          <Input
+          {/* Read in the pilot's locale, "12,5" twelve and a half where a
+              comma is the decimal; given as it is typed, for Save. Keyed
+              by the figure asked, so the next is asked in an empty field. */}
+          <NumberField
+            key={vm.asked}
             id={id}
-            type="text"
-            inputMode="decimal"
-            value={vm.typed}
-            onChange={(e) => vm.setTyped(e.target.value.replace(/[^0-9.,]/g, ""))}
-            className={cn("h-8 w-24 text-right tabular-nums", TEXT.row)}
-            aria-invalid={!!vm.problem}
+            defaultValue={null}
+            onTyped={vm.setTyped}
+            minValue={0}
+            className="h-8 w-24"
+            inputClassName={cn("text-right", TEXT.row)}
+            isInvalid={!!vm.problem}
             data-testid="ask-input"
           />
           <span className="text-muted-foreground">{words.unit}</span>
         </span>
-        {vm.problem && (
-          <p className={cn("text-destructive-ink", TEXT.detail)} role="alert">
-            {vm.problem}
-          </p>
-        )}
+        {vm.problem && <FieldError className={cn("text-destructive-ink", TEXT.detail)}>{vm.problem}</FieldError>}
         <span className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <Button type="submit" size="sm" disabled={vm.saving || !vm.typed.trim()} data-testid="ask-save">
+          <Button type="submit" size="sm" disabled={vm.saving || vm.typed == null} data-testid="ask-save">
             {vm.saving ? "Saving…" : "Save"}
           </Button>
           <Button type="button" variant="link" size="sm" className={LINK} onClick={vm.notNow} data-testid="ask-not-now">

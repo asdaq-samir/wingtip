@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { cn } from "cn";
 import { hoverTfr, mouseHover } from "../../../../lib/map/marks/mapHover";
 import AccordionSection from "../../../../components/AccordionSection";
@@ -23,9 +22,7 @@ import FuelSection from "./FuelSection";
 import FlightPlanSection from "./FlightPlanSection";
 import RiskAssessment from "./RiskAssessment";
 import FindingIcon from "../../../../components/FindingIcon";
-import MockOral from "./MockOral";
-import { useClaudeOn } from "../../../../lib/subscription";
-import { BriefingNarrativePrintBlock, Flag, PassNote, Pending } from "./BriefingBits";
+import { Flag, PassNote, Pending } from "./BriefingBits";
 import { SUA_FINDING, SUA_WORDS } from "./briefingWords";
 
 /** Preflight's sections its checks' tiles open (BriefChecks): the
@@ -39,21 +36,14 @@ interface Props {
   dep: string;
   dest: string;
   depart: string;
-  narrativeText: string | null;
-  narrative?: ReactNode;
 }
 
 /** Preflight: the go / no-go first, then what is done before leaving --
  *  the airspace, the risk, the paperwork, the loading. */
-export default function PreflightPart({ vm, nav, totals, dep, dest, depart, narrativeText, narrative }: Props) {
-  const { items, landings, setFolds, printing, folds, assessment, briefingPendingMessage, ifr, planForms, briefing, pilot, planText } = vm;
-  const oral = useClaudeOn();
+export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Props) {
+  const { items, landings, setFolds, printing, folds, assessment, briefingPendingMessage, ifr, planForms, briefing } = vm;
   return (
     <>
-      {/* The narrative, printed only: on screen it is the tab's own
-          section (BriefNarrative). */}
-      <BriefingNarrativePrintBlock text={narrativeText} />
-
       <BriefChecks
         items={items}
         flight={`${landings.join("-")}|${depart}`}
@@ -67,8 +57,6 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart, narr
       <SectionTitle className="mt-2 px-1 print:hidden">Before You Go</SectionTitle>
       <SectionsOpen.Provider value={printing}>
         <Accordion multiple value={folds} onValueChange={(v) => setFolds(v as string[])} data-testid="before-you-go">
-          {narrative}
-
           <AirspaceSection vm={vm} />
 
           {/* What the briefing raised, and what only the pilot can say
@@ -119,16 +107,6 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart, narr
           <div className="print:hidden">
             <FlightChecklists />
           </div>
-
-          {/* The mock oral, the developer's until a CFI has reviewed its
-          answers, and only with Claude on (lib/subscription); never on paper. */}
-          {pilot?.developer && oral && briefing && (
-            <div className="print:hidden">
-              <AccordionSection title="Mock Oral">
-                <MockOral plan={planText} />
-              </AccordionSection>
-            </div>
-          )}
         </Accordion>
       </SectionsOpen.Provider>
     </>

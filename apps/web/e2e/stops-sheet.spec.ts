@@ -1,5 +1,6 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { grabberTo, inSheet, settle, showSearch, sideDrawer, slow } from "./helpers";
+import { grabberTo, inSheet, settle, showSearch, sideDrawer, slow, frontSheet } from "./helpers";
+import { drawnMarks } from "./marks";
 
 const origin = new URL(process.env.BASE_URL ?? "http://localhost:8080").origin;
 
@@ -157,20 +158,29 @@ test("with a course drawn, the Stops along it, each with a line for each kind it
   await card.getByTestId("stops-kind-food").click();
   await expect(card.getByTestId("stops-kind-food")).toHaveAttribute("aria-pressed", "true");
   await expect(rows).toHaveCount(1);
-  await expect(page.getByTitle("KAAA: Food")).toHaveCount(1);
+  // The pins on the map's canvas, as their probe says (StopFieldsGl).
+  const pins = async (title: string) => (await drawnMarks(page, "stop-fields")).filter((m) => m.title === title).length;
+  await expect.poll(() => pins("KAAA: Food")).toBe(1);
   await card.getByTestId("stops-kind-all").click();
   await expect(rows).toHaveCount(2);
-  await expect(page.getByTitle("KAAA: Fuel, Food, Repair, Training")).toHaveCount(1);
+  await expect.poll(() => pins("KAAA: Fuel, Food, Repair, Training")).toBe(1);
 
   // A field's pin tapped with the sheet at its pill: its row picked, the
-  // sheet up to show it, and no card opened over the list -- half way, or
-  // all the way where the row is under half's edge, which is not scrolled
-  // but pulled up (the owner, 2026-11-05: "pull up, like Apple Maps").
+  // sheet up to show it, and no card opened over the list; the row
+  // scrolled into sight (StopsCard), the sheet left at the size it is at
+  // (the owner, 2026-11-11: "Just let the drawer do what it does").
   await grabberTo(page, "peek");
-  await page.getByTitle("KBBB: Fuel").click();
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", /^(half|full)$/);
+  await expect.poll(() => pins("KBBB: Fuel")).toBe(1);
+  const kbbb = (await drawnMarks(page, "stop-fields")).find((m) => m.title === "KBBB: Fuel")!;
+  await page.mouse.click(kbbb.x, kbbb.y);
+  // The Stops a card of its own now (95f9e953b): its row picked, and the
+  // card half way up from its pill (useFplCards' pickStopField), as the
+  // card rule's 11 has something new raised from the pill to be seen. A row
+  // under half's edge is reached by pulling the card up, as every list's.
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   await expect(rows.nth(1)).toHaveAttribute("aria-current", "true");
   await expect(rows.nth(0)).not.toHaveAttribute("aria-current", "true");
+  await inSheet(page, rows.nth(1));
   await expect(rows.nth(1)).toBeInViewport();
   await expect(page).not.toHaveURL(/[?&]place=/);
 
@@ -219,7 +229,7 @@ test("the one search's Find Nearby tiles open the Stops round the pilot with tha
   await grabberTo(page, "full");
   const nearby = sideDrawer(page).getByTestId("find-nearby");
   await expect(nearby).toBeVisible();
-  await expect(nearby.getByRole("button")).toHaveText(["Food", "Fuel", "Repair", "Flight Training"]);
+  await expect(nearby.getByRole("button")).toHaveText(["Food", "Fuel", "Repair", "Training"]);
   // A finger's 44 points.
   const tile = nearby.getByTestId("find-nearby-repair");
   expect((await tile.boundingBox())!.height).toBeGreaterThanOrEqual(44);

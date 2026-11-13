@@ -1,20 +1,20 @@
 {
-  "about": "Where an airplane is along the planned route (the engine's route_position): the nearest point of the line, the miles along it and off it, on the route within 3 nm (the debrief's tolerance for the distance from the planned route, ACS PA.VI.A.S5), the leg by the legs' miles (or by the route's own points, those not placed left out) and the fuel the plan has burnt by there. Along the equator a degree is 60.04 nm on the engine's 3,440.065 nm sphere. Figures to within 0.01. iOS: Flight.position (the strip, the Live Activity, the ribbon). Android: StripData.positionAlong.",
+  "about": "Where an airplane is along the planned route (the engine's route_position): the nearest point of the line, the miles along it and off it, on the route within 3 nm (the debrief's tolerance for the distance from the planned route, ACS PA.VI.A.S5), the leg by the legs' miles (or by the route's own points, those not placed left out) and the fuel the plan has burnt by there. Along the equator a degree is 60.108 nm on the WGS-84 ellipsoid (pyproj's Geod(ellps=\"WGS84\"): 111,319.49 m), and 0.02 degrees of latitude there 1.194 nm. Figures to within 0.01. iOS: Flight.position (the strip, the Live Activity, the ribbon). Android: StripData.positionAlong.",
   "cases": [
     {
       "name": "on the second leg, 1.2 nm off",
-      "input": { "at": { "lat": 0.02, "lon": 1.5 }, "line": [[0, 0], [0, 1], [0, 2]], "legs": [{ "distance_nm": 60.0405, "fuel_gal": 6 }, { "distance_nm": 60.0405, "fuel_gal": 8 }] },
-      "answer": { "along_nm": 90.061, "total_nm": 120.081, "left_nm": 30.020, "off_nm": 1.201, "on_route": true, "leg": 1, "leg_fraction": 0.5, "burnt_gal": 10 }
+      "input": { "at": { "lat": 0.02, "lon": 1.5 }, "line": [[0, 0], [0, 1], [0, 2]], "legs": [{ "distance_nm": 60.1077, "fuel_gal": 6 }, { "distance_nm": 60.1077, "fuel_gal": 8 }] },
+      "answer": { "along_nm": 90.162, "total_nm": 120.215, "left_nm": 30.054, "off_nm": 1.194, "on_route": true, "leg": 1, "leg_fraction": 0.5, "burnt_gal": 10 }
     },
     {
       "name": "3.6 nm off: not on the route",
-      "input": { "at": { "lat": 0.06, "lon": 0.5 }, "line": [[0, 0], [0, 1], [0, 2]], "legs": [{ "distance_nm": 60.0405, "fuel_gal": 6 }, { "distance_nm": 60.0405, "fuel_gal": 8 }] },
-      "answer": { "along_nm": 30.020, "total_nm": 120.081, "left_nm": 90.061, "off_nm": 3.602, "on_route": false, "leg": 0, "leg_fraction": 0.5, "burnt_gal": 3 }
+      "input": { "at": { "lat": 0.06, "lon": 0.5 }, "line": [[0, 0], [0, 1], [0, 2]], "legs": [{ "distance_nm": 60.1077, "fuel_gal": 6 }, { "distance_nm": 60.1077, "fuel_gal": 8 }] },
+      "answer": { "along_nm": 30.054, "total_nm": 120.215, "left_nm": 90.162, "off_nm": 3.582, "on_route": false, "leg": 0, "leg_fraction": 0.5, "burnt_gal": 3 }
     },
     {
       "name": "by the route's points, one not placed",
       "input": { "at": { "lat": 0, "lon": 1.25 }, "points": [[0, 0], null, [0, 1], [0, 2]] },
-      "answer": { "along_nm": 75.051, "total_nm": 120.081, "left_nm": 45.030, "off_nm": 0, "on_route": true, "leg": 2, "leg_fraction": 0.25, "burnt_gal": 0 }
+      "answer": { "along_nm": 75.135, "total_nm": 120.215, "left_nm": 45.081, "off_nm": 0, "on_route": true, "leg": 2, "leg_fraction": 0.25, "burnt_gal": 0 }
     },
     {
       "name": "no line to be on",

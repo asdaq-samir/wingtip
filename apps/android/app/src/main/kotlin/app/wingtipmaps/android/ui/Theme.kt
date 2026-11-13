@@ -2,7 +2,6 @@ package app.wingtipmaps.android.ui
 
 import android.content.Context
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialExpressiveTheme
@@ -23,7 +22,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.design.LocalNative
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipPalette
@@ -66,18 +66,18 @@ enum class Look(val key: String, val label: String) {
 /** The look picked, kept under the web app's key "look" and held in one
  *  flow, so the theme and Setup's Theme row see the same value at once. */
 object LookPreference {
-    private const val KEY = "look"
+    private val KEY = stringPreferencesKey("look")
     private val state = MutableStateFlow<Look?>(null)
 
     fun flow(context: Context): StateFlow<Look?> {
         if (state.value == null) {
-            state.value = Look.of(context.getSharedPreferences("wingtip", Context.MODE_PRIVATE).getString(KEY, null))
+            state.value = Look.of(Kept.of(context, "wingtip")[KEY])
         }
         return state.asStateFlow()
     }
 
     fun set(context: Context, look: Look) {
-        context.getSharedPreferences("wingtip", Context.MODE_PRIVATE).edit { putString(KEY, look.key) }
+        Kept.of(context, "wingtip").edit { it[KEY] = look.key }
         state.value = look
     }
 }
@@ -203,7 +203,7 @@ fun lookTheme(look: Look, dark: Boolean, nativeScheme: ColorScheme?): LookTheme 
 
 /**
  * The one Wingtip Material theme, for both layouts, in the look picked in
- * Setup (Wingtip by default), light or dark with the system. The brand
+ * Settings (Wingtip by default), light or dark by its Appearance. The brand
  * looks wear Material 3 Expressive's own theme (MaterialExpressiveTheme),
  * so every stock component -- switches, tabs, menus, sliders, sheets,
  * buttons -- moves on Google's expressive motion scheme, its springs.
@@ -222,7 +222,10 @@ fun lookTheme(look: Look, dark: Boolean, nativeScheme: ColorScheme?): LookTheme 
  */
 @Composable
 fun WingtipTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
+    // Light or dark by Settings' Appearance, the phone's own by default.
+    val shade = rememberShade()
+    val dark = shade.dark
+    SystemBarsFollow(dark)
     val look = rememberLook().value ?: Look.WINGTIP
     val scheme = if (look == Look.NATIVE) nativeScheme(LocalContext.current, dark) else null
     val theme = lookTheme(look, dark, scheme)
@@ -231,6 +234,7 @@ fun WingtipTheme(content: @Composable () -> Unit) {
         LocalWingtipPalette provides palette,
         LocalInk provides InkColors.of(palette, dark),
         LocalNative provides theme.native,
+        LocalShade provides shade,
     ) {
         if (theme.native) {
             MaterialTheme(colorScheme = theme.colorScheme, content = content)

@@ -9,6 +9,7 @@ import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 import { HOUR_FINDING, HOUR_WORD, bestLine, clock, dayOf, hourFigures, hourLabel } from "./hourWords";
 import { useDepartureWindow } from "./useDepartureWindow";
+import { FieldError } from "../../components/ui/field";
 
 /** Each hour's tile's tint, as the Brief's verdict is tinted: the colour
  *  beside a mark of its own shape, never the colour alone. */
@@ -21,8 +22,7 @@ const TILE_TINT = {
 } as const;
 
 /**
- * "When should I go?" in the Brief, under the verdict and the assistant's
- * field: an hour-by-hour strip across as far as the forecasts reach, each
+ * "When should I go?" in the Brief, under the verdict: an hour-by-hour strip across as far as the forecasts reach, each
  * hour go, caution, no-go or not known by the Brief's own Go / No-Go for
  * a flight leaving then, the best window said over it ("Best: 07:00–10:00
  * CST"), and a tap on an hour opening why, with its time and fuel. Its
@@ -41,9 +41,9 @@ export default function DepartureWindowStrip() {
         </p>
       ) : m.error ? (
         // Where it happened, not a toast (lib/problems).
-        <p className={cn(TEXT.detail, "text-muted-foreground")} role="alert" data-testid="departure-window-error">
+        <FieldError className={cn(TEXT.detail, "text-muted-foreground")} data-testid="departure-window-error">
           Hours unavailable: {describeError(m.error, "the planner did not answer")}
-        </p>
+        </FieldError>
       ) : m.pending ? (
         <div className="flex gap-2" aria-busy="true" data-testid="departure-window-pending">
           {Array.from({ length: 6 }, (_, i) => (

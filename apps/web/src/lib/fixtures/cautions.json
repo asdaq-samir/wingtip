@@ -673,15 +673,17 @@
     {
       "ident": "KDST",
       "approaches": {
-        "any": true,
-        "precision": true,
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
         "alternate_minimums_url": null
       },
       "forecast": {
         "ceiling_ft": 2000,
         "ceiling_unknown": false,
         "visibility_sm": 3,
-        "raw": "TAF KDST"
+        "raw": "TAF KDST",
+        "covers": true
       },
       "answer": {
         "ident": "KDST",
@@ -696,15 +698,17 @@
     {
       "ident": "KDST",
       "approaches": {
-        "any": true,
-        "precision": true,
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
         "alternate_minimums_url": null
       },
       "forecast": {
         "ceiling_ft": 1900,
         "ceiling_unknown": false,
         "visibility_sm": 6,
-        "raw": "TAF KDST"
+        "raw": "TAF KDST",
+        "covers": true
       },
       "answer": {
         "ident": "KDST",
@@ -721,15 +725,17 @@
     {
       "ident": "KDST",
       "approaches": {
-        "any": true,
-        "precision": true,
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
         "alternate_minimums_url": null
       },
       "forecast": {
         "ceiling_ft": 3000,
         "ceiling_unknown": false,
         "visibility_sm": 2.5,
-        "raw": "TAF KDST"
+        "raw": "TAF KDST",
+        "covers": true
       },
       "answer": {
         "ident": "KDST",
@@ -746,15 +752,15 @@
     {
       "ident": "KDST",
       "approaches": {
-        "any": false,
-        "precision": false,
+        "names": [],
         "alternate_minimums_url": null
       },
       "forecast": {
         "ceiling_ft": null,
         "ceiling_unknown": false,
         "visibility_sm": 6,
-        "raw": "TAF KDST"
+        "raw": "TAF KDST",
+        "covers": true
       },
       "answer": {
         "ident": "KDST",
@@ -771,8 +777,9 @@
     {
       "ident": "KNOA",
       "approaches": {
-        "any": true,
-        "precision": true,
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
         "alternate_minimums_url": null
       },
       "forecast": null,
@@ -791,15 +798,17 @@
     {
       "ident": "KDST",
       "approaches": {
-        "any": true,
-        "precision": true,
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
         "alternate_minimums_url": null
       },
       "forecast": {
         "ceiling_ft": null,
         "ceiling_unknown": true,
         "visibility_sm": 6,
-        "raw": "TAF KDST"
+        "raw": "TAF KDST",
+        "covers": true
       },
       "answer": {
         "ident": "KDST",
@@ -812,21 +821,107 @@
           "The TAF has a ceiling of unknown height within an hour of the ETA."
         ]
       }
+    },
+    {
+      "_why": "14 CFR 91.169(b)(2)(i), 'for 1 hour after the estimated time of arrival': a TAF ending 30 minutes after the ETA does not cover the hour after, however good its figures.",
+      "ident": "KDST",
+      "approaches": {
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 5000,
+        "ceiling_unknown": false,
+        "visibility_sm": 6,
+        "raw": "TAF KDST",
+        "covers": false
+      },
+      "answer": {
+        "ident": "KDST",
+        "approach": true,
+        "ceiling_ft": 5000,
+        "visibility_sm": 6,
+        "taf": "TAF KDST",
+        "required": true,
+        "reasons": [
+          "The TAF for KDST does not cover the whole hour either side of the ETA (14 CFR 91.169(b)(2)(i))."
+        ]
+      }
+    },
+    {
+      "_why": "91.169(b)(2)(i): 'the visibility will be at least 3 statute miles' -- a forecast with no visibility indicates nothing.",
+      "ident": "KDST",
+      "approaches": {
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 5000,
+        "ceiling_unknown": false,
+        "visibility_sm": null,
+        "raw": "TAF KDST",
+        "covers": true
+      },
+      "answer": {
+        "ident": "KDST",
+        "approach": true,
+        "ceiling_ft": 5000,
+        "visibility_sm": null,
+        "taf": "TAF KDST",
+        "required": true,
+        "reasons": [
+          "The TAF gives no visibility within an hour of the ETA, so it does not show 3 sm."
+        ]
+      }
+    },
+    {
+      "_why": "91.169(b)(2)(i): 'at least 2,000 feet': 1,999 ft is under it (both sides of the boundary; 2,000 is the first case).",
+      "ident": "KDST",
+      "approaches": {
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 1999,
+        "ceiling_unknown": false,
+        "visibility_sm": 3,
+        "raw": "TAF KDST",
+        "covers": true
+      },
+      "answer": {
+        "ident": "KDST",
+        "approach": true,
+        "ceiling_ft": 1999,
+        "visibility_sm": 3,
+        "taf": "TAF KDST",
+        "required": true,
+        "reasons": [
+          "The TAF has a 1,999 ft ceiling within an hour of the ETA: under 2,000 ft."
+        ]
+      }
     }
   ],
   "alternate_check": [
     {
       "ident": "KALT",
       "approaches": {
-        "any": true,
-        "precision": true,
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
         "alternate_minimums_url": null
       },
       "forecast": {
         "ceiling_ft": 700,
         "ceiling_unknown": false,
         "visibility_sm": 2,
-        "raw": "TAF KALT"
+        "raw": "TAF KALT",
+        "covers": true
       },
       "answer": {
         "ident": "KALT",
@@ -848,15 +943,17 @@
     {
       "ident": "KALT",
       "approaches": {
-        "any": true,
-        "precision": false,
+        "names": [
+          "RNAV (GPS) RWY 9"
+        ],
         "alternate_minimums_url": null
       },
       "forecast": {
         "ceiling_ft": 700,
         "ceiling_unknown": false,
         "visibility_sm": 2,
-        "raw": "TAF KALT"
+        "raw": "TAF KALT",
+        "covers": true
       },
       "answer": {
         "ident": "KALT",
@@ -880,15 +977,17 @@
     {
       "ident": "KALT",
       "approaches": {
-        "any": true,
-        "precision": false,
+        "names": [
+          "RNAV (GPS) RWY 9"
+        ],
         "alternate_minimums_url": null
       },
       "forecast": {
         "ceiling_ft": 3000,
         "ceiling_unknown": false,
         "visibility_sm": 1.5,
-        "raw": "TAF KALT"
+        "raw": "TAF KALT",
+        "covers": true
       },
       "answer": {
         "ident": "KALT",
@@ -912,15 +1011,17 @@
     {
       "ident": "KALT",
       "approaches": {
-        "any": true,
-        "precision": true,
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
         "alternate_minimums_url": "https://aeronav.faa.gov/d-tpp/2610/NC3ALT.PDF"
       },
       "forecast": {
         "ceiling_ft": 3000,
         "ceiling_unknown": false,
         "visibility_sm": 6,
-        "raw": "TAF KALT"
+        "raw": "TAF KALT",
+        "covers": true
       },
       "answer": {
         "ident": "KALT",
@@ -944,15 +1045,15 @@
     {
       "ident": "KALT",
       "approaches": {
-        "any": false,
-        "precision": false,
+        "names": [],
         "alternate_minimums_url": null
       },
       "forecast": {
         "ceiling_ft": 3000,
         "ceiling_unknown": false,
         "visibility_sm": 6,
-        "raw": "TAF KALT"
+        "raw": "TAF KALT",
+        "covers": true
       },
       "answer": {
         "ident": "KALT",
@@ -973,8 +1074,9 @@
     {
       "ident": "KALT",
       "approaches": {
-        "any": true,
-        "precision": true,
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
         "alternate_minimums_url": null
       },
       "forecast": null,
@@ -1000,15 +1102,17 @@
     {
       "ident": "KALT",
       "approaches": {
-        "any": true,
-        "precision": true,
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
         "alternate_minimums_url": null
       },
       "forecast": {
         "ceiling_ft": null,
         "ceiling_unknown": true,
         "visibility_sm": 6,
-        "raw": "TAF KALT"
+        "raw": "TAF KALT",
+        "covers": true
       },
       "answer": {
         "ident": "KALT",
@@ -1026,6 +1130,280 @@
         "meets_standard": false,
         "reasons": [
           "The TAF has a ceiling of unknown height at the ETA."
+        ]
+      }
+    },
+    {
+      "_why": "91.169(c)(1)(i)(A): precision, 'Ceiling 600 feet and visibility 2 statute miles' -- at 600-2 exactly it will do.",
+      "ident": "KALT",
+      "approaches": {
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 600,
+        "ceiling_unknown": false,
+        "visibility_sm": 2,
+        "raw": "TAF KALT",
+        "covers": true
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": true,
+        "minimums": {
+          "ceiling_ft": 600,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 600,
+        "visibility_sm": 2,
+        "taf": "TAF KALT",
+        "good": true,
+        "meets_standard": true,
+        "reasons": []
+      }
+    },
+    {
+      "_why": "91.169(c)(1)(i)(A): 599 ft is under 600.",
+      "ident": "KALT",
+      "approaches": {
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 599,
+        "ceiling_unknown": false,
+        "visibility_sm": 2,
+        "raw": "TAF KALT",
+        "covers": true
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": true,
+        "minimums": {
+          "ceiling_ft": 600,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 599,
+        "visibility_sm": 2,
+        "taf": "TAF KALT",
+        "good": false,
+        "meets_standard": false,
+        "reasons": [
+          "The TAF has a 599 ft ceiling at the ETA: under 600 ft."
+        ]
+      }
+    },
+    {
+      "_why": "91.169(c)(1)(i)(B): nonprecision, 'Ceiling 800 feet and visibility 2 statute miles' -- 800-2 will do.",
+      "ident": "KALT",
+      "approaches": {
+        "names": [
+          "VOR RWY 3"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 800,
+        "ceiling_unknown": false,
+        "visibility_sm": 2,
+        "raw": "TAF KALT",
+        "covers": true
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": false,
+        "minimums": {
+          "ceiling_ft": 800,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 800,
+        "visibility_sm": 2,
+        "taf": "TAF KALT",
+        "good": true,
+        "meets_standard": true,
+        "reasons": []
+      }
+    },
+    {
+      "_why": "91.169(c)(1)(i)(B): 799 ft is under 800.",
+      "ident": "KALT",
+      "approaches": {
+        "names": [
+          "VOR RWY 3"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 799,
+        "ceiling_unknown": false,
+        "visibility_sm": 2,
+        "raw": "TAF KALT",
+        "covers": true
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": false,
+        "minimums": {
+          "ceiling_ft": 800,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 799,
+        "visibility_sm": 2,
+        "taf": "TAF KALT",
+        "good": false,
+        "meets_standard": false,
+        "reasons": [
+          "The TAF has a 799 ft ceiling at the ETA: under 800 ft."
+        ]
+      }
+    },
+    {
+      "_why": "AIM 5-4-5 a.7(a): 'PAR, ILS, and GLS are precision approaches' -- a GLS takes 600-2.",
+      "ident": "KALT",
+      "approaches": {
+        "names": [
+          "GLS RWY 4R"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 700,
+        "ceiling_unknown": false,
+        "visibility_sm": 2,
+        "raw": "TAF KALT",
+        "covers": true
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": true,
+        "minimums": {
+          "ceiling_ft": 600,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 700,
+        "visibility_sm": 2,
+        "taf": "TAF KALT",
+        "good": true,
+        "meets_standard": true,
+        "reasons": []
+      }
+    },
+    {
+      "_why": "AIM 5-4-5 a.7(b): LPV is APV, not precision, and AIM 1-1-18 plans a WAAS alternate on 'non-precision weather requirements' -- an RNAV (GPS) chart with LPV takes 800-2.",
+      "ident": "KALT",
+      "approaches": {
+        "names": [
+          "RNAV (GPS) RWY 9"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 700,
+        "ceiling_unknown": false,
+        "visibility_sm": 2,
+        "raw": "TAF KALT",
+        "covers": true
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": false,
+        "minimums": {
+          "ceiling_ft": 800,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 700,
+        "visibility_sm": 2,
+        "taf": "TAF KALT",
+        "good": false,
+        "meets_standard": false,
+        "reasons": [
+          "The TAF has a 700 ft ceiling at the ETA: under 800 ft."
+        ]
+      }
+    },
+    {
+      "_why": "91.169(c): the forecast must indicate the minimums 'at the estimated time of arrival' -- a TAF not in force then does not.",
+      "ident": "KALT",
+      "approaches": {
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 3000,
+        "ceiling_unknown": false,
+        "visibility_sm": 6,
+        "raw": "TAF KALT",
+        "covers": false
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": true,
+        "minimums": {
+          "ceiling_ft": 600,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 3000,
+        "visibility_sm": 6,
+        "taf": "TAF KALT",
+        "good": null,
+        "meets_standard": false,
+        "reasons": [
+          "The TAF for KALT does not cover the ETA there."
+        ]
+      }
+    },
+    {
+      "_why": "91.169(c): no visibility forecast does not indicate 2 sm.",
+      "ident": "KALT",
+      "approaches": {
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 3000,
+        "ceiling_unknown": false,
+        "visibility_sm": null,
+        "raw": "TAF KALT",
+        "covers": true
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": true,
+        "minimums": {
+          "ceiling_ft": 600,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 3000,
+        "visibility_sm": null,
+        "taf": "TAF KALT",
+        "good": null,
+        "meets_standard": false,
+        "reasons": [
+          "The TAF gives no visibility at the ETA."
         ]
       }
     }

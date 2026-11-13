@@ -167,13 +167,10 @@ test("the Radio card finds the inputs, listens through the one picked with its l
   await expect(captions).toContainText(lost, { timeout: slow(10_000) });
   await expect(card.getByTestId("listen-problem")).toHaveText(lost);
 
-  // Nothing moved: the mic is where it was. On a phone at the left of the
-  // map's foot (map-mic.spec, the owner's "Move the mic back to the left
-  // side, above the tabs", 2026-11-04), its pill grown to the right of it,
-  // its height following the sheet's, which the Radio card raised; from
-  // md up over the map's buttons at the right edge (the owner,
-  // 2026-11-06), its pill grown to the left of it.
+  // Nothing moved: the mic is where it was, over the map's buttons at the
+  // right edge (the owner, 2026-11-06; on a phone too since 2026-11-13,
+  // map-mic.spec), its pill grown to the left of it; on a phone its height
+  // following the sheet's, which the Radio card raised.
   const box = (await mic.boundingBox())!;
-  const wide = page.viewportSize()!.width >= 768;
-  expect(Math.abs(wide ? box.x + box.width - (placed.x + placed.width) : box.x - placed.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(box.x + box.width - (placed.x + placed.width))).toBeLessThanOrEqual(1);
 });

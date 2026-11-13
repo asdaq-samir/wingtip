@@ -130,14 +130,14 @@ def test_the_metars_are_the_newest_report_per_station_from_the_cache_file():
 
 def test_metars_are_kept_however_long_an_outage_with_their_own_times():
     """Each METAR carries its own observation time, which the pilot sees,
-    so the stored copy is served through an outage of any length (AC
-    00-45H; the owner's call of 2026-11-04). The products with a validity
+    so the stored copy is served through an outage of any length
+    (FAA-H-8083-28B 24.4.1; the owner's call of 2026-11-04). The products with a validity
     of their own run out: the TAF and SIGMET tests below."""
     _serve("metars", METARS)
     assert weather_store.read("metars").until is None
     with (
         patch("app.fetch.requests.get", side_effect=requests.ConnectionError("no route to host")),
-        patch("wingtip.retry.time.sleep"),
+        patch("tenacity.nap.time.sleep"),
         pytest.raises(fetch.FetchFailed),
     ):
         aviationweather.fetch_source("metars")
@@ -226,7 +226,7 @@ def test_a_certificate_failure_is_not_retried():
     the back-off would only delay the same answer by six seconds."""
     with (
         patch("app.fetch.requests.get", side_effect=requests.exceptions.SSLError("certificate has expired")) as mock_get,
-        patch("wingtip.retry.time.sleep") as mock_sleep,
+        patch("tenacity.nap.time.sleep") as mock_sleep,
     ):
         with pytest.raises(fetch.FetchFailed, match="certificate has expired"):
             aviationweather.fetch_source("metars")
@@ -242,7 +242,7 @@ def test_a_request_refused_as_asked_is_not_retried_and_one_too_many_is():
     26-47) is the same answer on every try: three tries and their back-off
     put 6.5 s on a plan. A 429 asks to be tried later, and is."""
     refused = Mock(status_code=400, text='{"status":"error","error":"Wind/temp tables have been discontinued"}')
-    with patch("app.fetch.requests.get", return_value=refused) as mock_get, patch("wingtip.retry.time.sleep") as mock_sleep:
+    with patch("app.fetch.requests.get", return_value=refused) as mock_get, patch("tenacity.nap.time.sleep") as mock_sleep:
         with pytest.raises(fetch.FetchFailed, match="refused: 400"):
             fetch.get("https://aviationweather.gov/api/data/windtemp", {"fcst": "06"})
     assert mock_get.call_count == 1
@@ -250,7 +250,7 @@ def test_a_request_refused_as_asked_is_not_retried_and_one_too_many_is():
 
     busy = Mock(status_code=429, text="slow down")
     busy.raise_for_status.side_effect = requests.HTTPError("429 Client Error")
-    with patch("app.fetch.requests.get", return_value=busy) as mock_get, patch("wingtip.retry.time.sleep"):
+    with patch("app.fetch.requests.get", return_value=busy) as mock_get, patch("tenacity.nap.time.sleep"):
         with pytest.raises(fetch.FetchFailed, match="after 3 attempts"):
             fetch.get("https://aviationweather.gov/api/data/windtemp", {"fcst": "06"})
     assert mock_get.call_count == 3
@@ -358,7 +358,7 @@ def test_a_station_is_read_for_when_the_flight_is_there():
     told, and not one arriving at 01Z: each place over its own hour."""
     _serve("tafs", FOG_IN_A_TEMPO)
     assert weather.tafs_over({"KDLH": (_at(4), _at(6))}) == {
-        "KDLH": {"ceiling_ft": 200, "ceiling_unknown": False, "visibility_sm": 0.5, "raw": "TAF KDLH ..."}
+        "KDLH": {"ceiling_ft": 200, "ceiling_unknown": False, "visibility_sm": 0.5, "covers": True, "raw": "TAF KDLH ..."}
     }
     assert weather.tafs_over({"KDLH": (_at(0), _at(2))})["KDLH"]["visibility_sm"] == 6.0
     # One with no TAF held is left out; asked for none, nothing is read.

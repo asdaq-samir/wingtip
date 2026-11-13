@@ -9,8 +9,8 @@ import {
   lessonPath,
   lessonProfile,
   pathBetween,
-  stopwatch,
 } from "./approachLesson";
+import { stopwatch } from "./format";
 import { callEngine } from "./engine/engine";
 
 // The engine's names behind the lesson's sentences, asked through the

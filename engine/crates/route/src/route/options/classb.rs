@@ -15,12 +15,14 @@ use super::grid::Area;
 use crate::geo;
 use crate::json::{self, Value};
 use std::collections::HashMap;
+use wingtip_core::flat::Flat;
 use wingtip_core::grid::Point;
 use wingtip_core::sort::StableSort;
 
 /// Kept from Class B airspace a route is bent round, as a pilot keeps a
-/// margin from its edge rather than skimming it: a mile, in degrees of the
-/// chart (the shapefile's own longitude and latitude).
+/// margin from its edge rather than skimming it: a mile, the planner's own
+/// figure (91.131(a)(1) forbids only entering without a clearance), and a
+/// mile every way, measured on a flat frame in nm (Edges::near).
 pub const DETOUR_MARGIN_NM: f64 = 1.0;
 /// A detour no longer than the route by more than this is offered.
 pub const DETOUR_MAX_ADDED_NM: f64 = 40.0;
@@ -72,12 +74,23 @@ impl Edges {
         Edges { by_cell }
     }
 
-    /// Whether a segment comes within `margin` degrees of an edge.
-    fn near(&self, a: Point, b: Point, margin: f64) -> bool {
-        let (r0, c0) = cell_of((a.0.min(b.0) - margin, a.1.min(b.1) - margin));
-        let (r1, c1) = cell_of((a.0.max(b.0) + margin, a.1.max(b.1) + margin));
+    /// Whether a segment comes within `margin_nm` of an edge: the cells of
+    /// core's corridor_bbox round it, each edge there measured in miles on
+    /// a flat frame about the box's middle (core::flat), where degrees of
+    /// longitude had a mile short east and west by cos(latitude). Lines
+    /// stay lines on that frame, so a crossing is a crossing on it too.
+    fn near(&self, a: Point, b: Point, margin_nm: f64) -> bool {
+        let (s, w, n, e) = geo::corridor_bbox(a, b, margin_nm);
+        let (r0, c0) = cell_of((s, w));
+        let (r1, c1) = cell_of((n, e));
+        let flat = Flat::about((s + n) / 2.0, (w + e) / 2.0);
+        let on = |p: Point| {
+            let (x, y) = flat.nm(p.0, p.1);
+            (y, x)
+        };
+        let (a, b) = (on(a), on(b));
+        let check = |edges: &Vec<(Point, Point)>| edges.iter().any(|&(p, q)| segment_distance(a, b, on(p), on(q)) <= margin_nm);
         let cells = ((r1 - r0 + 1) * (c1 - c0 + 1)) as usize;
-        let check = |edges: &Vec<(Point, Point)>| edges.iter().any(|&(p, q)| segment_distance(a, b, p, q) <= margin);
         if cells > self.by_cell.len() {
             return self.by_cell.iter().any(|(&(r, c), edges)| (r0..=r1).contains(&r) && (c0..=c1).contains(&c) && check(edges));
         }
@@ -105,8 +118,8 @@ fn point_segment(p: Point, a: Point, b: Point) -> f64 {
     ((a.1 + dx * t - p.1).powi(2) + (a.0 + dy * t - p.0).powi(2)).sqrt()
 }
 
-/// The least distance between two segments on the chart, degrees: 0 where
-/// they cross.
+/// The least distance between two segments on a flat frame, in its units:
+/// 0 where they cross.
 fn segment_distance(a: Point, b: Point, p: Point, q: Point) -> f64 {
     let (d1, d2, d3, d4) = (orient(a, b, p), orient(a, b, q), orient(p, q, a), orient(p, q, b));
     if ((d1 > 0.0) != (d2 > 0.0)) && ((d3 > 0.0) != (d4 > 0.0)) {
@@ -161,9 +174,10 @@ pub fn detours(start: Point, end: Point, shelves: &[Shelf], below_ft: f64, fixes
         let b = a.bounds();
         (s, w, n, e) = (s.min(b.0), w.min(b.1), n.max(b.2), e.max(b.3));
     }
-    let pad = DETOUR_MAX_ADDED_NM / 60.0;
+    // A degree of longitude as cos(latitude) of one of latitude, which the
+    // same pad either way had short of the miles east and west.
+    let (s, w, n, e) = geo::corridor_bbox((s, w), (n, e), DETOUR_MAX_ADDED_NM);
     let edges = Edges::new(blocking.iter().copied());
-    let margin = DETOUR_MARGIN_NM / 60.0;
     let inside = |p: Point| blocking.iter().any(|a| a.contains(p.0, p.1));
     // Either end inside it: every leg from it is inside unless it crosses
     // an edge, which the edges catch.
@@ -171,7 +185,7 @@ pub fn detours(start: Point, end: Point, shelves: &[Shelf], below_ft: f64, fixes
     let direct = geo::distance_nm(start.0, start.1, end.0, end.1);
     let mut ranked: Vec<(f64, Detour)> = Vec::new();
     for f in fixes {
-        if !(f.lat >= s - pad && f.lat <= n + pad && f.lon >= w - pad && f.lon <= e + pad) {
+        if !(f.lat >= s && f.lat <= n && f.lon >= w && f.lon <= e) {
             continue;
         }
         let added = geo::distance_nm(start.0, start.1, f.lat, f.lon) + geo::distance_nm(f.lat, f.lon, end.0, end.1) - direct;
@@ -179,7 +193,7 @@ pub fn detours(start: Point, end: Point, shelves: &[Shelf], below_ft: f64, fixes
             continue;
         }
         let via = (f.lat, f.lon);
-        if ends_in || inside(via) || edges.near(start, via, margin) || edges.near(via, end, margin) {
+        if ends_in || inside(via) || edges.near(start, via, DETOUR_MARGIN_NM) || edges.near(via, end, DETOUR_MARGIN_NM) {
             continue;
         }
         let rank = added + if f.vfr { 0.0 } else { DETOUR_NON_VFR_NM };
@@ -269,6 +283,19 @@ mod tests {
 
     fn idents(ways: &[Detour]) -> Vec<&str> {
         ways.iter().map(|w| w.ident.as_str()).collect()
+    }
+
+    #[test]
+    fn the_margin_is_a_mile_east_and_west_too() {
+        // At 60 N a degree of longitude is 30 nm: 0.025 degrees east of the
+        // edge is 0.75 nm, inside the mile (degrees alone read 1.5 nm), and
+        // 0.04 degrees is 1.2 nm, outside it.
+        let edges = Edges::new(std::iter::once(&Area { rings: vec![vec![(59.9, -0.1), (59.9, 0.1), (60.1, 0.1), (60.1, -0.1)]] }));
+        assert!(edges.near((59.95, 0.125), (60.05, 0.125), DETOUR_MARGIN_NM));
+        assert!(!edges.near((59.95, 0.14), (60.05, 0.14), DETOUR_MARGIN_NM));
+        // And north, a minute of latitude a mile: 0.9 nm in, 1.2 nm out.
+        assert!(edges.near((60.115, -0.05), (60.115, 0.05), DETOUR_MARGIN_NM));
+        assert!(!edges.near((60.12, -0.05), (60.12, 0.05), DETOUR_MARGIN_NM));
     }
 
     #[test]

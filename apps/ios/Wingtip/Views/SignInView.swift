@@ -10,6 +10,8 @@ struct SignInView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var email = ""
     @State private var sent = false
+    /// The nonce sent with the attempt in progress, the one hashed into it.
+    @State private var nonce: String?
 
     var body: some View {
         NavigationStack {
@@ -17,13 +19,17 @@ struct SignInView: View {
                 Section {
                     SignInWithAppleButton(.signIn) { request in
                         request.requestedScopes = [.email, .fullName]
+                        // The gateway's nonce for this attempt, hashed as
+                        // Apple asks (the security audit's L5).
+                        nonce = session.appleNonce
+                        request.nonce = nonce.map(Session.hashedNonce)
                     } onCompletion: { result in
                         guard case .success(let auth) = result,
                               let credential = auth.credential as? ASAuthorizationAppleIDCredential,
                               let token = credential.identityToken, let identity = String(data: token, encoding: .utf8)
                         else { return }
                         Task {
-                            await session.signInWithApple(identityToken: identity)
+                            await session.signInWithApple(identityToken: identity, nonce: nonce)
                             if session.signedIn { dismiss() }
                         }
                     }
@@ -51,6 +57,7 @@ struct SignInView: View {
                     Section { ProblemLine(problem) }
                 }
             }
+            .task { await session.prepareAppleNonce() }
             .navigationTitle("Sign In")
             .navigationBarTitleDisplayMode(.inline)
             .closeButton { dismiss() }

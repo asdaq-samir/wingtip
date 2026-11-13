@@ -10,6 +10,9 @@ import app.wingtipmaps.android.api.generated.RouteProfile
 import app.wingtipmaps.android.dryrun.DryRunRows
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.planProfile
+import app.wingtipmaps.android.offline.KeptForAir
+import app.wingtipmaps.android.ready.ReadyFacts
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,17 +20,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * The Profile card's view model: the route's side view from the planner
- * (/api/route-profile, the web's and the iPhone's), the plan's altitude
+ * (/api/route-profile, the web's and the iPhone's, kept on the phone for
+ * the next launch and the air), the plan's altitude
  * line over it from the engine (`plan_profile`, from the nav log's rows),
  * the legal altitudes the slider steps through (the planner's, by 14 CFR
  * 91.159 or 91.179), and the altitude previewed on the slider, which
  * changes nothing until Set. The clearance at a previewed altitude is the
  * engine's (ProfileClearance). Nothing aviation is worked out here.
  */
-class ProfileModel : ViewModel() {
+@HiltViewModel
+class ProfileModel @Inject constructor() : ViewModel() {
     data class State(
         val profile: RouteProfile? = null,
         val problem: String? = null,
@@ -49,8 +55,12 @@ class ProfileModel : ViewModel() {
         loading?.cancel()
         loading = viewModelScope.launch {
             try {
-                val profile = Planner.routeProfile(plan.dep, plan.dest, plan.stops)
-                _state.update { it.copy(profile = profile, problem = null) }
+                // Kept as it comes, and the kept one with no signal, across a
+                // relaunch too (KeptForAir; Keep for the Air keeps it as well).
+                val had = KeptForAir.had(KeptForAir.ROUTE_PROFILE, ReadyFacts.flightKey(plan), RouteProfile.serializer()) {
+                    Planner.routeProfile(plan.dep, plan.dest, plan.stops)
+                }
+                _state.update { it.copy(profile = had.value, problem = null) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

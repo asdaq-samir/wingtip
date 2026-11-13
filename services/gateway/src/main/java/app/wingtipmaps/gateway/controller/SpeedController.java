@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.service.SpeedService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -18,7 +19,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -70,7 +70,8 @@ public class SpeedController {
     private final byte[] labToken;
     private final SlidingWindowLimiter recent = new SlidingWindowLimiter(Duration.ofHours(1));
 
-    public SpeedController(SpeedService speed, @Value("${app.speed.lab-token:}") String labToken) {
+    public SpeedController(SpeedService speed, AppProperties app) {
+        String labToken = app.speed().labToken();
         this.speed = speed;
         this.labToken = labToken.getBytes(StandardCharsets.UTF_8);
     }

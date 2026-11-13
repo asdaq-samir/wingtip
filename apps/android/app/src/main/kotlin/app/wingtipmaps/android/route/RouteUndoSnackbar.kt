@@ -31,6 +31,7 @@ fun RouteUndoSnackbar(plan: Plan, host: SnackbarHostState) {
                 RouteUndo.Kind.DIRECT -> R.string.undo_direct
                 RouteUndo.Kind.FLY_HERE -> R.string.undo_fly_here
                 RouteUndo.Kind.DEPART_FROM -> R.string.undo_depart_from
+                RouteUndo.Kind.CLEARED -> R.string.undo_cleared
             },
             shown.ident,
         )

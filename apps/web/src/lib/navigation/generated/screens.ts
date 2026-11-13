@@ -24,6 +24,7 @@ export const SCREENS = {
   guide: { title: "Guide" },
   shared: { title: "Shared Flight" },
   about: { title: "About" },
+  search: { title: "Search" },
 } as const;
 
 export type ScreenId = keyof typeof SCREENS;

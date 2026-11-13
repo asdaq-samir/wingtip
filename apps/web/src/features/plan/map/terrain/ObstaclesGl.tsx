@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Map as MlMap } from "maplibre-gl";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { api } from "../../../../lib/api/client";
 import { EMPTY, useGlMap } from "../../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../../lib/map/gl/glStyle";
+import { useGlView } from "../../../../lib/map/gl/useGlView";
 import { obstacleFeatures } from "./geometry";
 import { setExtrusionData, useExtrusion } from "./useExtrusion";
 import { CHART } from "../../../../lib/tokens";
@@ -15,7 +16,8 @@ type Box = { south: number; west: number; north: number; east: number };
  *  a post would be a pixel. */
 function obstacleBox(map: MlMap): Box | null {
   if (map.getZoom() < glZoom(9)) return null;
-  const c = map.getCenter();
+  // In -180 to 180: past the antimeridian the world's copy's centre is not.
+  const c = map.getCenter().wrap();
   const out = (v: number, up: boolean) => (up ? Math.ceil(v * 2) : Math.floor(v * 2)) / 2;
   return { south: out(c.lat - 0.5, false), north: out(c.lat + 0.5, true), west: out(c.lng - 0.5, false), east: out(c.lng + 0.5, true) };
 }
@@ -38,17 +40,7 @@ export default function ObstaclesGl() {
       "fill-extrusion-height": ["get", "height"],
     },
   });
-  const [box, setBox] = useState(() => obstacleBox(map));
-  useEffect(() => {
-    const moved = () => {
-      const next = obstacleBox(map);
-      setBox((was) => (JSON.stringify(was) === JSON.stringify(next) ? was : next));
-    };
-    map.on("moveend", moved);
-    return () => {
-      map.off("moveend", moved);
-    };
-  }, [map]);
+  const { box } = useGlView(obstacleBox, "rest");
   const { data } = useQuery({
     queryKey: ["obstacles", box],
     queryFn: () => api.obstacles(box!),

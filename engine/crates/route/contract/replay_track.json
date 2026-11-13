@@ -1,0 +1,176 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those within 10 s each side, at the report's own time (a transponder's 25 ft steps, DO-260B) and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ReplayTrackInput",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "title": "ReplayReport",
+            "type": "object",
+            "properties": {
+              "t": {
+                "type": "number",
+                "description": "s since 1970"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "alt_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Pressure altitude, ft; null on the ground or not sent"
+              },
+              "gs_kt": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "track_deg": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "ground": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "t",
+              "lat",
+              "lon"
+            ]
+          }
+        },
+        "gap_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "points"
+      ]
+    },
+    "answer": {
+      "title": "ReplayTrackAnswer",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "title": "ReplaySample",
+            "type": "object",
+            "properties": {
+              "t": {
+                "type": "number"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "alt_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "gs_kt": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "track_deg": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "vs_fpm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "along_nm": {
+                "type": "number"
+              },
+              "gap": {
+                "type": "boolean"
+              },
+              "ground": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "t",
+              "lat",
+              "lon",
+              "alt_ft",
+              "gs_kt",
+              "track_deg",
+              "vs_fpm",
+              "along_nm",
+              "gap",
+              "ground"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "title": "ReplayGap",
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "number"
+              },
+              "to": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "from",
+              "to"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "length_nm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "points",
+        "gaps",
+        "length_nm"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

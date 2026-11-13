@@ -329,6 +329,470 @@
       "source": "No height above the ground, no glide",
       "input": { "altitude_ft": 1000, "ground_ft": 1000, "speed_kt": 68, "glide_ratio": 9 },
       "want": null
+    },
+    {
+      "name": "Oxygen at 12,500 ft MSL",
+      "rule": "own_altitude_caution",
+      "source": "14 CFR 91.211(a): \"(1) At cabin pressure altitudes above 12,500 feet (MSL) up to and including 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen for that part of the flight at those altitudes that is of more than 30 minutes duration; (2) At cabin pressure altitudes above 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen during the entire flight time at those altitudes; and (3) At cabin pressure altitudes above 15,000 feet (MSL) unless each occupant of the aircraft is provided with supplemental oxygen.\" No oxygen or pressurised cabin in the profile; eastbound IFR, so a height off the odd thousands also draws 91.179(b)(1)'s caution.",
+      "input": {
+        "selection": {
+          "rules": "ifr",
+          "segments": [
+            {
+              "floor_ft": 3000,
+              "eastbound": true,
+              "service_ceiling_ft": 25000,
+              "airspace_ceiling_ft": null,
+              "cloud_ceiling_ft": null,
+              "hemispheric_rule_from_ft": 4000
+            }
+          ]
+        },
+        "legs": [
+          {
+            "altitude_ft": 12500
+          }
+        ],
+        "between": [
+          "KAAA",
+          "KBBB"
+        ],
+        "profile": {}
+      },
+      "want": {
+        "reasons": [
+          "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)"
+        ]
+      }
+    },
+    {
+      "name": "Oxygen at 12,501 ft MSL",
+      "rule": "own_altitude_caution",
+      "source": "14 CFR 91.211(a): \"(1) At cabin pressure altitudes above 12,500 feet (MSL) up to and including 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen for that part of the flight at those altitudes that is of more than 30 minutes duration; (2) At cabin pressure altitudes above 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen during the entire flight time at those altitudes; and (3) At cabin pressure altitudes above 15,000 feet (MSL) unless each occupant of the aircraft is provided with supplemental oxygen.\" No oxygen or pressurised cabin in the profile; eastbound IFR, so a height off the odd thousands also draws 91.179(b)(1)'s caution.",
+      "input": {
+        "selection": {
+          "rules": "ifr",
+          "segments": [
+            {
+              "floor_ft": 3000,
+              "eastbound": true,
+              "service_ceiling_ft": 25000,
+              "airspace_ceiling_ft": null,
+              "cloud_ceiling_ft": null,
+              "hemispheric_rule_from_ft": 4000
+            }
+          ]
+        },
+        "legs": [
+          {
+            "altitude_ft": 12501
+          }
+        ],
+        "between": [
+          "KAAA",
+          "KBBB"
+        ],
+        "profile": {}
+      },
+      "want": {
+        "reasons": [
+          "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)",
+          "Over 12,500 ft MSL: oxygen for the crew for any of it past 30 minutes (14 CFR 91.211(a)(1))"
+        ]
+      }
+    },
+    {
+      "name": "Oxygen at 14,000 ft MSL",
+      "rule": "own_altitude_caution",
+      "source": "14 CFR 91.211(a): \"(1) At cabin pressure altitudes above 12,500 feet (MSL) up to and including 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen for that part of the flight at those altitudes that is of more than 30 minutes duration; (2) At cabin pressure altitudes above 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen during the entire flight time at those altitudes; and (3) At cabin pressure altitudes above 15,000 feet (MSL) unless each occupant of the aircraft is provided with supplemental oxygen.\" No oxygen or pressurised cabin in the profile; eastbound IFR, so a height off the odd thousands also draws 91.179(b)(1)'s caution.",
+      "input": {
+        "selection": {
+          "rules": "ifr",
+          "segments": [
+            {
+              "floor_ft": 3000,
+              "eastbound": true,
+              "service_ceiling_ft": 25000,
+              "airspace_ceiling_ft": null,
+              "cloud_ceiling_ft": null,
+              "hemispheric_rule_from_ft": 4000
+            }
+          ]
+        },
+        "legs": [
+          {
+            "altitude_ft": 14000
+          }
+        ],
+        "between": [
+          "KAAA",
+          "KBBB"
+        ],
+        "profile": {}
+      },
+      "want": {
+        "reasons": [
+          "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)",
+          "Over 12,500 ft MSL: oxygen for the crew for any of it past 30 minutes (14 CFR 91.211(a)(1))"
+        ]
+      }
+    },
+    {
+      "name": "Oxygen at 14,001 ft MSL",
+      "rule": "own_altitude_caution",
+      "source": "14 CFR 91.211(a): \"(1) At cabin pressure altitudes above 12,500 feet (MSL) up to and including 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen for that part of the flight at those altitudes that is of more than 30 minutes duration; (2) At cabin pressure altitudes above 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen during the entire flight time at those altitudes; and (3) At cabin pressure altitudes above 15,000 feet (MSL) unless each occupant of the aircraft is provided with supplemental oxygen.\" No oxygen or pressurised cabin in the profile; eastbound IFR, so a height off the odd thousands also draws 91.179(b)(1)'s caution.",
+      "input": {
+        "selection": {
+          "rules": "ifr",
+          "segments": [
+            {
+              "floor_ft": 3000,
+              "eastbound": true,
+              "service_ceiling_ft": 25000,
+              "airspace_ceiling_ft": null,
+              "cloud_ceiling_ft": null,
+              "hemispheric_rule_from_ft": 4000
+            }
+          ]
+        },
+        "legs": [
+          {
+            "altitude_ft": 14001
+          }
+        ],
+        "between": [
+          "KAAA",
+          "KBBB"
+        ],
+        "profile": {}
+      },
+      "want": {
+        "reasons": [
+          "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)",
+          "Over 14,000 ft MSL: oxygen for the crew the whole time there (14 CFR 91.211(a)(2))"
+        ]
+      }
+    },
+    {
+      "name": "Oxygen at 15,000 ft MSL",
+      "rule": "own_altitude_caution",
+      "source": "14 CFR 91.211(a): \"(1) At cabin pressure altitudes above 12,500 feet (MSL) up to and including 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen for that part of the flight at those altitudes that is of more than 30 minutes duration; (2) At cabin pressure altitudes above 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen during the entire flight time at those altitudes; and (3) At cabin pressure altitudes above 15,000 feet (MSL) unless each occupant of the aircraft is provided with supplemental oxygen.\" No oxygen or pressurised cabin in the profile; eastbound IFR, so a height off the odd thousands also draws 91.179(b)(1)'s caution.",
+      "input": {
+        "selection": {
+          "rules": "ifr",
+          "segments": [
+            {
+              "floor_ft": 3000,
+              "eastbound": true,
+              "service_ceiling_ft": 25000,
+              "airspace_ceiling_ft": null,
+              "cloud_ceiling_ft": null,
+              "hemispheric_rule_from_ft": 4000
+            }
+          ]
+        },
+        "legs": [
+          {
+            "altitude_ft": 15000
+          }
+        ],
+        "between": [
+          "KAAA",
+          "KBBB"
+        ],
+        "profile": {}
+      },
+      "want": {
+        "reasons": [
+          "Over 14,000 ft MSL: oxygen for the crew the whole time there (14 CFR 91.211(a)(2))"
+        ]
+      }
+    },
+    {
+      "name": "Oxygen at 15,001 ft MSL",
+      "rule": "own_altitude_caution",
+      "source": "14 CFR 91.211(a): \"(1) At cabin pressure altitudes above 12,500 feet (MSL) up to and including 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen for that part of the flight at those altitudes that is of more than 30 minutes duration; (2) At cabin pressure altitudes above 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen during the entire flight time at those altitudes; and (3) At cabin pressure altitudes above 15,000 feet (MSL) unless each occupant of the aircraft is provided with supplemental oxygen.\" No oxygen or pressurised cabin in the profile; eastbound IFR, so a height off the odd thousands also draws 91.179(b)(1)'s caution.",
+      "input": {
+        "selection": {
+          "rules": "ifr",
+          "segments": [
+            {
+              "floor_ft": 3000,
+              "eastbound": true,
+              "service_ceiling_ft": 25000,
+              "airspace_ceiling_ft": null,
+              "cloud_ceiling_ft": null,
+              "hemispheric_rule_from_ft": 4000
+            }
+          ]
+        },
+        "legs": [
+          {
+            "altitude_ft": 15001
+          }
+        ],
+        "between": [
+          "KAAA",
+          "KBBB"
+        ],
+        "profile": {}
+      },
+      "want": {
+        "reasons": [
+          "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)",
+          "Over 15,000 ft MSL: oxygen for the crew the whole time there and for every occupant (14 CFR 91.211(a)(2), (3))"
+        ]
+      }
+    },
+    {
+      "name": "91.169(b): 2,000 ft and 3 sm, the TAF covering the hour either side: no alternate needed",
+      "rule": "ifr_alternate_destination",
+      "source": "14 CFR 91.169(b)(2)(i): \"For at least 1 hour before and for 1 hour after the estimated time of arrival, the ceiling will be at least 2,000 feet above the airport elevation and the visibility will be at least 3 statute miles.\" (b)(1): Part 97 prescribes an approach (an ILS).",
+      "input": {
+        "ident": "KDST",
+        "approaches": {
+          "names": [
+            "ILS OR LOC RWY 9"
+          ],
+          "alternate_minimums_url": null
+        },
+        "forecast": {
+          "ceiling_ft": 2000,
+          "ceiling_unknown": false,
+          "visibility_sm": 3,
+          "covers": true,
+          "raw": "TAF KDST"
+        }
+      },
+      "want": {
+        "required": false,
+        "reasons": []
+      }
+    },
+    {
+      "name": "91.169(b): a short TAF, ending 30 minutes after the ETA, does not cover the hour after: an alternate is needed",
+      "rule": "ifr_alternate_destination",
+      "source": "14 CFR 91.169(b)(2)(i): \"For at least 1 hour before and for 1 hour after the estimated time of arrival, the ceiling will be at least 2,000 feet above the airport elevation and the visibility will be at least 3 statute miles.\"",
+      "input": {
+        "ident": "KDST",
+        "approaches": {
+          "names": [
+            "ILS OR LOC RWY 9"
+          ],
+          "alternate_minimums_url": null
+        },
+        "forecast": {
+          "ceiling_ft": 5000,
+          "ceiling_unknown": false,
+          "visibility_sm": 6,
+          "covers": false,
+          "raw": "TAF KDST"
+        }
+      },
+      "want": {
+        "required": true,
+        "reasons": [
+          "The TAF for KDST does not cover the whole hour either side of the ETA (14 CFR 91.169(b)(2)(i))."
+        ]
+      }
+    },
+    {
+      "name": "A short TAF over the destination's window: ETA 3,600 s, the TAF to 5,400 (ETA + 30 min), so it does not cover 0 to 7,200",
+      "rule": "taf_window",
+      "source": "14 CFR 91.169(b)(2)(i): \"For at least 1 hour before and for 1 hour after the estimated time of arrival, the ceiling will be at least 2,000 feet above the airport elevation and the visibility will be at least 3 statute miles.\"",
+      "input": {
+        "fcsts": [
+          {
+            "timeFrom": -3600,
+            "timeTo": 5400,
+            "change": "",
+            "ceiling_ft": 5000,
+            "ceiling_unknown": false,
+            "visibility_sm": 6
+          }
+        ],
+        "start": 0,
+        "end": 7200
+      },
+      "want": {
+        "worst": {
+          "ceiling_ft": 5000,
+          "visibility_sm": 6,
+          "covers": false
+        }
+      }
+    },
+    {
+      "name": "91.155(c), (d) in a surface area: 1,000 ft and 3 sm: not below",
+      "rule": "below_vfr_minimums",
+      "source": "14 CFR 91.155(c): \"no person may operate an aircraft beneath the ceiling under VFR within the lateral boundaries of controlled airspace designated to the surface for an airport when the ceiling is less than 1,000 feet\"; (d): \"no person may take off or land an aircraft, or enter the traffic pattern of an airport, under VFR, within the lateral boundaries of the surface areas of Class B, Class C, Class D, or Class E airspace designated for an airport ... Unless ground visibility at that airport is at least 3 statute miles\"",
+      "input": {
+        "ceiling_ft": 1000,
+        "visibility_sm": 3
+      },
+      "want": false
+    },
+    {
+      "name": "91.155(c), (d) in a surface area: 999 ft: below (c)'s 1,000 ft",
+      "rule": "below_vfr_minimums",
+      "source": "14 CFR 91.155(c): \"no person may operate an aircraft beneath the ceiling under VFR within the lateral boundaries of controlled airspace designated to the surface for an airport when the ceiling is less than 1,000 feet\"; (d): \"no person may take off or land an aircraft, or enter the traffic pattern of an airport, under VFR, within the lateral boundaries of the surface areas of Class B, Class C, Class D, or Class E airspace designated for an airport ... Unless ground visibility at that airport is at least 3 statute miles\"",
+      "input": {
+        "ceiling_ft": 999,
+        "visibility_sm": 3
+      },
+      "want": true
+    },
+    {
+      "name": "91.155(c), (d) in a surface area: 2.9 sm: below (d)'s 3 sm",
+      "rule": "below_vfr_minimums",
+      "source": "14 CFR 91.155(c): \"no person may operate an aircraft beneath the ceiling under VFR within the lateral boundaries of controlled airspace designated to the surface for an airport when the ceiling is less than 1,000 feet\"; (d): \"no person may take off or land an aircraft, or enter the traffic pattern of an airport, under VFR, within the lateral boundaries of the surface areas of Class B, Class C, Class D, or Class E airspace designated for an airport ... Unless ground visibility at that airport is at least 3 statute miles\"",
+      "input": {
+        "ceiling_ft": 1000,
+        "visibility_sm": 2.9
+      },
+      "want": true
+    },
+    {
+      "name": "91.159 at exactly 3,000 ft above the surface: any altitude up to it, odd plus 500 above (090 magnetic, 500 ft ground)",
+      "rule": "legal_cruising_altitudes",
+      "source": "14 CFR 91.159(a): \"When operating above 3,000 feet above the surface\" -- 3,500 ft MSL over 500 ft ground is 3,000 ft above it, not more, so any altitude to it (every 500 ft offered); above it, \"on a magnetic course of zero degrees through 179 degrees, any odd thousand foot MSL altitude + 500 feet\": 5,500. 4,000 and 4,500 are more than 3,000 ft up and not odd plus 500.",
+      "input": {
+        "floor_ft": 2000,
+        "ceiling_ft": 6000,
+        "magnetic_course_deg": 90,
+        "rule_from_ft": 3500
+      },
+      "want": [
+        2000,
+        2500,
+        3000,
+        3500,
+        5500
+      ]
+    },
+    {
+      "name": "VFR with no departure time: night is not ruled out, so the night's 45-minute reserve, and night left unknown",
+      "rule": "navlog_fuel_plan",
+      "source": "14 CFR 91.151(a): \"(1) During the day, to fly after that for at least 30 minutes; or (2) At night, to fly after that for at least 45 minutes.\" With no time the larger is assumed; 45 min at 8 gal/h is 6 gal.",
+      "input": {
+        "total_fuel_gal": 20,
+        "profile": {
+          "fuel_burn_gph": 8,
+          "cruise_tas_kt": 100
+        },
+        "night": null
+      },
+      "want": {
+        "reserve_min": 45,
+        "reserve_gal": 6,
+        "fuel_required_gal": 26,
+        "night": null
+      }
+    },
+    {
+      "name": "The handbook's Sample Problem 1: pressure altitude 5,718 ft at 5,883 ft and 30.10 inHg",
+      "rule": "pressure_altitude_ft",
+      "source": "FAA-H-8083-25C ch. 11, Sample Problem 1: \"Airport Elevation 5,883 feet, OAT 70 °F, Altimeter 30.10 \"Hg ... Find 30.10 under the altimeter heading ... It reads \"-165.\" Therefore, it is necessary to subtract 165 from the airport elevation giving a pressure altitude of 5,718 feet ... The approximate density altitude in thousands of feet is 7,700 feet.\" Figure 11-3's table is in whole feet: within 2.",
+      "input": {
+        "elevation_ft": 5883,
+        "altimeter_inhg": 30.1
+      },
+      "want": 5718,
+      "within": {
+        "": 2
+      }
+    },
+    {
+      "name": "The handbook's Sample Problem 1: density altitude about 7,700 ft at 5,718 ft pressure altitude and 70 F (21.1 C)",
+      "rule": "gonogo_density_altitude",
+      "source": "FAA-H-8083-25C ch. 11, Sample Problem 1: \"Airport Elevation 5,883 feet, OAT 70 °F, Altimeter 30.10 \"Hg ... Find 30.10 under the altimeter heading ... It reads \"-165.\" Therefore, it is necessary to subtract 165 from the airport elevation giving a pressure altitude of 5,718 feet ... The approximate density altitude in thousands of feet is 7,700 feet.\" Read off Figure 11-22's chart to the nearest hundred: within 100.",
+      "input": {
+        "pressure_alt_ft": 5718,
+        "temp_c": 21.1
+      },
+      "want": 7700,
+      "within": {
+        "": 100
+      }
+    },
+    {
+      "name": "Endurance: 40 gal usable at 8 gal/h is 5 hours, 4:30 after the day VFR reserve",
+      "rule": "endurance",
+      "source": "FAA-H-8083-25C ch. 16: fuel used is the burn times the time (\"If fuel consumption is 8 gallons an hour, 8 x 2.5 or about 20 gallons is used\"), so 40 / 8 = 5 h; 14 CFR 91.151(a)(1): \"During the day, to fly after that for at least 30 minutes\", 4 gal at 8 gal/h.",
+      "input": {
+        "usable_gal": 40,
+        "burn_gph": 8,
+        "reserve": "vfr_day"
+      },
+      "want": {
+        "minutes": 300,
+        "reserve_min": 30,
+        "reserve_gal": 4,
+        "after_reserve_min": 270,
+        "below_reserve": false
+      }
+    },
+    {
+      "name": "Lost comms, 91.185(c)(2): on each segment the highest of assigned, minimum and expected",
+      "rule": "lost_comms",
+      "source": "14 CFR 91.185(c)(2): \"At the highest of the following altitudes or flight levels for the route segment being flown: (i) The altitude or flight level assigned in the last ATC clearance received; (ii) The minimum altitude ... for IFR operations; or (iii) The altitude or flight level ATC has advised may be expected in a further clearance.\" V170: assigned 6,000 over its 5,000 minimum; V82, from where 8,000 was to be expected: 8,000 over its 7,000 and the 6,000 assigned.",
+      "input": {
+        "segments": [
+          {
+            "name": "V170",
+            "minimum_ft": 5000
+          },
+          {
+            "name": "V82",
+            "minimum_ft": 7000
+          }
+        ],
+        "assigned_ft": 6000,
+        "expected_ft": 8000,
+        "expected_from": 1
+      },
+      "want": {
+        "segments": [
+          {
+            "name": "V170",
+            "fly": 6000,
+            "because": "assigned",
+            "words": "Fly 6,000 ft: assigned"
+          },
+          {
+            "name": "V82",
+            "fly": 8000,
+            "because": "expected",
+            "words": "Fly 8,000 ft: expected"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Lost comms, 91.185(c)(2)(ii): the minimum altitude where it is the highest",
+      "rule": "lost_comms",
+      "source": "14 CFR 91.185(c)(2): \"At the highest of the following altitudes or flight levels for the route segment being flown: (i) The altitude or flight level assigned in the last ATC clearance received; (ii) The minimum altitude ... for IFR operations; or (iii) The altitude or flight level ATC has advised may be expected in a further clearance.\" V82's 9,000 minimum is over the 6,000 assigned and the 8,000 expected.",
+      "input": {
+        "segments": [
+          {
+            "name": "V82",
+            "minimum_ft": 9000
+          }
+        ],
+        "assigned_ft": 6000,
+        "expected_ft": 8000,
+        "expected_from": 0
+      },
+      "want": {
+        "segments": [
+          {
+            "name": "V82",
+            "fly": 9000,
+            "because": "minimum",
+            "words": "Fly 9,000 ft: the minimum"
+          }
+        ]
+      }
     }
   ]
 }

@@ -1,30 +1,53 @@
 import { useEffect, useState } from "react";
-import { prefersReducedMotion } from "../../../../lib/motion";
 import { slotId, useGlMap } from "../../../../lib/map/gl/glLayer";
+import AirspaceVolumesGl from "./AirspaceVolumesGl";
 import AloftGl from "./AloftGl";
-import { DEM, EXAGGERATION, FLAT_MAX_PITCH, HILLSHADE, HILLSHADE_LAYER, MAX_PITCH, OPEN_PITCH, SKY, SV_TINT, demSource } from "./dem";
+import ApproachGl from "./ApproachGl";
+import type { ProcedureDrawing } from "../../../../lib/api/types";
+import ClearanceGl from "./ClearanceGl";
+import { MAP } from "../../../../lib/tokens";
+import { DEM, EXAGGERATION, HILLSHADE, HILLSHADE_LAYER, SV_TINT, demSource } from "./dem";
 import type { AloftPoint } from "./geometry";
 import ObstaclesGl from "./ObstaclesGl";
 import PilotCamera from "./PilotCamera";
+import SkyGl from "./SkyGl";
+import TrafficAloftGl from "./TrafficAloftGl";
+import { ReplayCameraGl } from "../../../replay";
 import type { TerrainMode } from "./useTerrainView";
 
+/** How long the map takes to tilt into 3D and back (MapLibre makes it
+ *  instant under Reduce Motion itself). */
+const TILT_MS = 600;
+
 /**
- * The ground under the chart (the Map menu's Terrain; useTerrainView): its
+ * The ground under the chart (the map's 3D button; useTerrainView): its
  * relief shaded over the chart, or stood up in 3D -- the map tilted with
  * two fingers up to 75 degrees, the FAA's obstacles stood up over the
  * ground (ObstaclesGl), and the route drawn at its planned altitudes with
- * a curtain down to its ground track (AloftGl) -- and, in the dry run, the
- * pilot's-eye view (PilotCamera). The 3D module's entry, loaded on its own
+ * a curtain down to its ground track (AloftGl), under a sky with the
+ * distance hazed (SkyGl); the way in to the route's destination or the
+ * field whose card is open (ApproachGl), the traffic at its heights
+ * (TrafficAloftGl) -- and, in the dry run, the pilot's-eye view
+ * (PilotCamera). The satellite imagery close in (lib/map/gl's
+ * CloseImageryGl) is a raster layer of the chart's slot, so the 3D ground
+ * drapes it as it does the chart, at the same zooms as in 2D. The 3D module's entry, loaded on its own
  * (GlRouteMap's lazy import): none of it is in the map's first script.
  */
 export default function TerrainGl({
   mode,
   pilot,
   aloft,
+  field = null,
+  procedures = [],
 }: {
-  mode: Exclude<TerrainMode, "flat">;
+  mode: TerrainMode;
   pilot: boolean;
   aloft: AloftPoint[] | null;
+  /** The field whose way in is drawn: the open card's, else the route's
+   *  destination. */
+  field?: string | null;
+  /** The procedures picked for the route, its approach among them. */
+  procedures?: ProcedureDrawing[];
 }) {
   const { map } = useGlMap();
   const [ready, setReady] = useState(false);
@@ -55,14 +78,12 @@ export default function TerrainGl({
     if (!raised) return;
     const el = map.getContainer();
     map.setTerrain({ source: DEM, exaggeration: EXAGGERATION });
-    map.setMaxPitch(MAX_PITCH);
-    map.setSky(SKY);
+    map.setMaxPitch(MAP.pitchMax);
     map.dragRotate.enable();
     map.touchPitch.enable();
     map.touchZoomRotate.enableRotation();
     el.dataset.terrain = "3d";
-    const duration = prefersReducedMotion() ? 0 : 600;
-    if (map.getPitch() < 1) map.easeTo({ pitch: OPEN_PITCH, duration });
+    if (map.getPitch() < 1) map.easeTo({ pitch: MAP.pitchOpen, duration: TILT_MS });
     return () => {
       delete el.dataset.terrain;
       if (!map.style) return;
@@ -70,16 +91,23 @@ export default function TerrainGl({
       map.dragRotate.disable();
       map.touchPitch.disable();
       map.touchZoomRotate.disableRotation();
-      map.easeTo({ pitch: 0, bearing: 0, duration });
-      map.setMaxPitch(FLAT_MAX_PITCH);
+      map.easeTo({ pitch: 0, bearing: 0, duration: TILT_MS });
+      map.setMaxPitch(MAP.pitchFlatMax);
     };
   }, [map, raised]);
   if (!raised) return null;
   return (
     <>
+      <SkyGl />
       <ObstaclesGl />
+      <AirspaceVolumesGl />
       {aloft && aloft.length > 1 && <AloftGl points={aloft} />}
+      {aloft && aloft.length > 1 && !pilot && <ClearanceGl points={aloft} />}
+      {field && <ApproachGl key={field} ident={field} picked={procedures} />}
+      <TrafficAloftGl />
       {pilot && <PilotCamera />}
+      {/* A replay's camera (features/replay), the pilot's view taking it while on. */}
+      {!pilot && <ReplayCameraGl />}
     </>
   );
 }

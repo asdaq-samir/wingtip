@@ -5,9 +5,11 @@ import Observation
 /// along the route (KeepRoute) and the cycle packs of the regions it
 /// crosses (CyclePacks), then everything else the flight needs with no
 /// signal -- the briefing with its METARs and TAFs and the plan with its
-/// nav log (Kept), the ranked NOTAMs, the route's airport cards and
-/// diagrams, the destination's approach plates, the Go / No-Go and the
-/// weather loop's frames (KeptForAir) -- and the size it all comes to,
+/// nav log and the route's profile (Kept), the ranked NOTAMs and each
+/// field's own, the route's airport cards, diagrams and diagram PDFs, the
+/// destination's approach plates, the Go / No-Go, the weather loop's
+/// frames and the newest radar frame's tiles along the route (KeptForAir,
+/// KeepRadar) -- and the size it all comes to,
 /// said on the button and to Ready to fly (its `kept` row).
 @MainActor
 @Observable
@@ -85,6 +87,17 @@ final class KeepForAir {
             guard let place = try? await KeptForAir.answer(.airports, key: ident, fetch: { try await Planner.place(ident) }).value else { continue }
             cards += 1
             files.append(KeptForAir.file(KeptForAir.Kind.airports.rawValue, ident))
+            // The field's own NOTAMs under the key its card reads, and the
+            // FAA's diagram PDF the own-ship diagram draws on.
+            let notamsKey = KeptForAir.fieldNotamsKey(ident)
+            if (try? await KeptForAir.answer(.notams, key: notamsKey, fetch: { try await Planner.notams(ident) })) != nil {
+                files.append(KeptForAir.file(KeptForAir.Kind.notams.rawValue, notamsKey))
+            }
+            if let pdf = place.airportDiagramUrl, let address = URL(string: pdf),
+               let (data, response) = try? await URLSession.shared.data(from: address), (response as? HTTPURLResponse)?.statusCode == 200 {
+                KeptForAir.writePicture(data, path: KeptForAir.pdfKey(pdf))
+                files.append(KeptForAir.file("pictures", KeptForAir.pdfKey(pdf), ext: "img"))
+            }
             if let cycle = place.airportDiagramCycle {
                 pictures += [Planner.diagramPath(ident: ident, cycle: cycle), Planner.diagramPath(ident: ident, cycle: cycle, runwaysOnly: true)]
             }
@@ -103,17 +116,24 @@ final class KeepForAir {
         }
         if cards == plan.idents.count { kinds.append(KeptForAir.Kind.airports.rawValue) }
         for path in pictures {
-            if let data = try? await Planner.picture(path) { KeptForAir.writePicture(data, path: path) }
-            files.append(KeptForAir.file("pictures", path, ext: "img"))
+            // Kept by the address the pictures' loader asks (KeptPictureLoader).
+            let address = Planner.address(of: path).absoluteString
+            if let data = try? await Planner.picture(path) { KeptForAir.writePicture(data, path: address) }
+            files.append(KeptForAir.file("pictures", address, ext: "img"))
         }
-        // The weather loop's frames, of the loop picked (the radar where none is).
+        // The weather loop's frames, of the loop picked (the radar where
+        // none is), and the newest radar frame's tiles along the route.
         let loop = WeatherLoop.shared.kind == .off ? LoopKind.radar : WeatherLoop.shared.kind
-        if (try? await KeptForAir.answer(.weatherLoop, key: loop.rawValue, fetch: {
-            try await Planner.fetch(APIWeatherLoop.self, "/api/weather/loop", ["kind": loop.rawValue])
-        })) != nil {
+        if let frames = try? await KeptForAir.answer(.weatherLoop, key: loop.rawValue, fetch: {
+            try await Planner.call { try await $0.weatherLoopFrames(query: .init(kind: loop.rawValue)).ok.body.json }
+        }).value {
             kinds.append(KeptForAir.Kind.weatherLoop.rawValue)
             files.append(KeptForAir.file(KeptForAir.Kind.weatherLoop.rawValue, loop.rawValue))
+            if let course = plan.course { files += await KeepRadar.keep(frames, along: course.coordinates) }
         }
+        // The ground and airspace under the route, for the profile, where
+        // the plan's own fetch of it had not come.
+        if await plan.keepProfile() { files.append(Kept.file) }
         return (kinds, Set(files).reduce(0) { $0 + KeptForAir.size(of: $1) })
     }
 }

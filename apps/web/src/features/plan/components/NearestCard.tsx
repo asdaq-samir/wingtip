@@ -1,10 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef } from "react";
+import type { Drawer } from "@base-ui/react/drawer";
 import { useQuery } from "@tanstack/react-query";
 import { LocateFixed, MapPin, Navigation2 } from "lucide-react";
 import { cn } from "cn";
 import { Badge } from "../../../components/ui/badge";
 import { ListPageHead } from "../../../components/Favorites";
-import { PanelCard } from "../../../components/PanelCard";
+import { SheetCard } from "../../../components/SheetCard";
+import { SearchField } from "../../../components/PanelCapsule";
+import { closeTopCard } from "../../../lib/openCards";
+import { useCardSize } from "../../../lib/sheetCards";
 import QueryState from "../../../components/QueryState";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { api } from "../../../lib/api/client";
@@ -22,6 +26,8 @@ import { nearestQuery } from "../../../lib/queryClient";
 import { inkOn } from "../../../lib/scoreScale";
 import { TEXT } from "../../../lib/text";
 import { useTabSearch } from "../lib/tabSearch";
+import { nearSearch } from "./workspace/listSearch";
+import { useDebounced } from "../../../lib/useDebounced";
 import { altFt } from "../../../lib/format";
 import { FINDING_TONE } from "../../../lib/findings";
 
@@ -38,18 +44,17 @@ const TYPING_MS = 250;
 /**
  * Where Nearest is from: the pilot's position until a place is typed --
  * a town, a street address, an airport -- at the pilot's ask, as Maps'
- * search asks where. Typed in Nearest's field, in the panel's head
- * (PlanWorkspace, features/plan/lib/tabSearch), which reads "Current position" until
- * then; what answers comes up here, at the top of the list, and the
- * field's clear goes back to the position.
+ * search asks where. Typed in Nearest's field, the one search scoped to
+ * where from, at the card's top (NearField), which reads "Current
+ * position" until then; what answers comes up here, at the top of the
+ * list, and the field's clear goes back to the position.
  */
 function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: NearFrom | null) => void }) {
   const typed = useTabSearch((s) => s.near);
-  const [asked, setAsked] = useState("");
   // The field shows the place picked, as it did when it was this card's.
-  // Not emptied as the card first comes up with no place: the field is in
-  // the panel's head, there before the card, and what was typed into it
-  // in that moment was wiped (nearest.spec's smoke test, on a fast stack).
+  // Not emptied as the card first comes up with no place: what was typed
+  // into the field in that moment was wiped (nearest.spec's smoke test,
+  // on a fast stack).
   const shownFrom = useRef<string | null | undefined>(undefined);
   useEffect(() => {
     const label = from?.label ?? null;
@@ -58,10 +63,7 @@ function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: N
     if (first && label === null) return;
     useTabSearch.setState({ near: label ?? "" });
   }, [from?.label]);
-  useEffect(() => {
-    const later = window.setTimeout(() => setAsked(typed.trim()), TYPING_MS);
-    return () => window.clearTimeout(later);
-  }, [typed]);
+  const asked = useDebounced(typed.trim(), TYPING_MS);
   const searching = asked.length >= 2 && asked !== from?.label && typed.trim() !== from?.label;
   const {
     data: answered,
@@ -123,6 +125,20 @@ function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: N
           />
         )}
       </ListGroup>
+    </div>
+  );
+}
+
+/**
+ * Where from, the one search scoped to Nearest (listSearch's nearSearch),
+ * at the card's top under its name: the card is a drawer over the sheet,
+ * so the sheet's own first row is out of reach while Nearest is open.
+ */
+function NearField() {
+  const typed = useTabSearch((s) => s.near);
+  return (
+    <div className="pb-3">
+      <SearchField {...nearSearch(typed)} />
     </div>
   );
 }
@@ -272,9 +288,26 @@ export default function NearestCard({
   // Underway (the engine's, its flying speed): the GPS track is steady
   // enough to point the rows' arrows from.
   const ahead = !from && fix?.headingDeg != null && underway(fix) ? fix.headingDeg : null;
+  const cardId = useId();
+  const card = useCardSize(cardId);
+  // What its drawer tells it: a tap on the chart (not its own buttons)
+  // lowers it to the pill; Escape closes it, a level back, as every card's
+  // does (lib/openCards); the rest refused, it is no modal.
+  const lowerOnMap = (details: Drawer.Root.ChangeEventDetails) => {
+    details.cancel();
+    const at = details.event.target instanceof Element ? details.event.target : null;
+    if (details.reason === "outside-press") {
+      if (at?.closest(".maplibregl-map") && !at.closest("[data-map-controls], .maplibregl-ctrl")) card?.setSize("peek");
+      return;
+    }
+    if (details.reason === "escape-key" && !details.event.defaultPrevented && closeTopCard()) details.event.preventDefault();
+  };
   return (
-    <PanelCard testId="nearest-card">
+    // At half as it opens, as every card does; a tap on the chart lowers
+    // its own drawer to the pill, the list kept (lowerOnMap).
+    <SheetCard head={false} testId="nearest-card" cardId={cardId} dismiss={lowerOnMap}>
       <ListPageHead title="Nearest" backLabel="Back to the search" onBack={onBack} testId="nearest-page" />
+      <NearField />
       <NearAnswers from={from} onFrom={onFrom} />
       <div className="pt-1">
         {!origin ? (
@@ -322,6 +355,6 @@ export default function NearestCard({
             place, the fields listed nearest first meanwhile (AskFigure). */}
         {!from && ratio == null && underway(fix) && <AskFigure figure="glide" what="The glide" testId="nearest-glide-ask" />}
       </div>
-    </PanelCard>
+    </SheetCard>
   );
 }

@@ -1,13 +1,15 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, sideDrawer } from "./helpers";
+import { settle, sideDrawer, frontSheet, grabberTo } from "./helpers";
 
 /**
  * A phone's sheet going from the pill to half way and back keeps what it
  * shows where it was, frame by frame: the tabs in their one place under
  * the grabber (the sheet is one shape at every size since the rewrite of
- * 2026-11-04), and with a route the figures at the sheet's visible foot
- * the whole way, where they were once out of sight under it from the
- * turn until the sheet was most of the way up (2026-10-15).
+ * 2026-11-04); and with a route, from half all the way up and back (on a
+ * phone the pill is one row, the figures shown from half: the fixed snap
+ * points, 2026-11-11), the figures at the sheet's visible foot the whole
+ * way, where they were once out of sight under it from the turn until the
+ * sheet was most of the way up (2026-10-15).
  */
 
 type Frame = { height: number; bar: { top: number } | null; figures: { top: number; bottom: number } | null };
@@ -50,7 +52,7 @@ test("on a phone the tabs move with the sheet from the pill to half way and back
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
   for (const key of ["ArrowUp", "ArrowDown"] as const) {
     const seen = await frames(page, () => step(page, key));
     const first = seen[0]!,
@@ -69,11 +71,16 @@ test("on a phone the tabs move with the sheet from the pill to half way and back
   }
 });
 
-test("on a phone a route's figures stay in sight at the sheet's foot as the pill turns into the sheet and back", async ({ page }) => {
+test("on a phone a route's figures stay in sight at the sheet's foot from half all the way up and back", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
+  // At the pill the figures are the pill, in the route's row's place (the
+  // owner, 2026-11-11, the canvas's b; sheet-page-toggle.spec), and from half on.
+  await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeHidden();
+  await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
   for (const key of ["ArrowUp", "ArrowDown"] as const) {
     const seen = await frames(page, () => step(page, key));

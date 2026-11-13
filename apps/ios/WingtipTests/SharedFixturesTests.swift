@@ -1,4 +1,5 @@
 import Foundation
+import OpenAPIRuntime
 import Testing
 @testable import Wingtip
 
@@ -103,7 +104,7 @@ private struct TrafficFixture: Decodable {
 private struct LogbookFixture: Decodable {
     // The web's entries, where a field not kept is null; the gateway's
     // LogbookEntryDto never sends one, so these go to the engine as written.
-    struct Export: Decodable { let entries: [[String: JSONValue]]; let csv: String }
+    struct Export: Decodable { let entries: [[String: OpenAPIValueContainer]]; let csv: String }
     struct Skip: Decodable { let line: Int; let reason: String }
     struct Import: Decodable { let name: String; let text: String; let entries: [LogbookEntryRequest]; let skipped: [Skip] }
     let exports: [Export]
@@ -188,9 +189,9 @@ struct SharedFixturesTests {
     }
 
     @Test func trafficIsLabelledAsTheWebLabelsIt() throws {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        let f = try fixture("traffic", as: TrafficFixture.self, decoder: decoder)
+        // A plain decoder: the case's own keys are the fixture's (ownFt), and the
+        // airplane is the planner's generated type, which names its snake-case keys.
+        let f = try fixture("traffic", as: TrafficFixture.self)
         #expect(!f.cases.isEmpty)
         for c in f.cases {
             let said = "\(c.plane.altitudeFt.map { "\($0)" } ?? "none") ft against \(c.ownFt.map { "\($0)" } ?? "none")"

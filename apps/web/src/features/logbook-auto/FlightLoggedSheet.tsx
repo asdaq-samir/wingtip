@@ -13,6 +13,7 @@ import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 import type { Edits } from "./draftEntry";
 import type { AutoLogbook } from "./useAutoLogbook";
+import { FieldError } from "../../components/ui/field";
 
 // Its own chunk: the approaches' debrief is drawn only when asked for.
 const ApproachDebriefs = lazy(() => import("../../components/ApproachDebrief"));
@@ -246,19 +247,17 @@ export default function FlightLoggedSheet({ log }: { log: AutoLogbook }) {
         </>
       )}
       {log.draftError && (
-        <p className={cn(FINDING_TONE.stop, TEXT.prose)} role="alert">
+        <FieldError className={cn(FINDING_TONE.stop, TEXT.prose)}>
           The entry could not be drawn: {log.draftError.message}{" "}
           <Button variant="link" className="h-auto p-0" onClick={log.retry}>
             Try Again
           </Button>
-        </p>
+        </FieldError>
       )}
       {log.problem && <p className={cn(FINDING_TONE.caution, TEXT.prose)}>{log.problem}</p>}
       {draft && <DraftRows log={log} draft={draft} />}
       {log.logError && (
-        <p className={cn(FINDING_TONE.stop, TEXT.prose)} role="alert">
-          It could not be logged: {log.logError.message}
-        </p>
+        <FieldError className={cn(FINDING_TONE.stop, TEXT.prose)}>It could not be logged: {log.logError.message}</FieldError>
       )}
     </SheetDialog>
   );

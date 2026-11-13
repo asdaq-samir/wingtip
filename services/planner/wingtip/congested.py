@@ -49,9 +49,10 @@ import numpy as np
 import requests
 import shapely
 
-from . import geocode
+from . import geocode, outside
+from .atomic import atomic_path
 from .engine import ask as engine
-from .units import M_PER_NM
+from .units import M_PER_FT, M_PER_NM, NM_PER_DEG_LAT
 
 logger = logging.getLogger(__name__)
 
@@ -68,11 +69,11 @@ SEARCH_FT = 2500.0
 #: The largest circle a gazetteer place is drawn as, m: a nautical mile,
 #: the planner's own figure -- about the built-up core of a small town.
 PLACE_RADIUS_M = M_PER_NM
-#: A degree of latitude: sixty nautical miles of 6,076.12 ft, near enough
-#: (the earth's flattening moves it under 1% from the equator to the pole),
-#: as the engine has it.
-FT_PER_DEG_LAT = 60 * 6076.12
-M_PER_DEG_LAT = 60 * M_PER_NM
+#: A degree of latitude: sixty nautical miles (wingtip.units.NM_PER_DEG_LAT),
+#: near enough (the earth's flattening moves it under 1% from the equator to
+#: the pole), as the engine has it.
+M_PER_DEG_LAT = NM_PER_DEG_LAT * M_PER_NM
+FT_PER_DEG_LAT = M_PER_DEG_LAT / M_PER_FT
 #: After a failed download, the next try waits this long.
 RETRY_AFTER_S = 300
 
@@ -84,12 +85,10 @@ _RETRY_AT = 0.0
 def _urban_areas() -> list:
     """The urban areas' outlines, downloaded once and kept."""
     if not URBAN_AREAS_PATH.exists():
-        resp = requests.get(URBAN_AREAS_URL, headers=HEADERS, timeout=60)
+        resp = outside.get(URBAN_AREAS_URL, headers=HEADERS, timeout=60)
         resp.raise_for_status()
-        DIR.mkdir(parents=True, exist_ok=True)
-        part = URBAN_AREAS_PATH.with_suffix(".part")
-        part.write_bytes(resp.content)
-        part.replace(URBAN_AREAS_PATH)
+        with atomic_path(URBAN_AREAS_PATH) as part:
+            part.write_bytes(resp.content)
     # Kept beside the download as WKB, keyed by its size and time: pyshp
     # and shapely building every outline from lists was 3 to 4 CPU-seconds
     # of each planner start, where WKB is read back in a fraction of one
@@ -115,11 +114,9 @@ def _urban_areas() -> list:
 
     with shapefile.Reader(str(URBAN_AREAS_PATH)) as reader:
         areas = [shape(s.__geo_interface__) for s in reader.iterShapes()]
-    part = kept.with_suffix(".part")
     try:
-        with part.open("wb") as f:
+        with atomic_path(kept) as part, part.open("wb") as f:
             pickle.dump((key, shapely.to_wkb(areas)), f, protocol=pickle.HIGHEST_PROTOCOL)
-        part.replace(kept)
     except OSError as err:
         logger.warning("Census urban areas not kept as WKB: %s", err)
     return areas

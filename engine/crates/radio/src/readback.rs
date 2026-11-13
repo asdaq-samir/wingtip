@@ -49,21 +49,9 @@ fn missed(item: &'static str, cleared: String, said: Option<String>) -> Missed {
 }
 
 /// A whole number with its thousands grouped ("4,000"), as the web's
-/// lib/format grouped writes one.
+/// lib/format grouped writes one (core's text).
 pub fn grouped(n: i64) -> String {
-    let digits = n.abs().to_string();
-    let mut out = String::new();
-    for (i, ch) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i).is_multiple_of(3) {
-            out.push(',');
-        }
-        out.push(ch);
-    }
-    if n < 0 {
-        format!("-{out}")
-    } else {
-        out
-    }
+    crate::text::grouped_int(n)
 }
 
 /// An altitude as ATC says it (AIM 4-2-9): feet below 18,000, a flight

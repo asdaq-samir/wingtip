@@ -1,0 +1,88 @@
+{
+  "title": "ApproachFacts",
+  "type": "object",
+  "properties": {
+    "runway": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string",
+              "description": "The CIFP's runway ident, \"RW36\"."
+            },
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "threshold_ft": {
+              "type": "number",
+              "description": "The landing threshold's elevation, ft MSL (the CIFP's runway record, ARINC 424-18 5.68)."
+            },
+            "tch_ft": {
+              "type": "number",
+              "description": "The threshold crossing height, ft (ARINC 424-18 5.67)."
+            },
+            "tdze_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The touchdown zone elevation, ft MSL, to a tenth (NASR APT_RWY_END TDZ_ELEV)."
+            }
+          },
+          "required": [
+            "ident",
+            "lat",
+            "lon",
+            "threshold_ft",
+            "tch_ft"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "coded": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "fix": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "The fix's altitude description (ARINC 424-18 5.29): \"G\" or \"H\" the glide slope's altitude at the FAF, \"I\" or \"J\" its intercept altitude at the FACF, \"V\" the vertical path's at a step-down fix."
+          },
+          "ft": {
+            "type": "number",
+            "description": "That altitude, ft MSL: the record's second altitude."
+          }
+        },
+        "required": [
+          "fix",
+          "code",
+          "ft"
+        ]
+      }
+    },
+    "levels": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "description": "The levels of service the CIFP authorises (ARINC 424-19 5.275, 5.276): \"LPV\", \"LNAV/VNAV\", \"LNAV\", ..."
+    }
+  },
+  "description": "What the CIFP says of an approach besides its legs (wingtip.approach_facts): its runway, the altitudes coded beside a fix's limits, and the levels of service authorised."
+}

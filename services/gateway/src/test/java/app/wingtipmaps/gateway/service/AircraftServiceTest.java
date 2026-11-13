@@ -49,7 +49,7 @@ class AircraftServiceTest {
         given(aircraftRepository.findByIdAndPilotId(1L, stranger.getId())).willReturn(Optional.empty());
 
         Optional<Aircraft> result = aircraftService.update(
-                stranger, 1L, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null, null, null);
+                stranger, 1L, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null, null, null, null, null);
 
         assertThat(result).isEmpty();
         verify(aircraftRepository, never()).save(any());
@@ -57,7 +57,7 @@ class AircraftServiceTest {
 
     @Test
     void updateSavesWhenTheAircraftBelongsToThisPilot() {
-        Aircraft existing = new Aircraft(owner, "N12345", "C172", 110.0, 8.5, null, null, null, null);
+        Aircraft existing = new Aircraft(owner, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null);
         given(aircraftRepository.findByIdAndPilotId(1L, owner.getId())).willReturn(Optional.of(existing));
         given(aircraftRepository.save(existing)).willReturn(existing);
 
@@ -71,6 +71,8 @@ class AircraftServiceTest {
                 75.0,
                 80.0,
                 12.0,
+                90.0,
+                7.5,
                 48.0,
                 " sdfgry ",
                 "b1",
@@ -95,13 +97,15 @@ class AircraftServiceTest {
      *  keep the airplane's own as they were. */
     @Test
     void anUpdateWithNoFiguresKeepsTheAirplanesOwn() {
-        Aircraft existing = new Aircraft(owner, "N12345", "XYZ1", 110.0, 8.5, null, null, null, null)
+        Aircraft existing = new Aircraft(owner, "N12345", "XYZ1", 110.0, 8.5, null, null, null, null, null, null)
                 .keepFigures(12000.0, 600.0, null, 9.0, null, null);
         given(aircraftRepository.findByIdAndPilotId(1L, owner.getId())).willReturn(Optional.of(existing));
         given(aircraftRepository.save(existing)).willReturn(existing);
 
         Aircraft saved = aircraftService
-                .update(owner, 1L, "N12345", "XYZ1", 110.0, 8.5, null, null, null, null, null, null, null, null)
+                .update(
+                        owner, 1L, "N12345", "XYZ1", 110.0, 8.5, null, null, null, null, null, null, null, null, null,
+                        null)
                 .orElseThrow();
 
         assertThat(saved.getServiceCeilingFt()).isEqualTo(12000.0);
@@ -111,7 +115,7 @@ class AircraftServiceTest {
     /** An inline ask saves one figure, the rest as they were. */
     @Test
     void addingAFigureKeepsTheRest() {
-        Aircraft existing = new Aircraft(owner, "N12345", "XYZ1", 110.0, 8.5, null, null, null, null)
+        Aircraft existing = new Aircraft(owner, "N12345", "XYZ1", 110.0, 8.5, null, null, null, null, null, null)
                 .keepFigures(12000.0, 600.0, null, 9.0, null, null);
         given(aircraftRepository.findByIdAndPilotId(1L, owner.getId())).willReturn(Optional.of(existing));
         given(aircraftRepository.save(existing)).willReturn(existing);
@@ -138,13 +142,15 @@ class AircraftServiceTest {
      *  form would show as said. */
     @Test
     void aBlankFlightPlanItemIsNone() {
-        Aircraft existing = new Aircraft(owner, "N12345", "C172", 110.0, 8.5, null, null, null, null)
+        Aircraft existing = new Aircraft(owner, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null)
                 .describeForFlightPlan("S", "C", "Red");
         given(aircraftRepository.findByIdAndPilotId(1L, owner.getId())).willReturn(Optional.of(existing));
         given(aircraftRepository.save(existing)).willReturn(existing);
 
         Aircraft saved = aircraftService
-                .update(owner, 1L, "N12345", "C172", 110.0, 8.5, null, null, null, null, " ", "", null, null)
+                .update(
+                        owner, 1L, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null, " ", "", null,
+                        null)
                 .orElseThrow();
 
         assertThat(saved.getEquipment()).isNull();
@@ -164,7 +170,7 @@ class AircraftServiceTest {
 
     @Test
     void deleteReturnsTrueWhenTheAircraftBelongsToThisPilot() {
-        Aircraft existing = new Aircraft(owner, "N12345", "C172", 110.0, 8.5, null, null, null, null);
+        Aircraft existing = new Aircraft(owner, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null);
         given(aircraftRepository.findByIdAndPilotId(1L, owner.getId())).willReturn(Optional.of(existing));
 
         boolean deleted = aircraftService.delete(owner, 1L);

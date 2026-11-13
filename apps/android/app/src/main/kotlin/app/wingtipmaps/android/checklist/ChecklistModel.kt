@@ -2,10 +2,12 @@ package app.wingtipmaps.android.checklist
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import javax.inject.Inject
 
 /**
  * The checklist screen's state: which airplane's list is shown, normal
@@ -15,7 +17,8 @@ import kotlinx.coroutines.flow.update
  * ticks last while the app runs, as a paper checklist's finger does,
  * and Start over clears them.
  */
-class ChecklistModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class ChecklistModel @Inject constructor(app: Application) : AndroidViewModel(app) {
     enum class Mode { RUN, EDIT }
 
     data class State(

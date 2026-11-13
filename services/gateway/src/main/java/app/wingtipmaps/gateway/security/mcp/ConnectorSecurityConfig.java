@@ -9,8 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.savedrequest.NullRequestCache;
@@ -22,8 +20,9 @@ import org.springframework.security.web.savedrequest.NullRequestCache;
  * <ul>
  *   <li>/mcp and its metadata: anyone. The planner, behind them, refuses
  *       a call without a token of its own issue (McpProxyController).
- *   <li>/internal/mcp: anyone who reaches it, which only the planner's
- *       shared token gets past (InternalRecordsController).
+ *   <li>/internal/mcp: whoever reaches the gateway's internal port, which
+ *       only the compose network does (InternalPortConfig), and then only
+ *       the planner's shared token gets past (InternalRecordsController).
  *   <li>/connect and /connect/continue: anyone, to sign in.
  *   <li>/oauth2/consent: a signed-in pilot.
  * </ul>
@@ -51,9 +50,7 @@ public class ConnectorSecurityConfig {
                         .authenticated()
                         .anyRequest()
                         .permitAll())
-                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                        .ignoringRequestMatchers("/mcp", "/.well-known/**", "/internal/mcp/**"))
+                .csrf(csrf -> csrf.spa().ignoringRequestMatchers("/mcp", "/.well-known/**", "/internal/mcp/**"))
                 .requestCache(cache -> cache.requestCache(new NullRequestCache()))
                 .exceptionHandling(handling ->
                         handling.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
@@ -70,7 +67,7 @@ public class ConnectorSecurityConfig {
      *  SecurityConfig has them and for its reason: /mcp's answer is piped
      *  on a thread of its own (StreamingProxy), and two threads must not
      *  write headers at once. */
-    static SecurityFilterChain headersFirst(SecurityFilterChain chain) {
+    public static SecurityFilterChain headersFirst(SecurityFilterChain chain) {
         for (Filter filter : chain.getFilters()) {
             if (filter instanceof HeaderWriterFilter writer) {
                 writer.setShouldWriteHeadersEagerly(true);

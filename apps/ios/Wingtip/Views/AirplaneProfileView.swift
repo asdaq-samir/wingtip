@@ -10,6 +10,8 @@ import SwiftUI
 /// the card it was opened from elsewhere, Back or its close going back to
 /// where the pilot was. Its state is AirplaneProfileModel's.
 struct AirplaneProfileView: View {
+    @Environment(Airplanes.self) private var airplanes
+    @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
     /// Back to the plan once flown, where the profile was opened over it.
@@ -46,10 +48,10 @@ struct AirplaneProfileView: View {
             }
             EnduranceSection(model: model)
             ProfilePhotoSection(model: model) { Task { await model.commitDrafts(plan: plan, signedIn: session.signedIn) } }
-            if let record = Airplanes.shared.record(model.tail) {
+            if let record = airplanes.record(model.tail) {
                 Section {
                     NavigationLink("Checklists, Squawks and Inspections") {
-                        OwnAircraftPage(record: record) { Task { await Airplanes.shared.loadRecords(signedIn: session.signedIn) } }.navigationBarTitleDisplayMode(.inline)
+                        OwnAircraftPage(record: record) { Task { await airplanes.loadRecords(signedIn: session.signedIn) } }.navigationBarTitleDisplayMode(.inline)
                     }
                 }
             }
@@ -64,8 +66,6 @@ struct AirplaneProfileView: View {
         .task {
             await model.load(signedIn: session.signedIn)
             focused = focus
-            // A figure to type wants the card full height.
-            if focus != nil { Navigator.shared.cardDetent = .large }
         }
         // A figure is saved as the pilot leaves its field.
         .onChange(of: focused) { old, _ in
@@ -80,8 +80,8 @@ struct AirplaneProfileView: View {
     /// The plan flown with this airplane, then the plan shown.
     private func fly() {
         Task {
-            await plan.fly(tail: model.tail, own: Airplanes.shared.records, names: Array(Airplanes.shared.books.keys))
-            if let showPlan { showPlan() } else { Navigator.shared.showPlan() }
+            await plan.fly(tail: model.tail, own: airplanes.records, names: Array(airplanes.books.keys))
+            if let showPlan { showPlan() } else { nav.showPlan() }
         }
     }
 

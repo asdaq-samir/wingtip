@@ -26,6 +26,7 @@ from datetime import datetime, timezone
 
 import requests
 
+from . import outside
 from .config import REQUEST_HEADERS
 from .engine import ask as engine
 
@@ -75,7 +76,7 @@ def _section(a: tuple, b: tuple, hour: int, issued: datetime) -> dict | None:
         held = _HELD.get(key)
         if held and time.time() - held[0] < HELD_S:
             return held[1]
-    resp = requests.get(URL.format(issued=issued.strftime("%Y%m%d/%H"), hour=hour, path=path), headers=REQUEST_HEADERS, timeout=TIMEOUT_S)
+    resp = outside.get(URL.format(issued=issued.strftime("%Y%m%d/%H"), hour=hour, path=path), headers=REQUEST_HEADERS, timeout=TIMEOUT_S)
     resp.raise_for_status()
     body = resp.json()
     values = body.get("values") if isinstance(body, dict) else None

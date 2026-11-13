@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api/client";
 import { aircraftKey, choiceOf, tailTyped } from "../../../lib/aircraftChoice";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
-import { useAsk } from "../../../lib/ask/useAsk";
-import { useClaudeOn } from "../../../lib/subscription";
 import { useRadioActions } from "../../../lib/atcRadio";
 import { SCREENS, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { wantScreen } from "../../../lib/navigation/wanted";
 import { takeSearchAsk, useSearchAsk, useSearchPick } from "../../../lib/oneSearch";
 import { usePickScope } from "./usePickScope";
+import { positionIdent } from "../../../lib/identSchema";
+import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { searchWords } from "../lib/searchPlaceholder";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../../lib/queryClient";
@@ -20,6 +21,7 @@ import { readQuery } from "../lib/searchFilters";
 import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import { nearOf, useSearchResults } from "./useSearchResults";
 import type { PlanWorkspaceModel } from "./usePlanWorkspace";
+import { riseToSee } from "./panelNow";
 
 /** One airplane the search found: the pilot's own (their record, or one
  *  kept on this device), one the FAA's registry has by the N-number typed,
@@ -35,14 +37,13 @@ export interface AirplaneHit {
   fly?: () => void;
 }
 
-/** One thing to do: an action, a screen, a question for the assistant, or
- *  the words typed sent as a search round a place (Apple Maps' "Search
+/** One thing to do: an action, a screen, or the words typed sent as a search round a place (Apple Maps' "Search
  *  Nearby" suggestion, the owner's screenshot, 2026-11-10). */
 export interface DoHit {
   key: string;
   label: string;
   keys?: string;
-  kind: "action" | "screen" | "ask" | "nearby";
+  kind: "action" | "screen" | "nearby";
   run: () => void;
 }
 
@@ -79,24 +80,12 @@ const finds = (typed: string, name: string) => name.toLowerCase().includes(typed
  * figures out. Direct To, and a picker (usePickScope), take the next pick.
  */
 export function useOneSearch(vm: PlanWorkspaceModel) {
-  const {
-    query,
-    setQuery,
-    search,
-    pickPlace,
-    routed,
-    pickView,
-    setPanel,
-    picking,
-    setPicking,
-    place,
-    selectPlace,
-    selectFlight,
-    listAway,
-    flyHere,
-    departFrom,
-    changeAircraft,
-  } = vm;
+  const { pickView, setPanel } = vm.view;
+  const { routed, departFrom } = vm.route;
+  const { changeAircraft } = vm.plan;
+  const { place, selectPlace, selectFlight, listAway } = vm.cards;
+  const { flyHere } = vm.map;
+  const { query, setQuery, search, pickPlace, picking, setPicking } = vm.search;
   const typed = query.trim();
   // A search sent (useSearchResults): its list in the sheet while the
   // field is not being typed in, its fields on the map.
@@ -104,11 +93,10 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   const index = useAirportIndex(true, typed.length > 0);
   const [direct, setDirect] = useState(false);
   // A picker's ask: airports only (the waypoints too for a stop), its pick.
-  const { pick, from: pickFrom } = usePickScope(vm.view); // pickIdent: its airport, picked or typed
+  const { pick, from: pickFrom } = usePickScope(vm.view.view); // pickIdent: its airport, picked or typed
   const [problem, setProblem] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const directTo = useRadioActions((s) => s.directTo);
-  const claude = useClaudeOn(); // Ask only with Claude on (lib/subscription, off by default since 2026-11-10)
 
   // The pilot's own airplanes: their records signed in, and the ones kept
   // on this device (their Airplane, Favorites and Recents, by ICAO address).
@@ -223,7 +211,14 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     }
   };
 
+  // Where the airplane is, for a route's departure asked for (useStopAsked).
+  const fix = useOwnShip((s) => (s.enabled ? s.fix : null));
   const does: DoHit[] = [];
+  // The departure asked for: where the airplane is, first, as Maps' From
+  // offers My Location -- a route may start at a present position, as Fly
+  // Here's does (the owner's "Departure → HSKEL → KJAX", 2026-11-13).
+  if (pick?.label === "Departure" && fix && (!typed || finds(typed, "My Position")))
+    does.push({ key: "my-position", label: "My Position", kind: "action", run: () => pickIdent(positionIdent(fix)) });
   if (!direct && !pick) {
     const out = does;
     const first = airports[0];
@@ -232,7 +227,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
       out.push({ key: "direct-first", label: `Direct to ${first.ident}`, kind: "action", run: () => void flyDirect(first.ident) });
     const actions: DoHit[] = [
       { key: "direct", label: "Direct To…", keys: DIRECT_KEY, kind: "action", run: () => (setDirect(true), setQuery("")) },
-      { key: "traffic", label: "Traffic Nearby", kind: "action", run: () => (done(), pickView("traffic"), setPanel("half")) },
+      { key: "traffic", label: "Traffic Nearby", kind: "action", run: () => (done(), pickView("traffic"), riseToSee(setPanel)) },
     ];
     for (const a of actions) if (!typed || finds(typed, a.label)) if (a.key !== "direct" || directTo) out.push(a);
     for (const id of OFFERED) {
@@ -243,7 +238,6 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     }
     // The words typed sent as a search round a place, Apple's "Search Nearby" row, first.
     if (typed) out.push({ key: "nearby", label: typed, kind: "nearby", run: () => send(typed) });
-    if (typed && claude) out.push({ key: "ask", label: `Ask: “${typed}”`, kind: "ask", run: () => ask(typed) });
   }
 
   // Sent: round the place it names, else own ship or Nearest's place, else
@@ -252,8 +246,8 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     const near = nearOf(
       text,
       index,
-      vm.nearOrigin ? { label: vm.nearFrom?.label ?? "your position", ...vm.nearOrigin } : null,
-      vm.planned.dep,
+      vm.map.nearOrigin ? { label: vm.cards.nearFrom?.label ?? "your position", ...vm.map.nearOrigin } : null,
+      vm.route.planned.dep,
     );
     if (!near) {
       setProblem('Name a field to search round ("near KMSN"), or turn on your position.');
@@ -264,16 +258,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     (document.activeElement as HTMLElement | null)?.blur();
     useSearchResults.getState().send(text, near, readQuery(text).filters, (ident) => selectPlace(ident));
     pickView("search");
-    setPanel("half");
-  };
-
-  // The question to the assistant (lib/ask): with a route its answer in
-  // the Brief, the assistant's home; with none on the search's page.
-  const ask = (question: string) => {
-    done();
-    void useAsk.getState().ask(question);
-    if (routed) wantScreen("brief");
-    else pickView("search");
+    riseToSee(setPanel);
   };
 
   const pickIdent = (ident: string) => {
@@ -316,8 +301,8 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   // departure -- one, a single wide pill, where only one does (Apple's "Directions").
   const quick = (r: AirportSearchRow) =>
     [
-      r.ident !== vm.planned.dest && { label: "Fly Here", run: () => flyTo(r), testId: "search-top-fly-here" },
-      r.ident !== vm.planned.dep && { label: "Depart From", run: () => departFromHit(r), testId: "search-top-depart-from" },
+      r.ident !== vm.route.planned.dest && { label: "Fly Here", run: () => flyTo(r), testId: "search-top-fly-here" },
+      r.ident !== vm.route.planned.dep && { label: "Depart From", run: () => departFromHit(r), testId: "search-top-depart-from" },
     ].filter((a): a is { label: string; run: () => void; testId: string } => !!a);
   const flyAirplane = (hit: AirplaneHit) => {
     if (!hit.fly) return;
@@ -326,14 +311,15 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     if (routed) pickView("plan");
   };
 
-  // Focused: the search's own page up, a card over it put away, all the
-  // way up unless an Add asked quietly (useSearchPanel's quietFocus).
+  // Focused: the search's own page up, a card over it put away; the sheet
+  // stays where the pilot put it, the keyboard placed over it by the
+  // Drawer's VirtualKeyboardProvider (the owner, 2026-11-11: "Whenever I
+  // try to type on search bar it takes the card to full screen").
   const focus = () => {
     setFocused(true);
     if (place) selectPlace(null);
     listAway("favorites");
     pickView("search");
-    if (!vm.quietFocus.current) setPanel("full");
   };
   // Cancel: let go, back where a picker asked from, else the plan with a route.
   const cancel = () => {
@@ -346,7 +332,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
 
   // ⌘K, `/`, the Map menu's row and D ask for the field (lib/oneSearch):
   // focused within the ask, so the keyboard comes up.
-  const input = vm.searchInput;
+  const input = vm.search.searchInput;
   useEffect(
     () =>
       useSearchAsk.subscribe(({ ask }) => {
@@ -354,9 +340,16 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
         takeSearchAsk();
         setDirect(ask.mode === "direct");
         setProblem(null);
+        // A picker's ask on the Search page, where its field and rows are:
+        // asked from FPL (the route box's Departure), it focused a field on
+        // the page not up, and nothing seemed to happen (2026-11-13). Any
+        // ask while that page is put away likewise. The page drawn up before
+        // the focus: put away it is inert (SheetPage), and an inert field
+        // takes no focus, so the route box's stop asked for none came.
+        if (ask.mode === "pick" || input.current?.closest("[inert]")) flushSync(() => pickView("search"));
         input.current?.focus();
       }),
-    [input],
+    [input, pickView],
   );
 
   return {
@@ -364,13 +357,14 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     direct,
     pick,
     pickIdent,
-    problem,
+    // Its own, else why a picker's last pick would not do (the first flight's).
+    problem: problem ?? pick?.problem ?? null,
     focused,
     /** A search sent, its list shown while the field is let go. */
     sent: !!sent && !focused,
     send,
     // The field's words, shown short and said whole.
-    ...searchWords(direct, pick, picking, claude),
+    ...searchWords(direct, pick, picking),
     answered: search.answered,
     airports,
     waypoints,
@@ -381,8 +375,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
       if (sent && text !== sent.query) useSearchResults.getState().clear();
       setQuery(text);
       setProblem(null);
-      if (text && vm.view !== "search") pickView("search");
-      if (text && vm.panel === "peek") setPanel("full");
+      if (text && vm.view.view !== "search") pickView("search");
     },
     pickAirport,
     pickWaypoint,
@@ -391,6 +384,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     flyAirplane,
     focus,
     cancel,
+    letGo: done, // A card's Fly Here or Add Stop: the route set, the search let go with it, as the top hit's are.
   };
 }
 

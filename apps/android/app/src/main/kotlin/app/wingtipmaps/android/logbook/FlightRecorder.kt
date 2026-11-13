@@ -1,9 +1,13 @@
 package app.wingtipmaps.android.logbook
 
 import android.content.Context
+import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.Kept
+import app.wingtipmaps.android.KeptFile
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.generated.DraftTrackPoint
 import app.wingtipmaps.android.flight.OwnShip
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,11 +40,13 @@ interface RecordedFlight {
  * one point every five seconds, kept in the app's files until it is
  * logged or let go. It rides on own ship's reading, which its foreground
  * service keeps with the screen off while flying, so nothing new runs.
- * Nothing of it leaves the phone until the pilot asks for the entry.
+ * Nothing of it leaves the phone until the pilot asks for the entry. The
+ * file is written behind, off the main thread (KeptFile).
  */
-class FlightRecorder(private val file: File, private val nowMs: () -> Long = System::currentTimeMillis) : RecordedFlight {
+class FlightRecorder(file: File, writing: CoroutineDispatcher = Kept.writing, private val nowMs: () -> Long = AppClock::nowMs) : RecordedFlight {
+    private val kept = KeptFile(file, writing)
     private val _recorded = MutableStateFlow(
-        runCatching { Gateway.json.decodeFromString<Recorded>(file.readText()) }.getOrNull() ?: Recorded(),
+        kept.read()?.let { runCatching { Gateway.json.decodeFromString<Recorded>(it) }.getOrNull() } ?: Recorded(),
     )
     override val recorded: StateFlow<Recorded> = _recorded.asStateFlow()
     private var writtenAtMs: Long? = null
@@ -61,6 +67,12 @@ class FlightRecorder(private val file: File, private val nowMs: () -> Long = Sys
         write()
     }
 
+    /** The recording and its file gone: signed out, or the account deleted. */
+    suspend fun wipe() {
+        _recorded.value = Recorded()
+        kept.delete()
+    }
+
     override fun forget() {
         _recorded.value = Recorded()
         write()
@@ -68,12 +80,8 @@ class FlightRecorder(private val file: File, private val nowMs: () -> Long = Sys
 
     private fun write() {
         writtenAtMs = nowMs()
-        runCatching {
-            file.parentFile?.mkdirs()
-            val part = File(file.path + ".part")
-            part.writeText(Gateway.json.encodeToString(_recorded.value))
-            if (!part.renameTo(file)) part.delete()
-        }
+        val now = _recorded.value
+        kept.write { Gateway.json.encodeToString(now) }
     }
 
     companion object {

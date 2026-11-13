@@ -1,7 +1,7 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.Pilot;
-import app.wingtipmaps.gateway.dto.ErrorResponse;
 import app.wingtipmaps.gateway.security.SessionSignIn;
 import app.wingtipmaps.gateway.security.SignInLanding;
 import app.wingtipmaps.gateway.service.PilotService;
@@ -17,8 +17,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -61,15 +63,28 @@ public class AppleNativeSignInController {
 
     private final PilotService pilots;
     private final JwtDecoder decoder;
+    /** Whether a token must come with its nonce (AppleNonce): off until
+     *  the app sends one, then on (APP_APPLE_REQUIRE_NONCE). */
+    private final boolean requireNonce;
 
     @Autowired
-    public AppleNativeSignInController(PilotService pilots, @Value("${APP_IOS_BUNDLE_ID:}") String bundleId) {
-        this(pilots, bundleId.isBlank() ? null : appleTokens(bundleId.trim()));
+    public AppleNativeSignInController(PilotService pilots, AppProperties app) {
+        this(
+                pilots,
+                app.ios().bundleId().isBlank()
+                        ? null
+                        : appleTokens(app.ios().bundleId().trim()),
+                app.apple().requireNonce());
     }
 
     AppleNativeSignInController(PilotService pilots, JwtDecoder decoder) {
+        this(pilots, decoder, false);
+    }
+
+    AppleNativeSignInController(PilotService pilots, JwtDecoder decoder, boolean requireNonce) {
         this.pilots = pilots;
         this.decoder = decoder;
+        this.requireNonce = requireNonce;
     }
 
     /** Apple's identity tokens for this app alone. */
@@ -89,16 +104,37 @@ public class AppleNativeSignInController {
                 : OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token", "not this app's token", null));
     }
 
-    /** What the app's Apple sheet answered. */
-    public record AppleToken(@NotBlank @Size(max = 8000) String identityToken) {}
+    /** What the app's Apple sheet answered, and the nonce it was asked
+     *  with (AppleNonce), which an app before it asks for one leaves out. */
+    public record AppleToken(
+            @NotBlank @Size(max = 8000) String identityToken,
+            @Nullable @Size(max = 200) String nonce) {
+
+        public AppleToken(String identityToken) {
+            this(identityToken, null);
+        }
+    }
+
+    /** A nonce for this session's next Apple sign-in. */
+    public record AppleNonceAnswer(String nonce) {}
+
+    @Operation(
+            summary = "A nonce for Sign in with Apple from the iOS app",
+            description = "Kept by this session, used once. Give Apple its SHA-256 as lowercase hex "
+                    + "(ASAuthorizationAppleIDRequest.nonce), then send it as `nonce` with the identity token.")
+    @PostMapping("/nonce")
+    public AppleNonceAnswer nonce(HttpServletRequest request) {
+        return new AppleNonceAnswer(AppleNonce.issue(request));
+    }
 
     /** Signed in: where the app goes next (SignInLanding). */
     public record SignedIn(String next) {}
 
     @Operation(
             summary = "Sign in with Apple from the iOS app",
-            description = "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id) and "
-                    + "signs the pilot in on this session. 404 where no iOS app is set up.")
+            description = "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, "
+                    + "and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS "
+                    + "app is set up.")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
@@ -111,15 +147,22 @@ public class AppleNativeSignInController {
     public ResponseEntity<?> signIn(
             @Valid @RequestBody AppleToken body, HttpServletRequest request, HttpServletResponse response) {
         if (decoder == null) {
-            return ResponseEntity.status(404)
-                    .body(new ErrorResponse("Sign in with Apple is not set up for the app here."));
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.NOT_FOUND, "Sign in with Apple is not set up for the app here."))
+                    .build();
         }
         Jwt jwt;
         try {
             jwt = decoder.decode(body.identityToken());
         } catch (JwtException refused) {
-            return ResponseEntity.status(401)
-                    .body(new ErrorResponse("Apple's sign-in could not be confirmed. Try again."));
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.UNAUTHORIZED, "Apple's sign-in could not be confirmed. Try again."))
+                    .build();
+        }
+        if (!AppleNonce.checks(request, jwt, body.nonce(), requireNonce)) {
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.UNAUTHORIZED, "Apple's sign-in could not be confirmed. Try again."))
+                    .build();
         }
         OidcUser user = new DefaultOidcUser(
                 List.of(new SimpleGrantedAuthority("OIDC_USER")),
@@ -129,9 +172,10 @@ public class AppleNativeSignInController {
         try {
             pilot = pilots.fromOidcUser(user, "apple");
         } catch (UnverifiedEmailException | IllegalArgumentException refused) {
-            return ResponseEntity.status(401)
-                    .body(new ErrorResponse(
-                            "Apple did not share a verified email address, which an account here needs."));
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.UNAUTHORIZED,
+                            "Apple did not share a verified email address, which an account here needs."))
+                    .build();
         }
         Authentication authentication = new OAuth2AuthenticationToken(user, user.getAuthorities(), "apple");
         SessionSignIn.signIn(authentication, request, response);

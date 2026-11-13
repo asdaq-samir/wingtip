@@ -20,7 +20,7 @@ struct DepartureWindowTests {
 
     @Test func hoursInWords() throws {
         let json = #"{"airplane":true,"forecast_until":"2026-11-10T18:00:00Z","hours":[{"depart":"2026-11-09T13:00:00Z","ete_min":58,"fuel_gal":11.6,"margin":2,"night":false,"night_passengers":false,"reasons":[{"key":"weather","label":"Weather","finding":"ok","detail":"VFR all the way","tab":"weather"}],"verdict":"go"},{"depart":"2026-11-10T02:00:00Z","night":true,"night_passengers":true,"reasons":[],"verdict":"no-go"}],"windows":[{"start":"2026-11-09T13:00:00Z","last":"2026-11-09T16:00:00Z","hours":4,"quickest":"2026-11-09T13:00:00Z"}]}"#
-        let answer = try Planner.snakeCase.decode(WindowAnswer.self, from: Data(json.utf8))
+        let answer = try Planner.json.decode(WindowAnswer.self, from: Data(json.utf8))
         let now = try #require(AirportWords.date("2026-11-09T12:00:00Z"))
         // 1300Z is 07:00 in Chicago (CST, UTC-6).
         #expect(DepartureWindow.bestLine(answer.windows[0], now: now, zone: chicago) == "Best: 07:00–10:00 CST")

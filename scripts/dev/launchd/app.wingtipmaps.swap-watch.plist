@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Holds the heavy-turn limit as high as the Mac takes without swapping
+  (scripts/dev/swap-watch.sh), from login, for ever. __SCRIPT__ is the
+  installed copy (~/.local/bin/wingtip-swap-watch), __HOME__ the home folder;
+  docs/LOCAL-DEV.md, "Full throttle without swapping", says how to install it.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>app.wingtipmaps.swap-watch</string>
+  <key>ProgramArguments</key><array><string>/bin/bash</string><string>__SCRIPT__</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>__HOME__/Library/Logs/wingtip-swap-watch.log</string>
+  <key>StandardErrorPath</key><string>__HOME__/Library/Logs/wingtip-swap-watch.log</string>
+</dict>
+</plist>

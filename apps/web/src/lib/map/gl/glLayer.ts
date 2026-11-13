@@ -1,6 +1,14 @@
 import { createContext, useContext, useEffect, useRef, type ReactNode, useEffectEvent } from "react";
 import { prefersReducedMotion } from "../../motion";
-import type { GeoJSONSource, LayerSpecification, Map as MlMap, MapGeoJSONFeature, MapMouseEvent, SourceSpecification } from "maplibre-gl";
+import type {
+  FilterSpecification,
+  GeoJSONSource,
+  LayerSpecification,
+  Map as MlMap,
+  MapGeoJSONFeature,
+  MapMouseEvent,
+  SourceSpecification,
+} from "maplibre-gl";
 
 /**
  * The WebGL map's layer API (lib/map/gl): each thing drawn on the map is
@@ -30,7 +38,57 @@ export interface GlTap {
   reach: number;
   /** Lower first. */
   rank: number;
+  /** Only the features of its layers this keeps (a style filter). */
+  filter?: FilterSpecification;
   onTap: (feature: MapGeoJSONFeature, event: MapMouseEvent) => void;
+  /** Instead of the style's `layers`, a finder of its own: deck.gl's
+   *  picking (lib/map/gl/deckLayers useDeckTap). */
+  find?: (point: { x: number; y: number }) => MapGeoJSONFeature | null;
+}
+
+/** What a tap finds under the finger, within its reach: the nearest
+ *  feature of its layers (nearestHit), or what its own finder picks. */
+export function tapHit(map: MlMap, tap: GlTap, point: { x: number; y: number }): MapGeoJSONFeature | null {
+  if (tap.find) return tap.find(point);
+  const layers = tap.layers.filter((l) => map.getLayer(l));
+  if (!layers.length) return null;
+  const r = tap.reach;
+  const found = map.queryRenderedFeatures(
+    [
+      [point.x - r, point.y - r],
+      [point.x + r, point.y + r],
+    ],
+    { layers, filter: tap.filter },
+  );
+  return nearestHit(found, point, r, (at) => map.project(at));
+}
+
+/** Of the features MapLibre found in a finger's square, the one the tap
+ *  is for: a mark (a point) only where its point is within `reach` of the
+ *  finger, its 44-point target, the nearest first; a line or an area in
+ *  the square as MapLibre gave it, the topmost. The square also takes in
+ *  a mark's drawn words and chip, so a field's ident or a route's pill
+ *  whose point was a finger and more away took the tap: on the chart
+ *  beside a field's name, its card opened rather than the open card
+ *  putting itself away (map.spec), and on O'Hare at the route's whole
+ *  view, C81's chip (classb.spec). */
+export function nearestHit(
+  found: MapGeoJSONFeature[],
+  finger: { x: number; y: number },
+  reach: number,
+  project: (at: [number, number]) => { x: number; y: number },
+): MapGeoJSONFeature | null {
+  let best: MapGeoJSONFeature | null = null,
+    near = Infinity;
+  for (const f of found) {
+    let d = 0;
+    if (f.geometry.type === "Point") {
+      const at = project(f.geometry.coordinates as [number, number]);
+      d = Math.hypot(at.x - finger.x, at.y - finger.y);
+    }
+    if (d <= reach && d < near) [best, near] = [f, d];
+  }
+  return best;
 }
 
 export interface GlMapApi {
@@ -246,15 +304,37 @@ export function useGlMiss(onMiss: (event: MapMouseEvent) => void) {
 export const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 /** A picture that stretches to fit its text (icon-text-fit), its corners
- *  `inset` px each way kept as drawn. */
+ *  `inset` px each way kept as drawn; or, for a picture with more than
+ *  corners to keep (a chip's diamond at its left, a callout's tail under
+ *  it), the band each way that stretches and the box the text fills, px
+ *  of the picture as drawn. */
 export interface Stretch {
   inset: number;
+  x?: [number, number];
+  y?: [number, number];
+  content?: [number, number, number, number];
 }
 
 /** A picture ready for addImage: drawn, and its density and stretch. */
 export interface DrawnImage {
-  image: HTMLImageElement;
+  /** An SVG drawn (drawSvg), or a canvas's pixels (drawTag). */
+  image: HTMLImageElement | ImageData;
   options: { pixelRatio: number; stretchX?: [number, number][]; stretchY?: [number, number][]; content?: [number, number, number, number] };
+}
+
+/** A stretch in the picture's pixels, at its density. */
+function stretchOf(
+  stretch: Stretch,
+  w: number,
+  h: number,
+  ratio: number,
+): Pick<DrawnImage["options"], "stretchX" | "stretchY" | "content"> {
+  const { inset } = stretch;
+  const s = (v: number) => v * ratio;
+  const [x0, x1] = stretch.x ?? [inset, w - inset];
+  const [y0, y1] = stretch.y ?? [inset, h - inset];
+  const box = stretch.content ?? [inset, inset, w - inset, h - inset];
+  return { stretchX: [[s(x0), s(x1)]], stretchY: [[s(y0), s(y1)]], content: box.map(s) as [number, number, number, number] };
 }
 
 /** A picture's SVG markup drawn at the screen's density (up to three
@@ -272,12 +352,7 @@ export function drawSvg(svg: string, stretch?: Stretch): Promise<DrawnImage | nu
     const image = new Image(w * ratio, h * ratio);
     image.onload = () => {
       // A label's box (icon-text-fit) stretches between its corners.
-      const s = (v: number) => v * ratio;
-      const fit = stretch && {
-        stretchX: [[s(stretch.inset), s(w - stretch.inset)]] as [number, number][],
-        stretchY: [[s(stretch.inset), s(h - stretch.inset)]] as [number, number][],
-        content: [s(stretch.inset), s(stretch.inset), s(w - stretch.inset), s(h - stretch.inset)] as [number, number, number, number],
-      };
+      const fit = stretch && stretchOf(stretch, w, h, ratio);
       resolve({ image, options: { pixelRatio: ratio, ...fit } });
     };
     // A picture that cannot be drawn leaves its symbol bare, not the

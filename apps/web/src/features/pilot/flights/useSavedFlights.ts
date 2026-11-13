@@ -143,12 +143,12 @@ export function useSavedFlights() {
     );
   };
 
-  /** Share: the flight shared by link (its N-number only where asked),
+  /** Share: the flight shared by link, with its N-number where it has one,
    *  read-only until Stop Sharing, and the link sent on from the share
    *  sheet, or copied. The list keeps the share, for its Stop Sharing. */
-  const shareFlight = async (flight: FlightSummary, includeTail: boolean) => {
+  const shareFlight = async (flight: FlightSummary) => {
     try {
-      const share = await flightShares.share(flight.id, includeTail);
+      const share = await flightShares.share(flight.id, true);
       keep({ ...flight, share });
       if ((await shareOrCopy({ title: flightTitle(flight), url: share.url })) === "copied") done("Link Copied");
     } catch (err) {

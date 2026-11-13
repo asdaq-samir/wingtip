@@ -9,8 +9,8 @@
  * started where the browser cannot promise that (lib/speechLocal).
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { listen, noMicrophone, takesTrack } from "./listen";
-import { checkSpeech, forgetSpeechCheck } from "./speechLocal";
+import { NEEDS_CONNECTION, listen, noMicrophone } from "./listen";
+import { checkSpeech, forgetSpeechCheck, takesTrack } from "./speechLocal";
 
 class Recognizer {
   static made: Recognizer[] = [];
@@ -251,6 +251,14 @@ describe("its failures", () => {
       userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_1 like Mac OS X) AppleWebKit/605.1.15 CriOS/142.0 Mobile/15E148 Safari/604.1",
     });
     expect(noMicrophone()).toMatch(/; if it is, close the browser and open it again\.$/);
+  });
+
+  test("no connection to the browser's recognizer: said as a connection, not the device", async () => {
+    const ended = vi.fn();
+    await listen([], undefined, () => {}, ended);
+    Recognizer.made[0]!.onerror!({ error: "network" });
+    Recognizer.made[0]!.onend!();
+    expect(ended).toHaveBeenCalledWith(NEEDS_CONNECTION);
   });
 
   test("no microphone elsewhere: the page reloaded, not Safari", () => {

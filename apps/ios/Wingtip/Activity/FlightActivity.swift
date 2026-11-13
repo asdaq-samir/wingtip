@@ -92,7 +92,7 @@ final class FlightActivity {
             progress: nil, routeNm: kept.course?.distanceNm ?? kept.legs.reduce(0) { $0 + $1.distanceNm },
             airplaneChosen: kept.aircraft != Plan.noAirplane, usableFuelGal: kept.totals?.usableFuelGal,
             frequency: nil, copilot: nil, now: now, phase: .ready,
-            depCategory: kept.briefing?.metars[kept.dep]??.flightCategory, plannedEteMin: kept.totals?.eteMin)
+            depCategory: kept.briefing?.metars.additionalProperties[kept.dep]??.flightCategory, plannedEteMin: kept.totals?.eteMin)
         return start(dep: kept.dep, dest: kept.dest, tail: kept.tail, state: FlightActivityContent.state(inputs))
     }
 
@@ -135,18 +135,20 @@ final class FlightActivity {
 
     /// Watches a flight: the dry run's, or own ship's with a route planned.
     /// Called every few seconds from the app (WingtipApp); it starts,
-    /// updates and ends the activity as the flight goes.
-    func observe(plan: Plan, dryRun: DryRun, ownShip: OwnShip, now: Date = Date()) {
+    /// updates and ends the activity as the flight goes. `weather` is the
+    /// newest change the weather watch told (WeatherWatch.latest).
+    func observe(plan: Plan, dryRun: DryRun, ownShip: OwnShip, inFlight: InFlight, copilot: Copilot, atc: AtcCopilot,
+                 weather: String?, now: Date = Date()) {
         // The rehearsal on the ground counts as a flight on the Lock
         // Screen: that is what it is for. Own ship's flying speed is the
         // engine's (`underway`, InFlight).
         let rehearsing = dryRun.running || (dryRun.fix != nil && !dryRun.done)
-        let flying = rehearsing || (ownShip.fix != nil && plan.routed && InFlight.shared.underway)
+        let flying = rehearsing || (ownShip.fix != nil && plan.routed && inFlight.underway)
         if dryRun.done, dryRun.fix != nil, activity != nil, lastFlying != nil {
             end()
             return
         }
-        var inputs = Self.inputs(plan: plan, now: now)
+        var inputs = Self.inputs(plan: plan, progress: inFlight.progress, copilot: copilot, atc: atc, weather: weather, now: now)
         inputs.startedAt = startedAt
         // On the ground after flying, still the flight until it is over.
         inputs.phase = flying || lastFlying != nil ? .airborne : .ready
@@ -173,16 +175,17 @@ final class FlightActivity {
     }
 
     /// The app's in-flight models as they stand, for the content.
-    static func inputs(plan: Plan, now: Date) -> FlightActivityContent.Inputs {
+    static func inputs(plan: Plan, progress: InFlight.Progress?, copilot: Copilot, atc: AtcCopilot, weather: String?,
+                       now: Date) -> FlightActivityContent.Inputs {
         FlightActivityContent.Inputs(
-            progress: InFlight.shared.progress,
+            progress: progress,
             routeNm: plan.course?.distanceNm ?? plan.legs.reduce(0) { $0 + $1.distanceNm },
             airplaneChosen: plan.airplaneChosen, usableFuelGal: plan.totals?.usableFuelGal,
-            frequency: FlightActivityContent.frequency(in: AtcCopilot.shared.cards),
-            copilot: Copilot.shared.mode == .off ? nil : Copilot.shared.message,
-            weather: WeatherWatch.shared.latest,
+            frequency: FlightActivityContent.frequency(in: atc.cards),
+            copilot: copilot.mode == .off ? nil : copilot.message,
+            weather: weather,
             now: now,
-            depCategory: plan.briefing?.metars[plan.dep]??.flightCategory,
+            depCategory: plan.briefing?.metars.additionalProperties[plan.dep]??.flightCategory,
             plannedEteMin: plan.totals?.eteMin)
     }
 

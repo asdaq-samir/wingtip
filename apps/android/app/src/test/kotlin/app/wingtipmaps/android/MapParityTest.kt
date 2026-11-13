@@ -62,16 +62,20 @@ class MapParityTest {
 
     @Test
     fun aCategoryIsItsTokensRingOrDotByTheSettingAndNoneIsNoPip() {
-        val halo = AirportWeatherMode.HALO
+        val halo = AirportWeatherMode.CATEGORY
         assertEquals("h#1a7f37", AirportWeatherMarks.pipOf("VFR", halo))
         assertEquals("h#1f6feb", AirportWeatherMarks.pipOf("MVFR", halo))
         assertEquals("h#b3261e", AirportWeatherMarks.pipOf("IFR", halo))
         assertEquals("h#a371f7", AirportWeatherMarks.pipOf("LIFR", AirportWeatherMode.STATION))
-        assertEquals("d#b3261e", AirportWeatherMarks.pipOf("IFR", AirportWeatherMode.DOT))
+        assertEquals("h#b3261e", AirportWeatherMarks.pipOf("IFR", AirportWeatherMode.WIND))
         assertEquals("", AirportWeatherMarks.pipOf("IFR", AirportWeatherMode.OFF))
         assertEquals("", AirportWeatherMarks.pipOf(null, halo))
-        assertEquals(9, AirportWeatherMarks.PIPS.size)
-        assertTrue(AirportWeatherMarks.isDot("d#b3261e"))
+        // A METAR older than the engine's freshness wears the stale grey.
+        val stale = "h" + AirportWeatherMarks.STALE
+        assertEquals(stale, AirportWeatherMarks.pipOf("VFR", halo, stale = true))
+        // None, then each category's ring and dot and the stale grey's.
+        assertEquals(6, AirportWeatherMarks.PIPS.size)
+        assertTrue(stale in AirportWeatherMarks.PIPS)
         assertEquals("#b3261e", AirportWeatherMarks.inkOf("h#b3261e"))
         assertEquals(emptyMap<String, String>(), AirportWeatherMarks.pips(mapOf("KORD" to "VFR"), AirportWeatherMode.OFF))
         assertEquals(mapOf("KORD" to "h#1a7f37"), AirportWeatherMarks.pips(mapOf("KORD" to "VFR", "KMDW" to "XX"), halo))
@@ -163,7 +167,7 @@ class MapParityTest {
     /** The engine's `traffic_fresh` and `destination` stood in for: a
      *  report half a minute old or less fresh, and each step answered a
      *  degree north per nm, so the test reads which step went where; the
-     *  engine itself is held to traffic.json and sphere.json by
+     *  engine itself is held to traffic.json and geodesic.json by
      *  EngineFixturesTest. */
     private open class Steps : TrafficDrawing.Rules {
         val asked = mutableListOf<EngineContract.DestinationInputPointsItem>()

@@ -123,23 +123,24 @@ def test_the_tracks_kept_are_those_round_a_view_and_the_followed_ones(monkeypatc
 def test_the_radar_reaches_the_planners_map_through_the_store(monkeypatch):
     """What ingest keeps is what the planner reads: a view the planner's map
     asked for, read back here as wanted, and the airplane heard over it
-    found by the planner's own read of the store."""
+    found by the planner's own read of the store. The view is kept as its
+    half-degree region, never its own middle (the pilot's position when
+    the map follows the airplane, docs/privacy-inventory.md): O'Hare's
+    20 nm view is the cell round 42N 88W, its radius widened by half the
+    cell's diagonal (21.2 nm) so the circle still holds the whole view."""
     now = 1792461510.0
     monkeypatch.setattr(traffic.radar, "_wall", lambda: now)
     traffic.looked_at(41.98, -87.9, 20)
     swim.WANTED[0] = traffic.radar_wanted()
     try:
-        assert swim.WANTED[0] == ([(41.98, -87.9, 20)], set())
-        assert swim._radar(MESSAGE) == 1
+        assert swim.WANTED[0] == ([(42.0, -88.0, 42)], set())
+        # The wider circle keeps N3429J too, 39 nm out; the planner's read
+        # of the view itself leaves it out.
+        assert swim._radar(MESSAGE) == 2
     finally:
         swim.WANTED[0] = ([], set())
     seen = traffic.radar._elsewhere_near(41.98, -87.9, 20, set())
     assert [p["hex"] for p in seen] == ["a6ed61"] and seen[0]["seen_s"] == 4.0
-
-
-def test_a_flat_chart_distance_is_near_enough():
-    # O'Hare to N3429J's track, 39.2 nm on the ellipsoid (pyproj's WGS84).
-    assert abs(swim._nm(41.98, -87.9, 42.58095, -88.24562) - 39.2) < 0.5
 
 
 def test_tfms_flight_plans_go_to_the_filed_routes_and_notams_to_theirs():

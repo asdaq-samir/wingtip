@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.diagnostics
 
 import android.app.ApplicationExitInfo
+import app.wingtipmaps.android.api.generated.gateway.FaultReport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -9,10 +10,15 @@ import org.junit.Test
 import java.time.Instant
 
 /** The diagnostics' pure parts: the body cut to what the gateway takes
- *  (DiagnosticsController's limits), the exits that are faults, the
+ *  (its shape; the gateway holds the size limits), the exits that are faults, the
  *  crash's file, and the session's frame figures. */
 class DiagnosticsTest {
-    private val fault = Fault("crash", "java.lang.IllegalStateException: boom", "at x.y(Z.kt:1)", "2026-11-09T12:00:00Z")
+    private val fault = FaultReport(
+        kind = "crash",
+        signature = "java.lang.IllegalStateException: boom",
+        detail = "at x.y(Z.kt:1)",
+        at = "2026-11-09T12:00:00Z",
+    )
 
     @Test
     fun aBodySaysTheBuildAndTheSystemAndNothingOfThePilots() {
@@ -23,6 +29,7 @@ class DiagnosticsTest {
         assertEquals("1.0 (42)", body.version)
         assertEquals("Android 16", body.os)
         assertEquals("phone", body.device)
+        assertEquals("app", body.page)
         assertEquals(listOf(fault), body.faults)
         assertEquals(mapOf("frames" to 120.0), body.metrics)
         assertEquals("tablet", DiagnosticsBodies.build("1.0", 1, "16", true, listOf(fault), emptyMap())!!.device)
@@ -34,23 +41,16 @@ class DiagnosticsTest {
     }
 
     @Test
-    fun aBodyIsCutToTheGatewaysLimits() {
+    fun aBodySendsTheValuesRawAndLeavesTheRulesToTheGateway() {
         val many = List(25) { fault.copy(signature = "sig $it\nsecond line", detail = "x".repeat(70_000)) }
-        val metrics = (0 until 35).associate { "m$it" to it * 1e7 } + mapOf("Bad-Name" to 1.0, "nan" to Double.NaN, "neg" to -5.0)
-        val body = DiagnosticsBodies.build("1.0-beta/é", 7, "x".repeat(50), false, many, metrics)!!
-        assertEquals(DiagnosticsBodies.MAX_FAULTS, body.faults.size)
+        val metrics = (0 until 35).associate { "m$it" to it * 1e7 } + mapOf("Bad-Name" to 1.0, "nan" to Double.NaN)
+        val body = DiagnosticsBodies.build("1.0-beta/é", 7, "16", false, many, metrics)!!
+        assertEquals(25, body.faults.size)
         assertEquals("sig 24", body.faults.last().signature)
-        assertTrue(body.faults.all { it.detail.length == DiagnosticsBodies.MAX_DETAIL })
-        assertTrue(body.metrics.size <= DiagnosticsBodies.MAX_METRICS)
-        assertTrue(body.metrics.keys.none { it == "Bad-Name" || it == "nan" })
-        assertTrue(body.metrics.values.all { it in 0.0..DiagnosticsBodies.MAX_METRIC })
-        assertTrue(Regex("[A-Za-z0-9._ ()+-]{1,40}").matches(body.version))
-        assertTrue(body.os.length <= 40)
-    }
-
-    @Test
-    fun aFaultOfAKindTheGatewayDoesNotKnowIsLeftOut() {
-        assertNull(DiagnosticsBodies.build("1.0", 1, "16", false, listOf(fault.copy(kind = "oops")), emptyMap()))
+        assertTrue(body.faults.all { it.detail.length == 70_000 })
+        assertEquals(36, body.metrics.size)
+        assertTrue(body.metrics.keys.none { it == "nan" })
+        assertEquals("1.0-beta/é (7)", body.version)
     }
 
     @Test

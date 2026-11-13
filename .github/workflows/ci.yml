@@ -54,6 +54,7 @@ jobs:
       # first parent is the main it lands on.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 2
       # Cargo's downloads and the ci profile's build, saved by main and the
       # night (docs/CI.md, rule 4), keyed by the lock and then the sources.
@@ -75,7 +76,11 @@ jobs:
       # engine_affected.py reads the first such line's crates.
       - if: steps.affected.outputs.contract == 'true'
         run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine --test contract
-      - run: cargo test --profile ci --manifest-path engine/Cargo.toml ${{ steps.affected.outputs.packages }}
+      - env:
+          PACKAGES: ${{ steps.affected.outputs.packages }}
+        run: |
+          # shellcheck disable=SC2086  # engine_affected.py's -p flags, one a word
+          cargo test --profile ci --manifest-path engine/Cargo.toml $PACKAGES
       # The committed WebAssembly must be what engine/ builds, or the browser
       # runs other rules than the planner and the phones.
       - name: The engine's WebAssembly is the committed one
@@ -110,6 +115,7 @@ jobs:
       # Two deep, for Vitest's --changed (below).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 2
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         id: node
@@ -123,19 +129,17 @@ jobs:
       # The API types, generated from services/planner/openapi.json --
       # test-planner proves that file matches the running app.
       - run: npm run types
+      # The iPhone's API generator (swift-openapi-generator), built once per
+      # version in .tool-versions by api-models-apps.sh.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.cache/wingtip/swift-openapi-generator
+          key: swift-openapi-generator-${{ hashFiles('.tool-versions') }}
       # The phones' API models and engine calls, generated and committed
       # (neither app's build has Node): a stale one fails here, not on a phone.
       - name: The phones' generated models and engine calls are the committed ones
         working-directory: .
-        run: |
-          scripts/build/api-models-apps.sh
-          scripts/build/engine-contract-apps.sh
-          generated="apps/ios/Wingtip/API/Generated apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated apps/ios/Wingtip/Engine/Generated apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated"
-          if [ -n "$(git status --porcelain -- $generated)" ]; then
-            git status --short -- $generated
-            echo "::error title=Phone generated code out of date::the phones' generated API models or engine calls are not what the OpenAPI documents and the engine's contract give: run scripts/build/api-models-apps.sh and scripts/build/engine-contract-apps.sh and commit the files."
-            exit 1
-          fi
+        run: scripts/ci/phones_generated.sh
       # The design tokens, the screens' links and the app icons, generated and
       # committed: each must be what its source makes.
       - name: The design tokens are the committed ones
@@ -168,6 +172,8 @@ jobs:
     if: needs.changes.outputs.test-gateway == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/hub-mirror
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78  # v6.2.0
         id: java
@@ -215,13 +221,15 @@ jobs:
     if: needs.changes.outputs.docs-only != 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/engine-wheel
         with:
           mode: build
 
   # The Python suites, one leg each where `changes` found its filter
   # touched (test-planner, test-wingtip, test-jobs, test-ingest,
-  # test-assistant, test-weather in scripts/areas.yml), each on its own
+  # test-weather in scripts/areas.yml), each on its own
   # requirements (scripts/ci/python_suite.sh); ruff is the guards job's.
   # None to run skips the job, which counts as passed.
   test-python:
@@ -235,6 +243,8 @@ jobs:
         service: ${{ fromJSON(needs.changes.outputs.python) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       # wingtip's and the planner's reference files (data/raw), a week at a
       # time: 131 s fetched against 11 s warm (#452), and no FAA outage fails
       # a suite.
@@ -262,17 +272,33 @@ jobs:
           key: tests-raw-root-v1-${{ steps.week.outputs.week }}
           restore-keys: tests-raw-root-v1-
       - if: (matrix.service == 'planner' && steps.raw-planner.outputs.cache-hit != 'true') || (matrix.service == 'wingtip' && steps.raw-root.outputs.cache-hit != 'true')
-        run: echo "::notice title=Cache miss::tests-raw-${{ matrix.service }} (weekly key)"
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: echo "::notice title=Cache miss::tests-raw-$SERVICE (weekly key)"
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
-      # All but the assistant import wingtip's Rust extension (Claude and
-      # the planner are stood in for there).
-      - if: matrix.service != 'assistant'
+      # All but the X-Plane driver import wingtip's Rust extension.
+      - if: matrix.service != 'xplane'
         uses: ./.github/actions/engine-wheel
         with:
           mode: install
-      - run: scripts/ci/python_suite.sh ${{ matrix.service }}
+      - env:
+          SERVICE: ${{ matrix.service }}
+        run: scripts/ci/python_suite.sh "$SERVICE"
+
+  # The MSFS replay agent's build, format and unit tests (scripts/ci/sim_suite.sh,
+  # dotnet in Docker), when tools/msfs-agent or the trial's files changed.
+  test-sim:
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes]
+    if: needs.changes.outputs.sim == 'true'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: scripts/ci/sim_suite.sh
 
   # What this run has to do, from what changed: the one job the others wait
   # on, a checkout and a diff. On a pull request, what it changes; on main,
@@ -298,26 +324,31 @@ jobs:
       api: ${{ steps.plan.outputs.api }}
       arch: ${{ steps.plan.outputs.arch }}
       site: ${{ steps.plan.outputs.site }}
+      sim: ${{ steps.plan.outputs.sim }}
       deps: ${{ steps.plan.outputs.deps }}
-      docs-only: ${{ steps.docsonly.outputs.only }}
+      docs-only: ${{ steps.docsonly.outputs.code == 'false' }}
     steps:
       # The filter block below is generated from scripts/areas.yml (the
       # guards job checks it is).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       # Words only (docs, Markdown, skills, notebooks): no browser suite.
-      - name: Only docs?
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
         id: docsonly
         if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          PR: ${{ github.event.pull_request.number }}
-        run: |
-          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
-          if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -qvE '^(docs/|ml/notebooks/|\.claude/)|\.md$|^LICENSE$'; then
-            echo "only=true" >> "$GITHUB_OUTPUT"
-            echo "docs only: the browser suite is skipped"
-          fi
+        with:
+          # `every`: a file counts as code when it matches all of these, so
+          # `code` is false when every file changed is words.
+          predicate-quantifier: every
+          filters: |
+            code:
+              - '**'
+              - '!docs/**'
+              - '!ml/notebooks/**'
+              - '!.claude/**'
+              - '!**/*.md'
+              - '!LICENSE'
       - name: The last green commit on main
         id: base
         if: github.event_name != 'pull_request'
@@ -325,17 +356,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
-        run: |
-          sha=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""' || true)
-          status=""
-          [ -n "$sha" ] && status=$(gh api "repos/$REPO/compare/$sha...$GITHUB_SHA" --jq .status || true)
-          if [ "$EVENT" = push ] && { [ "$status" = ahead ] || [ "$status" = identical ]; }; then
-            echo "sha=$sha" >> "$GITHUB_OUTPUT"
-            echo "since the last green commit, ${sha:0:7}"
-          else
-            echo "all=true" >> "$GITHUB_OUTPUT"
-            echo "everything: event $EVENT, last green ${sha:0:7}, compare '$status'"
-          fi
+        run: scripts/ci/changes_since.sh last-green
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
         id: filter
         with:
@@ -355,6 +376,7 @@ jobs:
                 - services/planner/pytest_guards.py
                 - scripts/areas.yml
                 - scripts/areas.py
+                - scripts/ci/changes_since.sh
                 - scripts/dev/format.sh
               deps:
                 - apps/web/package-lock.json
@@ -369,7 +391,6 @@ jobs:
                 - .github/actions/**
               api:
                 - services/planner/openapi.json
-                - services/assistant/openapi.json
                 - services/gateway/openapi.json
                 - .github/api-breaks.txt
               infra:
@@ -379,7 +400,6 @@ jobs:
               docs:
                 - services/gateway/**
                 - services/planner/openapi.json
-                - services/assistant/openapi.json
                 - scripts/build/api-reference.sh
               base:
                 - services/Dockerfile.base
@@ -410,9 +430,6 @@ jobs:
               ingest:
                 - services/ingest/**
                 - services/planner/wingtip/**
-              assistant:
-                - services/assistant/**
-                - services/Dockerfile.base
               weather:
                 - services/weather/**
                 - services/Dockerfile.base
@@ -423,13 +440,11 @@ jobs:
                 - apps/web/**
                 - services/gateway/**
                 - services/planner/openapi.json
-                - services/assistant/openapi.json
                 - engine/contract/**
               test-web:
                 - apps/web/**
                 - .prettierrc.yaml
                 - services/planner/openapi.json
-                - services/assistant/openapi.json
                 - services/gateway/openapi.json
                 - engine/contract/**
                 - scripts/build/api-models-apps.*
@@ -483,18 +498,13 @@ jobs:
               test-planner:
                 - services/planner/**
                 - engine/**
+                - scripts/build/planner_calls.py
+                - scripts/build/planner-calls.sh
               test-ingest:
                 - services/ingest/**
                 - services/planner/wingtip/**
                 - services/planner/requirements-wingtip.txt
                 - engine/**
-              test-assistant:
-                - services/assistant/**
-                - .ruff.toml
-                - services/planner/openapi.json
-                - services/planner/app/generated/**
-                - engine/contract/**
-                - scripts/build/assistant*
               test-weather:
                 - services/weather/**
                 - services/planner/wingtip/**
@@ -519,7 +529,6 @@ jobs:
                 - services/planner/tests_wingtip/fixtures/native/**
               test-gateway:
                 - services/gateway/**
-                - services/assistant/openapi.json
                 - services/planner/openapi.json
                 - apps/web/src/lib/fixtures/aircraftForm.json
               ios:
@@ -549,6 +558,14 @@ jobs:
                 - apps/web/public/privacy.html
                 - apps/web/public/terms.html
                 - apps/web/public/support.html
+              sim:
+                - tools/msfs-agent/**
+                - tools/xplane-driver/wingtip_replay/shots.schema.json
+                - infra/sim-trial/**
+                - scripts/ci/sim_suite.sh
+              test-xplane:
+                - tools/xplane-driver/**
+                - scripts/dev/xplane-trial.sh
               arch:
                 - '**/*.ts'
                 - '**/*.tsx'
@@ -562,6 +579,8 @@ jobs:
                 - scripts/ci/brand_guard.py
                 - scripts/ci/brand_guard_allow.txt
                 - design/tokens.json
+                - scripts/ci/shared_parts_guard.py
+                - scripts/ci/shared_parts_guard_allow.txt
                 - apps/web/src/*.css
                 - apps/web/src/**/*.css
                 - scripts/ci/dead_python.sh
@@ -586,6 +605,10 @@ jobs:
                 - README.md
                 - docs/*.md
                 - .claude/skills/checks/SKILL.md
+                - '**/*.mjs'
+                - '**/*.cs'
+                - '**/*.kts'
+                - scripts/ci/**
               # END generated
       - name: What this run builds and tests
         id: plan
@@ -593,33 +616,7 @@ jobs:
           CHANGED: ${{ steps.filter.outputs.changes }}
           ALL: ${{ steps.base.outputs.all }}
           EVENT: ${{ github.event_name }}
-        run: |
-          python3 - <<'EOF'
-          import json, os
-          changed = set(json.loads(os.environ.get("CHANGED") or "[]"))
-          everything = os.environ.get("ALL") == "true" or "global" in changed
-          # Every image this workflow builds, each a target of
-          # .github/images.hcl, which has its context and Dockerfile.
-          IMAGES = ("base", "ml", "retrain", "charts", "planner", "ingest", "assistant", "weather", "gateway")
-          due = lambda name: everything or name in changed
-          images = [{"service": s} for s in IMAGES if due(s)]
-          outputs = {"images": json.dumps(images)}
-          for name in ("test-web", "test-engine", "test-gateway", "docs", "infra", "api", "arch", "site", "deps"):
-              outputs[name] = "true" if due(name) else "false"
-          # test-python's legs: the suites whose test-<leg> filter matched.
-          outputs["python"] = json.dumps([s for s in ("planner", "wingtip", "jobs", "ingest", "assistant", "weather") if due(f"test-{s}")])
-          # The phones' builds gate a merge (#499): a pull request, or a run
-          # started by hand on one's branch. Main's pushes and the nights
-          # have native-android.yml and native-ios.yml for them, so they
-          # are not run twice there.
-          gate = os.environ["EVENT"] in ("pull_request", "workflow_dispatch")
-          for name in ("android", "ios"):
-              outputs[name] = "true" if gate and due(name) else "false"
-          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
-              for key, value in outputs.items():
-                  out.write(f"{key}={value}\n")
-          print(json.dumps({**outputs, "images": [i["service"] for i in images]}, indent=2))
-          EOF
+        run: python3 scripts/ci/plan.py
 
   # The browser suite (apps/web/e2e, Playwright) against the stack a pilot
   # uses: the gateway, planner and weather images e2e-images built for this
@@ -656,6 +653,8 @@ jobs:
         shard: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]' || '[1, 2]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/hub-mirror
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
         with:
@@ -672,48 +671,7 @@ jobs:
         env:
           REGISTRY: ghcr.io/${{ github.repository }}
           FULL_BROWSERS: ${{ (github.event_name == 'schedule' || inputs.standards) && '1' || '' }}
-        run: |
-          # apps/web/dist: where the page will be built, mounted into the
-          # gateway -- made now, so that Docker does not make it, as root.
-          mkdir -p /tmp/e2e-out apps/web/dist
-          # The caches are restored into tmpfs: on a runner whose disk writes
-          # about 230 MB/s they competed with the images for it.
-          mkdir -p data/raw apps/web/node_modules
-          sudo mount -t tmpfs -o "size=8g,mode=0777,uid=$(id -u),gid=$(id -g)" tmpfs data/raw
-          sudo mount -t tmpfs -o "size=2g,mode=0777,uid=$(id -u),gid=$(id -g)" tmpfs apps/web/node_modules
-          # Write-back kept small, so a container start's fsync does not wait
-          # behind gigabytes of unpacked images (20-27 s a service, run 36743209328).
-          sudo sysctl -q -w vm.dirty_bytes=$((256 << 20)) vm.dirty_background_bytes=$((64 << 20))
-          T0=$(date +%s)
-          export T0
-          echo "T0=$T0" >> "$GITHUB_ENV"
-          nohup vmstat -n 1 180 > /tmp/e2e-out/vmstat.log 2>&1 < /dev/null &
-          echo "0 the runner's disk: $(lsblk -e 7 -dno NAME,MODEL | xargs)" >> /tmp/e2e-out/timeline
-          cat > /tmp/e2e-out/playwright.sh <<'EOF'
-          digest=$(docker buildx imagetools inspect --raw "$PLAYWRIGHT_IMAGE" | sha256sum | cut -c1-16)
-          until [ -f /tmp/e2e-out/small.pulled ]; do sleep 0.5; done
-          if [ -z "$FULL_BROWSERS" ] && docker pull -q "$REGISTRY/e2e-playwright:$digest" > /dev/null 2>&1; then
-            docker tag "$REGISTRY/e2e-playwright:$digest" "$PLAYWRIGHT_IMAGE" && echo "its slim copy"
-          else
-            docker pull -q "$PLAYWRIGHT_IMAGE" > /dev/null && echo "the image itself"
-          fi
-          EOF
-          cat > /tmp/e2e-out/public.sh <<'EOF'
-          mark() { echo "$(($(date +%s) - T0)) $*" >> /tmp/e2e-out/timeline; }
-          compose() { docker compose -f docker-compose.yml -f infra/docker-compose.ci.yml "$@"; }
-          compose pull -q db > /tmp/e2e-out/db.log 2>&1 &
-          db=$!
-          compose pull -q mailpit > /tmp/e2e-out/net.log 2>&1
-          wait $db
-          mark "Postgres and Mailpit pulled"
-          touch /tmp/e2e-out/small.pulled
-          compose up -d mailpit >> /tmp/e2e-out/net.log 2>&1
-          r=$?; mark "Mailpit up"; echo $r > /tmp/e2e-out/net.exit
-          compose up -d db >> /tmp/e2e-out/db.log 2>&1
-          r=$?; mark "Postgres up"; echo $r > /tmp/e2e-out/db.exit
-          EOF
-          nohup bash /tmp/e2e-out/public.sh > /dev/null 2>&1 < /dev/null &
-          nohup bash -c 'bash /tmp/e2e-out/playwright.sh > /tmp/e2e-out/playwright.log 2>&1; r=$?; echo "$(($(date +%s) - T0)) the Playwright image, $(tail -1 /tmp/e2e-out/playwright.log)" >> /tmp/e2e-out/timeline; echo $r > /tmp/e2e-out/playwright.exit' > /dev/null 2>&1 < /dev/null &
+        run: scripts/ci/e2e_public_images.sh
       # The three images this commit runs, each the one e2e-images built for its
       # key (.github/e2e-keys.sh), nearly always by an earlier commit's run. A
       # new key: pull the last `e2e` image (most of its layers) and then the new
@@ -726,88 +684,7 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           GH_TOKEN: ${{ github.token }}
           BUILDX_NO_DEFAULT_ATTESTATIONS: "1"
-        run: |
-          cat > /tmp/e2e-out/stack.sh <<'EOF'
-          mark() { echo "$(($(date +%s) - T0)) $*" >> /tmp/e2e-out/timeline; }
-          there() { docker buildx imagetools inspect --raw "$1" > /dev/null 2>&1; }
-          # Until e2e-images has pushed $1. After a minute, ask after that
-          # job every twenty seconds: once it has ended, it never will.
-          await() {
-            local built
-            until there "$1"; do
-              sleep 2
-              if [ "$SECONDS" -ge 60 ]; then
-                built=$(gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/jobs?per_page=100" \
-                  --jq '.jobs[] | select(.name == "build (e2e)") | .conclusion // "running"')
-                if [ "$built" != running ] && [ -n "$built" ] && ! there "$1"; then
-                  echo "no $1, and build (e2e) ended: $built"
-                  return 1
-                fi
-                sleep 18
-              fi
-            done
-          }
-          # Until Postgres and Mailpit are pulled, which go first.
-          small() { until [ -f /tmp/e2e-out/small.pulled ]; do sleep 0.5; done; }
-          # One image, $1, for its key, $2.
-          fetch() {
-            local ref=$REGISTRY/$1 built=yes
-            there "$ref:e2e-$2" || built=""
-            small
-            if [ -z "$built" ]; then
-              docker pull -q "$ref:e2e" > /dev/null 2>&1
-              await "$ref:e2e-$2" || return 1
-            fi
-            docker pull -q "$ref:e2e-$2" > /dev/null || return 1
-            docker tag "$ref:e2e-$2" "wingtip-$1:ci"
-            mark "$1 pulled"
-          }
-          # The page, for its key, $1: copied out of the image e2e-images
-          # made of it into apps/web/dist, which the gateway serves.
-          page() {
-            local ref=$REGISTRY/gateway:e2e-page-$1
-            await "$ref" || return 1
-            docker pull -q "$ref" > /dev/null || return 1
-            docker create --name e2e-page "$ref" none > /dev/null || return 1
-            docker cp e2e-page:/page/. apps/web/dist/ > /dev/null || return 1
-            docker rm e2e-page > /dev/null
-            mark "the page copied"
-          }
-          start() {
-            local after=net
-            if [ "$1" = planner ]; then
-              until [ -f /tmp/e2e-out/data.ready ]; do sleep 1; done
-            elif [ "$1" = gateway ]; then
-              after=db
-            fi
-            until [ -f /tmp/e2e-out/$after.exit ]; do sleep 1; done
-            [ "$(cat /tmp/e2e-out/$after.exit)" = 0 ] || return 1
-            mark "$1 starting"
-            docker compose -f docker-compose.yml -f infra/docker-compose.ci.yml up -d --no-build "$1" || return 1
-            mark "$1 started"
-            if [ "$1" = planner ]; then
-              nohup bash /tmp/e2e-out/first-reads.sh > /tmp/e2e-out/first-reads.log 2>&1 < /dev/null &
-            fi
-          }
-          keys=$(bash .github/e2e-keys.sh) || exit 1
-          while read -r name key; do
-            if [ "$name" != page ]; then
-              { fetch "$name" "$key" && start "$name"; } &
-            else
-              page "$key" &
-            fi
-          done <<< "$keys"
-          failed=0
-          for job in $(jobs -p); do wait "$job" || failed=1; done
-          exit "$failed"
-          EOF
-          cat > /tmp/e2e-out/first-reads.sh <<'EOF'
-          until curl -sf http://localhost:8084/ | grep -q '"warm":true'; do sleep 1; done
-          curl -sf -o /dev/null --max-time 600 "http://localhost:8084/api/navlog?dep=C81&dest=KDLH"
-          echo "$(($(date +%s) - T0)) the nav log read, the first time (curl $?)" >> /tmp/e2e-out/timeline
-          EOF
-          nohup bash -c 'bash /tmp/e2e-out/stack.sh > /tmp/e2e-out/stack.log 2>&1; echo $? > /tmp/e2e-out/stack.exit' > /dev/null 2>&1 < /dev/null &
-
+        run: scripts/ci/e2e_stack.sh
       # The planner's two caches first, since it starts once they are in.
       # data/raw's entries, not data/raw itself, so the charts are not archived
       # twice; the same list is in the step that saves it.
@@ -901,11 +778,12 @@ jobs:
         if: matrix.shard == 1
         env:
           READER: ${{ hashFiles('services/planner/wingtip/chartvision.py', 'services/planner/app/detection.py') }}
+          RESTORED: ${{ steps.charts.outputs.cache-matched-key || 'no chart cache' }}
         run: |
           cycle=$(curl -sf http://localhost:8084/api/status | python3 -c 'import json, sys; print(json.load(sys.stdin)["charts"]["cycle"])')
           echo "cycle=$cycle" >> "$GITHUB_OUTPUT"
           echo "key=planner-charts-v4-$cycle-${READER:0:16}" >> "$GITHUB_OUTPUT"
-          echo "serving cycle $cycle; restored ${{ steps.charts.outputs.cache-matched-key || 'no chart cache' }}"
+          echo "serving cycle $cycle; restored $RESTORED"
       # What the planner has to work with, on the commit's checks: a
       # job's log takes admin rights to read, an annotation does not.
       # "Warm" means the warm-up finished, not that every fetch in it
@@ -974,7 +852,10 @@ jobs:
         env:
           IOS_AUDIT: ${{ (github.event_name == 'schedule' || inputs.standards) && '1' || '' }}
           SCREENSHOTS: /out/screens
-          PROJECTS: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '' || '--project=mobile --grep "@smoke|@flight-critical"' }}
+          # Every project at night or by hand, the smoke set otherwise. (`cond && '' || x`
+          # is x whatever cond is: '' is false, so it is written the other way round.)
+          PROJECTS: ${{ !(github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '--project=mobile --project=webkit-phone --grep "@smoke|@flight-critical"' || '' }}
+          SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
           # The JSON report, for the flaky tests below (those that passed
           # on their retry): listed in the nightly issue, not failing the run.
           PLAYWRIGHT_JSON_OUTPUT_NAME: /out/results.json
@@ -984,7 +865,7 @@ jobs:
           docker run --rm --network host -e CI=1 -e IOS_AUDIT -e SCREENSHOTS -e PLAYWRIGHT_JSON_OUTPUT_NAME \
             -v "$PWD/apps/web:/w" -v /tmp/e2e-out:/out -w /w \
             "$PLAYWRIGHT_IMAGE" \
-            bash -o pipefail -c "timeout 1800 npx playwright test $PROJECTS --shard=${{ matrix.shard }}/${{ strategy.job-total }} --reporter=list,github,json 2>&1 | tee /out/playwright.log"
+            bash -o pipefail -c "timeout 1800 npx playwright test $PROJECTS --shard=$SHARD --reporter=list,github,json 2>&1 | tee /out/playwright.log"
       # A test that failed and then passed on its retry (playwright.config.ts
       # retries) passes the run. Kept three days, for the nightly
       # flake-report job to list in the "Flaky tests (nightly)" issue, a
@@ -1127,6 +1008,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
         with:
           registry: ghcr.io
@@ -1240,6 +1123,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
         # Docker Hub through Google's mirror first (Hub's pull limit failed
         # every image build from 2026-10-09 20:47).
@@ -1276,6 +1161,8 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294  # v5.0.0
         with:
           fail-on-severity: high
@@ -1301,6 +1188,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
@@ -1342,6 +1231,8 @@ jobs:
           SITE: ${{ needs.changes.outputs.site }}
           WEB: ${{ needs.changes.outputs.test-web }}
           ENGINE: ${{ needs.changes.outputs.test-engine }}
+          IOS: ${{ needs.changes.outputs.ios }}
+          ANDROID: ${{ needs.changes.outputs.android }}
           FLIGHT: ${{ needs.engine-wheel.result == 'success' }}
         run: scripts/ci/guards.sh
       - if: github.event_name != 'pull_request' && steps.cargo.outputs.cache-primary-key != '' && steps.cargo.outputs.cache-hit != 'true'
@@ -1363,6 +1254,8 @@ jobs:
     if: needs.changes.outputs.docs == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
@@ -1399,7 +1292,7 @@ jobs:
       # by Redoc (scripts/build/api-reference.sh). An artifact, not a
       # committed page: GitHub shows .html as source, and the page's bytes
       # change with Redoc's bundle.
-      - name: API reference (planner, gateway, assistant)
+      - name: API reference (planner, gateway)
         run: scripts/build/api-reference.sh "$RUNNER_TEMP"/api-reference
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
@@ -1415,6 +1308,8 @@ jobs:
     if: needs.changes.outputs.infra == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/hub-mirror
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
@@ -1473,13 +1368,14 @@ jobs:
       # so the comparison is with exactly the main this would land on.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 2
       - uses: ./.github/actions/hub-mirror
       - name: oasdiff breaking, each document against main's
         run: |
           docker pull -q "$OASDIFF_IMAGE"
           status=0
-          for doc in services/planner/openapi.json services/assistant/openapi.json services/gateway/openapi.json; do
+          for doc in services/planner/openapi.json services/gateway/openapi.json; do
             mkdir -p "/tmp/base/$(dirname "$doc")"
             if ! git show "HEAD^1:$doc" > "/tmp/base/$doc" 2>/dev/null; then
               echo "$doc is new: nothing on main to break"
@@ -1508,6 +1404,8 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         continue-on-error: true
         with:
@@ -1580,6 +1478,8 @@ jobs:
         suite: [wingtip, planner]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       # The reference data the test jobs keep, restored with the same paths
       # they save (a cache's paths are part of its key), never saved here.
       - name: The week, for the reference data's cache
@@ -1633,6 +1533,8 @@ jobs:
         working-directory: apps/web
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version-file: .tool-versions
@@ -1667,6 +1569,8 @@ jobs:
       actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         continue-on-error: true
         with:
@@ -1707,6 +1611,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          persist-credentials: false
           sparse-checkout: scripts/ci
       - run: python3 scripts/ci/sources_answer.py
 
@@ -1715,7 +1620,7 @@ jobs:
   # (scripts/ci/ci_budget.py). Last, after every job; seconds.
   budget:
     name: CI budget
-    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, passed]
+    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, passed]
     if: ${{ !cancelled() }}
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
@@ -1728,6 +1633,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          persist-credentials: false
           sparse-checkout: scripts/ci
       - name: Minutes and cache misses, against the budget
         env:
@@ -1744,7 +1650,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-gateway, infra, api-compat, dependency-review, android, ios]
+    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, android, ios]
     if: always()
     steps:
       - name: Every job passed or was not needed

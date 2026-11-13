@@ -249,3 +249,23 @@ enum StripData {
         return out
     }
 }
+
+/// The airplane's place on the strip (StripData.positionAlong), worked out
+/// once a fix and route: the strip's body runs again for many other
+/// reasons (the verdict, the answer, the radio), and asked the engine
+/// again each time.
+@MainActor
+final class StripPlace {
+    typealias Along = Result<(leg: Int, along: Double)?, any Error>
+    private var last: (fix: OwnShip.Fix, points: [StripPoint], along: Along)?
+
+    func along(_ points: [StripPoint], fix: OwnShip.Fix) -> Along {
+        if let last, last.fix == fix, last.fix.coordinate.latitude == fix.coordinate.latitude,
+           last.fix.coordinate.longitude == fix.coordinate.longitude, last.points == points {
+            return last.along
+        }
+        let along = Along { try StripData.positionAlong(points, fix: fix.coordinate) }
+        last = (fix, points, along)
+        return along
+    }
+}

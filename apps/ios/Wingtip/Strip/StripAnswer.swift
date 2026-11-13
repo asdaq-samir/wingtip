@@ -3,11 +3,11 @@ import SwiftUI
 /// The assistant's last answer, a card over the strip: the question, the
 /// answer as it streams with the reports it rests on as chips, each
 /// opening the report as sent; Stop while it answers, and ✕ forgetting
-/// the conversation. The assistant is the app's own (AssistantClient);
+/// the conversation. The answer is this iPhone's (AskScreenModel);
 /// the Brief's Ask (AskView) draws the whole conversation, this the last
 /// turn.
 struct StripAnswerCard: View {
-    let client: AssistantClient
+    let client: AskScreenModel
     let onClose: () -> Void
     @Environment(\.chartInk) private var ink
     @State private var source: AssistantSource?
@@ -38,13 +38,6 @@ struct StripAnswerCard: View {
             if let answer, !answer.content.isEmpty {
                 Text(answer.content).font(ChartInk.text).textSelection(.enabled)
                     .accessibilityLabel("The assistant: \(answer.content)")
-            }
-            if let status = client.status {
-                HStack(spacing: WingtipSpace.sm) {
-                    ProgressView().controlSize(.small)
-                    Text(status).font(ChartInk.note).foregroundStyle(ink.muted)
-                }
-                .accessibilityElement(children: .combine)
             }
             if let answer, !answer.sources.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {

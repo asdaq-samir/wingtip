@@ -31,9 +31,10 @@ const ORIGIN = "https://wingtip.test";
 
 /** As much of a MapLibre map as the filters touch. */
 function fakeMap(ids: string[]) {
-  const set = { filter: new Map<string, unknown>(), layout: new Map<string, unknown>() };
+  const set = { filter: new Map<string, unknown>(), layout: new Map<string, unknown>(), state: new Map<string, unknown>() };
   const map = {
     style: {},
+    setGlobalStateProperty: vi.fn((k: string, v: unknown) => set.state.set(k, v)),
     getLayer: (id: string) => (ids.includes(id) ? { id } : undefined),
     setFilter: vi.fn((id: string, f: unknown) => set.filter.set(id, f)),
     setLayoutProperty: vi.fn((id: string, k: string, v: unknown) => set.layout.set(`${id}.${k}`, v)),
@@ -57,6 +58,7 @@ describe("the overlay tiles' layers", () => {
       "airspace-B-band",
       "airspace-B",
       "airspace-labels",
+      "sua-labels",
     ]);
     expect(layers.marks!.map((l) => l.id)).toEqual([
       "navaids",
@@ -95,49 +97,56 @@ describe("the overlay tiles' layers", () => {
 
   it("turn the airspace, its bands and labels, and the special-use areas off with the Airspace setting", () => {
     expect(AIRSPACE_TILE_LAYERS).toEqual(
-      expect.arrayContaining(["airspace-C-band", "airspace-C", "airspace-labels", "sua-band", "sua-line"]),
+      expect.arrayContaining(["airspace-C-band", "airspace-C", "airspace-labels", "sua-band", "sua-line", "sua-labels"]),
     );
   });
 
   it("leave the open card's field's ident to the ring's own, larger one", () => {
     const { map, set } = fakeMap(["airports"]);
     setSelectedAirport(map, "KMSN");
-    expect(set.layout.get("airports.text-field")).toEqual(["case", ["==", ["get", "ident"], "KMSN"], "", ["get", "ident"]]);
+    expect(set.state.get("selectedAirport")).toBe("KMSN");
     setSelectedAirport(map, null);
-    expect(set.layout.get("airports.text-field")).toEqual(["get", "ident"]);
+    expect(set.state.get("selectedAirport")).toBeNull();
+    const airports = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
+    // Hidden by its paint, so the tiles are not laid out again at a tap.
+    expect(airports.layout!["text-field"]).toEqual(["get", "ident"]);
+    expect(airports.paint!["text-opacity"]).toEqual(["case", ["==", ["get", "ident"], ["global-state", "selectedAirport"]], 0, 1]);
   });
 
   it("hide the armed services' and private fields unless asked for, and the route's own fields", () => {
     const { map, set } = fakeMap(["airports", "vfr-waypoints", "airspace-B", "navaids"]);
     usePreferences.setState({ military: false, privateFields: false, airspace: true, navaids: false });
     applyOverlayFilters(map);
-    expect(set.filter.get("airports")).toEqual(["all", ["!=", ["get", "military"], "military"], ["!=", ["get", "use"], "private"]]);
+    expect(set.state.get("showMilitary")).toBe(false);
+    expect(set.state.get("showPrivate")).toBe(false);
     expect(set.layout.get("airspace-B.visibility")).toBe("visible");
     expect(set.layout.get("navaids.visibility")).toBe("none");
-    setOverlayExclusion(map, "airports", ["KDLH", "C81"]);
-    expect(set.filter.get("airports")).toEqual([
-      "all",
-      ["!=", ["get", "military"], "military"],
-      ["!=", ["get", "use"], "private"],
-      ["!", ["in", ["get", "ident"], ["literal", ["C81", "KDLH"]]]],
-    ]);
-    usePreferences.setState({ military: true, privateFields: true });
-    setOverlayExclusion(map, "airports", []);
-    expect(set.filter.get("airports")).toEqual(["all"]);
+    setOverlayExclusion(map, "airports", ["KDLH", "C81", "KDLH"]);
+    expect(set.state.get("routeAirports")).toEqual(["C81", "KDLH"]);
+    setOverlayExclusion(map, "waypoints", ["VPXYZ"]);
+    expect(set.state.get("routeWaypoints")).toEqual(["VPXYZ"]);
+    const marks = overlayStyle(TILES, ORIGIN).layers.marks!;
+    const airports = marks.find((l) => l.id === "airports") as SymbolLayerSpecification;
+    expect(JSON.stringify(airports.filter)).toContain(JSON.stringify(["global-state", "routeAirports"]));
+    expect(JSON.stringify(airports.filter)).toContain(JSON.stringify(["global-state", "showMilitary"]));
+    for (const id of ["vfr-waypoints", "vfr-waypoints-idents"])
+      expect(JSON.stringify((marks.find((l) => l.id === id) as SymbolLayerSpecification).filter)).toContain(
+        JSON.stringify(["global-state", "routeWaypoints"]),
+      );
   });
 
-  it("join each field's weather pip onto its symbol by ident", () => {
+  it("join each field's weather pip onto its symbol by ident, from the map's state", () => {
     const { map, set } = fakeMap(["airports"]);
     setAirportWeather(
       map,
       new Map([
         ["KORD", "#1a7f37"],
-        ["KMDW", "#1a7f37"],
         ["KDLH", "#b3261e"],
       ]),
     );
-    const icon = JSON.stringify(set.layout.get("airports.icon-image"));
-    expect(icon).toContain(JSON.stringify(["match", ["get", "ident"], ["KORD", "KMDW"], "#1a7f37", ["KDLH"], "#b3261e", ""]));
+    expect(set.state.get("airportWeather")).toEqual({ KORD: "#1a7f37", KDLH: "#b3261e" });
+    const airports = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
+    expect(JSON.stringify(airports.layout!["icon-image"])).toContain(JSON.stringify(["global-state", "airportWeather"]));
   });
 });
 

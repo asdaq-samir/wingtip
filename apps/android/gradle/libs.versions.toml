@@ -1,5 +1,11 @@
 # Every version the native Android app builds with, in one place
-# (docs/NATIVE-ANDROID.md), each the newest stable one on 2026-11-09.
+# (docs/NATIVE-ANDROID.md), each the newest one on 2026-11-12, a release
+# candidate or an alpha where that is the newest (the owner: "use the
+# latest libraries and components for each OS even if it's a rc"), each
+# checked that day against its own release page: AGP on Google Maven
+# (com.android.tools.build:gradle), Kotlin on JetBrains/kotlin's GitHub
+# releases (v2.5.0-RC, 2026-11-11), the Compose BOM, Lifecycle, Navigation
+# 3 and Activity on Google Maven.
 # AGP 9 compiles the Kotlin itself (its built-in Kotlin), so the Kotlin
 # Android plugin is not applied; Kotlin's own Compose compiler and
 # serialization plugins ride on Kotlin's version; the Compose libraries
@@ -7,25 +13,26 @@
 # construction and carry no version of their own here -- all but
 # Material 3, below.
 [versions]
-agp = "9.5.1"
-kotlin = "2.4.21"
+agp = "9.6.0-alpha03"
+kotlin = "2.5.0-RC"
 coreKtx = "1.19.1"
-activityCompose = "1.13.0"
-lifecycle = "2.11.0"
-composeBom = "2026.09.00"
-# Material 3 off the BOM, at the release candidate that makes Material 3
+activityCompose = "1.14.0-alpha03"
+lifecycle = "2.12.0-alpha05"
+# Compose's alpha BOM, the newest (2026.11.00): Compose 1.13.0-rc01, and
+# Material 3 1.5.0-rc01, the release candidate that makes Material 3
 # Expressive public (the owner, 2026-11-09: "Avoid building our own and
-# let's use rc01"): the expressive motion scheme, button groups, floating
-# toolbars, the loading indicator, the buttons' press shapes and the
-# emphasized type roles, all of which 1.4.0 (the BOM's) keeps internal.
-# It needs Compose 1.12.0's foundation, ui and animation, which the BOM's
-# 1.12.1 already is, so nothing else leaves the BOM. Bump to 1.5.0
-# stable when it is released (docs/NATIVE-ANDROID.md).
-material3 = "1.5.0-rc01"
-serialization = "1.12.0"
+# let's use rc01"), and Material's adaptive 1.4.0-alpha03 with its
+# Navigation 3 scenes (adaptive-navigation3), so Material 3 is back on the
+# BOM and nothing of Compose carries a version of its own here.
+composeBom = "2026.11.00"
+serialization = "1.13.0"
 coroutines = "1.11.0"
 okhttp = "5.5.1"
-maplibre = "13.7.1"
+# JNA, which the engine's generated Kotlin (uniffi-bindgen, engine/bindings/ffi)
+# loads and calls the engine's library through: its Android archive, the
+# newest (5.19.1), with the 16 KB-page fixes of 5.16 and 5.17.
+jna = "5.19.1"
+maplibre = "2026.11.2-globe"
 material = "1.14.0"
 junit = "4.13.2"
 androidxTestRunner = "1.7.0"
@@ -53,9 +60,11 @@ work = "2.12.0"
 # Glance, for the home screen's Next Flight widget (widget/), drawn in
 # Material 3's roles from the Wingtip palettes.
 glance = "1.2.0"
-# Navigation Compose, for the docked sheet's pages (ui/PlanSheet.kt's
-# NavHost): its back stack, transitions and predictive back.
-navigation = "2.10.2"
+# Navigation 3, for the sheet's cards and pages (ui/SheetPages.kt's
+# NavDisplay over MapViewModel's back stack): its transitions and
+# predictive back, and Material's list-detail scene on a wide window. The
+# newest release, an alpha (Google Maven, 2026-11-12).
+navigation3 = "1.3.0-alpha04"
 # AndroidX's SplashScreen, so Android 8 to 11 show the launch's mark as 12
 # and later do (res/values/themes.xml).
 coreSplashscreen = "1.2.0"
@@ -78,25 +87,48 @@ mlkitTextRecognition = "19.0.2"
 # train, 1.5.0 the newest stable on Google Maven on 2026-11-10; UiAutomator
 # for the generator's taps (2.4.1, the same day); ProfileInstaller, which
 # installs the profile on a phone that did not get it from Play (1.4.1).
+# Hilt, the app's dependency injection (the owner, 2026-11-12): Dagger's
+# Hilt 2.60.1 (google/dagger's GitHub releases, dagger-2.60.1, the newest
+# on 2026-11-12), its compiler through KSP, and AndroidX's Hilt 1.4.0
+# (Google Maven) for hiltViewModel in Compose.
+hilt = "2.60.1"
+androidxHilt = "1.4.0"
 benchmark = "1.5.0"
 uiautomator = "2.4.1"
 profileinstaller = "1.4.1"
+# Coil 3, the images (a field's pictures on its card, ui/PhotoCarousel.kt):
+# decoded off the main thread, sized to where they are drawn, kept in
+# memory and on disk, fetched through the app's OkHttp client so the
+# gateway's paths carry the session. 3.6.3, the newest on Maven Central
+# and GitHub (coil-kt/coil releases, 2026-09-18).
+coil = "3.6.3"
+# Telephoto's zoomable images and Modifier.zoomable (saket/telephoto):
+# pinch, double tap, fling and over-zoom as Google Photos has them, for the
+# full-screen picture and the airport diagram. 0.19.0, the newest release on
+# GitHub (2026-04-02); Maven Central's "1.0.0-alpha02" is an older 2023
+# preview on Coil 2, not a newer one.
+telephoto = "0.19.0"
+# Retrofit 3, the calls to our servers: the interfaces openapi-generator
+# writes from their OpenAPI documents (api/generated/client,
+# scripts/build/api-models-apps.sh), read with kotlinx.serialization, on
+# the app's OkHttp client. 3.0.0, the newest on Maven Central (2025-05-15).
+retrofit = "3.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
-androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom-alpha", version.ref = "composeBom" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
-# Material's adaptive panes, the BOM's versions (1.3.0, the newest stable
-# on 2026-11-09): the search's list and a card side by side on a tablet or
-# an unfolded phone (ListDetailPaneScaffold).
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+# Material's adaptive panes, the BOM's versions: the search's list and a
+# card side by side on a tablet or an unfolded phone, as Navigation 3's
+# list-detail scene (ListDetailSceneStrategy).
 androidx-compose-material3-adaptive-layout = { group = "androidx.compose.material3.adaptive", name = "adaptive-layout" }
-androidx-compose-material3-adaptive-navigation = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation" }
+androidx-compose-material3-adaptive-navigation3 = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation3" }
 # Compose's instrumented tests, and Google's Accessibility Test Framework
 # run over a composition's nodes (enableAccessibilityChecks), the BOM's
 # versions: the screens' TalkBack labels, roles and touch targets held in
@@ -112,6 +144,7 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 # MapLibre Native: the open native map, no key and no account, which is
 # why it draws the chart rather than Google Maps (docs/NATIVE-ANDROID.md).
@@ -155,18 +188,36 @@ mlkit-genai-prompt = { group = "com.google.mlkit", name = "genai-prompt", versio
 play-services-mlkit-text-recognition = { group = "com.google.android.gms", name = "play-services-mlkit-text-recognition", version.ref = "mlkitTextRecognition" }
 # Play services' Task awaited in a coroutine (the text recognizer's answer).
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
-androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
+androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
 androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmark" }
 androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+androidx-hilt-lifecycle-viewmodel-compose = { group = "androidx.hilt", name = "hilt-lifecycle-viewmodel-compose", version.ref = "androidxHilt" }
 androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
+# OkHttp's own coroutine call (Call.executeAsync), its release train's:
+# cancelled with the coroutine, and the response closed if it lands after.
+okhttp-coroutines = { group = "com.squareup.okhttp3", name = "okhttp-coroutines", version.ref = "okhttp" }
+# Coil 3's Compose images and its OkHttp fetcher (the app's one client).
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
+# Telephoto: Coil 3's AsyncImage made zoomable, and Modifier.zoomable for
+# any content (the diagram with the airplane drawn on it).
+telephoto-zoomable-image-coil3 = { group = "me.saket.telephoto", name = "zoomable-image-coil3", version.ref = "telephoto" }
+telephoto-zoomable = { group = "me.saket.telephoto", name = "zoomable", version.ref = "telephoto" }
+# Retrofit and its kotlinx.serialization converter.
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 android-test = { id = "com.android.test", version.ref = "agp" }
 androidx-baselineprofile = { id = "androidx.baselineprofile", version.ref = "benchmark" }

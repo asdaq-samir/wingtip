@@ -64,7 +64,7 @@ struct FieldRunner {
             if let at = ownShip.fix?.coordinate, let near = try? await Planner.nearest(lat: at.latitude, lon: at.longitude, limit: 1).first {
                 dep = near.ident
             }
-            if dep.isEmpty, let home = session.pilot?.homeBase ?? WelcomeModel.savedHome(), !home.isEmpty { dep = home.uppercased() }
+            if dep.isEmpty, let home = session.pilot?.homeBase ?? FirstFlightModel.savedHome(), !home.isEmpty { dep = home.uppercased() }
             if dep.isEmpty { return "Say where from too: \"C81 KDLH\", or allow your position." }
         }
         if dep == dest, stops.isEmpty { return "\(dest) is where you are. Say somewhere to fly to." }

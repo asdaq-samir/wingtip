@@ -1,13 +1,15 @@
 import SwiftUI
 
-/// The map's own buttons at its top right, as Maps has them and the web
-/// app's MyPositionButton: the location arrow, filled while the map
+/// The map's own buttons, riding the sheet's top at the right on the
+/// iPhone and at the top right beside the iPad's sidebar (MapButtonsDock),
+/// as the web app's MyPositionButton: the location arrow, filled while the map
 /// follows own ship and an outline otherwise, and under it the sparkle
 /// that opens Ask (AskView), a question about the flight put to the
 /// assistant. With a route entered and the map panned off it, the
 /// arrow's other face fits the course again; tapped then, the arrow
 /// comes back to bring the map to the position.
 struct MapButtons: View {
+    @Environment(Navigator.self) private var nav
     @Environment(\.lookAccent) private var accent
     @Environment(OwnShip.self) private var ownShip
     @Binding var following: Bool
@@ -28,8 +30,8 @@ struct MapButtons: View {
         VStack(spacing: 0) {
             // The Map card, as Maps' map button opens Choose Map: the
             // layers, the weather and the alerts (MapSettingsView).
-            Button { Navigator.shared.open(.mapSettings) } label: { glyph("map") }
-                .accessibilityLabel("Map Settings")
+            Button { nav.open(.mapSettings) } label: { glyph("map") }
+                .accessibilityLabel("Map")
                 .accessibilityIdentifier("map-settings")
                 .foregroundStyle(accent)
             Divider().frame(width: side * 0.6)
@@ -51,12 +53,9 @@ struct MapButtons: View {
             }
         }
         .buttonStyle(.plain)
-        // Liquid Glass on iOS 26, as Maps' own buttons are; the material
-        // on iOS 18 (Design/Glass.swift).
+        // Liquid Glass, as Maps' own buttons are (Design/Glass.swift).
         .floatingGlass(in: Capsule(), interactive: true)
         .glassGroup(spacing: WingtipSpace.md)
-        .padding(.trailing, WingtipSpace.md)
-        .padding(.top, WingtipSpace.md)
     }
 
     /// A button's glyph in the body style, so it follows Dynamic Type,

@@ -1,6 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useFlying } from "../../../lib/mapChrome";
-import type { PanelState } from "../../../lib/mapChrome";
 import { underway } from "../../../lib/map/position/glide";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { DRY_RUN, usePastFlight } from "../map/pastFlight";
@@ -22,14 +21,11 @@ import { DRY_RUN, usePastFlight } from "../map/pastFlight";
  * by itself the next time the airplane is underway after being on the
  * ground: the tap is for this flight, not a setting.
  *
- * The sheet is brought to the pill as a real flight starts, the figures
- * alone over the chart; the pilot opens it as ever for the nav log. A dry
- * run keeps the sheet where the pilot has it, its card's chart and its
- * play, scrub and close in sight -- the owner's asks that a run started
- * half way plays in the card (2026-10-20) and can be flown with the nav
- * log all the way up (2026-10-28) -- under flying mode's look, at the
- * owner's yes to keeping that look with the run's own controls back
- * (2026-11-04): pulled to the pill, they were out of sight.
+ * The sheet stays where the pilot has it as a flight starts, real or dry
+ * (the owner, 2026-11-11: "I like the stock behavior" -- the sheet keeps
+ * the size the pilot left it at); a dry run's card keeps its chart and its
+ * play, scrub and close in sight, under flying mode's look (2026-10-20,
+ * 2026-10-28, 2026-11-04).
  */
 
 /** How long under flying speed before the airplane is on the ground. */
@@ -37,13 +33,11 @@ const GROUND_MS = 60_000;
 
 export function useFlyingMode({
   routed,
-  setPanel,
   nearest,
   direct,
 }: {
   /** There is a route to fly: nothing to show without one. */
   routed: boolean;
-  setPanel: (state: PanelState) => void;
   /** Nearest's list opened (NRST). */
   nearest: () => void;
   /** Direct to the next landing (D→): the field and the way; null with
@@ -84,17 +78,6 @@ export function useFlyingMode({
     const timer = window.setTimeout(land, GROUND_MS);
     return () => window.clearTimeout(timer);
   }, [routed, up, hasFix, dryPlaying, stopped]);
-  // Started: the sheet down to the pill, the figures alone over the chart;
-  // not for a dry run, whose controls are in its card. Only as flying
-  // starts: a run closed ends the run a render before flying, and the
-  // sheet went to the pill then, the Profile card's close under it.
-  const dryRun = usePastFlight((s) => s.hex === DRY_RUN);
-  const wasFlying = useRef(false);
-  useEffect(() => {
-    const started = flying && !wasFlying.current;
-    wasFlying.current = flying;
-    if (started && !dryRun) setPanel("peek");
-  }, [flying, dryRun, setPanel]);
   // Its buttons' doings told to the map's chrome (MapControls), and all of
   // it taken back with the planner.
   useEffect(() => {

@@ -1,6 +1,6 @@
 # Terms of use
 
-*Draft for the owner to review. Checked against the app on 9 November 2026; not yet in effect.*
+*Draft for the owner to review. Checked against the app on 12 November 2026; not yet in effect.*
 
 By using Wingtip Maps ("the app", on the web, the iPhone and Android) you agree to these terms.
 
@@ -19,9 +19,9 @@ The pilot in command is directly responsible for, and is the final authority as 
 - **Not an official briefing, and it files no flight plan.**
 - **Not a logbook of record.** Keep your own, and a copy of your data (Setup, Export My Data).
 
-## Features Claude writes
+## Words a model writes
 
-Planning and flying with the app are free: the charts, the route, checkpoints, the nav log, altitudes, fuel, weather, airspace and the Go / No-Go. With an account you also have the features Claude, an AI model made by Anthropic, writes: Ask, the written briefing, checkpoint descriptions, the mock oral and the debrief's words. They are free while the app is in early use. Each has a monthly allowance, which the app shows where the feature is, and which starts again on the 1st of each month (UTC). What Claude writes can be wrong: check it as you would any briefing. What is sent to Claude to write them is in the [Privacy policy](/privacy).
+Planning and flying with the app are free: the charts, the route, checkpoints, the nav log, altitudes, fuel, weather, airspace and the Go / No-Go. Where your phone has its own model (Apple Intelligence on an iPhone, Gemini Nano on Android), Ask and the words beside some figures are written by it on the phone. What a model writes can be wrong: check it as you would any briefing. What leaves your phone for them is in the [Privacy policy](/privacy).
 
 ## No warranty
 

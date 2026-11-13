@@ -1,4 +1,5 @@
 import Foundation
+import OpenAPIRuntime
 import SwiftUI
 import Testing
 import UIKit
@@ -6,9 +7,9 @@ import UIKit
 
 private final class DocumentsFixtureBundle {}
 
-/// What POST /api/read-document answers for the shared pages
-/// (apps/web/src/lib/fixtures/documentAnswers.json), each answer as the
-/// bytes the reader sends.
+/// The reader's answers for the shared pages
+/// (apps/web/src/lib/fixtures/documentAnswers.json), each as the bytes
+/// OnDeviceDocumentReader.answer writes.
 private func answer(_ key: String) throws -> DocumentAnswer {
     let url = try #require(Bundle(for: DocumentsFixtureBundle.self).url(forResource: "documentAnswers", withExtension: "json"))
     let all = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
@@ -16,18 +17,22 @@ private func answer(_ key: String) throws -> DocumentAnswer {
     return try DocumentAnswer(data: JSONSerialization.data(withJSONObject: one))
 }
 
-private func member(_ value: JSONValue?, _ key: String) -> JSONValue? {
-    guard case .object(let object)? = value else { return nil }
-    return object[key]
+private func member(_ value: OpenAPIValueContainer?, _ key: String) -> OpenAPIValueContainer? {
+    guard let object = value?.value as? [String: (any Sendable)?], let member = object[key] else { return nil }
+    return try? OpenAPIValueContainer(unvalidatedValue: member)
 }
 
-private func count(_ value: JSONValue?) -> Int? {
-    guard case .array(let list)? = value else { return nil }
-    return list.count
+private func list(_ value: OpenAPIValueContainer?) -> [OpenAPIValueContainer]? {
+    (value?.value as? [(any Sendable)?])?.compactMap { try? OpenAPIValueContainer(unvalidatedValue: $0) }
 }
+
+private func count(_ value: OpenAPIValueContainer?) -> Int? { list(value)?.count }
+
+/// A member there and null, not one left out.
+private func isNull(_ value: OpenAPIValueContainer?) -> Bool { value != nil && value?.value == nil }
 
 /// "Add from a Photo" on the phone (Wingtip/Documents): the reader's
-/// answers decoded, the ask, the read cut to what the pilot confirmed and
+/// answers decoded, the photo made small, the read cut to what the pilot confirmed and
 /// checked again by the engine, the logbook rows that can be logged, and
 /// the flags' inks. No network.
 @MainActor
@@ -42,8 +47,8 @@ struct DocumentsTests {
         // The JSON keeps what the generated model drops: the distance over
         // 50 ft the engine checks against the ground roll.
         let takeoff = member(handbook.handbook, "takeoff")
-        guard case .array(let rows)? = takeoff else { Issue.record("no takeoff rows"); return }
-        #expect(member(rows.first, "over_obstacle") == .number(1510))
+        guard let rows = list(takeoff) else { Issue.record("no takeoff rows"); return }
+        #expect(member(rows.first, "over_obstacle")?.number == 1510)
 
         let misread = try #require(try answer("misread").read.handbookCheck)
         #expect(misread.items.contains { $0.flags.contains { $0.level == "wrong" } })
@@ -65,16 +70,16 @@ struct DocumentsTests {
         let read = try #require(try answer("handbook").handbook)
         let cut = HandbookReview.confirmedOnly(read, keys: ["cruise.2", "fuel", "takeoff.1"])
         #expect(count(member(cut, "cruise")) == 1)
-        guard case .array(let cruise)? = member(cut, "cruise") else { Issue.record("no cruise rows"); return }
-        #expect(member(cruise.first, "tas") == .number(113))
+        guard let cruise = list(member(cut, "cruise")) else { Issue.record("no cruise rows"); return }
+        #expect(member(cruise.first, "tas")?.number == 113)
         #expect(count(member(cut, "takeoff")) == 1)
         #expect(count(member(cut, "landing")) == 0)
         #expect(count(member(cut, "envelope")) == 0)
-        #expect(member(cut, "climb") == .null)
-        #expect(member(cut, "glide") == .null)
-        #expect(member(cut, "empty") == .null)
-        #expect(member(cut, "max_takeoff_weight") == .null)
-        #expect(member(cut, "fuel") != .null)
+        #expect(isNull(member(cut, "climb")))
+        #expect(isNull(member(cut, "glide")))
+        #expect(isNull(member(cut, "empty")))
+        #expect(isNull(member(cut, "max_takeoff_weight")))
+        #expect(!isNull(member(cut, "fuel")))
 
         // The engine's answer for what is left: the form's figures from the
         // one cruise row and the fuel, and nothing of the climb.
@@ -95,14 +100,14 @@ struct DocumentsTests {
         let tas = check.items.first { $0.key == "cruise.2" }?.figures.first { $0.path == "cruise.2.tas" }
         #expect(tas?.value == 115)
         #expect(HandbookReview.setting(read, path: "cruise.9.tas", to: 1) == read)
-        #expect(member(HandbookReview.setting(read, path: "max_takeoff_weight", to: 2550), "max_takeoff_weight") == .number(2550))
+        #expect(member(HandbookReview.setting(read, path: "max_takeoff_weight", to: 2550), "max_takeoff_weight")?.number == 2550)
     }
 
     @Test func theFormTakesOnlyTheProfilesFiguresToATenth() {
         var form = AircraftForm()
         form.climbFuelBurnGph = "12"
-        HandbookReview.fill(&form, from: ASHandbookProfile(climbFuelBurnGph: nil, cruiseFrom: "cruise.2", cruisePowerPct: 65,
-                                                           cruiseTasKt: 112.96, fuelBurnGph: 8.5, usableFuelGal: nil))
+        HandbookReview.fill(&form, from: HandbookProfile(cruiseTasKt: 112.96, fuelBurnGph: 8.5, cruisePowerPct: 65,
+                                                         cruiseFrom: "cruise.2", climbFuelBurnGph: nil, usableFuelGal: nil))
         #expect(form.cruiseTasKt == "113.0")
         #expect(form.fuelBurnGph == "8.5")
         #expect(form.cruisePowerPct == "65")
@@ -123,7 +128,7 @@ struct DocumentsTests {
         #expect(both.climbSpeedKias == performance.climbSpeedKias)
     }
 
-    @Test func theAskCarriesASmallJPEGInBase64() throws {
+    @Test func thePhotoIsMadeSmallEnough() throws {
         let big = UIGraphicsImageRenderer(size: CGSize(width: 3000, height: 1000), format: {
             let f = UIGraphicsImageRendererFormat(); f.scale = 1; return f
         }()).image { ctx in
@@ -132,13 +137,6 @@ struct DocumentsTests {
         let jpeg = try #require(DocumentReader.jpeg(big))
         let back = try #require(UIImage(data: jpeg))
         #expect(back.size.width == 2000 && back.size.height == 667)
-
-        let body = try Planner.snakeEncoder.encode(DocumentReader.ask(.logbookPage, jpeg: jpeg, today: "2026-11-09"))
-        let sent = try #require(try JSONSerialization.jsonObject(with: body) as? [String: String])
-        #expect(sent["kind"] == "logbook-page")
-        #expect(sent["media_type"] == "image/jpeg")
-        #expect(sent["today"] == "2026-11-09")
-        #expect(Data(base64Encoded: sent["image"] ?? "") == jpeg)
 
         // A small photo is never made larger.
         let small = UIGraphicsImageRenderer(size: CGSize(width: 40, height: 20)).image { _ in }
@@ -185,9 +183,12 @@ struct DocumentsTests {
         #expect(FlagTone(level: "check").color == WingtipInk.caution)
     }
 
+    /// The page is read on the iPhone alone since the server's reader went
+    /// (decision 0041): its refusals are the on-device reader's own words,
+    /// anything else said as a page that could not be read.
     @Test func theReadersRefusalsAreSaidInItsWords() {
-        #expect(DocumentReader.words(for: Planner.Failure(status: 503, detail: "The reader declined this page.")) == "The reader declined this page.")
-        #expect(DocumentReader.words(for: Planner.Failure(status: 502, detail: nil)) == "The figures read could not be checked.")
-        #expect(DocumentReader.words(for: Planner.Failure(status: 413, detail: nil)) == "That photo is too large to send.")
+        #expect(DocumentReader.words(for: WordsUnavailable(why: "That photo could not be opened.")) == "That photo could not be opened.")
+        struct Other: LocalizedError { var errorDescription: String? { "no model" } }
+        #expect(DocumentReader.words(for: Other()) == "The page could not be read: no model")
     }
 }

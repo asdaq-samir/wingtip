@@ -75,6 +75,10 @@ struct PilotRecordsTests {
         #expect(GatewayRefusal.words(in: Data(#"{"error":"Invalid request","details":["cruiseTasKt: must be greater than 0"]}"#.utf8)) == "Invalid request: cruiseTasKt: must be greater than 0")
         #expect(GatewayRefusal.words(in: Data(#"{"error":"That tail number is already registered","details":[]}"#.utf8)) == "That tail number is already registered")
         #expect(GatewayRefusal.words(in: Data("<html>".utf8)) == nil)
+        // Spring's ProblemDetail, as the gateway answers now.
+        let problem = #"{"type":"about:blank","title":"Bad Request","status":400,"detail":"Invalid request: cruiseTasKt: must be greater than 0","errors":["cruiseTasKt: must be greater than 0"]}"#
+        #expect(GatewayRefusal.words(in: Data(problem.utf8)) == "Invalid request: cruiseTasKt: must be greater than 0")
+        #expect(GatewayRefusal.words(in: Data(#"{"status":400,"errors":["a: b","c: d"]}"#.utf8)) == "a: b; c: d")
         #expect(GatewayRefusal(status: 502, words: nil).errorDescription == "The server answered 502.")
     }
 }

@@ -7,7 +7,7 @@ planner's (wingtip.weather)."""
 
 import pytest
 
-from wingtip.weather import wind_in_levels
+from wingtip.winds_stations import wind_in_levels
 
 
 def test_circular_interpolation_across_the_360_wrap():
@@ -30,12 +30,11 @@ def _leg_with_wind(monkeypatch, wind_dir, wind_speed, tas=100.0, oat_c=None, alt
 
     asked = []
 
-    def wind(lat, lon, alt, fcst_hr="06"):
-        asked.append((round(lat, 6), round(lon, 6), alt, fcst_hr))
-        return {"wind_dir_true_deg": wind_dir, "wind_speed_kt": wind_speed}
+    def air(lat, lon, altitudes, fcst_hr="06"):
+        asked.extend((round(lat, 6), round(lon, 6), alt, fcst_hr) for alt in altitudes)
+        return [{"wind": {"wind_dir_true_deg": wind_dir, "wind_speed_kt": wind_speed}, "temp_c": oat_c} for _ in altitudes]
 
-    monkeypatch.setattr(navlog, "wind_at_altitude", wind)
-    monkeypatch.setattr(navlog, "temperature_at_altitude", lambda lat, lon, alt, fcst_hr="06": oat_c)
+    monkeypatch.setattr(navlog, "air_at", air)
     monkeypatch.setattr(navlog, "magnetic_variation_deg", lambda lat, lon: 0.0)
     a = {"name": "A", "category": "departure", "lat": 45.0, "lon": -90.0}
     b = {"name": "B", "category": "destination", "lat": 45.0, "lon": -89.0}  # due east, 090

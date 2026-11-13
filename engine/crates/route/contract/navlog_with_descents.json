@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_route::navlog::calls::call",
-  "description": "The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before; the times and fuel unchanged.",
+  "description": "The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude where the 45-degree entry begins, about 1.7 nm before the end (AC 90-66C 11.2, 11.3: level at pattern altitude before entering), to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before. With a profile giving the descent's speed and fuel flow, each descent is flown as its own phase (its wind triangle at the descent's TAS, its flow), the legs' times and fuel changed by it and each row stating its phase's figures; else the times and fuel unchanged, the descent on the cruise's. A top of descent's minutes and gallons are those flown to it: what a leg flies beyond its line, counted at its end (its procedure's more_min and more_gal, a hold with at_end), comes after it.",
   "type": "object",
   "properties": {
     "input": {
@@ -29,13 +29,25 @@
           "type": [
             "number",
             "null"
-          ]
+          ],
+          "description": "How far before the legs' end the descent is finished, nm: an approach's fix's distance out; where not given, down to a pattern, where the 45-degree entry begins (limits::pattern_entry_start_nm, about 1.7 nm), and 0 with an end_fix."
         },
         "end_fix": {
           "type": [
             "string",
             "null"
           ]
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The airplane, for the descent flown as its own phase at its descent_ias_kt and descent_fuel_burn_gph (descent_phase): each leg's time and fuel over the miles descended, its row's figures the descent's. Left out or null: the legs as they are. A profile without the two: the descent on the cruise's figures, each top of descent descent_at_cruise."
         }
       },
       "required": [

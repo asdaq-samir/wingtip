@@ -11,11 +11,12 @@
  * planner opened (2026-10-10), the browser reading its date data. It
  * also wrote midnight "24:05" where hour12 was off in some browsers.
  */
-const two = (n: number) => String(n).padStart(2, "0");
+/** A count in two figures, "05": a clock's hours and minutes, a day of the month. */
+export const twoFigures = (n: number) => String(n).padStart(2, "0");
 
 /** This device's clock: "09:05". */
 export function clockTime(at: Date): string {
-  return `${two(at.getHours())}:${two(at.getMinutes())}`;
+  return `${twoFigures(at.getHours())}:${twoFigures(at.getMinutes())}`;
 }
 
 let zoneFormat: Intl.DateTimeFormat | null = null;
@@ -39,7 +40,7 @@ export function zoneName(at: Date = new Date()): string {
 /** UTC hours and minutes in four figures, as a flight plan's item 13
  *  takes them: "1505". */
 export function utcFigures(at: Date): string {
-  return `${two(at.getUTCHours())}${two(at.getUTCMinutes())}`;
+  return `${twoFigures(at.getUTCHours())}${twoFigures(at.getUTCMinutes())}`;
 }
 
 /** UTC as reports give it: "1255Z". */
@@ -51,7 +52,7 @@ export function zuluTime(at: Date): string {
  *  "today", where an ISO string's slice is UTC's and turns over in the
  *  evening across the U.S. */
 export function localDay(at: Date = new Date()): string {
-  return `${at.getFullYear()}-${two(at.getMonth() + 1)}-${two(at.getDate())}`;
+  return `${at.getFullYear()}-${twoFigures(at.getMonth() + 1)}-${twoFigures(at.getDate())}`;
 }
 
 /** A duration's hours and minutes, the minutes rounded first: rounding
@@ -105,10 +106,20 @@ export function ago(sinceMs: number): string {
   return minutes < 1 ? "just now" : `${duration(minutes)} ago`;
 }
 
+/** Minutes and seconds, as a stopwatch shows them, from seconds: "2:07".
+ *  The diversion drill's and the radio's timers (whole seconds gone, as a
+ *  stopwatch counts) and the approach brief's time to the missed approach
+ *  point (to the nearest second, as the engine says it), which each had a
+ *  copy of it. */
+export function stopwatch(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds));
+  return `${Math.floor(s / 60)}:${twoFigures(s % 60)}`;
+}
+
 /** A time en route as a paper nav log writes it, "0:18", "1:35": the
  *  kneeboard, a saved flight's page and its debrief, and the instructor's
  *  review, which each had a copy of it. */
 export function hm(minutes: number): string {
   const t = hoursMinutes(minutes);
-  return `${t.hours}:${String(t.minutes).padStart(2, "0")}`;
+  return `${t.hours}:${twoFigures(t.minutes)}`;
 }

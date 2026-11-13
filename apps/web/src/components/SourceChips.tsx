@@ -2,13 +2,13 @@ import { useState } from "react";
 import { cn } from "cn";
 import { Button } from "./ui/button";
 import SheetDialog from "./SheetDialog";
-import type { Source } from "../lib/api/assistant";
+import type { Source } from "../lib/api/flightWatch";
 import { TEXT } from "../lib/text";
 
 /**
- * The reports an answer rests on, a chip each after it -- "METAR KDLH
- * 1753Z" -- as the assistant's answers and the Brief's words have them
- * (AskCard, WordsSection). A tap opens the report as it was sent, in the
+ * The reports a line rests on, a chip each after it -- "METAR KDLH
+ * 1753Z" -- as the flight watch's changes have them (FlightWatch). A tap
+ * opens the report as it was sent, in the
  * app's one way of asking over the page (SheetDialog: a sheet from the
  * bottom on a phone, with its ✕, by the one card rule, the owner
  * 2026-11-10), monospace and never reformatted: a METAR, a TAF or a NOTAM is

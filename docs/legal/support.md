@@ -9,7 +9,8 @@ Issues there are public, so do not put your email address, a tail number or anyt
 ## Your data
 
 - **A copy of it:** Setup, under your account, *Export My Data*.
-- **Deleting your account:** Setup, under your account, *Delete Account*. It removes your account and everything we keep for it, on every device, at once. What that covers is in the [Privacy policy](/privacy).
+- **Deleting your account:** in Wingtip Maps on your iPhone, Android phone or the web (wingtipmaps.app/app), Setup, under your account, *Delete Account*. It removes your account and everything we keep for it, on every device, at once. What that covers is in the [Privacy policy](/privacy).
+- **Deleting your account without the app:** go to [wingtipmaps.app/delete-account](/delete-account) and enter the email address you sign in with. We email that address a link; open it and press *Delete Account*. It deletes exactly what Setup's *Delete Account* does, and you need neither the app nor to sign in. The app is "Wingtip Maps" on the App Store and Google Play.
 
 A security problem is not for a public issue: use GitHub's private vulnerability report on the same repository.
 

@@ -1,7 +1,6 @@
 package app.wingtipmaps.android.api
 
-import android.content.SharedPreferences
-import androidx.core.content.edit
+import app.wingtipmaps.android.AppClock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -12,13 +11,13 @@ import okhttp3.HttpUrl
 /**
  * The cookies the gateway sets, kept on the phone: the session cookie is
  * the sign-in itself, and the XSRF-TOKEN cookie is echoed on every write
- * (Gateway). OkHttp keeps no cookies on its own, so this jar does, in the
- * app's preferences, as iOS's HTTPCookieStorage keeps the iOS app's. A
+ * (Gateway). OkHttp keeps no cookies on its own, so this jar does, on a
+ * shelf (SealedShelf: the app's preferences, sealed by a Keystore key). A
  * cookie with no expiry is kept too: a phone's app is never "closed" the
  * way a browser window is, and the pilot expects to stay signed in. Only
  * cookies, no secret of the app's own.
  */
-class CookieStore(private val prefs: SharedPreferences) : CookieJar {
+class CookieStore(private val shelf: CookieShelf) : CookieJar {
     @Serializable
     private data class Kept(
         val name: String,
@@ -47,7 +46,7 @@ class CookieStore(private val prefs: SharedPreferences) : CookieJar {
     private val kept = HashMap<String, Cookie>()
 
     init {
-        val saved = prefs.getString(KEY, null)
+        val saved = shelf.read()
         if (saved != null) {
             runCatching { Gateway.json.decodeFromString<List<Kept>>(saved) }.getOrNull()?.forEach { k ->
                 runCatching { k.cookie() }.getOrNull()?.let { kept[key(it)] = it }
@@ -60,7 +59,7 @@ class CookieStore(private val prefs: SharedPreferences) : CookieJar {
 
     @Synchronized
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMs()
         for (cookie in cookies) {
             // A cookie set in the past is the server deleting it (a sign-out).
             if (cookie.expiresAt <= now) kept.remove(key(cookie)) else kept[key(cookie)] = cookie
@@ -70,7 +69,7 @@ class CookieStore(private val prefs: SharedPreferences) : CookieJar {
 
     @Synchronized
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMs()
         kept.values.removeAll { it.expiresAt <= now }
         return kept.values.filter { it.matches(url) }
     }
@@ -84,10 +83,6 @@ class CookieStore(private val prefs: SharedPreferences) : CookieJar {
 
     private fun persist() {
         val text = Gateway.json.encodeToString(kept.values.map { Kept(it) })
-        prefs.edit { putString(KEY, text) }
-    }
-
-    private companion object {
-        const val KEY = "cookies"
+        shelf.write(text)
     }
 }

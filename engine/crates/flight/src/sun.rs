@@ -144,6 +144,20 @@ pub fn is_night(lat: f64, lon: f64, at_s: f64) -> bool {
     }
 }
 
+/// Whether the sun is down at a point (after sunset, before sunrise: its
+/// centre SUNRISE_DEPRESSION_DEG below the horizon), read on the day whose
+/// solar noon is nearest. Not 1.1's night, which waits for civil
+/// twilight's end: the sky as it looks, for a picture's day or night
+/// glyph (the map's weather bubble). Where the sun does not set, never;
+/// where it does not rise, always.
+pub fn sun_down(lat: f64, lon: f64, at_s: f64) -> bool {
+    let noon = solar_noon(lon, at_s);
+    match sun_day(lat, lon, noon, SUNRISE_DEPRESSION_DEG) {
+        Ok((sunrise, sunset)) => at_s < sunrise || at_s > sunset,
+        Err(night_all_day) => night_all_day,
+    }
+}
+
 /// Whether an instant is in 14 CFR 61.57(b)'s night-passenger period at a
 /// point: "beginning 1 hour after sunset and ending 1 hour before
 /// sunrise", read on the day whose solar noon is nearest (so after local
@@ -203,15 +217,8 @@ pub fn night_at_either_end(start: (f64, f64), depart_s: f64, end: (f64, f64), ar
 mod tests {
     use super::*;
 
-    fn utc(y: i32, m: u32, d: u32, h: u32, min: u32) -> f64 {
-        // Days from 1970-01-01 by the civil calendar (Howard Hinnant's).
-        let (y, m) = if m <= 2 { (y - 1, m + 9) } else { (y, m - 3) };
-        let era = y.div_euclid(400);
-        let yoe = y - era * 400;
-        let doy = (153 * m + 2) / 5 + d - 1;
-        let doe = yoe as u32 * 365 + yoe as u32 / 4 - yoe as u32 / 100 + doy;
-        let days = era as i64 * 146_097 + doe as i64 - 719_468;
-        (days * 86_400 + h as i64 * 3600 + min as i64 * 60) as f64
+    fn utc(y: i64, m: u32, d: u32, h: u32, min: u32) -> f64 {
+        (wingtip_core::time::days_from_civil(y, m, d) * wingtip_core::time::DAY_S + h as i64 * 3600 + min as i64 * 60) as f64
     }
 
     #[test]
@@ -222,6 +229,17 @@ mod tests {
         assert!((dawn - 1_774_005_934.0).abs() <= 120.0);
         assert!((dusk - 1_774_052_989.0).abs() <= 120.0);
         assert_eq!(utc(2026, 3, 20, 0, 0), 1_773_964_800.0);
+    }
+
+    #[test]
+    fn the_sun_is_down_from_sunset_not_from_civil_twilight() {
+        // Chicago on the 2026 equinox: sunset about 00:03 UTC on the 21st.
+        assert!(!sun_down(41.88, -87.63, utc(2026, 3, 20, 18, 0)));
+        assert!(!sun_down(41.88, -87.63, utc(2026, 3, 20, 23, 50)));
+        // Twenty minutes after sunset: down, though not yet 1.1's night.
+        assert!(sun_down(41.88, -87.63, utc(2026, 3, 21, 0, 20)));
+        assert!(!is_night(41.88, -87.63, utc(2026, 3, 21, 0, 20)));
+        assert!(sun_down(41.88, -87.63, utc(2026, 3, 21, 8, 0)));
     }
 
     #[test]

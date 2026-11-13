@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { openMapSettings, openSetup, settle, consolePage } from "./helpers";
+import { consolePage, openSetup, settle } from "./helpers";
+import { openSettingsPage } from "./mapCard";
 
 /**
  * What the planner is not (components/planningAid, components/dataSources): said in About and at the
@@ -46,8 +47,8 @@ test("a fresh device opens straight onto the map, and About says what the planne
 test("the map's settings credit adsb.lol for the traffic as they credit the FAA for the charts", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
-  await openMapSettings(page);
-  const settings = page.getByTestId("map-settings");
+  await openSettingsPage(page, "sources");
+  const settings = page.getByTestId("console-sheet");
   // Rows of their own, where they were a footnote.
   await expect(settings.getByTestId("chart-edition")).toContainText("FAA");
   await expect(settings).toContainText("adsb.lol · ODbL");

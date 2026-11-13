@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { airportSearch, closeCard, drawn, settle, sideDrawer, slow } from "./helpers";
+import { airportSearch, closeCard, drawn, inSheet, settle, sheetUpToType, sideDrawer, slow } from "./helpers";
 
 /**
  * A search sent (the one search's "Search Nearby"), laid out as Apple Maps
@@ -83,6 +83,9 @@ async function nearestStubbed(page: Page, asked: (number | null)[] = []) {
 /** "near C81" typed and sent from its Search Nearby row. */
 async function sendNear(page: Page, words = "near C81") {
   const search = await airportSearch(page);
+  // Typing leaves the sheet where it is (5db1f8b10): from the pill the
+  // Search Nearby row is under its edge, so it is pulled up half way.
+  await sheetUpToType(page);
   await search.fill(words);
   await sideDrawer(page).getByTestId("search-do-nearby").click();
   const list = sideDrawer(page).getByTestId("search-results");
@@ -97,11 +100,11 @@ test("a search sent lists the fields round the place, its chips and Filters narr
   await page.goto("/app/plan");
   await settle(page);
   const list = await sendNear(page);
-  // The field keeps what was typed, let go; the title row's ✕ in the
-  // account button's place.
+  // The field keeps what was typed, let go; Cancel beside it in the
+  // account button's place, as Apple Maps' is.
   await expect(page.getByTestId("search-airports")).toHaveValue("near C81");
   await expect(page.getByTestId("search-airports")).not.toBeFocused();
-  await expect(sideDrawer(page).getByTestId("search-results-close")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("one-search-cancel")).toBeVisible();
   const rows = list.getByTestId("search-result");
   await expect(rows).toHaveCount(3);
   await expect(rows.first()).toContainText("Airport · 0.1 nm");
@@ -139,8 +142,8 @@ test("a search sent lists the fields round the place, its chips and Filters narr
   await expect(list).toBeVisible();
   await expect(page.getByTestId("search-airports")).toHaveValue("near C81");
 
-  // ✕: the search let go, the start again.
-  await sideDrawer(page).getByTestId("search-results-close").click();
+  // Cancel: the search let go, the start again.
+  await sideDrawer(page).getByTestId("one-search-cancel").click();
   await expect(list).toHaveCount(0);
   await expect(page.getByTestId("search-airports")).toHaveValue("");
   await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
@@ -196,7 +199,11 @@ test("a search's fuel, approach, surface and VFR at… filters narrow its fields
   // Turf, from the Filters page's surfaces (a stock ToggleGroup): Campbell and Galt.
   await list.getByTestId("chip-filters").click();
   const filters = sideDrawer(page).getByTestId("search-filters");
-  await filters.getByTestId("filter-surface").getByRole("button", { name: "Turf" }).click();
+  // Half way, where the search was sent: the surfaces under the sheet's
+  // edge are reached by pulling it up (the card rule's 11: nothing raises it).
+  const turf = filters.getByTestId("filter-surface").getByRole("button", { name: "Turf" });
+  await inSheet(page, turf);
+  await turf.click();
   await filters.getByTestId("filters-apply").click();
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(1)).toHaveAttribute("data-ident", "10C");

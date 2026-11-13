@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { angleBetween, bearingDeg, bestStopIndex, deg, distanceNm, normalizeDeg, rad, signedTurn } from "./geo";
+import geodesic from "./fixtures/geodesic.json";
+import { angleBetween, deg, normalizeDeg, rad, signedTurn, geoLoaded } from "./geo";
+
+// The engine's geodesic rules, loaded by the setup file (vitestSetup).
+const { bearingDeg, bestStopIndex, destination, distanceNm, legsNm } = await geoLoaded;
 
 describe("geo", () => {
   it("turns degrees to radians and back", () => {
@@ -23,6 +27,25 @@ describe("geo", () => {
     expect(bearingDeg(campbell, duluth)).toBeLessThan(335);
     expect(bearingDeg(duluth, campbell)).toBeGreaterThan(135);
     expect(bearingDeg(duluth, campbell)).toBeLessThan(150);
+  });
+
+  it("answers the shared cases, the engine's WGS-84 geodesic every app asks", () => {
+    for (const c of geodesic.distance) expect(distanceNm({ lat: c.lat1, lon: c.lon1 }, { lat: c.lat2, lon: c.lon2 })).toBeCloseTo(c.nm, 9);
+    for (const c of geodesic.bearing) expect(bearingDeg({ lat: c.lat1, lon: c.lon1 }, { lat: c.lat2, lon: c.lon2 })).toBeCloseTo(c.deg, 9);
+    for (const c of geodesic.destination) {
+      const to = destination({ lat: c.lat, lon: c.lon }, c.bearing_deg, c.nm);
+      expect(to.lat).toBeCloseTo(c.to.lat, 9);
+      expect(to.lon).toBeCloseTo(c.to.lon, 9);
+    }
+  });
+
+  it("measures a trail's legs at once, each as one leg alone", () => {
+    const madison = { lat: 43.1399, lon: -89.3375 };
+    const legs = legsNm([campbell, madison, duluth]);
+    expect(legs).toHaveLength(2);
+    expect(legs[0]).toBeCloseTo(distanceNm(campbell, madison), 9);
+    expect(legs[1]).toBeCloseTo(distanceNm(madison, duluth), 9);
+    expect(legsNm([campbell])).toEqual([]);
   });
 
   it("is zero to itself", () => {

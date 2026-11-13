@@ -5,12 +5,10 @@
 //! CLOUD_STATION_RADIUS_NM, this figure).
 
 use crate::geo;
-
-/// Nautical miles in a statute mile (1,609.344 m and 1,852 m).
-pub const NM_PER_SM: f64 = 1609.344 / 1852.0;
+use wingtip_core::units::NM_PER_SM;
 
 /// A TAF is the forecast for the area within 5 statute miles of the
-/// airport's centre (AC 00-45H, Terminal Aerodrome Forecast; NWSI 10-813),
+/// airport's centre (FAA-H-8083-28B 27.4.1; NWSI 10-813),
 /// its "vicinity" (VC) the ring from 5 to 10 sm. The one figure each
 /// reach below starts from.
 pub const TAF_AREA_SM: f64 = 5.0;

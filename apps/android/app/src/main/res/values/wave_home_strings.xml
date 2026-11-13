@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The three homes of 2026-11-13 (You, Settings, the Map card), the
+     welcome and the map's round buttons, in the web's words
+     (features/pilot/PilotPanel, features/settings, components/FirstFlight). -->
+<resources>
+    <!-- You, the avatar's card. -->
+    <string name="you">You</string>
+    <string name="add_your_name">Add Your Name</string>
+    <string name="you_sign_in">Sign In</string>
+    <string name="checking_sign_in">Checking your sign-in…</string>
+    <string name="pilot_details">Pilot Details</string>
+    <string name="airplanes">Airplanes</string>
+    <string name="minimums">Minimums</string>
+    <string name="training">Training</string>
+
+    <!-- Settings, in its groups. -->
+    <string name="settings_look">Look</string>
+    <string name="settings_map">Map</string>
+    <string name="settings_in_flight">In Flight</string>
+    <string name="settings_data">Data</string>
+    <string name="help_and_about">Help &amp; About</string>
+    <string name="appearance">Appearance</string>
+    <string name="appearance_system">System</string>
+    <string name="appearance_light">Light</string>
+    <string name="appearance_dark">Dark</string>
+    <string name="appearance_dark_bright">Dark + Bright</string>
+    <string name="clear_your_path">Clear Your Path</string>
+    <string name="comms_assist">Comms Assist</string>
+    <string name="atc_alerts">ATC Alerts</string>
+
+    <!-- The Map card, the map's Layers button opens. -->
+    <string name="map_card">Map</string>
+    <string name="map_layers">Layers</string>
+    <string name="map_layers_button">Map layers</string>
+
+    <!-- The round button that turns the sheet's two pages: where a tap goes. -->
+    <string name="show_flight_plan">Show flight plan</string>
+    <string name="show_search">Show search</string>
+
+    <!-- The welcome, the first flight's sheet. -->
+    <string name="welcome_title">Welcome to Wingtip Maps</string>
+    <string name="welcome_search_title">Search, like Maps</string>
+    <string name="welcome_search_line">Find any airport, town or fix the way you would in Apple or Google Maps.</string>
+    <string name="welcome_fpl_title">FPL, like your EFB</string>
+    <string name="welcome_fpl_line">The route, nav log, profile and brief, one tap away on the FPL button.</string>
+    <string name="welcome_charts_title">FAA charts that move like Maps</string>
+    <string name="welcome_charts_line">Sectional charts you pinch, pan and tap, with the weather on top.</string>
+    <string name="turn_on_location">Turn On Location</string>
+    <string name="lets_go_flying">Let\'s Go Flying</string>
+    <string name="welcome_location_refused">Allow it in Settings › Apps › Wingtip Maps › Permissions › Location.</string>
+    <string name="fpl_tip_title">Your flight plan is one tap away</string>
+    <string name="fpl_tip">Route, nav log, profile and brief, like your EFB. Tap here any time.</string>
+</resources>

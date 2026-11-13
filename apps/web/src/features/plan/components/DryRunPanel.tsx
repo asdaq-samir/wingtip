@@ -10,6 +10,7 @@ import { Slider } from "../../../components/ui/slider";
 import { PlaybackButton, PlaybackToggle, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../../components/PlaybackBar";
 import { playbackKey } from "../../../components/playbackKeys";
 import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlight } from "../map/pastFlight";
+import { toggleReplay } from "../../replay";
 import { routeProfileQuery } from "../../../lib/queryClient";
 import { TEXT } from "../../../lib/text";
 import { altFt, feet } from "../../../lib/format";
@@ -68,8 +69,9 @@ export function DryRunControls({
   // at the owner's ask ("just show a go missed button when on the final of
   // the approach").
   const onFinal = !!run.final && !missed && !!onMissed && second !== null && second >= run.final.from && second < run.final.to;
-  // Play or pause, from the toggle, Space on the bar, or Space on the chart.
-  const toggle = () => (usePastFlight.getState().playing ? pausePastFlight() : playPastFlight());
+  // Play or pause, from the toggle, Space on the bar, or Space on the
+  // chart: the map's one replay clock's, as every replay's (features/replay).
+  const toggle = toggleReplay;
   // The run seen from the pilot's seat over the 3D ground, or the chart
   // from above (features/plan/map/terrain's PilotCamera): a toggle among the
   // run's own controls, put back to the chart as the run is put away.
@@ -78,7 +80,7 @@ export function DryRunControls({
   // The chart dragged along, at the owner's ask ("can the trace be
   // drag-able in the dry run?"): a finger or a pointer on it puts the
   // airplane where it points along the course, the run held while it does
-  // and going on as it was once let go; the arrow keys step it five miles.
+  // and going on as it was once let go; the keys the stock slider's own.
   // shadcn's Slider (Base UI's) over the chart, its track and thumb unseen:
   // the chart's own marks say where the run is. Across the chart's own
   // width, inside its twelve points each side (PastFlightChart), a tenth
@@ -102,18 +104,13 @@ export function DryRunControls({
     if (held.current?.was) playPastFlight();
     held.current = null;
   };
-  // Five miles an arrow, where the slider's own would step a tenth; Home
-  // and End are the slider's; Space plays or pauses (the playback bar's).
+  // The keys are the stock slider's (Base UI, the APG's): an arrow a
+  // tenth of a mile, Page Up and Down or Shift and an arrow five miles
+  // (largeStep), Home and End; Space plays or pauses (the playback bar's).
   const step = (event: KeyboardEvent<HTMLSpanElement>) => {
-    if (playbackKey(event.key, event.target) === "toggle") {
-      event.preventDefault();
-      toggle();
-      return;
-    }
-    const by = event.key === "ArrowRight" || event.key === "ArrowUp" ? 5 : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -5 : 0;
-    if (!by) return;
+    if (playbackKey(event.key, event.target) !== "toggle") return;
     event.preventDefault();
-    seekNm((nowNm ?? first) + by);
+    toggle();
   };
   return (
     <div className="relative flex min-h-0 flex-1 flex-col rounded-xl bg-background/70 px-1 pt-1" data-testid="dry-run">
@@ -209,6 +206,7 @@ export function DryRunControls({
           min={tenth(first)}
           max={Math.max(tenth(last), tenth(first) + 0.1)}
           step={0.1}
+          largeStep={5}
           value={[tenth(nowNm ?? first)]}
           onValueChange={(v) => {
             const nm = Array.isArray(v) ? v[0] : v;
@@ -222,6 +220,10 @@ export function DryRunControls({
           onKeyDown={step}
           className={cn(
             "absolute inset-y-0 right-3 left-3 w-auto cursor-ew-resize rounded-lg",
+            // Its control, which takes the pointer, the chart's whole height:
+            // the stock one is its thumb's 16 points, at the top, so a tap or
+            // a drag lower on the chart moved nothing (dry-run.spec, 2026-11-13).
+            "*:h-full",
             "has-[[data-slot=slider-thumb]:focus-visible]:ring-2 has-[[data-slot=slider-thumb]:focus-visible]:ring-ring",
             "[&_[data-slot=slider-range]]:bg-transparent [&_[data-slot=slider-track]]:bg-transparent",
           )}

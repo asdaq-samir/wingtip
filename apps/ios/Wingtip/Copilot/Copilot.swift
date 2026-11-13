@@ -1,6 +1,7 @@
 import CoreLocation
 import Foundation
 import Observation
+import PlannerAPI
 
 /// The in-flight copilot (the web's features/copilot): while flying with
 /// a route, the one message that matters most now from the engine's
@@ -13,8 +14,6 @@ import Observation
 @MainActor
 @Observable
 final class Copilot {
-    static let shared = Copilot()
-
     /// Off, shown, or shown and said: Setup's Alerts (the web's copilotMode).
     enum Mode: String, CaseIterable, Identifiable, Sendable {
         case off, on, spoken
@@ -102,7 +101,9 @@ final class Copilot {
         if key != askedKey || now.timeIntervalSince(askedAt) >= Self.askEveryS {
             askedKey = key
             askedAt = now
-            if let fresh = try? await Planner.fetch(APICopilotAround.self, "/api/copilot/around", query, timeout: Planner.inFlight) {
+            let tenth = { (n: Double) in (n * 10).rounded() / 10 }
+            let asked = Operations.CopilotAround.Input.Query(lat: tenth(fix.coordinate.latitude), lon: tenth(fix.coordinate.longitude), dest: flight.dest, path: path)
+            if let fresh = try? await Planner.call(.inFlight, { try await $0.copilotAround(query: asked).ok.body.json }) {
                 around = fresh
                 for field in fresh.fields where firstSeen[field.ident] == nil { firstSeen[field.ident] = .some(field.metar?.flightCategory) }
             }

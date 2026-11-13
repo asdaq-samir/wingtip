@@ -7,7 +7,7 @@
 
 use super::{num, opt, rad};
 use crate::figures::words::{grouped, js_round};
-use crate::geo::{angle_between, bearing_deg, destination, distance_nm};
+use crate::geo::{angle_between, bearing_deg, destination, distance_nm, Flat};
 use crate::json::{self, Value};
 
 /// Within this of own ship's height an airplane is drawn amber, the traffic
@@ -61,6 +61,18 @@ pub fn label(altitude_ft: Option<f64>, vertical_fpm: Option<f64>, own_ft: Option
     let hundreds = (apart.abs() / 100.0).trunc();
     format!("{}{:02}{arrow}", if apart < 0.0 { "-" } else { "+" }, hundreds as u64)
 }
+
+/// How much wider the near band is for an airplane that sends only its
+/// pressure altitude the planner could not set on a METAR's altimeter
+/// (`pressure_altitude`, the planner's traffic.on_altimeter). Own ship's
+/// height is the phone's GNSS above mean sea level, and a pressure
+/// altitude is off that by the day's pressure: about 1,000 ft for each
+/// inch of mercury from 29.92 (FAA-H-8083-25C ch. 11, Figure 11-3: 28.92
+/// "Hg is about +960 ft, 30.92 about -940). The heights are not on one
+/// reference, so rather than tell a near one as far, the band is widened
+/// by an inch's worth, which holds any setting from 28.92 to 30.92. A
+/// design choice that errs toward telling.
+pub const PRESSURE_SLACK_FT: f64 = 1000.0;
 
 /// Whether it is within NEAR_FT of own ship's height; false where either
 /// is not known.
@@ -133,9 +145,8 @@ pub fn own_ship_hex<'a>(planes: &'a [Plane], fix: Option<&Fix>) -> Option<&'a st
 pub fn closest_approach(own: &Fix, plane: &Plane) -> Option<(f64, f64, Option<f64>)> {
     let (heading, speed) = (own.heading_deg?, own.speed_kt?);
     let (track, kt) = (plane.track_deg?, plane.speed_kt?);
-    let cos_lat = rad(own.lat).cos();
     // Nautical miles east and north of own ship, and knots each way.
-    let (rx, ry) = ((plane.lon - own.lon) * 60.0 * cos_lat, (plane.lat - own.lat) * 60.0);
+    let (rx, ry) = Flat::about(own.lat, own.lon).nm(plane.lat, plane.lon);
     let vx = kt * rad(track).sin() - speed * rad(heading).sin();
     let vy = kt * rad(track).cos() - speed * rad(heading).cos();
     let closing = vx * vx + vy * vy;
@@ -187,7 +198,7 @@ fn own_at(name: &str, v: &Value) -> Result<Option<(f64, f64)>, String> {
 
 /// `traffic_marks`: [{"label", "near", "nm", "bearing_deg", "tell"}], one
 /// an airplane, from `{"own_ft"?, "own"?: {"lat", "lon"}, "planes":
-/// [{"altitude_ft"?, "vertical_fpm"?, "lat"?, "lon"?}]}`: the map's
+/// [{"altitude_ft"?, "vertical_fpm"?, "lat"?, "lon"?, "pressure_altitude"?}]}`: the map's
 /// airplanes all at once, as one call a plane costs more than the rule.
 /// With own ship's place and the airplane's, how far off it is and its
 /// bearing from own ship (true), and `tell`: near in height and within
@@ -202,7 +213,14 @@ pub(super) fn marks_rule(v: &Value) -> Result<String, String> {
             out.push(',');
         }
         let ft = opt(n, p, "altitude_ft")?;
-        let near = near_own_height(ft, own);
+        // A pressure altitude against own ship's height above sea level:
+        // not like with like, so the band takes PRESSURE_SLACK_FT more.
+        let pressure = matches!(p.get("pressure_altitude"), Some(Value::Bool(true)));
+        let near = if pressure {
+            matches!((ft, own), (Some(f), Some(o)) if (f - o).abs() <= NEAR_FT + PRESSURE_SLACK_FT)
+        } else {
+            near_own_height(ft, own)
+        };
         let apart = match (at, opt(n, p, "lat")?, opt(n, p, "lon")?) {
             (Some((lat, lon)), Some(plat), Some(plon)) => Some((distance_nm(lat, lon, plat, plon), bearing_deg(lat, lon, plat, plon))),
             _ => None,

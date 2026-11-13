@@ -5,28 +5,20 @@ import { placed } from "../../ruler/rulerPlaced";
 import { useCruiseTas } from "../../useCruiseTas";
 import { HOLD_MS, heldStill } from "../../ruler/ruler";
 import { useGlMap } from "../glLayer";
-import { EngineGate } from "../../../engine/engineGate";
+import { useGeo } from "../../../geo";
 
 type XY = { x: number; y: number };
 type Ends = readonly [XY, XY];
-
-/** Drawn once the shared engine is there (lib/engine/engineGate), which
- *  it asks as it draws: the chart under it draws at once (MapPage). */
-export function RulerGl() {
-  return (
-    <EngineGate>
-      <RulerGlDrawn />
-    </EngineGate>
-  );
-}
 
 /**
  * Two fingers held still on the chart measure it, as ForeFlight's ruler
  * (MapRuler) -- the WebGL map's: held for HOLD_MS without the map zooming,
  * the pinch handed over to the ruler, which follows the fingers until
- * they lift, its distance, course and time en route along it.
+ * they lift, its distance, course and time en route along it. Its
+ * figures are the engine's (lib/geo): none until its .wasm is there,
+ * while the chart under it draws at once (MapPage).
  */
-function RulerGlDrawn() {
+export function RulerGl() {
   const { map } = useGlMap();
   const [ends, setEnds] = useState<{ first: Ends; now: Ends } | null>(null);
   const [declination, setDeclination] = useState<Declination | null>(null);
@@ -35,7 +27,7 @@ function RulerGlDrawn() {
     const el = map.getContainer();
     let hold: { ids: [number, number]; from: XY[]; zoom: number; timer: number } | null = null;
     let held: XY[] = [];
-    let ruling: { ids: [number, number]; at: XY[]; box: DOMRect } | null = null;
+    let ruling: { ids: [number, number]; at: XY[]; box: DOMRect; pitch: boolean } | null = null;
     const pointOf = (t: Touch, box?: DOMRect): XY => ({ x: t.clientX - (box?.left ?? 0), y: t.clientY - (box?.top ?? 0) });
     const find = (list: TouchList, id: number) => Array.from(list).find((t) => t.identifier === id);
     const cancelHold = () => {
@@ -50,16 +42,22 @@ function RulerGlDrawn() {
       hold = null;
       const box = el.getBoundingClientRect();
       const from = held.map((p) => ({ x: p.x - box.left, y: p.y - box.top }));
-      ruling = { ids, at: from, box };
+      // Two fingers moved together tilt the map in 3D (TerrainGl): held
+      // still under the ruler as the pinch and the pan are, and given back
+      // only where they were on.
+      ruling = { ids, at: from, box, pitch: map.touchPitch.isEnabled() };
       map.touchZoomRotate.disable();
+      map.touchPitch.disable();
       map.dragPan.disable();
       const first = [from[0]!, from[1]!] as const;
       setEnds({ first, now: first });
     };
     const end = () => {
       if (!ruling) return;
+      // enable() keeps the rotation as it was: off on the flat chart, on in
+      // 3D (TerrainGl). Turning it off here left 3D unable to twist.
       map.touchZoomRotate.enable();
-      map.touchZoomRotate.disableRotation();
+      if (ruling.pitch) map.touchPitch.enable();
       map.dragPan.enable();
       ruling = null;
       setEnds(null);
@@ -123,11 +121,15 @@ function RulerGlDrawn() {
     },
     [map],
   );
-  const drawn = useMemo(() => ends && placed(toLatLon, ends.now, declination, tasKt), [ends, toLatLon, declination, tasKt]);
+  const geo = useGeo();
+  const drawn = useMemo(
+    () => (geo && ends ? placed(geo, toLatLon, ends.now, declination, tasKt) : null),
+    [geo, ends, toLatLon, declination, tasKt],
+  );
   const first = ends?.first;
   const spoken = useMemo(
-    () => (first ? placed(toLatLon, first, declination, tasKt).words.spoken : ""),
-    [first, toLatLon, declination, tasKt],
+    () => (geo && first ? placed(geo, toLatLon, first, declination, tasKt).words.spoken : ""),
+    [geo, first, toLatLon, declination, tasKt],
   );
   return <RulerDrawing drawn={drawn} spoken={spoken} />;
 }

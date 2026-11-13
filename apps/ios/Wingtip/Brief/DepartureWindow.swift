@@ -47,12 +47,23 @@ final class DepartureWindow {
         return ask
     }
 
+    /// The hours asked for the question worked out; where it couldn't be
+    /// written, that is said in the window's place, never no hours.
+    func refresh(asking: Result<APIDepartureWindowAsk, any Error>) async {
+        switch asking {
+        case .success(let ask): await refresh(ask)
+        case .failure(let error):
+            answer = nil
+            problem = "Hours unavailable: the question couldn't be put together (\(error.localizedDescription))."
+        }
+    }
+
     func refresh(_ ask: APIDepartureWindowAsk?) async {
         guard let ask else { answer = nil; return }
         asking = true
         defer { asking = false }
         do {
-            answer = try await Planner.postRead(WindowAnswer.self, "/api/departure-window", ask)
+            answer = try await Planner.call { try await $0.departureWindow(body: .json(ask)).ok.body.json }
             problem = nil
         } catch {
             guard !Task.isCancelled else { return }

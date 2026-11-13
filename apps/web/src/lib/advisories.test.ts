@@ -82,6 +82,10 @@ describe("the FAA's capitals in sentence case", () => {
     expect(faaWords("CHICAGO CLASS B")).toBe("Chicago Class B");
     expect(faaWords("0800 - 1600, TUE-SAT")).toBe("0800 - 1600, Tue-Sat");
     expect(faaWords(null)).toBe("");
+    // An approach's title keeps its codes (the plate's card).
+    expect(faaWords("ILS OR LOC RWY 36")).toBe("ILS or LOC rwy 36");
+    expect(faaWords("RNAV (GPS) Z RWY 36")).toBe("RNAV (GPS) Z rwy 36");
+    expect(faaWords("VOR-A")).toBe("VOR-A");
     expect(sigmetHazard("CONVECTIVE")).toBe("Convective");
     expect(sigmetHazard("MTN OBSCN")).toBe("Mountain obscuration");
     expect(sigmetHazard(null, "SIGMET")).toBe("SIGMET");

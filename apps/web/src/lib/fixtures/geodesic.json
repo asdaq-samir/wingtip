@@ -1,0 +1,119 @@
+{
+  "about": "The geodesic figures every app asks the engine rather than working out itself (distance_nm, bearing_deg, destination, and great_circles for many legs at once), on the WGS-84 ellipsoid (NGA TR8350.2) by Karney's geodesic, a nautical mile 1,852 m: each answer pyproj's Geod(ellps=\"WGS84\") (pyproj 3.8.0, PROJ 9.8.1), not typed. The planner's wingtip.geo, the phones' traffic notice, own trail, replay and stop placing. Compared to 1e-9. Web: lib/geo. iOS: Engine.distanceNm, bearingDeg, destination. Android: the same.",
+  "distance": [
+    {
+      "lat1": 41.9786,
+      "lon1": -87.9048,
+      "lat2": 41.7868,
+      "lon2": -87.7522,
+      "nm": 13.382524218830271
+    },
+    {
+      "lat1": 46.8421,
+      "lon1": -92.1936,
+      "lat2": 38.7487,
+      "lon2": -90.37,
+      "nm": 492.0668096326006
+    },
+    {
+      "lat1": 45.0,
+      "lon1": -93.0,
+      "lat2": 45.0,
+      "lon2": -93.0,
+      "nm": 0.0
+    },
+    {
+      "lat1": 42.0,
+      "lon1": -88.0,
+      "lat2": 43.0,
+      "lon2": -88.0,
+      "nm": 59.98002401182506
+    },
+    {
+      "lat1": 0.0,
+      "lon1": 179.5,
+      "lat2": 0.0,
+      "lon2": -179.5,
+      "nm": 60.10771641105484
+    }
+  ],
+  "bearing": [
+    {
+      "lat1": 41.9786,
+      "lon1": -87.9048,
+      "lat2": 41.7868,
+      "lon2": -87.7522,
+      "deg": 149.21489639058674
+    },
+    {
+      "lat1": 46.8421,
+      "lon1": -92.1936,
+      "lat2": 38.7487,
+      "lon2": -90.37,
+      "deg": 169.94915827341623
+    },
+    {
+      "lat1": 45.0,
+      "lon1": -93.0,
+      "lat2": 45.0,
+      "lon2": -93.0,
+      "deg": 0.0
+    },
+    {
+      "lat1": 42.0,
+      "lon1": -88.0,
+      "lat2": 43.0,
+      "lon2": -88.0,
+      "deg": 0.0
+    },
+    {
+      "lat1": 0.0,
+      "lon1": 179.5,
+      "lat2": 0.0,
+      "lon2": -179.5,
+      "deg": 90.0
+    }
+  ],
+  "destination": [
+    {
+      "lat": 45.0,
+      "lon": -93.0,
+      "bearing_deg": 0.0,
+      "nm": 60.0,
+      "to": {
+        "lat": 45.99980613388248,
+        "lon": -93.0
+      }
+    },
+    {
+      "lat": 0.0,
+      "lon": 179.9,
+      "bearing_deg": 90.0,
+      "nm": 60.0,
+      "to": {
+        "lat": 0.0,
+        "lon": -179.10179205628637
+      }
+    },
+    {
+      "lat": 41.9786,
+      "lon": -87.9048,
+      "bearing_deg": 149.3,
+      "nm": 13.4,
+      "to": {
+        "lat": 41.78638025680122,
+        "lon": -87.75238284062806
+      }
+    },
+    {
+      "lat": 42.0,
+      "lon": -88.0,
+      "bearing_deg": 270.0,
+      "nm": 0.0,
+      "to": {
+        "lat": 41.99999999999999,
+        "lon": -88.0
+      }
+    }
+  ]
+}

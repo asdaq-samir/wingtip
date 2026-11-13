@@ -48,12 +48,12 @@ describe("saving a pilot's figures", () => {
 
 describe("a figure typed", () => {
   it("is held to the record's bounds", () => {
-    expect(readFigure("taxi_fuel_gal", "1.4")).toEqual({ value: 1.4 });
-    expect(readFigure("taxi_fuel_gal", "0")).toEqual({ value: 0 });
-    expect(readFigure("glide_ratio", "1")).toHaveProperty("problem");
-    expect(readFigure("service_ceiling_ft", "14,000")).toEqual({ value: 14000 });
-    expect(readFigure("service_ceiling_ft", "40000")).toHaveProperty("problem");
-    expect(readFigure("empty_weight_lb", "")).toHaveProperty("problem");
+    expect(readFigure("taxi_fuel_gal", 1.4)).toEqual({ value: 1.4 });
+    expect(readFigure("taxi_fuel_gal", 0)).toEqual({ value: 0 });
+    expect(readFigure("glide_ratio", 1)).toHaveProperty("problem");
+    expect(readFigure("service_ceiling_ft", 14000)).toEqual({ value: 14000 });
+    expect(readFigure("service_ceiling_ft", 40000)).toHaveProperty("problem");
+    expect(readFigure("empty_weight_lb", null)).toHaveProperty("problem");
   });
 
   it("names the tables a figure needs", () => {

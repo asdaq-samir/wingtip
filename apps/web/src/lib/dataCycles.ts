@@ -1,5 +1,6 @@
 import { dayMonthYear } from "./format/days";
 import type { DataCycle } from "./api/types";
+import { andList } from "./listWords";
 
 /**
  * The FAA data the planner uses, in a pilot's words, where an edition is
@@ -8,7 +9,7 @@ import type { DataCycle } from "./api/types";
  * sent with the map's ages (/api/map/ages `data_cycles`); only the words
  * are here. An old edition is still used -- warn, never limit (the owner,
  * 2026-10-23) -- and said once, where it matters: the Status page's rows,
- * the map settings' Charts row and a line in the Brief.
+ * Settings' Sources' Charts row and a line in the Brief.
  */
 
 /** A day the planner sends ("2026-10-29") as the pilot reads it, "29 Oct
@@ -49,6 +50,6 @@ const SHORT: Record<string, string> = {
 export function dataWarning(cycles: readonly DataCycle[] | null | undefined): string | null {
   const names = outOfDate(cycles).map((c) => SHORT[c.key] ?? c.name.toLowerCase());
   if (!names.length) return null;
-  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  const list = andList(names);
   return `FAA data out of date: ${list}`;
 }

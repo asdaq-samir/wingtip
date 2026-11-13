@@ -1,19 +1,21 @@
 import { test, expect } from "@playwright/test";
-import { settle, slow } from "./helpers";
+import { frontSheet, searchAirports, settle, slow } from "./helpers";
+import { expectPage, toggle } from "./sheetPages";
 
 /**
- * The first flight's card (FirstFlight, useFirstFlight): over the map the
- * first time the planner opens with no route on this device, a
- * destination picked from the airport search, Plan it planning from where
- * the airplane is; then the nav log open and the card gone for good. The
- * suite's session has the tips all seen, the card with them; this spec
- * starts with none seen, once, so a reload keeps what it saw.
+ * The first flight (FirstFlight, useFirstFlight; the owner's option A,
+ * 2026-11-13): the welcome sheet the first time the planner opens with no
+ * route on this device; Later leaves the one search ready for
+ * where to, the airport picked is planned to from where the airplane is, FPL comes
+ * up and one tip points at the page toggle once it shows FPL; each once. The suite's session has the
+ * tips all seen, these with them; this spec starts with none seen, once,
+ * so a reload keeps what it saw.
  */
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     if (!sessionStorage.getItem("first-fresh")) {
-      // The welcome (its own spec) seen, the rest not.
-      localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["welcome"] }, version: 0 }));
+      // None seen.
+      localStorage.removeItem("wingtip.tips");
       sessionStorage.setItem("first-fresh", "1");
     }
     // Own ship on with a fix by Campbell (C81), where the first flight
@@ -51,38 +53,70 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("a new pilot is asked where to, Plan it plans from where the airplane is, the nav log opens and the card is gone for good", async ({
+test("a new pilot is welcomed, Later leaves the one search ready, the pick is planned from where the airplane is and the FPL toggle is pointed out once", async ({
   page,
 }) => {
   test.setTimeout(slow(90_000));
   await page.goto("/app/plan");
   await settle(page);
-  const card = page.getByTestId("first-flight");
-  await expect(card).toBeVisible({ timeout: slow(15_000) });
-  await expect(card.getByTestId("first-flight-plan")).toBeDisabled();
+  const welcome = page.getByTestId("first-flight");
+  await expect(welcome).toBeVisible({ timeout: slow(15_000) });
+  await expect(welcome.getByRole("heading", { name: "Welcome to Wingtip Maps" })).toBeVisible();
+  for (const row of ["Search, like Maps", "FPL, like your EFB", "FAA charts that move like Maps"])
+    await expect(welcome.getByText(row)).toBeVisible();
+  // The position not yet allowed: Turn On Location and Later at its foot
+  // (Apple's permission priming, the owner, 2026-11-13), Later going on
+  // without asking.
+  await expect(welcome.getByTestId("first-flight-location")).toBeVisible();
 
-  // Madison picked from the search the route's box uses.
-  await card.getByTestId("first-flight-dest").fill("KMSN");
-  await card
-    .getByTestId("search-result")
-    .filter({ hasText: "KMSN" })
+  // Later: the sheet gone, Search up and its field asking for
+  // the destination -- not focused, so no keyboard jumps up.
+  await welcome.getByTestId("first-flight-later").click();
+  await expect(welcome).toHaveCount(0);
+  await expectPage(page, 0);
+  // Risen from the pill to half, so the search's page is seen (rule 11).
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
+  const search = page.getByTestId("search-airports");
+  await expect(search).not.toBeFocused();
+  await expect(search).toHaveAttribute("placeholder", /destination/i);
+
+  // Oshkosh picked: planned from the nearest field to the fix (Campbell),
+  // FPL up with the route; the tip on the toggle once it shows FPL.
+  await search.click();
+  await search.fill("KOSH");
+  await searchAirports(page)
+    .filter({ hasText: "KOSH" })
     .first()
     .click({ timeout: slow(15_000) });
-  await expect(card.getByTestId("first-flight-dest")).toHaveValue(/KMSN/);
-  await card.getByTestId("first-flight-plan").click();
+  await expect(page).toHaveURL(/dest=KOSH/, { timeout: slow(30_000) });
+  await expectPage(page, 1);
+  // The tip waits for the toggle to show FPL: on FPL it shows the magnifier.
+  const tip = page.getByTestId("fpl-tip");
+  await expect(tip).toHaveCount(0);
+  await toggle(page).click();
+  await expectPage(page, 0);
+  await expect(tip).toBeVisible();
+  await expect(tip).toContainText("Your flight plan is one tap away");
+  await expect(tip).toContainText("Tap here any time");
+  // Over the toggle, its arrow at it: wherever the toggle is (on a phone at
+  // the left under the 3D, the owner 2026-11-13), the tip's edge reaches
+  // over it, on the screen.
+  const [tipBox, toggleBox] = [await tip.boundingBox(), await toggle(page).boundingBox()];
+  expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(toggleBox!.y);
+  expect(tipBox!.x).toBeLessThanOrEqual(toggleBox!.x + toggleBox!.width / 2);
+  expect(tipBox!.x + tipBox!.width).toBeGreaterThanOrEqual(toggleBox!.x + toggleBox!.width / 2);
+  expect(tipBox!.x).toBeGreaterThanOrEqual(0);
+  expect(tipBox!.x + tipBox!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await tip.getByTestId("fpl-tip-close").click();
+  await expect(tip).toHaveCount(0);
 
-  // Planned from the nearest field to the fix: the nav log's rows, over
-  // the route, and the card gone.
-  // A phone's list, or a desktop's table (docs/design/web.md §4).
-  const navlog = page.getByTestId(/^navlog-(list|table)$/);
-  await expect(navlog).toBeVisible({ timeout: slow(60_000) });
-  await expect(navlog.getByRole("row").nth(1)).toBeVisible({ timeout: slow(60_000) });
-  await expect(page).toHaveURL(/dest=KMSN/);
-  await expect(card).toHaveCount(0);
-
-  // Seen: not offered again on this device, even with no route.
+  // Seen, both: neither offered again on this device, even with no route.
   await page.goto("/app/plan");
   await settle(page);
   await page.waitForTimeout(1500);
-  await expect(card).toHaveCount(0);
+  await expect(welcome).toHaveCount(0);
+  await page.goto("/app/plan?dep=C81&dest=KMSN");
+  await settle(page);
+  await page.waitForTimeout(1500);
+  await expect(tip).toHaveCount(0);
 });

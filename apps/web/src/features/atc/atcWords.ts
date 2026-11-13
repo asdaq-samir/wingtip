@@ -8,12 +8,12 @@
  */
 import { altitudeWords } from "../../lib/readback";
 import type { AtcItem } from "./atcEngine";
+import { threeFigures } from "../../lib/format";
 
 const capital = (words: string) => words.charAt(0).toUpperCase() + words.slice(1);
 /** A place as said: spelled idents as they are, words in capitals as a
  *  chart names a fix. */
 const place = (said: string) => said.toUpperCase();
-const three = (deg: number) => String(deg).padStart(3, "0");
 
 /** The eight points a hold is said from, as a chart abbreviates them. */
 const POINTS: Record<string, string> = {
@@ -37,7 +37,7 @@ export function itemWords(item: AtcItem): string {
     case "heading":
       if (item.by_deg != null) return `Turn ${item.turn ?? ""} ${item.by_deg}°`.replace("  ", " ");
       if (item.deg == null) return "Runway heading";
-      return `${item.turn ? `${capital(item.turn)} heading` : "Heading"} ${three(item.deg)}`;
+      return `${item.turn ? `${capital(item.turn)} heading` : "Heading"} ${threeFigures(item.deg)}`;
     case "direct":
       return `Direct ${place(item.said)}`;
     case "route": {
@@ -50,7 +50,7 @@ export function itemWords(item: AtcItem): string {
     case "hold": {
       if (item.published) return `Hold at ${place(item.fix)} as published${item.efc ? `, EFC ${item.efc}Z` : ""}`;
       const parts = [`Hold${item.direction ? ` ${POINTS[item.direction] ?? item.direction}` : ""} of ${place(item.fix)}`];
-      if (item.on && item.on_deg != null) parts.push(`${three(item.on_deg)} ${item.on}`);
+      if (item.on && item.on_deg != null) parts.push(`${threeFigures(item.on_deg)} ${item.on}`);
       if (item.turns) parts.push(`${item.turns} turns`);
       if (item.efc) parts.push(`EFC ${item.efc}Z`);
       return parts.join(", ");

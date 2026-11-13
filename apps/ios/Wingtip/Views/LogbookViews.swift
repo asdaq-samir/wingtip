@@ -1,32 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// "To 19 Dec 2026" in the go ink, or "Ended …" or "Not current" in the
-/// problem ink: a day the gateway worked out, against today, with a
-/// symbol beside the colour so it is never the only sign (HIG
-/// Accessibility).
-struct UntilText: View {
-    let date: String?
-    /// A currency still to come (instrument currency from approaches flown
-    /// this month, 14 CFR 61.57(c)(1)): "From 1 Nov 2026" in orange, as the
-    /// pilot is not current yet.
-    var from: String? = nil
-
-    var body: some View {
-        let current = Day.current(date)
-        if current, let from, from > Day.today() {
-            Label("From \(Day.said(from))", systemImage: "exclamationmark.triangle.fill")
-                .monospacedDigit()
-                .foregroundStyle(WingtipInk.caution)
-        } else {
-            Label(date.map { current ? "To \(Day.said($0))" : "Ended \(Day.said($0))" } ?? "Not current",
-                  systemImage: current ? "checkmark.circle.fill" : "xmark.octagon.fill")
-                .monospacedDigit()
-                .foregroundStyle(current ? WingtipInk.go : WingtipInk.problem)
-        }
-    }
-}
-
 /// The pilot's logbook and their currency, laid out as Health's Summary
 /// (docs/design/ios.md §9): a large title with the search and Add; what
 /// falls due, then the currency pinned -- passengers by day and at night
@@ -53,15 +27,18 @@ struct LogbookView: View {
     @State private var imported: String?
     @State private var exportFile: URL?
     @State private var paperwork: Paperwork?
+    /// What falls due, and the reminders' state, where they couldn't be
+    /// fetched: said in their places, never as nothing due or reminders off.
+    @State private var paperworkProblem: String?
+    @State private var remindersProblem: String?
     /// A file read, shown before its flights go in.
     @State private var preview: (name: String, read: LogbookCSV.Imported)?
     @State private var sending = false
     /// The search over the flights' route, airplane, type and remarks.
     @State private var query = ""
     @State private var period = LogbookSummary.Period.month
-    /// The CSV on its way to Files (iOS 27's exporter; the share sheet before).
+    /// The CSV on its way to Files (the system's exporter).
     @State private var saving: SavedFile?
-    @State private var sharing: URL?
 
     var body: some View {
         List {
@@ -110,7 +87,7 @@ struct LogbookView: View {
                                 // Tapped, the flight opens in its row to change (Edit);
                                 // its N-number, a tap of its own, opens the airplane's profile.
                                 LogbookRow(entry: e) { if flights.editingID == e.id { flights.cancelEdit() } else { flights.edit(e) } }
-                                    .siriSees(SiriSaw.logbookEntry(e.id))
+                                    .appEntityIdentifier(SiriSaw.logbookEntry(e.id))
                                     .contextMenu {
                                         Button("Edit", systemImage: "pencil") { flights.edit(e) }
                                         Button("Delete", systemImage: "trash", role: .destructive) { delete(e) }
@@ -138,8 +115,7 @@ struct LogbookView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button { importing = true } label: { Label("Import a Logbook", systemImage: "square.and.arrow.down") }
-                        Button { export() } label: { Label("Export as CSV", systemImage: "square.and.arrow.up") }
-                            .disabled(exportFile == nil)
+                        exportRow
                     } label: {
                         Label("More", systemImage: "ellipsis")
                     }
@@ -149,10 +125,7 @@ struct LogbookView: View {
                 }
             }
         }
-        .modifier(SaveFileExporter(saving: $saving) { sharing = $0 })
-        .sheet(isPresented: Binding(get: { sharing != nil }, set: { if !$0 { sharing = nil } })) {
-            if let sharing { ActivityView(items: [sharing]).presentationDetents([.medium, .large]) }
-        }
+        .modifier(SaveFileExporter(saving: $saving))
         .sheet(isPresented: Binding(get: { adding != nil }, set: { if !$0 { adding = nil } })) {
             NavigationStack {
                 LogbookEntryForm(entry: adding ?? .blank(aircraft: plan.tail), isNew: true) { saved in
@@ -179,7 +152,9 @@ struct LogbookView: View {
     // 91.413, 91.171; an AD's own number) and the days or hours left: the
     // gateway's list, the one the reminder emails are made from.
     @ViewBuilder private var comingUpSection: some View {
-        if let items = paperwork?.items {
+        if let paperworkProblem {
+            Section("Coming Up") { ProblemLine(paperworkProblem) }
+        } else if let items = paperwork?.items {
             Section("Coming Up") {
                 if items.isEmpty {
                     Text("Nothing dated yet: your flight review, medical and airplanes' inspections show here once given.")
@@ -255,6 +230,7 @@ struct LogbookView: View {
                 Text("30 and 7 days before each runs out, your airplanes' too")
             }
             .disabled(reminders == nil)
+            ProblemLine(remindersProblem)
         }
     }
 
@@ -291,10 +267,23 @@ struct LogbookView: View {
         })
     }
 
-    /// The CSV written for today, handed to Files (SaveFileExporter).
-    private func export() {
-        guard let exportFile, let data = try? Data(contentsOf: exportFile) else { return }
-        saving = SavedFile(data: data, type: .commaSeparatedText, name: exportFile.lastPathComponent)
+    /// The CSV written for today, handed to Files (SaveFileExporter);
+    /// dimmed until it is written.
+    @ViewBuilder private var exportRow: some View {
+        let label = Label("Export as CSV", systemImage: "square.and.arrow.up")
+        if let exportFile {
+            SaveFileLink(saving: $saving, make: { [$problem] in
+                // Why it sent nothing, under the list (lib/problems' rule).
+                do {
+                    return SavedFile(data: try Data(contentsOf: exportFile), type: .commaSeparatedText, name: exportFile.lastPathComponent)
+                } catch {
+                    $problem.wrappedValue = "The CSV couldn't be made, so nothing was sent: \(error.localizedDescription)"
+                    throw error
+                }
+            }) { label }
+        } else {
+            Button {} label: { label }.disabled(true)
+        }
     }
 
     /// The logbook's rows in their own layout, greyed while they come.
@@ -334,8 +323,12 @@ struct LogbookView: View {
             let held = flights.held
             flights.entries = list.filter { !held.contains($0.id) }
             currency = try await Gateway.currency()
-            reminders = try? await Gateway.reminders()
-            paperwork = try? await Gateway.paperwork()
+            do { reminders = try await Gateway.reminders(); remindersProblem = nil } catch {
+                remindersProblem = "Whether reminders are on couldn't be fetched: \(error.localizedDescription)"
+            }
+            do { paperwork = try await Gateway.paperwork(); paperworkProblem = nil } catch {
+                paperworkProblem = "What falls due couldn't be fetched: \(error.localizedDescription)"
+            }
             problem = nil
             do { exportFile = try Self.write(list) } catch {
                 exportFile = nil

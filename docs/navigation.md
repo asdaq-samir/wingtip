@@ -31,7 +31,8 @@ not timed on a device.
 - **One way in per platform.** Every screen opens by its name from one place:
   the web's `useOpenScreen` (`features/plan/hooks`) through
   `lib/navigation/wanted`, iOS's `RootView.openScreen` (through
-  `PendingCommand.open`; the strip's `ScreenAsk`), which opens the card
+  `AppCommand.open`, a card's through the environment's `appCommand`;
+  the strip's `ScreenAsk`), which opens the card
   by `Navigator.open`, Android's `OpenScreen` through
   `ScreenRequests`. A link, a figure tapped and a shortcut row all use it.
   Each is a `switch`/`when` over the generated list, so a screen added to
@@ -68,7 +69,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 
 | Link (`open=`) | Screen | Web | iOS | Android | What it is |
 |---|---|---|---|---|---|
-| `fpl` | FPL | yes | yes | yes | The plan: the route, its altitude and its figures, the sheet's main content under the one search. |
+| `fpl` | FPL | yes | yes | yes | The plan: the route, its altitude and its figures, the sheet's second page (Search, FPL). |
 | `airport` | Airport | yes | yes | yes | The one search with nothing typed: the flight, favorites, recents, nearest. |
 | `airplane` | Airplane | yes | yes | yes | The airplane picked's profile, or the traffic about where none is picked. |
 | `setup` | Setup | yes | yes | yes | The account and settings page, the account button's. |
@@ -90,6 +91,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 | `passengers` | Passenger Briefing | -- | yes | yes | The passenger briefing. |
 | `shared` | Shared Flight | yes | yes | yes | A flight another pilot sent: its plan shown first, with Use This Plan and Not Now, the receiver's own plan kept until they choose. Its keys are the plan's (dep, dest, stops, altitude_ft, depart, type, rules, tail) or a saved flight's share. |
 | `about` | About | yes | yes | yes | The build, the data's cycles, the credits and the legal pages. |
+| `search` | Search | yes | -- | -- | The sheet's first page: the one search and its home list (favorites, recents, nearest, saved). |
 
 The plan's own keys go beside it, and alone they open what they name:
 
@@ -111,7 +113,7 @@ The plan's own keys go beside it, and alone they open what they name:
 A link with a route and a screen (`?dep=C81&dest=KDLH&open=brief`) plans
 the route, then opens the screen: the web waits up to 30 s for the route
 (`lib/navigation/wanted`), the phones open it after the route command
-(`PendingCommand.then`, `Links.Route.then`). The word `open` is taken off
+(the screen `CommandHost` runs after a link's command, `Links.Route.then`). The word `open` is taken off
 the web's address once used, so a reload or Back does not open it again.
 
 ## Sharing a flight
@@ -177,7 +179,7 @@ list is where it was.
 |---|---|---|---|
 | Plan: route box, route list, nav log rows | the sheet (with a route); the search's Your Flight card | 1 → **0** with a route, 1 from the search | Route pills drag to reorder; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; altitude and departure time chips open popovers; Undo bar under the route after a removal or clear |
 | Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Dist opens the nav log |
-| Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off; Ask chips apply changes |
+| Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off (iOS too: the Brief's Alternate sections, and the plan's Alternate row under IFR, 1 tap); Ask chips apply changes |
 | Nav log card | plan → ••• → Nav log; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
 | Profile | plan → Profile | 2 → **1** with a route | VFR/IFR, altitude in the side view, Dry run |
 | Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
@@ -191,7 +193,7 @@ list is where it was.
 | Questions (Ready to Fly's prompt, a source's report as sent) | as they come; a source chip | 0 / 1 | SheetDialog: a sheet from the bottom on a phone with its ✕ (Fly Anyway the prompt's answer), a dialog from `md` up |
 | Map card (was the Map menu) | Map button | 1 | A card in the sheet over the search, as Apple Maps' Choose Map card (the owner, 2026-11-10): the charts as picture tiles (a tap applies), then the weather, the overlay, every switch and the alerts in place; its ✕ goes back to the sheet as it was; its Search row focuses the search |
 | Emergency assistant | Flying head; voice; search → Do → Emergency Assistant | 1 in flight, **2** on the ground | Its frequencies copy; the one full-height card, ✕ top right, nothing dimmed |
-| Account and Settings (was Setup) | account button (the page itself, no menu: the owner, 2026-11-10) | 1 → 2 → **1** | Layout tiles in place; covers the title row and the search, its ✕ back |
+| Settings (was Account and Settings, Setup) | account button (the page itself, no menu: the owner, 2026-11-10) | 1 → 2 → **1** | Layout tiles in place; covers the title row and the search, its ✕ back |
 | Airplanes, Flights, Logbook, Minimums, Checklists, Coach, Practice | account button → row on the page | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |
 | Status, Guide, About | account button → row on the page; About also the map's or the search page's Legal | 3 → **2** | -- |
 | Checkride, Instructing | account button → Logbook → row | 3 | Checkride inline |
@@ -235,7 +237,7 @@ Flights, Share and Undo, which were the bar's, are in the route card's
 | Figures strip | the sheet's foot, with a route | 0 | Tapped, the nav log |
 | Nav Log | the route card's Nav Log; the strip | 2 → **1** / 1 | -- |
 | Brief | the route card's Brief; the search's Do | 2 → **1** | the Brief's one foot bar, Start Flight |
-| Profile | the route card's ••• → Profile; the search's Do | 2 | -- |
+| Profile | the route card's ••• → Profile; the cruise altitude in the route section; a stop's Set Altitude… (on that waypoint's Start At / Cross At popover); the search's Do | 1 / 2 | The vertical altitude slider (Set, Auto in flight); the Altitude Advisor's rows pick the cruise; a waypoint's altitude, typed or stepped |
 | Saved Flights | the route card's ••• → Saved Flights (was the bar's, 1); the search's Do; Settings' Flights row | 1 → **2** (one-row header, owner decision 2026-11-10) | Swipe to delete with an Undo row |
 | Share | the route card's ••• → Share → a way (was the bar's Share, 1 → 2) | 2 → **3** | -- |
 | Undo | the route card's ••• → Undo (was the bar's, 1); shake; ⌘Z | 1 → **2**, shake 0 | -- |
@@ -262,10 +264,10 @@ in the search is not counted.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop; each field of the route opens its card |
+| Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop; each field of the route opens its card; under IFR an Alternate row after the destination (its card), or Add Alternate, which opens the Brief's Alternate (2026-11-10) |
 | Nav Log, Profile | the flight's card → Nav Log (or the figures); the plan's Profile row or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
 | A leg | a leg on the map, a nav log row, or a strip checkpoint: the one leg card | 1 / 2 | Direct, Remove |
-| Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head |
+| Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head; under IFR the Alternate (14 CFR 91.169): an alternate filed from those that will do, or taken off, as the web's (2026-11-10) |
 | Airport card | search → the field; tap it on the map; a list row; the plan's field | 1 + typing (map 1) | Fly Here (with its time), Depart From, Add as Stop, Diagram, Call, Address at its foot; the star; Overview, Weather, Frequencies, Runways, Approaches, NOTAMs under pinned tabs |
 | A fix, VOR, airspace, traffic, What's Here | tap it on the map; an alert; a point's More Info | 1 | its actions |
 | Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration, passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane |
@@ -288,7 +290,7 @@ or overflow).
 
 | On | Actions | Web | iOS | Android |
 |---|---|---|---|---|
-| A waypoint of the route | Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Move, Remove, Undo | point menu (all) | point menu (all but Add a Stop After; More Info new) | **⋮ point menu: all but Set Altitude… (a waypoint's altitude is set on the Profile card, Start At or Cross At); Undo row (new)** |
+| A waypoint of the route | Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Move, Remove, Undo | point menu (all) | point menu (all but Add a Stop After; More Info new; Set Altitude… opens the Profile on the point's Start At / Cross At popover, which also takes typed feet) | **⋮ point menu: all but Set Altitude… (a waypoint's altitude is set on the Profile card, Start At or Cross At); Undo row (new)** |
 | The destination | More Info (weather, frequencies, runways, approaches), Brief, Nearest | More Info; Brief on FPL | point menu: More Info, **Brief (new)** | Brief beside Plan; **point menu: More Info, Brief (new)** |
 | The figures | the nav log | **Dist (new)** | **strip (new)** | **strip (new)** |
 | A nav log row | its field's card | **name (new)** | leg detail | leg sheet |

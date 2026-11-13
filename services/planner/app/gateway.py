@@ -2,7 +2,7 @@
 phone may reach, said where the route is declared.
 
 The gateway (services/gateway, its UpstreamRoutes) forwards
-/api/planner/... to this service and to the assistant, and only the
+/api/planner/... to this service, and only the
 operations whose OpenAPI entry carries ``x-gateway``: a route without it
 is a 404 there, and this service is never asked. The gateway reads this
 service's committed openapi.json, copied into its jar when it is built,
@@ -25,18 +25,13 @@ a flight). The rest are off unless set:
   which holds no cookie to echo a CSRF token from.
 - ``pilot``: the gateway sends the signed-in pilot's id as X-Pilot-Id,
   set from the session and never from the request.
-- ``paid``: the subscription feature it is (the gateway's PaidFeature),
-  checked against the pilot's subscription and its daily allowance first.
 - ``body_limit``: the largest body forwarded, in bytes, where it is less
   than the gateway's 4 MB for any POST.
-
-The assistant (services/assistant/app/gateway.py) has the same helper.
 """
 
 from typing import Literal
 
 Access = Literal["public", "signed-in", "developer"]
-Paid = Literal["NARRATIVE", "CHECKPOINT_NOTES", "ORAL", "ASSISTANT", "WORDS"]
 
 
 def gateway(
@@ -47,7 +42,6 @@ def gateway(
     range: bool = False,  # noqa: A002
     csrf: bool = True,
     pilot: bool = False,
-    paid: Paid | None = None,
     body_limit: int | None = None,
 ) -> dict:
     """The ``openapi_extra`` of a route the gateway forwards."""
@@ -62,8 +56,6 @@ def gateway(
         spec["csrf"] = False
     if pilot:
         spec["pilot"] = True
-    if paid:
-        spec["paid"] = paid
     if body_limit:
         spec["bodyLimit"] = body_limit
     return {"x-gateway": spec}
@@ -79,8 +71,6 @@ SHARED = gateway("public", cache=True)
 PUBLIC_READ_BY_POST = gateway("public", csrf=False)
 #: The developer's: the model's training and the stack's own state.
 DEVELOPER = gateway("developer")
-#: Asked by the assistant service alone, on the stack's own network: no
-#: ``x-gateway``, so the gateway never forwards it and no browser or
-#: phone reaches it; ``x-internal`` says who does, for a reader of the
-#: document.
-INTERNAL_ASSISTANT = {"x-internal": "assistant"}
+#: Asked by the gateway alone (its CrashDraftMail, the Studio's crash
+#: drafts' mail), on the stack's own network, never forwarded.
+INTERNAL_GATEWAY = {"x-internal": "gateway"}

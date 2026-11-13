@@ -3,15 +3,14 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
-/// How to spot each checkpoint from the air, one line each, written on
-/// the pilot's tap (each is a billed call, so never on its own) and
-/// streamed as they come; a pilot's own edit is theirs from then on (the
-/// web app's useCheckpointNotes).
+/// How to spot each checkpoint from the air, one line each: the notes
+/// kept for the route (the pilot's own, else the shared one), and a
+/// pilot's own edit theirs from then on (the web app's
+/// useCheckpointNotes).
 struct CheckpointNotesView: View {
     @Environment(Plan.self) private var plan
+    @Environment(Session.self) private var session
     @State private var notes: [String: (text: String, source: String)] = [:]
-    @State private var writing = false
-    @State private var count: Int?
     @State private var problem: String?
     @State private var editing: Checkpoint?
     @State private var typed = ""
@@ -21,10 +20,6 @@ struct CheckpointNotesView: View {
 
     var body: some View {
         List {
-            // Claude's descriptions have no free path: hidden while the Claude features are off (docs/decisions/0035).
-            if ServerFeatures.shared.claudeOn {
-                Button(writing ? (count.map { "Writing \(notes.count) of \($0)…" } ?? "Writing…") : "Describe the Checkpoints") { describe() }.disabled(writing || plan.checkpoints.isEmpty)
-            }
             ProblemLine(problem)
             Section("Checkpoints") {
                 if plan.checkpoints.isEmpty { Text("The route's checkpoints come with its plan.").foregroundStyle(.secondary) }
@@ -46,6 +41,9 @@ struct CheckpointNotesView: View {
             }
         }
         .navigationTitle("Checkpoint notes")
+        // The notes kept for the route, asked again as the route changes;
+        // signed out, there are none to ask for.
+        .task(id: "\(plan.dep)|\(plan.dest)|\(plan.stops)|\(session.signedIn)") { await load() }
         .alert(editing.map { $0.name ?? $0.waypoint ?? $0.category } ?? "Note", isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
             TextField("What you see there", text: $typed)
             Button("Save") { save() }
@@ -55,27 +53,20 @@ struct CheckpointNotesView: View {
         }
     }
 
-    private func describe() {
-        writing = true
-        problem = nil
-        let dep = plan.dep, dest = plan.dest, stops = plan.stops
-        Task {
-            do {
-                for try await line in Planner.describeCheckpoints(dep: dep, dest: dest, stops: stops) {
-                    switch line.type {
-                    case "start": count = line.count
-                    case "checkpoint":
-                        if let lat = line.lat, let lon = line.lon {
-                            notes[Self.key(lat, lon)] = (line.description ?? "", line.source ?? "generated")
-                        }
-                    case "error": problem = line.detail
-                    default: break
-                    }
-                }
-            } catch {
-                problem = "The descriptions could not be written: \(error.localizedDescription)"
+    private func load() async {
+        guard session.signedIn, !plan.dep.isEmpty, !plan.dest.isEmpty else { return }
+        do {
+            let kept = try await Planner.routeNotes(dep: plan.dep, dest: plan.dest, stops: plan.stops)
+            guard !Task.isCancelled else { return }
+            for point in kept {
+                guard let text = point.saved, !text.isEmpty else { continue }
+                let key = Self.key(point.lat, point.lon)
+                // An edit made while they were asked for stays.
+                if notes[key] == nil { notes[key] = (text, "saved") }
             }
-            writing = false
+        } catch {
+            guard !Task.isCancelled else { return }
+            problem = "The route's notes couldn't be fetched: \(error.localizedDescription)"
         }
     }
 
@@ -97,34 +88,6 @@ struct CheckpointNotesView: View {
     }
 }
 
-/// FAA Form 7233-4's items as AIM Appendix 4 writes them: the engine's
-/// (`filed_speed`, `filed_level`, `filed_route`, `filed_duration`), the
-/// very ones the web app's lib/flightPlanForm asks. Each throws where the
-/// engine cannot write the item, and nothing is filed then.
-enum FilingForm {
-    /// Item 15's cruising speed, "N0450".
-    static func cruisingSpeed(_ tasKt: Double) throws -> String { try Engine.filedSpeed(tasKt: tasKt) }
-
-    /// Item 15's level: "F350" at and above 18,000 ft, "A080" below it
-    /// (14 CFR 91.121(a)(2)).
-    static func cruisingLevel(_ altitudeFt: Double) throws -> String { try Engine.filedLevel(ft: altitudeFt) }
-
-    /// An airway as a route names one: Victor, T, Jet or Q and its number
-    /// (the web app's identSchema isAirwayToken).
-    static func airwayToken(_ stop: String) -> Bool {
-        stop.range(of: "^[VTJQ][0-9]{1,4}$", options: .regularExpression) != nil
-    }
-
-    /// Item 15's route between the ends ("FLACK DCT IRW", "EIC V18 MEI");
-    /// its procedures are not filed from here yet.
-    static func route(_ stops: [String], isAirway: (String) -> Bool = FilingForm.airwayToken) throws -> String {
-        try Engine.filedRoute(stops: stops, airways: stops.filter(isAirway))
-    }
-
-    /// Hours and minutes in four figures, HHMM (items 16 and 19).
-    static func hhmm(_ minutes: Int) throws -> String { try Engine.filedDuration(minutes: Double(minutes)) }
-}
-
 /// Filing with Flight Service, where the gateway has it connected, as the
 /// web app's Brief files (FlightServiceController): signed in, in the
 /// pilot's name, the form's items from the plan and the rest typed. With
@@ -133,20 +96,16 @@ enum FilingForm {
 struct FlightServiceView: View {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
-    @State private var status: FlightServiceStatus?
+    @State private var model = FlightServiceModel()
     @State private var aircraftId = ""
     @State private var aircraftType = ""
     @State private var departs = Date().addingTimeInterval(3600)
     @State private var endurance = ""
     @State private var persons = ""
-    @State private var reference: String?
-    @State private var briefing: String?
-    @State private var problem: String?
-    @State private var sending = false
 
     var body: some View {
         Form {
-            if let status, status.connected, session.signedIn {
+            if let status = model.status, status.connected, session.signedIn {
                 Section("Flight Plan") {
                     LabeledContent("Rules", value: "VFR")
                     TextField("Aircraft identification", text: $aircraftId).textInputAutocapitalization(.characters).autocorrectionDisabled()
@@ -158,6 +117,7 @@ struct FlightServiceView: View {
                         LabeledContent("Cruising speed", value: request.cruisingSpeed)
                         LabeledContent("Cruising level", value: request.cruisingLevel)
                         LabeledContent("Route", value: request.route)
+                        // Words only: the same minutes said plainly where the engine cannot write HHMM.
                         LabeledContent("Total EET", value: (try? FilingForm.hhmm(request.eetMinutes)) ?? "\(request.eetMinutes) min")
                     }
                     ProblemLine(asked, "The flight plan's items")
@@ -166,17 +126,21 @@ struct FlightServiceView: View {
                     TextField("Persons on board", text: $persons).keyboardType(.numberPad)
                 }
                 Section {
-                    Button(reference.map { "Filed: \($0)" } ?? (sending ? "Filing…" : "File with \(status.provider)")) { Task { await file() } }
-                        .disabled((try? request()) == nil || reference != nil || sending)
-                    Button("Standard Briefing") { Task { await brief() } }
-                        .disabled((try? request()) == nil || sending)
-                    ProblemLine(problem)
+                    Button(model.reference.map { "Filed: \($0)" } ?? (model.sending ? "Filing…" : "File with \(status.provider)")) {
+                        if let request = try? request() { Task { await model.file(request) } }
+                    }
+                    .disabled((try? request()) == nil || model.reference != nil || model.sending)
+                    Button("Standard Briefing") { if let request = try? request() { Task { await model.brief(request) } } }
+                        .disabled((try? request()) == nil || model.sending)
+                    ProblemLine(model.problem)
                 }
-                if let briefing {
+                if let briefing = model.briefing {
                     Section("Standard Briefing") { Text(briefing).font(.footnote.monospaced()).textSelection(.enabled) }
                 }
             }
-            Section(status?.connected == true ? "Or" : "File it with Flight Service") {
+            Section(model.status?.connected == true ? "Or" : "File it with Flight Service") {
+                // Whether filing here is connected, where that couldn't be asked.
+                ProblemLine(model.statusProblem)
                 Link(destination: URL(string: "https://www.1800wxbrief.com")!) {
                     LabeledContent("1800wxbrief.com", value: "Open it as you leave, close it when you land")
                 }
@@ -185,7 +149,7 @@ struct FlightServiceView: View {
         }
         .navigationTitle("File Flight Plan")
         .task {
-            status = try? await Gateway.flightService()
+            await model.load()
             if aircraftId.isEmpty { aircraftId = plan.tail ?? "" }
             if aircraftType.isEmpty, let type = plan.stockType { aircraftType = type }
         }
@@ -202,26 +166,15 @@ struct FlightServiceView: View {
         let pob = Int(persons.filter(\.isNumber)).flatMap { (1...999).contains($0) ? $0 : nil }
         return FlightPlanFilingRequest(aircraftId: aircraftId.uppercased(), aircraftType: aircraftType.uppercased(), cruisingLevel: try FilingForm.cruisingLevel(first.altitudeFt), cruisingSpeed: try FilingForm.cruisingSpeed(tas), departure: plan.dep, departureTime: ISO8601DateFormatter().string(from: departs), destination: plan.dest, eetMinutes: Int(ete.rounded(.up)), enduranceMinutes: hours * 60 + minutes, personsOnBoard: pob, route: try FilingForm.route(plan.stops), rules: "VFR")
     }
-
-    private func file() async {
-        guard let request = try? request() else { return }
-        sending = true
-        do { reference = try await Gateway.file(request); problem = nil } catch { problem = "Not filed: \(error.localizedDescription)" }
-        sending = false
-    }
-
-    private func brief() async {
-        guard let request = try? request() else { return }
-        sending = true
-        do { briefing = try await Gateway.standardBriefing(request); problem = nil } catch { problem = "No briefing: \(error.localizedDescription)" }
-        sending = false
-    }
 }
 
 /// A saved flight's flown track: its profile, shown on the map over its
 /// route, put in from a GPX file (ForeFlight's, Garmin Pilot's, a GPS's),
 /// or taken off. GPS altitude, not what the altimeter read.
 struct FlownTrackView: View {
+    @Environment(Replay.self) private var replay
+    @Environment(Tracking.self) private var tracking
+    @Environment(OwnShip.self) private var ownShip
     let flight: Int
     let title: String
     @State private var track: SavedTrack?
@@ -241,7 +194,7 @@ struct FlownTrackView: View {
                 // Its replay, the airplane flown along it again on the
                 // map, the track put there with it.
                 ReplaySection(points: Replay.points(track.points), key: replayKey, onPlay: {
-                    if Tracking.shared.flown.isEmpty { Tracking.shared.flown = points }
+                    if tracking.flown.isEmpty { tracking.flown = points }
                 })
                 Section {
                     if let first = points.first, let last = points.last {
@@ -252,18 +205,18 @@ struct FlownTrackView: View {
                 // Its debrief against the flight's nav log, the planner's (POST /api/debrief).
                 DebriefSections(flight: flight, points: track.points)
                 Section {
-                    Button(Tracking.shared.flown.isEmpty ? "Show on the Map" : "Hide from the Map") {
-                        Tracking.shared.flown = Tracking.shared.flown.isEmpty ? points : []
+                    Button(tracking.flown.isEmpty ? "Show on the Map" : "Hide from the Map") {
+                        tracking.flown = tracking.flown.isEmpty ? points : []
                     }
                     Button("Delete the Track", role: .destructive) {
                         Task {
-                            do { try await Gateway.deleteTrack(flight); self.track = nil; Tracking.shared.flown = []; Replay.shared.clear(replayKey) } catch { problem = error.localizedDescription }
+                            do { try await Gateway.deleteTrack(flight); self.track = nil; tracking.flown = []; replay.clear(replayKey) } catch { problem = error.localizedDescription }
                         }
                     }
                 }
             } else if loaded {
                 ContentUnavailableView("No track kept", systemImage: "point.topleft.down.to.point.bottomright.curvepath",
-                                       description: Text(OwnTrail.shared.points.count > 1
+                                       description: Text(ownShip.trail.points.count > 1
                                            ? "Keep the path this iPhone flew, or put in a GPX file."
                                            : "Put in the flight's track from a GPX file."))
             }
@@ -271,9 +224,9 @@ struct FlownTrackView: View {
                 // The path the phone flew (OwnTrail), kept as the flight's
                 // track with no file to find: the debrief from the
                 // airplane's own GPS, as ForeFlight's track logs are.
-                if OwnTrail.shared.points.count > 1 {
+                if ownShip.trail.points.count > 1 {
                     Button("Keep the Path This iPhone Flew") {
-                        let saved = OwnTrail.shared.asSavedTrack
+                        let saved = ownShip.trail.asSavedTrack
                         Task {
                             do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
                         }
@@ -288,7 +241,7 @@ struct FlownTrackView: View {
             do { track = try await Gateway.track(flight) } catch { problem = error.localizedDescription }
             loaded = true
         }
-        .onDisappear { Replay.shared.clear(replayKey) }
+        .onDisappear { replay.clear(replayKey) }
         .fileImporter(isPresented: $importing, allowedContentTypes: [UTType(filenameExtension: "gpx") ?? .xml, .xml]) { result in
             guard case .success(let url) = result else { return }
             let reading = url.startAccessingSecurityScopedResource()
@@ -307,36 +260,6 @@ struct FlownTrackView: View {
                 do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
             }
         }
-    }
-}
-
-/// A track file's points with their times, as the web app's lib/track
-/// reads one (the engine's `read_track`: GPX 1.1's trkpt, its ele in
-/// metres, as feet, or KML's gx:Track; in time order, one a moment, the
-/// unreadable dropped), then thinned to the most a saved track keeps
-/// (`thin_track`). Nil where the file has no track to use.
-enum GPXTrack {
-    /// The engine's points: t in ms since 1970, which it writes as a
-    /// fraction ("1792940400000.0"), so read as one. The contract leaves
-    /// read_track's answer and thin_track's points open, so this shape is
-    /// the app's, read from the engine's JSON.
-    private struct Point: Codable {
-        let t: Double; let lat: Double; let lon: Double; let altFt: Double?
-        enum CodingKeys: String, CodingKey { case t, lat, lon, altFt = "alt_ft" }
-    }
-
-    private struct Read: Decodable {
-        let points: [Point]?
-        let error: String?
-    }
-
-    /// Nil where the file has no track; thrown where the engine refuses.
-    static func points(_ data: Data) throws -> [SavedTrackPoint]? {
-        let text = String(decoding: data, as: UTF8.self)
-        let read: Read = try Engine.recoded(try Engine.readTrack(text: text))
-        guard read.error == nil, let points = read.points else { return nil }
-        let thinned: [Point] = try Engine.thinTrack(points: try points.map { try Engine.recoded($0) }).map { try Engine.recoded($0) }
-        return thinned.map { SavedTrackPoint(altFt: $0.altFt, lat: $0.lat, lon: $0.lon, t: Int($0.t.rounded())) }
     }
 }
 
@@ -423,66 +346,31 @@ enum RouteShare {
     }
 }
 
-/// iOS's share sheet, for a file made here.
-struct ActivityView: UIViewControllerRepresentable {
-    let items: [Any]
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
-    }
-
-    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
-}
-
-/// The alerts ahead said aloud, Setup's switch for it.
-struct SpokenAlertsToggle: View {
-    var body: some View {
-        Toggle("Speak Alerts Ahead", isOn: Binding(get: { SpokenAlerts.shared.on }, set: { SpokenAlerts.shared.on = $0 }))
-    }
-}
-
 /// The pilot's own checkpoint notes forgotten, everywhere, asked first.
 struct ForgetNotesButton: View {
     @State private var asking = false
     @State private var said: String?
+    @State private var problem: String?
 
-    var body: some View {
+    @ViewBuilder var body: some View {
         Button(said ?? "Forget My Checkpoint Notes", role: .destructive) { asking = true }
             .confirmationDialog("Forget your checkpoint notes?", isPresented: $asking, titleVisibility: .visible) {
                 Button("Forget Them", role: .destructive) {
                     Task {
-                        if let removed = try? await Planner.forgetNotes() { said = removed == 1 ? "1 note forgotten" : "\(removed) notes forgotten" }
+                        do {
+                            let removed = try await Planner.forgetNotes()
+                            said = removed == 1 ? "1 note forgotten" : "\(removed) notes forgotten"
+                            problem = nil
+                        } catch {
+                            problem = "Your notes couldn't be forgotten: \(error.localizedDescription)"
+                        }
                     }
                 }
             } message: {
                 Text("Every note you wrote on a checkpoint goes; the shared ones stay.")
             }
-    }
-}
-
-/// The last watch that went off, over the map until it is put away.
-struct WatchBanner: View {
-    var body: some View {
-        if let words = Tracking.shared.fired {
-            HStack(spacing: WingtipSpace.sm) {
-                Image(systemName: "bell.fill").symbolRing(on: words).accessibilityHidden(true)
-                Text(words).font(.subheadline.weight(.semibold)).lineLimit(2)
-                Button { Tracking.shared.fired = nil } label: {
-                    // The 44-point hit area round the glyph, which does not grow.
-                    Image(systemName: "xmark").contentShape(Rectangle().inset(by: -12))
-                }
-                .accessibilityLabel("Dismiss")
-            }
-            .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
-            .floatingGlass(in: Capsule())
-        } else if let problem = Tracking.shared.watchProblem {
-            // A watch that could not be checked says so where it would
-            // have gone off, rather than staying quiet.
-            Label(problem, systemImage: "exclamationmark.triangle")
-                .font(.subheadline).foregroundStyle(WingtipInk.caution).lineLimit(2)
-                .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
-                .floatingGlass(in: Capsule())
-        }
+        // Said in its own row under the button where they couldn't be forgotten.
+        ProblemLine(problem)
     }
 }
 
@@ -517,16 +405,14 @@ private enum PreviewData {
     Kneeboard(route: "KDLH → KHIB → KGPZ", aircraft: "N3429J", totals: PreviewData.totals, legs: PreviewData.legs)
 }
 
-#Preview("SpokenAlertsToggle") {
-    Form { SpokenAlertsToggle() }
-}
-
 #Preview("ForgetNotesButton") {
     Form { ForgetNotesButton() }
 }
 
 #Preview("WatchBanner") {
-    Tracking.shared.fired = "N3429J is in the air from KDLH"
+    let tracking = Tracking()
+    tracking.fired = "N3429J is in the air from KDLH"
     return WatchBanner()
         .padding()
+        .environment(tracking)
 }

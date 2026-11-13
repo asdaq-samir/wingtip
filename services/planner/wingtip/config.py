@@ -70,10 +70,9 @@ MIN_LABELED_ROWS = 30
 # login around 2026-09-03, then Texas A&M's public mirror of the same
 # data, which had no tile cache and no chart west of Duluth.)
 #
-# Chart editions are listed on the products page, each under a
-# cycle-dated URL; when the page cannot be reached, the cycle is the
-# engine's 56-day arithmetic (wingtip.data_cycles).
-FAA_VFR_PRODUCTS_PAGE = "https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/vfr/"
+# Each sheet's zip is under its cycle's date; the cycle is the one the
+# FAA's APRA names (wingtip.apra), else the engine's 56-day arithmetic
+# (wingtip.data_cycles).
 FAA_VISUAL_ZIP_URL = "https://aeronav.faa.gov/visual/{cycle}/{folder}/{name}.zip"
 FAA_ENROUTE_ZIP_URL = "https://aeronav.faa.gov/enroute/{cycle}/{name}.zip"
 
@@ -97,8 +96,7 @@ class Settings(BaseSettings):
     """Every environment variable wingtip and the planner read, by its
     own name (case aside; the field `log_level` is LOG_LEVEL), with its
     default. Unset optional keys (the ADS-B keys) are None,
-    which is how each feature knows it is off. The Claude models and ANTHROPIC_API_KEY are the assistant
-    service's (services/assistant, app.settings): the planner calls no model."""
+    which is how each feature knows it is off. The planner calls no model."""
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
 
@@ -154,6 +152,10 @@ class Settings(BaseSettings):
     chart_landmarks_dir: Path | None = None
     #: Whether the planner starts the charts job when a cycle or its overlay tiles are due (0 in production, which schedules it).
     charts_auto_refresh: bool = True
+    #: Whether the crash-leads job (services/jobs/crash, `python -m crash every`)
+    #: runs, and how often, minutes: the Studio's crash drafts.
+    crash_leads_auto: bool = True
+    crash_leads_every_min: int = 30
     #: Whether the planner fetches a new edition of the FAA's NASR files and
     #: obstacle file on its own (0 on a test stack): on in production, whatever the charts do.
     faa_data_auto_refresh: bool = True
@@ -194,6 +196,10 @@ class Settings(BaseSettings):
     #: The gateway's address (GATEWAY_URL), for the status page's health probe
     #: and the connector's records and signing keys (app.mcp).
     gateway_url: str = "http://gateway:8080"
+    #: The gateway's own port for the services alone (GATEWAY_INTERNAL_URL,
+    #: its app.internal.port), which no compose file publishes: the
+    #: connector's records are asked there (app.mcp.records).
+    gateway_internal_url: str = "http://gateway:8081"
     #: Who issues the connector's tokens: the gateway's public address
     #: (MCP_ISSUER); None serves no /mcp (app.mcp).
     mcp_issuer: str | None = None
@@ -213,6 +219,7 @@ class Settings(BaseSettings):
         "cycle_pack",
         "landmarks_build",
         "charts_auto_refresh",
+        "crash_leads_auto",
         "faa_data_auto_refresh",
         "chart_reads_in_process",
         "charts_cycle_auto",

@@ -1,68 +1,12 @@
 import SwiftUI
 
-/// The pilot's own airplanes (the web app's AircraftPanel): a row each,
-/// the one the nav log flies ticked, a tap opening its figures to edit,
-/// and New Airplane at the top. Each airplane's page has its checklist,
-/// squawks, inspections and VOR check, and Delete, asked first.
-struct OwnAircraftListView: View {
-    @Environment(Plan.self) private var plan
-    @State private var list: [OwnAircraftRecord]?
-    @State private var problem: String?
-    @State private var adding = false
-
-    var body: some View {
-        List {
-            if let list {
-                if list.isEmpty {
-                    ContentUnavailableView("No Airplanes", systemImage: "airplane", description: Text("Add yours with its handbook's figures."))
-                }
-                ForEach(list) { airplane in
-                    NavigationLink {
-                        OwnAircraftPage(record: airplane, onChange: { Task { await load() } })
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                                HStack(spacing: WingtipSpace.sm) {
-                                    Text(airplane.tailNumber).font(.headline.monospaced()).siriSees(SiriSaw.airplane(airplane.tailNumber))
-                                    Text(airplane.typeDesignator).foregroundStyle(.secondary)
-                                }
-                                Text(OwnAircraftPage.figuresLine(airplane)).font(.footnote).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if plan.tail == airplane.tailNumber.uppercased() { Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityLabel("Flying now") }
-                        }
-                    }
-                }
-            } else if problem == nil {
-                ProgressView()
-            }
-            ProblemLine(problem)
-        }
-        .navigationTitle("Your Airplanes")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { adding = true } label: { Label("New Airplane", systemImage: "plus") }
-            }
-        }
-        .sheet(isPresented: $adding) {
-            NavigationStack { AircraftFormView(record: nil) { _ in Task { await load() } } }
-        }
-        .task { await load() }
-        .refreshable { await load() }
-    }
-
-    private func load() async {
-        do { list = try await Gateway.aircraftRecords(); problem = nil } catch { problem = error.localizedDescription }
-    }
-}
-
 /// The figures, the flight plan's items and Save (the web app's form):
 /// a new airplane in a sheet with Cancel and Add, one of the pilot's
 /// with Save.
 struct AircraftFormView: View {
-    /// The altitude the cruise figures are the airplane's at, the engine's.
-    /// Nil where the engine cannot say, and the heading leaves it out.
-    private static let cruiseReferenceFt: Double? = try? Engine.planningFigures().cruiseReferenceFt
+    /// The altitude the cruise figures are the airplane's at, the engine's
+    /// (AircraftForm.cruiseReferenceFt); a failure is said in the section.
+    private static let cruiseReference = Result { try AircraftForm.cruiseReferenceFt() }
 
     let record: OwnAircraftRecord?
     var onSaved: (OwnAircraftRecord) -> Void
@@ -88,15 +32,24 @@ struct AircraftFormView: View {
                 number("Climb", unit: "kt", text: $form.climbTasKt, placeholder: "74", key: "climbTasKt", problems: problems)
                 number("Cruise", unit: "kt", text: $form.cruiseTasKt, placeholder: "110", key: "cruiseTasKt", problems: problems)
             }
+            // The descent as the POH gives it, indicated; the engine makes
+            // it true at the descent's altitude (FAA-H-8083-25C ch. 8). Left
+            // blank, the descent is flown on the cruise's figures and the
+            // nav log says so.
+            Section("Indicated Airspeed") {
+                number("Descent", unit: "kt", text: $form.descentIasKt, placeholder: "110", key: "descentIasKt", problems: problems)
+            }
             // Climb left blank climbs at the type's book figures.
             Section("Fuel Burn") {
                 number("Climb", unit: "gph", text: $form.climbFuelBurnGph, placeholder: "11", key: "climbFuelBurnGph", problems: problems)
                 number("Cruise", unit: "gph", text: $form.fuelBurnGph, placeholder: "8.5", key: "fuelBurnGph", problems: problems)
+                number("Descent", unit: "gph", text: $form.descentFuelBurnGph, placeholder: "6", key: "descentFuelBurnGph", problems: problems)
             }
             // The cruise figures are the airplane's at this power at the
             // engine's reference altitude on a standard day, a row of its
             // handbook's cruise table (planning_figures' cruise_reference_ft).
-            Section(Self.cruiseReferenceFt.map { "Cruise figures at \(Format.altitude($0)), standard day" } ?? "Cruise figures, standard day") {
+            Section((try? Self.cruiseReference.get()).map { "Cruise figures at \(Format.altitude($0)), standard day" } ?? "Cruise figures, standard day") {
+                ProblemLine(Self.cruiseReference, "The altitude these figures are at")
                 number("Cruise power", unit: "%", text: $form.cruisePowerPct, placeholder: "65", key: "cruisePowerPct", problems: problems)
             }
             // Without usable fuel the nav log makes no fuel check.
@@ -225,7 +178,12 @@ struct OwnAircraftPage: View {
     }
 
     private func reload() async {
-        if let fresh = try? await Gateway.aircraftRecords().first(where: { $0.id == record.id }) { record = fresh }
+        do {
+            if let fresh = try await Gateway.aircraftRecords().first(where: { $0.id == record.id }) { record = fresh }
+        } catch {
+            // Said here, so what is shown is not taken for what was just saved.
+            problem = "Its record couldn't be fetched again: \(error.localizedDescription)"
+        }
         onChange()
     }
 }
@@ -378,128 +336,6 @@ struct VorCheckSection: View {
         let request = VorCheckRequest(checkedOn: Day.string(checkedOn), errorDeg: Double(errorText.trimmingCharacters(in: .whitespaces)) ?? 0,
                                       kind: kind, place: trimmed.isEmpty ? nil : trimmed)
         do { record = try await Gateway.recordVorCheck(record.id, request); problem = nil; onChange() } catch { problem = error.localizedDescription }
-    }
-}
-
-/// An airplane's squawks: written as they are found, open until fixed. An
-/// instrument or equipment that does not work is marked so, with the
-/// kinds of flight its 14 CFR 91.213(d) determination covers -- not
-/// required for them, removed or deactivated and placarded, no hazard --
-/// as the risk assessment reads it.
-struct SquawksView: View {
-    let aircraft: OwnAircraftRecord
-    var onChange: () -> Void
-    @State private var squawks: [Squawk]?
-    @State private var text = ""
-    @State private var foundOn = Date()
-    @State private var inoperative = false
-    @State private var deferredFor: String?
-    @State private var fixing: Squawk?
-    @State private var fixNote = ""
-    @State private var problem: String?
-    @State private var busy = false
-
-    var body: some View {
-        List {
-            if let squawks {
-                let open = squawks.filter { $0.fixedOn == nil }
-                Section("Open") {
-                    if open.isEmpty { Text("None open").foregroundStyle(.secondary) }
-                    ForEach(open) { s in
-                        Button {
-                            fixing = s
-                            fixNote = ""
-                        } label: {
-                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                                Text(s.text).foregroundStyle(.primary)
-                                Text([Day.said(s.reportedOn), Deferral.standing(s)].compactMap { $0 }.joined(separator: " · "))
-                                    .font(.footnote).foregroundStyle(s.inoperative && s.deferredFor == nil ? WingtipInk.problem : Color.secondary)
-                            }
-                        }
-                    }
-                }
-                if let fixing {
-                    Section("Fix: \(fixing.text)") {
-                        TextField("What was done, and by whom", text: $fixNote, axis: .vertical).lineLimit(2...5)
-                        Button("Fixed Today") { Task { await fix(fixing) } }.disabled(busy)
-                        Button("Cancel") { self.fixing = nil }
-                    }
-                }
-                // Without a minimum equipment list, inoperative equipment may
-                // be deferred for the kinds of flight it is not required for,
-                // removed or deactivated and placarded INOPERATIVE, by a pilot
-                // or a mechanic who finds it no hazard (14 CFR 91.213(d)).
-                Section("Write a Squawk") {
-                    TextField("What was found", text: $text, axis: .vertical).lineLimit(1...4)
-                    DatePicker("Found on", selection: $foundOn, in: ...Date(), displayedComponents: .date)
-                    Toggle("Inoperative equipment", isOn: $inoperative)
-                        .onChange(of: inoperative) { _, on in if !on { deferredFor = nil } }
-                    if inoperative {
-                        Picker("91.213(d)", selection: $deferredFor) {
-                            ForEach(Deferral.reaches, id: \.label) { r in Text(r.label).tag(r.value) }
-                        }
-                    }
-                    Button("Write It") { Task { await add() } }
-                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || busy)
-                }
-                let fixed = squawks.filter { $0.fixedOn != nil }
-                if !fixed.isEmpty {
-                    Section("Fixed") {
-                        ForEach(fixed) { s in
-                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                                Text(s.text)
-                                Text((["Fixed \(Day.said(s.fixedOn ?? ""))"] + [s.fixNote].compactMap { $0 }).joined(separator: " · "))
-                                    .font(.footnote).foregroundStyle(.secondary)
-                            }
-                        }
-                        .onDelete { at in
-                            let gone = at.map { fixed[$0] }
-                            Task {
-                                for s in gone { try? await Gateway.deleteSquawk(aircraft.id, s.id) }
-                                await load()
-                            }
-                        }
-                    }
-                }
-            } else if problem == nil {
-                ProgressView()
-            }
-            ProblemLine(problem)
-        }
-        .navigationTitle("\(aircraft.tailNumber) Squawks")
-        .task { await load() }
-    }
-
-    private func load() async {
-        do { squawks = try await Gateway.squawks(aircraft.id); problem = nil } catch { problem = "The squawks could not be fetched: \(error.localizedDescription)" }
-    }
-
-    private func add() async {
-        busy = true
-        defer { busy = false }
-        let request = SquawkRequest(deferredFor: inoperative ? deferredFor : nil, inoperative: inoperative, reportedOn: Day.string(foundOn),
-                                    text: text.trimmingCharacters(in: .whitespacesAndNewlines))
-        do {
-            _ = try await Gateway.addSquawk(aircraft.id, request)
-            text = ""; inoperative = false; deferredFor = nil
-            await load()
-            onChange()
-        } catch { problem = error.localizedDescription }
-    }
-
-    private func fix(_ s: Squawk) async {
-        busy = true
-        defer { busy = false }
-        var request = s.request
-        request.fixedOn = Day.today()
-        let note = fixNote.trimmingCharacters(in: .whitespacesAndNewlines)
-        request.fixNote = note.isEmpty ? nil : note
-        do {
-            _ = try await Gateway.updateSquawk(aircraft.id, s.id, request)
-            fixing = nil
-            await load()
-            onChange()
-        } catch { problem = error.localizedDescription }
     }
 }
 

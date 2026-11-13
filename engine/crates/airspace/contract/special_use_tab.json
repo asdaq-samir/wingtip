@@ -1,0 +1,101 @@
+{
+  "x-call": "wingtip_airspace::sua_tab::call",
+  "description": "The tab ForeFlight writes on a special-use area's boundary, its words: the area's name cut to nine characters after the type's letter (\"M-BRADY NOR*\"), its floor and ceiling as figures with their references (SFC, AGL, MSL, FL, UNL), and the tab's finished words as the map writes them (\"M-BRADY NOR*:\" over \"3600-17999\": whole feet MSL, 500AGL, FL230, SFC, UNL), from the FAA's special use airspace data (ADDS: each limit's VAL in feet, a flight level times 100, its CODE SFC, MSL, STD or UNLTD and its DESC TI, TNI or ANI). Written as the FAA's CIFP writes the same areas: a ceiling \"to but not including\" FL180 is 17,999 ft MSL, as Class A begins at 18,000 ft MSL (14 CFR 71.33); another ceiling TNI a foot under its figure, a floor ANI a foot over it; SFC above 0 is that height AGL. Null for a piece the FAA cuts out of its area (EXCLUSION 1), or where a limit has no figure.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "SpecialUseTabInput",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "floor": {
+          "$ref": "#/definitions/SpecialUseTabLimit"
+        },
+        "ceiling": {
+          "$ref": "#/definitions/SpecialUseTabLimit"
+        },
+        "excluded": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "answer": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "floor_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "floor_ref": {
+              "enum": [
+                "SFC",
+                "AGL",
+                "MSL",
+                "FL",
+                "UNL"
+              ]
+            },
+            "ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ceiling_ref": {
+              "enum": [
+                "SFC",
+                "AGL",
+                "MSL",
+                "FL",
+                "UNL"
+              ]
+            },
+            "text": {
+              "type": "string",
+              "description": "The tab as the map writes it: the name, a colon, a line break, then the floor and the ceiling a hyphen apart."
+            }
+          },
+          "required": [
+            "name",
+            "floor_ft",
+            "floor_ref",
+            "ceiling_ft",
+            "ceiling_ref",
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "SpecialUseTabAnswer"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

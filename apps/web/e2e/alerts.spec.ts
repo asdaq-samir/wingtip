@@ -1,5 +1,6 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { openMapSettings, settle, slow } from "./helpers";
+import { drawn, settle, slow } from "./helpers";
+import { closeMapSettings, openSettingsPage } from "./mapCard";
 
 /**
  * What is ahead of own ship in the air (lib/map/position/ahead), said over the map
@@ -23,7 +24,7 @@ async function flying(page: Page, speedKt = 120, accuracyM = 10) {
             accuracy,
             heading: 90,
             speed: knots / 1.943844,
-            altitude: 3000 / 3.28084,
+            altitude: 3000 * 0.3048, // 3,000 ft in metres, by the international foot (0.3048 m exactly)
             altitudeAccuracy: 10,
             toJSON() {
               return this;
@@ -118,10 +119,10 @@ test("in the air, what is ahead is said over the map, a warning first, and drawn
   await expect(title).toContainText("Chicago Class B", { timeout: slow(15_000) });
   await expect(title).toContainText("In 2 min · 4.2 nm · 1 more");
   // A warning is said at once to a screen reader, once, through the
-  // page's assertive live region (lib/announce), not the banner's
+  // page's assertive live region (React Aria's announcer, lib/announce), not the banner's
   // countdown read again at every change.
   await expect(banner(page).getByRole("region", { name: "Alerts ahead" })).toBeVisible();
-  await expect(page.locator('[data-announcer="assertive"]')).toContainText("Chicago Class B");
+  await expect(page.locator('[data-live-announcer] [aria-live="assertive"]')).toContainText("Chicago Class B");
   // Asked from the GPS's own track, speed and height.
   const ask = asks[0]!.searchParams;
   expect([ask.get("track"), ask.get("gs"), ask.get("alt")]).toEqual(["90", "120", "3000"]);
@@ -131,14 +132,15 @@ test("in the air, what is ahead is said over the map, a warning first, and drawn
   // Under the line, not inside its button (shadcn's Collapsible).
   await expect(banner(page)).toContainText("91.131(a)(1)");
   await expect(banner(page)).toContainText("Tower 2,700 ft: In 40 s · 300 ft below you");
-  // A ring where each is (a marker in its colour; the line out to it is
-  // on the map's canvas).
-  await expect(page.locator(".maplibregl-marker.ahead-warning")).toHaveCount(1);
-  await expect(page.locator(".maplibregl-marker.ahead-caution")).toHaveCount(1);
+  // A ring where each is, in its colour, and the line out to it, on the
+  // map's canvas (AheadGl's probe).
+  const rings = async (level: string) => (await drawn(page, "ahead-rings")).filter((r) => r.level === level).length;
+  await expect.poll(() => rings("warning")).toBe(1);
+  await expect.poll(() => rings("caution")).toBe(1);
   // OK puts them away, and they stay away while they are what is ahead.
   await banner(page).getByTestId("alerts-acknowledge").click();
   await expect(banner(page)).toHaveCount(0);
-  await expect(page.locator(".maplibregl-marker.ahead-warning")).toHaveCount(0);
+  await expect.poll(() => rings("warning")).toBe(0);
 });
 
 test("a planner that does not answer is said, not shown as a clear sky", { tag: "@smoke" }, async ({ page }) => {
@@ -203,13 +205,13 @@ test("spoken, each alert ahead is said once as it comes, and turned on it says s
 
   // The map's settings: one Alerts control of Off, On and Spoken, there
   // since the owner's "alerts can go to overlay settings" (2026-11-05).
-  await openMapSettings(page);
-  const mode = page.getByTestId("map-settings").getByTestId("alerts-mode");
+  // Settings' Alerts page since the owner's option A (2026-11-13).
+  await openSettingsPage(page, "alerts");
+  const mode = page.getByTestId("alerts-mode");
   await expect(mode.getByRole("button", { name: "On" })).toHaveAttribute("aria-pressed", "true");
   await mode.getByRole("button", { name: "Spoken" }).click();
   await expect(mode.getByRole("button", { name: "Spoken" })).toHaveAttribute("aria-pressed", "true");
-  await page.keyboard.press("Escape");
-  await expect(page.getByTestId("map-settings")).toHaveCount(0);
+  await closeMapSettings(page);
   // Turned on in the air: it says so, then what is ahead.
   await expect.poll(said).toEqual(["Alerts will be spoken.", "Chicago Class B, in 2 minutes."]);
 

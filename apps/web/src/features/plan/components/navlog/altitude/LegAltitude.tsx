@@ -3,7 +3,8 @@ import { cn } from "cn";
 import SheetDialog from "../../../../../components/SheetDialog";
 import Segmented from "../../../../../components/Segmented";
 import { Button } from "../../../../../components/ui/button";
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "../../../../../components/ui/input-group";
+import { NumberField } from "../../../../../components/ui/number-field";
+import { THREE_FIGURES } from "../../../../../components/ui/numberFormats";
 import {
   Popover,
   PopoverContent,
@@ -58,6 +59,10 @@ function changeWords(point: ProfilePoint, feet: number, mode: ChangeMode, profil
       tas_kt: leg?.tas_kt ?? null,
       fuel_burn_gph: leg?.fuel_burn_gph ?? null,
       oat_c: leg?.oat_c ?? null,
+      // The climb's own wind triangle in the leg's wind.
+      true_course_deg: leg?.true_course_deg ?? null,
+      wind_dir_true_deg: leg?.wind?.wind_dir_true_deg ?? null,
+      wind_speed_kt: leg?.wind?.wind_speed_kt ?? null,
     });
   let c;
   try {
@@ -98,16 +103,18 @@ export default function LegAltitude({
   const phone = useIsMobile();
   const [open, setOpen] = useState(false);
   const planned = point.legIn?.altitude_ft ?? point.legOut?.altitude_ft ?? null;
-  const [typed, setTyped] = useState("");
+  const level = planned === null ? null : Number(flightLevel(planned).slice(3));
+  // The flight level as typed (React Aria's NumberField), hundreds of feet.
+  const [typed, setTyped] = useState<number | null>(null);
   const [mode, setMode] = useState<ChangeMode>("cross_at");
   const form = useId();
-  const feet = typed ? Number(typed) * 100 : NaN;
+  const feet = typed != null ? typed * 100 : Number.NaN;
   // Under Class A and at least 500 ft (the engine's altitude_allowed;
   // 14 CFR 71.33, 91.135, 91.119(c)), as the address takes one.
   const valid = Number.isFinite(feet) && callEngine("altitude_allowed", { ft: feet });
   const words = valid ? changeWords(point, feet, mode, profile) : null;
   const openWith = (next: boolean) => {
-    if (next) setTyped(planned === null ? "" : flightLevel(planned).slice(3));
+    if (next) setTyped(level);
     setOpen(next);
   };
   const set = () => {
@@ -125,19 +132,20 @@ export default function LegAltitude({
         set();
       }}
     >
-      <InputGroup className="h-10 font-mono">
-        <InputGroupAddon>
-          <InputGroupText>FL</InputGroupText>
-        </InputGroupAddon>
-        <InputGroupInput
-          value={typed}
-          onChange={(e) => setTyped(e.target.value.replace(/\D/g, "").slice(0, 3))}
-          placeholder="---"
-          inputMode="numeric"
-          aria-label={`${title}, flight level`}
-          data-testid="leg-altitude-input"
-        />
-      </InputGroup>
+      <NumberField
+        key={String(open)}
+        defaultValue={level}
+        onTyped={setTyped}
+        formatOptions={THREE_FIGURES}
+        minValue={0}
+        maxValue={999}
+        placeholder="---"
+        lead="FL"
+        aria-label={`${title}, flight level`}
+        className="h-10 font-mono"
+        inputClassName="font-mono"
+        data-testid="leg-altitude-input"
+      />
       <Segmented
         label="Where the change is flown"
         value={mode}

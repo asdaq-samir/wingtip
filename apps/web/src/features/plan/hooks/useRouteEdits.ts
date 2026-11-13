@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { SetURLSearchParams } from "react-router";
+import { ADDRESS_CLEARED, type SetAddress } from "../../../lib/address";
 import type { Detour, ProcedureDrawing } from "../../../lib/api/types";
 import { fieldListParams, fieldListsOf, prunedFieldLists } from "../lib/fieldLists";
 import { MAX_STOPS, altitudesOf, altitudesParam, departureOf, identOf, routeOf, stopsOf } from "../../../lib/identSchema";
@@ -7,7 +7,6 @@ import { sameField, type PickedProcedure } from "../../../lib/procedures";
 import { courseQuery, queryClient } from "../../../lib/queryClient";
 import { feel } from "../../../lib/haptics";
 import { rebasedRoute } from "../lib/routeRebase";
-import { patched } from "../../../lib/useSearchParamsNow";
 import type { RouteParts } from "../components/RouteBox";
 
 /** A picked procedure's kind, from its drawing where it has been asked for:
@@ -22,18 +21,18 @@ export const procedureKind = (p: PickedProcedure) =>
  * a stop added, taken out or put after a point, a point's own altitude,
  * the altitude flown, and Class B allowed or avoided. The address is the
  * one place the route is kept, so each edit reads it as it is when the
- * change is made (setSearchParams' `prev`), never a copy of it.
+ * change is made (setAddress's `prev`), never a copy of it.
  */
 export function useRouteEdits({
   planned,
   routePoints,
-  setSearchParams,
+  setAddress,
 }: {
   /** The route this render drew. */
   planned: { dep: string; stops: string[]; dest: string };
   /** Its points as typed, the departure first (empty ones left out). */
   routePoints: string[];
-  setSearchParams: SetURLSearchParams;
+  setAddress: SetAddress;
 }) {
   // The route, changed in its box (RouteBox): in the address at once,
   // which re-plans, as the airplane and the time do -- the departure,
@@ -53,7 +52,10 @@ export function useRouteEdits({
       const { dep, dest } = parts;
       const drawn = { dep: drawnDep, stops, dest: drawnDest };
       if (!dep && !dest) {
-        setSearchParams({}, { replace: true });
+        // The height the pilot left the sheet at kept (`view`, all the way
+        // up), as the route's close keeps it (clearRoute): wiped with the
+        // rest, the last waypoint out dropped the sheet to its pill.
+        void setAddress({ ...ADDRESS_CLEARED, view: undefined });
         return;
       }
       // The course asked for now, as the route goes in, not once the page
@@ -63,42 +65,39 @@ export function useRouteEdits({
       const via = stopsOf(parts.stops.join(","));
       const whole = routeOf(dep, dest, via);
       if (whole) void queryClient.prefetchQuery(courseQuery(whole.dep, whole.dest, via));
-      setSearchParams(
-        (prev) => {
-          const { dep, stops, dest } = rebasedRoute(drawn, parts, {
-            dep: departureOf(prev.get("dep")),
-            stops: stopsOf(prev.get("stops")),
-            dest: identOf(prev.get("dest")),
-          });
-          // What was picked at a field goes with it out of the route -- its
-          // runways, procedures, altitude, time on the ground and hold -- in
-          // the same change, so the planner is not asked once with them.
-          // Not while the Routes' cards are browsed (`keepLists`): a way in
-          // sight that skips a stop took the stop's approach and ground time
-          // with it, and Your Route came back without them.
-          const lists = fieldListsOf(prev);
-          const kept = keepLists ? lists : prunedFieldLists(lists, { dep, stops, dest }, procedureKind);
-          // A route changed by hand is the route: a Direct to's own is kept,
-          // and Cancel has nothing to go back to.
-          // The fuel stops among the stops (useFuelStops): those added now, and
-          // those before that are stops still.
-          const fuel = [...(prev.get("fuel") ?? "").split(","), ...fuelAdded].filter(
-            (id, i, all) => id && all.indexOf(id) === i && stops.some((stop) => sameField(stop, id)),
-          );
-          return patched(prev, {
-            dep,
-            dest,
-            stops: stops.join(","),
-            ...fieldListParams(kept),
-            direct: null,
-            was: null,
-            fuel: fuel.length ? fuel.join(",") : null,
-          });
-        },
-        { replace: true },
-      );
+      void setAddress((prev) => {
+        const { dep, stops, dest } = rebasedRoute(drawn, parts, {
+          dep: departureOf(prev.dep),
+          stops: stopsOf(prev.stops),
+          dest: identOf(prev.dest),
+        });
+        // What was picked at a field goes with it out of the route -- its
+        // runways, procedures, altitude, time on the ground and hold -- in
+        // the same change, so the planner is not asked once with them.
+        // Not while the Routes' cards are browsed (`keepLists`): a way in
+        // sight that skips a stop took the stop's approach and ground time
+        // with it, and Your Route came back without them.
+        const lists = fieldListsOf(prev);
+        const kept = keepLists ? lists : prunedFieldLists(lists, { dep, stops, dest }, procedureKind);
+        // A route changed by hand is the route: a Direct to's own is kept,
+        // and Cancel has nothing to go back to.
+        // The fuel stops among the stops (useFuelStops): those added now, and
+        // those before that are stops still.
+        const fuel = [...(prev.fuel ?? "").split(","), ...fuelAdded].filter(
+          (id, i, all) => id && all.indexOf(id) === i && stops.some((stop) => sameField(stop, id)),
+        );
+        return {
+          dep: dep || null,
+          dest: dest || null,
+          stops: stops.join(",") || null,
+          ...fieldListParams(kept),
+          direct: null,
+          was: null,
+          fuel: fuel.length ? fuel.join(",") : null,
+        };
+      });
     },
-    [setSearchParams, drawnDep, stops, drawnDest],
+    [setAddress, drawnDep, stops, drawnDest],
   );
   // An airport's card's Add Stop, at the pilot's ask: the field the
   // route's next stop, after the ones it makes and before its destination
@@ -115,21 +114,16 @@ export function useRouteEdits({
       else points.push(to.ident);
       // One change of the address: two in a row, the second read the first's
       // address from before it.
-      setSearchParams(
-        (prev) => {
-          return patched(prev, {
-            dep: points[0]!,
-            stops: points.length > 2 ? points.slice(1, -1).join(",") : null,
-            dest: points.length > 1 ? points.at(-1)! : null,
-            place: null,
-            direct: null,
-            was: null,
-          });
-        },
-        { replace: true },
-      );
+      void setAddress({
+        dep: points[0] || null,
+        stops: points.length > 2 ? points.slice(1, -1).join(",") : null,
+        dest: points.length > 1 ? points.at(-1) || null : null,
+        place: null,
+        direct: null,
+        was: null,
+      });
     },
-    [routePoints, planned.dep, planned.dest, setSearchParams],
+    [routePoints, planned.dep, planned.dest, setAddress],
   );
   // An airport's card's Depart From (the one search, 2026-11-09): the
   // field the route's departure, its stops and destination kept -- the
@@ -137,23 +131,20 @@ export function useRouteEdits({
   // plan, which the route's change brings up (usePanelView).
   const departFrom = useCallback(
     (from: { ident: string }) => {
-      setSearchParams(
-        (prev) => {
-          const kept = stopsOf(prev.get("stops")).filter((stop) => !sameField(stop, from.ident));
-          const dest = identOf(prev.get("dest"));
-          return patched(prev, {
-            dep: from.ident,
-            stops: kept.length ? kept.join(",") : null,
-            dest: dest && !sameField(dest, from.ident) ? dest : null,
-            place: null,
-            direct: null,
-            was: null,
-          });
-        },
-        { replace: true },
-      );
+      void setAddress((prev) => {
+        const kept = stopsOf(prev.stops).filter((stop) => !sameField(stop, from.ident));
+        const dest = identOf(prev.dest);
+        return {
+          dep: from.ident || null,
+          stops: kept.length ? kept.join(",") : null,
+          dest: dest && !sameField(dest, from.ident) ? dest : null,
+          place: null,
+          direct: null,
+          was: null,
+        };
+      });
     },
-    [setSearchParams],
+    [setAddress],
   );
   // A point's own altitude set, or (null) given back to the plan; with
   // `startAt` from the profile, whether its change begins there (Start At,
@@ -162,21 +153,18 @@ export function useRouteEdits({
   const setPointAltitude = useCallback(
     (ident: string, feet: number | null, startAt?: boolean) => {
       feel("altitude");
-      setSearchParams(
-        (prev) => {
-          const own = altitudesOf(prev.get("altitudes"));
-          if (feet === null) delete own[ident];
-          else own[ident] = feet;
-          const starts = new Set((prev.get("altitude_starts") ?? "").split(",").filter(Boolean));
-          if (startAt && feet !== null) starts.add(ident);
-          else if (startAt !== undefined || feet === null) starts.delete(ident);
-          const kept = [...starts].filter((s) => s in own);
-          return patched(prev, { altitudes: altitudesParam(own), altitude_starts: kept.length ? kept.join(",") : null });
-        },
-        { replace: true },
-      );
+      void setAddress((prev) => {
+        const own = altitudesOf(prev.altitudes);
+        if (feet === null) delete own[ident];
+        else own[ident] = feet;
+        const starts = new Set((prev.altitude_starts ?? "").split(",").filter(Boolean));
+        if (startAt && feet !== null) starts.add(ident);
+        else if (startAt !== undefined || feet === null) starts.delete(ident);
+        const kept = [...starts].filter((s) => s in own);
+        return { altitudes: altitudesParam(own) || null, altitude_starts: kept.length ? kept.join(",") : null };
+      });
     },
-    [setSearchParams],
+    [setAddress],
   );
   const setStops = useCallback(
     (stops: string[], fuelAdded?: string[], keepLists = false) =>
@@ -204,20 +192,13 @@ export function useRouteEdits({
   // still bent round the Class B it was now planned through.
   const acceptClassB = useCallback(
     (accept: boolean) => {
-      setSearchParams(
-        (prev) => {
-          const via = prev.get("class_b_via");
-          const stops = stopsOf(prev.get("stops")).filter((stop) => !accept || stop !== via);
-          return patched(prev, {
-            class_b: accept ? null : "0",
-            class_b_via: accept ? null : via,
-            stops: stops.length ? stops.join(",") : null,
-          });
-        },
-        { replace: true },
-      );
+      void setAddress((prev) => {
+        const via = prev.class_b_via;
+        const stops = stopsOf(prev.stops).filter((stop) => !accept || stop !== via);
+        return { class_b: accept, class_b_via: accept ? null : via, stops: stops.length ? stops.join(",") : null };
+      });
     },
-    [setSearchParams],
+    [setAddress],
   );
   // "Avoid Class B": the planner's waypoint round it put in the stops where
   // it says (Detour.stop_index, before that stop), and the clearance taken
@@ -228,17 +209,14 @@ export function useRouteEdits({
   // alone taken back then. Its ident kept (class_b_via), for Allow.
   const avoidClassB = useCallback(
     (detour: Detour | null) => {
-      setSearchParams(
-        (prev) => {
-          const stops = stopsOf(prev.get("stops"));
-          const added = !!detour && !stops.includes(detour.ident) && stops.length < MAX_STOPS;
-          if (added) stops.splice(Math.min(detour.stop_index, stops.length), 0, detour.ident);
-          return patched(prev, { class_b: "0", class_b_via: added ? detour.ident : null, stops: stops.length ? stops.join(",") : null });
-        },
-        { replace: true },
-      );
+      void setAddress((prev) => {
+        const stops = stopsOf(prev.stops);
+        const added = !!detour && !stops.includes(detour.ident) && stops.length < MAX_STOPS;
+        if (added) stops.splice(Math.min(detour.stop_index, stops.length), 0, detour.ident);
+        return { class_b: false, class_b_via: added ? detour.ident : null, stops: stops.length ? stops.join(",") : null };
+      });
     },
-    [setSearchParams],
+    [setAddress],
   );
   // An altitude of the pilot's own, the rest of the address as it was.
   // An altitude typed beside the airplane is flown on every leg, legal or
@@ -250,11 +228,9 @@ export function useRouteEdits({
   const flyAltitude = useCallback(
     (ft: number, nearest = false) => {
       feel("altitude");
-      setSearchParams((prev) => patched(prev, { altitude_ft: String(ft), altitude_nearest: nearest ? "1" : null, altitude_choice: null }), {
-        replace: true,
-      });
+      void setAddress({ altitude_ft: ft, altitude_nearest: nearest, altitude_choice: null });
     },
-    [setSearchParams],
+    [setAddress],
   );
   return { setRoute, addStop, departFrom, setPointAltitude, setStops, removeStop, insertStopAfter, acceptClassB, avoidClassB, flyAltitude };
 }

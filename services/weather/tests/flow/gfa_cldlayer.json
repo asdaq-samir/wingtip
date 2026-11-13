@@ -1,0 +1,427 @@
+{
+"type": "FeatureCollection",
+"features": [
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-125,
+40
+]
+},
+"properties": {
+"cldlayers": "BKN010/TOP FL450/CI ABV",
+"cldcov": "BKN"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-123,
+40
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-121,
+40
+]
+},
+"properties": {
+"cldlayers": "SKC",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-119,
+40
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-117,
+40
+]
+},
+"properties": {
+"cldlayers": "SKC",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-115,
+40
+]
+},
+"properties": {
+"cldlayers": "SKC",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-125,
+42
+]
+},
+"properties": {
+"cldlayers": "BKN010/TOP FL450/CI ABV",
+"cldcov": "BKN"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-123,
+42
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-121,
+42
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-119,
+42
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-117,
+42
+]
+},
+"properties": {
+"cldlayers": "SKC",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-115,
+42
+]
+},
+"properties": {
+"cldlayers": "SKC",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-125,
+44
+]
+},
+"properties": {
+"cldlayers": "OVC003/TOP FL450/CI ABV",
+"cldcov": "OVC"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-123,
+44
+]
+},
+"properties": {
+"cldlayers": "FEW007/CI ABV",
+"cldcov": "FEW"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-121,
+44
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-119,
+44
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-117,
+44
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-115,
+44
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-125,
+46
+]
+},
+"properties": {
+"cldlayers": "OVC006/TOP FL450/CI ABV",
+"cldcov": "OVC"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-123,
+46
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-121,
+46
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-119,
+46
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-117,
+46
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-115,
+46
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-125,
+48
+]
+},
+"properties": {
+"cldlayers": "OVC003/TOP FL350/CI ABV",
+"cldcov": "OVC"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-123,
+48
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-121,
+48
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-119,
+48
+]
+},
+"properties": {
+"cldlayers": "OVC022/TOP FL260/CI ABV",
+"cldcov": "OVC"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-117,
+48
+]
+},
+"properties": {
+"cldlayers": "SCT030/CI ABV",
+"cldcov": "SCT"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-115,
+48
+]
+},
+"properties": {
+"cldlayers": "Cirrus",
+"cldcov": "CLR"
+}
+}
+],
+"mtime": "20261112_12_F02",
+"validTime": "2026-11-12T14:00:00.000Z"
+}

@@ -4,3 +4,4 @@
 # pydantic-settings and the engine's wheel. Pinned to what python:3.15-slim
 # resolves; moved on in each wave's end pass.
 gribberish==1.9.0   # app.gfs and app.glmp read the GFS's and GLMP's GRIB2, complex packing included (MIT; 2 MB, where eccodes is 100)
+pillow==13.0.0      # app.flow_grid writes the flow layer's PNGs (MIT-CMU; wingtip.charts' pin, services/planner/requirements-wingtip-charts.txt)

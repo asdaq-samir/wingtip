@@ -24,6 +24,7 @@ FAA's own data set, its attributes the fields named below:
 - `special_use`: the FAA's special use airspace feature service (ADDS),
   as the cycle pack holds it: NAME, TYPE_CODE, LOWER_*/UPPER_*, TIMESOFUSE,
   GMTOFFSET/DST_CODE and CONT_AGENT, read as wingtip.sua reads them.
+- `special_use_labels`: a point on each area's edge, its tab (sua_labels).
 - `airports`: NASR's APT_BASE.csv (ARPT_ID, ICAO_ID, ARPT_NAME,
   SITE_TYPE_CODE, FACILITY_USE_CODE, OWNERSHIP_TYPE_CODE, TWR_TYPE_CODE,
   ELEV, FUEL_TYPES, LAT_DECIMAL/LONG_DECIMAL; ARPT_STATUS O only), with
@@ -61,7 +62,9 @@ import tempfile
 import time
 from pathlib import Path
 
-from wingtip import cycle_pack, vector_tiles
+from wingtip import cycle_pack, geo, vector_tiles
+from wingtip.atomic import atomic_path
+from wingtip.units import M_PER_FT, M_PER_NM
 from wingtip.vector_tiles import INDEX, LAYERS, VERSION, archive_name
 
 log = logging.getLogger(__name__)
@@ -96,7 +99,7 @@ DETAIL = 12
 #: within 0.0001 degree, 11 m (wingtip.cycle_pack.PHONE_TOLERANCE_DEG); a
 #: sectional's printed airspace line is itself some 100 m wide at
 #: 1:500,000. services/jobs/charts/tests/test_overlays.py measures it on Chicago's Class B.
-TOLERANCE_M = round((1 + 0.5 * 2**0.5) * 40_075_016.686 / 2**MAX_ZOOM / 2**DETAIL, 1)
+TOLERANCE_M = round((1 + 0.5 * 2**0.5) * geo.WEB_MERCATOR_CIRCUMFERENCE_M / 2**MAX_ZOOM / 2**DETAIL, 1)
 
 #: Each layer's first zoom, by what the feature is. Below it a feature is
 #: left out of the tiles; from it on, it is in every tile it touches, and
@@ -122,12 +125,6 @@ FIX_MIN_ZOOM = 10
 #: Runways from zoom 10 (a tile 39 km across): the map draws them closer
 #: in, past the chart's own detail, where they are a few pixels wide.
 RUNWAY_MIN_ZOOM = 10
-#: Feet to metres, exactly (the international foot, 0.3048 m).
-FT_M = 0.3048
-#: WGS 84's equatorial radius, m: the local frame a runway's corners are
-#: put in (_runway_corners) is a plane tangent there, which over a
-#: 4-km runway is out by well under a centimetre.
-EARTH_M = 6_378_137.0
 
 ATTRIBUTION = "FAA NASR and special use airspace (ADDS), cycle {cycle}"
 
@@ -484,18 +481,16 @@ def fix_features(fix_path: Path, bbox=None):
 
 def _runway_corners(a, b, width_m: float) -> list[list[float]]:
     """The four corners of a runway's surface, (lon, lat), from its two
-    ends' positions and its width: a rectangle along the line between the
-    ends, half the width each side, as a closed counter-clockwise ring
-    (RFC 7946). Worked in a plane tangent at the runway's middle."""
-    lat0 = math.radians((a[1] + b[1]) / 2)
-    east = lambda lon: math.radians(lon) * EARTH_M * math.cos(lat0)  # noqa: E731
-    north = lambda lat: math.radians(lat) * EARTH_M  # noqa: E731
-    ax, ay, bx, by = east(a[0]), north(a[1]), east(b[0]), north(b[1])
-    length = math.hypot(bx - ax, by - ay) or 1.0
-    # The unit normal to the runway, half its width long.
-    nx, ny = -(by - ay) / length * width_m / 2, (bx - ax) / length * width_m / 2
-    back = lambda x, y: [round(math.degrees(x / (EARTH_M * math.cos(lat0))), 7), round(math.degrees(y / EARTH_M), 7)]  # noqa: E731
-    ring = [back(ax - nx, ay - ny), back(bx - nx, by - ny), back(bx + nx, by + ny), back(ax + nx, ay + ny)]
+    ends' positions and its width: half the width square off each end's
+    true course to the other (wingtip.geo), as a closed counter-clockwise
+    ring (RFC 7946)."""
+    half_nm = width_m / 2 / M_PER_NM
+
+    def beside(end, other, side: float) -> list[float]:
+        lat, lon = geo.destination_point(end[1], end[0], geo.bearing_deg(end[1], end[0], other[1], other[0]) + side, half_nm)
+        return [round(lon, 7), round(lat, 7)]
+
+    ring = [beside(a, b, 90.0), beside(b, a, -90.0), beside(b, a, 90.0), beside(a, b, -90.0)]
     if (ring[1][0] - ring[0][0]) * (ring[2][1] - ring[0][1]) - (ring[1][1] - ring[0][1]) * (ring[2][0] - ring[0][0]) < 0:
         ring.reverse()
     return [*ring, ring[0]]
@@ -503,11 +498,9 @@ def _runway_corners(a, b, width_m: float) -> list[list[float]]:
 
 def _true_bearing(a, b) -> int:
     """The initial great-circle bearing from a to b, (lon, lat), degrees
-    true: the heading of an airplane landing on a's end towards b."""
-    lat1, lat2, dlon = math.radians(a[1]), math.radians(b[1]), math.radians(b[0] - a[0])
-    y = math.sin(dlon) * math.cos(lat2)
-    x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
-    return round(math.degrees(math.atan2(y, x))) % 360
+    true, whole: the heading of an airplane landing on a's end towards b
+    (wingtip.geo.bearing_deg, PROJ's on the planner's sphere)."""
+    return round(geo.bearing_deg(a[1], a[0], b[1], b[0])) % 360
 
 
 def runway_features(rwy_path: Path, rwy_end_path: Path, bbox=None):
@@ -537,7 +530,7 @@ def runway_features(rwy_path: Path, rwy_end_path: Path, bbox=None):
             continue
         width_ft, surface = widths.get(key, (None, ""))
         props = {"site_no": key[0], "runway": key[1], "width_ft": width_ft, "surface": surface, "hard": _hard(surface)}
-        ring = _runway_corners(a, b, (width_ft or 75) * FT_M)
+        ring = _runway_corners(a, b, (width_ft or 75) * M_PER_FT)
         yield _feature({**props, "part": "surface"}, json.dumps({"type": "Polygon", "coordinates": [ring]}), RUNWAY_MIN_ZOOM)
         yield _feature(
             {**props, "part": "centreline"}, json.dumps({"type": "LineString", "coordinates": [list(a), list(b)]}), RUNWAY_MIN_ZOOM
@@ -564,10 +557,13 @@ def write_layers(
 ) -> dict[str, int]:
     """Each layer's GeoJSON, a feature a line, into folder/<layer>.geojsonl;
     how many features each holds."""
+    from .sua_labels import special_use_label_features
+
     sources = {
         "airspace": airspace_features(pack, bbox),
         "airspace_labels": airspace_label_features(pack, bbox),
         "special_use": special_use_features(pack, bbox),
+        "special_use_labels": special_use_label_features(pack, bbox),
         "airports": airport_features(apt_path, rwy_path, rwy_end_path, bbox),
         "navaids": navaid_features(nav_path, bbox, nav_rmk_path),
         "fixes": fix_features(fix_path, bbox),
@@ -616,12 +612,8 @@ def tippecanoe_args(folder: Path, out: Path, cycle: str, tippecanoe: str = TIPPE
         "--read-parallel",
         "--temporary-directory",
         str(folder),
-        "--name",
-        f"Wingtip FAA overlays {cycle}",
-        "--description",
-        f"Airspace, special use, airports, navaids, fixes and runways, FAA cycle {cycle}",
-        "--attribution",
-        ATTRIBUTION.format(cycle=cycle),
+        *("--name", f"Wingtip FAA overlays {cycle}", "--attribution", ATTRIBUTION.format(cycle=cycle)),
+        *("--description", f"Airspace, special use, airports, navaids, fixes and runways, FAA cycle {cycle}"),
     ]
     for layer in LAYERS:
         args += ["-L", f"{layer}:{folder / f'{layer}.geojsonl'}"]
@@ -672,12 +664,8 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
         run = subprocess.run(tippecanoe_args(folder, built, pack.cycle, tippecanoe), capture_output=True, text=True)
         if run.returncode != 0:
             raise RuntimeError(f"tippecanoe failed ({run.returncode}): {run.stderr[-2000:]}")
-        part = out_dir / f".{name}.pmtiles.part"
-        try:
+        with atomic_path(path) as part:
             shutil.copyfile(built, part)
-            os.replace(part, path)
-        finally:
-            part.unlink(missing_ok=True)
     index = {
         "cycle": pack.cycle,
         "name": name,
@@ -689,8 +677,8 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
         "tolerance_m": TOLERANCE_M,
         "layers": [{"name": layer, "features": counts[layer]} for layer in LAYERS],
     }
-    (out_dir / f"{INDEX}.part").write_text(json.dumps(index, separators=(",", ":")))
-    os.replace(out_dir / f"{INDEX}.part", out_dir / INDEX)
+    with atomic_path(out_dir / INDEX) as part:
+        part.write_text(json.dumps(index, separators=(",", ":")))
     for old in out_dir.glob("*.pmtiles"):
         if old != path:
             old.unlink(missing_ok=True)

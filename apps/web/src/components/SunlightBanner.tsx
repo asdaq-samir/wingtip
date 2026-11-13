@@ -6,7 +6,7 @@ import { unseen, useTips } from "../lib/firstRunTips";
 import { usePreferences } from "../lib/preferences";
 import { useSunlight, useSunlightSensor } from "../lib/sunlight";
 
-/** The tips store's key for the banner, said once on this device. */
+/** The seen-once store's key for the banner (lib/firstRunTips), said once on this device. */
 const SEEN = "sunlight-banner";
 
 /**

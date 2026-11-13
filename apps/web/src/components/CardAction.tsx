@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "cn";
+import { Toggle } from "@base-ui/react/toggle";
 import { Button } from "./ui/button";
-import { GLASS_BUTTON } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 import { Spinner } from "./ui/spinner";
 import { Kbd } from "./ui/kbd";
@@ -57,15 +57,16 @@ export function CardAction({
    *  the tap asked for. */
   busy?: boolean;
   /** Its key on a desktop, shown beside its word (aria-keyshortcuts too):
-   *  the airport card's F, D and S. */
+   *  the airport card's Alt+F, Alt+D and Alt+S. */
   keys?: string;
 } & Omit<ComponentProps<"button">, "children" | "onClick" | "disabled">) {
   // Its sides four points in, not the stock button's ten: the room a
   // word needs to stay on its one line (below) at the text sizes a reader
   // sets larger.
-  // The others iOS's grey tiles with their glyph and word in the tint, as
-  // Apple's Maps on the web draws a place's Call and Website (the owner's
-  // screenshot, 2026-10-26).
+  // The others the stock Button's glass, their glyph and word in the tint,
+  // as Apple's Maps on the web draws a place's Call and Website (the
+  // owner's screenshot, 2026-10-26).
+  const variant = filled ? ("default" as const) : ("glass" as const);
   const look = cn(
     // No edge on any, Fly Here's filled one too: the stock button's
     // clear one inset its fill a point, out of line with the tiles beside
@@ -73,12 +74,13 @@ export function CardAction({
     "h-auto min-w-0 flex-col gap-0.5 rounded-xl border-0 px-1 py-1.5 [&_svg:not([class*='size-'])]:size-[20px]",
     !filled &&
       cn(
-        GLASS_BUTTON,
-        // Its grey kept at 8% while its menu is open (GLASS_BUTTON's 12% there):
+        destructive ? "text-destructive-ink hover:text-destructive-ink" : "text-tint hover:text-tint",
+        // The Native look's words, as the stock grey button had them.
+        "native:text-secondary-foreground",
+        // Its grey kept at 8% while its menu is open (the glass's 12% there):
         // on the darker grey the tint read 4.44 to 1, short of WCAG's 4.5 (the
         // iOS audit's P15, an airplane's Alert menu, 2026-11-05); the menu
         // under it says it is open.
-        destructive ? "text-destructive-ink hover:text-destructive-ink" : "text-tint hover:text-tint",
         "aria-expanded:bg-foreground/8",
       ),
   );
@@ -104,7 +106,7 @@ export function CardAction({
   if (href && !disabled) {
     return (
       <Button
-        variant={filled ? "default" : "secondary"}
+        variant={variant}
         className={look}
         nativeButton={false}
         render={
@@ -121,25 +123,28 @@ export function CardAction({
       </Button>
     );
   }
-  return (
-    // What a menu's trigger hands its button (DropdownMenuTrigger asChild:
-    // its ref, its pointer and key handlers, aria-expanded) goes on it, so
-    // a tile can open a menu, as the airplane card's Alert does.
-    <Button
-      type="button"
-      variant={filled ? "default" : "secondary"}
-      {...trigger}
-      onClick={onClick}
-      disabled={disabled}
-      data-testid={testId}
-      aria-label={spoken}
-      aria-busy={busy || undefined}
-      aria-pressed={pressed}
-      // ⌥ is no key name aria-keyshortcuts knows: Alt is (lib/shortcutKeys).
-      aria-keyshortcuts={keys?.replace("⌥", "Alt+")}
-      className={look}
-    >
+  // What a menu's trigger hands its button (DropdownMenuTrigger asChild:
+  // its ref, its pointer and key handlers, aria-expanded) goes on it, so
+  // a tile can open a menu, as the airplane card's Alert does.
+  const own = {
+    type: "button" as const,
+    variant,
+    ...trigger,
+    onClick,
+    disabled,
+    "data-testid": testId,
+    "aria-label": spoken,
+    "aria-busy": busy || undefined,
+    // "Alt+F", as aria-keyshortcuts names it (lib/shortcutKeys).
+    "aria-keyshortcuts": keys,
+    className: look,
+  };
+  // A tile that is on or off is Base UI's Toggle (aria-pressed its own).
+  return pressed === undefined ? (
+    <Button {...own}>{face}</Button>
+  ) : (
+    <Toggle pressed={pressed} disabled={disabled} render={<Button {...own} />}>
       {face}
-    </Button>
+    </Toggle>
   );
 }

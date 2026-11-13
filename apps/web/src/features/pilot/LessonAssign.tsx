@@ -11,20 +11,13 @@ import type { ApproachLesson, FlightSummary, Training } from "../../lib/api/type
 import { dueWords, lessonPicked, lessonStatus, notableFixes, notesToSend } from "../../lib/assignedLessons";
 import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
-import { procedureQuery } from "../../lib/queryClient";
+import { procedureQuery, proceduresQuery } from "../../lib/queryClient";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
+import { FieldError } from "../../components/ui/field";
 
 // Its own chunk, as on a flight's page: drawn only where a track came.
 const ApproachDebriefs = lazy(() => import("../../components/ApproachDebrief"));
-
-/** A cycle's procedures hold for its 28 days, under the key the map's and
- *  the debrief's lists share. */
-const listQuery = (ident: string) => ({
-  queryKey: ["procedures", ident],
-  queryFn: () => api.procedures(ident),
-  staleTime: 6 * 60 * 60_000,
-});
 
 const route = (f: Pick<FlightSummary, "departureIdent" | "stops" | "destinationIdent">) =>
   [f.departureIdent, ...f.stops, f.destinationIdent].join(" ");
@@ -95,7 +88,7 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
   const [due, setDue] = useState("");
   const ident = field.trim().toUpperCase();
   const typed = /^[A-Z0-9]{3,4}$/.test(ident);
-  const list = useQuery({ ...listQuery(ident), enabled: typed });
+  const list = useQuery({ ...proceduresQuery(ident), enabled: typed });
   const approaches = (list.data?.procedures ?? []).filter((p) => p.kind === "approach");
   const procedure = approaches.find((p) => p.id === picked) ?? null;
   const at = list.data && procedure ? { ident: list.data.airport, id: procedure.id, transition: null } : null;
@@ -146,9 +139,9 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
             Fetching its approaches…
           </p>
         ) : list.error ? (
-          <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+          <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
             Its approaches could not be had ({list.error.message}).
-          </p>
+          </FieldError>
         ) : approaches.length === 0 ? (
           <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>No instrument approaches at {ident}</p>
         ) : (
@@ -182,9 +175,9 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
             Fetching its fixes…
           </p>
         ) : drawing.error ? (
-          <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+          <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
             Its fixes could not be had ({drawing.error.message}).
-          </p>
+          </FieldError>
         ) : (
           // A note at a fix, shown to the student on the lesson's brief and
           // as it is flown there ("Your instructor: …").
@@ -203,11 +196,7 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
         />
         <ListRow title="Cancel" onClick={onCancel} />
       </ListGroup>
-      {assign.error && (
-        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
-          {assign.error.message}
-        </p>
-      )}
+      {assign.error && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{assign.error.message}</FieldError>}
     </div>
   );
 }
@@ -279,11 +268,7 @@ function LessonDetail({ lesson, studentId, onDone }: { lesson: ApproachLesson; s
         />
         <ListRow title="Done" onClick={() => onDone()} data-testid="lesson-done" />
       </ListGroup>
-      {remove.error && (
-        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
-          {remove.error.message}
-        </p>
-      )}
+      {remove.error && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{remove.error.message}</FieldError>}
     </div>
   );
 }
@@ -317,9 +302,9 @@ function LessonDebrief({ lesson, studentId }: { lesson: ApproachLesson; studentI
         </ListGroup>
       </ListChoices>
       {track.error ? (
-        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+        <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
           Its track could not be fetched ({track.error.message}).
-        </p>
+        </FieldError>
       ) : track.data ? (
         <Suspense fallback={null}>
           <ApproachDebriefs

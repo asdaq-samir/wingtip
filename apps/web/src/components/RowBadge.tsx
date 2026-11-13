@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { FileText } from "lucide-react";
+import { cn } from "cn";
 import { BADGE } from "../lib/rowBadges";
 
 /**
@@ -11,11 +12,23 @@ import { BADGE } from "../lib/rowBadges";
  * White on the colour in light and dark alike; the glyph's meaning is
  * also in the row's words.
  */
-export function RowBadge({ colour, children }: { colour: string; children: ReactNode }) {
+export function RowBadge({
+  colour,
+  round = false,
+  children,
+}: {
+  colour: string;
+  /** A disc, as Apple Maps' account card leads its rows (You). */
+  round?: boolean;
+  children: ReactNode;
+}) {
   return (
     <span
       aria-hidden="true"
-      className="grid size-7 shrink-0 place-items-center rounded-(--radius-badge) text-white [&_svg]:size-[18px]"
+      className={cn(
+        "grid size-7 shrink-0 place-items-center text-white [&_svg]:size-[18px]",
+        round ? "rounded-full" : "rounded-(--radius-badge)",
+      )}
       style={{ backgroundColor: colour }}
     >
       {children}

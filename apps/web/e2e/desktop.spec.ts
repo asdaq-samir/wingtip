@@ -26,15 +26,18 @@ test("the side panel is the wide one, with rows at a desktop's size", async ({ p
   expect(size).toBeGreaterThanOrEqual(16);
 });
 
-test("/ and ⌘K go to the one search, Escape goes back a level", async ({ page }) => {
+test("Alt+/ and ⌘K go to the one search, a bare / is the browser's, Escape goes back a level", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
   await openPanel(page);
   const search = page.getByTestId("search-airports");
   // Its keys shown in it at rest (the command palette it replaced).
   await expect(firstRow(page).locator("kbd")).toHaveText(/⌘K|Ctrl K/);
+  // A bare / is left to the browser (Firefox's quick find): the shortcuts take Alt, Option on a Mac (the owner, 2026-11-11).
   await page.locator("body").click({ position: { x: 1000, y: 400 } });
   await page.keyboard.press("/");
+  await expect(search).not.toBeFocused();
+  await page.keyboard.press("Alt+Slash");
   await expect(search).toBeFocused();
   // Typed into, the keys are the field's: no tab under a number any more.
   await page.keyboard.type("1");
@@ -52,7 +55,9 @@ test("/ and ⌘K go to the one search, Escape goes back a level", async ({ page 
   await expect(page.getByTestId("console-sheet")).toHaveCount(0);
 });
 
-test("an airport's card has its actions' keys, F, D and S, and the search's rows preview a field under the mouse", async ({ page }) => {
+test("an airport's card has its actions' keys, Alt+F and Alt+S, and the search's rows preview a field under the mouse", async ({
+  page,
+}) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -64,15 +69,18 @@ test("an airport's card has its actions' keys, F, D and S, and the search's rows
   await expect(page.getByTestId("airport-preview")).toContainText("KOSH");
   await row.click();
   const card = sideDrawer(page).getByTestId("place-card");
-  await expect(card.getByTestId("fly-here")).toContainText("F");
-  await expect(card.getByTestId("place-depart-from")).toHaveAttribute("aria-keyshortcuts", "D");
-  await expect(card.getByTestId("place-add-stop")).toHaveAttribute("aria-keyshortcuts", "S");
-  // D, Depart From: the field the route's start, the rest kept, the plan up.
+  await expect(card.getByTestId("fly-here")).toContainText("Alt+F");
+  await expect(card.getByTestId("place-add-stop")).toHaveAttribute("aria-keyshortcuts", "Alt+S");
+  // A bare S does nothing: a letter alone is VoiceOver's quick nav and the browser's find-as-you-type.
   await page.locator("body").click({ position: { x: 1000, y: 400 } });
-  await page.keyboard.press("d");
-  await expect(page).toHaveURL(/[?&]dep=KOSH/);
+  await page.keyboard.press("s");
+  await page.waitForTimeout(300);
+  await expect(page).not.toHaveURL(/[?&]stops=KOSH/);
+  // Alt+S, Add Stop: the field a landing on the way, both ends kept.
+  await page.keyboard.press("Alt+KeyS");
+  await expect(page).toHaveURL(/[?&]stops=KOSH/);
+  await expect(page).toHaveURL(/[?&]dep=C81/);
   await expect(page).toHaveURL(/[?&]dest=KDLH/);
-  await expect(card).toHaveCount(0);
 });
 
 test("the route box's Profile and Brief say their words on a desktop", async ({ page }) => {

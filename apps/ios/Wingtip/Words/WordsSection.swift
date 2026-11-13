@@ -3,9 +3,9 @@ import SwiftUI
 /// "In words": the briefing's or the Go / No-Go's sentences over its
 /// figures, each with the chips of the figures it rests on; a chip opens
 /// the raw text in a sheet. The caption says which model wrote them
-/// ("From the planner", "On this iPhone"), and with no words a plain
-/// line says why. The figures the screen shows under it are untouched:
-/// the words are read with them, never instead of them.
+/// ("On this iPhone", "Apple's Private Cloud Compute"), and with no words
+/// a plain line says why. The figures the screen shows under it are
+/// untouched: the words are read with them, never instead of them.
 struct WordsSection: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The header: "The weather in words", "The flight in words".
@@ -86,7 +86,7 @@ struct WordsSection: View {
 }
 
 #Preview("WordsSection") {
-    let words = Words(model: "claude", sentences: [
+    let words = Words(model: "apple-on-device", sentences: [
         WordsSentence(sources: ["metar:KMSN"], text: "KMSN is VFR now, with a few clouds at 4,500 ft and 10 sm."),
         WordsSentence(sources: ["gairmet:0", "flight:route"], text: "An IFR G-AIRMET lies along the route from 14:00 to 17:00."),
     ], sources: [
@@ -95,8 +95,8 @@ struct WordsSection: View {
         WordsSource(id: "gairmet:0", label: "G-AIRMET, IFR", text: "G-AIRMET: IFR. Due to clouds. Valid at 1500Z."),
     ], unavailable: nil)
     List {
-        WordsSection(said: SaidWords(words: words, origin: .planner))
-        WordsSection(said: SaidWords(words: .none("none", "No words: the planner cannot be reached, and words on this iPhone need iOS 26."), origin: .none))
+        WordsSection(said: SaidWords(words: words, origin: .device))
+        WordsSection(said: SaidWords(words: .none("none", "No words: Apple Intelligence is off in Settings."), origin: .none))
         WordsSection(said: nil, writing: true)
     }
 }

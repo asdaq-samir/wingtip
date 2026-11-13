@@ -14,21 +14,26 @@ type ListSearch = ComponentProps<typeof SearchField>;
  * the one search's own field says and does this (OneSearchField's
  * `list`), what is typed kept in features/plan/lib/tabSearch. None
  * elsewhere: the field is the search's.
+ *
+ * Nearest's is drawn at the top of its card (NearestCard, nearSearch):
+ * Nearest is a card, its own drawer over the sheet (the card rule's 3),
+ * so the sheet's first row is under it while it is open and the place
+ * could not be typed (nearest.spec's smoke test, 2026-11-12). The same
+ * scoped field, in sight where the pilot is.
  */
 export function listSearchOf(vm: PlanWorkspaceModel): ListSearch | null {
-  return vm.view === "traffic" ? aircraftSearch(vm) : vm.nearOpen ? nearSearch(vm) : null;
+  return vm.view.view === "traffic" ? aircraftSearch(vm) : null;
 }
 
 /** The traffic's: an airplane by its callsign, registration or address. */
 function aircraftSearch(vm: PlanWorkspaceModel): ListSearch {
-  const { aircraftInput, aircraftTyped, listAway, panel, pickingFavorite, pickingMine, quietFocus, setPanel, upAsTyped, pickView, routed } =
-    vm;
+  const { pickView } = vm.view;
+  const { routed } = vm.route;
+  const { listAway } = vm.cards;
+  const { aircraftInput, aircraftTyped, pickingFavorite, pickingMine } = vm.search;
   return {
     value: aircraftTyped,
-    onChange: (aircraft) => {
-      useTabSearch.setState({ aircraft });
-      upAsTyped(aircraft);
-    },
+    onChange: (aircraft) => useTabSearch.setState({ aircraft }),
     inputRef: aircraftInput,
     placeholder: pickingMine
       ? "Search for your airplane"
@@ -38,27 +43,26 @@ function aircraftSearch(vm: PlanWorkspaceModel): ListSearch {
     label: "Find an airplane: callsign, registration or ICAO address",
     testId: "aircraft-search",
     capitals: true,
-    // Up, the list under the field in sight -- not by an Add's focus,
-    // which leaves the panel where it is (focusQuietly).
+    // The list under the field in sight; the sheet stays where the pilot
+    // put it (the owner, 2026-11-11), the keyboard the Drawer's to place.
     onFocus: () => {
       listAway("aircraft-favorites");
       listAway("aircraft-recents");
-      if (panel === "peek" && !quietFocus.current) setPanel("full");
     },
     // Cancel leaves the traffic for the search's own scope again (the plan
-    // with a route), the field being the one search's.
+    // with a route), the field being the one search's; the sheet stays at
+    // the size the pilot left it (the owner, 2026-11-11).
     onCancel: () => {
       useTabSearch.setState({ aircraft: "", pickingMine: false, pickingFavorite: false });
       pickView(routed ? "plan" : "search");
-      setPanel("peek");
     },
     onSubmit: () => useTabSearch.getState().submitAircraft?.(),
   };
 }
 
-/** Nearest's: where the nearest fields are measured from. */
-function nearSearch(vm: PlanWorkspaceModel): ListSearch {
-  const { nearTyped, panel, setPanel } = vm;
+/** Nearest's: where the nearest fields are measured from, `nearTyped`
+ *  being what is typed in it (features/plan/lib/tabSearch's `near`). */
+export function nearSearch(nearTyped: string): ListSearch {
   return {
     value: nearTyped,
     onChange: (near) => useTabSearch.setState({ near }),
@@ -66,10 +70,9 @@ function nearSearch(vm: PlanWorkspaceModel): ListSearch {
     label: "Nearest to: a town, an address or an airport",
     testId: "nearest-from",
     icon: MapPin,
-    onFocus: () => {
-      if (panel === "peek") setPanel("full");
-    },
-    onCancel: () => setPanel("peek"),
+    // Escape only lets the field go (SearchField blurs it): the sheet stays
+    // at the size the pilot left it (the owner, 2026-11-11).
+    onCancel: () => undefined,
     onSubmit: () => useTabSearch.getState().submitNear?.(),
     onClear: () => {
       const clear = useTabSearch.getState().clearNear;

@@ -1,5 +1,5 @@
 import { Suspense, lazy, useState } from "react";
-import { clockTime, localDay, monthSlashDay, weekdayShort } from "../../../../lib/format";
+import { clockTime, localDay, monthSlashDay, twoFigures, weekdayShort } from "../../../../lib/format";
 import { CalendarIcon, ChevronDown } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
 
@@ -10,7 +10,7 @@ const DayCalendar = lazy(() => import("../../../../components/ui/calendar").then
 const TimeField = lazy(() => import("../../../../components/ui/date-field").then((m) => ({ default: m.TimeField })));
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../../components/ResponsivePopover";
 import { cn } from "cn";
-import { CHIP_TEXT, GLASS_BUTTON } from "../../../../lib/mapChrome";
+import { CHIP_TEXT } from "../../../../lib/mapChrome";
 import { TEXT } from "../../../../lib/text";
 
 interface Props {
@@ -43,7 +43,7 @@ function instantAt(day: Date, time: string): string {
 /** The next whole hour, local: the time a freshly picked day starts
  *  with, so picking a day alone already means something. */
 function nextHour(): string {
-  return `${String((new Date().getHours() + 1) % 24).padStart(2, "0")}:00`;
+  return `${twoFigures((new Date().getHours() + 1) % 24)}:00`;
 }
 
 /** The departure in a few characters, as iOS's compact picker reads:
@@ -97,26 +97,27 @@ export default function DepartPicker({
     <ResponsivePopover open={open} onOpenChange={setOpen}>
       <ResponsivePopoverTrigger asChild>
         {look === "time" ? (
-          <button
-            type="button"
+          <Button
+            variant="link"
+            size="inline"
             aria-label={`${label}, ${date ? shortWhen(date) : "now"}: change`}
             data-testid={testId}
             className={cn(
-              "relative flex shrink-0 items-center gap-0.5 font-semibold text-tint tabular-nums after:absolute after:-inset-2.5 after:content-['']",
+              "relative shrink-0 gap-0.5 font-semibold tabular-nums after:absolute after:-inset-2.5 after:content-['']",
               TEXT.detail,
             )}
           >
             {date ? shortWhen(date) : "Now"}
             <ChevronDown className="size-4" aria-hidden />
-          </button>
+          </Button>
         ) : (
           <Button
             // A chip of glass, as Maps' filter chips are: the time in the
             // text's colour, not a button's tint, at a note's 13 (TEXT), as
             // the airplane beside it (FlightInputs).
-            variant="outline"
+            variant="glass"
             size="sm"
-            className={cn("rounded-full px-2.5 font-normal pointer-coarse:px-1.5", GLASS_BUTTON, CHIP_TEXT)}
+            className={cn("rounded-full px-2.5 font-normal pointer-coarse:px-1.5", CHIP_TEXT)}
             aria-label={`${label} date`}
             data-testid={testId}
           >

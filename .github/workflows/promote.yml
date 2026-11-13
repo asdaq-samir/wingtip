@@ -46,6 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ github.event.workflow_run.head_sha }}
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
         with:
@@ -123,11 +124,11 @@ jobs:
           SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          # The five images the production server runs
+          # The four images the production server runs
           # (infra/docker-compose.prod.yml) and the charts job's, which the
           # refresh task and the server's hourly overlays run. The retrain
           # job stays out of production (docs/README-AWS.md).
-          for service in gateway planner ingest assistant weather charts; do
+          for service in gateway planner ingest weather charts; do
             source="$GHCR/$service:sha-$SHA"
             if ! docker buildx imagetools inspect --raw "$source" > /dev/null 2>&1; then
               source="$GHCR/$service:latest"

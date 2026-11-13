@@ -3,10 +3,10 @@ import Testing
 @testable import Wingtip
 
 /// The airport weather marks (the owner's pick, 2026-11-10) as the map
-/// asks the engine for them through wt_call, against the shared fixture
+/// asks the engine for them through its call, against the shared fixture
 /// the engine's, the web's and Android's tests read too
-/// (apps/web/src/lib/fixtures/airportWeatherMarks.json): the arrow shown
-/// or not, red or not, the barb's parts, and the ↓ shown or not.
+/// (apps/web/src/lib/fixtures/airportWeatherMarks.json): the barb drawn
+/// zoomed out or not, red or not, its parts and calm, and the ↓ shown or not.
 @MainActor
 struct FieldWeatherMarksTests {
     private final class FixtureBundle {}
@@ -62,14 +62,14 @@ struct FieldWeatherMarksTests {
         return try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
     }
 
-    @Test func theArrowShowsAndGoesRedAsTheEngineSays() throws {
+    @Test func theFarBarbShowsAndGoesRedAsTheEngineSays() throws {
         for example in try fixture().windArrow {
             let i = example.input
             let mark = FieldWeatherMarks.mark(.init(ident: "KJVL", category: "VFR", windDirTrueDeg: 220, windSpeedKt: i.speedKt, windGustKt: i.gustKt,
                                                     crosswindKt: i.crosswindKt),
                                               demonstratedKt: i.demonstratedKt, worse: false)
-            #expect(mark.arrow == example.answer.shown, "\(example.why)")
-            #expect(mark.arrowRed == example.answer.over, "\(example.why)")
+            #expect(mark.far == example.answer.shown, "\(example.why)")
+            #expect(mark.over == example.answer.over, "\(example.why)")
         }
     }
 
@@ -78,7 +78,7 @@ struct FieldWeatherMarksTests {
         #expect(FieldWeatherMarks.demonstratedKt(plan) == nil)
         let mark = FieldWeatherMarks.mark(.init(ident: "KJVL", windDirTrueDeg: 220, windSpeedKt: 18, windGustKt: 26, crosswindKt: 17),
                                           demonstratedKt: FieldWeatherMarks.demonstratedKt(plan), worse: false)
-        #expect(mark.arrow && !mark.arrowRed)
+        #expect(mark.far && !mark.over)
     }
 
     @Test func theBarbIsTheEngines() throws {
@@ -100,7 +100,24 @@ struct FieldWeatherMarksTests {
         let mark = FieldWeatherMarks.mark(.init(ident: "KJVL", category: "IFR", windDirTrueDeg: 220, windSpeedKt: 18, windGustKt: 26),
                                           demonstratedKt: nil, worse: false)
         #expect(mark.spoken == "IFR, wind 220 at 18 gusting 26")
-        #expect(mark.windLabel == "18G26")
+        // The gust is the card's; the barb is the wind's only mark.
+        #expect(mark.variable == nil)
+    }
+
+    @Test func aVariableWindIsWrittenAsTheMetarWritesIt() {
+        let mark = FieldWeatherMarks.mark(.init(ident: "KJVL", category: "VFR", windSpeedKt: 5), demonstratedKt: nil, worse: false)
+        #expect(mark.variable == "VRB05" && !mark.calm)
+        #expect(mark.spoken == "VFR, wind variable at 5")
+        // Calm is no variable wind.
+        let calm = FieldWeatherMarks.mark(.init(ident: "KJVL", windSpeedKt: 2), demonstratedKt: nil, worse: false)
+        #expect(calm.calm && calm.variable == nil)
+    }
+
+    @Test func farBarbsStartAtARegionsScaleAndGrowIn() {
+        #expect(FarBarb.scale(zoom: 5.9) == nil)
+        #expect(FarBarb.scale(zoom: 6) == 0.6)
+        #expect(FarBarb.scale(zoom: 7.5) == 0.8)
+        #expect(FarBarb.scale(zoom: 9) == 1 && FarBarb.scale(zoom: 12) == 1)
     }
 
     @Test func theStationLinesAreTheReportsFigures() {
@@ -119,14 +136,46 @@ struct FieldWeatherMarksTests {
     }
 
     @Test func theStationModelShowsCloseInOrAlways() {
-        var choice = AirportWeatherChoice()
-        #expect(choice.style == .halo && choice.stationClose && choice.windArrows && choice.worse)
-        #expect(!choice.station(zoom: 9) && choice.station(zoom: 10))
-        choice.stationClose = false
-        #expect(!choice.station(zoom: 12))
-        choice.style = .station
-        #expect(choice.station(zoom: 5))
-        choice.style = .off
-        #expect(!choice.station(zoom: 12))
+        // With Wind, the default: the ring, its barbs, the station model close in.
+        let wind = AirportWeather.standard.choice
+        #expect(AirportWeather.standard == .wind)
+        #expect(wind.style == .halo && wind.stationClose && wind.windBarbs && wind.worse)
+        #expect(!wind.station(zoom: 9) && wind.station(zoom: 10))
+        // The flight category's ring alone: no barbs, no station model.
+        let category = AirportWeather.category.choice
+        #expect(!category.station(zoom: 12) && !category.windBarbs && category.worse)
+        #expect(AirportWeather.station.choice.station(zoom: 5))
+        // Off: nothing, the worse-by-arrival arrow too.
+        let off = AirportWeather.off.choice
+        #expect(off.style == .off && !off.station(zoom: 12) && !off.windBarbs && !off.worse)
+    }
+
+    @Test func aKeptLookComesOverToTheMenu() throws {
+        func kept(_ values: [String: Any]) throws -> AirportWeather {
+            let name = "airport-weather-\(UUID().uuidString)"
+            let defaults = try #require(UserDefaults(suiteName: name))
+            defer { defaults.removePersistentDomain(forName: name) }
+            for (key, value) in values { defaults.set(value, forKey: key) }
+            return AirportWeather.kept(defaults)
+        }
+        #expect(try kept([:]) == .wind)
+        #expect(try kept([AirportWeather.Legacy.style: "off"]) == .off)
+        #expect(try kept([AirportWeather.Legacy.style: "station"]) == .station)
+        #expect(try kept([AirportWeather.Legacy.style: "halo"]) == .wind)
+        #expect(try kept([AirportWeather.Legacy.style: "halo", AirportWeather.Legacy.windArrows: false]) == .category)
+        #expect(try kept([AirportWeather.Legacy.style: "dot"]) == .category)
+        // The menu's own pick wins over what was kept before it.
+        #expect(try kept([AirportWeather.key: "off", AirportWeather.Legacy.style: "station"]) == .off)
+    }
+
+    @Test func aReportHeardOverAnHourAgoSaysItsAge() {
+        let now = Date(timeIntervalSince1970: 1_762_700_000)
+        let mark = FieldWeatherMark(category: "VFR", spoken: "VFR, wind calm")
+        // Within the hour a routine METAR is made in: fresh, as it was.
+        #expect(FieldWeatherMarks.aged(mark, heardAt: now.addingTimeInterval(-50 * 60), now: now) == mark)
+        #expect(FieldWeatherMarks.aged(mark, heardAt: nil, now: now) == mark)
+        let old = FieldWeatherMarks.aged(mark, heardAt: now.addingTimeInterval(-75 * 60), now: now)
+        #expect(old.heardAgo == "1h 15m")
+        #expect(old.spoken.contains("weather heard 1h 15m ago"))
     }
 }

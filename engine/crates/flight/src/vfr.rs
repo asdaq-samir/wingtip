@@ -32,7 +32,7 @@ pub const HIGH_FROM_MSL_FT: f64 = 10_000.0;
 pub const HIGH_VISIBILITY_SM: f64 = 5.0;
 pub const HIGH_CLOUD_BELOW_FT: f64 = 1000.0;
 pub const HIGH_CLOUD_ABOVE_FT: f64 = 1000.0;
-pub const HIGH_CLOUD_HORIZONTAL_FT: f64 = 5280.0;
+pub const HIGH_CLOUD_HORIZONTAL_FT: f64 = wingtip_core::units::FT_PER_SM;
 
 /// Class G's rows split at 1,200 ft above the surface (91.155(a)): at or
 /// below it by day, 1 statute mile and clear of clouds; more than 1,200 ft

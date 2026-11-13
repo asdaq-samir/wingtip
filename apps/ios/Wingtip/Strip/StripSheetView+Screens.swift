@@ -28,9 +28,20 @@ extension View {
     /// The Brief Siri asked for (BriefAsk), and any screen asked for by its
     /// name (ScreenAsk), opened by the strip's own `open`.
     func takesAskedScreens(_ open: @escaping (FieldScreen) -> Void) -> some View {
-        onChange(of: BriefAsk.shared.wanted, initial: true) { _, now in if now, BriefAsk.shared.take() { open(.brief) } }
-            .onChange(of: ScreenAsk.shared.wanted, initial: true) { _, _ in
-                if let screen = ScreenAsk.shared.take(Set(Screen.allCases.filter(StripSheetView.opens))),
+        modifier(AskedScreens(open: open))
+    }
+}
+
+private struct AskedScreens: ViewModifier {
+    let open: (FieldScreen) -> Void
+    @Environment(BriefAsk.self) private var briefAsk
+    @Environment(ScreenAsk.self) private var screenAsk
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: briefAsk.wanted, initial: true) { _, now in if now, briefAsk.take() { open(.brief) } }
+            .onChange(of: screenAsk.wanted, initial: true) { _, _ in
+                if let screen = screenAsk.take(Set(Screen.allCases.filter(StripSheetView.opens))),
                    let field = StripSheetView.field(for: screen) {
                     open(field)
                 }

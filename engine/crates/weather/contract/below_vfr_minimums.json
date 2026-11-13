@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_weather::calls::call",
+  "description": "Whether a ceiling or a visibility is under 14 CFR 91.155(c), (d)'s basic VFR minimums (1,000 ft, 3 sm); a missing figure is below nothing.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "BelowVfrMinimumsInput",
+      "type": "object",
+      "properties": {
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "BelowVfrMinimumsAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

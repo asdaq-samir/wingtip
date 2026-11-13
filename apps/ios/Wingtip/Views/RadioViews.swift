@@ -7,10 +7,10 @@ import SwiftUI
 /// Captions sit over what is under them. A tap on the captions opens the
 /// radio's sheet with the whole log.
 struct RadioOverlay: View {
+    @Environment(ClearanceListener.self) private var listener
     @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
-    private var listener: ClearanceListener { ClearanceListener.shared }
 
     var body: some View {
         VStack(spacing: WingtipSpace.sm) {
@@ -64,6 +64,8 @@ struct RadioOverlay: View {
 /// read it first), Fly the altitude. Nothing is done until it is tapped;
 /// ✕ puts it away.
 struct RadioCallBanner: View {
+    @Environment(AtcCopilot.self) private var atc
+    @Environment(ClearanceListener.self) private var listener
     @Environment(\.lookAccent) private var accent
     let call: ClearanceListener.Transmission
     @Environment(Plan.self) private var plan
@@ -71,15 +73,13 @@ struct RadioCallBanner: View {
     @State private var problem: String?
     @State private var busy = false
 
-    private var listener: ClearanceListener { ClearanceListener.shared }
-
     var body: some View {
         // A call the engine cannot read shows as heard, with nothing read
-        // out of it (logged by Engine.rule).
-        let clearance = (try? Clearance.read(call.text)) ?? Clearance()
-        // A call the engine cannot read offers no Direct To (logged by
-        // Engine.rule); the words are still shown as heard.
-        let direct = try? HeardCall.directOf(call.text)
+        // out of it and no Direct To, and says so under it (logged by Engine.rule).
+        let read = Result { try Clearance.read(call.text) }
+        let clearance = (try? read.get()) ?? Clearance()
+        let directRead = Result { try HeardCall.directOf(call.text) }
+        let direct = try? directRead.get()
         VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack(alignment: .top, spacing: WingtipSpace.sm) {
                 Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(accent).accessibilityHidden(true)
@@ -93,7 +93,7 @@ struct RadioCallBanner: View {
             }
             // The ATC copilot's reading of it, where it is on: each item
             // the engine read (atc_call), and the readback checked.
-            if let card = AtcCopilot.shared.card(for: call.id) {
+            if let card = atc.card(for: call.id) {
                 AtcCardRows(card: card, tail: plan.tail)
             }
             ScrollView(.horizontal, showsIndicators: false) {
@@ -126,6 +126,8 @@ struct RadioCallBanner: View {
                 .buttonBorderShape(.capsule)
             }
             if let problem { ProblemLine(problem) }
+            ProblemLine(read, "What the call asks")
+            ProblemLine(directRead, "A Direct To in it")
         }
         .padding(WingtipSpace.md)
         .floatingGlass(in: floatingCard)
@@ -152,8 +154,7 @@ struct RadioCallBanner: View {
         } catch {
             // No signal: found by the engine among the places of the
             // regions kept for the air.
-            let offline = Engine.hear(call.text, tail: nil, packs: CyclePacks.shared.keptPacks(), near: points,
-                                      dep: plan.dep, stops: plan.stops, dest: plan.dest)
+            let offline = ClearanceLookup.offline(call.text, near: points, dep: plan.dep, stops: plan.stops, dest: plan.dest)
             guard let ident = offline?.directFound?.ident else {
                 problem = "No signal, and “\(said)” is not in the regions kept for the air."
                 return

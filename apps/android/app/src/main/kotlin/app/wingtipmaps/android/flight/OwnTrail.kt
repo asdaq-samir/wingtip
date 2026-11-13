@@ -1,12 +1,15 @@
 package app.wingtipmaps.android.flight
 
-import android.content.Context
+import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.Kept
+import app.wingtipmaps.android.KeptFile
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.api.SavedTrack
 import app.wingtipmaps.android.api.SavedTrackPoint
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.underway
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,8 +27,8 @@ import java.io.File
  * track for its debrief without a GPX file. A new flight starts a new
  * path: a point more than ten minutes after the last is the first of
  * it. Kept on the phone (a file in filesDir, written at most every half
- * minute), so the app put away in the air keeps the path; at most a long
- * day's flying of it. The figures are the web's and iOS's, to keep the
+ * minute, behind and off the main thread by KeptFile), so the app put
+ * away in the air keeps the path; at most a long day's flying of it. The figures are the web's and iOS's, to keep the
  * apps' paths the same. The twin of the iOS app's OwnTrail.swift.
  *
  * Whether a speed is flying speed, the distance from the last point
@@ -33,13 +36,15 @@ import java.io.File
  * the keep rules without the native engine.
  */
 class OwnTrail(
-    private val file: File,
+    file: File,
     // Where the engine cannot say (Engine.rule has logged why), the point
     // is kept: a track with a point too many beats one with a gap.
     private val underway: (speedKt: Double?) -> Boolean = { speed -> Engine.underway(speed).getOrDefault(true) },
     private val distance: Geo.Distance = Geo.engineDistance,
-    private val nowMs: () -> Long = System::currentTimeMillis,
+    private val nowMs: () -> Long = AppClock::nowMs,
+    writing: CoroutineDispatcher = Kept.writing,
 ) {
+    private val kept = KeptFile(file, writing)
     private val _points = MutableStateFlow<List<PathPoint>>(emptyList())
     val points: StateFlow<List<PathPoint>> = _points.asStateFlow()
 
@@ -53,9 +58,9 @@ class OwnTrail(
     init {
         // The path kept from before, unless the last point is over ten
         // minutes old: that was another flight's, and a new one starts.
-        val kept = runCatching { Gateway.json.decodeFromString<List<PathPoint>>(file.readText()) }.getOrNull()
-        val last = kept?.lastOrNull()
-        if (kept != null && last != null && nowMs() / 1000.0 - last.t < NEW_FLIGHT_S) _points.value = kept
+        val had = kept.read()?.let { runCatching { Gateway.json.decodeFromString<List<PathPoint>>(it) }.getOrNull() }
+        val last = had?.lastOrNull()
+        if (had != null && last != null && nowMs() / 1000.0 - last.t < NEW_FLIGHT_S) _points.value = had
     }
 
     /** A fix taken: whether the airplane is at flying speed, by the
@@ -84,6 +89,13 @@ class OwnTrail(
         return true
     }
 
+    /** The path and its file gone: signed out, or the account deleted. */
+    suspend fun wipe() {
+        _points.value = emptyList()
+        flying = false
+        kept.delete()
+    }
+
     /** The path let go: a new flight's starts empty. */
     fun clear() {
         _points.value = emptyList()
@@ -100,12 +112,8 @@ class OwnTrail(
 
     private fun write() {
         lastWrittenMs = nowMs()
-        runCatching {
-            file.parentFile?.mkdirs()
-            val part = File(file.path + ".part")
-            part.writeText(Gateway.json.encodeToString(_points.value))
-            if (!part.renameTo(file)) part.delete()
-        }
+        val now = _points.value
+        kept.write { Gateway.json.encodeToString(now) }
     }
 
     companion object {
@@ -117,14 +125,5 @@ class OwnTrail(
         /** At most a long day's flying of points. */
         const val MOST = 5000
         const val WRITE_EVERY_MS = 30_000L
-
-        @Volatile
-        private var shared: OwnTrail? = null
-
-        /** The app's one path, in filesDir/own-trail.json. */
-        fun of(context: Context): OwnTrail =
-            shared ?: synchronized(this) {
-                shared ?: OwnTrail(File(context.applicationContext.filesDir, "own-trail.json")).also { shared = it }
-            }
     }
 }

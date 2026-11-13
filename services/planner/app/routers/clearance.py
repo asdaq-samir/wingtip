@@ -1,15 +1,17 @@
 """An ATC clearance heard by the phone, its places found: the web's
 lib/clearance and the app's Clearance read the words the recognizer
 wrote into the clearance's items (AIM 4-4-3), and ask here for the
-idents of the places it named (wingtip.spoken), near the route. Before
+idents of the places it named, near the route. This finds the places and
+the procedures they may be (NASR, the CIFP) and the engine says which
+(`clearance_places`, engine/crates/airspace/src/spoken.rs). Before
 listening, the names the recognizer is told to expect."""
 
 import functools
-import math
 import re
 
 from fastapi import APIRouter, Query, Response
-from wingtip import airports, fixes, procedures, spoken
+from wingtip import airports, fixes, geo, procedures
+from wingtip.engine import ask as engine
 
 from ..router_basics import near_points
 from ..schemas.clearance import ClearanceAsk, ClearancePlaces, ClearanceWords
@@ -17,9 +19,9 @@ from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 
 router = APIRouter()
 
-#: How far round the route's points a place said is looked for, degrees:
-#: about 60 nm of latitude, a clearance's points being near its route.
-PAD_DEG = 1.0
+#: How far round the route's points a place said is looked for, nm, every
+#: way (wingtip.geo.box_around): a clearance's points being near its route.
+PAD_NM = 60.0
 
 #: As many names as Apple suggests a recognizer's contextualStrings hold.
 MOST_WORDS = 100
@@ -27,7 +29,7 @@ MOST_WORDS = 100
 
 def _corridor(near: tuple) -> list[tuple[float, float, float, float]]:
     """Boxes along the lines between the route's points, a degree apart
-    and PAD_DEG round each: a navaid halfway along a long route -- Hill
+    and PAD_NM round each: a navaid halfway along a long route -- Hill
     City on one from San Jose to Nashville -- is outside the boxes round
     its ends, and a box round both ends is most of the country."""
     boxes = []
@@ -35,16 +37,16 @@ def _corridor(near: tuple) -> list[tuple[float, float, float, float]]:
         steps = max(1, int(max(abs(lat2 - lat1), abs(lon2 - lon1))))
         for k in range(steps + 1):
             lat, lon = lat1 + (lat2 - lat1) * k / steps, lon1 + (lon2 - lon1) * k / steps
-            boxes.append((lat - PAD_DEG, lon - PAD_DEG * 1.4, lat + PAD_DEG, lon + PAD_DEG * 1.4))
+            boxes.append(geo.box_around(lat, lon, PAD_NM))
     return boxes
 
 
 def _places(near: tuple) -> list[dict]:
     """The navaids, fixes and airports along the route, each with `what`
-    it is, for wingtip.spoken."""
+    it is, as the engine's clearance_places takes them (it puts them in
+    order, the nearest to the route first)."""
     if not near:
         return []
-    lats = [p[0] for p in near]
     seen, found = set(), []
     for south, west, north, east in _corridor(near):
         for f in fixes.within(south, west, north, east):
@@ -56,12 +58,7 @@ def _places(near: tuple) -> list[dict]:
             if (a["ident"], "airport", a["lat"]) not in seen:
                 seen.add((a["ident"], "airport", a["lat"]))
                 found.append({**a, "what": "airport"})
-    # The nearest to the route's points first: of two fixes that sound the
-    # same, PYKLA by Duluth and PICLE in Iowa, the one by the route
-    # (wingtip.spoken keeps this order between equals).
-    # Flat-earth distances do for an order, at a thousandth of the cost.
-    squeeze = math.cos(math.radians(sum(lats) / len(lats)))
-    return sorted(found, key=lambda p: min((p["lat"] - lat) ** 2 + ((p["lon"] - lon) * squeeze) ** 2 for lat, lon in near))
+    return found
 
 
 @functools.cache
@@ -71,7 +68,7 @@ def _navaids_by_name() -> dict[str, list[dict]]:
     by_name: dict[str, list[dict]] = {}
     for navaid in fixes.navaids():
         if navaid.get("name"):
-            by_name.setdefault(spoken.name_words(navaid["name"]), []).append({**navaid, "what": "navaid"})
+            by_name.setdefault(_words(navaid["name"]), []).append({**navaid, "what": "navaid"})
     return by_name
 
 
@@ -102,37 +99,49 @@ def _exact(said: str, near: tuple) -> list[dict]:
     return out
 
 
-def _airport(said: str, near: tuple) -> dict | None:
-    """The field an airport's name said is, the nearest of its name. A
-    name said short or long of the one on file -- "Seattle Tacoma" for
-    Seattle–Tacoma International, "city of Colorado Springs" -- is tried
-    by fewer of its words, the longest run first."""
-    words, _ = spoken.words_of(said)
-    runs = [words[i : i + n] for n in range(len(words), 0, -1) for i in range(len(words) - n + 1)]
-    for run in runs:
-        if len(run) == 1 and len(run[0]) < 4:
-            continue
-        hits = airports.search_airports(" ".join(run), limit=1, near=list(near) or None)
-        if hits:
-            return airports.find_place(hits[0]["ident"])
-    return None
+def _words(said: str) -> str:
+    """Words as the index is keyed, in capitals, marks gone: "WILKES
+    BARRE" for Wilkes-Barre. A key to look places up by, not a match:
+    the engine decides what was said."""
+    return " ".join(re.findall(r"[A-Z0-9']+", said.upper()))
+
+
+def _airports(said: str, near: tuple) -> dict[str, dict]:
+    """The field the airport search finds for each run of the words said,
+    the nearest of its name, by the run: the engine takes the longest run
+    its own reading of the words has one for. A single word of fewer than
+    four letters is not searched."""
+    words = _words(said).split()
+    found = {}
+    for n in range(len(words), 0, -1):
+        for i in range(len(words) - n + 1):
+            run = " ".join(words[i : i + n])
+            if run in found or (n == 1 and len(run) < 4):
+                continue
+            hits = airports.search_airports(run, limit=1, near=list(near) or None)
+            place = airports.find_place(hits[0]["ident"]) if hits else None
+            if place and place.get("lat") is not None:
+                found[run] = _candidate({**place, "what": "airport"})
+    return found
+
+
+def _candidate(place: dict) -> dict:
+    """A place as the engine takes it."""
+    return {k: place.get(k) for k in ("ident", "name", "what", "lat", "lon")}
 
 
 def _navaid_names(places: list[dict]) -> dict[str, str]:
     return {p["ident"]: p["name"] for p in places if p["what"] == "navaid" and p.get("name")}
 
 
-def _procedure(field: str | None, ask, kind: str, places: list[dict]) -> dict | None:
-    if not field or ask is None:
-        return None
-    listed = procedures.procedures_at(field)
+def _procedure(field: str | None, ask) -> dict | None:
+    """A SID or STAR said, with its field's own procedures (the CIFP) for
+    the engine to find it among."""
+    listed = procedures.procedures_at(field) if field and ask is not None else None
     if not listed:
         return None
-    found = spoken.procedure(ask.name, ask.number, kind, listed["procedures"], _navaid_names(places))
-    if found is None:
-        return None
-    via = spoken.transition(ask.transition, found["transitions"], places) if ask.transition else None
-    return {"id": found["id"], "transition": via, "sure": found["sure"]}
+    given = [{"id": p["id"], "kind": p["kind"], "transitions": p["transitions"]} for p in listed["procedures"]]
+    return {"name": ask.name, "number": ask.number, "transition": ask.transition, "procedures": given}
 
 
 @router.post("/api/clearance/places", openapi_extra=PUBLIC_READ_BY_POST)
@@ -143,17 +152,25 @@ def clearance_places(ask: ClearanceAsk) -> ClearancePlaces:
     found by its sound alone is not `sure`; one not found has no ident."""
     near = near_points(ask.near)
     places = _places(near)
-    limit = None
-    if ask.limit:
-        limit = spoken.point(ask.limit, places + _exact(ask.limit, near), _airport(ask.limit, near))
-        limit = limit or {"said": ask.limit}
-    route = [spoken.points(phrase, places + _exact(phrase, near)) for phrase in ask.route]
-    return {
-        "limit": limit,
-        "route": route,
-        "departure": _procedure(ask.dep, ask.departure, "departure", places),
-        "arrival": _procedure(ask.dest, ask.arrival, "arrival", places),
-    }
+    # The places anywhere spelled or named in what was said, besides those
+    # near the route: the engine puts the nearer of two alike first, PYKLA
+    # by Duluth before PICLE in Iowa.
+    seen = {(p["ident"], p["what"], p["lat"]) for p in places}
+    for said in [ask.limit or "", *ask.route]:
+        for p in _exact(said, near):
+            if (p["ident"], p["what"], p["lat"]) not in seen:
+                seen.add((p["ident"], p["what"], p["lat"]))
+                places.append(p)
+    return engine(
+        "clearance_places",
+        places=[_candidate(p) for p in places if p.get("lat") is not None and p.get("lon") is not None],
+        near=[[lat, lon] for lat, lon in near],
+        limit=ask.limit,
+        limit_airports=_airports(ask.limit, near) if ask.limit else {},
+        route=ask.route,
+        departure=_procedure(ask.dep, ask.departure),
+        arrival=_procedure(ask.dest, ask.arrival),
+    )
 
 
 @router.get("/api/clearance/words", openapi_extra=PUBLIC)

@@ -1,24 +1,18 @@
-import { lazy, useEffect, type ReactNode, type ComponentProps } from "react";
-import { cn } from "cn";
+import { lazy, useEffect } from "react";
 import { fromChunk } from "../../../../lib/fromChunk";
 import { loadAccountPanels } from "../../../pilot";
 import type { LatLon } from "../../../../lib/geo";
 import { pickKeptAircraft } from "../../lib/tabSearch";
-import { MAX_STOPS, routeName } from "../../../../lib/identSchema";
-import type { FlightRules } from "../../../../lib/preferences";
-import Segmented from "../../../../components/Segmented";
+import { MAX_STOPS } from "../../../../lib/identSchema";
 import { AirportRecentsPage } from "../../../../components/PanelCapsule";
 import { sameField } from "../../../../lib/procedures";
 import { AircraftCard, AircraftPill, AircraftRecentsPage, usePrefetchAircraftTab } from "../../aircraftTabChunk";
 import type { OneSearchModel } from "../../hooks/useOneSearch";
 import TabKept from "../../../../components/TabKept";
 import TabPage from "../../../../components/TabPage";
-import FplStrip from "../FplStrip";
 import { RecentRoutesPage } from "../RecentRoutes";
-import ProfileCard from "../ProfileCard";
-import { BriefCard, AirspaceCard, FlightCard, PastFlightCard, PlaceCard, StopsCard, DryRunControls } from "../../routePanelParts";
+import { AirspaceCard, FlightCard, PastFlightCard, PlaceCard } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
-import ProfileSideView from "./ProfileSideView";
 import Waits from "./Waits";
 
 /** The one search's parts on chunks of their own, out of the first load
@@ -43,17 +37,9 @@ const AircraftFavoritesList = lazy(() => import("../AircraftFavoritesList"));
 // Nearest's list in full, when it is opened; its strip is the pill's.
 const NearestCard = lazy(() => import("../NearestCard"));
 
-/** The flight rules a route is planned under, as the Profile card's switch
- *  offers them. */
-const FLIGHT_RULES = [
-  { value: "vfr", label: "VFR" },
-  { value: "ifr", label: "IFR" },
-];
-
 /**
- * The sheet's body under the one search (PlanWorkspace's `sidebar`): the
- * plan's nav log, kept mounted under whatever is open over it and on
- * paper; the search's own page (SearchHome) or what answers what is typed
+ * The sheet's first page under the one search (PlanWorkspace's `sidebar`;
+ * the plan is the second, PlanPage): the search's own page (SearchHome) or what answers what is typed
  * (OneSearchResults), and its lists in full -- Favorites, Recents, Saved,
  * the routes planned, Nearest; the traffic. A card -- an airport's, the
  * airspace's, an airplane's -- over the place it was opened from, its
@@ -62,100 +48,55 @@ const FLIGHT_RULES = [
 export default function PlanSidebar({
   vm,
   model,
-  navLog,
-  briefContents,
-  briefNotice,
 }: {
   vm: PlanWorkspaceModel;
   /** The one search's view model (useOneSearch). */
   model: OneSearchModel;
-  navLog: ReactNode;
-  briefContents: ComponentProps<typeof BriefCard>["contents"];
-  briefNotice: ReactNode;
 }) {
+  const { opened, stripsDrawn, view } = vm.view;
+  const { addStop, depart, planned, routePoints, routed } = vm.route;
+  const { course, s } = vm.plan;
   const {
-    addFromPill,
-    addStop,
-    addStopField,
     aircraftFavoritesOpen,
     aircraftOpen,
     aircraftRecentsOpen,
-    aircraftTyped,
     airportRecentsOpen,
     approachesOf,
-    askFor,
-    briefHere,
-    briefLine,
     cardUp,
-    closeBrief,
-    closeCard,
     closeFlight,
     closeList,
-    closeNearest,
     closePlace,
-    closeProfileCard,
-    closeSaved,
-    closeStops,
-    course,
-    departFrom,
-    depAlone,
-    depart,
-    dropIntoRoute,
-    dryRunning,
-    favorites,
     favoritesOpen,
     flight,
-    flightRules,
-    flyHere,
-    goMissed,
-    goMissedNow,
-    hasPoints,
     heldPoint,
-    home,
-    keepFuelStops,
-    marks,
-    measuredFrom,
-    moveFavoriteAirport,
     nearFrom,
     nearOpen,
-    openAirportOverFlight,
     openList,
-    openSaved,
-    opened,
     past,
-    pickPlace,
     place,
-    planned,
-    profileCautions,
-    profileHere,
-    query,
-    routeKey,
-    routePoints,
     routeRecentsOpen,
-    routed,
-    s,
-    savedOpen,
     selectFlight,
     selectPast,
     selectPlace,
     setApproachesOf,
-    setFlightRules,
-    setHomeAirport,
     setNearFrom,
-    setPanel,
-    setStopsScope,
-    showLegs,
-    stopDryRun,
-    stopsAt,
-    stopsHere,
-    stopsRoute,
-    stopsScope,
-    stripsDrawn,
-    suggestedAt,
-    view,
-    tabTap,
+  } = vm.cards;
+  const { flyHere, measuredFrom } = vm.map;
+  const { keepFuelStops, suggestedAt } = vm.stops;
+  const { dropIntoRoute } = vm.routeList;
+  const { closeNearest, closeSaved, savedOpen } = vm.fpl;
+  const {
+    addFromPill,
+    aircraftTyped,
+    askFor,
+    favorites,
+    home,
+    moveFavoriteAirport,
+    pickPlace,
+    query,
+    setHomeAirport,
     toggleFavoriteAirport,
-  } = vm;
+  } = vm.search;
   usePrefetchAircraftTab();
   useEffect(() => {
     const later = window.setTimeout(searchHome.prefetch, 1500);
@@ -166,7 +107,7 @@ export default function PlanSidebar({
     flight && past ? (
       <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} />
     ) : flight ? (
-      <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={openAirportOverFlight} />
+      <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={selectPlace} />
     ) : null;
   // The airport's card, in the panel's body.
   const placeCard = place && (
@@ -176,17 +117,26 @@ export default function PlanSidebar({
         ident={place}
         from={measuredFrom}
         onClose={closePlace}
-        onFlyHere={(to) => void flyHere(to)}
-        onDepartFrom={departFrom}
-        onExpand={() => setPanel("full")}
-        onLower={() => setPanel("half")}
-        // None for a point of the route, or past the planner's most stops.
-        onAddStop={
-          routePoints.includes(place) || planned.stops.length >= MAX_STOPS
-            ? undefined
-            : suggestedAt
-              ? () => keepFuelStops(suggestedAt.after, [place])
-              : addStop
+        // The route set from the card ends the search it was opened from,
+        // its words and Cancel let go, as the top hit's Fly Here does
+        // (one-search.spec's smoke test, 2026-11-12).
+        onFlyHere={(to) => {
+          model.letGo();
+          void flyHere(to);
+        }}
+        onAddStop={(to) => {
+          model.letGo();
+          if (suggestedAt) keepFuelStops(suggestedAt.after, [place]);
+          else addStop(to);
+        }}
+        // Shown but greyed for a point of the route, or past the planner's
+        // most stops, with why (the owner, 2026-11-11: "show it but disable it").
+        addStopOff={
+          routePoints.includes(place)
+            ? "already on the route"
+            : planned.stops.length >= MAX_STOPS
+              ? "the route has its most stops"
+              : undefined
         }
         stop={suggestedAt?.stop}
         // The route's destination: when the flight lands there -- en route and on the ground at its
@@ -223,7 +173,7 @@ export default function PlanSidebar({
           <AirspaceCard
             key={`${heldPoint.lat},${heldPoint.lon}`}
             point={heldPoint}
-            onClose={() => closeCard(() => selectPlace(null))}
+            onClose={() => selectPlace(null)}
             {...(routed && course && planned.stops.length < MAX_STOPS
               ? {
                   onAdd: (ident: string, at: LatLon) => dropIntoRoute(ident, at, "add"),
@@ -279,147 +229,55 @@ export default function PlanSidebar({
           <NearestCard onOpen={selectPlace} from={nearFrom} onFrom={setNearFrom} onBack={closeNearest} />
         </Waits>
       )}
-      {opened.includes("search") && (
-        <TabKept away={cardUp || view !== "search" || nearOpen}>
-          {favoritesOpen ? (
-            <TabPage testId="favorites-page">
-              <Waits>
-                <FavoritesList
-                  home={home}
-                  favorites={favorites}
-                  onBack={closeList}
-                  onOpen={(airport) => selectPlace(airport.ident)}
-                  onChangeHome={() => askFor("home")}
-                  onRemoveHome={() => setHomeAirport(null)}
-                  onRemove={toggleFavoriteAirport}
-                  onMove={moveFavoriteAirport}
-                  onAdd={() => askFor("favorite")}
-                />
-              </Waits>
-            </TabPage>
-          ) : airportRecentsOpen && !query ? (
-            <TabPage testId="airport-recents-list">
-              <AirportRecentsPage
+      {/* Always built, the sheet's first page (Search, PageToggle):
+          kept while FPL is up, as it was left. */}
+      <TabKept away={cardUp || view === "traffic" || nearOpen}>
+        {favoritesOpen ? (
+          <TabPage testId="favorites-page">
+            <Waits>
+              <FavoritesList
+                home={home}
+                favorites={favorites}
                 onBack={closeList}
-                onPick={(airport) => {
-                  closeList();
-                  void pickPlace(airport);
-                }}
+                onOpen={(airport) => selectPlace(airport.ident)}
+                onChangeHome={() => askFor("home")}
+                onRemoveHome={() => setHomeAirport(null)}
+                onRemove={toggleFavoriteAirport}
+                onMove={moveFavoriteAirport}
+                onAdd={() => askFor("favorite")}
               />
-            </TabPage>
-          ) : routeRecentsOpen ? (
-            <TabPage testId="route-recents-list">
-              <RecentRoutesPage onBack={closeList} />
-            </TabPage>
-          ) : savedOpen ? (
-            <TabPage testId="saved-flights">
-              <Waits>
-                <SavedFlights onBack={closeSaved} />
-              </Waits>
-            </TabPage>
-          ) : model.typed || model.direct ? (
-            // A search sent, its results, else the suggestions: each its own scroll box (one scrolling rule).
-            <TabPage key={model.sent ? "results" : "suggestions"} testId="search-page">
-              <Waits>{model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}</Waits>
-            </TabPage>
-          ) : (
-            stripsDrawn && <SearchHome vm={vm} model={model} />
-          )}
-        </TabKept>
-      )}
-      {opened.includes("plan") && (
-        <TabKept away={cardUp || view !== "plan"}>
-          {/* And while a finger takes it up: the pill's own are out of
-          sight then (the owner's notice, "Fpl hides Saved while dragging
-          up"). */}
-          {/* Not under the Stops with no route: FPL's Saved stood over
-          its list (the owner's screenshot, 2026-10-26). */}
-          {!hasPoints && !stopsHere && stripsDrawn && (
-            // The flights saved or the routes planned last, under the empty
-            // box, picked from its filter as before.
-            <TabPage>
-              <FplStrip onAllSaved={openSaved} onAllRecents={() => openList("routes")} />
-            </TabPage>
-          )}
-          {/* The Brief over FPL, a card of its own: the route's head and its
-          figures out of sight while it is open, as an airport's card has
-          them. */}
-          {briefHere && (
-            <BriefCard
-              name={routeName(planned.dep, planned.dest, planned.stops)}
-              line={briefLine}
-              contents={briefContents}
-              notice={briefNotice}
-              marks={marks}
-              onClose={closeBrief}
-              onTap={tabTap}
-              onLegs={showLegs}
-              route={routeKey}
+            </Waits>
+          </TabPage>
+        ) : airportRecentsOpen && !query ? (
+          <TabPage testId="airport-recents-list">
+            <AirportRecentsPage
+              onBack={closeList}
+              onPick={(airport) => {
+                closeList();
+                void pickPlace(airport);
+              }}
             />
-          )}
-          {/* FPL's nav log once there is a route, at the pilot's ask: the
-          empty box alone before. */}
-          {profileHere && (
-            <ProfileCard
-              name={routeName(planned.dep, planned.dest, planned.stops)}
-              line={briefLine}
-              onClose={closeProfileCard}
-              cautions={profileCautions}
-              corner={
-                !s.local && (
-                  <Segmented
-                    label="Flight rules"
-                    value={flightRules}
-                    onChange={(v) => setFlightRules(v as FlightRules)}
-                    testId="flight-rules"
-                    options={FLIGHT_RULES}
-                  />
-                )
-              }
-            >
-              {/* The dry run in the side view's place while it plays, the card's
-              height; its figures counting down at the sheet's foot. */}
-              {dryRunning ? (
-                <Waits>
-                  <div className="flex min-h-0 flex-1 flex-col" data-testid="profile-dry-run">
-                    <DryRunControls run={dryRunning} ends={course} onClose={stopDryRun} missed={goMissed} onMissed={goMissedNow} />
-                  </div>
-                </Waits>
-              ) : (
-                <ProfileSideView vm={vm} />
-              )}
-            </ProfileCard>
-          )}
-          {stopsHere && (
-            <StopsCard
-              at={stopsAt}
-              route={stopsRoute}
-              scope={stopsScope}
-              onScope={setStopsScope}
-              onClose={closeStops}
-              onOpenField={selectPlace}
-              onAddStop={addStopField}
-            />
-          )}
-          <div
-            className={cn(
-              "flex min-h-0 flex-col print:flex",
-              depAlone ? "flex-none" : "flex-1",
-              (briefHere || profileHere || stopsHere || !hasPoints) && "hidden",
-            )}
-          >
-            {navLog}
-          </div>
-          {/* A departure alone: under it the flights saved and the routes
-          planned last, to pick from, where the sheet stood empty under
-          the one field (the owner's screenshot, 2026-10-23). */}
-          {depAlone && hasPoints && !briefHere && !profileHere && !stopsHere && (
-            <div className="px-4 pt-2" data-testid="fpl-departure-strip">
-              <FplStrip onAllSaved={openSaved} onAllRecents={() => openList("routes")} />
-            </div>
-          )}
-        </TabKept>
-      )}
+          </TabPage>
+        ) : routeRecentsOpen ? (
+          <TabPage testId="route-recents-list">
+            <RecentRoutesPage onBack={closeList} />
+          </TabPage>
+        ) : savedOpen ? (
+          <TabPage testId="saved-flights">
+            <Waits>
+              <SavedFlights onBack={closeSaved} />
+            </Waits>
+          </TabPage>
+        ) : model.typed || model.direct || (model.pick && model.does.length > 0) ? (
+          // A search sent, its results, else the suggestions: each its own scroll box (one scrolling rule);
+          // a picker's ask with a row before anything is typed too (the departure's My Position).
+          <TabPage key={model.sent ? "results" : "suggestions"} testId="search-page">
+            <Waits>{model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}</Waits>
+          </TabPage>
+        ) : (
+          stripsDrawn && <SearchHome vm={vm} />
+        )}
+      </TabKept>
     </>
   );
 }

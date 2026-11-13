@@ -15,36 +15,25 @@
 //! that far outside it. Neither data set knows an open air assembly of
 //! persons (a fair, a race), which is the pilot's to see.
 
+use crate::geo;
+use wingtip_core::units::FT_PER_NM;
+
 /// 14 CFR 91.119(b): "within a horizontal radius of 2,000 feet of the
 /// aircraft".
 pub const RADIUS_FT: f64 = 2000.0;
-/// A degree of latitude: sixty nautical miles of 6,076.12 ft (the
-/// international nautical mile, 1,852 m), near enough -- the earth's
+/// A degree of latitude: sixty nautical miles (a minute of arc each),
+/// near enough -- the earth's
 /// flattening moves it under 1% from the equator to the pole.
-pub const FT_PER_DEG_LAT: f64 = 60.0 * 6076.12;
+pub const FT_PER_DEG_LAT: f64 = 60.0 * FT_PER_NM;
 
 /// An area's outline: polygons, each its outer ring and its holes, each
 /// ring (lon, lat) points.
 pub type Area = Vec<Vec<Vec<(f64, f64)>>>;
 
-/// Whether a ring holds a point, by the even-odd rule.
-fn ring_holds(ring: &[(f64, f64)], x: f64, y: f64) -> bool {
-    let mut inside = false;
-    let mut j = ring.len() - 1;
-    for i in 0..ring.len() {
-        let ((xi, yi), (xj, yj)) = (ring[i], ring[j]);
-        if (yi > y) != (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi {
-            inside = !inside;
-        }
-        j = i;
-    }
-    inside
-}
-
 /// Whether an area holds a point: inside a polygon's outline and none of
 /// its holes.
 pub fn inside(area: &Area, lat: f64, lon: f64) -> bool {
-    area.iter().any(|rings| rings.iter().filter(|r| r.len() >= 3 && ring_holds(r, lon, lat)).count() % 2 == 1)
+    area.iter().any(|rings| rings.iter().filter(|r| r.len() >= 3 && geo::ring_holds(r, lon, lat)).count() % 2 == 1)
 }
 
 /// The least distance from the point to the area's edges, feet: degrees of
@@ -86,6 +75,7 @@ pub fn congested(areas: &[&Area], lat: f64, lon: f64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wingtip_core::units::FT_PER_SM;
 
     /// A town a mile on a side, its south-west corner at 45 N 90 W, and a
     /// point `north` and `east` feet from that corner.
@@ -93,7 +83,7 @@ mod tests {
         let (lat, lon): (f64, f64) = (45.0, -90.0);
         let ft_lat = 1.0 / FT_PER_DEG_LAT;
         let ft_lon = ft_lat / lat.to_radians().cos();
-        let (e, n) = (lon + 5280.0 * ft_lon, lat + 5280.0 * ft_lat);
+        let (e, n) = (lon + FT_PER_SM * ft_lon, lat + FT_PER_SM * ft_lat);
         let area = vec![vec![vec![(lon, lat), (e, lat), (e, n), (lon, n), (lon, lat)]]];
         (area, move |north: f64, east: f64| (lat + north * ft_lat, lon + east * ft_lon))
     }

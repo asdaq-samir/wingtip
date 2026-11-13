@@ -12,8 +12,8 @@ import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.engine.CyclePacks
-import app.wingtipmaps.android.map.CloseMap
 import app.wingtipmaps.android.tiles.TileTemplate
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -26,6 +26,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.File
+import javax.inject.Inject
 
 /**
  * Which chart the map draws (/api/chart): its cycle, its layers and where
@@ -36,7 +37,8 @@ import java.io.File
  * cache with no connection at all, and its first style has the overlays
  * in it from the start.
  */
-class Charts(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class Charts @Inject constructor(app: Application) : AndroidViewModel(app) {
     private val kept = File(app.filesDir, "chart.json")
 
     private val _info = MutableStateFlow<ChartInfo?>(null)
@@ -139,31 +141,13 @@ class Charts(app: Application) : AndroidViewModel(app) {
         withContext(Dispatchers.IO) { runCatching { store.keepOnly(tiles.name) } }
         if (store.hasWhole(tiles.name, tiles.bytes) || !unmetered()) return
         val url = (Config.gateway + Config.plannerPath("/api/overlay-tiles/${tiles.name}.pmtiles")).toHttpUrl()
-        runCatching { store.download(Gateway.client, url, tiles.name, tiles.bytes) }
+        val _ = runCatching { store.download(Gateway.streaming, url, tiles.name, tiles.bytes) }
     }
 
     private fun unmetered(): Boolean {
         val connectivity = getApplication<Application>().getSystemService(ConnectivityManager::class.java) ?: return false
         val capabilities = connectivity.getNetworkCapabilities(connectivity.activeNetwork) ?: return false
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-    }
-
-    /** Google's street map close in, its tiles' address (CloseMap), or
-     *  null where the deployment has no Google key or Google refused. */
-    private val _closeTiles = MutableStateFlow<String?>(null)
-    val closeTiles: StateFlow<String?> = _closeTiles.asStateFlow()
-
-    private var askedClose = false
-
-    /** Asked once the map is first near where the street map comes in, as
-     *  the web asks only then, so no session is made (or billed) for a
-     *  pilot who never goes close in. */
-    fun wantClose() {
-        if (askedClose) return
-        askedClose = true
-        viewModelScope.launch {
-            _closeTiles.value = runCatching { CloseMap.tiles(getApplication()) }.getOrNull()
-        }
     }
 
     companion object {

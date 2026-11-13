@@ -1,4 +1,4 @@
-import { bearingDeg, distanceNm, type LatLon } from "../../../lib/geo";
+import type { Geo, LatLon } from "../../../lib/geo";
 import { compassPoint } from "../../../lib/compass";
 import { nmAway } from "../../../lib/useAway";
 
@@ -53,16 +53,16 @@ export function lineEnters(rings: Rings, line: readonly (readonly [number, numbe
 
 /** Where the area is from the airplane: "Inside it" or how far and which
  *  way its nearest corner is ("12 nm NE"). */
-export function areaFrom(rings: Rings, at: LatLon): string | null {
+export function areaFrom(geo: Geo, rings: Rings, at: LatLon): string | null {
   if (!rings.length) return null;
   if (insideAny(rings, at)) return "You are inside it";
   let best: { nm: number; to: LatLon } | null = null;
   for (const ring of rings) {
     for (const [lon, lat] of ring) {
       const to = { lat: lat!, lon: lon! };
-      const nm = distanceNm(at, to);
+      const nm = geo.distanceNm(at, to);
       if (!best || nm < best.nm) best = { nm, to };
     }
   }
-  return best ? `${nmAway(best.nm)} ${compassPoint(bearingDeg(at, best.to))} of you` : null;
+  return best ? `${nmAway(best.nm)} ${compassPoint(geo.bearingDeg(at, best.to))} of you` : null;
 }

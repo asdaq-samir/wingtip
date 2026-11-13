@@ -367,8 +367,7 @@ def test_a_search_takes_its_turn_between_requests(clock):
     asked_at = []
     with patch("requests.get", side_effect=lambda url, **kw: (asked_at.append(clock.now), get(url))[1]):
         traffic.near(42.3, -88.1, 25)
-        # A callsign with nothing, then the same as a registration: each
-        # five seconds after the one before.
+        # A callsign with nothing, then the same as a registration: each five seconds after the one before.
         assert traffic.find("FOO123") == []
     assert asked_at == [1000.0, 1005.0, 1010.0]
 
@@ -493,11 +492,12 @@ def test_a_flight_whose_track_begins_in_the_air_or_away_from_a_field_says_no_dep
         assert traffic.flight("a0b7d8")["departed"] is None
 
 
-def test_a_flight_with_no_trace_is_drawn_without_its_past(clock, monkeypatch):
+def test_a_flight_with_no_trace_is_drawn_without_its_past_and_named_by_its_faa_record(clock, monkeypatch):
     stand_in(monkeypatch, "_TRACES", {})
+    monkeypatch.setattr(registry, "lookup", lambda **kw: {"n_number": "N654FL", "year": 1971})  # N654FL's card read "Registration –"
     with patch("requests.get", return_value=Mock(status_code=404)):
-        found = traffic.flight("a0b7d8")
-    assert found["trail"] == [] and found["departed"] is None and found["registration"] is None
+        found = traffic.flight("a89c1e")
+    assert (found["trail"], found["departed"], found["type"], found["registration"], found["year"]) == ([], None, None, "N654FL", 1971)
 
 
 def test_a_flight_that_has_landed_is_its_flight_to_the_landing_not_the_parked_tail(clock, monkeypatch):
@@ -1321,10 +1321,10 @@ def test_the_faa_radars_airplanes_are_on_the_map_and_a_followed_ones_flight_reco
 
 
 def test_the_faa_radar_is_read_around_the_places_the_map_shows_traffic(clock, monkeypatch):
-    """The radar is wanted around each place the map asked about within a
-    minute, once a place however often it asks, and for the followed
-    airplanes wherever they are (ingest reads no others). The views are
-    written to the live store on the wall clock, which ingest reads them by."""
+    """The radar is wanted around each region (test_traffic_privacy) the map
+    asked about within a minute, once a region however often it asks, and
+    for the followed airplanes wherever they are (ingest reads no others),
+    on the wall clock, which ingest reads them by."""
     wall = {"now": 1791800000.0}
     stand_in(monkeypatch, "_wall", lambda: wall["now"])
     traffic.follow("a3c858")
@@ -1334,23 +1334,23 @@ def test_the_faa_radar_is_read_around_the_places_the_map_shows_traffic(clock, mo
     traffic.near(42.37, -88.13, 30)
     wall["now"] += traffic.LOOKED_S / 2
     traffic.near(33.94, -118.41, 200)
-    assert traffic.radar_wanted() == ([(42.37, -88.13, 30), (33.94, -118.41, traffic.MAX_RADIUS_NM)], {"a3c858"})
+    assert traffic.radar_wanted() == ([(42.5, -88.0, 52), (34.0, -118.0, 250)], {"a3c858"})
     wall["now"] += traffic.LOOKED_S / 2 + 1
-    assert traffic.radar_wanted() == ([(33.94, -118.41, traffic.MAX_RADIUS_NM)], {"a3c858"})
+    assert traffic.radar_wanted() == ([(34.0, -118.0, 250)], {"a3c858"})
     wall["now"] += traffic.LOOKED_S
     assert traffic.radar_wanted() == ([], {"a3c858"})
 
 
 def test_pressure_altitudes_are_set_on_the_nearest_altimeter(clock, monkeypatch):
     """The FAA's radar sends pressure altitude (29.92): on a 30.42 day an
-    airplane at 4,500 ft on the altimeter is sent as 4,000, and read 500 ft
-    below own ship's GPS height level with it. Set on the nearest METAR's
-    altimeter, about 1,000 ft an inch; a GNSS height is left alone."""
+    airplane at about 4,460 ft on the altimeter is sent as 4,000. Set on the
+    nearest METAR's altimeter: FAA-H-8083-25C Figure 11-3 gives 30.4 "Hg
+    -440 ft and 30.5 -531, so 30.42 is -458; a GNSS height is left alone."""
     monkeypatch.setattr(weather, "nearest_report", lambda lat, lon, **kw: {"metar": {"altimeter_in_hg": 30.42}})
     baro = {"hex": "a3c858", "altitude_ft": 4000.0, "pressure_altitude": True}
     gnss = {"hex": "a6ed61", "altitude_ft": 8000.0, "pressure_altitude": False}
     out = traffic.on_altimeter([baro, gnss], 42.3, -88.1)
-    assert out[0]["altitude_ft"] == 4500 and out[0]["pressure_altitude"] is False
+    assert out[0]["altitude_ft"] == pytest.approx(4458, abs=2) and out[0]["pressure_altitude"] is False
     assert out[1] == gnss
     # None near: as sent, still marked.
     monkeypatch.setattr(weather, "nearest_report", lambda lat, lon, **kw: None)

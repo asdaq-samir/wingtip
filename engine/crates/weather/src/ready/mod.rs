@@ -35,6 +35,7 @@
 
 use crate::cycles::{self, Kind, State};
 use crate::json::{self, Value};
+use crate::text::grouped_int;
 use crate::validity::ROUTINE_INTERVAL_S;
 
 mod checks;
@@ -79,23 +80,6 @@ fn day_words(day: i64) -> String {
     const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     let (_, m, d) = crate::time::civil_from_days(day);
     format!("{d} {}", MONTHS[(m as usize).saturating_sub(1) % 12])
-}
-
-/// A whole number with thousands set off: "5,500".
-fn grouped(n: i64) -> String {
-    let digits = n.unsigned_abs().to_string();
-    let mut out = String::new();
-    for (i, c) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i).is_multiple_of(3) {
-            out.push(',');
-        }
-        out.push(c);
-    }
-    if n < 0 {
-        format!("-{out}")
-    } else {
-        out
-    }
 }
 
 /// A count of minutes as a pilot reads an age: "40 min", "3 h".
@@ -153,7 +137,7 @@ fn plan_items(plan: Option<&Value>, out: &mut Vec<Item>) -> bool {
         "altitude",
         altitude.is_some(),
         match altitude {
-            Some(ft) => format!("Cruise at {} ft", grouped(ft.round() as i64)),
+            Some(ft) => format!("Cruise at {} ft", grouped_int(ft.round() as i64)),
             None => "Set the cruise altitude".into(),
         },
         "The winds, fuel and terrain clearance are worked at it".into(),

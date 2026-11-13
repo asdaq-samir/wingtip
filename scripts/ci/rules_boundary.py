@@ -18,9 +18,12 @@ listed with any, fails: move the rule into the engine (engine/README.md,
 file with its reason. A file with fewer than its count is said, so the
 list shrinks as #482 does.
 
-  python3 scripts/ci/rules_boundary.py         check
-  python3 scripts/ci/rules_boundary.py --list  print every hit
+  python3 scripts/ci/rules_boundary.py              check
+  python3 scripts/ci/rules_boundary.py --list       print every hit
+  python3 scripts/ci/rules_boundary.py FILE...      only those files (the edit-time hook)
 """
+
+from __future__ import annotations
 
 import re
 import sys
@@ -33,28 +36,44 @@ ALLOW = ROOT / "scripts/ci/rules_boundary_allow.txt"
 # the rule could hide in (generated types, tests, fixtures).
 # The planner's wingtip/ too: its 91.169 window was a figure the engine
 # also judged by (the simplicity measure of 2026-11-10).
+# Every service and tool since 2026-11-12: the crash pipeline's and Model
+# Weather's figures went unchecked in weather/, jobs/ and ingest/ (the
+# simplicity audit of that day, finding 7).
 AREAS = [
     "apps/web/src",
     "apps/ios/Wingtip",
+    "apps/ios/WingtipWidgets",
+    "apps/ios/WingtipWatch",
     "apps/android/app/src/main",
     "services/gateway/src/main",
     "services/planner/app",
     "services/planner/wingtip",
+    "services/weather/app",
+    "services/ingest/ingest",
+    "services/jobs",
+    "tools",
 ]
-SUFFIXES = {".ts", ".tsx", ".swift", ".kt", ".java", ".py"}
+SUFFIXES = {".ts", ".tsx", ".js", ".mjs", ".swift", ".kt", ".java", ".py", ".cs"}
 SKIP = re.compile(
-    r"(\.test\.|\.spec\.|/fixtures/|/Generated/|/generated/|lib/engine/contract\.ts|lib/api/types\.ts|"
-    r"EngineContract\.(swift|kt)|/tests?/|services/planner/app/detection\.py)"
+    r"(\.test\.|\.spec\.|/fixtures/|/Generated/|/generated/|apps/ios/WingtipAPI/|lib/engine/contract\.ts|lib/api/types\.ts|"
+    r"EngineContract\.(swift|kt)|/tests?/|/test_[^/]*\.py$|Tests?/|/bin/|/obj/|node_modules/|"
+    r"planner_client\.py$|planner_models\.py$|services/planner/app/detection\.py)"
 )
 
-# A source of an aviation figure, as this repo's comments cite one.
-CITATION = re.compile(r"14 CFR|\bCFR\b|§|\bAIM\b|\bAC \d{2,3}-\d|\bACS\b|FAA Order|\b(61|91|71|73|95|97|135)\.\d{2,3}\b")
-# A constant set to a number: TS/JS const, Swift let/var, Kotlin val/const
-# val, Java static final, a Python module constant.
+# A source of an aviation figure, as this repo's comments cite one: the
+# FAA's handbooks too (FAA-H-8083-28B took AC 00-45H's place in 2022).
+CITATION = re.compile(r"14 CFR|\bCFR\b|§|\bAIM\b|\bAC \d{2,3}-\d|\bACS\b|FAA Order|FAA-H-\d{4}|\b(61|91|71|73|95|97|135)\.\d{2,3}\b")
+# A constant set to a number, or to a list of numbers (a cited table of
+# steps: `RUNWAY_STEPS = [2000, 3000]`, `listOf(1, 2)`, a tuple): TS/JS
+# const, Swift let/var, Kotlin val/const val, Java static final, C# const,
+# a Python module constant.
+VALUE = r"=\s*(?:\[\s*|\(\s*|(?:listOf|arrayOf|setOf|doubleArrayOf|intArrayOf|floatArrayOf)\(\s*)?-?\(?\s*[\d][\d_.]*\b"
 CONSTANT = re.compile(
-    r"^\s*(?:export\s+)?(?:(?:private|internal|public|static|const|final|let|var|val|override)\s+)*"
-    r"(?:const|let|var|val|final\s+\w+|static\s+final\s+\w+)\s+[A-Za-z_]\w*\s*(?::\s*[\w.<>?]+\s*)?=\s*-?\(?\s*[\d][\d_.]*\b"
-    r"|^[A-Z][A-Z0-9_]+\s*(?::\s*[\w\[\], ]+)?=\s*-?[\d][\d_.]*\b"
+    r"^\s*(?:export\s+)?(?:(?:private|internal|public|static|const|final|let|var|val|override|readonly)\s+)*"
+    r"(?:const|let|var|val|final\s+\w+|static\s+final\s+\w+|const\s+\w+)\s+[A-Za-z_]\w*\s*(?::\s*[\w.<>?\[\]]+\s*)?"
+    + VALUE
+    + r"|^[A-Z_][A-Z0-9_]+\s*(?::\s*[\w\[\], .]+)?"
+    + VALUE
 )
 COMMENT = re.compile(r"^\s*(//|/\*|\*|#|///)")
 # The engine's rules by name, defined again outside it.
@@ -88,15 +107,22 @@ def hits(path: Path) -> list[tuple[int, str]]:
     return found
 
 
-def scan() -> dict[str, list[tuple[int, str]]]:
+def scanned(rel: str) -> bool:
+    return rel.startswith(tuple(a + "/" for a in AREAS)) and Path(rel).suffix in SUFFIXES and not SKIP.search(rel)
+
+
+def scan(only: list[str] | None = None) -> dict[str, list[tuple[int, str]]]:
     out = {}
-    for area in AREAS:
-        for path in sorted((ROOT / area).rglob("*")):
-            rel = path.relative_to(ROOT).as_posix()
-            if path.suffix in SUFFIXES and path.is_file() and not SKIP.search(rel):
-                found = hits(path)
-                if found:
-                    out[rel] = found
+    if only is None:
+        paths = [p for area in AREAS for p in sorted((ROOT / area).rglob("*"))]
+    else:
+        paths = [ROOT / p for p in only]
+    for path in paths:
+        rel = path.relative_to(ROOT).as_posix()
+        if scanned(rel) and path.is_file():
+            found = hits(path)
+            if found:
+                out[rel] = found
     return out
 
 
@@ -111,7 +137,10 @@ def allowed() -> dict[str, int]:
 
 
 def main() -> int:
-    found = scan()
+    # Files given (the edit-time hook passes one): only those, against the
+    # same allow list.
+    only = [Path(a).resolve().relative_to(ROOT).as_posix() for a in sys.argv[1:] if not a.startswith("--")]
+    found = scan(only or None)
     if "--list" in sys.argv:
         for rel, items in found.items():
             for n, text in items:
@@ -130,6 +159,8 @@ def main() -> int:
             for n, text in items:
                 print(f"  {rel}:{n}: {text}")
     for rel, count in allow.items():
+        if only and rel not in only:
+            continue
         have = len(found.get(rel, []))
         if have < count:
             print(f"{rel}: {have} now, {count} allowed: lower its count in rules_boundary_allow.txt.")

@@ -1,10 +1,11 @@
 # iOS 27 on the iPhone app
 
-The app builds with Xcode 27.2 and the iOS 27.2 SDK and still runs on iOS 18.
-Each iOS 27 feature below sits behind `if #available(iOS 27.0, *)`. On iOS 26
-the app keeps its Liquid Glass code, and below that the iOS 18 code. The
-owner asked for this on 2026-11-09: "I want iOS 27 features and look rather
-than 26".
+The app builds with Xcode 27.2 and the iOS 27.2 SDK, and its oldest iOS is
+27.0 (watchOS 26.0 for the Watch, decision 0040's amendment): each iOS 27 feature below is used as it
+is, with no `#available` branch and no older fallback. The owner asked for
+iOS 27's features and look on 2026-11-09 ("I want iOS 27 features and look
+rather than 26"), and for the floor at 27 on 2026-11-12 ("Why did you move
+to 26 and not 27?").
 
 Every API named here was checked in the iOS 27.2 SDK's own interfaces
 (`SwiftUI.swiftinterface`, `SwiftUICore.swiftinterface`, `WidgetKit`, `UIKit`
@@ -99,16 +100,16 @@ grep for `iOS 27` alone misses them.
 
 ## What the app adopted
 
-| What | Where | iOS 27 | Fallback |
-|---|---|---|---|
-| The navigation bar folds away while a long list scrolls down | Nav Log, Brief, Logbook (`navigationBarMinimizesOnScroll`, Design/Bars.swift) | `toolbarMinimizationBehavior(.onScrollDown, for: .navigationBar)` | The bar stays |
-| Share and Favorite are pinned in the airport card's bar | AirportCard toolbar (`ToolbarItemPlacement.pinnedTrailing`) | `.topBarPinnedTrailing` | `.topBarTrailing`, the same place |
-| The airport card's Info / Weather / Runways / Charts switch is read as tabs | AirportCard (`tabsPicker()`) | `.pickerStyle(.tabs)` | `.segmented` |
-| The system's own text field border | FPL, Welcome, Trip planner, Ask, route box, Ask figures (`borderedField()`) | `.textFieldStyle(.bordered)` | `.roundedBorder` |
-| Scroll edges use the HIG's preferred automatic style | `glassScrollEdges()`, Design/Glass.swift | `.automatic` | `.soft` on iOS 26, none on 18 |
-| With Reduce Motion on, a card fades in from its row instead of zooming | CardZoom.swift | `.navigationTransition(.crossFade)` | The stack's push |
-| The Dynamic Island's figure has a short form when the island is narrow | FlightActivityWidget `CompactFigure`; `FlightActivityLines.compactNarrow` ("1:25" for "1h 25m"), tested in FlightActivityTests | `isDynamicIslandLimitedInWidth` | The usual figure |
-| The weather loop does not start by itself when the system asks apps to do less | WeatherLoop.loaded() | `UIApplication.systemPrefersReducedResourceUsage` | Unchanged (Reduce Motion still applies) |
+| What | Where | iOS 27 |
+|---|---|---|
+| The navigation bar folds away while a long list scrolls down | Nav Log, Brief, Logbook (`navigationBarMinimizesOnScroll`, Design/Bars.swift) | `toolbarMinimizationBehavior(.onScrollDown, for: .navigationBar)` |
+| Share and Favorite are pinned in the airport card's bar | AirportCard toolbar (`ToolbarItemPlacement.pinnedTrailing`) | `.topBarPinnedTrailing` |
+| The airport card's Info / Weather / Runways / Charts switch is read as tabs | AirportCard (`tabsPicker()`) | `.pickerStyle(.tabs)` |
+| The system's own text field border | FPL, Welcome, Trip planner, Ask, route box, Ask figures (`borderedField()`) | `.textFieldStyle(.bordered)` |
+| Scroll edges use the HIG's preferred automatic style | `glassScrollEdges()`, Design/Glass.swift | `.automatic` |
+| With Reduce Motion on, a card fades in from its row instead of zooming | CardZoom.swift | `.navigationTransition(.crossFade)` |
+| The Dynamic Island's figure has a short form when the island is narrow | FlightActivityWidget `CompactFigure`; `FlightActivityLines.compactNarrow` ("1:25" for "1h 25m"), tested in FlightActivityTests | `isDynamicIslandLimitedInWidth` |
+| The weather loop does not start by itself when the system asks apps to do less | WeatherLoop.loaded() | `UIApplication.systemPrefersReducedResourceUsage` |
 
 ## Flight files and configurable widgets
 
@@ -122,12 +123,11 @@ Both were owner-approved on 2026-11-09 and built on their own branch
   link (`SharedPlan`, `?open=shared`: route, stops, altitude, departure
   time, airplane type, rules, the N-number only where ticked) and the nav
   log with its totals (`Route/FlightFile.swift`). The route's Share menu
-  gains **Save as File**, with the flight and the kneeboard's PDF. On
-  iOS 27 they are saved through the system's file exporter,
+  gains **Save as File**, with the flight and the kneeboard's PDF. They
+  are saved through the system's file exporter,
   `fileExporter(isPresented:document:contentType:defaultFilename:onCompletion:onCancellation:)`
   with a `WritableDocument` written by the SDK's `FileWrapperDocumentWriter`
-  (`Route/FileSaving.swift`). Below iOS 27 the share sheet takes the file
-  (Save to Files, AirDrop, Mail). `FileDocument` is not used. A file opened
+  (`Route/FileSaving.swift`). `FileDocument` is not used. A file opened
   from Files, AirDrop or Mail comes in through `onOpenURL`, as GPX and KML
   already do (`Links`), and shows the Shared Flight preview with Use This
   Plan and Not Now. It never replaces the plan without asking.

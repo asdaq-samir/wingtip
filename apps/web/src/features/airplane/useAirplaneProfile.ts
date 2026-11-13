@@ -65,7 +65,7 @@ export function useAirplaneProfile() {
   const [shownOwn, changeOwn] = useOptimistic(own, ownWith);
   const figures = useMemo(() => airplaneFigures(book, handbookOf(record?.handbook), shownOwn), [book, record, shownOwn]);
   const save = useSaveFigures();
-  const [drafts, setDrafts] = useState<Partial<Record<FigureKey, string>>>({});
+  const [drafts, setDrafts] = useState<Partial<Record<FigureKey, number | null>>>({});
   const [problems, setProblems] = useState<Partial<Record<FigureKey, string>>>({});
   const [busy, setBusy] = useState<FigureKey | null>(null);
   /** Figures kept as the pilot's (null: the book's put back), at once:
@@ -87,17 +87,18 @@ export function useAirplaneProfile() {
       }
     });
   };
-  /** The fields' text, those given, kept as the pilot's figures where they
-   *  changed; one out of its bounds said under it and not kept. */
-  const commit = (...keys: FigureKey[]) => {
+  /** The figures given, kept as the pilot's where they changed; one out
+   *  of its bounds said under it and not kept, and left in its field. A
+   *  field emptied keeps the figure it had. */
+  const commit = (typed: Partial<Record<FigureKey, number | null>>) => {
     const changes: FigureChanges = {};
-    for (const key of keys) {
-      const typed = drafts[key];
-      if (typed === undefined) continue;
+    for (const [key, value] of Object.entries(typed) as [FigureKey, number | null][]) {
       const now = figures.figures.find((f) => f.key === key)?.value ?? null;
-      const read = typed.trim() ? readFigure(key, typed) : null;
-      if (read && "problem" in read) setProblems((p) => ({ ...p, [key]: read.problem }));
-      else if (read && read.value !== now) changes[key] = read.value;
+      const read = value == null ? null : readFigure(key, value);
+      if (read && "problem" in read) {
+        setDrafts((d) => ({ ...d, [key]: value }));
+        setProblems((p) => ({ ...p, [key]: read.problem }));
+      } else if (read && read.value !== now) changes[key] = read.value;
       else setDrafts((d) => without(d, key));
     }
     if (Object.keys(changes).length) keep(changes);
@@ -126,10 +127,11 @@ export function useAirplaneProfile() {
     type: typeWords(record, registered, book?.type),
     rows: figures.figures.map((f) => ({ ...f, key: f.key as FigureKey, resettable: resettable(f) })),
     drafts,
-    setDraft: (key: FigureKey, text: string) => setDrafts((d) => ({ ...d, [key]: text })),
-    commit,
+    /** A figure as its field is left (React Aria's NumberField commits on
+     *  blur or Enter), kept as the pilot's. */
+    change: (key: FigureKey, value: number | null) => commit({ [key]: value }),
     /** Every field changed kept at once: the figures read off a photo. */
-    commitAll: () => commit(...(Object.keys(drafts) as FigureKey[])),
+    commitAll: () => commit(drafts),
     reset: (key: FigureKey) => keep({ [key]: null }),
     photo,
     problems,

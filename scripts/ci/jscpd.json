@@ -1,0 +1,46 @@
+{
+  "minTokens": 100,
+  "minLines": 5,
+  "format": [
+    "typescript",
+    "tsx",
+    "javascript",
+    "python",
+    "swift",
+    "kotlin",
+    "java",
+    "rust",
+    "csharp"
+  ],
+  "ignore": [
+    "**/node_modules/**",
+    "**/generated/**",
+    "**/Generated/**",
+    "**/apps/ios/WingtipAPI/**",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/tests/**",
+    "**/tests_wingtip/**",
+    "**/test_*.py",
+    "**/*Tests/**",
+    "**/test/**",
+    "**/androidTest/**",
+    "**/e2e/**",
+    "**/fixtures/**",
+    "**/*.d.ts",
+    "**/target/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/pkg/**",
+    "**/lib/engine/contract.ts",
+    "**/planner_models.py",
+    "**/.venv/**",
+    "**/bin/**",
+    "**/obj/**"
+  ],
+  "absolute": false,
+  "silent": true,
+  "reporters": [
+    "json"
+  ]
+}

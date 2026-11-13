@@ -4,12 +4,20 @@ lib/map/gl/terrain): the terrain tiles the planner reads its floors from
 Digital Obstacle File in the view, for the obstacles stood up over that
 ground. app.routers.terrain serves them."""
 
-from . import elevation, faa_data, terrain
+import hashlib
+import inspect
+from functools import cache
+from pathlib import Path
 
-#: The finest terrain tile served: the planner's own (TERRAIN_TILE_ZOOM,
-#: about 38 m a pixel). The map asks no finer than zoom 11 and draws
-#: closer in from it.
-MAX_ZOOM = elevation.TERRAIN_TILE_ZOOM
+from . import elevation, faa_data, terrain, terrain_fine
+from .atomic import atomic_path
+
+#: The finest terrain tile served: one finer than the planner's own
+#: (TERRAIN_TILE_ZOOM, about 38 m a pixel), the zoom-13 tiles built ahead
+#: round the airports and over steep ground (wingtip.terrain_fine), some
+#: 15 m a pixel at 40 N -- USGS 3DEP's 1/3 arc-second, about 10 m, is what
+#: they are drawn from. The map draws closer in from them.
+MAX_ZOOM = terrain_fine.FINE_ZOOM
 
 #: The obstacles' least height by default: 14 CFR 77.9(a)'s 200 ft above
 #: the ground, past which construction is noticed to the FAA, and
@@ -32,11 +40,39 @@ class BoxTooWide(ValueError):
 
 def tile_png(z: int, x: int, y: int) -> bytes:
     """One {z}/{x}/{y} terrain tile as a terrarium PNG, cleaned
-    (elevation.terrain_tile_png). Raises NoSuchTile off the grid, and
-    requests.RequestException where it cannot be fetched."""
+    (elevation.terrain_tile_png); at zoom 13 the one built ahead, else its
+    parent's drawn larger, never fetched (terrain_fine.fine_tile_png).
+    Raises NoSuchTile off the grid, and requests.RequestException where
+    it cannot be fetched."""
     if not (0 <= z <= MAX_ZOOM) or not (0 <= x < 2**z) or not (0 <= y < 2**z):
         raise NoSuchTile(f"terrain tiles exist for zoom 0-{MAX_ZOOM}")
-    return elevation.terrain_tile_png(z, x, y)
+    if z == terrain_fine.FINE_ZOOM:
+        return terrain_fine.fine_tile_png(x, y)
+    folder = _cleaned_dir()
+    path = folder / str(z) / str(x) / f"{y}.png" if folder else None
+    if path is not None and path.exists():
+        return path.read_bytes()
+    png = elevation.terrain_tile_png(z, x, y)
+    if path is not None:
+        # A cache, drawn again where a power cut loses it: no flush.
+        with atomic_path(path, durable=False) as part:
+            part.write_bytes(png)
+    return png
+
+
+@cache
+def _cleaned_dir() -> Path | None:
+    """Where the cleaned tiles are kept, written once each rather than
+    decoded, cleaned and encoded again at every ask: a folder named by
+    wingtip.elevation's own source, so a change to how a tile is cleaned
+    (terrarium_m, _filled, terrarium_rgb) is a new folder and never a tile
+    cleaned the old way. None where the source cannot be read: no copies
+    kept then."""
+    try:
+        source = inspect.getsource(elevation)
+    except (OSError, TypeError):
+        return None
+    return elevation.TERRAIN_TILE_DIR.parent / "terrain-tiles-cleaned" / hashlib.sha256(source.encode()).hexdigest()[:12]
 
 
 def obstacles_in_box(

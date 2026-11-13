@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import type { RankedNotam, RankedNotams } from "../../lib/api/types";
+import type { RankedNotam, RankedNotams } from "./engineRanking";
 import NotamRankingSection from "./NotamRankingSection";
 import { runwaysOfPicks, splitRanking } from "./useNotamRanking";
 import { useNotamMarks } from "./notamMarks";
@@ -17,7 +17,6 @@ const notam = (id: string, top: boolean, why: string, over: Partial<RankedNotam>
   kind: "notam",
   label: `NOTAM ${id}`,
   why,
-  worded: true,
   top,
   rank: 1,
   score: 1,
@@ -42,8 +41,6 @@ const ANSWER: RankedNotams = {
   top: 3,
   coverage_since: "2026-10-19",
   unchecked: [],
-  model: "claude-haiku-5-5",
-  unavailable: null,
 };
 
 const state = vi.hoisted(() => ({ value: {} as Record<string, unknown> }));
@@ -79,20 +76,14 @@ describe("the NOTAMs that matter", () => {
     expect(screen.getByTestId("brief-notams-more").textContent).toContain("2 more");
     expect(screen.getAllByTestId("brief-notam-folded")).toHaveLength(2);
     expect(screen.getByTestId("brief-notams-credit").textContent).toBe("FAA NOTAM feed since 19 Oct 2026");
-    expect(screen.queryByTestId("brief-notams-unworded")).toBeNull();
   });
 
-  test("none heard reads as such, never as no NOTAMs; the engine's lines are said to be its own", () => {
+  test("none heard reads as such, never as no NOTAMs", () => {
     const none: RankedNotams = { ...ANSWER, notams: [], top: 0 };
     state.value = { shown: true, top: [], rest: [], answer: none, error: null, pending: false };
     render(<NotamRankingSection />);
     expect(screen.getByTestId("brief-notams-empty").textContent).toBe("None heard since 19 Oct");
     expect(document.body.textContent).not.toMatch(/no notams/i);
-    cleanup();
-    const unworded = { ...ANSWER, unavailable: "The briefer cannot be reached." };
-    state.value = { shown: true, ...splitRanking(unworded), answer: unworded, error: null, pending: false };
-    render(<NotamRankingSection />);
-    expect(screen.getByTestId("brief-notams-unworded")).toBeTruthy();
   });
 
   test("a NOTAM's raw text is folded under its name, as sent; a pinned one is first and a read one folds", () => {

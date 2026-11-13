@@ -1,8 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, settle, slow } from "./helpers";
+import { drawn, grabberTo, mapStill, settle, slow } from "./helpers";
 
 /**
- * The traffic about the map (TrafficLayer), from adsb.lol through the
+ * The traffic about the map (TrafficGl's symbol layers, read through
+ * their probes: traffic-marks, traffic-trends), from adsb.lol through the
  * planner, when the map's settings show it: stubbed here, adsb.lol's sky
  * not being the suite's. Two airplanes near Campbell Airport (C81).
  */
@@ -56,62 +57,35 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("shown in the map's settings, the airplanes about are drawn on their tracks with their heights, and adsb.lol is credited", async ({
-  page,
-}) => {
-  const asks = await showTraffic(page, true);
-  await page.goto("/app/plan?place=C81");
-  await settle(page);
-  const marks = page.locator("svg[data-traffic]");
-  await expect(marks).toHaveCount(2, { timeout: slow(15_000) });
-  // With no own ship, each one's own height, a descent's arrow with it.
-  const labels = page.locator(".maplibregl-map").getByText(/^(4,500↓|9,800)/);
-  await expect(labels).toHaveCount(2);
-  await expect(marks.first()).toHaveAttribute("style", /rotate\(320deg\)/);
-  await expect(page.locator(".maplibregl-ctrl-attrib")).toContainText("adsb.lol, ODbL");
-  expect(asks.length).toBeGreaterThan(0);
-  // Asked again while it shows.
-  const first = asks.length;
-  await expect.poll(() => asks.length, { timeout: slow(12_000) }).toBeGreaterThan(first);
-});
-
-test.describe("on a touch screen", () => {
-  test.use({ hasTouch: true });
-  test("on a phone the credit rides on the sheet's top, at rest and where a drag lands it", { tag: "@smoke" }, async ({ page }) => {
-    test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
-    await showTraffic(page, true);
+// The journey's one @smoke (the credit riding the sheet's top went with the
+// map's credits row, the owner 2026-11-11).
+test(
+  "shown in the map's settings, the airplanes about are drawn on their tracks with their heights",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    const asks = await showTraffic(page, true);
     await page.goto("/app/plan?place=C81");
     await settle(page);
-    const credit = page.locator(".maplibregl-ctrl-attrib", { hasText: "adsb.lol" });
-    await expect(credit).toBeVisible({ timeout: slow(15_000) });
-    const panel = page.locator('[data-slot="map-panel"]');
-    // The credit's foot against the sheet's top.
-    const gap = async () => {
-      const [c, p] = [(await credit.boundingBox())!, (await panel.boundingBox())!];
-      return Math.abs(c.y + c.height - p.y);
-    };
-    for (const size of ["half", "peek"] as const) {
-      await grabberTo(page, size);
-      await expect.poll(gap).toBeLessThan(3);
-    }
-    // Dragged up from its grabber and let go (the card is the sheet, no
-    // search over it): the credit on the sheet's top where the throw lands
-    // it, where it once stayed at the inset the sheet had before (the
-    // owner, 2026-10-28). Under the finger it waits for the throw: the
-    // map's buttons and credits, outside the stock Drawer's tree, take the
-    // height the sheet is going to once per snap point (sheetCover; the
-    // Drawer as it is, the owner 2026-11-10).
-    const tabs = (await page.getByTestId("sidebar-trigger-button").boundingBox())!;
-    const at = { x: tabs.x + tabs.width / 2, y: tabs.y + tabs.height / 2 };
-    const cdp = await page.context().newCDPSession(page);
-    const touch = (type: string, q?: { x: number; y: number }) =>
-      cdp.send("Input.dispatchTouchEvent", { type, touchPoints: q ? [{ ...q, id: 1 }] : [] });
-    await touch("touchStart", at);
-    for (let i = 1; i <= 6; i++) await touch("touchMove", { x: at.x, y: at.y - 25 * i });
-    await touch("touchEnd");
-    await expect.poll(gap).toBeLessThan(3);
-  });
-});
+    await expect.poll(async () => (await drawn(page, "traffic-marks")).length, { timeout: slow(15_000) }).toBe(2);
+    // With no own ship, each one's own height, a descent's arrow with it:
+    // once the map has come in to the field (HEIGHT_ZOOM). The account has
+    // no home, so the page opens on the whole country and flies in to C81,
+    // and the airplanes are drawn on the way, their heights not yet.
+    await expect
+      .poll(async () => (await drawn(page, "traffic-marks")).map((m) => String(m.label)).sort())
+      .toEqual([expect.stringMatching(/^4,500↓/), expect.stringMatching(/^9,800/)]);
+    const marks = await drawn(page, "traffic-marks");
+    // Turned by MapLibre against the map (icon-rotation-alignment "map"),
+    // the flat chart's bearing 0, so its turn is the track.
+    expect(marks.find((m) => m.hex === "a1")?.track).toBe(320);
+    // Credited in Status and About, not on the map (the owner, 2026-11-11).
+    await expect(page.locator(".maplibregl-ctrl-attrib")).toHaveCount(0);
+    expect(asks.length).toBeGreaterThan(0);
+    // Asked again while it shows.
+    const first = asks.length;
+    await expect.poll(() => asks.length, { timeout: slow(12_000) }).toBeGreaterThan(first);
+  },
+);
 
 test("between reports each airplane is carried on along its track, as ForeFlight's and FlightAware's are", async ({ page }) => {
   await page.addInitScript(() => {
@@ -128,13 +102,16 @@ test("between reports each airplane is carried on along its track, as ForeFlight
   );
   await page.goto("/app/plan?place=C81");
   await settle(page);
-  const mark = page.locator("svg[data-traffic]");
-  await expect(mark).toHaveCount(1, { timeout: slow(15_000) });
+  const mark = async () => (await drawn(page, "traffic-marks")) as { x: number; y: number }[];
+  await expect.poll(async () => (await mark()).length, { timeout: slow(15_000) }).toBe(1);
   // Its line out to where it will be in a minute.
-  await expect(mark.locator("[data-trend]")).toHaveCount(1);
-  const first = (await mark.boundingBox())!;
+  await expect.poll(async () => (await drawn(page, "traffic-trends")).length).toBe(1);
+  // The map at rest over C81 first: the page opens on the whole country
+  // (the account has no home) and flies in, which moved the mark too.
+  await mapStill(page);
+  const first = (await mark())[0]!;
   await page.waitForTimeout(3000);
-  const later = (await mark.boundingBox())!;
+  const later = (await mark())[0]!;
   // East, some 0.4 nm in three seconds: points to the right at this
   // zoom, and no jump back as the same report comes again.
   expect(later.x - first.x).toBeGreaterThan(2);
@@ -147,9 +124,9 @@ test("off, as it is unless shown, nothing is asked and nothing drawn", async ({ 
   await settle(page);
   await page.waitForTimeout(2000);
   expect(asks).toHaveLength(0);
-  await expect(page.locator("svg[data-traffic]")).toHaveCount(0);
-  // The map's row keeps its legal links (MapCredits); the traffic's credit is not in it.
-  await expect(page.locator(".maplibregl-ctrl-attrib")).not.toContainText("adsb.lol");
+  expect(await drawn(page, "traffic-marks")).toHaveLength(0);
+  // No small print on the map at all (MapCredits).
+  await expect(page.locator(".maplibregl-ctrl-attrib")).toHaveCount(0);
 });
 
 test("the traffic is asked about wherever the map is panned, own ship or not, and further out for a map zoomed out", async ({
@@ -179,7 +156,7 @@ test("the traffic is asked about wherever the map is panned, own ship or not, an
     )
     .toBe(true);
   // Zoomed out to a state: asked further than the near regions' 60 nm --
-  // the card's link opens all the way up, so down to its pill first.
+  // the card down to its pill first, the map clear over it.
   await grabberTo(page, "peek");
   const map = (await page.locator(".maplibregl-map").boundingBox())!;
   await page.mouse.move(map.x + map.width / 2, map.y + map.height / 4);
@@ -208,7 +185,7 @@ test("an answer missed while the map is panned is not said; traffic is said unav
   await page.clock.install();
   await page.goto("/app/plan?place=C81");
   await settle(page);
-  await expect(page.locator("svg[data-traffic]")).toHaveCount(2, { timeout: slow(15_000) });
+  await expect.poll(async () => (await drawn(page, "traffic-marks")).length, { timeout: slow(15_000) }).toBe(2);
   down = true;
   await page.clock.runFor(10_000);
   await expect(page.getByText("Traffic isn't available right now.")).toHaveCount(0);

@@ -14,6 +14,7 @@ import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import NumberRow from "./NumberRow";
+import SpeedAndBurnGroups from "./SpeedAndBurnGroups";
 import { useAirplanes } from "./airplanes/useAirplanes";
 import { Spinner } from "../../components/ui/spinner";
 import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
@@ -24,8 +25,7 @@ import ChecklistPage from "../../components/ChecklistPage";
 import SquawksPage from "./SquawksPage";
 import { aircraftKey, choiceOf } from "../../lib/aircraftChoice";
 import { api } from "../../lib/api/client";
-import type { Aircraft, AircraftRequest, HandbookFigures, InspectionsRequest } from "../../lib/api/types";
-import { HandbookPhotoRow, mergeHandbook, type ConfirmedHandbook } from "../document-photo";
+import type { Aircraft, AircraftRequest, InspectionsRequest } from "../../lib/api/types";
 import { cruiseReferenceFt } from "../../lib/performance";
 import { usePreferences } from "../../lib/preferences";
 import { TEXT } from "../../lib/text";
@@ -38,6 +38,7 @@ import { daysBetween, daysWords, dueFinding } from "./paperwork";
 import { callEngine } from "../../lib/engine/engine";
 import DueItemsGroup from "./DueItemsGroup";
 import { VorCheckGroup } from "./VorCheckGroup";
+import { FieldError } from "../../components/ui/field";
 
 /** A form field as the request carries it: blank is null. */
 const orNull = (value: string) => (value.trim() ? Number(value) : null);
@@ -50,6 +51,8 @@ const AIRCRAFT_FIELDS = [
   "cruisePowerPct",
   "climbTasKt",
   "climbFuelBurnGph",
+  "descentIasKt",
+  "descentFuelBurnGph",
   "usableFuelGal",
   "equipment",
   "surveillance",
@@ -70,7 +73,7 @@ const aircraftSchema = z
       if (message) ctx.addIssue({ code: "custom", path: [field], message });
     }
   });
-type AircraftFormValues = z.infer<typeof aircraftSchema>;
+export type AircraftFormValues = z.infer<typeof aircraftSchema>;
 const EMPTY_AIRCRAFT_FORM: AircraftFormValues = {
   tailNumber: "",
   typeDesignator: "",
@@ -79,6 +82,8 @@ const EMPTY_AIRCRAFT_FORM: AircraftFormValues = {
   cruisePowerPct: "",
   climbTasKt: "",
   climbFuelBurnGph: "",
+  descentIasKt: "",
+  descentFuelBurnGph: "",
   usableFuelGal: "",
   equipment: "",
   surveillance: "",
@@ -96,6 +101,8 @@ function formOf(a: AircraftRequest): AircraftFormValues {
     cruisePowerPct: typed(a.cruisePowerPct),
     climbTasKt: typed(a.climbTasKt),
     climbFuelBurnGph: typed(a.climbFuelBurnGph),
+    descentIasKt: typed(a.descentIasKt),
+    descentFuelBurnGph: typed(a.descentFuelBurnGph),
     usableFuelGal: typed(a.usableFuelGal),
     equipment: a.equipment ?? "",
     surveillance: a.surveillance ?? "",
@@ -373,28 +380,22 @@ export function AircraftPanel() {
     control,
     handleSubmit,
     reset,
-    setValue,
     setError,
     formState: { errors },
   } = useForm<AircraftFormValues>({ resolver: zodResolver(aircraftSchema), defaultValues: EMPTY_AIRCRAFT_FORM });
 
-  // Handbook figures confirmed from a photo (features/document-photo),
-  // kept with the airplane when the pilot saves it, never before.
-  const [handbook, setHandbook] = useState<HandbookFigures | null>(null);
   const cancelEdit = () => {
     setEditingId(null);
     setAdding(false);
-    setHandbook(null);
     reset(EMPTY_AIRCRAFT_FORM);
   };
 
   // A save or a delete shows in the list at once, the form closed
   // (useAirplanes); a refused save opens the form again on what was typed,
   // with why at its top, where the pilot was.
-  const { list, isLoading, saving, save, remove } = useAirplanes(({ id, request, figures }, why) => {
+  const { list, isLoading, saving, save, remove } = useAirplanes(({ id, request }, why) => {
     if (id) setEditingId(id);
     else setAdding(true);
-    setHandbook(figures);
     reset(formOf(request));
     setError("root.server", { type: "server", message: why });
   });
@@ -403,28 +404,14 @@ export function AircraftPanel() {
     // One the gateway has yet to give an id is not edited until it has.
     if (a.id < 0) return;
     setEditingId(a.id);
-    setHandbook(null);
     reset(formOf(a));
   };
 
-  // The confirmed figures put in the form's fields to see and save; the rest of the page's go with that save.
-  const fromPhoto = ({ handbook: figures, profile }: ConfirmedHandbook) => {
-    const fill = (name: keyof AircraftFormValues, v: number | null | undefined) => {
-      if (v != null) setValue(name, String(Math.round(v * 10) / 10), { shouldDirty: true, shouldValidate: true });
-    };
-    fill("cruiseTasKt", profile.cruise_tas_kt);
-    fill("fuelBurnGph", profile.fuel_burn_gph);
-    fill("cruisePowerPct", profile.cruise_power_pct);
-    fill("climbFuelBurnGph", profile.climb_fuel_burn_gph);
-    fill("usableFuelGal", profile.usable_fuel_gal);
-    setHandbook((now) => mergeHandbook(now ?? list?.find((a) => a.id === editingId)?.handbook, figures));
-  };
-
   const onSubmit = (values: AircraftFormValues) => {
-    const sent = { id: editingId, figures: handbook };
+    const id = editingId;
     cancelEdit();
     save({
-      ...sent,
+      id,
       request: {
         tailNumber: values.tailNumber.trim(),
         typeDesignator: values.typeDesignator.trim(),
@@ -433,6 +420,8 @@ export function AircraftPanel() {
         cruisePowerPct: orNull(values.cruisePowerPct),
         climbTasKt: orNull(values.climbTasKt),
         climbFuelBurnGph: orNull(values.climbFuelBurnGph),
+        descentIasKt: orNull(values.descentIasKt),
+        descentFuelBurnGph: orNull(values.descentFuelBurnGph),
         usableFuelGal: orNull(values.usableFuelGal),
         equipment: values.equipment.trim() || null,
         surveillance: values.surveillance.trim() || null,
@@ -594,12 +583,11 @@ export function AircraftPanel() {
               }
             >
               <form id={formElementId} className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-                {/* What the gateway refused of the last save, over the
-                  fields typed as they were. */}
+                {/* What the gateway refused of the last save, over the fields typed as they were. */}
                 {errors.root?.server && (
-                  <p role="alert" className={cn("px-1 text-destructive", TEXT.note)} data-testid="aircraft-problem">
+                  <FieldError className={cn("px-1 text-destructive", TEXT.note)} data-testid="aircraft-problem">
                     {errors.root.server.message}
-                  </p>
+                  </FieldError>
                 )}
                 {/* What the airplane is, then its speeds and fuel burns --
                   climb and cruise, a row each under the group's heading
@@ -642,54 +630,7 @@ export function AircraftPanel() {
                     </FieldHit>
                   </ListRow>
                 </ListGroup>
-                <ListGroup>
-                  <HandbookPhotoRow onConfirmed={fromPhoto} pending={!!handbook} />
-                </ListGroup>
-                <ListGroup title="True airspeed">
-                  <NumberRow
-                    id={`${formId}-climb-tas`}
-                    title="Climb"
-                    unit="kt"
-                    placeholder="74"
-                    name="Climb TAS in knots"
-                    control={control}
-                    field="climbTasKt"
-                    error={errors.climbTasKt?.message}
-                  />
-                  <NumberRow
-                    id={`${formId}-tas`}
-                    title="Cruise"
-                    unit="kt"
-                    placeholder="110"
-                    name="Cruise TAS in knots"
-                    control={control}
-                    field="cruiseTasKt"
-                    error={errors.cruiseTasKt?.message}
-                  />
-                </ListGroup>
-                {/* Climb is optional: left blank, the nav log climbs at the type's book figures. */}
-                <ListGroup title="Fuel burn">
-                  <NumberRow
-                    id={`${formId}-climb-burn`}
-                    title="Climb"
-                    unit="gph"
-                    placeholder="11"
-                    name="Climb fuel burn in gallons per hour"
-                    control={control}
-                    field="climbFuelBurnGph"
-                    error={errors.climbFuelBurnGph?.message}
-                  />
-                  <NumberRow
-                    id={`${formId}-burn`}
-                    title="Cruise"
-                    unit="gph"
-                    placeholder="8.5"
-                    name="Cruise fuel burn in gallons per hour"
-                    control={control}
-                    field="fuelBurnGph"
-                    error={errors.fuelBurnGph?.message}
-                  />
-                </ListGroup>
+                <SpeedAndBurnGroups formId={formId} control={control} errors={errors} />
                 {/* What the cruise figures mean to the planner, said where
                   they are typed: they are the airplane's at this power at
                   the reference altitude, and each leg flies them in its own

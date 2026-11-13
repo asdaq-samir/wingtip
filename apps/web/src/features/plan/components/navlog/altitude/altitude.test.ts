@@ -18,7 +18,7 @@ describe("the profile's altitude", () => {
     expect(points[1]!.legBefore?.altitude_ft).toBe(4500);
   });
 
-  it("colours the ground by the engine's ForeFlight defaults and says it in words", () => {
+  it("colours the ground red under 500 ft of clearance (14 CFR 91.119(c)) and says it in words", () => {
     const profile = {
       length_nm: 20,
       terrain: [
@@ -29,7 +29,7 @@ describe("the profile's altitude", () => {
       obstacles: [{ along_nm: 10, amsl_ft: 1500 }],
     } as RouteProfile;
     const c = clearanceAt(profile, 3500, [{ ident: "KXYZ", along_nm: 20 }])!;
-    expect([c.red_from_ft, c.yellow_from_ft, c.level]).toEqual([3400, 2500, "yellow"]);
+    expect([c.red_from_ft, c.yellow_from_ft, c.level]).toEqual([3000, 2500, "yellow"]);
     expect(c.words).toBe("3,500 ft, terrain within 500 ft near KXYZ");
   });
 

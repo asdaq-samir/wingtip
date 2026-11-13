@@ -1,0 +1,31 @@
+{
+ "great-circle-outside-geo-python": {
+  "tools/xplane-driver/wingtip_replay/track.py": 1
+ },
+ "html-marker-on-the-map": {
+  "apps/web/src/features/plan/map/layers/TracksGl.tsx": 2,
+  "apps/web/src/features/weather-flow/FlowBubble.tsx": 1,
+  "apps/web/src/features/weather-flow/FlowPins.tsx": 1,
+  "apps/web/src/lib/map/gl/htmlMarker.ts": 1
+ },
+ "planner-http-by-hand-java": {
+  "services/gateway/src/main/java/app/wingtipmaps/gateway/monitoring/UptimeWatch.java": 1
+ },
+ "planner-http-by-hand-phones": {
+  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/Charts.kt": 1,
+  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/diagnostics/DiagnosticsReporter.kt": 1,
+  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/offline/DownloadsModel.kt": 1,
+  "apps/ios/Wingtip/Diagnostics/DiagnosticsReporter.swift": 1
+ },
+ "planner-http-by-hand-python": {
+  "services/planner/app/routers/offline.py": 1
+ },
+ "planner-http-by-hand-web": {
+  "apps/web/src/features/pilot/useExportAccount.ts": 1,
+  "apps/web/src/lib/errorReports.ts": 1
+ },
+ "unit-constant-outside-units-module": {
+  "tools/msfs-agent/Replay.Core/Geo.cs": 1,
+  "tools/xplane-driver/wingtip_replay/player.py": 1
+ }
+}

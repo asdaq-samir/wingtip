@@ -40,7 +40,7 @@ class SquawkServiceTest {
     private static final Pilot PILOT = new Pilot("pilot@example.com", "A. Pilot", "sub-1");
 
     private static Aircraft plane() {
-        Aircraft plane = new Aircraft(PILOT, "N12345", "C172", 110, 8.5, null, null, null, 40.0);
+        Aircraft plane = new Aircraft(PILOT, "N12345", "C172", 110, 8.5, null, null, null, null, null, 40.0);
         ReflectionTestUtils.setField(plane, "id", 7L);
         return plane;
     }

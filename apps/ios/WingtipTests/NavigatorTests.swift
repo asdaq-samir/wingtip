@@ -6,12 +6,17 @@ import Testing
 /// in its own stack, a page done going back to where it was opened from.
 @MainActor
 struct NavigatorTests {
-    @Test func aThingOpensHalfWayAndAPageFull() throws {
+    /// Every card opens half way, a page as a thing does, and Emergency
+    /// alone all the way up (the owner, 2026-11-13: one card rule,
+    /// "natively, but stay consistent").
+    @Test func everyCardOpensHalfWayAndEmergencyFull() throws {
         let nav = Navigator()
         nav.open(.airport("KOSH"))
         #expect(nav.card?.page == .airport("KOSH") && nav.cardDetent == .half)
         nav.open(.screen(.setup))
-        #expect(nav.card?.page == .screen(.setup) && nav.cardDetent == .large)
+        #expect(nav.card?.page == .screen(.setup) && nav.cardDetent == .half)
+        nav.open(.emergency)
+        #expect(nav.card?.page == .emergency && nav.cardDetent == .large)
     }
 
     @Test func aCardTakesTheOnesPlaceRatherThanPilingUp() throws {
@@ -70,6 +75,33 @@ struct NavigatorTests {
         let back = Navigator()
         back.restore(SheetPage.restore(kept))
         #expect(back.card?.page == .screen(.setup) && back.cardPath == [.screen(.logbook)])
+    }
+
+    @Test func flyHereLandsOnFplAndTheEmptyRoutesCloseGoesBackToTheCard() throws {
+        let nav = Navigator()
+        // Fly Here from a field's card, twice to the same field: FPL each time.
+        for _ in 0..<2 {
+            nav.open(.airport("KOSH"))
+            nav.sheetPage = .search
+            nav.showPlan()
+            #expect(nav.card == nil && nav.sheetPage == .fpl)
+        }
+        // The route cleared, its empty box's close: the card, over Search.
+        nav.closeEmptyRoute()
+        #expect(nav.card?.page == .airport("KOSH") && nav.sheetPage == .search)
+        // Again with no card to go back to: Search alone.
+        nav.close()
+        nav.sheetPage = .fpl
+        nav.closeEmptyRoute()
+        #expect(nav.card == nil && nav.sheetPage == .search)
+    }
+
+    @Test func aCardOpenedOverSearchClosesBackToSearch() throws {
+        let nav = Navigator()
+        nav.sheetPage = .search
+        nav.open(.airport(AirportRoute.nearby(.fuel).text))
+        nav.close()
+        #expect(nav.sheetPage == .search)
     }
 
     @Test func theMapCardIsKeptAndTheFlightsCardsAreNot() throws {

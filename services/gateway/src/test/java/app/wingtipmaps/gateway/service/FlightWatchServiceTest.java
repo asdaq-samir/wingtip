@@ -8,9 +8,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
-import app.wingtipmaps.gateway.assistant.model.AssistantSentence;
-import app.wingtipmaps.gateway.assistant.model.AssistantSource;
 import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.FlightWatch;
 import app.wingtipmaps.gateway.domain.Pilot;
@@ -32,6 +29,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.test.util.ReflectionTestUtils;
+import tools.jackson.databind.json.JsonMapper;
 
 /** The flight watch without a database or a planner: a watch starts from
  *  the briefing now; a check that finds a change keeps it, moves the
@@ -73,17 +71,8 @@ class FlightWatchServiceTest {
 
     @BeforeEach
     void service() {
-        // The Claude features on, as most of these are about the words;
-        // the default, off, is its own test below.
         service = new FlightWatchService(
-                watches,
-                flights,
-                pilots,
-                planner,
-                lines,
-                SubscriptionService.ClaudeFeatures.EVERYONE,
-                mail,
-                "https://maps.example.com/");
+                watches, flights, pilots, planner, lines, mail, "https://maps.example.com/", JsonMapper.shared());
     }
 
     private static Pilot pilotWithId(long id) {
@@ -100,23 +89,15 @@ class FlightWatchServiceTest {
         return flight;
     }
 
-    private static AssistantChangesWords changed() {
-        return new AssistantChangesWords()
-                .changed(true)
-                .sentences(List.of(new AssistantSentence().text(CEILING).sources(List.of("taf:KDLH"))))
-                .sources(List.of(new AssistantSource()
-                        .id("taf:KDLH")
-                        .label("TAF KDLH 031720Z")
-                        .text("KDLH 031720Z 0318/0418 ...")))
-                .model("claude-haiku-5-5");
+    private static ChangeLines.Changes changed() {
+        return new ChangeLines.Changes(
+                true,
+                List.of(new BriefingChangeDto(CEILING, List.of("taf:KDLH"))),
+                List.of(new BriefingSourceDto("taf:KDLH", "TAF KDLH 031720Z", "KDLH 031720Z 0318/0418 ...")));
     }
 
-    private static AssistantChangesWords unchanged() {
-        return new AssistantChangesWords()
-                .changed(false)
-                .sentences(List.of())
-                .sources(List.of())
-                .model("claude-haiku-5-5");
+    private static ChangeLines.Changes unchanged() {
+        return new ChangeLines.Changes(false, List.of(), List.of());
     }
 
     @Test
@@ -159,7 +140,7 @@ class FlightWatchServiceTest {
         given(watches.due(any(), any(), any(), any())).willReturn(List.of(watch));
         given(flights.findById(7L)).willReturn(Optional.of(flightWithId(7L, pilot)));
         given(planner.briefing("C81", "KDLH", List.of("KJVL"), DEPART, 205.0)).willReturn(LATER);
-        given(planner.changes("C81", "KDLH", List.of("KJVL"), THEN, LATER)).willReturn(changed());
+        given(lines.changes("C81", "KDLH", List.of("KJVL"), THEN, LATER)).willReturn(changed());
         given(pilots.findById(1L)).willReturn(Optional.of(pilot));
         given(watches.save(any(FlightWatch.class))).willAnswer(call -> call.getArgument(0));
 
@@ -177,7 +158,7 @@ class FlightWatchServiceTest {
         assertThat(watch.getBriefingJson()).isEqualTo(LATER);
         assertThat(watch.getChangedAt()).isEqualTo(NOW);
         assertThat(watch.getCheckedAt()).isEqualTo(NOW);
-        // What the app shows: the planner's words and the reports, read back.
+        // What the app shows: the planner's lines and the reports, read back.
         given(watches.findByFlightIdAndPilotId(7L, 1L)).willReturn(Optional.of(watch));
         FlightWatchDto shown = service.watchOf(pilot, 7L).orElseThrow();
         assertThat(shown.changes()).extracting(BriefingChangeDto::text).containsExactly(CEILING);
@@ -186,7 +167,7 @@ class FlightWatchServiceTest {
 
         // Half an hour on, nothing new: no second email, the baseline kept,
         // only the check's time moved.
-        given(planner.changes("C81", "KDLH", List.of("KJVL"), LATER, LATER)).willReturn(unchanged());
+        given(lines.changes("C81", "KDLH", List.of("KJVL"), LATER, LATER)).willReturn(unchanged());
         Instant later = NOW.plus(Duration.ofMinutes(30));
         assertThat(service.check(later)).isZero();
         verify(mail, times(1)).send(any());
@@ -195,65 +176,22 @@ class FlightWatchServiceTest {
         assertThat(watch.getCheckedAt()).isEqualTo(later);
     }
 
-    /** Off, the default (the owner, 2026-11-10): the planner's own line
-     *  for each change is what the pilot is told, and the assistant, which
-     *  would ask Claude, is never asked. */
+    /** A watch kept before Claude was taken out (docs/decisions/0041)
+     *  carries a model's name and an unavailable reason beside the
+     *  changes: it is read as it always was, those two read past. */
     @Test
-    void withTheClaudeFeaturesOffThePlannersOwnLinesAreSentAndClaudeIsNeverAsked() {
-        FlightWatchService off = new FlightWatchService(
-                watches,
-                flights,
-                pilots,
-                planner,
-                lines,
-                SubscriptionService.ClaudeFeatures.OFF,
-                mail,
-                "https://maps.example.com/");
-        FlightWatch watch = new FlightWatch(7L, 1L, DEPART, THEN, NOW.minus(Duration.ofHours(1)));
-        given(watches.due(any(), any(), any(), any())).willReturn(List.of(watch));
-        given(flights.findById(7L)).willReturn(Optional.of(flightWithId(7L, pilot)));
-        given(planner.briefing("C81", "KDLH", List.of("KJVL"), DEPART, 205.0)).willReturn(LATER);
-        AssistantChangesWords planned = new AssistantChangesWords()
-                .changed(true)
-                .sentences(List.of(
-                        new AssistantSentence().text("KDLH METAR, VFR to IFR.").sources(List.of("metar:KDLH"))))
-                .sources(List.of(new AssistantSource()
-                        .id("metar:KDLH")
-                        .label("KDLH METAR, VFR to IFR")
-                        .text("Was: ...")))
-                .model(ChangeLines.WRITER);
-        given(lines.changes("C81", "KDLH", List.of("KJVL"), THEN, LATER)).willReturn(planned);
-        given(pilots.findById(1L)).willReturn(Optional.of(pilot));
-        given(watches.save(any(FlightWatch.class))).willAnswer(call -> call.getArgument(0));
-
-        assertThat(off.check(NOW)).isEqualTo(1);
-
-        verify(planner, never()).changes(any(), any(), any(), any(), any());
-        ArgumentCaptor<SimpleMailMessage> sent = ArgumentCaptor.forClass(SimpleMailMessage.class);
-        verify(mail).send(sent.capture());
-        assertThat(sent.getValue().getText()).startsWith("KDLH METAR, VFR to IFR.\n");
-    }
-
-    @Test
-    void wordsThatCouldNotBeWrittenKeepTheBaselineForTheNextCheck() {
+    void changesKeptWithAModelsNameStillShow() {
         FlightWatch watch = new FlightWatch(7L, 1L, DEPART, THEN, NOW);
-        given(watches.due(any(), any(), any(), any())).willReturn(List.of(watch));
-        given(flights.findById(7L)).willReturn(Optional.of(flightWithId(7L, pilot)));
-        given(planner.briefing("C81", "KDLH", List.of("KJVL"), DEPART, 205.0)).willReturn(LATER);
-        given(planner.changes("C81", "KDLH", List.of("KJVL"), THEN, LATER))
-                .willReturn(new AssistantChangesWords()
-                        .changed(false)
-                        .sentences(List.of())
-                        .sources(List.of())
-                        .unavailable("Claude did not answer"));
-        given(watches.save(any(FlightWatch.class))).willAnswer(call -> call.getArgument(0));
+        watch.changed(LATER, """
+                {"changed": true, "model": "claude-haiku-5-5", "unavailable": null,
+                 "sentences": [{"text": "KDLH METAR, VFR to IFR.", "sources": ["metar:KDLH"]}],
+                 "sources": [{"id": "metar:KDLH", "label": "KDLH METAR, VFR to IFR", "text": "Was: ..."}]}""", NOW);
+        given(watches.findByFlightIdAndPilotId(7L, 1L)).willReturn(Optional.of(watch));
 
-        assertThat(service.check(NOW)).isZero();
+        FlightWatchDto shown = service.watchOf(pilot, 7L).orElseThrow();
 
-        assertThat(watch.getBriefingJson()).isEqualTo(THEN);
-        assertThat(watch.getCheckedAt()).isEqualTo(NOW);
-        assertThat(watch.getChangedAt()).isNull();
-        verify(mail, never()).send(any());
+        assertThat(shown.changes()).extracting(BriefingChangeDto::text).containsExactly("KDLH METAR, VFR to IFR.");
+        assertThat(shown.sources()).extracting(BriefingSourceDto::id).containsExactly("metar:KDLH");
     }
 
     @Test
@@ -267,7 +205,7 @@ class FlightWatchServiceTest {
         given(planner.briefing("C81", "KDLH", List.of("KJVL"), DEPART, 205.0))
                 .willThrow(new PlannerUnavailableException("the planner could not be reached for the briefing"))
                 .willReturn(LATER);
-        given(planner.changes("C81", "KDLH", List.of("KJVL"), THEN, LATER)).willReturn(unchanged());
+        given(lines.changes("C81", "KDLH", List.of("KJVL"), THEN, LATER)).willReturn(unchanged());
         given(watches.save(any(FlightWatch.class))).willAnswer(call -> call.getArgument(0));
 
         assertThat(service.check(NOW)).isZero();

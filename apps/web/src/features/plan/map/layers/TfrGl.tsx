@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { FeatureCollection, Geometry } from "geojson";
 import type { FillLayerSpecification, LineLayerSpecification } from "maplibre-gl";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { usePreferences } from "../../../../lib/preferences";
 import { useMapHover } from "../../../../lib/map/marks/mapHover";
 import { CHART } from "../../../../lib/tokens";
@@ -12,7 +12,9 @@ import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../..
 import { TAP } from "../../../../lib/map/gl/layers/common";
 
 const SOURCE = "tfrs";
-const SOURCES = { [SOURCE]: { type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } } };
+// Each TFR's NOTAM number its feature's id (promoteId), for MapLibre's
+// feature state to light the one under the mouse.
+const SOURCES = { [SOURCE]: { type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] }, promoteId: "id" } };
 
 /** A TFR is drawn bold, a thing that changes by the day over the chart
  *  that does not: in force a solid red line over a red wash, not yet in
@@ -52,16 +54,20 @@ const LINE_LATER: LineLayerSpecification = {
 const ALL = [...LAYERS, LINE, LINE_LATER];
 
 /** The TFR a mouse rests on in the Brief (lib/map/marks/mapHover): its
- *  edge again, wide, in the selection's yellow over its red. */
-const HOVER_SOURCE = "tfr-hover";
-const HOVER_SOURCES = { [HOVER_SOURCE]: { type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } } };
+ *  edge again, wide, in the selection's yellow over its red, drawn where
+ *  its feature state says it is hovered. */
 const HOVER: LineLayerSpecification = {
   id: "tfr-hover-line",
   type: "line",
-  source: HOVER_SOURCE,
+  source: SOURCE,
   layout: { "line-join": "round" },
-  paint: { "line-color": CHART.selected, "line-width": 5, "line-opacity": 0.9 },
+  paint: {
+    "line-color": CHART.selected,
+    "line-width": 5,
+    "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.9, 0],
+  },
 };
+const DRAWN = [...ALL, HOVER];
 
 /**
  * The temporary flight restrictions (tfrsQuery), at the settings' TFRs:
@@ -71,7 +77,7 @@ const HOVER: LineLayerSpecification = {
 export function TfrGl() {
   const show = usePreferences((s) => s.tfrs);
   const { data, dataUpdatedAt: now } = useQuery({ ...tfrsQuery, enabled: show });
-  useGlLayer("areas", SOURCES, ALL);
+  useGlLayer("areas", SOURCES, DRAWN);
   // Faded in as the first answer comes, not snapped on over the chart.
   useGlFadeIn(ALL, !!data);
   const features = useMemo<FeatureCollection | null>(
@@ -89,17 +95,18 @@ export function TfrGl() {
     [show, data, now],
   );
   useGlData(SOURCE, features);
-  // The one under the mouse in the Brief, lit; none on a touch screen.
-  useGlLayer("areas", HOVER_SOURCES, [HOVER]);
+  // The one under the mouse in the Brief, lit by its feature state; none
+  // on a touch screen.
+  const { map, openCard } = useGlMap();
   const hovered = useMapHover((s) => s.tfr);
-  const lit = useMemo<FeatureCollection | null>(() => {
-    const tfr = hovered ? data?.find((t) => t.notam_id === hovered) : undefined;
-    return tfr
-      ? { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: tfr.geometry as unknown as Geometry }] }
-      : null;
-  }, [hovered, data]);
-  useGlData(HOVER_SOURCE, lit);
-  const { openCard } = useGlMap();
+  useEffect(() => {
+    if (!hovered || !map.getSource(SOURCE)) return;
+    const feature = { source: SOURCE, id: hovered };
+    map.setFeatureState(feature, { hover: true });
+    return () => {
+      if (map.style && map.getSource(SOURCE)) map.setFeatureState(feature, { hover: false });
+    };
+  }, [map, hovered, features]);
   useGlTap(["tfrs-fill", "tfrs-fill-later"], 1, TAP.rank.area, (feature) => {
     const tfr = data?.find((t) => t.notam_id === feature.properties.id);
     if (tfr) openCard(<TfrCard key={tfr.notam_id} tfr={tfr} active={inForce(tfr, now)} />);

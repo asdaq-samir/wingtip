@@ -15,37 +15,25 @@ struct NativeLookTests {
                        runways: [], score: 10, starts: starts, tied: false, top: rank == 1)
     }
 
-    @Test func scopesNarrowByRoleAndKind() {
-        let all = [notam("a", rank: 1, role: "dep"), notam("b", rank: 2, role: "stop"), notam("c", rank: 3), notam("t", rank: 4, kind: "tfr")]
-        #expect(NotamFilter.shown(all, scope: .all, query: "", order: .relevance).map(\.id) == ["a", "b", "c", "t"])
-        #expect(NotamFilter.shown(all, scope: .departure, query: "", order: .relevance).map(\.id) == ["a"])
-        #expect(NotamFilter.shown(all, scope: .enRoute, query: "", order: .relevance).map(\.id) == ["b"])
-        #expect(NotamFilter.shown(all, scope: .destination, query: "", order: .relevance).map(\.id) == ["c"])
-        #expect(NotamFilter.shown(all, scope: .tfrs, query: "", order: .relevance).map(\.id) == ["t"])
-        #expect(NotamFilter.shown(all, scope: .notams, query: "", order: .relevance).map(\.id) == ["a", "b", "c"])
-    }
-
-    @Test func theEnginesOrderStandsUnlessSorted() {
-        let all = [notam("late", rank: 1, starts: "2026-11-10T14:00:00Z"), notam("soon", rank: 2, keyword: "AD", starts: "2026-11-09T14:00:00Z")]
-        #expect(NotamFilter.shown(all, scope: .all, query: "", order: .relevance).map(\.id) == ["late", "soon"])
-        #expect(NotamFilter.shown(all, scope: .all, query: "", order: .time).map(\.id) == ["soon", "late"])
-        #expect(NotamFilter.shown(all, scope: .all, query: "", order: .kind).map(\.id) == ["soon", "late"])
-        #expect(NotamFilter.shown(all, scope: .all, query: "clsd", order: .relevance).count == 2)
-        #expect(NotamFilter.shown(all, scope: .all, query: "ILS", order: .relevance).isEmpty)
+    @Test func everyNotamShowsInTheEnginesOrder() {
+        // No search, scope or sort: the app keeps one search (the owner,
+        // 2026-11-13), and the order is the engine's rank.
+        let all = [notam("c", rank: 3), notam("t", rank: 4, kind: "tfr"), notam("a", rank: 1, role: "dep"), notam("b", rank: 2, role: "stop")]
+        #expect(NotamRows.inOrder(all).map(\.id) == ["a", "b", "c", "t"])
     }
 
     @Test func sectionsGoByPlaceWithTfrsTogether() {
         let all = [notam("a", rank: 1, field: "KMSN"), notam("t", rank: 2, kind: "tfr"), notam("b", rank: 3, field: "KOSH"), notam("c", rank: 4, field: "KMSN")]
-        let places = NotamFilter.places(all, source: .route)
+        let places = NotamRows.places(all, source: .route)
         #expect(places.map(\.title) == ["KMSN", "TFRs", "KOSH"])
         #expect(places.first?.notams.map(\.id) == ["a", "c"])
     }
 
     @Test func aRowSaysWhenInZuluAndDropsTheHead() {
-        #expect(NotamFilter.when(notam("a", rank: 1, starts: "2026-11-09T14:00:00Z")) == "From 1400Z")
-        #expect(NotamFilter.when(notam("a", rank: 1, inForce: true)) == "In effect now")
-        #expect(!NotamFilter.summary(notam("a", rank: 1)).hasPrefix("!OSH"))
-        #expect(NotamFilter.kind(notam("t", rank: 1, kind: "tfr")) == "TFR")
+        #expect(NotamRows.when(notam("a", rank: 1, starts: "2026-11-09T14:00:00Z")) == "From 1400Z")
+        #expect(NotamRows.when(notam("a", rank: 1, inForce: true)) == "In effect now")
+        #expect(!NotamRows.summary(notam("a", rank: 1)).hasPrefix("!OSH"))
+        #expect(NotamRows.kind(notam("t", rank: 1, kind: "tfr")) == "TFR")
     }
 
     @Test func notamPagesAreKeptByTheScene() {
@@ -59,16 +47,16 @@ struct NativeLookTests {
         let oshkosh = (lat: 43.9844, lon: -88.5570)
         let madison = CourseEnd(airspaceClass: "C", elevationFt: 887, ident: "KMSN", kind: nil, lat: 43.1399, lon: -89.3375, name: "Dane County Regional",
                                 patternAltitudeFt: nil)
-        let fromDeparture = try #require(AirportDistance.of(lat: oshkosh.lat, lon: oshkosh.lon, ident: "KOSH", fix: nil, departure: madison))
+        let fromDeparture = try #require(try AirportDistance.of(lat: oshkosh.lat, lon: oshkosh.lon, ident: "KOSH", fix: nil, departure: madison))
         #expect(fromDeparture.from == "KMSN")
         #expect(fromDeparture.caption == "From KMSN")
         #expect((60...64).contains(fromDeparture.nm))
         let fix = CLLocationCoordinate2D(latitude: 43.9844, longitude: -88.0)
-        let fromHere = try #require(AirportDistance.of(lat: oshkosh.lat, lon: oshkosh.lon, ident: "KOSH", fix: fix, departure: madison))
+        let fromHere = try #require(try AirportDistance.of(lat: oshkosh.lat, lon: oshkosh.lon, ident: "KOSH", fix: fix, departure: madison))
         #expect(fromHere.from == nil)
         #expect(fromHere.caption == "Distance")
         // The departure's own card has no distance from itself.
-        #expect(AirportDistance.of(lat: madison.lat, lon: madison.lon, ident: "KMSN", fix: nil, departure: madison) == nil)
+        #expect(try AirportDistance.of(lat: madison.lat, lon: madison.lon, ident: "KMSN", fix: nil, departure: madison) == nil)
     }
 
     @Test func enduranceIsTheEnginesAfterEachReserveAndNeverAssumed() throws {

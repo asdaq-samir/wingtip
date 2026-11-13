@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { welcomeDue } from "../../../lib/firstRunTips";
 import { locateOnOpen, useOwnShipNear } from "../../../lib/map/position/ownShip";
 import { useKeptAirport } from "../../../lib/preferences";
 import { airportQuery, nearestQuery } from "../../../lib/queryClient";
@@ -41,10 +40,8 @@ export function useMapPins({
   useEffect(() => {
     if (landed.current) return;
     landed.current = true;
-    // Not under the welcome, whose Location page says why first and asks
-    // only on Allow (useWelcome).
-    if (!place && !heldPoint && !(welcomeDue() && !planned.dest)) void locateOnOpen();
-  }, [place, heldPoint, planned.dest]);
+    if (!place && !heldPoint) void locateOnOpen();
+  }, [place, heldPoint]);
   const { data: placeData } = useQuery({ ...airportQuery(place ?? ""), enabled: !!place });
   // Where it is, from the card's answer -- or at once, where this browser
   // keeps where it is (Home, a Favorite, one picked lately): the map and

@@ -21,8 +21,15 @@ final class OneSearchModel {
     static let prompt: LocalizedStringKey = "Search airports, airplanes, or ask"
     /// The field's prompt while Ask by voice listens, nothing said yet.
     static let speak: LocalizedStringKey = "Speak your question"
+    /// The field's prompt after the welcome, asking for the first flight's
+    /// destination (the web's first flight, lib/oneSearch's pick), until
+    /// something is typed or the search is put away.
+    static let whereTo: LocalizedStringKey = "Where are you flying to?"
 
-    var text = ""
+    var text = "" { didSet { if !text.isEmpty { askingDestination = false } } }
+    /// The welcome put away: the field asks for the destination, not
+    /// focused, so no keyboard comes up until the pilot taps it.
+    var askingDestination = false
     /// The search up: the field focused and its suggestions in sight.
     var presented = false
     /// Why a line sent or said was not done, said under the field.
@@ -37,6 +44,11 @@ final class OneSearchModel {
     private(set) var nearest: [NearestAirport] = []
     /// The planner did not answer the last search: said in its place.
     private(set) var failed: String?
+    /// The airports shown are this iPhone's packs', the planner not
+    /// answering (PackSearch): said over them.
+    private(set) var fromDevice = false
+    /// The packs' fields, read once the planner first fails to answer.
+    @ObservationIgnored private var keptFields: [AirportPin]?
     @ObservationIgnored private var searching: Task<Void, Never>?
 
     var query: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -90,13 +102,28 @@ final class OneSearchModel {
             case .success(let list):
                 airports = list.filter { $0.kind != "fix" }
                 fixes = list.filter { $0.kind == "fix" }
+                fromDevice = false
             case .failure(let error):
-                airports = []; fixes = []
-                failed = error.localizedDescription
+                // With no planner, the airports kept on this iPhone that
+                // match; the fixes, towns and registry need the planner.
+                if keptFields == nil { keptFields = await Task.detached(priority: .userInitiated) { PackSearch.allKept() }.value }
+                guard !Task.isCancelled else { return }
+                airports = PackSearch.search(q, in: keptFields ?? [])
+                fixes = []
+                fromDevice = !airports.isEmpty
+                failed = Self.failedWords(error, kept: !airports.isEmpty)
             }
             towns = (spots ?? []).filter { $0.kind != "airport" }
             registered = registration
         }
+    }
+
+    /// What a failed search says: no connection said as such, with what
+    /// the iPhone could still find.
+    static func failedWords(_ error: any Error, kept: Bool) -> String {
+        guard error is URLError else { return "The search couldn't be done: \(error.localizedDescription)" }
+        return kept ? "No connection: airports from the chart data on this iPhone only. Waypoints, towns and N-numbers need a connection."
+            : "No connection: the search needs one, and no airport kept on this iPhone matches."
     }
 
     private nonisolated static func fields(_ q: String) async -> Result<[AirportSuggestion], any Error> {
@@ -108,7 +135,7 @@ final class OneSearchModel {
     }
 
     private func clearFound() {
-        airports = []; fixes = []; towns = []; registered = nil
+        airports = []; fixes = []; towns = []; registered = nil; fromDevice = false
     }
 
     /// The planner's airplane types, asked once.
@@ -120,12 +147,14 @@ final class OneSearchModel {
     /// The fields nearest the airplane, for the Nearest group.
     func findNearest(_ fix: OwnShip.Fix?) async {
         guard let at = fix?.coordinate else { return }
-        if let fields = try? await Planner.nearest(lat: at.latitude, lon: at.longitude, limit: 25) { nearest = fields }
+        // With no planner, the packs' fields (PackFields), nearest first.
+        if let found = try? await Planner.nearestOrPacks(lat: at.latitude, lon: at.longitude, limit: 25) { nearest = found.fields }
     }
 
     /// The search put away, what was typed with it.
     func close() {
         presented = false
+        askingDestination = false
         text = ""
         clearFound()
     }

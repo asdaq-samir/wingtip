@@ -28,7 +28,7 @@ struct AirportListView: View {
     @Environment(\.undoManager) private var undoManager
     let shows: AirportShelf.Shows
     let nearest: [NearestAirport]
-    private var shelf: AirportShelf { .shared }
+    @Environment(AirportShelf.self) private var shelf
 
     var body: some View {
         // Nearest is the one list (NearestView), wherever it is opened.
@@ -39,12 +39,12 @@ struct AirportListView: View {
         List {
             if shows == .favorites {
                 if shelf.favorites.isEmpty { Text("No Favorites").foregroundStyle(.secondary) }
-                ForEach(shelf.favorites) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
+                ForEach(shelf.favorites) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.airportPreview(field.ident).appEntityIdentifier(SiriSaw.airport(field.ident)) }
                     .onDelete { shelf.removeFavorites(at: $0, undo: undoManager) }
                     .onMove { shelf.moveFavorites(from: $0, to: $1) }
             } else {
                 if shelf.recents.isEmpty { Text("No Recents").foregroundStyle(.secondary) }
-                ForEach(shelf.recents) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
+                ForEach(shelf.recents) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.airportPreview(field.ident).appEntityIdentifier(SiriSaw.airport(field.ident)) }
                     .onDelete { shelf.removeRecents(at: $0) }
             }
         }
@@ -79,7 +79,7 @@ struct NearFromView: View {
         List {
             if let fields {
                 Section("Nearest \(label)") {
-                    ForEach(fields) { field in NavigationLink(value: SheetPage.airport(field.ident)) { NearestRow(field: field) }.airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
+                    ForEach(fields) { field in NavigationLink(value: SheetPage.airport(field.ident)) { NearestRow(field: field) }.airportPreview(field.ident).appEntityIdentifier(SiriSaw.airport(field.ident)) }
                 }
             } else if let problem {
                 ProblemLine(problem)

@@ -74,7 +74,7 @@ private data class AltitudeAsk(@SerialName("altitude_ft") val altitudeFt: Double
 /**
  * The engine on an Android phone held to the web's shared fixtures
  * (docs/NATIVE-ANDROID.md), through this app's own bridge
- * (wingtip_jni.c, Engine.kt): the same files the web's vitest tests and
+ * (the generated UniFFI Kotlin, Engine.kt): the same files the web's vitest tests and
  * the iOS tests read, so a bridge that mangles a string or a number
  * fails here. One table, the holds, as the iOS test checks it, and a
  * clearance read.

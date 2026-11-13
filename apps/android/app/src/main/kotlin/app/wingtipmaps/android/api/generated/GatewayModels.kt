@@ -13,12 +13,16 @@ typealias StreamingResponseBody = JsonElement?
 data class AccountExport (
     val account: PilotDto,
     val airplanes: List<ExportedAirplane>,
+    val checkpointNotes: List<PlannerCheckpointNote>? = null,
+    val connectedApps: List<ConnectorGrantDto>,
     val currency: CurrencyDto,
     val exportedAt: String,
     val flights: List<ExportedFlight>,
     val format: String,
     val instructing: InstructorDto,
     val logbook: List<LogbookEntryDto>,
+    val records: AccountRecordsDto,
+    val reminders: RemindersDto,
     val training: TrainingDto
 )
 
@@ -84,6 +88,8 @@ data class AircraftDto (
     val createdAt: String,
     val cruisePowerPct: Double? = null,
     val cruiseTasKt: Double,
+    val descentFuelBurnGph: Double? = null,
+    val descentIasKt: Double? = null,
 
     /**
      * What else falls due on it as its owner keeps it: ADs (14 CFR 91.417(a)(2)(v)) and other
@@ -375,6 +381,26 @@ data class VorCheckDto (
 )
 
 @Serializable
+data class PlannerCheckpointNote (
+    @SerialName("created_at")
+    val createdAt: String,
+
+    val description: String,
+    val lat: Double,
+    val lon: Double,
+    val route: String
+)
+
+@Serializable
+data class ConnectorGrantDto (
+    val app: String,
+    val at: String? = null,
+    val kind: String,
+    val scopes: String? = null,
+    val until: String? = null
+)
+
+@Serializable
 data class CurrencyDto (
     /**
      * Approaches logged in the 6 calendar months before this one
@@ -430,7 +456,9 @@ data class CurrencyDto (
 @Serializable
 data class ExportedFlight (
     val flight: FlightDto,
-    val track: TrackDto
+    val share: FlightShareDto? = null,
+    val track: TrackDto? = null,
+    val watch: FlightWatchDto? = null
 )
 
 @Serializable
@@ -479,6 +507,14 @@ data class RiskAssessmentDto (
 )
 
 @Serializable
+data class FlightShareDto (
+    val includeTail: Boolean,
+    val sharedAt: String,
+    val token: String,
+    val url: String
+)
+
+@Serializable
 data class TrackDto (
     val points: List<TrackPointDto>,
     val source: String
@@ -490,6 +526,29 @@ data class TrackPointDto (
     val lat: Double,
     val lon: Double,
     val t: Long
+)
+
+@Serializable
+data class FlightWatchDto (
+    val changedAt: String? = null,
+    val changes: List<BriefingChangeDto>,
+    val checkedAt: String? = null,
+    val departAt: String,
+    val flightId: Long,
+    val sources: List<BriefingSourceDto>
+)
+
+@Serializable
+data class BriefingChangeDto (
+    val sources: List<String>,
+    val text: String
+)
+
+@Serializable
+data class BriefingSourceDto (
+    val id: String,
+    val label: String,
+    val text: String
 )
 
 @Serializable
@@ -598,14 +657,6 @@ data class FlightSummaryDto (
 )
 
 @Serializable
-data class FlightShareDto (
-    val includeTail: Boolean,
-    val sharedAt: String,
-    val token: String,
-    val url: String
-)
-
-@Serializable
 data class LogbookEntryDto (
     val aircraft: String? = null,
     val aircraftType: String? = null,
@@ -631,6 +682,44 @@ data class LogbookEntryDto (
     val touchAndGoes: Int,
     val toweredLandings: Int,
     val tracking: Boolean
+)
+
+@Serializable
+data class AccountRecordsDto (
+    val featureUses: List<FeatureUse>,
+    val remindersSent: List<SentReminder>,
+    val subscription: SubscriptionRow? = null
+)
+
+@Serializable
+data class FeatureUse (
+    val feature: String,
+    val month: String,
+    val uses: Int
+)
+
+@Serializable
+data class SentReminder (
+    val daysBefore: Int,
+    val dueOn: String,
+    val sentAt: String,
+    val what: String
+)
+
+@Serializable
+data class SubscriptionRow (
+    val paidUntil: String? = null,
+    val plan: String? = null,
+    val store: String? = null,
+    val storeRef: String? = null,
+    val trialEndsAt: String? = null,
+    val trialStartedAt: String? = null,
+    val updatedAt: String
+)
+
+@Serializable
+data class RemindersDto (
+    val on: Boolean
 )
 
 @Serializable
@@ -711,6 +800,8 @@ data class AircraftRequest (
     val colour: String? = null,
     val cruisePowerPct: Double? = null,
     val cruiseTasKt: Double,
+    val descentFuelBurnGph: Double? = null,
+    val descentIasKt: Double? = null,
     val equipment: String? = null,
 
     /**
@@ -727,8 +818,14 @@ data class AircraftRequest (
 )
 
 @Serializable
+data class AppleNonceAnswer (
+    val nonce: String
+)
+
+@Serializable
 data class AppleToken (
-    val identityToken: String
+    val identityToken: String,
+    val nonce: String? = null
 )
 
 @Serializable
@@ -768,14 +865,6 @@ data class Capabilities (
      * writes and the developer's workspace are refused.
      */
     val access: String,
-
-    /**
-     * Who has the features Claude writes (the assistant, the written briefing, the readings in
-     * words, checkpoint descriptions, the mock oral, a photographed page read): OFF, the
-     * default, for nobody, whatever else is sold or open -- the apps then use only on-device
-     * models and the engine's own words; DEVELOPERS; or EVERYONE signed in.
-     */
-    val claudeFeatures: String,
 
     /**
      * The OIDC providers with real credentials, by registration id: the sign-in buttons to
@@ -903,29 +992,6 @@ data class FlightServiceStatus (
 )
 
 @Serializable
-data class FlightWatchDto (
-    val changedAt: String? = null,
-    val changes: List<BriefingChangeDto>,
-    val checkedAt: String? = null,
-    val departAt: String,
-    val flightId: Long,
-    val sources: List<BriefingSourceDto>
-)
-
-@Serializable
-data class BriefingChangeDto (
-    val sources: List<String>,
-    val text: String
-)
-
-@Serializable
-data class BriefingSourceDto (
-    val id: String,
-    val label: String,
-    val text: String
-)
-
-@Serializable
 data class FullNameRequest (
     val fullName: String
 )
@@ -979,6 +1045,11 @@ data class LessonProgressRequest (
 data class Quiz (
     val answers: List<QuizAnswerDto>,
     val of: Int
+)
+
+@Serializable
+data class LinkAccount (
+    val email: String
 )
 
 @Serializable
@@ -1089,11 +1160,6 @@ data class DueDto (
 data class PilotContactRequest (
     val homeBase: String? = null,
     val phone: String? = null
-)
-
-@Serializable
-data class RemindersDto (
-    val on: Boolean
 )
 
 @Serializable
@@ -1228,26 +1294,7 @@ data class SubscriptionDto (
     /**
      * When the free month or the paid time runs out; null for FREE and COMPED
      */
-    val until: String? = null,
-
-    /**
-     * This month's uses of each paid feature Claude writes, against its cap
-     */
-    val uses: List<FeatureUse>
-)
-
-/**
- * One paid feature's uses this month (UTC)
- */
-@Serializable
-data class FeatureUse (
-    /**
-     * The month's allowance
-     */
-    val cap: Int,
-
-    val feature: String,
-    val used: Int
+    val until: String? = null
 )
 
 @Serializable

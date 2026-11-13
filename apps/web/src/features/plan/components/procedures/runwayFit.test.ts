@@ -7,9 +7,11 @@ import { callEngine } from "../../../../lib/engine/engine";
 // The engine's one evaluator of a runway end's distance (runways.rs), the
 // runway check's and FPL's chips', asked by name through the .wasm.
 // The air a field's distances are worked out in: the pressure altitude off
-// the altimeter (a thousand feet an inch under 29.92) and the temperature.
+// the altimeter, the standard atmosphere's height of the setting above
+// 29.92 (FAA-H-8083-25C ch. 11, Figure 11-3: 29.7 "Hg is +205 ft), and the
+// temperature.
 const fieldAir = (elevationFt: number, altimeterInHg: number, tempC: number) => ({
-  pressureAltFt: elevationFt + (29.92 - altimeterInHg) * 1000,
+  pressureAltFt: elevationFt + (1 - (altimeterInHg / 29.92) ** (1 / 5.2558797)) * 145442.16,
   tempC,
 });
 const endDistance = (

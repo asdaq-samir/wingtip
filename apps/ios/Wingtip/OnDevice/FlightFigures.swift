@@ -86,18 +86,11 @@ enum FlightFigures {
     /// nearest first, with each one's distance and true course.
     static func nearest(facts: OnDeviceFacts, pins: Pins = packPins) throws -> [AskFigure] {
         guard let own = facts.own else { throw AskRefused(why: "This iPhone has no GPS fix for the airplane.") }
-        // About 30 nm each way: a box, not a rule; the engine ranks.
-        let dLat = 0.5, dLon = 0.5 / max(cos(own.lat * .pi / 180), 0.2)
-        guard let found = pins(own.lat - dLat, own.lon - dLon, own.lat + dLat, own.lon + dLon), !found.isEmpty else {
+        guard let kept = try PackFields.ranked(lat: own.lat, lon: own.lon, altitudeFt: own.altitudeFt, speedKt: own.groundspeedKt,
+                                               limit: 3, pins: pins), !kept.pins.isEmpty else {
             throw AskRefused(why: "No region's pack is kept on this iPhone round the airplane; keep the route for the air first.")
         }
-        let fields = found.map {
-            EngineContract.BestFieldsInputFieldsItem(ident: $0.ident, name: $0.name, lat: $0.lat, lon: $0.lon, elevationFt: nil, runways: [],
-                                                     metar: nil, towered: $0.towered, private: $0.isPrivate, military: $0.military != nil)
-        }
-        let ranked = try Engine.bestFields(mode: "glide", at: .init(lat: own.lat, lon: own.lon), altitudeFt: own.altitudeFt,
-                                           speedKt: own.groundspeedKt, fields: fields, limit: 3)
-        return ranked.fields.map { field in
+        return kept.ranked.fields.map { field in
             var said = "\(field.ident), \(field.name), is \(Format.distance(field.distanceNm)) away on \(Format.heading(field.courseDeg)) true"
             if let ete = field.eteMin { said += ", \(Format.duration(ete))" }
             return AskFigure(id: "nearest:\(field.ident)", label: "\(field.ident) nearest", said: said + ".",

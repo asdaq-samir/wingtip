@@ -1,0 +1,81 @@
+{
+  "x-call": "wingtip_route::approach::tags::call",
+  "description": "The tags an approach's fixes carry on the map with its plate, ForeFlight's way: each fix's crossing altitude and its sense (ARINC 424-18 5.29); at the final approach fix the ILS's glide slope altitude as the CIFP codes it, or an LPV or LNAV/VNAV approach's glidepath altitude worked out from its angle, threshold and TCH (FAA Order 8260.3G formula 2-6-4); at a runway missed approach point its threshold crossing height and touchdown zone elevation (no DA or MDA: the minimums are the plate's alone); and the final approach segment, FAF to MAP.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachFixTagsInput",
+      "type": "object",
+      "properties": {
+        "drawing": {
+          "$ref": "#/definitions/ProcedureDrawing"
+        }
+      },
+      "required": [
+        "drawing"
+      ]
+    },
+    "answer": {
+      "title": "ApproachFixTagsAnswer",
+      "type": "object",
+      "properties": {
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ApproachFixTag"
+          }
+        },
+        "final": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                },
+                "points": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "minItems": 2,
+                    "items": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "additionalItems": false,
+                    "description": "[lat, lon]"
+                  }
+                }
+              },
+              "required": [
+                "from",
+                "to",
+                "points"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The final approach segment, from the FAF to the MAP, for the map to mark."
+        }
+      },
+      "required": [
+        "tags",
+        "final"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

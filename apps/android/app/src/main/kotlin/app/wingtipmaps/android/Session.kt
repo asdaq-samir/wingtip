@@ -3,20 +3,25 @@ package app.wingtipmaps.android
 import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import app.wingtipmaps.android.ai.ClaudeGate
+import app.wingtipmaps.android.account.PhoneWipe
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.deleteAccount
-import app.wingtipmaps.android.checklist.ChecklistStore
-import app.wingtipmaps.android.plan.KeptPlan
+import app.wingtipmaps.android.api.setContact
+import app.wingtipmaps.android.flight.FlightSession
+import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.plan.HomeAirport
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Who is signed in, and the way in: the emailed link, which opens the
@@ -25,7 +30,8 @@ import kotlinx.coroutines.launch
  * cookie, kept by CookieStore, is the sign-in itself. The twin of the iOS
  * app's Session.swift, as a ViewModel with its state in flows.
  */
-class Session : ViewModel() {
+@HiltViewModel
+class Session @Inject constructor(app: Application, private val flight: FlightSession) : AndroidViewModel(app) {
     private val _pilot = MutableStateFlow<Pilot?>(null)
     val pilot: StateFlow<Pilot?> = _pilot.asStateFlow()
 
@@ -46,6 +52,14 @@ class Session : ViewModel() {
     private val _linkSent = MutableStateFlow(false)
     val linkSent: StateFlow<Boolean> = _linkSent.asStateFlow()
 
+    /** A sign-in link opened and waiting for the pilot's yes (SignInDialog). */
+    private val _signInAsk = MutableStateFlow<SignInAsk?>(null)
+    val signInAsk: StateFlow<SignInAsk?> = _signInAsk.asStateFlow()
+
+    /** The address this phone last asked a link for, kept so a link
+     *  opened after the app was closed still names it. */
+    private val asked = Kept.of(app, "sign_in")
+
     init {
         refresh()
     }
@@ -58,6 +72,9 @@ class Session : ViewModel() {
     private suspend fun load() {
         try {
             _pilot.value = Gateway.me()
+            // The account's home base is the pilot's home airport on every
+            // device they sign in on (HomeAirport): this phone takes it.
+            HomeAirport.mirrored(_pilot.value?.homeBase, null)?.let { FlightChoices.of(getApplication()).setHome(it) }
             _problem.value = null
             _checkFailed.value = false
         } catch (e: CancellationException) {
@@ -68,9 +85,6 @@ class Session : ViewModel() {
             _problem.value = Problems.say("Your account could not be checked", e)
             _checkFailed.value = true
         }
-        // Whether the server's Claude features are this pilot's, asked with
-        // every sign-in change: DEVELOPERS depends on who it is (ClaudeGate).
-        ClaudeGate.refresh(_pilot.value?.developer == true)
         _loaded.value = true
     }
 
@@ -78,6 +92,7 @@ class Session : ViewModel() {
         viewModelScope.launch {
             try {
                 Gateway.requestMagicLink(email.trim())
+                asked.edit { it[ASKED] = email.trim() }
                 _problem.value = null
                 _linkSent.value = true
             } catch (e: CancellationException) {
@@ -89,13 +104,64 @@ class Session : ViewModel() {
         }
     }
 
-    /** An App Link opened in the app: the sign-in link's token is verified
-     *  here; any other link is the screens' (Links, MainActivity). */
+    /** An App Link opened in the app: a sign-in link, asked first and
+     *  verified only on the pilot's yes (signIn); any other link is the
+     *  screens' (Links, MainActivity). */
     fun open(uri: Uri) {
         val link = Links.parse(uri.toString()) as? Links.SignIn ?: return
+        _signInAsk.value = SignInAsk(link.token, asked[ASKED], _pilot.value?.email, checking = true)
+        // Whose link it is, asked of the gateway without spending it; where
+        // it cannot be reached, the question names the address asked for.
         viewModelScope.launch {
+            val checked = checkLink(link.token)
+            _signInAsk.value = _signInAsk.value?.takeIf { it.token == link.token }?.let(checked)
+        }
+    }
+
+    /** The gateway's word on a link, as the change it makes to the ask. */
+    private suspend fun checkLink(token: String): (SignInAsk) -> SignInAsk {
+        try {
+            val account = Gateway.magicLinkAccount(token)
+            return { a -> if (account == null) a.copy(checking = false, expired = true) else a.copy(checking = false, account = account.email) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Gateway.Refusal) {
+            val said = if (e.status == 429) "Too many sign-in links were checked from here. Try this one again later." else Problems.say("The sign-in link could not be checked", e)
+            return { a -> a.copy(checking = false, refused = said) }
+        } catch (e: Exception) {
+            Problems.say("The sign-in link could not be checked", e)
+            return { a -> a.copy(checking = false) }
+        }
+    }
+
+    /** An expired link's offer: a new one sent to the address this phone
+     *  asked for. */
+    fun askAgain() {
+        val address = _signInAsk.value?.address ?: return
+        _signInAsk.value = null
+        requestMagicLink(address)
+    }
+
+    /** The link not followed: nothing changes. */
+    fun declineSignIn() {
+        _signInAsk.value = null
+    }
+
+    /** The pilot's yes: where someone is signed in, that session ended
+     *  and what the phone kept of it forgotten first, as signing out
+     *  does, then the link's token verified. */
+    fun signIn(context: Context) {
+        val ask = _signInAsk.value ?: return
+        _signInAsk.value = null
+        val wipe = PhoneWipe.of(context, flight)
+        viewModelScope.launch {
+            if (ask.current != null) {
+                val _ = runCatching { Gateway.signOut() }
+                forget(wipe)
+            }
             try {
-                Gateway.verifyMagicLink(link.token)
+                Gateway.verifyMagicLink(ask.token)
+                asked.edit { it.remove(ASKED) }
                 _linkSent.value = false
                 load()
             } catch (e: CancellationException) {
@@ -106,20 +172,41 @@ class Session : ViewModel() {
         }
     }
 
-    /** Signing out ends the session on the gateway and forgets what the
-     *  phone kept of the pilot's, their airplanes' checklists and their
-     *  plan kept for the next launch (the owner's pick: sign-out clears, as
-     *  the web app's useLogout does). The public aviation data kept for the
-     *  air -- the fields' cards, the NOTAMs, the weather (KeptForAir) -- is
-     *  not the pilot's, and stays. */
+    /** Signing out ends the session on the gateway and forgets everything
+     *  the phone kept of the pilot's (PhoneWipe: records, tracks, last
+     *  position, checklists, plan, cookies and the rest; the owner's pick:
+     *  sign-out clears, as the web app's useLogout does). The public
+     *  aviation data kept for the air -- the fields' cards, the NOTAMs, the
+     *  weather (KeptForAir) -- is not the pilot's, and stays. */
     fun signOut(context: Context) {
-        val checklists = ChecklistStore.of(context.applicationContext)
-        val plan = KeptPlan(context.applicationContext as Application)
+        val wipe = PhoneWipe.of(context, flight)
         viewModelScope.launch {
-            runCatching { Gateway.signOut() }
-            forget(checklists)
-            plan.clear()
-            ClaudeGate.refresh(developer = false)
+            val _ = runCatching { Gateway.signOut() }
+            forget(wipe)
+        }
+    }
+
+    /** Why the home airport did not reach the account, shown under its row. */
+    private val _homeProblem = MutableStateFlow<String?>(null)
+    val homeProblem: StateFlow<String?> = _homeProblem.asStateFlow()
+
+    /** Setup's Home Airport, picked or cleared (null): kept on this phone,
+     *  and signed in, the account's home base too (PUT /api/me/contact,
+     *  the phone number sent back as it is), so it follows the pilot to
+     *  the web and the iPhone. */
+    fun setHomeAirport(ident: String?) {
+        val home = HomeAirport.mirrored(ident, null)
+        FlightChoices.of(getApplication()).setHome(home)
+        _homeProblem.value = null
+        val pilot = _pilot.value ?: return
+        viewModelScope.launch {
+            try {
+                _pilot.value = Gateway.setContact(pilot.phone, home)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _homeProblem.value = Problems.say(getApplication<Application>().getString(R.string.home_airport_unsaved), e)
+            }
         }
     }
 
@@ -132,16 +219,13 @@ class Session : ViewModel() {
      *  gateway refuses (nothing deleted), the pilot stays signed in and
      *  its words are the problem shown under the account. */
     fun deleteAccount(context: Context) {
-        val checklists = ChecklistStore.of(context.applicationContext)
-        val plan = KeptPlan(context.applicationContext as Application)
+        val wipe = PhoneWipe.of(context, flight)
         viewModelScope.launch {
             _deleting.value = true
             try {
                 Gateway.deleteAccount()
                 _problem.value = null
-                forget(checklists)
-                plan.clear()
-                ClaudeGate.refresh(developer = false)
+                forget(wipe)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -152,9 +236,13 @@ class Session : ViewModel() {
         }
     }
 
-    private fun forget(checklists: ChecklistStore) {
+    private companion object {
+        val ASKED = stringPreferencesKey("asked")
+    }
+
+    private suspend fun forget(wipe: PhoneWipe) {
         _pilot.value = null
         _linkSent.value = false
-        checklists.forgetAll()
+        wipe.run()
     }
 }

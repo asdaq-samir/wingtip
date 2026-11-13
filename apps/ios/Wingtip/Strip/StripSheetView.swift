@@ -17,6 +17,11 @@ import SwiftUI
 /// is answered on the strip itself (StripAnswerCard); why not is said
 /// under the field (lib/problems' rule: where it happens, never a toast).
 struct StripSheetView: View {
+    @Environment(Emergency.self) private var emergency
+    @Environment(AirportShelf.self) private var shelf
+    @Environment(ClearanceListener.self) private var listener
+    @Environment(InFlight.self) private var inFlight
+    @Environment(Navigator.self) private var nav
     @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
@@ -31,8 +36,7 @@ struct StripSheetView: View {
     /// The one search, the plan's own (RootView keeps it).
     let search: OneSearchModel
     @State private var path: [StripPage] = []
-    @State private var client = AssistantClient()
-    private var listener: ClearanceListener { ClearanceListener.shared }
+    @State private var client = AskScreenModel()
 
     /// The pages the stack opens over the strip.
     enum StripPage: Hashable {
@@ -65,8 +69,11 @@ struct StripSheetView: View {
     /// FiguresStrip counts it (the engine's `in_flight`, InFlight): a dry
     /// run's airplane counts as flying.
     private var flyingFix: OwnShip.Fix? {
-        InFlight.shared.onRoute ? InFlight.shared.fix : nil
+        inFlight.onRoute ? inFlight.fix : nil
     }
+
+    /// The airplane's place on the strip, worked out once a fix.
+    @State private var place = StripPlace()
 
     private var points: [StripPoint] {
         StripData.points(dep: plan.dep, dest: plan.dest, stops: plan.stops, legs: plan.legs, checkpoints: plan.checkpoints, course: plan.course)
@@ -106,7 +113,7 @@ struct StripSheetView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: WingtipSpace.md) {
                 if let fix = flyingFix {
-                    let along = Result { try StripData.positionAlong(points, fix: fix.coordinate) }
+                    let along = place.along(points, fix: fix)
                     StripAir(points: points, position: try? along.get(), fix: fix)
                     if case .failure(let error) = along {
                         Text("Your place on the strip couldn't be worked out: \(error.localizedDescription)")
@@ -127,6 +134,8 @@ struct StripSheetView: View {
                             Text(planProblem.brief ?? planProblem.detail).font(ChartInk.detail.weight(.semibold)).foregroundStyle(WingtipInk.caution)
                         }
                         StripHead(onBrief: { path.append(.brief) }, onFile: { path.append(.file) })
+                        // Why the head's Share sent nothing (ShareMenu).
+                        if let shareProblem = plan.shareProblem { ProblemLine(shareProblem) }
                         StripList(points: points,
                                   onField: { path.append(.airport($0)) },
                                   onPlates: { path.append(.airport($0)) },
@@ -161,8 +170,8 @@ struct StripSheetView: View {
                 case .notams: path.append(.brief)
                 case .practice, .training, .contact, .leg, .flight: _ = open(.setup)
                 // A thing's card over the strip, as over the plan (Navigator).
-                case .traffic, .tail, .hold, .flown, .ask, .mapSettings, .clearance, .welcome, .sharedFlight, .flightLogged:
-                    Navigator.shared.open(page)
+                case .traffic, .tail, .hold, .flown, .ask, .mapSettings, .settings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency:
+                    nav.open(page)
                 }
             },
             screen: { openScreen($0) },
@@ -179,7 +188,7 @@ struct StripSheetView: View {
         }
         switch screen {
         case .airport, .ask: search.presented = true
-        case .emergency: Emergency.shared.open = .link
+        case .emergency: emergency.open = .link
         default: path = []
         }
     }
@@ -231,7 +240,7 @@ struct StripSheetView: View {
         case .airplane: AircraftView()
         case .logbook: LogbookView()
         case .instructor: InstructorView()
-        case .setup: SetupView()
+        case .setup: YouView()
         case .clearance: ClearanceSheet()
         case .file: FlightServiceView()
         case .flights: FlightsView()
@@ -271,7 +280,7 @@ struct StripSheetView: View {
 
     /// A question, answered on the strip (StripAnswerCard).
     private func ask(_ question: String) {
-        client.ask(question, context: AssistantContext.make(plan: plan, ownShip: ownShip, session: session, minimums: verdict.minimums))
+        client.ask(question, facts: .make(plan: plan, ownShip: ownShip, inFlight: inFlight))
         up()
     }
 
@@ -290,12 +299,12 @@ struct StripSheetView: View {
             guard routed else { return "Plan a route first: a field, a town or two idents." }
             path.append(.brief); up()
         case .nearest:
-            AirportShelf.shared.show(.nearest)
+            shelf.show(.nearest)
             path.append(.list(.nearest)); up()
         case .fuel, .food, .stops:
             // The fuel, food and rest stops are the web app's for now; the
             // nearest fields, which have the fuel, are here.
-            AirportShelf.shared.show(.nearest)
+            shelf.show(.nearest)
             path.append(.list(.nearest)); up()
             return "Stops with fuel and food are on the website for now; these are the nearest fields."
         case .routes:
@@ -328,15 +337,15 @@ struct StripSheetView: View {
         case .saved, .recentRoutes:
             path.append(.flights); up()
         case .favorites:
-            AirportShelf.shared.show(.favorites)
+            shelf.show(.favorites)
             path.append(.list(.favorites)); up()
         case .recents:
-            AirportShelf.shared.show(.recents)
+            shelf.show(.recents)
             path.append(.list(.recents)); up()
         case .map:
             return "The map's switches are in Settings, under the account button."
         case .emergency:
-            Emergency.shared.open = .voice
+            emergency.open = .voice
         }
         return nil
     }

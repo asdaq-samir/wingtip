@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_route::navlog::calls::call",
-  "description": "The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.",
+  "description": "The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), and 45 where `night` is null (no departure time: night cannot be ruled out, so the larger is assumed), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.",
   "type": "object",
   "properties": {
     "input": {
@@ -28,7 +28,8 @@
           "type": [
             "boolean",
             "null"
-          ]
+          ],
+          "description": "Whether the flight is at night (14 CFR 1.1, after the end of evening civil twilight); null where it has no departure time, which takes the night's 45-minute VFR reserve (91.151(a)(2))."
         },
         "rules": {
           "enum": [

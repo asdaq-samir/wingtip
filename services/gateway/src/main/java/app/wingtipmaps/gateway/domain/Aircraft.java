@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.domain;
 
+import app.wingtipmaps.gateway.dto.HandbookFigures;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,7 +15,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Map;
 import lombok.Getter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -82,6 +82,12 @@ public class Aircraft {
     private Double climbTasKt;
 
     private Double climbFuelBurnGph;
+
+    /** The descent's indicated airspeed, as a handbook gives it, and its
+     *  fuel flow: the nav log flies the descent as a phase of its own. */
+    private Double descentIasKt;
+
+    private Double descentFuelBurnGph;
 
     private Double usableFuelGal;
 
@@ -151,10 +157,11 @@ public class Aircraft {
 
     /** Its handbook figures as its pilot confirmed them from a photographed
      *  page (V36; the engine contract's HandbookFigures), kept as sent;
-     *  null until then. */
+     *  null until then. Hibernate writes and reads the record as the jsonb
+     *  it is kept in. */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private Map<String, Object> handbook;
+    private HandbookFigures handbook;
 
     protected Aircraft() {
         // JPA
@@ -169,6 +176,8 @@ public class Aircraft {
             Double cruisePowerPct,
             Double climbTasKt,
             Double climbFuelBurnGph,
+            Double descentIasKt,
+            Double descentFuelBurnGph,
             Double usableFuelGal) {
         this.pilot = pilot;
         this.tailNumber = tailNumber;
@@ -178,6 +187,8 @@ public class Aircraft {
         this.cruisePowerPct = cruisePowerPct;
         this.climbTasKt = climbTasKt;
         this.climbFuelBurnGph = climbFuelBurnGph;
+        this.descentIasKt = descentIasKt;
+        this.descentFuelBurnGph = descentFuelBurnGph;
         this.usableFuelGal = usableFuelGal;
         this.createdAt = Instant.now();
     }
@@ -193,6 +204,8 @@ public class Aircraft {
             Double cruisePowerPct,
             Double climbTasKt,
             Double climbFuelBurnGph,
+            Double descentIasKt,
+            Double descentFuelBurnGph,
             Double usableFuelGal) {
         this.tailNumber = tailNumber;
         this.typeDesignator = typeDesignator;
@@ -201,6 +214,8 @@ public class Aircraft {
         this.cruisePowerPct = cruisePowerPct;
         this.climbTasKt = climbTasKt;
         this.climbFuelBurnGph = climbFuelBurnGph;
+        this.descentIasKt = descentIasKt;
+        this.descentFuelBurnGph = descentFuelBurnGph;
         this.usableFuelGal = usableFuelGal;
         return this;
     }
@@ -223,7 +238,7 @@ public class Aircraft {
     }
 
     /** Its handbook figures, as confirmed; null takes them away. */
-    public Aircraft keepHandbook(Map<String, Object> figures) {
+    public Aircraft keepHandbook(HandbookFigures figures) {
         this.handbook = figures;
         return this;
     }

@@ -1,5 +1,6 @@
 import { PMTiles, Protocol } from "pmtiles";
 import type { OverlayTiles } from "../../api/types";
+import { tileOf } from "../tileMath";
 
 /**
  * The map's FAA overlays as vector tiles, for a MapLibre map: the cycle's
@@ -16,7 +17,16 @@ import type { OverlayTiles } from "../../api/types";
  */
 
 /** The archive's source layers (wingtip.vector_tiles.LAYERS). */
-export const OVERLAY_LAYERS = ["airspace", "airspace_labels", "special_use", "airports", "navaids", "fixes", "runways"] as const;
+export const OVERLAY_LAYERS = [
+  "airspace",
+  "airspace_labels",
+  "special_use",
+  "special_use_labels",
+  "airports",
+  "navaids",
+  "fixes",
+  "runways",
+] as const;
 
 /** MapLibre's addProtocol, as much of it as this needs: maplibre-gl itself
  *  is the map's import, not this module's. The loader is pmtiles' own
@@ -107,13 +117,10 @@ export function overlaySource(tiles: OverlayTiles, origin?: string) {
 /** The XYZ tiles a box covers at zoom z: [x0, y0, x1, y1], inclusive. */
 export function tileRange(box: { west: number; south: number; east: number; north: number }, z: number): [number, number, number, number] {
   const n = 2 ** z;
-  const x = (lon: number) => Math.floor(((lon + 180) / 360) * n);
-  const y = (lat: number) => {
-    const r = (Math.max(-85.0511, Math.min(85.0511, lat)) * Math.PI) / 180;
-    return Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n);
-  };
   const clamp = (v: number) => Math.max(0, Math.min(n - 1, v));
-  return [clamp(x(box.west)), clamp(y(box.north)), clamp(x(box.east)), clamp(y(box.south))];
+  const nw = tileOf(box.north, box.west, z);
+  const se = tileOf(box.south, box.east, z);
+  return [clamp(nw.x), clamp(nw.y), clamp(se.x), clamp(se.y)];
 }
 
 /** The tiles one ring outside a range, within the world. */

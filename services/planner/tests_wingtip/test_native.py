@@ -118,7 +118,7 @@ def test_the_packs_rings_hold_what_the_shapefiles_hold(chicago, chicago_pack):
 
 def test_one_way_in_answers_a_rule_by_name_as_its_own_function_does():
     """wingtip_native.call, the engine's one way in that the web app's
-    WebAssembly and the phones' wt_call share (wingtip_engine::call): a
+    WebAssembly and the phones' `call` share (wingtip_engine::call): a
     rule by name, JSON in and out, the answer the rule's own function
     gives; a name not known or input of the wrong shape a ValueError."""
     asked = json.loads(

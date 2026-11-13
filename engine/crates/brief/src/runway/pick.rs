@@ -193,10 +193,13 @@ pub struct Entry {
 /// traffic, "left" or "right") arriving on a true course of `course_deg`
 /// (the hop's last leg): from the pattern's side, the 45° to the downwind
 /// abeam midfield at pattern altitude (AC 90-66C 11.3); from the other,
-/// its Appendix A's preferred entry -- over midfield 500 ft above pattern
-/// altitude, down to it well clear, and back to the 45 -- or, where the
-/// pattern is not busy, across midfield at pattern altitude straight onto
-/// the downwind.
+/// AC 90-66C Appendix A's preferred entry (its Figure, "Preferred entry
+/// from upwind leg side of airport (A)") -- over midfield at least 500 ft
+/// above pattern altitude, FAA-H-8083-3C ch. 8: "cross over midfield at
+/// least 500 feet above pattern altitude", down to it well clear (AC 11.2),
+/// and back to the 45 -- or, where the pattern is not busy, across
+/// midfield at pattern altitude straight onto the downwind (Appendix A's
+/// alternate (B), "should not be used when the pattern is congested").
 pub fn entry_for(ident: &str, heading_true_deg: Option<f64>, traffic: &str, course_deg: f64) -> Entry {
     let from_deg = (course_deg + 180.0) % 360.0;
     let pattern_side = angle_apart(from_deg, pattern_side_deg(heading_true_deg, traffic)) < 90.0;
@@ -206,7 +209,7 @@ pub fn entry_for(ident: &str, heading_true_deg: Option<f64>, traffic: &str, cour
         format!("From the {from}, on the pattern's side: join the 45° to the {downwind}, abeam midfield at pattern altitude.")
     } else {
         format!(
-            "From the {from}, across the field from the pattern: cross midfield 500 ft above pattern altitude, descend to it well clear, \
+            "From the {from}, across the field from the pattern: cross midfield at least 500 ft above pattern altitude, descend to it well clear, \
              and turn back to join the 45° to the {downwind}. With no traffic, crossing midfield at pattern altitude onto the downwind will do."
         )
     };
@@ -221,8 +224,10 @@ pub fn exit_for(traffic: &str) -> String {
 }
 
 /// A field's traffic pattern above it where the FAA publishes none: AC
-/// 90-66C's 1,000 ft for a propeller airplane (1,500 for a large or
-/// turbine one, which no profile here is), as wingtip.faa_data has it.
+/// 90-66C Appendix A, Traffic Pattern Altitudes, item 1: "Propeller-driven
+/// aircraft enter the traffic pattern at 1,000 feet above the airport
+/// surface" (item 2's 1,500 is for large and turbine-powered airplanes,
+/// which no profile here is), as wingtip.faa_data has it.
 pub const PATTERN_AGL_FT: f64 = 1000.0;
 
 /// How high the pattern is flown (wingtip.pattern pattern_at): above the

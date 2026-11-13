@@ -6,7 +6,9 @@
 /** The airport diagram cropped to its runways, for the card's thumbnail
  *  (the planner's /api/airport-diagram/{cycle}/runways). */
 export const diagramRunwaysPicture = (ident: string, cycle: string) =>
-  `/api/planner/airport-diagram/${encodeURIComponent(cycle)}/runways/${encodeURIComponent(ident)}.png`;
+  // "?v=2": the crop's margin grew (2026-11-13), and browsers keep the
+  // tighter picture a cycle (immutable) under the old address.
+  `/api/planner/airport-diagram/${encodeURIComponent(cycle)}/runways/${encodeURIComponent(ident)}.png?v=2`;
 
 export const diagramPicture = (ident: string, cycle: string) =>
   `/api/planner/airport-diagram/${encodeURIComponent(cycle)}/${encodeURIComponent(ident)}.png`;
@@ -16,3 +18,16 @@ export const diagramPicture = (ident: string, cycle: string) =>
  *  the whole of it too. */
 export const chartPagePicture = (page: { source: string; edition: string; pdf: string; page: number }) =>
   `/api/planner/faa-chart/page/${encodeURIComponent(page.source)}/${encodeURIComponent(page.edition)}/${encodeURIComponent(page.pdf)}/${page.page}.png`;
+
+/** Own ship on the first page of a chart full screen (an approach plate,
+ *  by its georeference: the engine's plate_page_point): fractions of the
+ *  page's width from its left and its height from its top, so of its
+ *  picture at any scale; the track's turn on the page, degrees clockwise
+ *  from its up, or null without one; and whether it is under way, as the
+ *  map's own ship draws its beam. */
+export interface PageMark {
+  x: number;
+  y: number;
+  rotationDeg: number | null;
+  moving: boolean;
+}

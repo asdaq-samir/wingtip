@@ -20,8 +20,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The airport weather marks' rules through this app's own bridge (the JNI
- * shim over wt_call), held to the shared fixtures the engine's Rust tests
+ * The airport weather marks' rules through this app's own bridge (the
+ * generated UniFFI Kotlin over the engine's call), held to the shared fixtures the engine's Rust tests
  * and the web's hold them to (apps/web/src/lib/fixtures/
  * airportWeatherMarks.json, this test APK's assets): the arrow shown and
  * red (`wind_arrow`), the barb (`wind_barb`), and the ↓ at a plan's field

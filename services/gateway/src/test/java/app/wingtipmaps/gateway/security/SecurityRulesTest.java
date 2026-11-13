@@ -67,7 +67,7 @@ class SecurityRulesTest {
                         "img-src 'self' data:[^;]* https://basemap\\.nationalmap\\.gov https://tile\\.googleapis\\.com https://mesonet\\.agron\\.iastate\\.edu https://nowcoast\\.noaa\\.gov https://t\\.plnspttrs\\.net;");
         assertThat(policy)
                 .contains(
-                        "connect-src 'self' https://tile.googleapis.com https://mesonet.agron.iastate.edu https://nowcoast.noaa.gov https://api.planespotters.net;");
+                        "connect-src 'self' https://basemap.nationalmap.gov https://tile.googleapis.com https://mesonet.agron.iastate.edu https://nowcoast.noaa.gov https://api.planespotters.net https://huggingface.co https://us.aws.cdn.hf.co https://eu.aws.cdn.hf.co;");
         assertThat(policy).doesNotContain("*");
     }
 

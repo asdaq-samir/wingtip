@@ -13,7 +13,7 @@ def _weather_store_of_its_own(tmp_path_factory, monkeypatch):
     from wingtip import weather_store
 
     monkeypatch.setenv("WEATHER_STORE", str(tmp_path_factory.mktemp("weather")))
-    monkeypatch.setitem(weather_store._ASKED, "at", 0.0)
+    weather_store._ASKED.clear()
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()

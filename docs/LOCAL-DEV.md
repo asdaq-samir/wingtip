@@ -9,15 +9,9 @@ scripts that keep the owner's Mac tidy. What the services are is
 - **Docker Desktop** with Compose v2. Nothing else is installed natively:
   every service builds its own image, and the checks run in containers.
 - **Git** and **make** (it ships with macOS and every Linux).
-- **No Anthropic API key.** The Claude features (the Brief's narrative,
-  checkpoint notes, the words, the assistant, the mock oral) are off
-  until the subscription is decided
-  ([decision 0035](decisions/0035-claude-off-until-subscription.md)), and
-  the assistant service is not started. To try them, put
-  `ANTHROPIC_API_KEY=sk-...`, `APP_CLAUDE_FEATURES=EVERYONE` and
-  `COMPOSE_PROFILES=claude` in `.env` at the repository's root
-  (gitignored; Compose reads it). The key is read with
-  `${ANTHROPIC_API_KEY:-}`, so a missing key fails no command.
+- **No API key for a model.** The server calls none: its Claude features
+  were taken out on 2026-11-12
+  ([decision 0041](decisions/0041-claude-taken-out.md)).
 - **Xcode and XcodeGen**, or **the Android SDK and a JDK 25** (the Android build's, as the gateway's;
   Gradle fetches a Temurin 25 into `~/.gradle/jdks` itself where there is none),
   only for the phone apps ([NATIVE.md](NATIVE.md), [NATIVE-ANDROID.md](NATIVE-ANDROID.md)).
@@ -39,10 +33,10 @@ make dev
    a line marked FAIL saying what to do, and nothing is started.
 2. Makes `.env` from `.env.example` when there is none, and says what to
    fill in: your address in `APP_DEVELOPER_EMAILS` for the developer
-   role (the Claude features stay off). Nothing in it is
+   role. Nothing in it is
    required.
 3. Builds the images, runs `docker compose up -d --wait` (gateway,
-   planner, ingest, weather, assistant, db, mailpit, dev-services) and
+   planner, ingest, weather, db, mailpit, dev-services) and
    waits for every service's health, up to 25 minutes
    (`WINGTIP_WAIT_SECONDS`).
 4. Prints the app's address, the API docs, the Mailpit inbox and how to
@@ -101,13 +95,12 @@ Every port is on `127.0.0.1` unless `.env` says otherwise (below).
 | The gateway's API docs and spec | [/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html), [/v3/api-docs](http://localhost:8080/v3/api-docs) | gateway |
 | Health | [localhost:8080/actuator/health](http://localhost:8080/actuator/health) | gateway |
 | The planner's API docs | [localhost:8084/docs](http://localhost:8084/docs) | planner |
-| The assistant's API docs | [localhost:8085/docs](http://localhost:8085/docs) | assistant |
 | The sign-in inbox | [localhost:8025](http://localhost:8025) | mailpit |
 | Jupyter (token `wingtip`) | [localhost:8888](http://localhost:8888) | ml, on request |
 | Traces | [localhost:16686](http://localhost:16686) | jaeger, on request |
 
 The apps only ever talk to the gateway; it proxies `/api/planner/*` to
-the planner and the assistant. Port 8084 is for debugging. The database
+the planner. Port 8084 is for debugging. The database
 is never published.
 
 ## On a phone, over the Wi-Fi
@@ -140,9 +133,11 @@ docker compose up -d
   tiles within 10 nm of the course with the course, checkpoints and nav
   log. The briefing and the weather are not kept, since a cached METAR
   could only be shown as if it were current.
-- `DEV_PUBLISH_ADDRESS=0.0.0.0` opens the planner (8084) and Jupyter
-  (8888) too. Neither has a password and Jupyter runs code; the assistant
-  and the database stay on loopback whatever it says.
+- `DEV_PUBLISH_ADDRESS=0.0.0.0` opens Jupyter (8888) too. It has no
+  password and runs code. The planner (8084) and the database stay on
+  loopback whatever it says: the planner answers without
+  sign-in, and its developer routes are checked by the gateway alone, so
+  another device reaches it through the gateway.
 
 The top of [`docker-compose.yml`](../docker-compose.yml) lists every such
 setting.
@@ -171,6 +166,30 @@ checkout stays on `main`; links the main checkout's `.env`, certificates
 and `data/`; follows the Mac's address if DHCP moved it (a new
 certificate and `PHONE_BASE_URL`); rebuilds what changed; and prints the
 address when every service is healthy.
+
+### The phone simulators
+
+`scripts/dev/simulators.sh [ios|android|both] [--tree <dir>]`, after
+`go-live.sh --up`, boots the newest iPhone simulator and an arm64 Android
+emulator on the live tree (`~/Developer/wingtip-live` unless `--tree` says
+otherwise), builds each app for `localhost:8443` (the gateway's HTTPS port,
+above), installs it and launches it. Each heavy step takes a turn of
+`one-at-a-time.sh`; each wait has a deadline (`SIM_BOOT_WAIT`, 240 s). It
+stops with the next step when the stack does not answer, the certificate is
+missing, or there is no simulator runtime, AVD or system image.
+
+- **iOS:** the host is the `WINGTIP_HOST` build setting (`Config.swift`
+  reads Info.plist's `WingtipHost`); the local authority goes into the
+  simulator with `xcrun simctl keychain <udid> add-root-cert`.
+- **Android:** the host is `WINGTIP_HOST` for Gradle (`BuildConfig`);
+  `adb reverse tcp:8443 tcp:8443` makes the emulator's `localhost` the
+  Mac's, a name the server certificate holds (`10.0.2.2` is not in it).
+  The debug build trusts the authority itself: Gradle copies
+  `infra/local-https/certs/ca.pem` (or the `wingtipLocalCa` property's file)
+  into the debug variant's resources and a network security config
+  (`<debug-overrides>`) trusts it beside the system store, so the stock Play
+  Store image works with no `adb root`. The release build is unchanged, and
+  a build without the certificate (CI's) is the platform's default.
 
 ## The jobs and on-demand services
 
@@ -204,8 +223,7 @@ time. [services/jobs/README.md](../services/jobs/README.md) has the rest.
 
 One request can be followed end to end in Jaeger: the page's call, the
 gateway, the planner, every rule it asks of the engine, every weather
-product it reads and every source it fetches, and the assistant's
-Claude calls. It is off unless asked for, and costs nothing off: no
+product it reads and every source it fetches. It is off unless asked for, and costs nothing off: no
 service makes a span or imports OpenTelemetry, and nothing is sent.
 Production sets none of it (`infra/docker-compose.prod.yml`).
 
@@ -226,9 +244,8 @@ network:
 
 | Service | Spans | Set up in |
 |---|---|---|
-| gateway | each request (Micrometer Tracing), tagged `wingtip.request_id`; the `traceparent` and `X-Request-Id` on every call to the planner and the assistant | `management.tracing` in application.yml, `gateway/tracing/` |
+| gateway | each request (Micrometer Tracing), tagged `wingtip.request_id`; the `traceparent` and `X-Request-Id` on every call to the planner | `management.tracing` in application.yml, `gateway/tracing/` |
 | planner | each request (FastAPI) under the gateway's; each rule asked of the engine, `engine <rule>` with `wingtip.engine.rule` and no payload; each weather product read, `weather_store.read`; each source asked with requests; threads and pools kept in the trace | `app/tracing.py` over `wingtip/tracing.py` |
-| assistant | each request (FastAPI); each Claude call, `chat <model>` with `wingtip.feature`, `gen_ai.request.model` and the tokens used (`gen_ai.usage.*`), never the prompt or the answer; the planner calls (requests) | `app/tracing.py` |
 | weather | each product's fetch, `fetch <product>`, a trace of its own, the sources under it | `wingtip/tracing.py` |
 | ingest | each round of following airplanes, `follow round`, with its adsb.fi asks | `wingtip/tracing.py` |
 
@@ -251,11 +268,13 @@ All in `scripts/dev/`, each with its usage at its top.
 
 | Script | What it does |
 |---|---|
-| `check.sh <area>` or `check.sh all-changed` | The quick checks for a part of the repo (web, py, planner, ingest, assistant, weather, jobs, engine, java, ios, android), in Docker, warm from any worktree's first run ([CI.md](CI.md)) |
+| `check.sh <area>` or `check.sh all-changed` | The quick checks for a part of the repo (web, py, planner, ingest, weather, jobs, engine, java, ios, android), in Docker, warm from any worktree's first run ([CI.md](CI.md)) |
 | `dev.sh doctor` or `dev.sh up` | What `make dev` and `make doctor` run (First run, above) |
-| `one-at-a-time.sh "<label>" <command>` | Runs a heavy command (a suite, an image build, a browser run) in one of two turns, waiting while memory is short; `--alone` takes the whole machine for a measurement |
+| `one-at-a-time.sh "<label>" <command>` | Runs a heavy command (a suite, an image build, a browser run) in one of the turns the swap watcher allows (below), waiting while memory is short; `--alone` takes the whole machine for a measurement |
+| `swap-watch.sh`, `install-swap-watch.sh` | Full throttle without swapping: a LaunchAgent that holds the heavy-turn limit as high as the Mac takes (below) |
 | `validate-wave.sh` | The end-of-wave validation on `claude/integration`: every check area, the image builds, the `@smoke` browser specs on a throwaway stack, the iPad tests; one table of what passed |
 | `go-live.sh [branch]` | A branch on the owner's stack for the phone (above) |
+| `simulators.sh [ios\|android\|both] [--tree <dir>]` | The iPhone simulator and the Android emulator, each with the app built for the live stack and launched ([above](#the-phone-simulators)) |
 | `tidy-local.sh [--dry-run]` | Removes merged, clean worktrees and branches and stopped scratch containers; never volumes, never a running agent's worktree |
 | `tidy-branches.sh [--dry-run]` | Removes the `~/Developer/wingtip-*` worktrees whose commit is on `origin/claude/integration` or `origin/main`, with nothing uncommitted and untouched for six hours (never `wingtip`, `wingtip-live` or a locked one), then deletes local `worktree-agent-*` branches already on `origin/main` |
 | `docker-tidy.sh [--dry-run]` | Reclaims Docker disk: images no container uses (`docker image prune -a`), build cache unused for 24 hours, and volumes no container uses except the named caches (`wingtip-cargo-*`, `wingtip-sccache*`, `wingtip-npm*`, `wingtip-format-npm`, `wingtip-m2`, `fp-m2`, `wingtip-check-raw`) and the stacks' own (`wingtip_*`, `fpam_*`, the database among them); never a container; prints the space freed; then `tidy-build-caches.sh` (Shared build caches, below) |
@@ -263,6 +282,24 @@ All in `scripts/dev/`, each with its usage at its top.
 | `install-hooks.sh` | Installs the pre-push hook (tsc and ESLint, ruff, `cargo check`, the formatters, and the generated-file and budget checks CI runs -- `screens.sh --check`, `design-tokens.sh --check`, `toolchain.sh --check`, `file_sizes.py`, `brand_guard.py` -- each for what a push changes) |
 | `rename-local.sh` | Once, on a Mac that ran the stack before the rename to Wingtip |
 | `mcp_token.py` | A token for the connector (`/mcp`) from the stack's own sign-in, as Claude gets one; the Inspector and Claude or ChatGPT through a tunnel are in [MCP-CONNECTOR.md](MCP-CONNECTOR.md) |
+
+### Full throttle without swapping
+
+The owner's standing rule (2026-11-12): "Make it permanent rule full
+throttle while avoiding swapping memory". `scripts/dev/install-swap-watch.sh`
+installs a LaunchAgent that runs `swap-watch.sh` from login, for ever. Each
+minute it reads the Mac's swap-outs (`vm_stat`) and sets
+`ONE_AT_A_TIME_SLOTS` in `~/.config/wingtip/one-at-a-time`:
+
+- **6 turns** while the Mac isn't swapping;
+- **3 turns** the moment it writes more than 2,000 pages a minute (about 31 MB) to swap;
+- **one turn back** after each 3 calm minutes.
+
+Swap-outs are the signal, not `memory_pressure`'s free percentage, which
+counts compressed memory as free: on 2026-11-12 the Mac swapped about
+35 MB/s while it read 44% free. Its log is
+`~/Library/Logs/wingtip-swap-watch.log`; `--remove` takes it out. The
+`SWAP_WATCH_*` settings at the script's top change the numbers.
 
 ### The nightly database backup
 
@@ -273,6 +310,31 @@ whole, the newest 14 kept, hand-named dumps (`db-before-*.sql.gz`) never
 touched. Its log is `~/Library/Logs/wingtip-db-backup.log`;
 `install-backup.sh --now` runs one at once and `--remove` takes it out.
 The server's backups are in [README-AWS.md](README-AWS.md#backups-and-restore).
+
+## The linters and formatters
+
+Installed by [mise](https://mise.jdx.dev), at the version each has in
+`.tool-versions`, through one script: `scripts/build/tool.sh <tool> [args]`
+(`--have <tool>` asks whether it can be had, `--path <tool>` where it is). Nothing
+is installed by hand: the first call fetches mise's release (checked against
+its sum in the script) into `~/.cache/wingtip-tools`, and mise fetches the
+tool; a copy already on the PATH at the right version is used as it is. CI's
+`guards` job calls the same scripts, so a finding is the same on the Mac:
+
+| Tool | Run by |
+|---|---|
+| shellcheck | `scripts/ci/shellcheck.sh` (`.shellcheckrc`) |
+| actionlint, zizmor | `python3 scripts/ci/workflow_rules.py` (`.github/actionlint.yaml`, `.github/zizmor.yml`) |
+| lychee | `scripts/ci/check_links.sh` (`lychee.toml`) |
+| SwiftFormat, ktlint | `scripts/dev/format.sh swift kotlin` |
+| SwiftLint, Semgrep | `scripts/ci/phone_lint.sh ios`, `scripts/ci/semgrep_check.py` |
+
+A tool mise cannot fetch (no network) is a skip on the Mac, a failure in CI.
+A bump is a line in `.tool-versions` (Renovate lists the newer ones in its
+dashboard issue), then `scripts/build/toolchain.sh --check`; mise's own
+version carries its sums in `scripts/build/tool.sh`. The legal pages are
+written with markdown-it-py by `scripts/build/legal_pages.py`, which uv
+runs with the dependency pinned in its own header.
 
 ## Shared build caches
 

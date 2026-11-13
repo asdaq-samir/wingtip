@@ -8,7 +8,7 @@
     {"timeFrom": 50, "timeTo": 60, "change": "BECMG", "ceiling_ft": 800, "ceiling_unknown": false, "visibility_sm": 6}
    ],
    "start": 25, "end": 30,
-   "worst": {"ceiling_ft": 4000, "ceiling_unknown": false, "visibility_sm": 0.5}
+   "worst": {"ceiling_ft": 4000, "ceiling_unknown": false, "visibility_sm": 0.5, "covers": true}
   },
   {
    "fcsts": [
@@ -17,14 +17,14 @@
     {"timeFrom": 50, "timeTo": 60, "change": "BECMG", "ceiling_ft": 800, "ceiling_unknown": false, "visibility_sm": 6}
    ],
    "start": 70, "end": 80,
-   "worst": {"ceiling_ft": 800, "ceiling_unknown": false, "visibility_sm": 6}
+   "worst": {"ceiling_ft": 800, "ceiling_unknown": false, "visibility_sm": 6, "covers": true}
   },
   {
    "fcsts": [
     {"timeFrom": 0, "timeTo": 100, "change": "", "ceiling_ft": null, "ceiling_unknown": true, "visibility_sm": 10}
    ],
    "start": 10, "end": 20,
-   "worst": {"ceiling_ft": null, "ceiling_unknown": true, "visibility_sm": 10}
+   "worst": {"ceiling_ft": null, "ceiling_unknown": true, "visibility_sm": 10, "covers": true}
   },
   {
    "fcsts": [
@@ -32,6 +32,14 @@
    ],
    "start": 200, "end": 300,
    "worst": null
+  },
+  {
+   "_why": "14 CFR 91.169(b)(2)(i), 'for 1 hour after the estimated time of arrival': ETA 3,600 s, the window 0 to 7,200; the TAF ends at 5,400 (ETA + 30 min), so it gives its worst but does not cover the window.",
+   "fcsts": [
+    {"timeFrom": -3600, "timeTo": 5400, "change": "", "ceiling_ft": 5000, "ceiling_unknown": false, "visibility_sm": 6}
+   ],
+   "start": 0, "end": 7200,
+   "worst": {"ceiling_ft": 5000, "ceiling_unknown": false, "visibility_sm": 6, "covers": false}
   }
  ],
  "vfrNotRecommended": [

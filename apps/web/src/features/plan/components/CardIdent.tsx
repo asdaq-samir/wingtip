@@ -12,8 +12,10 @@ const NO_ROWS: AirportSearchRow[] = [];
 /**
  * A card's ident a text box, at the owner's ask (2026-11-05: "the airport
  * id should be a text box", after "Make the cards airport ids editable so
- * it can be changed to anything"): typed over and taken as typed on Return
- * or as it is left, Escape putting it back. The app's neutral fill, a
+ * it can be changed to anything"): typed over and taken as it is left,
+ * Escape putting it back; Return takes the first suggestion, as the route
+ * box's and the one search's do, or what is typed where none is offered
+ * or it is one's ident. The app's neutral fill, a
  * field's, its width the ident's (or the card's, `wide`); over the head's
  * tap that folds the card. In the Plan's every card has one, the two ends'
  * before there is a route (RouteEnds) and a stop's being added
@@ -94,10 +96,9 @@ export default function CardIdent({
   // Set as a suggestion is taken, so the blur after it puts in nothing
   // more: its draft, read in that blur, is still what was half typed.
   const picked = useRef(false);
-  // Set once an arrow has moved the highlight since the last typing: a row
-  // lit by itself (as cmdk lit the first) must not be taken by Return for
-  // the pilot.
-  const arrowed = useRef(false);
+  // A suggestion lit now (the list's own highlight, the first lit by
+  // itself as the rows come: autoHighlight "always").
+  const lit = useRef(false);
   const commit = () => {
     setTyping(false);
     if (picked.current) {
@@ -139,12 +140,22 @@ export default function CardIdent({
       }}
       onBlur={commit}
       onKeyDown={(e) => {
-        if (e.key === "ArrowDown" || e.key === "ArrowUp") arrowed.current = true;
-        // Return takes a suggestion only once an arrow has chosen it (the
-        // list's own Enter, after this); else the typing, and the list is
-        // not let to take a row lit by itself.
+        // Return takes the lit suggestion (the list's own Enter, after
+        // this), as every other search does: "KMS" and Return is KMSN, not
+        // KMS. What is typed where no list is open or it is a row's ident.
         if (e.key === "Enter") {
-          if (open && arrowed.current) return;
+          const typed = draft.trim().toUpperCase();
+          if (open && !rows.some((r) => r.ident === typed)) {
+            if (lit.current) return;
+            // Typed key by key, the rows can come with none lit yet: the
+            // first shown, as RouteBox takes it.
+            const first = rows.find((r) => r.kind !== "fix") ?? rows[0]!;
+            e.preventDefault();
+            e.preventBaseUIHandler();
+            if (first.kind === "fix") pick(first.ident);
+            else pick(first.ident, { ident: first.ident, name: first.name, municipality: first.municipality });
+            return;
+          }
           e.preventBaseUIHandler();
           e.stopPropagation();
           e.currentTarget.blur();
@@ -186,9 +197,12 @@ export default function CardIdent({
       value={draft}
       onValueChange={(next) => {
         picked.current = false;
-        arrowed.current = false;
         setDraft(next.toUpperCase());
         setTyping(true);
+      }}
+      autoHighlight="always"
+      onItemHighlighted={(item) => {
+        lit.current = item !== undefined;
       }}
     >
       <Popover

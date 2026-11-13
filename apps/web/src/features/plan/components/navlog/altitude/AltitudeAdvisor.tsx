@@ -3,7 +3,8 @@ import { cn } from "cn";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "../../../../../components/ui/item";
 import { Badge } from "../../../../../components/ui/badge";
 import { altFt, duration, flightLevel, one } from "../../../../../lib/format";
-import { GROUP_HEADING, TEXT } from "../../../../../lib/text";
+import { TEXT } from "../../../../../lib/text";
+import SectionTitle from "../../../../../components/SectionTitle";
 import type { AdvisorRow } from "./plans";
 
 /** A head or tail wind as said on a row: "+12 kt" helping, "−8 kt" against. */
@@ -33,9 +34,10 @@ export default function AltitudeAdvisor({
   if (!rows.length) return null;
   return (
     <section aria-labelledby="altitude-advisor-title" data-testid="altitude-advisor">
-      <h3 id="altitude-advisor-title" className={cn("mb-1", GROUP_HEADING)}>
+      {/* A section's title as every other is (SectionTitle, 20 points). */}
+      <SectionTitle id="altitude-advisor-title" className="mb-1">
         Altitude Advisor
-      </h3>
+      </SectionTitle>
       <ItemGroup className="max-h-72 gap-0 overflow-y-auto rounded-xl bg-card">
         {rows.map((r) => {
           const figures = [

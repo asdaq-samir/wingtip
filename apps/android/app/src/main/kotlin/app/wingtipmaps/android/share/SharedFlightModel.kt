@@ -3,16 +3,19 @@ package app.wingtipmaps.android.share
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.gateway.FlightCheckpointDto
 import app.wingtipmaps.android.api.generated.gateway.SharedFlightDto
+import app.wingtipmaps.android.api.readOrNone
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.FlightRules
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
+import javax.inject.Inject
 
 /**
  * The Shared Flight sheet's state (design/screens.json `shared`): a flight
@@ -29,7 +33,8 @@ import java.time.Instant
  * with its filed nav log. Use This Plan plans it as the receiver's own,
  * with their own airplane; Not Now leaves their plan as it was.
  */
-class SharedFlightModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class SharedFlightModel @Inject constructor(app: Application) : AndroidViewModel(app) {
     /** What the sheet shows. */
     sealed interface State {
         data object Closed : State
@@ -64,7 +69,7 @@ class SharedFlightModel(app: Application) : AndroidViewModel(app) {
         _state.value = State.Reading
         reading = viewModelScope.launch {
             _state.value = try {
-                Gateway.read<SharedFlightDto>("/api/shared-flights/$token", none = setOf(404))?.let(::shown) ?: State.Gone
+                Gateway.api.shared(token).readOrNone(none = setOf(404))?.let(::shown) ?: State.Gone
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -86,7 +91,7 @@ class SharedFlightModel(app: Application) : AndroidViewModel(app) {
         val shown = _state.value as? State.Shown ?: return
         val p = shown.plan
         p.rules?.let { FlightChoices.of(getApplication()).setRules(FlightRules.of(it)) }
-        val depart = p.depart?.takeIf { runCatching { Instant.parse(it).isAfter(Instant.now()) }.getOrDefault(false) }
+        val depart = p.depart?.takeIf { runCatching { Instant.parse(it).isAfter(AppClock.javaNow()) }.getOrDefault(false) }
         plan.useLeg(p.dep, p.dest, p.stops, p.altitudeFt?.toDouble(), depart)
         ScreenRequests.ask(Screen.NAVLOG)
         _state.value = State.Closed

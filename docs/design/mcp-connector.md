@@ -1,7 +1,8 @@
 # The Wingtip connector: Wingtip in a pilot's own Claude or ChatGPT
 
 The owner, 2026-11-10: server-side Claude stays off until there is a
-subscription (decision 0035). Instead, Wingtip is published as an MCP
+subscription (decision 0035); on 2026-11-12 it was taken out altogether
+(decision 0041). Instead, Wingtip is published as an MCP
 **connector** that a pilot adds to the Claude or ChatGPT they already pay for.
 Their subscription pays for the model; Wingtip only answers tool calls, from
 the engine and the planner, for the pilot signed in with their Wingtip
@@ -159,7 +160,7 @@ sequenceDiagram
 - **Each tool asks the planner's own HTTP API, in-process** (`calls.planner`,
   an ASGI transport onto the planner's app): `GET /api/plan`,
   `POST /api/go-no-go`, `GET /api/airport/{ident}` and the rest. The answer
-  is the one the app and the assistant get, shaped by its response model; no
+  is the one the apps get, shaped by its response model; no
   figure is worked out in `app/mcp`, and only `app.main` imports a router
   (`.importlinter`).
 - **The gateway is the authorization server**, because it owns accounts:
@@ -173,8 +174,9 @@ sequenceDiagram
 - **The pilot's records stay in the gateway.** The planner asks
   `/internal/mcp/aircraft`, `/flights` and `POST /flights` with its own
   secret (`MCP_INTERNAL_TOKEN`) and the pilot's id from the checked token,
-  never with the pilot's token: the spec forbids passing it on. Without the
-  secret, those routes are a 404.
+  never with the pilot's token: the spec forbids passing it on. Those routes
+  answer only on the gateway's internal port (8081), which nothing
+  publishes, and only with the secret; anywhere else they are a 404.
 
 ## 3. Sign-in and tokens
 
@@ -183,11 +185,11 @@ sequenceDiagram
 | Issuer | the gateway's public address (`APP_PUBLIC_BASE_URL`), no trailing slash |
 | Resource (audience) | `<issuer>/mcp` (`MCP_RESOURCE_URL` overrides, on both services) |
 | Metadata | `/.well-known/oauth-authorization-server` (RFC 8414); `/.well-known/oauth-protected-resource/mcp` (RFC 9728, the planner's) |
-| Registration | RFC 7591 at `/oauth2/register`, open, public clients only (`none`), PKCE required, consent required |
+| Registration | RFC 7591 at `/oauth2/register`, open, public clients only (`none`), PKCE required, consent required; 10 an hour per address, a name of 100 characters, 4 callbacks of 200, a 16 KB body (`RegistrationLimit`, `ConnectorClients`); clients nobody connected through let go a day after, and connections whose tokens have all run out a day after the last, each night (`ConnectorHousekeeping`) |
 | Callbacks allowed | `https://claude.ai/api/mcp/auth_callback`, `https://chatgpt.com/connector_platform_oauth_redirect`, `https://chatgpt.com/connector/oauth/*`, loopback `localhost` and `127.0.0.1` on any port (`MCP_REDIRECT_URIS`) |
 | Scopes | `wingtip:read` (tools), `wingtip:write` (save a flight); both in `scopes_supported`, so the pilot approves both once; no `openid` |
-| Access token | JWT, RS256, 15 minutes: `iss`, `aud` = the resource, `sub` = the pilot's id, `scope`, `client_id` |
-| Refresh token | 30 days, rotated on every use |
+| Access token | JWT, RS256, 15 minutes: `iss`, `aud` = the resource, `sub` = the pilot's id, `scope`, `client_id`; on every call the planner also asks the gateway (`/internal/mcp/connection`) whether the connection still stands, so a disconnect or a deleted account cuts it off at once |
+| Refresh token | 30 days, rotated on every use; a spent one presented again revokes the whole connection (`RotatedRefreshTokens`, V42) |
 | Signing key | `MCP_SIGNING_KEY` (PKCS#8 PEM); blank makes one at start, so tokens end with a restart (development only) |
 
 The pilot signs in as they do in the app. Signed out at `/oauth2/authorize`,
@@ -222,7 +224,7 @@ never a stock airplane's (decision 0011).
 | `plan_route` | the nav log: altitude and why, each leg's courses, heading, wind, ground speed, time and fuel, the totals with reserve and margin, the cautions, a link to open it in Wingtip | `GET /api/plan` |
 | `flight_briefing` | the Go / No-Go line, each finding, the risk assessment | `POST /api/go-no-go` |
 | `my_airplanes` | the pilot's airplanes and their figures, inspections and open squawks | gateway `/internal/mcp/aircraft` |
-| `my_flights` | the pilot's saved flights | gateway `/internal/mcp/flights` |
+| `my_flights` | the pilot's saved flights as a route summary (name, route, airplane, altitude, distance, time, fuel, when); never the notes, the risk assessment or the share link | gateway `/internal/mcp/flights` |
 | `save_flight` | plans the route and saves it to the pilot's Flights | `GET /api/plan`, then gateway `POST /internal/mcp/flights` |
 
 Hints, on every tool: `title`, `readOnlyHint`, `destructiveHint`,
@@ -271,8 +273,11 @@ logbook, and send nothing to Anthropic or OpenAI unless the pilot asked.
 
 ## 7. Left for the owner
 
-- **The production domain:** `APP_PUBLIC_BASE_URL` on HTTPS (the issuer and
-  `/mcp`), `MCP_SIGNING_KEY` and `MCP_INTERNAL_TOKEN` as secrets, and
+- **The production domain:** `MCP_ENABLED=true` (the connector is off,
+  every address a 404, until then), `APP_PUBLIC_BASE_URL` on HTTPS (the
+  issuer and `/mcp`), `MCP_SIGNING_KEY` and `MCP_INTERNAL_TOKEN` (a long
+  random value, `openssl rand -hex 32`) as secrets on the gateway and the
+  planner, and
   Anthropic's egress range allowed through any WAF in front of the gateway.
 - **Anthropic's directory:** submit at claude.ai's developer portal, with a
   test account holding airplanes and flights, the public documentation page,

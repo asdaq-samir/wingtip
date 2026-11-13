@@ -1,6 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 import { placeName } from "../../lib/radio";
 import { SearchNear } from "../../../../lib/useAirportSearch";
+import { coverCard, useSheetCards } from "../../../../lib/sheetCards";
 import { RouteLine, RouteEnds, RouteSplit } from "../../routePanelParts";
 // The search, on a chunk of its own: the first screen draws it.
 import { RouteBox } from "../../routeBoxChunk";
@@ -9,41 +10,30 @@ import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 /**
  * The route at FPL's head (PlanWorkspace's `route`): folded to its ends
  * and its controls once it is whole (RouteEdit), or the box of pills.
+ * Folded and not yet whole, the controls wait for both ends, and the
+ * route's ••• menu (`menu`) has a row of its own at their end, so its Show
+ * Route As is there before a route (the owner, 2026-11-13).
  */
-export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; controls: ReactNode }) {
-  const {
-    addAt,
-    addingChange,
-    addingStop,
-    airspaceOf,
-    altitudeAt,
-    clearRoute,
-    course,
-    directParam,
-    directToPoint,
-    fuelStops,
-    hideFuelStop,
-    keepFuelStops,
-    metarColour,
-    openProcedures,
-    planned,
-    routeEdit,
-    routeFolded,
-    routeLine,
-    routeOpen,
-    routePoints,
-    routeProcedures,
-    s,
-    searchNear,
-    selectPlace,
-    setPointAltitude,
-    setRoute,
-    setRouteOpen,
-    typeProcedures,
-    typeStopAt,
-    waypointStops,
-    wholeRoute,
-  } = vm;
+export default function RouteHead({ vm, controls, menu }: { vm: PlanWorkspaceModel; controls: ReactNode; menu: ReactNode }) {
+  const { directParam, planned, routeEdit, routePoints, setPointAltitude, setRoute, wholeRoute } = vm.route;
+  const { course, directToPoint, s } = vm.plan;
+  const { selectPlace } = vm.cards;
+  const { openProcedures, routeProcedures, typeProcedures } = vm.picks;
+  const { fuelStops, hideFuelStop, keepFuelStops } = vm.stops;
+  const { addAt, addingChange, addingStop, routeFolded, routeLine, routeOpen, setRouteOpen, typeStopAt, waypointStops } = vm.routeList;
+  const { airspaceOf, altitudeAt, metarColour, searchNear } = vm.brief;
+  // A stop asked for from a card (the profile's no-legal-altitude problem,
+  // its Add a Stop): asked of the box once the card has gone. Under it the
+  // sheet's head is inert (SheetParts, while a card is up), and the box's
+  // focus as it was asked went nowhere (plans.spec, "no legal altitude").
+  const covered = useSheetCards((c) => !!coverCard(c.stack));
+  // The menu alone at the row's end, where the controls' row ends once the
+  // route is whole (RouteControls' route-actions).
+  const menuRow = !wholeRoute && (
+    <div className="flex w-full items-center justify-end pr-0.5" data-testid="route-menu-row">
+      {menu}
+    </div>
+  );
   return routeFolded ? (
     <div className="flex min-w-0 flex-1 flex-col gap-2.5" data-testid="route-folded">
       {/* In the Plan, the owner's pick of the canvas's option 3 as
@@ -51,6 +41,8 @@ export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; co
           and destination as two cards and nothing else -- no airplane,
           no altitude; once it is, those over the plan, whose Routes
           and cards follow (ProceduresRoute), with no title. */}
+      {/* Over the cards, where the route's group box sits once whole. */}
+      {routeEdit === "plan" && menuRow}
       {routeEdit === "plan" ? (
         !wholeRoute && (
           <Suspense fallback={<div className="h-[7.75rem]" />}>
@@ -79,6 +71,8 @@ export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; co
           />
         </Suspense>
       )}
+      {/* Under the line, where its controls' row comes once whole. */}
+      {routeEdit !== "plan" && menuRow}
       {/* The airplane, the altitude and the route's buttons once the route
           is whole, in either: none before, at the owner's ask ("no n
           number or altitude" till both ends are in). */}
@@ -121,7 +115,7 @@ export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; co
             onAltitudeChange={setPointAltitude}
             onChange={setRoute}
             onTypedProcedures={typeProcedures}
-            adding={!!addingStop}
+            adding={!!addingStop && !covered}
             onAddingChange={addingChange}
             via={addingStop === "via" ? s.unflyable?.detours : undefined}
             procedures={routeProcedures}
@@ -134,7 +128,6 @@ export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; co
             onOpenAirport={selectPlace}
             directTo={directParam}
             onDirectTo={directToPoint}
-            onClear={clearRoute}
             unknownPoint={s.unknownPlace}
             footer={controls}
             addAt={addAt}

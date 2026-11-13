@@ -58,20 +58,7 @@ pub fn assemble_leg(
     };
     let cruise = profile.airplane.cruise(altitude_ft, air.oat_c);
     let tas_kt = cruise.tas_kt;
-    let (wca_deg, gs_kt) = match &air.wind {
-        Value::Null => (0.0, tas_kt),
-        w => {
-            let o = Obj::read("navlog", w)?;
-            let (from, kt) = (o.num("wind_dir_true_deg")?, o.num("wind_speed_kt")?);
-            let wca = flight::wind_correction_deg(true_course_deg, from, kt, tas_kt);
-            let mut gs = flight::groundspeed_kt(true_course_deg, from, kt, tas_kt, wca);
-            let crosswind_kt = kt * (from - true_course_deg).to_radians().sin();
-            if crosswind_kt.abs() > tas_kt {
-                gs = 0.0;
-            }
-            (wca, gs)
-        }
-    };
+    let (wca_deg, gs_kt) = wind_triangle(true_course_deg, wind_of(&air.wind)?, tas_kt);
     let true_heading_deg = py_mod(true_course_deg + wca_deg, 360.0);
     let magnetic_heading_deg = py_mod(true_heading_deg - variation_deg, 360.0);
     // The course over the ground as the compass reads it: the figure a
@@ -100,6 +87,32 @@ pub fn assemble_leg(
     leg.set_opt("oat_c", air.oat_c);
     leg.set_num("density_altitude_ft", cruise.density_altitude_ft.round_ties_even());
     Ok(leg)
+}
+
+/// The wind triangle at `tas_kt` along `true_course_deg` in `wind` (from,
+/// degrees true, and knots; FAA-H-8083-25C, PHAK ch. 16, "Wind triangle"):
+/// the wind correction angle and the ground speed. No wind (None) is no
+/// correction and the ground speed the TAS; a crosswind stronger than the
+/// TAS holds no heading, and the ground speed is none (0). The cruise's
+/// triangle (assemble_leg) and the climb's (with_climbs, altitude_change,
+/// at the climb speed in the same wind) are all this one.
+pub(crate) fn wind_triangle(true_course_deg: f64, wind: Option<(f64, f64)>, tas_kt: f64) -> (f64, f64) {
+    let Some((from, kt)) = wind else { return (0.0, tas_kt) };
+    let wca = flight::wind_correction_deg(true_course_deg, from, kt, tas_kt);
+    let crosswind_kt = kt * (from - true_course_deg).to_radians().sin();
+    let gs = if crosswind_kt.abs() > tas_kt { 0.0 } else { flight::groundspeed_kt(true_course_deg, from, kt, tas_kt, wca) };
+    (wca, gs)
+}
+
+/// A leg's `wind` as the triangle takes it: (from, kt), None for null.
+pub(crate) fn wind_of(wind: &Value) -> R<Option<(f64, f64)>> {
+    match wind {
+        Value::Null => Ok(None),
+        w => {
+            let o = Obj::read("navlog", w)?;
+            Ok(Some((o.num("wind_dir_true_deg")?, o.num("wind_speed_kt")?)))
+        }
+    }
 }
 
 /// A fix's (lat, lon) and the name a leg calls it by: its name, else its
@@ -195,7 +208,10 @@ pub fn totals(legs: &[Obj]) -> R<Value> {
 /// 30 minutes by day and 45 at night under VFR (91.151(a)), 45 under IFR
 /// day or night (91.167(a)(3)) -- and the margin against the usable fuel
 /// where the profile gives it. `night` None is a flight with no departure
-/// time: the day's reserve, and said so. With no airplane (`profile`
+/// time: night cannot be ruled out, so the night's 45 minutes
+/// (91.151(a)(2), "At night, to fly after that for at least 45 minutes"),
+/// the larger, and `night` stays null for the apps to say "night reserve
+/// assumed". With no airplane (`profile`
 /// None) the reserve's minutes alone, which are the rules' (91.151,
 /// 91.167): its gallons, the taxi allowance, the fuel required and the
 /// margin are an airplane's, and null. The start, taxi and takeoff
@@ -204,7 +220,7 @@ pub fn totals(legs: &[Obj]) -> R<Value> {
 /// allowance out, which the apps say beside it -- no stock airplane's
 /// figure fills the gap (the owner, 2026-11-09).
 pub fn fuel_plan(total_fuel_gal: Option<f64>, profile: Option<&Profile>, night: Option<bool>, rules: &str, alternate_gal: f64) -> Value {
-    let reserve_min = flight::reserve_min(rules == "ifr", night.unwrap_or(false));
+    let reserve_min = flight::reserve_min(rules == "ifr", night.unwrap_or(true));
     let reserve_gal = profile.map(|p| py_round(reserve_min / 60.0 * p.airplane.fuel_burn_gph, 2));
     let taxi_gal = profile.and_then(|p| p.taxi_fuel_gal);
     let required = match (total_fuel_gal, reserve_gal) {

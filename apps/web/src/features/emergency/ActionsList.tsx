@@ -1,6 +1,7 @@
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
-import { Input } from "../../components/ui/input";
+import { NumberField } from "../../components/ui/number-field";
+import { WHOLE } from "../../components/ui/numberFormats";
 import FrequencyButton from "../../components/FrequencyButton";
 import { TEXT } from "../../lib/text";
 import type { EmergencyModel } from "./useEmergency";
@@ -66,22 +67,24 @@ export default function ActionsList({ vm }: { vm: EmergencyModel }) {
         <div className="grid grid-cols-2 gap-2 px-4 pb-3">
           <div className={cn("grid gap-1", TEXT.note)}>
             <label htmlFor="emergency-souls">People on board</label>
-            <Input
+            <NumberField
               id="emergency-souls"
-              inputMode="numeric"
-              value={souls}
-              onChange={(e) => setSouls(e.target.value)}
+              defaultValue={souls === "" ? null : Number(souls)}
+              onTyped={(v) => setSouls(v == null ? "" : String(v))}
+              formatOptions={WHOLE}
+              minValue={0}
               placeholder="2"
               data-testid="emergency-souls"
             />
           </div>
           <div className={cn("grid gap-1", TEXT.note)}>
             <label htmlFor="emergency-fuel">Fuel, minutes</label>
-            <Input
+            <NumberField
               id="emergency-fuel"
-              inputMode="numeric"
-              value={fuelMin}
-              onChange={(e) => setFuelMin(e.target.value)}
+              defaultValue={fuelMin === "" ? null : Number(fuelMin)}
+              onTyped={(v) => setFuelMin(v == null ? "" : String(v))}
+              formatOptions={WHOLE}
+              minValue={0}
               placeholder="90"
               data-testid="emergency-fuel"
             />

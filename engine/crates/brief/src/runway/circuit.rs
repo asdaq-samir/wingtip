@@ -30,16 +30,15 @@
 
 use super::pick::{end_key, pattern_side_deg, runway_number};
 use crate::geo::{bearing_deg, destination, distance_nm};
+use wingtip_core::units::FT_PER_NM;
 
 /// Three-quarters of a statute mile, in nautical miles: the middle of the
-/// handbook's half a mile to a mile for the downwind's distance out.
-pub const DOWNWIND_NM: f64 = 0.75 * 0.868976;
+/// handbook's half a mile to a mile for the downwind's distance out
+/// (wingtip_flight::limits, which the nav log's descent reads too).
+pub const DOWNWIND_NM: f64 = wingtip_flight::limits::PATTERN_DOWNWIND_NM;
 /// How far out the 45° entry is drawn from where it joins the downwind,
 /// and the departure's exit from the upwind's end, nm.
-pub const ENTRY_NM: f64 = 1.2;
-/// Feet in a nautical mile (1,852 m), as lib/geo's FT_PER_NM.
-const FT_PER_NM: f64 = 6076.12;
-
+pub const ENTRY_NM: f64 = wingtip_flight::limits::PATTERN_ENTRY_NM;
 pub type Point = (f64, f64);
 
 /// A runway end as the pattern reads it: its ident, true heading (None for

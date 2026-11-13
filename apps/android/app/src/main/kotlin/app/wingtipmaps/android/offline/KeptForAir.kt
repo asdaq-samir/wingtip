@@ -1,6 +1,10 @@
 package app.wingtipmaps.android.offline
 
 import android.content.Context
+import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.keptAge
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -11,7 +15,8 @@ import java.io.File
  * The last good answer of each thing a flight needs in the air, kept on
  * the phone with when the network gave it: the Brief's Go / No-Go, the
  * route's airport cards (their METAR and TAF, frequencies and runways)
- * and diagrams, the ranked NOTAMs and the weather loop's frames (the plan
+ * and diagrams, the ranked NOTAMs and each field's own, the route's side
+ * view and the weather loop's frames (the plan
  * and its nav log are KeptPlan's). A screen's model writes one as it
  * comes and reads it back when the network fails, said with its age
  * (KeptAgeLine); Keep for the Air fetches them all for the route at once
@@ -33,9 +38,9 @@ class KeptForAir(private val dir: File) {
 
     private fun file(kind: String, key: String, ext: String): File = File(File(dir, kind), "${safe(key)}.$ext")
 
-    fun write(kind: String, key: String, body: String, atMs: Long = System.currentTimeMillis()) {
+    fun write(kind: String, key: String, body: String, atMs: Long = AppClock.nowMs()) {
         val to = file(kind, key, "json")
-        runCatching {
+        val _ = runCatching {
             to.parentFile?.mkdirs()
             // Written beside and moved over, so a kill mid-write leaves the
             // last good answer, never half of one.
@@ -63,7 +68,7 @@ class KeptForAir(private val dir: File) {
 
     /** The answer from the network, kept as it comes; where the network
      *  fails, the kept one with its time; where there is none, the failure. */
-    suspend fun <T> orKept(kind: String, key: String, serializer: KSerializer<T>, nowMs: Long = System.currentTimeMillis(), fetch: suspend () -> T): Had<T> {
+    suspend fun <T> orKept(kind: String, key: String, serializer: KSerializer<T>, nowMs: Long = AppClock.nowMs(), fetch: suspend () -> T): Had<T> {
         try {
             val value = fetch()
             write(kind, key, JSON.encodeToString(serializer, value), nowMs)
@@ -85,6 +90,21 @@ class KeptForAir(private val dir: File) {
         const val NOTAMS = "notams"
         const val PLAN = "plan"
         const val WEATHER_LOOP = "weather_loop"
+
+        /** The route's side view (/api/route-profile): the ground and the
+         *  obstacles under it, a cycle's data, so said with no age. Not one
+         *  of the engine's kinds: ready_to_fly does not count it. */
+        const val ROUTE_PROFILE = "route_profile"
+
+        /** The engine's kept_age for an answer of `kind` fetched at `fetchedAtMs`:
+         *  its line ("Fetched 42 min ago") and whether it is past the freshness
+         *  ready_to_fly holds that kind to. Null where the engine could not say. */
+        fun age(kind: String, fetchedAtMs: Long, nowMs: Long = AppClock.nowMs()): EngineContract.KeptAgeAnswer? =
+            Engine.keptAge(now = (nowMs / 1000).toDouble(), fetchedAt = (fetchedAtMs / 1000).toDouble(), kind = kind).getOrNull()
+
+        /** The key a field's own NOTAMs are kept under, the one the airport
+         *  card reads (AirportModel) and Keep for the Air writes. */
+        fun fieldNotams(ident: String): String = "$ident|field"
 
         /** The planner's own coder's settings: a member not modelled is
          *  passed over, so an answer kept by an older build still reads. */
@@ -116,6 +136,6 @@ class KeptForAir(private val dir: File) {
         /** The answer through the app's store where there is one, else
          *  straight from the network. */
         suspend fun <T> had(kind: String, key: String, serializer: KSerializer<T>, fetch: suspend () -> T): Had<T> =
-            current?.orKept(kind, key, serializer, fetch = fetch) ?: Had(fetch(), System.currentTimeMillis(), kept = false)
+            current?.orKept(kind, key, serializer, fetch = fetch) ?: Had(fetch(), AppClock.nowMs(), kept = false)
     }
 }

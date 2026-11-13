@@ -1,37 +1,40 @@
 package app.wingtipmaps.gateway.controller;
 
-import app.wingtipmaps.gateway.dto.ErrorResponse;
-import app.wingtipmaps.gateway.flightservice.FlightServiceNotConnectedException;
-import app.wingtipmaps.gateway.service.InstructorRefusedException;
-import app.wingtipmaps.gateway.service.NoSuchAircraftException;
-import app.wingtipmaps.gateway.service.PlannerUnavailableException;
-import app.wingtipmaps.gateway.service.SubscriptionService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import org.apache.coyote.CloseNowException;
+import org.hibernate.exception.ConstraintViolationException;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.web.util.DisconnectedClientHelper;
 
 /**
- * Turns failure classes into a uniform ErrorResponse instead of an
- * opaque 500 (or, for validation, Spring's own default problem-detail
- * shape) -- a bad request body, an unresolvable aircraft reference, a
- * unique-constraint clash, the wrong HTTP method, and everything else.
- * Ordered most-specific to least-specific, matching how
- * {@code @ExceptionHandler} resolution actually works.
+ * Every failure answered as an RFC 9457 problem ({@link ProblemDetail},
+ * {@code application/problem+json}): Spring MVC's own through
+ * {@link ResponseEntityExceptionHandler}, this app's refusals as the
+ * {@link ErrorResponseException}s they are, a unique-constraint clash, and
+ * everything else as a 500 that leaks nothing. The pages and the phones
+ * read {@code detail}; a failed validation lists its fields in
+ * {@code errors}. A client that has gone is answered with nothing.
  */
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
@@ -75,54 +78,45 @@ public class GlobalExceptionHandler {
         return false;
     }
 
-    /**
-     * Handles a failed {@code @Valid} check on a request body.
-     *
-     * @param ex the validation failure, carrying one field error per broken constraint
-     * @return 400 with each field's error message
-     */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
-        List<String> details = ex.getBindingResult().getFieldErrors().stream()
+    /** A failed {@code @Valid} check on a request body: Spring's 400
+     *  problem, its detail naming each broken field (what the pages and the
+     *  phones show) and {@code errors} listing them one by one. */
+    @Override
+    protected @Nullable ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        List<String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
                 .toList();
-        return ResponseEntity.badRequest().body(new ErrorResponse("Invalid request", details));
+        ProblemDetail problem =
+                ProblemDetail.forStatusAndDetail(status, "Invalid request: " + String.join("; ", errors));
+        problem.setProperty("errors", errors);
+        return handleExceptionInternal(ex, problem, headers, status, request);
     }
 
     /** A body that is not JSON, or not JSON this endpoint takes (a string
      *  where a number goes, a value past the end): the caller's mistake,
-     *  a 400. It reached the catch-all below as a 500, which is how a
-     *  logbook entry Jackson 3 would not read showed as the server broken.
-     *  Jackson's own words name this app's classes, so they stay in the log. */
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException ex) {
+     *  a 400. Jackson's own words name this app's classes, so they stay in
+     *  the log. */
+    @Override
+    protected @Nullable ResponseEntity<Object> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         log.debug("Unreadable request body: {}", ex.getMessage());
-        return ResponseEntity.badRequest().body(new ErrorResponse("The request's body could not be read"));
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, "The request's body could not be read");
+        return handleExceptionInternal(ex, problem, headers, status, request);
     }
 
-    /**
-     * Handles a {@code SaveFlightRequest} naming an {@code aircraftId}
-     * that doesn't exist or doesn't belong to the calling pilot.
-     *
-     * @param ex carries the id that didn't resolve
-     * @return 404 with that detail
-     */
-    @ExceptionHandler(NoSuchAircraftException.class)
-    public ResponseEntity<ErrorResponse> handleNoSuchAircraft(NoSuchAircraftException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(ex.getMessage()));
-    }
-
-    /** An instructor's or a student's request refused, with its own
-     *  status and words (InstructorService). */
-    @ExceptionHandler(InstructorRefusedException.class)
-    public ResponseEntity<ErrorResponse> handleInstructorRefused(InstructorRefusedException ex) {
-        return ResponseEntity.status(ex.status).body(new ErrorResponse(ex.getMessage()));
-    }
-
-    /** The free month asked for again: once an account (SubscriptionService). */
-    @ExceptionHandler(SubscriptionService.TrialUsedException.class)
-    public ResponseEntity<ErrorResponse> handleTrialUsed(SubscriptionService.TrialUsedException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(ex.getMessage()));
+    /** This app's own refusals (NoSuchAircraftException,
+     *  InstructorRefusedException, TrialUsedException,
+     *  FlightServiceNotConnectedException, PlannerUnavailableException) are
+     *  problems already; one that is the server's side, the planner not
+     *  answering, is logged too. */
+    @Override
+    protected @Nullable ResponseEntity<Object> handleErrorResponseException(
+            ErrorResponseException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        if (status.is5xxServerError()) {
+            log.warn("Answered {}: {}", status.value(), ex.getBody().getDetail(), ex.getCause());
+        }
+        return super.handleErrorResponseException(ex, headers, status, request);
     }
 
     /**
@@ -130,49 +124,19 @@ public class GlobalExceptionHandler {
      * an aircraft whose tail number the same pilot already has on file
      * ({@code uq_aircraft_pilot_tail}).
      *
-     * @param ex the underlying constraint failure, logged in full server-side
+     * @param ex the underlying constraint failure, logged by the
+     *     constraint's name only: the database's own text quotes the row's
+     *     values (a tail number, an address), and the logs are kept 30 days
+     *     (docs/privacy-inventory.md, "Logs")
      * @return 409, with a message that doesn't leak constraint/SQL internals
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        log.warn("Data integrity violation", ex);
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ErrorResponse("That tail number is already registered"));
-    }
-
-    /**
-     * Handles a filing or a briefing asked of Flight Service with no
-     * provider connected (FlightServiceGateway).
-     *
-     * @param ex says where to file instead
-     * @return 503 with that detail
-     */
-    @ExceptionHandler(FlightServiceNotConnectedException.class)
-    public ResponseEntity<ErrorResponse> handleFlightServiceNotConnected(FlightServiceNotConnectedException ex) {
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ErrorResponse(ex.getMessage()));
-    }
-
-    /** The planner could not brief a flight the pilot asked to watch
-     *  (PlannerClient): the same 502 the proxy answers for a planner that
-     *  does not answer, so the page reports it the same way. */
-    @ExceptionHandler(PlannerUnavailableException.class)
-    public ResponseEntity<ErrorResponse> handlePlannerUnavailable(PlannerUnavailableException ex) {
-        log.warn("The planner could not be asked: {}", ex.toString());
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(new ErrorResponse(ex.getMessage()));
-    }
-
-    /**
-     * Handles a request using a method the path doesn't map, such as
-     * {@code GET /api/routes}. Without this the catch-all below would
-     * report it as a 500, and a caller could not tell "wrong method"
-     * from "server broke".
-     *
-     * @param ex names the unsupported method
-     * @return 405 with that detail
-     */
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(new ErrorResponse(ex.getMessage()));
+    public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        String constraint = ex.getCause() instanceof ConstraintViolationException violation
+                ? violation.getConstraintName()
+                : ex.getMostSpecificCause().getClass().getSimpleName();
+        log.warn("Data integrity violation: {}", constraint);
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "That tail number is already registered");
     }
 
     /**
@@ -180,10 +144,9 @@ public class GlobalExceptionHandler {
      * against an opaque, stack-trace-leaking default error page.
      *
      * <p>Spring MVC's own request failures -- no such resource, a
-     * missing parameter -- say which client error
-     * they are, and are answered as that. They were all 500s here: a
-     * browser asking for a bundle file a new build had replaced was told
-     * the server broke, and the log said "Unhandled exception".
+     * missing parameter, the wrong method -- are the superclass's, each
+     * answered as the client error it is; any other exception that says
+     * it is a client error is answered as that too.
      *
      * @param ex the unexpected exception, logged in full server-side
      * @param response the answer under way, which may already be committed
@@ -191,7 +154,7 @@ public class GlobalExceptionHandler {
      *         nothing for a client that has gone, or once the response is committed
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletResponse response) {
+    public @Nullable ResponseEntity<ProblemDetail> handleUnexpected(Exception ex, HttpServletResponse response) {
         if (DISCONNECTED.checkAndLogClientDisconnectedException(ex)) {
             return null;
         }
@@ -205,13 +168,12 @@ public class GlobalExceptionHandler {
             log.error("Failed after the response was sent", ex);
             return null;
         }
-        if (ex instanceof org.springframework.web.ErrorResponse known
-                && known.getStatusCode().is4xxClientError()) {
-            String detail = known.getBody().getDetail();
-            return ResponseEntity.status(known.getStatusCode())
-                    .body(new ErrorResponse(detail != null ? detail : ex.getMessage()));
+        if (ex instanceof ErrorResponse known && known.getStatusCode().is4xxClientError()) {
+            return ResponseEntity.status(known.getStatusCode()).body(known.getBody());
         }
         log.error("Unhandled exception", ex);
-        return ResponseEntity.internalServerError().body(new ErrorResponse("An unexpected error occurred"));
+        return ResponseEntity.internalServerError()
+                .body(ProblemDetail.forStatusAndDetail(
+                        HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred"));
     }
 }

@@ -5,7 +5,7 @@ import { askMicrophone, permissionState } from "../lib/permissions";
 
 /**
  * Why the ATC copilot wants the microphone, said before the browser asks:
- * turning the copilot on (the Map menu's ATC) opens this first where the
+ * turning the copilot on (Settings' ATC page) opens this first where the
  * browser has not been answered yet. Allow asks the browser and turns it
  * on; Not Now leaves it off. Granted already, it turns on at once.
  * Returns the sheet to draw and the ask, with what to do once allowed.

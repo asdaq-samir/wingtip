@@ -104,18 +104,55 @@ fn ahead_json(
     Ok(ahead::ahead(&read, lat, lon, track_deg, gs_kt, alt_ft, vs_fpm, now, tfr_lines, tfrs_at))
 }
 
+/// A buffer of f64s read in place, as `bytes_of` reads bytes.
+fn floats_of(buffer: &PyBuffer<f64>) -> PyResult<&[f64]> {
+    if !buffer.is_c_contiguous() {
+        return Err(PyValueError::new_err("numbers in one piece"));
+    }
+    // SAFETY: a contiguous buffer of item_count f64s (PyBuffer<f64> has
+    // checked the format), alive as long as `buffer`.
+    Ok(unsafe { std::slice::from_raw_parts(buffer.buf_ptr() as *const f64, buffer.item_count()) })
+}
+
+/// The sphere's figures (wingtip_core::geo_many: `inverse`, `track`,
+/// `destination`) over numpy's columns, written into the two answer
+/// arrays in place: wingtip.geo's corridors, thousands of points a call,
+/// which JSON text would cost more than the figures. The numbers are the
+/// rule `great_circles`', and geo's, not a second copy.
+#[pyfunction]
+fn geo_many(py: Python<'_>, name: &str, columns: Vec<PyBuffer<f64>>, first: PyBuffer<f64>, second: PyBuffer<f64>) -> PyResult<()> {
+    let cols = columns.iter().map(floats_of).collect::<PyResult<Vec<_>>>()?;
+    let n = first.item_count();
+    let (mut a, mut b) = (vec![0.0; n], vec![0.0; n]);
+    wingtip_engine::geo_many::fill(name, &cols, &mut a, &mut b).map_err(PyValueError::new_err)?;
+    first.copy_from_slice(py, &a)?;
+    second.copy_from_slice(py, &b)?;
+    Ok(())
+}
+
+/// One row of `geo_many`, for the nav log's scalar figures a few hundred
+/// times a plan, where making arrays would cost more than the sum.
+#[pyfunction]
+fn geo_one(name: &str, row: Vec<f64>) -> PyResult<(f64, f64)> {
+    wingtip_engine::geo_many::figure(name, &row).map_err(PyValueError::new_err)
+}
+
 /// The engine's one way in, as the web app and the phones ask it: a rule
 /// by name (wingtip_engine::call), its input and answer JSON text. A name
 /// not known or input not of the rule's shape is a ValueError with the
-/// engine's words.
+/// engine's words. The engine touches no Python object, so the call lets go
+/// of the GIL while it runs: a long rule (route options, a nav log) then
+/// holds up none of the planner's other threads, its tiles among them.
 #[pyfunction]
-fn call(name: &str, input: &str) -> PyResult<String> {
-    wingtip_engine::call::call(name, input).map_err(PyValueError::new_err)
+fn call(py: Python<'_>, name: &str, input: &str) -> PyResult<String> {
+    py.detach(|| wingtip_engine::call::call(name, input)).map_err(PyValueError::new_err)
 }
 
 #[pymodule]
 fn wingtip_native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(call, m)?)?;
+    m.add_function(wrap_pyfunction!(geo_many, m)?)?;
+    m.add_function(wrap_pyfunction!(geo_one, m)?)?;
     m.add_function(wrap_pyfunction!(shape_holds, m)?)?;
     m.add_function(wrap_pyfunction!(wkb_holds, m)?)?;
     m.add_function(wrap_pyfunction!(shape_to_wkb, m)?)?;

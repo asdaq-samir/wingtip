@@ -70,6 +70,9 @@ final class ReadyToFly {
             ? EngineContract.ReadyToFlyInputCharts(kept: store?.chartsKept ?? false, canKeep: true, edition: store?.chartEdition, downloadMb: nil)
             : nil
         let notamsAt = notamsFor == routeKey ? notamsAt : nil
+        // The saved plan read from disk once a refresh, for both the kept
+        // items and the device's "plan saved".
+        let saved = plan.routed && ReadyFacts.saved(dep: plan.dep, dest: plan.dest, stops: plan.stops, kept: Kept.load())
         return ReadyFacts.Input(
             now: now.timeIntervalSince1970,
             plan: ReadyFacts.plan(plan),
@@ -78,19 +81,18 @@ final class ReadyToFly {
             briefing: EngineContract.ReadyToFlyInputBriefing(fetchedAt: plan.briefedAt?.timeIntervalSince1970),
             fields: ReadyFacts.fields(dep: plan.dep, dest: plan.dest, briefing: plan.briefing),
             notams: EngineContract.ReadyToFlyInputNotams(fetchedAt: notamsAt?.timeIntervalSince1970),
-            kept: plan.routed ? kept(plan, routeKey: routeKey) : nil,
+            kept: plan.routed ? kept(plan, routeKey: routeKey, saved: saved) : nil,
             device: EngineContract.ReadyToFlyInputDevice(
                 batteryPct: battery.pct, charging: battery.charging,
                 location: ReadyFacts.location(CLLocationManager().authorizationStatus),
-                planSaved: plan.routed ? ReadyFacts.saved(dep: plan.dep, dest: plan.dest, stops: plan.stops, kept: Kept.load()) : nil),
+                planSaved: plan.routed ? saved : nil),
             receiver: ReadyFacts.receiver(used: Receiver.used, listening: Receiver.shared.mode == .auto, live: Receiver.shared.live))
     }
 
     /// What Keep for the Air holds for this route, looked for on disk.
-    private func kept(_ plan: Plan, routeKey: String) -> EngineContract.ReadyToFlyInputKept {
-        let saved = ReadyFacts.saved(dep: plan.dep, dest: plan.dest, stops: plan.stops, kept: Kept.load())
-        return ReadyFacts.kept(manifest: KeptForAir.manifest(route: routeKey), saved: saved, briefed: plan.briefing != nil,
-                               notams: KeptForAir.has(.notams, key: routeKey), goNoGo: KeptForAir.has(.goNoGo, key: routeKey))
+    private func kept(_ plan: Plan, routeKey: String, saved: Bool) -> EngineContract.ReadyToFlyInputKept {
+        ReadyFacts.kept(manifest: KeptForAir.manifest(route: routeKey), saved: saved, briefed: plan.briefing != nil,
+                        notams: KeptForAir.has(.notams, key: routeKey), goNoGo: KeptForAir.has(.goNoGo, key: routeKey))
     }
 
     /// The facts gathered and the engine asked: the disk looked at first
@@ -142,7 +144,7 @@ final class ReadyToFly {
         do {
             // The last good ranking kept, and given back with its time when
             // there is no signal (KeptForAir): its age is ready to fly's.
-            let found = try await KeptForAir.answer(.notams, key: key) { try await Planner.postRead(APINotamsRanked.self, "/api/notams/ranked", ask) }
+            let found = try await KeptForAir.answer(.notams, key: key) { try await Planner.call { try await $0.notamsRanked(body: .json(ask)).ok.body.json } }
             guard Self.flightKey(plan) == key else { return }
             notams = found.value; notamsAt = found.keptAt ?? Date(); notamsFor = key; notamsProblem = nil
         } catch {

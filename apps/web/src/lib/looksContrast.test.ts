@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { contrast, lookTokens, over, parseColour, type Linear, type Look } from "./contrast";
+import { wcagContrast as contrast, type Color } from "culori";
+import { lookTokens, over, parseColour, type Look } from "./contrast";
 import { CATEGORY, CATEGORY_CHIP } from "./tokens";
 
 /**
@@ -54,7 +55,7 @@ const heldTo = (look: string, a: string, b: string, ratio: number, least: number
   return known === undefined ? { got: Math.min(ratio, least), want: least } : { got: Math.round(ratio * 100) / 100, want: known };
 };
 
-const colour = (v: string | undefined, what: string): Linear => {
+const colour = (v: string | undefined, what: string): Color => {
   const c = v === undefined ? null : parseColour(v);
   if (!c) throw new Error(`${what} is not a colour: ${v}`);
   return c;

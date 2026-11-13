@@ -5,6 +5,7 @@ use super::ask::{Advisory, Airspace, Report, Station};
 use super::grid::{Grid, PER_CELL};
 use super::words::g;
 use crate::geo;
+use wingtip_core::grid::{flat_bearing, STEPS};
 use wingtip_flight::{flight, limits, vfr};
 use wingtip_weather::forecast::field::TAF_VICINITY_NM;
 use wingtip_weather::metar;
@@ -22,7 +23,7 @@ pub const COARSE_MARGIN_FT: f64 = 1000.0;
 /// radar to tell which.
 pub const STORM_NM: f64 = 20.0;
 /// How far round a field under minimums its report or forecast closes the
-/// grid: a TAF is for 5 sm of the airport (AC 00-45H, NWSI 10-813), and
+/// grid: a TAF is for 5 sm of the airport (FAA-H-8083-28B 27.4.1, NWSI 10-813), and
 /// route options keep out to its vicinity, 10 sm (8.7 nm), twice that --
 /// the planner's choice, narrower than the 25 nm a field's brief reads a
 /// TAF from (TAF_REACH_NM), as closing cells that far round every low
@@ -52,8 +53,10 @@ pub const GAIRMET_SNAPSHOT_S: f64 = 90.0 * 60.0;
 /// a share of a cell's minutes, for every way: their times of use are not
 /// read here, so they are gone round where it costs little, not closed.
 pub const SPECIAL_USE_COST: f64 = 0.5;
-/// The margin kept from a prohibited area or a TFR, degrees: a mile.
-pub const AIRSPACE_MARGIN_DEG: f64 = 1.0 / 60.0;
+/// The margin kept from a prohibited area or a TFR, nm: the planner's own,
+/// not the FAA's -- 14 CFR 91.133(a) and 91.137 to 91.145 bar flying
+/// "within" the area and set no distance outside it; a mile keeps off the edge.
+pub const AIRSPACE_MARGIN_NM: f64 = 1.0;
 /// The airplane is taken to climb to cruise from no lower than this, ft:
 /// the planner's own figure, the lowest a cross-country is flown over
 /// level ground (91.119(c)'s 500 ft and the altitudes the plan picks).
@@ -62,13 +65,6 @@ pub const LOWEST_CRUISE_FT: f64 = 2500.0;
 /// is not to be had (AIM 7-1-6) -- and those that mark them marginal.
 pub const GAIRMET_CLOSES: [&str; 2] = ["IFR conditions", "Mountains obscured"];
 pub const GAIRMET_MARKS: [&str; 3] = ["Turbulence", "Icing", "Low-level wind shear"];
-
-/// The eight ways out of a cell: (rows, columns).
-pub const STEPS: [(i64, i64); 8] = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)];
-
-pub fn step_index(dr: i64, dc: i64) -> usize {
-    STEPS.iter().position(|&s| s == (dr, dc)).unwrap_or(0)
-}
 
 /// The highest VFR cruising altitude the airplane reaches either way:
 /// 91.159's odd thousands plus 500 eastbound, even westbound, under its
@@ -202,20 +198,7 @@ pub fn weather(grid: &mut Grid, tafs: &[Report], metars: &[Report], leave_s: f64
 
 /// Python's f"{int(x):,}": the whole number with commas.
 fn thousands(x: f64) -> String {
-    let n = x.trunc() as i64;
-    let digits = n.unsigned_abs().to_string();
-    let mut out = String::new();
-    for (i, ch) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i).is_multiple_of(3) {
-            out.push(',');
-        }
-        out.push(ch);
-    }
-    if n < 0 {
-        format!("-{out}")
-    } else {
-        out
-    }
+    wingtip_core::text::grouped_int(x.trunc() as i64)
 }
 
 fn field_weather(grid: &mut Grid, r: &Report, min_ceiling_ft: f64, min_visibility_sm: f64, how: &str) {
@@ -236,7 +219,7 @@ fn field_weather(grid: &mut Grid, r: &Report, min_ceiling_ft: f64, min_visibilit
         grid.close(&at, "weather", &format!("{} {how} under minimums ({words})", r.ident));
         return;
     }
-    // Marginal: a flight category worse than VFR (AC 00-45H, AIM 7-1-7:
+    // Marginal: a flight category worse than VFR (FAA-H-8083-28B 3.4.2.14, AIM 7-1-7:
     // MVFR is a ceiling of 1,000 to 3,000 ft and/or visibility 3 to 5
     // miles, inclusive; metar.rs). A ceiling of unknown height could be
     // any: marked, as a pilot is warned and never stopped by the planner,
@@ -266,14 +249,12 @@ pub fn sigmets(grid: &mut Grid, advisories: &[Advisory], window: (f64, f64)) {
         let hazard = a.hazard.to_uppercase();
         let raw: String = a.raw.split('\n').next().unwrap_or("").chars().take(60).collect::<String>().trim().to_owned();
         if hazard.starts_with("CONVECTIVE") {
-            // AIM 7-1-27's 20 nm every way: the area's longitudes scaled to
-            // miles at its centre, where degrees alone gave 15 nm east and
-            // west at 40 N (the aviation check, 2026-10-27).
-            let k = a.area.centroid().0.to_radians().cos().max(0.05);
-            let at = grid.in_area(&a.area, STORM_NM / 60.0, k);
+            // AIM 7-1-27's 20 nm every way, in miles at each cell (in_area):
+            // degrees alone gave 15 nm east and west at 40 N (2026-10-27).
+            let at = grid.in_area(&a.area, STORM_NM);
             grid.close(&at, "storm", format!("Convective SIGMET {raw}").trim());
         } else {
-            let at = grid.in_area(&a.area, 0.0, 1.0);
+            let at = grid.in_area(&a.area, 0.0);
             let what = if hazard.is_empty() { "a hazard".to_owned() } else { hazard.to_lowercase() };
             grid.close(&at, "sigmet", format!("SIGMET for {what} {raw}").trim());
         }
@@ -299,7 +280,7 @@ pub fn gairmets(grid: &mut Grid, advisories: &[Advisory], window: (f64, f64), to
         if hazard == "Icing" && a.altitude_low_ft.is_some_and(|low| low >= top_ft) {
             continue;
         }
-        let at = grid.in_area(&a.area, 0.0, 1.0);
+        let at = grid.in_area(&a.area, 0.0);
         // "IFR conditions" as it is, "mountains obscured" in the line.
         let words = if hazard.chars().take(2).all(|c| c.is_uppercase()) {
             hazard.to_owned()
@@ -322,11 +303,11 @@ pub fn special_use(grid: &mut Grid, areas: &[Airspace]) {
     for a in areas {
         match a.kind.as_str() {
             "P" => {
-                let at = grid.in_area(&a.area, AIRSPACE_MARGIN_DEG, 1.0);
+                let at = grid.in_area(&a.area, AIRSPACE_MARGIN_NM);
                 grid.close(&at, "prohibited", &format!("Prohibited area {}", a.name));
             }
             "R" | "MOA" | "W" | "A" => {
-                for i in grid.in_area(&a.area, 0.0, 1.0) {
+                for i in grid.in_area(&a.area, 0.0) {
                     grid.dear[i] = grid.dear[i].max(SPECIAL_USE_COST);
                 }
             }
@@ -339,7 +320,7 @@ pub fn special_use(grid: &mut Grid, areas: &[Airspace]) {
 /// planner's pick of them, closed a mile round.
 pub fn tfrs(grid: &mut Grid, tfrs: &[Airspace]) {
     for t in tfrs {
-        let at = grid.in_area(&t.area, AIRSPACE_MARGIN_DEG, 1.0);
+        let at = grid.in_area(&t.area, AIRSPACE_MARGIN_NM);
         grid.close(&at, "tfr", format!("TFR {} {}", t.kind, t.name).trim());
     }
 }
@@ -363,7 +344,7 @@ pub fn groundspeeds(grid: &Grid, stations: &[Station], altitudes: &[f64], tas_kt
         let ways: Vec<(f64, bool)> = STEPS
             .iter()
             .map(|&(dr, dc)| {
-                let course = geo::py_mod((dc as f64 * lat.to_radians().cos()).atan2(dr as f64).to_degrees(), 360.0);
+                let course = geo::py_mod(flat_bearing(lat, dr as f64, dc as f64).to_degrees(), 360.0);
                 (course, flight::is_eastbound(geo::py_mod(course - variation_deg, 360.0)))
             })
             .collect();

@@ -11,18 +11,23 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
 
 - `apps/android/`: a Gradle project of one module, `app`, in the Kotlin DSL,
   every version in the catalog `gradle/libs.versions.toml`, on Gradle
-  9.9.1 and AGP 9.5.1, whose built-in Kotlin compiles the app (no Kotlin
+  9.9.1 and AGP 9.6.0-alpha03, whose built-in Kotlin compiles the app (no Kotlin
   Android plugin), for API 37 (compiled against 37.2, the newest minor SDK), on Java 25 (the gateway's LTS): Gradle
   runs on the Temurin 25 that `gradle/gradle-daemon-jvm.properties`
   names, fetched once into `~/.gradle/jdks` by the foojay resolver, and
-  the app compiles to Java 25 bytecode, which AGP 9.5's D8 dexes. Every
+  the app compiles to Java 25 bytecode, which AGP 9.6's D8 dexes. Every
   Kotlin and lint warning fails the build, as a Gradle deprecation does
   (`org.gradle.warning.mode=fail`).
-- `app/src/main/cpp`: the JNI shim round the engine, in C
-  (`wingtip_jni.c`), and the CMake file that links the engine's static
-  library for each ABI. The engine itself is built by
-  `engine/bindings/ffi/build-android.sh` into `app/engine/` (not committed; the
-  twin of `build-xcframework.sh`). It uses the NDK `.tool-versions`
+- `app/engine/` (not committed): the engine, built by
+  `engine/bindings/ffi/build-android.sh` (the twin of
+  `build-xcframework.sh`) as a shared library for each ABI
+  (`jniLibs/<abi>/libwingtip_ffi.so`), and the Kotlin UniFFI's
+  uniffi-bindgen writes from it (`generated/`, package
+  `app.wingtipmaps.android.engine.ffi`), which loads it through JNA
+  (`net.java.dev.jna:jna`'s Android archive). Nothing between the Rust
+  and the Kotlin is written by hand: the Rust's `#[uniffi::export]`
+  functions (`engine/bindings/ffi/src/lib.rs`) are the one source, and
+  both are generated again with every build of the engine. It uses the NDK `.tool-versions`
   names (`android-ndk`), the app's `ndkVersion` too: r30, which GitHub's
   ubuntu-26.04 image has installed, so CI downloads no NDK. On a Mac,
   install that version once (Android Studio's SDK Manager, SDK Tools, NDK
@@ -30,10 +35,12 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
   and rustup's cargo when the shell's PATH lacks it.
 - `app/src/main/kotlin/app/wingtipmaps/android`:
   - `engine/Engine.kt`: the engine's one way in, `Engine.call(name,
-    input)` (`wt_call`), with `EngineException` for the engine's own
-    words when it refuses;
+    input)` (the generated `engine.ffi.call`), with `EngineException`
+    for the engine's own words when it refuses;
   - `api/`: the data layer. `Gateway` (the session's cookies, kept by
-    `CookieStore`; the CSRF header; a cache the servers' Cache-Control
+    `CookieStore` on `SealedShelf`, encrypted under an Android Keystore
+    AES-GCM key, since androidx.security's EncryptedSharedPreferences is
+    deprecated; the CSRF header; a cache the servers' Cache-Control
     fills), `Planner` (the planner through the gateway's proxy),
     `Models.kt` (the answers' shapes, in the document's names through
     `@SerialName`: most are typealiases of `api/generated`, which
@@ -46,13 +53,15 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     what the planner said of it), and `Links` (the site's links the app
     opens);
   - `tiles/TileTemplate.kt`: the tile address, the web app's and the iOS
-    app's;
+    app's; `tiles/TileGrid.kt` the tile a point lies in, the app's one copy
+    of the Web Mercator maths, clamped at MapLibre's own limits;
   - `map/`: the map. `ChartMap` (the MapLibre view, its camera, the
     route, own ship and the path flown), `MapStyle` (the first style as
     JSON: the chart and the overlay tiles' layers, the web's
     `glStyle.ts` and `glOverlays.ts`), `OverlayPictures` (the symbols'
-    pictures, drawn with Canvas) and `MapLoading` (Material's loading
-    indicator until the map is drawn);
+    pictures, drawn with Canvas), `MapLoading` (Material's loading
+    indicator until the map is drawn), `Map3dLayer` (Terrain: the relief
+    and the 3D view) and `map/flow` (Model Weather);
   - `ui/`: Material 3 screens, one composable and one ViewModel per
     screen. `RootScreen` (the map, `MapPane`, under the docked sheet, whose
     first row is the one search, Material's `SearchBar`, with its mic and
@@ -198,10 +207,15 @@ and `glOverlays.ts`):
   own symbol, or ForeFlight's dot in its place (`AirportWeatherMarks`,
   part of the symbol's picture, so give-way hides it with the field).
   Over it, MapLibre symbol layers (`StationLayer`): the station model's
-  barb (`wind_barb`) and its visibility and ceiling lines from Leaflet's
-  zoom 10, the wind arrow at any zoom (`wind_arrow`, red past the picked
-  airplane's demonstrated crosswind on the field's least-crosswind
-  runway, the planner's `least_crosswind`), and the amber ↓ at the
+  barb (`wind_barb`, calm under 3 kt) for every reported wind and its
+  visibility and ceiling lines from Leaflet's zoom 10; farther out, from
+  zoom 6, the barb only where the engine's `wind_arrow` earns one (10 kt
+  or more, or gusting), smaller out there and giving way to one another,
+  as the web's `AirportWeatherGl` (the owner, 2026-11-12: barbs as the
+  Aviation Weather Center's map draws them, in place of arrows); "VRB05"
+  for a variable wind no barb can point; red past the picked airplane's
+  demonstrated crosswind on the field's least-crosswind runway (the
+  planner's `least_crosswind`) at every zoom; and the amber ↓ at the
   plan's fields whose TAF at the ETA is worse than the METAR now
   (`weather_worse` over `/api/briefing`'s forecast stations,
   `RouteWorse`). Settings' Map section sets it (`AirportWeatherStore`):
@@ -231,14 +245,17 @@ and `glOverlays.ts`):
   archive (about 120 MB a cycle, carrying on where a fetch stopped), and
   every range is answered from it. The archive's name changes with each
   build, so nothing kept goes stale; another name's files are dropped.
-- **Close in, the street map**: from MapLibre zoom 12 to 13 Google's road
-  map (the Map Tiles API) fades in over the chart under the runways, and
-  the map may go to 17 (`CloseMap`, the web's `CloseBase`), with the
-  deployment's key from `/api/map/google`. No key is set today
-  (`GOOGLE_MAPS_API_KEY` is empty), so, as on the web, the chart stays,
-  enlarged. The key is a browser key; for the phone it must also allow
-  this app (an Android restriction by package and signing certificate,
-  which `CloseMap.signer` sends as `X-Android-Package` and `X-Android-Cert`).
+- **Close in, the USGS's aerial imagery**: past the chart's own detail
+  the chart fades out over one level from its tiles' last zoom (the
+  sectional's 12, MapLibre's 11 to 12) and the USGS's public-domain
+  imagery under it (The National Map's USGSImageryOnly, tiles to {z} 16,
+  a MapLibre `RasterSource`) fades in over the half level before, so the
+  chart never fades over nothing; the map may go to 17 (`CloseMap`, the
+  web's `lib/map/gl/closeZoom`). No key and no session. Its credit,
+  "Imagery USGS The National Map", is About's (USGS The National Map
+  imagery), not the map's. Google's road map is the web's overlay only;
+  the phone no longer asks for it. With no signal the imagery is only
+  what MapLibre's cache kept.
 - **Traffic** is drawn as on the web (`TrafficDrawing`, the traffic
   layers in the first style): the chevron turned to its track, amber
   where the engine's `traffic_marks` says it is near and cyan otherwise,
@@ -247,6 +264,64 @@ and `glOverlays.ts`):
   a step a second between answers; own ship's own transponder left off
   (the engine's `own_ship_hex`). A tap opens its card, with Track, which
   rings it on the map.
+- **Terrain and 3D** (`Map3dLayer`, `MapTerrain`, the web's
+  `features/plan/map/terrain`): Map Settings' Terrain is a segmented
+  choice, Off, Relief or 3D. Relief shades the planner's terrain tiles
+  (`/api/terrain-tile`, terrarium, to {z} 13, a `RasterDemSource`) over
+  the chart with a `HillshadeLayer`, lit from the north-west as the
+  web's. 3D adds the relief, lets the map tilt (to 60 degrees, opening at
+  50) and turn, and stands up the Class B, C, D and surface E and the
+  special use areas in view as see-through `FillExtrusionLayer`s, one a
+  kind, from the planner's whole polygons (`/api/airspace/volumes`,
+  `AirspaceVolumes3d`), and drapes the way in to the open card's field or
+  the route's destination (the engine's `approach_scene`,
+  `ApproachScene3d`: the centrelines dashed, the glidepaths, the
+  approach's line and the pattern's ring). Flat and north up again after.
+- **What MapLibre Native can't do yet** (13.7.1, the newest stable on
+  2026-11-12; the `-globe` pre-releases add only the globe): no 3D
+  terrain (no `terrain` in the style or `setTerrain`; MapLibre's
+  `feature/terrain-3d` branch is a prototype), so the ground is not
+  raised and the volumes stand on a sea-level map, MSL figures as they
+  are, and a volume whose floor or top is above the ground (AGL, or SFC
+  with a figure) is left out, as the web leaves one out until its ground
+  is in; no `sky` or fog; no `raster-color`; no `line-z-offset`, so the
+  route and the approach are draped, not drawn at their altitudes; no
+  `symbol-height-offset`, so the traffic keeps its 2D marks and "+12"
+  tags on the ground and the special use areas' names stay the chart's
+  tabs; a maximum pitch of 60 (GL JS's 75); `fill-extrusion-opacity` is a
+  layer's alone, so each kind is its own layer, and an extrusion layer
+  draws its own nearest walls over its farther ones (the web's
+  `depthWriteEnabled: false` has no counterpart), so two volumes of one
+  kind are not seen through each other. It does draw `hillshade` and
+  `color-relief`, but the terrain clearance tint needs each terrain tile
+  rewritten against the plan (the web's `addProtocol`), which MapLibre
+  Native has no hook for; it is not drawn. The volumes' taps open nothing
+  of their own: their lines on the chart open the card as before.
+- **Model Weather** (`map/flow`, the web's `features/weather-flow`): Map
+  Settings' Weather has Model Weather, a menu of the web's twelve fields.
+  `ModelWeather` holds the planner's timeline (`/api/weather/flow`, every
+  ten minutes), the hour shown, play (once through, stopping on the last,
+  never with animations off, paused in the background), the wind level
+  and the precipitation's 1h | 12h span. `ModelWeatherLayer` fetches the
+  hour's picture at its version, decodes it (`FlowGrid`: red the value
+  between the field's `unscale`, the wind's east part in red and north in
+  green, alpha 0 none), colours it on the phone by the field's ramp
+  (`FlowLooks`, from the engine's `model_weather_bands` and
+  `aviation_grid_bands` and the tokens' `color.weather.flow-*`) into a
+  picture of the Web Mercator plane (`Painted`: the grid is equal-degree,
+  and MapLibre's `ImageSource` stretches between corners on the Mercator
+  plane), and lays it under the route at the field's cover; the radar's
+  mosaic in its place on the 1h span for an hour past; and the hour's
+  G-AIRMETs, dashed, with the engine's `gairmet_hazards` labels.
+  `ModelWeatherBar` is Material 3 Expressive's floating toolbar (Play,
+  the hour's `Slider`, the 1h | 12h `SegmentedButton`), a legend `Card`
+  (unit, ramp, marks, the level's `ExposedDropdownMenu`, "AWC winds,
+  12Z"), and the value where a tap found nothing else (`FlowReading`,
+  its words the engine's). No streaks. Unlike the web's bubble, the
+  reading is a card under the legend rather than a badge on the map, the
+  precipitation's reading has no temperature or sky glyph, and the wind
+  at a level no temperature; the world wind's picture beyond the grid is
+  not drawn.
 
 ## Downloads: the chart with no signal
 
@@ -272,6 +347,38 @@ the terminal switch as the style is built. The style is built again as
 a download lands. The cycle's update, its expiry at 0901Z on the next
 one's date and the sweep once the update is whole are the iPhone's.
 
+With no signal in the air (the offline audit of 2026-11-10): Emergency
+and Nearest rank the packs' fields on the phone (`emergency/PhoneFields`,
+"From this phone, without weather"); a re-plan that fails puts the last
+whole plan back, saying "Not changed: no connection."
+(`plan/PlanShown`); Keep for the Air also keeps each field's own NOTAMs,
+the route's side view and the radar loop's newest frame over the route
+within 12 MB (`offline/KeptLoopTiles`, answered by the client's
+`LoopTileFallback`); Ask's tools read those copies; a stale airport
+weather mark is greyed with its age said (`map/WeatherAge`); and every
+call through `Gateway.client` ends after 10 s (60 s a write), streams and
+downloads going through `Gateway.streaming`. The location foreground
+service runs only from the pilot's Start Flight
+(`flight/StartFlight`), and sign-out or Delete Account forgets everything
+the phone kept of the pilot (`account/PhoneWipe`).
+
+## Signing in from a link: whose account it is
+
+An emailed sign-in link names no account, and anyone can mail a pilot a
+link to their own (the security audit's M1 and L1, 2026-11-10). Before the
+app spends a link's token, it asks the gateway whose it is and shows it on
+its confirmation sheet ("Sign in as a•••@icloud.com?"):
+
+- `POST /api/auth/magic-link/account`, form body `token=<the link's
+  token>`, with the session's CSRF header as for `/verify`.
+- `200 {"email": "a•••@icloud.com"}`: the link can still sign in, to that
+  address (its first letter and its domain). Nothing is spent; the token
+  still signs in once, by `POST /api/auth/magic-link/verify`.
+- `404`, no body: used, expired or unknown, all alike. Say the link has
+  expired and offer a new one; don't offer Sign in.
+- `429`: 30 asks an hour from one address; say so and let the pilot try
+  later.
+
 ## Building
 
 The owner's Mac has no Java, Gradle, Android SDK or cargo, so everything
@@ -286,14 +393,30 @@ runner:
 - a push to `main` or to a `claude/native-*` branch: the same and
   `assembleDebug`, the APK kept with the run (`wingtip-native-debug-apk`:
   it installs on any Android phone with "Install unknown apps" allowed);
+  on `main`'s pushes and the night, `assembleRelease` and `bundleRelease`
+  too, the App Bundle and R8's mapping file kept 90 days
+  (`wingtip-native-release`; the mapping to read a release build's crash
+  reports by), signed with the upload key where the repository has it,
+  and every 64-bit native library checked for 16 KB pages
+  (`scripts/ci/android_build.sh`, `scripts/ci/android_16k.py`; below);
 - every night, and by hand: then `:app:connectedDebugAndroidTest` on an
   API 35 x86_64 emulator (reactivecircus/android-emulator-runner), and
   the release build's `ReleaseEngineTest` (below).
-- No Google Play lane yet: the shell's (android.yml) stays until the
-  gates.
+- No upload to Google Play from CI: the bundle is uploaded by hand
+  (Releasing to Google Play, below).
 
 `WINGTIP_HOST` is the build's host (the repo variable `WINGTIP_URL`'s);
 it is the gateway's address and the App Links domain in the manifest.
+The emailed sign-in link is followed only as `https` on that host
+(`Links.parse`), since any app can send MainActivity a link, and only after
+the pilot's yes in a stock alert naming the account the link is for, as
+the gateway says without spending it (`POST /api/auth/magic-link/account`,
+above: "Sign in as a•••@icloud.com?"), and the account it would sign out
+of (`SignInDialog`, `SignInAsk`; the security audit's M1, 2026-11-10).
+Sign In waits for that answer; a used or expired link (404) offers a new
+link to the address this phone asked for in its place, a 429 says to try
+later, and with the gateway out of reach the alert names the address
+asked for, as before.
 `ANDROID_NATIVE_APP_ID` would be the package name, once there is a Play
 lane for it.
 
@@ -310,11 +433,10 @@ App Bundle sends a phone one ABI's.
 
 - **Keep rules.** Each library brings its own (kotlinx.serialization's
   in its jar, Room 3, AppFunctions, MapLibre, OkHttp, WorkManager, ML
-  Kit), and the stock file keeps every class with a native method under
-  its name with those methods, which is how JNI finds `Engine.callNative`
-  and the `Packs` functions. `app/proguard-rules.pro` adds the one thing
-  only this app knows: the shim throws `EngineException` by its class
-  name through its `String` constructor.
+  Kit). JNA's Android archive brings none, so `app/proguard-rules.pro`
+  holds the rules UniFFI's manual gives: JNA's classes, the `Library`
+  interface and `Structure`s it finds by name, and the engine's generated
+  package, kept whole.
 - **Baseline Profile.** The stock `androidx.baselineprofile` plugin, with
   a generator module, `:baselineprofile` (Google's template: a
   `com.android.test` module driving the app's `benchmarkRelease` build
@@ -342,13 +464,60 @@ App Bundle sends a phone one ABI's.
 - **The engine in the release build.** `ReleaseEngineTest`, on CI's
   nightly emulator, starts the `benchmarkRelease` build (R8 and the
   release's rules, signed with the debug key) and lets the map settle:
-  its first rest asks the engine `distance_nm` through the JNI shim, so a
-  renamed native method, a dropped `EngineException` constructor or a
+  its first rest asks the engine `distance_nm` through the generated
+  bindings, so a JNA interface or `Structure` R8 renamed or a
   stripped serializer shows as an "engine ... failed" line in the log,
   or a crash. The debug build's `EngineTest` holds the rules themselves
   to the shared fixtures.
-- There is no release signing yet (no Play lane): `assembleRelease`
-  writes an unsigned APK.
+- **Signing.** The release is signed with the upload key when
+  `WINGTIP_UPLOAD_KEYSTORE` (a keystore file) and
+  `WINGTIP_UPLOAD_PASSWORD` are set (`app/build.gradle.kts`, the
+  `upload` signing config; the key's alias `upload` unless
+  `WINGTIP_UPLOAD_ALIAS` says otherwise), and unsigned without them. CI
+  sets them from the repository's secrets on `main`'s pushes and the
+  night only.
+- **16 KB pages.** Google Play: "Starting February 1, 2027, if your app
+  updates don't support 16 KB memory page sizes, you won't be able to
+  release these updates"
+  (developer.android.com/guide/practices/page-sizes). NDK r30 links at
+  16 KB by default and AGP 9.5 stores the libraries uncompressed and 16
+  KB aligned; `scripts/ci/android_16k.py` proves it on every release
+  build, reading each `arm64-v8a` and `x86_64` library's PT_LOAD
+  alignment in the APK and the bundle and each stored library's offset
+  in the APK (what `zipalign -c -P 16` checks). The 32-bit
+  `armeabi-v7a` is outside the rule and only listed.
+
+## Releasing to Google Play
+
+New apps on Play upload an Android App Bundle signed with an upload
+key, and Play signs what it serves with an app-signing key it keeps
+(Play App Signing, support.google.com/googleplay/android-developer/answer/9842756).
+The owner's steps, once:
+
+1. **Make the upload key** (it is not the app-signing key, and can be
+   reset through Play if lost):
+   `keytool -genkeypair -v -keystore upload.jks -alias upload -keyalg RSA -keysize 4096 -validity 10000`,
+   one password for the store and the key.
+2. **Give it to CI:** the repository's secrets `ANDROID_UPLOAD_KEYSTORE`
+   (`base64 -i upload.jks | pbcopy`) and `ANDROID_UPLOAD_PASSWORD`. Keep
+   `upload.jks` and the password outside the repository.
+3. **Create the app in the Play Console** and pick the package name for
+   good (`ANDROID_NATIVE_APP_ID`, `app.wingtipmaps.android.native` by
+   default; docs/store/listing.md): Play never lets it change.
+4. **Upload the first bundle** (`wingtip-native-release` from a `main`
+   run, `app-release.aab`) to internal testing. Play App Signing is on
+   for a new app: let Google generate the app-signing key. A new
+   personal developer account then runs a closed test with at least 12
+   testers for 14 days before production.
+5. **Restrict the Google Maps key** (`GOOGLE_MAPS_ANDROID_KEY`) to the
+   package name and the SHA-256 of Play's app-signing certificate (Play
+   Console › Test and release › App integrity), as well as the upload
+   key's for builds installed outside Play.
+6. **Each release:** raise `ANDROID_VERSION_CODE` above the last
+   upload's (the workflow passes none yet, so set it for the run, or in
+   `app/build.gradle.kts`), take the bundle from that run, and upload it.
+   The foreground-service declarations and the Data safety form are in
+   docs/store (foreground-services.md, privacy-labels.md).
 
 ## The flight pieces, and what is still to come
 
@@ -358,8 +527,7 @@ fused location provider, kept going in the air by a foreground service
 of the location type with Android's persistent notification; the path
 flown (OwnTrail); the airplane tracked and its watches (Tracking,
 Traffic); the cycle packs on the device and the engine's in-view readers
-through JNI entries appended to the shim (Packs.kt, CyclePacks,
-InView); the pilot's records in Room 3 (androidx.room3, over the
+through the generated UniFFI Kotlin (Packs.kt, CyclePacks, InView); the pilot's records in Room 3 (androidx.room3, over the
 framework's SQLite driver); and notification channels. The
 map draws own ship as the blue dot and the path under the route, with
 the location button over the map (`ui/MapButtons`) as Apple Maps has

@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { openPanel, settled, showTabs, sideDrawer } from "./helpers";
+import { grabberTo, openPanel, settled, sheetUpToType, showTabs, sideDrawer } from "./helpers";
 
 /**
  * The one search's ways round the sheet (the owner's one-search design,
@@ -15,15 +15,28 @@ export const firstRow = (page: Page) =>
     .getByRole("search")
     .filter({ has: page.getByTestId("search-airports") });
 
-/** The plan in sight under the one search (the sheet's main content with a
- *  route): the search's Your Flight card tapped where the search's own
- *  page is up, or its Cancel where the field is in use. */
+/** One of the sheet's two pages up, by the round toggle riding the
+ *  sheet's top (PageToggle; the owner, 2026-11-13): 0 Search, 1 FPL. The
+ *  toggle shows the page it goes to, so it is tapped only while it shows
+ *  `at`. */
+export async function showPage(page: Page, at: 0 | 1) {
+  const toggle = page.getByTestId("sheet-page-toggle");
+  if ((await toggle.count()) === 0 || (await toggle.getAttribute("data-shows")) !== String(at)) return;
+  // All the way up on a phone the map's buttons give way (index.css), the
+  // toggle with them: down to half first, as a pilot would.
+  if ((await page.locator('body[data-map-sheet][data-map-panel="full"]').count()) > 0) await grabberTo(page, "half");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("data-shows", String(at === 0 ? 1 : 0));
+  await expect(sideDrawer(page).getByTestId("sheet-pages")).toHaveAttribute("data-page", String(at));
+}
+
+/** The plan in sight (FPL, the sheet's second page): its Cancel first
+ *  where the field is in use, then FPL's tab. */
 export async function showPlan(page: Page) {
   await showTabs(page);
   const cancel = page.getByTestId("one-search-cancel");
   if (await cancel.isVisible()) await cancel.click();
-  const card = sideDrawer(page).getByTestId("flight-summary").or(sideDrawer(page).getByTestId("flight-summary-new"));
-  if (await card.isVisible()) await card.click();
+  await showPage(page, 1);
 }
 
 /** The one search's own page (nothing typed): the flight, Favorites,
@@ -31,6 +44,8 @@ export async function showPlan(page: Page) {
  *  were -- by a tap on the field. */
 export async function showSearch(page: Page) {
   await showTabs(page);
+  await showPage(page, 0);
+  await sheetUpToType(page);
   await page.getByTestId("search-airports").click();
   await expect(sideDrawer(page).getByTestId("search-home")).toBeVisible();
 }
@@ -39,15 +54,17 @@ export async function showSearch(page: Page) {
  *  Do, Traffic Nearby. */
 export async function showTraffic(page: Page) {
   await showTabs(page);
+  await showPage(page, 0);
+  await sheetUpToType(page);
   await page.getByTestId("search-airports").fill("traffic");
   await sideDrawer(page).getByTestId("search-do-traffic").click();
 }
 
-/** The plan's empty box, with no route, from the one search's own page
- *  (its Plan a Flight): with no route the sheet opens on the search. */
+/** The plan's empty box, with no route, by FPL's tab: with
+ *  no route the sheet opens on the search, whose Plan a Flight went
+ *  (3eb6e1417). */
 export async function planFromSearch(page: Page) {
-  const start = sideDrawer(page).getByTestId("flight-summary-new");
-  if (await start.isVisible()) await start.click();
+  await showPage(page, 1);
 }
 
 /** The sheet half way on the plan's empty box, as a fresh load with no
@@ -66,3 +83,29 @@ export const searchAirports = (page: Page) =>
   sideDrawer(page)
     .getByRole("group", { name: /^(Top Hit|Airports)$/ })
     .getByTestId("airport-result");
+
+/** The account's home base kept to this page. Signed in, Home is the
+ *  account's (lib/homeAirport, PUT /api/me/contact) and the suite shares
+ *  one account: a spec that sets Home -- from Favorites, or a link's
+ *  `home=` -- would otherwise set it for every spec after it (Fly Here
+ *  then flew from it). The account's own answer, its home base `home`
+ *  (none by default) at first, and what the page writes kept here. */
+export async function ownHomeBase(page: Page, home: string | null = null) {
+  let me: Record<string, unknown> | null = null;
+  await page.route(
+    (url) => url.pathname === "/api/me",
+    async (route) => {
+      const answer = await route.fetch();
+      me ??= { ...((await answer.json()) as Record<string, unknown>), homeBase: home };
+      await route.fulfill({ response: answer, json: me });
+    },
+  );
+  await page.route(
+    (url) => url.pathname === "/api/me/contact",
+    async (route) => {
+      const { homeBase } = route.request().postDataJSON() as { homeBase: string };
+      me = { ...me, homeBase: homeBase.trim().toUpperCase() || null };
+      await route.fulfill({ json: me });
+    },
+  );
+}

@@ -25,12 +25,35 @@ AIRPLANE_FIELDS = (
     "cruisePowerPct",
     "climbTasKt",
     "climbFuelBurnGph",
+    "descentIasKt",
+    "descentFuelBurnGph",
     "usableFuelGal",
     "equipment",
     "surveillance",
     "inspections",
     "openSquawks",
     "figures",
+)
+#: What my_flights gives of a saved flight: the route summary a pilot
+#: expects an AI app to read, and no more. The flight's notes, its risk
+#: assessment, its share link and the picks it was planned with stay in
+#: the app: notes are free text the pilot wrote for themself, and the risk
+#: factors can name their health or currency, which connecting an app to
+#: read "saved flights" did not agree to (docs/privacy-inventory.md, "AI
+#: apps"). An allowlist, so a field the gateway adds later is not given.
+FLIGHT_FIELDS = (
+    "id",
+    "name",
+    "departureIdent",
+    "destinationIdent",
+    "stops",
+    "aircraftTailNumber",
+    "cruiseAltitudeFt",
+    "totalDistanceNm",
+    "totalEteMin",
+    "totalFuelGal",
+    "plannedFor",
+    "createdAt",
 )
 ACCOUNT_SOURCE = {"source": "The pilot's own Wingtip account, as they entered it"}
 
@@ -69,8 +92,8 @@ def register(server: MCPServer) -> None:
 
     @server.tool(
         name="my_flights",
-        description="The flights the signed-in pilot saved in Wingtip, newest first: route, airplane, cruise altitude, "
-        "distance, time and fuel, when planned for, the risk assessment saved with it, its name and notes.",
+        description="The flights the signed-in pilot saved in Wingtip, newest first, as a route summary: its name, "
+        "route, airplane, cruise altitude, distance, time and fuel, and when planned for. Not its notes or risk assessment.",
         title="My saved flights",
         annotations=read_only("My saved flights"),
         meta=READS,
@@ -78,7 +101,7 @@ def register(server: MCPServer) -> None:
     async def my_flights(limit: Annotated[int, Field(ge=1, le=50, description="How many, newest first, 1 to 50.")] = 10) -> dict[str, Any]:
         who = pilot()
         theirs = (await records.flights(who))[:limit]
-        return {"flights": [{k: v for k, v in f.items() if v is not None and k != "share"} for f in theirs], "sources": [ACCOUNT_SOURCE]}
+        return {"flights": [{k: f[k] for k in FLIGHT_FIELDS if f.get(k) is not None} for f in theirs], "sources": [ACCOUNT_SOURCE]}
 
     @server.tool(
         name="save_flight",

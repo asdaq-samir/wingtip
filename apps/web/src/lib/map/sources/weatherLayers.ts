@@ -2,13 +2,22 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 /** The winds aloft's altitude on the map: the plan's cruise, or one of
- *  the FD product's own (AC 00-45H: 3,000 to 39,000 ft), or none. */
+ *  the FD product's own (FAA-H-8083-28B 27.2.1.1.1: 3,000 to 39,000 ft), or none. */
 export type WindsAt = "off" | "plan" | 3000 | 6000 | 9000 | 12000 | 18000;
 
 /** The radar and satellite loop (features/weather-loop): off, the radar,
  *  the GOES infrared or visible picture, or the radar over the infrared
  *  (the owner's five, 2026-11-09). */
 export type LoopKind = "off" | "radar" | "ir" | "visible" | "both";
+
+/** The flow layer's field (features/weather-flow): a colour field of the
+ *  wind or gusts under the wind's streaks, or the precipitation, cloud,
+ *  ceiling, thunderstorm energy (CAPE), temperature, visibility, and the
+ *  Aviation Weather Center's icing, turbulence, freezing level and cloud
+ *  tops alone, Windy's and Apple Weather's map (the owner, 2026-11-11 and
+ *  2026-11-12), or off -- off by default, so it never fights the chart. */
+export type FlowField =
+  "off" | "wind" | "gust" | "precip" | "cloud" | "ceiling" | "cape" | "temp" | "vis" | "icing" | "turb" | "frzlvl" | "tops";
 
 /** How fast the loop plays: a menu, as a discrete setting is (the owner,
  *  2026-09-30), not a slider. */
@@ -31,12 +40,26 @@ interface WeatherLayers {
   areas: boolean;
   pireps: boolean;
   winds: WindsAt;
+  flow: FlowField;
+  /** The flow layer's level, by AWC's name ("sfc", "060", "max"): the
+   *  wind's, the icing's or the turbulence's, whichever is shown (a field
+   *  without the level falls back to its first). */
+  flowLevel: string;
   set: (patch: Partial<Omit<WeatherLayers, "set">>) => void;
 }
 
 export const useWeatherLayers = create<WeatherLayers>()(
-  persist((set) => ({ loop: "off", loopSpeed: "normal", areas: false, pireps: false, winds: "off", set: (patch) => set(patch) }), {
-    name: "wingtip.weatherLayers",
-    partialize: ({ set: _set, ...kept }) => kept,
-  }),
+  persist(
+    (set) => ({
+      loop: "off",
+      loopSpeed: "normal",
+      areas: false,
+      pireps: false,
+      winds: "off",
+      flow: "off",
+      flowLevel: "sfc",
+      set: (patch) => set(patch),
+    }),
+    { name: "wingtip.weatherLayers", partialize: ({ set: _set, ...kept }) => kept },
+  ),
 );

@@ -456,7 +456,7 @@ fn arrival(cs: &str, fields: &[Field], legs: &[Leg], i: usize) -> Phase {
             c.note = note.map(str::to_owned);
             c
         };
-        calls.push(say(format!("ten miles {from}, {altitude}, inbound for landing"), Some("About ten miles out (AC 90-66C 9.5).")));
+        calls.push(say(format!("ten miles {from}, {altitude}, inbound for landing"), Some("About ten miles out (AC 90-66C 10.4.1).")));
         calls.push(say(format!("entering the forty-five for {side} downwind {runway}"), None));
         calls.push(say(format!("{side} downwind {runway}"), None));
         calls.push(say(format!("{side} base {runway}"), None));

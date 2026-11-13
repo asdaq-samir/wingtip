@@ -10,6 +10,14 @@
 {$ORIGIN_HOST} {
 	encode zstd gzip
 
+	# The routes only the planner calls, over the compose network to the
+	# gateway's internal port (8081, InternalPortConfig); the gateway
+	# refuses them on 8080 too, and this keeps them off the internet
+	# whatever it does (the security audit's M2, 2026-11-10).
+	handle /internal/* {
+		respond "Not found" 404
+	}
+
 	@cloudfront header X-Origin-Secret {$ORIGIN_SECRET}
 	handle @cloudfront {
 		# The pilot's address is the last one in X-Forwarded-For: CloudFront
@@ -28,6 +36,14 @@
 			# not this origin's.
 			header_up X-Forwarded-Host {$PUBLIC_HOST}
 			header_up -X-Origin-Secret
+			# Spring reads RFC 7239's Forwarded ahead of X-Forwarded-Host
+			# (forward-headers-strategy: framework), and X-Forwarded-Prefix
+			# beside it: sent by a viewer, CloudFront passes them on, and
+			# they would change the host and path of every link the gateway
+			# builds (the share page's, the sign-in redirects'). Only the
+			# X-Forwarded-* set above reaches it (the security audit's L2).
+			header_up -Forwarded
+			header_up -X-Forwarded-Prefix
 		}
 	}
 

@@ -11,7 +11,7 @@ struct BriefLegsTests {
     private let utc = TimeZone(identifier: "UTC")!
 
     private func decode<T: Decodable>(_ type: T.Type, _ json: String) throws -> T {
-        try Planner.snakeCase.decode(T.self, from: Data(json.utf8))
+        try Planner.json.decode(T.self, from: Data(json.utf8))
     }
 
     private func on(legs: [Int] = [1, 2], enter: String = "2026-10-04T14:20:00Z", leave: String = "2026-10-04T14:45:00Z",

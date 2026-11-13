@@ -1,6 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
 import { settle, sideDrawer, slow, openBrief } from "./helpers";
-import { claudeFeatures } from "./claude";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -26,7 +25,6 @@ async function briefingAs(page: Page, change: (json: Record<string, unknown>) =>
 }
 
 test("the Brief opens on the verdict and at most three one-sentence lines, each unfolding to why it matters", async ({ page }) => {
-  await claudeFeatures(page); // Ask in its place, under the lines (./claude)
   await briefingAs(page, (json) => {
     // Every runway at C81 with 18 kt across, gusting 22: past the 15 kt
     // the C172's POH demonstrates (data/aircraft/c172.json).
@@ -75,8 +73,7 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   const count = await lines.count();
   expect(count).toBeGreaterThanOrEqual(1);
   expect(count).toBeLessThanOrEqual(3);
-  // Verdict first, its lines, then Ask straight under them (the owner,
-  // 2026-11-08: "Verdict first"; it opened on Ask, the FPL audit's A9).
+  // Verdict first, then its lines (the owner, 2026-11-08: "Verdict first").
   const top = async (id: string) => (await glance.getByTestId(id).first().boundingBox())!.y;
   expect(await top("brief-verdict")).toBeLessThan(
     await lines
@@ -84,12 +81,6 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
       .boundingBox()
       .then((b) => b!.y),
   );
-  expect(
-    await lines
-      .last()
-      .boundingBox()
-      .then((b) => b!.y),
-  ).toBeLessThan(await top("brief-ask"));
   for (const words of await glance.getByTestId("brief-line-words").allTextContents()) {
     expect(words.length).toBeLessThanOrEqual(140);
     expect(words).not.toMatch(/\. [A-Z]/);

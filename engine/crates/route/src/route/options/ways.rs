@@ -3,12 +3,12 @@
 //! what it meets along it.
 
 use super::grid::{Grid, CELL_DEG, PER_CELL};
-use super::read::{step_index, COARSE_MARGIN_FT, STEPS};
+use super::read::COARSE_MARGIN_FT;
 use super::words::r1;
 use crate::geo;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
-use wingtip_core::grid::{straightened as straighten_turns, Cell, Costs, Point, Straighten};
+use wingtip_core::grid::{straightened as straighten_turns, way_of, Cell, Costs, Point, Straighten, STEPS};
 
 fn costs<'a>(grid: &'a Grid, gs: &'a Vec<f64>) -> Costs<'a> {
     Costs::new(grid.rows, grid.cols, &grid.closed, &grid.marginal, &grid.dear, &grid.offshore, gs, &grid.ends)
@@ -220,8 +220,7 @@ pub fn along(grid: &Grid, gs: &Vec<f64>, path: &[Point], tas_kt: f64) -> Along {
         }
         let each = minutes / cells.len() as f64;
         water += far_nm(grid, a, b);
-        let bearing = ((b.1 - a.1) * ((a.0 + b.0) / 2.0).to_radians().cos()).atan2(b.0 - a.0);
-        let k = step_index(bearing.cos().round_ties_even() as i64, bearing.sin().round_ties_even() as i64);
+        let k = way_of(a, b);
         for c in cells {
             let at = grid.at(c);
             let h = grid.closed[at];

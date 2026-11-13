@@ -1,6 +1,7 @@
-import { Suspense, type ReactNode } from "react";
+import { Suspense, useRef, type ReactNode } from "react";
 import { cn } from "cn";
 import { Shown, useShown } from "../lib/shown";
+import { useKeptScroll } from "../lib/scrollPlace";
 
 /**
  * A tab's body kept under the others once it has been opened, as iOS keeps
@@ -18,24 +19,19 @@ import { Shown, useShown } from "../lib/shown";
  * chunk not yet in hand (the Aircraft tab's, aircraftTabChunk) waits
  * here, the tab empty a moment, not the panel round it.
  *
+ * Its place in the sheet's one scroller is kept too (useKeptScroll): back
+ * to it, the list is where it was left.
+ *
  * Kept is not working: what is inside reads whether it is in sight
  * (lib/shown) and stops its polling, clocks and store reads while it is
  * not.
  */
-export default function TabKept({
-  away,
-  still = false,
-  children,
-}: {
-  away: boolean;
-  /** In place but at rest: Setup up over the tabs (MapPanel), which hides
-   *  them plainly; Setup's own layer says it is shown (MapPage). */
-  still?: boolean;
-  children: ReactNode;
-}) {
-  const shown = useShown() && !away && !still;
+export default function TabKept({ away, children }: { away: boolean; children: ReactNode }) {
+  const shown = useShown() && !away;
+  const node = useRef<HTMLDivElement>(null);
+  useKeptScroll(node, !away);
   return (
-    <div inert={away} className={cn("flex min-h-0 flex-col", away ? "tab-away flex-none" : "flex-1")}>
+    <div ref={node} inert={away} className={cn("flex min-h-0 flex-col", away ? "tab-away flex-none" : "flex-1")}>
       <Shown.Provider value={shown}>
         <Suspense fallback={null}>{children}</Suspense>
       </Shown.Provider>

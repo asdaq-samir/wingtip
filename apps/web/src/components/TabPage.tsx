@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { cn } from "cn";
+import { useStartAtTop } from "../lib/scrollPlace";
 
 /** The room between a tab page's sections, 24 points: Airport's room, less
  *  the 8 its strip kept under it besides. */
@@ -17,32 +18,36 @@ export const TAB_PAGE_GAP = "gap-6";
  * (Setup's), its first section where the search bar starts -- and one gap
  * between its sections (TAB_PAGE_GAP), each a labelled one (PillSection)
  * whose heading is the same on every tab. There at once as its tab is
- * picked: a card that comes in over a tab is PanelCard.
+ * picked: a card that comes in over a tab is SheetCard.
+ *
+ * It does not scroll on its own: it is laid out whole in the sheet's one
+ * scroller (SheetParts), under the sheet's head, which stays pinned as it
+ * scrolls. Opened anew it starts at the top (the one scrolling rule); a
+ * tab's own place is kept by TabKept.
  */
 export default function TabPage({
   testId,
   headless = false,
-  scroll = true,
   children,
 }: {
   testId?: string;
   /** No head's row over it (Setup's): it starts where the head would. */
   headless?: boolean;
-  /** Scrolls on its own; not where it is the strip under a head that is
-   *  all the tab shows (FPL's Saved strip with no route). */
-  scroll?: boolean;
   children: ReactNode;
 }) {
+  const page = useRef<HTMLDivElement>(null);
+  useStartAtTop(page);
   return (
     <div
+      ref={page}
       data-tab-page=""
       data-testid={testId}
       className={cn(
-        "flex flex-col px-4 pb-4 [scrollbar-width:none]",
+        "flex shrink-0 flex-col px-4 pb-4",
         TAB_PAGE_GAP,
-        // Scrolling, it runs on up under the panel's head (under-head).
-        scroll ? "under-head min-h-0 flex-1 overflow-y-auto" : headless ? "pt-1" : "pt-2",
-        headless ? "[--under-pad:0.25rem]" : "[--under-pad:0.5rem]",
+        // Its room over its first line, which a list's pinned head
+        // (PinnedHead) reaches up over.
+        headless ? "pt-1 [--pinned-room:0.25rem]" : "pt-2 [--pinned-room:0.5rem]",
       )}
     >
       {children}

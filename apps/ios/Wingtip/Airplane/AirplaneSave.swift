@@ -1,4 +1,5 @@
 import Foundation
+import OpenAPIRuntime
 
 /// Where an airplane's figures were kept.
 enum FiguresKept: Equatable, Sendable {
@@ -53,16 +54,15 @@ extension Airplanes {
     }
 
     /// The type designator in a stock profile, where it has one.
-    static func designator(_ book: [String: JSONValue]?) -> String? {
-        if case .string(let d)? = book?["designator"] { return d }
-        return nil
+    static func designator(_ book: [String: OpenAPIValueContainer]?) -> String? {
+        book?["designator"]?.value as? String
     }
 
     /// The whole airplane as PUT /api/aircraft/{id} takes it: its record
     /// with these figures, a cruise speed or burn not given left as kept.
     static func request(_ record: OwnAircraftRecord, _ f: Figures) -> AircraftRequest {
         AircraftRequest(climbFuelBurnGph: f.climbFuelBurnGph, climbTasKt: f.climbTasKt, colour: record.colour, cruisePowerPct: f.cruisePowerPct,
-                        cruiseTasKt: f.cruiseTasKt ?? record.cruiseTasKt, equipment: record.equipment, figures: f.gateway,
+                        cruiseTasKt: f.cruiseTasKt ?? record.cruiseTasKt, descentFuelBurnGph: f.descentFuelBurnGph, descentIasKt: f.descentIasKt, equipment: record.equipment, figures: f.gateway,
                         fuelBurnGph: f.fuelBurnGph ?? record.fuelBurnGph, surveillance: record.surveillance, tailNumber: record.tailNumber,
                         typeDesignator: record.typeDesignator, usableFuelGal: f.usableFuelGal)
     }
@@ -74,7 +74,7 @@ extension Airplanes {
         // The gateway's type is at most 16 characters (AircraftRequest).
         let designator = String((type?.trimmingCharacters(in: .whitespaces).uppercased()).flatMap { $0.isEmpty ? nil : $0 }?.prefix(16) ?? Substring(noDesignator))
         return AircraftRequest(climbFuelBurnGph: f.climbFuelBurnGph, climbTasKt: f.climbTasKt, colour: nil, cruisePowerPct: f.cruisePowerPct,
-                               cruiseTasKt: cruise, equipment: nil, figures: f.gateway, fuelBurnGph: burn, surveillance: nil,
+                               cruiseTasKt: cruise, descentFuelBurnGph: f.descentFuelBurnGph, descentIasKt: f.descentIasKt, equipment: nil, figures: f.gateway, fuelBurnGph: burn, surveillance: nil,
                                tailNumber: tail, typeDesignator: designator, usableFuelGal: f.usableFuelGal)
     }
 }
@@ -83,6 +83,6 @@ extension Gateway {
     /// The figures given added to the airplane's own, the rest as they
     /// were (PUT /api/aircraft/{id}/figures): an inline ask's Save.
     static func addFigures(_ id: Int, _ figures: GWOwnFigures) async throws -> OwnAircraftRecord {
-        try await send(OwnAircraftRecord.self, "PUT", "/api/aircraft/\(id)/figures", json: figures)
+        try await call { try await $0.figures(path: .init(id: id), body: .json(figures)).ok.body.json }
     }
 }

@@ -14,7 +14,7 @@ pub const CLOUD_CLEARANCE_FT: f64 = wingtip_flight::vfr::CLOUD_BELOW_FT;
 pub const CLOUD_CLEARANCE_HIGH_FT: f64 = wingtip_flight::vfr::HIGH_CLOUD_BELOW_FT;
 pub const CLOUD_CLEARANCE_HIGH_FROM_FT: f64 = wingtip_flight::vfr::HIGH_FROM_MSL_FT;
 
-/// A TAF speaks for 5 sm of the airport's centre (TAF_AREA_SM, AC 00-45H
+/// A TAF speaks for 5 sm of the airport's centre (TAF_AREA_SM, FAA-H-8083-28B 27.4.1
 /// and NWSI 10-813): a leg takes the forecasts of the stations this close
 /// to its own line, the planner's own reach beyond that area, the same
 /// one a field without a TAF of its own is briefed from
@@ -46,6 +46,10 @@ pub fn clearance_at_ft(altitude_ft: f64) -> f64 {
 
 /// A TAF station's forecast ceiling for the flight (feet above the field,
 /// the lowest broken or overcast layer) and the field's elevation.
+/// A stated simplification: 91.155(a)'s distances are from any cloud, but
+/// only the ceiling is read, not a FEW or SCT layer's base under it, so a
+/// scattered deck lower than the ceiling is not kept clear of here; the
+/// pilot keeps the distances from what is seen.
 pub struct Station {
     pub ident: String,
     pub at: Point,

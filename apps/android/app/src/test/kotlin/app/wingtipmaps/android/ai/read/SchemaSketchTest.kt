@@ -1,6 +1,6 @@
 package app.wingtipmaps.android.ai.read
 
-import app.wingtipmaps.android.api.generated.assistant.LogbookPageRead
+import app.wingtipmaps.android.documents.model.LogbookPageRead
 import org.junit.Assert.assertTrue
 import org.junit.Test
 

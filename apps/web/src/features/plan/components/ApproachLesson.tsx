@@ -21,14 +21,16 @@ import {
 } from "../../../lib/approachLesson";
 import type { AircraftProfile, ProcedureDrawing, QuizAnswer } from "../../../lib/api/types";
 import { noteAt } from "../../../lib/assignedLessons";
-import { bearingDeg } from "../../../lib/geo";
+import { useGeo } from "../../../lib/geo";
 import { NO_FOCUS, endLessonMap, useLessonMap } from "../../../lib/map/route/lessonMap";
 import type { PickedProcedure } from "../../../lib/procedures";
 import { airportQuery, procedureQuery } from "../../../lib/queryClient";
 import { FINDING_TONE } from "../../../lib/findings";
-import { GROUP_HEADING, TEXT, TEXT_POINTS } from "../../../lib/text";
+import { TEXT, TEXT_POINTS } from "../../../lib/text";
+import SectionTitle from "../../../components/SectionTitle";
 import { altFt } from "../../../lib/format";
 import { CHART } from "../../../lib/tokens";
+import { FieldError } from "../../../components/ui/field";
 
 /** The lesson's one safety line, its subtitle: the plate, not this, is
  *  what is flown (CLAUDE.md's safety principle, kept off the pilot's
@@ -143,9 +145,7 @@ export default function ApproachLesson({
           </p>
         )}
         {error ? (
-          <p className={cn(FINDING_TONE.stop, TEXT.prose)} role="alert">
-            The approach could not be had: {error.message}
-          </p>
+          <FieldError className={cn(FINDING_TONE.stop, TEXT.prose)}>The approach could not be had: {error.message}</FieldError>
         ) : isPending || !input ? (
           <div role="status" className="flex flex-col gap-2 py-1">
             <span className="sr-only">Fetching the approach…</span>
@@ -178,9 +178,9 @@ function Lesson({ input, from }: { input: LessonInput; from?: FromInstructor }) 
         testId="approach-lesson-steps"
       />
       {from?.problem && (
-        <p role="alert" className={cn(FINDING_TONE.stop, TEXT.note)} data-testid="approach-lesson-problem">
+        <FieldError className={cn(FINDING_TONE.stop, TEXT.note)} data-testid="approach-lesson-problem">
           {from.problem}
-        </p>
+        </FieldError>
       )}
       {page === "brief" && (
         <BriefPage
@@ -198,11 +198,9 @@ function Lesson({ input, from }: { input: LessonInput; from?: FromInstructor }) 
   );
 }
 
-/** "3 of 10" over a step, as a group's heading. */
+/** "3 of 10" over a step, a section's title (SectionTitle), said as it changes. */
 const Progress = ({ at, of }: { at: number; of: number }) => (
-  <p className={GROUP_HEADING} aria-live="polite" data-testid="approach-lesson-progress">
-    {at + 1} of {of}
-  </p>
+  <SectionTitle aria-live="polite" data-testid="approach-lesson-progress">{`${at + 1} of ${of}`}</SectionTitle>
 );
 
 function BriefPage({ input, from, onDone }: { input: LessonInput; from?: FromInstructor; onDone: () => void }) {
@@ -243,12 +241,12 @@ function FlyPage({
   onDone: () => void;
 }) {
   const steps = useMemo(() => coachingSteps(input, gs), [input, gs]);
-  // Where each step is and what it shows, the same at any speed: a new
-  // speed changes the words, and the airplane stays where it is.
+  // Where each step is and what it shows, alike at any speed: the airplane stays put.
   const places = useMemo(() => coachingSteps(input, SPEEDS[1]).map((s) => ({ at: s.at, focus: s.focus })), [input]);
   const path = useMemo(() => lessonPath(input.drawing), [input.drawing]);
   const [at, setAt] = useState(0);
   const step = steps[Math.min(at, steps.length - 1)];
+  const geo = useGeo();
   // The airplane flown from the last step's place to this one's, along the
   // approach's line; at the first, put at it.
   useEffect(() => {
@@ -262,10 +260,10 @@ function FlyPage({
     useLessonMap.setState((s) => ({
       focus: place.focus,
       flight: way.length
-        ? { path: way, track: a && b ? bearingDeg(a, b) : (s.flight?.track ?? null), id: (s.flight?.id ?? 0) + 1 }
+        ? { path: way, track: geo && a && b ? geo.bearingDeg(a, b) : (s.flight?.track ?? null), id: (s.flight?.id ?? 0) + 1 }
         : s.flight,
     }));
-  }, [at, path, places]);
+  }, [at, path, places, geo]);
   // Flown to its last step: the instructor told, once a lesson.
   const flownToEnd = steps.length > 0 && at >= steps.length - 1;
   const onFlown = from?.onFlown;

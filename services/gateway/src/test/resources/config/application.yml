@@ -22,3 +22,5 @@ app:
     cron: "-"
   diagnostics:
     prune-cron: "-"
+  studio:
+    drafts-cron: "-"

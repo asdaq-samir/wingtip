@@ -16,15 +16,27 @@ quote marks and with each bullet on one line.
 
 The stores' text says what the app itself says, in its words: the web's
 `apps/web/src/components/planningAid.ts` and the terms
-(`apps/web/public/terms.html#a-planning-aid-not-for-navigation`), and the native kneeboards'
-footer (`apps/ios/Wingtip/Views/Kneeboard.swift`: "a planning aid: check
-the charts, NOTAMs and an official briefing before flight"). The
-description's last paragraph is that sentence, word for word:
+(`docs/legal/terms.md`, "A planning aid, not for navigation", served at
+`/terms`), and the native kneeboards' footer
+(`apps/ios/Wingtip/Views/Kneeboard.swift`: "a planning aid: check the
+charts, NOTAMs and an official briefing before flight"). Both
+descriptions end with that sentence, word for word, and then the terms'
+heading said for the moving map: not for navigation. Apple's guideline
+5.1.5 says location services "shouldn't be used to provide emergency
+services or autonomous control over vehicles, aircraft, and other
+devices"; so the listing never sells the app as emergency help, and the
+nearest-fields line says it is a reference and not an emergency service
+(121.5 MHz is the aeronautical emergency frequency, AIM 6-3-1). The
+paragraphs, as both listings use them:
 
 > Wingtip Maps is a planning aid for VFR and IFR flight. It does not
 > replace an official weather briefing (1800wxbrief.com or
 > 1-800-WX-BRIEF), current FAA charts and publications, or the pilot in
 > command's judgement and final authority (14 CFR 91.3, 91.103).
+>
+> Not for navigation: the map, your airplane on it, the traffic and the
+> alerts are for awareness, not a replacement for the airplane's
+> instruments and approved navigation equipment.
 
 ## URLs
 
@@ -68,7 +80,7 @@ sectional,flight planner,pilot,METAR,TAF,airspace,TFR,ADS-B,logbook,EFB,student 
 Stores count keywords without the spaces after commas; there are none
 here, and the spaces inside a phrase ("flight planner") count.
 
-**Description** (2,170 / 4,000):
+**Description** (2,481 / 4,000):
 
 > Wingtip Maps is the FAA chart on a map that works like Maps on your
 > iPhone, and everything a VFR or IFR flight needs on top of it.
@@ -102,7 +114,9 @@ here, and the spaces inside a phrase ("flight planner") count.
 >   are heard on your iPhone where it can.
 > - Charts, airports and terrain downloaded by sectional, state or a
 >   box you draw, for flying with no signal.
-> - Emergency help: the nearest fields you can reach, and what to do.
+> - Nearest fields: the airports within reach of where you are, as a
+>   reference for planning a diversion. It is not an emergency service:
+>   in an emergency, fly the airplane and talk to ATC (121.5 MHz).
 >
 > AFTER
 > - The flight logged with no typing: when you land, the logbook entry
@@ -118,6 +132,10 @@ here, and the spaces inside a phrase ("flight planner") count.
 > replace an official weather briefing (1800wxbrief.com or
 > 1-800-WX-BRIEF), current FAA charts and publications, or the pilot in
 > command's judgement and final authority (14 CFR 91.3, 91.103).
+>
+> Not for navigation: the map, your airplane on it, the traffic and the
+> alerts are for awareness, not a replacement for the airplane's
+> instruments and approved navigation equipment.
 
 Where each line comes from, for the next check:
 
@@ -133,7 +151,7 @@ Where each line comes from, for the next check:
 | ADS-B receiver | `Receiver/Receiver.swift` |
 | ATC copilot | `Atc/AtcCopilot.swift`, `ClearanceListener.swift` (on-device recognition where supported) |
 | Downloads | `Offline/DownloadsView.swift` |
-| Emergency | `Emergency/`, `Views/EmergencySheet.swift` |
+| Nearest fields (the emergency sheet) | `Emergency/`, `Views/EmergencySheet.swift` |
 | Logbook auto-draft | `Logbook/AutoLogbook.swift`, `Views/FlightLoggedSheet.swift` |
 | Sign-in, iCloud | `Session.swift`, `Records/Records.swift` |
 | Watch | `apps/ios/WingtipWatch` |
@@ -154,31 +172,97 @@ in by address; there is no public posting or chat). That gives **4+**.
 ### App Review information
 
 **Sign-in required:** no. A route, its nav log, the Brief and the charts
-need no account; leave the demo account fields empty.
+need no account. The account features have a review account (see
+"Review access" below): put its address in the demo account's user name
+and its code in the password field, and the notes say how to use them.
 
-**Notes for review:**
+**Notes for review** (keep them true to the code; inaccurate notes are a
+2.1 and 2.3 risk):
 
 > No account is needed to plan a flight: open FPL, type two airports
-> (for example C81 and KDLH) in From and To, and tap Plan. The nav log
-> is under the route's More (•••) menu, and the Brief is the glyph
-> beside the altitude. To try the account features (saving an
-> airplane, the logbook, and Delete Account in Setup under Account),
-> use Sign in with Apple. Location is asked for when the map first
-> opens, to open the chart where you are and draw the airplane on it;
-> declined, the map opens on the country. The microphone and speech
-> recognition are asked for only when the pilot turns on the ATC
-> copilot in Setup under Alerts, and speech is recognised on the
-> iPhone only (requiresOnDeviceRecognition), never sent to a server; background audio keeps listening to
-> the radio while the phone is locked in flight, and background
-> location keeps the airplane's position and the path flown. Local
+> (for example C81 and KDLH) in From and To, and tap Plan, or open the
+> demo flight from About. The nav log is under the route's More (•••)
+> menu, and the Brief is the glyph beside the altitude.
+>
+> Account features (saving an airplane, the logbook, Export My Data and
+> Delete Account, in Setup under Account): use Sign in with Apple, or
+> the review account, which needs no email. On this device, tap this
+> link (paste it into Notes or Messages and tap it there; a link typed
+> into Safari's address bar opens the website instead, which signs in
+> the same way): https://wingtipmaps.app/api/auth/magic-link/verify?token=[the code in the password field].
+> The app opens signed in as the review account.
+>
+> Location is asked for the first time you use something that needs it
+> (the location button on the map, Nearest, the emergency assistant or
+> Ready to Fly), never at launch; declined, the map works without your
+> airplane on it. The microphone and speech recognition are asked for
+> when you turn on the ATC copilot (Setup, Alerts) or tap a microphone
+> in search or Ask; speech is recognised on the iPhone only
+> (requiresOnDeviceRecognition) and never sent to a server, and the
+> phone shows the orange microphone indicator while it listens. Local
 > network is asked for only when Traffic looks for a cockpit ADS-B
-> receiver. The first open needs a connection; after that, the charts
-> already looked at and any downloaded in Setup under Downloads work
-> offline.
+> receiver.
+>
+> Background modes: audio keeps the ATC copilot listening to the radio
+> while the phone is locked in flight (the orange indicator and the
+> flight's Live Activity show it); location keeps the airplane's
+> position, the alerts ahead and the path flown while flying, with the
+> blue location indicator; remote-notification takes iCloud's silent
+> pushes so another device's saved airplanes and routes sync; fetch is
+> iOS's background refresh for the route's weather watched after the
+> Brief.
+>
+> Widgets: Next Flight, Airport Weather and Currency Status (Currency
+> needs the account); the flight's Live Activity on the Lock Screen and
+> in the Dynamic Island. Apple Watch: timers, the airplane's checklists
+> and the nearest airports.
+>
+> The first open needs a connection; after that, the charts already
+> looked at and any downloaded in Setup under Downloads work offline.
 
-The background modes App Review will ask about are in
+The four background modes App Review will ask about are in
 `apps/ios/project.yml` (`UIBackgroundModes: [audio, location,
-remote-notification]`), each with its reason there.
+remote-notification, fetch]`, with `BGTaskSchedulerPermittedIdentifiers:
+[app.wingtipmaps.weather-watch]` for `fetch`), each with its reason
+there. Attach a short screen recording of the copilot listening with the
+phone locked (the orange indicator and the Live Activity) for the
+`audio` mode (2.5.4).
+
+Where each note comes from: the location ask, `OwnShip.swift`
+(`askLocation`, "No question at launch"); the microphone, `VoiceInput`
+and `ClearanceListener.swift`; the widgets, `apps/ios/WingtipWidgets`;
+the Watch, `apps/ios/WingtipWatch`; the review link,
+`MagicLinkController.verify` and `Session.open`.
+
+### Review access
+
+Both stores' reviewers need to reach the account features, and this
+app's sign-in is an emailed link (Android has no other) whose inbox a
+reviewer cannot read. The gateway has a review account for that
+(`ReviewSignIn`): with `REVIEW_SIGN_IN=true`, the one address in
+`REVIEW_SIGN_IN_EMAIL` may sign in with the fixed code in
+`REVIEW_SIGN_IN_CODE` (at least 20 characters) wherever a sign-in
+link's token goes, so the link
+`https://wingtipmaps.app/api/auth/magic-link/verify?token=<code>` signs
+that account in, in the apps (which open sign-in links themselves) and
+on the web. Only that account, only that code, compared in constant
+time and never logged; the gateway refuses to start with it on and no
+address or a short code.
+
+**It is off by default** (`application.yml`, `infra/docker-compose.prod.yml`
+`REVIEW_SIGN_IN:-false`). The owner turns it on for a review and off
+after:
+
+1. Make the review account once: sign in with an address used for
+   nothing else (review@ on the site's domain), and give it an airplane
+   and a saved flight so the screens have something to show.
+2. Before submitting, put `REVIEW_SIGN_IN` true, the address and a fresh
+   random code (`openssl rand -base64 24`) in the AppSecret
+   (`infra/server/env.example`) and run deploy.sh.
+3. Give the reviewers the address and the code: App Store Connect's demo
+   account fields, and Play Console's App access (below).
+4. When the review is done, set `REVIEW_SIGN_IN` false and deploy again;
+   change the code before the next review.
 
 ## Google Play
 
@@ -194,7 +278,7 @@ remote-notification]`), each with its reason there.
 | Website | `https://wingtipmaps.app/` | |
 | Privacy policy | `https://wingtipmaps.app/privacy` | |
 
-**Full description** (1,818 / 4,000). The App Store's text with what the
+**Full description** (2,129 / 4,000). The App Store's text with what the
 Android app does not have taken out (Sign in with Apple, iCloud, the
 Lock Screen activity, the watch) and the emailed link as the one way
 in (`Session.kt`):
@@ -228,7 +312,9 @@ in (`Session.kt`):
 >   shows a call to you as a card, and checks your readback.
 > - Charts, airports and terrain downloaded by sectional, state or a
 >   box you draw, for flying with no signal.
-> - Emergency help: the nearest fields you can reach, and what to do.
+> - Nearest fields: the airports within reach of where you are, as a
+>   reference for planning a diversion. It is not an emergency service:
+>   in an emergency, fly the airplane and talk to ATC (121.5 MHz).
 >
 > AFTER
 > - The flight logged with no typing: when you land, the logbook entry
@@ -240,11 +326,22 @@ in (`Session.kt`):
 > replace an official weather briefing (1800wxbrief.com or
 > 1-800-WX-BRIEF), current FAA charts and publications, or the pilot in
 > command's judgement and final authority (14 CFR 91.3, 91.103).
+>
+> Not for navigation: the map, your airplane on it, the traffic and the
+> alerts are for awareness, not a replacement for the airplane's
+> instruments and approved navigation equipment.
 
 Android sources for the lines that differ: `ui/AirportScreen.kt` and
 `live/LiveAirportModel.kt` (D-ATIS, RVR), `atc/` (copilot,
 `RadioListener.kt` on the system's recognizer), `offline/DownloadsScreen.kt`,
 `logbook/FlightLoggedSheet.kt`, `receiver/Receiver.kt`, `emergency/`.
+
+### Foreground services
+
+The declarations for the three foreground-service types (location,
+microphone, connected device), what starts each and what to paste in
+the Play Console: [foreground-services.md](foreground-services.md). The
+location service starts only on the pilot's Start Flight tap.
 
 ### Content rating (IARC questionnaire)
 
@@ -255,6 +352,26 @@ digital goods. It shares the device's location with the server to answer
 (Nearest, the copilot's look ahead) but not with other users. Expected
 rating: Everyone / PEGI 3 / USK 0.
 
+### App access (Play Console)
+
+"All or some functionality is restricted": yes, the account features.
+Instructions, with the review account's address and code from "Review
+access" above:
+
+> No account is needed to plan a flight: open FPL, type two airports
+> (for example C81 and KDLH) and tap Plan. For the account features
+> (airplanes, logbook, Export My Data, Delete Account in Setup), sign in
+> without email: on the device, tap this link (paste it into a note or a
+> message and tap it there; typed into Chrome's address bar it opens the
+> website, which signs in the same way):
+> https://wingtipmaps.app/api/auth/magic-link/verify?token=[code]. The app
+> opens signed in as [review address]. No other sign-in is needed.
+
+Android opens the link in the app through its verified App Link
+(`AndroidManifest.xml`, `/api/auth/magic-link/verify`; `Links.kt`,
+`Session.kt`), which needs `APP_ANDROID_CERT_SHA256` to hold Play's app
+signing certificate (launch-checklist.md).
+
 ### Target audience and the rest of App content
 
 - Target age group: 18 and over (pilots; a student pilot may be 16, but
@@ -262,19 +379,21 @@ rating: Everyone / PEGI 3 / USK 0.
 - Ads: none.
 - News app: no. Government app: no (it reads FAA and NOAA data, and says
   so; it is not the FAA's).
-- Account deletion URL (Play requires one for apps with accounts): the
-  Android app has no Delete Account of its own yet (only iOS and the web
-  do: `apps/ios/Wingtip/Views/AccountViews.swift`, the web's Setup); give
-  `https://wingtipmaps.app/support` until it has, and say there that the
-  web app's Setup deletes the account. Adding the button to Android's
-  Setup is the better answer before the first release.
+- Account deletion URL (Play requires one for apps with accounts, where
+  a user can ask "without reinstalling the app"):
+  `https://wingtipmaps.app/delete-account` (`DeleteAccountController`):
+  the address, an emailed link, Delete Account, deleting what Setup's
+  Delete Account does. The app has its own too (Setup, Delete Account,
+  `account/AccountActions.kt`), with Export My Data beside it, and the
+  support page names both.
 
 ## Platform differences found
 
 | | iOS | Android | Web |
 |---|---|---|---|
 | Sign-in | Apple, emailed link | emailed link | Apple, Google, emailed link |
-| Delete account in the app | yes | no (see above) | yes |
+| Delete account in the app | yes | yes | yes |
+| Delete account without the app | `/delete-account` | `/delete-account` | `/delete-account` |
 | Lock Screen / widgets | Live Activity, widgets | none | n/a |
 | Watch | yes | no | n/a |
 | Pilot's view / 3D terrain | no (`isPitchEnabled = false`) | no | yes (`features/plan/map/terrain`) |
@@ -284,6 +403,9 @@ So the listings never mention a 3D or pilot's view; the web's is the
 only one, and the site may show it as the web's.
 
 ## The owner's steps
+
+Every console and account step, as a checklist, is
+[launch-checklist.md](launch-checklist.md); in short:
 
 - Register `wingtipmaps.app` (and `wingtipmaps.com`) and serve the site
   there, so the URLs above answer before the first submission.

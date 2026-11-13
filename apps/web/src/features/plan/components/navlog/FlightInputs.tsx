@@ -1,8 +1,10 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { N_NUMBER, profileOfRegistered, shortName } from "../../../../lib/aircraftChoice";
 import { api } from "../../../../lib/api/client";
 import { InlineField } from "../../../../components/InlineField";
+import { useEngineReady } from "../../../../lib/engine/useEngineReady";
+import { airplanePickAnswered, useAirplanePick } from "../../../../lib/pickAirplane";
 import DepartPicker from "./DepartPicker";
 
 /**
@@ -38,7 +40,11 @@ export default function FlightInputs({
   onDepartChange?: (iso: string) => void;
 }) {
   const current = shortName(aircraftOptions.find((o) => o.value === aircraftValue)?.label ?? "");
-  const tailNow = N_NUMBER.test(current) ? current : "";
+  // The N-number test is the engine's (N_NUMBER): the row is drawn at once,
+  // the engine or not, so until its .wasm is there the box shows no tail
+  // and takes none, and fills in once it is (useEngineReady).
+  const engineReady = useEngineReady();
+  const tailNow = engineReady && N_NUMBER.test(current) ? current : "";
   const [typed, setTyped] = useState<string | null>(null);
   const shown = typed ?? tailNow;
   const queryClient = useQueryClient();
@@ -59,7 +65,7 @@ export default function FlightInputs({
   const commit = () => {
     const tail = (typed ?? "").trim().toUpperCase();
     setTyped(null);
-    if (!N_NUMBER.test(tail) || tail === tailNow) return;
+    if (!engineReady || !N_NUMBER.test(tail) || tail === tailNow) return;
     const mine = aircraftOptions.find((o) => shortName(o.label) === tail);
     if (mine) {
       onAircraftChange(mine.value);
@@ -75,6 +81,18 @@ export default function FlightInputs({
         /* its N-number alone stands, on no profile */
       });
   };
+  // "Pick an airplane" asked from a screen that needs one (lib/pickAirplane):
+  // this field takes the focus once drawn, the frame after FPL is picked.
+  const field = useRef<HTMLInputElement>(null);
+  const pickAsked = useAirplanePick((s) => s.pending);
+  useEffect(() => {
+    if (!pickAsked) return;
+    const frame = requestAnimationFrame(() => {
+      field.current?.focus();
+      airplanePickAnswered();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pickAsked]);
   return (
     <>
       {/* A field as the altitude's is, at the owner's ask ("N-number should
@@ -124,6 +142,7 @@ export default function FlightInputs({
             if (e.key === "Escape") setTyped(null);
           },
           onBlur: commit,
+          ref: field,
           "data-testid": "aircraft-input",
         }}
         inputClassName="text-foreground"

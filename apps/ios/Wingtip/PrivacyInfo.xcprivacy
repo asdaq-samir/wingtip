@@ -27,13 +27,59 @@
                 <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
             </array>
         </dict>
-        <!-- The airplane's position: shown on the chart and sent to the
-             planner for what is ahead (OwnShip), not kept with the account. -->
+        <!-- The name Apple gives at sign-in, and the name as on a pilot
+             certificate where the pilot gives it for endorsements, kept with
+             the account (SignInView, InstructorView; the gateway's pilots). -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeName</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+        <!-- The telephone number the pilot may add, the contact a flight
+             plan's item 19 asks for (Session.setContact; pilots.phone). -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypePhoneNumber</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+        <!-- The account's id, and Apple's subject for the sign-in (Session;
+             the gateway's pilots). -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeUserID</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+        <!-- The airplane's position: a flight's track kept with the account
+             when the pilot logs or saves it (FlightRecorder, AutoLogbook;
+             flight_tracks), so linked; and the live position sent to the
+             planner to answer and not kept (OwnShip, Nearest, what is ahead).
+             App Store Connect takes one answer a type: linked, as one use is. -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>
             <string>NSPrivacyCollectedDataTypePreciseLocation</string>
             <key>NSPrivacyCollectedDataTypeLinked</key>
-            <false/>
+            <true/>
             <key>NSPrivacyCollectedDataTypeTracking</key>
             <false/>
             <key>NSPrivacyCollectedDataTypePurposes</key>
@@ -89,13 +135,31 @@
     <key>NSPrivacyAccessedAPITypes</key>
     <array>
         <!-- UserDefaults: the pilot's own settings (the tab, the watches,
-             the kept packs), read and written by the app alone. -->
+             the kept packs), read and written by the app alone (CA92.1);
+             and the App Group's suite the widgets read, the next flight's
+             snapshot and the saved flights and fields (WidgetSnapshot,
+             WidgetStore), shared only with this app's own extension
+             (1C8F.1, Apple's reason for an App Group's defaults). -->
         <dict>
             <key>NSPrivacyAccessedAPIType</key>
             <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
             <key>NSPrivacyAccessedAPITypeReasons</key>
             <array>
                 <string>CA92.1</string>
+                <string>1C8F.1</string>
+            </array>
+        </dict>
+        <!-- Disk space: the free space on the iPhone shown on Downloads
+             beside what the charts take (DownloadsModel.refresh,
+             volumeAvailableCapacityForImportantUsageKey), never sent off
+             the device (85F4.1, Apple's reason for showing disk space to
+             the person using it). -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>85F4.1</string>
             </array>
         </dict>
         <!-- File timestamps: the chart tiles and cycle packs kept on the

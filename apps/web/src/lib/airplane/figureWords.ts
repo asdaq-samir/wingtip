@@ -1,4 +1,5 @@
 import type { FigureKey } from "./figures";
+import { andList } from "../listWords";
 
 /**
  * How each airplane figure is named, asked for and bounded on screen. The
@@ -40,6 +41,22 @@ export const FIGURE_WORDS: Record<FigureKey, FigureWords> = {
     max: 5000,
     minExcluded: true,
   },
+  // A descent's speed as its handbook gives it, indicated (the engine
+  // flies it as a true airspeed at the descent's altitude).
+  descent_ias_kt: {
+    label: "Descent speed (IAS)",
+    unit: "kt",
+    ask: (t) => `How fast does ${t} descend (indicated airspeed, as its handbook gives it)?`,
+    min: 30,
+    max: 300,
+  },
+  descent_fuel_burn_gph: {
+    label: "Descent fuel burn",
+    unit: "gal/h",
+    ask: (t) => `How much fuel does ${t} burn in the descent?`,
+    min: 1,
+    max: 150,
+  },
   service_ceiling_ft: { label: "Service ceiling", unit: "ft", ask: (t) => `What is ${t}'s service ceiling?`, min: 1000, max: 30000 },
   taxi_fuel_gal: {
     label: "Start and taxi fuel",
@@ -60,11 +77,13 @@ export const FIGURE_WORDS: Record<FigureKey, FigureWords> = {
   },
 };
 
-/** A figure typed, as a number within its bounds; else what is wrong with it. */
-export function readFigure(key: FigureKey, typed: string): { value: number } | { problem: string } {
+/** A figure typed, within its bounds; else what is wrong with it. The
+ *  field (React Aria's NumberField) has read the text in the pilot's
+ *  locale, so "12,5" on a comma-decimal phone is 12.5 here, where a
+ *  hand-parse of the text took it for 125. */
+export function readFigure(key: FigureKey, n: number | null): { value: number } | { problem: string } {
   const words = FIGURE_WORDS[key];
-  const n = Number(typed.trim().replace(/,/g, ""));
-  if (!typed.trim() || !Number.isFinite(n)) return { problem: `Type the ${words.label.toLowerCase()} as a number.` };
+  if (n == null || !Number.isFinite(n)) return { problem: `Type the ${words.label.toLowerCase()} as a number.` };
   const low = words.minExcluded ? n <= words.min : n < words.min;
   if (low || n > words.max) {
     const unit = words.unit.startsWith(":") ? "" : ` ${words.unit}`;
@@ -78,5 +97,5 @@ export function readFigure(key: FigureKey, typed: string): { value: number } | {
  *  airplane_needs: loading, takeoff, landing). */
 export function tablesWords(tables: readonly string[]): string {
   const names = tables.map((t) => (t === "loading" ? "loading envelope" : `${t} chart`));
-  return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : (names[0] ?? "");
+  return andList(names);
 }

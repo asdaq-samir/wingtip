@@ -1,16 +1,14 @@
 import { Suspense, useCallback, useDeferredValue, useMemo } from "react";
 import { TEXT } from "../../lib/text";
 import { CommandRoot } from "../../components/ui/command";
-import { MAX_STOPS, routeName } from "../../lib/identSchema";
+import { MAX_STOPS } from "../../lib/identSchema";
 import type { WorkspaceProps } from "../shell";
 import { ShareMenu } from "./ShareMenuLazy";
-import PaidPrompt from "../../components/PaidPromptLazy";
 import { RouteShareMenu, type RouteCard } from "../../lib/openCards";
-import { CardHead } from "../../components/PanelCard";
+import { useNavLogs } from "./components/workspace/useNavLogs";
 import type { BriefingPart } from "./components/briefing/sections";
 import {
   PilotPanel,
-  NavLogView,
   ProceduresRoute,
   FlightBriefingView,
   BriefingNotices,
@@ -20,16 +18,15 @@ import {
   Kneeboard,
   FlightInputs,
   AltitudeGroup,
-  BriefNarrative,
 } from "./routePanelParts";
 import { usePlanWorkspace } from "./hooks/usePlanWorkspace";
 import PlanMap from "./components/workspace/PlanMap";
 import PlanSidebar from "./components/workspace/PlanSidebar";
+import PlanPage from "./components/workspace/PlanPage";
 import FlightFoot from "./components/workspace/FlightFoot";
 import RouteHead from "./components/workspace/RouteHead";
 import RouteControls from "./components/workspace/RouteControls";
 import { listSearchOf } from "./components/workspace/listSearch";
-import SheetTitle from "./components/search/SheetTitle";
 import OneSearchField from "./components/search/OneSearchField";
 import { useOneSearch } from "./hooks/useOneSearch";
 
@@ -57,107 +54,85 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   // The one search over the sheet (the owner's one-search design,
   // 2026-11-09): its field the sheet's first row, its results the body's.
   const search = useOneSearch(vm);
+  const { view, pickPage } = vm.view;
+  const {
+    altitudeFt,
+    altitudeNearest,
+    crossings,
+    depart,
+    directParam,
+    flightRules,
+    flyAltitude,
+    ground,
+    holds,
+    insertStopAfter,
+    planned,
+    removeStop,
+    routeEdit,
+    routePoints,
+    routed,
+    setLoad,
+    setRouteEdit,
+    setPointAltitude,
+  } = vm.route;
   const {
     aircraft,
     aircraftChoices,
     aircraftValue,
-    altitudeAt,
-    altitudeFt,
-    altitudeNearest,
-    autoPicked,
-    briefLine,
-    briefShown,
-    cardOpen,
     changeAircraft,
     changeDepart,
-    closeNavLogCard,
     course,
-    crossings,
-    depart,
-    descriptionsHidden,
-    descriptionsLoading,
-    deselectPoint,
-    directParam,
     directToPoint,
-    drawerOpen,
-    dryRunning,
-    fileFlightPlan,
-    fileable,
+    pickTail,
+    s,
+    selected,
+    setGround,
+    setHold,
+  } = vm.plan;
+  const { cardOpen, flight, heldPoint, place, selectPlace, setApproachesOf } = vm.cards;
+  const {
+    autoPicked,
     filedProcedures,
-    flight,
-    flightRules,
-    flightToSave,
-    flyAltitude,
-    flying,
-    fuelHidden,
-    ground,
-    heldPoint,
-    holdAsk,
-    holds,
-    insertStopAfter,
-    landedStops,
-    landings,
-    listEdit,
-    marks,
-    metarColour,
-    navLogShown,
     noApproaches,
-    openNavLogCard,
-    paywalled,
     pickPattern,
     pickProcedures,
-    pickTail,
     pickedPatterns,
     pickedProcedures,
     pickedTakeoffs,
-    place,
-    planned,
     preselectPattern,
     preselectTakeoff,
     previewProcedure,
     procedureAirports,
     proceduresAt,
-    profileShown,
-    removeStop,
-    routeEdit,
-    routeLine,
-    routePoints,
     routeProcedures,
-    routeRows,
-    routed,
     runwayFitInputs,
-    s,
-    selectPlace,
-    selectPointAt,
-    selected,
-    selectedPoint,
-    setApproachesOf,
-    setGround,
-    setHold,
-    setLoad,
-    setPointAltitude,
     setProceduresShown,
     setTakeoff,
     showFix,
-    showFuelStops,
+  } = vm.picks;
+  const { fuelHidden, showFuelStops, tankFigures } = vm.stops;
+  const { holdAsk, listEdit, routeLine } = vm.routeList;
+  const { briefShown, openNavLogCard } = vm.fpl;
+  const { flying } = vm.flight;
+  const { routeRows } = vm.leg;
+  const {
+    altitudeAt,
+    fileFlightPlan,
+    fileable,
+    flightToSave,
+    landedStops,
+    landings,
+    metarColour,
     stale,
-    stopsShown,
-    view,
-    tankFigures,
     tightLeg,
     unflyable,
     unflyableBrief,
-  } = vm;
-  // Each tab's part of the briefing; the Brief's narrative under its Go /
-  // No-Go. Made once for the same plan (useCallback, useMemo), and each
+  } = vm.brief;
+  // Each tab's part of the briefing. Made once for the same plan
+  // (useCallback), and each
   // part drawn again only when its plan changes (FlightBriefingView's
   // memo): a row picked in the nav log drew all four tabs again, the
   // hidden ones and their charts too -- half a second of a phone's.
-  const narrative = useMemo(
-    () => !s.local && <BriefNarrative ready={!!s.totals} onGenerateNarrative={s.generateNarrative} narrative={s.narrative} />,
-    [s.local, s.totals, s.generateNarrative, s.narrative],
-  );
-
   const tabContent = useCallback(
     (part: BriefingPart) => (
       <FlightBriefingView
@@ -174,9 +149,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         course={course}
         totals={s.totals}
         depart={depart}
-        narrativeText={s.narrative.text}
         problem={unflyableBrief}
-        narrative={part === "preflight" ? narrative : undefined}
       />
     ),
     [
@@ -191,9 +164,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       course,
       s.totals,
       depart,
-      s.narrative.text,
       unflyableBrief,
-      narrative,
     ],
   );
 
@@ -220,14 +191,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     [course, s.logSelected, s.legs, s.totals, s.nav, s.briefing, depart, aircraft.label, landings],
   );
   const kneeboardLater = useDeferredValue(kneeboard, null);
-
-  const descriptionsPaywall = useMemo(
-    () =>
-      paywalled ? (
-        <PaidPrompt feature="CHECKPOINT_NOTES">A line for each checkpoint on what to look for from the air.</PaidPrompt>
-      ) : undefined,
-    [paywalled],
-  );
 
   const routeList = useMemo(
     () => (
@@ -333,122 +296,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     ],
   );
 
-  const navLog = useMemo(
-    () => (
-      <Suspense fallback={<div className="min-h-0 flex-1" />}>
-        <NavLogView
-          totals={s.totals}
-          nav={s.nav}
-          legs={s.legs}
-          descriptionError={s.descriptionError}
-          depart={depart}
-          dep={planned.dep}
-          dest={planned.dest}
-          ends={course}
-          selected={s.logSelected}
-          descriptions={s.descriptions}
-          onSaveDescription={s.saveDescription}
-          onGenerateDescriptions={s.generateDescriptions}
-          descriptionsLoading={descriptionsLoading}
-          descriptionsPaywall={descriptionsPaywall}
-          descriptionsHidden={descriptionsHidden}
-          selectedPoint={selectedPoint}
-          onSelectPoint={selectPointAt}
-          onDeselectPoint={deselectPoint}
-          // In sight all the way up, the Brief not over it: a row picked is
-          // brought into sight as it comes back.
-          drawerOpen={drawerOpen && !briefShown}
-          dryRun={dryRunning}
-          // Under the strip the nav log's card keeps the route in order too:
-          // its pills' menus -- a stop taken out, a point's altitude, a hold,
-          // direct to -- have no route box there (features/strip).
-          // Route Cards with one end only: its card is the end's own (RouteEnds),
-          // not again under it as the list's row (the owner's screenshot,
-          // 2026-11-05: C81 typed as the departure, there twice).
-          route={navLogShown || (routeEdit === "plan" && !(planned.dep && planned.dest)) ? undefined : routeList}
-          cardHead={
-            navLogShown ? (
-              <CardHead
-                // As the Brief's head: the route's name, and the line under
-                // it (the owner's "Profile and Navlog titles appear twice").
-                name={routeName(planned.dep, planned.dest, planned.stops)}
-                line={briefLine}
-                nameTestId="navlog-name"
-                onClose={closeNavLogCard}
-                onShare="navlog"
-                closeTestId="navlog-close"
-              />
-            ) : undefined
-          }
-          aircraftLabel={aircraft.label}
-          marks={marks}
-          tabContent={tabContent}
-          notice={<BriefingNotices briefing={s.briefing} />}
+  const { navLog, navLogCard } = useNavLogs(vm, { tabContent, routeList, kneeboard: kneeboardLater });
 
-          local={s.local}
-          metarColourOf={metarColour}
-        >
-          {/* Out of the tabs, drawing nothing: the risk assessment and the
-          Go / No-Go's findings published once, for Save and the tabs' marks. */}
-          <FlightBriefingView
-            part={null}
-            publish
-            nav={s.nav}
-            legs={s.legs}
-            dep={planned.dep}
-            dest={planned.dest}
-            stops={landedStops}
-            briefing={s.briefing}
-            course={course}
-            totals={s.totals}
-            depart={depart}
-            narrativeText={s.narrative.text}
-            problem={unflyableBrief}
-          />
-          {kneeboardLater}
-        </NavLogView>
-      </Suspense>
-    ),
-    [
-      s.totals,
-      s.descriptionError,
-      s.nav,
-      s.legs,
-      depart,
-      planned.dep,
-      planned.dest,
-      course,
-      s.logSelected,
-      s.descriptions,
-      s.saveDescription,
-      s.generateDescriptions,
-      descriptionsLoading,
-      descriptionsPaywall,
-      descriptionsHidden,
-      selectedPoint,
-      selectPointAt,
-      deselectPoint,
-      drawerOpen,
-      aircraft.label,
-      marks,
-      tabContent,
-      s.briefing,
-      s.local,
-      landedStops,
-      s.narrative.text,
-      unflyableBrief,
-      kneeboardLater,
-      metarColour,
-      dryRunning,
-      briefShown,
-      routeList,
-      navLogShown,
-      closeNavLogCard,
-      planned.stops,
-      briefLine,
-      routeEdit,
-    ],
-  );
   // The Brief's pages (BriefCard): En route's without the legs, which are
   // FPL's own; and its warnings over them.
   const briefContents = useMemo(
@@ -554,6 +403,9 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
       onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
       onNavLog={card === undefined && routed && course ? openNavLogCard : undefined}
+      // Nothing to clear on the empty page: its ✕ goes back (RouteControls).
+      onClear={card === undefined && vm.route.hasPoints ? vm.routeList.clearRoute : undefined}
+      showRouteAs={card === undefined ? { value: routeEdit, onChange: setRouteEdit } : undefined}
     />
   );
 
@@ -569,39 +421,30 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // Recents and what answers, or Nearest's list; Aircraft's list. A card --
         // an airport's, the airspace's, an airplane's -- over the tab it was
         // opened from, its close back to it.
-        sidebar: <PlanSidebar vm={vm} model={search} navLog={navLog} briefContents={briefContents} briefNotice={briefNotice} />,
-        // Under the one search: the plan's the route's box (`route`, below);
-        // nothing else, the traffic and Nearest scoping the one field (list).
-        head: view === "plan" ? undefined : null,
+        sidebar: <PlanSidebar vm={vm} model={search} />,
+        // The pages, turned by the round toggle on the sheet's top (PageToggle; the owner, 2026-11-13): Search over `sidebar`, FPL's `route` over the plan.
+        pages: {
+          at: view === "plan" ? 1 : 0,
+          go: pickPage,
+          second: <PlanPage vm={vm} navLog={navLog} navLogCard={navLogCard} briefContents={briefContents} briefNotice={briefNotice} />,
+        },
         // The one search's Autocomplete round the whole panel, so its field
         // (the first row) and its list (the body) are one combobox.
         around: (panel) => (
-          <CommandRoot value={vm.query} onValueChange={search.setTyped} autoHighlight="always">
+          <CommandRoot value={vm.search.query} onValueChange={search.setTyped} autoHighlight="always">
             {panel}
           </CommandRoot>
         ),
-        // A card over the tab: its card alone, the tab's head gone while it is
-        // open, at the pilot's ask.
-        alone: cardOpen || briefShown || navLogShown || profileShown || stopsShown,
-        // An airport's or a point's card over another tab -- a field tapped on
-        // the route from FPL -- its bar the card's kind and Back to the tab, at
-        // the owner's ask ("unless going from another tab ... the back button
-        // should get it back to fpl"); on its own tab, the tabs.
-        // Any card, an airplane's too, its bar its name with Back and the close,
-        // at the owner's ask ("For the airport card it should replace tabs with
-        // a back close button and title as the airport id").
-        cardOver: cardOpen || briefShown || navLogShown || profileShown || stopsShown,
+        // A card over the page: its card alone, the page's head gone while it is open, at the pilot's ask.
+        alone: cardOpen || briefShown,
+        // Any card over the page it was opened from, its bar its name with Back and the close, at the
+        // owner's asks ("the back button should get it back to fpl"; "replace tabs with a back close button").
+        cardOver: cardOpen || briefShown,
         toEdge: !!place,
         flying,
-        // The one search, the panel's first row, and at rest the pill
-        // itself (MapPanel), where the tabs were.
-        bar: <OneSearchField model={search} inputRef={vm.searchInput} list={listSearchOf(vm)} />,
-        // Over it the app's name and the account (Apple Maps' web title, 2026-11-10).
-        title: <SheetTitle onClose={search.sent ? search.cancel : undefined} />,
-        titleAtFull: search.focused || !!search.typed,
-        // The route's figures pinned at FPL's foot at every height, the pill
-        // too, at the pilot's ask; FPL's alone, at the owner's ask ("Fpl can
-        // show calculations but other tabs should show something else").
+        // The one search, the first page's first row, and at rest its pill (MapPanel).
+        bar: <OneSearchField model={search} inputRef={vm.search.searchInput} list={listSearchOf(vm)} />,
+        // FPL's alone ("Fpl can show calculations but other tabs should show something else").
         // FPL's figures pinned at the sheet's foot at every height, the pill's
         // too, growing as it comes up, at the owner's asks ("While dragging fpl
         // keep the calculations pinned at the bottom"; "Why can't the half card
@@ -614,25 +457,22 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // over it and follows the run (NavLogView), at the owner's ask ("I wanna
         // be able to do the dry run with navlog in full fpl"). It took the
         // body's room half way, and grew with the sheet under a finger.
-        // Under the nav log's card too, its side view and figures with it, as
-        // FPL is "route, navlog, profile and calculations".
-        foot: view === "plan" && !place && !heldPoint && !flight && !briefShown ? routed && <FlightFoot vm={vm} /> : undefined,
-        // The route as one box of pills, in place of the two airport fields,
-        // the top row to itself, at the pilot's ask: its close and its
-        // Procedures beside it went to the chips' row (Approaches) and the
-        // Share menu (Clear the route). An airport twice (a round trip with its
-        // stop taken out) keeps the box, its notice saying what to change.
-        // Whatever the tab: MapPanel keeps it under the others' heads (`kept`).
-        // Once the route is whole, folded away (lib/preferences RouteEdit, the
-        // owner's A and B of the FPL canvas, 2026-11-05: "keeping the route box
-        // on top after a destination is known is redundant because the plan
-        // at the bottom can have dragables"): the route on one line, a tap the
-        // box again (A), or its name over the plan whose rows change it (B);
-        // the airplane, the altitude and the route's buttons under either, as
-        // they were under the box. The box again while a stop is typed in
-        // from the list or a problem, and while it is opened from the head;
-        // with no route either, the head folded (the owner, 2026-11-05).
-        route: <RouteHead vm={vm} controls={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
+        // At the pill on FPL they are the pill's one row (MapPanel), the
+        // route's row from half up (the owner, 2026-11-11, the canvas's b).
+        // FPL's page's own (SheetParts); under the Profile, its foot (PlanPage).
+        foot: !place && !heldPoint && !flight && !briefShown && !vm.fpl.profileShown ? routed && <FlightFoot vm={vm} /> : undefined,
+        // The route as one box of pills, the top row to itself (MapPanel keeps
+        // it under the others' heads). How it shows once whole is the pilot's
+        // pick from its ••• menu's Show Route As (lib/preferences RouteEdit:
+        // the box, one line, or the plan's own rows; the owner, 2026-11-05 and
+        // 2026-11-13); the box again while a stop is typed in or a problem shows.
+        route: (
+          <RouteHead
+            vm={vm}
+            controls={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />}
+            menu={shareMenu("end")}
+          />
+        ),
         console: <PilotPanel />,
       })}
     </RouteShareMenu.Provider>

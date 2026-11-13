@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The airport card's NOTAMs, as the web's PlaceNotams says them. -->
+    <string name="notam_active">Active</string>
+    <string name="notam_inactive">Inactive</string>
+    <string name="notam_since">Since</string>
+    <string name="notam_starts">Starts</string>
+    <string name="notam_ends">Ends</string>
+    <string name="notam_duration">Duration</string>
+    <string name="notam_permanent">Permanent</string>
+    <string name="notam_local">%1$s local</string>
+    <string name="notam_estimated">%1$s (est.)</string>
+    <string name="notam_in">%1$s (in %2$s)</string>
+    <string name="notam_number">NOTAM %1$s</string>
+    <string name="notam_heading">NOTAM</string>
+    <string name="notam_kind_tfr">TFR</string>
+    <string name="notam_kind_other">Other</string>
+    <string name="notams_shown">%1$d of %2$d</string>
+    <string name="notams_none_heard">None heard</string>
+    <string name="notams_none_since">None heard since %1$s</string>
+    <string name="notams_tfrs_unread">The TFR list could not be read: check the FAA\'s TFRs before flying.</string>
+    <string name="notams_show_all">Show all NOTAMs</string>
+    <string name="notams_show_fewer">Show fewer NOTAMs</string>
+    <string name="notam_as_sent">As Sent</string>
+    <string name="tfr_as_sent">TFR as Sent</string>
+    <string name="tfr_instructions">Instructions</string>
+    <string name="tfr_facility">Coordination facility</string>
+    <string name="tfr_contact">Point of contact</string>
+    <string name="tfr_call">Call %1$s</string>
+    <string name="notam_badge_said">%1$s: %2$s</string>
+
+    <!-- The runways' badges. -->
+    <string name="runway_best_wind">Best Wind</string>
+    <string name="runway_longest">Longest</string>
+    <string name="runway_name">Runway %1$s</string>
+
+    <!-- The field's lights (the planner's lighting_read). -->
+    <string name="section_lights">Lights</string>
+    <string name="light_with_code">%1$s (%2$s)</string>
+    <string name="light_runway">Runway %1$s</string>
+    <string name="light_runways">Runways %1$s</string>
+    <string name="light_nonstandard">Non-standard</string>
+    <!-- AIM 2-1-8, Pilot Control of Airport Lighting: the mic keyed 7
+         times within 5 seconds for the highest intensity, 5 for medium or
+         lower, 3 for the lowest. -->
+    <string name="light_keying">Keying</string>
+    <string name="light_keying_clicks">7 high · 5 medium · 3 low</string>
+
+    <!-- The field's fuel, from its Chart Supplement entry. -->
+    <string name="fuel">Fuel</string>
+    <string name="fuel_none_listed">None listed</string>
+    <string name="fuel_remarks">Fuel remarks</string>
+
+    <!-- The card's actions. -->
+    <string name="action_favorite">Favorite</string>
+</resources>

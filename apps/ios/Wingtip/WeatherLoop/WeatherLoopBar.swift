@@ -8,7 +8,7 @@ import SwiftUI
 /// are said here too, where the loop is. Pauses the loop while the app is
 /// in the background.
 struct WeatherLoopBar: View {
-    @State private var loop = WeatherLoop.shared
+    @Environment(WeatherLoop.self) private var loop
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -74,15 +74,15 @@ struct WeatherLoopBar: View {
 /// The loop's two menus in Setup's Map section: which loop, and, with one
 /// on, how fast it plays. Menus, as discrete settings are here.
 struct WeatherLoopRows: View {
-    @State private var loop = WeatherLoop.shared
+    @Environment(WeatherLoop.self) private var loop
 
     var body: some View {
-        Picker("Radar and Satellite", selection: $loop.kind) {
+        Picker("Radar and Satellite", selection: Bindable(loop).kind) {
             ForEach(LoopKind.allCases) { Text($0.label).tag($0) }
         }
         .pickerStyle(.menu)
         if loop.kind != .off {
-            Picker("Loop Speed", selection: $loop.speed) {
+            Picker("Loop Speed", selection: Bindable(loop).speed) {
                 ForEach(LoopSpeed.allCases) { Text($0.label).tag($0) }
             }
             .pickerStyle(.menu)

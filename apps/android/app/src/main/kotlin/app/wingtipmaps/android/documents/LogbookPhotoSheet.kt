@@ -16,14 +16,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.api.generated.assistant.LogbookEntryDraft
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.documents.model.LogbookEntryDraft
 import app.wingtipmaps.android.logbook.DraftEntry
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import kotlin.math.roundToInt
 
 /**
  * The logbook's "Add from a Photo" sheet: Scan the Page, then the page's
@@ -33,7 +34,7 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
  * Flights" logs the confirmed ones.
  */
 @Composable
-fun LogbookPhotoSheet(onClose: () -> Unit, model: LogbookPhotoModel = viewModel()) {
+fun LogbookPhotoSheet(onClose: () -> Unit, model: LogbookPhotoModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scan = rememberPageScanner(onPage = { model.read(context, it) }, onProblem = model::problem)
@@ -85,10 +86,10 @@ private fun route(e: LogbookEntryDraft): String = e.route?.ifBlank { null } ?: e
 
 /** "N12345 C172 · 1.4 h · 1 landing", as the logbook's own rows read. */
 private fun figures(e: LogbookEntryDraft): String {
-    val landings = (e.dayLandings ?: 0) + (e.nightLandings ?: 0)
+    val landings = (e.dayLandings + e.nightLandings).roundToInt()
     return listOfNotNull(
         listOfNotNull(e.aircraft, e.aircraftType).joinToString(" ").ifEmpty { null },
-        e.totalHours?.let { "${DraftEntry.tenths(it)} h" },
+        "${DraftEntry.tenths(e.totalHours)} h",
         if (landings == 1) "1 landing" else "$landings landings",
     ).joinToString(" · ")
 }

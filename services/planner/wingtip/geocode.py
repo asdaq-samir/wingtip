@@ -16,7 +16,6 @@ import csv
 import io
 import json
 import logging
-import os
 import re
 import threading
 import time
@@ -24,6 +23,8 @@ import zipfile
 
 import requests
 
+from . import outside
+from .atomic import atomic_path
 from .config import DATA_DIR
 from .config import FAA_HEADERS as HEADERS
 
@@ -105,7 +106,7 @@ def _towns() -> list:
         # at once; a success clears it.
         _RETRY_AT = time.monotonic() + DOWNLOAD_TIMEOUT_S
     try:
-        resp = requests.get(GAZETTEER_URL, headers=HEADERS, timeout=DOWNLOAD_TIMEOUT_S)
+        resp = outside.get(GAZETTEER_URL, headers=HEADERS, timeout=DOWNLOAD_TIMEOUT_S)
         resp.raise_for_status()
         towns = _towns_of(resp.content)
     except (requests.RequestException, zipfile.BadZipFile, StopIteration) as err:
@@ -113,10 +114,8 @@ def _towns() -> list:
         with _LOCK:
             _RETRY_AT = time.monotonic() + RETRY_AFTER_S
         return []
-    TOWNS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    partial = TOWNS_PATH.with_name(TOWNS_PATH.name + ".part")
-    partial.write_text(json.dumps(towns))
-    os.replace(partial, TOWNS_PATH)
+    with atomic_path(TOWNS_PATH) as partial:
+        partial.write_text(json.dumps(towns))
     with _LOCK:
         _TOWNS = towns
         _RETRY_AT = 0.0
@@ -158,13 +157,17 @@ def find_addresses(query: str, limit: int = 4) -> list:
     if kept and time.monotonic() < kept[0]:
         return kept[1][:limit]
     try:
+        # Not wingtip.outside's retrying session: urllib3 logs a retried
+        # request's URL, and this one carries the typed address.
         resp = requests.get(
             GEOCODER_URL, headers=HEADERS, timeout=8, params={"address": query.strip(), "benchmark": "Public_AR_Current", "format": "json"}
         )
         resp.raise_for_status()
         matches = resp.json().get("result", {}).get("addressMatches", [])
     except (requests.RequestException, ValueError) as err:
-        log.warning("The Census geocoder did not answer for an address: %s", err)
+        # The error's own text carries the URL, and with it the typed address:
+        # only its kind is logged (docs/privacy-inventory.md, the Census row).
+        log.warning("The Census geocoder did not answer for an address: %s", type(err).__name__)
         return kept[1][:limit] if kept else []
     found = [
         {"label": _address_label(m["matchedAddress"]), "lat": m["coordinates"]["y"], "lon": m["coordinates"]["x"]}

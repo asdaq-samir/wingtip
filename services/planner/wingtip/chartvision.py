@@ -39,15 +39,12 @@ from dataclasses import dataclass, field
 import numpy as np
 from PIL import Image
 
-from . import charts
+from . import charts, geo
 from .config import VFR_SECTIONAL_MAX_ZOOM
-from .geo import along_track_distance_nm, cross_track_distance_nm, distance_nm, tile_lat_lon, tile_xy
+from .geo import EARTH_RADIUS_NM, along_track_distance_nm, cross_track_distance_nm, distance_nm, great_circle_points, tile_lat_lon, tile_xy
 
 TILE_PX = 256
 DEFAULT_ZOOM = VFR_SECTIONAL_MAX_ZOOM  # 12; the chart's own maximum
-
-# Earth's circumference at the equator, for the web-mercator scale below.
-EARTH_CIRCUMFERENCE_M = 40_075_016.686
 
 
 @dataclass
@@ -290,7 +287,7 @@ def metres_per_pixel(lat: float, zoom: int = DEFAULT_ZOOM) -> float:
     """Ground resolution at this latitude -- web mercator stretches with
     latitude, so a pixel is not a fixed distance and blob areas would be
     overstated in the north without this."""
-    return EARTH_CIRCUMFERENCE_M * math.cos(math.radians(lat)) / ((2**zoom) * TILE_PX)
+    return geo.WEB_MERCATOR_CIRCUMFERENCE_M * math.cos(math.radians(lat)) / ((2**zoom) * TILE_PX)
 
 
 def corridor_tiles(start: tuple, end: tuple, half_width_nm: float, zoom: int = DEFAULT_ZOOM) -> list:
@@ -658,21 +655,12 @@ def great_circle_pixels(start: tuple, end: tuple, zoom: int = DEFAULT_ZOOM) -> n
     is measured against the great circle everywhere else in this project,
     so the raster walk has to use it too.
 
-    Spherical linear interpolation rather than repeated bearing steps:
-    it is exact, and it vectorises, which matters because a long route is
-    tens of thousands of samples.
+    The engine's points along the great circle (geo.great_circle_points),
+    in one crossing for all of them: a long route is tens of thousands of
+    samples.
     """
-    lat1, lon1 = math.radians(start[0]), math.radians(start[1])
-    lat2, lon2 = math.radians(end[0]), math.radians(end[1])
-    a = np.array([math.cos(lat1) * math.cos(lon1), math.cos(lat1) * math.sin(lon1), math.sin(lat1)])
-    b = np.array([math.cos(lat2) * math.cos(lon2), math.cos(lat2) * math.sin(lon2), math.sin(lat2)])
-
-    omega = math.acos(float(np.clip(np.dot(a, b), -1.0, 1.0)))
-    # Not `== 0`: the dot product of a unit vector with itself comes back
-    # as 0.999999... in floating point, so acos gives ~1e-8 rather than
-    # zero and the guard never fired. Below a microradian (~6 m) there is
-    # no course to walk.
-    if omega < 1e-6:
+    # Below a microradian (~6 m) there is no course to walk.
+    if distance_nm(start[0], start[1], end[0], end[1]) < 1e-6 * EARTH_RADIUS_NM:
         return np.empty((0, 2))
 
     # One sample per pixel of the straight-line pixel distance is enough:
@@ -681,11 +669,7 @@ def great_circle_pixels(start: tuple, end: tuple, zoom: int = DEFAULT_ZOOM) -> n
     x1, y1 = latlon_to_global_px(end[0], end[1], zoom)
     steps = max(2, int(math.hypot(x1 - x0, y1 - y0)))
 
-    t = np.linspace(0.0, 1.0, steps + 1)
-    points = (np.sin((1 - t)[:, None] * omega) * a + np.sin(t[:, None] * omega) * b) / math.sin(omega)
-
-    lat = np.degrees(np.arcsin(np.clip(points[:, 2], -1.0, 1.0)))
-    lon = np.degrees(np.arctan2(points[:, 1], points[:, 0]))
+    lat, lon = great_circle_points(start, end, steps + 1)
     px, py = tile_xy(lat, lon, zoom)
     return np.column_stack([px, py]) * TILE_PX
 

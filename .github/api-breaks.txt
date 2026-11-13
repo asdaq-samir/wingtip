@@ -1,4 +1,4 @@
-# Breaking changes to the planner's, the assistant's or the gateway's API made on purpose,
+# Breaking changes to the planner's or the gateway's API (and, until 2026-11-12, the assistant's) made on purpose,
 # which ci.yml's api-compat job lets through (oasdiff --err-ignore).
 # One line each, dated, with the method and path and oasdiff's own words
 # for the change, as its failure printed them, and why no released app
@@ -151,3 +151,23 @@
 2026-11-09 PUT /api/training/name removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
 2026-11-09 POST /api/training/reviews removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
 2026-11-09 DELETE /api/training/reviews/{id} removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-10 POST /api/auth/apple/native added the new required request property `nonce` -- additive in fact: it is @Nullable, and the gateway takes a body without it unless app.apple.require-nonce is set (default false), so an app from before the nonce still signs in; the document lists it required only because OpenApiConfig lists every property so. No app is released yet (#570's line above)
+2026-11-10 GET /api/me/export added `#/components/schemas/TrackDto, subschema #2` to the `flights/items/track` response property `anyOf` list for the response status `200` -- main already wrote null for a flight with no saved track, undeclared; the document now says so (@Nullable). No app decodes it: the web, iOS (DataExport) and Android (exportAccount) save the bytes as a file for the pilot
+2026-11-10 GET /api/me/export added `#/components/schemas/TrackDto, subschema #2` to the `flights/items/track` response property `anyOf` list for the response status `401` -- the same
+2026-11-10 GET /api/me/export the `flights/items/track` response's property `type` changed from `object` to `any` for status `200` -- the same
+2026-11-10 GET /api/me/export the `flights/items/track` response's property `type` changed from `object` to `any` for status `401` -- the same
+2026-11-10 GET /api/me/export removed the required property `flights/items/track/points` from the response with the `200` status -- the same
+2026-11-10 GET /api/me/export removed the required property `flights/items/track/points` from the response with the `401` status -- the same
+2026-11-10 GET /api/me/export removed the required property `flights/items/track/source` from the response with the `200` status -- the same
+2026-11-10 GET /api/me/export removed the required property `flights/items/track/source` from the response with the `401` status -- the same
+2026-11-12 POST /api/checkpoint-notes/pending api path removed without deprecation -- the assistant's alone, never forwarded to an app; the route's notes are POST /api/checkpoint-notes/route now (decision 0041)
+2026-11-12 POST /api/checkpoint-notes/seed api path removed without deprecation -- the assistant's alone, never forwarded; Claude no longer writes notes (decision 0041)
+2026-11-12 POST /api/engine/{name} api path removed without deprecation -- the assistant's alone, on the stack's own network, never forwarded (decision 0041)
+2026-11-12 GET /api/auth/capabilities removed the required property `claudeFeatures` from the response with the `200` status -- the Claude switch is gone (decision 0041); no app is released, and every app now ships without reading it
+2026-11-12 GET /api/subscription removed the required property `uses` from the response with the `200` status -- the Claude features' monthly counts are gone with them (decision 0041); no app is released
+2026-11-12 POST /api/subscription/trial removed the required property `uses` from the response with the `200` status -- the same
+2026-11-13 POST /api/aircraft added the new required request property `descentIasKt` -- nullable, as the climb's figures are (a record's every component is listed as required); the descent phase's IAS (38ad5fa4f); no app is released
+2026-11-13 POST /api/aircraft added the new required request property `descentFuelBurnGph` -- the same, the descent's fuel flow
+2026-11-13 PUT /api/aircraft/{id} added the new required request property `descentIasKt` -- the same
+2026-11-13 PUT /api/aircraft/{id} added the new required request property `descentFuelBurnGph` -- the same
+2026-11-13 POST /api/diagnostics the `faults/items/signature` request property's minLength was set to `1` -- springdoc's own document since 7010a2132, the gateway already refusing an empty signature; no app is released

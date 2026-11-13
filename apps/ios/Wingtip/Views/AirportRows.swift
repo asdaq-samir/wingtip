@@ -74,6 +74,8 @@ extension CardRow where Value == EmptyView {
 /// frequency as pilots write it at the right.
 struct FrequencyRowView: View {
     let frequency: Frequency
+    /// A NOTAM in force on it ("Out of service"), its badge before the figure.
+    var mark: NotamMark?
 
     static func glyph(_ kind: AirportWords.FrequencyKind) -> (String, Color) {
         switch kind {
@@ -90,9 +92,12 @@ struct FrequencyRowView: View {
         let line = AirportWords.frequencyLine(type: frequency.type, description: frequency.description)
         let glyph = Self.glyph(line.kind)
         CardRow(badge: RowBadge(systemImage: glyph.0, colour: glyph.1), title: line.name, detail: line.detail) {
-            Text(frequency.frequencyMhz.map(AirportWords.mhz) ?? "—").fontWeight(.semibold).monospacedDigit()
-                // Figure by figure, as a frequency is read on the radio.
-                .accessibilityLabel(frequency.frequencyMhz.map(SpokenFigures.frequency) ?? "no frequency")
+            HStack(spacing: WingtipSpace.sm) {
+                if let mark { NotamMarkBadge(mark: mark) }
+                Text(frequency.frequencyMhz.map(AirportWords.mhz) ?? "—").fontWeight(.semibold).monospacedDigit()
+                    // Figure by figure, as a frequency is read on the radio.
+                    .accessibilityLabel(frequency.frequencyMhz.map(SpokenFigures.frequency) ?? "no frequency")
+            }
         }
         // Held: Copy (FrequencyActions).
         .frequencyActions(frequency.frequencyMhz.map(AirportWords.mhz))
@@ -102,10 +107,36 @@ struct FrequencyRowView: View {
 /// A runway: drawn on its badge along its true heading, its ends, its
 /// surface and lights, any end flown with right traffic, the reported
 /// wind on the end it favours as the planner worked it out, and its
-/// length and width at the right.
+/// length and width at the right. By its name, the Runways tab's badges:
+/// Best Wind and Longest (the owner, 2026-11-11: "best wind runways should
+/// get the best wind badge", "just put a longest badge on the runway"),
+/// and a NOTAM's in force on it.
 struct RunwayRowView: View {
     let runway: Runway
+    var longest = false
+    var bestWind = false
+    var mark: NotamMark?
     @ScaledMetric(relativeTo: .subheadline) private var side = 28.0
+
+    /// The name and its badges on one line where they fit, the badges
+    /// under the name where they don't (the larger text sizes).
+    @ViewBuilder private var title: some View {
+        let name = Text("Runway \(runway.ends ?? "—")")
+        if bestWind || longest || mark != nil {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: WingtipSpace.sm) { name; badges }
+                VStack(alignment: .leading, spacing: WingtipSpace.xxs) { name; HStack(spacing: WingtipSpace.sm) { badges } }
+            }
+        } else {
+            name
+        }
+    }
+
+    @ViewBuilder private var badges: some View {
+        if bestWind { StatusLabel("Best Wind", systemImage: "wind", colour: .secondary) }
+        if longest { StatusLabel("Longest", systemImage: "arrow.left.and.right", colour: .secondary) }
+        if let mark { NotamMarkBadge(mark: mark) }
+    }
 
     var body: some View {
         let heading = (runway.runwayEnds ?? []).compactMap(\.headingTrueDeg).first
@@ -118,7 +149,7 @@ struct RunwayRowView: View {
             .frame(width: side, height: side)
             .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                Text("Runway \(runway.ends ?? "—")")
+                title
                 let detail = AirportWords.runwayDetail(runway)
                 if !detail.isEmpty { Text(detail).font(.subheadline).foregroundStyle(.secondary) }
                 if let wind = runway.wind {
@@ -228,6 +259,7 @@ struct RunwaySketch: View {
 /// One of the card's actions, as Maps' place card has them: a glyph over
 /// its name on a rounded pane, the first in the tint.
 struct CardActionLabel: View {
+    @Environment(Feel.self) private var feel
     /// The action, whose one name and glyph every card uses (CardAction).
     let action: CardAction
 
@@ -237,106 +269,10 @@ struct CardActionLabel: View {
         VStack(spacing: WingtipSpace.xs) {
             Image(systemName: action.systemImage).font(WingtipType.heading)
                 // Fly Here and Direct To bounce as they are taken.
-                .symbolBounce(on: action == .flyHere || action == .directTo ? Feel.shared.directTo : 0)
+                .symbolBounce(on: action == .flyHere || action == .directTo ? feel.directTo : 0)
             Text(action.title).font(WingtipType.tabBar.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, minHeight: WingtipSize.tapTarget)
-    }
-}
-
-/// What the field offers on the ground, after the radio and the lights
-/// (the web app's StopServices): the fuel and its remarks, what is on
-/// the field from its Chart Supplement entry, then the places to eat,
-/// sleep and hire a car within five miles, nearest first. A place with a
-/// website opens it, one with a phone calls it.
-struct StopServicesSections: View {
-    let ident: String
-    @State private var services: AirportServices?
-    @State private var problem: String?
-
-    var body: some View {
-        Group {
-            if let s = services {
-                Section("Fuel") {
-                    CardRow(badge: RowBadge(systemImage: "fuelpump", colour: Badge.fuel),
-                            title: (s.fuelTypes ?? []).isEmpty ? "None listed" : AirportWords.fuelNames(s.fuelTypes ?? []))
-                    // The remarks in plain English as the planner gives
-                    // them (wingtip.remarks.service_notes).
-                    ForEach(s.fuelNotes ?? [], id: \.self) { Text($0) }
-                }
-                let field = onTheField(s)
-                if !field.isEmpty {
-                    Section("On the Field") {
-                        ForEach(field, id: \.title) { row in
-                            CardRow(badge: RowBadge(systemImage: row.symbol, colour: row.colour), title: row.title, detail: row.detail) {
-                                if let value = row.value { Text(value).foregroundStyle(.secondary) }
-                            }
-                        }
-                    }
-                }
-                places("Food nearby", s.food, "fork.knife", Badge.food)
-                places("Places to stay", s.lodging, "bed.double", Badge.lodging)
-                places("Car rental", s.cars, "car", Badge.car)
-                if s.nearbyUnavailable == true {
-                    Section("Nearby") { Text("Places near the field could not be looked up").foregroundStyle(.secondary) }
-                }
-            } else if let problem {
-                Section("Services") {
-                    Text(problem).foregroundStyle(.secondary)
-                    Button("Try Again") { Task { await load() } }
-                }
-            } else {
-                Section("Fuel") {
-                    ForEach(0..<2, id: \.self) { _ in
-                        CardRow(badge: RowBadge(systemImage: "fuelpump", colour: Badge.fuel), title: "The fuel sold on the field")
-                            .loading("Fetching the services")
-                    }
-                }
-            }
-        }
-        .task(id: ident) { await load() }
-    }
-
-    private func load() async {
-        problem = nil
-        do { services = try await Planner.services(ident) } catch { problem = "The services could not be fetched." }
-    }
-
-    private struct FieldRow { let symbol: String; let colour: Color; let title: String; var detail: String?; var value: String? }
-
-    private func onTheField(_ s: AirportServices) -> [FieldRow] {
-        let repair = [s.airframeRepair.map { "airframe \($0)" }, s.powerplantRepair.map { "engine \($0)" }].compactMap { $0 }.joined(separator: ", ")
-        return [
-            s.courtesyCar == true ? FieldRow(symbol: "car.fill", colour: Badge.car, title: "Courtesy car", detail: (s.groundNotes ?? []).joined(separator: " ")) : nil,
-            s.tieDown == true ? FieldRow(symbol: "parkingsign", colour: Badge.runway, title: "Tie-downs") : nil,
-            s.hangar == true ? FieldRow(symbol: "house.lodge", colour: Badge.runway, title: "Hangars") : nil,
-            repair.isEmpty ? nil : FieldRow(symbol: "wrench.and.screwdriver", colour: Badge.other, title: "Repair", value: repair),
-            s.oxygen == true ? FieldRow(symbol: "aqi.medium", colour: Badge.other, title: "Oxygen") : nil,
-            s.landingFee.map { FieldRow(symbol: "doc.text", colour: Badge.other, title: "Landing fee", value: $0 ? "Yes" : "None") },
-        ].compactMap { $0 }
-    }
-
-    @ViewBuilder
-    private func places(_ title: String, _ list: [NearbyPlace]?, _ symbol: String, _ colour: Color) -> some View {
-        if let list, !list.isEmpty {
-            Section {
-                ForEach(list) { place in
-                    let row = CardRow(badge: RowBadge(systemImage: symbol, colour: colour), title: place.name, detail: place.kind) {
-                        Text(AirportWords.away(place)).foregroundStyle(.secondary).monospacedDigit()
-                    }
-                    if let link = place.website.flatMap(URL.init(string:)) ?? place.phone.flatMap({ URL(string: "tel:" + $0.filter { !$0.isWhitespace }) }) {
-                        Link(destination: link) { row }.foregroundStyle(.primary)
-                    } else {
-                        row
-                    }
-                }
-            } header: {
-                Text(title)
-            } footer: {
-                // Overture's credit under its places, as its licence asks.
-                Text("Places © Overture Maps Foundation")
-            }
-        }
     }
 }
 

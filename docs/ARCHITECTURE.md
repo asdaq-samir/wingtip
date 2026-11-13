@@ -22,9 +22,9 @@ once and every app gets the same answer.
 | Layer | Where | Its job |
 |---|---|---|
 | **The engine** | [`engine/`](../engine) (Rust) | Every aviation rule and figure, once: altitudes, winds, runways, fuel, weather limits, Go / No-Go, holds, procedures, the clearance reader, the debrief, currency. No network, no screen, no clock. A facade (`wingtip-engine`) over eleven domain crates; each rule is a name in `engine/facade/src/call.rs`, JSON in and out, typed by `engine/contract/engine.schema.json`. [engine/README.md](../engine/README.md) |
-| **The planner and its services** | [`services/planner`](../services/planner), [`ingest`](../services/ingest), [`weather`](../services/weather), [`assistant`](../services/assistant), [`jobs`](../services/jobs) (Python) | Work out a flight. The planner fetches the FAA's data, reads the stores the other services fill, scores checkpoints with the chart model, and asks the engine every rule (`wingtip_native.call`). |
+| **The planner and its services** | [`services/planner`](../services/planner), [`ingest`](../services/ingest), [`weather`](../services/weather), [`jobs`](../services/jobs) (Python) | Work out a flight. The planner fetches the FAA's data, reads the stores the other services fill, scores checkpoints with the chart model, and asks the engine every rule (`wingtip_native.call`). |
 | **The gateway** | [`services/gateway`](../services/gateway) (Spring Boot) | Who the pilot is and what they saved: accounts, sign-in, records, the public API, scheduled mail. No aviation logic: it asks the planner for a figure. [services/gateway/README.md](../services/gateway/README.md) |
-| **The apps** | [`apps/web`](../apps/web), [`apps/ios`](../apps/ios), [`apps/android`](../apps/android) | Get data, keep state, draw (one view model per screen), and ask the engine the rest by name: the web through WebAssembly (`callEngine`), the phones through its C interface (`wt_call`). |
+| **The apps** | [`apps/web`](../apps/web), [`apps/ios`](../apps/ios), [`apps/android`](../apps/android) | Get data, keep state, draw (one view model per screen), and ask the engine the rest by name: the web through WebAssembly (`callEngine`), the phones through the Swift and Kotlin UniFFI generates from it (`call`). |
 
 The owner kept both server languages on this split (2026-11-06): the
 boundary between them is plain HTTP, merging them would give a pilot
@@ -40,11 +40,10 @@ The long-running ones restart with Docker (`restart: unless-stopped`).
 
 | Service | What it does | Port (this machine only) |
 |---|---|---|
-| `gateway` | Spring Boot: accounts, sign-in, records, the public API, mail; serves the web app and proxies `/api/planner/*` to the planner and the assistant | 8080, 8443 (HTTPS) |
+| `gateway` | Spring Boot: accounts, sign-in, records, the public API, mail; serves the web app and proxies `/api/planner/*` to the planner | 8080, 8443 (HTTPS) |
 | `planner` | FastAPI: the course, checkpoints, nav log, briefing, chart and overlay tiles, traffic, the live SWIM answers and feed health; the engine inside it | 8084 |
 | `ingest` | The live feeds, read always: FAA SWIM (STDDS, FNS, TFMS, ITWS, SFDPS) and the followed airplanes' adsb.fi rounds, written into the live store | none |
 | `weather` | Fetches the weather on a schedule (METAR, TAF, PIREP, SIGMET, G-AIRMET, GFS winds aloft, GLMP, TFRs, the radar's time) into the weather store | none |
-| `assistant` | Every Claude call (the assistant, the Brief's narrative, the words, the checkpoint notes, the mock oral) over the planner's figures; holds the Anthropic key. Only with the `claude` profile: the Claude features are off until the subscription is decided ([decision 0035](decisions/0035-claude-off-until-subscription.md)) | 8085 |
 | `db` | PostgreSQL 18 (`postgres:18-trixie`): the gateway's records | not published |
 | `mailpit` | The local inbox the sign-in mail goes to (Amazon SES on AWS) | 8025 |
 | `dev-services` | A sidecar holding the Docker socket, so the developer console can start `ml` and the jobs | none |
@@ -57,34 +56,32 @@ On request only, behind a compose profile:
 | `charts`, `charts-overlays`, `charts-next` | `jobs` | The chart cycle: the FAA's sheets rendered into one PMTiles archive per kind; the map's overlay vector tiles; the next cycle staged before its date and swapped in at 0901Z on it. [services/jobs/README.md](../services/jobs/README.md) |
 | `ml` | `notebooks` | Jupyter on 8888 (token `wingtip`) |
 | `web-build` | `web-dev` | `vite build --watch` into `apps/web/dist`, which the gateway serves in place of its own bundle |
-| `jaeger` | `tracing` | Traces of a request, gateway to planner to each engine rule and source, and the assistant's Claude calls, on 16686 ([LOCAL-DEV.md](LOCAL-DEV.md#tracing)) |
+| `jaeger` | `tracing` | Traces of a request, gateway to planner to each engine rule and source, on 16686 ([LOCAL-DEV.md](LOCAL-DEV.md#tracing)) |
 | `base` | (never runs) | Builds `services/Dockerfile.base`, the Python base with wingtip and the engine that every Python image starts from |
 
 ### A request, end to end
 
 ```
-app (web, iOS, Android)   draws; asks the engine (WebAssembly, wt_call) what it draws
+app (web, iOS, Android)   draws; asks the engine (WebAssembly, UniFFI) what it draws
   -> gateway   :8080      serves the page, owns sign-in and records, proxies /api/planner/*
   -> planner   :8084      works out the flight from the stores and the FAA's data; asks the engine every rule
-  -> assistant :8085      (Claude paths only) writes words over the planner's figures
   -> db        :5432      pilots, aircraft, flights, logbook
 ```
 
 The browser never reaches the planner directly: the gateway checks the
-session, the subscription and the day's allowance, then forwards. Which
-planner and assistant routes a browser may reach, and what each needs,
-the gateway learns from the two services' own OpenAPI documents.
+session (and, for the debrief, the subscription), then forwards. Which
+planner routes a browser may reach, and what each needs, the gateway
+learns from the planner's own OpenAPI document (`x-gateway`).
 
 A request can be followed through all of this as one trace
 (OpenTelemetry, to Jaeger, off unless `TRACING=1`;
 [LOCAL-DEV.md](LOCAL-DEV.md#tracing)). The page sends an `X-Request-Id`; the
 gateway puts it on its span and passes the W3C `traceparent` and the id to
-the planner and the assistant, which take it up; the planner's spans go
-down to each engine rule by its name and each weather product read, the
-assistant's to each Claude call with its model and tokens. Each service
+the planner, which takes it up; its spans go down to each engine rule by
+its name and each weather product read. Each service
 sets this up in one small module of its own (the gateway's `tracing`
 package, the planner's `app/tracing.py` over `wingtip/tracing.py`, which the
-weather service and ingest start too, and the assistant's `app/tracing.py`),
+weather service and ingest start too),
 and none of it is loaded where tracing is off.
 
 ## The shared stores
@@ -138,7 +135,6 @@ Each service fetches its own; the engine never fetches.
 | tfr.faa.gov | TFRs | weather |
 | adsb.lol, ADS-B Exchange | The map's traffic, by region | planner |
 | adsb.fi | The followed airplanes | ingest |
-| Anthropic | Claude, through the Python SDK | assistant |
 
 ## Tech stack
 
@@ -151,7 +147,11 @@ Each service fetches its own; the engine never fetches.
 - **Phones:** SwiftUI and MapKit (iOS, watchOS); Kotlin, Jetpack Compose
   and MapLibre (Android).
 - **Chart model:** scikit-learn; notebooks in Jupyter.
-- **AI:** the Claude API through the Anthropic Python SDK, no agent framework.
+- **AI:** on the phone only: Apple's Foundation Models on the iPhone and
+  Gemini Nano on Android. The server makes no model call
+  ([decision 0041](decisions/0041-claude-taken-out.md)); a pilot's own
+  Claude or ChatGPT reaches the planner through its MCP connector
+  (`services/planner/app/mcp`, [decision 0036](decisions/0036-mcp-connector.md)).
 - **Infrastructure:** Docker Compose; GitHub Actions; AWS CloudFormation
   (EC2, CloudFront, S3, Fargate Spot, SES), designed but not yet deployed.
 
@@ -159,7 +159,7 @@ Each service fetches its own; the engine never fetches.
 
 | For | Read |
 |---|---|
-| Every endpoint of the planner, the assistant and the gateway | [api/README.md](api/README.md) |
+| Every endpoint of the planner and the gateway | [api/README.md](api/README.md) |
 | wingtip, the planner's Python package | [services/planner/wingtip/README.md](../services/planner/wingtip/README.md) |
 | The engine's crates and how a rule is added | [engine/README.md](../engine/README.md) |
 | The web app's layout and map | [apps/web/README.md](../apps/web/README.md) |

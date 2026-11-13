@@ -7,7 +7,7 @@
  *
  * Worked out by the shared engine (engine/crates/procedures/src/figures/lost_comms.rs,
  * through lib/engine), the very code behind the planner's /api/lost-comms
- * and the phones' wt_call("lost_comms"): the routes' labels and rules, VFR's words
+ * and the phones' `call`("lost_comms"): the routes' labels and rules, VFR's words
  * and each segment's line too, so the page writes none of 91.185's words
  * itself.
  */

@@ -37,21 +37,20 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AheadAlert
-import app.wingtipmaps.android.api.NearestAirport
 import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.emergency.EmergencyOpen
-import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
-import app.wingtipmaps.android.engine.generated.glideReaches
 import app.wingtipmaps.android.flight.AheadSheet
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.InFlight
-import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
 import java.time.Instant
@@ -62,10 +61,13 @@ import kotlin.math.roundToInt
  * The top of the map in the air (#218), under the status bar and left of
  * the buttons: what is ahead on the track (AlertsBanner, the planner's or
  * the packs' alerts) and the flight's instruments (InstrumentsBar), where
- * nothing else was drawn. Nothing moves for them.
+ * nothing else was drawn. Nothing moves for them. The instruments, and the
+ * fix in them, are read here rather than by the map round them, so only
+ * this is drawn again at each fix; the copilot is handed them too.
  */
 @Composable
-fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () -> Unit, modifier: Modifier = Modifier, copilot: @Composable () -> Unit = {}) {
+fun InFlightTop(ahead: List<AheadAlert>, onNearest: () -> Unit, modifier: Modifier = Modifier, model: FlightModel = hiltViewModel(), copilot: @Composable (InFlight.State) -> Unit = {}) {
+    val state by model.state.collectAsStateWithLifecycle()
     // Under the status bar and clear of a cutout or a side navigation
     // bar in landscape (edge to edge).
     Column(
@@ -76,7 +78,7 @@ fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () ->
     ) {
         AlertsBanner(ahead)
         // The copilot's one message, under what is ahead (CopilotBanner).
-        copilot()
+        copilot(state)
         InstrumentsBar(state, onNearest)
         // A rule of the engine that failed for this fix, in its words.
         state.problem?.let { ProblemLine(it) }
@@ -255,9 +257,3 @@ object InstrumentsWords {
         return dest.fuelLeftGal?.let { "$line, about ${Format.fuel(maxOf(0.0, it))} left by the plan" } ?: line
     }
 }
-
-/** Whether a field is within a still-air glide at pattern height, by the
- *  engine's glide_reaches over the field's own elevation, at the airplane's
- *  own `glideRatio` (false with none). */
-fun glideReaches(fix: OwnShip.Fix, field: NearestAirport, glideRatio: Double?): Result<Boolean> =
-    Engine.glideReaches(fix.altitudeFt, fix.groundspeedKt, field.distanceNm, field.elevationFt, glideRatio)

@@ -26,14 +26,22 @@ final class AIEvaluationsTests: XCTestCase {
     static let floor = EvalBar.quality(device: 0.8, simulator: 0.7)
     static let namesFloor = EvalBar.quality(device: 0.8, simulator: 0.5)
 
-    private func modelOrSkip() throws {
+    /// Skipped where the model is said to be unavailable, and also where it
+    /// is said to be available but cannot answer: GitHub's macOS runner's
+    /// simulator reports `.available` yet holds none of the model's assets
+    /// (UnifiedAssetFramework 5000, ModelManagerError 1026, CI run
+    /// 43517308483), so every sample came back empty and scored 0.
+    private func modelOrSkip() async throws {
         if let why = OnDeviceWords.unavailableWhy { throw XCTSkip("No on-device model here: \(why)") }
-        guard #available(iOS 27, *) else { throw XCTSkip("The Evaluations framework needs iOS 27.") }
+        do {
+            _ = try await LanguageModelSession().respond(to: "Say OK.")
+        } catch {
+            throw XCTSkip("The on-device model cannot answer here: \(error.localizedDescription)")
+        }
     }
 
     func testTheNotamsInWordsKeepToTheNotams() async throws {
-        try modelOrSkip()
-        guard #available(iOS 27, *) else { return }
+        try await modelOrSkip()
         let evaluation = NotamWordsEvaluation(samples: try EvalBar.asked(try NotamWordsEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
@@ -42,8 +50,7 @@ final class AIEvaluationsTests: XCTestCase {
     }
 
     func testAClearanceSaidBackReadsTheSame() async throws {
-        try modelOrSkip()
-        guard #available(iOS 27, *) else { return }
+        try await modelOrSkip()
         let evaluation = ClearanceSaidEvaluation(samples: try EvalBar.asked(try ClearanceSaidEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
@@ -53,7 +60,6 @@ final class AIEvaluationsTests: XCTestCase {
     /// The fixtures' own checks, run everywhere, with or without a model:
     /// the samples are built and the metrics judge known answers right.
     func testTheEvaluationsJudgeKnownAnswers() throws {
-        guard #available(iOS 27, *) else { throw XCTSkip("The Evaluations framework needs iOS 27.") }
         let samples = try NotamWordsEvaluation.samples()
         XCTAssertTrue(samples.contains { $0.expected?.contains("runway") == true })
         let runway = try XCTUnwrap(samples.first { $0.expected?.contains("runway") == true })
@@ -107,7 +113,6 @@ enum EvalBar {
     /// The samples as asked: on the simulator the whole set over and over,
     /// each sample as often as the next, until there are
     /// `simulatorSamples` of them; once on a phone.
-    @available(iOS 27, *)
     static func runs(_ samples: [TextSample]) -> [TextSample] {
         guard onSimulator, !samples.isEmpty else { return samples }
         let times = (simulatorSamples + samples.count - 1) / samples.count
@@ -117,7 +122,6 @@ enum EvalBar {
     /// A fixture's samples as asked (`runs`), or an error where it has
     /// fewer than `leastSamples` of its own: counted before they are asked
     /// over, so one sample asked thirty times is still too few.
-    @available(iOS 27, *)
     static func asked(_ samples: [TextSample]) throws -> [TextSample] {
         guard samples.count >= leastSamples else { throw TooFewSamples(count: samples.count) }
         return runs(samples)
@@ -131,7 +135,6 @@ enum EvalBar {
 
 /// A sample of words to judge: the input as text (CustomStringConvertible,
 /// as the framework asks), and what the answer is held to.
-@available(iOS 27, *)
 struct TextSample: SampleProtocol {
     var input: String
     var expected: String?
@@ -151,7 +154,6 @@ enum EvalFixtures {
 
 /// The NOTAMs in words: each sample one ranked NOTAM, as sent with the
 /// engine's reasons (NotamsInWords.figure), and the words it must name.
-@available(iOS 27, *)
 struct NotamWordsEvaluation: Evaluation {
     static let noInvented = Metric("no figure of its own")
     static let namesIt = Metric("names what the NOTAM does")
@@ -223,7 +225,6 @@ struct NotamWordsEvaluation: Evaluation {
 /// engine's reading of those words -- the altitude, the expect, the
 /// frequency and the squawk -- so the model's words change nothing the
 /// engine reads.
-@available(iOS 27, *)
 struct ClearanceSaidEvaluation: Evaluation {
     static let sameReading = Metric("the engine reads the same clearance")
 

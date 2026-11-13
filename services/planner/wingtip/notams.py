@@ -22,6 +22,7 @@ international ones too.
 
 from __future__ import annotations
 
+import html
 import json
 import re
 import sqlite3
@@ -54,7 +55,7 @@ _ICAO_PLACE = re.compile(r"\bA\)\s*([A-Z]{4})\b")
 _DOMESTIC_ID = re.compile(r"^!(\w+)\s+([A-Z]?\d{1,4}/\d{1,4})")
 #: The store's layout: 1 since a NOTAM known only by its ICAO number is
 #: kept by its place and number, not the number alone (_upgrade).
-STORE_VERSION = 1
+STORE_VERSION = 2
 
 _LOCK = threading.Lock()
 _db: sqlite3.Connection | None = None
@@ -88,15 +89,31 @@ def _upgrade(db: sqlite3.Connection) -> None:
     over KAPG's, a row with one's place and the other's words (15 of the
     4,011 kept so on 2026-11-02). Each is kept again by its place and
     number, its place read from its own words where they give one; the
-    NOTAM it was written over is gone until the feed sends it again."""
-    if db.execute("PRAGMA user_version").fetchone()[0] >= STORE_VERSION:
+    NOTAM it was written over is gone until the feed sends it again.
+
+    Before version 2 a NOTAM's text was kept with the HTML entities the
+    FAA's feed puts inside its XML ("O&apos;HARE"), which notam_read took for
+    someone's own words; the engine's reader now decodes them (from_fns),
+    and those kept are decoded here."""
+    version = db.execute("PRAGMA user_version").fetchone()[0]
+    if version >= STORE_VERSION:
         return
+    if version < 1:
+        _keep_by_place(db)
+    for key, raw, text in db.execute("SELECT id, raw, text FROM notams WHERE raw LIKE '%&%' OR text LIKE '%&%'").fetchall():
+        db.execute("UPDATE notams SET raw = ?, text = ? WHERE id = ?", (html.unescape(raw or ""), html.unescape(text or ""), key))
+    db.execute(f"PRAGMA user_version = {STORE_VERSION}")
+    db.commit()
+
+
+def _keep_by_place(db: sqlite3.Connection) -> None:
+    """Version 1: each NOTAM kept by its place and number (_upgrade)."""
     rows = db.execute("SELECT id, location, icao_location, raw FROM notams WHERE id NOT LIKE '% %'").fetchall()
     for old, location, icao_location, raw in rows:
         domestic = _DOMESTIC_ID.match(raw or "")
         place = _ICAO_PLACE.search(raw or "")
         if domestic:
-            key, fix = f"{domestic.group(1)} {domestic.group(2)}", {"icao_location": domestic.group(1)}
+            key, fix = (f"{domestic.group(1)} {domestic.group(2)}", {"icao_location": domestic.group(1)})
             # Its location is the word after the number, as the domestic form writes it.
             words = (raw or "").split()
             if len(words) > 2:
@@ -110,8 +127,6 @@ def _upgrade(db: sqlite3.Connection) -> None:
             "UPDATE notams SET id = ?, location = COALESCE(?, location), icao_location = COALESCE(?, icao_location) WHERE id = ?",
             (key, fix.get("location"), fix.get("icao_location"), old),
         )
-    db.execute(f"PRAGMA user_version = {STORE_VERSION}")
-    db.commit()
 
 
 def reset() -> None:
@@ -177,6 +192,7 @@ def heard(xml: str, now: float | None = None) -> int:
                         :ends, :estimated, :schedule, :text, :raw, 0, :heard)
                 ON CONFLICT (id) DO UPDATE SET
                     icao_id = COALESCE(excluded.icao_id, icao_id),
+                    location = COALESCE(excluded.location, location),
                     icao_location = COALESCE(excluded.icao_location, icao_location),
                     issued = excluded.issued, starts = excluded.starts, ends = excluded.ends,
                     estimated = excluded.estimated, schedule = excluded.schedule, text = excluded.text,
@@ -200,6 +216,16 @@ def since() -> float | None:
     return row[0] if row else None
 
 
+def every() -> list[dict]:
+    """Every NOTAM kept, ended ones included (a day after their end), each
+    {"id", "location", "icao_location", "starts", "ends", "text", "raw"}:
+    what the day's archive keeps (wingtip.history.notam_archive)."""
+    with _LOCK:
+        rows = _connection().execute("SELECT id, location, icao_location, starts, ends, text, raw FROM notams").fetchall()
+    keys = ("id", "location", "icao_location", "starts", "ends", "text", "raw")
+    return [dict(zip(keys, r)) for r in rows]
+
+
 def _places(field: str) -> set[str]:
     """A field's identifiers as NOTAMs give them: the domestic location
     drops the K of a contiguous-states ICAO one (KBJC is BJC)."""
@@ -213,7 +239,13 @@ def _places(field: str) -> set[str]:
 def at_fields(fields: list[str], now: float | None = None) -> list[dict]:
     """The NOTAMs in force at these fields or yet to come, soonest first:
     not ended, cancelled or replaced. Each {"id", "location", "starts",
-    "ends", "estimated", "schedule", "text", "raw"}."""
+    "ends", "estimated", "schedule", "text", "raw"}.
+
+    An ICAO-form NOTAM is at the place its A) item names (icao_location),
+    not by its kept location: a row kept by its number alone before
+    version 1 kept one field's location under another's words (KSHV's
+    A0917/26, "RWY 06/24 CLSD EXC XNG", listed under KORD on the owner's
+    card, 2026-11-11)."""
     now = time.time() if now is None else now
     places = sorted(set().union(*(_places(f) for f in fields))) if fields else []
     if not places:
@@ -226,7 +258,7 @@ def at_fields(fields: list[str], now: float | None = None) -> list[dict]:
                 f"""
             SELECT id, location, starts, ends, estimated, schedule, text, raw FROM notams
             WHERE ended = 0 AND (ends IS NULL OR ends > ?)
-              AND (location IN ({marks}) OR icao_location IN ({marks}))
+              AND ((location IN ({marks}) AND (raw LIKE '!%' OR icao_location IS NULL)) OR icao_location IN ({marks}))
             ORDER BY starts, id
         """,
                 (_stamp(now), *places, *places),

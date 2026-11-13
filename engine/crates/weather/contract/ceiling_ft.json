@@ -1,0 +1,54 @@
+{
+  "x-call": "wingtip_weather::calls::call",
+  "description": "A report's ceiling, ft above the ground: the lowest broken, overcast or obscured layer (14 CFR 1.1), an obscured sky's at its vertical visibility; null where there is none or it is not known (sky_ceiling tells them apart).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CeilingFtInput",
+      "type": "object",
+      "properties": {
+        "layers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "cover": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "base_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "vert_vis_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "CeilingFtAnswer",
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

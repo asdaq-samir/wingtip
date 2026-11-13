@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- What the agent works out, with no simulator and no OBS: the track
+       read, cut at its gaps, eased between reports, and the shot list.
+       Tested anywhere (check.sh's sim area, in Docker). -->
+  <PropertyGroup>
+    <RootNamespace>Wingtip.Replay</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The shot list's schema, the one both simulator drivers read: its
+         home is beside the X-Plane plugin, which installs it with its
+         package (scripts/dev/xplane-trial.sh). -->
+    <EmbeddedResource Include="../../xplane-driver/wingtip_replay/shots.schema.json" LogicalName="shots.schema.json" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,72 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::fuel",
+  "description": "The figures from the airplane's book alone, before the nav log's: at cruise speed with no wind the minutes over the distance, the fuel at the cruise burn over them, and the fuel required, that with the airplane's own start and taxi allowance (taxi_fuel_gal, its profile's; left out where it has none, never a stock airplane's) and 45 minutes' reserve at the cruise burn, the most the rules ask (14 CFR 91.151(a)(2), 91.167(a)(3)), so an estimate is never short of a reserve. Null where the book gives no speed, or no burn for the fuel.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FuelEstimateInput",
+      "type": "object",
+      "properties": {
+        "distance_nm": {
+          "type": "number"
+        },
+        "cruise_tas_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_burn_gph": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "taxi_fuel_gal": {
+          "description": "The airplane's own fuel for engine start, taxi and takeoff, gallons (its profile's taxi_fuel_gal); null or missing for none.",
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "distance_nm"
+      ]
+    },
+    "answer": {
+      "title": "FuelEstimateAnswer",
+      "type": "object",
+      "properties": {
+        "minutes": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "trip_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "required_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "minutes",
+        "trip_gal",
+        "required_gal"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

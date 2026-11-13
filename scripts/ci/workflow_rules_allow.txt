@@ -6,11 +6,9 @@
 # merging, labelling and pushing are what they are for.
 write | auto-merge-agents.yml
 write | ci-autofix.yml
-write | claude-review.yml
 write | update-branches.yml
-# One standing issue each (issues: write and nothing else that writes).
+# One standing issue (issues: write and nothing else that writes).
 write | nightly-issue.yml
-write | versions.yml
 
 # `|| true` read afterwards, not hidden:
 # the flake hunt runs each suite five times; flaky_tests.py reads every
@@ -23,21 +21,18 @@ or-true | native-ios.yml | test > "$RUNNER_TEMP/xcodebuild.log" 2>&1 || true
 
 # The run blocks longer than 15 lines when the guard came in (2026-11-10):
 # workflow | job | step | lines. Each is to move into a script.
-long | ci.yml | changes | What this run builds and tests | 19
-long | ci.yml | e2e | The public images, in the background | 35
-long | ci.yml | e2e | The stack, in the background | 79
 long | ci.yml | e2e | Wait for the stack, the page and a warm planner | 21
 long | ci.yml | e2e | The planner's data, as annotations | 34
 long | ci.yml | e2e-images | The keys nothing has been built for yet | 30
 long | ci.yml | api-compat | oasdiff breaking, each document against main's | 18
 long | ci.yml | standards | Speed trend | 35
-long | native-ios.yml | test | The simulators to test on | 17
 long | native-ios.yml | test | Each device's first screen | 20
-long | native-ios.yml | testflight | Archived, signed and uploaded to TestFlight | 21
 long | promote.yml | promote | This commit's images, as latest | 21
 
 # The workflows' lines in all, at most: set at the total on 2026-11-10,
 # lowered when engine-wheel and test-python replaced six wheel builds, then
 # one for the gateway's aircraftForm.json path (areas.yml); lowered again
-# when the tiers (2026-11-10) folded five jobs into guards and its script.
-budget | 3025
+# when the tiers (2026-11-10) folded five jobs into guards and its script;
+# lowered again (2026-11-12) when the e2e job's two long steps and the
+# phones' generated-code check moved into scripts.
+budget | 2900

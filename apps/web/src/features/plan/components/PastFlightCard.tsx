@@ -1,18 +1,19 @@
 import { Suspense, lazy, memo, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table";
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
-import { Gauge, MoveVertical, Pause, Play, PlaneLanding, PlaneTakeoff, Route, Square, Timer } from "lucide-react";
+import { Gauge, MoveVertical, PlaneLanding, PlaneTakeoff, Route, Timer } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { CardHead, PanelCard } from "../../../components/PanelCard";
-import RoundButton from "../../../components/RoundButton";
+import { CardHead } from "../../../components/CardHead";
+import { SheetCard } from "../../../components/SheetCard";
 import { RowBadge } from "../../../components/RowBadge";
-import Segmented from "../../../components/Segmented";
 import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../../lib/api/types";
 import { clockTime } from "../../../lib/format";
 import { compassPoint } from "../../../lib/compass";
-import { distanceNm } from "../../../lib/geo";
-import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, stopPastFlight, usePastFlight } from "../map/pastFlight";
+import { useGeo } from "../../../lib/geo";
+import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight } from "../map/pastFlight";
+import { usePreferences } from "../../../lib/preferences";
+import { CameraMenu, ReplayTimeline, setReplayCamera } from "../../replay";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
 import { altFt, bearing, grouped } from "../../../lib/format";
@@ -46,7 +47,8 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
   const points = usePastFlight((s) => s.points);
   const off = when(flight?.off ?? id);
   return (
-    <PanelCard testId="past-flight-card">
+    // At half as it opens, as every card does (the owner, 2026-11-11).
+    <SheetCard head={false} testId="past-flight-card">
       <CardHead
         name={flight ? legOf(flight) : "Flight"}
         nameTestId="past-flight-name"
@@ -63,13 +65,15 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
         {flight?.destination && points.length > 1 && <ApproachRow ident={flight.destination.ident} points={points} />}
         {points.length > 1 && <TrackLog points={points} />}
       </div>
-    </PanelCard>
+    </SheetCard>
   );
 }
 
 /** Off and on, how long, how high, how far over the ground and how fast. */
 function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFlightPoint[] }) {
-  const flown = useMemo(() => points.slice(1).reduce((nm, p, i) => nm + distanceNm(points[i]!, p), 0), [points]);
+  // The miles flown are the engine's (lib/geo): their rows wait for it.
+  const geo = useGeo();
+  const flown = useMemo(() => geo?.legsNm(points).reduce((sum, nm) => sum + nm, 0) ?? null, [geo, points]);
   const hours = (flight.on - flight.off) / 3600;
   const value = (text: string) => <span className="font-semibold text-foreground tabular-nums">{text}</span>;
   return (
@@ -114,7 +118,7 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
         title="Highest"
         value={value(`${altFt(flight.max_alt_ft)} ft`)}
       />
-      {points.length > 1 && (
+      {points.length > 1 && flown !== null && (
         <>
           <ListRow
             media={
@@ -141,43 +145,24 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
   );
 }
 
-const SPEED_OPTIONS = REPLAY_SPEEDS.map((n) => ({ value: String(n), label: `${n}×` }));
-
-/** The replay's controls: play or pause, stop, and how fast. */
+/** The replay's controls: the timeline every replay plays on
+ *  (features/replay's ReplayTimeline) -- play or pause, stop, how fast,
+ *  and its time scrubbed in Zulu and local -- with the camera's menu
+ *  where the map is in 3D (features/replay/camera), the Studio's own. */
 function Replay() {
   const points = usePastFlight((s) => s.points);
-  const playing = usePastFlight((s) => s.playing);
-  const speed = usePastFlight((s) => s.speed);
-  const started = usePastFlight((s) => s.at !== null);
+  const threeD = usePreferences((s) => s.threeD);
+  // The camera let go with the card: the map the pilot's again.
+  useEffect(() => () => setReplayCamera(null), []);
   return (
     // No title over it: the card's name says what is replayed, and the
     // room is the graph's at the half sheet.
     <ListGroup>
-      <ListRow
-        title={
-          <span className="flex items-center gap-2">
-            <RoundButton
-              label={playing ? "Pause" : "Play"}
-              onClick={playing ? pausePastFlight : playPastFlight}
-              disabled={!points.length}
-              data-testid="replay-play"
-            >
-              {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
-            </RoundButton>
-            <RoundButton label="Stop" onClick={stopPastFlight} disabled={!started} data-testid="replay-stop">
-              <Square className="size-5" />
-            </RoundButton>
-          </span>
-        }
-      >
-        <Segmented
-          label="Replay speed"
-          value={String(speed)}
-          onChange={(v) => usePastFlight.setState({ speed: Number(v) })}
-          options={SPEED_OPTIONS}
-          testId="replay-speed"
-        />
-      </ListRow>
+      <div className="px-3 py-2">
+        <ReplayTimeline label="Replay" speeds={REPLAY_SPEEDS} onStop={stopPastFlight} testId="replay">
+          {threeD && <CameraMenu testId="replay-camera" />}
+        </ReplayTimeline>
+      </div>
       {points.length > 1 && <ReplayChart points={points} />}
     </ListGroup>
   );
@@ -259,14 +244,17 @@ const CHART_MAX = 160;
 const UNDER_CHART = 8;
 
 /**
- * The graph's height, so that it ends where the half sheet's body does
- * (MapPanel's --half-body: the body's height at half, the route's figures
- * at the panel's foot left out), at the owner's ask: at half, with the tab
- * bar and the figures over and under the card, its time axis was cut off.
- * From where the graph starts in the body, not from guessed heights of
- * what is above it, which change with the text size. Measured by a
- * ResizeObserver, on the body and the card -- never in the middle of a
- * render; null until then, and where the sheet gives no half.
+ * The graph's height, so that it ends where the half sheet's body does, at
+ * the owner's ask: at half, with the tab bar and the figures over and under
+ * the card, its time axis was cut off. The body in sight at half is the
+ * card's body less the Drawer's own snap offset (--sheet-offset, CardStack:
+ * the card is laid out at its full height and slid by it); none from `md`
+ * up, whose side panel has no half. From where the graph starts in the
+ * body, not from guessed heights of what is above it, which change with the
+ * text size; all the way up the room all the way up. Measured by a
+ * ResizeObserver on the body and the card and as the card's size changes
+ * (its data-panel, the offset set with it) -- never in the middle of a
+ * render; null until then.
  */
 function useHalfFit(box: RefObject<HTMLDivElement | null>): number | null {
   const [height, setHeight] = useState<number | null>(null);
@@ -274,17 +262,26 @@ function useHalfFit(box: RefObject<HTMLDivElement | null>): number | null {
     const el = box.current;
     const body = el?.closest<HTMLElement>("[data-panel-body]");
     if (!el || !body) return;
+    const card = el.closest<HTMLElement>("[data-panel]");
     const fit = () => {
-      const half = parseFloat(getComputedStyle(el).getPropertyValue("--half-body"));
+      if (card?.dataset.panel === "peek") return;
+      const offset = Math.abs(parseFloat(getComputedStyle(el).getPropertyValue("--sheet-offset")) || 0);
+      const bodyBox = body.getBoundingClientRect();
+      const half = bodyBox.height - offset;
       if (!(half > 0)) return setHeight(null);
-      const top = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop;
+      const top = el.getBoundingClientRect().top - bodyBox.top + body.scrollTop;
       setHeight(Math.round(Math.min(CHART_MAX, Math.max(CHART_MIN, half - top - UNDER_CHART))));
     };
     const watch = new ResizeObserver(fit);
     watch.observe(body);
-    const card = el.closest("[data-testid='past-flight-card']");
-    if (card) watch.observe(card);
-    return () => watch.disconnect();
+    const flight = el.closest("[data-testid='past-flight-card']");
+    if (flight) watch.observe(flight);
+    const sized = new MutationObserver(fit);
+    if (card) sized.observe(card, { attributes: true, attributeFilter: ["data-panel"] });
+    return () => {
+      watch.disconnect();
+      sized.disconnect();
+    };
   }, [box]);
   return height;
 }

@@ -116,9 +116,17 @@ def signed(**over) -> str:
     return jwt.encode(claims, KEY, algorithm="RS256", headers={"kid": "k1"})
 
 
+#: The connections that still stand, as the gateway would say (pilot, client).
+LIVE = {("42", "c1")}
+
+
+async def _live(pilot: str, client: str) -> bool:
+    return (pilot, client) in LIVE
+
+
 @pytest.fixture
 def tokens(monkeypatch):
-    reader = GatewayTokens(jwks_url="http://gateway.test/oauth2/jwks", issuer=ISSUER, resource=RESOURCE)
+    reader = GatewayTokens(jwks_url="http://gateway.test/oauth2/jwks", issuer=ISSUER, resource=RESOURCE, live=_live)
     monkeypatch.setattr(reader._keys, "get_signing_key_from_jwt", lambda token: jwt.PyJWK.from_dict(_jwk()))
     return reader
 
@@ -143,6 +151,13 @@ def test_a_gateway_token_for_this_connector_is_read_as_its_pilot(tokens):
 )
 def test_a_token_not_for_this_connector_is_refused(tokens, over):
     assert anyio.run(tokens.verify_token, signed(**over)) is None
+
+
+def test_a_token_whose_connection_is_gone_is_refused_at_once(tokens):
+    """Disconnected, or the account deleted: the gateway says so, and the
+    token is refused though it has not run out (L4)."""
+    assert anyio.run(tokens.verify_token, signed(sub="43")) is None
+    assert anyio.run(tokens.verify_token, signed(client_id="another")) is None
 
 
 def test_a_token_signed_by_another_key_is_refused(tokens):
@@ -170,3 +185,22 @@ def test_the_planner_serves_mcp_where_an_issuer_is_set(monkeypatch):
         metadata = client.get("/.well-known/oauth-protected-resource/mcp").json()
     assert metadata["resource"] == "https://wingtip.test/mcp"
     assert "/mcp" not in planner.openapi()["paths"]
+
+
+def test_junk_key_ids_do_not_make_the_planner_fetch_the_gateways_keys_each_time(monkeypatch):
+    """L7: a token with a made-up key id is refused; the gateway's key set
+    is fetched again for one at most once a minute, not for each of twenty."""
+    reader = GatewayTokens(jwks_url="http://gateway.test/oauth2/jwks", issuer=ISSUER, resource=RESOURCE, live=_live)
+    fetched = []
+
+    def fetch():
+        fetched.append(1)
+        return {"keys": [_jwk()]}
+
+    monkeypatch.setattr(reader._keys, "fetch_data", fetch)
+    assert anyio.run(reader.verify_token, signed()) is not None
+    for i in range(20):
+        junk = jwt.encode({"sub": "1"}, KEY, algorithm="RS256", headers={"kid": f"junk-{i}"})
+        assert anyio.run(reader.verify_token, junk) is None
+    # The first fetch, and one more for the first unknown id; none after.
+    assert len(fetched) == 2

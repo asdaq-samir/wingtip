@@ -42,6 +42,13 @@ export const CHART = {
   courseChip: "#b000b0",
   pattern: "#0e8f8a",
   patternLabel: "#0b7a75",
+  finalApproach: "#00b4e6",
+  sky: "#a9cbe8",
+  skyHorizon: "#e6eef6",
+  skyNight: "#0d1828",
+  skyHorizonNight: "#26354a",
+  centreline: "#ffffff",
+  glidepath: "#00b4e6",
   obstacle: "#7a1f1f",
 };
 
@@ -108,6 +115,48 @@ export const WEATHER = {
   ash: "#57534e",
   other: "#9333ea",
   urgent: "#dc2626",
+  flowStreak: "#f4f8ff",
+  flowWindCalm: "#3a6db0",
+  flowWindBreeze: "#4a62c4",
+  flowWindStrong: "#6a4fc6",
+  flowWindGale: "#9a3fb4",
+  flowRainLight: "#3f8cf2",
+  flowRainModerate: "#7a52e0",
+  flowRainHeavy: "#d53fb2",
+  flowRainExtreme: "#f6c445",
+  flowRainExtremeTop: "#fff4b8",
+  flowCloud: "#eef2f6",
+  flowCeilingLifr: "#a371f7",
+  flowCeilingIfr: "#b3261e",
+  flowCeilingMvfr: "#1f6feb",
+  flowCeilingVfr: "#1a7f37",
+  flowCapeWeak: "#e8d44d",
+  flowCapeModerate: "#f08a24",
+  flowCapeStrong: "#d62b2b",
+  flowCapeExtreme: "#c02bb8",
+  flowTempFrigid: "#5a4fcf",
+  flowTempCold: "#3e8ddb",
+  flowTempFreezing: "#46c0b4",
+  flowTempCool: "#98d36a",
+  flowTempMild: "#f1c64b",
+  flowTempWarm: "#ef893c",
+  flowTempHot: "#d5443c",
+  flowVisLow: "#4b4d7a",
+  flowVisHigh: "#c9ccdc",
+  flowIcingTrace: "#9fd3f5",
+  flowIcingLight: "#4fa3e8",
+  flowIcingModerate: "#2a5fd6",
+  flowIcingHeavy: "#5b2bb0",
+  flowTurbLight: "#b9d86a",
+  flowTurbModerate: "#f0b429",
+  flowTurbSevere: "#d6402b",
+  flowTurbExtreme: "#b0217e",
+  flowFrzLow: "#3a52c4",
+  flowFrzMid: "#42b8a6",
+  flowFrzHigh: "#e2a63a",
+  flowTopsLow: "#d5dbe4",
+  flowTopsHigh: "#5a6478",
+  flowHatch: "#7b8494",
 };
 
 export const SCORE = {
@@ -173,6 +222,8 @@ export const MOTION = {
   sheetMost: 0.35,
   sheetEase: [0, 0, 0.58, 1],
   sheetBackEase: [0.2, 0.9, 0.3, 1],
+  drawer: 0.45,
+  drawerEase: [0.32, 0.72, 0, 1],
   fade: 0.2,
   quick: 0.15,
   page: 0.25,
@@ -186,6 +237,57 @@ export const HAPTIC = {
   warning: [40, 60, 40],
   detent: [6],
 } as const;
+
+/** The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees. */
+export const MAP = {
+  pitchOpen: 50,
+  pitchMax: 75,
+  pitchFlatMax: 60,
+  zoomStationClose: 10,
+  zoomStationAlways: 7,
+  zoomBarbFarFrom: 6,
+  zoomBarbFull: 9,
+  zoomWorldWind: 4,
+  zoomStreakNear: 7,
+} as const;
+
+/** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */
+type FlowStop = [number, [number, number, number, number]];
+/** Model Weather's colour scales: ramps, the opacities of the banded fields, and how strongly each covers the chart. */
+export const FLOW: {
+  ramp: Record<"wind" | "streak" | "cloud" | "temp" | "vis" | "frzlvl" | "tops", FlowStop[]>;
+  alpha: { rain: number[]; ceiling: number[]; cape: number[]; icing: number; turb: number; block: number };
+  cover: { tint: number; wash: number; hazard: number; solid: number };
+  scale: { windTicks: number[]; rainHeadroom: number };
+} = {
+  ramp: {
+    wind: [[0, [58, 109, 176, 40]], [25, [74, 98, 196, 140]], [50, [106, 79, 198, 190]], [75, [154, 63, 180, 220]]],
+    streak: [[0, [244, 248, 255, 90]], [15, [244, 248, 255, 180]], [40, [244, 248, 255, 250]]],
+    cloud: [[0, [238, 242, 246, 0]], [50, [238, 242, 246, 110]], [100, [238, 242, 246, 215]]],
+    temp: [[-60, [90, 79, 207, 235]], [-30, [90, 79, 207, 235]], [-10, [62, 141, 219, 235]], [0, [70, 192, 180, 235]], [10, [152, 211, 106, 235]], [20, [241, 198, 75, 235]], [30, [239, 137, 60, 235]], [40, [213, 68, 60, 235]], [45, [213, 68, 60, 235]]],
+    vis: [[0, [75, 77, 122, 200]], [5, [201, 204, 220, 90]], [10, [201, 204, 220, 0]]],
+    frzlvl: [[0, [58, 82, 196, 200]], [8000, [66, 184, 166, 180]], [16000, [226, 166, 58, 170]]],
+    tops: [[0, [213, 219, 228, 120]], [40000, [90, 100, 120, 220]]],
+  },
+  alpha: {
+    rain: [0, 160, 190, 215, 235, 245],
+    ceiling: [220, 200, 170, 110],
+    cape: [0, 130, 170, 200, 225],
+    icing: 210,
+    turb: 200,
+    block: 220,
+  },
+  cover: {
+    tint: 0.6,
+    wash: 0.75,
+    hazard: 0.8,
+    solid: 0.9,
+  },
+  scale: {
+    windTicks: [0, 25, 50, 75],
+    rainHeadroom: 15,
+  },
+};
 
 /** Corners, in points. */
 export const RADIUS = {

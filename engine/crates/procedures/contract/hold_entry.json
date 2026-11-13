@@ -1,0 +1,46 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::hold",
+  "description": "The entry into a route's hold for an airplane arriving on a course (AIM 5-3-8 j.3's sectors, read by the course flown).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "HoldEntryInput",
+      "type": "object",
+      "properties": {
+        "arrival_deg": {
+          "type": "number",
+          "description": "The magnetic course flown to the fix."
+        },
+        "inbound_deg": {
+          "type": "number",
+          "description": "The hold's inbound course."
+        },
+        "turns": {
+          "enum": [
+            "right",
+            "left",
+            null
+          ],
+          "description": "Right where not given (standard)."
+        }
+      },
+      "required": [
+        "arrival_deg",
+        "inbound_deg"
+      ]
+    },
+    "answer": {
+      "title": "HoldEntryAnswer",
+      "enum": [
+        "direct",
+        "teardrop",
+        "parallel"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

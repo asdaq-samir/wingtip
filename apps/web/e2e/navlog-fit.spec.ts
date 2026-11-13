@@ -120,8 +120,9 @@ test("a long trip's figures are set smaller to fit the strip, not cut short", as
   await controlsInSight(page);
   await expect(sideDrawer(page).getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
   await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
-  const figures = sideDrawer(page).locator('[data-tip="flight-line"] dd');
-  await expect(figures.filter({ hasText: / nm$/ }).first()).toHaveText(/^1\d{3}(\.\d)? nm$/);
+  const figures = sideDrawer(page).getByTestId("flight-line").locator("dd");
+  // Its unit after a no-break space, the Dist a button to the nav log (FlightLine).
+  await expect(figures.filter({ hasText: /\snm$/ }).first()).toHaveText(/^1\d{3}(\.\d)?\snm$/);
   // At the default text size and the two above it, as an iPhone sets the
   // root from Settings' text size (features/shell/dynamicType, which a test browser
   // does not run): a 19-point Body, 17.88 px; a 21-point one, held to the
@@ -132,9 +133,22 @@ test("a long trip's figures are set smaller to fit the strip, not cut short", as
       document.documentElement.style.fontSize = size;
     }, root);
     await expect
-      .poll(() => figures.evaluateAll((dds) => dds.filter((dd) => dd.scrollWidth > dd.clientWidth).map((dd) => dd.textContent)), {
-        message: `at a root of ${root || "16px"}`,
-      })
+      .poll(
+        // A figure that is a button (Dist, ETE, Fuel) is cut in its own
+        // truncated words, its dd left to overflow for the button's 44-point
+        // area (FlightLine), which a measure of the dd took for a cut figure.
+        () =>
+          figures.evaluateAll((dds) =>
+            dds
+              .filter((dd) =>
+                dd.querySelector("button")
+                  ? [...dd.querySelectorAll<HTMLElement>("button .truncate")].some((el) => el.scrollWidth > el.clientWidth)
+                  : dd.scrollWidth > dd.clientWidth,
+              )
+              .map((dd) => dd.textContent),
+          ),
+        { message: `at a root of ${root || "16px"}` },
+      )
       .toEqual([]);
   }
 });
@@ -179,6 +193,9 @@ test("the route's Profile, AI brief and ••• stay on the airplane and altit
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
+  // A route's link opens at rest, the pill (layout.spec): the route's
+  // line all the way up, where its buttons are.
+  await controlsInSight(page);
   for (const root of ["17.88px", "19.65px"]) {
     await page.evaluate((size) => {
       document.documentElement.style.fontSize = size;

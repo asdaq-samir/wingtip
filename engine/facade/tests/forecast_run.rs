@@ -38,3 +38,26 @@ fn the_fixtures_run_meets_the_forecast_for_its_times() {
     // Every alert cites its rule or product.
     assert!(got["alerts"].as_array().unwrap().iter().all(|a| !a["source"].as_str().unwrap().is_empty()));
 }
+
+#[test]
+fn a_tafs_ceiling_of_unknown_height_beats_a_modelled_vfr() {
+    // The fixture's run with KAAA's TAF "OVC/// 6SM" throughout and the
+    // Gridded LAMP's VFR at the first sample: a ceiling of unknown height
+    // is a ceiling not known to be high enough (14 CFR 1.1 "ceiling"), so
+    // the run warns of it under 91.155 rather than taking the model's VFR.
+    let run = read_json("apps/web/src/lib/fixtures/forecastRun.json");
+    let mut input = run["input"].clone();
+    input["sigmets"] = json!([]);
+    input["outlooks"] = json!([]);
+    input["tafs"][0]["fcsts"] =
+        json!([{ "timeFrom": 0, "timeTo": 7200, "change": "", "ceiling_ft": null, "ceiling_unknown": true, "visibility_sm": 6 }]);
+    let got: Value = serde_json::from_str(&call("forecast_run", &input.to_string()).unwrap()).unwrap();
+    let alerts = got["alerts"].as_array().unwrap();
+    // The first sample, at 600 s, is where the model has its VFR.
+    let along = alerts.iter().find(|a| a["kind"] == "vfr_minimums" && a["t"] == json!(600.0));
+    assert!(
+        along.is_some_and(|a| a.to_string().contains("ceiling of unknown height") && a["source"].as_str().unwrap().contains("TAF KAAA")),
+        "no unknown-ceiling alert along the way: {}",
+        Value::Array(alerts.clone())
+    );
+}

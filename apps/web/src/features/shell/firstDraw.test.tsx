@@ -20,15 +20,24 @@ vi.mock("../../lib/map/gl/worker", () => ({}));
 const wasm = join(dirname(fileURLToPath(import.meta.url)), "../../lib/engine/wingtip-engine.wasm");
 let unmount: (() => void) | null = null;
 
-afterEach(() => {
+afterEach(async () => {
   unmount?.();
   unmount = null;
-});
+  // The page asks for the route's panel chunk once it has painted
+  // (routePanelParts' loadRoutePanel), and a test can end before it is in:
+  // the last one's import then landed after the environment was torn down,
+  // failing the run with every test passed. Each test waits here for the
+  // imports its page started: a cold transform of the chunk's modules, so
+  // the tests' own 30 s, not a hook's default 10 s, which a busy CI runner
+  // went past.
+  await vi.dynamicImportSettled();
+}, 30_000);
 
 /** The page at `address`, drawn from a fresh copy of every module: the
  *  engine's not loaded, and nothing answering on the network. */
-async function drawAt(address: string) {
+async function drawAt(address: string, before?: () => Promise<void>) {
   vi.resetModules();
+  await before?.();
   vi.stubGlobal(
     "fetch",
     vi.fn(() => new Promise<Response>(() => {})),
@@ -58,13 +67,20 @@ async function drawAt(address: string) {
   const { RouterProvider } = await import("react-router/dom");
   const { QueryClientProvider } = await import("@tanstack/react-query");
   const { queryClient } = await import("../../lib/queryClient");
+  const { NuqsTestingAdapter } = await import("nuqs/adapters/testing");
   const { default: MapPage } = await import("./MapPage");
   const router = createMemoryRouter([{ path: "/plan", element: createElement(MapPage, { mode: "pilot" }) }], { initialEntries: [address] });
+  // The address's keys as the page reads them (lib/address), from the same address.
+  const searchParams = address.split("?")[1] ?? "";
   // In an awaited act: a part that waits for the engine suspends, and
   // React's retry once it is there is flushed inside one.
   await library.act(async () => {
     unmount = library.render(
-      createElement(QueryClientProvider, { client: queryClient }, createElement(RouterProvider, { router })),
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(NuqsTestingAdapter, { searchParams, hasMemory: true, children: createElement(RouterProvider, { router }) }),
+      ),
     ).unmount;
   });
   return { ...library, engine };
@@ -74,8 +90,36 @@ describe("the planner before the engine is there", () => {
   test("draws the search and the sheet at once", { timeout: 30_000 }, async () => {
     const { engine, screen } = await drawAt("/plan");
     expect(engine.engineLoaded()).toBe(false);
-    expect(await screen.findByText("Where do you want to fly?", undefined, { timeout: 10_000 })).toBeTruthy();
+    expect(await screen.findByPlaceholderText(/^Search airports/, undefined, { timeout: 10_000 })).toBeTruthy();
     expect(screen.getByText("Skip to the map")).toBeTruthy();
+  });
+
+  test("draws with location on and a fix in hand", { timeout: 30_000 }, async () => {
+    // Flying mode, the own-ship mark and the Ready to Fly prompt ask
+    // whether the airplane is underway on the first draw.
+    const { screen } = await drawAt("/plan", async () => {
+      const { useOwnShip } = await import("../../lib/map/position/ownShip");
+      useOwnShip.setState({
+        enabled: true,
+        fix: { lat: 42.1, lon: -87.9, accuracyM: 10, speedKt: 0, headingDeg: null, altitudeFt: null, at: Date.now() },
+      });
+    });
+    expect(await screen.findByPlaceholderText(/^Search airports/, undefined, { timeout: 10_000 })).toBeTruthy();
+  });
+
+  test("draws a route and a card with a fix in hand, then loads the engine without a throw", { timeout: 30_000 }, async () => {
+    // The parts that say how far and which way (lib/geo's useGeo) draw
+    // without the figure until the engine is there; the console guard
+    // fails the test on any throw, before or after.
+    const { act, engine, screen } = await drawAt("/plan?dep=KMSN&dest=KOSH&place=KUGN", async () => {
+      const { useOwnShip } = await import("../../lib/map/position/ownShip");
+      useOwnShip.setState({
+        enabled: true,
+        fix: { lat: 42.1, lon: -87.9, accuracyM: 10, speedKt: 0, headingDeg: null, altitudeFt: null, at: Date.now() },
+      });
+    });
+    await act(() => engine.loadEngine(readFileSync(wasm)));
+    expect(await screen.findByText("Skip to the map", undefined, { timeout: 10_000 })).toBeTruthy();
   });
 
   test("says Working out in a card's place, opened from the address", { timeout: 30_000 }, async () => {

@@ -3,6 +3,20 @@
 export type AcsCodesAnswer = string[];
 export type AirborneNowAnswer = boolean | null;
 export type AirspaceColumnAnswer = AirspaceBand[];
+export type AirspaceVolumeSpanAnswer = {
+  /**
+   * Feet MSL.
+   */
+  floor_ft: number;
+  /**
+   * Feet MSL, at most 18,000.
+   */
+  ceiling_ft: number;
+  /**
+   * Whether the floor is the surface, drawn from the sea up.
+   */
+  surface: boolean;
+} | null;
 export type AirwayFloorFtAnswer = number | null;
 /**
  * An area's outline: polygons, each its outer ring and its holes, each ring [[lon, lat], ...].
@@ -149,6 +163,7 @@ export type BareFieldAnswer = string;
 export type BearingDegAnswer = number;
 export type BelowVfrMinimumsAnswer = boolean;
 export type CallPatternAnswer = string | null;
+export type CapeCategoryAnswer = "Weak" | "Moderate" | "Strong" | "Extreme";
 export type CeilingFtAnswer = number | null;
 export type ChecklistPhasesAnswer = string[];
 export type ChecklistSectionAnswer = number | null;
@@ -163,6 +178,8 @@ export type ClosestApproachAnswer = {
   above_ft: number | null;
 } | null;
 export type CloudClearanceAtFtAnswer = number;
+export type CompassPointAnswer =
+  "N" | "NNE" | "NE" | "ENE" | "E" | "ESE" | "SE" | "SSE" | "S" | "SSW" | "SW" | "WSW" | "W" | "WNW" | "NW" | "NNW";
 export type CompassWordAnswer =
   "north" | "northeast" | "east" | "southeast" | "south" | "southwest" | "west" | "northwest";
 export type CongestedPointsAnswer = boolean[];
@@ -293,6 +310,27 @@ export type FiledZzzzAnswer = boolean;
 export type FixRadialDistanceAnswer = string | null;
 export type FlightCategoryAnswer = "VFR" | "MVFR" | "IFR" | "LIFR" | null;
 export type FloorCautionAnswer = string | null;
+export type FloorCorridorNmAnswer = number;
+export type FlowCellAnswer = {
+  /**
+   * Four indices: north-west, north-east, south-west, south-east.
+   */
+  pixels: number[];
+  fx: number;
+  fy: number;
+} | null;
+export type FlowSampleAnswer = {
+  value: number;
+  from_deg: number | null;
+  /**
+   * A wind under 1 kt, which has no direction (FMH-1 Table 5-1, 5.5.2); false for a scalar.
+   */
+  calm: boolean;
+  /**
+   * The ceiling's picture at its top at every pixel read: a ceiling over it or none, either no ceiling (AIM 7-1-7); false for any other field.
+   */
+  no_ceiling: boolean;
+} | null;
 export type ForecastHourAnswer = "06" | "12" | "24";
 export type FrdNearAnswer = {
   base: string;
@@ -526,6 +564,7 @@ export type HoldsReadAnswer = {
   part: string;
   hold: RouteHold | null;
 }[];
+export type IcingSeverityAnswer = "None" | "Trace" | "Light" | "Moderate" | "Heavy" | null;
 export type IfrAlternatesRankedAnswer = {}[];
 export type IfrFloorsAnswer = {
   floor_ft: number;
@@ -631,6 +670,12 @@ export type ModeCVeilAnswer = {
   name: string | null;
   distance_nm: number;
 } | null;
+export type ModelWindLevelsAnswer = {
+  altitude_ft: number;
+  wind_dir_true_deg: number;
+  wind_speed_kt: number;
+  temp_c: number;
+}[];
 export type MorseAnswer = string;
 export type NNumberAnswer = boolean;
 export type NavaidHoursAnswer = string | null;
@@ -690,6 +735,11 @@ export type PirepsAlongRouteAnswer = {}[];
 export type PirepsInBoxAnswer = {}[];
 export type PlaceNameAnswer = string | string[];
 export type PlaceWordsAnswer = string;
+export type PlatePagePointAnswer = null | {
+  x: number;
+  y: number;
+  rotation_deg: number | null;
+};
 export type PointKindAnswer = "fix" | "own" | null;
 export type PressureAltitudeFtAnswer = number;
 export type ProcedureArcAnswer = [number, number][];
@@ -848,10 +898,65 @@ export type ShortAirspaceNameAnswer = string;
 export type SigmetHazardAnswer = string;
 export type SigmetsAlongRouteAnswer = {}[];
 export type SoloXcDeterminationsAnswer = SoloXcDetermination[];
+export type SpecialUseTabAnswer = {
+  name: string;
+  floor_ft: number | null;
+  floor_ref: "SFC" | "AGL" | "MSL" | "FL" | "UNL";
+  ceiling_ft: number | null;
+  ceiling_ref: "SFC" | "AGL" | "MSL" | "FL" | "UNL";
+  /**
+   * The tab as the map writes it: the name, a colon, a line break, then the floor and the ceiling a hyphen apart.
+   */
+  text: string;
+} | null;
 export type SquawkMeaningAnswer = "hijack" | "lost radio" | "emergency" | null;
 export type SuaAltitudesAnswer = string;
+export type SunDownAnswer = boolean;
 export type TemperatureAtAnswer = number | null;
-export type TfrDetailReadAnswer = {} | null;
+export type TfrDetailReadAnswer = {
+  effective: string | null;
+  expires: string | null;
+  rule: string | null;
+  purpose: string | null;
+  floor_ft: number | null;
+  floor_ref: string | null;
+  ceiling_ft: number | null;
+  ceiling_ref: string | null;
+  /**
+   * Its operative instructions, a line each as sent.
+   */
+  instructions: string[];
+  /**
+   * Its NOTAM's text as sent.
+   */
+  text: string | null;
+  /**
+   * The FAA facility it is coordinated through (CDN FAC), its name written as a name with its kind kept ("Fort Worth ARTCC").
+   */
+  facility: {
+    name: string;
+    phone: string | null;
+    frequency: string | null;
+  } | null;
+  /**
+   * Its point of contact, who is in charge inside it.
+   */
+  contact: {
+    name: string;
+    phone: string | null;
+    frequency: string | null;
+  } | null;
+} | null;
+/**
+ * A point in degrees, WGS-84 (the field, or a TFR's nearest edge to it); null where not known.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "TfrPoint".
+ */
+export type TfrPoint = {
+  lat: number;
+  lon: number;
+} | null;
 export type ThinTrackAnswer = unknown[];
 export type TitleCaseAnswer = string | string[];
 export type TokensAnswer = HeardToken[];
@@ -865,7 +970,12 @@ export type TrafficMarksAnswer = {
   tell: boolean;
 }[];
 export type TrafficMatchesAnswer = boolean;
+export type TurbulenceCategoryAnswer = "Light" | "Moderate" | "Severe" | "Extreme" | null;
 export type UnderwayAnswer = boolean;
+export type VelocityTrackAnswer = {
+  track_deg: number | null;
+  speed: number;
+}[];
 export type VerticalSpeedAnswer = number | null;
 export type VfrAltitudesAnswer = number[];
 export type VfrFloorsAnswer = {
@@ -886,6 +996,7 @@ export type VorCheckLimitDegAnswer = number;
 export type WeatherExpiresAtAnswer = number | null;
 export type WeatherHeldUntilAnswer = number | null;
 export type WeatherInForceAnswer = boolean;
+export type WindAloftAtAnswer = AloftAt | AloftAt[];
 export type WindAtAltitudeAnswer = WindAloft | null | (WindAloft | null)[];
 export type WindCalmAnswer = boolean;
 export type WindPickAnswer = {
@@ -930,7 +1041,7 @@ export type WordsToFixedAnswer = string;
 export type WorkingsRightAnswer = boolean;
 
 /**
- * The engine's calls (engine/facade/src/call.rs): for each name, the JSON input it takes and the JSON answer it gives. Generated by wingtip-contract-gen (engine/contract/gen) from each rule's own file beside its code (engine/crates/<crate>/contract/<name>.json, engine/facade/contract/<name>.json) and the types they share (contract/definitions/): change those, not this file. apps/web/src/lib/engine/contract.ts is generated from it (npm run types), and engine/facade/tests/contract.rs holds the engine's answers to it. A member left out of `required` may be missing; a type with null may be null.
+ * The engine's calls (engine/facade/src/call.rs): for each name, the JSON input it takes and the JSON answer it gives. Generated by wingtip-contract-gen (engine/contract/gen) from each rule's own file beside its code (engine/crates/<crate>/contract/<name>.json) and the types they share (contract/definitions/): change those, not this file. apps/web/src/lib/engine/contract.ts is generated from it (npm run types), and engine/facade/tests/contract.rs holds the engine's answers to it. A member left out of `required` may be missing; a type with null may be null.
  */
 export interface EngineContract {
   /**
@@ -955,7 +1066,7 @@ export interface EngineContract {
     answer: AirborneNowAnswer;
   };
   /**
-   * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
+   * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's, the descent's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
    */
   aircraft_problems: {
     input: AircraftProblemsInput;
@@ -969,7 +1080,7 @@ export interface EngineContract {
     answer: AirplaneFiguresAnswer;
   };
   /**
-   * The inputs a figure needs that the airplane's profile lacks, by name, so the app asks for them where the figure would be (the owner, 2026-11-09): the legs their cruise speed and burn; the fuel totals also the start, taxi and takeoff allowance; the glide its glide ratio; the climb its climb speed, sea-level rate and service ceiling; a weight and balance its loading envelope and its own empty weight and moment; takeoff and landing their charts. ["airplane"] with no airplane.
+   * The inputs a figure needs that the airplane's profile lacks, by name, so the app asks for them where the figure would be (the owner, 2026-11-09): the legs their cruise speed and burn; the fuel totals also the start, taxi and takeoff allowance; the glide its glide ratio; the climb its climb speed, sea-level rate and service ceiling; the descent its indicated speed and fuel flow; a weight and balance its loading envelope and its own empty weight and moment; takeoff and landing their charts. ["airplane"] with no airplane.
    */
   airplane_needs: {
     input: AirplaneNeedsInput;
@@ -988,6 +1099,13 @@ export interface EngineContract {
   airspace_entry_rules: {
     input: AirspaceEntryRulesInput;
     answer: AirspaceEntryRulesAnswer;
+  };
+  /**
+   * How high a 3D map stands an airspace volume: its floor and top in feet MSL, from its limits as the FAA's data gives them (each its figure in feet, a flight level times 100, its CODE SFC, AGL, MSL, STD or UNLTD and its DESC TI, TNI or ANI), read as special_use_tab reads them: SFC above 0 is that height above the ground, a ceiling "to but not including" a foot under its figure (FL180 TNI 17,999 ft MSL), a floor "above but not including" a foot over it. A floor above the ground stands on the lowest of `ground`, a ceiling on its highest; the surface is 0 ft MSL with `surface` true; a flight level is drawn as if MSL; no ceiling, or one above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)), a drawing bound. Null where nothing is left to draw, or where a limit above the ground has no `ground`.
+   */
+  airspace_volume_span: {
+    input: AirspaceVolumeSpanInput;
+    answer: AirspaceVolumeSpanAnswer;
   };
   /**
    * An airway segment's minimum IFR altitude (14 CFR 91.177(a)(1)): its MEA, else its GNSS MEA; null where it publishes neither.
@@ -1032,7 +1150,7 @@ export interface EngineContract {
     answer: AltitudeAnywayAnswer;
   };
   /**
-   * A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its climb speed scaled by the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.
+   * A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its own ground speed, the wind triangle at the climb speed in the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.
    */
   altitude_change: {
     input: AltitudeChangeInput;
@@ -1123,6 +1241,13 @@ export interface EngineContract {
     answer: ApproachFindAnswer;
   };
   /**
+   * The tags an approach's fixes carry on the map with its plate, ForeFlight's way: each fix's crossing altitude and its sense (ARINC 424-18 5.29); at the final approach fix the ILS's glide slope altitude as the CIFP codes it, or an LPV or LNAV/VNAV approach's glidepath altitude worked out from its angle, threshold and TCH (FAA Order 8260.3G formula 2-6-4); at a runway missed approach point its threshold crossing height and touchdown zone elevation (no DA or MDA: the minimums are the plate's alone); and the final approach segment, FAF to MAP.
+   */
+  approach_fix_tags: {
+    input: ApproachFixTagsInput;
+    answer: ApproachFixTagsAnswer;
+  };
+  /**
    * How the approach is flown, by its CIFP id (ARINC 424-18 5.10): "localizer", "gps" or "other".
    */
   approach_guidance: {
@@ -1165,6 +1290,13 @@ export interface EngineContract {
     answer: ApproachQuizAnswer;
   };
   /**
+   * A field's way in as the 3D map stands it up: each runway end's extended centreline on the ground, out to the picked approach's final approach fix or 5 nm (past a VASI's 4 NM and a PAPI's 3.4, AIM 2-1-2); the glidepath to the threshold in the air, the approach's own angle and threshold crossing height where the CIFP codes them (ARINC 424-18 5.67, 5.68, 5.70), else 3.00 degrees (FAA Order 8260.3G 2-6-3, AIM 2-1-2) over the threshold at 40 ft (8260.3G Table 10-1-1, height group 1) from the field's elevation, its heights by 8260.3G formula 2-6-4; the picked approach's path, each fix at its crossing altitude (ARINC 424-18 5.29) and down the glidepath from the final approach fix, stopping where no altitude follows; and a ring (its middle and radius) at the pattern altitude (the FAA's TPA, else 1,000 ft above the field, AIM 4-3-3) as far out as the downwind is drawn past half the longest runway. With an approach picked, its runway's glidepath alone.
+   */
+  approach_scene: {
+    input: ApproachSceneInput;
+    answer: ApproachSceneAnswer;
+  };
+  /**
    * The transition's debrief, or null, from the vectors' debrief's figures.
    */
   approach_transition: {
@@ -1184,6 +1316,13 @@ export interface EngineContract {
   atc_call: {
     input: AtcCallInput;
     answer: AtcCallAnswer;
+  };
+  /**
+   * The Aviation Weather Center's words for its icing and turbulence grids (aviationweather.gov GFA help, read 2026-11-12): icing severity by category, 0 none, 1 trace, 2 light, 3 moderate, 4 heavy; turbulence by EDR, (m^2/s^3)^1/3, from each word's threshold in the weight class's row: light (< 15,500 lb) 0.13, 0.16, 0.36, 0.64; medium 0.15, 0.20, 0.44, 0.79; heavy 0.17, 0.24, 0.54, 0.96.
+   */
+  aviation_grid_bands: {
+    input: AviationGridBandsInput;
+    answer: AviationGridBandsAnswer;
   };
   /**
    * The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
@@ -1228,7 +1367,7 @@ export interface EngineContract {
     answer: BareFieldAnswer;
   };
   /**
-   * The initial great-circle course from the first point to the second, degrees true 0 to 360, on the same sphere as distance_nm (wingtip.geo.bearing_deg); 0 for two points that coincide.
+   * The initial course of the geodesic from the first point to the second on the WGS-84 ellipsoid, as distance_nm, degrees true 0 to 360 (wingtip.geo.bearing_deg, pyproj's Geod(ellps="WGS84") forward azimuth); 0 for two points that coincide.
    */
   bearing_deg: {
     input: BearingDegInput;
@@ -1254,6 +1393,13 @@ export interface EngineContract {
   call_pattern: {
     input: CallPatternInput;
     answer: CallPatternAnswer;
+  };
+  /**
+   * A surface CAPE's category (NWS, "Severe Weather Topics: CAPE"): weak under 1,000 J/kg, moderate 1,000 to 2,500, strong 2,500 to 4,000, extreme over 4,000. The energy a storm could draw on, not a forecast of storms.
+   */
+  cape_category: {
+    input: CapeCategoryInput;
+    answer: CapeCategoryAnswer;
   };
   /**
    * A report's ceiling, ft above the ground: the lowest broken, overcast or obscured layer (14 CFR 1.1), an obscured sky's at its vertical visibility; null where there is none or it is not known (sky_ceiling tells them apart).
@@ -1319,6 +1465,13 @@ export interface EngineContract {
     answer: boolean;
   };
   /**
+   * The places an ATC clearance heard named, found as idents among the places given, put nearest to the route's points (`near`) first, so of two alike the one by the route is taken (nothing is fetched): a navaid by its name ("Gopher" is GEP, NASR NAV_BASE's NAME), a fix said as a word by its sound ("pickla" is PYKLA, offered unsure for the pilot to check), an airport by its name followed by "airport", as AIM 4-4-3 a gives a clearance limit ("cleared to the Duluth airport": an airport and its navaid often share a name), or the field the planner's search found for the limit's name (`limit_airports`), and anything spelled by its ident. Each phrase of the route is its places in order, the longest names first; a word that names nothing is kept, unfound. The SID and STAR by their name and number among the field's own procedures ("Bunyan One departure" is BUNYN1), their transition by its fix's name or sound.
+   */
+  clearance_places: {
+    input: ClearancePlacesInput;
+    answer: ClearancePlacesAnswer;
+  };
+  /**
    * The route a clearance gives, from the words heard, the planner's places found for them (ClearancePlaces) and the route planned.
    */
   cleared_route: {
@@ -1338,6 +1491,20 @@ export interface EngineContract {
   cloud_clearance_at_ft: {
     input: CloudClearanceAtFtInput;
     answer: CloudClearanceAtFtAnswer;
+  };
+  /**
+   * A cloud cover in percent as eighths of the sky, the nearest eighth (none only at 0, eight only at 100: WMO code table 2700), and its METAR contraction (AIM 7-1-28: SKC 0/8, FEW to 2/8, SCT 3/8-4/8, BKN 5/8-7/8, OVC 8/8).
+   */
+  cloud_cover: {
+    input: CloudCoverInput;
+    answer: CloudCoverAnswer;
+  };
+  /**
+   * A bearing, degrees true, as the nearest of the 16 points of the compass as FAA Order JO 7930.2 3-3-9 abbreviates them (N, NNE, NE, ... NNW), each the middle of its 22.5-degree sector, an edge taken clockwise. The map's value bubble says a wind's direction this way, where it blows from.
+   */
+  compass_point: {
+    input: CompassPointInput;
+    answer: CompassPointAnswer;
   };
   /**
    * A bearing as one of the eight compass points.
@@ -1438,7 +1605,7 @@ export interface EngineContract {
     answer: DepartureWindowAnswer;
   };
   /**
-   * Where a great circle from each point on its true course reaches its distance out, on the same sphere as distance_nm, the longitude within -180 to 180: the phones' traffic carried on along its track between reports, a list so a map's airplanes cross once.
+   * Where the geodesic from each point on its true course reaches its distance out, on the WGS-84 ellipsoid as distance_nm, the longitude within -180 to 180: the phones' traffic carried on along its track between reports, a list so a map's airplanes cross once.
    */
   destination: {
     input: DestinationInput;
@@ -1480,7 +1647,7 @@ export interface EngineContract {
     answer: DirectOfAnswer;
   };
   /**
-   * The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0), the great circle of FAA-H-8083-25C ch. 16.
+   * The distance between two points, nm (1,852 m), along the geodesic on the WGS-84 ellipsoid (NGA TR8350.2) the FAA's coordinates and GPS are on, by Karney's algorithm (J. Geodesy 87:43-55, 2013) as pyproj's Geod(ellps="WGS84") and a GPS navigator have it: the great circle of FAA-H-8083-25C ch. 16 on the ellipsoid.
    */
   distance_nm: {
     input: DistanceNmInput;
@@ -1599,14 +1766,14 @@ export interface EngineContract {
     answer: FaaIdsAnswer;
   };
   /**
-   * The FAA's capitals in sentence case, its codes kept (AIM 3-2-1's "Class B"): one string from text, or each of texts as a list (a null row answers "").
+   * The FAA's capitals in sentence case, its codes kept (AIM 3-2-1's "Class B"; an approach's title as AIM 5-4-5 names it, "ILS or LOC rwy 36"): one string from text, or each of texts as a list (a null row answers "").
    */
   faa_words: {
     input: FaaWordsInput;
     answer: FaaWordsAnswer;
   };
   /**
-   * A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as AC 00-45H sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
+   * A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as FAA-H-8083-28B 27.4.2.10 sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
    */
   field_hours: {
     input: FieldHoursInput;
@@ -1620,7 +1787,7 @@ export interface EngineContract {
     answer: FieldRelationAnswer;
   };
   /**
-   * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (AC 00-45H).
+   * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (FAA-H-8083-28B 27.4.1, 24.4.3.8.2).
    */
   field_taf: {
     input: FieldTafInput;
@@ -1718,7 +1885,35 @@ export interface EngineContract {
     answer: FloorCautionAnswer;
   };
   /**
-   * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, AC 00-45H).
+   * How far either side of the course the VFR floor counts the ground's obstacles: 5 nm, wider than 14 CFR 91.119(b)'s 2,000 ft and 91.177(a)(2)'s 4 nm, so the floor tolerates the airplane off its line. The 3D map colours the ground against the plan within it.
+   */
+  floor_corridor_nm: {
+    input: FloorCorridorNmInput;
+    answer: FloorCorridorNmAnswer;
+  };
+  /**
+   * The four pixels of a Model Weather picture (the weather service's flow_grid: a latitude-longitude grid, north row first, `bounds` [west, south, east, north] its pixels' outer edges) round a point, by index row by row from the north, north-west, north-east, south-west and south-east of it, and how far east (`fx`) and south (`fy`) of the first the point is, each 0 to 1, for flow_sample to read. Within half a pixel of the edge, the edge's pixels. Null off the picture.
+   */
+  flow_cell: {
+    input: FlowCellInput;
+    answer: FlowCellAnswer;
+  };
+  /**
+   * The map's model weather levels by field, as the Aviation Weather Center names them ("060" is 6,000 ft MSL, "180" FL180; "sfc" the surface, "max" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).
+   */
+  flow_levels: {
+    input: FlowLevelsInput;
+    answer: FlowLevelsAnswer;
+  };
+  /**
+   * A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes), each byte a 255th of `unscale` [least, most] a step. The wind and the temperature, continuous, are read between them linearly, as weatherlayers-gl's LINEAR reading does. Every field with a worse end is read as its worst of the pixels the point is read from (all four between their middles, a pixel's own on its middle), never between: a straight line reads a figure no pixel holds, better than the worst, and a pilot is never told better weather than the data holds. The lowest (`field` "ceiling", "vis" or "frzlvl", or `ceiling` true): the ceiling and the visibility, on which AIM 7-1-7's categories step ("LIFR (Low IFR). Ceiling less than 500 feet and/or visibility less than 1 mile"; a straight line between a 500 ft ceiling and none reads about 6,600 ft, VFR beside LIFR), and the freezing level, as icing begins round it (AIM 7-1-19: icing in visible precipitation "between +02 and -10 degrees Celsius"). The highest (`field` "gust", "precip", "cape", "cloud", "tops", "icing" or "turb"): icing's categories (AIM 7-1-19, trace to severe), turbulence (AIM 7-1-21, light to extreme), the precipitation (AIM 7-1-12, "LIGHT" (< 26 dBZ) to "EXTREME" (> 50 dBZ)), CAPE, gusts, the cloud cover (AIM 7-1-28's eighths, BKN a ceiling by 14 CFR 1.1) and the cloud tops, which a pilot reads to clear (14 CFR 91.155(a): "1,000 feet above" in Class C, D and E). For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true) come from those parts, the vector average, so the same point reads the same wind on every app. A wind under 1 kt is calm (`calm` true, `from_deg` null): FMH-1 (FCM-H1-2019) Table 5-1 gives under a knot as "Calm; smoke rises vertically", reported as calm with no direction, 00000KT (5.5.2, 12.6.5 d), so the apps write "Calm" rather than a direction the picture's rounding made up. `calm` is false for a scalar field. For the ceiling (app.flow_grid's picture of feet above the ground, 50 ft a step to 12,750) `no_ceiling` is true only where every pixel read is at its top: the picture writes a ceiling at or over its top, and none at all, as the top, and either is no ceiling 14 CFR 1.1's definition or AIM 7-1-7's categories (VFR: "Ceiling greater than 3,000 feet") turn on, so the apps write "None" rather than a figure. `no_ceiling` is false for any other field. Null where a pixel the point is read from has no value (alpha 0).
+   */
+  flow_sample: {
+    input: FlowSampleInput;
+    answer: FlowSampleAnswer;
+  };
+  /**
+   * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).
    */
   forecast_hour: {
     input: ForecastHourInput;
@@ -1802,7 +1997,7 @@ export interface EngineContract {
     answer: FuelStopsAnswer;
   };
   /**
-   * The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (AC 00-45H).
+   * The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (FAA-H-8083-28B 26.3.1.1); and each hazard's short label on the map's outline, as AWC's map labels it (SfcWind, IFR, Mtn Obsc, Turb, LLWS, Ice).
    */
   gairmet_hazards: {
     input: GairmetHazardsInput;
@@ -1816,11 +2011,25 @@ export interface EngineContract {
     answer: GairmetTitleAnswer;
   };
   /**
-   * The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (AC 00-45H).
+   * The time a G-AIRMET snapshot stands for: three hours either side of its valid time (UNIX seconds). AIM 7-1-6: G-AIRMETs are "valid at discrete times no more than 3 hours apart", and "the user should assume the hazardous weather condition is occurring between the snap shots unless informed otherwise" (a hazard at 03 and none at 00 or 06 exists from 0001 to 0559), so a snapshot stands for the whole gap either side, erring toward telling of the hazard.
+   */
+  gairmet_window: {
+    input: GairmetWindowInput;
+    answer: GairmetWindowAnswer;
+  };
+  /**
+   * The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (FAA-H-8083-28B 26.3.1.1).
    */
   gairmets_along_route: {
     input: GairmetsAlongRouteInput;
     answer: GairmetsAlongRouteAnswer;
+  };
+  /**
+   * AWC's GFA cloud text and cover at points (aviationweather.gov's cloud layers: "OVC035/TOP 050", "SCT021/OVC040/TOP FL280/CI ABV", "Cirrus", "SKC"; heights hundreds of feet MSL; cover CLR, FEW, SCT, BKN, OVC for clouds below FL180) as each point's cover in percent, the most of its band's eighths (AIM 7-1-28: FEW 2/8, SCT 4/8, BKN 6/8, OVC 8/8, so cloud_cover reads the same cover back), and its highest top, ft MSL, null where the text gives none.
+   */
+  gfa_cloud_layers: {
+    input: GfaCloudLayersInput;
+    answer: GfaCloudLayersAnswer;
   };
   /**
    * Still-air glide range, nm, at the picked airplane's own glide ratio (glide_ratio: feet forward for each foot down, its POH's Section 3 maximum glide, as its profile gives it), or null on the ground, with no height, or with no glide ratio: no airplane, or none in its profile, has no glide worked out.
@@ -2012,6 +2221,13 @@ export interface EngineContract {
     answer: GonogoWithAlternateAnswer;
   };
   /**
+   * distance_nm and bearing_deg over many legs at once, columns in and columns out: row i is the geodesic from (lat1[i], lon1[i]) to (lat2[i], lon2[i]) on the WGS-84 ellipsoid (wingtip.geo), its distance in nm and its initial course in degrees true 0 to 360, 0 for two points that coincide. The lists are all as long as each other, so a corridor of points, a route's legs or a map's stops cross into the engine once.
+   */
+  great_circles: {
+    input: GreatCirclesInput;
+    answer: GreatCirclesAnswer;
+  };
+  /**
    * The nav log's ground speed once the heading holds the course: the airspeed's share along it less the wind's.
    */
   groundspeed_kt: {
@@ -2117,14 +2333,21 @@ export interface EngineContract {
     answer: IcingForecastRouteAnswer;
   };
   /**
-   * Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach, 800 and 2 without; `good` null where the pilot has to look (its own minimums, no approach, no TAF).
+   * AWC's icing severity category (0 to 4) in its words: None, Trace, Light, Moderate, Heavy (aviationweather.gov GFA help); null for any other value. Not a PIREP's severity (AWC: "not synonymous").
+   */
+  icing_severity: {
+    input: IcingSeverityInput;
+    answer: IcingSeverityAnswer;
+  };
+  /**
+   * Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility).
    */
   ifr_alternate_check: {
     input: IfrAlternateCheckInput;
     answer: IfrAlternateCheckAnswer;
   };
   /**
-   * Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast an hour either side of the ETA under 2,000 ft and 3 sm, TEMPO and PROB included; no TAF needs one.
+   * Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast that does not indicate at least 2,000 ft and 3 sm for an hour either side of the ETA (TEMPO and PROB included; a TAF not covering the whole window, a ceiling of unknown height or no visibility does not); no TAF needs one.
    */
   ifr_alternate_destination: {
     input: IfrAlternateDestinationInput;
@@ -2222,6 +2445,13 @@ export interface EngineContract {
     answer: LegalCruisingAltitudesAnswer;
   };
   /**
+   * A field's lighting remarks read for a pilot (the Chart Supplement's, NASR APT_RMK.csv LGT_SKED and BCN_LGT_SKED): each system named, by its code in the Chart Supplement legend (Airport Lighting, Visual Glideslope Indicators) and its name in AIM 2-1 (approach lights 2-1-1, visual glideslope indicators 2-1-2, REIL 2-1-3, runway edge lights by intensity 2-1-4, in-runway lighting 2-1-5, the beacon 2-1-9, taxiway lights 2-1-10), the runways it serves as written, and how it is turned on: keying the mic on the CTAF or a frequency (AIM 2-1-8, Pilot Control of Airport Lighting), when the tower is closed, at a preset intensity a pilot turns up, on a schedule (sunset to sunrise), or on all the time; the contractions written out (JO 7340.2 and the Chart Supplement's Abbreviations). A sentence not read in full is a note, its known contractions written out and every other word kept as written, never guessed. standard_keying where a light is the pilot's and the remarks give no count of clicks of their own: AIM 2-1-8's 7 (highest), 5 (medium or lower) and 3 (lowest) within 5 seconds.
+   */
+  lighting_read: {
+    input: LightingReadInput;
+    answer: LightingReadAnswer;
+  };
+  /**
    * A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them. Air time (not a 61.51(b) column) is this logbook's AirTime, else ForeFlight's TimeOff to TimeOn, else 0 (not known); an entry read from a file is never from a track.
    */
   logbook_csv_read: {
@@ -2292,6 +2522,20 @@ export interface EngineContract {
     answer: ModeCVeilAnswer;
   };
   /**
+   * The bands the map's model weather is coloured and labelled by: precipitation's intensity words by reflectivity, dBZ (AIM 7-1-12: light under 26, moderate 26 to 40, heavy over 40 to 50, extreme over 50; drawn from 10 dBZ, the app's least), the ceiling's by AIM 7-1-7's categories, ft above the ground (14 CFR 1.1), and CAPE's, J/kg (NWS: weak under 1,000, moderate to 2,500, strong to 4,000, extreme over).
+   */
+  model_weather_bands: {
+    input: ModelWeatherBandsInput;
+    answer: ModelWeatherBandsAnswer;
+  };
+  /**
+   * The GFS's pressure levels at a station (the weather service's model winds, from NOMADS' GRIB2 HGT, TMP, UGRD and VGRD) in the units the winds aloft are kept in, as the FB's columns were (FAA-H-8083-28B 27.2.1.1.1): the geopotential height in feet by the international foot (0.3048 m, NIST SP 811 B.9), the temperature in degrees Celsius (kelvin less 273.15, NIST SP 811 4.2.1.1), and the wind's east and north parts in metres a second turned into knots (1,852 m a nautical mile, NIST SP 811 B.9) and the direction it blows from, degrees true (360 for no wind at all), and its speed. Unrounded, in the levels' order; a level with any figure missing is left out.
+   */
+  model_wind_levels: {
+    input: ModelWindLevelsInput;
+    answer: ModelWindLevelsAnswer;
+  };
+  /**
    * A navaid's ident in Morse code (AIM 1-1-3), the letters two spaces apart.
    */
   morse: {
@@ -2334,7 +2578,7 @@ export interface EngineContract {
     answer: NavLogCandidatesAnswer;
   };
   /**
-   * The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
+   * The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), and 45 where `night` is null (no departure time: night cannot be ruled out, so the larger is assumed), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
    */
   navlog_fuel_plan: {
     input: NavLogFuelPlanInput;
@@ -2404,14 +2648,14 @@ export interface EngineContract {
     answer: NavLogTotals1;
   };
   /**
-   * The legs with their climbs flown, from the field (start_altitude_ft; null starts level) and at every step up, at the best rate in each leg's air and the climb speed; each leg's climb_min and the top of climb (toc).
+   * The legs with their climbs flown, from the field (start_altitude_ft; null starts level) and at every step up, at the best rate in each leg's air and the climb speed; each leg's climb_min and the top of climb (toc). A climb is flown at its own ground speed, the climb speed's wind triangle in the leg's wind; a leg flown wholly in the climb states the climb's TAS, wind correction, headings, ground speed and fuel flow, so its ground speed times its time is its miles; a leg partly climbed keeps the cruise's, the climb's on its toc.
    */
   navlog_with_climbs: {
     input: NavLogWithClimbsInput;
     answer: NavLogWithClimbsAnswer;
   };
   /**
-   * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before; the times and fuel unchanged.
+   * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude where the 45-degree entry begins, about 1.7 nm before the end (AC 90-66C 11.2, 11.3: level at pattern altitude before entering), to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before. With a profile giving the descent's speed and fuel flow, each descent is flown as its own phase (its wind triangle at the descent's TAS, its flow), the legs' times and fuel changed by it and each row stating its phase's figures; else the times and fuel unchanged, the descent on the cruise's. A top of descent's minutes and gallons are those flown to it: what a leg flies beyond its line, counted at its end (its procedure's more_min and more_gal, a hold with at_end), comes after it.
    */
   navlog_with_descents: {
     input: NavLogWithDescentsInput;
@@ -2439,6 +2683,20 @@ export interface EngineContract {
     answer: NoAltitudeAnswer;
   };
   /**
+   * A NOTAM read for a pilot, beside its text as sent: its keyword (FAA Order JO 7930.2 1-2-1) as a plain heading, or the ICAO Q) code's subject (Appendix B); its words with the FAA's contractions written out (JO 7340.2; JO 7930.2 3-3-1 and TBL 3-3-1) in sentence case, its codes (ILS, PAPI, VOR, RNAV, LPV) and idents kept, runways and taxiways as designated (3-3-5, 3-3-6), heights MSL unless AGL is stated (4-2-1), distances and compass points from a place, coordinates and fix-radial-distances written out; and its start of activity and end of validity in UTC (YYMMDDHHMM, 3-3-2), with EST (an estimate) and PERM (permanent) (4-2-1). Its what and where in our words where its subject's words say them (the airport card's lines). The keyword AD, JO 7930.2's aerodrome, is headed "Airport", the FAA's word for pilots (the AIM). A word it does not know is kept as written, never guessed.
+   */
+  notam_read: {
+    input: NotamReadInput;
+    answer: NotamReadAnswer;
+  };
+  /**
+   * What one NOTAM addresses on an airport's card, from its text as sent (FAA Order JO 7930.2, the domestic form of 4-2-1 and the ICAO form of chapter 8), matched to the card's own rows: the field (AD AP CLSD), a runway by its designation (RWY, 1-2-1 and 3-3-5; never a runway a taxiway's NOTAM names, 3-3-6), a light on it (PAPI, VASI, REIL, the approach lights, the edge lights, the beacon; AIM 2-1), the approaches an ILS, LOC, LDA or SDF serves (NAV) or the procedure an FDC IAP NOTAM titles (7-1-3), a frequency by its MHz or its facility (COM), the fuel (SVC), and a TFR near the field. Each with its badge's word (Closed, Closed at times, Part closed, Restricted, Out of service, Not available, Not authorized (NA, JO 7340.2), Changed, NOTAM, TFR) and how bad (unusable: closed, or a procedure not authorized; caution: the rest). CLSD EXC XNG or EXC TAX is still closed to landing and takeoff, said in the label. A NOTAM it cannot place answers no badge, never a guess.
+   */
+  notam_subject: {
+    input: NotamSubjectInput;
+    answer: NotamSubjectAnswer;
+  };
+  /**
    * The NOTAMs of one FAA NOTAM System (FNS) message, AIXM 5.1, as wingtip.notams keeps them: each by its domestic place and number, else its place and ICAO number; `ends` the sooner of its own end and its feature lifetime's. None where the message is not XML.
    */
   notams_fns: {
@@ -2446,11 +2704,18 @@ export interface EngineContract {
     answer: NotamsFnsAnswer;
   };
   /**
-   * A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. The top three in force are said first; none is dropped.
+   * A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. Every one in force comes before every one that is not, whatever its points, then best first. The top three in force are said first; none is dropped.
    */
   notams_ranked: {
     input: NotamsRankedInput;
     answer: NotamsRankedAnswer;
+  };
+  /**
+   * Whether an accident or incident report (the FAA's statement or preliminary notice, or the NTSB's record), the FAA's aircraft registry and an ADS-B track are one airplane at one time and place: the identity check a Studio crash draft is held to. The report's N-number must be in the registry with a Mode S code (the registry's MASTER file, MODE S CODE HEX), the track must be that address's (adsb.lol's '~' pseudo-addresses never are), and the track must have a report in the window the report's local time gives -- 60 minutes before it to 15 after, at each UTC offset the place may have that day, or the whole local day without a time; with no offset given, every US offset, UTC-11 to UTC+10 (49 CFR part 71) -- within 20 nm of a town's point or 10.5 nm of a point the NTSB gives (10 nm for the receivers' coverage lost low before the place, plus the place's own doubt; ADS-B's own fix is within 0.05 nm, 14 CFR 91.227(c)(1)(i)). The tolerances are this check's judgment, not a regulation. Verdict: confirmed where all agree; no_track where the registry agrees and the track has no report in the window (a draft of the place alone, never a guessed path); needs_human for anything else.
+   */
+  occurrence_identity: {
+    input: OccurrenceIdentityInput;
+    answer: OccurrenceIdentityAnswer;
   };
   /**
    * Whether a transmission is said to the airplane `tail` (AIM 4-2-4).
@@ -2600,6 +2865,13 @@ export interface EngineContract {
     answer: PlanningFiguresAnswer;
   };
   /**
+   * Where a position is drawn on an approach plate's page, for own ship on the plate full screen as an EFB's geo-referenced plates draw it: the latitude and longitude through the plate's Lambert conformal conic projection on NAD 83's GRS 80 (Snyder, USGS Professional Paper 1395, eqs. 14-1, 14-2, 14-4, 14-15, 15-7 to 15-10) and the page's affine from its GeoPDF viewport (ISO 32000-2 12.9, as the planner fits it: PlateGeoreference), as fractions of the page's width from the left and its height from the top, with a true track turned onto the page (degrees clockwise from the page's up, null without a track). Null outside the plan view's box or inside an inset cut from it, the only part of a d-TPP plate drawn to scale being the plan view.
+   */
+  plate_page_point: {
+    input: PlatePagePointInput;
+    answer: PlatePagePointAnswer;
+  };
+  /**
    * What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.
    */
   point_kind: {
@@ -2607,7 +2879,21 @@ export interface EngineContract {
     answer: PointKindAnswer;
   };
   /**
-   * Pressure altitude from a field's elevation and its altimeter setting, a thousand feet an inch from 29.92 (PHAK ch. 4).
+   * Precipitation rates, mm/h, as the reflectivity a radar would see for each by the WSR-88D's default Z-R relation, Z = 300 R^1.4 (NWS), dBZ to the hundredth; 0 where none falls. So a model's rate and the radar's echo are read against the same intensity words.
+   */
+  precip_dbz: {
+    input: PrecipDbzInput;
+    answer: PrecipDbzAnswer;
+  };
+  /**
+   * A precipitation reflectivity's intensity word, AIM 7-1-12's (light under 26 dBZ, moderate 26 to 40, heavy over 40 to 50, extreme over 50), none under 10 dBZ (the app's trace); and with the temperature at 2 m, whether it falls as snow (at or under 0 C) or rain, a simplification said only as a glyph.
+   */
+  precip_intensity: {
+    input: PrecipIntensityInput;
+    answer: PrecipIntensityAnswer;
+  };
+  /**
+   * Pressure altitude from a field's elevation and its altimeter setting: the standard atmosphere's height of the setting above 29.92 "Hg, (1 - (setting/29.92)^(1/5.2558797)) x 145,442 ft (ICAO Doc 7488), FAA-H-8083-25C ch. 11 Figure 11-3's conversion factor to within 2 ft (30.10 "Hg: -165).
    */
   pressure_altitude_ft: {
     input: PressureAltitudeFtInput;
@@ -2670,7 +2956,7 @@ export interface EngineContract {
     answer: ProficiencyPlanAnswer;
   };
   /**
-   * The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red within 100 ft of it or above it and yellow within 1,000 ft -- ForeFlight's Hazard Advisor display defaults (ForeFlight Pilot's Guide), not a regulation; the legal minimums over the ground are 14 CFR 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack ("3,500 ft, terrain within 500 ft near KXYZ").
+   * The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red where they come within less than 500 ft of it or above it (14 CFR 91.119(c)'s 500 ft above the surface and from any structure; exactly 500 ft meets it) and yellow within 1,000 ft (91.119(b)'s height over a congested area, the town not known here) -- the legal floors themselves are 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack ("3,500 ft, terrain within 500 ft near KXYZ").
    */
   profile_clearance: {
     input: ProfileClearanceInput;
@@ -2794,6 +3080,20 @@ export interface EngineContract {
   registered_profile: {
     input: RegisteredProfileInput;
     answer: RegisteredProfileAnswer;
+  };
+  /**
+   * An airport's remarks in words (the Chart Supplement's, NASR APT_RMK.csv): its fuel's, its FBO's, its courtesy car's and its radio's (the weather read out on the CTAF), and a navaid's (NAV_RMK.csv, where its signal is unusable), each a line. Each contraction of one meaning written out, by the Chart Supplement's General Information Abbreviations first (CUST customs, TSNT transient, avbl available, hr hour, O/R on request, thru through) and FAA Order JO 7340.2R's decode after it, to which it defers; a code (FBO, CBP, CTAF, 100LL, Jet A), a figure, a time and a telephone number kept as written; a contraction of more than one meaning (OPR, OPN, FM) and any word not known kept as written, never guessed; the rest in sentence case. A remark with any lower case is someone's own writing, as sent.
+   */
+  remarks_read: {
+    input: RemarksReadInput;
+    answer: RemarksReadAnswer;
+  };
+  /**
+   * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those within 10 s each side, at the report's own time (a transponder's 25 ft steps, DO-260B) and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
+   */
+  replay_track: {
+    input: ReplayTrackInput;
+    answer: ReplayTrackAnswer;
   };
   /**
    * The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).
@@ -2929,11 +3229,18 @@ export interface EngineContract {
     answer: SigmetHazardAnswer;
   };
   /**
-   * The SIGMETs in force whose area the route crosses (AC 00-45H).
+   * The SIGMETs in force whose area the route crosses (FAA-H-8083-28B 26.2.4).
    */
   sigmets_along_route: {
     input: SigmetsAlongRouteInput;
     answer: SigmetsAlongRouteAnswer;
+  };
+  /**
+   * A recorded flight made ready (replay_track) made ready for a flight simulator's replay: each run of reports between two gaps its own segment, nothing drawn across a gap; the path between reports a cubic Hermite spline through each report with its sent velocity as the slope (de Boor 1978, ch. IV), the height the same with the vertical speed, `rate_hz` frames a second (10 where not given, at most 60); pressure altitude set on the airplane's own altimeter setting where it sent one below 18,000 ft (14 CFR 91.121(a)(1); FAA-H-8083-25C ch. 11), else left as sent and the segment's `msl` false; on the ground, the ground's height. Estimated, as ADS-B sends none of them: bank from the turn, tan(bank) = V x turn rate / g (FAA-H-8083-25C ch. 5), pitch the flight path angle, each and the heading averaged over 2.5 s each side so the airplane rolls in before the heading moves (FAA-H-8083-15B ch. 7, a lead of half the bank); heading the track (no wind known), and magnetic by the WMM; gear and flaps by phase (FAA-H-8083-3C ch. 6, retracted once climbing; down below 1,000 ft above the ground descending, AC 120-108); lights by AIM 4-3-24 and 14 CFR 91.209.
+   */
+  sim_flight: {
+    input: SimFlightInput;
+    answer: SimFlightAnswer;
   };
   /**
    * A student's 61.87(n) solo endorsement on the instructor's list: the days to its last good day and its standing, caution within 7 days (the owner's choice).
@@ -2948,6 +3255,13 @@ export interface EngineContract {
   solo_xc_determinations: {
     input: SoloXcDeterminationsInput;
     answer: SoloXcDeterminationsAnswer;
+  };
+  /**
+   * The tab ForeFlight writes on a special-use area's boundary, its words: the area's name cut to nine characters after the type's letter ("M-BRADY NOR*"), its floor and ceiling as figures with their references (SFC, AGL, MSL, FL, UNL), and the tab's finished words as the map writes them ("M-BRADY NOR*:" over "3600-17999": whole feet MSL, 500AGL, FL230, SFC, UNL), from the FAA's special use airspace data (ADDS: each limit's VAL in feet, a flight level times 100, its CODE SFC, MSL, STD or UNLTD and its DESC TI, TNI or ANI). Written as the FAA's CIFP writes the same areas: a ceiling "to but not including" FL180 is 17,999 ft MSL, as Class A begins at 18,000 ft MSL (14 CFR 71.33); another ceiling TNI a foot under its figure, a floor ANI a foot over it; SFC above 0 is that height AGL. Null for a piece the FAA cuts out of its area (EXCLUSION 1), or where a limit has no figure.
+   */
+  special_use_tab: {
+    input: SpecialUseTabInput;
+    answer: SpecialUseTabAnswer;
   };
   /**
    * What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.
@@ -2971,7 +3285,14 @@ export interface EngineContract {
     answer: SuaAltitudesAnswer;
   };
   /**
-   * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (AC 00-45H).
+   * Whether the sun is down at a point and an instant: after sunset and before sunrise, the sun's centre 0.833 degrees below the horizon (its upper limb on it; NOAA's solar calculation, the Naval Observatory's definition). Not 14 CFR 1.1's night, which begins only at the end of evening civil twilight: this is the sky as a pilot sees it, the map's day or night glyph.
+   */
+  sun_down: {
+    input: SunDownInput;
+    answer: SunDownAnswer;
+  };
+  /**
+   * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
    */
   taf_window: {
     input: TafWindowInput;
@@ -3013,11 +3334,18 @@ export interface EngineContract {
     answer: TerrainWayStone[] | null;
   };
   /**
-   * A TFR's detail from the FAA's TFR XML: its NOTAM, times, altitudes and areas; null where it holds no NOTAM. Not XML is refused.
+   * A TFR's detail from the FAA's TFR XML (tfr.faa.gov's XNOTAM file): its times, the rule it is issued under, its purpose, its lowest floor and highest ceiling over its areas, its instructions and its NOTAM's text as sent, and who it names to call: the facility it is coordinated through and its point of contact, each with a telephone or frequency, from their own fields or, where the template left them empty, the sentence that calls one the coordination facility. Null where it holds no NOTAM. Not XML is refused.
    */
   tfr_detail_read: {
     input: TfrDetailReadInput;
     answer: TfrDetailReadAnswer;
+  };
+  /**
+   * A TFR read for a pilot, on the lines a NOTAM's row has, from what tfr.faa.gov gives of it: its kind as a heading ("Security TFR"), what it is with the rule it is issued under ("Security TFR, 14 CFR 99.7": 14 CFR 91.137-91.145, 99.7; 49 U.S.C. 44812), where it is (its floor to its ceiling in whole feet, rounded outward, each MSL or AGL as its XNOTAM gives it, the ground said as surface; and over the field, or how far its nearest edge is from the field and which way, to a tenth of a mile rounded down, on JO 7930.2 3-3-9's 16 points), and its place's name from the list's title, its dates off (the card says them once). A kind or rule it does not know is said as given, never guessed.
+   */
+  tfr_read: {
+    input: TfrReadInput;
+    answer: TfrReadAnswer;
   };
   /**
    * At most `most` (4,000 where not given) of `points`, even steps through, the first and last kept; each point as it came.
@@ -3055,7 +3383,7 @@ export interface EngineContract {
     answer: TrafficKindAnswer;
   };
   /**
-   * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
+   * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159), 2,000 ft for an airplane whose height is an uncorrected pressure altitude (pressure_altitude: the two are not on one reference); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
    */
   traffic_marks: {
     input: TrafficMarksInput;
@@ -3083,11 +3411,25 @@ export interface EngineContract {
     answer: TrafficReachAnswer;
   };
   /**
+   * An EDR, (m^2/s^3)^1/3, as AWC's turbulence word for an aircraft weight class (light < 15,500 lb, medium, heavy; aviationweather.gov GFA help's thresholds): the highest it reaches of Light, Moderate, Severe, Extreme; null under light's.
+   */
+  turbulence_category: {
+    input: TurbulenceCategoryInput;
+    answer: TurbulenceCategoryAnswer;
+  };
+  /**
    * Whether own ship moves at flying speed.
    */
   underway: {
     input: UnderwayInput;
     answer: UnderwayAnswer;
+  };
+  /**
+   * Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.
+   */
+  velocity_track: {
+    input: VelocityTrackInput;
+    answer: VelocityTrackAnswer;
   };
   /**
    * The vertical speed in feet a minute from GPS altitudes: the least-squares slope of the last 10 seconds of samples; null with fewer than three of them or under 2 seconds.
@@ -3139,32 +3481,39 @@ export interface EngineContract {
     answer: VorCheckLimitDegAnswer;
   };
   /**
-   * When a weather report stops counting, Unix seconds UTC, or null where nothing says: a routine METAR an hour after it was observed (AIM 7-1-28, "METAR-hourly"; FMH-1 ch. 2), a SPECI when the next routine report is due, a TAF, the FB winds or an advisory at the end of the valid time its header gives (AC 00-45H).
+   * When a weather report stops counting, Unix seconds UTC, or null where nothing says: a routine METAR an hour after it was observed (AIM 7-1-28, "METAR-hourly"; FMH-1 ch. 2), a SPECI when the next routine report is due, a TAF, the FB winds or an advisory at the end of the valid time its header gives (FAA-H-8083-28B 27.4.1, Table 27-2, 26.2-26.3).
    */
   weather_expires_at: {
     input: WeatherExpiresAtInput;
     answer: WeatherExpiresAtAnswer;
   };
   /**
-   * To when a stored copy may be served when later fetches fail, by its product's own validity (AC 00-45H): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
+   * To when a stored copy may be served when later fetches fail, by its product's own validity (FAA-H-8083-28B 24.4.1, 26.2-26.3, 27.4.1): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
    */
   weather_held_until: {
     input: WeatherHeldUntilInput;
     answer: WeatherHeldUntilAnswer;
   };
   /**
-   * Whether a weather report still counts at now: before it expires (weather_expires_at), and, for a forecast, from when its valid time starts, since a TAF's later hours are not today's weather (AC 00-45H).
+   * Whether a weather report still counts at now: before it expires (weather_expires_at), and, for a forecast, from when its valid time starts, since a TAF's later hours are not today's weather (FAA-H-8083-28B 27.4.1).
    */
   weather_in_force: {
     input: WeatherInForceInput;
     answer: WeatherInForceAnswer;
   };
   /**
-   * What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there. A caution, never a limit; each change keyed so an app tells it once.
+   * What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there; and either with a ceiling of unknown height now (OVC///) where it had a known one, a ceiling not known to be high enough (14 CFR 1.1). A caution, never a limit; each change keyed so an app tells it once.
    */
   weather_worse: {
     input: WeatherWorseInput;
     answer: WeatherWorseAnswer;
+  };
+  /**
+   * The wind and temperature at an altitude and a time from the winds-aloft grid's columns at a place, one column an hour (AWC's GFA levels, an altitude MSL under 18,000 ft and a flight level from FL180, 14 CFR 71.33; each level's wind as its east and north parts, kt): each hour's column read at the altitude as a station's levels are (the direction the short way round, the speed and temperature linear in altitude, clamped past the ends, the temperature keeping its difference from a standard day; FAA-H-8083-28B 27.2.1.1.1), then the two hours round the time weighed by how near each is, the nearest hour's outside them. A level with no wind (under the ground) is left out. Null where the grid has none. A list for "altitudes".
+   */
+  wind_aloft_at: {
+    input: WindAloftAtInput;
+    answer: WindAloftAtAnswer;
   };
   /**
    * Whether a field's wind earns its arrow on the map (10 kt or more, or gusting: the owner's pick, 2026-11-10) and whether it warns: its least crosswind more than the airplane's maximum demonstrated crosswind (the POH's, 14 CFR 23.233(a) before amendment 23-64). Never over with no airplane or no figure.
@@ -3181,7 +3530,7 @@ export interface EngineContract {
     answer: WindAtAltitudeAnswer;
   };
   /**
-   * A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28A, 25.2.3.4.5).
+   * A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm, under 3 kt (FAA-H-8083-28B, 25.2.3.4.5; the NWS's wind barb table, weather.gov/hfo/windbarbinfo, 0-2 kt rounded to 0).
    */
   wind_barb: {
     input: WindBarbInput;
@@ -3331,6 +3680,8 @@ export interface AircraftProblemsInput {
   cruisePowerPct?: string | null;
   climbTasKt?: string | null;
   climbFuelBurnGph?: string | null;
+  descentIasKt?: string | null;
+  descentFuelBurnGph?: string | null;
   usableFuelGal?: string | null;
   equipment?: string | null;
   surveillance?: string | null;
@@ -3344,6 +3695,8 @@ export interface AircraftProblemsAnswer {
   cruisePowerPct?: string;
   climbTasKt?: string;
   climbFuelBurnGph?: string;
+  descentIasKt?: string;
+  descentFuelBurnGph?: string;
   usableFuelGal?: string;
   equipment?: string;
   surveillance?: string;
@@ -3387,7 +3740,7 @@ export interface AirplaneNeedsInput {
    * The airplane (airplane_figures' profile); null for no airplane.
    */
   profile?: {} | null;
-  figure: "legs" | "fuel_totals" | "glide" | "climb" | "weight_balance" | "takeoff_landing";
+  figure: "legs" | "fuel_totals" | "glide" | "climb" | "descent" | "weight_balance" | "takeoff_landing";
 }
 export interface AirplaneNeedsAnswer {
   /**
@@ -3462,6 +3815,28 @@ export interface AirspaceEntryRulesAnswer {
    */
   call: ("APP" | "TWR")[];
 }
+export interface AirspaceVolumeSpanInput {
+  floor?: SpecialUseTabLimit;
+  ceiling?: SpecialUseTabLimit;
+  /**
+   * The ground under the volume, ft MSL: its lowest and its highest. Null where the map has none in yet.
+   */
+  ground?: {
+    low_ft: number;
+    high_ft: number;
+  } | null;
+}
+/**
+ * One limit of a special-use area as the FAA's data gives it: its figure in feet (a flight level times 100), its CODE (SFC, MSL, STD, UNLTD) and its DESC (TI, TNI to but not including, ANI above but not including).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "SpecialUseTabLimit".
+ */
+export interface SpecialUseTabLimit {
+  ft?: number | null;
+  code?: string | null;
+  desc?: string | null;
+}
 export interface AirwayFloorFtInput {
   mea_ft?: number | null;
   gnss_mea_ft?: number | null;
@@ -3532,6 +3907,14 @@ export interface AlertsAheadInput {
         floor_ref?: string | null;
         ceiling_ft?: number | null;
         ceiling_ref?: string | null;
+        /**
+         * The FAA's LOWER_DESC: ANI, above but not including.
+         */
+        floor_desc?: string | null;
+        /**
+         * The FAA's UPPER_DESC: TNI, to but not including; TI, to and including.
+         */
+        ceiling_desc?: string | null;
         times_of_use?: string | null;
         /**
          * The ground under the area, for AGL heights.
@@ -3650,7 +4033,7 @@ export interface AltitudeChangeInput {
    */
   mode: "start_at" | "cross_at";
   /**
-   * The leg's ground speed, knots: a descent's minutes, and with tas_kt the wind a climb's ground speed is scaled by. Null where the leg has none.
+   * The leg's ground speed, knots: a descent's minutes, and, where the course and wind are not given, with tas_kt the scale of a climb's ground speed. Null where the leg has none.
    */
   groundspeed_kt?: number | null;
   /**
@@ -3665,6 +4048,18 @@ export interface AltitudeChangeInput {
    * The forecast temperature at to_ft, degrees C: the climb is flown that far from a standard day (ISA, PHAK ch. 4). Null for a standard day.
    */
   oat_c?: number | null;
+  /**
+   * The leg's true course, degrees: with the wind, the climb's own wind triangle at the climb speed (PHAK ch. 16). Optional; left out, the climb's ground speed is the leg's scaled by the airspeeds.
+   */
+  true_course_deg?: number | null;
+  /**
+   * The leg's wind, from, degrees true (its NavLogWind's), for the climb's wind triangle. Null or left out where the leg has none.
+   */
+  wind_dir_true_deg?: number | null;
+  /**
+   * The leg's wind speed, knots, with wind_dir_true_deg.
+   */
+  wind_speed_kt?: number | null;
 }
 /**
  * An airplane's profile (data/aircraft/*.json, a pilot's own figures laid over it). A figure of 0 is taken as none.
@@ -3683,6 +4078,14 @@ export interface NavLogProfile {
   cruise_altitude_ft?: number | null;
   climb_tas_kt?: number | null;
   climb_fuel_burn_gph?: number | null;
+  /**
+   * The descent's indicated airspeed, knots, as the POH gives it; flown as a TAS at the descent's middle altitude. Null or left out: the descent is flown on the cruise's figures.
+   */
+  descent_ias_kt?: number | null;
+  /**
+   * The descent's fuel flow, gallons an hour, from the POH.
+   */
+  descent_fuel_burn_gph?: number | null;
   climb_rate_fpm_sea_level?: number | null;
   taxi_fuel_gal?: number | null;
   usable_fuel_gal?: number | null;
@@ -3796,6 +4199,7 @@ export interface ProcedureDrawing {
     | null;
   missed_legs?: ApproachMissedLeg[] | null;
   runway_path?: ApproachRunwayPath | null;
+  approach?: ApproachFacts | null;
 }
 /**
  * A missed approach's coded leg (ARINC 424-18 5.21).
@@ -3834,6 +4238,51 @@ export interface ApproachRunwayPath {
    * Glidepath angle, degrees.
    */
   deg: number;
+}
+/**
+ * What the CIFP says of an approach besides its legs (wingtip.approach_facts): its runway, the altitudes coded beside a fix's limits, and the levels of service authorised.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ApproachFacts".
+ */
+export interface ApproachFacts {
+  runway?: {
+    /**
+     * The CIFP's runway ident, "RW36".
+     */
+    ident: string;
+    lat: number;
+    lon: number;
+    /**
+     * The landing threshold's elevation, ft MSL (the CIFP's runway record, ARINC 424-18 5.68).
+     */
+    threshold_ft: number;
+    /**
+     * The threshold crossing height, ft (ARINC 424-18 5.67).
+     */
+    tch_ft: number;
+    /**
+     * The touchdown zone elevation, ft MSL, to a tenth (NASR APT_RWY_END TDZ_ELEV).
+     */
+    tdze_ft?: number | null;
+  } | null;
+  coded?:
+    | {
+        fix: string;
+        /**
+         * The fix's altitude description (ARINC 424-18 5.29): "G" or "H" the glide slope's altitude at the FAF, "I" or "J" its intercept altitude at the FACF, "V" the vertical path's at a step-down fix.
+         */
+        code: string;
+        /**
+         * That altitude, ft MSL: the record's second altitude.
+         */
+        ft: number;
+      }[]
+    | null;
+  /**
+   * The levels of service the CIFP authorises (ARINC 424-19 5.275, 5.276): "LPV", "LNAV/VNAV", "LNAV", ...
+   */
+  levels?: string[] | null;
 }
 /**
  * A flown track's point.
@@ -4022,6 +4471,76 @@ export interface ApproachFindInput {
   picked?: string | null;
   minimums_ft?: number | null;
 }
+export interface ApproachFixTagsInput {
+  drawing: ProcedureDrawing;
+}
+export interface ApproachFixTagsAnswer {
+  tags: ApproachFixTag[];
+  /**
+   * The final approach segment, from the FAF to the MAP, for the map to mark.
+   */
+  final: {
+    from: string;
+    to: string;
+    points: [number, number][];
+  } | null;
+}
+/**
+ * One fix's tag on the map with its approach's plate.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ApproachFixTag".
+ */
+export interface ApproachFixTag {
+  ident: string;
+  lat: number;
+  lon: number;
+  /**
+   * "IAF", "IF", "FACF", "FAF", "MAP", "hold".
+   */
+  roles: string[];
+  /**
+   * On the missed approach alone.
+   */
+  missed: boolean;
+  /**
+   * How the fix is crossed (ARINC 424-18 5.29): at min_ft (= max_ft), at or above min_ft, at or below max_ft, or between them; the FAA charts at or above underlined, at or below overlined.
+   */
+  altitude: {
+    sense: "at" | "at_or_above" | "at_or_below" | "between";
+    min_ft: number | null;
+    max_ft: number | null;
+  } | null;
+  /**
+   * At the final approach fix of an ILS, or of an RNAV approach with LPV or LNAV/VNAV minimums.
+   */
+  vertical: {
+    /**
+     * An ILS's electronic glide slope ("GS") or an RNAV approach's glidepath ("GP").
+     */
+    kind: "glideslope" | "glidepath";
+    /**
+     * Its altitude at the FAF, ft MSL.
+     */
+    ft: number;
+    deg: number | null;
+    /**
+     * "cifp" the CIFP's own (ARINC 424-18 5.29 "G"/"H"); "computed" from the angle, threshold and TCH by FAA Order 8260.3G formula 2-6-4.
+     */
+    source: "cifp" | "computed";
+  } | null;
+  /**
+   * At a missed approach point that is the runway: its threshold elevation, threshold crossing height and touchdown zone elevation. No DA or MDA: those are the plate's alone.
+   */
+  runway: {
+    threshold_ft: number;
+    tch_ft: number;
+    /**
+     * Whole feet, as the plate prints it.
+     */
+    tdze_ft: number | null;
+  } | null;
+}
 export interface ApproachGuidanceInput {
   id?: string | null;
 }
@@ -4082,6 +4601,68 @@ export interface ApproachQuizInput {
   drawing: ProcedureDrawing;
   gs_kt: number;
 }
+export interface ApproachSceneInput {
+  lat: number;
+  lon: number;
+  /**
+   * The field's elevation, ft MSL (NASR): the highest point of its usable runways.
+   */
+  elevation_ft?: number | null;
+  /**
+   * The traffic pattern altitude, ft MSL, as the planner gives it (pattern_altitude).
+   */
+  pattern_ft?: number | null;
+  runways: {
+    length_ft?: number | null;
+    runway_ends?: {
+      ident: string;
+      lat?: number | null;
+      lon?: number | null;
+      heading_true_deg?: number | null;
+    }[];
+  }[];
+  /**
+   * The approach picked at the field, as the planner draws it with its CIFP figures (`approach`).
+   */
+  drawing?: ProcedureDrawing | null;
+}
+export interface ApproachSceneAnswer {
+  centrelines: {
+    end: string;
+    points: [number, number][];
+  }[];
+  glidepaths: {
+    end: string;
+    deg: number;
+    /**
+     * The height it crosses the threshold at, ft MSL.
+     */
+    cross_ft: number;
+    /**
+     * The threshold crossing height, ft above the threshold, where known.
+     */
+    tch_ft: number | null;
+    /**
+     * The approach's own figures, or the standard 3.00 degrees and 40 ft.
+     */
+    source: "cifp" | "standard";
+    points: [number, number, number][];
+  }[];
+  /**
+   * The approach's line at its altitudes, transition and final.
+   */
+  path: [number, number, number][] | null;
+  ring: {
+    ft: number;
+    radius_nm: number;
+    /**
+     * [lat, lon], the field's place.
+     *
+     * @minItems 2
+     */
+    center: [number, number];
+  } | null;
+}
 export interface ApproachTransitionInput {
   drawings?: ProcedureDrawing[] | null;
   points?: TrackPoint[] | null;
@@ -4128,6 +4709,27 @@ export interface AtcCallInput {
 export interface AtcCallAnswer {
   who: "to_us" | "from_us" | "other";
   items: AtcItem[];
+}
+export interface AviationGridBandsInput {}
+export interface AviationGridBandsAnswer {
+  icing: {
+    word: string;
+    from: number;
+  }[];
+  turbulence: {
+    light: {
+      word: string;
+      from: number;
+    }[];
+    medium: {
+      word: string;
+      from: number;
+    }[];
+    heavy: {
+      word: string;
+      from: number;
+    }[];
+  };
 }
 export interface AwcAirsigmetsReadInput {
   text: string;
@@ -4408,6 +5010,9 @@ export interface BestField {
 export interface CallPatternInput {
   tail: string;
 }
+export interface CapeCategoryInput {
+  j_kg: number;
+}
 export interface CeilingFtInput {
   layers?:
     | {
@@ -4548,15 +5153,91 @@ export interface ClassBEnteredInput {
   altitude_ft: number;
   shelves?: ClassBShelf[] | null;
 }
-export interface ClearedRouteInput {
-  text: string;
-  found?: {
-    limit?: ClearanceFound | null;
-    route?: ClearanceFound[][];
-    departure?: ClearanceFoundProcedure | null;
-    arrival?: ClearanceFoundProcedure | null;
+export interface ClearancePlacesInput {
+  places: SpokenCandidate[];
+  /**
+   * The route's points, [lat, lon] each: the places are ordered nearest to them first (a flat-earth distance, enough for an order). None given keeps the places' order.
+   */
+  near?: [number, number][];
+  limit?: string | null;
+  /**
+   * The field the planner's airport search found for each run of the limit's words, by the run in capitals ("DULUTH"): the one for the longest run is the limit where it is said with "airport", or where its name starts with every word said.
+   */
+  limit_airports?: {
+    [k: string]: SpokenCandidate;
+  };
+  route?: string[];
+  departure?: {
+    /**
+     * The name said: "Bunyan", or the navaid's a procedure is named for, "Gopher".
+     */
+    name: string;
+    number: string;
+    /**
+     * The transition's words, where one was said.
+     */
+    transition?: string | null;
+    /**
+     * The field's own procedures, as the CIFP codes them.
+     */
+    procedures: {
+      /**
+       * "BUNYN1": the name's letters and the number.
+       */
+      id: string;
+      kind: "departure" | "arrival" | "approach";
+      transitions?: string[];
+    }[];
   } | null;
-  planned: ClearanceRoute;
+  arrival?: {
+    /**
+     * The name said: "Bunyan", or the navaid's a procedure is named for, "Gopher".
+     */
+    name: string;
+    number: string;
+    /**
+     * The transition's words, where one was said.
+     */
+    transition?: string | null;
+    /**
+     * The field's own procedures, as the CIFP codes them.
+     */
+    procedures: {
+      /**
+       * "BUNYN1": the name's letters and the number.
+       */
+      id: string;
+      kind: "departure" | "arrival" | "approach";
+      transitions?: string[];
+    }[];
+  } | null;
+}
+/**
+ * A place a clearance may name, as the planner or a phone's pack holds it: an airport, a navaid (NASR NAV_BASE, by its NAME) or a fix (no name).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "SpokenCandidate".
+ */
+export interface SpokenCandidate {
+  ident: string;
+  name?: string | null;
+  what: "airport" | "navaid" | "fix";
+  lat: number;
+  lon: number;
+}
+export interface ClearancePlacesAnswer {
+  limit: ClearanceFound | null;
+  route: ClearanceFound[][];
+  departure: {
+    id: string;
+    transition: string | null;
+    sure: boolean;
+  } | null;
+  arrival: {
+    id: string;
+    transition: string | null;
+    sure: boolean;
+  } | null;
 }
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema
@@ -4571,9 +5252,24 @@ export interface ClearanceFound {
    */
   kind?: "airport" | "navaid" | "fix" | null;
   /**
+   * Where it is, where it was found.
+   */
+  lat?: number | null;
+  lon?: number | null;
+  /**
    * True where left out.
    */
   sure?: boolean | null;
+}
+export interface ClearedRouteInput {
+  text: string;
+  found?: {
+    limit?: ClearanceFound | null;
+    route?: ClearanceFound[][];
+    departure?: ClearanceFoundProcedure | null;
+    arrival?: ClearanceFoundProcedure | null;
+  } | null;
+  planned: ClearanceRoute;
 }
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema
@@ -4638,6 +5334,19 @@ export interface TrafficPlane {
 }
 export interface CloudClearanceAtFtInput {
   altitude_ft: number;
+}
+export interface CloudCoverInput {
+  percent: number;
+}
+export interface CloudCoverAnswer {
+  oktas: number;
+  cover: "SKC" | "FEW" | "SCT" | "BKN" | "OVC";
+}
+export interface CompassPointInput {
+  /**
+   * Degrees true, any turn.
+   */
+  bearing_deg: number;
 }
 export interface CompassWordInput {
   bearing_deg: number;
@@ -5738,7 +6447,7 @@ export interface FieldHoursInput {
   count?: number | null;
 }
 /**
- * One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (AC 00-45H's change groups).
+ * One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (FAA-H-8083-28B 27.4.2.10's change groups).
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "FieldHour".
@@ -5767,7 +6476,7 @@ export interface FieldHour {
   at_times_gust_kt: number | null;
   at_times_thunder: boolean;
   /**
-   * The worse weather at times comes only from a PROB group (AC 00-45H).
+   * The worse weather at times comes only from a PROB group (FAA-H-8083-28B 27.4.2.10.3).
    */
   at_times_chance: boolean;
 }
@@ -5953,6 +6662,58 @@ export interface FloorCautionInput {
    */
   segment: {};
   altitude_ft: number;
+}
+export interface FloorCorridorNmInput {}
+export interface FlowCellInput {
+  /**
+   * [west, south, east, north], degrees.
+   */
+  bounds: number[];
+  width: number;
+  height: number;
+  lat: number;
+  lon: number;
+}
+export interface FlowLevelsInput {}
+export interface FlowLevelsAnswer {
+  wind: {
+    id: string;
+    ft: number | null;
+    isa_hpa: number | null;
+  }[];
+  icing: {
+    id: string;
+    ft: number | null;
+    isa_hpa: number | null;
+  }[];
+  turbulence: {
+    id: string;
+    ft: number | null;
+    isa_hpa: number | null;
+  }[];
+  temperature_hpa: number[];
+  flight_levels_from_ft: number;
+}
+export interface FlowSampleInput {
+  /**
+   * Four pixels, as flow_cell orders them, each [red, green, alpha] bytes.
+   */
+  pixels: number[][];
+  fx: number;
+  fy: number;
+  /**
+   * [least, most].
+   */
+  unscale: number[];
+  vector: boolean;
+  /**
+   * The picture is the ceiling's, feet above the ground (14 CFR 1.1), whose top is no ceiling; false or absent for any other field. The same as `field` "ceiling".
+   */
+  ceiling?: boolean;
+  /**
+   * The field the picture is, as app.flow_grid names it (its file's name before any level: "ceiling", "vis", "temp" and the rest), so the engine reads each its own way: the ceiling, the visibility and the freezing level as the lowest round the point, the gusts, precipitation, CAPE, cloud cover, cloud tops, icing and turbulence as the highest, the temperature between. Absent reads between.
+   */
+  field?: string;
 }
 export interface ForecastHourInput {
   hours_ahead?: number | null;
@@ -6226,11 +6987,24 @@ export interface GairmetHazardsAnswer {
   hazards: {
     [k: string]: string;
   };
+  labels: {
+    [k: string]: string;
+  };
   snapshot_s: number;
 }
 export interface GairmetTitleInput {
   hazard?: string | null;
   severity?: string | null;
+}
+export interface GairmetWindowInput {
+  /**
+   * The snapshot's valid time, UNIX seconds.
+   */
+  valid: number;
+}
+export interface GairmetWindowAnswer {
+  valid_from: number;
+  valid_to: number;
 }
 export interface GairmetsAlongRouteInput {
   advisories: {}[];
@@ -6240,6 +7014,14 @@ export interface GairmetsAlongRouteInput {
   path: [number, number][];
   start: number;
   end: number;
+}
+export interface GfaCloudLayersInput {
+  layers: string[];
+  covers: string[];
+}
+export interface GfaCloudLayersAnswer {
+  percent: number[];
+  top_ft: (number | null)[];
 }
 export interface GlideRangeInput {
   altitude_ft?: number | null;
@@ -6660,6 +7442,16 @@ export interface GonogoWithAlternateInput {
     finding: string;
     detail: string;
   } | null;
+}
+export interface GreatCirclesInput {
+  lat1: number[];
+  lon1: number[];
+  lat2: number[];
+  lon2: number[];
+}
+export interface GreatCirclesAnswer {
+  distance_nm: number[];
+  bearing_deg: number[];
 }
 export interface GroundspeedKtInput {
   true_course_deg: number;
@@ -7099,24 +7891,33 @@ export interface IcingForecastRouteAnswer {
   unchecked: number[];
   line: string | null;
 }
+export interface IcingSeverityInput {
+  category: number;
+}
 export interface IfrAlternateCheckInput {
   ident: string;
   /**
-   * The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+   * The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
    */
   approaches: {
-    any: boolean;
-    precision: boolean;
+    /**
+     * The field's instrument approach charts (IAP) by their d-TPP names, "ILS OR LOC RWY 27", "RNAV (GPS) RWY 9"; the engine decides which are precision (precision_approach: ILS, GLS, PAR, AIM 5-4-5 a.7(a)).
+     */
+    names: string[];
     alternate_minimums_url?: string | null;
   };
   /**
-   * The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+   * The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
    */
   forecast?: {
     ceiling_ft?: number | null;
     ceiling_unknown?: boolean | null;
     visibility_sm?: number | null;
     raw?: string | null;
+    /**
+     * taf_window's worst.covers: whether the TAF covers the whole window. Missing is taken as not.
+     */
+    covers: boolean;
   } | null;
 }
 export interface IfrAlternateCheckAnswer {
@@ -7138,21 +7939,27 @@ export interface IfrAlternateCheckAnswer {
 export interface IfrAlternateDestinationInput {
   ident: string;
   /**
-   * The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+   * The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
    */
   approaches: {
-    any: boolean;
-    precision: boolean;
+    /**
+     * The field's instrument approach charts (IAP) by their d-TPP names, "ILS OR LOC RWY 27", "RNAV (GPS) RWY 9"; the engine decides which are precision (precision_approach: ILS, GLS, PAR, AIM 5-4-5 a.7(a)).
+     */
+    names: string[];
     alternate_minimums_url?: string | null;
   };
   /**
-   * The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+   * The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
    */
   forecast?: {
     ceiling_ft?: number | null;
     ceiling_unknown?: boolean | null;
     visibility_sm?: number | null;
     raw?: string | null;
+    /**
+     * taf_window's worst.covers: whether the TAF covers the whole window. Missing is taken as not.
+     */
+    covers: boolean;
   } | null;
 }
 export interface IfrAlternateDestinationAnswer {
@@ -7336,6 +8143,92 @@ export interface LegalCruisingAltitudesInput {
   magnetic_course_deg: number;
   rule_from_ft?: number | null;
   rules?: "vfr" | "ifr" | null;
+}
+export interface LightingReadInput {
+  /**
+   * The field's lighting remarks as sent (LGT_SKED): "WHEN ATCT CLSD, ACTVT MALSR RWY 36; REIL RWY 18 & 27 - CTAF."
+   */
+  lighting: string[];
+  /**
+   * Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
+   */
+  beacon?: string[];
+}
+export interface LightingReadAnswer {
+  systems: LightingSystem[];
+  /**
+   * The sentences not read as systems, in the remarks' order.
+   */
+  notes: LightingNote[];
+  /**
+   * A light is the pilot's and the remarks give no count of clicks: AIM 2-1-8's 7, 5 and 3 apply.
+   */
+  standard_keying: boolean;
+}
+export interface LightingSystem {
+  /**
+   * The Chart Supplement legend's code (MALSR, REIL, HIRL, PAPI); null where the name says it all (taxiway lights, the rotating beacon).
+   */
+  code: string | null;
+  /**
+   * Its name in words: Approach lights, Runway end identifier lights, Runway edge lights, high intensity, Precision approach path indicator, Taxiway lights, Rotating beacon.
+   */
+  name: string;
+  /**
+   * The runways ("09/27") or runway ends ("36") it serves, as written.
+   */
+  runways: string[];
+  /**
+   * Turned on, or up, by keying the mic (AIM 2-1-8).
+   */
+  pilot_controlled: boolean;
+  /**
+   * What it is keyed on: CTAF, or a frequency as written ("122.8"); null where the remarks do not say.
+   */
+  frequency: string | null;
+  /**
+   * A count of clicks the remarks give of their own.
+   */
+  clicks: number | null;
+  /**
+   * Said of it when the tower is closed (WHEN ATCT CLSD).
+   */
+  tower_closed: boolean;
+  /**
+   * The intensity it is preset at.
+   */
+  preset: "low" | "medium" | "high" | null;
+  /**
+   * A preset light the pilot turns up by keying (TO INCR INTST).
+   */
+  brighter: boolean;
+  /**
+   * When, in words: "sunset to sunrise", "dusk to 0230", "after 0000", times as written.
+   */
+  schedule: string | null;
+  /**
+   * On all the time (OPR CONSLY, H24).
+   */
+  continuous: boolean;
+  /**
+   * NSTD: the legend's 'light system fails to meet FAA standards'.
+   */
+  nonstandard: boolean;
+  /**
+   * How it is turned on in a pilot's words: "Key the mic on CTAF when the tower is closed", "Preset low, sunset to sunrise; key the mic on CTAF for more", "On all the time"; null where the remarks say none.
+   */
+  how: string | null;
+  /**
+   * The sentence of the remark it was read from, as sent.
+   */
+  as_written: string;
+}
+export interface LightingNote {
+  /**
+   * The sentence, its contractions written out, every other word kept.
+   */
+  words: string;
+  as_written: string;
 }
 export interface LogbookCsvReadInput {
   text: string;
@@ -7776,6 +8669,44 @@ export interface ModeCVeilInput {
     lon?: number | null;
   }[];
 }
+export interface ModelWeatherBandsInput {}
+export interface ModelWeatherBandsAnswer {
+  precip: {
+    /**
+     * Under it nothing is said to fall: the app's choice, a trace.
+     */
+    least_dbz: number;
+    bands: {
+      word: string;
+      /**
+       * The band's least value, in the field's unit; the band runs to the next one's.
+       */
+      from: number;
+    }[];
+  };
+  ceiling: {
+    word: string;
+    /**
+     * The band's least value, in the field's unit; the band runs to the next one's.
+     */
+    from: number;
+  }[];
+  cape: {
+    word: string;
+    /**
+     * The band's least value, in the field's unit; the band runs to the next one's.
+     */
+    from: number;
+  }[];
+}
+export interface ModelWindLevelsInput {
+  levels: {
+    height_m: number | null;
+    temp_k: number | null;
+    u_m_s: number | null;
+    v_m_s: number | null;
+  }[];
+}
 export interface MorseInput {
   ident?: string | null;
 }
@@ -7867,6 +8798,9 @@ export interface NavLogFuelPlanInput {
    * null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
    */
   profile: NavLogProfile | null;
+  /**
+   * Whether the flight is at night (14 CFR 1.1, after the end of evening civil twilight); null where it has no departure time, which takes the night's 45-minute VFR reserve (91.151(a)(2)).
+   */
   night?: boolean | null;
   rules?: "vfr" | "ifr" | null;
   alternate_gal?: number | null;
@@ -7959,6 +8893,10 @@ export interface NavLogLeg {
   oat_c?: number | null;
   density_altitude_ft?: number | null;
   climb_min?: number | null;
+  /**
+   * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
+   */
+  phase?: "climb" | "descent" | null;
   toc?: NavLogTop | null;
   tod?: NavLogTop | null;
   /**
@@ -7968,7 +8906,7 @@ export interface NavLogLeg {
   [k: string]: unknown;
 }
 /**
- * A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg.
+ * A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg. A top of climb also carries the climb's own figures for the piece of its leg up to it: the climb speed, its wind correction, headings and ground speed in the leg's wind, and its fuel flow. A top of descent with an airplane whose profile gives the descent's figures carries them the same way for the piece of its leg after it, that piece's ground speed its miles over its minutes.
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "NavLogTop".
@@ -7984,6 +8922,14 @@ export interface NavLogTop {
   fpm?: number;
   tas_kt?: number;
   groundspeed_kt?: number;
+  fuel_burn_gph?: number;
+  wca_deg?: number;
+  true_heading_deg?: number;
+  magnetic_heading_deg?: number;
+  /**
+   * A top of descent with an airplane: true where its profile has no descent speed or fuel flow and the descent is flown on the cruise's figures (the app asks for them), false where it is flown at its own.
+   */
+  descent_at_cruise?: boolean;
   lat?: number;
   lon?: number;
   [k: string]: unknown;
@@ -8012,6 +8958,10 @@ export interface NavLogLeg1 {
   oat_c?: number | null;
   density_altitude_ft?: number | null;
   climb_min?: number | null;
+  /**
+   * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
+   */
+  phase?: "climb" | "descent" | null;
   toc?: NavLogTop | null;
   tod?: NavLogTop | null;
   /**
@@ -8123,6 +9073,10 @@ export interface NavLogLeg2 {
   oat_c?: number | null;
   density_altitude_ft?: number | null;
   climb_min?: number | null;
+  /**
+   * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
+   */
+  phase?: "climb" | "descent" | null;
   toc?: NavLogTop | null;
   tod?: NavLogTop | null;
   /**
@@ -8223,8 +9177,15 @@ export interface NavLogWithDescentsInput {
   legs: NavLogLeg[];
   fixes: NavLogFix[];
   end_altitude_ft?: number | null;
+  /**
+   * How far before the legs' end the descent is finished, nm: an approach's fix's distance out; where not given, down to a pattern, where the 45-degree entry begins (limits::pattern_entry_start_nm, about 1.7 nm), and 0 with an end_fix.
+   */
   end_before_nm?: number | null;
   end_fix?: string | null;
+  /**
+   * The airplane, for the descent flown as its own phase at its descent_ias_kt and descent_fuel_burn_gph (descent_phase): each leg's time and fuel over the miles descended, its row's figures the descent's. Left out or null: the legs as they are. A profile without the two: the descent on the cruise's figures, each top of descent descent_at_cruise.
+   */
+  profile?: NavLogProfile | null;
 }
 export interface NightAtEitherEndInput {
   /**
@@ -8278,6 +9239,125 @@ export interface NoAltitudeAnswer {
   advice: string;
   class_b: boolean;
   detail: string;
+}
+export interface NotamReadInput {
+  /**
+   * The NOTAM as sent: the domestic form ("!OSH 11/041 OSH RWY 18/36 CLSD 2511120900-2511121700") or the ICAO form (Q) A) B) C) E) ...).
+   */
+  text: string;
+  /**
+   * The field's idents (OSH, KOSH), kept as written in its words.
+   */
+  idents?: string[];
+}
+export interface NotamReadAnswer {
+  /**
+   * The form it was read in; text where it is in neither, its words then as sent.
+   */
+  form: "domestic" | "icao" | "text";
+  number: string | null;
+  location: string | null;
+  /**
+   * Its JO 7930.2 keyword (RWY, TWY, AD, OBST, NAV, IAP ...).
+   */
+  keyword: string | null;
+  /**
+   * What it is about, in words: Runway, Taxiway, Obstacle, Instrument approach, Temporary flight restriction ...
+   */
+  heading: string | null;
+  /**
+   * The thing it is about, named by the words straight after its keyword (1-2-1), as notam_subject reads them: a runway or taxiway as designated (3-3-5, 3-3-6: "Runway 06/24", "Taxiways B and C"), an apron, an ILS's part by its runway ("Glide slope runway 09"), a navaid by its ident ("OSH VOR"), an FDC approach NOTAM's procedure as the plate prints it (7-1-3), an obstacle's kind ("Obstacle: crane"), the fuel and its grade ("Fuel 100LL"), a facility and its frequency ("Tower 120.75"), the field's beacon or closure. Null where they name nothing it knows: the heading is then the title.
+   */
+  title: string | null;
+  /**
+   * In our words, one line: what it is and its condition ("Runway 04L/22R closed except taxiing", "Glide slope runway 09 out of service", "Crane 759 ft MSL (145 ft above ground)", "ILS Z RWY 10R (SA CAT I): not authorized"), said only where its subject's words (1-2-1) say all of it; null otherwise, its words then standing in.
+   */
+  what: string | null;
+  /**
+   * The field and the place on it as the NOTAM gives it: "KORD, runway 06/24", "KORD, taxiway A2 between taxiway A and taxiway B", "KORD, 1.3 nm west of the field"; null where it says no more than the field.
+   */
+  where: string | null;
+  /**
+   * Its words written out in sentence case, ending as a sentence ends.
+   */
+  words: string;
+  /**
+   * Its start of activity, ISO 8601 UTC, from its text.
+   */
+  starts: string | null;
+  /**
+   * Its end of validity, ISO 8601 UTC; null where it is permanent or not given.
+   */
+  ends: string | null;
+  /**
+   * The end is an estimate (EST): it may end sooner.
+   */
+  estimated: boolean;
+  /**
+   * PERM: the condition is permanent, until published.
+   */
+  permanent: boolean;
+}
+export interface NotamSubjectInput {
+  /**
+   * The NOTAM as sent, domestic or ICAO form.
+   */
+  text: string;
+  /**
+   * The planner's kind "tfr": a TFR within 5 nm of the field.
+   */
+  tfr?: boolean;
+  /**
+   * The field's idents (DLH, KDLH), kept as written in the label.
+   */
+  idents?: string[];
+  /**
+   * The card's runways as it names them ("09/27", "18L/36R"), in its order.
+   */
+  runways?: string[];
+  /**
+   * The card's lights as lighting_read names them, in its order.
+   */
+  lights?: NotamSubjectLight[];
+  /**
+   * The card's approach charts by their titles ("ILS OR LOC RWY 09"), in its order.
+   */
+  approaches?: string[];
+  /**
+   * The card's frequencies, their type (TWR, ATIS, AWOS) and MHz, in its order.
+   */
+  frequencies?: NotamSubjectFrequency[];
+}
+export interface NotamSubjectLight {
+  code: string | null;
+  name: string;
+  runways: string[];
+}
+export interface NotamSubjectFrequency {
+  type: string | null;
+  mhz: number | null;
+}
+export interface NotamSubjectAnswer {
+  badges: NotamBadge[];
+}
+export interface NotamBadge {
+  /**
+   * What the badge goes next to.
+   */
+  on: "field" | "runway" | "light" | "approach" | "frequency" | "fuel";
+  /**
+   * Its row in the list the card gave (runways, lights, approaches, frequencies); null for the field and the fuel.
+   */
+  index: number | null;
+  /**
+   * The badge's word, in sentence case.
+   */
+  word: string;
+  severity: "unusable" | "caution";
+  /**
+   * What it says, for the badge's label: the NOTAM's words (notam_read), or what a closure leaves open.
+   */
+  label: string;
 }
 export interface NotamsFnsInput {
   text: string;
@@ -8372,6 +9452,78 @@ export interface NotamsRankedAnswer {
     }[];
   }[];
   top: number;
+}
+export interface OccurrenceIdentityInput {
+  report: {
+    /**
+     * The N-number the report gives; null or missing where it gives none.
+     */
+    n_number?: string | null;
+    /**
+     * The local date of the event, YYYY-MM-DD.
+     */
+    date: string;
+    /**
+     * The local clock time, HH:MM (24-hour); null or missing where the report gives none or gives no a.m. or p.m.
+     */
+    time?: string | null;
+    /**
+     * The offsets from UTC the place may have that day, minutes (-360 for CST); empty or missing for every US offset.
+     */
+    utc_offsets_min?: number[];
+    lat: number;
+    lon: number;
+    /**
+     * town: a town's internal point (Census gazetteer); point: a point the record gives.
+     */
+    place: "town" | "point";
+  };
+  /**
+   * The FAA registry's answer for the report's N-number; null or missing where it has none.
+   */
+  registry?: {
+    n_number: string;
+    hex?: string | null;
+  } | null;
+  /**
+   * The ADS-B track of that address over the window's UTC days; null or missing where there is none.
+   */
+  track?: {
+    hex: string;
+    points: {
+      /**
+       * Seconds since 1970, UTC.
+       */
+      t: number;
+      lat: number;
+      lon: number;
+    }[];
+  } | null;
+}
+export interface OccurrenceIdentityAnswer {
+  verdict: "confirmed" | "no_track" | "needs_human";
+  /**
+   * Each check made, in order (registry, then track or address, window, place), with what it found in words.
+   */
+  checks: {
+    check: "registry" | "track" | "address" | "window" | "place";
+    ok: boolean;
+    words: string;
+  }[];
+  window: {
+    start: number;
+    end: number;
+  };
+  within_nm: number;
+  /**
+   * The track's report in the window nearest the place, with its distance; null where it has none.
+   */
+  nearest: {
+    t: number;
+    lat: number;
+    lon: number;
+    distance_nm: number;
+  } | null;
 }
 export interface OurCallInput {
   text: string;
@@ -8704,8 +9856,51 @@ export interface PlanningFiguresAnswer {
   turnaround_min: number;
   cruise_reference_ft: number;
 }
+export interface PlatePagePointInput {
+  lat: number;
+  lon: number;
+  track_deg?: number | null;
+  georeference: PlatePageGeoreference;
+}
+export interface PlatePageGeoreference {
+  lat_0: number;
+  lon_0: number;
+  lat_1: number;
+  lat_2: number;
+  to_page: number[];
+  width_pt: number;
+  height_pt: number;
+  plan_view: PlatePageBox;
+  insets?: PlatePageBox[];
+}
+/**
+ * A box on an approach plate's page, in its points from the bottom left.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "PlatePageBox".
+ */
+export interface PlatePageBox {
+  left: number;
+  bottom: number;
+  right: number;
+  top: number;
+}
 export interface PointKindInput {
   text: string;
+}
+export interface PrecipDbzInput {
+  rates_mm_h: number[];
+}
+export interface PrecipDbzAnswer {
+  dbz: number[];
+}
+export interface PrecipIntensityInput {
+  dbz: number;
+  temp_c?: number | null;
+}
+export interface PrecipIntensityAnswer {
+  word: "Light" | "Moderate" | "Heavy" | "Extreme" | null;
+  falls_as: "rain" | "snow" | null;
 }
 export interface PressureAltitudeFtInput {
   elevation_ft: number;
@@ -9728,6 +10923,58 @@ export interface RegisteredProfileInput {
   model?: string | null;
   year?: number | null;
 }
+export interface RemarksReadInput {
+  /**
+   * The remarks as sent: "CUST CLNC 2 HR PPR - 847-894-7292. TSNT UTILIZE FBO AFT CLR CUST. FBO CBP USER FEE."
+   */
+  remarks: string[];
+}
+export interface RemarksReadAnswer {
+  /**
+   * Each remark in words, in their order: "Customs clearance 2 hours prior permission required - 847-894-7292. Transient utilize FBO after clearing customs. FBO CBP user fee."
+   */
+  lines: string[];
+}
+export interface ReplayTrackInput {
+  points: ReplayReport[];
+  gap_s?: number | null;
+}
+export interface ReplayReport {
+  /**
+   * s since 1970
+   */
+  t: number;
+  lat: number;
+  lon: number;
+  /**
+   * Pressure altitude, ft; null on the ground or not sent
+   */
+  alt_ft?: number | null;
+  gs_kt?: number | null;
+  track_deg?: number | null;
+  ground?: boolean | null;
+}
+export interface ReplayTrackAnswer {
+  points: ReplaySample[];
+  gaps: ReplayGap[];
+  length_nm: number;
+}
+export interface ReplaySample {
+  t: number;
+  lat: number;
+  lon: number;
+  alt_ft: number | null;
+  gs_kt: number | null;
+  track_deg: number | null;
+  vs_fpm: number | null;
+  along_nm: number;
+  gap: boolean;
+  ground: boolean;
+}
+export interface ReplayGap {
+  from: number;
+  to: number;
+}
 export interface ReserveMinInput {
   ifr?: boolean | null;
   night?: boolean | null;
@@ -10257,6 +11504,112 @@ export interface SigmetsAlongRouteInput {
   corridor_nm?: number | null;
   now: number;
 }
+export interface SimFlightInput {
+  /**
+   * replay_track's points, in time order.
+   */
+  points: SimSample[];
+  /**
+   * The altimeter settings the airplane sent (ADS-B's barometric pressure setting), each with its pressure altitude then; null on the ground.
+   */
+  settings?: SimSetting[];
+  /**
+   * The ground's height under the track, ft MSL, by how far along it.
+   */
+  ground?: SimGround[];
+  /**
+   * Whether `alt_ft` is pressure altitude (adsb.lol's) rather than above sea level.
+   */
+  pressure?: boolean | null;
+  /**
+   * Only the runs that meet [from, to], s since 1970.
+   */
+  from?: number | null;
+  to?: number | null;
+  rate_hz?: number | null;
+}
+export interface SimSample {
+  /**
+   * s since 1970
+   */
+  t: number;
+  lat: number;
+  lon: number;
+  alt_ft?: number | null;
+  gs_kt?: number | null;
+  track_deg?: number | null;
+  vs_fpm?: number | null;
+  along_nm?: number;
+  gap?: boolean;
+  ground?: boolean;
+}
+export interface SimSetting {
+  t: number;
+  hpa: number;
+  alt_ft?: number | null;
+}
+export interface SimGround {
+  along_nm: number;
+  ground_ft: number;
+}
+export interface SimFlightAnswer {
+  segments: SimSegment[];
+}
+export interface SimSegment {
+  rows: SimRow[];
+  msl: boolean;
+  setting_hpa: number | null;
+}
+export interface SimRow {
+  t: number;
+  lat: number;
+  lon: number;
+  /**
+   * Above sea level where the segment's `msl`, else pressure altitude.
+   */
+  alt_ft: number;
+  gs_kt: number;
+  vs_fpm: number;
+  /**
+   * True; also the heading, as no wind is known.
+   */
+  track_deg: number;
+  heading_mag_deg: number;
+  /**
+   * Estimated, nose up positive.
+   */
+  pitch_deg: number;
+  /**
+   * Estimated, right wing down positive.
+   */
+  bank_deg: number;
+  agl_ft: number | null;
+  ground: boolean;
+  /**
+   * Estimated.
+   */
+  gear_down: boolean;
+  /**
+   * Estimated flap handle, 0 up to 1 full.
+   */
+  flaps: number;
+  /**
+   * Estimated thrust levers, 0 idle to 1 full: forward for the takeoff roll and the takeoff, 0.9 climbing, 0.6 level, 0.3 descending, 0.1 on the ground otherwise, the landing's roll-out included. For the picture and the sound only.
+   */
+  throttle: number;
+  lights: SimLights;
+}
+/**
+ * Estimated.
+ */
+export interface SimLights {
+  nav: boolean;
+  beacon: boolean;
+  strobe: boolean;
+  landing: boolean;
+  taxi: boolean;
+  logo: boolean;
+}
 export interface SoloStandingInput {
   /**
    * The last day it is good, YYYY-MM-DD; null for none on record.
@@ -10272,6 +11625,13 @@ export interface SoloXcDeterminationsInput {}
 export interface SoloXcDetermination {
   rule: string;
   label: string;
+}
+export interface SpecialUseTabInput {
+  name: string;
+  type?: string | null;
+  floor?: SpecialUseTabLimit;
+  ceiling?: SpecialUseTabLimit;
+  excluded?: boolean | null;
 }
 export interface SquawkMeaningInput {
   squawk?: string | null;
@@ -10319,6 +11679,17 @@ export interface SuaAltitudesInput {
    */
   mid_sentence?: boolean | null;
 }
+export interface SunDownInput {
+  lat: number;
+  /**
+   * East positive.
+   */
+  lon: number;
+  /**
+   * UNIX seconds.
+   */
+  at_s: number;
+}
 export interface TafWindowInput {
   fcsts: TafPeriod[];
   start: number;
@@ -10350,7 +11721,7 @@ export interface TafWindowAnswer {
   prevailing: TafPeriod | null;
 }
 /**
- * The worst a TAF forecasts in a window, TEMPO and PROB groups included.
+ * The worst a TAF forecasts in a window, TEMPO and PROB groups included, and whether the TAF covers the whole window.
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "WeatherWorst".
@@ -10359,6 +11730,10 @@ export interface WeatherWorst {
   ceiling_ft: number | null;
   ceiling_unknown: boolean;
   visibility_sm: number | null;
+  /**
+   * Whether the prevailing periods (the first line and each FM) cover the whole window without a gap: a TAF ending or beginning inside it says nothing of the rest (14 CFR 91.169(b)(2)(i)).
+   */
+  covers: boolean;
 }
 export interface TafsAlongRouteInput {
   tafs: {}[];
@@ -10460,6 +11835,54 @@ export interface TerrainWayStone {
 export interface TfrDetailReadInput {
   text: string;
 }
+export interface TfrReadInput {
+  /**
+   * tfr.faa.gov's kind ("Security", "Hazards", "Vip", "Space Operations", "Air Shows/Sports", "Uas Public Gathering").
+   */
+  kind?: string | null;
+  /**
+   * The rule as tfr_detail_read names it ("special security instructions (99.7)") or its code.
+   */
+  rule?: string | null;
+  /**
+   * The list's title as sent ("SAN ANGELO, TX, Sunday, November 1, 2026 through ...").
+   */
+  title?: string | null;
+  floor_ft?: number | null;
+  /**
+   * MSL, AGL or SFC.
+   */
+  floor_ref?: string | null;
+  ceiling_ft?: number | null;
+  /**
+   * MSL or AGL.
+   */
+  ceiling_ref?: string | null;
+  /**
+   * Whether its area takes the field in.
+   */
+  over_field?: boolean | null;
+  field?: TfrPoint;
+  edge?: TfrPoint;
+}
+export interface TfrReadAnswer {
+  /**
+   * Its kind: "Security TFR", or "TFR".
+   */
+  heading: string;
+  /**
+   * Its kind and the rule it is under: "Security TFR, 14 CFR 99.7".
+   */
+  what: string;
+  /**
+   * "3,500 to 18,000 ft MSL, 4.8 nm east of the field"; null where neither is known.
+   */
+  where: string | null;
+  /**
+   * Its place's name, its dates off: "San Angelo, TX".
+   */
+  place: string | null;
+}
 export interface ThinTrackInput {
   points: unknown[];
   most?: number | null;
@@ -10481,12 +11904,19 @@ export interface TrafficKindInput {
   category?: string | null;
 }
 export interface TrafficMarksInput {
+  /**
+   * Own ship's height above mean sea level, ft, as the phone's GNSS gives it (iOS CLLocation altitude, Android's MSL altitude).
+   */
   own_ft?: number | null;
   planes: {
     altitude_ft?: number | null;
     vertical_fpm?: number | null;
     lat?: number | null;
     lon?: number | null;
+    /**
+     * The airplane's height is its pressure altitude as sent (29.92 "Hg), not set on an altimeter: own_ft is the phone's GNSS above mean sea level, so the near band is 1,000 ft wider for it (PRESSURE_SLACK_FT, about an inch of mercury, FAA-H-8083-25C ch. 11 Figure 11-3).
+     */
+    pressure_altitude?: boolean | null;
   }[];
   own?: {
     lat: number;
@@ -10525,8 +11955,18 @@ export interface TrafficReachAnswer {
   around_nm: number;
   relation_nm: number;
 }
+export interface TurbulenceCategoryInput {
+  edr: number;
+  weight_class: "light" | "medium" | "heavy";
+}
 export interface UnderwayInput {
   speed_kt?: number | null;
+}
+export interface VelocityTrackInput {
+  velocities: {
+    east: number;
+    north: number;
+  }[];
 }
 export interface VerticalSpeedInput {
   samples: {
@@ -10713,7 +12153,7 @@ export interface WeatherWorseAnswer {
  */
 export interface WeatherWorseItem {
   /**
-   * The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR"): an app tells a key once.
+   * The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR", "metar:KMSN:ceiling-unknown"): an app tells a key once.
    */
   key: string;
   kind: "metar" | "advisory" | "taf";
@@ -10725,6 +12165,48 @@ export interface WeatherWorseItem {
    */
   line: string;
   source: string;
+}
+export interface WindAloftAtInput {
+  hours: {
+    /**
+     * The hour the column is valid at, UNIX seconds.
+     */
+    valid_s: number;
+    levels: {
+      altitude_ft: number;
+      /**
+       * The wind's east part, toward where it blows.
+       */
+      u_kt?: number | null;
+      /**
+       * The wind's north part, toward where it blows.
+       */
+      v_kt?: number | null;
+      temp_c?: number | null;
+    }[];
+  }[];
+  /**
+   * The time read at, UNIX seconds.
+   */
+  at_s: number;
+  altitude_ft?: number | null;
+  altitudes?: number[] | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "AloftAt".
+ */
+export interface AloftAt {
+  wind: WindAloft | null;
+  temp_c: number | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "WindAloft".
+ */
+export interface WindAloft {
+  wind_dir_true_deg: number;
+  wind_speed_kt: number;
 }
 export interface WindArrowInput {
   speed_kt?: number | null;
@@ -10755,14 +12237,6 @@ export interface WindAtAltitudeInput {
   };
   altitude_ft?: number | null;
   altitudes?: number[] | null;
-}
-/**
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "WindAloft".
- */
-export interface WindAloft {
-  wind_dir_true_deg: number;
-  wind_speed_kt: number;
 }
 export interface WindBarbInput {
   speed_kt: number;
@@ -10887,20 +12361,26 @@ export interface IfrAlternateCheck {
 export interface IfrAlternateIn {
   ident: string;
   /**
-   * The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+   * The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
    */
   approaches: {
-    any: boolean;
-    precision: boolean;
+    /**
+     * The field's instrument approach charts (IAP) by their d-TPP names, "ILS OR LOC RWY 27", "RNAV (GPS) RWY 9"; the engine decides which are precision (precision_approach: ILS, GLS, PAR, AIM 5-4-5 a.7(a)).
+     */
+    names: string[];
     alternate_minimums_url?: string | null;
   };
   /**
-   * The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+   * The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
    */
   forecast?: {
     ceiling_ft?: number | null;
     ceiling_unknown?: boolean | null;
     visibility_sm?: number | null;
     raw?: string | null;
+    /**
+     * taf_window's worst.covers: whether the TAF covers the whole window. Missing is taken as not.
+     */
+    covers: boolean;
   } | null;
 }

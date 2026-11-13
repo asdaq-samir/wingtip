@@ -39,6 +39,44 @@ struct TilesTests {
         try? FileManager.default.removeItem(at: root)
     }
 
+    @Test func keptTilesLiveOutsideCachesAndOutOfBackups() throws {
+        // The app's own stores: Keep for the Air's under Application
+        // Support, which iOS does not purge; the map's own under Caches.
+        let shared = TileStore()
+        #expect(shared.keptRoot.path.contains("/Library/Application Support/"))
+        #expect(shared.root.path.contains("/Library/Caches/"))
+        let root = FileManager.default.temporaryDirectory.appending(path: "tiles-\(UUID().uuidString)")
+        let store = TileStore(root: root)
+        store.write(Data([1]), cycle: "09-03-2026", kind: "sec", z: 8, x: 62, y: 93)
+        #expect(!store.isKept(cycle: "09-03-2026", kind: "sec", z: 8, x: 62, y: 93))
+        store.write(Data([2]), cycle: "09-03-2026", kind: "sec", z: 8, x: 62, y: 93, kept: true)
+        #expect(store.isKept(cycle: "09-03-2026", kind: "sec", z: 8, x: 62, y: 93))
+        // The kept one is read first.
+        #expect(store.read(cycle: "09-03-2026", kind: "sec", z: 8, x: 62, y: 93) == Data([2]))
+        let values = try store.keptRoot.resourceValues(forKeys: [.isExcludedFromBackupKey])
+        #expect(values.isExcludedFromBackup == true)
+        try? FileManager.default.removeItem(at: root)
+        try? FileManager.default.removeItem(at: store.keptRoot)
+    }
+
+    @Test func eachWaitIsItsOwnSessionsTimeout() throws {
+        // The reads a pilot waits on: about ten seconds with no byte, not 60.
+        #expect(Planner.read == 10)
+        #expect(Servers.sessions[.read]?.configuration.timeoutIntervalForRequest == 10)
+        // A call made in the air is bound as a whole: five seconds from
+        // asking to the last byte, however they trickle in.
+        #expect(Servers.sessions[.inFlight]?.configuration.timeoutIntervalForResource == Planner.inFlight)
+        // An upload waits two minutes with no byte; the usual call, the
+        // session's own minute.
+        #expect(Servers.sessions[.upload]?.configuration.timeoutIntervalForRequest == Planner.upload)
+        #expect(Servers.sessions[.usual] === Gateway.session)
+        // Every one keeps the one jar and the one cache.
+        for session in Servers.sessions.values {
+            #expect(session.configuration.httpCookieStorage === SessionCookies.jar)
+            #expect(session.configuration.urlCache === Gateway.answers)
+        }
+    }
+
     @Test func plannerPathsAreRewrittenUnderTheGatewaysProxy() throws {
         #expect(Config.plannerPath("/api/chart") == "/api/planner/chart")
         #expect(Config.plannerPath("/api/airport/KDLH") == "/api/planner/airport/KDLH")

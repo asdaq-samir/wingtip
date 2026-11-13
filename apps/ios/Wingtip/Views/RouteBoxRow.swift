@@ -5,21 +5,17 @@ import SwiftUI
 /// ••• took the row's buttons (the owner's one-row header, 2026-11-10).
 struct RouteBoxRow: View {
     @Environment(Plan.self) private var plan
-    @Binding var altitude: String
-    var focused: FocusState<PlanView.Field?>.Binding
     /// A page of the plan's: pushed on the iPhone, the inspector on the iPad.
     let open: (Screen) -> Void
-    let fly: () -> Void
-    /// "FL-045" fits at the larger sizes too.
-    @ScaledMetric(relativeTo: .body) private var altitudeWidth = 92.0
 
     var body: some View {
         airplane
     }
 
-    /// The airplane and the altitude: the planner's pick until one is
-    /// typed, in hundreds of feet, written FL-045 (docs/decisions/0009);
-    /// cleared, the planner's again.
+    /// The airplane and the cruise altitude, written FL-045 (docs/decisions/
+    /// 0009): the altitude a button to the Profile, its slider and Altitude
+    /// Advisor the one place the cruise is set (one control, one source of
+    /// truth; a typed field here was a second).
     private var airplane: some View {
         HStack(spacing: WingtipSpace.sm) {
             if let tail = plan.tail {
@@ -41,13 +37,15 @@ struct RouteBoxRow: View {
                 .accessibilityLabel("No airplane picked")
                 .accessibilityHint("Pick one for the time, fuel and groundspeed")
             }
-            TextField(Format.cruiseAltitude(plan.altitudeFt), text: $altitude)
-                .textFieldStyle(.plain).keyboardType(.numberPad).font(WingtipType.row.monospaced())
-                .frame(width: altitudeWidth).multilineTextAlignment(.trailing)
-                .focused(focused, equals: .altitude)
-                .onSubmit(fly)
-                .accessibilityLabel("Cruise altitude, hundreds of feet")
-                .accessibilityValue(plan.altitudeFt.map { Format.spokenAltitude($0) } ?? "the planner's pick")
+            Button { open(.profile) } label: {
+                Text(Format.cruiseAltitude(plan.altitudeFt)).font(WingtipType.row.monospaced())
+            }
+            .buttonStyle(.borderless)
+            .hitArea()
+            .accessibilityLabel("Cruise altitude")
+            .accessibilityValue(plan.altitudeFt.map { Format.spokenAltitude($0) } ?? "the planner's pick")
+            .accessibilityHint("Opens the profile and the Altitude Advisor")
+            .accessibilityIdentifier("route-cruise")
             Spacer(minLength: 0)
         }
     }

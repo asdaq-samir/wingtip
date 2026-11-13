@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_route::approach::calls::call",
   "description": "The descent rate on the path, ft/min (the TPP's rate of descent table).",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

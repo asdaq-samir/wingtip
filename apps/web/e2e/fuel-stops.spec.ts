@@ -1,5 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
-import { inSheet, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { inSheet, mapStill, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { drawnMarks } from "./marks";
+import { noCheckpoints } from "./startState";
+
+/** KRPD's pin on the map's canvas, as its probe says (FuelStopsGl). */
+const pinned = async (page: Page) => (await drawnMarks(page, "fuel-stops")).filter((m) => m.title === "Suggested fuel stop KRPD").length;
 
 /**
  * Fuel stops suggested as Tesla suggests chargers, at the owner's pick
@@ -69,7 +74,7 @@ test("a fuel stop the planner suggests is dashed in the route's box and pinned o
   await settle(page);
   await openPanel(page);
   await expect(sideDrawer(page).getByTestId("route-fuel-stop")).toHaveText("KRPD", { timeout: slow(60_000) });
-  await expect(page.getByTitle("Suggested fuel stop KRPD")).toHaveCount(1);
+  await expect.poll(() => pinned(page)).toBe(1);
   // No cards of it in FPL's list: the route line does their job.
   await expect(sideDrawer(page).getByTestId("fuel-stop-card")).toHaveCount(0);
 });
@@ -83,7 +88,7 @@ test("a stop suggested on a flight from a present position is dashed in the rout
   await settle(page);
   await openPanel(page);
   await expect(sideDrawer(page).getByTestId("route-fuel-stop")).toHaveText("KRPD", { timeout: slow(60_000) });
-  await expect(page.getByTitle("Suggested fuel stop KRPD")).toHaveCount(1);
+  await expect.poll(() => pinned(page)).toBe(1);
 });
 
 test("a suggested fuel stop can be taken out of the route box and put back, or added from its menu", async ({ page }) => {
@@ -114,7 +119,9 @@ test("a suggested fuel stop can be taken out of the route box and put back, or a
 const SERVICES = {
   ident: "KRPD",
   fuel_types: ["100LL", "A"],
-  fuel_notes: ["24 hour self serve fuel."],
+  // The remarks in words, as the engine reads them (remarks_read), and as sent.
+  fuel_notes: ["24 hours self service fuel available with credit card."],
+  fuel_remarks: ["24 HR SELF SVC FUEL AVBL WITH CREDIT CARD."],
   landing_fee: false,
   tie_down: true,
   hangar: true,
@@ -132,6 +139,11 @@ const SERVICES = {
 // The owner's pick of the trip-stops canvas ("Ok do it", 2026-10-22): the
 // stop's card a tap on it, with its figures.
 test("a suggested stop's pin opens its card with its figures", async ({ page }) => {
+  // The route's checkpoints off, as a pilot has them at first: drawn on the
+  // map's canvas now, the route's marks take a tap before a stop's pin
+  // (useGlSymbols' ranks, TAP.rank.field), and one sat beside KRPD's
+  // ("River near Hunter" took the tap).
+  await noCheckpoints(page);
   await suggested(page);
   await page.route(
     (url) => url.pathname.endsWith("/airport/KRPD/services"),
@@ -139,9 +151,10 @@ test("a suggested stop's pin opens its card with its figures", async ({ page }) 
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  const pin = page.getByTitle("Suggested fuel stop KRPD");
-  await expect(pin).toHaveCount(1, { timeout: slow(60_000) });
-  await pin.click();
+  await expect.poll(() => pinned(page), { timeout: slow(60_000) }).toBe(1);
+  await mapStill(page);
+  const pin = (await drawnMarks(page, "fuel-stops")).find((m) => m.title === "Suggested fuel stop KRPD")!;
+  await page.mouse.click(pin.x, pin.y);
   const card = page.getByTestId("place-card");
   await expect(card.getByTestId("place-stop")).toContainText("Suggested fuel stop");
   await expect(card.getByTestId("place-stop-after")).toContainText("From C81");
@@ -163,14 +176,24 @@ test("the airport's Info says its fuel in its details, and what is on the field 
   await page.goto("/app/plan?place=KRPD");
   const card = page.getByTestId("place-card");
   await expect(card).toBeVisible({ timeout: slow(30_000) });
-  const details = card.getByTestId("place-details");
-  await expect(details.getByTestId("services-fuel")).toContainText("100LL, Jet A");
-  // Its remarks folded under their own row, opened by a tap.
-  await expect(details).not.toContainText("24 hour self serve fuel.");
-  await inSheet(page, details.getByTestId("services-fuel-remarks"));
-  await details.getByTestId("services-fuel-remarks").click();
-  await expect(details).toContainText("24 hour self serve fuel.");
+  // Fuel first in On the field (the owner, 2026-11-11), its remarks in
+  // words under it in sight and only the remarks as sent folded (e1c0cd7dd).
   const services = card.getByTestId("place-services");
+  await expect(services.getByTestId("services-fuel")).toContainText("100LL, Jet A");
+  await expect(services).not.toContainText("24 HR SELF SVC FUEL");
+  await inSheet(page, services.getByTestId("services-fuel"));
+  // In words under Fuel, in sight (the owner, 2026-11-11: "Decode fuel
+  // remarks too"), as sent under As Written, as the card's Lights.
+  await expect(services.getByTestId("services-fuel-note")).toHaveText("24 hours self service fuel available with credit card.");
+  await expect(services.getByTestId("services-fuel-raw")).toBeHidden();
+  await services.getByTestId("services-fuel-sent").click();
+  await expect(services.getByTestId("services-fuel-raw")).toHaveText("24 HR SELF SVC FUEL AVBL WITH CREDIT CARD.");
+  // The rest of On the field under its title, its first three rows Fuel,
+  // its remarks and As Written (FirstFew; 263bd810d gave the remarks a row).
+  await expect(services.getByTestId("services-courtesy-car")).toHaveCount(0);
+  const onTheField = services.getByRole("button", { name: /^On the field/ });
+  await inSheet(page, onTheField);
+  await onTheField.click();
   await expect(services.getByTestId("services-courtesy-car")).toBeVisible();
   await expect(services.getByTestId("services-food")).toContainText(/Runway Diner.*4 min walk/);
   await expect(services.getByTestId("services-food")).toHaveAttribute("href", "tel:+17155550100");

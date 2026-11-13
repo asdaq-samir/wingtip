@@ -153,65 +153,52 @@ struct DiversionDrillView: View {
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(DryRun.self) private var dryRun
-    @State private var started: Date?
-    @State private var stopped: Date?
-    @State private var from: OwnShip.Fix?
-    @State private var fields: [NearestAirport] = []
-    @State private var finding = false
-    @State private var chosen: String?
-    @State private var typed: [String: String] = [:]
-    @State private var altitudeFt: Double = 0
-    @State private var answer: DiversionAnswer?
-    @State private var checking = false
-    @State private var problem: String?
+    @State private var model = DiversionDrillModel()
 
     /// The figures a student estimates, by the planner's keys; how far
     /// off is reasonable is the planner's (ALLOWANCES).
     private static let estimates: [(key: String, label: String, unit: String)] = [
         ("mh", "Magnetic heading", "°"), ("gs", "Ground speed", "kt"), ("ete", "Time", "min"), ("fuel", "Fuel", "gal"),
     ]
-    /// The altitudes the drill can be flown at, VFR's: below 18,000 ft
-    /// MSL, the floor of Class A (14 CFR 71.33).
-    /// A failure is said under the picker, which is then empty.
-    private static let altitudes = Result { try Altitudes.vfr(from: 1500) }
-
     private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
-    private var checked: Bool { stopped != nil }
+    private var checked: Bool { model.checked }
 
     var body: some View {
         List {
             if !plan.airplaneChosen { // No airplane: no speed to work at, and the planner not asked (it answers 422).
                 Section { PickAirplaneRow(detail: "Its heading, ground speed, time and fuel are worked at its speed and burn") }
-            } else if started == nil {
+            } else if model.started == nil {
                 Section {
-                    Text("Where you are, at \(Format.altitude(altitudeFt)), the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind.")
-                    Picker("Altitude", selection: $altitudeFt) {
-                        ForEach((try? Self.altitudes.get()) ?? [], id: \.self) { ft in Text(Format.altitude(ft)).tag(ft) }
+                    Text("Where you are\(model.altitudeFt.map { ", at \(Format.altitude($0))" } ?? ""), the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind.")
+                    Picker("Altitude", selection: $model.altitudeFt) {
+                        // None until one is picked or there is one to start from.
+                        Text("Pick one").tag(Double?.none)
+                        ForEach((try? model.altitudes.get()) ?? [], id: \.self) { ft in Text(Format.altitude(ft)).tag(Double?.some(ft)) }
                     }
                     .pickerStyle(.menu)
-                    if case .failure(let error) = Self.altitudes {
-                        Text("The altitudes couldn't be listed: \(error.localizedDescription)").foregroundStyle(WingtipInk.caution)
-                    }
-                    Button { start() } label: { Label("Start the Clock", systemImage: "timer") }
-                        .disabled(fix == nil)
+                    ProblemLine(model.altitudes, "The altitudes")
+                    Button { model.start(at: fix) } label: { Label("Start the Clock", systemImage: "timer") }
+                        .disabled(fix == nil || model.altitudeFt == nil)
                     if fix == nil { Text("Waiting for your position").foregroundStyle(.secondary) }
                 }
             } else {
                 Section {
                     TimelineView(.periodic(from: .now, by: 1)) { context in
                         LabeledContent(checked ? "You took" : "On the clock",
-                                       value: stopwatch((stopped ?? context.date).timeIntervalSince(started ?? context.date)))
+                                       value: stopwatch((model.stopped ?? context.date).timeIntervalSince(model.started ?? context.date)))
                             .monospacedDigit()
                     }
                 }
                 Section("Divert to") {
-                    if finding {
+                    if model.finding {
                         Text("Finding the nearest fields…").foregroundStyle(.secondary)
-                    } else if fields.isEmpty {
+                    } else if let failed = model.fieldsProblem {
+                        ProblemLine(failed)
+                    } else if model.fields.isEmpty {
                         Text("No fields near here").foregroundStyle(.secondary)
                     }
-                    ForEach(fields) { field in
-                        Button { chosen = field.ident } label: {
+                    ForEach(model.fields) { field in
+                        Button { model.chosen = field.ident } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     Text("\(field.ident) · \(field.name)").foregroundStyle(.primary)
@@ -220,7 +207,7 @@ struct DiversionDrillView: View {
                                         .font(.subheadline).foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                if chosen == field.ident { Image(systemName: "checkmark").foregroundStyle(.tint) }
+                                if model.chosen == field.ident { Image(systemName: "checkmark").foregroundStyle(.tint) }
                             }
                         }
                         .disabled(checked)
@@ -228,11 +215,11 @@ struct DiversionDrillView: View {
                 }
                 Section("Your Estimates") {
                     ForEach(Self.estimates, id: \.key) { e in
-                        let check = answer?.checks.first { $0.key == e.key }
+                        let check = model.answer?.checks.first { $0.key == e.key }
                         LabeledContent {
                             HStack(spacing: WingtipSpace.sm) {
                                 if let ok = check?.reasonable { WithinMark(ok: ok) }
-                                TextField("", text: Binding(get: { typed[e.key] ?? "" }, set: { typed[e.key] = $0 }))
+                                TextField("", text: Binding(get: { model.typed[e.key] ?? "" }, set: { model.typed[e.key] = $0 }))
                                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).monospacedDigit()
                                     .frame(width: 72).disabled(checked)
                                 Text(e.unit).foregroundStyle(.secondary).frame(width: 30, alignment: .leading)
@@ -243,7 +230,7 @@ struct DiversionDrillView: View {
                         }
                     }
                 }
-                if checked, let answer {
+                if checked, let answer = model.answer {
                     if let line = answer.problem {
                         Text(line).foregroundStyle(WingtipInk.problem)
                     } else {
@@ -251,62 +238,24 @@ struct DiversionDrillView: View {
                             ForEach(answer.steps, id: \.name) { step in LabeledContent(step.name, value: step.value).monospacedDigit() }
                         }
                     }
-                    if let nearest = fields.first, nearest.ident != answer.to {
+                    if let nearest = model.fields.first, nearest.ident != answer.to {
                         Text("The nearest was \(nearest.ident), \(Int(nearest.distanceNm.rounded())) nm: was \(answer.to) the better choice?")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                 }
-                ProblemLine(problem)
+                ProblemLine(model.problem)
                 Section {
                     if checked {
-                        Button("Again") { start() }
+                        Button("Again") { model.start(at: fix) }
                     } else {
-                        Button(checking ? "Checking…" : "Check") { check() }.disabled(chosen == nil || checking)
+                        Button(model.checking ? "Checking…" : "Check") { model.check(aircraft: plan.plannerAircraft, figures: plan.figures) }
+                            .disabled(model.chosen == nil || model.checking)
                     }
                 }
             }
         }
         .navigationTitle("Diversion Drill")
-        .onAppear {
-            // The plan's cruise to start with, else the airplane's own
-            // altitude to the nearest 500 ft: a choice to change, no rule.
-            guard altitudeFt == 0 else { return }
-            let own = plan.altitudeFt ?? fix?.altitudeFt.map { ($0 / 500).rounded() * 500 }
-            altitudeFt = ((try? Self.altitudes.get()) ?? []).min { abs($0 - (own ?? 3500)) < abs($1 - (own ?? 3500)) } ?? 3500
-        }
-    }
-
-    private func start() {
-        started = Date(); stopped = nil; chosen = nil; typed = [:]; answer = nil; problem = nil
-        from = fix
-        guard let at = from?.coordinate else { return }
-        finding = true
-        Task {
-            // A field under the point is where the airplane is, not a diversion.
-            if let near = try? await Planner.nearest(lat: at.latitude, lon: at.longitude, limit: 10) {
-                fields = Array(near.filter { $0.distanceNm >= 2 }.prefix(6))
-            }
-            finding = false
-        }
-    }
-
-    private func check() {
-        guard let ident = chosen, let at = from?.coordinate else { return }
-        let estimates = typed.compactMapValues { Double($0.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces)) }
-        stopped = Date()
-        checking = true
-        let aircraft = plan.plannerAircraft, figures = plan.figures, altitude = altitudeFt
-        Task {
-            do {
-                answer = try await Planner.diversion(lat: at.latitude, lon: at.longitude, to: ident, altitudeFt: altitude,
-                                                     aircraft: aircraft, figures: figures, estimates: estimates)
-                problem = nil
-            } catch {
-                problem = "The diversion could not be worked out: \(error.localizedDescription)"
-                stopped = nil
-            }
-            checking = false
-        }
+        .onAppear { model.startingAltitude(planFt: plan.altitudeFt, fix: fix) }
     }
 
     /// Minutes and seconds, as a stopwatch shows them: "2:07".
@@ -393,8 +342,8 @@ struct HoldingView: View {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled, let i = Double(inbound), let h = Double(heading), (0...360).contains(i), (0...360).contains(h) else { return }
             do {
-                answer = try Engine.holding(inbound: i, heading: h, turns: turns, tasKt: Double(tas), windFrom: Double(windFrom),
-                                            windKt: Double(windKt), altitudeFt: Double(altitude))
+                answer = try HoldingAnswer.of(inbound: i, heading: h, turns: turns, tasKt: Double(tas), windFrom: Double(windFrom),
+                                              windKt: Double(windKt), altitudeFt: Double(altitude))
                 problem = nil
             } catch {
                 problem = error.localizedDescription
@@ -573,9 +522,7 @@ struct LostCommsSegmentsSections: View {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
             do {
-                let ask = ask
-                let found = try Engine.lostComms(segments: ask.segments, assignedFt: ask.assignedFt, expectedFt: ask.expectedFt,
-                                                 expectedFrom: ask.expectedFrom, approachFix: ask.approachFix, efc: ask.efc, eta: ask.eta)
+                let found = try LostCommsAnswer.of(ask)
                 answer = found
                 leave = found.leave
                 problem = nil

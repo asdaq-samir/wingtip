@@ -22,16 +22,15 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 BASE = "services/Dockerfile.base"
 
-# Every image built on the base: those whose Dockerfile copies wingtip
-# in, and the assistant, which uses the base's Python alone.
+# Every image built on the base: those whose Dockerfile copies wingtip in.
 IMAGES = {
     "services/planner/Dockerfile": "planner",
     "services/ingest/Dockerfile": "ingest",
-    "services/assistant/Dockerfile": "assistant",
     "services/weather/Dockerfile": "weather",
     "ml/Dockerfile.ml": "ml",
     "services/jobs/retrain/Dockerfile": "retrain",
     "services/jobs/charts/Dockerfile": "charts",
+    "services/jobs/crash/Dockerfile": "crash-leads",
 }
 
 

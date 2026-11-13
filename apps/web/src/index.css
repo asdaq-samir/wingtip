@@ -1,3 +1,7 @@
+/* The first layer, before Tailwind's own (its preflight's [hidden] rule is
+   !important in its base layer, and an !important in an earlier layer
+   wins): a card kept between its openings (index.css, below). */
+@layer kept-cards;
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -48,18 +52,13 @@
     }
   }
 }
-/* The header at the bottom of the screen (useNavEdge): the page's root
-   says data-nav="bottom" once that edge has been picked, or "auto",
-   which is the bottom on a phone -- decided here, from the first frame,
-   rather than after a render has measured the screen. */
+/* The header at the bottom of the screen (useNavEdge): on a phone, always
+   (the owner, 2026-11-13, Position taken out of the settings) -- decided
+   here, from the first frame, rather than after a render has measured
+   the screen. */
 @custom-variant nav-bottom {
-  &:where([data-nav="bottom"] *) {
-    @slot;
-  }
   @media (width < 48rem) {
-    &:where([data-nav="auto"] *) {
-      @slot;
-    }
+    @slot;
   }
 }
 
@@ -83,20 +82,19 @@
   }
 }
 
-/* This is a controls app, not a page of text -- a long, still touch
-   on a button, a marker, or a drag handle should start whatever that
-   element does, not iOS/Android's own text-selection loupe or
-   "copy/share" callout popping up over it and swallowing the gesture.
-   Re-enabled on the few elements that are actually text entry. */
-body {
+/* Text is the browser's own: a METAR, a NOTAM, a frequency, a route
+   or a problem line selected with a long press and copied, a link's
+   long press its preview and Copy Link. Only the controls a drag or a
+   long, still touch would select by mistake are kept from it -- a
+   button (the sheet's grabber and its page tabs are buttons too), a
+   tab, and the map with its markers -- so the touch starts what the
+   control does, not the selection loupe or the "copy/share" callout. */
+button,
+[role="button"],
+[role="tab"],
+.maplibregl-map {
   -webkit-touch-callout: none;
   user-select: none;
-}
-input,
-select,
-textarea {
-  -webkit-touch-callout: default;
-  user-select: text;
 }
 
 /* The map's words in the app's own typeface: its credits and anything
@@ -111,9 +109,9 @@ textarea {
   margin-bottom: 0;
 }
 
-/* The credits' row (lib/map/gl/MapCredits) as Apple Maps on the web sets
-   its Privacy | Terms | Legal | Imagery: small words (the owner's
-   screenshot, 2026-11-10), in the text's colour on the page's, not grey,
+/* Google's credit, the one small print left on the map, while its tiles
+   are drawn (lib/map/gl/MapCredits): small words (the owner's screenshot,
+   2026-11-10), in the text's colour on the page's, not grey,
    so they keep 4.5:1 in every look, Glass Cockpit at night too (a11y.spec). */
 .maplibregl-map .maplibregl-ctrl-attrib {
   background-color: var(--background);
@@ -129,40 +127,26 @@ textarea {
 
 /* Clear of the map panel (MapPanel): its edge's corner controls sit
    past what the panel covers at rest (MapPage sets the insets), and past
-   the home indicator, moving in the sheet's time (mapChrome's
-   SHEET_SECONDS). */
+   the home indicator, moving on the Drawer's own time and curve
+   (motion.drawer), so they keep pace with the sheet they sit by. */
 .maplibregl-map .maplibregl-ctrl-bottom-left,
 .maplibregl-map .maplibregl-ctrl-bottom-right {
   bottom: max(var(--map-inset-bottom, 0px), env(safe-area-inset-bottom));
-  transition: bottom var(--motion-sheet) var(--motion-sheet-ease);
-}
-/* On a phone the credits ride on the sheet's top, as the map's buttons
-   do (--sheet-cover, eased with the sheet): kept on the inset, which
-   moves only once the sheet has turned, the traffic credit was left
-   half way up the map over a sheet down at its tabs (the owner's
-   screenshot, 2026-10-28). */
-body[data-map-sheet] .maplibregl-map .maplibregl-ctrl-bottom-left,
-body[data-map-sheet] .maplibregl-map .maplibregl-ctrl-bottom-right {
-  bottom: max(var(--sheet-cover, var(--map-inset-bottom, 0px)), env(safe-area-inset-bottom));
-  transition: bottom var(--sheet-cover-ease, 0s);
+  transition: bottom var(--motion-drawer) var(--motion-drawer-ease);
 }
 .maplibregl-map .maplibregl-ctrl-top-left,
 .maplibregl-map .maplibregl-ctrl-top-right {
   top: max(var(--map-inset-top, 0px), env(safe-area-inset-top));
-  transition: top var(--motion-sheet) var(--motion-sheet-ease);
+  transition: top var(--motion-drawer) var(--motion-drawer-ease);
 }
 
 /* With the phone's sheet all the way up, the map's buttons give way,
    as Maps' do: only a sliver of them showed past its edge. The panel's
    height and shape are on <body> (MapPanel): a :has() there restyled the
    whole page at every change of the attributes it named. */
-/* Their foot rides on the sheet's top (MapPanel's --sheet-cover), eased
-   with the sheet's own curve as it settles (--sheet-cover-ease). */
 [data-map-controls],
 [data-map-food] {
-  transition:
-    opacity var(--motion-fade),
-    bottom var(--sheet-cover-ease, 0s);
+  transition: opacity var(--motion-fade);
 }
 body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-food]) {
   opacity: 0;
@@ -301,7 +285,7 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* The chart at night (Settings' "Chart at night", lib/preferences
+/* The chart at night (Setup's Appearance, Dark, lib/preferences
    chartNight): its tiles alone are dimmed, by the map's own raster paint
    (lib/map/gl/glStyle chartPaint, the brightness and contrast these tiles
    had here as a CSS filter). Where a tile is not in yet, the night's
@@ -390,30 +374,15 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
   }
 }
 /* The toast stack sits over the chart, and the chart is the thing a
-   pilot is panning and zooming: a band of toasts that took the pointer
-   swallowed wheel and drag events meant for the map (a Playwright run
-   caught a zoom step going missing). So the stack is transparent to the
-   pointer; a toast has no control of its own, and goes by itself. */
-[data-slot="toast-viewport"],
-[data-slot="toast"] {
+   pilot is panning and zooming: the stack's band, wider than its
+   toasts, took wheel and drag events meant for the map (a Playwright
+   run caught a zoom step going missing), so the band is transparent to
+   the pointer. A toast itself takes it, as Base UI's own does: a touch
+   or the pointer on it holds it, and a swipe puts it away. */
+[data-slot="toast-viewport"] {
   pointer-events: none;
 }
-/* Except while a drawer or a dialog is open: the toasts are anchored to
-   the viewport, not the map, so an open drawer sits under them, and a tap
-   on a toast transparent to the pointer landed on whatever the drawer had
-   there (an accordion trigger, which opened a briefing section nobody
-   touched). The panel out is <body>'s data-map-panel (MapPanel); a
-   dialog, menu or popover open marks what is outside it
-   data-base-ui-inert (Base UI's marker), rather than a :has() looking for
-   either, which restyled the whole page at every state change (measured
-   2026-10-07). */
-body[data-map-panel="full"] [data-slot="toast"],
-[data-base-ui-inert] [data-slot="toast"],
-[data-slot="toast-viewport"][data-base-ui-inert] [data-slot="toast"] {
-  pointer-events: auto;
-}
-/* A toast with an Undo is one to tap, wherever it is. */
-[data-slot="toast"][data-action] {
+[data-slot="toast"] {
   pointer-events: auto;
 }
 
@@ -428,20 +397,21 @@ body[data-map-panel="full"] [data-slot="toast"],
    to a finger (calendar.tsx), so theirs is the cell itself, square, its
    rounded corners included; its month buttons get the 44 round them. A
    desktop keeps the tighter targets. The map's markers are placed by
-   their own size and are left alone. */
-@media (pointer: coarse) {
-  button:not([data-slot="tabs-trigger"])::after,
-  a[data-slot="button"]::after {
-    content: "";
-    position: absolute;
-    inset: min(0px, calc(50% - 22px));
-  }
-}
-/* Positioned so the pseudo-element is placed against the button: in
-   the base layer, so a button's own `absolute` or `fixed` utility
-   still wins. */
+   their own size and are left alone. In the base layer, under Tailwind's
+   utilities, so a control's own area (`after:-inset-1.5`, a chip's six
+   round it to meet its neighbours') wins over the default: outside any
+   layer it beat every utility, and each control's own was ignored on a
+   phone (the hand-built audit's row 6, 2026-11-12). The button is
+   positioned there too, so the pseudo-element is placed against it,
+   and a button's own `absolute` or `fixed` utility still wins. */
 @layer base {
   @media (pointer: coarse) {
+    button:not([data-slot="tabs-trigger"])::after,
+    a[data-slot="button"]::after {
+      content: "";
+      position: absolute;
+      inset: min(0px, calc(50% - 22px));
+    }
     button,
     a[data-slot="button"] {
       position: relative;
@@ -462,18 +432,43 @@ html[data-tv] .maplibregl-canvas:focus {
   outline-offset: -6px;
 }
 
-/* A panel tab not up (PanelTabs): skipped, its layout and its charts'
+/* A panel tab not up (PanelTabs: its Base UI Tabs.Panel's data-hidden;
+   TabKept: tab-away): skipped, its layout and its charts'
    sizes kept for its return, where display: none threw them away -- a
    tab shown again was laid out from nothing, and its charts drawn again.
    Out of the way of the pointer, the keys and VoiceOver (it is inert as
    well). Where content-visibility is not known (Safari before 18), out of
    the layout as before. */
-.tab-away {
+.tab-away,
+.tab-page[data-hidden] {
   content-visibility: hidden;
 }
 @supports not (content-visibility: hidden) {
-  .tab-away {
+  .tab-away,
+  .tab-page[data-hidden] {
     display: none;
+  }
+}
+
+/* A card's drawer kept closed (sheet/CardStack: Drawer.Portal keepMounted;
+   CardLayer's `open`, the Nav Log, the Profile, the Stops): Base UI marks
+   its popup `hidden`, which is display: none, and a card shown again was
+   laid out from nothing -- the Nav Log 0.6 s. Skipped instead, as a tab put
+   away is (tab-away above): its layout kept for its next opening, nothing
+   of it painted or hit, and out of VoiceOver's reach. */
+@layer kept-cards {
+  [data-sheet-card][hidden] {
+    display: flex !important;
+    visibility: hidden;
+    pointer-events: none !important;
+    content-visibility: hidden;
+  }
+}
+@supports not (content-visibility: hidden) {
+  @layer kept-cards {
+    [data-sheet-card][hidden] {
+      display: none !important;
+    }
   }
 }
 
@@ -656,69 +651,24 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
   inherits: false;
 }
 
-/* A scroller at the top of the map's panel's body, run on up under the
-   panel's head by the head's height (MapPanel's --head-room): its first
-   line starts where it did, and scrolled up its content passes under the
-   head, seen through its frost, as under a sheet's bar on iOS. Its own
-   room over its first line is --under-pad. Out of the panel the room is
-   unset, and this is nothing. */
-@utility under-head {
-  margin-top: calc(-1 * var(--head-room, 0px));
-  padding-top: calc(var(--head-room, 0px) + var(--under-pad, 0px));
-  scroll-padding-top: var(--head-room, 0px);
-  /* And clear of the route's figures pinned at the sheet's foot over it
-     (MapPanel's --foot-room): a row brought into view stops above them. */
-  scroll-padding-bottom: var(--foot-room, 0px);
-}
-
-/* The one scrolling rule (the owner, 2026-11-10), as Apple Maps' cards
-   scroll. A card's large title folds into its pinned compact head
-   (PinnedCardBar) as the card scrolls: where the browser runs
-   scroll-driven animations, the title fades and shrinks and the bar comes
-   in with the scroll itself; elsewhere the bar shows once the title has
-   gone (data-shown, from an IntersectionObserver). Hidden, the bar is
-   neither seen nor hit nor read. */
-.card-pinned {
-  visibility: hidden;
-  opacity: 0;
-}
-[data-shown] > .card-pinned {
-  visibility: visible;
-  opacity: 1;
-}
-@supports (animation-timeline: scroll()) {
-  .card-pinned {
-    animation: card-pinned linear both;
-    animation-timeline: scroll(nearest block);
-    animation-range: 0 8rem;
+/* Every card's head in the sheet, one row pinned at its top from the
+   start, the content scrolling on under it blurred through its frost (the
+   owner, 2026-11-10: "just keep the title on top and content moves under
+   with a frosty style"; PinnedHead): the sheet's own ground at the glass's
+   fill over the sheet's blur (design/tokens.json glass-fill, sheet-blur),
+   solid where the browser frosts nothing and under Reduce Transparency
+   or Increase Contrast (the solid variant), as iOS's materials go. */
+@utility frost-head {
+  background-color: color-mix(in oklab, var(--sheet, var(--background)) var(--glass-fill-light), transparent);
+  -webkit-backdrop-filter: blur(var(--sheet-blur));
+  backdrop-filter: blur(var(--sheet-blur));
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: var(--sheet, var(--background));
   }
-  .card-title-fold {
-    transform-origin: left center;
-    animation: card-title-fold linear both;
-    animation-timeline: scroll(nearest block);
-    animation-range: 0 6rem;
-  }
-}
-@keyframes card-pinned {
-  0%,
-  80% {
-    visibility: hidden;
-    opacity: 0;
-  }
-  100% {
-    visibility: visible;
-    opacity: 1;
-  }
-}
-@keyframes card-title-fold {
-  to {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .card-title-fold {
-    animation: none;
+  @variant solid {
+    background-color: var(--sheet, var(--background)) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
 }
 
@@ -730,8 +680,10 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
    have it only toward its closing edge, so the scrollers are no scrollers
    there (overflow hidden, which its arbitration skips); a script, the
    keyboard and a row brought into view still scroll them, and a row
-   focused under the sheet's edge brings it all the way up (MapPanel). */
-body[data-map-sheet]:is([data-map-panel="peek"], [data-map-panel="half"]) [data-panel-body] :is(.overflow-y-auto, .overflow-auto) {
+   focused under the sheet's edge brings it all the way up (MapPanel). The
+   sheet's own scroller (SheetParts' data-sheet-scroll) and a card's. */
+body[data-map-sheet]:is([data-map-panel="peek"], [data-map-panel="half"])
+  :is([data-sheet-scroll], [data-panel-body] :is(.overflow-y-auto, .overflow-auto)) {
   overflow-y: hidden;
 }
 

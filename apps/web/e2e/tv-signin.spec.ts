@@ -38,7 +38,7 @@ test("on a TV, sign-in is a code to type in on a phone, and the TV signs in once
   await settle(page);
   await showTabs(page);
   await openConsole(page);
-  await page.getByTestId("console-sheet").getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByTestId("console-sheet").getByRole("button", { name: "Sign In", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Sign in to Wingtip Maps" });
   await expect(dialog.getByTestId("tv-code")).toHaveText("BCDF-GHJK");
   await expect(dialog.getByTestId("tv-address")).toHaveText(/\/tv$/);

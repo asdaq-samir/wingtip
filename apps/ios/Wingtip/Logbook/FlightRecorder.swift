@@ -17,8 +17,6 @@ import Observation
 @MainActor
 @Observable
 final class FlightRecorder {
-    static let shared = FlightRecorder()
-
     typealias Point = EngineContract.TrackPoint
 
     /// A point every 5 s: four hours are under 3,000 points, and the
@@ -33,7 +31,7 @@ final class FlightRecorder {
     private static let writeEveryS = 30.0
 
     /// What is kept on the phone between launches.
-    struct Kept: Codable, Equatable {
+    struct Kept: Codable, Equatable, Sendable {
         var points: [Point] = []
         /// The end of the flight time last offered (the engine's block.to),
         /// so a draft let go is not offered again until a later landing.
@@ -47,11 +45,12 @@ final class FlightRecorder {
     /// offered: the sheet opens on it.
     private(set) var endedAt: Double?
     @ObservationIgnored private var lastWritten = Date.distantPast
-    @ObservationIgnored private let file: URL
+    /// Written off the main actor (BackgroundFile).
+    @ObservationIgnored private let disk: BackgroundFile
 
     init(file: URL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appending(path: "flight-recorder.json")) {
-        self.file = file
+        disk = BackgroundFile(file)
         kept = (try? JSONDecoder().decode(Kept.self, from: Data(contentsOf: file))) ?? Kept()
         look()
     }
@@ -112,9 +111,16 @@ final class FlightRecorder {
         write()
     }
 
+    /// The track gone from the phone, its file with it: the pilot signed
+    /// out or deleted the account (Session.forgetDevice).
+    func erase() {
+        kept = Kept()
+        endedAt = nil
+        disk.remove()
+    }
+
     private func write() {
         lastWritten = Date()
-        try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-        if let data = try? JSONEncoder().encode(kept) { try? data.write(to: file, options: .atomic) }
+        disk.write(kept)
     }
 }

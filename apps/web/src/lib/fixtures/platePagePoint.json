@@ -1,0 +1,41 @@
+{
+  "why": "plate_page_point's cases, held by the engine (engine/facade/tests/plate_page_point.rs) and the web (features/plates/platePosition.test.ts). The georeference is KRFD ILS RWY 07's (d-TPP 2610; its GeoPDF viewport is services/planner/tests_wingtip/test_plates.py's KRFD_I07), the affine as wingtip.plates.Georeference fits it with pyproj (PROJ). Its page is 396 by 612 points (5.5 by 8.5 inches). The plan view here is the viewport's own box, an inset cut from its bottom left. Where the FAA's points (GPTS) go: at LPTS's fractions of the viewport's box, (9.18 + 0.1 x 369, 2.628 + 0.9 x 588.744) = (46.08, 532.4976) points, so x = 46.08 / 396 and y = 1 - 532.4976 / 612. A true track turns on the page by the projection's convergence, gamma = n (lambda - lambda0) (Snyder, USGS PP 1395, eq. 14-4), n = 0.694913 for parallels 46.667 and 41.333 N (eq. 15-8): page rotation = track - gamma, to a hundredth of a degree.",
+  "georeference": {
+    "lat_0": 42.1566944444444,
+    "lon_0": -89.21819444444452,
+    "lat_1": 46.66666666666671,
+    "lat_2": 41.33333333333331,
+    "to_page": [0.005669291338633633, -1.816080238953724e-14, 198.77248352113932, -4.889983935168123e-14, 0.00566929133857482, 356.1238653497445],
+    "width_pt": 396.0,
+    "height_pt": 612.0,
+    "plan_view": { "left": 9.18, "bottom": 2.628, "right": 378.18, "top": 591.372 },
+    "insets": [{ "left": 9.18, "bottom": 2.628, "right": 100.0, "top": 100.0 }]
+  },
+  "cases": [
+    {
+      "why": "The viewport's top right point, from the FAA's GPTS: at its LPTS (0.9, 0.9), no track",
+      "input": { "lat": 42.4365259253, "lon": -88.91248437445, "track_deg": null },
+      "expected": { "x": 0.861818, "y": 0.129906, "rotation_deg": null }
+    },
+    {
+      "why": "Its top left point (LPTS 0.1, 0.9), flying north: 0.3276 degrees west of the central meridian, north leans 0.2276 degrees clockwise on the page",
+      "input": { "lat": 42.43646377287, "lon": -89.54575329403, "track_deg": 0 },
+      "expected": { "x": 0.116364, "y": 0.129906, "rotation_deg": 0.2276 }
+    },
+    {
+      "why": "42.2 N 89.1 W flying east, where PROJ puts it (254.0826, 383.4186 points); 0.1182 degrees east of the central meridian, east turns 0.0821 degrees back",
+      "input": { "lat": 42.2, "lon": -89.1, "track_deg": 90 },
+      "expected": { "x": 0.641623, "y": 0.373499, "rotation_deg": 89.9179 }
+    },
+    {
+      "why": "Its bottom left point (LPTS 0.1, 0.1), inside the inset, which is not to scale: not drawn",
+      "input": { "lat": 41.68814609406, "lon": -89.54178783614, "track_deg": 270 },
+      "expected": null
+    },
+    {
+      "why": "Forty miles south of the field, off the plan view: not drawn",
+      "input": { "lat": 41.5, "lon": -89.2, "track_deg": 0 },
+      "expected": null
+    }
+  ]
+}

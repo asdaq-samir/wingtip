@@ -15,7 +15,7 @@
  *
  * Worked out by the shared engine (engine/crates/procedures/src/figures/debrief.rs,
  * through lib/engine), the very code behind the planner's /api/debrief and
- * the phones' wt_call("debrief"): the tolerances and each row's mark too, so the
+ * the phones' `call`("debrief"): the tolerances and each row's mark too, so the
  * page's headings and ticks are the engine's figures, not copies.
  */
 import type { Flight } from "../../lib/api/types";
@@ -114,10 +114,10 @@ export interface Debrief {
   notes: string[];
 }
 
-/** A flight debriefed against its track; null where the track never
- *  flew. `patterns` are the fields' pattern altitudes, ft MSL, by ident. */
-export function debrief(flight: Flight, points: TrackPoint[], patterns: Record<string, number> = {}): Debrief | null {
-  const { debrief: d, tolerances: t } = callEngine("debrief", {
+/** The engine's debrief of a flight against its track (a coach's reading
+ *  of it and the flight's own page both ask it this way). */
+export const debriefOf = (flight: Flight, points: TrackPoint[], patterns: Record<string, number>) =>
+  callEngine("debrief", {
     checkpoints: flight.checkpoints.map((c) => ({
       sequence_no: c.sequenceNo,
       name: c.name,
@@ -132,6 +132,11 @@ export function debrief(flight: Flight, points: TrackPoint[], patterns: Record<s
     points: enginePoints(points),
     patterns,
   });
+
+/** A flight debriefed against its track; null where the track never
+ *  flew. `patterns` are the fields' pattern altitudes, ft MSL, by ident. */
+export function debrief(flight: Flight, points: TrackPoint[], patterns: Record<string, number> = {}): Debrief | null {
+  const { debrief: d, tolerances: t } = debriefOf(flight, points, patterns);
   if (!d) return null;
   return {
     tolerances: {

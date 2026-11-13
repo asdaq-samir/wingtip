@@ -30,8 +30,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
@@ -48,7 +48,7 @@ import app.wingtipmaps.android.ui.SectionTitle
  * the figures in the same scroll (the flown airplane's own rows).
  */
 @Composable
-fun AirplaneProfileScreen(airplane: AirplaneNow, focus: String?, model: AirplaneProfileModel = viewModel(), head: @Composable ColumnScope.() -> Unit = {}) {
+fun AirplaneProfileScreen(airplane: AirplaneNow, focus: String?, model: AirplaneProfileModel = hiltViewModel(), head: @Composable ColumnScope.() -> Unit = {}) {
     val context = LocalContext.current
     val own = remember(context) { OwnAirplanes.of(context) }
     val signedIn by own.signedIn.collectAsStateWithLifecycle()

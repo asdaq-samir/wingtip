@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_route::approach::calls::call",
   "description": "The approach category (14 CFR 97.3) from VREF, or 1.3 VSO, or null with neither.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

@@ -7,14 +7,28 @@ is deployed; the production steps are the design's section 7.
 
 ## On
 
-The connector is on wherever the planner has `MCP_ISSUER`, which
+The connector is off unless the gateway has `MCP_ENABLED=true`: off, every
+one of its addresses (`/mcp`, `/oauth2/*` but the app's own Google and Apple
+sign-in, the metadata, `/connect`, `/internal/mcp/*`) is a 404, and so it is
+in production until the connector launches. To try it here, put
+`MCP_ENABLED=true` in `.env` and `docker compose up -d gateway`.
+
+The planner serves its side wherever it has `MCP_ISSUER`, which
 `docker-compose.yml` sets to the gateway's public address
 (`APP_PUBLIC_BASE_URL`, `http://localhost:8080` by default). The gateway
 serves `/mcp`, `/.well-known/oauth-protected-resource/mcp`, its own
 authorization server metadata at `/.well-known/oauth-authorization-server`,
-and `/oauth2/*`. Both services share `MCP_INTERNAL_TOKEN` (a local default
-in the compose file). With `MCP_SIGNING_KEY` blank the gateway makes a key
-at start, so every restart signs connected apps out until they refresh.
+and `/oauth2/*`.
+
+The planner reads a pilot's records from the gateway's `/internal/mcp/*`,
+which answer only on the gateway's internal port, 8081, which no compose
+file publishes (`InternalPortConfig`; Caddy refuses `/internal/*` too), and
+only with `MCP_INTERNAL_TOKEN`, a secret both services share. It has no
+default in the repository: `make dev` (`scripts/dev/dev.sh doctor`) writes a
+random one into `.env` the first time, and the gateway will not start with
+the connector on and no token. With `MCP_SIGNING_KEY` blank the gateway
+makes a key at start, so every restart signs connected apps out until they
+refresh.
 
 ## A token, by script
 

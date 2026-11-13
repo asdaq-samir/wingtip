@@ -1,16 +1,11 @@
 import MapKit
 import SwiftUI
 
-/// Settings' Airport Weather as the map reads it, the four keys as one.
+/// Settings' Airport Weather as the map reads it: the one menu's pick.
 struct AirportWeatherSetting: DynamicProperty {
-    @AppStorage(AirportWeatherStyle.Keys.style) private var style = AirportWeatherStyle.halo.rawValue
-    @AppStorage(AirportWeatherStyle.Keys.stationClose) private var stationClose = true
-    @AppStorage(AirportWeatherStyle.Keys.windArrows) private var windArrows = true
-    @AppStorage(AirportWeatherStyle.Keys.worse) private var worse = true
+    @AppStorage(AirportWeather.key) private var show = AirportWeather.kept().rawValue
 
-    var choice: AirportWeatherChoice {
-        AirportWeatherChoice(style: AirportWeatherStyle(rawValue: style) ?? .halo, stationClose: stationClose, windArrows: windArrows, worse: worse)
-    }
+    var choice: AirportWeatherChoice { (AirportWeather(rawValue: show) ?? .standard).choice }
 }
 
 /// What the plan gives the marks: the route's fields whose TAF is worse
@@ -18,6 +13,9 @@ struct AirportWeatherSetting: DynamicProperty {
 /// airplane's demonstrated crosswind (nil with none).
 struct FieldWeatherInput: Equatable {
     var worse: Set<String> = []
+    /// Under IFR, the alternates' forecasts at the ETA there
+    /// (AlternateCheck.atEta), for their ↓ against the map's METARs.
+    var alternates: [EngineContract.WorseField] = []
     var demonstratedKt: Double?
 }
 
@@ -29,6 +27,10 @@ final class FieldWeatherState {
     private let feed = FieldWeatherFeed()
     private var input = FieldWeatherInput()
     private var marks: [String: FieldWeatherMark] = [:]
+    /// The alternates in view worse by the ETA there.
+    private var alternatesWorse: Set<String> = []
+    /// When the marks were last made again (remake).
+    private var madeAt = Date.distantPast
 
     /// The mark for a field, as an annotation takes it: made from its
     /// report once and kept until the report or the plan's part changes,
@@ -36,7 +38,8 @@ final class FieldWeatherState {
     func mark(_ ident: String) -> FieldWeatherMark? {
         if let kept = marks[ident] { return kept }
         guard let pin = feed.reports[ident] else { return nil }
-        let made = FieldWeatherMarks.mark(FieldWeatherMarks.report(pin), demonstratedKt: input.demonstratedKt, worse: input.worse.contains(ident))
+        let fresh = FieldWeatherMarks.mark(FieldWeatherMarks.report(pin), demonstratedKt: input.demonstratedKt, worse: input.worse.contains(ident) || alternatesWorse.contains(ident))
+        let made = FieldWeatherMarks.aged(fresh, heardAt: feed.heardAt[ident])
         marks[ident] = made
         return made
     }
@@ -58,6 +61,9 @@ final class FieldWeatherState {
 
     /// The map at rest: the weather about it asked where it is not in hand.
     func rested(_ map: MKMapView) {
+        // The marks made again now and then, so a report goes grey with
+        // its age as the map is used with no signal, not only when heard.
+        if Date().timeIntervalSince(madeAt) > 60 { remake(map) }
         feed.view(ViewBox(map.region)) { [weak self, weak map] in
             guard let self, let map else { return }
             self.remake(map)
@@ -68,6 +74,8 @@ final class FieldWeatherState {
     /// put on the fields drawn whose mark changed.
     private func remake(_ map: MKMapView) {
         marks = [:]
+        madeAt = Date()
+        alternatesWorse = input.alternates.isEmpty ? [] : FieldWeatherMarks.worse(alternates: input.alternates, reports: feed.reports)
         for case let field as AirportAnnotation in map.annotations {
             let fresh = mark(field.ident)
             guard field.weather != fresh else { continue }

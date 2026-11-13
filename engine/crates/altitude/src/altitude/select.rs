@@ -75,9 +75,20 @@ fn band(
         let altitudes = cruising::legal_ifr(floor, top, course).into_iter().filter(|&a| !blocked(a, areas)).collect();
         return Band { ceiling: top, altitudes, cloud_kept: true, tight: false };
     }
+    // The airspace ceiling is a Class B shelf's floor, and the floor is
+    // inside Class B ("from 3,000 feet MSL" upward), which 14 CFR
+    // 91.131(a)(1) takes no flight into without a clearance: an altitude
+    // equal to it is not under it, so the band keeps strictly below, as
+    // `cruising::tight` does and as cautions.rs's "Into Class B" reads
+    // (alt >= shelf). The service ceiling and the clouds' highest stay
+    // inclusive: an airplane may cruise at its ceiling, and
+    // clouds::highest_under_ft already keeps 91.155's distance below.
+    let under_airspace = |a: f64| airspace.is_none_or(|shelf| a < shelf);
     let legal = |ceiling: Option<f64>| -> (Vec<f64>, bool) {
-        let found: Vec<f64> =
-            cruising::legal_vfr(floor, ceiling, course, Some(rule_from)).into_iter().filter(|&a| !blocked(a, areas)).collect();
+        let found: Vec<f64> = cruising::legal_vfr(floor, ceiling, course, Some(rule_from))
+            .into_iter()
+            .filter(|&a| !blocked(a, areas) && under_airspace(a))
+            .collect();
         if !found.is_empty() {
             return (found, false);
         }

@@ -3,8 +3,8 @@
 import "./features/shell/storageRename";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { createBrowserRouter, Navigate, redirect } from "react-router";
-import { RouterProvider } from "react-router/dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
+import { NuqsAdapter } from "nuqs/adapters/react-router/v8";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { chartQuery, courseQuery, flightsQuery, overlayTilesQuery, queryClient } from "./lib/queryClient";
@@ -13,12 +13,14 @@ import { flushPendingDeletes } from "./lib/pendingDeletes";
 import { routeOf, stopsOf } from "./lib/identSchema";
 import AppToaster from "./components/AppToaster";
 import { BrandLook } from "./lib/brand";
+import SafariEdges from "./components/SafariEdges";
 import ErrorAlert from "./components/ErrorAlert";
-import PageError from "./components/PageError";
+import { PageErrorBoundary } from "./components/PageError";
 import { registerSW } from "virtual:pwa-register";
 import { followDynamicType } from "./features/shell/dynamicType";
-import { prepareAnnouncer } from "./lib/announce";
 import { keepAddressThroughReload, startFresh } from "./features/shell/freshLoad";
+import { takeNewBuildsWhenAway } from "./features/shell/newBuild";
+import { recoverChunk, useChunkFailure } from "./lib/chunkRecovery";
 import { installErrorReports, reportOf, sendReport } from "./lib/errorReports";
 import { startSpeedReports } from "./lib/speed";
 import { startLongTaskReports } from "./lib/longTasks";
@@ -39,11 +41,11 @@ import "@fontsource/barlow/latin-400.css";
 import "@fontsource/barlow/latin-500.css";
 import "@fontsource/barlow/latin-600.css";
 import "@fontsource/barlow/latin-700.css";
-import { startTv, tvPlatform } from "./lib/tv";
+import { tvPlatform } from "./lib/tv";
 import { loadEngine } from "./lib/engine/engine";
 import { preconnectTiles, preloadFirstLoad } from "./lib/preloads";
 import { usePreferences } from "./lib/preferences";
-import { takeSharedLinkFromAddress } from "./features/shared-flight";
+import { takeSharedLinkFrom } from "./features/shared-flight";
 
 // The shared Rust engine (lib/engine), asked for first: the rules it
 // works out (the hold's entry, lost comms, the diversion, the debrief)
@@ -58,14 +60,12 @@ const engineLoaded = loadEngine();
 // render, so the page is never drawn at the wrong size first.
 followDynamicType();
 
-// The screen reader's two live regions (lib/announce), in the page before
-// any alert is said into them, so the first one is heard.
-prepareAnnouncer();
-
 // On a Samsung or LG TV (the TV shells, in git history; lib/tv), the page made for its remote and
 // its distance, before the first render.
+// Its code on a chunk of its own (lib/tvStart), which the first render
+// waits for on a TV alone.
 const tv = tvPlatform();
-if (tv) startTv(tv);
+const tvStarted = tv ? import("./lib/tvStart").then((m) => m.startTv(tv)) : null;
 
 // The map's chunk (routeMapChunk) and the search's (routeBoxChunk),
 // fetched while the page draws.
@@ -90,33 +90,14 @@ startLoadLog();
 // The service worker (vite.config.ts): the app shell, the chart tiles
 // the map has drawn or kept ahead, and the planner's answers, held for
 // the air. It registers only on a secure origin (https, or localhost).
-// A new build is taken at once (vite.config.ts, "autoUpdate"): the
-// page reloads itself the moment the new worker has installed. The
-// browser checks for a new worker on its own only on a navigation, so
-// a page kept open -- the phone, all day -- asks every minute, and as
-// it comes back to the front: an iPhone stops a page's timers while it
-// is away, and the app brought back showed the build it was left on
-// until a minute after. The check is one small request for sw.js. That
-// reload keeps the route on screen; a person's starts clean
-// (features/shell/freshLoad).
+// A new build is taken while the app is away, never under the pilot
+// (features/shell/newBuild); that reload keeps the route on screen, a
+// person's starts clean (features/shell/freshLoad).
 // Registered once the page has loaded, not during it: the worker's
 // install fetches every chunk it precaches (2.7 MB), which competed
 // with the map, its tiles and the planner on a cold start and after
 // each deploy.
-registerSW({
-  immediate: false,
-  onRegisteredSW(_url, registration) {
-    if (!registration) return;
-    window.setInterval(() => void registration.update(), 60_000);
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") void registration.update();
-    });
-  },
-  onNeedReload() {
-    keepAddressThroughReload();
-    window.location.reload();
-  },
-});
+const takeNewBuild = takeNewBuildsWhenAway(registerSW);
 startFresh();
 
 // Three views, one app -- which is the point of the port. As separate
@@ -134,6 +115,13 @@ startFresh();
 // any in-app `<Link to="/app">` that never leaves the client. Plan is
 // the app's own homepage: the thing a pilot actually opens this for,
 // not a page-index one page removed from it.
+//
+// React Router's declarative mode (BrowserRouter and Routes), not the data
+// router: the app has no loader, action or fetcher left, and the data
+// router's own code was 59.5 KB of the first load (the speed audit,
+// 2026-11-12). nuqs's React Router adapter reads the address through
+// useNavigate and useSearchParams, which both modes have (nuqs.dev,
+// "Adapters", React Router).
 
 // One page in two modes, one for each role: the same shell around a
 // different workspace -- the pilot's (the route, the nav log, the
@@ -141,23 +129,35 @@ startFresh();
 // the dev console). The two older addresses keep working: the labeling
 // page is the Dev page now, and everything Settings held lives in
 // Plan's pilot console.
-const router = createBrowserRouter(
-  [
-    { index: true, element: <Navigate to="/plan" replace /> },
-    // The planner with the first script, not asked for once it has run:
-    // it is the page nearly every load is of, and its chunk was a second
-    // round trip before anything showed (2 s to the panel on a phone's
-    // CPU, cold). The training workspace inside it stays its own chunk.
-    { path: "plan", element: <MapPage mode="pilot" />, errorElement: <PageError /> },
-    { path: "dev", element: <MapPage mode="dev" />, errorElement: <PageError /> },
-    // The old labeling address, kept working with its route: a loader
-    // redirect rather than a component, since the router's own
-    // `redirect` is the one place a query string can be carried over
-    // before anything renders.
-    { path: "label", loader: ({ request }) => redirect(`/dev${new URL(request.url).search}`) },
-    { path: "settings", element: <Navigate to="/plan" replace /> },
-  ],
-  { basename: "/app" },
+//
+// Each page in its own boundary (components/PageError): a part that could
+// not be drawn, most often a chunk the phone could not fetch, says which it
+// was in the map's place.
+const page = (mode: "pilot" | "dev" | "studio") => (
+  <PageErrorBoundary>
+    <MapPage mode={mode} />
+  </PageErrorBoundary>
+);
+
+const routes = (
+  <BrowserRouter basename="/app">
+    <Routes>
+      <Route index element={<Navigate to="/plan" replace />} />
+      {/* The planner with the first script, not asked for once it has run:
+        it is the page nearly every load is of, and its chunk was a second
+        round trip before anything showed (2 s to the panel on a phone's
+        CPU, cold). The training workspace inside it stays its own chunk. */}
+      <Route path="plan" element={page("pilot")} />
+      <Route path="dev" element={page("dev")} />
+      {/* The Studio (features/studio): replays of real flights, the developer's for now. */}
+      <Route path="studio" element={page("studio")} />
+      {/* The old labeling address, kept working with its route: its query
+        string carried to /dev (the address as the browser has it as the
+        route is drawn). */}
+      <Route path="label" element={<Navigate to={{ pathname: "/dev", search: window.location.search }} replace />} />
+      <Route path="settings" element={<Navigate to="/plan" replace />} />
+    </Routes>
+  </BrowserRouter>
 );
 
 /**
@@ -198,8 +198,17 @@ void queryClient
 
 // A shared flight's link is a preview first: its route taken off the
 // address before anything plans it (features/shared-flight).
-takeSharedLinkFromAddress();
-const opening = new URLSearchParams(window.location.search);
+// The address put right before the router mounts (replacing the entry), the
+// rest read from what it is left as.
+const unshared = takeSharedLinkFrom(window.location.search);
+if (unshared) {
+  const rest = unshared.toString();
+  // The page it is on, kept as the browser has it, and only the search
+  // changed, the hash kept (a basename-relative pathname made the shared
+  // link's page a 404).
+  window.history.replaceState(window.history.state, "", `${window.location.pathname}${rest ? `?${rest}` : ""}${window.location.hash}`);
+}
+const opening = unshared ?? new URLSearchParams(window.location.search);
 const openingDep = opening.get("dep")?.trim().toUpperCase();
 const openingDest = opening.get("dest")?.trim().toUpperCase();
 const prefetchCourse = () => {
@@ -216,23 +225,38 @@ if (opening.get("stops")) void engineLoaded.then(prefetchCourse, () => {});
 else prefetchCourse();
 
 // A chunk that will not load -- the deploy after this page's own replaced
-// it, or no signal -- loads the page again, once a minute at most, as
-// Vite's own guide does: past that it falls to the route's PageError.
-window.addEventListener("vite:preloadError", (event) => {
-  let last = 0;
-  try {
-    last = Number(sessionStorage.getItem("wingtip.chunkReload")) || 0;
-  } catch {
-    /* storage refused: reload once */
-  }
-  if (Date.now() - last < 60_000) return;
-  try {
-    sessionStorage.setItem("wingtip.chunkReload", String(Date.now()));
-  } catch {
-    /* as above */
-  }
-  event.preventDefault();
-  window.location.reload();
+// it, or no signal -- recovered by itself where a newer build is served:
+// the page loaded again once, its route kept (lib/chunkRecovery). The
+// error goes on to the route's PageError meanwhile, which says which it
+// was where it stays: a newer version ready, no connection, or a part that
+// did not load.
+window.addEventListener("vite:preloadError", () => {
+  void recoverChunk({
+    fetchIndex: () =>
+      fetch(`${import.meta.env.BASE_URL}index.html`, { cache: "no-store" }).then(
+        (r) => (r.ok ? r.text() : null),
+        () => null,
+      ),
+    entry: document.querySelector<HTMLScriptElement>('script[type="module"][src]')?.src ?? null,
+    update: async () => {
+      await (await navigator.serviceWorker?.getRegistration())?.update();
+      await takeNewBuild();
+    },
+    reload: () => {
+      keepAddressThroughReload();
+      window.location.reload();
+    },
+    storage: (() => {
+      try {
+        return sessionStorage;
+      } catch {
+        return null;
+      }
+    })(),
+    online: navigator.onLine,
+  }).then((outcome) => {
+    if (outcome !== "reloaded") useChunkFailure.setState({ failure: outcome });
+  });
 });
 
 // A render React could not finish takes the page down: reported too.
@@ -257,10 +281,14 @@ const render = () =>
           provider would bring Base UI's tooltips into the first load
           (popupsChunk). */}
           <>
-            <RouterProvider router={router} />
+            {/* The address's keys read and written by nuqs (lib/address),
+            through React Router: a key's change is the browser's
+            address at once, not a navigation the router lands. */}
+            <NuqsAdapter>{routes}</NuqsAdapter>
             <AppToaster />
             <ErrorAlert />
             <BrandLook />
+            <SafariEdges />
           </>
         </QueryClientProvider>
       </ThemeProvider>
@@ -276,7 +304,7 @@ void engineLoaded.catch((error) => {
   sendReport(reportOf("error", error));
   console.error(error);
 });
-void faceLoaded.then(render, render);
+void Promise.all([faceLoaded, tvStarted]).then(render, render);
 
 // The deletes whose Undo was still up when the tab was last closed, sent
 // now (lib/pendingDeletes); the lists fetched again once any is.

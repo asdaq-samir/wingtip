@@ -8,7 +8,8 @@ import math
 
 from .. import tracing
 from ..config import get_settings
-from .common import STALE_S, TrafficUnavailable, _LOCK, _NM_PER_DEG, _aircraft, _clock, _sleep, _wall
+from ..geo import distance_nm
+from .common import STALE_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _sleep, _wall
 from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced
 from .adsbx import ADSBX_SOURCE, _adsbx
 from .adsbfi import ADSBFI_MIN_GAP_S, ADSBFI_SOURCE, _ADSBFI, _adsbfi
@@ -143,7 +144,7 @@ def _watched_near(lat: float, lon: float, radius_nm: float, have: set[str]) -> l
             continue
         last = track[-1]
         age = _wall() - last["t"]
-        nm = math.hypot((last["lat"] - lat) * _NM_PER_DEG, (last["lon"] - lon) * _NM_PER_DEG * math.cos(math.radians(lat)))
+        nm = distance_nm(lat, lon, last["lat"], last["lon"])
         if age <= STALE_S and nm <= radius_nm:
             out.append({**last["plane"], "seen_s": round(age, 1)})
     return out

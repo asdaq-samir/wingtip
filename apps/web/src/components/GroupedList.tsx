@@ -10,6 +10,14 @@ import { Label } from "./ui/label";
 import { TEXT } from "../lib/text";
 import SectionTitle from "./SectionTitle";
 
+// A group's box, plain on a sheet or translucent on a glass card.
+const GROUP_BASE = "gap-0 has-data-[size=sm]:gap-0 has-data-[size=xs]:gap-0";
+const GROUP = cn(GROUP_BASE, "rounded-lg border border-border bg-card");
+const GROUP_GLASS = cn(
+  GROUP_BASE,
+  "rounded-(--radius-card) border border-transparent bg-background/55 dark:bg-foreground/8 solid:border-border solid:bg-card",
+);
+
 /**
  * The app's grouped lists, the way iOS lays out Settings and a
  * briefing: an optional short heading, the rows in one rounded box with
@@ -27,6 +35,7 @@ export function ListGroup({
   badge,
   action,
   footer,
+  glass = false,
   children,
   className,
 }: {
@@ -34,6 +43,10 @@ export function ListGroup({
   badge?: ReactNode;
   action?: ReactNode;
   footer?: ReactNode;
+  /** On a glass card (You): the rows translucent over it, no edge, as
+   *  Apple's account card groups them; the card's own solid ground under
+   *  Reduce Transparency or Increase Contrast. */
+  glass?: boolean;
   children: ReactNode;
   className?: string;
 }) {
@@ -58,11 +71,7 @@ export function ListGroup({
           band above and below every row that a tap did nothing on (the
           owner's screenshot, 2026-10-28). The rows' own padding is the
           room between them instead (ListRow, 13 a side in a group). */}
-      <ItemGroup
-        role="group"
-        aria-labelledby={title ? id : undefined}
-        className="gap-0 rounded-lg border border-border bg-card has-data-[size=sm]:gap-0 has-data-[size=xs]:gap-0"
-      >
+      <ItemGroup role="group" aria-labelledby={title ? id : undefined} className={glass ? GROUP_GLASS : GROUP}>
         {rows.map((row, i) => (
           <Fragment key={i}>
             {i > 0 && <ItemSeparator className="my-0" />}
@@ -99,7 +108,16 @@ const TITLE = cn("line-clamp-none font-normal", TEXT.row);
 const TITLE_ACTION = cn(TITLE, "text-tint");
 const LABEL = cn("font-normal", TEXT.row);
 const DESCRIPTION = cn("line-clamp-none", TEXT.detail);
-const VALUE = cn("text-muted-foreground tabular-nums", TEXT.row);
+const VALUE = cn("text-right text-muted-foreground tabular-nums", TEXT.row);
+// Beside a value the words keep their longest word's width, and the value
+// wraps, or goes under them where the two cannot share the line, as an
+// iOS value row's long value does: "Registered to" was squeezed under
+// "Roca Roja Y Caballo Gris De Idaho Llc", the two overlapping (the
+// owner's iPhone, 2026-11-13).
+const CONTENT = "min-w-0 gap-0.5";
+const CONTENT_BY_VALUE = "min-w-min gap-0.5";
+const ACTIONS = "ml-auto";
+const ACTIONS_VALUE = "ml-auto min-w-0 max-w-full";
 
 export function ListRow({
   id,
@@ -164,7 +182,7 @@ export function ListRow({
       ) : (
         mark && <ItemMedia className={cn(action && "text-tint")}>{mark}</ItemMedia>
       )}
-      <ItemContent className="min-w-0 gap-0.5">
+      <ItemContent className={value !== undefined ? CONTENT_BY_VALUE : CONTENT}>
         <ItemTitle className={cn(action ? TITLE_ACTION : TITLE, wide && "w-full")}>
           {id ? (
             <Label htmlFor={id} className={LABEL}>
@@ -179,7 +197,7 @@ export function ListRow({
         {description && <ItemDescription className={DESCRIPTION}>{description}</ItemDescription>}
       </ItemContent>
       {(value !== undefined || children || href || opens) && (
-        <ItemActions className="ml-auto">
+        <ItemActions className={value !== undefined ? ACTIONS_VALUE : ACTIONS}>
           {value !== undefined && <span className={VALUE}>{value}</span>}
           {children}
           {href && <ExternalLink className="size-4 text-tint" aria-hidden />}

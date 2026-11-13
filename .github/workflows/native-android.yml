@@ -1,12 +1,10 @@
 name: Native Android
 
-# The native Android app (apps/android/, docs/NATIVE-ANDROID.md): the shared
-# Rust engine for three ABIs (engine/bindings/ffi/build-android.sh), then
-# the unit tests and lint. ci.yml calls this on a pull request that touches
-# the app, so "CI passed" waits for it (#499 merged with the app not
-# compiling when this ran beside CI). On its own: main's pushes and
-# claude/native-* (a debug APK too, as an artifact), and every night the
-# instrumented tests on an emulator after it. No Google Play lane yet.
+# The native Android app (apps/android/, docs/NATIVE-ANDROID.md): the
+# engine for three ABIs, then the unit tests and lint. ci.yml calls this on
+# a pull request that touches the app, so "CI passed" waits for it (#499).
+# Its own runs keep a debug APK; main's pushes and the night the release
+# app bundle and its R8 mapping too; the night adds the emulator's tests.
 #
 # Actions are pinned as in ci.yml (its opening comment says why).
 on:
@@ -41,9 +39,9 @@ env:
   # The site the app talks to and whose links open it (App Links); its
   # host is the build's WINGTIP_HOST (apps/android/app/build.gradle.kts).
   WINGTIP_URL: ${{ vars.WINGTIP_URL || 'https://wingtipmaps.app/app/plan' }}
-  # This workflow's own runs (not a call from CI's pull request) build
-  # the APK as well; the nights add the emulator.
+  # This workflow's own runs build the APK as well (scripts/ci/android_build.sh).
   OWN_RUN: ${{ github.workflow == 'Native Android' }}
+  RELEASE: ${{ github.workflow == 'Native Android' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) }}
 
 jobs:
   build:
@@ -53,31 +51,28 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       # Java 25, the build's JDK (apps/android/gradle/gradle-daemon-jvm.properties).
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78  # v6.2.0
         with:
           distribution: temurin
           java-version-file: .tool-versions
-      # Gradle's own cache of the wrapper, the dependencies and the build
-      # cache's outputs, through the Actions cache ('basic', not the
-      # commercial 'enhanced' provider). Written from main only, by the
-      # action's default; a pull request reads it.
+      # Gradle's cache through the Actions cache ('basic', not the commercial
+      # 'enhanced'); written from main only, a pull request reads it.
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6  # v6.4.0
         with:
           cache-provider: basic
           add-job-summary: on-failure
       - name: The Kotlin's layout
         run: scripts/dev/format.sh --check kotlin
-      # What the build lacks of the SDK (its platform, build tools, CMake)
-      # the Gradle plugin fetches once the licences are taken. Not the NDK:
-      # the app's ndkVersion is .tool-versions' android-ndk, one this image
-      # already has, so no run downloads it (AGP's default did, and a
-      # "Premature EOF" there failed run 42876898472).
+      # The Gradle plugin fetches what the build lacks of the SDK once the
+      # licences are taken; not the NDK, .tool-versions' android-ndk, which
+      # the image has (AGP's default download failed run 42876898472).
       - name: The SDK's licences
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
-      # 90 s to build for three ABIs (run 42110144706); the engine changes
-      # far less often than the app, and is cached by its own files. Saved
-      # at once, so the device job has it whatever the tests say.
+      # 90 s for three ABIs (run 42110144706), so cached by the engine's own
+      # files and saved at once, for the device job whatever the tests say.
       - name: The engine, as last built
         id: engine
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -96,19 +91,26 @@ jobs:
       - name: The site's host
         id: site
         run: echo "host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")" >> "$GITHUB_OUTPUT"
-      # A pull request: compiled, unit-tested and linted. The APK, a
-      # minute of packaging, is for this workflow's own runs.
       - name: Tested and linted
-        working-directory: apps/android
         env:
           WINGTIP_HOST: ${{ steps.site.outputs.host }}
-        run: ./gradlew --stacktrace --build-cache testDebugUnitTest lintDebug ${{ env.OWN_RUN == 'true' && 'assembleDebug' || '' }}
+          ANDROID_UPLOAD_KEYSTORE: ${{ env.RELEASE == 'true' && secrets.ANDROID_UPLOAD_KEYSTORE || '' }}
+          ANDROID_UPLOAD_PASSWORD: ${{ env.RELEASE == 'true' && secrets.ANDROID_UPLOAD_PASSWORD || '' }}
+        run: scripts/ci/android_build.sh
       - if: env.OWN_RUN == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: wingtip-native-debug-apk
           path: apps/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
+      - if: env.RELEASE == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: wingtip-native-release
+          path: |
+            apps/android/app/build/outputs/bundle/release/*.aab
+            apps/android/app/build/outputs/mapping/release/mapping.txt
+          retention-days: 90
       - name: The lint report, on failure
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
@@ -126,6 +128,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78  # v6.2.0
         with:
           distribution: temurin

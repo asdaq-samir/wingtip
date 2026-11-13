@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_weather::forecast::calls::call",
-  "description": "The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (AC 00-45H).",
+  "description": "The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (FAA-H-8083-28B 26.3.1.1); and each hazard's short label on the map's outline, as AWC's map labels it (SfcWind, IFR, Mtn Obsc, Turb, LLWS, Ice).",
   "type": "object",
   "properties": {
     "input": {
@@ -18,12 +18,19 @@
             "type": "string"
           }
         },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
         "snapshot_s": {
           "type": "number"
         }
       },
       "required": [
         "hazards",
+        "labels",
         "snapshot_s"
       ]
     }

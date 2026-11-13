@@ -6,6 +6,8 @@ from __future__ import annotations
 import threading
 import time
 
+from ..units import NM_PER_DEG_LAT
+
 HEADERS = {"User-Agent": "wingtip-maps/0.1 (VFR flight planner; traffic for pilots' situational awareness)"}
 
 #: A position older than this is left out: the airplane is somewhere else.
@@ -13,7 +15,7 @@ STALE_S = 30.0
 #: How long one request may take.
 TIMEOUT_S = 5.0
 
-_NM_PER_DEG = 60.0
+_NM_PER_DEG = NM_PER_DEG_LAT
 
 # Monotonic clock and sleep, through the module so the tests can stand in.
 _clock = time.monotonic
@@ -38,10 +40,14 @@ def _number(value) -> float | None:
 def _aircraft(entry: dict) -> dict | None:
     """One airplane as the map draws it; None on the ground, without a
     position, or with one too old. Its height the GNSS's where it sends
-    one (`alt_geom`, height above the WGS84 ellipsoid, as a phone's GNSS
-    fix is; about 100 ft from mean sea level over the US, and not the
+    one (`alt_geom`, height above the WGS84 ellipsoid, within about 100 ft
+    of mean sea level over the US, the geoid's undulation; not the
     pressure altitude ATC and TCAS use), else its pressure altitude
-    (`alt_baro`), which `pressure_altitude` says."""
+    (`alt_baro`), which `pressure_altitude` says. Own ship's height is the
+    phone's above mean sea level (iOS CLLocation's `altitude`, Android's
+    MSL altitude), so a pressure altitude is not on its reference: view.py
+    sets one on the nearest METAR's altimeter, and the engine's
+    traffic_marks widens its near band for one left as sent."""
     lat, lon = _number(entry.get("lat")), _number(entry.get("lon"))
     seen = _number(entry.get("seen_pos"))
     if lat is None or lon is None or entry.get("alt_baro") == "ground" or (seen is not None and seen > STALE_S):

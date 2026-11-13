@@ -32,14 +32,25 @@ enum SheetPage: Hashable {
     case flown(Int, String)
     /// The assistant, with the question the search sent where there is one.
     case ask(String?)
-    /// The map's own settings: its layers, weather and alerts (the Map
-    /// button's card, as Maps' Choose Map card).
+    /// The Map card, the map's own button's: what is on the map (as Maps'
+    /// Choose Map card).
     case mapSettings
+    /// The app's Settings, pushed from You's gear or the Map card's, at its
+    /// Map group from the Map card's (docs/design/rules.md §8).
+    case settings(atMap: Bool)
+    /// An approach plate on the map, by its key ("KOSH:I36"): its card's
+    /// Hide Plate, View Full Screen and how the page is drawn (PlateCard).
+    case plate(String)
     /// The clearance heard or typed into the route.
     case clearance
-    /// The first launch's welcome, a flight another pilot sent, and the
-    /// flight just ended to log: each a card of its own.
-    case welcome, sharedFlight, flightLogged
+    /// A flight another pilot sent, and the flight just ended to log:
+    /// each a card of its own.
+    case sharedFlight, flightLogged
+    /// The emergency assistant: a card like every other (the owner,
+    /// 2026-11-13: "For phones, just do it natively, but stay
+    /// consistent"), the one that opens at full height. Opened by its
+    /// model (Emergency.open, CardTriggers), never kept by a scene.
+    case emergency
 
     /// The field or point whose card this is, for the map's ring.
     var airportRoute: String? {
@@ -55,27 +66,24 @@ enum SheetPage: Hashable {
         switch self {
         case .airport(let text): RootLayout.inspects(AirportRoute(text))
         case .screen(let screen): [.brief, .profile, .flights].contains(screen)
-        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .clearance, .welcome, .sharedFlight, .flightLogged: true
-        case .flight, .notams, .practice, .training, .instructing, .contact: false
+        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency: true
+        case .flight, .notams, .practice, .training, .instructing, .contact, .settings: false
         }
     }
 
-    /// Opened full height: a page to read or work in. A thing opens half
-    /// way, the map in sight above it, as Maps opens a place.
-    var opensFull: Bool {
-        switch self {
-        case .screen(let screen): ![.nearest, .favorites].contains(screen)
-        case .flight, .notams, .practice, .training, .instructing, .contact, .ask, .clearance: true
-        case .airport, .leg, .traffic, .tail, .hold, .flown, .mapSettings, .welcome, .sharedFlight, .flightLogged: false
-        }
-    }
+    /// Opened full height: the emergency assistant alone. Every other card
+    /// opens half way, the map in sight above it, as Maps opens a place,
+    /// and the pilot's drag chooses its size from there (the card rule's
+    /// 2, the owner, 2026-11-11: "I thought stock was to open each card
+    /// medium by default").
+    var opensFull: Bool { self == .emergency }
 
     /// Whether the page brings its own way out (an edit form's Cancel, a
     /// question's Not Now), so the card adds no close of its own: HIG
     /// Sheets puts Cancel where the close would be.
     var ownClose: Bool {
         switch self {
-        case .hold, .clearance, .welcome, .sharedFlight, .flightLogged: true
+        case .hold, .clearance, .sharedFlight, .flightLogged: true
         default: false
         }
     }
@@ -105,10 +113,12 @@ enum SheetPage: Hashable {
         case .flown: "card-flown"
         case .ask: "card-ask"
         case .mapSettings: "card-map"
+        case .settings: "card-settings"
+        case .plate: "card-plate"
         case .clearance: "card-clearance"
-        case .welcome: "card-welcome"
         case .sharedFlight: "card-shared"
         case .flightLogged: "card-logged"
+        case .emergency: "card-emergency"
         }
     }
 
@@ -124,9 +134,11 @@ enum SheetPage: Hashable {
         case .instructing: "+instructing"
         case .contact: "+contact"
         case .mapSettings: "+map"
+        case .settings: "+settings"
+        case .plate(let key): "+plate:" + key
         case .notams(.route): "+notams"
         case .notams(.field(let ident)): "+notams:" + ident
-        case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .welcome, .sharedFlight, .flightLogged: nil
+        case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .sharedFlight, .flightLogged, .emergency: nil
         }
     }
 
@@ -143,9 +155,11 @@ enum SheetPage: Hashable {
         case "+instructing": self = .instructing
         case "+contact": self = .contact
         case "+map": self = .mapSettings
+        case "+settings": self = .settings(atMap: false)
         // Never kept (stored is nil), but opened by the UI tests' `-card`.
         case "+clearance": self = .clearance
         case "+notams": self = .notams(.route)
+        case let text where text.hasPrefix("+plate:") && PlateKey.parts(String(text.dropFirst(7))) != nil: self = .plate(String(text.dropFirst(7)))
         case let text where text.hasPrefix("+notams:") && text.count > 8: self = .notams(.field(String(text.dropFirst(8))))
         default:
             guard let screen = Screen(rawValue: stored), Self.pages(screen) else { return nil }
@@ -164,7 +178,7 @@ enum SheetPage: Hashable {
 
     /// Whether a screen is a page of its own, rather than the plan itself,
     /// the search, Ask (a card by its question), the emergency assistant
-    /// (full screen) or a preview a link carries (a shared flight).
+    /// (a card its model opens) or a preview a link carries (a shared flight).
     static func pages(_ screen: Screen) -> Bool {
         switch screen {
         case .fpl, .airport, .ask, .emergency, .shared: false
@@ -210,13 +224,12 @@ struct SheetPageView: View {
         case .flown(let id, let title): FlownTrackView(flight: id, title: title).id(id)
         case .ask(let question): AskView(first: question)
         case .mapSettings: MapSettingsView()
+        case .settings(let atMap): SettingsView(atMap: atMap)
+        case .plate(let key): PlateCard(key: key).id(key)
         case .clearance: ClearanceSheet()
-        case .welcome:
-            ScrollView { WelcomeView(model: .shared) }
-                .scrollBounceBehavior(.basedOnSize)
-                .toolbar(.hidden, for: .navigationBar)
-        case .sharedFlight: SharedFlightView(model: .shared)
+        case .sharedFlight: SharedFlightView()
         case .flightLogged: FlightLoggedCard()
+        case .emergency: EmergencyCard()
         }
     }
 }
@@ -232,7 +245,7 @@ struct ScreenPage: View {
     var body: some View {
         switch screen {
         case .airplane: AircraftView()
-        case .setup: SetupView()
+        case .setup: YouView()
         case .brief: BriefView()
         case .navlog: NavLogPage()
         case .profile: ProfileCard()
@@ -252,7 +265,7 @@ struct ScreenPage: View {
         case .about: AboutView()
         // Not pages (SheetPage.pages): the plan is the root, the search
         // is the field's, Ask is a card by its question, the emergency
-        // assistant is full screen and a shared flight is its own card.
+        // assistant is its model's card and a shared flight is its own card.
         case .fpl, .airport, .ask, .emergency, .shared: EmptyView()
         }
     }

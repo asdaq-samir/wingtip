@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, settled, sideDrawer, slow } from "./helpers";
+import { frontSheet, grabberTo, settled, slow } from "./helpers";
 import { CARDS, type CardRow, type Check } from "./cardTable";
-import { go, hittable, scrollOf } from "./cardEntries";
+import { contentTop, go, hittable, scrollOf } from "./cardEntries";
 
 /**
  * Scrolling every card, by the one scrolling rule (the owner, 2026-11-10;
@@ -12,10 +12,12 @@ import { go, hittable, scrollOf } from "./cardEntries";
  * last row is still reached; a sideways row slides without moving the
  * sheet; and its place is kept going back to it. A phone's sheet: the
  * desktop's side panel has no detents to drag between. A check a card is
- * excused from says why (cardTable's `not`).
+ * excused from says why (cardTable's `not`). The sheet dragged is the
+ * card's own nested drawer, its own snap point (CardStack), or the map's
+ * sheet for a page of the plan (frontSheet).
  */
 
-const panel = (page: Page) => sideDrawer(page);
+const panel = (page: Page) => frontSheet(page);
 
 async function open(page: Page, row: CardRow) {
   await row.entries[0]!.open(page);
@@ -57,6 +59,24 @@ for (const row of CARDS) {
       await grabberTo(page, "full");
       await scrollOf(page, row.card, "end");
       await expect.poll(() => hittable(page, [`${row.close}-pinned`, row.close]), { timeout: slow(10_000) }).not.toBeNull();
+      // The pinned head at the sheet's content top, nothing of the card's
+      // body in sight over it (the owner's iPhone, 2026-11-10: it sat 40%
+      // down the sheet, the chart tiles scrolling by above it).
+      const pinned = page.getByTestId(row.card).getByTestId("card-head-pinned");
+      if (await pinned.isVisible()) {
+        const head = (await pinned.boundingBox())!;
+        // The card's own drawer's scroller (CardStack), or the sheet's for a page of the plan.
+        const top = await contentTop(page, row.card);
+        expect(Math.abs(head.y - top), "the pinned head's top against the card's content top").toBeLessThanOrEqual(2);
+        const over = await page.evaluate(
+          ([x, y, card]) => {
+            const at = document.elementFromPoint(x, y);
+            return !!at && !!at.closest(`[data-testid="${card}"]`) && !at.closest('[data-testid="card-head-pinned"]');
+          },
+          [head.x + head.width / 2, head.y - 3, row.card] as const,
+        );
+        expect(over, "the card's body in sight over its pinned head").toBe(false);
+      }
     });
 
     test("at half a drag up on its body raises the sheet before the body scrolls", async ({ page }) => {
@@ -64,7 +84,10 @@ for (const row of CARDS) {
       await open(page, row);
       await grabberTo(page, "half");
       const before = await scrollOf(page, row.card);
-      await drag(page, await bodyPoint(page, row), 0, -160);
+      // Past the middle between half (23rem) and all the way up (sheet/insets'
+      // snaps), so where it settles is the drag's and not its speed: 160 was
+      // a fling on a quiet machine and short of the middle on a busy one.
+      await drag(page, await bodyPoint(page, row), 0, -300);
       await expect(panel(page)).toHaveAttribute("data-panel", "full");
       await settled(panel(page));
       // Not scrolled: at the top (0), or with nothing to scroll (-1) -- a body
@@ -77,7 +100,8 @@ for (const row of CARDS) {
       await open(page, row);
       await grabberTo(page, "full");
       await scrollOf(page, row.card, 0);
-      await drag(page, await bodyPoint(page, row), 0, 200);
+      // Past the middle down to half, as above, whatever the drag's speed.
+      await drag(page, await bodyPoint(page, row), 0, 300);
       await expect(panel(page)).not.toHaveAttribute("data-panel", "full");
     });
 
@@ -133,3 +157,81 @@ for (const row of CARDS) {
     });
   });
 }
+
+/**
+ * The airport card opened FROM THE PILL, the path that failed on the
+ * owner's iPhone (2026-11-10): the search row went as the sheet rose, the
+ * head's height was not measured again, and the card's pinned head sat
+ * that far down the sheet with the card scrolling above it. Nothing is
+ * measured now (the head sticky in the sheet's one scroller); this holds
+ * it. At the bottom edge and in the top layout (the preferences' navBar
+ * "top") alike.
+ */
+for (const edge of ["bottom", "top"] as const) {
+  test(`opened from the pill (${edge} layout), scrolled to its end, its pinned head is at the sheet's content top`, async ({ page }) => {
+    test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+    if (edge === "top") {
+      await page.addInitScript(() => {
+        const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":7}');
+        localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, navBar: "top" } }));
+      });
+    }
+    const row = CARDS.find((r) => r.name === "airport")!;
+    const entry = row.entries.find((e) => e.name === "map tap")!;
+    await entry.open(page);
+    await expect(page.getByTestId(row.card)).toBeVisible({ timeout: slow(20_000) });
+    await settled(panel(page));
+    await grabberTo(page, "full");
+    await scrollOf(page, row.card, "end");
+    const pinned = page.getByTestId(row.card).getByTestId("card-head-pinned").first();
+    await expect(pinned).toBeVisible();
+    await expect(async () => {
+      const head = (await pinned.boundingBox())!;
+      expect(Math.abs(head.y - (await contentTop(page, row.card)))).toBeLessThanOrEqual(2);
+    }).toPass({ timeout: slow(5_000) });
+    const head = (await pinned.boundingBox())!;
+    const over = await page.evaluate(
+      ([x, y, card]) => {
+        const at = document.elementFromPoint(x, y);
+        return !!at && !!at.closest(`[data-testid="${card}"]`) && !at.closest('[data-testid="card-head-pinned"]');
+      },
+      [head.x + head.width / 2, head.y - 3, row.card] as const,
+    );
+    expect(over, "the card's body in sight over its pinned head").toBe(false);
+  });
+}
+
+/**
+ * The airport card's tabs with the bar pinned (the owner's recording,
+ * 2026-11-11): Weather scrolled down, a tap on Info opened Info part way
+ * down, at its foot, and a tap on Runways, short, threw the card back to
+ * its top with the bar dropped below the photos. Now a tab not yet seen
+ * opens at its own top under the pinned bar, a short one keeps the bar
+ * where it pinned, and a tab seen before is where it was.
+ */
+test("the airport card's tabs, the bar pinned, open each at its top and keep the bar in place", async ({ page }) => {
+  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  const row = CARDS.find((r) => r.name === "airport")!;
+  await open(page, row);
+  await grabberTo(page, "full");
+  const card = page.getByTestId(row.card);
+  const bar = card.getByRole("tablist");
+  await card.getByTestId("place-tab-weather").click();
+  const { max } = await scrollOf(page, row.card);
+  test.skip(max < 200, "too short to pin the bar at this size");
+  const deep = (await scrollOf(page, row.card, max)).top;
+  const pinnedY = (await bar.boundingBox())!.y;
+  const underBar = async (testId: string) => {
+    const panel = (await card.getByRole("tabpanel").boundingBox())!;
+    const b = (await bar.boundingBox())!;
+    expect(Math.abs(b.y - pinnedY), `the bar stays pinned on ${testId}`).toBeLessThanOrEqual(2);
+    expect(Math.abs(panel.y - (b.y + b.height)), `${testId} opens at its top, under the bar`).toBeLessThanOrEqual(16);
+  };
+  await card.getByTestId("place-tab-radio").click();
+  await expect(async () => underBar("Info")).toPass({ timeout: slow(5_000) });
+  await card.getByTestId("place-tab-runways").click();
+  await expect(async () => underBar("Runways")).toPass({ timeout: slow(5_000) });
+  // Weather, seen before: where it was.
+  await card.getByTestId("place-tab-weather").click();
+  await expect.poll(async () => (await scrollOf(page, row.card)).top, { timeout: slow(5_000) }).toBeGreaterThanOrEqual(deep - 2);
+});

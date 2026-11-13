@@ -3,17 +3,16 @@ package app.wingtipmaps.android.documents
 import app.wingtipmaps.android.MainRule
 import app.wingtipmaps.android.api.generated.LogbookDraft
 import app.wingtipmaps.android.api.generated.LogbookDraftAsk
-import app.wingtipmaps.android.api.generated.assistant.DocumentRead
-import app.wingtipmaps.android.api.generated.assistant.HandbookFigure
-import app.wingtipmaps.android.api.generated.assistant.HandbookRead
 import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
+import app.wingtipmaps.android.documents.model.DocumentRead
+import app.wingtipmaps.android.documents.model.HandbookFigure
+import app.wingtipmaps.android.documents.model.HandbookRead
 import app.wingtipmaps.android.logbook.LogbookSource
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -21,15 +20,12 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import java.time.LocalDate
-import java.util.Base64
 
 /**
  * Add from a Photo against the server's own answers
  * (apps/web/src/lib/fixtures/documentAnswers.json, on the test's
  * classpath, not a copy): each decodes as the app decodes it; the read is
- * reduced to the confirmed items by their keys; the ask is the shape the
- * server takes; a logbook row with no date cannot be confirmed or
+ * reduced to the confirmed items by their keys; a logbook row with no date cannot be confirmed or
  * logged; the flags' tones. No network and no engine.
  */
 class DocumentsTest {
@@ -49,11 +45,11 @@ class DocumentsTest {
         assertEquals("cruise.2", handbook.handbookCheck.profile.cruiseFrom)
         assertTrue(answer("misread").handbookCheck!!.items.any { item -> item.flags.any { it.level == "wrong" } })
         assertEquals(listOf("The bottom row is cut off."), answer("misread").notes)
-        // The engine writes counts as 1.0; the decoder takes them as Ints.
+        // The engine writes counts as numbers; the review makes them whole.
         val logbook = answer("logbook").logbookCheck!!
         assertEquals(3, logbook.rows.size)
-        assertEquals(1, logbook.rows[0].entry.dayLandings)
-        assertEquals(2, logbook.rows[2].entry.approaches)
+        assertEquals(1.0, logbook.rows[0].entry.dayLandings, 0.0)
+        assertEquals(2.0, logbook.rows[2].entry.approaches, 0.0)
         assertEquals(1, answer("logbookWrong").logbookCheck!!.flags.size)
         val clearance = answer("clearance").clearance!!
         assertTrue(clearance.said.startsWith("Cleared to KDLH"))
@@ -118,19 +114,11 @@ class DocumentsTest {
         assertEquals("C172", request.typeDesignator)
         assertNull(form.copy(fuelBurnGph = "").request(emptyMap()))
         val figures = HandbookReview.forGateway(handbook.handbookCheck!!.handbook)
-        assertEquals(handbook.handbookCheck.handbook.cruise!!.size, figures.cruise.size)
+        assertEquals(handbook.handbookCheck.handbook.cruise.size, figures.cruise.size)
     }
 
     @Test
-    fun theAskIsTheServersShape() {
-        val jpeg = ByteArray(300) { it.toByte() }
-        val body = Json.parseToJsonElement(Documents.body(Documents.ask(Documents.Kind.LOGBOOK, jpeg, LocalDate.of(2026, 11, 9)))).jsonObject
-        assertEquals("logbook-page", body.getValue("kind").jsonPrimitive.content)
-        assertEquals("image/jpeg", body.getValue("media_type").jsonPrimitive.content)
-        assertEquals("2026-11-09", body.getValue("today").jsonPrimitive.content)
-        val image = body.getValue("image").jsonPrimitive.content
-        assertFalse(image.contains('\n'))
-        assertTrue(Base64.getDecoder().decode(image).contentEquals(jpeg))
+    fun eachKindIsNamedAsTheReadNamesIt() {
         assertEquals(
             listOf("poh-performance", "weight-balance", "logbook-page", "clearance"),
             Documents.Kind.entries.map { it.wire },
@@ -182,18 +170,9 @@ class DocumentsTest {
 
     @Test
     fun figuresReadAsThePagePrintsThem() {
-        assertEquals("4,000 ft", HandbookReview.figure(HandbookFigure("ft", 4000.0, "Pressure altitude", "cruise.0.altitude_ft", "ft", 4000.0)))
-        assertEquals("65%", HandbookReview.figure(HandbookFigure("%", 65.0, "Power", "cruise.0.power_pct", "%", 65.0)))
-        assertEquals("30 L → 7.93 gal", HandbookReview.figure(HandbookFigure("gal", 7.925, "Usable", "fuel.usable", "L", 30.0)))
-    }
-
-    @Test
-    fun aLargePhotoIsScaledToItsLongEdge() {
-        assertEquals(2000 to 1500, PagePhoto.scaledSize(4000, 3000))
-        assertEquals(1500 to 2000, PagePhoto.scaledSize(3000, 4000))
-        assertEquals(1200 to 900, PagePhoto.scaledSize(1200, 900))
-        assertEquals(4, PagePhoto.sampleSize(8000, 6000))
-        assertEquals(1, PagePhoto.sampleSize(3000, 2000))
+        assertEquals("4,000 ft", HandbookReview.figure(HandbookFigure(path = "cruise.0.altitude_ft", label = "Pressure altitude", value = 4000.0, unit = "ft", appValue = 4000.0, appUnit = "ft")))
+        assertEquals("65%", HandbookReview.figure(HandbookFigure(path = "cruise.0.power_pct", label = "Power", value = 65.0, unit = "%", appValue = 65.0, appUnit = "%")))
+        assertEquals("30 L → 7.93 gal", HandbookReview.figure(HandbookFigure(path = "fuel.usable", label = "Usable", value = 30.0, unit = "L", appValue = 7.925, appUnit = "gal")))
     }
 
     private class Servers : LogbookSource {

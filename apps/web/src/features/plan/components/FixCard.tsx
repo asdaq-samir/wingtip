@@ -5,7 +5,8 @@ import CloseButton from "../../../components/CloseButton";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { SheetCard } from "../../../components/SheetCard";
 import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
+import { NumberField } from "../../../components/ui/number-field";
+import { WHOLE } from "../../../components/ui/numberFormats";
 import { altitudeLines, fixRoles, type BranchFix } from "../../../lib/procedures";
 import { TEXT } from "../../../lib/text";
 import { altFt } from "../../../lib/format";
@@ -70,8 +71,9 @@ function FixCardBody({
   onCross: (fix: string, feet: number | null) => void;
 }) {
   const { fix, own, direct } = open;
-  const [typed, setTyped] = useState(own != null ? String(own) : "");
-  const feet = typed ? Number(typed) : NaN;
+  // As typed (React Aria's NumberField, in the pilot's locale).
+  const [typed, setTyped] = useState<number | null>(own);
+  const feet = typed ?? Number.NaN;
   // A VFR altitude, under Class A's floor (14 CFR 71.33, 91.135), as the
   // planner takes one: the engine's altitude_allowed.
   const valid = Number.isInteger(feet) && callEngine("altitude_allowed", { ft: feet });
@@ -106,15 +108,17 @@ function FixCardBody({
           <ListRow title="Charted" value={charted ? capitalised(charted) : "None"} />
           <ListRow title={<label htmlFor="fix-cross">Cross at</label>}>
             <span className="flex items-center gap-1.5">
-              <Input
+              <NumberField
                 id="fix-cross"
-                value={typed}
-                onChange={(e) => setTyped(e.target.value.replace(/\D/g, "").slice(0, 5))}
-                inputMode="numeric"
+                defaultValue={own}
+                onTyped={setTyped}
+                formatOptions={WHOLE}
+                minValue={0}
+                maxValue={99999}
                 enterKeyHint="done"
-                autoComplete="off"
                 placeholder={own != null ? altFt(own) : "Feet"}
-                className="h-9 w-24 text-right tabular-nums"
+                className="h-9 w-24"
+                inputClassName="text-right"
                 aria-label={`Altitude to cross ${fix.ident} at, feet`}
                 data-testid="fix-card-altitude"
               />

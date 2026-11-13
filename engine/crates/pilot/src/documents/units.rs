@@ -1,9 +1,10 @@
 //! A handbook's units into the app's: knots, feet, pounds, inches,
 //! gallons and gallons an hour, as the airplane's profile and the weight
-//! and balance keep them. The factors are the definitions: the
-//! international foot (0.3048 m), pound (0.45359237 kg) and inch
-//! (25.4 mm); the nautical mile 1,852 m and the statute mile 1,609.344 m;
-//! the US gallon 3.785411784 L (NIST Handbook 44, Appendix C).
+//! and balance keep them. The factors are the definitions, from
+//! wingtip_core::units: the international foot, pound and inch, the
+//! nautical and statute miles and the US gallon.
+
+use wingtip_core::units::{KG_PER_LB, L_PER_GAL, MM_PER_IN, M_PER_FT, M_PER_NM, M_PER_SM};
 
 /// What each figure of the read is in: the unit a page prints it in, or
 /// the app's own.
@@ -46,15 +47,15 @@ impl Units {
 
     pub fn kt(&self, v: f64) -> f64 {
         match self.speed {
-            "mph" => v * 1609.344 / 1852.0,
-            "kmh" => v * 1000.0 / 1852.0,
+            "mph" => v * M_PER_SM / M_PER_NM,
+            "kmh" => v * 1000.0 / M_PER_NM,
             _ => v,
         }
     }
 
     pub fn ft(&self, v: f64) -> f64 {
         if self.distance == "m" {
-            v / 0.3048
+            v / M_PER_FT
         } else {
             v
         }
@@ -62,7 +63,7 @@ impl Units {
 
     pub fn lb(&self, v: f64) -> f64 {
         if self.weight == "kg" {
-            v / 0.45359237
+            v / KG_PER_LB
         } else {
             v
         }
@@ -70,15 +71,15 @@ impl Units {
 
     pub fn inch(&self, v: f64) -> f64 {
         match self.arm {
-            "cm" => v / 2.54,
-            "mm" => v / 25.4,
+            "cm" => v / (MM_PER_IN / 10.0),
+            "mm" => v / MM_PER_IN,
             _ => v,
         }
     }
 
     pub fn gal(&self, v: f64) -> f64 {
         if self.fuel == "l" {
-            v / 3.785411784
+            v / L_PER_GAL
         } else {
             v
         }
@@ -90,7 +91,7 @@ impl Units {
     /// heavier.
     pub fn gph(&self, v: f64) -> f64 {
         match self.burn {
-            "lph" => v / 3.785411784,
+            "lph" => v / L_PER_GAL,
             "pph" => v / AVGAS_LB_PER_GAL,
             _ => v,
         }

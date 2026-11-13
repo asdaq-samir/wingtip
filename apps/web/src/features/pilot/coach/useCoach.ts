@@ -3,17 +3,15 @@
  * logbook, dates and home field as the app already has them, the
  * certificate they hold (a menu, kept on this device), and on their ask
  * the debriefs of their recent flights, the engine's plan through the
- * planner, then the plan in words from the assistant. The plan is the
- * engine's; the words come after it and never hold it up.
+ * planner.
  */
-import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api/client";
 import type { Currency, LogbookEntry, Training } from "../../../lib/api/types";
 import { localDay } from "../../../lib/format";
+import { keptStore } from "../../../lib/storage";
 import { currencyQuery, pilotQuery, trainingQuery } from "../../../lib/queryClient";
 import { coachApi, type CoachAsk, type ProficiencyPlan } from "./coachApi";
-import { useClaudeOn } from "../../../lib/subscription";
 import { recentDebriefs } from "./coachDebriefs";
 
 /** What the pilot holds, as the plan reads it: a student is held to the
@@ -25,16 +23,16 @@ export const CERTIFICATES: { value: Certificate; label: string }[] = [
   { value: "instrument", label: "Instrument Rated" },
 ];
 
+/** The certificate the pilot said they hold, kept on this device in the
+ *  app's persisted store (keptStore: one store for every caller, a refused
+ *  or full storage kept for the visit). */
 const KEY = "wingtip.coach.certificate";
-
-function stored(): Certificate | null {
-  try {
-    const v = window.localStorage.getItem(KEY);
-    return CERTIFICATES.some((c) => c.value === v) ? (v as Certificate) : null;
-  } catch {
-    return null;
-  }
-}
+/** Made once here, named as the hook it is: made inside useCoach, the React
+ *  Compiler took keptStore for a plain call and memoised the store's
+ *  selector hook with it, so a render that reused the memo called one hook
+ *  fewer and React threw (#311) as the plan came in. */
+const useKeptCertificate = keptStore<Certificate | null>(KEY, null);
+const isCertificate = (v: unknown): v is Certificate => CERTIFICATES.some((c) => c.value === v);
 
 /** The certificate a pilot most likely holds, until they say: a student
  *  with endorsements on file, instrument where a check or an approach is
@@ -75,33 +73,15 @@ export function useCoach() {
   const { data: currency } = useQuery(currencyQuery);
   const { data: training } = useQuery(trainingQuery);
   const { data: pilot } = useQuery(pilotQuery);
-  const [chosen, setChosen] = useState<Certificate | null>(stored);
-  const certificate = chosen ?? guessed(entries.data, currency, training);
-  const choose = (c: Certificate) => {
-    setChosen(c);
-    try {
-      window.localStorage.setItem(KEY, c);
-    } catch {
-      /* kept for this visit only */
-    }
-  };
+  const chosen = useKeptCertificate((s) => s.value);
+  const certificate = isCertificate(chosen) ? chosen : guessed(entries.data, currency, training);
+  const choose = (c: Certificate) => useKeptCertificate.setState({ value: c });
 
   const plan = useMutation({
     mutationFn: async (): Promise<ProficiencyPlan> => {
       const debriefs = await recentDebriefs().catch(() => []);
       return coachApi.plan(askOf(entries.data ?? [], currency, training, certificate, pilot?.homeBase ?? null, debriefs, localDay()));
     },
-  });
-  // The words follow the plan they were asked of, and are asked once --
-  // only where Claude is on (lib/subscription): the plan's own lines stand alone.
-  const claude = useClaudeOn();
-  const words = useQuery({
-    queryKey: ["coach-words", plan.data],
-    queryFn: ({ signal }) => coachApi.words(plan.data!, signal),
-    enabled: claude && !!plan.data,
-    staleTime: Infinity,
-    retry: false,
-    meta: { silent: true },
   });
 
   return {
@@ -113,7 +93,5 @@ export function useCoach() {
     making: plan.isPending,
     problem: plan.error,
     plan: plan.data ?? null,
-    words: words.data ?? null,
-    wording: words.isFetching,
   };
 }

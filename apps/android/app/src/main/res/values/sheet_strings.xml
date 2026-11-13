@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The sheet's own words: the first flight's route, Help & About's row
+     that brings the welcome back, and the line under the nav log and the
+     Brief naming whose winds a plan flies (docs/design/android.md). -->
+<resources>
+    <!-- The first flight's route (firstflight/FirstFlightModel), as the web's FirstFlight says it. -->
+    <string name="first_flight_same">%1$s is where you are. Pick somewhere to fly to.</string>
+    <string name="first_flight_unreached">The planner could not be reached</string>
+    <string name="first_flight_again">Show First Flight Again</string>
+    <!-- When a plan was made and the winds aloft it flies (ui/PlannedLine), the web's plannedWords:
+         "Planned 1712Z · AWC winds, 12Z · for use 1400–2100Z". -->
+    <string name="planned_at">Planned %1$s</string>
+    <string name="planned_for_use">for use %1$s–%2$s</string>
+    <string name="planned_winds">winds</string>
+    <string name="planned_winds_modelled">modelled winds (GFS%1$s)</string>
+</resources>

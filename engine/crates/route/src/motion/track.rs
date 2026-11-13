@@ -10,9 +10,8 @@ use crate::json::{self, Value};
 use crate::time::{days_from_civil, days_in_month};
 use crate::xml::{self, Element};
 use wingtip_core::sort::StableSort;
+use wingtip_core::units::FT_PER_M;
 
-/// Feet in a metre (the international foot, 0.3048 m).
-pub const FEET_PER_METRE: f64 = 3.28084;
 /// The most points a track is kept with: a second-by-second log of two
 /// hours is seven thousand.
 pub const KEEP_POINTS: usize = 4000;
@@ -143,7 +142,7 @@ fn elevation(text: Option<String>) -> Option<f64> {
         return None;
     }
     let metres = js_number(&text);
-    metres.is_finite().then_some(metres * FEET_PER_METRE)
+    metres.is_finite().then_some(metres * FT_PER_M)
 }
 
 fn first_text(e: &Element, name: &str) -> Option<String> {
@@ -175,7 +174,7 @@ fn kml(root: &Element) -> Vec<TrackPoint> {
                 t: iso_ms(&when.all_text()).unwrap_or(f64::NAN),
                 lat: figures.get(1).copied().unwrap_or(f64::NAN),
                 lon: figures.first().copied().unwrap_or(f64::NAN),
-                alt_ft: alt.map(|a| a * FEET_PER_METRE),
+                alt_ft: alt.map(|a| a * FT_PER_M),
             });
         }
     }

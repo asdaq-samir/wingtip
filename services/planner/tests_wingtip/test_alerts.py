@@ -5,6 +5,7 @@ special-use areas, TFRs, ground and obstacles stubbed. Own ship is at 42 N
 longitude a mile there. The engine's own cases are the shared fixture
 apps/web/src/lib/fixtures/ahead.json (engine/facade/tests/ahead.rs)."""
 
+import time
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -12,7 +13,8 @@ import pytest
 import requests
 from shapely.geometry import box
 
-from wingtip import airports, airspace, alerts, elevation, faa_data, sua, tfr
+from wingtip import airports, airspace, alerts, elevation, faa_data, sua, tfr, weather_store
+from wingtip.units import M_PER_FT
 
 LAT, LON = 42.0, -88.0
 NOW = datetime(2026, 10, 10, 18, 0, tzinfo=timezone.utc)
@@ -72,8 +74,13 @@ def ahead(monkeypatch):
     }
     monkeypatch.setattr(airspace, "load_controlled_airspace", lambda shp, bbox: world["volumes"])
     monkeypatch.setattr(sua, "areas_in", lambda bbox: world["areas"])
-    monkeypatch.setattr(tfr, "all_tfrs", lambda: world["tfrs"])
-    monkeypatch.setattr(elevation, "ground_m", lambda lat, lon: world["ground_ft"](lat, lon) / 3.28084)
+    # The TFRs as the weather service stores them, read through
+    # tfr.with_shapes: its parsed shapes and its box.
+    monkeypatch.setattr(tfr, "_record", lambda: weather_store.Record(fetched_at=time.time(), until=None, data=world["tfrs"], meta={}))
+    # The terrain tiles are in metres: each test's ground in feet, put in
+    # metres by the exact foot alerts takes back out (wingtip.units), not a
+    # rounded 3.28084 that leaves 800 ft as 799.99997.
+    monkeypatch.setattr(elevation, "ground_m", lambda lat, lon: world["ground_ft"](lat, lon) * M_PER_FT)
     monkeypatch.setattr(faa_data, "ensure_nasr_file", lambda name, cache_dir: "DOF.DAT")
     monkeypatch.setattr(faa_data, "load_obstacles", lambda path, bbox, min_agl_ft=0: world["obstacles"])
     monkeypatch.setattr(
@@ -245,6 +252,21 @@ def test_an_agl_ceiling_is_over_the_ground_under_the_area_and_no_limit_where_unr
     assert [a["name"] for a in ahead(alt=4300.0)["alerts"] if a["kind"] == "special_use"] == ["HIGH MOA"]
 
 
+def test_a_floor_coded_sfc_above_zero_is_over_the_ground_under_the_area(ahead):
+    # Brady Low MOA's piece round Curtis Field as the FAA's special use
+    # airspace data has it (ADDS, 2026-11-12): 1,500 FT SFC "above but not
+    # including" to 6,000 MSL "to but not including", EXCLUSION 1, REMARKS
+    # "EXCLUDES SFC TO 1500 FT AGL". Over 1,800 ft ground it begins at
+    # 3,301 MSL: nothing at 2,500, where reading SFC as MSL alerted.
+    area, geometry = _area("BRADY LOW MOA", "MOA", _east(3, 5), floor=1500.0, floor_ref="SFC", ceiling=6000.0)
+    area.update(floor_desc="ANI", ceiling_desc="TNI", excluded=True)
+    ahead.world["areas"] = [(area, geometry)]
+    ahead.world["ground_ft"] = lambda lat, lon: 1800.0 if lon > LON + 2.0 * MILE else 800.0
+    assert [a for a in ahead(alt=2500.0)["alerts"] if a["kind"] == "special_use"] == []
+    [moa] = [a for a in ahead(alt=4500.0)["alerts"] if a["kind"] == "special_use"]
+    assert (moa["floor_ft"], moa["ceiling_ft"]) == (3301.0, 5999.0)
+
+
 def test_without_an_altitude_the_ground_is_said_not_read(ahead):
     assert ahead(alt=None)["unavailable"] == ["terrain and obstacles, with no GPS altitude"]
 
@@ -280,6 +302,6 @@ def test_what_cannot_be_read_is_said(ahead, monkeypatch):
         raise requests.ConnectionError("no tiles")
 
     monkeypatch.setattr(sua, "areas_in", sua_down)
-    monkeypatch.setattr(tfr, "all_tfrs", tfr_down)
+    monkeypatch.setattr(tfr, "_record", tfr_down)
     monkeypatch.setattr(elevation, "ground_m", no_tiles)
     assert ahead()["unavailable"] == ["special-use airspace", "TFRs", "terrain"]

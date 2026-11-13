@@ -13,8 +13,6 @@ import Observation
 @MainActor
 @Observable
 final class AutoLogbook {
-    static let shared = AutoLogbook()
-
     typealias Draft = APILogbookDraft
 
     /// What the pilot may change of the draft before it is logged.
@@ -46,7 +44,7 @@ final class AutoLogbook {
     /// What was logged, for the sheet's last word.
     private(set) var logged: LogbookEntryRequest?
 
-    init(recorder: FlightRecorder = .shared) {
+    init(recorder: FlightRecorder) {
         self.recorder = recorder
     }
 
@@ -68,11 +66,9 @@ final class AutoLogbook {
                                      points: recorder.points.map { APIDraftTrackPoint(altFt: $0.altFt, lat: $0.lat, lon: $0.lon, t: $0.t) },
                                      utcOffsetMin: Double(TimeZone.current.secondsFromGMT()) / 60)
         do {
-            // The ask's keys as the planner names them, some camel case, so
-            // not through the snake-case encoder.
-            var request = try await Planner.request("POST", "/api/logbook-draft", json: nil, csrf: false)
-            request.httpBody = try JSONEncoder().encode(ask)
-            draft = try Planner.snakeCase.decode(Draft.self, from: try await Planner.data(for: request))
+            // The ask's keys as the planner names them, some camel case,
+            // each carried by the generated type.
+            draft = try await Planner.call { try await $0.draft(body: .json(ask)).ok.body.json }
             draftProblem = nil
             flights = (try? await Gateway.flights()) ?? []
         } catch {

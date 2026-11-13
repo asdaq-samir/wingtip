@@ -15,6 +15,7 @@ import { FINDING_TONE } from "../../../../lib/findings";
 import { planOf, SAVE_FLIGHT, useSaveRequest } from "./saveFlightRequest";
 import type { FlightToSave } from "../../../../lib/briefPlan";
 import { Spinner } from "../../../../components/ui/spinner";
+import { FieldError } from "../../../../components/ui/field";
 
 /**
  * "Save this flight" -- files the nav log Spring Boot already has a
@@ -154,9 +155,9 @@ export function ReviewAskSheet({ flight, onDone }: { flight: FlightToSave; onDon
           initialDay={localDay(flight.depart ? new Date(flight.depart) : new Date())}
         />
         {ask.error && (
-          <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="review-problem">
+          <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="review-problem">
             {ask.error.message}
-          </p>
+          </FieldError>
         )}
       </div>
     </ResponsivePopoverContent>

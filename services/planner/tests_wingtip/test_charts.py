@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import rasterio
+from cachetools import TTLCache
 from PIL import Image
 from rasterio.transform import from_bounds
 from rasterio.warp import transform_bounds
@@ -37,24 +38,13 @@ def test_cycle_arithmetic_from_the_anchor():
     assert charts.cycle_from_anchor(dt.date(2026, 7, 9)) == "07-09-2026"
 
 
-def test_products_page_yields_the_cycle_already_in_effect():
-    """Near a changeover the page links both editions; the next one's
-    files are not there to download until its date."""
-    html = (
-        '<a href="https://aeronav.faa.gov/visual/09-03-2026/sectional-files/Chicago.zip">current</a>'
-        '<a href="https://aeronav.faa.gov/visual/10-29-2026/sectional-files/Chicago.zip">next</a>'
-    )
-    assert charts.cycle_from_products_page(html, dt.date(2026, 9, 20)) == "09-03-2026"
-    assert charts.cycle_from_products_page(html, dt.date(2026, 10, 29)) == "10-29-2026"
-    assert charts.cycle_from_products_page("<p>no charts here</p>", dt.date(2026, 9, 20)) is None
-
-
 def test_current_cycle_never_fetches_when_told_not_to(monkeypatch):
     def boom(*args, **kwargs):
         raise AssertionError("must not touch the network")
 
     monkeypatch.setattr(charts.requests, "get", boom)
-    monkeypatch.setattr(charts, "_cycle_cache", {"value": None, "at": 0.0})
+    monkeypatch.setattr(charts.outside, "get", boom)
+    monkeypatch.setattr(charts, "_cycle_cache", TTLCache(maxsize=1, ttl=60))
     assert charts.current_cycle(dt.date(2026, 9, 20), fetch=False) == "09-03-2026"
 
 

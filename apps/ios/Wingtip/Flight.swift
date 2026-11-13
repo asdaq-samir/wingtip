@@ -28,6 +28,12 @@ enum Flight {
         deg < 0 ? ("W", "west") : ("E", "east")
     }
 
+    /// The great-circle miles between two points, the engine's
+    /// `distance_nm` (WGS 84); thrown where it cannot say, never a guess.
+    static func distanceNm(_ from: CLLocationCoordinate2D, _ to: CLLocationCoordinate2D) throws -> Double {
+        try Engine.distanceNm(lat1: from.latitude, lon1: from.longitude, lat2: to.latitude, lon2: to.longitude)
+    }
+
     /// Where the airplane is along the route, the engine's `route_position`
     /// (motion/along.rs), the very answer Android's ribbon asks: the miles
     /// along the line, to go and off it, whether it is on the route (within

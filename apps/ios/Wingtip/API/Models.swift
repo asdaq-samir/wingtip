@@ -2,12 +2,12 @@ import Foundation
 
 // The planner's answers the app reads (services/planner/openapi.json,
 // app.schemas). Most are generated from the document into
-// Generated/PlannerModels.swift (scripts/build/api-models-apps.sh, the API
+// WingtipAPI/PlannerAPI (scripts/build/api-models-apps.sh, the API
 // prefix), as the web's types are, so a field the planner renames fails
 // the build rather than a screen; the names the app has always used are
 // typealiases of them here, with what the app adds as extensions. Every
-// property is the document's, in camel case through Planner.snakeCase; a
-// field the document marks nullable or leaves out is optional.
+// property is the document's in camel case, its key the document's own;
+// a field the document marks nullable or leaves out is optional.
 //
 // Still by hand: ProcedurePick, which is the app's own. AirportPin and
 // AheadAlert, which the engine also writes from the cycle packs on the
@@ -45,8 +45,8 @@ extension AirportPin {
 /// there, worked out by the planner.
 typealias NearestAirport = APINearestAirport
 
-extension NearestAirport: Identifiable {
-    var id: String { ident }
+extension NearestAirport: @retroactive Identifiable {
+    public var id: String { ident }
 }
 
 /// One airplane the receivers hear, as sent: its transponder's code
@@ -58,8 +58,8 @@ typealias TrafficAnswer = APITraffic
 /// A field found by ident or name.
 typealias AirportSuggestion = APIAirportSuggestion
 
-extension AirportSuggestion: Identifiable {
-    var id: String { ident }
+extension AirportSuggestion: @retroactive Identifiable {
+    public var id: String { ident }
 }
 
 /// A METAR as the planner reads it, with the report as sent; the
@@ -83,7 +83,7 @@ typealias AircraftProfile = APIAircraftProfile
 /// (Candidate): the selected ones are the nav log's fixes.
 typealias Checkpoint = APICandidate
 
-extension Checkpoint: Identifiable {}
+extension Checkpoint: @retroactive Identifiable {}
 
 /// The ground and the airspace under the route's line; an airspace's
 /// `class` (B, C, D) is airspaceClass, the name Swift leaves free.
@@ -91,8 +91,8 @@ typealias RouteProfile = APIRouteProfile
 typealias ProfileGround = APIProfileGround
 typealias ProfileAirspace = APIProfileAirspace
 
-extension ProfileAirspace: Identifiable {
-    var id: String { "\(name)-\(fromNm)" }
+extension ProfileAirspace: @retroactive Identifiable {
+    public var id: String { "\(name)-\(fromNm)" }
 }
 
 /// The briefing for a route: what a flight service briefer says, in the
@@ -109,8 +109,8 @@ typealias Forecast = APIForecast
 typealias ForecastStation = APIForecastStation
 typealias RouteTfr = APIRouteTfr
 
-extension RouteTfr: Identifiable {
-    var id: String { notamId }
+extension RouteTfr: @retroactive Identifiable {
+    public var id: String { notamId }
 }
 
 /// One thing ahead of the airplane (AheadAlert, wingtip.alerts): airspace, a
@@ -119,7 +119,7 @@ extension RouteTfr: Identifiable {
 /// next minute. The planner's judgment; the app says it.
 typealias AheadAlert = APIAheadAlert
 
-extension AheadAlert: Identifiable {}
+extension AheadAlert: @retroactive Identifiable {}
 
 /// The ways to fly a route, as Maps offers its routes (RouteOptions,
 /// wingtip.route_options): the direct line and the ways round what it meets
@@ -135,12 +135,12 @@ typealias RouteOption = APIRouteOption
 typealias RouteChip = APIRouteChip
 typealias RouteHazard = APIRouteHazard
 
-extension RouteOption: Identifiable {
-    var id: String { kind + ":" + stops.joined(separator: ",") }
+extension RouteOption: @retroactive Identifiable {
+    public var id: String { kind + ":" + stops.joined(separator: ",") }
 }
 
-extension RouteChip: Identifiable {
-    var id: String { key + ":" + stops.joined(separator: ",") }
+extension RouteChip: @retroactive Identifiable {
+    public var id: String { key + ":" + stops.joined(separator: ",") }
 }
 
 /// A field's instrument procedures from the FAA's CIFP (wingtip.procedures):
@@ -149,7 +149,7 @@ extension RouteChip: Identifiable {
 typealias ProcedureList = APIProcedureList
 typealias ProcedureSummary = APIProcedureSummary
 
-extension ProcedureSummary: Identifiable {}
+extension ProcedureSummary: @retroactive Identifiable {}
 
 /// A procedure picked for a field of the route, as the planner takes it
 /// (web lib/procedures proceduresParam): `ident:id[:transition]`.

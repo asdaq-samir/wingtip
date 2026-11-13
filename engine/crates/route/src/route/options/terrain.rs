@@ -31,8 +31,8 @@ use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use wingtip_core::grid::{Cell, Point};
 
-/// How far round the route the grid reaches, degrees.
-pub const REACH_DEG: f64 = 5.0;
+/// How far round the route the grid reaches, nm every way (5 degrees of latitude).
+pub const REACH_NM: f64 = 300.0;
 /// The fields near the way round that may be flown by, nm from it.
 pub const FIELD_NM: f64 = 40.0;
 /// The longest leg between two of them looked at, nm: none in effect --
@@ -53,10 +53,10 @@ pub struct Frame {
 }
 
 pub fn frame(start: Point, end: Point) -> Frame {
-    let lat0 = start.0.min(end.0) - REACH_DEG;
-    let lon0 = start.1.min(end.1) - REACH_DEG;
-    let rows = ((start.0.max(end.0) + REACH_DEG - lat0) / CELL_DEG).ceil() as usize;
-    let cols = ((start.1.max(end.1) + REACH_DEG - lon0) / CELL_DEG).ceil() as usize;
+    // corridor_bbox as grid::frame, its corner on one earth-wide grid of cells (a ridge's cells whatever the route).
+    let (south, west, north, east) = geo::corridor_bbox(start, end, REACH_NM);
+    let (lat0, lon0) = ((south / CELL_DEG).floor() * CELL_DEG, (west / CELL_DEG).floor() * CELL_DEG);
+    let (rows, cols) = (((north - lat0) / CELL_DEG).ceil() as usize, ((east - lon0) / CELL_DEG).ceil() as usize);
     Frame { lat0, lon0, rows: rows.max(1), cols: cols.max(1) }
 }
 
@@ -323,11 +323,10 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         out.push_str(&format!(",\"per_cell\":{PER_CELL},\"top_ft\":"));
         json::number(&mut out, highest_cruise_ft(r.num(v, "ceiling_ft")?));
         // The fields wanted: those within FIELD_NM of the grid.
-        let pad_lat = FIELD_NM / 60.0;
-        let n = f.lat0 + f.rows as f64 * CELL_DEG;
-        let pad_lon = pad_lat / (f.lat0.abs().max(n.abs()) + pad_lat).min(89.0).to_radians().cos().max(0.1);
+        let (s, w, n, e) =
+            geo::corridor_bbox((f.lat0, f.lon0), (f.lat0 + f.rows as f64 * CELL_DEG, f.lon0 + f.cols as f64 * CELL_DEG), FIELD_NM);
         out.push_str(",\"data_box\":[");
-        for (i, x) in [f.lat0 - pad_lat, f.lon0 - pad_lon, n + pad_lat, f.lon0 + f.cols as f64 * CELL_DEG + pad_lon].iter().enumerate() {
+        for (i, x) in [s, w, n, e].iter().enumerate() {
             if i > 0 {
                 out.push(',');
             }

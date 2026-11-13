@@ -10,7 +10,7 @@ use crate::geo;
 use crate::route::points::frd_ident;
 use wingtip_core::grid::Point;
 use wingtip_core::sort::StableSort;
-use wingtip_core::{time, wmm};
+use wingtip_core::wmm;
 
 /// How far from a turn a fix is looked for to turn at instead, nm, and
 /// how many minutes it may add: the planner's own figures, a fix a pilot
@@ -26,11 +26,7 @@ pub const RADIAL_KINDS: [&str; 4] = ["VORTAC", "VOR/DME", "VOR", "TACAN"];
 
 /// The World Magnetic Model's decimal year of a Unix time.
 pub fn decimal_year(t_s: f64) -> f64 {
-    let day = (t_s / time::DAY_S as f64).floor() as i64;
-    let (year, _, _) = time::civil_from_days(day);
-    let start = time::days_from_civil(year, 1, 1);
-    let of_year = time::days_from_civil(year + 1, 1, 1) - start;
-    wmm::decimal_year(year as i32, (day - start + 1) as u32, of_year as u32)
+    wmm::year_at(t_s)
 }
 
 /// An ident a route can take as a fix's: two to five letters or figures.
@@ -39,11 +35,8 @@ fn fix_like(ident: &str) -> bool {
 }
 
 fn within(fixes: &[Fix], at: Point, nm: f64) -> impl Iterator<Item = &Fix> {
-    let dlat = nm / 60.0;
-    let dlon = nm / (60.0 * at.0.to_radians().cos().max(0.1));
-    fixes
-        .iter()
-        .filter(move |f| f.lat >= at.0 - dlat && f.lat <= at.0 + dlat && f.lon >= at.1 - dlon && f.lon <= at.1 + dlon && fix_like(&f.ident))
+    let (s, w, n, e) = geo::box_around(at.0, at.1, nm);
+    fixes.iter().filter(move |f| f.lat >= s && f.lat <= n && f.lon >= w && f.lon <= e && fix_like(&f.ident))
 }
 
 /// A point named as the pilot's own point (frd_ident) off the nearest fix
@@ -132,6 +125,7 @@ pub fn fix_for_turn<'a>(grid: &Grid, gs: &Vec<f64>, fixes: &'a [Fix], before: Po
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wingtip_core::time;
 
     fn fix(ident: &str, lat: f64, lon: f64, navaid: bool, kind: &str, mag_var: Option<f64>) -> Fix {
         Fix { ident: ident.into(), lat, lon, navaid, vfr: false, kind: kind.into(), mag_var }
@@ -139,12 +133,15 @@ mod tests {
 
     #[test]
     fn a_point_is_named_off_the_nearest_navaid_by_its_radial() {
-        // Due east of a VOR with 0 variation, 30 nm: the 090 radial.
+        // Due east of a VOR with 0 variation, half a degree of longitude on
+        // the WGS-84 equator (a = 6,378,137 m, × 0.5° = 55,660 m = 30.05 nm,
+        // to a tenth 30.1; the sphere before 7fd7fa026 gave 30.0): the 090
+        // radial.
         let vor = fix("ABC", 0.0, 0.0, true, "VOR", Some(0.0));
         let gps = fix("GPSFX", 0.0, 0.45, false, "fix", None);
         let named = frd_near(&[vor, gps], 0.0, 0.5, NEAR_NM, 2026.8).unwrap();
-        assert_eq!(named.ident, "ABC/090/30");
-        assert!(named.radial && named.course_deg == 90 && named.distance_nm == 30.0);
+        assert_eq!(named.ident, "ABC/090/30.1");
+        assert!(named.radial && named.course_deg == 90 && named.distance_nm == 30.1);
         assert!(frd_near(&[], 0.0, 0.5, NEAR_NM, 2026.8).is_none());
     }
 

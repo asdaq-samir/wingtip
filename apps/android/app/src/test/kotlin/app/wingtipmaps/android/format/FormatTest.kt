@@ -109,4 +109,12 @@ class FormatTest {
         assertEquals("15 °C", Format.temperature(15.0))
         assertEquals("−3 °C", Format.temperature(-3.0))
     }
+
+    /** A forecast's ceiling and visibility, as the web's ceilingAndVisibility. */
+    @Test
+    fun ceilingAndVisibility() {
+        assertEquals("1,200 ft · 3 sm", Format.ceilingAndVisibility(1200.0, 3.0))
+        assertEquals("no ceiling · 6 sm", Format.ceilingAndVisibility(null, 6.0))
+        assertEquals("800 ft · —", Format.ceilingAndVisibility(800.0, null))
+    }
 }

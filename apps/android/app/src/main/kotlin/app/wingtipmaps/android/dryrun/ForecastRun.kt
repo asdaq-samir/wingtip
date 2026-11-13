@@ -3,12 +3,12 @@ package app.wingtipmaps.android.dryrun
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import app.wingtipmaps.android.Config
-import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.ForecastRunAsk
+import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.pilot.MinimumsStore
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,8 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
+import javax.inject.Inject
 import app.wingtipmaps.android.api.generated.ForecastRun as RunAnswer
 
 /**
@@ -29,7 +28,8 @@ import app.wingtipmaps.android.api.generated.ForecastRun as RunAnswer
  * on -- and the answer kept, which the strip and the map read at the
  * run's time as it plays (ForecastPlay). A new run is asked again.
  */
-class ForecastRun(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class ForecastRun @Inject constructor(app: Application) : AndroidViewModel(app) {
     data class State(
         val on: Boolean = false,
         val loading: Boolean = false,
@@ -86,9 +86,5 @@ class ForecastRun(app: Application) : AndroidViewModel(app) {
 /** The planner's forecast run (POST /api/forecast/run): public, as the
  *  map's other weather is, and posted as the clearance's places are. */
 object ForecastPlanner {
-    suspend fun run(ask: ForecastRunAsk): RunAnswer {
-        val (body, status) = Gateway.call("POST", Config.plannerPath("/api/forecast/run"), json = Gateway.json.encodeToString(ask))
-        if (status != 200) throw Planner.Failure(status, Planner.detail(body))
-        return Gateway.json.decodeFromString(body)
-    }
+    suspend fun run(ask: ForecastRunAsk): RunAnswer = Planner.writes.forecastDryRun(ask).planned()
 }

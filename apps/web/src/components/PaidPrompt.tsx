@@ -1,39 +1,21 @@
 import { Suspense, lazy, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookOpenCheck, Bot, Gauge, MessageSquareText, Quote, Sparkles } from "lucide-react";
+import { Gauge } from "lucide-react";
 import { cn } from "cn";
 import EmptyState from "./EmptyState";
 import { Button } from "./ui/button";
 import { Spinner } from "./ui/spinner";
 import { api, describeError } from "../lib/api/client";
-import type { PaidFeature } from "../lib/api/types";
 import { PRICE, subscriptionQuery, useEntitlement, useSold } from "../lib/subscription";
 import { TEXT } from "../lib/text";
+import { FieldError } from "./ui/field";
 
 /** Only for a pilot signed out, so not in the planner's first load. */
 const SignInModal = lazy(() => import("./SignInModal"));
 
-const TITLES: Record<PaidFeature, string> = {
-  NARRATIVE: "Written Briefing",
-  CHECKPOINT_NOTES: "Checkpoint Descriptions",
-  ORAL: "Mock Oral",
-  ASSISTANT: "Assistant",
-  WORDS: "Readings in Words",
-  DEBRIEF: "Debrief",
-};
-
-const ICONS: Record<PaidFeature, ReactNode> = {
-  NARRATIVE: <MessageSquareText />,
-  CHECKPOINT_NOTES: <Sparkles />,
-  ORAL: <BookOpenCheck />,
-  ASSISTANT: <Bot />,
-  WORDS: <Quote />,
-  DEBRIEF: <Gauge />,
-};
-
 /**
- * A paid feature's own place, for a pilot without the subscription: what
- * it does, that it comes with the subscription, its price and the free
+ * The paid feature's own place (the debrief), for a pilot without the
+ * subscription: what it does, that it comes with the subscription, its price and the free
  * month, and the way to it -- shown where the feature is, as iOS shows
  * what is not here yet (ContentUnavailableView, EmptyState), never over
  * the planning (the pricing-and-paywall skill). Signed out, the way in is
@@ -43,19 +25,17 @@ const ICONS: Record<PaidFeature, ReactNode> = {
  * pilot has it, or where nobody can sign in (one's own machine).
  */
 export default function PaidPrompt({
-  feature,
-  title,
+  title = "Debrief",
   children,
   className,
 }: {
-  feature: PaidFeature;
-  /** Its heading where it speaks for more than the one feature. */
+  /** Its heading where it speaks for the subscription as a whole. */
   title?: string;
   /** What it does, a sentence. */
   children: ReactNode;
   className?: string;
 }) {
-  const entitlement = useEntitlement(feature);
+  const entitlement = useEntitlement();
   const sold = useSold();
   const queryClient = useQueryClient();
   const start = useMutation({
@@ -69,10 +49,10 @@ export default function PaidPrompt({
   // takes, and no word of a price, a trial or subscribing.
   if (!sold) {
     return (
-      <div data-testid={`paid-prompt-${feature}`} className={className}>
+      <div data-testid="paid-prompt-DEBRIEF" className={className}>
         <EmptyState
-          icon={ICONS[feature]}
-          title={title ?? TITLES[feature]}
+          icon={<Gauge />}
+          title={title}
           action={
             <Suspense fallback={null}>
               <SignInModal />
@@ -96,18 +76,14 @@ export default function PaidPrompt({
         <Button onClick={() => start.mutate()} disabled={start.isPending} data-testid="start-trial">
           {start.isPending && <Spinner />}Start Free Month
         </Button>
-        {start.isError && (
-          <p role="alert" className={cn("text-destructive", TEXT.note)}>
-            {describeError(start.error)}
-          </p>
-        )}
+        {start.isError && <FieldError className={cn("text-destructive", TEXT.note)}>{describeError(start.error)}</FieldError>}
       </div>
     ) : (
       <p className={cn("text-muted-foreground", TEXT.note)}>Subscribing is coming.</p>
     );
   return (
-    <div data-testid={`paid-prompt-${feature}`} className={className}>
-      <EmptyState icon={ICONS[feature]} title={title ?? TITLES[feature]} action={action} className="p-4">
+    <div data-testid="paid-prompt-DEBRIEF" className={className}>
+      <EmptyState icon={<Gauge />} title={title} action={action} className="p-4">
         {children}{" "}
         {trial
           ? `It comes with the subscription, ${PRICE.monthly} or ${PRICE.yearly}, the first month free.`

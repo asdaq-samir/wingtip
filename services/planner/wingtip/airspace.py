@@ -30,12 +30,13 @@ import threading
 from pathlib import Path
 
 import shapefile
-from cachetools import TTLCache
+from cachetools import LRUCache, TTLCache
 from shapely import STRtree, from_wkb, points as shapely_points, to_wkb
 from shapely.geometry import LineString, Point, shape as shapely_shape
 
+from .atomic import atomic_path
 from .engine import ask as engine
-from .faa_data import NASR_INDEX_URL, _is_icloud_evicted, download_and_extract, find_current_cycle_page, find_download_link
+from .faa_data import _is_icloud_evicted, nasr_zip_url, download_and_extract
 
 CONTROLLED_CLASSES = ("B", "C", "D")
 
@@ -100,9 +101,7 @@ def ensure_class_airspace_shapefile(cache_dir) -> Path:
     cache_dir = Path(cache_dir)
     shp_path = cache_dir / "Shape_Files" / "Class_Airspace.shp"
     if not shp_path.exists() or not _shapefile_is_complete(shp_path):
-        cycle_page = find_current_cycle_page(NASR_INDEX_URL)
-        zip_url = find_download_link(cycle_page, r'href="([^"]*class_airspace_shape_files\.zip)"')
-        download_and_extract(zip_url, cache_dir)
+        download_and_extract(nasr_zip_url("Class_Airspace"), cache_dir)
         if not _shapefile_is_complete(shp_path):
             evicted = [shp_path.with_suffix(x).name for x in SHAPEFILE_SUFFIXES if _is_icloud_evicted(shp_path.with_suffix(x))]
             if evicted:
@@ -149,8 +148,10 @@ def _floor_ft_msl(record: dict) -> float:
 # The Class B/C/D polygons, parsed once per process and held in memory:
 # every altitude selection needs them, and walking Class_Airspace.shp --
 # 5,612 PolygonZ records, 394 MB, twelve million vertices -- takes about
-# thirty seconds. Held bbox-independent, so every route shares one parse.
-_ALL_AIRSPACE_CACHE: dict = {}
+# thirty seconds. Held bbox-independent, so every route shares one parse,
+# and one edition at a time: a new cycle's replaces the last in memory
+# rather than sitting beside it.
+_ALL_AIRSPACE_CACHE: LRUCache = LRUCache(maxsize=1)
 _ALL_AIRSPACE_LOCK = threading.Lock()
 
 # The same polygons written beside the shapefile as WKB, so a fresh
@@ -283,15 +284,13 @@ def _write_controlled_cache(shp_path: Path, key: tuple, polygons: list) -> None:
             for p in polygons
         ],
     }
-    part = path.with_suffix(path.suffix + ".part")
     try:
-        with part.open("wb") as f:
+        with atomic_path(path) as part, part.open("wb") as f:
             pickle.dump(payload, f, protocol=pickle.HIGHEST_PROTOCOL)
-        part.replace(path)
     except OSError:
         # A read-only data directory only loses the speed-up, never the
         # answer: the parse just runs again next process.
-        part.unlink(missing_ok=True)
+        pass
 
 
 def preload(faa_cache_dir) -> None:
@@ -303,7 +302,7 @@ def preload(faa_cache_dir) -> None:
     _load_surface_e(shp_path)
 
 
-_SURFACE_E_CACHE: dict = {}
+_SURFACE_E_CACHE: LRUCache = LRUCache(maxsize=1)
 
 
 def _load_surface_e(shp_path) -> list:
@@ -323,7 +322,6 @@ def _load_surface_e(shp_path) -> list:
                 if record[local_type] in SURFACE_E_TYPES:
                     shape = sf.shape(index)
                     areas.append((shapely_shape(shape.__geo_interface__), tuple(shape.bbox)))
-            _SURFACE_E_CACHE.clear()
             _SURFACE_E_CACHE[key] = areas
         return _SURFACE_E_CACHE[key]
 
@@ -354,30 +352,30 @@ def surface_class_at(lat: float, lon: float, shp_path) -> str:
     return surface_classes([(lat, lon)], shp_path)[0]
 
 
+# The surface airspace's indexes, per shapefile (surface_classes).
+_SURFACE_TREES: dict = {}
+
+
 def surface_classes(points: list[tuple[float, float]], shp_path) -> list[str]:
     """surface_class_at for many (lat, lon) points at once -- every field
-    in the map's view, for its mark -- the airspace about them read once
-    and indexed (shapely's STRtree) rather than searched a point at a
-    time."""
+    in the map's view, for its mark -- through indexes (shapely's STRtree)
+    of the B, C and D reaching the ground and the E surface areas, built
+    once a shapefile: a point in a shape is in its box, so the country's
+    find what the shapes round the points did, with no trees made an ask."""
     if not points:
         return []
-    lats, lons = [p[0] for p in points], [p[1] for p in points]
-    margin = 0.01
-    south, west, north, east = min(lats) - margin, min(lons) - margin, max(lats) + margin, max(lons) + margin
-    where = shapely_points(lons, lats)
+    controlled, surface_e = _load_all_controlled_airspace(shp_path), _load_surface_e(shp_path)
+    held = _SURFACE_TREES.get("held")
+    if held is None or held[0] is not controlled or held[1] is not surface_e:
+        reaching = [p for p in controlled if p["floor_ft_msl"] <= 0]
+        trees = (reaching, STRtree([p["geometry"] for p in reaching]), STRtree([g for g, _ in surface_e]))
+        held = _SURFACE_TREES["held"] = (controlled, surface_e, *trees)
+    reaching, tree, e_tree = held[2:]
+    where = shapely_points([p[1] for p in points], [p[0] for p in points])
     found: list[str | None] = [None] * len(points)
-    reaching = [p for p in load_controlled_airspace(shp_path, (south, west, north, east)) if p["floor_ft_msl"] <= 0]
-    if reaching:
-        inside, polygon = STRtree([p["geometry"] for p in reaching]).query(where, predicate="within")
-        for i, j in zip(inside.tolist(), polygon.tolist()):
-            cls = reaching[j]["class"]
-            found[i] = cls if found[i] is None else min(found[i], cls)
-    surface_e = [
-        geometry
-        for geometry, (min_lon, min_lat, max_lon, max_lat) in _load_surface_e(shp_path)
-        if not (max_lat < south or min_lat > north or max_lon < west or min_lon > east)
-    ]
-    in_e = set(STRtree(surface_e).query(where, predicate="within")[0].tolist()) if surface_e else set()
+    for i, j in zip(*(a.tolist() for a in tree.query(where, predicate="within"))):
+        found[i] = reaching[j]["class"] if found[i] is None else min(found[i], reaching[j]["class"])
+    in_e = set(e_tree.query(where, predicate="within")[0].tolist())
     return [cls or ("E" if i in in_e else "G") for i, cls in enumerate(found)]
 
 

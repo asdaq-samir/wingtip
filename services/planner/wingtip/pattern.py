@@ -15,7 +15,7 @@ left.
 The rules -- which way an end is flown, how high, and the pattern's
 corners and legs -- are the shared engine's (wingtip_engine::runway, through
 wingtip_native.call), the very code the web app's map (lib/trafficPattern,
-lib/pattern) and the phones (wt_call) ask; this reads the FAA's files they
+lib/pattern) and the phones (the generated `call`) ask; this reads the FAA's files they
 are fed from and carries the dicts across.
 """
 
@@ -57,13 +57,16 @@ def faa_ids(ident: str) -> list[str]:
 
 
 @once(maxsize=2)
-def _ends_of(path: str, _mtime: float) -> tuple[dict, dict]:
-    """Every airport's runway ends flown with right-hand traffic, and
-    where each of its ends is (NASR's LAT_DECIMAL and LONG_DECIMAL, the
+def _ends_of(path: str, _mtime: float) -> tuple[dict, dict, dict]:
+    """Every airport's runway ends flown with right-hand traffic, where
+    each of its ends is (NASR's LAT_DECIMAL and LONG_DECIMAL, the
     threshold's surveyed position, where the FAA has one: three ends in
-    five), by its FAA identifier."""
+    five), and each end's touchdown zone elevation (TDZ_ELEV, ft MSL to a
+    tenth: the highest in the first 3,000 ft of its landing surface, the
+    Pilot/Controller Glossary), by its FAA identifier."""
     right: dict[str, set[str]] = {}
     at: dict[str, dict[str, tuple[float, float]]] = {}
+    tdz: dict[str, dict[str, float]] = {}
     with open(path, newline="", encoding="utf-8", errors="replace") as f:
         for row in csv.DictReader(f):
             airport, end = row["ARPT_ID"].strip().upper(), end_key(row["RWY_END_ID"])
@@ -73,23 +76,27 @@ def _ends_of(path: str, _mtime: float) -> tuple[dict, dict]:
                 at.setdefault(airport, {})[end] = (float(row.get("LAT_DECIMAL") or ""), float(row.get("LONG_DECIMAL") or ""))
             except (TypeError, ValueError):
                 pass
-    return right, at
+            try:
+                tdz.setdefault(airport, {})[end] = float(row.get("TDZ_ELEV") or "")
+            except (TypeError, ValueError):
+                pass
+    return right, at, tdz
 
 
-def _ends(ident: str, cache_dir) -> tuple[set[str], dict]:
-    """This airport's ends flown with right traffic and where its ends
-    are; none where the file cannot be had -- a card is no reason to
-    fail."""
+def _ends(ident: str, cache_dir) -> tuple[set[str], dict, dict]:
+    """This airport's ends flown with right traffic, where its ends are
+    and their touchdown zones' elevations; none where the file cannot be
+    had -- a card is no reason to fail."""
     try:
         with _LOCK:
             path = faa_data.ensure_nasr_file("APT_RWY_END.csv", cache_dir)
-            right, at = _ends_of(str(path), Path(path).stat().st_mtime)
+            right, at, tdz = _ends_of(str(path), Path(path).stat().st_mtime)
     except (OSError, RuntimeError):
-        return set(), {}
+        return set(), {}, {}
     for faa_id in faa_ids(ident):
         if faa_id in right or faa_id in at:
-            return right.get(faa_id, set()), at.get(faa_id, {})
-    return set(), {}
+            return right.get(faa_id, set()), at.get(faa_id, {}), tdz.get(faa_id, {})
+    return set(), {}, {}
 
 
 def right_traffic_ends(ident: str, cache_dir=FAA_CACHE_DIR) -> set[str]:
@@ -104,6 +111,13 @@ def end_positions(ident: str, cache_dir=FAA_CACHE_DIR) -> dict:
     the FAA surveyed them; none where it did not, or the file cannot be
     had."""
     return _ends(ident, cache_dir)[1]
+
+
+def touchdown_zone_ft(ident: str, end: str, cache_dir=FAA_CACHE_DIR) -> float | None:
+    """A runway end's touchdown zone elevation, ft MSL to a tenth, as NASR
+    has it ("36" or "RW36"); None where it has none, or the file cannot be
+    had."""
+    return _ends(ident, cache_dir)[2].get(end_key(end.removeprefix("RW")))
 
 
 def with_traffic(runways: list, ident: str, lat: float, lon: float, cache_dir=FAA_CACHE_DIR) -> list:

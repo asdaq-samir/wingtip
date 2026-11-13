@@ -5,9 +5,9 @@ import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../../components/ResponsivePopover";
 import Segmented from "../../../../components/Segmented";
 import { Button } from "../../../../components/ui/button";
-import { Input } from "../../../../components/ui/input";
+import { NumberField } from "../../../../components/ui/number-field";
 import type { Leg } from "../../../../lib/api/types";
-import { ANSWERS, checks, typedNumber, workingsOf, written, type AnswerKey, type Workings } from "./workings";
+import { ANSWERS, checks, workingsOf, written, type AnswerKey, type Phase, type Workings } from "./workings";
 import { TEXT } from "../../../../lib/text";
 import { FINDING_TONE } from "../../../../lib/findings";
 
@@ -43,7 +43,8 @@ function Worked({ workings }: { workings: Workings }) {
  *  E6B's accuracy (ANSWERS): each marked right, or wrong with the answer. */
 function TryIt({ workings }: { workings: Workings }) {
   const id = useId();
-  const [typed, setTyped] = useState<Partial<Record<AnswerKey, string>>>({});
+  // The figures as typed (React Aria's NumberField, in the pilot's locale).
+  const [typed, setTyped] = useState<Partial<Record<AnswerKey, number | null>>>({});
   const [checked, setChecked] = useState(false);
   return (
     <form
@@ -56,8 +57,7 @@ function TryIt({ workings }: { workings: Workings }) {
     >
       <ListGroup>
         {ANSWERS.map((answer) => {
-          const value = typed[answer.key];
-          const number = typedNumber(value);
+          const number = typed[answer.key] ?? null;
           // Only the figures typed are marked: a student works them one
           // at a time, and the rest are not given away.
           const marked = checked && number !== null && Number.isFinite(number);
@@ -75,7 +75,9 @@ function TryIt({ workings }: { workings: Workings }) {
                   : answer.key === "wca"
                     ? "+ right, − left"
                     : answer.key === "ete" || answer.key === "fuel"
-                      ? "Cruise only"
+                      ? workings.phase === "cruise"
+                        ? "Cruise only"
+                        : `The ${workings.phase}'s`
                       : undefined
               }
               data-testid={`try-${answer.key}`}
@@ -87,14 +89,14 @@ function TryIt({ workings }: { workings: Workings }) {
                   ) : (
                     <X className={cn("size-4", FINDING_TONE.stop)} aria-label="Not right" />
                   ))}
-                <Input
+                <NumberField
                   id={`${id}-${answer.key}`}
-                  inputMode="decimal"
-                  className="h-8 w-20 text-right tabular-nums"
-                  value={value ?? ""}
+                  className="h-8 w-20"
+                  inputClassName="text-right"
+                  value={number}
                   data-testid={`try-${answer.key}-input`}
-                  onChange={(e) => {
-                    setTyped({ ...typed, [answer.key]: e.target.value });
+                  onChange={(v) => {
+                    setTyped({ ...typed, [answer.key]: v });
                     setChecked(false);
                   }}
                 />
@@ -120,8 +122,8 @@ function TryIt({ workings }: { workings: Workings }) {
  * its sum -- or, under Try it, the student's own figures checked against
  * them. A popover from `md` up, a sheet on a phone.
  */
-export default function LegWorkings({ leg }: { leg: Leg }) {
-  const workings = workingsOf(leg);
+export default function LegWorkings({ leg, phase = "cruise" }: { leg: Leg; phase?: Phase }) {
+  const workings = workingsOf(leg, phase);
   const [mode, setMode] = useState("worked");
   if (!workings) return null;
   return (

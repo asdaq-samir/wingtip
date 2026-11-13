@@ -1,22 +1,11 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "react-router";
 import SheetDialog from "../../components/SheetDialog";
 import { ApiError, api } from "../../lib/api/client";
 import { TEXT } from "../../lib/text";
-
-/** The token an emailed sign-in link brought, from the address's
- *  fragment (`#signin=…`), where the link's redirect put it
- *  (MagicLinkController#confirm). */
-function linkToken(): string | null {
-  return new URLSearchParams(window.location.hash.slice(1)).get("signin");
-}
-
-/** Takes the token off the address, so a reload or a shared link does
- *  not ask again. */
-function forgetLink() {
-  const { pathname, search } = window.location;
-  window.history.replaceState(window.history.state, "", pathname + search);
-}
+import { linkAccount } from "./linkAccount";
+import { FieldError } from "../../components/ui/field";
 
 /**
  * The last step of an emailed-link sign-in, in the app's own dialog
@@ -29,21 +18,35 @@ function forgetLink() {
  * Sign in button makes -- the one thing a scanner does not do.
  * Success opens wherever the server sent the browser: the planner, or
  * dev mode for a developer.
+ *
+ * The dialog names the account the link signs in to, masked, before the
+ * pilot presses Sign in (linkAccount): a link to someone else's account,
+ * mailed to the pilot so that what they save lands where the sender reads
+ * it, shows an address that is not theirs (the security audit's L1).
  */
-export default function LinkSignIn() {
-  const [token] = useState(linkToken);
-  const [open, setOpen] = useState(token !== null);
+export default function LinkSignIn({ token }: { token: string }) {
+  // The token taken off the address by the router (React Router's
+  // navigate, replacing), so a reload or a shared link does not ask again:
+  // the query as the browser has it, which nuqs writes without the router.
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [open, setOpen] = useState(true);
+  const account = useQuery({
+    queryKey: ["linkAccount", token],
+    queryFn: () => linkAccount(token),
+    retry: false,
+    staleTime: Infinity,
+    meta: { silent: true },
+  });
   const finish = useMutation({
     mutationFn: (value: string) => api.finishMagicLink(value),
     onSuccess: (landing) => window.location.assign(landing),
     meta: { silent: true },
   });
-  if (token === null) return null;
-
-  const spent = finish.error instanceof ApiError && finish.error.status === 400;
+  const spent = (finish.error instanceof ApiError && finish.error.status === 400) || account.data === null;
   const close = () => {
     setOpen(false);
-    forgetLink();
+    void navigate({ pathname, search: window.location.search }, { replace: true });
   };
 
   return (
@@ -53,15 +56,19 @@ export default function LinkSignIn() {
         if (!next) close();
       }}
       title="Sign in"
-      description="Finish signing in with the link from your email."
-      action={{ label: "Sign in", onClick: () => finish.mutate(token), disabled: finish.isPending || spent }}
+      description={
+        account.data
+          ? `This link signs in to ${account.data}. Sign in only if that is your email address.`
+          : "Finish signing in with the link from your email."
+      }
+      action={{ label: "Sign in", onClick: () => finish.mutate(token), disabled: finish.isPending || spent || account.isPending }}
     >
-      {finish.isError && (
-        <p role="alert" className={`text-destructive ${TEXT.prose}`}>
+      {(finish.isError || spent) && (
+        <FieldError className={`text-destructive ${TEXT.prose}`}>
           {spent
             ? "This link has expired or was already used. Ask for a new one from the pilot console."
             : "Couldn't sign in just now. Try again."}
-        </p>
+        </FieldError>
       )}
     </SheetDialog>
   );

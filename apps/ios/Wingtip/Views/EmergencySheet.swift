@@ -1,12 +1,25 @@
 import MapKit
 import SwiftUI
 
+/// The emergency assistant's card, the airplane's own checklist picked
+/// for it: opened by its model (Emergency.open, CardTriggers) as every
+/// card is, on the card's sheet, the one that opens at full height (the
+/// owner, 2026-11-13: "For phones, just do it natively, but stay
+/// consistent").
+struct EmergencyCard: View {
+    @Environment(Plan.self) private var plan
+
+    var body: some View {
+        EmergencySheet(airplane: LocalChecklists.airplane(of: plan))
+    }
+}
+
 /// The emergency assistant, one screen (the web's EmergencySheet), laid
-/// out as docs/design/ios.md §8 has it: a full-screen cover (HIG
-/// Modality: for an urgent flow, "consider alternatives to sheets"), its
-/// close at the top right, where iOS puts the system's close (the owner's
-/// card rule, 2026-11-10), ending this view alone, the map in its top
-/// third with the line to the field picked and the glide's reach, then on
+/// out as docs/design/ios.md §8 has it: a card at full height with the
+/// card's close at the top right (CardStack; the owner's card rule,
+/// 2026-11-10), putting it away as its model's close does (Navigator's
+/// left), the map in its top third with the line to the field picked
+/// and the glide's reach, then on
 /// a solid ground squawk 7700 and Guard as two large tiles, the best
 /// fields each with its own Direct To, the airplane's own emergency
 /// checklist (or the general guidance, labelled so, with none picked),
@@ -25,7 +38,7 @@ struct EmergencySheet: View {
         _checklist = State(initialValue: ChecklistModel(airplane: airplane, kind: .emergency))
     }
 
-    private var model: Emergency { .shared }
+    @Environment(Emergency.self) private var model
     private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
     /// The airplane's profile for its glide, none with none picked (the
     /// web's useEmergency): never a type assumed. An own airplane of no
@@ -34,40 +47,34 @@ struct EmergencySheet: View {
     private var emergencyAircraft: String? { plan.airplaneChosen ? plan.aircraft : nil }
 
     var body: some View {
-        NavigationStack {
-            GeometryReader { screen in
-                VStack(spacing: 0) {
-                    EmergencyMap(fix: fix, picked: model.picked, ring: model.ranked?.glide?.ring ?? [])
-                        .frame(height: screen.size.height / 3)
-                    List {
-                        if case .success(let call) = mayday { EmergencyCodeTiles(call: call) }
-                        EmergencyFieldsSection(fix: fix, ownShipOff: ownShip.denied) { ident in directTo(ident) }
-                        if let guidance = Emergency.guidance(airplaneChosen: plan.airplaneChosen) {
-                            guidanceSection(guidance)
-                        } else {
-                            checklistSection
-                        }
-                        EmergencyRadioSections(mayday: mayday, phoneIdent: model.picked?.ident, phone: model.pickedPhone)
+        GeometryReader { screen in
+            VStack(spacing: 0) {
+                EmergencyMap(fix: fix, picked: model.picked, ring: model.ranked?.glide?.ring ?? [])
+                    .frame(height: screen.size.height / 3)
+                List {
+                    if case .success(let call) = mayday { EmergencyCodeTiles(call: call) }
+                    EmergencyFieldsSection(fix: fix, ownShipOff: ownShip.denied) { ident in directTo(ident) }
+                    // A Direct To with no connection is not made: said
+                    // here, the field's heading and distance still above.
+                    if let problem = plan.directProblem { Section { ProblemLine(problem) } }
+                    if plan.airplaneChosen {
+                        checklistSection
+                    } else {
+                        guidanceSection(Result { try Emergency.guidance(airplaneChosen: false) ?? [] })
                     }
-                    // Solid grounds read better in a hurry than glass.
-                    .listStyle(.insetGrouped)
-                    .font(.title3)
+                    EmergencyRadioSections(mayday: mayday, phoneIdent: model.picked?.ident, phone: model.pickedPhone)
                 }
+                // Solid grounds read better in a hurry than glass.
+                .listStyle(.insetGrouped)
+                .font(.title3)
             }
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("card-emergency")
-            .navigationTitle("Emergency")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // At the right, where every card's close is: it ends this
-                // view only.
-                ToolbarItem(placement: .topBarTrailing) { CloseButton { model.close() } }
-            }
-            .task(id: fix.map { Emergency.key($0, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio) }) {
-                await model.refresh(fix: fix, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio)
-            }
-            .onChange(of: fix) { _, new in if let new { model.rank(new) } }
         }
+        .navigationTitle("Emergency")
+        .navigationBarTitleDisplayMode(.inline)
+        .task(id: fix.map { Emergency.key($0, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio) }) {
+            await model.refresh(fix: fix, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio)
+        }
+        .onChange(of: fix) { _, new in if let new { model.rank(new) } }
         // One warning as it opens, never again while it is up (HIG Haptics).
         .sensoryFeedback(.warning, trigger: opened)
         // The position, asked for now if it never was: the nearest fields
@@ -90,8 +97,12 @@ struct EmergencySheet: View {
 
     private var sections: [EngineContract.ChecklistSectionsItem] { checklist.checklist.sections }
 
+    /// The engine's pick of the section to open on; a failure is said
+    /// over the checklist, which opens on its first section then.
+    private var sectionFound: Result<Int?, any Error> { Result { try Emergency.section(sections.map(\.title)) } }
+
     private var sectionIndex: Int? {
-        model.sectionPicked ?? Emergency.section(sections.map(\.title)) ?? (sections.isEmpty ? nil : 0)
+        model.sectionPicked ?? (try? sectionFound.get()) ?? (sections.isEmpty ? nil : 0)
     }
 
     private var mayday: Result<Emergency.Mayday, any Error> {
@@ -103,12 +114,14 @@ struct EmergencySheet: View {
     /// 2026-11-09): the engine's emergency_guidance, each item with its
     /// source (AIM 6-1, 6-2, 6-3; FAA-H-8083-3C ch. 18), and the picker for
     /// an airplane -- never an airplane's checklist or figure.
-    @ViewBuilder private func guidanceSection(_ items: [EngineContract.EmergencyGuidanceAnswerItemsItem]) -> some View {
+    @ViewBuilder private func guidanceSection(_ items: Result<[EngineContract.EmergencyGuidanceAnswerItemsItem], any Error>) -> some View {
         // Labelled as general: never an airplane's checklist assumed.
         Section("What to Do · General, No Airplane Picked") {
-            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+            ForEach(Array(((try? items.get()) ?? []).enumerated()), id: \.offset) { _, item in
                 CardRow(title: item.title, detail: "\(item.detail) (\(item.source))")
             }
+            // Where the engine could not give it, said here, never an empty list.
+            ProblemLine(items, "The general guidance")
             PickAirplaneRow(detail: "Its own emergency checklist and glide")
         }
     }
@@ -117,6 +130,9 @@ struct EmergencySheet: View {
     /// as its pilot wrote it), opened at the emergency asked, a menu of
     /// its other sections, each item ticked as it is done. The app writes none.
     @ViewBuilder private var checklistSection: some View {
+        if model.sectionPicked == nil, case .failure = sectionFound {
+            Section { ProblemLine(sectionFound, "The emergency's section") }
+        }
         if let s = sectionIndex, sections.indices.contains(s) {
             Section {
                 ForEach(Array(sections[s].items.enumerated()), id: \.offset) { i, item in
@@ -155,7 +171,7 @@ struct EmergencySheet: View {
 }
 
 #Preview("EmergencySheet") {
-    EmergencySheet(airplane: "N3429J")
+    NavigationStack { EmergencySheet(airplane: "N3429J") }
         .environment(Plan())
         .environment(OwnShip())
         .environment(DryRun())

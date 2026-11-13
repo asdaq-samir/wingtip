@@ -1,19 +1,22 @@
 package app.wingtipmaps.android.briefing
 
 import android.app.Application
-import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.checklist.PreferencesStore
 import app.wingtipmaps.android.strip.StripData
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * The passenger briefing's state for the planned flight: the items
@@ -21,7 +24,8 @@ import kotlinx.coroutines.launch
  * weather now) for the message. The ticks are kept on the phone for the
  * flight (PassengerTicks); a new route starts them afresh.
  */
-class PassengerModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class PassengerModel @Inject constructor(app: Application) : AndroidViewModel(app) {
     data class State(
         val flight: String = "",
         val ticked: Set<String> = emptySet(),
@@ -30,7 +34,7 @@ class PassengerModel(app: Application) : AndroidViewModel(app) {
         /** When the message says the flight leaves: when the briefing was
          *  opened, as this app's plan has no departure time of its own
          *  and leaves at the planner's now (the strip's leaveMs). */
-        val departMs: Long = System.currentTimeMillis(),
+        val departMs: Long = AppClock.nowMs(),
         /** The briefing's items, the engine's; none where it failed. */
         val items: List<PassengerItem> = PassengerBriefing.ITEMS.getOrDefault(emptyList()),
         /** Why there are no items: the engine's words where its
@@ -38,7 +42,7 @@ class PassengerModel(app: Application) : AndroidViewModel(app) {
         val problem: String? = PassengerBriefing.ITEMS.exceptionOrNull()?.let { "The briefing's items could not be had: ${it.message}" },
     )
 
-    private val ticks = PassengerTicks(PreferencesStore(app.getSharedPreferences("passengers", Context.MODE_PRIVATE)))
+    private val ticks = PassengerTicks(PreferencesStore(Kept.of(app, "passengers")))
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()

@@ -9,6 +9,8 @@ import SwiftUI
 /// web app's lib/verdict on the planner), so no judgment is made on the
 /// phone: each finding opens where the Brief says it.
 struct BriefView: View {
+    @Environment(BriefAsk.self) private var briefAsk
+    @Environment(\.appCommand) private var appCommand
     @Environment(Plan.self) private var plan
     @Environment(Verdict.self) private var verdict
     @Environment(Session.self) private var session
@@ -158,7 +160,10 @@ struct BriefView: View {
                             }
                         }
                     }
-                    let stations = briefing.metars.keys.sorted()
+                    // Under IFR, the destination's and the alternate's check
+                    // (91.169), after the forecast, as the web's Brief has it.
+                    AlternateSection(pickAirplane: { appCommand(.open(.airplane)) })
+                    let stations = briefing.metars.additionalProperties.keys.sorted()
                     if !stations.isEmpty {
                         Section("METARs") {
                             KeptAgeLine(kind: .weather, key: ReadyToFly.flightKey(plan))
@@ -166,9 +171,9 @@ struct BriefView: View {
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     HStack {
                                         Text(ident).font(.headline)
-                                        if let category = briefing.metars[ident]??.flightCategory { Text(category).font(.footnote.weight(.semibold)).foregroundStyle(.secondary) }
+                                        if let category = briefing.metars.additionalProperties[ident]??.flightCategory { Text(category).font(.footnote.weight(.semibold)).foregroundStyle(.secondary) }
                                     }
-                                    if let raw = briefing.metars[ident]??.raw {
+                                    if let raw = briefing.metars.additionalProperties[ident]??.raw {
                                         Text(raw).font(.footnote.monospaced()).foregroundStyle(.secondary)
                                     } else {
                                         Text("No report").font(.footnote).foregroundStyle(.secondary)
@@ -206,7 +211,7 @@ struct BriefView: View {
                 }
             }
         }
-        .siriSees(SiriSaw.flight(plan))
+        .appEntityIdentifier(SiriSaw.flight(plan))
         .navigationTitle("Brief")
         .navigationBarMinimizesOnScroll()
         // The flight started from the Brief's foot (its Live Activity).
@@ -235,9 +240,9 @@ struct BriefView: View {
         // The hours to go, asked again as the Go / No-Go's question changes.
         .task(id: "\(verdict.key(for: plan))|\(session.signedIn)") {
             guard session.signedIn, plan.routed else { return }
-            await window.refresh(try? DepartureWindow.ask(verdict.ask(for: plan), airplane: plan.airplaneChosen))
+            await window.refresh(asking: Result { try DepartureWindow.ask(verdict.ask(for: plan), airplane: plan.airplaneChosen) })
             // The hour said to Siri with the ask ("tomorrow at 9"), picked.
-            if let when = BriefAsk.shared.takeDepart() { window.pick(nearest: when) }
+            if let when = briefAsk.takeDepart() { window.pick(nearest: when) }
         }
         // The words for the briefing on the page, written again when it
         // changes; the figures stay as they are while they are written.
@@ -245,12 +250,8 @@ struct BriefView: View {
             guard let briefing = plan.briefing else { weatherWords = nil; return }
             writingWords = true
             defer { writingWords = false }
-            let legs = BriefLegs.query(course: plan.course, checkpoints: plan.checkpoints, legs: plan.legs)
-            let eteMin = plan.totals?.eteMin
-            let figures = WordsFigures.weather(briefing, dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: eteMin)
-            let body = WeatherWordsAsk(dep: plan.dep, dest: plan.dest, eteMin: eteMin, fixes: legs?.fixes ?? "", legMin: legs?.legMin ?? "", stops: plan.stops)
-            guard let ask = try? WordsAsk(kind: .weather, body: body, figures: figures) else { return }
-            let said = await WordsFor().said(ask)
+            let figures = WordsFigures.weather(briefing, dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin)
+            let said = await WordsFor().said(WordsAsk(kind: .weather, figures: figures))
             guard !Task.isCancelled else { return }
             weatherWords = said
         }

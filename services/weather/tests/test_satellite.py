@@ -38,7 +38,7 @@ def test_each_pictures_times_are_the_last_three_hours_oldest_first():
 
 
 def test_the_times_are_stored_for_the_planner(monkeypatch):
-    monkeypatch.setattr(satellite.requests, "get", Mock(return_value=Mock(content=CAPABILITIES, raise_for_status=lambda: None)))
+    monkeypatch.setattr(satellite.outside, "get", Mock(return_value=Mock(content=CAPABILITIES, raise_for_status=lambda: None)))
     monkeypatch.setattr(satellite.time, "time", lambda: NOW)
     satellite.fetch()
     record = weather_store.read("satellite")
@@ -46,13 +46,13 @@ def test_the_times_are_stored_for_the_planner(monkeypatch):
 
 
 def test_no_answer_leaves_the_stored_times_and_says_why(monkeypatch):
-    monkeypatch.setattr(satellite.requests, "get", Mock(side_effect=requests.ConnectionError("down")))
+    monkeypatch.setattr(satellite.outside, "get", Mock(side_effect=requests.ConnectionError("down")))
     with pytest.raises(satellite.SatelliteUnavailable, match="nowCOAST did not answer"):
         satellite.fetch()
 
 
 def test_an_answer_with_no_recent_pictures_is_a_failure(monkeypatch):
-    monkeypatch.setattr(satellite.requests, "get", Mock(return_value=Mock(content=CAPABILITIES, raise_for_status=lambda: None)))
+    monkeypatch.setattr(satellite.outside, "get", Mock(return_value=Mock(content=CAPABILITIES, raise_for_status=lambda: None)))
     monkeypatch.setattr(satellite.time, "time", lambda: NOW + 86400)
     with pytest.raises(satellite.SatelliteUnavailable, match="no GOES pictures"):
         satellite.fetch()

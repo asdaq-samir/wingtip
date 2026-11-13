@@ -9,6 +9,7 @@ import SwiftUI
 /// to the profile alone. With no airplane picked, the existing picker (PickAirplaneRow).
 /// Nothing shows where nothing is missing. Its state is AskFigureModel's.
 struct AskFigureRow: View {
+    @Environment(Navigator.self) private var nav
     /// The screen's figures, first missing input first.
     let needs: [AirplaneNeed]
     /// What an airplane would give here, under the picker's title.
@@ -20,11 +21,13 @@ struct AskFigureRow: View {
 
     var body: some View {
         Group {
-            switch model.ask(needs, plan: plan) {
-            case .pick?: PickAirplaneRow(detail: pickDetail)
-            case .figure(let figure)?: ask(figure)
-            case .table(let table)?: tableLink(table)
-            case nil: EmptyView()
+            switch Result(catching: { try model.ask(needs, plan: plan) }) {
+            case .success(.pick?): PickAirplaneRow(detail: pickDetail)
+            case .success(.figure(let figure)?): ask(figure)
+            case .success(.table(let table)?): tableLink(table)
+            case .success(nil): EmptyView()
+            // Said where the ask would be, never read as nothing missing.
+            case .failure(let error): ProblemLine(Result<Void, any Error>.failure(error), "What \(name) lacks")
             }
         }
     }
@@ -50,7 +53,7 @@ struct AskFigureRow: View {
                 .disabled(model.saving || AskFigureModel.number(model.text) == nil)
                 Button("Not Now") { typing = false; model.putOff(figure.rawValue, plan: plan) }
                 if let tail = plan.tail {
-                    Button("Edit \(tail)") { Navigator.shared.push(.tail(ProfileAsk(tail: tail, focus: figure))) }
+                    Button("Edit \(tail)") { nav.push(.tail(ProfileAsk(tail: tail, focus: figure))) }
                 }
             }
             // Each its own tap in the row, the tint's blue; a 44-point area
@@ -67,7 +70,7 @@ struct AskFigureRow: View {
     @ViewBuilder private func tableLink(_ table: String) -> some View {
         let what = table == "loading" ? "loading and envelope" : "\(table) chart"
         if let tail = plan.tail {
-            Button { Navigator.shared.push(.tail(ProfileAsk(tail: tail, focus: nil))) } label: {
+            Button { nav.push(.tail(ProfileAsk(tail: tail, focus: nil))) } label: {
                 CardRow(title: "Add \(tail)'s \(what)", detail: "From its handbook, in its profile") {
                     Image(systemName: "chevron.right").foregroundStyle(.tertiary).accessibilityHidden(true)
                 }

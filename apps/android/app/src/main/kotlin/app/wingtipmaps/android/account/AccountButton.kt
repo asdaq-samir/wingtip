@@ -20,18 +20,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.Pilot
-import app.wingtipmaps.android.navigation.ScreenRequests
-import app.wingtipmaps.android.navigation.generated.Screen
+import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.strip.StripData
+import app.wingtipmaps.android.ui.SheetPage
 
 /**
  * The round account button beside the one search, where Setup was (the
  * owner, 2026-11-09): the pilot's initials in a circle, or a person's
- * glyph signed out. A tap opens Settings by its name (ScreenRequests), with
- * nothing in between (the owner, 2026-11-10: "When tapping the avatar
- * just open the settings"); Settings holds what the menu did -- the
- * account and signing in or out, the Logbook and the Coach, Downloads,
- * the passenger briefing and About (SetupScreen). An IconButton is
+ * glyph signed out. A tap opens You, the pilot's own card (the owner's
+ * three homes, 2026-11-13: You, Settings and the Map card), as a card is
+ * asked for (CardRequests); Settings is the gear on it. An IconButton is
  * Material's 48-dp control, so the hit area is the platform's and nothing
  * is grown for it.
  */
@@ -40,7 +38,7 @@ fun AccountButton(pilot: Pilot?, modifier: Modifier = Modifier, avatar: Dp = Acc
     val initials = StripData.initialsOf(pilot)
     val name = stringResource(R.string.account_and_settings)
     IconButton(
-        onClick = { ScreenRequests.ask(Screen.SETUP) },
+        onClick = { CardRequests.open(SheetPage.You) },
         modifier = modifier.semantics {
             contentDescription = pilot?.let { "${it.displayName}: $name" } ?: name
         },

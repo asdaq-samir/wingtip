@@ -1,22 +1,25 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import type { Marker } from "maplibre-gl";
+import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { TrafficAircraft } from "../../../../lib/api/types";
 import { api } from "../../../../lib/api/client";
-import { M_PER_NM } from "../../../../lib/geo";
-import { prefersReducedMotion } from "../../../../lib/motion";
+import { M_PER_NM, useGeo, type Geo } from "../../../../lib/geo";
 import { clearProblem, raiseProblem } from "../../../../lib/problems";
 import { usePreferences } from "../../../../lib/preferences";
-import { TRAFFIC_COLOURS, trafficIcon } from "../../../../lib/map/marks/icons";
-import { useOwnFix, useOwnShip } from "../../../../lib/map/position/ownShip";
+import { TRAFFIC_COLOURS } from "../../../../lib/map/marks/icons";
+import { CHART } from "../../../../lib/tokens";
+import { useOwnShip } from "../../../../lib/map/position/ownShip";
 import { usePastFlight } from "../pastFlight";
-import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, trafficLabel, trendPx } from "../traffic";
+import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, trafficLabel, trendSeconds } from "../traffic";
 import { trafficCredit } from "../trafficCredit";
 import { reported, useTracking, useTrafficFocus, type Report } from "../../../../lib/map/position/tracking";
-import { useGlMap } from "../../../../lib/map/gl/glLayer";
+import { EMPTY, useGlLayer, useGlMap, useGlTap } from "../../../../lib/map/gl/glLayer";
+import { TAP } from "../../../../lib/map/gl/layers/common";
+import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { useMapCredit } from "../../../../lib/map/gl/creditStore";
 import { appZoomOf, glZoom } from "../../../../lib/map/gl/glStyle";
-import { fadeInMarker, iconMarker, setMarkerIcon } from "../../../../lib/map/gl/htmlMarker";
+import { useTerrainView } from "../terrain/useTerrainView";
+import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "./trafficMarks";
 import { PastFlightGl, TrackedPathGl } from "./TracksGl";
 
 /** Asked every five seconds, each airplane carried on
@@ -31,24 +34,29 @@ const HEIGHT_ZOOM = 9;
 const CALLSIGN_ZOOM = 10;
 const PROBLEM = "traffic";
 const STALE_MS = 30_000;
-const ADD_PER_STEP = 40;
+const POINTS = "traffic";
+const TRENDS = "traffic-trends";
+const IDS = { marks: "traffic-marks", tags: "traffic-tags", trends: "traffic-trend-lines" };
+const SOURCES = { [POINTS]: { type: "geojson" as const, data: EMPTY }, [TRENDS]: { type: "geojson" as const, data: EMPTY } };
+const LAYERS = trafficLayers(IDS, { points: POINTS, trends: TRENDS });
 
 interface Target {
-  marker: Marker;
   plane: TrafficAircraft;
   at: number;
   shift: { lat: number; lon: number; from: number } | null;
-  icon: ReturnType<typeof trafficIcon> | null;
-  drawn: boolean;
+  /** Where it is drawn now, carried on (null until it is first drawn). */
+  pos: { lat: number; lon: number } | null;
+  /** How it looks, from its report, own ship's height and the map's zoom. */
+  look: { near: boolean; tracked: boolean; dim: boolean; label: string; callsign: string; trendS: number } | null;
 }
 
 /**
  * The airplanes ADS-B receivers hear about the map, drawn
  * bold as the thing on the map that moves most: each the app's own
- * traffic mark (icons.ts trafficIcon) as a MapLibre marker, which the map
- * places in the frame it draws the chart. A tap tracks one (tracking's
- * pick); a tracked airplane's path and a past flight with its replay are
- * drawn under it.
+ * traffic mark in MapLibre's own symbol layers (trafficMarks), the ones
+ * the 3D view stands at their heights. A tap tracks one (tracking's
+ * pick, in the map's one tap); a tracked airplane's path and a past
+ * flight with its replay are drawn under it.
  */
 export function TrafficGl() {
   const on = usePreferences((s) => s.traffic);
@@ -56,10 +64,12 @@ export function TrafficGl() {
   const hex = useTracking((s) => s.hex);
   const past = usePastFlight((s) => (s.hex === hex ? s.id : null));
   const focused = useTrafficFocus((s) => s.on);
+  // Carried on along their tracks by the engine (lib/geo): drawn once it is there.
+  const geo = useGeo();
   if (!on && !tracking && !focused) return null;
   return (
     <>
-      <Traffic />
+      {geo && <Traffic geo={geo} />}
       {hex && past === null && <TrackedPathGl key={hex} hex={hex} />}
       {hex && past !== null && <PastFlightGl key={`${hex}-${past}`} hex={hex} id={past} />}
     </>
@@ -67,14 +77,18 @@ export function TrafficGl() {
 }
 
 function viewOf(map: ReturnType<typeof useGlMap>["map"]) {
-  const c = map.getCenter();
+  // In -180 to 180: past the antimeridian the world's copy's centre is not.
+  const c = map.getCenter().wrap();
   const ne = map.getBounds().getNorthEast();
   return { lat: c.lat, lon: c.lng, radiusNm: Math.min(165, Math.max(10, c.distanceTo(ne) / M_PER_NM)), zoom: appZoomOf(map.getZoom()) };
 }
 
-function Traffic() {
+function Traffic({ geo }: { geo: Geo }) {
   const { map } = useGlMap();
-  const fix = useOwnFix();
+  // Own ship's height alone, exact (the 1,000 ft "near own height" rule is
+  // the engine's traffic_marks, read against it as it is, not rounded), so
+  // the traffic is not drawn again at a fix that moved only sideways.
+  const ownFt = useOwnShip((s) => (s.enabled ? (s.fix?.altitudeFt ?? null) : null));
   const hex = useTracking((s) => s.hex);
   const follow = useTracking((s) => s.follow);
   const followed = useTracking((s) => (s.hex && s.follow && s.latest ? s.latest.plane : null));
@@ -107,13 +121,33 @@ function Traffic() {
   useEffect(() => () => clearProblem(PROBLEM), []);
 
   const targets = useRef(new Map<string, Target>());
+  useGlLayer("top", SOURCES, LAYERS);
   useEffect(() => {
-    const drawn = targets.current;
-    return () => {
-      for (const t of drawn.values()) t.marker.remove();
-      drawn.clear();
-    };
+    addTrafficPictures(map);
   }, [map]);
+  // Hidden while the 3D view stands the traffic at its heights
+  // (terrain/TrafficAloftGl), not drawn twice; still asked for here, as
+  // the 3D view's airplanes are this one's reports (tracking's seen).
+  const raised = useTerrainView().mode === "3d";
+  useEffect(() => {
+    for (const id of Object.values(IDS)) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", raised ? "none" : "visible");
+  }, [map, raised]);
+  // A tap on one tracks it, in the map's one tap: within 22 points of its
+  // middle, the 44-point target every mark has.
+  useGlTap([IDS.marks], TAP.mark, TAP.rank.mark, (feature) => {
+    const tapped = String(feature.properties.hex);
+    const { pick, seen } = useTracking.getState();
+    pick?.(tapped, seen.find((r) => r.plane.hex === tapped)?.plane);
+  });
+  // Where each is, for the browser tests (useGlProbe).
+  useGlProbe("traffic-marks", [IDS.marks], (f) => ({
+    hex: f.properties.hex,
+    track: f.properties.track,
+    tracked: f.properties.tracked,
+    label: f.properties.label,
+    callsign: f.properties.callsign,
+  }));
+  useGlProbe("traffic-trends", [IDS.trends], (f) => ({ colour: f.properties.colour }));
 
   const [answer, setAnswer] = useState<{ data: NonNullable<typeof data>; at: number } | null>(null);
   if (data && !isPlaceholderData && answer?.at !== dataUpdatedAt) setAnswer({ data, at: dataUpdatedAt });
@@ -122,9 +156,9 @@ function Traffic() {
     if (gone) raiseProblem({ id: PROBLEM, title: "Traffic isn't available right now." });
     else clearProblem(PROBLEM);
   }, [gone]);
-  // Own ship's own transponder, not drawn as traffic over itself.
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- once an answer
-  const own = useMemo(() => (answer ? ownShipHex(agedBy(answer.data.aircraft, answer.data.age_s ?? 0), fix) : null), [answer]);
+  // Own ship's own transponder, not drawn as traffic over itself: its fix
+  // as each answer comes.
+  const own = useMemo(() => (answer ? ownShipHex(agedBy(answer.data.aircraft, answer.data.age_s ?? 0), ownFix()) : null), [answer]);
   const merged = useMemo(
     () =>
       answer
@@ -145,34 +179,22 @@ function Traffic() {
       reported({ plane, at });
       const held = targets.current.get(plane.hex);
       if (!held) {
-        const hexOf = plane.hex;
-        const icon = trafficIcon(plane.track_deg ?? null, TRAFFIC_COLOURS.far, "", null, 0, false);
-        const marker = iconMarker(icon, { interactive: true }).setLngLat([plane.lon, plane.lat]);
-        marker.getElement().addEventListener("click", (e) => {
-          e.stopPropagation();
-          useTracking.getState().pick?.(hexOf, targets.current.get(hexOf)?.plane);
-        });
-        targets.current.set(plane.hex, { marker, plane, at, shift: null, icon: null, drawn: false });
+        targets.current.set(plane.hex, { plane, at, shift: null, pos: null, look: null });
         continue;
       }
       if (at <= held.at) continue;
       const now = Date.now();
-      const was = held.marker.getLngLat();
-      const should = carriedOn(plane, (now - at) / 1000);
-      held.shift = { lat: was.lat - should.lat, lon: was.lng - should.lon, from: now };
+      // Blended over a second from where it is drawn onto where the new
+      // report carries it, not jumped.
+      const should = carriedOn(geo, plane, (now - at) / 1000);
+      held.shift = held.pos ? { lat: held.pos.lat - should.lat, lon: held.pos.lon - should.lon, from: now } : null;
       held.plane = plane;
       held.at = at;
     }
-    for (const [hex, target] of targets.current) {
-      if (!seen.has(hex)) {
-        target.marker.remove();
-        targets.current.delete(hex);
-      }
-    }
+    for (const hex of targets.current.keys()) if (!seen.has(hex)) targets.current.delete(hex);
     useTracking.setState({ seen: reports });
-  }, [merged]);
+  }, [geo, merged]);
 
-  const ownFt = fix?.altitudeFt ?? null;
   const only = useTrafficFocus((s) => (s.on ? s.only : null));
   useEffect(() => {
     const heights = view.zoom >= HEIGHT_ZOOM,
@@ -184,91 +206,138 @@ function Traffic() {
     for (const target of targets.current.values()) {
       const { plane } = target;
       const tracked = plane.hex === hex;
-      const icon = trafficIcon(
-        plane.track_deg ?? null,
-        nearOwnHeight(plane, ownFt) ? TRAFFIC_COLOURS.near : TRAFFIC_COLOURS.far,
-        heights || tracked ? trafficLabel(plane, ownFt) : "",
-        callsigns || tracked ? (plane.callsign ?? plane.registration ?? null) : null,
-        trendPx(plane.speed_kt, plane.lat, view.zoom),
+      target.look = {
+        near: nearOwnHeight(plane, ownFt),
         tracked,
-      );
-      if (icon !== target.icon) {
-        target.icon = icon;
-        setMarkerIcon(target.marker, icon);
-      }
-      const el = target.marker.getElement();
-      el.style.zIndex = tracked ? "2" : "1";
-      el.style.opacity = only && !only.has(plane.hex) && !tracked ? "0.25" : "1";
+        dim: !!only && !only.has(plane.hex) && !tracked,
+        label: heights || tracked ? trafficLabel(plane, ownFt) : "",
+        callsign: callsigns || tracked ? (plane.callsign ?? plane.registration ?? "") : "",
+        trendS: plane.track_deg != null ? trendSeconds(plane.speed_kt, plane.lat, view.zoom) : 0,
+      };
     }
-  }, [merged, ownFt, view.zoom, hex, only]);
+    drawTargets(geo, map, targets.current);
+  }, [geo, map, merged, ownFt, view.zoom, hex, only]);
 
   // The airplane tracked, followed: flown to as its first report comes.
   const heard = useTracking((s) => !!s.hex && s.latest?.plane.hex === s.hex);
   useEffect(() => {
     if (!hex || !follow) return;
-    if (useOwnShip.getState().follow) useOwnShip.getState().setFollow(false);
+    const ownShip = useOwnShip.getState();
+    if (ownShip.follow && ownShip.enabled) ownShip.setFollow(false);
     const latest = useTracking.getState().latest;
     if (!heard || !latest) return;
-    map.flyTo({
-      center: [latest.plane.lon, latest.plane.lat],
-      zoom: Math.max(map.getZoom(), glZoom(9)),
-      duration: prefersReducedMotion() ? 0 : 800,
-    });
+    map.flyTo({ center: [latest.plane.lon, latest.plane.lat], zoom: Math.max(map.getZoom(), glZoom(9)), duration: 800 });
   }, [map, hex, follow, heard]);
 
-  // Each airplane carried on a frame at a time, in sight only, a few
-  // added a step.
+  // The frames stop while the page is hidden (the app put away, the phone
+  // locked) and start again as it is back; the answers stop with them
+  // (TanStack Query's refetchIntervalInBackground, false).
   useEffect(() => {
     let timer = 0;
     const step = () => {
-      timer = window.setTimeout(step, frameMs(appZoomOf(map.getZoom())));
-      if (map.isZooming()) return;
-      const now = Date.now();
-      const { hex: tracked, follow } = useTracking.getState();
-      const b = map.getBounds();
-      const dLat = (b.getNorth() - b.getSouth()) / 4,
-        dLon = (b.getEast() - b.getWest()) / 4;
-      let added = 0;
-      for (const [hex, target] of targets.current) {
-        const age = (now - target.at) / 1000;
-        if (age > CARRY_S) {
-          target.marker.remove();
-          targets.current.delete(hex);
-          continue;
-        }
-        let { lat, lon } = carriedOn(target.plane, age);
-        if (target.shift) {
-          const left = 1 - (now - target.shift.from) / BLEND_MS;
-          if (left <= 0) target.shift = null;
-          else {
-            lat += target.shift.lat * left;
-            lon += target.shift.lon * left;
-          }
-        }
-        const inSight =
-          hex === tracked ||
-          (lat >= b.getSouth() - dLat && lat <= b.getNorth() + dLat && lon >= b.getWest() - dLon && lon <= b.getEast() + dLon);
-        if (!inSight) {
-          if (target.drawn) {
-            target.marker.remove();
-            target.drawn = false;
-          }
-          continue;
-        }
-        if (!target.drawn && (!target.icon || added >= ADD_PER_STEP)) continue;
-        target.marker.setLngLat([lon, lat]);
-        if (!target.drawn) {
-          fadeInMarker(target.marker.addTo(map));
-          target.drawn = true;
-          added += 1;
-        }
-      }
-      const replaying = usePastFlight.getState().hex === tracked;
-      const target = tracked && follow && !replaying ? targets.current.get(tracked) : undefined;
-      if (target) map.jumpTo({ center: target.marker.getLngLat() });
+      timer = document.hidden ? 0 : window.setTimeout(step, frameMs(appZoomOf(map.getZoom())));
+      if (!map.isZooming()) drawTargets(geo, map, targets.current);
+    };
+    const back = () => {
+      if (!document.hidden && !timer) timer = window.setTimeout(step, 0);
     };
     timer = window.setTimeout(step, 0);
-    return () => window.clearTimeout(timer);
-  }, [map]);
+    document.addEventListener("visibilitychange", back);
+    return () => {
+      document.removeEventListener("visibilitychange", back);
+      window.clearTimeout(timer);
+    };
+  }, [geo, map]);
   return null;
+}
+
+/** Each airplane carried on to now, in sight only, and the layers' data
+ *  set again (Traffic's step, a frame at a time, more often closer in);
+ *  those older than CARRY_S let go. */
+function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
+  const now = Date.now();
+  const b = map.getBounds();
+  const dLat = (b.getNorth() - b.getSouth()) / 4,
+    dLon = (b.getEast() - b.getWest()) / 4;
+  const { hex: tracked } = useTracking.getState();
+  const points: GeoJSON.Feature<GeoJSON.Point, TrafficMarkProps>[] = [];
+  const trends: GeoJSON.Feature<GeoJSON.LineString>[] = [];
+  for (const [hex, target] of targets) {
+    const age = (now - target.at) / 1000;
+    if (age > CARRY_S) {
+      targets.delete(hex);
+      continue;
+    }
+    const { plane, look } = target;
+    if (!look) continue;
+    let shift = { lat: 0, lon: 0 };
+    if (target.shift) {
+      const left = 1 - (now - target.shift.from) / BLEND_MS;
+      if (left <= 0) target.shift = null;
+      else shift = { lat: target.shift.lat * left, lon: target.shift.lon * left };
+    }
+    const here = carriedOn(geo, plane, age);
+    const pos = { lat: here.lat + shift.lat, lon: here.lon + shift.lon };
+    target.pos = pos;
+    const inSight =
+      hex === tracked ||
+      (pos.lat >= b.getSouth() - dLat && pos.lat <= b.getNorth() + dLat && pos.lon >= b.getWest() - dLon && pos.lon <= b.getEast() + dLon);
+    if (!inSight) continue;
+    const colour = look.near ? TRAFFIC_COLOURS.near : TRAFFIC_COLOURS.far;
+    points.push({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [pos.lon, pos.lat] },
+      properties: {
+        hex,
+        icon: trafficPicture(look.near, plane.track_deg != null, look.tracked),
+        track: plane.track_deg ?? 0,
+        tracked: look.tracked,
+        dim: look.dim,
+        label: look.label,
+        callsign: look.callsign,
+        ink: look.near ? CHART.trafficNearText : CHART.casing,
+        alt_m: 0,
+      },
+    });
+    if (look.trendS > 0) {
+      const ahead = carriedOn(geo, plane, age + look.trendS);
+      trends.push({
+        type: "Feature",
+        geometry: {
+          type: "LineString",
+          coordinates: [
+            [pos.lon, pos.lat],
+            [ahead.lon + shift.lon, ahead.lat + shift.lat],
+          ],
+        },
+        properties: { colour, dim: look.dim },
+      });
+    }
+  }
+  setIfNew(map, POINTS, points);
+  setIfNew(map, TRENDS, trends);
+  const { follow } = useTracking.getState();
+  const replaying = usePastFlight.getState().hex === tracked;
+  const target = tracked && follow && !replaying ? targets.get(tracked) : undefined;
+  if (target?.pos) map.jumpTo({ center: [target.pos.lon, target.pos.lat] });
+}
+
+/** Own ship's fix while it is on, read once (useOwnFix's, not followed). */
+function ownFix() {
+  const ship = useOwnShip.getState();
+  return ship.enabled ? ship.fix : null;
+}
+
+/** What each source was last sent, as JSON: a frame with nothing moved
+ *  (none in sight, or every one on the ground and still) sends nothing to
+ *  the map's worker, where each setData is indexed again from nothing. By
+ *  the source itself, so one made again (a new style) is sent afresh. */
+const lastSent = new WeakMap<GeoJSONSource, string>();
+function setIfNew(map: MlMap, id: string, features: GeoJSON.Feature[]) {
+  const source = map.getSource<GeoJSONSource>(id);
+  if (!source) return;
+  const json = JSON.stringify(features);
+  if (lastSent.get(source) === json) return;
+  lastSent.set(source, json);
+  source.setData({ type: "FeatureCollection", features });
 }

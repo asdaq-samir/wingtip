@@ -27,15 +27,12 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.engine.Engine
-import app.wingtipmaps.android.engine.generated.EngineContract
-import app.wingtipmaps.android.engine.generated.stripFuel
-import app.wingtipmaps.android.flight.InFlight
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.navigation.ScreenRequests
@@ -50,17 +47,17 @@ import app.wingtipmaps.android.navigation.generated.Screen
  * 91.151, 91.167): a warning, never a limit.
  */
 @Composable
-fun FiguresStrip(state: Plan.State) {
+fun FiguresStrip(state: Plan.State, model: FlightModel = hiltViewModel()) {
     // In the air on the route -- moving, within 3 nm of the line (the
     // engine's `in_flight`, InFlight) -- the figures count down from where
     // the airplane is, as the iPhone's do: what is left to the destination
     // at the groundspeed now, and the fuel still required.
-    val flight by InFlight.shared.state.collectAsStateWithLifecycle()
+    val flight by model.state.collectAsStateWithLifecycle()
     val progress = flight.progress?.takeIf { it.onRoute }
-    val warn = stripFuel(state.totals).getOrNull()?.short?.isNotEmpty() == true
+    val warn = model.stripFuel(state.totals).getOrNull()?.short?.isNotEmpty() == true
     // A failed rule reads "Failed" in the error colour, never as no fuel
     // required (Engine.rule logs the engine's words).
-    val fuel = stripFuel(state.totals, burntGal = progress?.burntGal)
+    val fuel = model.stripFuel(state.totals, burntGal = progress?.burntGal)
     val to = stringResource(R.string.figure_to)
     val dist = stringResource(R.string.figure_dist)
     val ete = stringResource(R.string.figure_ete)
@@ -111,11 +108,6 @@ fun FiguresStrip(state: Plan.State) {
 
 /** One of the strip's figures: its name, as written and as said. */
 private data class StripFigure(val name: String, val value: String, val said: String, val warn: Boolean = false)
-
-/** The strip's fuel from the planner's totals, as the engine works it for
- *  the three apps (`strip_fuel`); a failure where the engine could not. */
-fun stripFuel(totals: NavLogTotals?, burntGal: Double? = null): Result<EngineContract.StripFuelAnswer> =
-    Engine.stripFuel(fuelRequiredGal = totals?.fuelRequiredGal, fuelMarginGal = totals?.fuelMarginGal, burntGal = burntGal)
 
 /** One figure of a strip, its name over it, read as one node: `said` is
  *  what TalkBack says, the name and the figure in words (Spoken); the

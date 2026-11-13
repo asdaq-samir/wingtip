@@ -10,9 +10,11 @@ import {
   openSidebar,
   PAGES,
   settle,
+  settled,
   showTabs,
   sideDrawer,
   slow,
+  frontSheet,
 } from "./helpers";
 import { fromRest } from "./startState";
 
@@ -57,19 +59,32 @@ test.describe("/app/plan", () => {
     await fromRest(page);
     await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
     await expect(firstRow(page)).toBeVisible();
-    await expect(sideDrawer(page).getByTestId("route-type")).toBeHidden();
+    // The route's field is on FPL's page of the sheet's pager, beside
+    // Search's off the screen's edge: out of sight, not out of the page.
+    await expect(sideDrawer(page).getByTestId("route-type")).not.toBeInViewport();
     await expect(sideDrawer(page).getByTestId("flight-line")).toHaveCount(0);
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     await fromRest(page);
     await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
-    // With a route, the one search is still the pill (the one-search
-    // design, 2026-11-09: MapPanel's bar) and the route's figures are pinned
-    // under it (a no-break space between a figure and its unit, so \s).
-    await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
-    await expect(firstRow(page)).toBeVisible();
+    // With a route the sheet opens on FPL, whose pill on a phone is the
+    // route's figures, To, Dist, ETE and Fuel (the owner, 2026-11-11, the
+    // canvas's b; the pill's one fixed height, sheet/insets), the route's
+    // row from half up; in the side panel they are pinned under the one
+    // search. A no-break space between a figure and its unit, so \s.
+    const figures = sideDrawer(page).getByTestId("flight-line");
+    await expect(figures).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
+    if ((page.viewportSize()?.width ?? 0) < 768) {
+      await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeHidden();
+      // The pill no taller for them: the search's own 4.25 rem, on the
+      // screen's foot (no home indicator here; the pages' toggle rides its
+      // top, PageToggle, with no bar under it).
+      const pill = await sideDrawer(page).evaluate((el) => el.getBoundingClientRect().top);
+      const rem = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
+      expect((page.viewportSize()?.height ?? 0) - pill).toBeLessThanOrEqual(4.25 * rem + 2);
+    } else await expect(firstRow(page)).toBeVisible();
     await page.getByTestId("sidebar-trigger-button").click();
-    await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+    await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
     // The plan, the sheet's main content with a route.
     await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeVisible();
     await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
@@ -94,8 +109,8 @@ test.describe("/app/plan", () => {
       else expect(Math.abs(grabber.y + grabber.height - (panelBox.y + panelBox.height))).toBeLessThan(2);
     }).toPass({ timeout: 10_000 });
     await page.getByTestId("sidebar-trigger-button").click();
-    await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
-    await expect(sideDrawer(page).getByTestId("sheet-title").getByTestId("account-button")).toBeVisible();
+    await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
+    await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
     await grabberTo(page, "full");
 
     await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -135,7 +150,7 @@ test.describe("/app/plan", () => {
     await openBrief(page);
     await grabberTo(page, "full");
     await page.getByTestId("brief-glance-enroute").click();
-    await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
+    await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
     await expect(page.getByTestId("panel-tab-enroute")).toHaveAttribute("aria-selected", "true");
   });
 });
@@ -256,7 +271,7 @@ test.describe("/app/plan", () => {
     // Taps cycle it: on up from half, then back down to the pill.
     for (const height of ["full", "half", "peek"]) {
       await page.getByTestId("sidebar-trigger-button").click();
-      await expect(sideDrawer(page)).toHaveAttribute("data-panel", height);
+      await expect(frontSheet(page)).toHaveAttribute("data-panel", height);
     }
     await expectDrawerClosed(page);
   });
@@ -271,26 +286,27 @@ for (const path of PAGES) {
     const viewport = page.viewportSize();
     if (!viewport) throw new Error("no viewport configured");
 
-    // The group's own first, not the radio's mic, which from md up stands
-    // over it in the same column (the owner, 2026-11-06).
+    // The group's own first, not the radio's mic, which stands over it in
+    // the same column (the owner, 2026-11-06; on a phone too, 2026-11-13).
     const first = page.locator("[data-map-controls] > div:not([data-map-food]) button").first();
     const firstBox = (await first.boundingBox())!;
     // On the map, flush with its right edge -- the same on both pages: on a
-    // phone at the top right, as Apple Maps on the web has them (the
-    // owner's screenshot, 2026-11-10), at the bottom under a desktop's card.
+    // phone just over the sheet's top, the search's row, riding it as the
+    // 3D and the page toggle do at the left (the owner, 2026-11-11), at the
+    // bottom under a desktop's card.
     expect(viewport.width - (firstBox.x + firstBox.width)).toBeLessThan(20);
     if (viewport.width < 768) {
+      await settled(page.locator("[data-slot=map-panel]"));
       const sheet = (await page.locator("[data-slot=map-panel]").boundingBox())!;
       const group = (await page.locator("[data-map-controls]").boundingBox())!;
-      expect(group.y + group.height).toBeLessThanOrEqual(sheet.y);
-      expect(group.y).toBeLessThan(80);
+      expect(Math.round(sheet.y - (group.y + group.height))).toBe(24);
     } else {
       expect(firstBox.y).toBeGreaterThan(viewport.height / 2);
-      // The mic a button of its own right over the group, at the same edge.
-      const mic = (await page.locator("[data-map-controls] [data-map-food]").boundingBox())!;
-      expect(mic.y + mic.height).toBeLessThanOrEqual(firstBox.y);
-      expect(viewport.width - (mic.x + mic.width)).toBeLessThan(20);
     }
+    // The mic a button of its own right over the group, at the same edge.
+    const mic = (await page.locator("[data-map-controls]").getByTestId("mic-circle").boundingBox())!;
+    expect(mic.y + mic.height).toBeLessThanOrEqual(firstBox.y);
+    expect(viewport.width - (mic.x + mic.width)).toBeLessThan(20);
     // Never among the map's buttons, on either page: their first is the
     // map's own, its card the map's settings in the sheet (a desktop's side
     // panel too), as Apple Maps' Choose Map card is (the owner, 2026-11-10).

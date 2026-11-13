@@ -2,9 +2,10 @@ import { useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { Button } from "../../../../../components/ui/button";
+import { Toggle } from "@base-ui/react/toggle";
 import { Slider } from "../../../../../components/ui/slider";
 import Segmented from "../../../../../components/Segmented";
-import type { AltitudeChoice, Detour, Leg, NavLogAltitude } from "../../../../../lib/api/types";
+import type { AltitudeChoice, Detour, Leg, NavLogAltitude, Totals } from "../../../../../lib/api/types";
 import { useAirplaneChosen, type FlightRules } from "../../../../../lib/preferences";
 import { routeProfileQuery } from "../../../../../lib/queryClient";
 import { TEXT } from "../../../../../lib/text";
@@ -27,8 +28,8 @@ const LEVEL_INK: Record<string, string> = { red: "text-destructive-ink", yellow:
  * The Profile card's body, ForeFlight's way (the owner, 2026-11-10): the
  * route from the side (`chart`) with the stock Base UI Slider upright down
  * its left, stepping through the engine's altitudes. Sliding it previews
- * the clearance -- the ground red within 100 ft of the altitude, yellow
- * within 1,000 ft (the engine's profile_clearance) -- and changes nothing
+ * the clearance -- the ground red within 500 ft of the altitude (14 CFR
+ * 91.119(c)), yellow within 1,000 ft (the engine's profile_clearance) -- and changes nothing
  * till Set; in flight, Auto holds the preview at the GPS's altitude. A tap
  * on a waypoint's mark sets the leg from it, Start At or Cross At
  * (LegAltitude). Under the graph, the ground against the altitude, then
@@ -37,6 +38,7 @@ const LEVEL_INK: Record<string, string> = { red: "text-destructive-ink", yellow:
 export function AltitudeProfile({
   nav: navNow,
   legs: legsNow,
+  winds,
   ends,
   chart,
   corner,
@@ -83,6 +85,8 @@ export function AltitudeProfile({
   /** Sets a waypoint's own altitude, Start At or Cross At (useRouteEdits'
    *  setPointAltitude). */
   onLegAltitude?: (ident: string, feet: number, startAt: boolean) => void;
+  /** Whose winds the plan flies (the totals'), for the notes to name. */
+  winds?: Totals["winds"];
 }) {
   const airplane = useAirplaneChosen();
   const route = ends ? [ends.departure.ident, ...(ends.stops ?? []).map((s) => s.ident), ends.destination.ident].join(" ") : "";
@@ -172,16 +176,14 @@ export function AltitudeProfile({
           <div className="flex shrink-0 gap-2">
             {/* In flight: the preview back to the airplane's own altitude. */}
             {vm.flying && (
-              <Button
-                type="button"
-                size="sm"
-                variant={vm.auto ? "default" : "secondary"}
-                aria-pressed={vm.auto}
-                onClick={() => vm.setAuto(!vm.auto)}
-                data-testid="altitude-auto"
+              // Base UI's Toggle: pressed and aria-pressed its own.
+              <Toggle
+                pressed={vm.auto}
+                onPressedChange={vm.setAuto}
+                render={<Button type="button" size="sm" variant={vm.auto ? "default" : "secondary"} data-testid="altitude-auto" />}
               >
                 Auto
-              </Button>
+              </Toggle>
             )}
             <Button type="button" size="sm" disabled={shownAt === flown} onClick={() => vm.fly(shownAt)} data-testid="altitude-set">
               Set
@@ -234,6 +236,7 @@ export function AltitudeProfile({
       <ProfileNotes
         nav={nav}
         legs={legs}
+        winds={winds}
         profile={profile}
         shownAt={shownAt}
         tight={tight}

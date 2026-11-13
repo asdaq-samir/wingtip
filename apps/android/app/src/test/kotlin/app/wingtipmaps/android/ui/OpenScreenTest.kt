@@ -24,10 +24,11 @@ class OpenScreenTest {
     @Test
     fun theTabsScreensOpenWhereTheirContentWent() {
         assertEquals(Where.Plan, OpenScreen.whereOf(Screen.FPL))
-        assertEquals(Where.Plan, OpenScreen.whereOf(Screen.NAVLOG))
         assertEquals(Where.Search, OpenScreen.whereOf(Screen.AIRPORT))
         assertEquals(Where.Page(SheetPage.Airplane()), OpenScreen.whereOf(Screen.AIRPLANE))
         assertEquals(Where.Page(SheetPage.Settings), OpenScreen.whereOf(Screen.SETUP))
+        // Minimums is You's own page now, the three homes of 2026-11-13.
+        assertEquals(Where.Page(SheetPage.Minimums), OpenScreen.whereOf(Screen.MINIMUMS))
     }
 
     @Test
@@ -40,12 +41,15 @@ class OpenScreenTest {
         assertEquals(Where.Page(SheetPage.Brief), OpenScreen.whereOf(Screen.BRIEF))
         assertEquals(Where.Page(SheetPage.Nearest), OpenScreen.whereOf(Screen.NEAREST))
         assertEquals(Where.Page(SheetPage.Ask), OpenScreen.whereOf(Screen.ASK))
+        // The Nav Log a card of its own, not a part of the plan (the card rule's 3).
+        assertEquals(Where.Page(SheetPage.NavLog), OpenScreen.whereOf(Screen.NAVLOG))
     }
 
     @Test
-    fun onlyEmergencyIsFullScreen() {
-        val full = Screen.entries.filter { OpenScreen.whereOf(it) == Where.Emergency }
-        assertEquals(listOf(Screen.EMERGENCY), full)
+    fun emergencyIsACardOnTheStackToo() {
+        // The owner, 2026-11-13: every card on the sheet's stack, Emergency
+        // the one opened at full height (SheetPage.opensFull).
+        assertEquals(Where.Page(SheetPage.Emergency), OpenScreen.whereOf(Screen.EMERGENCY))
     }
 
     @Test

@@ -5,18 +5,21 @@ import numpy as np
 import pytest
 
 from wingtip.geo import (
-    EARTH_RADIUS_NM,
     along_path_nm,
     along_track_distance_nm,
     bearing_deg,
+    box_around,
     cluster_points,
     corridor_bbox,
     cross_track_distance_nm,
     destination_point,
     distance_nm,
+    great_circle_points,
     nearest,
     nearest_neighbour_nm,
     neighbours_within_nm,
+    path_points,
+    shape_distance_nm,
     tile_lat_lon,
     tile_xy,
     track_distances_nm,
@@ -24,10 +27,11 @@ from wingtip.geo import (
 
 
 def test_distance_nm_one_degree_of_longitude_at_equator():
-    # circumference / 360, since a degree of longitude at the equator is
-    # one 360th of the way around the globe
-    expected = 2 * math.pi * EARTH_RADIUS_NM / 360
-    assert distance_nm(0, 0, 0, 1) == pytest.approx(expected, rel=1e-3)
+    # The equator is a geodesic and a circle of WGS-84's semi-major axis,
+    # 6,378,137 m (NGA TR8350.2), so a degree of it is a 360th of that
+    # circle, over 1,852 m to the nautical mile.
+    expected = 2 * math.pi * 6378137.0 / 360 / 1852.0
+    assert distance_nm(0, 0, 0, 1) == pytest.approx(expected, rel=1e-12)
 
 
 def test_distance_nm_same_point_is_zero():
@@ -146,15 +150,16 @@ def test_corridor_bbox_padding():
 
 # --- The library check ---------------------------------------------------
 #
-# wingtip.geo's distances and azimuths are PROJ's, and the two track
-# distances are written there from the standard spherical identities.
-# pygeodesy has its own independent implementation of all four, so it is
-# the oracle they are pinned against. It is a test dependency only
-# (requirements-dev.txt) and ships in no service image.
+# wingtip.geo's distances and azimuths are the engine's WGS-84 geodesic.
+# pygeodesy's ellipsoidalExact is its own pure-Python implementation of
+# Karney's geodesic (GeodesicExact, no PROJ and no geographiclib), so it
+# is the oracle they are pinned against; the cross- and along-track are
+# pinned to pyproj in test_geo_engine.py. It is a test dependency only
+# (requirements-dev-wingtip.txt) and ships in no service image.
 
 
 def _pygeodesy():
-    return pytest.importorskip("pygeodesy.sphericalTrigonometry").LatLon
+    return pytest.importorskip("pygeodesy.ellipsoidalExact").LatLon
 
 
 def _random_cases(n, seed):
@@ -169,10 +174,9 @@ def test_it_matches_an_independent_implementation():
     LatLon = _pygeodesy()
     for start, end, point in _random_cases(300, seed=17):
         a, b, p = LatLon(*start), LatLon(*end), LatLon(*point)
-        assert distance_nm(*start, *end) == pytest.approx(a.distanceTo(b, radius=EARTH_RADIUS_NM), abs=1e-6)
+        assert distance_nm(*start, *end) == pytest.approx(a.distanceTo(b) / 1852.0, abs=1e-6)
         assert bearing_deg(*start, *end) == pytest.approx(a.initialBearingTo(b), abs=1e-6)
-        assert cross_track_distance_nm(*point, start, end) == pytest.approx(p.crossTrackDistanceTo(a, b, radius=EARTH_RADIUS_NM), abs=1e-6)
-        assert along_track_distance_nm(*point, start, end) == pytest.approx(p.alongTrackDistanceTo(a, b, radius=EARTH_RADIUS_NM), abs=1e-6)
+        assert distance_nm(*start, *point) == pytest.approx(a.distanceTo(p) / 1852.0, abs=1e-6)
 
 
 def test_the_array_form_is_the_scalar_form():
@@ -254,6 +258,19 @@ def test_a_known_tile():
     assert (int(x), int(y)) == (737, 1607)
 
 
+def test_a_pole_falls_on_the_grids_edge():
+    # Web Mercator ends at arctan(sinh(pi)) = 85.0511 N and S: a pole, or
+    # anything past the edge, is clamped to the grid's top or bottom row
+    # rather than off it (tan(90) is infinite).
+    for zoom in (0, 10, 20):
+        n = 2**zoom
+        assert tile_xy(90.0, 0.0, zoom)[1] == pytest.approx(0.0, abs=1e-9)
+        assert tile_xy(85.06, 0.0, zoom)[1] == pytest.approx(0.0, abs=1e-9)
+        assert tile_xy(-90.0, 0.0, zoom)[1] == pytest.approx(n, abs=1e-9)
+    ys = tile_xy(np.array([90.0, 0.0, -90.0]), np.array([0.0, 0.0, 0.0]), 1)[1]
+    assert list(ys) == pytest.approx([0.0, 1.0, 2.0], abs=1e-9)
+
+
 def test_tiles_take_arrays_and_give_plain_floats_for_scalars():
     lats, lons = np.array([36.08, 44.0]), np.array([-115.152, -89.0])
     xs, ys = tile_xy(lats, lons, 10)
@@ -274,3 +291,55 @@ def test_nearest_is_the_argmin_of_every_distance_first_on_a_tie():
         lat[:150], lon[:150] = to_lat + rng.normal(0, 0.01, 150), to_lon + rng.normal(0, 0.01, 150)
         every = distance_nm(lat[:, None], lon[:, None], to_lat[None, :], to_lon[None, :])
         assert (nearest(lat, lon, to_lat, to_lon) == np.argmin(every, axis=1)).all()
+
+
+@pytest.mark.parametrize("lat", [0.0, 46.8, 64.8, -33.9])
+def test_the_box_around_a_point_holds_every_point_within_its_radius(lat):
+    """Each point 30 nm off, every way, on the WGS-84 geodesic this module
+    flies: at the equator 30 nm north is 0.5025 degrees, past 30 / 60."""
+    south, west, north, east = box_around(lat, -92.2, 30.0)
+    for bearing in range(0, 360, 15):
+        p_lat, p_lon = destination_point(lat, -92.2, bearing, 30.0)
+        assert south <= p_lat <= north and west <= p_lon <= east, bearing
+
+
+def test_great_circle_points_are_evenly_along_the_course_both_ends_kept():
+    """Every point is on the geodesic from start to end: its distance
+    from the start plus to the end is the whole, and the steps are equal.
+    The vertex of KSEA to KJFK's geodesic is north of both ends."""
+    start, end = (47.45, -122.31), (40.64, -73.78)
+    lats, lons = great_circle_points(start, end, 11)
+    total = distance_nm(*start, *end)
+    assert (lats[0], lons[0], lats[-1], lons[-1]) == pytest.approx((*start, *end))
+    np.testing.assert_allclose(distance_nm(*start, lats, lons) + distance_nm(lats, lons, *end), total, rtol=1e-9)
+    np.testing.assert_allclose(distance_nm(lats[:-1], lons[:-1], lats[1:], lons[1:]), total / 10, rtol=1e-9)
+    assert lats.max() > start[0]
+    same = great_circle_points(start, start, 3)
+    assert same[0].tolist() == [start[0]] * 3 and same[1].tolist() == [start[1]] * 3
+
+
+def test_path_points_follow_each_leg_in_steps_no_longer_than_asked():
+    path = [(42.0, -88.0), (43.0, -88.0), (43.0, -86.0)]
+    lats, lons = path_points(path, 2.0)
+    steps = distance_nm(lats[:-1], lons[:-1], lats[1:], lons[1:])
+    assert steps.max() <= 2.0 + 1e-9
+    assert steps.sum() == pytest.approx(distance_nm(*path[0], *path[1]) + distance_nm(*path[1], *path[2]))
+    assert (43.0, -88.0) in zip(lats.tolist(), lons.tolist())
+
+
+@pytest.mark.parametrize(("lat", "bearing", "nm"), [(49.0, 90.0, 5.0), (25.0, 0.0, 5.0), (40.0, 225.0, 120.0)])
+def test_shape_distance_from_the_centre_is_the_geodesic_distance(lat, bearing, nm):
+    from shapely.geometry import Point
+
+    there = destination_point(lat, -86.0, bearing, nm)
+    assert shape_distance_nm(Point(-86.0, lat), Point(there[1], there[0]), (lat, -86.0)) == pytest.approx(nm, rel=1e-9)
+
+
+def test_shape_distance_away_from_the_centre_is_never_short():
+    """The azimuthal equidistant projection only stretches: two points
+    100 nm from the centre are drawn a little apart, never nearer."""
+    from shapely.geometry import Point
+
+    a, b = destination_point(40.0, -100.0, 0.0, 100.0), destination_point(40.0, -100.0, 10.0, 100.0)
+    drawn = shape_distance_nm(Point(a[1], a[0]), Point(b[1], b[0]), (40.0, -100.0))
+    assert distance_nm(*a, *b) <= drawn <= distance_nm(*a, *b) * 1.001

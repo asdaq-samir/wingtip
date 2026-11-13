@@ -2,7 +2,6 @@ package app.wingtipmaps.gateway.monitoring;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import app.wingtipmaps.gateway.service.SubscriptionService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -10,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Each service by its health answer, each feed by the planner's alerting, the feeds not asked of a planner down. */
 class UptimeWatchTest {
@@ -29,16 +30,13 @@ class UptimeWatchTest {
     }
 
     private static UptimeWatch watch(Fake probe) {
-        return watch(probe, SubscriptionService.ClaudeFeatures.EVERYONE);
-    }
-
-    private static UptimeWatch watch(Fake probe, SubscriptionService.ClaudeFeatures claude) {
         return new UptimeWatch(
                 probe,
                 null,
+                JsonMapper.builder()
+                        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                        .build(),
                 "http://planner:8000/",
-                "http://assistant:8000",
-                claude,
                 "http://weather:8000",
                 8080,
                 Duration.ofMinutes(5));
@@ -64,7 +62,7 @@ class UptimeWatchTest {
         List<Outages.Change> later = watch.check(T0.plusSeconds(300));
         assertThat(later).extracting(Outages.Change::name).containsExactly("weather service");
         assertThat(later.getFirst().detail()).isEqualTo("ConnectException");
-        assertThat(probe.asked).contains("http://assistant:8000/", "http://localhost:8080/actuator/health/readiness");
+        assertThat(probe.asked).contains("http://planner:8000/", "http://localhost:8080/actuator/health/readiness");
     }
 
     @Test
@@ -73,14 +71,5 @@ class UptimeWatchTest {
         probe.answers.put("http://planner:8000/", new HealthProbe.Answer(503, ""));
         watch(probe).check(T0);
         assertThat(probe.asked).doesNotContain("http://planner:8000/api/status/feeds");
-    }
-
-    /** Off, the default, the assistant is not started (docs/decisions/0035),
-     *  so it is not asked after nor missed. */
-    @Test
-    void withTheClaudeFeaturesOffTheAssistantIsNotWatched() {
-        Fake probe = new Fake();
-        watch(probe, SubscriptionService.ClaudeFeatures.OFF).check(Instant.parse("2026-11-10T14:00:00Z"));
-        assertThat(probe.asked).doesNotContain("http://assistant:8000/").contains("http://planner:8000/");
     }
 }

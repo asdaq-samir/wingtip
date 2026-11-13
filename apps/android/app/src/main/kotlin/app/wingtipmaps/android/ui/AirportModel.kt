@@ -8,22 +8,36 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.airportNotams
 import app.wingtipmaps.android.api.airportPhotos
+import app.wingtipmaps.android.api.airportServices
 import app.wingtipmaps.android.api.generated.AirportPhotos
+import app.wingtipmaps.android.api.generated.AirportServices
 import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.offline.KeptForAir
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /** A field's card's model, and the welcome's search for the pilot's home
  *  field: the search's words, what the planner found for them, and the
  *  card of the one picked (the map rings it). */
-class AirportModel : ViewModel() {
+@OptIn(FlowPreview::class)
+@HiltViewModel
+class AirportModel @Inject constructor() : ViewModel() {
     data class State(
         val query: String = "",
         val suggestions: List<AirportSuggestion> = emptyList(),
@@ -35,7 +49,8 @@ class AirportModel : ViewModel() {
          *  the air; null when it is the network's own. */
         val keptAtMs: Long? = null,
         /** The field's own NOTAMs and the TFRs within 5 nm of it, the
-         *  engine's ranking, for the card's NOTAMs and its alert card;
+         *  engine's ranking, for the card's NOTAMs and the badges on what
+         *  they address;
          *  null until fetched. */
         val notams: NotamsRanked? = null,
         val notamsProblem: String? = null,
@@ -47,6 +62,11 @@ class AirportModel : ViewModel() {
         val photos: AirportPhotos? = null,
         /** The pictures were asked, so none means none: the chart then. */
         val photosAsked: Boolean = false,
+        /** What the field offers on the ground, for its Fuel rows; null
+         *  until fetched, or where it could not be (the rows do without). */
+        val services: AirportServices? = null,
+        /** The fuel grades by their names (AirportReads.fuelNames). */
+        val fuelNames: String? = null,
     )
 
     /** A departure field's ident and place, the distance's start. */
@@ -55,36 +75,55 @@ class AirportModel : ViewModel() {
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
 
-    private var searching: Job? = null
+    /** The card's NOTAMs and runways read by the engine (AirportReads), off
+     *  the main thread as the card opens and again as its NOTAMs come: the
+     *  engine reads every one. */
+    val read: StateFlow<AirportReads.Read> = state.map { it.place to it.notams }.distinctUntilChanged()
+        .map { (place, ranked) -> place?.let { AirportReads.read(it, ranked) } ?: AirportReads.Read() }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, AirportReads.Read())
+
+    /** The line typed, for the fields' search; null for none. */
+    private val asks = MutableStateFlow<String?>(null)
     private var departing: Job? = null
 
     /** Fields by ident or name as they are typed, asked a moment after
      *  the typing pauses, so a word is one ask rather than one per letter. */
     fun search(text: String) {
         _state.update { it.copy(query = text) }
-        searching?.cancel()
         val q = text.trim()
         if (q.length < 2) {
+            asks.value = null
             _state.update { it.copy(suggestions = emptyList(), loading = false) }
             return
         }
-        searching = viewModelScope.launch {
-            delay(SEARCH_PAUSE_MS)
-            _state.update { it.copy(loading = true) }
-            try {
-                val found = Planner.search(q)
-                _state.update { it.copy(suggestions = found, problem = null, loading = false) }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.update { it.copy(problem = Problems.say("Fields could not be found", e), loading = false) }
-            }
+        asks.value = q
+    }
+
+    // The lines typed, asked once the typing pauses (Flow's debounce); none
+    // passes at once, so a search under way stops with it (collectLatest
+    // cancels the one before).
+    init {
+        viewModelScope.launch {
+            asks.debounce { if (it == null) 0L else SEARCH_PAUSE_MS }.collectLatest { q -> if (q != null) find(q) }
+        }
+    }
+
+    private suspend fun find(q: String) {
+        _state.update { it.copy(loading = true) }
+        try {
+            val found = Planner.search(q)
+            _state.update { it.copy(suggestions = found, problem = null, loading = false) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            _state.update { it.copy(problem = Problems.say("Fields could not be found", e), loading = false) }
         }
     }
 
     /** A field's card opened, by its ident. */
     fun open(ident: String) {
-        searching?.cancel()
+        asks.value = null
         _state.update { it.copy(loading = true) }
         viewModelScope.launch {
             try {
@@ -93,10 +132,11 @@ class AirportModel : ViewModel() {
                 val had = KeptForAir.had(KeptForAir.AIRPORTS, ident.trim().uppercase(), AirportPlace.serializer()) { Planner.place(ident.trim().uppercase()) }
                 val place = had.value
                 _state.update {
-                    it.copy(place = place, keptAtMs = had.fetchedAtMs.takeIf { had.kept }, suggestions = emptyList(), query = place.ident, problem = null, loading = false, notams = it.notams.takeIf { _ -> it.place?.ident == place.ident }, photos = it.photos.takeIf { _ -> it.place?.ident == place.ident }, photosAsked = it.photosAsked && it.place?.ident == place.ident)
+                    it.copy(place = place, keptAtMs = had.fetchedAtMs.takeIf { had.kept }, suggestions = emptyList(), query = place.ident, problem = null, loading = false, notams = it.notams.takeIf { _ -> it.place?.ident == place.ident }, services = it.services.takeIf { _ -> it.place?.ident == place.ident }, photos = it.photos.takeIf { _ -> it.place?.ident == place.ident }, photosAsked = it.photosAsked && it.place?.ident == place.ident)
                 }
-                // Asked with the card, not the tab: the alert card first on
-                // it reads them too.
+                // Asked with the card, not the tab: the badges on its
+                // runways, lights and frequencies read them too.
+                launch { loadServices(place.ident) }
                 loadNotams(place.ident)
             } catch (e: CancellationException) {
                 throw e
@@ -116,6 +156,19 @@ class AirportModel : ViewModel() {
         }
     }
 
+    /** The field's services, for its Fuel rows; none where they cannot be had. */
+    private suspend fun loadServices(ident: String) {
+        val services = try {
+            Planner.airportServices(ident)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            return
+        }
+        val names = AirportReads.fuelNames(services.fuelTypes.orEmpty())
+        _state.update { if (it.place?.ident == ident) it.copy(services = services, fuelNames = names) else it }
+    }
+
     /**
      * The field's own NOTAMs and the TFRs within 5 nm of it, the engine's
      * most important first (/api/airport/{ident}/notams), asked each time
@@ -124,7 +177,7 @@ class AirportModel : ViewModel() {
      */
     private suspend fun loadNotams(ident: String) {
         try {
-            val had = KeptForAir.had(KeptForAir.NOTAMS, "$ident|field", NotamsRanked.serializer()) { Planner.airportNotams(ident) }
+            val had = KeptForAir.had(KeptForAir.NOTAMS, KeptForAir.fieldNotams(ident), NotamsRanked.serializer()) { Planner.airportNotams(ident) }
             _state.update { if (it.place?.ident == ident) it.copy(notams = had.value, notamsProblem = null) else it }
         } catch (e: CancellationException) {
             throw e

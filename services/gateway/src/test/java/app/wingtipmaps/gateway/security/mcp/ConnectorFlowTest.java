@@ -51,7 +51,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * resource, and refresh. Against a real Postgres: the clients,
  * authorizations and consents are Spring's JDBC stores, on V40's tables.
  */
-@SpringBootTest(properties = "app.public-base-url=http://localhost")
+@SpringBootTest(
+        properties = {"app.public-base-url=http://localhost", "app.mcp.enabled=true", "app.mcp.internal-token=t"})
 @AutoConfigureMockMvc
 @Testcontainers
 class ConnectorFlowTest {
@@ -208,6 +209,14 @@ class ConnectorFlowTest {
         mvc.perform(post("/oauth2/token")
                         .param("grant_type", "refresh_token")
                         .param("refresh_token", refresh)
+                        .param("client_id", clientId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("invalid_grant"));
+        // That replay revoked the whole connection (L3): the newer refresh
+        // token, the client's or a thief's, is no good either.
+        mvc.perform(post("/oauth2/token")
+                        .param("grant_type", "refresh_token")
+                        .param("refresh_token", (String) JsonPath.read(refreshed, "$.refresh_token"))
                         .param("client_id", clientId))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("invalid_grant"));

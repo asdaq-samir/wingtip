@@ -9,7 +9,12 @@ import SwiftUI
 /// an ident is never cut short), where side by side the fields had 76
 /// points and showed "KM…" and Plan broke over two lines.
 struct RouteEndsRow: View {
+    @Environment(ClearanceListener.self) private var listener
     @Environment(Plan.self) private var plan
+    @Environment(OwnShip.self) private var ownShip
+    /// Settings' Comms Assist (In Flight › ATC): the radio's button only
+    /// while it is on, off by default (the owner, 2026-11-13).
+    @AppStorage(CommsAssist.key) private var commsAssist = false
     @Environment(\.dynamicTypeSize) private var typeSize
     var focused: FocusState<PlanView.Field?>.Binding
     /// The fields' widths follow the type size, so an ident still fits at
@@ -22,19 +27,45 @@ struct RouteEndsRow: View {
             VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 routeField("From", text: $plan.dep, field: .dep)
                 routeField("To", text: $plan.dest, field: .dest)
+                fromPosition
                 HStack(spacing: WingtipSpace.md) {
-                    radio
+                    if commsAssist { radio }
                     planButton
                 }
             }
         } else {
-            HStack(spacing: WingtipSpace.sm) {
-                routeField("From", text: $plan.dep, field: .dep)
-                Image(systemName: "arrow.right").foregroundStyle(.secondary).accessibilityHidden(true)
-                routeField("To", text: $plan.dest, field: .dest)
-                radio
-                planButton
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+                HStack(spacing: WingtipSpace.sm) {
+                    routeField("From", text: $plan.dep, field: .dep)
+                    Image(systemName: "arrow.right").foregroundStyle(.secondary).accessibilityHidden(true)
+                    routeField("To", text: $plan.dest, field: .dest)
+                    if commsAssist { radio }
+                    planButton
+                }
+                fromPosition
             }
+        }
+    }
+
+    /// Half a route, its departure still to give (the owner's screenshot,
+    /// 2026-11-13: "Departure → HSKEL → KJAX"): where own ship has a fix,
+    /// My Position offered first as Maps' From offers My Location, planned
+    /// from the present position as a Direct to is (RouteExtras.position);
+    /// with no fix the From field's own prompt asks for it.
+    @ViewBuilder private var fromPosition: some View {
+        if plan.dep.isEmpty, !plan.dest.isEmpty, let fix = ownShip.fix {
+            Button {
+                focused.wrappedValue = nil
+                plan.dep = RouteExtras.position(fix)
+                plan.plan()
+            } label: {
+                Label("From My Position", systemImage: WingtipIcon.myLocation)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .buttonStyle(.borderless)
+            .hitArea()
+            .accessibilityIdentifier("from-my-position")
         }
     }
 
@@ -42,19 +73,19 @@ struct RouteEndsRow: View {
     /// radio's waves its mark; where speech cannot be recognised on the
     /// iPhone, the same sheet, the clearance typed.
     private var radio: some View {
-        let voice = ClearanceListener.shared.canListen
+        let voice = listener.canListen
         return Button {
             focused.wrappedValue = nil
-            ClearanceListener.shared.sheetText = nil
-            ClearanceListener.shared.sheetShown = true
+            listener.sheetText = nil
+            listener.sheetShown = true
         } label: {
             Image(systemName: !voice ? "text.bubble" : WingtipIcon.radio)
-                .symbolOnAir(ClearanceListener.shared.listening).symbolSwap()
+                .symbolOnAir(listener.listening).symbolSwap()
                 // The 44-point hit area round the glyph, which does not grow.
                 .hitArea()
         }
         .buttonStyle(.borderless)
-        .accessibilityLabel(!voice ? "Enter a clearance" : ClearanceListener.shared.listening ? "Listening to the radio" : "Listen to the radio")
+        .accessibilityLabel(!voice ? "Enter a clearance" : listener.listening ? "Listening to the radio" : "Listen to the radio")
         .accessibilityIdentifier("radio")
     }
 
@@ -62,7 +93,12 @@ struct RouteEndsRow: View {
     /// the look's own colour on the tint (glassProminentButton).
     private var planButton: some View {
         Button { focused.wrappedValue = nil; plan.plan() } label: {
-            Text("Plan").frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : nil)
+            // Its whole height and as many lines as it needs at every size,
+            // over the glass button's one line: the empty route box (FPL
+            // with no route, since the welcome went) put it before the
+            // largest text's audit, which found its word clipped.
+            Text("Plan").lineLimit(nil).frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : nil)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .glassProminentButton()
         // ⌘Return plans from an iPad's keyboard; Return in a field

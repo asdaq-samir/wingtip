@@ -14,8 +14,10 @@ Each fact lives in one doc; the others link to it.
 | [CI.md](CI.md) | What CI runs and when, every job and test suite, what gates a merge, flaky tests |
 | [README-AWS.md](README-AWS.md) | The AWS design (not deployed yet), its cost, the first deploy and running it |
 | [OPERATIONS.md](OPERATIONS.md) | What is monitored (services, live feeds, faults and speed from devices), the thresholds, and where alerts go |
+| [STUDIO-PIPELINE.md](STUDIO-PIPELINE.md) | The Studio's crash films: the stages from an FAA report to a film, what is automatic and what a person does, and the rules (identity by three sources, "preliminary", no cause, no names, the hold, publishing a person's) |
 | [decisions/](decisions/README.md) | The owner's standing decisions, one page each with the reason, so none is undone by accident |
 | [LEARNING-GUIDE.md](LEARNING-GUIDE.md) | Why it is built this way, concept by concept, to build something like it yourself |
+| [SECURITY.md](SECURITY.md) | The security audit's findings and what changed, the standing security decisions (public API documents, open Dependabot alerts), and the owner's console steps |
 | [privacy-inventory.md](privacy-inventory.md) | What the app collects, what leaves the device, and the stores' privacy forms |
 | [versions.md](versions.md) | What each part pins today, the version rules, the upgrades coming and what blocks each, and how an upgrade lands |
 
@@ -29,7 +31,6 @@ Each fact lives in one doc; the others link to it.
 | [services/planner/wingtip/README.md](../services/planner/wingtip/README.md) | wingtip, the planner's Python package, module by module |
 | [services/ingest/README.md](../services/ingest/README.md) | The live feeds: what each SWIM feed sends and how the live store is shared |
 | [services/weather/README.md](../services/weather/README.md) | The weather service: products, schedule and health |
-| [services/assistant/README.md](../services/assistant/README.md) | Every Claude call: endpoints, models and settings |
 | [services/jobs/README.md](../services/jobs/README.md) | The one-off jobs: the training run, the chart cycle, the overlay tiles |
 | [services/gateway/README.md](../services/gateway/README.md) | The Spring Boot gateway: sign-in, records, the package map |
 | [apps/web/README.md](../apps/web/README.md) | The web app: its layout, the fast test loop, the map |
@@ -48,6 +49,8 @@ Each fact lives in one doc; the others link to it.
 | [design/icons.md](design/icons.md) | The icon concepts and each platform's symbol for them |
 | [legal/](legal/privacy.md) | The privacy policy, terms, credits and support pages |
 | [store/listing.md](store/listing.md) | The App Store and Google Play listings and review notes; [store/privacy-labels.md](store/privacy-labels.md) the stores' privacy answers, [store/preview-video.md](store/preview-video.md) the App Preview's plan |
+| [SIM-EXPORT.md](SIM-EXPORT.md) | The Studio's "Export for simulator": each file, what is estimated, and how to replay it in MSFS (FlightControlReplay, Sky Dolly), X-Plane 12 and Google Earth |
+| [XPLANE-TRIAL.md](XPLANE-TRIAL.md) | The X-Plane 12 trial on the Mac: the demo, the replay plugin (tools/xplane-driver), the steps with times, what to judge, AutoOrtho |
 | [GOOGLE-MAPS.md](GOOGLE-MAPS.md) | The map's imagery under the chart: the USGS's, and Google's with the owner's key |
 | [TV.md](TV.md) | The TV apps (parked): the site's remote-control mode and the deleted Tizen and webOS shells |
 | [brand/](brand) | The mark and the brand's files |
@@ -70,4 +73,4 @@ a service, crate, app or outside source edits the `.drawio` and
 re-exports the `.svg` with the `rlespinasse/drawio-export` image (run
 through `scripts/dev/one-at-a-time.sh`).
 
-The links in every doc are checked in CI (`scripts/ci/check_links.py`).
+The links in every doc are checked in CI (`scripts/ci/check_links.sh`, lychee).

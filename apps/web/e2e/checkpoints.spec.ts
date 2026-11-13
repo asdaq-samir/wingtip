@@ -17,6 +17,7 @@ import {
   navLogSheet,
   settled,
 } from "./helpers";
+import { drawnMarks, tapMark } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -38,7 +39,10 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
   await expect.poll(async () => table.locator('[role="row"][data-kind]').count(), { timeout: slow(15000) }).toBeGreaterThan(4);
   // And the legs: their tops of climb and descent are rows of their own,
   // put in as the legs arrive, and a row counted before them moves.
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  // FPL's figure strip has its fuel once they are in, under the Nav Log's
+  // card now (95f9e953b: a card of its own over FPL), so in the page, not
+  // in sight.
+  await expect(page.getByTestId("navlog-fuel")).toBeAttached({ timeout: slow(120000) });
   const selectedRow = table.locator('[role="row"][data-selected]');
   await expect(selectedRow).toHaveCount(0);
 
@@ -99,13 +103,8 @@ test(
     await settle(page);
     // A checkpoint late on the route, so the log has rows above it: one
     // the map shows, as its badges now give way to each other and a
-    // phone's view leaves some out until closer in (lib/map/gl/declutter).
-    const marker = page.locator('.maplibregl-marker:not([data-declutter="hidden"])', { hasText: /^(?:[89]|1\d)$/ }).first();
-    await expect(marker).toBeVisible({ timeout: slow(15000) });
-    // A DOM click, not a pointer one: the legs are still streaming in
-    // and each re-draws the markers, so Playwright's wait for the marker
-    // to hold still ran the test out of time.
-    await marker.dispatchEvent("click");
+    // phone's view leaves some out until closer in (MapLibre's collision).
+    await tapMark(page, "route-marks", /^(?:[89]|1\d)$/);
     // On a phone its card comes up in the map's sheet over the route
     // (MapPopup): put away, the pick kept, for the route's box under it.
     if (page.viewportSize()!.width < 768) {
@@ -135,6 +134,9 @@ test(
     await openNavLog(page);
     const table = page.getByRole("table", { name: /Navigation log from/i });
     await expect(table).toBeVisible();
+    // Its card come all the way up first: still sliding in, it carried the
+    // row clicked below 15 points up with it (2026-11-13).
+    await settled(page.locator("[data-sheet-card]").filter({ has: navLogSheet(page) }));
     const selectedRow = table.locator('[role="row"][data-selected]');
     await expect(selectedRow).toHaveCount(1);
     const scroller = navLogScroller(page);
@@ -260,14 +262,14 @@ test("plan page: the checkpoints are their numbers at the route's zoom, named in
   const names = () => drawn(page, "checkpoint-names");
   // The route fitted: its dots numbered and no names, where two dozen dark
   // names covered the chart (the design review, 2026-10-28).
-  const dots = page.locator(".maplibregl-marker").filter({ hasText: /^\d+$/ });
-  await expect.poll(() => dots.count(), { timeout: slow(30000) }).toBeGreaterThan(3);
+  const dots = async () => (await drawnMarks(page, "route-marks")).filter((m) => m.kind === "checkpoint");
+  await expect.poll(async () => (await dots()).length, { timeout: slow(30000) }).toBeGreaterThan(3);
   await mapStill(page);
   expect(await names()).toEqual([]);
   // Closer in, over the first dot, they are named.
-  const first = await dots.first().boundingBox();
+  const first = (await dots())[0]!;
   await expect(async () => {
-    await page.mouse.move(first!.x + first!.width / 2, first!.y + first!.height / 2);
+    await page.mouse.move(first.x, first.y);
     await page.mouse.wheel(0, -300);
     await expect.poll(async () => (await names()).length, { timeout: 2500 }).toBeGreaterThan(0);
   }).toPass({ timeout: slow(30000) });
@@ -295,17 +297,12 @@ test("plan page: the checkpoints are their numbers at the route's zoom, named in
     expect(y).toBeLessThanOrEqual(viewport.height + DOT_RADIUS);
   }
   // Nor at the route's own airports' marks, nor their idents beside them.
-  const chips = await page.locator(".maplibregl-marker", { hasText: /^(C81|KDLH)$/ }).evaluateAll((els) =>
-    els.map((el) => {
-      const [mark, ident] = [...el.children].map((c) => c.getBoundingClientRect());
-      return {
-        left: mark!.left,
-        right: Math.max(mark!.right, ident!.right),
-        top: Math.min(mark!.top, ident!.top),
-        bottom: Math.max(mark!.bottom, ident!.bottom),
-      };
-    }),
-  );
+  // Each a field's 26-point mark and its ident's pill to its right
+  // (routeMarks), round its point (the probe's, in the page's points; the
+  // names' are the map's, the map at the page's top left here).
+  const chips = (await drawnMarks(page, "route-marks"))
+    .filter((m) => m.kind === "field" && /^(C81|KDLH)$/.test(String(m.text)))
+    .map(({ x, y }) => ({ left: x - 13, right: x + 60, top: y - 13, bottom: y + 13 }));
   for (const { x, y, name } of shown as { x: number; y: number; name: string }[]) {
     for (const c of chips) {
       const inside = x > c.left && x < c.right && y > c.top && y < c.bottom;

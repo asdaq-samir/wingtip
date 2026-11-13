@@ -30,12 +30,15 @@ import io
 import json
 import math
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
 import requests
+from cachetools import TTLCache
 
+from . import geo, outside
 from .elevation import terrarium_m
 from .units import M_TO_FT
 
@@ -81,42 +84,25 @@ _HELD: dict = {}
 _HELD_LOCK = threading.Lock()
 
 
-def _tile_x(lon):
-    return (np.asarray(lon) + 180.0) / 360.0 * 2**ZOOM
-
-
-def _tile_y(lat):
-    lat = np.radians(np.asarray(lat))
-    return (1.0 - np.arcsinh(np.tan(lat)) / np.pi) / 2.0 * 2**ZOOM
-
-
-def _lon_of(x):
-    return np.asarray(x) / 2**ZOOM * 360.0 - 180.0
-
-
-def _lat_of(y):
-    return np.degrees(np.arctan(np.sinh(np.pi * (1.0 - 2.0 * np.asarray(y) / 2**ZOOM))))
-
-
 #: How long "not built" is believed before the files are looked for again,
 #: s: a server builds its grid in the background after a deploy, and the
 #: planner beside it takes it up once it is there, with no restart.
 LOOK_AGAIN_S = 600
+_NOT_BUILT: TTLCache = TTLCache(maxsize=1, ttl=LOOK_AGAIN_S, timer=lambda: time.monotonic())
 
 
 def _grids() -> tuple[np.ndarray, np.ndarray] | None:
     """The built grids, memory-mapped once; None where none is built."""
-    import time
-
     with _HELD_LOCK:
-        held = _HELD.get("grids")
-        if held is not None and (held[1] is not None or time.monotonic() - held[0] < LOOK_AGAIN_S):
-            return held[1]
-        grids = None
+        if "grids" in _HELD:
+            return _HELD["grids"]
+        if "not built" in _NOT_BUILT:
+            return None
         if HIGH_PATH.exists() and LOW_PATH.exists() and not DONE_PATH.exists():
-            grids = (np.load(HIGH_PATH, mmap_mode="r"), np.load(LOW_PATH, mmap_mode="r"))
-        _HELD["grids"] = (time.monotonic(), grids)
-        return grids
+            _HELD["grids"] = (np.load(HIGH_PATH, mmap_mode="r"), np.load(LOW_PATH, mmap_mode="r"))
+            return _HELD["grids"]
+        _NOT_BUILT["not built"] = True
+        return None
 
 
 def _cells(lats: np.ndarray, lons: np.ndarray) -> tuple[np.ndarray, np.ndarray] | None:
@@ -148,26 +134,13 @@ def line_points(start: tuple, end: tuple) -> tuple[np.ndarray, np.ndarray, np.nd
     """Points along the line from start to end close enough that every
     cell it crosses holds one -- a third of a cell apart -- and how far
     along each is, nm: (lats, lons, along_nm)."""
-    from . import geo
-
     total = float(geo.distance_nm(start[0], start[1], end[0], end[1]))
     span = max(abs(end[0] - start[0]), abs(end[1] - start[1]))
     n = max(2, int(math.ceil(span * PER_DEG * 3)) + 1)
-    t = np.linspace(0.0, 1.0, n)
     # Along the great circle, not the straight line on the chart: the
     # same path wingtip.terrain's samples and the course line take.
-    a = np.radians(start)
-    b = np.radians(end)
-    va = np.array([np.cos(a[0]) * np.cos(a[1]), np.cos(a[0]) * np.sin(a[1]), np.sin(a[0])])
-    vb = np.array([np.cos(b[0]) * np.cos(b[1]), np.cos(b[0]) * np.sin(b[1]), np.sin(b[0])])
-    omega = math.acos(min(1.0, max(-1.0, float(va @ vb))))
-    if omega < 1e-12:
-        v = np.outer(np.ones_like(t), va)
-    else:
-        v = (np.outer(np.sin((1 - t) * omega), va) + np.outer(np.sin(t * omega), vb)) / math.sin(omega)
-    lats = np.degrees(np.arctan2(v[:, 2], np.hypot(v[:, 0], v[:, 1])))
-    lons = np.degrees(np.arctan2(v[:, 1], v[:, 0]))
-    return lats, lons, t * total
+    lats, lons = geo.great_circle_points(start, end, n)
+    return lats, lons, np.linspace(0.0, total, n)
 
 
 # --- The build ---
@@ -177,19 +150,14 @@ def _fetch(session: requests.Session, x: int, y: int) -> np.ndarray | None:
     """A tile's heights, m; None for one the bucket has not (the sea)."""
     from PIL import Image
 
-    for attempt in range(4):
-        try:
-            resp = session.get(TILE_URL.format(z=ZOOM, x=x, y=y), headers=HEADERS, timeout=30)
-            if resp.status_code in (403, 404):
-                return None
-            resp.raise_for_status()
-            rgb = np.asarray(Image.open(io.BytesIO(resp.content)).convert("RGB")).astype(np.float64)
-            # Voids NaN, not the encoding's +-32,768 m (wingtip.elevation).
-            return terrarium_m(rgb)
-        except (requests.RequestException, OSError):
-            if attempt == 3:
-                raise
-    return None
+    # The session asks again after a dropped connection or a busy bucket (wingtip.outside).
+    resp = session.get(TILE_URL.format(z=ZOOM, x=x, y=y), headers=HEADERS, timeout=30)
+    if resp.status_code in (403, 404):
+        return None
+    resp.raise_for_status()
+    rgb = np.asarray(Image.open(io.BytesIO(resp.content)).convert("RGB")).astype(np.float64)
+    # Voids NaN, not the encoding's +-32,768 m (wingtip.elevation).
+    return terrarium_m(rgb)
 
 
 def _into(high: np.ndarray, low: np.ndarray, x: int, y: int, heights: np.ndarray) -> None:
@@ -200,8 +168,8 @@ def _into(high: np.ndarray, low: np.ndarray, x: int, y: int, heights: np.ndarray
     size = heights.shape[0]
     px = x + (np.arange(size) + 0.5) / size
     py = y + (np.arange(size) + 0.5) / size
-    lons = _lon_of(px)
-    lats = _lat_of(py)
+    lats, _ = geo.tile_lat_lon(0.0, py, ZOOM)
+    _, lons = geo.tile_lat_lon(px, 0.0, ZOOM)
     cols = np.floor((lons - WEST) * PER_DEG).astype(int)
     rows = np.floor((lats - SOUTH) * PER_DEG).astype(int)
     keep_c = (cols >= 0) & (cols < COLS)
@@ -236,10 +204,9 @@ def build(workers: int = 12) -> None:
         high = np.full((ROWS, COLS), NONE, dtype=np.int16)
         low = np.full((ROWS, COLS), NONE, dtype=np.int16)
     done = set(json.loads(DONE_PATH.read_text())) if DONE_PATH.exists() else set()
-    x0, x1 = int(_tile_x(WEST)), int(_tile_x(EAST))
-    y0, y1 = int(_tile_y(NORTH)), int(_tile_y(SOUTH))
-    session = requests.Session()
-    session.mount("https://", requests.adapters.HTTPAdapter(pool_connections=1, pool_maxsize=workers))
+    x0, y0 = (int(v) for v in geo.tile_xy(NORTH, WEST, ZOOM))
+    x1, y1 = (int(v) for v in geo.tile_xy(SOUTH, EAST, ZOOM))
+    session = outside.session(pool=workers)
     with ThreadPoolExecutor(workers) as pool:
         for y in range(y0, y1 + 1):
             if y in done:
@@ -261,6 +228,7 @@ def build(workers: int = 12) -> None:
     DONE_PATH.unlink()
     with _HELD_LOCK:
         _HELD.pop("grids", None)
+        _NOT_BUILT.clear()
 
 
 if __name__ == "__main__":

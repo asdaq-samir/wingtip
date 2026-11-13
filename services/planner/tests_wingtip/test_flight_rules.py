@@ -53,7 +53,9 @@ def test_density_and_pressure_altitude():
         assert performance.density_altitude_ft(sigma) == pytest.approx(case["densityAltitudeFt"], abs=1e-6)
     for case in FIXTURE["pressureAltitude"]:
         got = engine("pressure_altitude_ft", elevation_ft=case["elevationFt"], altimeter_inhg=case["altimeterInHg"])
-        assert got == pytest.approx(case["pressureAltitudeFt"], abs=1e-9)
+        # The handbook's table (FAA-H-8083-25C Figure 11-3) is whole feet off
+        # the standard atmosphere: within 2 ft.
+        assert got == pytest.approx(case["pressureAltitudeFt"], abs=2.0)
 
 
 @pytest.mark.parametrize("case", FIXTURE["declination"], ids=lambda c: f"{c['lat']},{c['lon']}@{c['year']}")

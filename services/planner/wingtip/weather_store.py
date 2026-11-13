@@ -4,7 +4,7 @@ mount (WEATHER_STORE, data/raw/weather by default), so no pilot's request
 ever waits on aviationweather.gov, NOMADS, tfr.faa.gov or IEM (#535).
 
 The service is the only writer. Each product is a gzipped JSON record,
-written whole to a file of its own and moved into place (os.replace), so
+written whole to a file of its own and moved into place (wingtip.atomic), so
 a reader sees the old copy or the new one and never half of either:
 
     {"name", "fetched_at" (UNIX s), "until" (UNIX s, or null for no
@@ -14,7 +14,8 @@ a reader sees the old copy or the new one and never half of either:
 Beside it `<name>.attempt.json` says when the service last tried for a
 newer copy and whether that failed, for the Status page and the
 service's health; a grid too large for JSON (GLMP's) is a .npy array
-beside its record, opened by the planner without reading it all in
+beside its record, and a picture made whole (the flow layer's PNGs,
+write_blob) a file of its own, opened by the planner without reading it all in
 (np.load's mmap_mode). And `asked`, a file the planner touches at most
 once a minute as it reads, tells the service someone is planning: it
 fetches at its full pace then, and slowly otherwise (services/weather's
@@ -31,13 +32,15 @@ from __future__ import annotations
 import gzip
 import json
 import os
-import tempfile
 import threading
 import time
 from pathlib import Path
 from typing import NamedTuple
 
+from cachetools import TTLCache
+
 from . import tracing
+from .atomic import atomic_path
 from .config import get_settings
 
 #: The winds aloft's periods, each a product of its own ("winds-06" ...):
@@ -67,15 +70,8 @@ def _path(name: str, suffix: str = ".json.gz") -> Path:
 
 
 def _write_atomic(path: Path, body: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
-    try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(body)
-        os.replace(tmp, path)
-    except BaseException:
-        Path(tmp).unlink(missing_ok=True)
-        raise
+    with atomic_path(path) as tmp:
+        tmp.write_bytes(body)
 
 
 def write(name: str, data, fetched_at: float, until: float | None, meta: dict | None = None) -> None:
@@ -119,6 +115,34 @@ def remove_arrays(prefix: str, keep: set[str]) -> None:
         return
     for path in folder.glob(f"{prefix}*.npy"):
         if path.stem not in keep:
+            path.unlink(missing_ok=True)
+
+
+def write_blob(name: str, body: bytes, suffix: str) -> Path:
+    """A file the service made whole (the flow layer's PNGs), beside the
+    records, for the planner to send as it is."""
+    path = _path(name, suffix)
+    _write_atomic(path, body)
+    return path
+
+
+def blob_path(name: str, suffix: str) -> Path | None:
+    """Where a file written by write_blob is; None where there is none."""
+    path = _path(name, suffix)
+    return path if path.is_file() else None
+
+
+def blob_exists(name: str, suffix: str) -> bool:
+    return blob_path(name, suffix) is not None
+
+
+def remove_blobs(prefix: str, keep: set[str], suffix: str) -> None:
+    """Every file of `suffix` whose name starts with `prefix` but those in `keep`."""
+    folder = store_dir()
+    if not folder.is_dir():
+        return
+    for path in folder.glob(f"{prefix}*{suffix}"):
+        if path.name[: -len(suffix)] not in keep:
             path.unlink(missing_ok=True)
 
 
@@ -174,7 +198,8 @@ def servable(record: Record | None, now: float | None = None) -> bool:
     return record.until is None or (time.time() if now is None else now) < record.until
 
 
-_ASKED = {"at": 0.0}
+# One entry that lives ASKED_EVERY_S: while it is there, the mark is fresh.
+_ASKED: TTLCache = TTLCache(maxsize=1, ttl=ASKED_EVERY_S, timer=lambda: time.time())
 
 
 def mark_asked() -> None:
@@ -183,7 +208,7 @@ def mark_asked() -> None:
     planner cannot write to is left alone, the service then keeping its
     slow pace."""
     now = time.time()
-    if now - _ASKED["at"] < ASKED_EVERY_S:
+    if "at" in _ASKED:
         return
     _ASKED["at"] = now
     try:

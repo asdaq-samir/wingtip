@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cn } from "cn";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+import { anchorHiddenRender } from "./anchorHidden";
 
 function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
@@ -28,9 +29,13 @@ function PopoverContent({
   sideOffset = 4,
   collisionPadding,
   anchor,
+  onAnchorHidden,
   ...props
 }: PopoverPrimitive.Popup.Props &
-  Pick<PopoverPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset" | "collisionPadding" | "anchor">) {
+  Pick<PopoverPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset" | "collisionPadding" | "anchor"> & {
+    /** Its anchor out of sight while it is open (anchorHidden). */
+    onAnchorHidden?: () => void;
+  }) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
@@ -40,6 +45,7 @@ function PopoverContent({
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
         anchor={anchor}
+        render={anchorHiddenRender(onAnchorHidden)}
         className="isolate z-50"
       >
         <PopoverPrimitive.Popup

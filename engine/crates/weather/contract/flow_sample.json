@@ -1,0 +1,96 @@
+{
+  "x-call": "wingtip_weather::flow_sample::call",
+  "description": "A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes), each byte a 255th of `unscale` [least, most] a step. The wind and the temperature, continuous, are read between them linearly, as weatherlayers-gl's LINEAR reading does. Every field with a worse end is read as its worst of the pixels the point is read from (all four between their middles, a pixel's own on its middle), never between: a straight line reads a figure no pixel holds, better than the worst, and a pilot is never told better weather than the data holds. The lowest (`field` \"ceiling\", \"vis\" or \"frzlvl\", or `ceiling` true): the ceiling and the visibility, on which AIM 7-1-7's categories step (\"LIFR (Low IFR). Ceiling less than 500 feet and/or visibility less than 1 mile\"; a straight line between a 500 ft ceiling and none reads about 6,600 ft, VFR beside LIFR), and the freezing level, as icing begins round it (AIM 7-1-19: icing in visible precipitation \"between +02 and -10 degrees Celsius\"). The highest (`field` \"gust\", \"precip\", \"cape\", \"cloud\", \"tops\", \"icing\" or \"turb\"): icing's categories (AIM 7-1-19, trace to severe), turbulence (AIM 7-1-21, light to extreme), the precipitation (AIM 7-1-12, \"LIGHT\" (< 26 dBZ) to \"EXTREME\" (> 50 dBZ)), CAPE, gusts, the cloud cover (AIM 7-1-28's eighths, BKN a ceiling by 14 CFR 1.1) and the cloud tops, which a pilot reads to clear (14 CFR 91.155(a): \"1,000 feet above\" in Class C, D and E). For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true) come from those parts, the vector average, so the same point reads the same wind on every app. A wind under 1 kt is calm (`calm` true, `from_deg` null): FMH-1 (FCM-H1-2019) Table 5-1 gives under a knot as \"Calm; smoke rises vertically\", reported as calm with no direction, 00000KT (5.5.2, 12.6.5 d), so the apps write \"Calm\" rather than a direction the picture's rounding made up. `calm` is false for a scalar field. For the ceiling (app.flow_grid's picture of feet above the ground, 50 ft a step to 12,750) `no_ceiling` is true only where every pixel read is at its top: the picture writes a ceiling at or over its top, and none at all, as the top, and either is no ceiling 14 CFR 1.1's definition or AIM 7-1-7's categories (VFR: \"Ceiling greater than 3,000 feet\") turn on, so the apps write \"None\" rather than a figure. `no_ceiling` is false for any other field. Null where a pixel the point is read from has no value (alpha 0).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FlowSampleInput",
+      "type": "object",
+      "properties": {
+        "pixels": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "description": "Four pixels, as flow_cell orders them, each [red, green, alpha] bytes."
+        },
+        "fx": {
+          "type": "number"
+        },
+        "fy": {
+          "type": "number"
+        },
+        "unscale": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "[least, most]."
+        },
+        "vector": {
+          "type": "boolean"
+        },
+        "ceiling": {
+          "type": "boolean",
+          "description": "The picture is the ceiling's, feet above the ground (14 CFR 1.1), whose top is no ceiling; false or absent for any other field. The same as `field` \"ceiling\"."
+        },
+        "field": {
+          "type": "string",
+          "description": "The field the picture is, as app.flow_grid names it (its file's name before any level: \"ceiling\", \"vis\", \"temp\" and the rest), so the engine reads each its own way: the ceiling, the visibility and the freezing level as the lowest round the point, the gusts, precipitation, CAPE, cloud cover, cloud tops, icing and turbulence as the highest, the temperature between. Absent reads between."
+        }
+      },
+      "required": [
+        "pixels",
+        "fx",
+        "fy",
+        "unscale",
+        "vector"
+      ]
+    },
+    "answer": {
+      "title": "FlowSampleAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number"
+            },
+            "from_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "calm": {
+              "type": "boolean",
+              "description": "A wind under 1 kt, which has no direction (FMH-1 Table 5-1, 5.5.2); false for a scalar."
+            },
+            "no_ceiling": {
+              "type": "boolean",
+              "description": "The ceiling's picture at its top at every pixel read: a ceiling over it or none, either no ceiling (AIM 7-1-7); false for any other field."
+            }
+          },
+          "required": [
+            "value",
+            "from_deg",
+            "calm",
+            "no_ceiling"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

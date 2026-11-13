@@ -9,11 +9,12 @@ import SwiftUI
 /// Undo; they are in the ••• now, with the profile and Clear, and Undo
 /// stays on shake and the Edit menu (UndoManager).
 struct RouteCard: View {
+    @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @Environment(\.undoManager) private var undoManager
     /// A page of the plan's: a card on the iPhone, the inspector on the iPad.
     let open: (Screen) -> Void
-    private var ready: ReadyToFly { .shared }
+    @Environment(ReadyToFly.self) private var ready
 
     var body: some View {
         Section {
@@ -97,7 +98,7 @@ struct RouteCard: View {
     /// page to pick one.
     private var airplane: some View {
         Button {
-            if let tail = plan.tail { Navigator.shared.open(.tail(ProfileAsk(tail: tail))) } else { open(.airplane) }
+            if let tail = plan.tail { nav.open(.tail(ProfileAsk(tail: tail))) } else { open(.airplane) }
         } label: {
             Label("Airplane", systemImage: WingtipIcon.airplane)
         }
@@ -124,6 +125,7 @@ struct RouteCard: View {
                     Label(undoManager.undoActionName.isEmpty ? "Undo" : "Undo \(undoManager.undoActionName)", systemImage: "arrow.uturn.backward")
                 }
             }
+            ShowRouteAs()
             Divider()
             Button(role: .destructive) { plan.clear() } label: { Label("Clear Route", systemImage: WingtipIcon.close) }
         }, label: Image(systemName: WingtipIcon.more).imageScale(.large).hitArea())

@@ -6,12 +6,14 @@ import app.wingtipmaps.android.api.generated.SpecialUse
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.MapRules
 import app.wingtipmaps.android.engine.generated.suaAltitudes
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /** The engine's words for a special-use area (faa_words, sua_altitudes):
  *  a fake in the tests. */
@@ -33,9 +35,10 @@ object EngineAreaWords : AreaWords {
  * and SFDPS's word on it now where it has one (/api/live/saa), which is
  * the FAA's own and newer than the chart's schedule.
  */
-class SpecialUseModel(
-    private val source: LiveSource = PlannerLive,
-    private val words: AreaWords = EngineAreaWords,
+@HiltViewModel
+class SpecialUseModel @Inject constructor(
+    private val source: LiveSource,
+    private val words: AreaWords,
 ) : ViewModel() {
     data class Area(val name: String, val kind: String, val line: String, val status: String?, val active: Boolean)
 

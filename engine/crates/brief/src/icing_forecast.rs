@@ -29,14 +29,11 @@
 use crate::figures::words::{feet, grouped};
 use crate::json::{self, Value};
 use wingtip_core::sort::StableSort;
+use wingtip_core::units::FT_PER_M;
 
 /// The AWC's severity categories by their number (the GFA's legend; "heavy"
 /// is the AWC's word where AIM 7-1-19's scale ends at "severe").
 pub const SEVERITY: [&str; 5] = ["none", "trace", "light", "moderate", "heavy"];
-
-/// Metres to feet, for the section's ground (`sfc_hgt`), the AWC's own
-/// factor (3.28084 ft a metre).
-const FT_PER_M: f64 = 3.28084;
 
 type R<T> = Result<T, String>;
 

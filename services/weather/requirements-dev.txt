@@ -6,3 +6,4 @@
 pytest==9.2.0
 pytest-randomly==5.1.0   # every run in a new random order, --randomly-seed=N repeats one (docs/CI.md, "Flaky tests")
 ruff==0.17.4
+import-linter==2.16   # lint-imports: this service's import contracts (services/weather/.importlinter)

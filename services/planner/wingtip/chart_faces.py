@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import logging
 import math
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -26,6 +25,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from . import charts
+from .atomic import atomic_path
 
 if TYPE_CHECKING:
     from .charts import Box, ChartKind
@@ -875,14 +875,13 @@ def remove_masked_lines(path: Path, faces: list, known: tuple = ()) -> tuple:
 
     if not profile.get("tiled"):
         profile.pop("blockxsize", None)  # a striped file's strips are whole rows; GDAL only warns about it
-    tmp = path.with_name(f"{path.name}.{os.getpid()}.part")
-    with rasterio.open(tmp, "w", **profile) as dst:
-        dst.write_colormap(1, colormap)  # first: GDAL cannot make it a palette image once pixels are written
-        dst.write(data, 1)
-        dst.update_tags(**tags)
-        dst.update_tags(1, **band_tags)
-    charts.build_overviews(tmp)
-    tmp.replace(path)
+    with atomic_path(path) as tmp:
+        with rasterio.open(tmp, "w", **profile) as dst:
+            dst.write_colormap(1, colormap)  # first: GDAL cannot make it a palette image once pixels are written
+            dst.write(data, 1)
+            dst.update_tags(**tags)
+            dst.update_tags(1, **band_tags)
+        charts.build_overviews(tmp)
     log.info("%s: %d masked-line pixels given back their tint, in %d area(s)", path.name, changed, len(boxes))
     return tuple(boxes)
 

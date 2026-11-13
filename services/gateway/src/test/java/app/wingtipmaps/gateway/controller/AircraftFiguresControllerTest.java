@@ -13,6 +13,7 @@ import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.OwnFigures;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
+import app.wingtipmaps.gateway.service.AircraftLimits;
 import app.wingtipmaps.gateway.service.AircraftService;
 import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.service.PilotService;
@@ -54,6 +55,9 @@ class AircraftFiguresControllerTest {
     @MockitoBean
     private PlannerClient planner;
 
+    @MockitoBean
+    private AircraftLimits limits;
+
     @BeforeEach
     void nothingDue() {
         given(planner.inspections(any(), any(), any(), any(), any(), any(), any(), any()))
@@ -69,7 +73,7 @@ class AircraftFiguresControllerTest {
      *  airplane's own figures. */
     @Test
     void aFigureAskedInlineIsAddedAndReturned() throws Exception {
-        Aircraft airplane = new Aircraft(pilot(), "N12345", "C172", 110, 8.5, null, null, null, 40.0)
+        Aircraft airplane = new Aircraft(pilot(), "N12345", "C172", 110, 8.5, null, null, null, null, null, 40.0)
                 .keepFigures(null, null, 1.2, null, null, null);
         given(aircraftService.addFigures(any(), eq(8L), eq(new OwnFigures(null, null, 1.2, null, null, null))))
                 .willReturn(Optional.of(airplane));

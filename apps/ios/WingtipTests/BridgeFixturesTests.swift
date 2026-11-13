@@ -3,7 +3,7 @@ import Testing
 @testable import Wingtip
 
 /// The engine through this app's own bridge (Engine.callText: the input
-/// written by Engine.written, wt_call, the answer taken back as a Swift
+/// written by Engine.written, the engine's call, the answer taken back as a Swift
 /// string) held to the shared fixtures the engine's Rust tests
 /// (engine/facade/tests) and the web's vitest tests (through the .wasm)
 /// hold it to: apps/web/src/lib/fixtures, bundled into this target in place by
@@ -210,7 +210,7 @@ struct BridgeFixturesTests {
 
     /// The flight's figures in flightRules.json. The fixture's cruising
     /// altitudes (14 CFR 91.159) and reserves (91.151, 91.167) have no name
-    /// of their own in wt_call, since no phone asks them alone; the engine's
+    /// of their own in the engine's call, since no phone asks them alone; the engine's
     /// flight_rules.rs and the planner's test_flight_rules.py hold those.
     @Test func theFlightsFiguresAreWorkedThroughTheBridge() throws {
         let f = try fixture("flightRules")

@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_pilot::pilot::records::call",
   "description": "The largest bearing error 14 CFR 91.171 allows for a kind of VOR check: 4 degrees for a test signal (VOT or a repair station's, (b)(1)), a surface checkpoint ((b)(2)) and one receiver against the other ((c)); 6 for an airborne checkpoint ((b)(3)) and a radial along an airway ((b)(4)).",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

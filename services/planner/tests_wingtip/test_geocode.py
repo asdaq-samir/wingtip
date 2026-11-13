@@ -115,7 +115,7 @@ def test_a_failed_download_is_not_tried_again_at_once(monkeypatch, tmp_path):
         calls.append(url)
         raise requests.ConnectionError("down")
 
-    monkeypatch.setattr(geocode.requests, "get", down)
+    monkeypatch.setattr(geocode.outside, "get", down)
     assert geocode.find_towns("madison") == []
     assert geocode.find_towns("madison") == []
     assert len(calls) == 1
@@ -131,5 +131,5 @@ def test_a_corrupt_kept_gazetteer_is_downloaded_again(monkeypatch, tmp_path):
         def raise_for_status(self):
             pass
 
-    monkeypatch.setattr(geocode.requests, "get", lambda url, **kwargs: Resp())
+    monkeypatch.setattr(geocode.outside, "get", lambda url, **kwargs: Resp())
     assert geocode.find_towns("madison")[0]["label"] == "Madison, WI"

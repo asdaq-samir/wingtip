@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_flight::calls::call",
+  "description": "The planner's own planning figures, one copy for the apps: the time on the ground at a stop the pilot gave none for, a 30-minute turnaround (the owner's pick, 2026-10-20), and the altitude an airplane's cruise TAS and fuel burn are taken as its own at on a standard day, 6,000 ft (a row of every handbook's cruise table, FAA-H-8083-25C ch. 11).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PlanningFiguresInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "title": "PlanningFiguresAnswer",
+      "type": "object",
+      "properties": {
+        "turnaround_min": {
+          "type": "number"
+        },
+        "cruise_reference_ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "turnaround_min",
+        "cruise_reference_ft"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

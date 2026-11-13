@@ -9,7 +9,7 @@
  *
  * Worked out by the shared engine (engine/crates/brief/src/runway/pick.rs and
  * wind.rs, through lib/engine), the very code behind the planner's
- * wingtip.pattern and wingtip.runway_wind and the phones' wt_call: the rules and
+ * wingtip.pattern and wingtip.runway_wind and the phones' `call`: the rules and
  * their AC 90-66C and 14 CFR sources live there. Only the shapes the
  * pages read are made here.
  */
@@ -70,7 +70,7 @@ export function pickedEnd(
 /** The runway end flown at a field: the pilot's pick in FPL where they
  *  made one (`picked`, the end as painted, "24"), else the one most nearly
  *  into the wind, else the longest (runwayInUse). One rule for the radio
- *  calls, the kneeboard, the mock oral and the runway check, which each
+ *  calls, the kneeboard and the runway check, which each
  *  chose their own and never saw the pilot's pick: the runway checked for
  *  length could be a long one while a short one was picked. */
 export function runwayFlown(runways: Runway[], picked: string | null | undefined): InUse | null {

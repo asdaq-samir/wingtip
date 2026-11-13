@@ -1,0 +1,163 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::lost_comms",
+  "description": "The planner's /api/lost-comms answer (14 CFR 91.185): VFR's words, the routes in the rule's order (c)(1), each segment's altitude (c)(2) and when to leave the clearance limit (c)(3).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "LostCommsInput",
+      "type": "object",
+      "properties": {
+        "segments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "minimum_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "assigned_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "expected_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "expected_from": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "The index of the segment from which the expected altitude applies, a whole number; 0 where left out."
+        },
+        "approach_fix": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "efc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "eta": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "segments"
+      ]
+    },
+    "answer": {
+      "title": "LostCommsAnswer",
+      "type": "object",
+      "properties": {
+        "vfr": {
+          "type": "string"
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "enum": [
+                  "assigned",
+                  "vectored",
+                  "expected",
+                  "filed"
+                ]
+              },
+              "label": {
+                "type": "string"
+              },
+              "rule": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "label",
+              "rule"
+            ]
+          }
+        },
+        "altitude": {
+          "type": "string",
+          "description": "91.185(c)(2), the altitude rule, in words."
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "\"Segment\" where none is given."
+              },
+              "fly": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "because": {
+                "enum": [
+                  "assigned",
+                  "minimum",
+                  "expected",
+                  null
+                ]
+              },
+              "words": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "fly",
+              "because",
+              "words"
+            ]
+          }
+        },
+        "leave": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "vfr",
+        "routes",
+        "altitude",
+        "segments",
+        "leave"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

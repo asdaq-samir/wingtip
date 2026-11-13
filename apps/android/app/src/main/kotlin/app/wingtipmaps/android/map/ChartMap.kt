@@ -9,7 +9,10 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -23,12 +26,12 @@ import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.route.RouteLegs
 import app.wingtipmaps.android.route.RoutePoint
 import app.wingtipmaps.android.tiles.TileTemplate
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
@@ -47,7 +50,6 @@ import org.maplibre.android.style.sources.RasterSource
 import org.maplibre.android.style.sources.TileSet
 import org.maplibre.android.style.sources.VectorSource
 import org.maplibre.geojson.Feature
-import org.maplibre.geojson.Point
 
 /** The map's view where it came to rest: its box and its zoom, MapLibre's. */
 data class MapRest(val south: Double, val west: Double, val north: Double, val east: Double, val zoom: Double)
@@ -65,26 +67,27 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  * @param routePoints the route's points, where the line is cut into its
  *   legs (RouteLegs), so a tap on it picks a leg; `selectedLeg` the one
  *   cased in green while its Route Leg sheet is open.
- * @param ownShip the airplane's fix (OwnShip), drawn as the blue dot;
- *   null for none, or own ship off.
+ * @param ownShip the airplane's fix and whose it is (OwnShipMark), drawn
+ *   by MapLibre's LocationComponent (OwnShipPuck); grey while off. Read
+ *   here, as `glide` is, so a fix redraws the map's own and not its caller.
  * @param trail the path flown (OwnTrail), drawn under the route.
  * @param glide the still-air glide ring about own ship (InFlight, the
  *   engine's glide_ring), its outline as latitude and longitude pairs,
  *   drawn dashed; empty for none.
  * @param selectedField the field whose card is open, ringed (SelectedAirportLayer).
+ * @param plates the approach plates laid on the chart and their tags (PlateLayer).
  * @param emergency the emergency assistant's line to the field picked
  *   (EmergencyLayer); null while it is shut.
- * @param follow whether the map keeps the airplane in the middle; a
- *   drag of the map ends it (`onDragged`), as Apple Maps lets go.
+ * @param follow whether the map keeps the airplane in the middle (the
+ *   component's tracking); a drag of the map ends it (`onDragged`), as
+ *   Apple Maps lets go.
  * @param overlays the cycle's overlay tiles, in the first style with
  *   the chart; null for the chart alone.
  * @param layers Setup's switches: which overlays are drawn, and the
  *   terminal area chart pinned (`terminal`, where the chart has one).
  * @param weather each reporting field's weather pip by ident (AirportWeatherMarks).
- * @param closeTiles Google's street map close in (CloseMap); null for
- *   the chart alone, enlarged.
  * @param traffic the airplanes heard (Traffic), `tracked` the one ringed.
- * @param night the phone's dark theme: the chart dimmed (MapStyle.chartPaint).
+ * @param night the chart dimmed (MapStyle.chartPaint): a dark Appearance but Dark + Bright.
  * @param bottomInset what the sheet covers of the map, in pixels: the
  *   map's padding, so its middle is the middle of what the sheet leaves.
  * @param opensAt where the map opens, the airplane's last position
@@ -109,17 +112,17 @@ fun ChartMap(
     layers: MapLayers = MapLayers(),
     terminal: Charts.Companion.Terminal? = null,
     weather: Map<String, String> = emptyMap(),
-    closeTiles: String? = null,
     traffic: List<TrafficDrawing.Target> = emptyList(),
     tracked: String? = null,
     night: Boolean = false,
     bottomInset: Int = 0,
     opensAt: Pair<Double, Double>? = null,
-    ownShip: OwnShip.Fix? = null,
+    ownShip: () -> OwnShipMark = { OwnShipMark() },
     trail: List<PathPoint> = emptyList(),
-    glide: List<List<Double>> = emptyList(),
+    glide: () -> List<List<Double>> = { emptyList() },
     emergency: EmergencyLine? = null,
     selectedField: String? = null,
+    plates: PlatesShown = PlatesShown(),
     follow: Boolean = false,
     onDragged: () -> Unit = {},
     onRevealed: () -> Unit = {},
@@ -128,7 +131,7 @@ fun ChartMap(
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow).also(WeatherLoopLayer::follow).also(ForecastAreasLayer::follow).also(StationLayer::follow), density) } }
+    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow).also(WeatherLoopLayer::follow).also(ForecastAreasLayer::follow).also(StationLayer::follow).also(Map3dLayer::follow).also(app.wingtipmaps.android.map.flow.ModelWeatherLayer::follow), density) } }
     holder.onDragged = onDragged
     holder.onRevealed = onRevealed
     holder.onPick = onPick
@@ -155,18 +158,20 @@ fun ChartMap(
     // left in landscape as well as the sheet below.
     val leftInset = WindowInsets.safeDrawing.getLeft(LocalDensity.current, LayoutDirection.Ltr)
     LaunchedEffect(holder, bottomInset, leftInset) { holder.inset(bottomInset, leftInset) }
-    LaunchedEffect(holder, line, routePoints) { holder.route(line, routePoints) }
+    LaunchedEffect(holder, line, routePoints) { holder.route(line, routePoints).also { MapTerrain.destination(routePoints.lastOrNull()?.ident) } }
     LaunchedEffect(holder, selectedLeg) { holder.selectLeg(selectedLeg) }
-    LaunchedEffect(holder, ownShip, follow) { holder.ownShip(ownShip, follow) }
+    val mark by rememberUpdatedState(ownShip)
+    val ring by rememberUpdatedState(glide)
+    LaunchedEffect(holder, follow) { snapshotFlow { mark() }.collect { holder.ownShip(it, follow) } }
     LaunchedEffect(holder, trail) { holder.trail(trail) }
     LaunchedEffect(holder, layers) { holder.layers(layers) }
     LaunchedEffect(holder, terminal, layers.tac) { holder.terminal(if (layers.tac) terminal else null) }
     LaunchedEffect(holder, weather) { holder.weather(weather) }
-    LaunchedEffect(holder, closeTiles) { holder.close(closeTiles) }
     LaunchedEffect(holder, traffic, tracked) { holder.traffic(traffic, tracked) }
-    LaunchedEffect(holder, glide) { holder.glide(glide) }
+    LaunchedEffect(holder) { snapshotFlow { ring() }.collect(holder::glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
-    LaunchedEffect(holder, selectedField) { holder.selectField(selectedField) }
+    LaunchedEffect(holder, selectedField) { holder.selectField(selectedField).also { MapTerrain.selected(selectedField) } }
+    LaunchedEffect(holder, plates) { holder.plates(plates) }
 
     AndroidView(factory = { holder.view }, modifier = modifier)
 }
@@ -199,30 +204,25 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private val latest = Runnable { reveal() }
     /** What the map last drew over the chart, drawn again when the style is set anew (a cycle
      *  change), which drops every source and layer added since. */
-    private var lastFix: OwnShip.Fix? = null
+    private var lastMark = OwnShipMark()
     private var lastFollow = false
-    private var lastTrail: List<PathPoint> = emptyList()
+    /** Own ship, MapLibre's LocationComponent, once the map is open. */
+    private var puck: OwnShipPuck? = null
     private var lastLayers = MapLayers()
     private var lastTerminal: Charts.Companion.Terminal? = null
     private var lastWeather: Map<String, String> = emptyMap()
-    private var lastClose: String? = null
-    private var lastTraffic: List<TrafficDrawing.Target> = emptyList()
-    private var lastTracked: String? = null
     private var lastEmergency: EmergencyLine? = null
     private var lastSelected: String? = null
-    /** The chart's own furthest zoom, MapLibre's; the street map lets the
-     *  map go further while it is there. */
-    private var chartMaxZoom = 22.0
-    /** Each airplane carried on between answers, a step a second. */
-    private val carry = object : Runnable {
-        override fun run() {
-            drawTraffic()
-            if (lastTraffic.isNotEmpty() && !destroyed) handler.postDelayed(this, CARRY_MS)
-        }
-    }
+    /** The chart's tiles' last {z}, where the imagery takes over (CloseMap). */
+    private var chartTileMax = 12
+    /** The traffic's and the trail's GeoJSON last made, set again as
+     *  they are when the style is set anew. */
+    private var trafficJson: Pair<String, String>? = null
+    private var trailJson = lineJson(emptyList())
     private var lastGlide: List<List<Double>> = emptyList()
     private var lastPoints: List<RoutePoint> = emptyList()
     private var lastLeg: Int? = null
+    val plates = PlateLayer(density)
 
     fun on(event: Lifecycle.Event) {
         if (destroyed) return
@@ -244,7 +244,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
         if (destroyed) return
         destroyed = true
         handler.removeCallbacks(latest)
-        handler.removeCallbacks(carry)
         if (created) view.onDestroy()
     }
 
@@ -256,8 +255,9 @@ private class MapHolder(val view: MapView, private val density: Float) {
         view.getMapAsync { map ->
             open(map)
             if (template == null) return@getMapAsync
-            chartMaxZoom = MapStyle.maxZoom(maxZoom)
-            map.setMaxZoomPreference(if (lastClose != null) maxOf(chartMaxZoom, MapStyle.CLOSE_MAX_ZOOM) else chartMaxZoom)
+            // Past the chart's own detail the imagery (CloseMap), to its zoom.
+            chartTileMax = maxZoom
+            map.setMaxZoomPreference(maxOf(MapStyle.maxZoom(maxZoom), CloseMap.MAX_ZOOM))
             val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather), lastLayers.tac)
             val builder = Style.Builder().fromJson(json)
             OverlayPictures.addTo(builder, density)
@@ -270,14 +270,17 @@ private class MapHolder(val view: MapView, private val density: Float) {
             map.setStyle(builder) { style ->
                 styled = true
                 terminal(style, lastTerminal)
-                close(map, style, lastClose)
+                CloseMap.draw(style, chartTileMax)
                 route(style, line, lastPoints)
-                trail(style, lastTrail)
+                trail(style, trailJson)
                 GlideLayer.draw(style, lastGlide, GLIDE, ROUTE)
                 SelectedAirportLayer.draw(style, lastSelected)
-                ownShip(map, style, lastFix, lastFollow)
-                EmergencyLayer.draw(style, lastEmergency, below = OWN_SHIP)
-                drawTraffic()
+                plates.draw(style)
+                EmergencyLayer.draw(style, lastEmergency, below = OwnShipPuck.under(style))
+                // After what goes under it, so its layers are over them.
+                puck?.activate(style)
+                puck?.show(lastMark, lastFollow, app.wingtipmaps.android.ui.A11y.reducedMotion(view.context))
+                drawTraffic(style)
             }
         }
     }
@@ -365,59 +368,28 @@ private class MapHolder(val view: MapView, private val density: Float) {
         )
         layer.minZoom = MapStyle.glZoom(spec.minZoom.toDouble()).toFloat()
         style.addLayerAbove(layer, MapStyle.CHART)
+        CloseMap.draw(style, chartTileMax)
     }
 
-    /** The street map close in, over the chart and under the overlays,
-     *  fading in from CLOSE_FROM to CLOSE_FULL with the pinch (an opacity
-     *  by zoom); the map let in to CLOSE_MAX_ZOOM while it is there. */
-    fun close(url: String?) {
-        lastClose = url
-        if (destroyed) return
-        view.getMapAsync { map -> map.getStyle { style -> close(map, style, url) } }
-    }
-
-    private fun close(map: MapLibreMap, style: Style, url: String?) {
-        style.getLayer(MapStyle.CLOSE)?.let { style.removeLayer(it) }
-        style.getSource(MapStyle.CLOSE)?.let { style.removeSource(it) }
-        map.setMaxZoomPreference(if (url != null) maxOf(chartMaxZoom, MapStyle.CLOSE_MAX_ZOOM) else chartMaxZoom)
-        if (url == null) return
-        val tiles = TileSet("2.2.0", url).apply {
-            maxZoom = 22f
-            attribution = "Google Maps"
-        }
-        style.addSource(RasterSource(MapStyle.CLOSE, tiles, 256))
-        val layer = RasterLayer(MapStyle.CLOSE, MapStyle.CLOSE).withProperties(
-            PropertyFactory.rasterFadeDuration(0f),
-            PropertyFactory.rasterOpacity(
-                Expression.interpolate(
-                    Expression.linear(), Expression.zoom(),
-                    Expression.stop(MapStyle.CLOSE_FROM, 0), Expression.stop(MapStyle.CLOSE_FULL, 1),
-                ),
-            ),
-        )
-        layer.minZoom = (MapStyle.CLOSE_FROM - 0.5).toFloat()
-        val under = listOf(MapStyle.CHART_TERMINAL, MapStyle.CHART).firstOrNull { style.getLayer(it) != null }
-        if (under != null) style.addLayerAbove(layer, under) else style.addLayer(layer)
-    }
-
-    /** The airplanes heard, drawn now and carried on a step a second. */
-    fun traffic(targets: List<TrafficDrawing.Target>, tracked: String?) {
-        lastTraffic = targets
-        lastTracked = tracked
-        if (destroyed) return
-        handler.removeCallbacks(carry)
-        carry.run()
-    }
-
-    private fun drawTraffic() {
-        if (destroyed) return
-        view.getMapAsync { map ->
-            map.getStyle { style ->
-                val (points, trends) = TrafficDrawing.features(lastTraffic, lastTracked, System.currentTimeMillis())
-                style.getSourceAs<GeoJsonSource>(MapStyle.TRAFFIC)?.setGeoJson(points.toString())
-                style.getSourceAs<GeoJsonSource>(MapStyle.TRAFFIC_TREND)?.setGeoJson(trends.toString())
+    /** The airplanes heard, drawn now and carried on a step a second
+     *  until the next answer cancels this (ChartMap's effect). Where each
+     *  is carried to is worked out off the main thread (TrafficDrawing
+     *  asks the engine for every airplane), and only set on the map here. */
+    suspend fun traffic(targets: List<TrafficDrawing.Target>, tracked: String?) {
+        while (!destroyed) {
+            trafficJson = withContext(Dispatchers.Default) {
+                TrafficDrawing.features(targets, tracked, app.wingtipmaps.android.AppClock.nowMs()).let { (p, t) -> p.toString() to t.toString() }
             }
+            if (!destroyed) view.getMapAsync { map -> map.getStyle(::drawTraffic) }
+            if (targets.isEmpty()) return
+            delay(CARRY_MS)
         }
+    }
+
+    private fun drawTraffic(style: Style) {
+        val (points, trends) = trafficJson ?: return
+        style.getSourceAs<GeoJsonSource>(MapStyle.TRAFFIC)?.setGeoJson(points)
+        style.getSourceAs<GeoJsonSource>(MapStyle.TRAFFIC_TREND)?.setGeoJson(trends)
     }
 
     /** The sheet's room as the map's padding: the airplane, a fit and the
@@ -429,7 +401,11 @@ private class MapHolder(val view: MapView, private val density: Float) {
         leftInset = left
         if (destroyed || !opened) return
         view.getMapAsync { map ->
-            CameraUpdateFactory.paddingTo(0.0, 0.0, 0.0, px.toDouble()).let { if (app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)) map.moveCamera(it) else map.easeCamera(it, INSET_MS) }
+            val reduced = app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)
+            // While following, the component's tracking takes the padding.
+            if (puck?.inset(doubleArrayOf(0.0, 0.0, 0.0, px.toDouble()), if (reduced) 0L else INSET_MS.toLong()) != true) {
+                CameraUpdateFactory.paddingTo(0.0, 0.0, 0.0, px.toDouble()).let { if (reduced) map.moveCamera(it) else map.easeCamera(it, INSET_MS) }
+            }
             credits(map, px)
         }
     }
@@ -466,23 +442,26 @@ private class MapHolder(val view: MapView, private val density: Float) {
         view.getMapAsync { map -> map.getStyle { style -> RouteLegLayer.select(style, leg) } }
     }
 
-    fun ownShip(fix: OwnShip.Fix?, follow: Boolean) {
-        lastFix = fix
+    fun ownShip(mark: OwnShipMark, follow: Boolean) {
+        lastMark = mark
         lastFollow = follow
         if (destroyed) return
-        view.getMapAsync { map -> map.getStyle { style -> ownShip(map, style, fix, follow) } }
+        view.getMapAsync { puck?.show(mark, follow, app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)) }
     }
 
-    fun trail(points: List<PathPoint>) {
-        lastTrail = points
+    /** The path flown, its GeoJSON made off the main thread: a long day's
+     *  flying is thousands of points. */
+    suspend fun trail(points: List<PathPoint>) {
+        val json = withContext(Dispatchers.Default) { lineJson(points.map { it.lat to it.lon }) }
+        trailJson = json
         if (destroyed) return
-        view.getMapAsync { map -> map.getStyle { style -> trail(style, points) } }
+        view.getMapAsync { map -> map.getStyle { style -> trail(style, json) } }
     }
 
     fun emergency(line: EmergencyLine?) {
         lastEmergency = line
         if (destroyed) return
-        view.getMapAsync { map -> map.getStyle { style -> EmergencyLayer.draw(style, line, below = OWN_SHIP) } }
+        view.getMapAsync { map -> map.getStyle { style -> EmergencyLayer.draw(style, line, below = OwnShipPuck.under(style)) } }
     }
 
     fun glide(ring: List<List<Double>>) {
@@ -494,7 +473,18 @@ private class MapHolder(val view: MapView, private val density: Float) {
     /** The ring round the field whose card is open (SelectedAirportLayer). */
     fun selectField(ident: String?) {
         lastSelected = ident
-        if (!destroyed) view.getMapAsync { map -> map.getStyle { style -> SelectedAirportLayer.draw(style, ident) } }
+        redraw { style -> SelectedAirportLayer.draw(style, ident) }
+    }
+
+    /** The plates drawn, and the map brought to one newly put on it. */
+    fun plates(shown: PlatesShown) {
+        val new = plates.set(shown)
+        if (!destroyed && new != null) view.getMapAsync { it.animateCamera(PlateLayer.fit(new, density), OwnShipPuck.FOLLOW_MS) }
+        redraw(plates::draw)
+    }
+
+    private fun redraw(draw: (Style) -> Unit) {
+        if (!destroyed) view.getMapAsync { map -> map.getStyle(draw) }
     }
 
     /** The map opened on the airplane's last position at a region's
@@ -503,7 +493,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
      *  its padding as it is now, so the place is in the middle of what
      *  the sheet leaves, under the loading mark. A drag by the pilot ends
      *  following, as Apple Maps lets go of the position when the map is
-     *  moved by hand. A chart is read north up: no turn, no tilt. A tap
+     *  moved by hand: the component's tracking says so once it follows, the
+     *  gesture itself while it waits for a first fix. North up, no turn, no tilt, but in 3D (Map3dLayer). A tap
      *  opens the card of what is under it; each rest tells the view. */
     private fun open(map: MapLibreMap) {
         if (opened) return
@@ -518,8 +509,9 @@ private class MapHolder(val view: MapView, private val density: Float) {
             .zoom(MapStyle.glZoom(if (at != null) LEAFLET_OPEN_ZOOM else LEAFLET_COUNTRY_ZOOM))
             .padding(0.0, 0.0, 0.0, bottomInset.toDouble())
             .build()
+        puck = OwnShipPuck(map, view.context) { onDragged() }
         map.addOnCameraMoveStartedListener { reason ->
-            if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) onDragged()
+            if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE && puck?.tracking != true) onDragged()
         }
         map.addOnCameraIdleListener {
             val box = map.projection.visibleRegion.latLngBounds
@@ -559,7 +551,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         } ?: near(TAP_LINE, ROUTE)?.let { f ->
             // A leg of the route, before the airspace under it.
             f.getNumberProperty(RouteLegs.LEG)?.toInt()?.let { MapPick.RouteLeg(it) }
-        } ?: near(TAP_LINE, *MapStyle.AIRSPACE_LINES.toTypedArray())?.let { f ->
+        } ?: plates.at(at.latitude, at.longitude) ?: near(TAP_LINE, *MapStyle.AIRSPACE_LINES.toTypedArray())?.let { f ->
             MapPick.airspace(properties(f), at.latitude, at.longitude)
         }
         if (picked != null) onPick(picked)
@@ -580,40 +572,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
         return seen.values.toList()
     }
 
-    /** The airplane as an airplane, turned to its track, in the brand's
-     *  tint with a white casing so it reads on the chart's every colour
-     *  (OverlayPictures.ownShip); the tint's dot where the phone gives no
-     *  track, a shape of its own rather than a colour (the UI audit's
-     *  #12). The
-     *  map brought to it while following, at the sectional's scale the
-     *  first time and then only moved, so a pinch the pilot made is kept. */
-    private fun ownShip(map: MapLibreMap, style: Style, fix: OwnShip.Fix?, follow: Boolean) {
-        val geoJson = pointJson(fix)
-        val source = style.getSourceAs<GeoJsonSource>(OWN_SHIP)
-        if (source != null) {
-            source.setGeoJson(geoJson)
-        } else {
-            style.addSource(GeoJsonSource(OWN_SHIP, geoJson))
-            val layer = org.maplibre.android.style.layers.SymbolLayer(OWN_SHIP, OWN_SHIP).withProperties(
-                PropertyFactory.iconImage(
-                    Expression.switchCase(Expression.has("track"), Expression.literal(MapStyle.OWN_SHIP_ICON), Expression.literal(MapStyle.OWN_SHIP_DOT)),
-                ),
-                PropertyFactory.iconRotate(Expression.coalesce(Expression.get("track"), Expression.literal(0))),
-                PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
-                PropertyFactory.iconAllowOverlap(true),
-                PropertyFactory.iconIgnorePlacement(true),
-            )
-            // Under the traffic, which is drawn over everything.
-            below(style, layer, MapStyle.TRAFFIC_TREND)
-        }
-        if (follow && fix != null) {
-            val at = LatLng(fix.lat, fix.lon)
-            val update = if (map.cameraPosition.zoom < FOLLOW_ZOOM) CameraUpdateFactory.newLatLngZoom(at, FOLLOW_ZOOM)
-            else CameraUpdateFactory.newLatLng(at)
-            if (app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)) map.moveCamera(update) else map.animateCamera(update, FOLLOW_MS)
-        }
-    }
-
     private fun below(style: Style, layer: Layer, id: String) {
         if (style.getLayer(id) != null) style.addLayerBelow(layer, id) else style.addLayer(layer)
     }
@@ -621,8 +579,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     /** The path flown, under the route: a thinner line in the route's
      *  colour, so where the airplane went reads against where it meant
      *  to go. */
-    private fun trail(style: Style, points: List<PathPoint>) {
-        val geoJson = lineJson(points.map { it.lat to it.lon })
+    private fun trail(style: Style, geoJson: String) {
         val source = style.getSourceAs<GeoJsonSource>(TRAIL)
         if (source != null) {
             source.setGeoJson(geoJson)
@@ -687,7 +644,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
         const val ROUTE_EDGE = "route-edge"
         /** The chart's magenta, the web's COURSE_MAGENTA. */
         val COURSE_MAGENTA = Color.rgb(0xe6, 0x00, 0xe6)
-        const val OWN_SHIP = "own-ship"
         const val TRAIL = "trail"
         /** A finger's reach round a mark, and round a line, dp (the web's
          *  TAP.mark and TAP.line). */
@@ -696,11 +652,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
         /** How often each airplane is carried on between answers. */
         const val CARRY_MS = 1_000L
         const val GLIDE = "glide-ring"
-        /** The sectional's own scale, where the airplane's surroundings
-         *  read: the web app's zoom on a position (lib/map). */
-        const val FOLLOW_ZOOM = 9.0
-        /** Shorter than a fix's second, so the dot never lags the map. */
-        const val FOLLOW_MS = 300
         /** The sheet's own settle, so the map's middle moves with it. */
         const val INSET_MS = 300
         /** The latest the map is shown after its style is set, the web's
@@ -715,25 +666,5 @@ private class MapHolder(val view: MapView, private val density: Float) {
         const val LEAFLET_MIN_ZOOM = 3.0
         /** The middle of the lower 48 (the web's COUNTRY). */
         val COUNTRY = LatLng(39.5, -98.35)
-
-        /** A point feature's place, latitude first. */
-        fun pointOf(f: Feature): Pair<Double, Double>? = (f.geometry() as? Point)?.let { it.latitude() to it.longitude() }
-
-        /** A feature's fields as plain values (MapPick reads them): a
-         *  whole number as a Long, so an id reads as the tiles wrote it. */
-        fun properties(f: Feature): Map<String, Any?> {
-            val props: JsonObject = f.properties() ?: return emptyMap()
-            return props.entrySet().associate { (k, v) -> k to value(v) }
-        }
-
-        private fun value(v: JsonElement?): Any? {
-            if (v == null || v.isJsonNull || !v.isJsonPrimitive) return null
-            val p = v.asJsonPrimitive
-            return when {
-                p.isBoolean -> p.asBoolean
-                p.isNumber -> p.asDouble.let { d -> if (d == Math.floor(d) && !d.isInfinite() && kotlin.math.abs(d) < 1e15) d.toLong() else d }
-                else -> p.asString
-            }
-        }
     }
 }

@@ -137,18 +137,9 @@ export function hitAreaMisses(page: Page, scope = "body", size = 44): Promise<Hi
           const o = getComputedStyle(a);
           if (!/auto|scroll|clip|hidden/.test(o.overflowX + o.overflowY)) continue;
           const b = a.getBoundingClientRect();
-          // A scroller run on up under the panel's head (under-head) is in
-          // view from the head's foot down: what is over that is scrolled
-          // under the head, as under a sticky heading, not covered by it.
-          // Its scroll padding, the head's height resolved: --head-room
-          // itself can be a sum the property does not resolve (PanelTabs').
-          const under = a.classList.contains("under-head") ? parseFloat(o.scrollPaddingTop) || 0 : 0;
-          port = {
-            l: Math.max(port.l, b.left),
-            t: Math.max(port.t, b.top + under),
-            r: Math.min(port.r, b.right),
-            b: Math.min(port.b, b.bottom),
-          };
+          // What is under the sheet's sticky heads (its band, a card's
+          // pinned head) is scrolled under them, not covered (pinned, above).
+          port = { l: Math.max(port.l, b.left), t: Math.max(port.t, b.top), r: Math.min(port.r, b.right), b: Math.min(port.b, b.bottom) };
         }
         // A port's right and bottom edges are past it: a probe on one
         // finds what is beyond (a row cut off at 992 by its list, probed
@@ -583,7 +574,7 @@ export function contrastFindings(page: Page, scope = "body"): Promise<ContrastFi
       if (box.width < 2 || box.height < 2) continue;
       const cs = getComputedStyle(el);
       if (cs.visibility !== "visible") continue;
-      // Nor a word in a panel tab not up (PanelTabs' tab-away,
+      // Nor a word in a panel tab not up (PanelTabs' tab-page[data-hidden],
       // content-visibility: hidden): it has a box, measured, but is not
       // drawn, and its colours read as one -- 1:1, on CI's iPhone.
       if (!el.checkVisibility()) continue;
@@ -702,8 +693,8 @@ export async function emulateSafeArea(page: Page, insets: Insets) {
       }
     }
     for (const el of document.querySelectorAll<HTMLElement>("[style*='safe-area-inset']")) patch(el.style);
-    // What reads the insets in script (the map panel's sheet, whose
-    // detents are pixels) reads them again on a resize, which on a phone
+    // What reads the insets in script (the map's room under the status
+    // bar) reads them again on a resize, which on a phone
     // is what turning it fires.
     window.dispatchEvent(new Event("resize"));
   }, insets);
@@ -789,7 +780,7 @@ export function keyboardFindings(page: Page, scope = "body"): Promise<KeyboardFi
     for (const el of document.querySelectorAll<HTMLInputElement>(`${scope} input`)) {
       if (NOT_TYPED.has(el.type)) continue;
       const box = el.getBoundingClientRect();
-      if (!box.width || !box.height || el.closest("[inert], [aria-hidden=true], .tab-away")) continue;
+      if (!box.width || !box.height || el.closest("[inert], [aria-hidden=true], .tab-away, .tab-page[data-hidden]")) continue;
       const missing = [!el.hasAttribute("enterkeyhint") && "enterkeyhint", !el.hasAttribute("autocomplete") && "autocomplete"]
         .filter(Boolean)
         .join(", ");

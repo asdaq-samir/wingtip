@@ -9,7 +9,7 @@ import UIKit
 @Observable
 final class LogbookPhotoModel {
     let reader = DocumentReadModel()
-    private(set) var check: ASLogbookCheck?
+    private(set) var check: LogbookCheck?
     /// The rows confirmed, by their place on the page.
     private(set) var confirmed: Set<Int> = []
     /// The rows already logged, so a second try after a failure does not
@@ -20,7 +20,7 @@ final class LogbookPhotoModel {
     var reviewing = false
 
     var notes: DocumentRead? { reader.answer?.read }
-    var rows: [ASLogbookRowCheck] { check?.rows ?? [] }
+    var rows: [LogbookRowCheck] { check?.rows ?? [] }
     /// The rows to log on the next tap.
     var toLog: [Int] { confirmed.subtracting(logged).sorted() }
 
@@ -38,7 +38,7 @@ final class LogbookPhotoModel {
 
     /// A row can be logged only with its date: the logbook's entry needs
     /// the day flown (14 CFR 61.51(b)(1)(i)).
-    static func canConfirm(_ row: ASLogbookRowCheck) -> Bool { row.entry.flownOn != nil }
+    static func canConfirm(_ row: LogbookRowCheck) -> Bool { row.entry.flownOn != nil }
 
     func isConfirmed(_ i: Int) -> Bool { confirmed.contains(i) }
 
@@ -47,18 +47,19 @@ final class LogbookPhotoModel {
         if on { confirmed.insert(i) } else { confirmed.remove(i) }
     }
 
-    /// The gateway's entry for a row, every figure the page does not give
-    /// nought; nil for a row with no date.
-    static func request(_ e: ASLogbookEntryDraft) -> LogbookEntryRequest? {
+    /// The gateway's entry for a row, as the engine gives it (every
+    /// figure the page does not give nought); nil for a row with no date.
+    /// A paper page's row is no saved flight's, so it carries no flight.
+    static func request(_ e: LogbookEntryDraft) -> LogbookEntryRequest? {
         guard let day = e.flownOn else { return nil }
         return LogbookEntryRequest(
             flownOn: day, aircraft: e.aircraft, aircraftType: e.aircraftType, route: e.route, remarks: e.remarks,
-            totalHours: e.totalHours ?? 0, nightHours: e.nightHours ?? 0, crossCountryHours: e.crossCountryHours ?? 0,
-            dualHours: e.dualHours ?? 0, soloHours: e.soloHours ?? 0, instrumentHours: e.instrumentHours ?? 0,
-            dayLandings: e.dayLandings ?? 0, nightLandings: e.nightLandings ?? 0, toweredLandings: e.toweredLandings ?? 0,
-            distanceNm: e.distanceNm ?? 0, longestLegNm: e.longestLegNm ?? 0, approaches: e.approaches ?? 0,
-            holding: e.holding ?? false, tracking: e.tracking ?? false, airHours: e.airHours ?? 0,
-            touchAndGoes: e.touchAndGoes ?? 0, fromTrack: e.fromTrack ?? false, flightId: e.flightId)
+            totalHours: e.totalHours, nightHours: e.nightHours, crossCountryHours: e.crossCountryHours,
+            dualHours: e.dualHours, soloHours: e.soloHours, instrumentHours: e.instrumentHours,
+            dayLandings: Int(e.dayLandings), nightLandings: Int(e.nightLandings), toweredLandings: Int(e.toweredLandings),
+            distanceNm: e.distanceNm, longestLegNm: e.longestLegNm, approaches: Int(e.approaches),
+            holding: e.holding, tracking: e.tracking, airHours: e.airHours,
+            touchAndGoes: Int(e.touchAndGoes), fromTrack: e.fromTrack)
     }
 
     /// The confirmed rows logged one by one, through `add` (the gateway's

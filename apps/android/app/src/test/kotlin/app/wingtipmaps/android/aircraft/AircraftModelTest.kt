@@ -26,6 +26,7 @@ class AircraftModelTest {
     private fun dto(id: Long, tail: String, request: AircraftRequest? = null) = AircraftDto(
         id = id, tailNumber = tail, typeDesignator = request?.typeDesignator ?: "PA28", cruiseTasKt = request?.cruiseTasKt ?: 120.0,
         fuelBurnGph = request?.fuelBurnGph ?: 9.0, cruisePowerPct = request?.cruisePowerPct, equipment = request?.equipment,
+        descentIasKt = request?.descentIasKt, descentFuelBurnGph = request?.descentFuelBurnGph,
         createdAt = "2026-11-09T00:00:00Z", dueItems = emptyList(), inspections = InspectionsDto(forHire = false), openSquawks = emptyList(),
         figures = OwnFigures(),
     )
@@ -137,5 +138,26 @@ class AircraftModelTest {
         assertEquals("118", form.cruiseTasKt)
         assertEquals("SG", form.equipment)
         assertEquals("Cruise 120 kt, 9 gph", AircraftForm.figuresLine(was))
+    }
+
+    @Test
+    fun theDescentsTwoFiguresGoToTheGatewayAndComeBack() {
+        val form = AircraftForm(tailNumber = "N5TX", typeDesignator = "C172", cruiseTasKt = "110", fuelBurnGph = "8.5", descentIasKt = "100", descentFuelBurnGph = "5")
+        val asked = form.request(emptyMap())!!
+        assertEquals(100.0, asked.descentIasKt)
+        assertEquals(5.0, asked.descentFuelBurnGph)
+        val back = AircraftForm.of(dto(3, "N5TX", asked))
+        assertEquals("100", back.descentIasKt)
+        assertEquals("5", back.descentFuelBurnGph)
+    }
+
+    @Test
+    fun theEngineChecksEachFigureUnderItsOwnName() {
+        // By name: the contract puts the descent's two between the climb's
+        // burn and the usable fuel, so none is checked as another.
+        val answer = EngineContract.AircraftProblemsAnswer(descentIasKt = "Too slow", usableFuelGal = "Too much")
+        val problems = AircraftForm(descentIasKt = "5", usableFuelGal = "900").problems { Result.success(answer) }
+        assertEquals("Too slow", problems[AircraftForm.Field.DESCENT_IAS])
+        assertEquals("Too much", problems[AircraftForm.Field.USABLE_FUEL])
     }
 }
