@@ -89,6 +89,7 @@ def test_a_grid_built_after_the_planner_started_is_taken_up(monkeypatch, tmp_pat
     monkeypatch.setattr(ground_grid, "LOW_PATH", tmp_path / "low.npy")
     monkeypatch.setattr(ground_grid, "DONE_PATH", tmp_path / "done.json")
     monkeypatch.setattr(ground_grid, "_HELD", {})
+    ground_grid._NOT_BUILT.clear()
     assert ground_grid._grids() is None
     np.save(tmp_path / "high.npy", np.zeros((2, 2), dtype=np.int16))
     np.save(tmp_path / "low.npy", np.zeros((2, 2), dtype=np.int16))
