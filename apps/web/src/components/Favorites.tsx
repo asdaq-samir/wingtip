@@ -306,7 +306,7 @@ export function KeptChartMark({ airport, size }: { airport: RecentAirport; size?
 
 /** A kept airport -- a Favorite, a Recent -- as a pill's small tile: its
  *  chart symbol, its ident and `detail`, opening its card. */
-export function SmallAirportTile({
+function SmallAirportTile({
   airport,
   detail,
   onClick,

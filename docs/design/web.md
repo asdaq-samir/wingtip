@@ -1030,10 +1030,27 @@ second home for a control that already has one.
 
 ### 14. The welcome
 
-None, at the owner's word (2026-11-11: "We don't need the welcome"). A new
-pilot lands on the map with FPL's "Plan a flight": its Search and its Open
-Sample Flight, and the flights saved under them (§4). The airplane is
-picked in the Aircraft tab when it is needed, never assumed (decision 0011).
+A welcome sheet again, the owner's option A (2026-11-13: "highlight that
+it's a simple app with search like Apple/Google and a plan page like an
+EFB that can be easily accessed"), where the 2026-11-11 word had left none.
+The first time the planner opens with no route on a device
+(`features/plan/components/FirstFlight`, `useFirstFlight`, kept in
+`lib/firstRunTips`), Apple's welcome layout in the app's modal sheet
+(`WelcomeSheet`: the stock Drawer on a phone, the stock Dialog from `md`
+up, solid): "Welcome to Wingtip Maps", three rows (Search, like Maps; FPL,
+like your EFB; FAA charts that move like Maps) and one button, Let's Go
+Flying (the owner, 2026-11-13: one, not two). It, a swipe down or a tap
+beside the sheet goes on to the map with the one search ready: Search up
+at half (rule 11),
+its field asking for the destination (`useSearchPick`, as the route's own
+pickers ask) but not focused, so no keyboard jumps up until the pilot taps
+it; no field of its own. The airport picked is planned to from own ship's
+nearest field, else the last
+departure or Home, else the search asks for the departure. FPL comes up
+and one tip (`FplTip`, the stock Popover anchored to the FPL tab with its
+arrow) says the flight plan lives there, once. Setup's Guide, Show First
+Flight Again, brings both back. The airplane is picked when it is needed,
+never assumed (decision 0011).
 
 ### 15. Installable web app specifics
 
@@ -1302,7 +1319,7 @@ its reason:
   are the stock way, and each moves as its section is next changed.
 - **Map gestures** (the ruler's two-finger hold, the zoom banner): on
   MapLibre's canvas, where no stock component reaches.
-- **The radio's button, the map's buttons and the first flight's card on the sheet's top**
+- **The radio's button and the map's buttons on the sheet's top**
   (`sheet/sheetTop`, `OnSheetTop`): a portal into a slot in the Drawer's
   popup just over its top edge (`bottom: 100%`), so they move with the
   sheet under a finger and on its curve; the popup's corners are clipped
