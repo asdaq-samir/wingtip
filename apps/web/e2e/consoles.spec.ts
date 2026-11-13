@@ -68,20 +68,15 @@ test(
     await openConsole(page);
     const pilot = consoleSheet(page);
     await expect(pilot).toBeVisible();
-    // The account page, from the account button's menu beside the search:
-    // on a phone the panel's layer, under the search, its own close at its
-    // head.
-    const phone = page.viewportSize()!.width < 768;
-    await showTabs(page);
+    // You, from the account button beside the search: its own close at its top.
     await expect(pilot.getByTestId("console-close")).toBeVisible();
-    if (phone) expect(await pilot.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
-    // The role, a menu, in Personal's Account row, at the owner's ask: Pilot
-    // (chosen here), Developer for a developer, and Sign out last; who is
-    // signed in beside it.
-    // Setup is a tab's page, named for the console, no dialog over the panel
-    // (on a phone the panel is itself the Drawer's dialog, named for its page).
+    // A floating card of its own over the map (ConsoleLayer), not a layer of the sheet.
+    expect(await pilot.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(false);
+    // The role, a menu, in Pilot Details: Pilot (chosen here), Developer for
+    // a developer, and Sign out last; who is signed in beside it. You is a
+    // dialog of its own, named for the console.
     await expect(pilot).toHaveAccessibleName("Pilot");
-    await expect(page.getByRole("dialog", { name: "Pilot" }).and(page.locator(':not([data-slot="map-panel"])'))).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "Pilot" })).toBeVisible();
     await openAccount(page);
     await expect(pilot.getByTestId("role-menu")).toHaveText("Pilot");
     // Who is signed in, the role menu's title.
@@ -126,51 +121,40 @@ test(
   },
 );
 
-test("the console is the panel's own: up from the bottom of a phone's screen, in the panel beside a desktop's map", async ({ page }) => {
-  // The planner's Setup is a layer of the map's panel on every screen
-  // (MapPage's inPanel), at the owner's ask: a phone's from the bottom
-  // edge, the panel's height; from `md` up in the panel's column.
+test("You floats over the map as Apple Maps' account card does: in from a phone's sides and foot, the sheet under it left as it was", async ({
+  page,
+}) => {
+  // A card of its own over the map and its buttons (ConsoleLayer, the
+  // owner's Apple Maps screenshot, 2026-11-13), where it was a layer of
+  // the map's panel: ten points in from a phone's sides and foot, only as
+  // tall as what is in it; from `sm` up at the top corner over the panel.
   await page.goto("/app/plan");
   await settle(page);
   const panel = page.locator('[data-slot="map-panel"]');
-  // Opened as the tabs alone: half way up first, the height compared.
-  await grabberTo(page, "full");
-  // Measured once it has come to rest, not on its way up from the tabs.
+  await grabberTo(page, "half");
   await settled(panel);
-  const half = (await panel.boundingBox())!;
+  const before = (await panel.boundingBox())!;
   await openConsole(page);
   const pilot = consoleSheet(page);
-  await expect(
-    pilot
-      .getByTestId("setup-page")
-      .or(pilot.getByRole("tab", { name: "Guide" }))
-      .first(),
-  ).toBeVisible();
+  await expect(pilot.getByTestId("setup-page")).toBeVisible();
   await pilot.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
   const viewport = page.viewportSize();
   if (!viewport) throw new Error("no viewport configured");
   const box = (await pilot.boundingBox())!;
-  if (viewport.width < 768) {
-    // A layer of the map's panel, at the half every panel has, as the
-    // search was: in from the screen's sides and its foot by eight.
-    await expect(panel).toHaveAttribute("data-panel", "full");
-    await settled(panel);
-    const now = (await panel.boundingBox())!;
-    expect(Math.abs(now.y - half.y)).toBeLessThan(1);
-    expect(Math.abs(now.height - half.height)).toBeLessThan(1);
-    // All the way up, the sheet to the screen's sides.
-    expect(Math.round(box.x)).toBe(0);
-    expect(Math.abs(box.width - viewport.width)).toBeLessThanOrEqual(1);
-    // To the sheet's foot, less the room it keeps under its body for the home
-    // indicator all the way up.
-    expect(Math.abs(box.y + box.height - (now.y + now.height))).toBeLessThan(40);
+  // The sheet under it where it was.
+  await expect(panel).toHaveAttribute("data-panel", "half");
+  const now = (await panel.boundingBox())!;
+  expect(Math.abs(now.y - before.y)).toBeLessThan(1);
+  if (viewport.width < 640) {
+    expect(Math.round(box.x)).toBe(10);
+    expect(Math.round(viewport.width - box.x - box.width)).toBe(10);
+    expect(Math.round(viewport.height - box.y - box.height)).toBe(10);
   } else {
-    // Inside the panel, as the other tabs are, not a sheet of its own.
-    const now = (await panel.boundingBox())!;
-    expect(box.y).toBeGreaterThanOrEqual(now.y - 1);
-    expect(box.y + box.height).toBeLessThanOrEqual(now.y + now.height + 1);
+    expect(Math.round(box.x)).toBe(10);
+    expect(Math.round(box.y)).toBe(10);
   }
-  // Setup is one page now, no tabs of its own to change (PilotPanel).
+  // Within the screen, scrolling inside where it is taller.
+  expect(box.y).toBeGreaterThan(0);
 });
 
 test("Setup's Appearance control is system, light, dark or dark with the chart bright, a menu of all four, and the choice survives a reload", async ({

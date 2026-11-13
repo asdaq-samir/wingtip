@@ -20,9 +20,9 @@ const CoachPage = lazy(() => import("./coach/CoachPage"));
 /*
  * You's rows that open a page of pages (the owner's option A, 2026-11-13):
  * Airplanes, with the checklists inside it, and Training, the coach and
- * the drills; and the emergency assistant, its own group. Each row is its
- * own component, one child of the list, so the list keeps its hairlines
- * between rows.
+ * the drills; and the emergency assistant. Each row is its own component,
+ * one child of You's one list, so the list keeps its hairlines between
+ * rows.
  */
 
 /**
@@ -72,18 +72,16 @@ export function AirplanesPage({ signedIn }: { signedIn: boolean }) {
  *  2026-11-13), where they were two rows of its list. */
 export function TrainingRow() {
   return (
-    <ListGroup>
-      <PageRow
-        page="training"
-        title="Training"
-        testId="training-row"
-        media={
-          <RowBadge colour={SETTING_BADGE.coach}>
-            <GraduationCap />
-          </RowBadge>
-        }
-      />
-    </ListGroup>
+    <PageRow
+      page="training"
+      title="Training"
+      testId="training-row"
+      media={
+        <RowBadge colour={SETTING_BADGE.coach} round>
+          <GraduationCap />
+        </RowBadge>
+      }
+    />
   );
 }
 
@@ -135,25 +133,24 @@ export function TrainingPage({ signedIn }: { signedIn: boolean }) {
 }
 
 /**
- * The emergency assistant, its own group so it stands apart from the
- * pilot's things: opened by its name (lib/navigation/wanted), the one way
- * in a link and the flying head use, where on the ground it was five or
- * six taps away once its map button went (the owner, 2026-11-08).
+ * The emergency assistant, a row of You's one list as Apple's account
+ * card has every row (the owner's screenshot, 2026-11-13), where it was a
+ * group of its own: opened by its name (lib/navigation/wanted), the one
+ * way in a link and the flying head use, where on the ground it was five
+ * or six taps away once its map button went (the owner, 2026-11-08).
  */
-export function EmergencyGroup() {
+export function EmergencyRow() {
   return (
-    <ListGroup>
-      <ListRow
-        title="Emergency Assistant"
-        description="The best fields within a glide, the checklist, 7700 and 121.5"
-        onClick={() => wantScreen("emergency")}
-        data-testid="setup-emergency"
-        media={
-          <RowBadge colour={SETTING_BADGE.emergency}>
-            <Siren />
-          </RowBadge>
-        }
-      />
-    </ListGroup>
+    <ListRow
+      title="Emergency"
+      chevron
+      onClick={() => wantScreen("emergency")}
+      data-testid="setup-emergency"
+      media={
+        <RowBadge colour={SETTING_BADGE.emergency} round>
+          <Siren />
+        </RowBadge>
+      }
+    />
   );
 }

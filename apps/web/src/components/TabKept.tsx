@@ -26,18 +26,8 @@ import { useKeptScroll } from "../lib/scrollPlace";
  * (lib/shown) and stops its polling, clocks and store reads while it is
  * not.
  */
-export default function TabKept({
-  away,
-  still = false,
-  children,
-}: {
-  away: boolean;
-  /** In place but at rest: Setup up over the tabs (MapPanel), which hides
-   *  them plainly; Setup's own layer says it is shown (MapPage). */
-  still?: boolean;
-  children: ReactNode;
-}) {
-  const shown = useShown() && !away && !still;
+export default function TabKept({ away, children }: { away: boolean; children: ReactNode }) {
+  const shown = useShown() && !away;
   const node = useRef<HTMLDivElement>(null);
   useKeptScroll(node, !away);
   return (

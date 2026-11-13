@@ -6,6 +6,7 @@ import { Input } from "../../components/ui/input";
 import { api } from "../../lib/api/client";
 import type { Pilot } from "../../lib/api/types";
 import { pilotQuery } from "../../lib/queryClient";
+import { AccountGroup } from "./AccountMenu";
 
 // The server's own limits (PilotContactRequest): a number is figures and
 // the marks one is written with, a home base an airport identifier.
@@ -13,7 +14,7 @@ const PHONE = /^[0-9+()\-. ]{0,24}$/;
 const HOME_BASE = /^([A-Za-z0-9]{2,11})?$/;
 
 /**
- * Setup's Pilot details: what a flight plan asks of the pilot in command
+ * You's Pilot Details: the role's menu (AccountGroup), then what a flight plan asks of the pilot in command
  * (FAA Form 7233-4, item 19 C/) -- their name as their certificate gives
  * it, the one an endorsement names them by too (Checkride's), and their
  * contact, "including telephone number", good at the ETA in case search
@@ -24,9 +25,14 @@ const HOME_BASE = /^([A-Za-z0-9]{2,11})?$/;
  */
 export default function PilotPage() {
   const { data: pilot } = useQuery(pilotQuery);
-  // Keyed on the pilot, so the fields start from what is saved once it
-  // is known.
-  return pilot ? <PilotFields key={pilot.id} pilot={pilot} /> : null;
+  // The role's menu first (AccountGroup), then the fields, keyed on the
+  // pilot, so they start from what is saved once it is known.
+  return (
+    <div className="space-y-5">
+      <AccountGroup />
+      {pilot && <PilotFields key={pilot.id} pilot={pilot} />}
+    </div>
+  );
 }
 
 function PilotFields({ pilot }: { pilot: Pilot }) {

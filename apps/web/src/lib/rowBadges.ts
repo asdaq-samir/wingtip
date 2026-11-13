@@ -10,6 +10,7 @@ export { BADGE };
  *  in a colour of its own, as iOS's Settings leads every row with one,
  *  from the same palette as the cards'. */
 export const SETTING_BADGE = {
+  pilot: BADGE.car,
   aircraft: BADGE.tower,
   flights: BADGE.ground,
   logbook: BADGE.traffic,

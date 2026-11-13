@@ -7,7 +7,6 @@ import MapPanel from "../../components/MapPanel";
 import { ConsoleInPanelContext, useConsoleOpen, insetVars, setMapInsets, type PanelState } from "../../lib/mapChrome";
 import RouteForm from "../../components/RouteForm";
 import { EngineGate } from "../../lib/engine/engineGate";
-import { useNavEdge } from "../../hooks/use-nav-edge";
 import { useWarmAirportIndex } from "../../lib/airportIndex";
 import { useHomeAirportSync } from "../../lib/homeAirport";
 import { LinkSignIn, TvLinkHost } from "../pilot";
@@ -40,7 +39,6 @@ import type { WorkspacePieces } from "./workspace";
  */
 export default function MapPage({ mode }: { mode: Mode }) {
   const { title, panel: panelLabel, console: consoleLabel, Workspace, route } = MODES[mode];
-  const edge = useNavEdge();
   useShortcuts(useIsDesktop()); // a desktop's keys: / the search, B, N, D, Escape back
   const [address, setAddress] = useAddress();
   // The route in the panel: the address's, unless the pilot has typed
@@ -145,13 +143,10 @@ export default function MapPage({ mode }: { mode: Mode }) {
     setConsoleOpen(false);
   }, [setConsoleOpen]);
   const consoleInPanel = useMemo(() => ({ close: closeConsole }), [closeConsole]);
-  // Setup, the console, as a layer of the panel on every screen and both
-  // pages -- a tab as the others are, at the owner's asks ("in landscape
-  // mode it becomes a separate sheet while other tabs stay in the panel";
-  // "redesign the dev similar way") -- where the panel's body is, the
-  // route or the search under it kept (hidden) for when it is put away.
-  // Named as the console it is; Escape puts it away, unless something
-  // open in it (a menu) took the key.
+  // You, the avatar's card, floating over the map and its sheet (the
+  // owner's Apple Maps screenshot, 2026-11-13): the sheet under it stays
+  // as it was, the search or the route, for when it is put away. Escape
+  // puts it away, unless something open in it (a menu) took the key.
   const consoleLayer = consoleOpen;
   // Its whole page drawn just after the frame that shows Setup's pill, in
   // the background (useDeferredValue's first value): the pill is what a tap
@@ -167,7 +162,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
   if (layerDrawn && !setupDrawn) setSetupDrawn(true);
   const consoleLayerOf = (pieces: WorkspacePieces) => (
     <ConsoleInPanelContext.Provider value={consoleInPanel}>
-      <ConsoleLayer label={consoleLabel} edge={edge} onClose={closeConsole} finalFocus={consoleButton} shown={consoleLayer}>
+      <ConsoleLayer label={consoleLabel} onClose={closeConsole} finalFocus={consoleButton} shown={consoleLayer}>
         <Shown.Provider value={consoleLayer}>
           <AfterTheSheet>{pieces.console}</AfterTheSheet>
         </Shown.Provider>
@@ -196,7 +191,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
   // The panel's top row with it out: the workspace's head, or the route's
   // row; none over a card alone or the console's layer.
   const topRowOf = (pieces: WorkspacePieces, routeRow: ReactNode) =>
-    pieces.alone || consoleLayer ? null : pieces.head !== undefined ? pieces.head : routeRow;
+    pieces.alone ? null : pieces.head !== undefined ? pieces.head : routeRow;
 
   return (
     // The map alone (BootMap: chart and overlay tiles, which ask the engine
@@ -257,23 +252,21 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 </main>
                 {(pieces.around ?? ((panelNode: ReactNode) => panelNode))(
                   <MapPanel
-                    label={consoleLayer ? consoleLabel : panelLabel}
-                    controls={pieces.alone || consoleLayer ? undefined : pieces.controls}
+                    label={panelLabel}
+                    controls={pieces.alone ? undefined : pieces.controls}
                     state={panel}
                     onStateChange={setPanel}
                     onInsetsChange={setMapInsets}
                     // The pill: the workspace's own (a card's summary, the route's
                     // one line), or else the top row itself -- the same element, so
                     // a search bar typed into keeps its focus as the sheet comes up.
-                    // The console's layer (the account page) has none: at rest it is
-                    // the search's row.
-                    compact={consoleLayer ? undefined : (pieces.compact ?? topRow)}
+                    compact={pieces.compact ?? topRow}
                     toEdge={!!pieces.toEdge}
                     // The first row (the one search), put away under a card; and the pages, Search and FPL (MapPanel).
                     bar={pieces.bar}
                     pages={pieces.pages}
-                    layer={consoleLayer ? "console" : pieces.alone ? "card" : "tab"}
-                    foot={consoleLayer ? undefined : pieces.foot}
+                    layer={pieces.alone ? "card" : "tab"}
+                    foot={pieces.foot}
                     cardOver={!!pieces.cardOver}
                     flying={!!pieces.flying}
                     // Kept too where the row holds the workspace's actions: one can own a card in the
@@ -282,11 +275,12 @@ export default function MapPage({ mode }: { mode: Mode }) {
                     top={topRow}
                     kept={pieces.route != null || pieces.actions != null ? routeRow : undefined}
                   >
-                    {setupDrawn && consoleLayerOf(pieces)}
-                    {/* Under the console while it is out, kept as it is. */}
-                    <div className={consoleLayer ? "hidden" : "contents"}>{pieces.sidebar}</div>
+                    {pieces.sidebar}
                   </MapPanel>,
                 )}
+                {/* You, over the map and the sheet alike, outside the sheet's
+                    drawer: a dialog of its own, not one nested in it. */}
+                {setupDrawn && consoleLayerOf(pieces)}
               </div>
             );
           }}
