@@ -22,13 +22,15 @@ Functional core, imperative shell, four layers, each with one job
   feeds from the shared store, runs the chart model and chart vision, and
   asks the engine every rule (`wingtip_native.call`). It fetches no
   weather, reads no feed, calls no model and builds no tiles.
-- **The services beside it** (`services/ingest`, `weather`, `assistant`,
-  `jobs`), each its own image on `services/Dockerfile.base`, hold no rule
-  of their own. Ingest and weather write the shared store (the data volume
-  and Postgres); the planner reads it, so no pilot's request waits on a
-  live fetch. The assistant makes every Claude call and asks the planner
-  for every figure. The apps talk only to the gateway, which sends the
-  Claude paths to the assistant and the rest to the planner.
+- **The services beside it** (`services/ingest`, `weather`, `jobs`), each
+  its own image on `services/Dockerfile.base`, hold no rule of their own.
+  Ingest and weather write the shared store (the data volume and
+  Postgres); the planner reads it, so no pilot's request waits on a live
+  fetch. The server makes no model call (decision 0041): the phones' AI
+  runs on the phone, and a pilot's own Claude or ChatGPT reaches the
+  planner through its MCP connector (`services/planner/app/mcp`). The apps
+  talk only to the gateway, which forwards to the planner the
+  `/api/planner/*` paths the planner's document marks `x-gateway`.
 - **Spring Boot** (`services/gateway`) is who the pilot is and what they
   saved: accounts, sign-in, records, the public API, scheduled mail. It
   holds no aviation logic and asks the planner for a figure (`PlannerClient`).
@@ -49,8 +51,7 @@ Functional core, imperative shell, four layers, each with one job
   adding a rule": the Rust in the lowest crate that can hold it, its
   contract file, then `cargo run -p wingtip-contract-gen` in engine/,
   `npm run types` in apps/web, `scripts/build/engine-contract-apps.sh`,
-  `scripts/build/assistant-client.sh` for an `"x-tool"`, its test against
-  the shared fixtures (apps/web/src/lib/fixtures),
+  its test against the shared fixtures (apps/web/src/lib/fixtures),
   `scripts/build/build-engine-wasm.sh` (the `.wasm` is committed), and
   the images that link it rebuilt. CI checks every generated file matches.
 
@@ -65,7 +66,7 @@ Hard rules, checked as you write (the edit-time hook), at the push and in
 - **Map maths**: Mercator and tiles only in `lib/map/tileMath.ts` or
   `wingtip.geo`; hex-to-RGB only in `rgbOf` (`lib/rgb.ts`). Semgrep.
 - **The planner only through the generated clients**: the web's `lib/api/`,
-  `planner_client.py`, `PlannerClient`, the phones' API folders; no `/api/`
+  `planner_calls.py`, `PlannerClient`, the phones' API folders; no `/api/`
   path typed elsewhere. Semgrep, ArchUnit, detekt.
 - **No HTML markers** on the map but the own-ship arrow: draw a layer. Semgrep.
 - **The engine owns every rule and the great-circle maths**: no cited
@@ -193,7 +194,7 @@ without it).
 | `web` (`apps/web/`) | `npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip && npm run layers && npx vitest run` | lint in `guards`, the tests the change reaches (`--changed`) and the build / every test, and the `@smoke` browser tests / every browser test |
 | `py` (`services/planner/wingtip`, `tests_wingtip/`) | `ruff check wingtip tests_wingtip && lint-imports && pytest tests_wingtip/`, with the engine's wheel | all |
 | `planner` (`services/planner/` app) | `ruff check app tests && lint-imports && pytest tests/` | all |
-| `ingest`, `weather`, `assistant`, `jobs` | each service's ruff and pytest; the assistant's `python -m app.openapi` after a route change | all |
+| `ingest`, `weather`, `jobs` | each service's ruff and pytest | all |
 | `engine` | `scripts/ci/engine_layers.py`, `cargo machete`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --profile ci` over `scripts/ci/engine_affected.py --all` | lint in `guards`, the touched crates, those that use them and the contract test / every crate |
 | `java` (`services/gateway/`) | `mvn -B test` (Docker, for Testcontainers) | all |
 | `ios` (`apps/ios/`) | `xcodegen`, then `scripts/dev/xcodebuild.sh test` (xcodebuild with the shared caches) on the newest iPhone simulator (docs/NATIVE.md) | the build and unit tests on the iPhone / and `CardSmokeTests` / the full suites on the iPhone, iPad and iPhone Duo |
@@ -218,7 +219,7 @@ without it).
   rules for what a push changes. Skip it with `--no-verify` or `SKIP_HOOKS=1`; it is no
   substitute for the table.
 - **An API that changes changes its document:** `python -m app.openapi`
-  (the planner, the assistant) or `WRITE_OPENAPI=1 mvn -B test` (the
+  (the planner; then `scripts/build/planner-calls.sh` for the MCP connector's calls) or `WRITE_OPENAPI=1 mvn -B test` (the
   gateway), then `npm run types` and `scripts/build/api-models-apps.sh`;
   commit them all.
 - **Browser tests** (Playwright, `apps/web/e2e`) need the whole stack:
