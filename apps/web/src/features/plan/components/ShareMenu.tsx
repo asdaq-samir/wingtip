@@ -17,6 +17,8 @@ import { markPackSent, openInForeFlight, packOrigin, packPath, packSent } from "
 import { navLogRows } from "./navlog/rows";
 import { useShareLink } from "../hooks/useShareLink";
 import { refreshLive } from "../../../lib/liveRefresh";
+import type { RouteEdit } from "../../../lib/preferences";
+import ShowRouteAs from "./ShowRouteAs";
 
 const SHARE_LABEL: Record<"route" | RouteCard, string> = {
   // The route box's is More, a "…", at the owner's ask ("Don't call it
@@ -74,7 +76,11 @@ export default function ShareMenu({
   onShowFuel,
   onNavLog,
   onClear,
+  showRouteAs,
 }: {
+  /** How FPL shows its route, the route box's menu's view options (the
+   *  owner, 2026-11-13: "I want to move fpl layout to the fpl page"). */
+  showRouteAs?: { value: RouteEdit; onChange: (value: RouteEdit) => void };
   /** The suggested fuel stops taken out of the route box, put back. */
   onShowFuel?: () => void;
   /** The route's nav log opened: the route box's, with a course drawn. */
@@ -299,11 +305,16 @@ export default function ShareMenu({
                   <DropdownMenuSeparator />
                 </>
               )}
-              {saving(afterMenu(() => setAskingReview(true)))}
-              <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
-                <FileText />
-                File flight plan
-              </DropdownMenuItem>
+              {/* Before there is a route, only what applies then: the
+                  route's Show Route As (the owner, 2026-11-13), the rest
+                  left out, not greyed. */}
+              {routed && saving(afterMenu(() => setAskingReview(true)))}
+              {routed && (
+                <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
+                  <FileText />
+                  File flight plan
+                </DropdownMenuItem>
+              )}
               {planAgain && (
                 <DropdownMenuItem onClick={planAgain.onPlan} data-testid="plan-again" data-stale={planAgain.stale.length ? "" : undefined}>
                   <RotateCw />
@@ -341,6 +352,15 @@ export default function ShareMenu({
               <Printer />
               Print the nav log
             </DropdownMenuItem>
+          )}
+          {/* The page's view options after its actions, as iOS's ••• menus
+              put them, the Clear still last. */}
+          {showRouteAs && (
+            <>
+              {/* A band after the route's actions; none over it alone. */}
+              {routed && <DropdownMenuSeparator />}
+              <ShowRouteAs {...showRouteAs} />
+            </>
           )}
           {onClear && (
             <>

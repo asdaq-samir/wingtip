@@ -75,6 +75,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     routePoints,
     routed,
     setLoad,
+    setRouteEdit,
     setPointAltitude,
   } = vm.route;
   const {
@@ -405,7 +406,9 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
       onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
       onNavLog={card === undefined && routed && course ? openNavLogCard : undefined}
-      onClear={card === undefined ? vm.routeList.clearRoute : undefined}
+      // Nothing to clear on the empty page: its ✕ goes back (RouteControls).
+      onClear={card === undefined && vm.route.hasPoints ? vm.routeList.clearRoute : undefined}
+      showRouteAs={card === undefined ? { value: routeEdit, onChange: setRouteEdit } : undefined}
     />
   );
 
@@ -477,7 +480,13 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // they were under the box. The box again while a stop is typed in
         // from the list or a problem, and while it is opened from the head;
         // with no route either, the head folded (the owner, 2026-11-05).
-        route: <RouteHead vm={vm} controls={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
+        route: (
+          <RouteHead
+            vm={vm}
+            controls={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />}
+            menu={shareMenu("end")}
+          />
+        ),
         console: <PilotPanel />,
       })}
     </RouteShareMenu.Provider>

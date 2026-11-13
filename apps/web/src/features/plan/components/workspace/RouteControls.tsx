@@ -126,16 +126,18 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             <span className={WORD}>Brief</span>
           </RoundButton>
         )}
-        {/* Not before there is a route, at the owner's ask ("the share
-            button should not appear before a route is entered"): the box
-            clears itself (its own clear). */}
-        {routed && share}
-        {/* The box empty -- cleared, or never filled -- its close where
-            the menu was, a level back (the owner's "close goes back one
+        {/* The box empty -- cleared, or never filled -- its close before
+            the menu, a level back (the owner's "close goes back one
             level"): to the airport's card it was flown to from (Fly Here),
-            else the search (clearRoute's second press, which the menu gone
-            with the route left out of reach). */}
+            else the search (clearRoute's second press, which the menu's
+            Clear route, left out with nothing to clear, cannot reach). */}
         {!hasPoints && <CloseButton onClick={clearRoute} className="size-[32px]" data-testid="route-close" />}
+        {/* The route's menu, with a route or without: before one, only its
+            Show Route As (the owner, 2026-11-13: the layout reachable
+            before there is a route), where it was once kept back until a
+            route was entered ("the share button should not appear before
+            a route is entered"). */}
+        {share}
       </div>
     </div>
   );

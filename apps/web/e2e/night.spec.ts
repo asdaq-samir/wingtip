@@ -1,12 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openMapSettings, openSetup, pickControl, settle, slow } from "./helpers";
+import { openSetup, pickControl, settle, slow } from "./helpers";
 
 /**
  * Night: in the dark theme the sheets are the cockpit palette's navy and
  * the FAA chart's tiles alone are dimmed, so the white paper chart does
  * not take the pilot's night vision -- not the marks, the course or the
- * sheets over it. Settings' "Chart at night" puts the chart back as
- * printed. A browser that prefers dark is in the dark theme on System.
+ * sheets over it. Setup's Appearance Dark + Bright puts the chart back as
+ * printed, Dark dims it again (the map settings' Chart at Night folded in,
+ * the owner, 2026-11-13). A browser that prefers dark is in the dark theme on System.
  */
 
 test.use({ colorScheme: "dark" });
@@ -16,7 +17,7 @@ test.use({ colorScheme: "dark" });
  *  paint, nothing over the chart touched. */
 const lookOf = (page: Page) => page.getByTestId("gl-map").getAttribute("data-chart-look");
 
-test("in the dark theme the page is the night's navy and only the chart's tiles are dimmed, until Chart at night is Normal", async ({
+test("in the dark theme the page is the night's navy and only the chart's tiles are dimmed, until Appearance is Dark + Bright", async ({
   page,
 }) => {
   test.setTimeout(slow(60000));
@@ -37,24 +38,27 @@ test("in the dark theme the page is the night's navy and only the chart's tiles 
   // The chart's tiles dimmed, by the map's paint.
   await expect.poll(() => lookOf(page), { timeout: slow(15000) }).toBe("dimmed");
 
-  // Normal: the chart as printed, and kept so across a reload.
-  await openMapSettings(page);
-  const night = page.getByTestId("chart-night-select");
-  await expect(night.getByRole("button", { name: "Dimmed" })).toHaveAttribute("aria-pressed", "true");
-  await night.getByRole("button", { name: "Normal" }).click();
+  // Dark + Bright: the chart as printed, and kept so across a reload. The
+  // browser's dark on System is read as System, not Dark.
+  await openSetup(page);
+  const appearance = page.getByTestId("setup-page").getByTestId("theme-select");
+  await expect(appearance).toHaveAttribute("aria-label", "Appearance: System");
+  await pickControl(page, "theme-select", "theme-dark-bright");
+  await expect(appearance).toHaveAttribute("aria-label", "Appearance: Dark + Bright");
   await expect(html).toHaveAttribute("data-chart-night", "normal");
+  await page.keyboard.press("Escape");
   await expect.poll(() => lookOf(page)).toBe("normal");
   await page.reload();
   await settle(page);
   await expect(html).toHaveAttribute("data-chart-night", "normal");
   await expect.poll(() => lookOf(page)).toBe("normal");
 
-  // Back to Dimmed for the next test's sake, and the light theme never dims.
-  await openMapSettings(page);
-  await page.getByTestId("chart-night-select").getByRole("button", { name: "Dimmed" }).click();
-  await page.keyboard.press("Escape");
-  await expect(page.getByTestId("map-settings")).toHaveCount(0);
+  // Dark: the tiles dimmed again; then the light theme, which never dims.
   await openSetup(page);
+  await pickControl(page, "theme-select", "theme-dark");
+  await expect(page.getByTestId("setup-page").getByTestId("theme-select")).toHaveAttribute("aria-label", "Appearance: Dark");
+  await expect(html).toHaveAttribute("data-chart-night", "dimmed");
+  await expect.poll(() => lookOf(page)).toBe("dimmed");
   await pickControl(page, "theme-select", "theme-light");
   await expect(html).not.toHaveClass(/dark/);
   await expect.poll(() => lookOf(page)).toBe("normal");
