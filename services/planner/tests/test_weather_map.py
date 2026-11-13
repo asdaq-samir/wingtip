@@ -145,9 +145,7 @@ def test_the_winds_aloft_are_the_fd_stations_at_the_altitude_asked_for(monkeypat
     monkeypatch.setattr(airports, "load_airports", lambda: None)
     # Madison in the box, Duluth north of it.
     monkeypatch.setattr(
-        winds_stations,
-        "station_rows",
-        lambda ids, df: (np.array(["MSN", "DLH"]), np.radians(np.array([43.14, 46.84])), np.radians(np.array([-89.34, -92.19]))),
+        winds_stations, "station_rows", lambda ids, df: (np.array(["MSN", "DLH"]), np.array([43.14, 46.84]), np.array([-89.34, -92.19]))
     )
     wind = {"wind_dir_true_deg": 265.4, "wind_speed_kt": 33.6}
     monkeypatch.setattr(weather, "wind_at_altitude", lambda lat, lon, alt, fcst_hr="06": wind)

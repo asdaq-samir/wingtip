@@ -50,6 +50,13 @@ MERCATOR = re.compile(
     r"(?<![\w.])(6_?378_?137(\.0*)?|6_?378\.137|6_?371_?0[01]\d(\.\d*)?|6_?371(\.0*)?|40_?075_?01[67](\.\d*)?|40_?075(\.0\d*)?"
     r"|20_?037_?50[89](\.\d*)?|20_?037(\.5\d*)?|156_?543(\.\d*)?|78_?271(\.\d*)?|21_?6[0-4]\d(\.\d*)?|85\.05\d*)(?![\w.])"
 )
+# Every language's code in the apps, the services and the engine, which
+# the Mercator count reads.
+EVERY_SOURCE = tuple(
+    (top, suffix)
+    for top in ("apps", "services", "engine")
+    for suffix in (".rs", ".py", ".ts", ".tsx", ".js", ".mjs", ".swift", ".kt", ".java")
+)
 # Each platform's one home for them (and tags.rs's WGS-84 a, the sourced
 # TERPS earth's companion).
 MERCATOR_HOMES = (
@@ -65,11 +72,26 @@ MERCATOR_HOMES = (
 # Python service (round 5's S1). core's geo::corridor_bbox and box_around,
 # and wingtip.geo's, are the homes: a degree of latitude taken at its
 # shortest, 59.7 nm, and of longitude at the box's poleward edge.
+# The same box padded in degrees (round 6's T1 to T3): a latitude or
+# longitude plus or minus a pad, half, reach, margin or radius times a
+# fixed number (PAD_DEG * 1.4, half * 1.5: a cosine of one latitude for
+# every latitude) or over a cosine of its own.
+DEGREE_BOX = r"(?i:\b\w*(?:lat|lon)\w*\s*[-+]\s*\w*(?:pad|half|reach|margin|radius)\w*\s*(?:\*\s*\d|/[^\n]*\bcos\b))"
 SEARCH_BOX = re.compile(
     r"/\s*\(?\s*(?:60|59\.7)(?:\.0*)?(?![\w.])[^\n]*\bcos\b"
     r"|\bpad\w*\s*=(?!=)[^\n]*(?:/\s*\(?\s*(?:60|59\.7)(?:\.0*)?(?![\w.])|\bcos\b)"
+    r"|" + DEGREE_BOX
 )
 SEARCH_BOX_HOMES = ("engine/crates/core/src/geo.rs", "services/planner/wingtip/geo.py")
+# A great-circle distance worked by hand (round 6's T4): the haversine's
+# sin(x / 2) squared, or its asin or atan2 of a square root. The engine's
+# geodesic (core's geo.rs, through wingtip/geo.py) is the one distance.
+HAVERSINE = re.compile(
+    r"\bsin\([^\n]*/\s*2(?:\.0*)?\s*\)\s*(?:\*\*\s*2|\.powi\(2\))"
+    r"|/\s*2(?:\.0*)?\s*\)\s*\.sin\(\)\s*\.powi\(2\)"
+    r"|\b(?:asin|atan2)\(\s*(?:np\.|math\.|Math\.)?sqrt\("
+)
+HAVERSINE_HOMES = SEARCH_BOX_HOMES
 PY_NOT_CODE = re.compile(r'#[^\n]*|"""(.|\n)*?"""|\'\'\'(.|\n)*?\'\'\'|"(\\.|[^"\\\n])*"|\'(\\.|[^\'\\\n])*\'')
 
 

@@ -32,7 +32,8 @@ import sys
 from pathlib import Path
 
 import changed
-from source_literals import ENGINE_UNIT, MERCATOR, MERCATOR_HOMES, SEARCH_BOX, SEARCH_BOX_HOMES, UNIT, code_of, rust_code, text
+from source_literals import ENGINE_UNIT, HAVERSINE, HAVERSINE_HOMES, MERCATOR, MERCATOR_HOMES, SEARCH_BOX, SEARCH_BOX_HOMES, UNIT
+from source_literals import EVERY_SOURCE, code_of, rust_code, text
 
 ROOT = Path(__file__).resolve().parents[2]
 BASELINE = ROOT / "scripts/ci/simplicity_baseline.json"
@@ -68,6 +69,11 @@ def json_total(path: str) -> int:
     if isinstance(data, dict):
         return sum(v if isinstance(v, int) else sum(v.values()) for v in data.values())
     return len(data)
+
+
+def in_code(rx: re.Pattern, homes: tuple, tops=(("engine", ".rs"), ("services", ".py"))) -> int:
+    """How often `rx` is found in the code (comments and strings out) of every file under `tops` but its homes."""
+    return sum(len(rx.findall(code_of(p))) for top, suffix in tops for p in files(top, suffix) if not p.endswith(homes))
 
 
 def allow_total(path: str) -> int:
@@ -190,26 +196,20 @@ METRICS = {
     # written as a number outside each platform's home, in any language
     # (round 4's K2 and K7).
     "mercator_literals": (
-        lambda: sum(
-            len(MERCATOR.findall(code_of(p)))
-            for top in ("apps", "services", "engine")
-            for suffix in (".rs", ".py", ".ts", ".tsx", ".js", ".mjs", ".swift", ".kt", ".java")
-            for p in files(top, suffix)
-            if not p.endswith(MERCATOR_HOMES)
-        ),
+        lambda: in_code(MERCATOR, MERCATOR_HOMES, EVERY_SOURCE),
         "the earth's size or Web Mercator's edge written again: take it from lib/map/tileMath.ts, Tiles/TileMath.swift, "
         "tiles/TileGrid.kt, wingtip/geo.py or the engine's core geo (and tags.rs's TERPS_EARTH_FT)",
     ),
     # A search box padded by hand in the engine or a Python service, outside
     # core's geo.rs and wingtip/geo.py (round 5's S1).
     "search_box_formulas": (
-        lambda: sum(
-            len(SEARCH_BOX.findall(code_of(p)))
-            for top, suffix in (("engine", ".rs"), ("services", ".py"))
-            for p in files(top, suffix)
-            if not p.endswith(SEARCH_BOX_HOMES)
-        ),
+        lambda: in_code(SEARCH_BOX, SEARCH_BOX_HOMES),
         "a search box padded by hand: take it from the engine's geo::corridor_bbox or box_around, or wingtip.geo's",
+    ),
+    # A great-circle distance worked by hand outside the geo homes (round 6's T4).
+    "haversine_formulas": (
+        lambda: in_code(HAVERSINE, HAVERSINE_HOMES),
+        "a great-circle distance worked by hand: ask wingtip.geo.distance_nm or nearest, or the engine's geo",
     ),
     # The other guards' baselines, their totals (each only shrinks; here
     # for the one trend line).

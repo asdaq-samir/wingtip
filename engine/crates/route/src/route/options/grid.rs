@@ -17,28 +17,29 @@ pub const CELL_DEG: f64 = 0.25;
 /// reads every few pixels).
 pub const PER_CELL: usize = 5;
 /// How far round the route the grid reaches, a share of its length,
-/// degrees at least and at most: room to go round a line of storms.
+/// nm at least and at most: room to go round a line of storms.
 pub const REACH_SHARE: f64 = 0.3;
-pub const REACH_MIN_DEG: f64 = 1.0;
-pub const REACH_MAX_DEG: f64 = 3.0;
+pub const REACH_MIN_NM: f64 = 60.0;
+pub const REACH_MAX_NM: f64 = 180.0;
 
 /// Where the cells are round a route from `start` to `end` and the
 /// pilot's own points `via`: the straight line's reach every way, round
 /// every point -- a point outside the grid was clamped to its edge, and
 /// the route read against cells it never flew (the audit of 2026-10-24).
+/// The box is core's corridor_bbox round all of them, so the reach east
+/// and west is measured at the box's poleward edge, a via point's too,
+/// not at the mean of the ends' latitudes.
 pub fn frame(start: Point, end: Point, via: &[Point]) -> Geom {
-    let span = geo::distance_nm(start.0, start.1, end.0, end.1) / 60.0;
-    let reach = REACH_MAX_DEG.min(REACH_MIN_DEG.max(span * REACH_SHARE));
+    let length = geo::distance_nm(start.0, start.1, end.0, end.1);
+    let reach = REACH_MAX_NM.min(REACH_MIN_NM.max(length * REACH_SHARE));
     let points: Vec<Point> = [start, end].into_iter().chain(via.iter().copied()).collect();
     let min_lat = points.iter().map(|p| p.0).fold(f64::INFINITY, f64::min);
     let max_lat = points.iter().map(|p| p.0).fold(f64::NEG_INFINITY, f64::max);
     let min_lon = points.iter().map(|p| p.1).fold(f64::INFINITY, f64::min);
     let max_lon = points.iter().map(|p| p.1).fold(f64::NEG_INFINITY, f64::max);
-    let lat0 = min_lat - reach;
-    let lon0 = min_lon - reach / ((start.0 + end.0) / 2.0).to_radians().cos().max(0.2);
-    let rows = ((max_lat + reach - lat0) / CELL_DEG).ceil() as i64;
-    let lon_reach = min_lon - lon0;
-    let cols = ((max_lon + lon_reach - lon0) / CELL_DEG).ceil() as i64;
+    let (lat0, lon0, north, east) = geo::corridor_bbox((min_lat, min_lon), (max_lat, max_lon), reach);
+    let rows = ((north - lat0) / CELL_DEG).ceil() as i64;
+    let cols = ((east - lon0) / CELL_DEG).ceil() as i64;
     Geom { lat0, lon0, cell: CELL_DEG, rows: rows.max(1), cols: cols.max(1) }
 }
 

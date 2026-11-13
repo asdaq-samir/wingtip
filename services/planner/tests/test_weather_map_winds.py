@@ -3,8 +3,6 @@ once per forecast record and altitude and then cut to each box: the same
 stations, figures and order as a lookup of each station in the box at
 every ask."""
 
-import math
-
 import numpy as np
 from wingtip import airports, weather, weather_map, winds_stations
 
@@ -17,7 +15,7 @@ def _stub(monkeypatch, asked):
     monkeypatch.setattr(winds_stations, "fd_stations", lambda fcst_hr="06": product)
     monkeypatch.setattr(airports, "load_airports", lambda: None)
     codes = np.array(list(STATIONS))
-    lats, lons = (np.radians(np.array([p[i] for p in STATIONS.values()])) for i in (0, 1))
+    lats, lons = (np.array([p[i] for p in STATIONS.values()]) for i in (0, 1))
     monkeypatch.setattr(winds_stations, "station_rows", lambda ids, df: (codes, lats, lons))
 
     def wind(lat, lon, alt, fcst_hr="06"):
@@ -37,8 +35,8 @@ def _by_lookup(box, altitude_ft, fcst_hr):
     codes, lats, lons = winds_stations.station_rows(set(stations), airports.load_airports())
     south, west, north, east = box
     out = []
-    for code, lat_r, lon_r in zip(codes, lats, lons):
-        lat, lon = math.degrees(lat_r), math.degrees(lon_r)
+    for code, lat, lon in zip(codes, lats, lons):
+        lat, lon = float(lat), float(lon)
         if not (south <= lat <= north and west <= lon <= east):
             continue
         wind = weather.wind_at_altitude(lat, lon, altitude_ft, fcst_hr)

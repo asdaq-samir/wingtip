@@ -10,7 +10,7 @@ import functools
 import re
 
 from fastapi import APIRouter, Query, Response
-from wingtip import airports, fixes, procedures
+from wingtip import airports, fixes, geo, procedures
 from wingtip.engine import ask as engine
 
 from ..router_basics import near_points
@@ -19,9 +19,9 @@ from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 
 router = APIRouter()
 
-#: How far round the route's points a place said is looked for, degrees:
-#: about 60 nm of latitude, a clearance's points being near its route.
-PAD_DEG = 1.0
+#: How far round the route's points a place said is looked for, nm, every
+#: way (wingtip.geo.box_around): a clearance's points being near its route.
+PAD_NM = 60.0
 
 #: As many names as Apple suggests a recognizer's contextualStrings hold.
 MOST_WORDS = 100
@@ -29,7 +29,7 @@ MOST_WORDS = 100
 
 def _corridor(near: tuple) -> list[tuple[float, float, float, float]]:
     """Boxes along the lines between the route's points, a degree apart
-    and PAD_DEG round each: a navaid halfway along a long route -- Hill
+    and PAD_NM round each: a navaid halfway along a long route -- Hill
     City on one from San Jose to Nashville -- is outside the boxes round
     its ends, and a box round both ends is most of the country."""
     boxes = []
@@ -37,7 +37,7 @@ def _corridor(near: tuple) -> list[tuple[float, float, float, float]]:
         steps = max(1, int(max(abs(lat2 - lat1), abs(lon2 - lon1))))
         for k in range(steps + 1):
             lat, lon = lat1 + (lat2 - lat1) * k / steps, lon1 + (lon2 - lon1) * k / steps
-            boxes.append((lat - PAD_DEG, lon - PAD_DEG * 1.4, lat + PAD_DEG, lon + PAD_DEG * 1.4))
+            boxes.append(geo.box_around(lat, lon, PAD_NM))
     return boxes
 
 

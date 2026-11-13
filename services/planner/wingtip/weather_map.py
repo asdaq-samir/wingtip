@@ -12,8 +12,6 @@ says when the radar was made, as the weather service last read it
 
 from __future__ import annotations
 
-import math
-
 from . import weather, weather_store, winds_stations
 
 #: A SIGMET is a flight's for as long as it is valid; a G-AIRMET is a
@@ -155,8 +153,8 @@ def winds_in(box: tuple, altitude_ft: float, fcst_hr: str) -> dict | None:
     codes, lats, lons = winds_stations.station_rows(set(stations), airports_df)
     south, west, north, east = box
     out = []
-    for row, (code, lat_r, lon_r) in enumerate(zip(codes, lats, lons)):
-        lat, lon = math.degrees(lat_r), math.degrees(lon_r)
+    for row, (code, lat, lon) in enumerate(zip(codes, lats, lons)):
+        lat, lon = float(lat), float(lon)
         if not (south <= lat <= north and west <= lon <= east):
             continue
         if row not in worked:
