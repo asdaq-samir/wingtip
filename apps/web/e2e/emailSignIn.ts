@@ -83,3 +83,27 @@ export async function openLinkFor(page: Page, address: string): Promise<string> 
   await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
   return path;
 }
+
+/** Clears the signed-in account's home base, its telephone number sent
+ *  back as it is (PUT /api/me/contact takes both; blank is none), and this
+ *  device's copy of it (preferences' homeAirport), as the app's own
+ *  request does it: with the session's cookie and its CSRF header. */
+export async function blankHomeBase(page: Page) {
+  const status = await page.evaluate(async () => {
+    const token = /(?:^|;\s*)XSRF-TOKEN=([^;]+)/.exec(document.cookie)?.[1];
+    const me = (await (await fetch("/api/me")).json()) as { phone?: string | null };
+    const answer = await fetch("/api/me/contact", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...(token ? { "X-XSRF-TOKEN": decodeURIComponent(token) } : {}) },
+      body: JSON.stringify({ phone: me.phone ?? "", homeBase: "" }),
+    });
+    const kept = localStorage.getItem("wingtip.preferences");
+    if (kept) {
+      const prefs = JSON.parse(kept) as { state: Record<string, unknown> };
+      prefs.state.homeAirport = null;
+      localStorage.setItem("wingtip.preferences", JSON.stringify(prefs));
+    }
+    return answer.status;
+  });
+  expect(status, "the account's home base cleared").toBe(200);
+}

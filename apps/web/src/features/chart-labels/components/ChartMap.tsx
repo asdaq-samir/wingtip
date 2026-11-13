@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { SheetCard } from "../../../components/SheetCard";
 import type { Course, Point, Rating } from "../../../lib/api/types";
 import { isEndpoint } from "../../../lib/api/types";
@@ -7,6 +7,7 @@ import { useGlTap } from "../../../lib/map/gl/glLayer";
 import { AirspaceGl } from "../../../components/map/layers/AirspaceGl";
 import { LandWaterGl, OverlayGl } from "../../../lib/map/gl/layers/BaseGl";
 import { ChartGl } from "../../../lib/map/gl/layers/ChartGl";
+import { ClassBGl } from "../../../lib/map/gl/layers/ClassBGl";
 import { NavaidsGl } from "../../../components/map/layers/NavaidsGl";
 import { OwnShipGl } from "../../../lib/map/gl/layers/OwnShipGl";
 import { PickedGl } from "../../../lib/map/gl/layers/RouteExtrasGl";
@@ -37,8 +38,10 @@ const NO_HOLD = () => {};
 const UNRATED = CATEGORY_UNKNOWN;
 
 /**
- * The training map: the chart, the airspace, the VORs, the course and its
- * two airports, and every point the model detected or the developer added,
+ * The training map: the chart, the airspace, the VORs, the Class B fields
+ * while they are on (ClassBGl, a tap goes to the field at its terminal
+ * chart's zoom, as there is no card here), the course and its two
+ * airports, and every point the model detected or the developer added,
  * in its rating's colour -- on the same WebGL map as the planner's
  * (GlMapShell and its layers). A tap on a point selects it and flies to
  * it; its rating card opens in the sheet; a tap on the course adds a point
@@ -81,13 +84,18 @@ export default function ChartMap({
         .map((e) => ({ ident: e.ident, lat: e.lat, lon: e.lon, colour: CHART.casing, space: null, fix: false, select: () => onSelect(e) })),
     [endpoints, onSelect],
   );
+  // The route's two fields wear their own marks, not a Class B one too.
+  const routeIdents = useMemo(() => ends.map((e) => e.ident), [ends]);
+  // A Class B field hovered shows its terminal sheet (ChartGl's previewing).
+  const [previewing, setPreviewing] = useState(false);
   return (
     <GlMapShell course={course} focus={flyTo} focusZoom={flyZoom} place={null}>
       <LandWaterGl />
-      <ChartGl course={course} />
+      <ChartGl course={course} previewing={previewing} />
       <OverlayGl />
       <AirspaceGl />
       <NavaidsGl />
+      {course && <ClassBGl chart={course} route={routeIdents} onPreview={setPreviewing} />}
       <RouteGl course={course} checkpoints={[]} candidates={candidates} endpoints={ends} />
       <AddOnCourse onAddAt={onAddAt} />
       <PickedGl focus={selected} held={null} onHold={NO_HOLD} />

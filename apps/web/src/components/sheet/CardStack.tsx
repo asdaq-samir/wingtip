@@ -79,14 +79,28 @@ const SLIDE = {
  * there (the browser tests, index.css), and placed from the sheet's snap
  * offset to its own. The keyboard's inset is the Drawer's own
  * (VirtualKeyboardProvider).
+ *
+ * Each card up is nested in the one under it, in React's tree, as Base
+ * UI's nested drawers demo nests them: a Drawer tells its parent how many
+ * drawers are open over it by setting, not adding, so one parent takes
+ * one child (useDialogRoot's onNestedDialogOpen, DrawerPopup's presence;
+ * @base-ui/react 1.9.0, the newest). Drawn side by side in the sheet, the
+ * cards each set the sheet's count, the last to speak winning: a card
+ * closed over another left the sheet thinking none was open, or one was
+ * after all had gone -- its swipe the sheet's (DrawerViewport), its
+ * content shown or hidden under the card (data-nested-drawer-open). Nested
+ * one in another, each card counts those over it and the sheet hears the
+ * one under them all. A card kept closed (under a page put away) tells
+ * its parent nothing, and would cut the chain: it is drawn beside it.
  */
 export function CardStack(p: StackProps & { host: HTMLElement | null }) {
   const stack = useSheetCards((s) => s.stack);
   const riding = useRidingCard();
   if (!p.host) return null;
+  const host = p.host;
   const top = [...stack].reverse().find((entry) => entry.state === "open")?.id;
   const cover = coverCard(stack)?.id;
-  return stack.map((entry) => (
+  const drawer = (entry: CardEntry, over?: ReactNode) => (
     <CardDrawer
       key={entry.id}
       entry={entry}
@@ -94,9 +108,18 @@ export function CardStack(p: StackProps & { host: HTMLElement | null }) {
       cover={entry.id === cover}
       riding={entry.id === riding}
       {...p}
-      host={p.host!}
-    />
-  ));
+      host={host}
+    >
+      {over}
+    </CardDrawer>
+  );
+  const up = stack.filter((entry) => entry.state !== "kept");
+  return (
+    <>
+      {stack.filter((entry) => entry.state === "kept").map((entry) => drawer(entry))}
+      {up.reduceRight<ReactNode>((over, entry) => drawer(entry, over), null)}
+    </>
+  );
 }
 
 function CardDrawer({
@@ -105,8 +128,9 @@ function CardDrawer({
   cover,
   riding,
   host,
+  children,
   ...p
-}: StackProps & { entry: CardEntry; top: boolean; cover: boolean; riding: boolean; host: HTMLElement }) {
+}: StackProps & { entry: CardEntry; top: boolean; cover: boolean; riding: boolean; host: HTMLElement; children?: ReactNode }) {
   const { id, frame } = entry;
   const slot = useCallback((node: HTMLElement | null) => setCard(id, { slot: node }), [id]);
   const { onPhone, fromBottom } = p;
@@ -147,8 +171,8 @@ function CardDrawer({
       }}
       onOpenChange={(open, details) => {
         if (open) return;
-        // The card on top alone hears it: two cards open are two drawers
-        // nested in the sheet side by side, and both heard one Escape.
+        // The card on top alone hears it, as Base UI gives Escape to the
+        // topmost of nested drawers; kept here for a tap or a swipe.
         // The focus going elsewhere -- the sheet, the map -- leaves it
         // open: it is no modal.
         if (!top || details.reason === "focus-out") return details.cancel();
@@ -232,6 +256,8 @@ function CardDrawer({
           </SheetViewport>
         </Drawer.Portal>
       </Drawer.VirtualKeyboardProvider>
+      {/* The cards over it, nested in it (CardStack). */}
+      {children}
     </Drawer.Root>
   );
 }
