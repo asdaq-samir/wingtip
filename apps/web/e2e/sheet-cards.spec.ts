@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import {
   cardClose,
   closeCard,
@@ -12,7 +12,7 @@ import {
   tapTheChart,
   mapStill,
 } from "./helpers";
-import { drawnMarks, markWith, tapMark } from "./marks";
+import { drawnMarks, markWith, tapMark, type DrawnMark } from "./marks";
 
 /**
  * What a control opens (ResponsivePopover, on a phone) and what a tap on
@@ -307,7 +307,9 @@ test("a card tapped open on the chart floats up over it, the sheet, its buttons 
   await settled(sideDrawer(page));
   await mapStill(page);
   await expect.poll(markWith(page, "route-marks", /^\d+$/), { timeout: slow(60000) }).not.toBeNull();
-  const tapped = (await markWith(page, "route-marks", /^\d+$/)())!;
+  // The checkpoint highest on the screen, clear of where the card comes
+  // up: one it would hide is brought out from under it (the next test).
+  const tapped = (await checkpoints(page)).sort((a, b) => a.y - b.y)[0]!;
   // Every frame for a second from the tap, as painted: the sheet's top,
   // the map's buttons, and whether the chart is moving.
   const recording = page.evaluate(
@@ -348,4 +350,41 @@ test("a card tapped open on the chart floats up over it, the sheet, its buttons 
   await expect(card).toHaveCount(0);
   await mapStill(page);
   expect((await at())!.y).toBeCloseTo(before, 0);
+});
+
+/** The route's numbered checkpoints drawn now, on the page's points. */
+const checkpoints = async (page: Page): Promise<DrawnMark[]> =>
+  (await drawnMarks(page, "route-marks")).filter((m) => /^\d+$/.test(String(m.text ?? "")));
+
+// A floating card covers the map apart from the sheet: what it is about,
+// tapped low on the screen where the card comes up, was left under it as
+// the map made room for the sheet alone. The map now eases it into the
+// room the card leaves, as Apple Maps keeps a place clear of its card
+// (map/cardRoom's useFloatingInSight); one already in sight stays put (the
+// test before).
+test("a checkpoint tapped where its floating card comes up is brought out from under the card", async ({ page }) => {
+  test.skip(page.viewportSize()!.width >= 768, "a phone's floating card, at the screen's foot");
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await settled(sideDrawer(page));
+  await mapStill(page);
+  await expect.poll(async () => (await checkpoints(page)).length, { timeout: slow(60000) }).toBeGreaterThan(0);
+  // The lowest drawn, nearest the sheet: where the card comes up.
+  const tapped = (await checkpoints(page)).sort((a, b) => b.y - a.y)[0]!;
+  await page.mouse.click(tapped.x, tapped.y);
+  const card = page.locator("[data-floating-card][data-open]");
+  await expect(card).toBeVisible();
+  await expect(card).toContainText("nm along");
+  await mapStill(page);
+  const box = (await card.boundingBox())!;
+  const view = page.viewportSize()!;
+  // Its point on the screen, above the card's top and below the screen's.
+  const at = async () => (await checkpoints(page)).find((m) => m.key === tapped.key) ?? null;
+  await expect.poll(async () => (await at())?.y ?? Infinity).toBeLessThan(box.y);
+  const now = (await at())!;
+  expect(now.y).toBeGreaterThan(0);
+  expect(now.x).toBeGreaterThan(0);
+  expect(now.x).toBeLessThan(view.width);
+  const outside = now.y < box.y || now.y > box.y + box.height || now.x < box.x || now.x > box.x + box.width;
+  expect(outside).toBe(true);
 });

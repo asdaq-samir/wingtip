@@ -50,7 +50,13 @@ Compose. Nothing here is built by hand where a stock part does it.
    Drawers, with its sizes, grabber and swipe and the map's buttons on
    their top; an airport's card opened from a floating one (Nearest's
    list) puts the floating ones away while it is up (`ridingOver`). The
-   detent rules below (2, 10, 11) are the riding cards'.
+   map's room is what the sheet and the floating cards leave (MapLibre's
+   padding, `components/map/cardRoom`'s `padOf`, each card's box told by
+   `components/sheet/floatRoom`): the chart stays still as a card comes,
+   goes or changes size, and only if the spot tapped to open it is then
+   under it does the map ease that spot to the middle of the room left,
+   as Apple Maps does (`useFloatingInSight`). The detent rules below
+   (2, 10, 11) are the riding cards'.
 2. **What opens inside a card stays in that card's stack, with Back**
    (NOTAMs, a diagram's details, a past flight, a page of Settings).
    **Every card opens at half** (the medium detent), whatever it covers
