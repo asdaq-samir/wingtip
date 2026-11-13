@@ -9,7 +9,7 @@ import { useSafeArea } from "../hooks/use-viewport";
 import { GLASS_SHEET, MATERIAL, PILL_RADIUS, type MapInsets, type PanelState } from "../lib/mapChrome";
 import { coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
-import { FLOAT_PX, insetsOf, sizeAt, snapsOf } from "./sheet/insets";
+import { FLOAT_PX, insetsOf, sizeAt, snapsOf, tabBarRoomPx } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
 import { useDrawn } from "./sheet/useDrawn";
 import { CUT_TOP, FOLLOW, SHEET_BELOW, SheetParts, type PartsProps } from "./sheet/SheetParts";
@@ -17,7 +17,7 @@ import { SheetGrabber } from "./sheet/SheetGrabber";
 import { CardStack, type StackProps } from "./sheet/CardStack";
 import { SheetDrawer } from "./sheet/SheetDrawer";
 import { useCardMoving, useRidingCard } from "./sheet/sheetTopSlot";
-import type { SheetPages } from "./sheet/SheetPager";
+import { SheetTabBar, SheetTabs, type SheetPages } from "./sheet/SheetTabBar";
 
 interface Props {
   /** The panel's name -- "Flight Planning", "Model Training" -- for its
@@ -55,9 +55,9 @@ interface Props {
   /** The airplane flying the route (useFlyingMode): the first row, the top
    *  row and the controls put away, the pill its foot alone. */
   flying?: boolean;
-  /** The sheet's two pages, Search and FPL, side by side and swiped between
-   *  (the owner, 2026-11-11): the first the search and `children`, the
-   *  second the top row and its own body (SheetPager). */
+  /** The sheet's two pages, Search and FPL, picked from a tab bar under the
+   *  sheet (the owner, 2026-11-13: tab bar, option A): the first the search
+   *  and `children`, the second the top row and its own body (SheetTabBar). */
   pages?: SheetPages;
   state: PanelState;
   onStateChange: (state: PanelState) => void;
@@ -140,11 +140,17 @@ export default function MapPanel(props: Props) {
   // map, read from the Drawer as its snap point is set: the map eases with
   // the sheet (GlMapShell, in the Drawer's time).
   const { cover, card: coverIsCard } = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  // The pages' tab bar, in the workspace and not flying (a card over it
+  // keeps it: a tab picked puts the card away with its page, usePanelView).
+  const pages = props.pages && !flying && layer === "tab" ? props.pages : undefined;
+  // Under a top sheet the bar is the map's foot (under a bottom sheet the
+  // Drawer's viewport stands on it, which useSheetCover reads).
+  const barUnderMap = onPhone && !fromBottom && pages ? tabBarRoomPx(safe.bottom) : 0;
   const tellInsets = props.onInsetsChange;
-  const insetsNow = useMemo(
-    () => ({ ...insetsOf(front, cover, onPhone, fromBottom, safe.top, desktop), card: cardsUp || coverIsCard }),
-    [front, cover, onPhone, fromBottom, safe.top, desktop, cardsUp, coverIsCard],
-  );
+  const insetsNow = useMemo(() => {
+    const insets = insetsOf(front, cover, onPhone, fromBottom, safe.top, desktop);
+    return { ...insets, bottom: insets.bottom + barUnderMap, card: cardsUp || coverIsCard };
+  }, [front, cover, onPhone, fromBottom, safe.top, desktop, cardsUp, coverIsCard, barUnderMap]);
   useEffect(() => tellInsets(insetsNow), [insetsNow, tellInsets]);
 
   // Escape with no card over it (a card's own drawer takes it) lowers the
@@ -192,6 +198,7 @@ export default function MapPanel(props: Props) {
     cardsUp,
     barShown,
     toEdge,
+    tabBar: !!pages,
     panelSize,
     onFootTap: () => ask("half"),
     kept,
@@ -201,11 +208,9 @@ export default function MapPanel(props: Props) {
     bar,
     children,
   };
-  // A card's own grabber is the plain one, for its own size; the sheet's,
-  // with its pages and not flying, the split one that picks them (SheetGrabber).
+  // The sheet's grabber and each card's, the one plain bar.
   const grabberAt = bottomSheet ? "top" : "bottom";
-  const pages = props.pages && !flying && layer === "tab" ? props.pages : undefined;
-  const sheetGrabber = <SheetGrabber label={label} size={size} ask={ask} at={grabberAt} pages={pages} />;
+  const sheetGrabber = <SheetGrabber label={label} size={size} ask={ask} at={grabberAt} />;
   // On a phone the light grey of Apple Maps' web sheet (2026-11-10): the look's --sheet, Canvas in Native.
   const look = onPhone
     ? GLASS_SHEET
@@ -266,7 +271,11 @@ export default function MapPanel(props: Props) {
         // Out, the window's height inside its float on either side.
         style={{ top: FLOAT_PX, bottom: size === "peek" ? undefined : FLOAT_PX, borderRadius: PILL_RADIUS }}
       >
-        <SheetParts {...shared} />
+        <SheetTabs pages={pages}>
+          <SheetParts {...shared} />
+          {/* The pages' tabs at the panel's foot, on it rather than over the map. */}
+          {pages && <SheetTabBar names={pages.names} floating={false} className="mt-auto shrink-0 px-3 pt-2" />}
+        </SheetTabs>
         {!cardsUp && sheetGrabber}
         {/* The cards over it, each covering the panel, its own scroller. */}
         <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40 rounded-[inherit]" />
@@ -275,27 +284,30 @@ export default function MapPanel(props: Props) {
     );
 
   return (
-    <SheetDrawer
-      fromBottom={fromBottom}
-      snapPoints={snaps.points}
-      snapPoint={snaps.at[size]}
-      snapped={snapped}
-      popupRef={setSheetNode}
-      lower={lower}
-      ready={ready}
-      popup={common}
-      look={look}
-      grabber={!cardsUp && sheetGrabber}
-      topSlot={ridingCard === null}
-      cards={
-        // The cards over it, inside its popup: its place.
-        <>
-          <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40" />
-          <CardStack {...stackProps} />
-        </>
-      }
-    >
-      <SheetParts {...shared} />
-    </SheetDrawer>
+    <SheetTabs pages={pages}>
+      <SheetDrawer
+        fromBottom={fromBottom}
+        snapPoints={snaps.points}
+        snapPoint={snaps.at[size]}
+        snapped={snapped}
+        popupRef={setSheetNode}
+        lower={lower}
+        ready={ready}
+        popup={common}
+        look={look}
+        grabber={!cardsUp && sheetGrabber}
+        topSlot={ridingCard === null}
+        tabBar={pages && <SheetTabBar names={pages.names} floating />}
+        cards={
+          // The cards over it, inside its popup: its place.
+          <>
+            <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40" />
+            <CardStack {...stackProps} />
+          </>
+        }
+      >
+        <SheetParts {...shared} />
+      </SheetDrawer>
+    </SheetTabs>
   );
 }

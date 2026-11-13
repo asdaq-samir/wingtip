@@ -85,9 +85,9 @@ test(
     await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
     await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
     // The plan up (FPL, the sheet's second page), and the search, its own
-    // page now (SheetPager), let go: back on it, the account button in
-    // Cancel's place.
-    await expect(sideDrawer(page).getByTestId("sheet-pager")).toHaveAttribute("data-page", "1");
+    // page now (its tab, SheetTabBar), let go: back on it, the account
+    // button in Cancel's place.
+    await expect(sideDrawer(page).getByTestId("sheet-pages")).toHaveAttribute("data-page", "1");
     await showPage(page, 0);
     await expect(row.getByTestId("account-button")).toBeVisible();
   },
@@ -103,9 +103,8 @@ test("with no route the sheet opens on the search's own page, and the plan's emp
   // remove plan button and saved from search"): the plan is FPL's page.
   await expect(home.getByTestId("flight-summary-new")).toHaveCount(0);
   await emptyPlan(page);
-  // FPL's page up: the search's is beside it in the pager (SheetPager),
-  // drawn, out of sight.
-  await expect(sideDrawer(page).getByTestId("sheet-pager")).toHaveAttribute("data-page", "1");
+  // FPL's page up: the search's kept under its tab (SheetTabBar), out of sight.
+  await expect(sideDrawer(page).getByTestId("sheet-pages")).toHaveAttribute("data-page", "1");
   await expect(home).not.toBeInViewport();
 });
 

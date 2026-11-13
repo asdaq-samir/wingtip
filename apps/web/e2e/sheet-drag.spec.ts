@@ -142,7 +142,7 @@ test("a flick goes on the way it was thrown: up from the pill, down from all the
 });
 
 /** How much of the screen the sheet at rest covers, from its foot: the
- *  Drawer's own snap point (a fixed "4.75rem" at the pill), measured. */
+ *  Drawer's own snap point (a fixed "4.25rem" at the pill, over the tab bar), measured. */
 async function shown(page: Page) {
   await settled(sideDrawer(page));
   const box = (await sideDrawer(page).boundingBox())!;

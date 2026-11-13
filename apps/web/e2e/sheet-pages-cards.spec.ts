@@ -1,13 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { grabberTo, settle, sideDrawer, frontSheet, slow } from "./helpers";
-import { bar, expectPage, expectShown, openAirport } from "./sheetPages";
+import { tab, expectPage, expectShown, openAirport } from "./sheetPages";
 
 /**
  * Cards over the sheet's two pages, Search and FPL (the owner, 2026-11-11;
  * docs/design/rules.md §4a, and the card rule's 1): a card opened from one
  * page and put away leaves that page in sight and live, and the route
  * cleared or taken apart leaves the sheet where it was. The pages
- * themselves, their swipe and the split grabber: sheet-pages.spec.
+ * themselves and their tab bar: sheet-tab-bar.spec.
  */
 
 test.describe("cards over the pages", () => {
@@ -29,7 +29,7 @@ test.describe("cards over the pages", () => {
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     await grabberTo(page, "half");
-    await bar(page, 0).click();
+    await tab(page, 0).click();
     await expectShown(page, 0);
     await openAirport(page, "KOSH");
     await page.keyboard.press("Escape");

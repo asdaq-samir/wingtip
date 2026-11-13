@@ -1,19 +1,25 @@
-import { useEffect, type ComponentProps, type ReactNode } from "react";
+import { useEffect, type CSSProperties, type ComponentProps, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, usePanelDragging } from "../../lib/mapChrome";
 import { sheetTopRef } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
+import { TAB_BAR_ROOM } from "./insets";
 
 /** The Drawer's keyboard inset, 0 or a keyboard's height. */
 const KEYBOARD = "var(--drawer-keyboard-inset, 0px)";
 const VIEWPORT_BOTTOM = `max(${KEYBOARD}, env(safe-area-inset-bottom))`;
-/** A bottom sheet's ground carried on under the home indicator, below its
- *  viewport: all the way up the popup ends at the viewport's foot (lower,
- *  it hangs past it by its snap offset). Its own colour, so it goes clear
- *  with it under a card, whose drawer has its own (CardStack). */
+/** Over the tab bar: the sheet's sizes all stand on it (the owner,
+ *  2026-11-13: tab bar, option A), and a keyboard, taller, covers it. */
+const OVER_TAB_BAR = `max(${KEYBOARD}, ${TAB_BAR_ROOM})`;
+/** A bottom sheet's ground carried on under its viewport to the screen's
+ *  foot -- the home indicator's inset, or the tab bar's room, which the
+ *  viewport sets as --sheet-under -- so the bar floats on the sheet as
+ *  iOS 26's does: all the way up the popup ends at the viewport's foot
+ *  (lower, it hangs past it by its snap offset). Its own colour, so it
+ *  goes clear with it under a card, whose drawer has its own (CardStack). */
 export const UNDER_INDICATOR =
-  "after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-[env(safe-area-inset-bottom)] after:bg-inherit";
+  "after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-(--sheet-under,env(safe-area-inset-bottom)) after:bg-inherit";
 
 /**
  * What the sheet holds under a card, as Base UI's nested drawers demo has
@@ -55,6 +61,7 @@ export function SheetDrawer({
   grabber,
   topSlot,
   cards,
+  tabBar,
   children,
 }: {
   fromBottom: boolean;
@@ -78,8 +85,11 @@ export function SheetDrawer({
   topSlot: boolean;
   /** The cards over it (CardStack), outside the clip of its corners, so a card can stand higher than it. */
   cards: ReactNode;
+  /** The tab bar under the sheet (SheetTabBar), its sizes over it. */
+  tabBar?: ReactNode;
   children: ReactNode;
 }) {
+  const bottom = tabBar ? OVER_TAB_BAR : fromBottom ? VIEWPORT_BOTTOM : KEYBOARD;
   return (
     <Drawer.Root
       open
@@ -109,7 +119,7 @@ export function SheetDrawer({
               a target itself, so the map under it is the map's. */}
           <SheetViewport
             className="pointer-events-none fixed inset-x-0 top-0 z-40 print:static"
-            style={{ bottom: fromBottom ? VIEWPORT_BOTTOM : KEYBOARD }}
+            style={{ bottom, ...(tabBar ? { "--sheet-under": TAB_BAR_ROOM } : {}) } as CSSProperties}
           >
             <Drawer.Popup
               {...popup}
@@ -171,6 +181,9 @@ export function SheetDrawer({
               <div className={cn("relative flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]", GIVE_WAY)}>{children}</div>
               {cards}
             </Drawer.Popup>
+            {/* The tab bar, in the room under the viewport: over the sheet's
+                ground there, under a keyboard that is up. */}
+            {tabBar && <div className="absolute inset-x-0 top-full z-10 px-4">{tabBar}</div>}
           </SheetViewport>
         </Drawer.Portal>
       </Drawer.VirtualKeyboardProvider>

@@ -15,18 +15,18 @@ export const firstRow = (page: Page) =>
     .getByRole("search")
     .filter({ has: page.getByTestId("search-airports") });
 
-/** One of the sheet's two pages up (SheetPager; the owner, 2026-11-11),
- *  by its bar of the split grabber (SheetGrabber): 0 Search, 1 FPL. */
+/** One of the sheet's two pages up, by its tab in the tab bar under the
+ *  sheet (SheetTabBar; the owner, 2026-11-13): 0 Search, 1 FPL. */
 export async function showPage(page: Page, at: 0 | 1) {
-  const bar = page.locator(`[data-page-bar="${at}"]`);
-  if ((await bar.count()) === 0 || (await bar.getAttribute("aria-selected")) === "true") return;
-  await bar.click();
-  await expect(bar).toHaveAttribute("aria-selected", "true");
-  await expect(sideDrawer(page).getByTestId("sheet-pager")).toHaveAttribute("data-page", String(at));
+  const tab = page.locator(`[data-page-tab="${at}"]`);
+  if ((await tab.count()) === 0 || (await tab.getAttribute("aria-selected")) === "true") return;
+  await tab.click();
+  await expect(tab).toHaveAttribute("aria-selected", "true");
+  await expect(sideDrawer(page).getByTestId("sheet-pages")).toHaveAttribute("data-page", String(at));
 }
 
 /** The plan in sight (FPL, the sheet's second page): its Cancel first
- *  where the field is in use, then FPL's bar of the grabber. */
+ *  where the field is in use, then FPL's tab. */
 export async function showPlan(page: Page) {
   await showTabs(page);
   const cancel = page.getByTestId("one-search-cancel");
@@ -55,7 +55,7 @@ export async function showTraffic(page: Page) {
   await sideDrawer(page).getByTestId("search-do-traffic").click();
 }
 
-/** The plan's empty box, with no route, by FPL's bar of the grabber: with
+/** The plan's empty box, with no route, by FPL's tab: with
  *  no route the sheet opens on the search, whose Plan a Flight went
  *  (3eb6e1417). */
 export async function planFromSearch(page: Page) {

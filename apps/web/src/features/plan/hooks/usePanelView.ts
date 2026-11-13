@@ -219,7 +219,7 @@ export function usePanelView({
 
   const keptCards = useRef<Partial<Record<PanelView, AddressChange>>>({});
   // What the search's page was when it was left, the traffic or the search
-  // itself: swiped back to, it is that again (the sheet audit, 2026-11-12:
+  // itself: picked again by its tab, it is that again (the sheet audit, 2026-11-12:
   // the traffic came back as the plain search).
   const firstPage = useRef<PanelView>("search");
   const keptReplay = useRef<{ hex: string; id: number; at: number | null; playing: boolean } | null>(null);
@@ -265,7 +265,7 @@ export function usePanelView({
   // route cleared) come with an address change -- a card put away, a list
   // opened -- which nuqs makes at once, not in a transition: the pick at
   // once too, so the two land in one commit.
-  // A page of the sheet picked (SheetPager, its bar of the grabber): FPL's
+  // A page of the sheet picked (its tab in the tab bar, SheetTabBar): FPL's
   // the plan, the first the search's page as it was left.
   const pickPage = useCallback((page: number) => pickView(page ? "plan" : firstPage.current), [pickView]);
   const pickLater = useCallback((next: PanelView) => setViewPick(next), []);

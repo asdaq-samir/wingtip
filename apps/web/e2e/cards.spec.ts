@@ -90,7 +90,7 @@ for (const row of CARDS) {
               // data-sheet-scroll); the drawer round it -- its popup, the
               // scroller's own frame (a tap there raises it), the scroller
               // itself -- is the empty room under the title row (the pill's
-              // fixed 4.75rem, sheet/insets), and what of the body is hidden
+              // fixed 4.25rem, sheet/insets), and what of the body is hidden
               // there (AT_PILL) a point never finds. Counting the frame as
               // body failed the cards with a one-line head (the Map card, an
               // airplane's, a leg's), whose room under it the frame shows.
