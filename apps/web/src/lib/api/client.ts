@@ -2,12 +2,11 @@ import { plannerRoute } from "./plannerRoute";
 import { plannerAirports } from "./plannerAirports";
 import { plannerMap } from "./plannerMap";
 import { plannerDev } from "./plannerDev";
-import { assistantCalls } from "./assistantCalls";
 import { gatewayPilot } from "./gatewayPilot";
 import { gatewayRecords } from "./gatewayRecords";
 
 export { ApiError, describeError, detailOf, errorMessage, failIfNotOk, isDropped, isUnknownPlace, unknownPlaceOf } from "./errors";
-export { assistant, csrfHeaders, data, gateway, GatewayRequest, ndjson, planner, STREAM_QUIET_MS } from "./http";
+export { csrfHeaders, data, gateway, GatewayRequest, ndjson, planner, STREAM_QUIET_MS } from "./http";
 
 /**
  * Every call the pages make. Both servers' calls go through
@@ -22,18 +21,9 @@ export { assistant, csrfHeaders, data, gateway, GatewayRequest, ndjson, planner,
  *
  * One object for the pages, made of a module per area: the planner's
  * route and plan (./plannerRoute), airports and places (./plannerAirports),
- * the map's layers (./plannerMap) and the developer's (./plannerDev); the
- * assistant's Claude calls (./assistantCalls); and the gateway's, by its
- * OpenAPI tags, who the pilot is (./gatewayPilot) and what they keep
- * (./gatewayRecords). The clients and the rules every call keeps are in
+ * the map's layers (./plannerMap) and the developer's (./plannerDev);
+ * and the gateway's, by its OpenAPI tags, who the pilot is
+ * (./gatewayPilot) and what they keep (./gatewayRecords). The clients and the rules every call keeps are in
  * ./http, and why a call failed in ./errors.
  */
-export const api = {
-  ...plannerRoute,
-  ...plannerAirports,
-  ...plannerMap,
-  ...plannerDev,
-  ...assistantCalls,
-  ...gatewayPilot,
-  ...gatewayRecords,
-};
+export const api = { ...plannerRoute, ...plannerAirports, ...plannerMap, ...plannerDev, ...gatewayPilot, ...gatewayRecords };

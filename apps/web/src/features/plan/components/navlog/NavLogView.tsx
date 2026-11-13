@@ -1,6 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { cn } from "cn";
-import { WandSparkles } from "lucide-react";
 import {
   type CellData,
   type ColumnDef,
@@ -16,8 +15,6 @@ import { usePrinting } from "../../lib/usePrinting";
 import { LEGS, type PanelTab } from "./panelTab";
 import { SectionPane } from "../../../../components/SectionPane";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
-import IconButton from "../../../../components/IconButton";
-import { Popover, PopoverContent, PopoverTrigger } from "../../../../components/ui/popover";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../../../components/ui/table";
 import type { Candidate, Leg, NavLogAltitude, Totals, TopOfClimb, TopOfDescent } from "../../../../lib/api/types";
 import { feet, magneticVariation, windCorrection } from "../../../../lib/format";
@@ -41,7 +38,6 @@ import NavLogAge from "./NavLogAge";
 import { useIsDesktop } from "../../../../hooks/use-desktop";
 import { hoverLeg } from "../../../../lib/map/marks/mapHover";
 import { useAirplaneChosen } from "../../../../lib/preferences";
-import { Spinner } from "../../../../components/ui/spinner";
 
 // TanStack Table's own extension point for arbitrary per-column data --
 // used below to carry each numeric column's shared className (bordered,
@@ -73,9 +69,6 @@ const AIRPLANE = new Set(["mh", "gs", "ete", "fuel"]);
 
 interface Props {
   totals: Totals | null;
-  /** Why the checkpoints' descriptions could not be written, for the log
-   *  to say over its rows with a Try again (the wand's run). */
-  descriptionError: string | null;
   nav: NavLogAltitude | null;
   /** The departure time as an ISO instant, or "" for about now --
    *  set here, where its ETAs show; changing it re-plans, since the
@@ -108,19 +101,7 @@ interface Props {
   /** Resolves once the note is saved; the box keeps a pilot's typing
    *  until then, and keeps it if the save fails. */
   onSaveDescription: (lat: number, lon: number, text: string) => Promise<unknown>;
-  /** The nav log section's own one-shot "generate now" for every
-   *  checkpoint's description at once -- descriptions are visible
-   *  (and editable) in every row regardless of whether this has ever
-   *  been clicked. */
-  onGenerateDescriptions: () => void;
-  descriptionsLoading: boolean;
-  /** Where the pilot has no subscription, what the wand shows in place of
-   *  writing descriptions (PaidPrompt): they come with it. */
-  descriptionsPaywall?: ReactNode;
-  /** The descriptions not offered in this deployment: no wand at all. */
-  descriptionsHidden: boolean;
-  /** The briefing's pages (FlightBriefingView's parts, and the Brief's
-   *  narrative), printed after the legs: on screen they are the Brief's
+  /** The briefing's pages (FlightBriefingView's parts), printed after the legs: on screen they are the Brief's
    *  card's (BriefCard). */
   tabContent: (part: BriefingPart) => ReactNode;
   /** Beside the log, out of sight: Print's kneeboard card. */
@@ -176,8 +157,8 @@ interface Props {
  * This panel is the briefing, in tabs: the nav log's own first -- the
  * totals above the table, the fuel check and the route's profile under
  * it -- and the briefing's parts in the others, from PlanWorkspace
- * (`tabContent`: FlightBriefingView's parts and the Brief's narrative). The two inputs the log is computed from, the
- * airplane and the departure time, are the panel's controls
+ * (`tabContent`: FlightBriefingView's parts). The two inputs the log is
+ * computed from, the airplane and the departure time, are the panel's controls
  * (FlightInputs). The briefing
  * used to draw its own read-only copy of the table, and the two
  * drifted; then the drawer had two widths, the table alone and the
@@ -277,7 +258,6 @@ export default function NavLogView({
   totals,
   nav,
   depart,
-  descriptionError,
   legs,
   dep,
   dest,
@@ -285,10 +265,6 @@ export default function NavLogView({
   selected,
   descriptions,
   onSaveDescription,
-  onGenerateDescriptions,
-  descriptionsLoading,
-  descriptionsPaywall,
-  descriptionsHidden,
   tabContent,
   children,
   marks,
@@ -363,51 +339,10 @@ export default function NavLogView({
   // view and the rest off its edge. On paper, every column. The heading
   // kept is the one a pilot steers: it was the true heading, with the
   // magnetic one only under the row.
-  const wand = (
-    <IconButton
-      // relative z-10: its 44-point hit area (index.css) over the
-      // "Waypoint" beside it, which painted over the area's right.
-      // -ml-2: the button's own clear padding laid over the cell's,
-      // so its glyph lines up with the names under it and the
-      // column is no wider than it was with a 24-point button --
-      // the phone's five columns still fit their drawer.
-      label="Generate descriptions"
-      className="relative z-10 -ml-2 print:hidden"
-      onClick={descriptionsPaywall ? undefined : onGenerateDescriptions}
-      disabled={descriptionsLoading || selected.length === 0}
-      data-testid="generate-descriptions-button"
-    >
-      {/* The icon buttons' one size, 20 in 36 (it was 20 in 24, crowded). */}
-      {descriptionsLoading ? <Spinner className="size-5" aria-hidden /> : <WandSparkles className="size-5" />}
-    </IconButton>
-  );
-  // Without the subscription the wand says what it would do and how to
-  // have it, beside it (PaidPrompt), rather than writing.
-  const wandSlot = descriptionsHidden ? null : descriptionsPaywall ? (
-    <Popover>
-      <PopoverTrigger render={wand} />
-      <PopoverContent className="w-80 p-0" data-testid="descriptions-paywall">
-        {descriptionsPaywall}
-      </PopoverContent>
-    </Popover>
-  ) : (
-    wand
-  );
   const columns: ColumnDef<typeof navLogTableFeatures, NavLogRow>[] = [
     {
       id: "waypoint",
-      // The wand that fills the blank notes in -- one for the whole
-      // log -- sits in this heading, beside the names it writes for,
-      // rather than as a button of its own above the table. A wand,
-      // not the narrative's own sparkles: this one acts on the rows,
-      // where the narrative in the drawer's header writes a text of
-      // its own.
-      header: () => (
-        <span className="inline-flex items-center">
-          {wandSlot}
-          Waypoint
-        </span>
-      ),
+      header: () => <span className="inline-flex items-center">Waypoint</span>,
       // The name after the point's mark as the map draws it (PointMark):
       // a checkpoint's numbered dot, an airport's symbol, a top of climb's
       // tag. No more: a leg the clouds leave no legal altitude on is the
@@ -781,8 +716,7 @@ export default function NavLogView({
   );
 
   // On screen the log a line a point (NavLogList), under a heading of its
-  // own with the wand that writes the checkpoints' descriptions; the table
-  // above is the printed page's.
+  // own; the table above is the printed page's.
   const checkpointCount = data.filter((r) => r.kind === "checkpoint").length;
   const navLogList =
     data.length === 0 ? (
@@ -793,7 +727,6 @@ export default function NavLogView({
           <span className={GROUP_HEADING}>
             {checkpointCount} checkpoint{checkpointCount === 1 ? "" : "s"}
           </span>
-          <span className="mr-0.5 flex items-center">{wandSlot}</span>
         </div>
         <NavLogList
           rows={data}
@@ -824,20 +757,10 @@ export default function NavLogView({
   // table is the rest, as the pilot asked. (The altitude, which opens how
   // it was chosen, is the Alt column's head.)
   const cloudsUnplaced = !!nav && !nav.altitude_selection.cloud_clearance_kept && !perLeg;
-  const summary = (!!noWind || cloudsUnplaced || !!descriptionError) && (
+  const summary = (!!noWind || cloudsUnplaced) && (
     <div className="mb-3" data-testid="navlog-summary">
       <ListGroup>
         {noWind && <ListRow title={<span className="text-destructive">{noWind}</span>} />}
-        {descriptionError && (
-          <ListRow
-            title={<span className="text-destructive">The descriptions could not all be written</span>}
-            description={descriptionError}
-            data-testid="navlog-descriptions-error"
-          />
-        )}
-        {descriptionError && !descriptionsLoading && (
-          <ListRow title="Try again" onClick={onGenerateDescriptions} data-testid="navlog-descriptions-retry" />
-        )}
         {/* The clouds forecast near a leg leave it no legal altitude (14
             CFR 91.155): the plan still stands, over the band without
             them, and the briefing says so (Current Conditions, the

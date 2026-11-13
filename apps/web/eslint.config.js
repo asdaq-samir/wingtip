@@ -44,17 +44,7 @@ export default defineConfig(
   // nothing is an error, and the lint runs with --max-warnings 0, so a
   // rule a plugin's preset sets to "warn" fails it too.
   { linterOptions: { reportUnusedDisableDirectives: "error" } },
-  {
-    ignores: [
-      "dist",
-      "node_modules",
-      "playwright-report",
-      "test-results",
-      "src/lib/api/schema.d.ts",
-      "src/lib/api/assistant-schema.d.ts",
-      "src/lib/engine/contract.ts",
-    ],
-  },
+  { ignores: ["dist", "node_modules", "playwright-report", "test-results", "src/lib/api/schema.d.ts", "src/lib/engine/contract.ts"] },
   {
     files: ["**/*.{ts,tsx}"],
     extends: [

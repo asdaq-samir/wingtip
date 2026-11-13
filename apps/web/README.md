@@ -20,8 +20,7 @@ component (`MapPage`) in two modes:
   fuel-remaining columns to fill in in flight. Opened wide
   (`?view=briefing`, or the sidebar toggle), the same drawer is the
   FAA-sequence briefing: the nav log with the briefing's sections
-  under it, the written briefing (one streamed Claude call from the
-  planner) and Print in its header, the map still beside it. The
+  under it and Print in its header, the map still beside it. The
   pilot console drops down over the map from the header: sign-in, the
   pilot's own aeroplanes (the nav log flies the one picked), filed
   flights and the theme.
@@ -172,8 +171,7 @@ The front end never calls `planner`
 directly. Every request goes through `gateway` at `/api/planner/*` (a
 middleware rewrites `/api/x` to that path, so call sites read as if
 they spoke to the planner directly), so there is one origin, one
-session and one set of access rules -- the written briefing included
-(`/api/planner/briefing/narrative`, streamed as Claude writes it).
+session and one set of access rules.
 
 ## Project layout
 
@@ -190,13 +188,13 @@ src/
     ConsoleTabs.tsx, DevSwitch.tsx, ThemeToggle.tsx, FullscreenButton.tsx, KeepRoute.tsx, SelectableRows.tsx
     map/                     The map's own screen: GlMapShell (the map with its banners, controls and sheet),
                                cards/ (airspace, navaid, waypoint) and the layers that open them (layers/)
-    SignInModal.tsx, ChecklistPage.tsx, ReviewAsk.tsx, ClearanceCard.tsx, WordsSection.tsx, SourceChips.tsx
+    SignInModal.tsx, ChecklistPage.tsx, ReviewAsk.tsx, ClearanceCard.tsx, SourceChips.tsx
                              Screens two features show (the pilot's console and the plan's Brief, the radio)
     ui/                      shadcn/ui primitives (components.json), stock unless a comment says why not
   hooks/                   Hooks with no feature of their own (viewport, shortcuts, the plan's history)
   lib/                     Only what two or more features (or components/ and a feature) use
     api/client.ts             Every network call, one function per endpoint, as one `api` of the modules beside it:
-                               planner{Route,Airports,Map,Dev}, assistantCalls, gateway{Pilot,Records}; http, errors
+                               planner{Route,Airports,Map,Dev}, gateway{Pilot,Records}; http, errors
     api/types.ts               API request/response shapes, re-exported from schema.d.ts and gateway-schema.d.ts
     engine/                    The Rust engine as WebAssembly: callEngine, and contract.ts generated from its schema
     fixtures/                  The cases the web, the engine and the phones are all tested against
@@ -212,8 +210,7 @@ src/
       ruler/                     the ruler and where it was placed
       view.ts, clear.ts, useCruiseTas.ts
     atc/, copilot/             The radio and copilot pieces the ATC, copilot and map features share
-    ask/useAsk.ts              The assistant's conversation (the Brief's Ask card, the radio's Ask chip)
-    mapChrome.ts, emergencyStore.ts, briefPlan.ts, wordsState.ts, pointFilters.ts   State and styling the layers above share
+    mapChrome.ts, emergencyStore.ts, briefPlan.ts, pointFilters.ts   State and styling the layers above share
     glyphs/                    The app's own drawn glyphs (the tab bar's, Direct To) that lib/icons names
     preferences.ts             What's remembered per browser (zustand + localStorage): charts, aeroplane, filters
     queryClient.ts             The react-query client; a failed query becomes one toast, keyed by its message
@@ -225,7 +222,7 @@ src/
     plan/PlanWorkspace.tsx           The pilot's workspace: hooks/usePlan.ts (state), components/: RouteMap,
                                       BuildNotice, AltitudeReasoning, navlog/, briefing/, procedures/
     plan/lib/                        The plan's own rules and readings: pattern, wind, radio, routeHolds,
-                                      runwayCheck, passTimes, hourly, glance, oral, flightPlanForm, …
+                                      runwayCheck, passTimes, hourly, glance, flightPlanForm, …
     plan/map/                        The planner's own map: GlRouteMap, layers/ only it draws (traffic, TFRs,
                                       weather, tracks, marks), terrain/ (the 3D view), its traffic and TFR cards
     chart-labels/TrainWorkspace.tsx  The developer's workspace: hooks/useTraining.ts (state), logic.ts (pure,
@@ -308,12 +305,12 @@ the `pre*` scripts run before build, test, typecheck and lint. A field
 renamed in `services/planner/app/schemas.py` or in a Java DTO is a
 compile error here, not a silent `undefined`; both committed documents
 are checked against the running code by their own service's tests.
-`navlog()`, `detect()` and the checkpoint-notes stream read
-newline-delimited JSON one line at a time. The CSRF header and the
+`navlog()` and `detect()` read newline-delimited JSON one line at a
+time. The CSRF header and the
 `ApiError` for a failed response are one middleware both clients use;
 the only plain `fetch`es are Spring Security's own `/logout` and the
-narrative stream the gateway passes on from the planner untouched, and
-they call the same two helpers.
+flight watch's (`lib/api/flightWatch.ts`), and they call the same two
+helpers.
 
 **Messages.** Every info, warning and error is a sonner toast, centred
 and full-width (`main.tsx`'s `Toaster` props), at most three stacked at

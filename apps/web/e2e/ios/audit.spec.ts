@@ -71,7 +71,7 @@ for (const screen of SCREENS) {
     // (content-visibility) pauses its transitions while it is off it, so a
     // row's words kept the light scheme's colour on the dark one's
     // background (1.1:1), and a button enabled off screen stayed half
-    // faded (the mock oral's Ask, 2:1 to 4:1 on CI's iPad) -- in no
+    // faded (2:1 to 4:1 on CI's iPad) -- in no
     // pilot's view, since a transition runs as its section scrolls in.
     const instant = await page.addStyleTag({ content: "*, *::before, *::after { transition: none !important; }" });
     await still(page);

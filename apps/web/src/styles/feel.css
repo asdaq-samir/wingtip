@@ -6,7 +6,7 @@
 
 @theme inline {
   /* The shadow under what floats over the chart -- the liquid glass, the
-     desktop's panel, the assistant's cards -- and an own card laid over
+     desktop's panel, the emergency's cards -- and an own card laid over
      the map (design/tokens.json's feel.float and feel.overlay, deeper at
      night). */
   --shadow-float: var(--depth-float);

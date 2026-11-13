@@ -2,20 +2,17 @@
  * The Brief's NOTAMs that matter, for the flight on screen: the engine's
  * ranking (the planner's notams_ranked: in force while the flight is
  * there, the runway in use, the altitude flown, the airspace on the
- * route) with a line on each from the assistant (POST
- * /api/planner/words/notams/ranked) -- or, while Claude is off, the
- * engine's reasons (engineRanking) -- the top three apart from the rest.
+ * route) with the engine's reasons as each one's line (engineRanking),
+ * the top three apart from the rest.
  * Asked once for a route, its time, its altitude and its runways, and
  * kept ten minutes, as the Brief's words are.
  */
 import { useQuery } from "@tanstack/react-query";
-import { postJson } from "../../lib/api/words";
+import { data, planner } from "../../lib/api/client";
 import { keptStore } from "../../lib/storage";
-import type { RankedNotam, RankedNotams } from "../../lib/api/types";
 import { routeKeyOf, useBriefPlan } from "../../lib/briefPlan";
 import { patternsOf } from "../../lib/trafficPattern";
-import { claudeOnNow } from "../../lib/subscription";
-import { engineRanking, type EngineRanked } from "./engineRanking";
+import { engineRanking, type EngineRanked, type RankedNotam, type RankedNotams } from "./engineRanking";
 
 const KEPT_MS = 10 * 60_000;
 
@@ -66,11 +63,7 @@ export function notamRankingQuery(plan: ReturnType<typeof useBriefPlan.getState>
         altitude_ft: plan.altitudeFt,
         runways,
       };
-      // The assistant's lines where Claude is on; the engine's own ranking
-      // and reasons, asked of the planner, while it is off (engineRanking).
-      const answer = claudeOnNow()
-        ? await postJson<RankedNotams>("/api/planner/words/notams/ranked", ask, signal)
-        : engineRanking(await postJson<EngineRanked>("/api/planner/notams/ranked", ask, signal));
+      const answer = engineRanking(await planner.POST("/api/notams/ranked", { body: ask, signal }).then(data<EngineRanked>));
       keptRanking().setState({ value: { route, at: Date.now(), answer } });
       return answer;
     },

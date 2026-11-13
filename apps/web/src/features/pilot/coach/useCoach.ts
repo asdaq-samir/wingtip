@@ -3,8 +3,7 @@
  * logbook, dates and home field as the app already has them, the
  * certificate they hold (a menu, kept on this device), and on their ask
  * the debriefs of their recent flights, the engine's plan through the
- * planner, then the plan in words from the assistant. The plan is the
- * engine's; the words come after it and never hold it up.
+ * planner.
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api/client";
@@ -13,7 +12,6 @@ import { localDay } from "../../../lib/format";
 import { keptStore } from "../../../lib/storage";
 import { currencyQuery, pilotQuery, trainingQuery } from "../../../lib/queryClient";
 import { coachApi, type CoachAsk, type ProficiencyPlan } from "./coachApi";
-import { useClaudeOn } from "../../../lib/subscription";
 import { recentDebriefs } from "./coachDebriefs";
 
 /** What the pilot holds, as the plan reads it: a student is held to the
@@ -81,17 +79,6 @@ export function useCoach() {
       return coachApi.plan(askOf(entries.data ?? [], currency, training, certificate, pilot?.homeBase ?? null, debriefs, localDay()));
     },
   });
-  // The words follow the plan they were asked of, and are asked once --
-  // only where Claude is on (lib/subscription): the plan's own lines stand alone.
-  const claude = useClaudeOn();
-  const words = useQuery({
-    queryKey: ["coach-words", plan.data],
-    queryFn: ({ signal }) => coachApi.words(plan.data!, signal),
-    enabled: claude && !!plan.data,
-    staleTime: Infinity,
-    retry: false,
-    meta: { silent: true },
-  });
 
   return {
     ready: !!entries.data,
@@ -102,7 +89,5 @@ export function useCoach() {
     making: plan.isPending,
     problem: plan.error,
     plan: plan.data ?? null,
-    words: words.data ?? null,
-    wording: words.isFetching,
   };
 }

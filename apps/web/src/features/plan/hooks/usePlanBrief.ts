@@ -9,7 +9,6 @@ import { distanceNm } from "../../../lib/geo";
 import { placeOf, useAirportIndex } from "../../../lib/airportIndex";
 import { useProgressToast } from "../../../lib/useProgressToast";
 import { useVerdict } from "../../../lib/verdict";
-import { mayUse, useEntitlement } from "../../../lib/subscription";
 import type { PointAltitude } from "../components/PointAltitudeDialog";
 import { briefMarkOf, marksOf, progressWords, tightLegWords } from "./planWords";
 import { useFieldColours } from "./useFieldColours";
@@ -34,7 +33,7 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   // ask, where the flight's line said it with the panel out: that line
   // keeps the figures (FlightLine). A toast takes no tap but its own
   // controls' (index.css), so the route's box under it from the top still does.
-  useProgressToast(progressWords(s.navStage, s.stage, s.briefing.state === "loading", s.descriptionProgress));
+  useProgressToast(progressWords(s.navStage, s.stage, s.briefing.state === "loading"));
   // The flight's figures before the nav log's, at the pilot's ask for them as soon as can be (FlightLine's `estimate`): this
   // route's course distance, the airplane's book cruise speed and burn (its own where set) and its profile's taxi fuel.
   const profile = profiles?.find((p) => p.name === aircraft.profile);
@@ -75,11 +74,6 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   const landings = useMemo(() => [...new Set([planned.dep, ...landedStops, planned.dest])], [planned.dep, landedStops, planned.dest]);
   // The route's fields' chips' colours (useFieldColours).
   const { metarColour } = useFieldColours({ briefing: s.briefing, planned, waypointStops });
-  // Checkpoint descriptions come with the subscription: without it, the
-  // wand says so where it is (PaidPrompt), and writes nothing.
-  // A flag, not the entitlement, which is a new object at every render:
-  // the nav log is drawn again only when this changes.
-  const entitlement = useEntitlement();
   // A caution on the pilot's own altitude, or one tight in its band, marked
   // on the Profile button where the caution is said, as the AI brief's mark
   // is on its own (the owner, 2026-11-05: "The red dot can be on profile
@@ -130,8 +124,8 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
       .filter(Boolean)
       .join(" · ");
   }, [course, s.legs, s.local, aircraftLabel, depart]);
-  // The flight to save and file, and what the Brief and the assistant
-  // read of it (useFlightToSave).
+  // The flight to save and file, and what the Brief reads of it
+  // (useFlightToSave).
   const saving = useFlightToSave({
     s,
     planned,
@@ -143,9 +137,6 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
     localMin: route.localMin,
     address: route.address,
     setAddress: route.setAddress,
-    setRoute: route.setRoute,
-    flyAltitude: route.flyAltitude,
-    changeDepart: answer.changeDepart,
   });
   // What planning again would bring in fresh, said by the refresh's dot:
   // winds past the forecast's period the legs were flown on, legs flown
@@ -169,10 +160,6 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
     marks,
     // The Brief's own, on its button: the worst of its pages'.
     briefMark: briefMarkOf(marks),
-    descriptionsLoading: s.descriptionProgress !== null,
-    paywalled: !mayUse(entitlement) && entitlement.kind !== "loading" && entitlement.kind !== "hidden",
-    // Not offered here, or not known yet (Claude off by default): no wand (NavLogView).
-    descriptionsHidden: entitlement.kind === "hidden" || entitlement.kind === "loading",
     metarColour,
     altitudeMark,
     profileCautions,

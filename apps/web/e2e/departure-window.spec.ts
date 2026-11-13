@@ -1,12 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
 import { settle, sideDrawer, slow, openBrief } from "./helpers";
-import { claudeFeatures } from "./claude";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
- * "When should I go?" in the Brief: under the verdict and the assistant's
- * field, which stay first, an hour strip across the day with the best
+ * "When should I go?" in the Brief: under the verdict, which stays
+ * first, an hour strip across the day with the best
  * window over it, each hour's mark a shape of its own, and a tap on an
  * hour opening why with its time and fuel. The planner's answer is given
  * (its hours are the engine's departure_window over the Go / No-Go's own
@@ -62,8 +61,7 @@ async function signedInWithAnswer(page: Page) {
   );
 }
 
-test("the Brief says when to go: an hour strip under the verdict and Ask, the best window over it, a tap saying why", async ({ page }) => {
-  await claudeFeatures(page); // Ask in its place, over the strip (./claude)
+test("the Brief says when to go: an hour strip under the verdict, the best window over it, a tap saying why", async ({ page }) => {
   await signedInWithAnswer(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
   await settle(page);
@@ -73,10 +71,9 @@ test("the Brief says when to go: an hour strip under the verdict and Ask, the be
   const strip = glance.getByTestId("departure-window");
   await expect(strip).toBeVisible({ timeout: slow(30_000) });
 
-  // The verdict first, Ask under it, then the strip (the owner's "Verdict first").
+  // The verdict first, then the strip (the owner's "Verdict first").
   const top = async (id: string) => (await glance.getByTestId(id).first().boundingBox())!.y;
-  expect(await top("brief-verdict")).toBeLessThan(await top("brief-ask"));
-  expect(await top("brief-ask")).toBeLessThan(await top("departure-window"));
+  expect(await top("brief-verdict")).toBeLessThan(await top("departure-window"));
 
   // The best window in a line over the hours, in the device's clock.
   await expect(strip).toContainText(/Best: (\w{3} )?\d\d:00–\d\d:00 \S+/);

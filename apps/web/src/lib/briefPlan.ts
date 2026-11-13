@@ -1,12 +1,11 @@
 /**
  * The flight as the Brief is reading it, published once by the planning
  * workspace (PlanWorkspace) for what the Brief's cards draw outside the
- * route's props: the assistant's context (useAsk), the words sections'
- * requests (BriefWords) and the flight watch's saved flight
- * (FlightWatch). Read from the same places the Brief's own head reads
- * them -- the address's route and time, the airplane picked, the nav
- * log's altitude and totals -- so the assistant is asked about the plan
- * on screen, not one remembered.
+ * route's props: the NOTAMs that matter's request (features/notamRanking)
+ * and the flight watch's saved flight (FlightWatch). Read from the same
+ * places the Brief's own head reads them -- the address's route and time,
+ * the airplane picked, the nav log's altitude and totals -- so what is
+ * asked is about the plan on screen, not one remembered.
  */
 import { create } from "zustand";
 import type { Candidate, Course, Leg, NavLogAltitude, Totals } from "./api/types";

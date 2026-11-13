@@ -220,9 +220,9 @@ export default function ShareMenu({
           </DropdownMenuTrigger>
         </ResponsivePopoverAnchor>
         <DropdownMenuContent align={align} className="min-w-56 print:hidden">
-          {/* The nav log, its button's place beside the AI's brief now the
+          {/* The nav log, its button's place beside the Brief now the
               Profile's (the owner, 2026-11-04: "Navlog can be moved to the
-              more button"). The assistant's Ask is the AI brief's own. */}
+              more button"). */}
           {onNavLog && (
             <DropdownMenuItem onClick={onNavLog} data-testid="route-navlog">
               <ListOrdered />

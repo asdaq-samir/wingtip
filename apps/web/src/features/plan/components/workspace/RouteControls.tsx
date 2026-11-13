@@ -4,14 +4,13 @@ import { cn } from "cn";
 import CloseButton from "../../../../components/CloseButton";
 import RoundButton from "../../../../components/RoundButton";
 import { TEXT } from "../../../../lib/text";
-import { useClaudeOn } from "../../../../lib/subscription";
 import { LocalDuration } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import { LOCAL_MINUTES } from "../../../../lib/address";
 
 /** The route's chips: the airplane, the altitude and the time
  *  (`flightInputs`), a local flight's time aloft, and the route's buttons --
- *  the Profile, the AI brief and Share (`share`). */
+ *  the Profile, the Brief and Share (`share`). */
 
 /** On a desktop's side panel the route box's small buttons carry their
  *  word beside the glyph, where there is the room (docs/design/icons.md,
@@ -27,9 +26,6 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
   const { clearRoute } = vm.routeList;
   const { openBrief, openProfile, profileReady } = vm.fpl;
   const { altitudeMark, briefMark } = vm.brief;
-  // "AI brief" only where Claude writes some of it (lib/subscription): off,
-  // the Brief is the engine's alone and is called just that.
-  const brief = useClaudeOn() ? "AI brief" : "Brief";
   return (
     <div className="flex w-full min-w-0 flex-wrap items-center gap-x-1 gap-y-4">
       {/* On the narrowest panels (iPhone SE, the iPad slide-over) the row
@@ -107,15 +103,11 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             <span className={WORD}>Profile</span>
           </RoundButton>
         )}
-        {/* The AI's brief, a card over FPL (BriefCard) -- its verdict, its
-            words with their sources and Ask at its foot -- marked as the
-            worst of its pages is: one sparkle where the Brief's clipboard
-            and the menu's "Ask about this flight" were, at the owner's ask
-            ("Replace ... the brief button with AI button because they are
-            both the same thing", 2026-11-04). */}
+        {/* The Brief, a card over FPL (BriefCard) -- its verdict and its
+            pages -- marked as the worst of its pages is. */}
         {routed && (
           <RoundButton
-            label={briefMark ? `${brief}, ${briefMark === "stop" ? "warning" : "caution"}` : brief}
+            label={briefMark ? `Brief, ${briefMark === "stop" ? "warning" : "caution"}` : "Brief"}
             onClick={openBrief}
             className={cn("size-[32px]", WORDED)}
             data-testid="route-brief"

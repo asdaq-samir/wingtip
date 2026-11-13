@@ -22,7 +22,7 @@ export const SEARCH_SCREENS: Screen[] = [
       await settle(page);
       await showTabs(page);
       await page.getByTestId("search-airports").fill("osh");
-      await expect(sideDrawer(page).getByTestId("search-do-ask")).toBeVisible();
+      await expect(sideDrawer(page).getByTestId("search-do-nearby")).toBeVisible();
     },
   },
   {

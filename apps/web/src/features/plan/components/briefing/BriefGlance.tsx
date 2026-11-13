@@ -237,15 +237,13 @@ function InstructorNote() {
  */
 export default function BriefGlance({
   onOpen,
-  before: first,
   afterVerdict,
   after,
 }: {
   onOpen: (tab: PanelTab) => void;
-  /** Under the verdict and its lines, then under that, and after the
-   *  cards: the assistant's field, the words and the watch
-   *  (BriefOverview), round the cards without moving them. */
-  before?: ReactNode;
+  /** Under the verdict and its lines, and after the cards: when to go and
+   *  the NOTAMs and the watch (BriefOverview), round the cards without
+   *  moving them. */
   afterVerdict?: ReactNode;
   after?: ReactNode;
 }) {
@@ -283,11 +281,8 @@ export default function BriefGlance({
           ))}
         </Accordion>
       )}
-      {/* The verdict and its lines first, the assistant's field straight
-          under them, at the owner's word ("Verdict first", 2026-11-08):
-          the Brief opened on Ask, the verdict fourth and at 19.65 px half
-          under the fold (the FPL audit's A9). */}
-      {first}
+      {/* The verdict and its lines first, at the owner's word ("Verdict
+          first", 2026-11-08). */}
       {afterVerdict}
       {lines && lines.rest.items.length > 0 && (
         <Accordion>

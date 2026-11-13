@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { Switch } from "../../../../components/ui/switch";
 import { api, describeError } from "../../../../lib/api/client";
 import type { SaveFlightRequest } from "../../../../lib/api/types";
-import { flightWatch, type FlightWatch as Watch } from "../../../../lib/api/words";
+import { flightWatch, type FlightWatch as Watch } from "../../../../lib/api/flightWatch";
 import { useBriefPlan, type FlightToSave } from "../../../../lib/briefPlan";
 import { clockTime } from "../../../../lib/format";
 import { useMinuteClock } from "../../../../lib/useMinuteClock";

@@ -15,9 +15,8 @@ export const { Part: PilotPanel, prefetch: prefetchPilotPanel } = fromChunk(load
 // the page is idle and drawn where a route is. Its parts drawn straight
 // from the chunk once it is in hand, and waited for (lazy) only until
 // then: a part under lazy() alone waits once the first time it is drawn,
-// chunk in hand or not, and the Brief's narrative, first drawn as its tab
-// opened, hid the whole panel -- its tabs, with the focus in them -- while
-// it did.
+// chunk in hand or not, and a part first drawn as its tab opened hid the
+// whole panel -- its tabs, with the focus in them -- while it did.
 type RoutePanel = typeof import("./routePanel");
 type PropsOf<C> = C extends ComponentType<infer P extends object> ? P : never;
 let routePanel: RoutePanel | null = null;
@@ -83,7 +82,6 @@ export const Kneeboard = fromRoutePanel("Kneeboard");
 export const FlightInputs = fromRoutePanel("FlightInputs");
 export const AltitudeGroup = fromRoutePanel("AltitudeGroup");
 export const AltitudeProfile = fromRoutePanel("AltitudeProfile");
-export const BriefNarrative = fromRoutePanel("BriefNarrative");
 export const RouteProblem = fromRoutePanel("RouteProblem");
 export const LocalDuration = fromRoutePanel("LocalDuration");
 export const BriefCard = fromRoutePanel("BriefCard");

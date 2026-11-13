@@ -1,21 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { Subscription } from "./api/types";
-import { claudeOn, deploymentEntitlement, entitlementOf, mayUse, standing, unsoldEntitlement, usesLeft } from "./subscription";
+import { deploymentEntitlement, entitlementOf, mayUse, standing } from "./subscription";
 
-const sub = (over: Partial<Subscription>): Subscription => ({
-  state: "FREE",
-  entitled: false,
-  until: null,
-  trialAvailable: true,
-  trialDays: 30,
-  plan: null,
-  store: null,
-  uses: [
-    { feature: "NARRATIVE", used: 3, cap: 60 },
-    { feature: "ORAL", used: 61, cap: 60 },
-  ],
-  ...over,
-});
+const sub = (over: Partial<Subscription>): Subscription =>
+  ({ state: "FREE", entitled: false, until: null, trialAvailable: true, trialDays: 30, plan: null, store: null, ...over }) as Subscription;
 
 describe("the subscription as the page shows it", () => {
   it("is open where nobody can sign in, and waits for who is signed in", () => {
@@ -38,15 +26,6 @@ describe("the subscription as the page shows it", () => {
     expect(mayUse({ kind: "signed-out" })).toBe(false);
   });
 
-  it("counts what is left of the month, never below none, and not for one given it", () => {
-    const trial = entitlementOf("SIGN_IN", true, sub({ state: "TRIAL", entitled: true }));
-    expect(usesLeft(trial, "NARRATIVE")).toBe("57 of 60 left this month");
-    expect(usesLeft(trial, "ORAL")).toBe("0 of 60 left this month");
-    expect(usesLeft(trial, "DEBRIEF")).toBeNull();
-    expect(usesLeft(entitlementOf("SIGN_IN", true, sub({ state: "COMPED", entitled: true })), "NARRATIVE")).toBeNull();
-    expect(usesLeft({ kind: "open" }, "NARRATIVE")).toBeNull();
-  });
-
   it("says what the pilot has, the day first, the year only when it is not this one", () => {
     const now = new Date("2026-10-11T12:00:00Z");
     expect(standing(sub({ state: "TRIAL", until: "2026-11-10T12:00:00Z" }), now)).toBe("Free until 10 November");
@@ -57,41 +36,17 @@ describe("the subscription as the page shows it", () => {
   });
 });
 
-describe("where no subscription is sold", () => {
-  it("gives the debrief to everyone, and what Claude writes as the deployment says", () => {
-    expect(unsoldEntitlement("DEBRIEF", "OFF", false, false)).toEqual({ kind: "open" });
-    expect(unsoldEntitlement("NARRATIVE", "EVERYONE", true, false)).toEqual({ kind: "open" });
-    expect(unsoldEntitlement("NARRATIVE", "EVERYONE", false, false)).toEqual({ kind: "signed-out" });
-    expect(unsoldEntitlement("ORAL", "DEVELOPERS", true, false)).toEqual({ kind: "hidden" });
-    expect(unsoldEntitlement("ORAL", "DEVELOPERS", true, true)).toEqual({ kind: "open" });
-    expect(unsoldEntitlement("CHECKPOINT_NOTES", "OFF", true, true)).toEqual({ kind: "hidden" });
-    expect(unsoldEntitlement("NARRATIVE", "EVERYONE", undefined, false)).toEqual({ kind: "loading" });
-  });
-});
+describe("the deployment", () => {
+  const caps = (access: "OPEN" | "SIGN_IN", subscriptions: boolean) => ({ access, subscriptions }) as const;
 
-describe("the features Claude writes, off by default (the owner, 2026-11-10)", () => {
-  const caps = (claudeFeatures: "OFF" | "DEVELOPERS" | "EVERYONE", access: "OPEN" | "SIGN_IN" = "SIGN_IN", subscriptions = false) =>
-    ({ access, subscriptions, claudeFeatures }) as const;
-
-  it("is on only where the deployment says so", () => {
-    expect(claudeOn(undefined, true)).toBe(false);
-    expect(claudeOn("OFF", true)).toBe(false);
-    expect(claudeOn("DEVELOPERS", false)).toBe(false);
-    expect(claudeOn("DEVELOPERS", true)).toBe(true);
-    expect(claudeOn("EVERYONE", false)).toBe(true);
-  });
-
-  it("hides them while off, over one's own machine and a sold subscription, but not the debrief", () => {
-    expect(deploymentEntitlement("ASSISTANT", caps("OFF", "OPEN"), undefined, false, undefined, false)).toEqual({ kind: "hidden" });
-    expect(
-      deploymentEntitlement("NARRATIVE", caps("OFF", "SIGN_IN", true), true, true, sub({ state: "COMPED", entitled: true }), false),
-    ).toEqual({ kind: "hidden" });
-    expect(deploymentEntitlement("DEBRIEF", caps("OFF", "OPEN"), undefined, false, undefined, false)).toEqual({ kind: "open" });
-    expect(deploymentEntitlement("NARRATIVE", caps("EVERYONE", "OPEN"), undefined, false, undefined, false)).toEqual({ kind: "open" });
+  it("opens the debrief where nobody signs in or no subscription is sold", () => {
+    expect(deploymentEntitlement(caps("OPEN", true), undefined, undefined, false)).toEqual({ kind: "open" });
+    expect(deploymentEntitlement(caps("SIGN_IN", false), false, undefined, false)).toEqual({ kind: "open" });
+    expect(deploymentEntitlement(caps("SIGN_IN", true), false, undefined, false)).toEqual({ kind: "signed-out" });
   });
 
   it("asks for nothing before the deployment is known", () => {
-    const unknown = deploymentEntitlement("NARRATIVE", undefined, true, true, undefined, false);
+    const unknown = deploymentEntitlement(undefined, true, undefined, false);
     expect(unknown).toEqual({ kind: "loading" });
     expect(mayUse(unknown)).toBe(false);
   });

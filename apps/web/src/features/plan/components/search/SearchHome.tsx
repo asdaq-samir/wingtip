@@ -1,7 +1,6 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { FavoriteStrip, PillSection, PillStrip } from "../../../../components/Favorites";
 import TabPage from "../../../../components/TabPage";
-import { useAsk } from "../../../../lib/ask/useAsk";
 import { AircraftFavoriteStrip } from "../../aircraftTabChunk";
 import FindNearby from "../FindNearby";
 import { NearestStrip } from "../NearestStrip";
@@ -9,14 +8,9 @@ import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import RecentCards from "./RecentCards";
 import SheetFooter from "./SheetFooter";
 
-/** The assistant's answers, on their own chunk: drawn only once it has
- *  been asked from the search (the first load's budget). */
-const AskSection = lazy(() => import("../ask/AskCard"));
-
 /**
  * The one search with nothing typed (the owner's one-search design,
- * 2026-11-09), the sheet's Search page: the assistant's answers where it
- * was asked from here, then Nearest and Find Nearby first (the owner,
+ * 2026-11-09), the sheet's Search page: Nearest and Find Nearby first (the owner,
  * 2026-11-11: "move nearest and find nearby above favorites"), then
  * Favorites (the airports' and the airplanes') and Recents, each
  * section's title the list in full.
@@ -34,14 +28,8 @@ export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
   const { nearOrigin } = vm.map;
   const { openNearest, findNearby } = vm.fpl;
   const { home, favorites, addFromPill, askFor, pickPlace, nearStrip } = vm.search;
-  const asked = useAsk((s) => s.turns.length > 0 || s.busy);
   return (
     <TabPage testId="search-home">
-      {asked && (
-        <Suspense fallback={null}>
-          <AskSection />
-        </Suspense>
-      )}
       <PillSection title="Nearest" onMore={openNearest} testId="pill-section-nearest">
         <NearestStrip fields={nearStrip} located={!!nearOrigin} onOpen={selectPlace} />
       </PillSection>

@@ -1,12 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { library, openConsole, showTabs } from "./helpers";
-import { claudeFeatures } from "./claude";
 
 /**
  * The Logbook's Coach: on the pilot's ask, the engine's proficiency plan
  * (through the planner's POST /api/pilot/coach) with its reminder, its
- * sessions at their fields and WINGS's "may count", and the assistant's
- * words under it. The planner's and the assistant's answers are stubbed:
+ * sessions at their fields and WINGS's "may count". The planner's answer
+ * is stubbed:
  * the plan's rules are the engine's tests' (engine/facade/tests/coach.rs).
  */
 
@@ -67,8 +66,7 @@ const PLAN = {
   ],
 };
 
-test("the Coach makes a plan from the logbook and puts it in words", async ({ page }) => {
-  await claudeFeatures(page); // the words stubbed below (./claude)
+test("the Coach makes a plan from the logbook", async ({ page }) => {
   const asked: Record<string, unknown>[] = [];
   await page.route(
     (url) => url.pathname === "/api/logbook",
@@ -88,19 +86,6 @@ test("the Coach makes a plan from the logbook and puts it in words", async ({ pa
       asked.push(route.request().postDataJSON() as Record<string, unknown>);
       await route.fulfill({ json: PLAN });
     },
-  );
-  await page.route(
-    (url) => url.pathname === "/api/planner/words/coach",
-    (route) =>
-      route.fulfill({
-        json: {
-          sentences: [{ text: "Your night passenger currency runs out on 18 Nov.", sources: ["due:night_passengers"] }],
-          session_lines: [{ session: "session:2", text: "Fly the ILS at KMSN with an instructor.", sources: ["session:2", "ev:1"] }],
-          sources: [],
-          model: "claude-haiku-5-5",
-          unavailable: null,
-        },
-      }),
   );
 
   await page.goto("/app/plan");
@@ -122,6 +107,4 @@ test("the Coach makes a plan from the logbook and puts it in words", async ({ pa
   await expect(console.getByTestId("coach-status")).toContainText("Plan made: 2 sessions.");
   await expect(console.getByTestId("coach-session").nth(1)).toContainText("KMSN, ILS OR LOC RWY 36");
   await expect(console.getByTestId("coach-session").nth(1)).toContainText("May count toward WINGS: Takeoffs and landings, ACS PA.IV.B");
-  await expect(console.getByTestId("coach-session").nth(1)).toContainText("Fly the ILS at KMSN with an instructor.");
-  await expect(console.getByTestId("coach-words")).toHaveText("Your night passenger currency runs out on 18 Nov.");
 });

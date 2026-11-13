@@ -3,9 +3,7 @@
  *
  * Everything a server sends is generated from its own OpenAPI
  * document by `npm run types` -- the Python planner's from
- * services/planner/openapi.json into ./schema.d.ts, the assistant
- * service's (every Claude call) from services/assistant/openapi.json into
- * ./assistant-schema.d.ts, this app's Spring
+ * services/planner/openapi.json into ./schema.d.ts, this app's Spring
  * Boot endpoints from services/gateway/openapi.json into
  * ./gateway-schema.d.ts -- and re-exported here under the names the pages
  * use, so a field renamed in services/planner/app/schemas/ or in a
@@ -14,12 +12,10 @@
  * no server schema describes: the page's own compositions.
  */
 import type { components } from "./schema";
-import type { components as AssistantComponents } from "./assistant-schema";
 import type { components as GatewayComponents } from "./gateway-schema";
 import type { OwnFigureValues } from "../airplane/figures";
 
 type Schemas = components["schemas"];
-type Assistant = AssistantComponents["schemas"];
 type Gateway = GatewayComponents["schemas"];
 
 // ---------------------------------------------------------------------
@@ -116,12 +112,6 @@ export type ProcedureDrawing = Schemas["ProcedureDrawing"];
 export type PlateOverlay = Schemas["PlateOverlay"];
 export type ProcedureFix = Schemas["ProcedureFix"];
 export type ChartPages = Schemas["ChartPages"];
-/** The mock oral's question, its answer graded, and what each is asked with. */
-export type OralQuestion = Assistant["OralQuestion"];
-export type OralQuestionRequest = Assistant["OralQuestionRequest"];
-/** A photographed page sent, and read and checked (the assistant's app.documents). */
-export type ReadAsk = Assistant["ReadAsk"];
-export type DocumentRead = Assistant["DocumentRead"];
 export type ClearanceAsk = Schemas["ClearanceAsk"];
 export type ClearancePlaces = Schemas["ClearancePlaces"];
 /** "When should I go?": the hours and the windows (app.window). */
@@ -132,9 +122,6 @@ export type WindowHour = Schemas["WindowHour"];
 export type LogbookDraftAsk = Schemas["LogbookDraftAsk"];
 export type LogbookDraft = Schemas["LogbookDraft"];
 export type DepartureWindowRun = Schemas["Window"];
-export type OralGrade = Assistant["OralGrade"];
-export type OralGradeRequest = Assistant["OralGradeRequest"];
-export type OralCitation = Assistant["OralCitation"];
 export type AirportPin = Schemas["AirportInView"];
 export type AirportsInView = Schemas["AirportsInView"];
 /** The cycle's overlay tiles' archive (lib/map/sources/overlayTiles). */
@@ -233,27 +220,9 @@ export interface AircraftChoice extends OwnFigureValues {
   /** No airplane picked (preferences' NO_AIRPLANE): no profile (""), and no airplane figure. */
   none?: boolean;
 }
-/** One line of the per-checkpoint description stream. */
-export type CheckpointDescriptionMessage = Assistant["CheckpointNoteMessage"];
-/** The nav log on screen, sent to be told in words (the Brief's narrative,
- *  POST /api/briefing/narrative): checked on arrival, a field the prompt
- *  cannot read a 422 naming it. */
-export type NarrativeRequest = Assistant["NarrativeRequest"];
-/** One line of the narrative's stream: text as Claude writes it, then the
- *  whole briefing, or why there is none. */
-export type NarrativeMessage = Assistant["NarrativeMessage"];
-/** The flight's NOTAMs ranked by the engine with a line on each (the
- *  Brief's NOTAMs that matter, POST /api/words/notams/ranked). */
-export type RankedNotams = Assistant["RankedNotams"];
-export type RankedNotam = Assistant["RankedLine"];
-/** A trip in the pilot's words worked into a proposal (POST
- *  /api/trip-plan): the ask, one line of its stream, the proposal and a
- *  leg of it, which the FPL loads on the pilot's tap. */
-export type TripAsk = Assistant["TripAsk"];
-export type TripMessage = Assistant["TripMessage"];
-export type TripProposal = Assistant["TripProposal"];
-export type TripLeg = Assistant["TripLeg"];
 export type CheckpointNoteSaved = Schemas["CheckpointNoteSaved"];
+/** A route's checkpoints, each with the note kept for it: the pilot's own, else the shared one. */
+export type RouteNotes = Schemas["RouteNotes"];
 
 /** What the nav log stream's "altitude" message carries -- the generated
  *  shape, less its `type`. */
@@ -310,16 +279,11 @@ export type PilotContactRequest = Gateway["PilotContactRequest"];
 /** How this deployment is reached -- SIGN_IN, OPEN or CLOSED -- asked
  *  before anyone has signed in (`/api/auth/capabilities`). */
 export type SignInCapabilities = Gateway["Capabilities"];
-/** Who has the features Claude writes where no subscription is sold. */
-export type ClaudeFeatures = SignInCapabilities["claudeFeatures"];
 /** `GET /api/subscription`: the signed-in pilot's subscription to the
  *  paid features (SubscriptionService) -- FREE, TRIAL, SUBSCRIBED or
- *  COMPED, until when, whether the free month is still theirs to start,
- *  and this month's uses of each Claude-written feature against its cap.
+ *  COMPED, until when, and whether the free month is still theirs to start.
  *  For showing: the server checks it again on every paid call. */
 export type Subscription = Gateway["SubscriptionDto"];
-/** What the subscription unlocks: NARRATIVE, CHECKPOINT_NOTES, ORAL, ASSISTANT, WORDS, DEBRIEF. */
-export type PaidFeature = Subscription["uses"][number]["feature"];
 /** The iOS app's Apple sign-in, done: where to go next. */
 export type AppleSignedIn = Gateway["SignedIn"];
 /** A TV's code to be signed in with from a phone (DeviceSignInController). */

@@ -9,10 +9,8 @@ export function say(words: string) {
   voice.speak(line);
 }
 
-/** Reads an answer aloud in place of whatever was being read: the
- *  assistant's answer to a question asked by voice (RadioLayer's Ask
- *  chip, useAsk). A new answer cuts the one before off, so two questions
- *  asked in a row are not read one after the other. */
+/** Says a line in place of whatever was being read: the copilot's warning
+ *  (lib/copilot/voice) does not wait behind a caution. */
 export function speak(words: string) {
   const voice = typeof window !== "undefined" ? window.speechSynthesis : undefined;
   if (!voice || typeof SpeechSynthesisUtterance === "undefined") return;
