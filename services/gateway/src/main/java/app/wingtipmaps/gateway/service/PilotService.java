@@ -42,8 +42,9 @@ public class PilotService {
     private final Set<String> developerEmails;
 
     /**
-     * @param developerEmails {@code app.developer-emails}: the addresses
-     *     whose pilot is a developer, comma-separated, case ignored
+     * @param pilots the pilots kept
+     * @param app the settings, whose {@code app.developer-emails} lists the
+     *     addresses whose pilot is a developer, comma-separated, case ignored
      */
     public PilotService(PilotRepository pilots, AppProperties app) {
         String developerEmails = app.developerEmails();
