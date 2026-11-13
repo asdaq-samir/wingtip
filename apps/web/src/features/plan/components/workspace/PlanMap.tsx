@@ -117,7 +117,10 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
       )}
       {lessonOpen !== null && (
         <Suspense fallback={null}>
-          <AssignedLesson key={lessonOpen} id={lessonOpen} aircraft={fitAircraft} onClose={closeLesson} />
+          {/* The lesson's track is turned by the engine (lib/geo's bearingDeg). */}
+          <EngineGate>
+            <AssignedLesson key={lessonOpen} id={lessonOpen} aircraft={fitAircraft} onClose={closeLesson} />
+          </EngineGate>
         </Suspense>
       )}
       <FirstFlight routed={routed} onPlan={setRoute} onPlanned={openNavLogCard} />

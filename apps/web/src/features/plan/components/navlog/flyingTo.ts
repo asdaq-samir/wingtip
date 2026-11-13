@@ -2,6 +2,7 @@ import { distanceNm } from "../../../../lib/geo";
 import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
 import { useOwnShip } from "../../../../lib/map/position/ownShip";
 import { useFlying } from "../../../../lib/mapChrome";
+import { useEngineReady } from "../../../../lib/engine/useEngineReady";
 import { dryRunRow, type DryRun } from "./dryRun";
 import { isLegPoint, rowPoint, type NavLogRow } from "./rows";
 
@@ -57,8 +58,11 @@ export function useFlyingTo(run: DryRun | null, rows: NavLogRow[]): string | nul
     const index = dryRunNext(run, rows, s.at);
     return index === null ? null : rows[index]!.key;
   });
+  // How far the fix is from each row is the engine's (lib/geo): none
+  // until its .wasm is there, as useAway waits.
+  const engine = useEngineReady();
   const gps = useOwnShip((s) => {
-    if (!flying || run || !s.enabled || !s.fix) return null;
+    if (!flying || run || !engine || !s.enabled || !s.fix) return null;
     const index = gpsNext(rows, s.fix);
     return index === null ? null : rows[index]!.key;
   });

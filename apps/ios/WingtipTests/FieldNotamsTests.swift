@@ -18,7 +18,7 @@ import Testing
 
     private func reading(estimated: Bool = false, permanent: Bool = false) -> EngineContract.NotamReadAnswer {
         EngineContract.NotamReadAnswer(form: "domestic", number: nil, location: nil, keyword: nil, heading: nil, title: nil, what: nil,
-                                       where: nil, why: nil, words: "", starts: nil, ends: nil, estimated: estimated, permanent: permanent)
+                                       where: nil, words: "", starts: nil, ends: nil, estimated: estimated, permanent: permanent)
     }
 
     @Test func spansAreWrittenAsForeFlightWritesThem() {
