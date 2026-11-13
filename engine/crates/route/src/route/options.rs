@@ -564,8 +564,7 @@ fn frame(a: &Ask) -> String {
     let top = highest_cruise_ft(a.profile.ceiling_ft);
     // The fixes and fields wanted: those within a turn's naming reach of
     // the grid (naming::NEAR_NM), which takes in a fuel stop's too.
-    let pad_lat = naming::NEAR_NM / 60.0;
-    let pad_lon = pad_lat / (s.abs().max(n.abs()) + pad_lat).min(89.0).to_radians().cos().max(0.1);
+    let data_box = geo::corridor_bbox((s, w), (n, e), naming::NEAR_NM);
     let mut out = String::from("{");
     for (key, v) in [("lat0", grid.geom.lat0), ("lon0", grid.geom.lon0)] {
         out.push_str(&format!("\"{key}\":"));
@@ -606,7 +605,7 @@ fn frame(a: &Ask) -> String {
         out.push(']');
     };
     boxed(&mut out, "bbox", [s, w, n, e]);
-    boxed(&mut out, "data_box", [s - pad_lat, w - pad_lon, n + pad_lat, e + pad_lon]);
+    boxed(&mut out, "data_box", [data_box.0, data_box.1, data_box.2, data_box.3]);
     out.push('}');
     out
 }

@@ -7,7 +7,6 @@ the procedures they may be (NASR, the CIFP) and the engine says which
 listening, the names the recognizer is told to expect."""
 
 import functools
-import math
 import re
 
 from fastapi import APIRouter, Query, Response
@@ -44,10 +43,10 @@ def _corridor(near: tuple) -> list[tuple[float, float, float, float]]:
 
 def _places(near: tuple) -> list[dict]:
     """The navaids, fixes and airports along the route, each with `what`
-    it is, as the engine's clearance_places takes them."""
+    it is, as the engine's clearance_places takes them (it puts them in
+    order, the nearest to the route first)."""
     if not near:
         return []
-    lats = [p[0] for p in near]
     seen, found = set(), []
     for south, west, north, east in _corridor(near):
         for f in fixes.within(south, west, north, east):
@@ -59,12 +58,7 @@ def _places(near: tuple) -> list[dict]:
             if (a["ident"], "airport", a["lat"]) not in seen:
                 seen.add((a["ident"], "airport", a["lat"]))
                 found.append({**a, "what": "airport"})
-    # The nearest to the route's points first: of two fixes that sound the
-    # same, PYKLA by Duluth and PICLE in Iowa, the one by the route
-    # (the engine keeps this order between equals).
-    # Flat-earth distances do for an order, at a thousandth of the cost.
-    squeeze = math.cos(math.radians(sum(lats) / len(lats)))
-    return sorted(found, key=lambda p: min((p["lat"] - lat) ** 2 + ((p["lon"] - lon) * squeeze) ** 2 for lat, lon in near))
+    return found
 
 
 @functools.cache
@@ -158,8 +152,9 @@ def clearance_places(ask: ClearanceAsk) -> ClearancePlaces:
     found by its sound alone is not `sure`; one not found has no ident."""
     near = near_points(ask.near)
     places = _places(near)
-    # The places anywhere spelled or named in what was said, after those
-    # near the route: of two alike, the nearer stays first.
+    # The places anywhere spelled or named in what was said, besides those
+    # near the route: the engine puts the nearer of two alike first, PYKLA
+    # by Duluth before PICLE in Iowa.
     seen = {(p["ident"], p["what"], p["lat"]) for p in places}
     for said in [ask.limit or "", *ask.route]:
         for p in _exact(said, near):
@@ -169,6 +164,7 @@ def clearance_places(ask: ClearanceAsk) -> ClearancePlaces:
     return engine(
         "clearance_places",
         places=[_candidate(p) for p in places if p.get("lat") is not None and p.get("lon") is not None],
+        near=[[lat, lon] for lat, lon in near],
         limit=ask.limit,
         limit_airports=_airports(ask.limit, near) if ask.limit else {},
         route=ask.route,

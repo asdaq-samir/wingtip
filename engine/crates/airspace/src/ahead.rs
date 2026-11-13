@@ -113,17 +113,14 @@ impl Track {
         Track { times, along, lats, lons, alts, track_deg }
     }
 
+    /// [west, south, east, north] round the track, `pad_nm` wider: core's
+    /// corridor_bbox over its corners.
     fn bbox(&self, pad_nm: f64) -> [f64; 4] {
-        let pad_lat = pad_nm / 60.0;
-        let mean = self.lats.iter().sum::<f64>() / self.lats.len() as f64;
-        let pad_lon = pad_lat / mean.to_radians().cos().max(0.2);
         let fold = |v: &[f64], f: fn(f64, f64) -> f64, s: f64| v.iter().copied().fold(s, f);
-        [
-            fold(&self.lons, f64::min, f64::INFINITY) - pad_lon,
-            fold(&self.lats, f64::min, f64::INFINITY) - pad_lat,
-            fold(&self.lons, f64::max, f64::NEG_INFINITY) + pad_lon,
-            fold(&self.lats, f64::max, f64::NEG_INFINITY) + pad_lat,
-        ]
+        let low = (fold(&self.lats, f64::min, f64::INFINITY), fold(&self.lons, f64::min, f64::INFINITY));
+        let high = (fold(&self.lats, f64::max, f64::NEG_INFINITY), fold(&self.lons, f64::max, f64::NEG_INFINITY));
+        let (s, w, n, e) = geo::corridor_bbox(low, high, pad_nm);
+        [w, s, e, n]
     }
 
     /// (inside now, the first sample in it or within the buffer of it).

@@ -35,11 +35,8 @@ fn fix_like(ident: &str) -> bool {
 }
 
 fn within(fixes: &[Fix], at: Point, nm: f64) -> impl Iterator<Item = &Fix> {
-    let dlat = nm / 60.0;
-    let dlon = nm / (60.0 * at.0.to_radians().cos().max(0.1));
-    fixes
-        .iter()
-        .filter(move |f| f.lat >= at.0 - dlat && f.lat <= at.0 + dlat && f.lon >= at.1 - dlon && f.lon <= at.1 + dlon && fix_like(&f.ident))
+    let (s, w, n, e) = geo::box_around(at.0, at.1, nm);
+    fixes.iter().filter(move |f| f.lat >= s && f.lat <= n && f.lon >= w && f.lon <= e && fix_like(&f.ident))
 }
 
 /// A point named as the pilot's own point (frd_ident) off the nearest fix

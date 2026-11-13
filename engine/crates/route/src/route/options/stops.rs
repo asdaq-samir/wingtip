@@ -104,12 +104,9 @@ pub fn stops(grid: &Grid, gs: &Vec<f64>, way: &[Point], fuel: &Fuel, fewest: boo
     let max_lat = way.iter().map(|p| p.0).fold(f64::NEG_INFINITY, f64::max);
     let min_lon = way.iter().map(|p| p.1).fold(f64::INFINITY, f64::min);
     let max_lon = way.iter().map(|p| p.1).fold(f64::NEG_INFINITY, f64::max);
-    let pad_lat = STOP_FIELD_NM / 60.0 + 0.1;
-    let pad_lon = pad_lat / (min_lat.abs().max(max_lat.abs()) + pad_lat).to_radians().cos().max(0.2);
-    let near: Vec<&Field> = fields
-        .iter()
-        .filter(|f| f.lat >= min_lat - pad_lat && f.lat <= max_lat + pad_lat && f.lon >= min_lon - pad_lon && f.lon <= max_lon + pad_lon)
-        .collect();
+    // STOP_FIELD_NM and the tenth of a degree (6 nm) it always had beyond.
+    let (s, w, n, e) = geo::corridor_bbox((min_lat, min_lon), (max_lat, max_lon), STOP_FIELD_NM + 6.0);
+    let near: Vec<&Field> = fields.iter().filter(|f| f.lat >= s && f.lat <= n && f.lon >= w && f.lon <= e).collect();
     if near.is_empty() {
         return None;
     }

@@ -2142,6 +2142,8 @@ enum EngineContract {
 
     struct ClearancePlacesInput: Codable, Equatable, Sendable {
         var places: [EngineContract.SpokenCandidate]
+        /// The route's points, [lat, lon] each: the places are ordered nearest to them first (a flat-earth distance, enough for an order). None given keeps the places' order.
+        var near: [[Double]]?
         var limit: String?
         /// The field the planner's airport search found for each run of the limit's words, by the run in capitals ("DULUTH"): the one for the longest run is the limit where it is said with "airport", or where its name starts with every word said.
         var limitAirports: [String: EngineContract.SpokenCandidate]?
@@ -2151,6 +2153,7 @@ enum EngineContract {
 
         enum CodingKeys: String, CodingKey {
             case places
+            case near
             case limit
             case limitAirports = "limit_airports"
             case route

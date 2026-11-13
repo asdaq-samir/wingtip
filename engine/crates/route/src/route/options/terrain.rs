@@ -323,11 +323,10 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         out.push_str(&format!(",\"per_cell\":{PER_CELL},\"top_ft\":"));
         json::number(&mut out, highest_cruise_ft(r.num(v, "ceiling_ft")?));
         // The fields wanted: those within FIELD_NM of the grid.
-        let pad_lat = FIELD_NM / 60.0;
-        let n = f.lat0 + f.rows as f64 * CELL_DEG;
-        let pad_lon = pad_lat / (f.lat0.abs().max(n.abs()) + pad_lat).min(89.0).to_radians().cos().max(0.1);
+        let (s, w, n, e) =
+            geo::corridor_bbox((f.lat0, f.lon0), (f.lat0 + f.rows as f64 * CELL_DEG, f.lon0 + f.cols as f64 * CELL_DEG), FIELD_NM);
         out.push_str(",\"data_box\":[");
-        for (i, x) in [f.lat0 - pad_lat, f.lon0 - pad_lon, n + pad_lat, f.lon0 + f.cols as f64 * CELL_DEG + pad_lon].iter().enumerate() {
+        for (i, x) in [s, w, n, e].iter().enumerate() {
             if i > 0 {
                 out.push(',');
             }

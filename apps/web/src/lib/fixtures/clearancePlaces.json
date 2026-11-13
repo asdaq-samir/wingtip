@@ -571,6 +571,59 @@
         "departure": null,
         "arrival": null
       }
+    },
+    {
+      "about": "Of two fixes that sound alike, the one by the route's points (`near`) is taken, whichever was given first: \"pickla\" on a route from KMSP to KDLH is PYKLA by Duluth, not PICLE (its place here illustrative, in Iowa)",
+      "input": {
+        "places": [
+          {
+            "ident": "PICLE",
+            "name": null,
+            "what": "fix",
+            "lat": 41.62,
+            "lon": -93.66
+          },
+          {
+            "ident": "PYKLA",
+            "name": null,
+            "what": "fix",
+            "lat": 46.83,
+            "lon": -91.85
+          }
+        ],
+        "near": [
+          [
+            44.88,
+            -93.22
+          ],
+          [
+            46.84,
+            -92.19
+          ]
+        ],
+        "limit": null,
+        "route": [
+          "pickla"
+        ]
+      },
+      "answer": {
+        "limit": null,
+        "route": [
+          [
+            {
+              "said": "pickla",
+              "ident": "PYKLA",
+              "name": null,
+              "kind": "fix",
+              "lat": 46.83,
+              "lon": -91.85,
+              "sure": false
+            }
+          ]
+        ],
+        "departure": null,
+        "arrival": null
+      }
     }
   ]
 }

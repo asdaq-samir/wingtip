@@ -161,7 +161,9 @@ pub fn detours(start: Point, end: Point, shelves: &[Shelf], below_ft: f64, fixes
         let b = a.bounds();
         (s, w, n, e) = (s.min(b.0), w.min(b.1), n.max(b.2), e.max(b.3));
     }
-    let pad = DETOUR_MAX_ADDED_NM / 60.0;
+    // A degree of longitude as cos(latitude) of one of latitude, which the
+    // same pad either way had short of the miles east and west.
+    let (s, w, n, e) = geo::corridor_bbox((s, w), (n, e), DETOUR_MAX_ADDED_NM);
     let edges = Edges::new(blocking.iter().copied());
     let margin = DETOUR_MARGIN_NM / 60.0;
     let inside = |p: Point| blocking.iter().any(|a| a.contains(p.0, p.1));
@@ -171,7 +173,7 @@ pub fn detours(start: Point, end: Point, shelves: &[Shelf], below_ft: f64, fixes
     let direct = geo::distance_nm(start.0, start.1, end.0, end.1);
     let mut ranked: Vec<(f64, Detour)> = Vec::new();
     for f in fixes {
-        if !(f.lat >= s - pad && f.lat <= n + pad && f.lon >= w - pad && f.lon <= e + pad) {
+        if !(f.lat >= s && f.lat <= n && f.lon >= w && f.lon <= e) {
             continue;
         }
         let added = geo::distance_nm(start.0, start.1, f.lat, f.lon) + geo::distance_nm(f.lat, f.lon, end.0, end.1) - direct;
