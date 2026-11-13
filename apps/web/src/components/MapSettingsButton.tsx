@@ -52,7 +52,7 @@ export function MapSettingsCard() {
       onClose={() => showMapCard(false)}
       testId="map-settings"
       returnFocus={() => document.querySelector<HTMLElement>('[data-testid="map-settings-button"]')}
-      leading={<SettingsButton />}
+      leading={<SettingsButton group="map" />}
       closeButton
     >
       <MapCard />

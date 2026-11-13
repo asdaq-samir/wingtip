@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Plane, Route, Settings, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { BookOpen, Plane, Route, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { cn } from "cn";
 import type { ReactNode } from "react";
 import AboutPanel from "../../components/AboutPanel";
@@ -124,7 +124,7 @@ function Personal({
       <ConsolePages key={pilot === null || pilot === "error" ? "out" : "in"} back="You" pages={pages}>
         <div className={cn("flex flex-col", TAB_PAGE_GAP)}>
           {/* Who the pilot is, then one list of what is theirs and
-              Settings, as Apple Maps' account card is (the owner's
+              Settings by the gear, as Apple Maps' account card is (the owner's
               screenshot of iOS 27, 2026-11-13): the avatar, the name and
               the address over a single inset group, each row a round
               badge, its name, where it stands at its end and the chevron. */}
@@ -193,18 +193,6 @@ function Personal({
               />
               <TrainingRow />
               <EmergencyRow />
-              {/* The app's Settings, one page (features/settings): the Map
-                  card's gear opens the same page at its Map group. */}
-              <PageRow
-                page="settings"
-                title="Settings"
-                testId="settings-row"
-                media={
-                  <RowBadge colour={SETTING_BADGE.settings} round>
-                    <Settings />
-                  </RowBadge>
-                }
-              />
               {signedIn && sold && <SubscriptionRow />}
             </ListGroup>
           </div>

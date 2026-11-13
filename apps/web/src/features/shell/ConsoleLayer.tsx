@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
+import SettingsButton from "../../components/SettingsButton";
 import { Dialog, DialogPopup, DialogPortal } from "../../components/ui/dialog";
 import { GLASS } from "../../lib/mapChrome";
 import { Shown } from "../../lib/shown";
@@ -85,7 +86,13 @@ export default function ConsoleLayer({
             </div>
             {/* Its close in the top corner, over what scrolls under it, as
                 Apple's card has it: the shared CloseButton, its 44-point
-                area its own pseudo-element's. */}
+                area its own pseudo-element's; Settings' gear in the other
+                corner, the way in to Settings in place of a row (the
+                owner, 2026-11-13: "put settings as icon on top left
+                corner"), as the Map card's gear heads its card. */}
+            <div data-slot="layer-head" className="absolute top-3 left-3 z-30">
+              <SettingsButton testId="settings-row" />
+            </div>
             <div data-slot="layer-head" className="absolute top-3 right-3 z-30">
               <CloseButton label="Back to the map" onClick={onClose} data-back="" data-testid="console-close" />
             </div>

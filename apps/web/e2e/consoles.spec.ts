@@ -100,7 +100,7 @@ test(
     await expect(pilot.getByRole("region", { name: "Airplanes", exact: true })).toBeVisible();
     await library(pilot, "Flights");
     await expect(pilot.getByRole("region", { name: "Flights", exact: true })).toBeVisible();
-    // Settings a row of You, Guide and About rows of its Help & About
+    // Settings the gear at You's top left, Guide and About rows of its Help & About
     // (the owner's option A, 2026-11-13).
     await consolePage(pilot, "Account");
     await pilot.getByTestId("settings-row").click();

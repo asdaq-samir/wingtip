@@ -4,8 +4,8 @@ import { consoleSheet, noTips, openConsole, settle, showTabs } from "./helpers";
 /**
  * You, the avatar's card (the owner's option A, 2026-11-13): Airplanes
  * with the picked airplane's Checklists inside it, Training a row opening
- * the Coach and Practice, Emergency, and Settings, one list under the
- * avatar as Apple Maps' account card has it (the owner's screenshot,
+ * the Coach and Practice, and Emergency, one list under the avatar, and
+ * Settings the gear at its top left, as Apple Maps' account card has it (the owner's screenshot,
  * 2026-11-13). Signed out here: the checklists, the drills and the assistant
  * need no account; the Coach does, and says so.
  */
@@ -68,19 +68,15 @@ test("You is Apple Maps' account card: floating clear of the screen's edges, the
   expect(box.y).toBeGreaterThan(0);
   // One list of rows in order, each opening its page.
   const rows = sheet.getByTestId("library-section").getByRole("button");
-  await expect(rows).toHaveText([
-    /^Pilot Details/,
-    /^Airplanes/,
-    /^Flights/,
-    /^Logbook/,
-    /^Minimums/,
-    /^Training/,
-    /^Emergency/,
-    /^Settings/,
-  ]);
+  await expect(rows).toHaveText([/^Pilot Details/, /^Airplanes/, /^Flights/, /^Logbook/, /^Minimums/, /^Training/, /^Emergency/]);
   await expect(sheet.getByTestId("library-section").getByRole("group")).toHaveCount(1);
-  // No title and no grabber: the ✕ alone at the top.
+  // No title and no grabber: the gear at the top left (Settings, the
+  // owner, 2026-11-13) and the ✕ at the right.
   await expect(sheet.getByRole("heading", { name: "You", exact: true })).toHaveCount(0);
+  const gear = (await sheet.getByTestId("settings-row").boundingBox())!;
+  const close = (await sheet.getByTestId("console-close").boundingBox())!;
+  expect(gear.x).toBeLessThan(box.x + 24);
+  expect(Math.abs(gear.y - close.y)).toBeLessThan(2);
   await sheet.getByTestId("console-close").click();
   await expect(consoleSheet(page)).toHaveCount(0);
   // A tap outside it, on the map over it, closes it too.

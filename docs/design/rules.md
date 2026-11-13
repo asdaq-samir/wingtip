@@ -494,8 +494,9 @@ way: three homes, and every control in one of them.
    name, Pilot Details and the account's menu) and what is theirs --
    Airplanes (each airplane's checklists inside it, and the picked one's
    Checklists row), Flights, Logbook, Minimums, Training (the Coach and
-   Practice), the Emergency Assistant -- then Settings and Subscription.
-2. **Settings**, one page, You's row: Look (Sunlight, Theme,
+   Practice), the Emergency Assistant -- then Subscription; Settings is
+   the gear at its top left, the ✕ at its right.
+2. **Settings**, one page, You's gear: Look (Sunlight, Theme,
    Appearance), Map (Airport Weather, Glide Ring, Clear Your Path), In
    Flight (Alerts; ATC, one page of Comms Assist, ATC Alerts and the
    Copilot), Data (Keep for the Air), and Help & About (Guide, Status,
