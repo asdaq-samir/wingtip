@@ -40,7 +40,14 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     /// app put away still leaves minutes.
     static let aheadEveryS: TimeInterval = 10
 
-    override init() {
+    /// The path flown (OwnTrail) and the flight recorder's track (the
+    /// automatic logbook's), each fix given to both (took).
+    let trail: OwnTrail
+    let recorder: FlightRecorder
+
+    init(trail: OwnTrail = OwnTrail(), recorder: FlightRecorder = FlightRecorder()) {
+        self.trail = trail
+        self.recorder = recorder
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
@@ -107,8 +114,8 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         // The flight recorder (the automatic logbook) keeps it in the
         // background past the flying speed too, until the engine finds
         // the airplane landed and at rest: 1.1's flight time ends there.
-        let recording = FlightRecorder.shared.took(fix)
-        let flying = OwnTrail.shared.took(fix) || recording
+        let recording = recorder.took(fix)
+        let flying = trail.took(fix) || recording
         if manager.allowsBackgroundLocationUpdates != flying { manager.allowsBackgroundLocationUpdates = flying }
     }
 

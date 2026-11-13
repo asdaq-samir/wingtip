@@ -15,13 +15,19 @@ import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.offline.KeptForAir
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -59,6 +65,8 @@ class AirportModel @Inject constructor() : ViewModel() {
         /** What the field offers on the ground, for its Fuel rows; null
          *  until fetched, or where it could not be (the rows do without). */
         val services: AirportServices? = null,
+        /** The fuel grades by their names (AirportReads.fuelNames). */
+        val fuelNames: String? = null,
     )
 
     /** A departure field's ident and place, the distance's start. */
@@ -66,6 +74,14 @@ class AirportModel @Inject constructor() : ViewModel() {
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
+
+    /** The card's NOTAMs and runways read by the engine (AirportReads), off
+     *  the main thread as the card opens and again as its NOTAMs come: the
+     *  engine reads every one. */
+    val read: StateFlow<AirportReads.Read> = state.map { it.place to it.notams }.distinctUntilChanged()
+        .map { (place, ranked) -> place?.let { AirportReads.read(it, ranked) } ?: AirportReads.Read() }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, AirportReads.Read())
 
     /** The line typed, for the fields' search; null for none. */
     private val asks = MutableStateFlow<String?>(null)
@@ -149,7 +165,8 @@ class AirportModel @Inject constructor() : ViewModel() {
         } catch (_: Exception) {
             return
         }
-        _state.update { if (it.place?.ident == ident) it.copy(services = services) else it }
+        val names = AirportReads.fuelNames(services.fuelTypes.orEmpty())
+        _state.update { if (it.place?.ident == ident) it.copy(services = services, fuelNames = names) else it }
     }
 
     /**

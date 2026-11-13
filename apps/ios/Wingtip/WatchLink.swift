@@ -11,8 +11,6 @@ import WatchConnectivity
 /// in Shared/WatchMessages.swift.
 @MainActor
 final class WatchLink: NSObject, WCSessionDelegate {
-    static let shared = WatchLink()
-
     /// The airplane's checklist as last read, with the text it was read
     /// from, so the engine reads it again only when the text changes.
     private var checklistText: String?
@@ -20,7 +18,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
     /// The last context sent, so an unchanged one is not sent again.
     private var sentContext: Data?
 
-    override private init() { super.init() }
+    override init() { super.init() }
 
     /// Activated, then kept up: every few seconds the picked airplane's
     /// checklist (kept on this phone) and the fix are sent,

@@ -20,8 +20,6 @@ import UserNotifications
 @MainActor
 @Observable
 final class WeatherWatch {
-    static let shared = WeatherWatch()
-
     /// The background refresh's identifier (project.yml's
     /// BGTaskSchedulerPermittedIdentifiers).
     nonisolated static let taskId = "app.wingtipmaps.weather-watch"

@@ -90,3 +90,16 @@ extension UIFont {
         fontDescriptor.withSymbolicTraits(.traitBold).map { UIFont(descriptor: $0, size: 0) } ?? self
     }
 }
+
+extension ModelWeather {
+    /// The G-AIRMETs' labels by hazard, AWC's short names as the engine
+    /// has them (`gairmet_hazards`); none and why where it could not say,
+    /// for the bar to show rather than an outline's label to hide.
+    static func airmetLabels() -> (labels: [String: String], problem: String?) {
+        do {
+            return (try Engine.gairmetHazards().labels, nil)
+        } catch {
+            return ([:], "The G-AIRMETs' hazard names couldn't be read: \(error.localizedDescription)")
+        }
+    }
+}

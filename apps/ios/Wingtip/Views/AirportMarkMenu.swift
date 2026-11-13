@@ -53,7 +53,7 @@ extension RootView {
                 host.preferredContentSize = CGSize(width: 360, height: 480)
                 return host
             },
-            menu: { [plan, ownShip] ident in
+            menu: { [plan = flight.plan, ownShip = flight.ownShip] ident in
                 UIMenu(children: [
                     UIAction(title: CardAction.flyHere.title, image: UIImage(systemName: CardAction.flyHere.systemImage)) { _ in
                         Task { @MainActor in await plan.flyHere(ident, near: ownShip.fix); showPlan() }

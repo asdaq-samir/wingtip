@@ -60,8 +60,6 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipRadius
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.lookShape
-import app.wingtipmaps.android.engine.Engine
-import app.wingtipmaps.android.engine.generated.flowLevels
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 import app.wingtipmaps.android.ui.ProblemLine
@@ -176,10 +174,7 @@ private fun Timeline(state: FlowState, model: ModelWeather) {
 private fun levelName(id: String): String = when (id) {
     "sfc" -> stringResource(R.string.flow_surface)
     "max" -> stringResource(R.string.flow_max)
-    else -> remember(id) {
-        Engine.flowLevels().getOrNull()?.let { l -> (l.wind.map { it.id to it.ft } + l.icing.map { it.id to it.ft } + l.turbulence.map { it.id to it.ft }).firstOrNull { it.first == id }?.second }
-            ?.let(Format::mapLevel) ?: id
-    }
+    else -> remember(id) { ModelWeather.levelFt(id)?.let(Format::mapLevel) ?: id }
 }
 
 @Composable

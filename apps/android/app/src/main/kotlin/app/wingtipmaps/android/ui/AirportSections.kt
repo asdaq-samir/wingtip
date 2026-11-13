@@ -94,7 +94,7 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
                     Row(a, null, pad) { CardIntents.address(context, place.lat, place.lon, a) }
                 }
             }
-            fuelRows(state.services, view.marks.fuel, view.onNotam, pad)
+            fuelRows(state.services, state.fuelNames, view.marks.fuel, view.onNotam, pad)
         }
         AirportSection.WEATHER -> item(key = "weather") {
             Column(pad) {

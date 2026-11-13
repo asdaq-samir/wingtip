@@ -8,6 +8,8 @@ import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.FlowFrame
 import app.wingtipmaps.android.api.generated.FlowLayer
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.flowLevels
 import app.wingtipmaps.android.settings
 import app.wingtipmaps.android.ui.A11y
 import kotlinx.coroutines.CancellationException
@@ -189,6 +191,12 @@ class ModelWeather private constructor(private val context: Context, private val
 
         /** How long each hour is shown while the timeline plays (the web's FRAME_MS). */
         const val FRAME_MS = 1_200L
+
+        /** A level's feet by its id, the engine's (flow_levels): the wind's,
+         *  the icing's and the turbulence's levels; null where it has none. */
+        fun levelFt(id: String): Double? = Engine.flowLevels().getOrNull()?.let { l ->
+            (l.wind.map { it.id to it.ft } + l.icing.map { it.id to it.ft } + l.turbulence.map { it.id to it.ft }).firstOrNull { it.first == id }?.second
+        }
 
         // The application's context alone (of), which lives as long as the process.
         @SuppressLint("StaticFieldLeak")

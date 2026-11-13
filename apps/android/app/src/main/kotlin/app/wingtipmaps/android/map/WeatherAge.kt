@@ -9,7 +9,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.offline.KeptForAir
-import app.wingtipmaps.android.offline.keptAge
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 
 /**
@@ -22,7 +21,7 @@ import app.wingtipmaps.android.ui.LocalWingtipPalette
  */
 object WeatherAge {
     /** The engine's freshness for a METAR, minutes; null where it could not say. */
-    fun freshMin(nowMs: Long): Double? = keptAge(KeptForAir.WEATHER, nowMs, nowMs)?.freshMin
+    fun freshMin(nowMs: Long): Double? = KeptForAir.age(KeptForAir.WEATHER, nowMs, nowMs)?.freshMin
 
     /** The fields whose weather was heard longer ago than `freshMin`;
      *  none where the freshness is not known. */
@@ -40,7 +39,7 @@ object WeatherAge {
 @Composable
 fun WeatherAgeChip(stale: Set<String>, heardAtMs: Map<String, Long>, nowMs: Long, modifier: Modifier = Modifier) {
     val newest = stale.mapNotNull { heardAtMs[it] }.maxOrNull() ?: return
-    val line = keptAge(KeptForAir.WEATHER, newest, nowMs)?.line ?: return
+    val line = KeptForAir.age(KeptForAir.WEATHER, newest, nowMs)?.line ?: return
     Badge(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = LocalWingtipPalette.current.caution,

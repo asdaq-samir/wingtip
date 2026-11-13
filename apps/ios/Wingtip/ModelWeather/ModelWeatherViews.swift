@@ -86,8 +86,10 @@ struct ModelWeatherBar: View {
                 }
                 .accessibilityValue(model.hourName(model.shown))
             }
-            // A tapped point whose value the engine could not say.
+            // A tapped point whose value the engine could not say, and the
+            // G-AIRMETs' names it could not read.
             ProblemLine(model.readingProblem)
+            ProblemLine(model.airmetsProblem)
         }
         .padding(.leading, WingtipSpace.xs).padding(.trailing, WingtipSpace.md).padding(.vertical, WingtipSpace.xs)
         .frame(maxWidth: 380)

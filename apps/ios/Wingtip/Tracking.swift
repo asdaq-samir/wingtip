@@ -37,8 +37,6 @@ struct AirplaneWatch: Codable, Hashable, Sendable, Identifiable {
 @MainActor
 @Observable
 final class Tracking {
-    static let shared = Tracking()
-
     private(set) var hex: String?
     /// The map keeps it in the middle until the pilot drags the map.
     var follow = true
@@ -62,6 +60,8 @@ final class Tracking {
     /// memory) was freed under it, SwiftData trapping at the next insert.
     @ObservationIgnored private let container: ModelContainer
     @ObservationIgnored private var remote: Task<Void, Never>?
+    /// The voice a watch going off is said in, the flight's (FlightSession).
+    @ObservationIgnored private let spoken: SpokenAlerts
     /// The last watch that went off, for the banner over the map.
     var fired: String?
     /// Why the watches could not be checked just now (the engine refused),
@@ -79,8 +79,9 @@ final class Tracking {
     /// The app's store, and the UserDefaults the lists were in before
     /// it, taken in on the first launch after the change; a test gives
     /// its own of each.
-    init(container: ModelContainer = Records.container, defaults: UserDefaults = .standard) {
+    init(container: ModelContainer = Records.container, defaults: UserDefaults = .standard, spoken: SpokenAlerts = SpokenAlerts()) {
         self.container = container
+        self.spoken = spoken
         context = container.mainContext
         Records.migrate(from: defaults, into: context)
         reload()
@@ -331,7 +332,7 @@ final class Tracking {
                     // The banner over the map and the voice in the app; a
                     // time-sensitive notification with the app put away.
                     fired = words
-                    SpokenAlerts.shared.say("\(words).", force: true)
+                    spoken.say("\(words).", force: true)
                     Notifications.tell(watch.kind == .takeoff ? "Took off" : "Landed", words, id: watch.id)
                     remove(watch)
                     saved()

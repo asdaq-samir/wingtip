@@ -135,8 +135,10 @@ final class FlightActivity {
 
     /// Watches a flight: the dry run's, or own ship's with a route planned.
     /// Called every few seconds from the app (WingtipApp); it starts,
-    /// updates and ends the activity as the flight goes.
-    func observe(plan: Plan, dryRun: DryRun, ownShip: OwnShip, inFlight: InFlight, copilot: Copilot, atc: AtcCopilot, now: Date = Date()) {
+    /// updates and ends the activity as the flight goes. `weather` is the
+    /// newest change the weather watch told (WeatherWatch.latest).
+    func observe(plan: Plan, dryRun: DryRun, ownShip: OwnShip, inFlight: InFlight, copilot: Copilot, atc: AtcCopilot,
+                 weather: String?, now: Date = Date()) {
         // The rehearsal on the ground counts as a flight on the Lock
         // Screen: that is what it is for. Own ship's flying speed is the
         // engine's (`underway`, InFlight).
@@ -146,7 +148,7 @@ final class FlightActivity {
             end()
             return
         }
-        var inputs = Self.inputs(plan: plan, progress: inFlight.progress, copilot: copilot, atc: atc, now: now)
+        var inputs = Self.inputs(plan: plan, progress: inFlight.progress, copilot: copilot, atc: atc, weather: weather, now: now)
         inputs.startedAt = startedAt
         // On the ground after flying, still the flight until it is over.
         inputs.phase = flying || lastFlying != nil ? .airborne : .ready
@@ -173,14 +175,15 @@ final class FlightActivity {
     }
 
     /// The app's in-flight models as they stand, for the content.
-    static func inputs(plan: Plan, progress: InFlight.Progress?, copilot: Copilot, atc: AtcCopilot, now: Date) -> FlightActivityContent.Inputs {
+    static func inputs(plan: Plan, progress: InFlight.Progress?, copilot: Copilot, atc: AtcCopilot, weather: String?,
+                       now: Date) -> FlightActivityContent.Inputs {
         FlightActivityContent.Inputs(
             progress: progress,
             routeNm: plan.course?.distanceNm ?? plan.legs.reduce(0) { $0 + $1.distanceNm },
             airplaneChosen: plan.airplaneChosen, usableFuelGal: plan.totals?.usableFuelGal,
             frequency: FlightActivityContent.frequency(in: atc.cards),
             copilot: copilot.mode == .off ? nil : copilot.message,
-            weather: WeatherWatch.shared.latest,
+            weather: weather,
             now: now,
             depCategory: plan.briefing?.metars.additionalProperties[plan.dep]??.flightCategory,
             plannedEteMin: plan.totals?.eteMin)

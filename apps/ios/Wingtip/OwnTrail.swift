@@ -14,8 +14,6 @@ import Observation
 @MainActor
 @Observable
 final class OwnTrail {
-    static let shared = OwnTrail()
-
     private static let stepNm = 0.1
     private static let stepS = 10.0
     private static let newFlightS = 10.0 * 60
@@ -33,7 +31,7 @@ final class OwnTrail {
         return support.appendingPathComponent("own-trail.json")
     }
 
-    private init() {
+    init() {
         // The path kept from before, unless the last point is over ten
         // minutes old: that was another flight's, and a new one starts.
         if let data = try? Data(contentsOf: Self.file), let kept = try? JSONDecoder().decode([PathPoint].self, from: data),

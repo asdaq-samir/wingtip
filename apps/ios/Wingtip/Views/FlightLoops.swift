@@ -6,20 +6,17 @@ import SwiftUI
 /// the flight logged once landed, and each fix asked of the engine for
 /// the instruments, the strip and the glide ring.
 struct FlightLoops: ViewModifier {
-    @Environment(Plan.self) private var plan
-    @Environment(OwnShip.self) private var ownShip
-    @Environment(DryRun.self) private var dryRun
-    @Environment(Traffic.self) private var traffic
-    @Environment(Verdict.self) private var verdict
-    @Environment(Tracking.self) private var tracking
-    @Environment(InFlight.self) private var inFlight
+    /// The flight (FlightSession) the loops keep going.
+    @Environment(FlightSession.self) private var flight
     @Environment(Copilot.self) private var copilot
     @Environment(AtcCopilot.self) private var atc
     @Environment(ClearanceListener.self) private var listener
     @Environment(Emergency.self) private var emergency
 
     func body(content: Content) -> some View {
-        content
+        let (plan, ownShip, dryRun, traffic) = (flight.plan, flight.ownShip, flight.dryRun, flight.traffic)
+        let (verdict, tracking, inFlight) = (flight.verdict, flight.tracking, flight.inFlight)
+        return content
             // About own ship's real fix, never the dry run's: the traffic near
             // it is told in a notification (Traffic.tellNear).
             .task { await traffic.run { [ownShip] in ownShip.fix } }
@@ -36,7 +33,7 @@ struct FlightLoops: ViewModifier {
                 }
             }
             .onChange(of: traffic.planes) { _, planes in tracking.heard(planes) }
-            .onChange(of: ownShip.ahead) { _, alerts in SpokenAlerts.shared.hear(alerts) }
+            .onChange(of: ownShip.ahead) { _, alerts in flight.spoken.hear(alerts) }
             // The ATC copilot: each settled transmission read, the radio listened to while flying where turned on.
             .onChange(of: listener.heard) { _, heard in atc.observe(heard, tail: plan.tail) }
             .task(id: "\(inFlight.underway)|\(plan.tail ?? "")|\(atc.mode.rawValue)") {

@@ -11,16 +11,12 @@ struct RootView: View {
     @Environment(Replay.self) var replay
     @Environment(Emergency.self) var emergency
     @Environment(AirportShelf.self) var shelf
-    @Environment(Tracking.self) var tracking
-    @Environment(InFlight.self) var inFlight
     @Environment(Navigator.self) var nav
     @Environment(Charts.self) var charts
     @Environment(Session.self) var session
-    @Environment(Plan.self) var plan
-    @Environment(OwnShip.self) var ownShip
-    @Environment(DryRun.self) var dryRun
-    @Environment(Traffic.self) var traffic
-    @Environment(Verdict.self) var verdict
+    /// The flight (FlightSession): the plan, own ship and the airplane
+    /// tracked that the commands act on (RootView+Commands).
+    @Environment(FlightSession.self) var flight
     @Environment(ScreenModels.self) var screens
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -175,6 +171,5 @@ struct RootView: View {
 
 #Preview("RootView") {
     RootView()
-        .modifier(AppModels(session: Session(), charts: Charts(), plan: Plan(), ownShip: OwnShip(), dryRun: DryRun(),
-                            traffic: Traffic(), verdict: Verdict(), nav: Navigator(), inFlight: InFlight(), screens: ScreenModels()))
+        .modifier(AppModels(session: Session(), charts: Charts(), nav: Navigator(), screens: ScreenModels()))
 }

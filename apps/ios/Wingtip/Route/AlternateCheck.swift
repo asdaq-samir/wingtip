@@ -15,8 +15,6 @@ import Observation
 @MainActor
 @Observable
 final class AlternateCheck {
-    static let shared = AlternateCheck()
-
     /// The planner's answer for the question last asked; nil before one.
     private(set) var answer: APIAlternates?
     /// Why there is no answer to ask for yet, in words: VFR, no ETA, no

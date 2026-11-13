@@ -10,12 +10,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.generated.RankedNotam
-import app.wingtipmaps.android.engine.Engine
-import app.wingtipmaps.android.engine.generated.EngineContract
-import app.wingtipmaps.android.engine.generated.notamSubject
-import app.wingtipmaps.android.plates.APPROACH_CHART
 
 /** A badge on one of the card's things: the engine's word, how bad and
  *  what it says, and the NOTAMs in force on it, the worst's first. */
@@ -49,45 +44,6 @@ data class NotamMarks(
 ) {
     companion object {
         val NONE = NotamMarks()
-
-        fun of(notams: List<RankedNotam>, place: AirportPlace): NotamMarks {
-            val approaches = place.procedures.orEmpty().filter { it.kind == APPROACH_CHART }
-            val idents = FieldNotams.identsOf(place.ident)
-            val runways = place.runways.map { it.ends.orEmpty() }
-            val lights = place.lights.orEmpty().map { EngineContract.NotamSubjectInputLightsItem(it.code, it.name, it.runways) }
-            val frequencies = place.frequencies.map { EngineContract.NotamSubjectInputFrequenciesItem(it.type, it.frequencyMhz) }
-            var field: NotamMark? = null
-            var fuel: NotamMark? = null
-            val runway = mutableMapOf<Int, NotamMark>()
-            val light = mutableMapOf<Int, NotamMark>()
-            val frequency = mutableMapOf<Int, NotamMark>()
-            val approach = mutableMapOf<String, NotamMark>()
-            for (n in notams) {
-                if (!FieldNotams.active(n)) continue
-                val badges = Engine.notamSubject(n.raw, FieldNotams.isTfr(n), idents, runways, lights, approaches.map { it.name }, frequencies).getOrNull()?.badges.orEmpty()
-                for (b in badges) {
-                    val i = b.index ?: -1
-                    when (b.on) {
-                        "field" -> field = add(field, b, n)
-                        "fuel" -> fuel = add(fuel, b, n)
-                        "runway" -> runway[i] = add(runway[i], b, n)
-                        "light" -> light[i] = add(light[i], b, n)
-                        "frequency" -> frequency[i] = add(frequency[i], b, n)
-                        "approach" -> approaches.getOrNull(i)?.url?.let { url -> approach[url] = add(approach[url], b, n) }
-                    }
-                }
-            }
-            return NotamMarks(field, fuel, runway, light, frequency, approach)
-        }
-
-        /** One more NOTAM on a thing: its badge where it is the worse (a
-         *  closure over a caution), else the first's, in the engine's order. */
-        private fun add(prior: NotamMark?, b: EngineContract.NotamSubjectAnswerBadgesItem, n: RankedNotam): NotamMark {
-            val mark = NotamMark(b.word, b.severity, b.label, listOf(n))
-            if (prior == null) return mark
-            val notams = if (n in prior.notams) prior.notams else prior.notams + n
-            return if (!prior.unusable && mark.unusable) mark.copy(notams = listOf(n) + notams.filter { it != n }) else prior.copy(notams = notams)
-        }
     }
 }
 
