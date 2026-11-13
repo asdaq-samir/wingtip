@@ -15,6 +15,19 @@ PAGE = {
     "top_right": {"lat": 47.2, "lon": -91.5},
     "bottom_right": {"lat": 46.2, "lon": -91.5},
     "bottom_left": {"lat": 46.2, "lon": -92.6},
+    # The plate's georeference (wingtip.plate_page.georeference), for own
+    # ship on the plate full screen: carried to the app as it is kept.
+    "georeference": {
+        "lat_0": 46.8,
+        "lon_0": -92.1,
+        "lat_1": 46.666667,
+        "lat_2": 41.333333,
+        "to_page": [0.0056693, 0.0, 198.0, 0.0, 0.0056693, 306.0],
+        "width_pt": 396.0,
+        "height_pt": 612.0,
+        "plan_view": {"left": 17.0, "bottom": 192.0, "right": 370.0, "top": 472.0},
+        "insets": [{"left": 17.0, "bottom": 192.0, "right": 120.0, "top": 260.0}],
+    },
 }
 
 

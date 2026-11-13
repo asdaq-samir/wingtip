@@ -116,13 +116,16 @@ class Georeference:
         ground = np.array([self._to.transform(lon, lat) for lat, lon in zip(gpts[::2], gpts[1::2])])
         fitted, *_ = np.linalg.lstsq(page, ground, rcond=None)
         self._page_to_ground = np.vstack([fitted.T, [0.0, 0.0, 1.0]])
-        self._ground_to_page = np.linalg.inv(self._page_to_ground)
+        self.ground_to_page = np.linalg.inv(self._page_to_ground)
+        # Kept for the engine's plate_page_point (plate_page.georeference):
+        # the projection's parameters and the very inverse page_of works.
+        self.projection = {k: projection[k] for k in LCC_PARAMETERS}
 
     def page_of(self, lat: float, lon: float) -> tuple:
         """Where on the page a point on the ground is drawn, in points
         from the page's bottom left."""
         x, y = self._to.transform(lon, lat)
-        px, py, _ = self._ground_to_page @ (x, y, 1.0)
+        px, py, _ = self.ground_to_page @ (x, y, 1.0)
         return float(px), float(py)
 
     def ground_of(self, x: float, y: float) -> tuple:
@@ -286,7 +289,7 @@ def _plan_view(pdf: bytes, fixes: dict, airport: tuple) -> tuple | None:
     north, east = geo.ground_of(right - 1, top - 1)
     drawn = {f: geo.page_of(*at) for f, at in fixes.items()}
     inside = [f for f, (fx, fy) in drawn.items() if left < fx < right and bottom < fy < top]
-    whole = None if turned else plate_page.page_picture(image, geo, (width, height))
+    whole = None if turned else plate_page.page_picture(image, geo, (width, height), (left, bottom, right, top), others)
     corners = {"south": south, "west": west, "north": north, "east": east, "fixes": inside, "page": whole and whole[1]}
     return out.getvalue(), corners, whole and whole[0]
 
@@ -323,11 +326,12 @@ def _fixes_of(ident: str, procedure: str) -> dict:
 def _kept(meta: Path) -> dict | None:
     """What plate_overlay kept for a plate this cycle, or None to make it
     (again): never made, not placed by an older way of placing, or placed
-    before the whole page was kept with it."""
+    before the whole page, and then its georeference, was kept with it."""
     if not meta.exists():
         return None
     kept = json.loads(meta.read_text())
-    return kept if (kept["placed"] and "page" in kept) or (not kept["placed"] and kept.get("fit") == PLACING_VERSION) else None
+    placed = kept["placed"] and "page" in kept and (kept["page"] is None or "georeference" in kept["page"])
+    return kept if placed or (not kept["placed"] and kept.get("fit") == PLACING_VERSION) else None
 
 
 def plate_overlay(ident: str, procedure: str, on: date | None = None) -> dict | None:

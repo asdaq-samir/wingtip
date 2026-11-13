@@ -16874,6 +16874,35 @@
         "title": "PlannedStep",
         "type": "object"
       },
+      "PlateBox": {
+        "description": "A box on a plate's page, in its points from the bottom left.",
+        "properties": {
+          "bottom": {
+            "title": "Bottom",
+            "type": "number"
+          },
+          "left": {
+            "title": "Left",
+            "type": "number"
+          },
+          "right": {
+            "title": "Right",
+            "type": "number"
+          },
+          "top": {
+            "title": "Top",
+            "type": "number"
+          }
+        },
+        "required": [
+          "left",
+          "bottom",
+          "right",
+          "top"
+        ],
+        "title": "PlateBox",
+        "type": "object"
+      },
       "PlateCorner": {
         "description": "A corner of a plate's page on the ground.",
         "properties": {
@@ -16891,6 +16920,65 @@
           "lon"
         ],
         "title": "PlateCorner",
+        "type": "object"
+      },
+      "PlateGeoreference": {
+        "description": "A plate's own georeference (wingtip.plate_page.georeference), for the\nengine's plate_page_point to put the pilot's position on the page: its\nLambert conformal conic projection's origin, central meridian and two\nstandard parallels, degrees, on NAD 83; `to_page` the affine [a, b, c, d,\ne, f] from that projection's metres (no false easting or northing) to\nthe page's points from its bottom left, x = a*E + b*N + c and y = d*E +\ne*N + f; the page's size in points; its plan view's box, the only part\ndrawn to scale, and the boxes cut from it (the airport sketch's).",
+        "properties": {
+          "height_pt": {
+            "title": "Height Pt",
+            "type": "number"
+          },
+          "insets": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PlateBox"
+            },
+            "title": "Insets",
+            "type": "array"
+          },
+          "lat_0": {
+            "title": "Lat 0",
+            "type": "number"
+          },
+          "lat_1": {
+            "title": "Lat 1",
+            "type": "number"
+          },
+          "lat_2": {
+            "title": "Lat 2",
+            "type": "number"
+          },
+          "lon_0": {
+            "title": "Lon 0",
+            "type": "number"
+          },
+          "plan_view": {
+            "$ref": "#/components/schemas/PlateBox"
+          },
+          "to_page": {
+            "items": {
+              "type": "number"
+            },
+            "title": "To Page",
+            "type": "array"
+          },
+          "width_pt": {
+            "title": "Width Pt",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat_0",
+          "lon_0",
+          "lat_1",
+          "lat_2",
+          "to_page",
+          "width_pt",
+          "height_pt",
+          "plan_view"
+        ],
+        "title": "PlateGeoreference",
         "type": "object"
       },
       "PlateOverlay": {
@@ -16956,13 +17044,16 @@
         "type": "object"
       },
       "PlatePage": {
-        "description": "An approach plate's whole page placed on the map (wingtip.plate_page):\nits picture at /api/approach-plate-page/{cycle}/{ident}/{procedure}.png,\ngreyscale on white, `width` by `height` pixels, drawn between its four\ncorners on the ground, which put its plan view where the plate's own\ngeoreference does; the rest of the page goes round it at the same scale\nand turn, as ForeFlight lays a plate on its chart. The page may turn a\nlittle from north up (the plate's Lambert projection's meridians lean),\nso it is drawn between the four corners, not in a box.",
+        "description": "An approach plate's whole page placed on the map (wingtip.plate_page):\nits picture at /api/approach-plate-page/{cycle}/{ident}/{procedure}.png,\ngreyscale on white, `width` by `height` pixels, drawn between its four\ncorners on the ground, which put its plan view where the plate's own\ngeoreference does; the rest of the page goes round it at the same scale\nand turn, as ForeFlight lays a plate on its chart. The page may turn a\nlittle from north up (the plate's Lambert projection's meridians lean),\nso it is drawn between the four corners, not in a box. `georeference`\nplaces a position on the page (PlateGeoreference).",
         "properties": {
           "bottom_left": {
             "$ref": "#/components/schemas/PlateCorner"
           },
           "bottom_right": {
             "$ref": "#/components/schemas/PlateCorner"
+          },
+          "georeference": {
+            "$ref": "#/components/schemas/PlateGeoreference"
           },
           "height": {
             "title": "Height",
@@ -16985,7 +17076,8 @@
           "top_left",
           "top_right",
           "bottom_right",
-          "bottom_left"
+          "bottom_left",
+          "georeference"
         ],
         "title": "PlatePage",
         "type": "object"

@@ -8657,6 +8657,64 @@ enum EngineContract {
         var rows: [EngineContract.NavLogRow]
     }
 
+    /// A box on an approach plate's page, in its points from the bottom left.
+    struct PlatePageBox: Codable, Equatable, Sendable {
+        var left: Double
+        var bottom: Double
+        var right: Double
+        var top: Double
+    }
+
+    struct PlatePagePointAnswer: Codable, Equatable, Sendable {
+        var x: Double
+        var y: Double
+        var rotationDeg: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case x
+            case y
+            case rotationDeg = "rotation_deg"
+        }
+    }
+
+    struct PlatePagePointInput: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+        var trackDeg: Double?
+        var georeference: EngineContract.PlatePagePointInputGeoreference
+
+        enum CodingKeys: String, CodingKey {
+            case lat
+            case lon
+            case trackDeg = "track_deg"
+            case georeference
+        }
+    }
+
+    struct PlatePagePointInputGeoreference: Codable, Equatable, Sendable {
+        var lat0: Double
+        var lon0: Double
+        var lat1: Double
+        var lat2: Double
+        var toPage: [Double]
+        var widthPt: Double
+        var heightPt: Double
+        var planView: EngineContract.PlatePageBox
+        var insets: [EngineContract.PlatePageBox]?
+
+        enum CodingKeys: String, CodingKey {
+            case lat0 = "lat_0"
+            case lon0 = "lon_0"
+            case lat1 = "lat_1"
+            case lat2 = "lat_2"
+            case toPage = "to_page"
+            case widthPt = "width_pt"
+            case heightPt = "height_pt"
+            case planView = "plan_view"
+            case insets
+        }
+    }
+
     struct PointKindInput: Codable, Equatable, Sendable {
         var text: String
     }

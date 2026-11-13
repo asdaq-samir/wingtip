@@ -15373,6 +15373,43 @@ extension Components {
                 case toNm = "to_nm"
             }
         }
+        /// A box on a plate's page, in its points from the bottom left.
+        ///
+        /// - Remark: Generated from `#/components/schemas/PlateBox`.
+        public struct PlateBox: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PlateBox/bottom`.
+            public var bottom: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/PlateBox/left`.
+            public var left: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/PlateBox/right`.
+            public var right: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/PlateBox/top`.
+            public var top: Swift.Double
+            /// Creates a new `PlateBox`.
+            ///
+            /// - Parameters:
+            ///   - bottom:
+            ///   - left:
+            ///   - right:
+            ///   - top:
+            public init(
+                bottom: Swift.Double,
+                left: Swift.Double,
+                right: Swift.Double,
+                top: Swift.Double
+            ) {
+                self.bottom = bottom
+                self.left = left
+                self.right = right
+                self.top = top
+            }
+            public enum CodingKeys: String, CodingKey {
+                case bottom
+                case left
+                case right
+                case top
+            }
+        }
         /// A corner of a plate's page on the ground.
         ///
         /// - Remark: Generated from `#/components/schemas/PlateCorner`.
@@ -15396,6 +15433,80 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case lat
                 case lon
+            }
+        }
+        /// A plate's own georeference (wingtip.plate_page.georeference), for the
+        /// engine's plate_page_point to put the pilot's position on the page: its
+        /// Lambert conformal conic projection's origin, central meridian and two
+        /// standard parallels, degrees, on NAD 83; `to_page` the affine [a, b, c, d,
+        /// e, f] from that projection's metres (no false easting or northing) to
+        /// the page's points from its bottom left, x = a*E + b*N + c and y = d*E +
+        /// e*N + f; the page's size in points; its plan view's box, the only part
+        /// drawn to scale, and the boxes cut from it (the airport sketch's).
+        ///
+        /// - Remark: Generated from `#/components/schemas/PlateGeoreference`.
+        public struct PlateGeoreference: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PlateGeoreference/height_pt`.
+            public var heightPt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/PlateGeoreference/insets`.
+            public var insets: [Components.Schemas.PlateBox]?
+            /// - Remark: Generated from `#/components/schemas/PlateGeoreference/lat_0`.
+            public var lat0: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/PlateGeoreference/lat_1`.
+            public var lat1: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/PlateGeoreference/lat_2`.
+            public var lat2: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/PlateGeoreference/lon_0`.
+            public var lon0: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/PlateGeoreference/plan_view`.
+            public var planView: Components.Schemas.PlateBox
+            /// - Remark: Generated from `#/components/schemas/PlateGeoreference/to_page`.
+            public var toPage: [Swift.Double]
+            /// - Remark: Generated from `#/components/schemas/PlateGeoreference/width_pt`.
+            public var widthPt: Swift.Double
+            /// Creates a new `PlateGeoreference`.
+            ///
+            /// - Parameters:
+            ///   - heightPt:
+            ///   - insets:
+            ///   - lat0:
+            ///   - lat1:
+            ///   - lat2:
+            ///   - lon0:
+            ///   - planView:
+            ///   - toPage:
+            ///   - widthPt:
+            public init(
+                heightPt: Swift.Double,
+                insets: [Components.Schemas.PlateBox]? = nil,
+                lat0: Swift.Double,
+                lat1: Swift.Double,
+                lat2: Swift.Double,
+                lon0: Swift.Double,
+                planView: Components.Schemas.PlateBox,
+                toPage: [Swift.Double],
+                widthPt: Swift.Double
+            ) {
+                self.heightPt = heightPt
+                self.insets = insets
+                self.lat0 = lat0
+                self.lat1 = lat1
+                self.lat2 = lat2
+                self.lon0 = lon0
+                self.planView = planView
+                self.toPage = toPage
+                self.widthPt = widthPt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case heightPt = "height_pt"
+                case insets
+                case lat0 = "lat_0"
+                case lat1 = "lat_1"
+                case lat2 = "lat_2"
+                case lon0 = "lon_0"
+                case planView = "plan_view"
+                case toPage = "to_page"
+                case widthPt = "width_pt"
             }
         }
         /// An approach's plate's plan view placed on the map (wingtip.plates): the
@@ -15480,7 +15591,8 @@ extension Components {
         /// georeference does; the rest of the page goes round it at the same scale
         /// and turn, as ForeFlight lays a plate on its chart. The page may turn a
         /// little from north up (the plate's Lambert projection's meridians lean),
-        /// so it is drawn between the four corners, not in a box.
+        /// so it is drawn between the four corners, not in a box. `georeference`
+        /// places a position on the page (PlateGeoreference).
         ///
         /// - Remark: Generated from `#/components/schemas/PlatePage`.
         public struct PlatePage: Codable, Hashable, Sendable {
@@ -15488,6 +15600,8 @@ extension Components {
             public var bottomLeft: Components.Schemas.PlateCorner
             /// - Remark: Generated from `#/components/schemas/PlatePage/bottom_right`.
             public var bottomRight: Components.Schemas.PlateCorner
+            /// - Remark: Generated from `#/components/schemas/PlatePage/georeference`.
+            public var georeference: Components.Schemas.PlateGeoreference
             /// - Remark: Generated from `#/components/schemas/PlatePage/height`.
             public var height: Swift.Int
             /// - Remark: Generated from `#/components/schemas/PlatePage/top_left`.
@@ -15501,6 +15615,7 @@ extension Components {
             /// - Parameters:
             ///   - bottomLeft:
             ///   - bottomRight:
+            ///   - georeference:
             ///   - height:
             ///   - topLeft:
             ///   - topRight:
@@ -15508,6 +15623,7 @@ extension Components {
             public init(
                 bottomLeft: Components.Schemas.PlateCorner,
                 bottomRight: Components.Schemas.PlateCorner,
+                georeference: Components.Schemas.PlateGeoreference,
                 height: Swift.Int,
                 topLeft: Components.Schemas.PlateCorner,
                 topRight: Components.Schemas.PlateCorner,
@@ -15515,6 +15631,7 @@ extension Components {
             ) {
                 self.bottomLeft = bottomLeft
                 self.bottomRight = bottomRight
+                self.georeference = georeference
                 self.height = height
                 self.topLeft = topLeft
                 self.topRight = topRight
@@ -15523,6 +15640,7 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case bottomLeft = "bottom_left"
                 case bottomRight = "bottom_right"
+                case georeference
                 case height
                 case topLeft = "top_left"
                 case topRight = "top_right"

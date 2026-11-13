@@ -1,0 +1,20 @@
+{
+  "title": "PlatePageBox",
+  "description": "A box on an approach plate's page, in its points from the bottom left.",
+  "type": "object",
+  "properties": {
+    "left": {
+      "type": "number"
+    },
+    "bottom": {
+      "type": "number"
+    },
+    "right": {
+      "type": "number"
+    },
+    "top": {
+      "type": "number"
+    }
+  },
+  "required": ["left", "bottom", "right", "top"]
+}
