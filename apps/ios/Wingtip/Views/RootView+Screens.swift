@@ -4,8 +4,8 @@ import SwiftUI
 /// a Shortcut, a figure or a row tapped. The one way a page opens by name
 /// on the iPhone and the iPad (the owner's card rule, 2026-11-10): the
 /// plan is the sheet's root, the search is its field, the emergency
-/// assistant is full screen, and every other screen is a card over the
-/// plan (Navigator; the iPad's sidebar or inspector). The switch is over
+/// assistant is its model's card (CardTriggers), and every other screen is
+/// a card over the plan (Navigator; the iPad's sidebar or inspector). The switch is over
 /// the generated list, so a screen added there fails the build here
 /// until it opens.
 extension RootView {

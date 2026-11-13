@@ -86,15 +86,15 @@ struct RootView: View {
                     }
             case .split:
                 SplitLayout(map: map, search: search, openScreen: { openScreen($0) }, ask: { ask($0) })
-                    // No sheet over the iPad's layout: its alerts and the
-                    // emergency assistant from the root itself.
+                    // No sheet over the iPad's layout: its alerts from the
+                    // root itself.
                     .modifier(TopHosts(active: true))
             }
         }
         // Ready to Fly given the app's models, for a start from anywhere.
         .modifier(ReadyToFlyHost())
-        // A shared flight, the flight just logged and the clearance, each
-        // a card when its model asks (CardTriggers).
+        // A shared flight, the flight just logged, the clearance and the
+        // emergency assistant, each a card when its model asks (CardTriggers).
         .modifier(CardTriggers())
         .onChange(of: layout, initial: true) { _, now in nav.split = now == .split }
         // The scene's pages kept and brought back (SceneStorage); a launch

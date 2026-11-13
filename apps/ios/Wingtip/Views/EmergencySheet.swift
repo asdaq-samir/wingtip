@@ -1,12 +1,25 @@
 import MapKit
 import SwiftUI
 
+/// The emergency assistant's card, the airplane's own checklist picked
+/// for it: opened by its model (Emergency.open, CardTriggers) as every
+/// card is, on the card's sheet, the one that opens at full height (the
+/// owner, 2026-11-13: "For phones, just do it natively, but stay
+/// consistent").
+struct EmergencyCard: View {
+    @Environment(Plan.self) private var plan
+
+    var body: some View {
+        EmergencySheet(airplane: LocalChecklists.airplane(of: plan))
+    }
+}
+
 /// The emergency assistant, one screen (the web's EmergencySheet), laid
-/// out as docs/design/ios.md §8 has it: a full-screen cover (HIG
-/// Modality: for an urgent flow, "consider alternatives to sheets"), its
-/// close at the top right, where iOS puts the system's close (the owner's
-/// card rule, 2026-11-10), ending this view alone, the map in its top
-/// third with the line to the field picked and the glide's reach, then on
+/// out as docs/design/ios.md §8 has it: a card at full height with the
+/// card's close at the top right (CardStack; the owner's card rule,
+/// 2026-11-10), putting it away as its model's close does (Navigator's
+/// left), the map in its top third with the line to the field picked
+/// and the glide's reach, then on
 /// a solid ground squawk 7700 and Guard as two large tiles, the best
 /// fields each with its own Direct To, the airplane's own emergency
 /// checklist (or the general guidance, labelled so, with none picked),
@@ -34,43 +47,34 @@ struct EmergencySheet: View {
     private var emergencyAircraft: String? { plan.airplaneChosen ? plan.aircraft : nil }
 
     var body: some View {
-        NavigationStack {
-            GeometryReader { screen in
-                VStack(spacing: 0) {
-                    EmergencyMap(fix: fix, picked: model.picked, ring: model.ranked?.glide?.ring ?? [])
-                        .frame(height: screen.size.height / 3)
-                    List {
-                        if case .success(let call) = mayday { EmergencyCodeTiles(call: call) }
-                        EmergencyFieldsSection(fix: fix, ownShipOff: ownShip.denied) { ident in directTo(ident) }
-                        // A Direct To with no connection is not made: said
-                        // here, the field's heading and distance still above.
-                        if let problem = plan.directProblem { Section { ProblemLine(problem) } }
-                        if plan.airplaneChosen {
-                            checklistSection
-                        } else {
-                            guidanceSection(Result { try Emergency.guidance(airplaneChosen: false) ?? [] })
-                        }
-                        EmergencyRadioSections(mayday: mayday, phoneIdent: model.picked?.ident, phone: model.pickedPhone)
+        GeometryReader { screen in
+            VStack(spacing: 0) {
+                EmergencyMap(fix: fix, picked: model.picked, ring: model.ranked?.glide?.ring ?? [])
+                    .frame(height: screen.size.height / 3)
+                List {
+                    if case .success(let call) = mayday { EmergencyCodeTiles(call: call) }
+                    EmergencyFieldsSection(fix: fix, ownShipOff: ownShip.denied) { ident in directTo(ident) }
+                    // A Direct To with no connection is not made: said
+                    // here, the field's heading and distance still above.
+                    if let problem = plan.directProblem { Section { ProblemLine(problem) } }
+                    if plan.airplaneChosen {
+                        checklistSection
+                    } else {
+                        guidanceSection(Result { try Emergency.guidance(airplaneChosen: false) ?? [] })
                     }
-                    // Solid grounds read better in a hurry than glass.
-                    .listStyle(.insetGrouped)
-                    .font(.title3)
+                    EmergencyRadioSections(mayday: mayday, phoneIdent: model.picked?.ident, phone: model.pickedPhone)
                 }
+                // Solid grounds read better in a hurry than glass.
+                .listStyle(.insetGrouped)
+                .font(.title3)
             }
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("card-emergency")
-            .navigationTitle("Emergency")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // At the right, where every card's close is: it ends this
-                // view only.
-                ToolbarItem(placement: .topBarTrailing) { CloseButton { model.close() } }
-            }
-            .task(id: fix.map { Emergency.key($0, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio) }) {
-                await model.refresh(fix: fix, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio)
-            }
-            .onChange(of: fix) { _, new in if let new { model.rank(new) } }
         }
+        .navigationTitle("Emergency")
+        .navigationBarTitleDisplayMode(.inline)
+        .task(id: fix.map { Emergency.key($0, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio) }) {
+            await model.refresh(fix: fix, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio)
+        }
+        .onChange(of: fix) { _, new in if let new { model.rank(new) } }
         // One warning as it opens, never again while it is up (HIG Haptics).
         .sensoryFeedback(.warning, trigger: opened)
         // The position, asked for now if it never was: the nearest fields
@@ -167,7 +171,7 @@ struct EmergencySheet: View {
 }
 
 #Preview("EmergencySheet") {
-    EmergencySheet(airplane: "N3429J")
+    NavigationStack { EmergencySheet(airplane: "N3429J") }
         .environment(Plan())
         .environment(OwnShip())
         .environment(DryRun())

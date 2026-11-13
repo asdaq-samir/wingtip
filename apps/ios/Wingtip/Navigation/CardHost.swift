@@ -1,9 +1,9 @@
 import SwiftUI
 
 extension View {
-    /// The card over this sheet (Navigator's), and the app's alerts and
-    /// the emergency assistant presented from whichever is on top: the
-    /// card while one is up, else this sheet. One view presents one sheet
+    /// The card over this sheet (Navigator's), and the app's alerts
+    /// presented from whichever is on top: the card while one is up, else
+    /// this sheet. One view presents one sheet
     /// at a time, and a view under a sheet it presents can present nothing
     /// (UIKit's one presenter), so every card goes through the one item
     /// here and every alert is hung on the top of the stack, never on the
@@ -14,8 +14,9 @@ extension View {
 }
 
 /// The card over the plan's sheet on the iPhone, as Maps opens a place
-/// over its search: the system sheet, half way for a thing and full for a
-/// page, the map live above it at half height, its close at the right.
+/// over its search: the system sheet, half way for every card but the
+/// emergency assistant's (full), the map and its buttons live above it at
+/// half height, its close at the right.
 private struct CardHost: ViewModifier {
     @Environment(SheetEdge.self) private var sheetEdge
     @Environment(Navigator.self) private var nav
@@ -76,15 +77,12 @@ extension SheetPage {
     var modal: Bool { ownClose }
 }
 
-/// The alerts that ask and the emergency assistant, hung on the top of
-/// the stack (CardHost): the plan's sheet with no card up, else the card.
+/// The alerts that ask, hung on the top of the stack (CardHost): the
+/// plan's sheet with no card up, else the card.
 struct TopHosts: ViewModifier {
-    @Environment(Emergency.self) private var emergency
     let active: Bool
-    @Environment(Plan.self) private var plan
 
     func body(content: Content) -> some View {
-        @Bindable var emergency = self.emergency
         content
             // What the app is, once at first launch (PlanningAidNotice).
             .modifier(PlanningAidAlert(active: active))
@@ -96,23 +94,23 @@ struct TopHosts: ViewModifier {
             // Ready to Fly over a dry run's or a flight's start: one stock
             // prompt, its section in the Brief (ReadyToFlyPrompt).
             .modifier(ReadyToFlyPrompt(active: active))
-            // The emergency assistant, from the instruments bar, the pilot's
-            // words, Settings or a link; no map button (decision 0010).
-            // Full screen, its own map in its top third (docs/design/ios.md §8).
-            .fullScreenCover(item: active ? $emergency.open : .constant(nil)) { _ in
-                EmergencySheet(airplane: LocalChecklists.airplane(of: plan))
-            }
     }
 }
 
-/// The cards a model opens by itself: a flight another pilot sent, the flight just ended to log, and the
-/// clearance asked for from the radio. Each opens as the one card when
+/// The cards a model opens by itself: a flight another pilot sent, the
+/// flight just ended to log, the clearance asked for from the radio, and
+/// the emergency assistant, from the instruments bar, the pilot's words,
+/// You, the checklists or a link (no map button, decision 0010), a card
+/// like every other since 2026-11-13 where it was a full-screen cover
+/// (the owner: "For phones, just do it natively, but stay consistent").
+/// Each opens as the one card when
 /// its model asks and closes when its model is done; put away by the
 /// pilot, Navigator tells the model (Navigator.left).
 struct CardTriggers: ViewModifier {
     @Environment(SharedFlightModel.self) private var sharedFlight
     @Environment(AutoLogbook.self) private var logbook
     @Environment(ClearanceListener.self) private var listener
+    @Environment(Emergency.self) private var emergency
     @Environment(Navigator.self) private var nav
 
     func body(content: Content) -> some View {
@@ -120,6 +118,7 @@ struct CardTriggers: ViewModifier {
             .onChange(of: sharedFlight.showing, initial: true) { _, up in follow(.sharedFlight, up) }
             .onChange(of: logbook.isOpen, initial: true) { _, up in follow(.flightLogged, up) }
             .onChange(of: listener.sheetShown, initial: true) { _, up in follow(.clearance, up) }
+            .onChange(of: emergency.open != nil, initial: true) { _, up in follow(.emergency, up) }
     }
 
     /// The card up while its model asks, put away once it is done.

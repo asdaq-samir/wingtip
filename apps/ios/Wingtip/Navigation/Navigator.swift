@@ -41,8 +41,9 @@ final class Navigator {
     /// level back, as the web's clearRoute goes back to the airport flown
     /// to (`under`).
     private(set) var planFrom: SheetPage?
-    /// The card's height on the iPhone: half way for a thing, as Maps
-    /// opens a place, full for a page.
+    /// The card's height on the iPhone: half way, as Maps opens a place,
+    /// for every card but the emergency assistant's (SheetPage.opensFull);
+    /// the pilot's drag sets it from there.
     var cardDetent: PresentationDetent = .half
 
     /// The page on top: the card's last, else its root, else the sidebar's.
@@ -163,6 +164,8 @@ final class Navigator {
             if model.isOpen { if model.logged != nil { model.close() } else { model.later() } }
         case .clearance:
             ClearanceListener.shared.sheetShown = false
+        case .emergency:
+            if let emergency = screens?.emergency, emergency.open != nil { emergency.close() }
         default:
             break
         }

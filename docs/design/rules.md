@@ -184,6 +184,7 @@ grabber, detents and swipe; nothing is hand-built over it. You
 cards, their gear at the top left of the bar and the close at its right,
 and Settings (`Views/SettingsView`, `SheetPage.settings`) is pushed inside
 the card it was opened from, its Back going back to it.
+One card rule on the iPhone, the native way (the owner, 2026-11-13: "For phones, just do it natively, but stay consistent"): every card, the emergency assistant included (`SheetPage.emergency`, opened by its model through `CardTriggers`, no longer a `fullScreenCover`), is that one sheet or a page pushed in its stack, opening at half (`.half`) and only Emergency at `.large` (`SheetPage.opensFull`), the pilot's drag choosing the size from there; the Search ⇄ FPL toggle rides a half-height card's top and a tap closes the card and turns the sheet (`MapSideButtons`); signed out, You's head is Sign In alone, its bar title removed (`toolbar(removing: .title)`) and the rows that need an account disabled with no words (this line overrides the table's iPhone Emergency and Detents cells).
 
 ## 2. The scrolling rule (the owner, 2026-11-10)
 

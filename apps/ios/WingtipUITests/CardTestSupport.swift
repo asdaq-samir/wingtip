@@ -42,15 +42,13 @@ enum CardTests {
         let name: String
         let id: String
         let entries: [Entry]
-        /// Sits half way when opened (a thing), else full height (a page).
-        var half = false
     }
 
     /// The table: a new card gets every check by one row here.
     static let cards: [Card] = [
-        Card(name: "Map", id: "card-map", entries: [.button("map-settings"), .card("+map")], half: true),
-        Card(name: "Airport", id: "card-airport", entries: [.card("@KOSH")], half: true),
-        Card(name: "Nearest", id: "card-nearest", entries: [.link("nearest")], half: true),
+        Card(name: "Map", id: "card-map", entries: [.button("map-settings"), .card("+map")]),
+        Card(name: "Airport", id: "card-airport", entries: [.card("@KOSH")]),
+        Card(name: "Nearest", id: "card-nearest", entries: [.link("nearest")]),
         Card(name: "Brief", id: "card-brief", entries: [.link("brief")]),
         Card(name: "Nav Log", id: "card-navlog", entries: [.link("navlog")]),
         Card(name: "Profile", id: "card-profile", entries: [.link("profile")]),
@@ -60,7 +58,7 @@ enum CardTests {
         Card(name: "Ask", id: "card-ask", entries: [.link("ask"), .button("Ask about this flight")]),
         // A plate's card, as a tap on its page on the map opens it; offline,
         // its title from its key and its settings all there.
-        Card(name: "Plate", id: "card-plate", entries: [.card("+plate:KOSH:I36")], half: true),
+        Card(name: "Plate", id: "card-plate", entries: [.card("+plate:KOSH:I36")]),
     ]
 
     @MainActor

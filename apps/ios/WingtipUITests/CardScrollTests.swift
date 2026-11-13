@@ -19,14 +19,19 @@ final class CardScrollTests: XCTestCase {
     @MainActor
     func testTheTitleAndCloseStayInSightScrolledToTheEnd() throws {
         for size in CardTests.sizes {
-            for (entry, id, title) in [(CardTests.Entry.link("setup"), "card-setup", "You"), (.card("+map"), "card-map", "Map")] {
-                let context = "\(title) at \(size.name)"
+            // You signed out has no title in its bar, its gear stands for it.
+            for (entry, id, title) in [(CardTests.Entry.link("setup"), "card-setup", nil), (.card("+map"), "card-map", "Map")] {
+                let context = "\(title ?? "You") at \(size.name)"
                 let app = CardTests.open(entry, size: size.arguments)
                 XCTAssertTrue(CardTests.card(app, id).waitForExistence(timeout: 20), "\(context): did not open")
                 for _ in 0..<8 { app.swipeUp() }
                 let close = CardTests.close(app)
                 XCTAssertTrue(close.exists && close.isHittable, "\(context): the close scrolled away")
-                XCTAssertTrue(app.navigationBars[title].exists, "\(context): the title left the bar")
+                if let title {
+                    XCTAssertTrue(app.navigationBars[title].exists, "\(context): the title left the bar")
+                } else {
+                    XCTAssertTrue(app.buttons["settings-gear"].isHittable, "\(context): the gear left the bar")
+                }
                 app.terminate()
             }
         }

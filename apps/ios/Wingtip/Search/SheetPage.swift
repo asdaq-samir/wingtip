@@ -46,6 +46,11 @@ enum SheetPage: Hashable {
     /// A flight another pilot sent, and the flight just ended to log:
     /// each a card of its own.
     case sharedFlight, flightLogged
+    /// The emergency assistant: a card like every other (the owner,
+    /// 2026-11-13: "For phones, just do it natively, but stay
+    /// consistent"), the one that opens at full height. Opened by its
+    /// model (Emergency.open, CardTriggers), never kept by a scene.
+    case emergency
 
     /// The field or point whose card this is, for the map's ring.
     var airportRoute: String? {
@@ -61,20 +66,17 @@ enum SheetPage: Hashable {
         switch self {
         case .airport(let text): RootLayout.inspects(AirportRoute(text))
         case .screen(let screen): [.brief, .profile, .flights].contains(screen)
-        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged: true
+        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency: true
         case .flight, .notams, .practice, .training, .instructing, .contact, .settings: false
         }
     }
 
-    /// Opened full height: a page to read or work in. A thing opens half
-    /// way, the map in sight above it, as Maps opens a place.
-    var opensFull: Bool {
-        switch self {
-        case .screen(let screen): ![.nearest, .favorites].contains(screen)
-        case .flight, .notams, .practice, .training, .instructing, .contact, .ask, .clearance, .settings: true
-        case .airport, .leg, .traffic, .tail, .hold, .flown, .mapSettings, .plate, .sharedFlight, .flightLogged: false
-        }
-    }
+    /// Opened full height: the emergency assistant alone. Every other card
+    /// opens half way, the map in sight above it, as Maps opens a place,
+    /// and the pilot's drag chooses its size from there (the card rule's
+    /// 2, the owner, 2026-11-11: "I thought stock was to open each card
+    /// medium by default").
+    var opensFull: Bool { self == .emergency }
 
     /// Whether the page brings its own way out (an edit form's Cancel, a
     /// question's Not Now), so the card adds no close of its own: HIG
@@ -116,6 +118,7 @@ enum SheetPage: Hashable {
         case .clearance: "card-clearance"
         case .sharedFlight: "card-shared"
         case .flightLogged: "card-logged"
+        case .emergency: "card-emergency"
         }
     }
 
@@ -135,7 +138,7 @@ enum SheetPage: Hashable {
         case .plate(let key): "+plate:" + key
         case .notams(.route): "+notams"
         case .notams(.field(let ident)): "+notams:" + ident
-        case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .sharedFlight, .flightLogged: nil
+        case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .sharedFlight, .flightLogged, .emergency: nil
         }
     }
 
@@ -175,7 +178,7 @@ enum SheetPage: Hashable {
 
     /// Whether a screen is a page of its own, rather than the plan itself,
     /// the search, Ask (a card by its question), the emergency assistant
-    /// (full screen) or a preview a link carries (a shared flight).
+    /// (a card its model opens) or a preview a link carries (a shared flight).
     static func pages(_ screen: Screen) -> Bool {
         switch screen {
         case .fpl, .airport, .ask, .emergency, .shared: false
@@ -226,6 +229,7 @@ struct SheetPageView: View {
         case .clearance: ClearanceSheet()
         case .sharedFlight: SharedFlightView()
         case .flightLogged: FlightLoggedCard()
+        case .emergency: EmergencyCard()
         }
     }
 }
@@ -261,7 +265,7 @@ struct ScreenPage: View {
         case .about: AboutView()
         // Not pages (SheetPage.pages): the plan is the root, the search
         // is the field's, Ask is a card by its question, the emergency
-        // assistant is full screen and a shared flight is its own card.
+        // assistant is its model's card and a shared flight is its own card.
         case .fpl, .airport, .ask, .emergency, .shared: EmptyView()
         }
     }
