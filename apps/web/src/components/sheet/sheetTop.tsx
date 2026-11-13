@@ -4,7 +4,7 @@ import { useSheetTop } from "./sheetTopSlot";
 
 /**
  * What rides on a phone's bottom sheet's top edge -- the radio's button
- * at the left, the map's buttons at the right, the first flight's card --
+ * at the left, the map's buttons at the right --
  * drawn inside the stock Drawer's popup, just over its top (bottom:
  * 100%), so it moves with the sheet frame by frame under a finger and on
  * the Drawer's own curve, as Apple Maps' buttons ride its sheet. Where there is no bottom sheet (a top

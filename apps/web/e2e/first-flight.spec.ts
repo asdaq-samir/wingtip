@@ -1,13 +1,15 @@
 import { test, expect } from "@playwright/test";
-import { settle, slow } from "./helpers";
+import { searchAirports, settle, slow } from "./helpers";
+import { expectPage, tab } from "./sheetPages";
 
 /**
- * The first flight's card (FirstFlight, useFirstFlight): over the map the
- * first time the planner opens with no route on this device, a
- * destination picked from the airport search, Plan it planning from where
- * the airplane is; then the nav log open and the card gone for good. The
- * suite's session has the tips all seen, the card with them; this spec
- * starts with none seen, once, so a reload keeps what it saw.
+ * The first flight (FirstFlight, useFirstFlight; the owner's option A,
+ * 2026-11-13): the welcome sheet the first time the planner opens with no
+ * route on this device; Let's Go Flying leaves the one search ready for
+ * where to, the airport picked is planned to from where the airplane is, FPL comes
+ * up and one tip points at its tab; each once. The suite's session has the
+ * tips all seen, these with them; this spec starts with none seen, once,
+ * so a reload keeps what it saw.
  */
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -51,38 +53,55 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("a new pilot is asked where to, Plan it plans from where the airplane is, the nav log opens and the card is gone for good", async ({
+test("a new pilot is welcomed, Let's Go Flying leaves the one search ready, the pick is planned from where the airplane is and the FPL tab is pointed out once", async ({
   page,
 }) => {
   test.setTimeout(slow(90_000));
   await page.goto("/app/plan");
   await settle(page);
-  const card = page.getByTestId("first-flight");
-  await expect(card).toBeVisible({ timeout: slow(15_000) });
-  await expect(card.getByTestId("first-flight-plan")).toBeDisabled();
+  const welcome = page.getByTestId("first-flight");
+  await expect(welcome).toBeVisible({ timeout: slow(15_000) });
+  await expect(welcome.getByRole("heading", { name: "Welcome to Wingtip Maps" })).toBeVisible();
+  for (const row of ["Search, like Maps", "FPL, like your EFB", "FAA charts that move like Maps"])
+    await expect(welcome.getByText(row)).toBeVisible();
+  // One way on (the owner, 2026-11-13).
+  await expect(welcome.getByRole("button")).toHaveCount(1);
 
-  // Madison picked from the search the route's box uses.
-  await card.getByTestId("first-flight-dest").fill("KMSN");
-  await card
-    .getByTestId("search-result")
-    .filter({ hasText: "KMSN" })
+  // Let's Go Flying: the sheet gone, Search up and its field asking for
+  // the destination -- not focused, so no keyboard jumps up.
+  await welcome.getByTestId("first-flight-go").click();
+  await expect(welcome).toHaveCount(0);
+  await expectPage(page, 0);
+  const search = page.getByTestId("search-airports");
+  await expect(search).not.toBeFocused();
+  await expect(search).toHaveAttribute("placeholder", /destination/i);
+
+  // Oshkosh picked: planned from the nearest field to the fix (Campbell),
+  // FPL up with the route, and the tip on its tab.
+  await search.click();
+  await search.fill("KOSH");
+  await searchAirports(page)
+    .filter({ hasText: "KOSH" })
     .first()
     .click({ timeout: slow(15_000) });
-  await expect(card.getByTestId("first-flight-dest")).toHaveValue(/KMSN/);
-  await card.getByTestId("first-flight-plan").click();
+  await expect(page).toHaveURL(/dest=KOSH/, { timeout: slow(30_000) });
+  await expectPage(page, 1);
+  const tip = page.getByTestId("fpl-tip");
+  await expect(tip).toBeVisible();
+  await expect(tip).toContainText("Your flight plan lives here");
+  // Over the FPL tab, its arrow at it.
+  const [tipBox, tabBox] = [await tip.boundingBox(), await tab(page, 1).boundingBox()];
+  expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(tabBox!.y);
+  await tip.getByTestId("fpl-tip-close").click();
+  await expect(tip).toHaveCount(0);
 
-  // Planned from the nearest field to the fix: the nav log's rows, over
-  // the route, and the card gone.
-  // A phone's list, or a desktop's table (docs/design/web.md §4).
-  const navlog = page.getByTestId(/^navlog-(list|table)$/);
-  await expect(navlog).toBeVisible({ timeout: slow(60_000) });
-  await expect(navlog.getByRole("row").nth(1)).toBeVisible({ timeout: slow(60_000) });
-  await expect(page).toHaveURL(/dest=KMSN/);
-  await expect(card).toHaveCount(0);
-
-  // Seen: not offered again on this device, even with no route.
+  // Seen, both: neither offered again on this device, even with no route.
   await page.goto("/app/plan");
   await settle(page);
   await page.waitForTimeout(1500);
-  await expect(card).toHaveCount(0);
+  await expect(welcome).toHaveCount(0);
+  await page.goto("/app/plan?dep=C81&dest=KMSN");
+  await settle(page);
+  await page.waitForTimeout(1500);
+  await expect(tip).toHaveCount(0);
 });

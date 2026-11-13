@@ -23,8 +23,9 @@ setup("the developer signs in from the pilot console, and lands in dev mode", as
   await page.keyboard.press("Escape");
   await consolePage(page.getByTestId("console-sheet"), "Guide");
   await page.keyboard.press("Escape");
-  // The first flight's card (lib/firstRunTips) seen: over the map it
-  // takes the click a spec meant for it. first-flight.spec offers it afresh.
+  // The first flight's welcome and FPL tip (lib/firstRunTips) seen: over
+  // the map they take the click a spec meant for it. first-flight.spec
+  // offers them afresh.
   await page.evaluate(noTips);
   // FPL's fields opened at first (ProceduresRoute's fieldsOpenAtFirst): the
   // specs work on their runways and procedures; route-fields.spec folds

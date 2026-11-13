@@ -5,6 +5,7 @@ import { GLASS } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { TAB_BAR_PX } from "./insets";
+import { keepPlanTab } from "./planTab";
 
 /**
  * The sheet's two pages, Search and FPL, peers picked from a tab bar under
@@ -89,7 +90,7 @@ export function SheetTabBar({ names, floating, className }: { names: SheetPages[
       className={cn("pointer-events-none flex w-full justify-between gap-2 rounded-none p-0 print:hidden", className)}
     >
       <div className={glass}>
-        <TabsTrigger value={1} data-page-tab={1} className={cn(TAB, "min-w-16 flex-col gap-0 px-3 py-0")}>
+        <TabsTrigger ref={keepPlanTab} value={1} data-page-tab={1} className={cn(TAB, "min-w-16 flex-col gap-0 px-3 py-0")}>
           <Route className="size-5!" aria-hidden="true" />
           <span className={cn(TEXT.tabBar, "font-semibold")}>{planName}</span>
         </TabsTrigger>

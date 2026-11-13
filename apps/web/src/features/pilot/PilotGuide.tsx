@@ -144,7 +144,7 @@ export default function PilotGuide() {
   );
 }
 
-/** The first flight's card (lib/firstRunTips), offered again (Setup's one
+/** The first flight's welcome and its FPL tip (lib/firstRunTips), offered again (Setup's one
  *  home for it): the guide's short
  *  version, at its top, at the owner's ask (2026-10-27, "Tips can move to
  *  guide"). The pointing tips it brought back too are gone (2026-11-11). */

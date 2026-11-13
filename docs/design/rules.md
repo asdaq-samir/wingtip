@@ -279,7 +279,13 @@ only field.
    the Nav Log, the Profile and the Stops are cards over it. With no route, the route's row stands
    empty, with a Close that goes back to the card or Search it came from
    (the owner, 2026-11-11: "We don't need plan a flight either with two
-   buttons"); the first time, the first-flight card asks where to.
+   buttons"). The first time, a welcome sheet says what the app is
+   (Search like Maps, FPL like an EFB, the FAA charts) and its one
+   button, Let's Go Flying, goes on to the map with the one search ready
+   for where to (Search up, its field not focused), the airport picked
+   planned from where the airplane is; after that first route one tip points at the FPL tab, once (the
+   owner's option A, 2026-11-13; the web first, the phones keep their
+   first-flight card until the owner's word).
    FPL has no field of its own: adding a stop asks the one search.
 
 - **A tab bar under the sheet picks the page**, as iOS 26's TabView with
@@ -415,8 +421,9 @@ gone on every platform.
 
 ## 7. What rides the sheet, and the map's small print (the owner, 2026-11-11)
 
-1. **The radio's button, the map's own buttons and the first flight's
-   card ride the sheet's top**, 24 points over it at the pill and half,
+1. **The radio's button and the map's own buttons ride the sheet's
+   top** (and the phones' first-flight card, until they take the web's
+   welcome sheet), 24 points over it at the pill and half,
    following a finger's drag frame by frame as Apple Maps' buttons do;
    all the way up they give way. The radio's button is at the left, the
    map's buttons (Map, My Position) at the right, just above the search

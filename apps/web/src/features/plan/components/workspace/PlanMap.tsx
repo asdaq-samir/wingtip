@@ -20,7 +20,7 @@ const RouteLegCard = lazy(() => import("../RouteLegCard"));
 
 /** The map beside the briefing (PlanWorkspace's `map`), with what floats
  *  over it: the next checkpoint in flight, a fix's card, an assigned
- *  approach, the tips and the first flight's. */
+ *  approach, Ready to Fly and the first flight's welcome and tip. */
 export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
   const dryPlaying = usePastFlight((p) => p.hex === DRY_RUN && p.playing);
   const { panelOpen } = vm.view;
@@ -43,7 +43,7 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
   const { nearestPoints, placePin, startPin } = vm.map;
   const { fuelStopPins } = vm.stops;
   const { lineKey, pickWay, wayLines } = vm.routeList;
-  const { closeLesson, lessonOpen, openNavLogCard, pickStopField, stopFieldPins } = vm.fpl;
+  const { closeLesson, lessonOpen, pickStopField, stopFieldPins } = vm.fpl;
   const { dryRunning, flying } = vm.flight;
   const { closeLeg, mapLegs, openLeg, pickPoint, routeRows, selectCandidate, selectedPoint, setLegAt } = vm.leg;
   // Each card's chunk asked for at its first open, then kept.
@@ -123,7 +123,7 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
           </EngineGate>
         </Suspense>
       )}
-      <FirstFlight routed={routed} onPlan={setRoute} onPlanned={openNavLogCard} />
+      <FirstFlight routed={routed} onPlan={setRoute} pickView={vm.view.pickView} />
     </div>
   );
 }

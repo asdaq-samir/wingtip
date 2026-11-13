@@ -340,7 +340,8 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     direct,
     pick,
     pickIdent,
-    problem,
+    // Its own, else why a picker's last pick would not do (the first flight's).
+    problem: problem ?? pick?.problem ?? null,
     focused,
     /** A search sent, its list shown while the field is let go. */
     sent: !!sent && !focused,

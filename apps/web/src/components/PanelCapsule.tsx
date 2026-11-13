@@ -1,14 +1,12 @@
 import { Search } from "lucide-react";
-import { useRef, type ReactNode, type RefObject } from "react";
+import { useRef, type RefObject } from "react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
-import { useAirportSearch } from "../lib/useAirportSearch";
 import { usePreferences, type RecentAirport } from "../lib/preferences";
 import { ListGroup, ListRow } from "./GroupedList";
 import { ClearList, RemovableRow } from "./RemovableRow";
-import { KeptMark, ListPageHead, PillSection, PillStrip, SmallAirportTile } from "./Favorites";
+import { KeptMark, ListPageHead } from "./Favorites";
 import { placeLink } from "../lib/flightLink";
-import { useAway } from "../lib/useAway";
 import ClearButton from "./ClearButton";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
 import { PANEL_FIELD } from "./panelField";
@@ -123,76 +121,6 @@ export function SearchField({
         )}
       </InputGroup>
     </form>
-  );
-}
-
-/**
- * Under the search bar with the sheet out: before anything is typed, the
- * tab's strip (`places`), its filter the Favorites, the Recents or the
- * nearest fields (AirportPill); then the airports that answer what is
- * typed -- ident, name and town, a tap opening the field's card.
- */
-export function SearchResults({
-  query,
-  onPick,
-  places,
-  onAllRecents,
-}: {
-  query: string;
-  onPick: (airport: RecentAirport) => void;
-  /** Before anything is typed: the tab's strip. */
-  places?: ReactNode;
-  /** The Recents in full (AirportRecentsPage), from the section's title. */
-  onAllRecents?: () => void;
-}) {
-  const { typed, rows, answered } = useAirportSearch(query);
-  const recents = usePreferences((s) => s.recentAirports);
-  if (!typed) {
-    // Asked for an airport to keep -- Home, a Favorite -- with no strip:
-    // the airports opened last to pick it from, as the Aircraft search
-    // offers its own (AircraftCard).
-    if (places) return <>{places}</>;
-    return recents.length > 0 ? (
-      <PillSection title="Recents" testId="airport-recents" onMore={onAllRecents}>
-        <RecentAirportStrip recents={recents} onPick={onPick} />
-      </PillSection>
-    ) : (
-      <p className={cn("px-1 text-muted-foreground", TEXT.note)}>Search by an airport's ident, its name or its town.</p>
-    );
-  }
-  return (
-    <PillSection title="Airports" testId="airport-results">
-      <ListGroup className={cn(!answered && "opacity-60")}>
-        {rows.length === 0 && answered && <ListRow muted title="No airport matches; Enter keeps what you typed." />}
-        {rows.map((a) => (
-          <ListRow
-            key={a.ident}
-            media={<Search className="size-5 text-muted-foreground" />}
-            title={
-              <>
-                <span className="font-mono font-semibold">{a.ident}</span> · {a.name}
-              </>
-            }
-            description={a.municipality ?? undefined}
-            onClick={() => onPick({ ident: a.ident, name: a.name, municipality: a.municipality })}
-            data-testid="search-result"
-          />
-        ))}
-      </ListGroup>
-    </PillSection>
-  );
-}
-
-/** The airports picked last as tiles, newest first: each its chart symbol,
- *  its ident, and how far it is from own ship, else its town. */
-function RecentAirportStrip({ recents, onPick }: { recents: RecentAirport[]; onPick: (airport: RecentAirport) => void }) {
-  const away = useAway();
-  return (
-    <PillStrip testId="pill-airport-recents">
-      {recents.map((a) => (
-        <SmallAirportTile key={a.ident} airport={a} detail={away(a)} onClick={() => onPick(a)} testId="airport-recent" />
-      ))}
-    </PillStrip>
   );
 }
 
