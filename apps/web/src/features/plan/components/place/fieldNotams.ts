@@ -3,6 +3,7 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import { data, planner } from "../../../../lib/api/client";
 import type { components } from "../../../../lib/api/schema";
 import { callEngine, type EngineAnswer } from "../../../../lib/engine/engine";
+import { twoFigures, zuluTime } from "../../../../lib/format";
 
 export type FieldNotams = components["schemas"]["NotamsRanked"];
 export type FieldNotam = FieldNotams["notams"][number];
@@ -32,25 +33,50 @@ export const fieldNotamsQuery = (ident: string) =>
 const FIRST = 3;
 
 /**
- * The airport card's NOTAMs, its view model: the field's NOTAMs best
- * first, the first three or all of them, opened and closed again in place
- * by the section's title as every section on the card is (FirstFew; the
- * owner, 2026-11-11: "Notams should open like other sections").
+ * The airport card's NOTAMs, its view model: the field's NOTAMs in the
+ * engine's order (those in force first, then best first: notams_ranked),
+ * the first three or all of them, opened and closed again in place by the
+ * section's title as every section on the card is (FirstFew; the owner,
+ * 2026-11-11: "Notams should open like other sections"); and what is typed
+ * in the list's filter, every NOTAM that says it shown while it is there
+ * (the owner, 2026-11-12: a search field in the NOTAM list). Filtering
+ * asks the engine (notam_read), so this is used inside the card's
+ * EngineGate.
  */
 export function useFieldNotams(ident: string) {
   const { data, isError } = useQuery(fieldNotamsQuery(ident));
   const [all, setAll] = useState(false);
+  const [query, setQuery] = useState("");
   const notams = data?.notams ?? [];
   const long = notams.length > FIRST;
+  const typed = query.trim();
   return {
     data,
     isError,
     total: notams.length,
-    shown: all || !long ? notams : notams.slice(0, FIRST),
+    shown: typed ? notams.filter((n) => saysIt(n, ident, typed)) : all || !long ? notams : notams.slice(0, FIRST),
     long,
     all,
     toggle: () => setAll(!all),
+    query,
+    setQuery,
   };
+}
+
+/** The field's time zone, the planner's (wingtip.time_zone), from the
+ *  query the list reads; null until it is had or where none is known. */
+export function useFieldZone(ident: string): string | null {
+  return useQuery(fieldNotamsQuery(ident)).data?.time_zone ?? null;
+}
+
+/** Whether a NOTAM says what is typed, in any of the words a pilot sees of
+ *  it: its first line, its kind, its number, its words written out and its
+ *  text as sent, case aside. */
+function saysIt(n: FieldNotam, ident: string, typed: string): boolean {
+  const read = n.kind === "tfr" ? null : readNotam(n, ident);
+  const words = [whatOf(n, ident), headingOf(n, ident), n.id, read?.words, n.raw];
+  const want = typed.toLowerCase();
+  return words.some((w) => w?.toLowerCase().includes(want));
 }
 
 /** The field's idents as a NOTAM may write them ("OSH", "KOSH"), kept as
@@ -133,13 +159,43 @@ export function windowOf(n: FieldNotam, read: NotamReading): Pick<FieldNotam, "i
   return { in_force: n.in_force, starts: n.starts ?? read.starts, ends: n.ends ?? read.ends };
 }
 
-const CORNER = new Intl.DateTimeFormat("en-US", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+/** One formatter per zone, made the first time it is asked for: an Intl
+ *  formatter is costly to make (lib/format/time's note). Null where the
+ *  browser does not know the zone. */
+const corners = new Map<string, Intl.DateTimeFormat | null>();
+function cornerIn(zone: string): Intl.DateTimeFormat | null {
+  if (!corners.has(zone)) {
+    let format: Intl.DateTimeFormat | null = null;
+    try {
+      format = new Intl.DateTimeFormat("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+        timeZone: zone,
+      });
+    } catch {
+      // RangeError: a zone this browser's time-zone data does not have.
+    }
+    corners.set(zone, format);
+  }
+  return corners.get(zone) ?? null;
+}
 
-/** "11/10 06:00", with " local" where `local`: month/day and the 24-hour
- *  clock in the device's own time, as a pilot writes it on a kneeboard,
- *  the zone not named (the owner, 2026-11-11: "No need to mention time
- *  zone, just say local"). */
-export function corner(at: Date, local: boolean): string {
-  const part = Object.fromEntries(CORNER.formatToParts(at).map((p) => [p.type, p.value]));
-  return `${part.month}/${part.day} ${part.hour}:${part.minute}${local ? " local" : ""}`;
+const utcDay = (at: Date) => `${twoFigures(at.getUTCMonth() + 1)}/${twoFigures(at.getUTCDate())}`;
+
+/** "11/10 06:00 (1200Z)", with " local" where `local`: month/day and the
+ *  24-hour clock in the field's own time zone (the planner's, `zone`), as
+ *  a pilot writes it on a kneeboard, the zone not named (the owner,
+ *  2026-11-11: "No need to mention time zone, just say local"), and UTC
+ *  beside it, the time the NOTAM gives (FAA JO 7930.2 3-3-2; the owner,
+ *  2026-11-12: "airport's local time with UTC beside"). Where the field's
+ *  zone is not known, UTC alone with its day ("11/10 1200Z"): never the
+ *  device's own time called the field's. */
+export function corner(at: Date, zone: string | null, local: boolean): string {
+  const format = zone ? cornerIn(zone) : null;
+  if (!format) return `${utcDay(at)} ${zuluTime(at)}`;
+  const part = Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value]));
+  return `${part.month}/${part.day} ${part.hour}:${part.minute}${local ? " local" : ""} (${zuluTime(at)})`;
 }

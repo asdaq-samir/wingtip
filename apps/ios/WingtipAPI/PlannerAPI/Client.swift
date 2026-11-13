@@ -925,7 +925,8 @@ public struct Client: APIProtocol {
     /// a route's: the field read as a stop from an hour ago to three hours
     /// ahead (14 CFR 91.103 asks for the NOTAMs of every field a flight
     /// uses). With no flight there is no runway in use or cruise altitude to
-    /// weigh. `unchecked` names the TFRs when their list could not be had.
+    /// weigh. `unchecked` names the TFRs when their list could not be had;
+    /// `time_zone` is the field's, for its NOTAMs' local times.
     ///
     /// - Remark: HTTP `GET /api/airport/{ident}/notams`.
     /// - Remark: Generated from `#/paths//api/airport/{ident}/notams/get(airport_notams)`.

@@ -5776,6 +5776,10 @@ data class NotamsRanked (
     val coverageSince: String? = null,
 
     val notams: List<RankedNotam>,
+
+    @SerialName("time_zone")
+    val timeZone: String? = null,
+
     val top: Int,
     val unchecked: List<String>? = null
 )

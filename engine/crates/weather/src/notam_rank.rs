@@ -39,8 +39,13 @@
 //!
 //! Near a field the flight climbs or descends through every altitude, so
 //! a NOTAM at a field it uses is not judged by the cruise altitude.
-//! Ties keep the order of their ids and say so (`tied`): the words may
-//! put a tie in another order, never anything else.
+//!
+//! Every NOTAM in force (or whose times could not be read, which is never
+//! taken for not in force) comes before every one that is not, whatever
+//! its points: a list read from the top shows what applies first (the
+//! owner, 2026-11-12, "active NOTAMs first"), the points ordering each
+//! part. Ties keep the order of their ids and say so (`tied`): the words
+//! may put a tie in another order, never anything else.
 
 use crate::json::{self, Value};
 use crate::time::parse_iso;
@@ -294,7 +299,9 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     }
     let notams = v.get("notams").and_then(Value::as_array).ok_or("notams_ranked: \"notams\" is missing")?;
     let mut ranked: Vec<Ranked> = notams.iter().map(|n| rank_one(n, v)).collect();
-    ranked.stable_sort_by(|a, b| b.score.cmp(&a.score).then_with(|| a.id.cmp(&b.id)));
+    // In force first (the module's note), then best first.
+    let later = |r: &Ranked| r.in_force == Some(false);
+    ranked.stable_sort_by(|a, b| later(a).cmp(&later(b)).then_with(|| b.score.cmp(&a.score)).then_with(|| a.id.cmp(&b.id)));
     let mut top = 0;
     let mut out = String::from("{\"ranked\":[");
     for (i, r) in ranked.iter().enumerate() {
@@ -362,6 +369,28 @@ mod tests {
         assert_eq!(read("!OSH 11/021 OSH AIRSPACE UAS WI 1NM SFC-400FT AGL").high_ft, None);
         assert_eq!(runway_end("9L"), Some("09L".into()));
         assert_eq!(runway_end("37"), None);
+    }
+
+    #[test]
+    fn every_notam_in_force_comes_before_any_that_is_not() {
+        // Not in force at the departure, yet a field closed on the runway in
+        // use: -100 + 20 + 40 + 60 = 20 points. In force, a navaid off the
+        // route's fields, its span clear of the cruise: 30 - 20 + 5 = 15,
+        // which points alone would put after the first. A runway
+        // closed at the departure that the window takes in: 30 + 20 + 10 +
+        // 15 = 75. Whatever their points, those in force come first.
+        let v = crate::json::parse(
+            r#"{"notams":[
+                {"id":"A","location":"OSH","starts":"2026-11-20T12:00:00Z","ends":"2026-11-21T12:00:00Z","text":"!OSH 11/001 OSH AD AP RWY 18 CLSD"},
+                {"id":"B","location":"MSN","starts":null,"ends":null,"text":"!MSN 11/002 MSN NAV VOR U/S SFC-3000FT"},
+                {"id":"C","location":"OSH","starts":"2026-11-12T12:00:00Z","ends":"2026-11-12T20:00:00Z","text":"!OSH 11/003 OSH RWY 09 CLSD"}],
+              "fields":[{"ident":"KOSH","role":"dep","from":"2026-11-12T14:00:00Z","until":"2026-11-12T16:00:00Z","runways":["18"]}],
+              "from":"2026-11-12T14:00:00Z","until":"2026-11-12T16:00:00Z","cruise_ft":5500}"#,
+        )
+        .unwrap();
+        let out = crate::json::parse(&call("notams_ranked", &v).unwrap()).unwrap();
+        let ids: Vec<&str> = out.get("ranked").and_then(Value::as_array).unwrap().iter().filter_map(|r| r.get("id")?.as_str()).collect();
+        assert_eq!(ids, ["C", "B", "A"]);
     }
 
     #[test]

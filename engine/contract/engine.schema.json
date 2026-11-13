@@ -18600,7 +18600,7 @@
       "additionalProperties": false
     },
     "notam_read": {
-      "description": "A NOTAM read for a pilot, beside its text as sent: its keyword (FAA Order JO 7930.2 1-2-1) as a plain heading, or the ICAO Q) code's subject (Appendix B); its words with the FAA's contractions written out (JO 7340.2; JO 7930.2 3-3-1 and TBL 3-3-1) in sentence case, its codes (ILS, PAPI, VOR, RNAV, LPV) and idents kept, runways and taxiways as designated (3-3-5, 3-3-6), heights MSL unless AGL is stated (4-2-1), distances and compass points from a place, coordinates and fix-radial-distances written out; and its start of activity and end of validity in UTC (YYMMDDHHMM, 3-3-2), with EST (an estimate) and PERM (permanent) (4-2-1). Its what, where and why in our words where its subject's words say them (the airport card's four lines). A word it does not know is kept as written, never guessed.",
+      "description": "A NOTAM read for a pilot, beside its text as sent: its keyword (FAA Order JO 7930.2 1-2-1) as a plain heading, or the ICAO Q) code's subject (Appendix B); its words with the FAA's contractions written out (JO 7340.2; JO 7930.2 3-3-1 and TBL 3-3-1) in sentence case, its codes (ILS, PAPI, VOR, RNAV, LPV) and idents kept, runways and taxiways as designated (3-3-5, 3-3-6), heights MSL unless AGL is stated (4-2-1), distances and compass points from a place, coordinates and fix-radial-distances written out; and its start of activity and end of validity in UTC (YYMMDDHHMM, 3-3-2), with EST (an estimate) and PERM (permanent) (4-2-1). Its what and where in our words where its subject's words say them (the airport card's lines). The keyword AD, JO 7930.2's aerodrome, is headed \"Airport\", the FAA's word for pilots (the AIM). A word it does not know is kept as written, never guessed.",
       "type": "object",
       "properties": {
         "input": {
@@ -18683,13 +18683,6 @@
               ],
               "description": "The field and the place on it as the NOTAM gives it: \"KORD, runway 06/24\", \"KORD, taxiway A2 between taxiway A and taxiway B\", \"KORD, 1.3 nm west of the field\"; null where it says no more than the field."
             },
-            "why": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "description": "What it means to the pilot, only where that is a settled rule or a plain fact: a runway or the field closed, no landing or takeoff (CLSD, JO 7340.2), crossing or taxiing where EXC XNG or EXC TAX allows it; the glide slope out, a localizer approach to the LOC minimums, the localizer or the ILS out, no ILS or localizer approach (AIM 1-1-9); a PAPI or VASI out, no visual glide path guidance (AIM 2-1-2); approach lights out, visibility minimums may be higher (AIM 2-1-1, 1-1-9); an FDC approach NOTAM's minimums in place of the chart's (AIM 5-1-3) or the procedure not authorized; fuel not available; a frequency out of service; an obstacle's top; a TFR's limits to read (14 CFR 91.137-91.145, 91.103). Null otherwise, never guessed."
-            },
             "words": {
               "type": "string",
               "description": "Its words written out in sentence case, ending as a sentence ends."
@@ -18726,7 +18719,6 @@
             "title",
             "what",
             "where",
-            "why",
             "words",
             "starts",
             "ends",
@@ -19027,7 +19019,7 @@
       "additionalProperties": false
     },
     "notams_ranked": {
-      "description": "A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. The top three in force are said first; none is dropped.",
+      "description": "A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. Every one in force comes before every one that is not, whatever its points, then best first. The top three in force are said first; none is dropped.",
       "type": "object",
       "properties": {
         "input": {

@@ -10,8 +10,9 @@ const card = (page: import("@playwright/test").Page) => sideDrawer(page).getByTe
  * runway's row opens that NOTAM in full (the owner, 2026-11-11: "just put
  * closed badge next to the runway", "tapping the affected thing should show
  * the notam"); the Info tab's list reads it too, its words first and its
- * text as sent folded beneath. And how far the field is from the departure
- * typed alone, before any route is planned.
+ * text as sent folded beneath, its times in the field's own time with UTC
+ * beside them (the owner, 2026-11-12). And how far the field is from the
+ * departure typed alone, before any route is planned.
  */
 test("a field's closed runway has its badge, and its NOTAMs keep their text as sent", async ({ page }) => {
   const raw = "!DLH 11/042 DLH RWY 09/27 CLSD 2611101200-2611121432";
@@ -23,6 +24,8 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
           coverage_since: "2026-11-10T06:00:00Z",
           top: 1,
           unchecked: [],
+          // Duluth's zone, the planner's (wingtip.time_zone).
+          time_zone: "America/Chicago",
           notams: [
             {
               id: "11/042",
@@ -72,12 +75,15 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   await expect(notams).toBeVisible();
   const one = notams.getByTestId("place-notam");
   // The engine's reading in our words, a line each (the owner,
-  // 2026-11-11: "title(what), when, where, why ... on different lines"):
-  // what with its Active badge, its start and end in the device's own time, and where.
+  // 2026-11-11: "title(what), when, where ... on different lines"): what
+  // with its Active badge, its start and end in the field's own time with
+  // UTC beside them (JO 7930.2 3-3-2: a NOTAM's times are UTC), and where.
   await expect(one.getByTestId("place-notam-state")).toHaveText("Active");
   await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway 09/27 closed");
   // Labelled as ForeFlight's list: since its start, its end and how long is left.
-  await expect(one.getByTestId("place-notam-when")).toHaveText(/^Since11\/1[01] \d\d:\d\dEnds11\/12 \d\d:\d\d local/);
+  // Duluth keeps Central Standard Time in November, UTC-6, whatever the
+  // device's own zone.
+  await expect(one.getByTestId("place-notam-when")).toHaveText(/^Since11\/10 06:00 \(1200Z\)Ends11\/12 08:32 local \(1432Z\)/);
   await expect(one.getByTestId("place-notam-condition")).toHaveText("closed");
   // No where for a runway's: its what names it (the owner, 2026-11-11).
   await expect(one.getByTestId("place-notam-where")).toHaveCount(0);
@@ -172,6 +178,22 @@ test("a field's NOTAMs show three, and their title opens every one in place and 
   await title.click();
   await expect(section.getByTestId("place-notam")).toHaveCount(3);
   await expect(section).toContainText("3 of 5");
+
+  // The list's own filter (the owner, 2026-11-12): what is typed narrows
+  // this list, every NOTAM that says it, not only the first three; it is
+  // no second search (rules.md 1.5), so the one search stays as it was.
+  const search = section.getByTestId("place-notams-search");
+  await inSheet(page, search);
+  await search.fill("fuel");
+  await expect(section.getByTestId("place-notam")).toHaveCount(1);
+  await expect(section.getByTestId("place-notam-heading")).toHaveText("100LL fuel not available");
+  await search.fill("crane");
+  await expect(section.getByTestId("place-notam-heading")).toHaveText("Crane");
+  await search.fill("no such thing");
+  await expect(section.getByTestId("place-notam")).toHaveCount(0);
+  await expect(section.getByTestId("place-notams-unmatched")).toHaveText("None says “no such thing”");
+  await section.getByTestId("search-clear").click();
+  await expect(section.getByTestId("place-notam")).toHaveCount(3);
 });
 
 /**

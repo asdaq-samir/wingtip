@@ -144,9 +144,9 @@ fn obstacle(body: &[String]) -> Option<String> {
 fn aerodrome(body: &[String]) -> Option<String> {
     let body = if body.first().is_some_and(|w| w == "AP") { &body[1..] } else { body };
     match body.first().map(String::as_str)? {
-        "CLSD" => Some("Aerodrome closed".to_owned()),
+        "CLSD" => Some("Airport closed".to_owned()),
         "RWY" => runway(&body[1..]),
-        "BCN" | "ABN" => Some("Aerodrome beacon".to_owned()),
+        "BCN" | "ABN" => Some("Airport beacon".to_owned()),
         "ATIS" | "AWOS" | "ASOS" => facility(&body[0]).map(str::to_owned),
         _ if is_fuel(body) => Some(fuel(body)),
         _ => None,

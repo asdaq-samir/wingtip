@@ -1,20 +1,20 @@
-//! A NOTAM in our own words, on four lines (notam_read's `what`, `where`
-//! and `why`; its window is the fourth): what it is and its condition,
-//! where it is on the field, and what it means to the pilot. The owner,
-//! 2026-11-11: "reformat the notam a bit in our own words: title(what),
-//! when, where, why (significance to pilot) on different lines".
+//! A NOTAM in our own words, on lines of their own (notam_read's `what`
+//! and `where`; its window is the third): what it is and its condition,
+//! and where it is on the field. The owner, 2026-11-11: "reformat the
+//! notam a bit in our own words: title(what), when, where ... on different
+//! lines". The why line it once gave, what the NOTAM means to the pilot,
+//! is gone (the owner, 2026-11-11: "Why is not needed"; 2026-11-12, taken
+//! out of the engine too).
 //!
 //! Each is said only where the NOTAM's subject words (FAA Order JO 7930.2
 //! 1-2-1: the keyword and the words straight after it, notam_subject's
 //! reading) say all of it; otherwise None, and the NOTAM's words written
-//! out (notam_read's `words`) stand in for the what. A why is given only
-//! where the consequence is a settled rule or a plain fact, its source
-//! beside it; anything else has none, never a guess.
+//! out (notam_read's `words`) stand in for the what.
 
 use super::body::is_taxiway;
 use super::NotamRead;
 use crate::contractions::compass;
-use crate::notam_subject::parts::{condition, designations, is_fuel, lamp_of, Lamp};
+use crate::notam_subject::parts::{condition, designations, is_fuel, lamp_of};
 use crate::notam_subject::subject_of;
 use crate::text::grouped_int as grouped;
 
@@ -22,7 +22,6 @@ use crate::text::grouped_int as grouped;
 pub struct Four {
     pub what: Option<String>,
     pub place: Option<String>,
-    pub why: Option<String>,
 }
 
 /// The condition in our words, in lower case ("closed", "out of service").
@@ -59,42 +58,26 @@ fn runway(body: &[String], r: &NotamRead, schedule: Option<&str>) -> Four {
     let (_, used) = designations(body);
     let named: Vec<&str> = body[..used].iter().map(String::as_str).filter(|w| *w != "AND").collect();
     let Some(title) = r.title.as_deref().filter(|_| !named.is_empty()) else { return Four::default() };
-    let rwy = named.join(" and ");
     // No where: the what names the runway already, and the card is the
     // field's (the owner, 2026-11-11: "Notam of runway doesn't need a where").
     let place = None;
     let rest = &body[used..];
-    if let Some(lamp) = lamp_of(&rest[..rest.len().min(1)]) {
+    if lamp_of(&rest[..rest.len().min(1)]).is_some() {
         let Some(c) = cond(rest).filter(|_| rest.len() == 2) else { return Four { place, ..Four::default() } };
-        let out = c == "out of service";
-        let why = match lamp {
-            // A VGSI gives visual descent guidance to the runway (AIM
-            // 2-1-2): with it out there is none.
-            Lamp::Papi | Lamp::Vasi if out => Some(["No visual glide path guidance to runway ", &rwy, "."].concat()),
-            // An ALS is part of an approach's visual aids (AIM 2-1-1); with
-            // it out the minimums may go up by the chart's inoperative
-            // components note or the TPP's table (AIM 1-1-9, REFERENCE).
-            Lamp::Approach(_) if out => {
-                Some("Visibility minimums may be higher: see the approach chart's notes for inoperative approach lights.".to_owned())
-            }
-            _ => None,
-        };
-        return Four { what: Some([title, " ", &c].concat()), place, why };
+        return Four { what: Some([title, " ", &c].concat()), place };
     }
     if rest.first().is_some_and(|w| w == "CLSD") {
         // CLSD EXC XNG, EXC TAX (JO 7930.2 TBL 3-3-1): closed to landing and
         // takeoff, open to cross or to taxi on.
-        let (what, open) = match &rest[1..] {
-            [] => ("closed", ""),
-            [e, x] if e == "EXC" && x == "XNG" => ("closed except crossing", " It may be crossed."),
-            [e, x] if e == "EXC" && (x == "TAX" || x == "TAXI") => ("closed except taxiing", " It may be taxied on."),
+        let what = match &rest[1..] {
+            [] => "closed",
+            [e, x] if e == "EXC" && x == "XNG" => "closed except crossing",
+            [e, x] if e == "EXC" && (x == "TAX" || x == "TAXI") => "closed except taxiing",
             _ => return Four { place, ..Four::default() },
         };
+        // At the times its schedule gives, where it has one.
         let when = schedule.map_or(String::new(), |s| [", ", s].concat());
-        // A closed runway is not to be landed on or taken off from (CLSD,
-        // JO 7340.2); at the times its schedule gives where it has one.
-        let why = ["No landing or takeoff on it while it is closed.", open].concat();
-        return Four { what: Some([title, " ", what, &when].concat()), place, why: Some(why) };
+        return Four { what: Some([title, " ", what, &when].concat()), place };
     }
     Four { place, ..Four::default() }
 }
@@ -109,7 +92,7 @@ fn taxiway(body: &[String], r: &NotamRead) -> Four {
     let after = span.as_ref().map_or(n, |(_, end)| n + end);
     let what = (body.get(after..) == Some(&["CLSD".to_owned()][..])).then(|| [title, " closed", &tail].concat());
     // No where: the what says between which, the card is the field's.
-    Four { what, place: None, why: None }
+    Four { what, place: None }
 }
 
 /// An obstacle's height with FT as the app writes it, whole feet with
@@ -169,13 +152,7 @@ fn obstacle(raw: &[String], r: &NotamRead, idents: &[String]) -> Four {
         // 2026-11-11: "Where is only needed when it's not obvious").
         (spot, top) => Some([spot, top].into_iter().flatten().collect::<Vec<_>>().join(", ")),
     };
-    // Its top MSL, which a pilot's altitude is set against (14 CFR 91.119's
-    // clearances are from obstacles); its light out, a plain fact.
-    let why = msl.map(|m| {
-        let lit = if light_out { " Its light is out: it may be hard to see at night." } else { "" };
-        ["Its top is ", &m, " MSL: keep clear of it.", lit].concat()
-    });
-    Four { what, place, why }
+    Four { what, place }
 }
 
 /// An ILS's NOTAM (NAV ILS RWY 09 GP U/S): its parts by name ("GP/LOC").
@@ -211,20 +188,7 @@ fn navaid(body: &[String], r: &NotamRead) -> Four {
     } else {
         ["ILS runway ", rwy, " ", &super::title::listed(&named), " ", &c].concat()
     };
-    let out = c == "out of service";
-    // AIM 1-1-9, inoperative ILS components: "When the localizer fails, an
-    // ILS approach is not authorized"; "When the glide slope fails, the
-    // ILS reverts to a non-precision localizer approach".
-    let why = if !out {
-        None
-    } else if named.is_empty() || parts.contains(&"LOC") {
-        Some(["No ILS or localizer approach to runway ", rwy, "."].concat())
-    } else if named == ["glide slope"] {
-        Some("No vertical guidance: fly it as a localizer approach, to the chart's LOC minimums where it gives them.".to_owned())
-    } else {
-        None
-    };
-    Four { what: Some(what), place, why }
+    Four { what: Some(what), place }
 }
 
 /// An FDC approach NOTAM (IAP, 7-1-3): not authorized, new minimums, or
@@ -235,15 +199,15 @@ fn approach(after: &str, r: &NotamRead) -> Four {
     let na = words.windows(2).any(|p| p == ["PROCEDURE", "NA"]);
     let minimums = words.iter().any(|w| matches!(*w, "DA" | "MDA" | "VIS" | "VISIBILITY" | "RVR"));
     // NA is "not authorized" (JO 7340.2); FDC NOTAMs amend published
-    // approaches (AIM 5-1-3), and their minimums are then the ones to use.
-    let (what, why) = if na {
-        ("not authorized", Some("It cannot be flown while this NOTAM is in force."))
+    // approaches (AIM 5-1-3).
+    let what = if na {
+        "not authorized"
     } else if minimums {
-        ("new minimums", Some("The minimums in this NOTAM apply in place of the chart's."))
+        "new minimums"
     } else {
-        ("amended", None)
+        "amended"
     };
-    Four { what: Some([title, ": ", what].concat()), place: None, why: why.map(str::to_owned) }
+    Four { what: Some([title, ": ", what].concat()), place: None }
 }
 
 /// The fuel's or a facility's NOTAM: "100LL fuel not available".
@@ -252,27 +216,17 @@ fn service(body: &[String], r: &NotamRead) -> Four {
     if is_fuel(body) {
         let grades = r.title.as_deref().and_then(|t| t.strip_prefix("Fuel ")).map_or(String::new(), |g| [g, " "].concat());
         let Some(c) = c else { return Four::default() };
-        // A plain fact: no fuel of that grade there.
-        let why = matches!(c.as_str(), "not available" | "out of service").then(|| "Plan to fuel elsewhere.".to_owned());
         let what = [grades.as_str(), "fuel ", &c].concat();
-        return Four { what: Some([what[..1].to_ascii_uppercase().as_str(), &what[1..]].concat()), place: None, why };
+        return Four { what: Some([what[..1].to_ascii_uppercase().as_str(), &what[1..]].concat()), place: None };
     }
-    let what = r.title.as_deref().zip(c).map(|(t, c)| [t, " ", &c].concat());
-    // A frequency out of service is not to be called on: the Chart
-    // Supplement lists the field's others.
-    let why = what
-        .as_ref()
-        .filter(|w| w.ends_with("out of service") && r.keyword.as_deref() == Some("COM"))
-        .map(|_| "Use another of the field's frequencies (Chart Supplement).".to_owned());
-    Four { what, place: None, why }
+    Four { what: r.title.as_deref().zip(c).map(|(t, c)| [t, " ", &c].concat()), place: None }
 }
 
-/// The four lines' three of the NOTAM's `text` (its window is the fourth).
+/// The what and where of the NOTAM's `text` (its window is the third
+/// line). A TFR has neither here: its own reading is tfr_read's.
 pub(super) fn four(text: &str, r: &NotamRead, idents: &[String]) -> Four {
-    // A TFR: flight within it is restricted to what it allows (14 CFR
-    // 91.137-91.145), which only its own text says (91.103).
     if r.heading.as_deref() == Some("Temporary flight restriction") {
-        return Four { why: Some("Read its area, altitudes and times before flying near it.".to_owned()), ..Four::default() };
+        return Four::default();
     }
     let Some((keyword, body, after)) = subject_of(text) else { return Four::default() };
     let schedule = r.words.split_once("Schedule: ").map(|(_, s)| {
@@ -287,12 +241,10 @@ pub(super) fn four(text: &str, r: &NotamRead, idents: &[String]) -> Four {
         "NAV" => navaid(body, r),
         "IAP" => approach(&after, r),
         "AD" if body.first().is_some_and(|w| w == "RWY") => runway(&body[1..], r, schedule.as_deref()),
-        // The field closed: no landing or takeoff there (CLSD, JO 7340.2).
-        "AD" if body == ["CLSD"] => Four {
-            what: Some("Aerodrome closed".to_owned()),
-            place: None,
-            why: Some("No landing or takeoff at the field while it is closed.".to_owned()),
-        },
+        // The field closed (AD, JO 7930.2 1-2-1; CLSD, JO 7340.2), said
+        // "airport" as the FAA's guidance for pilots says it (the AIM, the
+        // Pilot/Controller Glossary), not ICAO's "aerodrome".
+        "AD" if body == ["CLSD"] => Four { what: Some("Airport closed".to_owned()), place: None },
         "AD" if body.first().is_some_and(|w| w == "BCN" || w == "ABN") => {
             Four { what: r.title.as_deref().zip(cond(body)).map(|(t, c)| [t, " ", &c].concat()), ..Four::default() }
         }

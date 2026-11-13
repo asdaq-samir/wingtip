@@ -11,6 +11,7 @@ import {
   headingOf,
   readNotam,
   useFieldNotams,
+  useFieldZone,
   numberOf,
   whatOf,
   whereOf,
@@ -18,6 +19,7 @@ import {
   type NotamReading,
   type FieldNotams,
 } from "./fieldNotams";
+import { NotamFilter, NotamsState } from "./NotamFilter";
 import { timeLines } from "./notamTimes";
 import { TfrDetails } from "./TfrDetails";
 
@@ -25,17 +27,17 @@ import { TfrDetails } from "./TfrDetails";
 const SECTION = "place-notams";
 
 /**
- * A NOTAM's lines in our words, under its what: when (in the device's own
- * time) and where on the field, each the engine's (notam_read) and each on
- * its own line, the where only where the engine can say it (the owner,
+ * A NOTAM's lines in our words, under its what: when (in the field's own
+ * time, UTC beside it) and where on the field, each the engine's
+ * (notam_read) and each on its own line, the where only where the engine can say it (the owner,
  * 2026-11-11: "title(what), when, where ... on different lines"; then "Why
  * is not needed"). Where the engine has no what, the NOTAM's words written
  * out stand first. A TFR's where is its levels and where it is from the
  * field (tfr_read); its title's words, which said its dates again, are
  * not a line (the owner, 2026-11-12: "dates are twice").
  */
-function NotamLines({ n, read }: { n: FieldNotam; read: NotamReading }) {
-  const times = timeLines(n, read);
+function NotamLines({ n, read, ident }: { n: FieldNotam; read: NotamReading; ident: string }) {
+  const times = timeLines(n, read, useFieldZone(ident));
   const where = whereOf(n, read);
   return (
     <span className={cn("flex flex-col gap-0.5", n.in_force === false && "text-muted-foreground")}>
@@ -81,7 +83,7 @@ export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
         <NotamWhat what={whatOf(n, ident)} />
       </p>
       <p className={TEXT.prose}>
-        <NotamLines n={n} read={read} />
+        <NotamLines n={n} read={read} ident={ident} />
       </p>
       {ours && <p className={cn("text-muted-foreground", TEXT.note)}>{read.words}</p>}
       {n.kind === "tfr" && <TfrDetails n={n} />}
@@ -136,7 +138,7 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
                   <NotamWhat what={whatOf(n, ident)} />
                 </span>
               }
-              description={<NotamLines n={n} read={read} />}
+              description={<NotamLines n={n} read={read} ident={ident} />}
               chevron
               onClick={() => setOpen(n)}
               data-testid="place-notam"
@@ -203,22 +205,6 @@ function NotamState({ n }: { n: FieldNotam }) {
   );
 }
 
-/** What is said of the list itself, a row of the list as a section's
- *  "None listed" is: that it could not be had, that none was heard since
- *  the feed's time (decision 0023, never "no NOTAMs"). */
-function NotamsState({ data, isError }: { data: FieldNotams | undefined; isError: boolean }) {
-  if (isError) return <ListRow muted title="Could not be had just now" />;
-  if (data && !data.notams.length)
-    return (
-      <ListRow
-        muted
-        title={data.coverage_since ? `None heard since ${data.coverage_since}` : "None heard"}
-        data-testid="place-notams-none"
-      />
-    );
-  return null;
-}
-
 /** That the TFRs could not be read rather than that there are none, under
  *  the list. */
 function Unchecked({ data }: { data: FieldNotams | undefined }) {
@@ -243,17 +229,20 @@ function kindsOf(notams: FieldNotam[], ident: string): [string, FieldNotam[]][] 
 
 /**
  * The field's NOTAMs in its card's Info tab: the engine's first three (its
- * ranking), each read for a pilot (NotamRow), how many in all at the
- * title's right, and the title opening every one in place and closing
- * them again, as every list on the card does (FirstFew; the owner,
- * 2026-11-11: "Can notams also show as a list of three like others", then
- * "Notams should open like other sections").
+ * ranking, those in force first), each read for a pilot (NotamRow), how
+ * many in all at the title's right, and the title opening every one in
+ * place and closing them again, as every list on the card does (FirstFew;
+ * the owner, 2026-11-11: "Can notams also show as a list of three like
+ * others", then "Notams should open like other sections"). Past three, a
+ * filter at the list's top (NotamFilter) shows every one that says what is
+ * typed.
  */
 export function PlaceNotamsSection({ ident }: { ident: string }) {
-  const { data, isError, total, shown, long, all, toggle } = useFieldNotams(ident);
+  const { data, isError, total, shown, long, all, toggle, query, setQuery } = useFieldNotams(ident);
   if (!data && !isError) return null;
   // "3 of 9" at the right while closed, as FirstFew's sections.
   const count = long && !all ? <span className={cn("text-muted-foreground", TEXT.note)}>{`${shown.length} of ${total}`}</span> : undefined;
+  const state = <NotamsState data={data} isError={isError} query={query} found={shown.length} />;
   return (
     <div className="scroll-mt-16 pt-5" data-testid={SECTION}>
       <PillSection
@@ -263,13 +252,15 @@ export function PlaceNotamsSection({ ident }: { ident: string }) {
         expanded={long ? all : undefined}
         right={count}
       >
+        {long && <NotamFilter query={query} onQuery={setQuery} />}
         {/* Opened, every one in the stock Collapsible's content, under its
             kind (Runway, Taxiway, Obstacle ...), the kinds in the order
             their first NOTAM ranks, as ForeFlight heads its list's groups
             (the owner's screenshots, 2026-11-11). */}
-        {!(all && long) && <NotamRows notams={shown} ident={ident} state={<NotamsState data={data} isError={isError} />} />}
+        {!(all && long) && <NotamRows notams={shown} ident={ident} state={state} />}
         {long && (
           <CollapsibleContent className="flex flex-col gap-2">
+            {!shown.length && <NotamRows notams={[]} ident={ident} state={state} />}
             {kindsOf(shown, ident).map(([kind, group]) => (
               <div key={kind} className="flex flex-col gap-1" data-testid="place-notams-kind">
                 <span className={cn("px-1 text-muted-foreground", TEXT.note)}>{kind}</span>

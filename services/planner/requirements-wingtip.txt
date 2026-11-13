@@ -31,6 +31,7 @@ pydantic==2.14.3    # pinned once here for planner's FastAPI and its schemas
 pydantic-settings==2.16.2   # wingtip.config's Settings -- every environment variable wingtip and the planner read
 scipy==1.18.1       # wingtip.geo's cluster_points KD-tree (imported at wingtip.geo's module level)
 pygeomag==1.1.0     # the oracle services/planner/tests_wingtip/test_flight_rules.py holds the engine's WMM-2025 (wingtip.magnetic) to
+tzfpy==2.1.2        # wingtip.time_zone: a field's IANA time zone from its position, for its NOTAMs' local times
 opentelemetry-sdk==1.45.2                           # wingtip.tracing: spans, where OTEL_EXPORTER_OTLP_ENDPOINT is set (imported only then)
 opentelemetry-exporter-otlp-proto-http==1.45.2      # wingtip.tracing: sent over OTLP/HTTP (Jaeger's 4318)
 opentelemetry-instrumentation-requests==0.66b2      # wingtip.tracing: a span, and the traceparent, on each source asked

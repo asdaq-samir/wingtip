@@ -34,9 +34,11 @@ mod title;
 use crate::contractions::{listed, lookup};
 use crate::json::{self, Value};
 
-/// JO 7930.2 1-2-1's keywords, each as a plain heading.
+/// JO 7930.2 1-2-1's keywords, each as a plain heading. AD, the order's
+/// "aerodrome", is "Airport", the word the FAA's guidance for pilots uses
+/// (the AIM, the Pilot/Controller Glossary); "aerodrome" is ICAO's.
 const KEYWORDS: &str = concat!(
-    "RWY:Runway\n", "TWY:Taxiway\n", "APRON:Apron\n", "AD:Aerodrome\n", "OBST:Obstacle\n", "NAV:Navaid\n", "COM:Communications\n",
+    "RWY:Runway\n", "TWY:Taxiway\n", "APRON:Apron\n", "AD:Airport\n", "OBST:Obstacle\n", "NAV:Navaid\n", "COM:Communications\n",
     "SVC:Services\n", "AIRSPACE:Airspace\n", "ODP:Departure procedure\n", "SID:SID\n", "STAR:STAR\n", "CHART:Chart\n", "DATA:Data\n",
     "DVA:Diverse vector area\n", "IAP:Instrument approach\n", "VFP:Visual flight procedure\n", "ROUTE:Route\n",
     "SPECIAL:Special procedure\n", "SECURITY:Security\n",
@@ -58,12 +60,10 @@ pub struct NotamRead {
     /// The thing it is about, named by its subject's words (title):
     /// "Runway 06/24", "Taxiway A"; None where they name none.
     pub title: Option<String>,
-    /// In our words, a line each (four): what it is and its condition,
-    /// where it is on the field, and what it means to the pilot; None where
-    /// its words do not say all of it.
+    /// In our words, a line each (four): what it is and its condition, and
+    /// where it is on the field; None where its words do not say all of it.
     pub what: Option<String>,
     pub place: Option<String>,
-    pub why: Option<String>,
     pub words: String,
     pub starts: Option<String>,
     pub ends: Option<String>,
@@ -229,10 +229,11 @@ pub(crate) fn item(text: &str, letter: u8) -> Option<&str> {
 /// second and third letters, else the second alone: M movement and landing
 /// area, F facilities and services, L lighting, I ILS, N navaids, G GNSS, C
 /// communications, S air traffic services, A airspace organisation, R
-/// airspace restrictions, W warnings), a line each.
+/// airspace restrictions, W warnings), a line each; M, F and L, the
+/// aerodrome's, said "Airport" as KEYWORDS says AD.
 const SUBJECTS: &str = concat!(
     "MR:Runway\nMX:Taxiway\nMN:Apron\nOB:Obstacle\nOL:Obstacle\nPI:Instrument approach\nPD:SID\nPA:STAR\n",
-    "RT:Temporary flight restriction\nM:Aerodrome\nF:Aerodrome\nL:Aerodrome\nI:Navaid\nN:Navaid\nG:Navaid\n",
+    "RT:Temporary flight restriction\nM:Airport\nF:Airport\nL:Airport\nI:Navaid\nN:Navaid\nG:Navaid\n",
     "C:Communications\nS:Services\nA:Airspace\nR:Airspace\nW:Airspace",
 );
 
@@ -302,12 +303,12 @@ pub fn read(text: &str, idents: &[String]) -> NotamRead {
     r.words = without_start_again(&r.words, r.starts.as_deref());
     r.title = title::title(t);
     let four = four::four(t, &r, idents);
-    (r.what, r.place, r.why) = (four.what, four.place, four.why);
+    (r.what, r.place) = (four.what, four.place);
     r
 }
 
 /// `notam_read`: `{"text", "idents"?}` to `{"form", "number", "location",
-/// "keyword", "heading", "title", "what", "where", "why", "words", "starts", "ends", "estimated",
+/// "keyword", "heading", "title", "what", "where", "words", "starts", "ends", "estimated",
 /// "permanent"}`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     if name != "notam_read" {
@@ -327,7 +328,6 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         ("title", r.title.as_deref()),
         ("what", r.what.as_deref()),
         ("where", r.place.as_deref()),
-        ("why", r.why.as_deref()),
         ("words", Some(r.words.as_str())),
         ("starts", r.starts.as_deref()),
         ("ends", r.ends.as_deref()),
