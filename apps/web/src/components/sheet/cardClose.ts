@@ -1,5 +1,5 @@
 import { closeTopCard } from "../../lib/openCards";
-import type { CardCloseDetails, CardFrame } from "../../lib/sheetCards";
+import { topCard, useSheetCards, type CardCloseDetails, type CardFrame } from "../../lib/sheetCards";
 
 /**
  * A card's answer to Base UI's word to close it, riding (CardStack's
@@ -24,4 +24,15 @@ export function answerClose(frame: CardFrame, top: boolean, details: CardCloseDe
   details.cancel();
   if (details.reason !== "escape-key" || details.event.defaultPrevented) return;
   if (closeTopCard()) details.event.preventDefault();
+}
+
+/** The card on top where it floats (FloatingCards; not You, whose own
+ *  dialog keeps the focus while it is on top): what Escape is for when the
+ *  key is pressed in the map's sheet under it -- the focus left there, on
+ *  the avatar You closed back to -- where the sheet's own drawer took the
+ *  key and the card never heard it. */
+export function floatingOnTop(): CardFrame | null {
+  const { stack } = useSheetCards.getState();
+  const top = stack.find((entry) => entry.id === topCard(stack));
+  return top?.float && !top.own && top.state === "open" ? top.frame : null;
 }
