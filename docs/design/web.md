@@ -488,41 +488,43 @@ photo that pushes the actions below the half detent.
 [amaps-newsroom], [amaps-shortcuts], [windy-v49], [skyvector-airport],
 [bui-drawer], [bui-releases], [bui-tabs], [apg-tabs], [bui-preview].
 
-### 2a. The sheet's two pages (the owner, 2026-11-11; a tab bar since 2026-11-13)
+### 2a. The sheet's two pages (the owner, 2026-11-11; one toggle button since 2026-11-13)
 
 The phone's sheet and the desktop's side panel hold two peer pages,
-Search and FPL ([rules.md](rules.md) §4a), picked from a tab bar under
-the sheet (the owner, 2026-11-13: tab bar, option A), where a sideways
-pager and a split grabber were. It is the app's shadcn Tabs on Base UI's
-(Root, List, Tab, Panel; the Indicator left out, as FPL's tab and the
-search tab sit in two pieces of glass and iOS moves no mark between them):
-`components/sheet/SheetTabBar`. One Root wraps the Drawer (`MapPanel`),
-so the List -- in the Drawer's portal, under its viewport
-(`SheetDrawer`'s `tabBar`) -- and the two Panels inside the popup
-(`SheetParts`) are tied by context, not by where they are drawn. The
-viewport stands on the bar's room (`TAB_BAR_ROOM` in sheet/insets: the
-48-point bar on the home indicator's inset, 4 points on a screen with
-none), so the Drawer's three snap points sit over it, and the sheet's
-ground runs on behind it to the screen's foot (`UNDER_INDICATOR`'s
-`--sheet-under`); a keyboard that is up covers it. FPL's tab is in a
-glass capsule, Search's an icon in a round glass button at the trailing
-end, each a 44-point tap by its `::after`, never grown; the page up in
-the tint on its wash. A finger on the bar is never the sheet's
-(`data-base-ui-swipe-ignore`). Each Panel is kept (`keepMounted`, its
-`hidden` left off) and skipped by `content-visibility` while the other
-is up (index.css's `tab-page[data-hidden]`), so each page keeps its
-scroller's place; Search's body is cut where the viewport ends, as
-FPL's is at its figures, so nothing hangs behind the bar's glass. The
-grabber is the plain `SheetGrabber` again, its box 16 points tall (the
-owner, 2026-11-13: "minimal space"), its 44-point hit area reaching off
-the sheet's edge over the map. Under a top sheet the bar is still at the
-screen's foot, and the map's room counts it (`tabBarRoomPx`). In the
-side panel the same bar sits at its foot on the panel's own ground. The
-bar goes while flying and under Settings' layer. The page up is the
+Search and FPL ([rules.md](rules.md) §4a), turned by one round glass
+button riding the sheet's top at the right (the owner, 2026-11-13: "Why
+not make the same tab on the right toggle between search and fpl"),
+where a tab bar under the sheet, and before it a sideways pager and a
+split grabber, were. It is the app's shadcn Toggle on Base UI's, never
+pressed (`aria-pressed="false"`: a tap goes somewhere, it turns nothing
+on), its name where it goes: `components/PageToggle`. It shows the page a
+tap goes to, as Apple Maps' 2D/3D button does -- lucide's Route on
+Search ("Show flight plan"), the magnifier on FPL ("Show search") -- in
+a glass circle of its own the size of the 3D and microphone circles (a
+36-point button in 4 points of glass), its 44-point area its `::after`
+out to the glass's edge, never grown. It is the last of the right-hand
+column of the map's buttons (`MapControls`), so on a phone's bottom
+sheet it rides the sheet's top through `OnSheetTop`, under the map's
+buttons and level with the 3D circle at the left; over a top sheet and
+beside the side panel it is under them at the bottom right. The pages
+live in `MapPanel` and the button with the map's, apart in the tree, so
+`MapPanel` tells it the page up and the way to turn it
+(`sheet/pageToggle`), or nothing while they cannot be turned. The
+sheet's sizes stand on the screen's foot again (the home indicator's
+inset), the bar's 48 points and its 4-point floor given back. Each page
+(`sheet/SheetPages`' `SheetPage`) is kept, inert and skipped by
+`content-visibility` while the other is up (index.css's
+`tab-page[data-hidden]`), so each keeps its scroller's place. The
+grabber is the plain `SheetGrabber`, its box 16 points tall (the owner,
+2026-11-13: "minimal space"), its 44-point hit area reaching off the
+sheet's edge over the map. The toggle gives way with the map's buttons
+all the way up and while a card slides (index.css), goes while flying
+and under Settings' layer, and rides a card's top while one is up. The
+first flight's tip (`FplTip`) points at it while it shows FPL. The page up is the
 planner's place (`usePanelView`'s `view`: the plan is FPL, the search
-and the traffic are Search); a tab picks it as a place is picked, so
-what each kept open comes back with it, and a tab picked under a card
-puts the card away with its page. The pill is the page's one row (the
+and the traffic are Search); the toggle picks it as a place is picked,
+so what each kept open comes back with it, and the toggle tapped over a
+card puts the card away with its page. The pill is the page's one row (the
 route's figures on FPL); the route's figures sit at the foot on FPL
 alone. The Brief, the Nav Log, the Profile and the Stops are cards over
 FPL (`PlanPage`, `CardLayer`), the last three kept between their

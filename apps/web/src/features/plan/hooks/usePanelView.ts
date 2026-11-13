@@ -260,7 +260,7 @@ export function usePanelView({
   // route cleared) come with an address change -- a card put away, a list
   // opened -- which nuqs makes at once, not in a transition: the pick at
   // once too, so the two land in one commit.
-  // A page of the sheet picked (its tab in the tab bar, SheetTabBar): FPL's
+  // A page of the sheet picked (its toggle, PageToggle): FPL's
   // the plan, the first the search's page as it was left.
   const pickPage = useCallback((page: number) => pickView(page ? "plan" : firstPage.current), [pickView]);
   const pickLater = useCallback((next: PanelView) => setViewPick(next), []);

@@ -77,7 +77,7 @@ test("on a phone a route's figures stay in sight at the sheet's foot from half a
   await settle(page);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
   // At the pill the figures are the pill, in the route's row's place (the
-  // owner, 2026-11-11, the canvas's b; sheet-tab-bar.spec), and from half on.
+  // owner, 2026-11-11, the canvas's b; sheet-page-toggle.spec), and from half on.
   await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeHidden();
   await grabberTo(page, "half");

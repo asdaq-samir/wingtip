@@ -1,13 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { frontSheet, searchAirports, settle, slow } from "./helpers";
-import { expectPage, tab } from "./sheetPages";
+import { expectPage, toggle } from "./sheetPages";
 
 /**
  * The first flight (FirstFlight, useFirstFlight; the owner's option A,
  * 2026-11-13): the welcome sheet the first time the planner opens with no
  * route on this device; Let's Go Flying leaves the one search ready for
  * where to, the airport picked is planned to from where the airplane is, FPL comes
- * up and one tip points at its tab; each once. The suite's session has the
+ * up and one tip points at the page toggle once it shows FPL; each once. The suite's session has the
  * tips all seen, these with them; this spec starts with none seen, once,
  * so a reload keeps what it saw.
  */
@@ -53,7 +53,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("a new pilot is welcomed, Let's Go Flying leaves the one search ready, the pick is planned from where the airplane is and the FPL tab is pointed out once", async ({
+test("a new pilot is welcomed, Let's Go Flying leaves the one search ready, the pick is planned from where the airplane is and the FPL toggle is pointed out once", async ({
   page,
 }) => {
   test.setTimeout(slow(90_000));
@@ -79,7 +79,7 @@ test("a new pilot is welcomed, Let's Go Flying leaves the one search ready, the 
   await expect(search).toHaveAttribute("placeholder", /destination/i);
 
   // Oshkosh picked: planned from the nearest field to the fix (Campbell),
-  // FPL up with the route, and the tip on its tab.
+  // FPL up with the route; the tip on the toggle once it shows FPL.
   await search.click();
   await search.fill("KOSH");
   await searchAirports(page)
@@ -88,12 +88,17 @@ test("a new pilot is welcomed, Let's Go Flying leaves the one search ready, the 
     .click({ timeout: slow(15_000) });
   await expect(page).toHaveURL(/dest=KOSH/, { timeout: slow(30_000) });
   await expectPage(page, 1);
+  // The tip waits for the toggle to show FPL: on FPL it shows the magnifier.
   const tip = page.getByTestId("fpl-tip");
+  await expect(tip).toHaveCount(0);
+  await toggle(page).click();
+  await expectPage(page, 0);
   await expect(tip).toBeVisible();
-  await expect(tip).toContainText("Your flight plan lives here");
-  // Over the FPL tab, its arrow at it.
-  const [tipBox, tabBox] = [await tip.boundingBox(), await tab(page, 1).boundingBox()];
-  expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(tabBox!.y);
+  await expect(tip).toContainText("Your flight plan is one tap away");
+  await expect(tip).toContainText("Tap here any time");
+  // Over the toggle, its arrow at it.
+  const [tipBox, toggleBox] = [await tip.boundingBox(), await toggle(page).boundingBox()];
+  expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(toggleBox!.y);
   await tip.getByTestId("fpl-tip-close").click();
   await expect(tip).toHaveCount(0);
 

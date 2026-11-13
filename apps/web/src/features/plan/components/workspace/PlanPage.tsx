@@ -25,7 +25,7 @@ const FLIGHT_RULES = [
 ];
 
 /**
- * The sheet's second page, FPL (its tab, SheetTabBar; the owner, 2026-11-13), under
+ * The sheet's second page, FPL (its toggle, PageToggle; the owner, 2026-11-13), under
  * the route's row: the route in order (the plan's nav log view), kept
  * mounted under whatever is open over it and on paper; the Brief, the Nav
  * Log, the Profile and the Stops cards of their own over it (the owner,

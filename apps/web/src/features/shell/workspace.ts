@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { PanelState } from "../../lib/mapChrome";
-import type { SheetPages } from "../../components/sheet/SheetTabBar";
+import type { SheetPages } from "../../components/sheet/SheetPages";
 
 /**
  * What a workspace (the pilot's planner, the developer's training)
@@ -62,8 +62,8 @@ export interface WorkspacePieces {
    *  row and top row put away and its foot grown (MapPanel's `flying`). */
   flying?: boolean;
   /** The sheet's two pages, Search (`bar` over `sidebar`) and FPL (`route`
-   *  over its own body), picked from the tab bar under the sheet
-   *  (MapPanel's `pages`, SheetTabBar). */
+   *  over its own body), turned by the toggle on the sheet's top
+   *  (MapPanel's `pages`, PageToggle). */
   pages?: SheetPages;
 }
 

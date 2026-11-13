@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { openPanel, settled, sheetUpToType, showTabs, sideDrawer } from "./helpers";
+import { grabberTo, openPanel, settled, sheetUpToType, showTabs, sideDrawer } from "./helpers";
 
 /**
  * The one search's ways round the sheet (the owner's one-search design,
@@ -15,13 +15,18 @@ export const firstRow = (page: Page) =>
     .getByRole("search")
     .filter({ has: page.getByTestId("search-airports") });
 
-/** One of the sheet's two pages up, by its tab in the tab bar under the
- *  sheet (SheetTabBar; the owner, 2026-11-13): 0 Search, 1 FPL. */
+/** One of the sheet's two pages up, by the round toggle riding the
+ *  sheet's top (PageToggle; the owner, 2026-11-13): 0 Search, 1 FPL. The
+ *  toggle shows the page it goes to, so it is tapped only while it shows
+ *  `at`. */
 export async function showPage(page: Page, at: 0 | 1) {
-  const tab = page.locator(`[data-page-tab="${at}"]`);
-  if ((await tab.count()) === 0 || (await tab.getAttribute("aria-selected")) === "true") return;
-  await tab.click();
-  await expect(tab).toHaveAttribute("aria-selected", "true");
+  const toggle = page.getByTestId("sheet-page-toggle");
+  if ((await toggle.count()) === 0 || (await toggle.getAttribute("data-shows")) !== String(at)) return;
+  // All the way up on a phone the map's buttons give way (index.css), the
+  // toggle with them: down to half first, as a pilot would.
+  if ((await page.locator('body[data-map-sheet][data-map-panel="full"]').count()) > 0) await grabberTo(page, "half");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("data-shows", String(at === 0 ? 1 : 0));
   await expect(sideDrawer(page).getByTestId("sheet-pages")).toHaveAttribute("data-page", String(at));
 }
 

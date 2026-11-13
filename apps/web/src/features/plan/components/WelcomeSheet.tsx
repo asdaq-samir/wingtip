@@ -14,8 +14,8 @@ import { TEXT } from "../../../lib/text";
  *  that can be easily accessed"). */
 const ROWS = [
   { icon: Search, title: "Search, like Maps", line: "Find any airport, town or fix the way you would in Apple or Google Maps." },
-  // The FPL tab's own icon (SheetTabBar).
-  { icon: Route, title: "FPL, like your EFB", line: "The route, nav log, profile and brief, one tap away on the FPL tab." },
+  // FPL's own glyph on the page toggle (PageToggle).
+  { icon: Route, title: "FPL, like your EFB", line: "The route, nav log, profile and brief, one tap away on the FPL button." },
   {
     icon: MapIcon,
     title: "FAA charts that move like Maps",

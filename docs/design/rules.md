@@ -106,10 +106,11 @@ Compose. Nothing here is built by hand where a stock part does it.
     clearance's verdict ("Cruise FL-055 · clear of terrain"), the Stops how
     many ("2 stops", "None on the route"). With no card open the pill is
     the page's own: the search on Search, the route's figures on FPL, and
-    the tab bar under the sheet stays in sight under it (the owner,
-    2026-11-13: tab bar, option A; §4a). **The smallest size is one fixed
+    the one round toggle that turns the pages rides the sheet's top at the
+    right over it (the owner, 2026-11-13; §4a), nothing under the sheet.
+    **The smallest size is one fixed
     height for every page and card**, never one a page: the web's
-    `"4.25rem"` over the tab bar (sheet/insets), which the search's row, a
+    `"4.25rem"` on the screen's foot (sheet/insets), which the search's row, a
     card's title row with its line, and FPL's figures (2.6875 rem under the
     grabber's 1) all fit. The grabber takes the least room its platform
     keeps (the owner, 2026-11-13: "grabber and tabs taking minimal space
@@ -134,7 +135,7 @@ Compose. Nothing here is built by hand where a stock part does it.
 | Back, Escape | Escape is the top card's own nested drawer's, closing it (CardStack); with no card up the sheet's own Escape lowers it to the pill. A device's Back closes the top card the same way (`lib/backNavigation` `closeTopmost`): Android's through the browser's stock CloseWatcher, held only while something is open (`useBackCloses`), a TV remote's by its key; where there is no CloseWatcher (Safari) the browser's Back is left as it is. The browser's history is not the app's, as the planner replaces its address | The stack's Back; the card's close at the right of its bar | System Back closes the top card at once (`MapSheet`'s `lowerOnBack` only with none open); the dry run, the ATC card and the assistant's answer close on Back too |
 | Questions | `SheetDialog`: a bottom sheet on a phone with ✕ or Cancel, centred from `md` up | `.alert` and `.confirmationDialog`, hung on the top of the stack (`TopHosts`) so they always show | `AlertDialog` (`ui/SourceDialog` for a source report) |
 | Emergency | The one full-height card, ✕ at the top right, the map not dimmed | `fullScreenCover`, its close at the top right | Material's full-screen dialog, ✕ at the start of its app bar |
-| One search | Search's page, picked by the round search tab at the tab bar's trailing end (`SheetTabBar`; the owner, 2026-11-13: tab bar, option A); the traffic's airplane and Nearest's place are the search scoped to them (`listSearchOf`; Nearest's at its card's top, `nearSearch`, where the card covers the sheet's first row); the route's points ask it for an airport (`askSearchPick`) | The one `.searchable` field, on the TabView's `Tab(role: .search)` | Search a `NavigationBar` item beside FPL's; Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`) |
+| One search | Search's page, turned to by one round toggle button riding the sheet's top at the right, under the map's buttons (`PageToggle`; the owner, 2026-11-13), its magnifier showing while FPL is up; the traffic's airplane and Nearest's place are the search scoped to them (`listSearchOf`; Nearest's at its card's top, `nearSearch`, where the card covers the sheet's first row); the route's points ask it for an airport (`askSearchPick`) | The one `.searchable` field, on the TabView's `Tab(role: .search)` | Search a `NavigationBar` item beside FPL's; Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`) |
 | At the pill | The card's pinned head (`data-sheet-head`: `PinnedHead`, Settings' title row, a console page's head) is all of the card left in sight there (CardStack's scroller), with its short line under its name (`CardHead`'s `sub`); a tap on the row raises the card to half | The system sheet's smallest detent shows the card's bar | The sheet's peek shows the card's bar |
 | By name | `useOpenScreen` through `lib/navigation/wanted` | `RootView.openScreen`, which opens the card by `Navigator.open` | `OpenScreen` through `ScreenRequests` |
 
@@ -223,8 +224,8 @@ the suite prints that reason. What runs when is [docs/CI.md](../CI.md).
 
 ## 4. One search (the owner, 2026-11-09)
 
-The sheet's Search page (§4a: its pages picked from a tab bar under the
-sheet, the owner, 2026-11-13) has one field as its first row, "Search airports,
+The sheet's Search page (§4a: its pages turned by one round toggle
+button riding the sheet's top at the right, the owner, 2026-11-13) has one field as its first row, "Search airports,
 airplanes, or ask", with the on-device microphone and the account button
 beside it; the account button holds settings and the account, where
 Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXzCV>.
@@ -258,16 +259,18 @@ Tests: [`e2e/one-search.spec.ts`](../../apps/web/e2e/one-search.spec.ts)
 (`@smoke`: an airport picked from the search), `WingtipTests/OneSearchTests`,
 Android's `search/SearchControlTest`.
 
-### 4a. The sheet's two pages, Search and FPL (the owner, 2026-11-11; a tab bar since 2026-11-13)
+### 4a. The sheet's two pages, Search and FPL (the owner, 2026-11-11; one toggle button since 2026-11-13)
 
 The owner asked "Can we have a sheet carousel? With search and fpl?" and
 chose swipe and dots, always two pages; on 2026-11-13 the owner picked a
 tab bar under the sheet in their place ("the owner, 2026-11-13: tab bar,
 option A"; the canvas's boards "A · Tab bar",
-<https://claude.ai/artifact/8QhNVP3EeyZCo9ZuFSAzEf>). This amends "The
-sheet has no tabs. Its first row is one field": the sheet has two peer
-pages, picked from a tab bar under it, and the one search is still the
-only field.
+<https://claude.ai/artifact/8QhNVP3EeyZCo9ZuFSAzEf>), and the same day
+one button for both in the bar's place ("Why not make the same tab on
+the right toggle between search and fpl"). This amends "The sheet has
+no tabs. Its first row is one field": the sheet has two peer pages,
+turned by one round toggle button riding its top at the right, and the
+one search is still the only field.
 
 1. **Search** (the first page): the search's row (field, microphone,
    account button) and its home list (Favorites, Recents, Nearest,
@@ -282,27 +285,27 @@ only field.
    (Search like Maps, FPL like an EFB, the FAA charts) and its one
    button, Let's Go Flying, goes on to the map with the one search ready
    for where to (Search up at half, its field not focused), the airport picked
-   planned from where the airplane is; after that first route one tip points at the FPL tab, once (the
+   planned from where the airplane is; after that first route one tip points at the toggle while it shows FPL ("Your flight plan is one tap away ... tap here any time"), once (the
    owner's option A, 2026-11-13; the web first, the phones keep their
    first-flight card until the owner's word).
    FPL has no field of its own: adding a stop asks the one search.
 
-- **A tab bar under the sheet picks the page**, as iOS 26's TabView with
-  a `Tab(role: .search)`: FPL a tab (its icon over its name) in a glass
-  capsule at the leading end, Search the round search tab apart from it
-  at the trailing end, an icon alone. The page up is in the tint on the
-  tint's wash. It is as compact as the platform's own bar (the owner,
-  2026-11-13: "taking minimal space and still meeting their platforms
-  standard"): 48 points tall, standing on the home indicator's inset, no
-  margin of its own over it. Glass, as it floats over the map; the sheet's
-  ground runs on behind it to the screen's foot. Each tab is a 44-point
-  tap by its hit area, never grown. A tab picks its page and leaves the
-  sheet's size; a tab tapped while a card is up puts the card away with
-  its page.
-- **The bar stays in sight at every size, the pill's included**: the
-  sheet's three sizes stand on it. A keyboard that is up covers it. It
-  goes while the airplane flies the route (the flying sheet is the
-  figures alone) and under Settings' layer.
+- **One round toggle button turns the page** (the owner, 2026-11-13),
+  riding the sheet's top at the right where the map's buttons ride, its
+  own glass circle the size of the 3D and microphone circles, under the
+  map's buttons (never over them, never merged into their group), level
+  with the 3D circle at the left. It shows the page a tap goes to, as
+  Apple Maps' 2D/3D button shows the mode it switches to: on Search FPL's
+  route glyph ("Show flight plan" to a screen reader), on FPL the
+  magnifier ("Show search"). A real button, never pressed, its name
+  saying where it goes; a 44-point tap by its hit area, never grown. It
+  turns the page and leaves the sheet's size; tapped while a card is up
+  (it rides the card's top then) it puts the card away with its page.
+- **Nothing under the sheet**: its three sizes stand on the screen's foot
+  (the home indicator's inset), the bar's room given back. The toggle
+  gives way with the map's buttons all the way up and while a card
+  slides; it goes while the airplane flies the route (the flying sheet
+  is the figures alone) and under Settings' layer.
 - **No sideways swipe turns a page.** A drag sideways is the row's under
   it (Nearest, Favorites, Recents' cards), a drag up or down the sheet's
   (and each page's own scroller's all the way up). Each page keeps its
@@ -315,21 +318,25 @@ only field.
 - **Cards** open over both pages as before; ✕ comes back to the page
   they were opened over.
 - **At the pill** the sheet shows the page's own one row, the grabber
-  over it and the tab bar under it, and nothing else: on Search the
+  over it and the toggle riding its top, and nothing else: on Search the
   search's row, on FPL the route's figures -- To, Dist, ETE, Fuel -- (the
   owner, 2026-11-11, the canvas's b, as ForeFlight and Garmin Pilot keep
   them), the route's row from half up; with no route, FPL's own row. The
   pill is one fixed height for both (the web's `"4.25rem"` snap point,
-  over the bar).
+  on the screen's foot).
 - **Links**: `open=search` and `open=fpl` (design/screens.json).
 
 | Web | iPhone | Android |
 |---|---|---|
-| shadcn's Tabs on Base UI's (`components/sheet/SheetTabBar`): one Root round the Drawer, its List the tab bar in the Drawer's portal under the sheet's viewport (`SheetDrawer`'s `tabBar`, the viewport standing on `TAB_BAR_ROOM`, sheet/insets), its two Panels the pages' scrollers (`SheetParts`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/plan/components/workspace/PlanPage`. In the side panel the same bar at its foot, on the panel's ground | A `TabView` with FPL's `Tab` and a `Tab(role: .search)`, its Liquid Glass tab bar under the system sheet (or inside it, where the sheet is the tab's content), the sheet's detents above the bar | Material 3 `NavigationBar` under `BottomSheetScaffold`, FPL and Search its two items, the sheet's peek and half over the bar |
+| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, in the right-hand column of the map's buttons (`MapControls`, riding the sheet's top through `OnSheetTop`), told the pages by `MapPanel` (`sheet/pageToggle`); the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/plan/components/workspace/PlanPage`. Beside the side panel the same circle under the map's buttons at the bottom right | A `TabView` with FPL's `Tab` and a `Tab(role: .search)`, its Liquid Glass tab bar under the system sheet (or inside it, where the sheet is the tab's content), the sheet's detents above the bar | Material 3 `NavigationBar` under `BottomSheetScaffold`, FPL and Search its two items, the sheet's peek and half over the bar |
 
-Tests: [`e2e/sheet-tab-bar.spec.ts`](../../apps/web/e2e/sheet-tab-bar.spec.ts)
-(`@smoke`: Search to FPL and back by the tab bar, the size kept; the bar
-in sight at every size; 44-point tabs and the one grabber bar) and, for the cards
+The iPhone's and Android's columns are still the tab bar's design; the
+toggle reaches them at the owner's word (web first).
+
+Tests: [`e2e/sheet-page-toggle.spec.ts`](../../apps/web/e2e/sheet-page-toggle.spec.ts)
+(`@smoke`: Search to FPL and back by the toggle, the size kept, by the
+keyboard too; where it rides and the sheet on the screen's foot; a
+44-point toggle and the one grabber bar) and, for the cards
 over the pages, [`e2e/sheet-pages-cards.spec.ts`](../../apps/web/e2e/sheet-pages-cards.spec.ts)
 (`@smoke`: Fly Here from an airport's card lands on FPL, live).
 

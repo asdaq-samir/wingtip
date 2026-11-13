@@ -14,10 +14,10 @@ import { riseToSee } from "./panelNow";
  * welcome sheet the first time the app opens with no route on this
  * device, whose one button, Let's Go Flying (or the sheet swiped away),
  * goes on to the map with the one search ready for the destination: its
- * Search tab up and its field asking for one (lib/oneSearch's pick, as the
+ * Search page up and its field asking for one (lib/oneSearch's pick, as the
  * route's own pickers ask), not focused, so no keyboard jumps up until the
  * pilot taps it (the owner, 2026-11-13); no field of its own. Then, after
- * the first route, one tip on the FPL tab.
+ * the first route, one tip on the page toggle where it shows FPL.
  * Each is kept as the tips are (lib/firstRunTips), so Settings' Show First
  * Flight Again brings them back.
  *
@@ -26,7 +26,7 @@ import { riseToSee } from "./panelNow";
  * last departure this device planned from, or its Home; with neither, the
  * search asks for the departure in its turn. Then the route is set as the
  * box sets it (useRouteEdits' setRoute) and FPL is the page up, with the
- * tip pointing at its tab.
+ * tip pointing at the toggle once it shows FPL again (Search up).
  */
 export function useFirstFlight({
   routed,
