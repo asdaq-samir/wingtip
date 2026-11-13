@@ -46,7 +46,7 @@ FACADE = "facade/"
 # The dependencies from outside the workspace the README's "Outside the
 # workspace" names, by the package that has them: each plain Rust with no
 # system library, so the phones and the WebAssembly carry it as it is.
-OUTSIDE = {"wingtip-airspace": {"crc32fast", "similar"}, "wingtip-core": {"geographiclib-rs"}}
+OUTSIDE = {"wingtip-airspace": {"crc32fast", "similar"}, "wingtip-core": {"geographiclib-rs"}, "wingtip-receiver": {"base64"}}
 
 
 def cargo() -> str:

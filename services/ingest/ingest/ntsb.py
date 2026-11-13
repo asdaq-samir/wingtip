@@ -48,6 +48,7 @@ import tempfile
 import time
 import zipfile
 from collections.abc import Iterator
+from html.parser import HTMLParser
 from pathlib import Path
 
 from wingtip import outside
@@ -63,8 +64,6 @@ FILE_URL = "https://data.ntsb.gov/avdata/FileDirectory/DownloadFile?fileID={name
 AVALL = "avall.zip"
 #: A weekly delta's name: "up", the day of the month and the month's three letters.
 DELTA = re.compile(r"^up\d{2}[A-Z]{3}\.zip$")
-#: A row of the directory's table: the file's name, date and size.
-_ROW = re.compile(r'<td id="fileName">([^<]+)</td>\s*<td id="fileDate">([^<]+)</td>\s*<td id="fileSize">(\d+)</td>')
 #: How long a download may take, s: avall.zip's 97 MB on a slow line.
 DOWNLOAD_TIMEOUT_S = 600.0
 DIRECTORY_TIMEOUT_S = 30.0
@@ -87,16 +86,46 @@ def _save(state: dict) -> None:
     _state_path().write_text(json.dumps(state))
 
 
+class _Table(HTMLParser):
+    """The directory table's cells, each row's by the ids the page gives
+    them (fileName, fileDate, fileSize), read with the standard library's
+    HTML parser rather than a regular expression over the markup."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.rows: list[dict[str, str]] = []
+        self._cell: str | None = None
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "tr":
+            self.rows.append({})
+        elif tag == "td" and self.rows:
+            self._cell = dict(attrs).get("id")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "td":
+            self._cell = None
+
+    def handle_data(self, data: str) -> None:
+        if self._cell:
+            self.rows[-1][self._cell] = self.rows[-1].get(self._cell, "") + data
+
+
 def read_directory(page: str) -> dict[str, dict]:
     """The directory's files, {name: {"date" (ISO, as the page gives it,
     the NTSB's own clock), "size"}}."""
+    table = _Table()
+    table.feed(page)
+    table.close()
     out = {}
-    for name, date, size in _ROW.findall(page):
+    for row in table.rows:
         try:
-            when = dt.datetime.strptime(date.strip(), "%m/%d/%Y %I:%M:%S %p")
-        except ValueError:
+            name = row["fileName"].strip()
+            when = dt.datetime.strptime(row["fileDate"].strip(), "%m/%d/%Y %I:%M:%S %p")
+            size = int(row["fileSize"])
+        except (KeyError, ValueError):
             continue
-        out[name.strip()] = {"date": when.isoformat(), "size": int(size)}
+        out[name] = {"date": when.isoformat(), "size": size}
     return out
 
 

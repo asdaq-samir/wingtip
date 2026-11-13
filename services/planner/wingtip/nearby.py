@@ -24,6 +24,7 @@ import math
 import re
 import threading
 import time
+import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -108,6 +109,23 @@ class NearbyUnavailable(RuntimeError):
     """Overture could not be read, nor had a field's answer been kept."""
 
 
+#: S3's ListObjectsV2 answer is in this namespace (docs.aws.amazon.com,
+#: "ListObjectsV2", Response Syntax), each common prefix a release.
+_S3 = "{http://s3.amazonaws.com/doc/2006-03-01/}"
+_RELEASE = re.compile(r"release/([0-9]{4}-[0-9]{2}-[0-9]{2}\.[0-9]+)/")
+
+
+def _release_names(listing: bytes) -> list[str]:
+    """The release names in the bucket's listing, read with ElementTree as
+    the planner's other XML is, rather than a regular expression over it."""
+    try:
+        root = ET.fromstring(listing)
+    except ET.ParseError as err:
+        raise NearbyUnavailable(f"Overture's release listing could not be read: {err}") from err
+    prefixes = (p.text or "" for p in root.iterfind(f"{_S3}CommonPrefixes/{_S3}Prefix"))
+    return [m.group(1) for m in map(_RELEASE.fullmatch, prefixes) if m]
+
+
 def latest_release(timeout_s: float = 10.0) -> str:
     """The newest release's name, "2026-10-21.0", asked of the bucket once
     a day; the last one asked where the bucket cannot be reached."""
@@ -119,7 +137,7 @@ def latest_release(timeout_s: float = 10.0) -> str:
     try:
         response = outside.get(RELEASES_URL, timeout=timeout_s)
         response.raise_for_status()
-        names = re.findall(r"<Prefix>release/([0-9]{4}-[0-9]{2}-[0-9]{2}\.[0-9]+)/</Prefix>", response.text)
+        names = _release_names(response.content)
         if not names:
             raise NearbyUnavailable("Overture's release listing named no release")
         release = max(names)

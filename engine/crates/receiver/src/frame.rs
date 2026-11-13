@@ -31,7 +31,9 @@ const fn table() -> [u16; 256] {
 static CRC_TABLE: [u16; 256] = table();
 
 /// The FCS of a clear message (ID and data): the specification's
-/// Crc16Compute, from zero.
+/// Crc16Compute, from zero. It adds each byte after the table rather than
+/// before it, so it is not CRC-16/XMODEM nor any catalogued CRC (the `crc`
+/// crate's): "123456789" checks 0xBEEF here, 0x31C3 there.
 pub fn crc(message: &[u8]) -> u16 {
     message.iter().fold(0u16, |crc, &b| CRC_TABLE[(crc >> 8) as usize] ^ (crc << 8) ^ b as u16)
 }
