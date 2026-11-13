@@ -14,12 +14,15 @@ export default function AirplaneSketch({
   trackDeg,
   from,
   to,
+  empty,
 }: {
   points: { lat: number; lon: number; altFt: number | null }[];
   now: { lat: number; lon: number; altFt: number | null } | null;
   trackDeg: number | null;
   from: SketchField | null;
   to: SketchField | null;
+  /** What it says with nothing to draw: none heard, or its flights not had. */
+  empty: string;
 }) {
   const drawn = points.length + (now ? 1 : 0) >= 2;
   return (
@@ -29,8 +32,11 @@ export default function AirplaneSketch({
           <TrailSketch points={points} now={now} trackDeg={trackDeg} from={from} to={to} />
         </div>
       ) : (
-        <p className={cn("flex size-full items-start justify-center px-2 pt-16 text-center text-muted-foreground", TEXT.note)}>
-          No flights heard
+        <p
+          data-testid="flight-trail-empty"
+          className={cn("flex size-full items-start justify-center px-2 pt-16 text-center text-muted-foreground", TEXT.note)}
+        >
+          {empty}
         </p>
       )}
     </div>

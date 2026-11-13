@@ -16,8 +16,7 @@ from .adsb_lol import GLOBE, UNREAD, _GlobeRefused, _Unread, _globe_get, _trace
 from .recorded import _recorded, follow
 from .watched import _WATCHED, _watch
 
-#: At most this many points of a trail are sent: enough for a line on a
-#: phone, a fraction of a long flight's.
+#: At most this many points of a trail are sent: enough for a line on a phone, a fraction of a long flight's.
 TRAIL_POINTS = 600
 #: A field within this of where a flight began on the ground is where it
 #: departed from.
@@ -86,16 +85,17 @@ def flight(hex_id: str) -> dict:
         trail = [{"t": p["t"], "lat": p["lat"], "lon": p["lon"], "alt_ft": p["alt_ft"]} for p in recorded[::rstep]]
         if recorded and departed is None:
             departed = _left_from(recorded[0])
+    # The FAA's record of a US airplane (wingtip.registry), None for one registered abroad; its registration and year
+    # where no trace today gives them (N654FL's card read "Registration –" with the registry's record, 2026-11-13).
+    faa = registry.lookup(hex_id=hex_id, n_number=trace.get("r"))
     return {
         "hex": hex_id,
-        # The FAA's record of a US airplane, by its address or its
-        # N-number (wingtip.registry); None for one registered abroad.
-        "faa": registry.lookup(hex_id=hex_id, n_number=trace.get("r")),
-        "registration": trace.get("r") or None,
+        "faa": faa,
+        "registration": trace.get("r") or (faa or {}).get("n_number") or None,
         "type": trace.get("t") or None,
         "description": trace.get("desc") or None,
         "operator": trace.get("ownOp") or None,
-        "year": trace.get("year") or None,
+        "year": trace.get("year") or (faa or {}).get("year") or None,
         "departed": departed,
         "trail": trail,
     }

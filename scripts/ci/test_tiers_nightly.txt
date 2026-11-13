@@ -61,6 +61,7 @@ pass-times.spec.ts
 passengers.spec.ts
 pattern-radio.spec.ts
 place-add-stop.spec.ts
+plane-card.spec.ts
 plates-map.spec.ts
 practice.spec.ts
 problems.spec.ts

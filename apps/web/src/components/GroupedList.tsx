@@ -108,7 +108,16 @@ const TITLE = cn("line-clamp-none font-normal", TEXT.row);
 const TITLE_ACTION = cn(TITLE, "text-tint");
 const LABEL = cn("font-normal", TEXT.row);
 const DESCRIPTION = cn("line-clamp-none", TEXT.detail);
-const VALUE = cn("text-muted-foreground tabular-nums", TEXT.row);
+const VALUE = cn("text-right text-muted-foreground tabular-nums", TEXT.row);
+// Beside a value the words keep their longest word's width, and the value
+// wraps, or goes under them where the two cannot share the line, as an
+// iOS value row's long value does: "Registered to" was squeezed under
+// "Roca Roja Y Caballo Gris De Idaho Llc", the two overlapping (the
+// owner's iPhone, 2026-11-13).
+const CONTENT = "min-w-0 gap-0.5";
+const CONTENT_BY_VALUE = "min-w-min gap-0.5";
+const ACTIONS = "ml-auto";
+const ACTIONS_VALUE = "ml-auto min-w-0 max-w-full";
 
 export function ListRow({
   id,
@@ -173,7 +182,7 @@ export function ListRow({
       ) : (
         mark && <ItemMedia className={cn(action && "text-tint")}>{mark}</ItemMedia>
       )}
-      <ItemContent className="min-w-0 gap-0.5">
+      <ItemContent className={value !== undefined ? CONTENT_BY_VALUE : CONTENT}>
         <ItemTitle className={cn(action ? TITLE_ACTION : TITLE, wide && "w-full")}>
           {id ? (
             <Label htmlFor={id} className={LABEL}>
@@ -188,7 +197,7 @@ export function ListRow({
         {description && <ItemDescription className={DESCRIPTION}>{description}</ItemDescription>}
       </ItemContent>
       {(value !== undefined || children || href || opens) && (
-        <ItemActions className="ml-auto">
+        <ItemActions className={value !== undefined ? ACTIONS_VALUE : ACTIONS}>
           {value !== undefined && <span className={VALUE}>{value}</span>}
           {children}
           {href && <ExternalLink className="size-4 text-tint" aria-hidden />}
