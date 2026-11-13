@@ -158,12 +158,14 @@ class StationMarksTest {
     }
 
     @Test
-    fun theBadgeAndFarBarbFollowTheirSwitches() {
+    fun theFarBarbIsWithWindsAndTheBadgeEveryChoiceButOff() {
         val mark = FieldMark("KJVL", 42.0, -89.0, "wx|barb|0|2|0|over", 220.0, "2 sm BR", worse = true, far = true, over = true)
         val all = StationLayer.geoJson(listOf(mark), AirportWeather())
         assertTrue(all, all.contains("\"far\":true") && all.contains("\"over\":true") && all.contains("\"worse\":true") && all.contains("\"barb\""))
-        val none = StationLayer.geoJson(listOf(mark), AirportWeather(windArrows = false, worse = false))
-        assertFalse(none, none.contains("\"far\"") || none.contains("\"worse\""))
+        val none = StationLayer.geoJson(listOf(mark), AirportWeather(AirportWeatherMode.CATEGORY))
+        assertFalse(none, none.contains("\"far\""))
+        // Getting worse by arrival is always drawn but with the weather off.
+        assertTrue(none, none.contains("\"worse\":true"))
         // The station model's barb stays with the far one off.
         assertTrue(none, none.contains("\"barb\""))
         assertFalse(StationLayer.geoJson(listOf(mark), AirportWeather(AirportWeatherMode.OFF)).contains("KJVL"))

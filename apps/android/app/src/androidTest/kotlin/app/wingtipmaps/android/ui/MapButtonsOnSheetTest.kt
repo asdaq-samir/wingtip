@@ -52,7 +52,7 @@ class MapButtonsOnSheetTest {
                 MapSheet(
                     state = sheet,
                     peek = PEEK,
-                    onTop = { MapButtons(ownShip = OwnShipMode.OFF, onOwnShip = { taps++ }, onAsk = { asks++ }, positionLast = true) },
+                    onTop = { MapButtons(ownShip = OwnShipMode.OFF, onOwnShip = { taps++ }, onAsk = { asks++ }, onLayers = {}, positionLast = true) },
                     body = { Box(Modifier.fillMaxSize()) },
                 ) { Box(Modifier.weight(1f)) }
             }

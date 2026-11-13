@@ -18,8 +18,11 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -28,15 +31,17 @@ import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 /**
- * The first flight's card's one model (the web's useFirstFlight): the
- * destination picked, a departure where one has to be asked, and Plan It.
+ * The first route's one model, after the welcome (the web's
+ * useFirstFlight): the destination the one search picked, a departure
+ * where one has to be asked, and the plan.
  *
- * Plan It plans to the destination from where the pilot is -- own ship's
- * fix, else the phone's position read once, the nearest field to it (the
+ * It plans to the destination from where the pilot is -- own ship's fix,
+ * else the phone's position read once, the nearest field to it (the
  * planner's nearest) -- else from the pilot's home airport (HomeAirport);
- * with neither, it asks where from (`needsFrom`). Then the route is
- * planned as the plan's own fields plan one, the card is done with for
- * good (FirstFlightMemory) and `onPlanned` opens the nav log.
+ * with neither, it asks where from (`needsFrom`), and a destination that
+ * is where the pilot is, where to again (`same`). Then the route is
+ * planned as the plan's own fields plan one, `planned` says so (the FPL
+ * tip, FplTip) and `onPlanned` brings the FPL up.
  */
 @HiltViewModel
 class FirstFlightModel @Inject constructor(app: Application, private val flight: FlightSession) : AndroidViewModel(app) {
@@ -47,6 +52,8 @@ class FirstFlightModel @Inject constructor(app: Application, private val flight:
         val needsFrom: Boolean = false,
         val planning: Boolean = false,
         val problem: String? = null,
+        /** The destination was where the pilot is: asked again. */
+        val same: Boolean = false,
     ) {
         val ready: Boolean get() = dest != null && (!needsFrom || from != null) && !planning
     }
@@ -54,15 +61,14 @@ class FirstFlightModel @Inject constructor(app: Application, private val flight:
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
 
-    /** Whether the phone may read its position, so Plan It asks first where it may not. */
-    val permitted: Boolean get() = flight.ownShip.permitted
+    private val _planned = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
-    fun pickDest(ident: String) = _state.update { it.copy(dest = ident.uppercase(), problem = null) }
+    /** Each first route planned. */
+    val planned: SharedFlow<Unit> = _planned.asSharedFlow()
+
+    fun pickDest(ident: String) = _state.update { it.copy(dest = ident.uppercase(), problem = null, same = false) }
 
     fun pickFrom(ident: String) = _state.update { it.copy(from = ident.uppercase(), problem = null) }
-
-    /** Not Now: the card is not offered again until Setup brings it back. */
-    fun dismiss() = FirstFlightMemory.of(getApplication()).markSeen()
 
     fun planIt(plan: Plan, onPlanned: () -> Unit) {
         val dest = _state.value.dest ?: return
@@ -74,11 +80,11 @@ class FirstFlightModel @Inject constructor(app: Application, private val flight:
                     // No position and nothing kept: the card asks where from.
                     dep == null -> _state.update { it.copy(needsFrom = true) }
                     dep.equals(dest, ignoreCase = true) ->
-                        _state.update { it.copy(problem = getApplication<Application>().getString(R.string.first_flight_same, dest)) }
+                        _state.update { it.copy(problem = getApplication<Application>().getString(R.string.first_flight_same, dest), same = true) }
                     else -> {
                         plan.plan(dep, dest, emptyList())
-                        FirstFlightMemory.of(getApplication()).markSeen()
                         _state.value = State()
+                        _planned.tryEmit(Unit)
                         onPlanned()
                     }
                 }
@@ -101,7 +107,7 @@ class FirstFlightModel @Inject constructor(app: Application, private val flight:
 
     /** Own ship's fix where it is on, else the phone's position read once
      *  (the fused provider's current location, a few seconds at most), or
-     *  null without the permission, which the card asks for at its tap. */
+     *  null without the permission, which the welcome asks for at its tap. */
     private suspend fun located(): Pair<Double, Double>? {
         flight.ownShip.fix.value?.let { return it.lat to it.lon }
         val app = getApplication<Application>()

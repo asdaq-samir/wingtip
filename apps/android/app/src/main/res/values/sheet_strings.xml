@@ -1,17 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The sheet's own words: the first flight's card riding it, Setup's row
-     that brings the card back, and the line under the nav log and the
+<!-- The sheet's own words: the first flight's route, Help & About's row
+     that brings the welcome back, and the line under the nav log and the
      Brief naming whose winds a plan flies (docs/design/android.md). -->
 <resources>
-    <!-- The first flight (firstflight/FirstFlightCard), as the web's FirstFlight says it. -->
-    <string name="first_flight">Your First Flight</string>
-    <string name="first_flight_line">Where to? Wingtip plans from where you are: the route, the checkpoints you\'ll see from the air, the nav log and a weather brief.</string>
-    <string name="first_flight_dest_hint">Airport, town or ident</string>
-    <string name="first_flight_from">From</string>
-    <string name="first_flight_from_hint">Where you take off</string>
-    <string name="first_flight_plan">Plan It</string>
-    <string name="first_flight_planning">Planning…</string>
-    <string name="first_flight_steps">Step 1 of 3 · Route · Nav Log · Brief</string>
+    <!-- The first flight's route (firstflight/FirstFlightModel), as the web's FirstFlight says it. -->
     <string name="first_flight_same">%1$s is where you are. Pick somewhere to fly to.</string>
     <string name="first_flight_unreached">The planner could not be reached</string>
     <string name="first_flight_again">Show First Flight Again</string>

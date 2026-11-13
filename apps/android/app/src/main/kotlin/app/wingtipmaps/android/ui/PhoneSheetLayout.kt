@@ -1,7 +1,8 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.firstflight.FirstFlightCard
+import app.wingtipmaps.android.firstflight.WelcomeSheet
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.search.SearchControl
@@ -46,6 +47,8 @@ internal fun PhoneSheetLayout(
     nav: SheetNav,
     ownShip: OwnShipControl,
     onAsk: (() -> Unit)?,
+    onLayers: () -> Unit,
+    onRadio: (() -> Unit)?,
     plan: Plan,
     search: SearchControl,
     map: @Composable (covered: Dp) -> Unit,
@@ -60,26 +63,24 @@ internal fun PhoneSheetLayout(
     // every font scale (the sheet audit's S-1).
     val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val searchHeight = with(LocalDensity.current) { searchRowPx.toDp() }.takeIf { it > 0.dp } ?: WingtipSize.TapTarget
-    // At the peek, the carousel's dots and the first row of its page in
-    // view: the search's, or the plan's bar.
+    // At the peek, the first row of the carousel's page in view: the
+    // search's, or the plan's bar.
     val firstRow = if (nav.planShown) TopAppBarDefaults.TopAppBarExpandedHeight else searchHeight + WingtipSpace.Sm
-    val peek = if (nav.covered) halfWindow() else SheetHandle + SheetDotsHeight + firstRow + navigationBar
+    val peek = if (nav.covered) halfWindow() else SheetHandle + firstRow + navigationBar
     // The map's buttons ride the sheet's top at the right, just above
     // the search (the owner, 2026-11-11), the position button nearest it;
-    // the first flight's card, while it is offered and no card is up,
-    // rides under them, the buttons standing over it rather than on it
-    // (the web's FirstFlight, 2026-11-12). Planned, the nav log opens.
+    // 3D and the pages' toggle at the left (the owner, 2026-11-13).
     MapSheet(
         state = sheet, peek = peek, snackbars = snackbars, lowerOnBack = !nav.covered,
         onTop = {
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
-                MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, positionLast = true)
-                if (!nav.covered) {
-                    FirstFlightCard(
-                        plan, search, onPlanned = { ScreenRequests.ask(Screen.NAVLOG) },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg).padding(top = WingtipSpace.Sm),
-                    )
-                }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                SheetSideButtons(
+                    planShown = nav.planShown,
+                    onToggle = if (nav.covered) null else ({ if (nav.planShown) nav.closePlan() else nav.toPlanPage() }),
+                    modifier = Modifier.padding(start = WingtipSpace.Sm),
+                )
+                Spacer(Modifier.weight(1f))
+                MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, onLayers = onLayers, onRadio = onRadio, positionLast = true)
             }
         },
         body = map,
@@ -92,6 +93,9 @@ internal fun PhoneSheetLayout(
             Box(Modifier.onSizeChanged { searchRowPx = it.height }) { searchRow() }
         }
     }
+    // The first flight's welcome, once on this phone (WelcomeSheet); its
+    // first route brings the FPL up.
+    WelcomeSheet(plan, search, ownShip, onPlanned = { ScreenRequests.ask(Screen.FPL) })
 }
 
 /** The stock drag handle's height: its 4-dp bar in 22 dp above and below,

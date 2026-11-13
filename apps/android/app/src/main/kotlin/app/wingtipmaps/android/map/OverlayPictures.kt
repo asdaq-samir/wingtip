@@ -29,7 +29,7 @@ object OverlayPictures {
      *  symbol is laid out without its picture. [density] is the screen's
      *  pixels to a dp. */
     fun addTo(builder: Style.Builder, density: Float) {
-        // 2 inks, 4 sizes, 11 pips and 4 uses: 352 small pictures.
+        // 2 inks, 4 sizes, 6 pips and 4 uses: 192 small pictures.
         for (towered in listOf(true, false)) {
             for (size in MapStyle.SIZES) {
                 for (pip in AirportWeatherMarks.PIPS) {
@@ -108,8 +108,7 @@ object OverlayPictures {
      *  private field the guide's circle with an "R", a military one with
      *  an "M", a heliport with an "H". Its weather (AirportWeatherMarks,
      *  `pip`) a ring in its flight category's colour round the white halo,
-     *  WEATHER_RING dp wide so it holds in sunlight, or ForeFlight's dot
-     *  in the colour in place of the symbol. */
+     *  WEATHER_RING dp wide so it holds in sunlight. */
     private fun airport(towered: Boolean, size: String, pip: String, use: String, density: Float): Bitmap {
         val colour = ink(if (towered) MapStyle.BLUE else MapStyle.MAGENTA)
         val letter = when (use) {
@@ -121,11 +120,6 @@ object OverlayPictures {
         val r = if (letter != null) 7f else RADIUS[size] ?: 6f
         val weather = AirportWeatherMarks.inkOf(pip)?.let(::ink)
         return picture(30f, density, origin = 15f) {
-            if (weather != null && AirportWeatherMarks.isDot(pip)) {
-                drawCircle(0f, 0f, DOT, fill(weather))
-                drawCircle(0f, 0f, DOT, stroke(Color.WHITE, 1.5f))
-                return@picture
-            }
             // The halo: white, 1.2 dp past the ring, and the weather's ring
             // round it.
             drawCircle(0f, 0f, r + if (weather != null) 1.2f else 2.5f, fill(Color.WHITE))
@@ -148,9 +142,6 @@ object OverlayPictures {
     /** The weather's ring round a symbol, dp: about 4.5 points, the
      *  owner's pick (2026-11-10), wide enough to read in sunlight. */
     private const val WEATHER_RING = 4.5f
-
-    /** ForeFlight's weather dot in place of the symbol, its radius, dp. */
-    private const val DOT = 7f
 
     /** How big a traffic airplane is drawn, dp (the web's TRAFFIC_MARK, 16
      *  at the owner's ask, 2026-10-28), the chevron in its 22-unit box. */

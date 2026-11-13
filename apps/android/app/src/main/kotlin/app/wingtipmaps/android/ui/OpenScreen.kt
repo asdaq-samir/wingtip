@@ -44,7 +44,8 @@ internal object OpenScreen {
             Screen.EMERGENCY -> Where.Emergency
             // The airplane flown now: its one card, its checklist on the card's stack.
             Screen.AIRPLANE, Screen.CHECKLISTS -> Where.Page(SheetPage.Airplane())
-            Screen.SETUP, Screen.MINIMUMS -> Where.Page(SheetPage.Settings)
+            Screen.SETUP -> Where.Page(SheetPage.Settings)
+            Screen.MINIMUMS -> Where.Page(SheetPage.Minimums)
             Screen.LOGBOOK, Screen.COACH -> Where.Page(SheetPage.Logbook)
             Screen.DOWNLOADS -> Where.Page(SheetPage.Downloads)
             Screen.PASSENGERS -> Where.Page(SheetPage.Passengers)

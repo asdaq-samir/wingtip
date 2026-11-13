@@ -2,7 +2,6 @@ package app.wingtipmaps.android.ui
 
 import android.content.Context
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialExpressiveTheme
@@ -204,7 +203,7 @@ fun lookTheme(look: Look, dark: Boolean, nativeScheme: ColorScheme?): LookTheme 
 
 /**
  * The one Wingtip Material theme, for both layouts, in the look picked in
- * Setup (Wingtip by default), light or dark with the system. The brand
+ * Settings (Wingtip by default), light or dark by its Appearance. The brand
  * looks wear Material 3 Expressive's own theme (MaterialExpressiveTheme),
  * so every stock component -- switches, tabs, menus, sliders, sheets,
  * buttons -- moves on Google's expressive motion scheme, its springs.
@@ -223,7 +222,10 @@ fun lookTheme(look: Look, dark: Boolean, nativeScheme: ColorScheme?): LookTheme 
  */
 @Composable
 fun WingtipTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
+    // Light or dark by Settings' Appearance, the phone's own by default.
+    val shade = rememberShade()
+    val dark = shade.dark
+    SystemBarsFollow(dark)
     val look = rememberLook().value ?: Look.WINGTIP
     val scheme = if (look == Look.NATIVE) nativeScheme(LocalContext.current, dark) else null
     val theme = lookTheme(look, dark, scheme)
@@ -232,6 +234,7 @@ fun WingtipTheme(content: @Composable () -> Unit) {
         LocalWingtipPalette provides palette,
         LocalInk provides InkColors.of(palette, dark),
         LocalNative provides theme.native,
+        LocalShade provides shade,
     ) {
         if (theme.native) {
             MaterialTheme(colorScheme = theme.colorScheme, content = content)

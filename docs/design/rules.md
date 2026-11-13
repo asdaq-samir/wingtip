@@ -539,6 +539,21 @@ always the airplane). A new control goes into one of the three, never a
 second home; the web first (`features/pilot`, `features/settings`,
 `features/map-settings`), the phones on the owner's word.
 
+On Android (Google Maps' way, 2026-11-13): every card, You and the Map
+card among them, rides the sheet's stack as Google Maps' place cards and
+its Layers sheet do, nothing floats; You's and the Map card's gear is the
+card bar's first action, before the ✕, Material's place for a card's own
+actions (`ui/YouScreen`, `ui/MapCard`); the Map card is the Layers button
+on the map's right column, its layers Google Maps' tiles (the stock
+filled icon toggle over its name), and has no chart or overlay pictures,
+as the phone draws one chart and no imagery overlay yet; 3D and the
+pages' toggle are the left column's floating toolbar on the sheet
+(`SheetSideButtons`), the toggle the only way between Search and FPL;
+the welcome is Material's modal bottom sheet with Settings' own Theme
+and Appearance rows (`firstflight/WelcomeSheet`), the FPL tip the stock
+rich tooltip at the toggle; the route's Plan or Strip layout stays in
+Settings › Look, as Android has no route box, line or cards to choose.
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then

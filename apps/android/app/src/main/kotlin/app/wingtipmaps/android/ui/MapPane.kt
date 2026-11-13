@@ -1,7 +1,6 @@
 package app.wingtipmaps.android.ui
 
 import androidx.activity.compose.ReportDrawnWhen
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,11 +88,23 @@ import kotlinx.coroutines.withContext
  *   and the loading mark turns in the middle of what is left; a sheet
  *   pulled up over the map moves neither.
  * @param onAsk the sparkle's Ask, or none (the strip's field is the way).
+ * @param onLayers the Layers button's Map card.
+ * @param onRadio Comms Assist's radio button, or none while it is off.
  * @param buttonsOnSheet whether the phone's sheet carries the map's
  *   buttons on its top edge (MapSheet's `onTop`), so none are drawn here.
  */
 @Composable
-fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) -> Unit, onAsk: (() -> Unit)?, onNearest: () -> Unit, buttonsOnSheet: Boolean = false) {
+fun MapPane(
+    plan: Plan,
+    ownShip: OwnShipControl,
+    covered: Dp,
+    onPick: (MapPick) -> Unit,
+    onAsk: (() -> Unit)?,
+    onNearest: () -> Unit,
+    onLayers: () -> Unit,
+    onRadio: (() -> Unit)? = null,
+    buttonsOnSheet: Boolean = false,
+) {
     val charts: Charts = hiltViewModel()
     val info by charts.info.collectAsStateWithLifecycle()
     val overlays by charts.overlays.collectAsStateWithLifecycle()
@@ -113,7 +124,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // The map shown as one thing (the web's #541, #542): the loading mark
     // over it until the chart and the overlays are drawn, then faded once.
     var revealed by remember { mutableStateOf(false) }
-    val night = isSystemInDarkTheme()
+    // The chart dimmed with a dark screen, but Dark + Bright (Appearance).
+    val night = LocalShade.current.chartDimmed
     val context = LocalContext.current
     val layers by remember { MapLayersStore.of(context) }.layers.collectAsStateWithLifecycle()
     val mapWeather: MapWeather = hiltViewModel()
@@ -269,7 +281,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             // Under the status bar, and clear of a cutout or a navigation
             // bar at the side in landscape (edge to edge).
             MapButtons(
-                ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk,
+                ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, onLayers = onLayers, onRadio = onRadio, threeD = true,
                 modifier = Modifier.align(Alignment.TopEnd).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.End)),
             )
         }

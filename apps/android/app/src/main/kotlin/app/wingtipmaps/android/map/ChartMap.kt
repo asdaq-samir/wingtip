@@ -87,7 +87,7 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  *   terminal area chart pinned (`terminal`, where the chart has one).
  * @param weather each reporting field's weather pip by ident (AirportWeatherMarks).
  * @param traffic the airplanes heard (Traffic), `tracked` the one ringed.
- * @param night the phone's dark theme: the chart dimmed (MapStyle.chartPaint).
+ * @param night the chart dimmed (MapStyle.chartPaint): a dark Appearance but Dark + Bright.
  * @param bottomInset what the sheet covers of the map, in pixels: the
  *   map's padding, so its middle is the middle of what the sheet leaves.
  * @param opensAt where the map opens, the airplane's last position

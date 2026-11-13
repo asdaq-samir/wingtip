@@ -8,9 +8,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Whether the first flight's card has been done with on this install:
- * planned or put away with Not Now, it is not offered again until Setup's
- * Show First Flight Again resets it (the web's FIRST_FLIGHT tip). Kept in
+ * Whether the first flight's welcome has been done with on this install:
+ * gone on from, it is not offered again until Help & About's Show First
+ * Flight Again resets it (the web's FIRST_FLIGHT tip). Kept in
  * the app's own "wingtip" store (Kept) beside the layout, and held in one
  * StateFlow so the root, which shows the card, and Setup, which resets it,
  * see the same value the moment it changes. The reading and writing are
@@ -25,7 +25,7 @@ class FirstFlightMemory(read: () -> Boolean, private val write: (Boolean) -> Uni
         _seen.value = true
     }
 
-    /** Setup's Show First Flight Again. */
+    /** Help & About's Show First Flight Again. */
     fun reset() {
         write(false)
         _seen.value = false

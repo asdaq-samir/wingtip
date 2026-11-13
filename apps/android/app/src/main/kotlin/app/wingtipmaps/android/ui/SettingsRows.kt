@@ -63,12 +63,16 @@ fun ActionSettingRow(
     count: Int,
     modifier: Modifier = Modifier,
     supporting: String? = null,
+    enabled: Boolean = true,
+    leading: @Composable (() -> Unit)? = null,
     trailing: @Composable (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     SegmentedListItem(
         onClick = onClick,
         shapes = ListItemDefaults.segmentedShapes(index = index, count = count),
+        enabled = enabled,
+        leadingContent = leading,
         modifier = modifier.fillMaxWidth().semantics { role = Role.Button },
         supportingContent = if (supporting != null) {
             { Text(supporting, color = MaterialTheme.colorScheme.onSurfaceVariant) }

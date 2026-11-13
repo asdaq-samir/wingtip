@@ -14,8 +14,8 @@ import androidx.compose.runtime.setValue
  * was the Airport tab), the plan's Add a Stop, or a route point's Add a
  * Stop After (the card rule, 2026-11-10: one search field, no field of
  * its own), where a field or a fix picked goes into the route as a stop
- * rather than opening its card; or the first flight's airport fields
- * (FirstFlightCard), where an airport picked is handed back to the card.
+ * rather than opening its card; or the first flight's route after the
+ * welcome, where an airport picked is handed back to the asker.
  * Back to finding once the search closes.
  */
 @Stable

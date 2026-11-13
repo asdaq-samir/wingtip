@@ -28,6 +28,8 @@ class OpenScreenTest {
         assertEquals(Where.Search, OpenScreen.whereOf(Screen.AIRPORT))
         assertEquals(Where.Page(SheetPage.Airplane()), OpenScreen.whereOf(Screen.AIRPLANE))
         assertEquals(Where.Page(SheetPage.Settings), OpenScreen.whereOf(Screen.SETUP))
+        // Minimums is You's own page now, the three homes of 2026-11-13.
+        assertEquals(Where.Page(SheetPage.Minimums), OpenScreen.whereOf(Screen.MINIMUMS))
     }
 
     @Test
