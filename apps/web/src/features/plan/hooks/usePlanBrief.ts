@@ -46,16 +46,18 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   // (placeOf) -- the figures at once, where they waited a second or more
   // on the planner's course line (the owner, 2026-10-28: "Why isn't
   // planning instant?"). None where a point is not an airport the index
-  // places (a waypoint, a pilot's own point): the course's then.
+  // places (a waypoint, a pilot's own point): the course's then. The
+  // engine works the great circles out (lib/geo), so none until its .wasm
+  // is there (`engine`, usePlanRoute's useEngineWhen), as useAway waits.
   const index = useAirportIndex(true, routed);
   const straightNm = useMemo(() => {
-    if (!routed || !index || !planned.dest) return null;
+    if (!engine || !routed || !index || !planned.dest) return null;
     const points = [planned.dep, ...planned.stops, `${planned.dest}`].map((p) => placeOf(index, p));
     if (points.some((p) => !p)) return null;
     let nm = 0;
     for (let i = 1; i < points.length; i++) nm += distanceNm(points[i - 1]!, points[i]!);
     return nm;
-  }, [routed, index, planned.dep, planned.stops, planned.dest]);
+  }, [engine, routed, index, planned.dep, planned.stops, planned.dest]);
   const estimate = useMemo(
     () =>
       routed && course && course.destination.ident === planned.dest && course.departure.ident === planned.dep
