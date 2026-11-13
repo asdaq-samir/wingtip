@@ -1,4 +1,5 @@
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
+import { useFailedAction } from "../../../lib/problems";
 import { useFirstFlight } from "../hooks/useFirstFlight";
 import type { PanelState } from "../../../lib/mapChrome";
 import type { PanelView } from "../hooks/usePanelView";
@@ -30,6 +31,12 @@ export default function FirstFlight({
   // Kept once drawn, so the sheet closes with its own motion.
   const [drawn, setDrawn] = useState(welcome);
   if (welcome && !drawn) setDrawn(true);
+  // Nothing stacked over the welcome: an alert raised meanwhile (a refused
+  // position's "No position" on a first launch) waits until it closes.
+  useEffect(() => {
+    useFailedAction.setState({ held: welcome });
+    return () => useFailedAction.setState({ held: false });
+  }, [welcome]);
   return (
     <Suspense fallback={null}>
       {drawn && <WelcomeSheet open={welcome} onGo={go} />}

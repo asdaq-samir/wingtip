@@ -49,7 +49,9 @@ interface FailedAction {
   description?: string | null;
 }
 
-export const useFailedAction = create<{ failed: FailedAction | null }>(() => ({ failed: null }));
+/** `held` while a sheet that must not be stacked on is up (the first
+ *  flight's welcome): the alert waits for it, then says what failed. */
+export const useFailedAction = create<{ failed: FailedAction | null; held: boolean }>(() => ({ failed: null, held: false }));
 
 export function showError(title: string, description?: string | null) {
   useFailedAction.setState({ failed: { title, description } });
