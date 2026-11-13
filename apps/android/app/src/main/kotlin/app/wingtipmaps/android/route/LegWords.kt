@@ -18,6 +18,12 @@ object LegWords {
     fun row(leg: Leg): String = listOfNotNull(
         "To ${leg.to}",
         Spoken.altitude(leg.altitudeFt),
+        // Flown whole in the climb or the descent: said, as the row shows it.
+        when (leg.phase) {
+            "climb" -> "in the climb"
+            "descent" -> "in the descent"
+            else -> null
+        },
         Spoken.distance(leg.distanceNm),
         bearing(leg),
         leg.eteMin?.let(Spoken::duration),
