@@ -64,9 +64,9 @@ export async function openLinkFor(page: Page, address: string): Promise<string> 
   const console = page.getByTestId("console-sheet");
   const before = new Set(await messagesTo(address));
   if (!(await console.isVisible())) await openConsole(page);
-  // Signed out, Sign In is You's head's, under the avatar (YouHead).
+  // Signed out, Sign In is You's head's large line, under the avatar (YouHead).
   await consolePage(console, "Account");
-  await console.getByRole("button", { name: "Sign in", exact: true }).click();
+  await console.getByRole("button", { name: "Sign In", exact: true }).click();
   await page.getByLabel("Email address").fill(address);
   await page.getByRole("button", { name: "Send Link" }).click();
   // The dialog's own status line: a toast is a status too (Base UI's),

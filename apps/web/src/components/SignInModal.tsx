@@ -30,12 +30,13 @@ import { FieldError } from "./ui/field";
  * registers neither, both did.
  */
 export default function SignInModal({
-  plain = false,
+  hero = false,
   inline = false,
 }: {
-  /** A tinted word, as a row's action (Setup's Account group), not a
-   *  bordered button. */
-  plain?: boolean;
+  /** You's large line while no one is signed in, in the name's place: a
+   *  tinted Sign In at the hero size, said once (the owner, 2026-11-13:
+   *  "Instead of saying you, just say sign in once"). */
+  hero?: boolean;
   /** A tinted link inside a sentence ("Sign in to keep the flights you
    *  plan", FPL's Saved), its 44-point area round it. */
   inline?: boolean;
@@ -93,14 +94,16 @@ export default function SignInModal({
           >
             Sign in
           </button>
-        ) : plain ? (
+        ) : hero ? (
           <Button
-            variant="ghost"
-            size="sm"
+            variant="link"
             data-testid="sign-in"
-            className={cn("relative -mr-2 px-2 font-normal text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
+            className={cn(
+              "relative h-auto p-0 font-bold tracking-tight text-tint after:absolute after:-inset-y-2 after:inset-x-0",
+              TEXT.hero,
+            )}
           >
-            Sign in
+            Sign In
           </Button>
         ) : (
           <Button variant="outline" size="sm">

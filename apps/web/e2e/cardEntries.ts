@@ -108,6 +108,12 @@ export async function tapLeg(page: Page) {
         for (const m of JSON.parse(probe?.getAttribute(`data-${name}`) ?? "[]") as { x: number; y: number }[])
           marks.push(new DOMRect(r.left + m.x - 13, r.top + m.y - 13, 26, 26));
       }
+      // And the chart's airports (AirportsGl's probe), within a near
+      // miss's reach: a tap by one opened its card under the leg's, which
+      // then took the tap on the head.
+      const fields = (
+        JSON.parse(map.querySelector("[data-airport-marks]")?.getAttribute("data-airport-marks") ?? "[]") as { x: number; y: number }[]
+      ).map((m) => ({ x: r.left + m.x, y: r.top + m.y }));
       // What of the map is not under the panel: a phone's sheet, a desktop's side panel.
       const panel = document.querySelector<HTMLElement>('[data-slot="map-panel"]')?.getBoundingClientRect();
       const under = (x: number, y: number) =>
@@ -128,7 +134,11 @@ export async function tapLeg(page: Page) {
             y = a[1]! + (b[1]! - a[1]!) * f + ny * 16;
           if (x < 8 || x > innerWidth - 8 || y < 8 || y > innerHeight - 8 || under(x, y)) continue;
           // Clear of each by more than a near miss's reach (22) round its box.
-          if (marks.every((m) => x < m.left - 30 || x > m.right + 30 || y < m.top - 30 || y > m.bottom + 30)) out.push({ x, y });
+          if (
+            marks.every((m) => x < m.left - 30 || x > m.right + 30 || y < m.top - 30 || y > m.bottom + 30) &&
+            fields.every((m) => Math.hypot(x - m.x, y - m.y) > 24)
+          )
+            out.push({ x, y });
         }
       }
       return out;
@@ -166,16 +176,15 @@ export async function expectBack(page: Page, back: Back) {
 /** The scroller of a card: the first element in it that scrolls up and
  *  down (a list of its own, StopsCard's), else the one scroller it is laid
  *  out in -- its own drawer's (CardStack's data-sheet-scroll, inside the
- *  card's popup where the test id is on the popup, a SheetCard's), a
- *  floating card's (FloatingCard's data-floating-scroll), or the sheet's
- *  for a page of the plan (SheetParts'). */
+ *  card's popup where the test id is on the popup, a SheetCard's), or the
+ *  sheet's for a page of the plan (SheetParts'). */
 export async function scrollOf(page: Page, card: string, to?: number | "end") {
   return page.getByTestId(card).evaluate((root, y) => {
     const all = [root, ...root.querySelectorAll<HTMLElement>("*")];
     const box =
       all.find((el) => ["auto", "scroll"].includes(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1) ??
-      root.closest<HTMLElement>("[data-sheet-scroll], [data-floating-scroll]") ??
-      root.querySelector<HTMLElement>("[data-sheet-scroll], [data-floating-scroll]");
+      root.closest<HTMLElement>("[data-sheet-scroll]") ??
+      root.querySelector<HTMLElement>("[data-sheet-scroll]");
     if (!box) return { top: -1, max: 0 };
     if (y != null) box.scrollTo({ top: y === "end" ? box.scrollHeight : y });
     return { top: box.scrollTop, max: box.scrollHeight - box.clientHeight };
@@ -204,19 +213,10 @@ export async function contentTop(page: Page, card: string) {
     .getByTestId(card)
     .first()
     .evaluate((root) => {
-      const box =
-        root.closest("[data-sheet-scroll], [data-floating-scroll]") ?? root.querySelector("[data-sheet-scroll], [data-floating-scroll]");
+      const box = root.closest("[data-sheet-scroll]") ?? root.querySelector("[data-sheet-scroll]");
       return box ? box.getBoundingClientRect().y : Number.NaN;
     });
 }
-
-/** The floating card (FloatingCard) a test id is in: every card but an
- *  airport's and the route's, You too (the owner, 2026-11-13). */
-export const floatingCardOf = (page: Page, testId: string) =>
-  page
-    .locator("[data-floating-card][data-open]")
-    .filter({ has: page.getByTestId(testId) })
-    .or(page.locator(`[data-floating-card][data-open][data-testid="${testId}"]`));
 
 /** Whether a card is a nested drawer over the map's sheet: in a card's
  *  popup (CardStack's data-sheet-card) inside the sheet's, which Base UI

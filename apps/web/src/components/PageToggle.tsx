@@ -1,7 +1,8 @@
 import { Route, Search } from "lucide-react";
 import { cn } from "cn";
 import { Toggle } from "./ui/toggle";
-import { GLASS } from "../lib/mapChrome";
+import { GLASS, useConsoleOpen } from "../lib/mapChrome";
+import { closeEveryCard } from "../lib/openCards";
 import { keepPlanButton, usePageToggle } from "./sheet/pageToggle";
 
 /**
@@ -17,7 +18,8 @@ import { keepPlanButton, usePageToggle } from "./sheet/pageToggle";
  * never pressed -- a tap goes somewhere, it turns nothing on -- so to a
  * screen reader it is a button whose name says where it goes. Its 44-point
  * area a pseudo-element out to its glass's edge, never a bigger button.
- * Not drawn while the pages cannot be turned (flying, under Settings).
+ * Not drawn while the pages cannot be turned (flying); drawn with a card
+ * open, whose close it is too.
  */
 export default function PageToggle() {
   const pages = usePageToggle((s) => s.pages);
@@ -30,7 +32,15 @@ export default function PageToggle() {
         // FPL's glyph is where the first flight's tip points (FplTip).
         ref={onSearch ? keepPlanButton : undefined}
         pressed={false}
-        onPressedChange={() => pages.go(onSearch ? 1 : 0)}
+        // With cards open over the sheet it is still in sight, riding the
+        // front card's top with the map's other buttons, and a tap closes
+        // them -- You too -- and turns to the other page (the owner,
+        // 2026-11-13: "airport card hides the fpl toggle").
+        onPressedChange={() => {
+          closeEveryCard();
+          useConsoleOpen.getState().setOpen(false);
+          pages.go(onSearch ? 1 : 0);
+        }}
         aria-label={onSearch ? "Show flight plan" : "Show search"}
         data-testid="sheet-page-toggle"
         data-shows={onSearch ? 1 : 0}

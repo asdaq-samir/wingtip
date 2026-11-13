@@ -132,8 +132,11 @@ function Personal({
               badge, its name, where it stands at its end and the chevron. */}
           <YouHead pilot={signedIn ? pilot : null} />
           {account}
-          {/* The account's rows greyed until there is one; the minimums
-              and the checklists (in Airplanes) are this device's. */}
+          {/* The account's rows greyed until there is one, with no word of
+              their own: the head's one Sign In says it (the owner,
+              2026-11-13: "Instead of saying you, just say sign in once").
+              The minimums and the checklists (in Airplanes) are this
+              device's. */}
           <div data-testid="library-section">
             <ListGroup glass>
               {/* Pilot Details, with the role's menu in it (sign out,
@@ -144,7 +147,7 @@ function Personal({
                 title="Pilot Details"
                 testId="pilot-row"
                 disabled={!signedIn && !devAllowed}
-                value={!signedIn && !devAllowed ? SIGNED_OUT : signedIn ? (pilot.homeBase ?? undefined) : undefined}
+                value={signedIn ? (pilot.homeBase ?? undefined) : undefined}
                 media={
                   <RowBadge colour={SETTING_BADGE.pilot} round>
                     <UserRound />
@@ -165,7 +168,7 @@ function Personal({
                 page="flights"
                 title="Flights"
                 disabled={!signedIn}
-                value={!signedIn ? SIGNED_OUT : flights ? `${flights.length} saved` : undefined}
+                value={signedIn && flights ? `${flights.length} saved` : undefined}
                 media={
                   <RowBadge colour={SETTING_BADGE.flights} round>
                     <Route />
@@ -176,7 +179,7 @@ function Personal({
                 page="logbook"
                 title="Logbook"
                 disabled={!signedIn}
-                value={!signedIn ? SIGNED_OUT : hours !== undefined && entries?.length ? `${hours.toFixed(1)} h` : undefined}
+                value={signedIn && hours !== undefined && entries?.length ? `${hours.toFixed(1)} h` : undefined}
                 media={
                   <RowBadge colour={SETTING_BADGE.logbook} round>
                     <BookOpen />
@@ -204,10 +207,6 @@ function Personal({
   );
 }
 
-/** What a row kept to an account says while no one is signed in: why it
- *  is greyed, where it only looked broken (the UI audit, 2026-11-09). */
-const SIGNED_OUT = "Sign In to Use";
-
 /** The personal minimums in a few words, the ceiling and visibility
  *  first; none set, nothing. */
 function minimumsWords(m: Minimums): string | null {
@@ -223,7 +222,7 @@ function minimumsWords(m: Minimums): string | null {
  *  address is never the name: an email sign-in's display name is the
  *  address itself, and where there is no name the large line asks for
  *  one, opening Pilot Details at its Name. Signed out, the avatar's glyph
- *  and Sign In. Room over it for the card's ✕. */
+ *  and, in the name's place, Sign In. */
 function YouHead({ pilot }: { pilot: Pilot | null }) {
   const given = pilot ? pilot.fullName || pilot.displayName : null;
   const name = given && given !== pilot?.email && !given.includes("@") ? given : null;
@@ -242,9 +241,17 @@ function YouHead({ pilot }: { pilot: Pilot | null }) {
       >
         <AccountFace name={name} />
       </span>
-      {name || !pilot ? (
+      {!pilot ? (
+        // Signed out, the large line is the way in, said once: no "You"
+        // over a link of its own (the owner, 2026-11-13).
+        <div className="flex min-h-11 items-center">
+          <Suspense fallback={null}>
+            <SignInModal hero />
+          </Suspense>
+        </div>
+      ) : name ? (
         <span className={cn("max-w-full truncate font-bold tracking-tight text-foreground", TEXT.hero)} data-testid="you-name">
-          {name ?? "You"}
+          {name}
         </span>
       ) : (
         <Button
@@ -263,13 +270,6 @@ function YouHead({ pilot }: { pilot: Pilot | null }) {
         <span className={cn("max-w-full truncate text-muted-foreground", TEXT.detail)} data-testid="you-address">
           {address}
         </span>
-      )}
-      {!pilot && (
-        <div className="flex min-h-11 items-center">
-          <Suspense fallback={null}>
-            <SignInModal plain />
-          </Suspense>
-        </div>
       )}
     </div>
   );

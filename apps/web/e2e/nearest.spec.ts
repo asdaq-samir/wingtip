@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { floatingCardOf } from "./cardEntries";
 import { closeCard, grabberTo, settle, showPlan, showSearch, sideDrawer, slow, frontSheet } from "./helpers";
 
 /**
@@ -14,7 +13,7 @@ test.use({ geolocation: { latitude: 42.3246, longitude: -88.0741 }, permissions:
 
 const FIELD = { kind: "small", longest_runway_ft: 3500, flight_category: "VFR", military: null };
 
-test("Nearest floats over the map, a field's card over it, and its close back to the list", async ({ page }) => {
+test("Nearest opens as a card half way up, a field over it as a layer, and its close back to the list", async ({ page }) => {
   await page.route(
     (url) => url.pathname.endsWith("/api/planner/airports/nearest"),
     (route) =>
@@ -55,13 +54,10 @@ test("Nearest floats over the map, a field's card over it, and its close back to
     await sideDrawer(page).getByTestId("nearest-strip-position").click();
   await expect(sideDrawer(page).getByTestId("nearest-strip-field").first()).toBeVisible({ timeout: slow(15000) });
   await sideDrawer(page).getByTestId("pill-section-nearest-more").click();
-  const sheetAt = await sideDrawer(page).getAttribute("data-panel");
-  const card = page.getByTestId("nearest-card");
+  const card = sideDrawer(page).getByTestId("nearest-card");
   await expect(card).toBeVisible();
-  // Floating over the map, as every card but an airport's (the owner,
-  // 2026-11-13), the sheet under it left as it was.
-  await expect(floatingCardOf(page, "nearest-card")).toHaveCount(1);
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", sheetAt!);
+  // At half, as every card opens (the owner, 2026-11-11).
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   const rows = card.getByTestId("nearest-airport");
   await expect(rows).toHaveCount(3, { timeout: slow(15000) });
   await expect(rows.nth(2)).toContainText("joint use");
@@ -75,9 +71,7 @@ test("Nearest floats over the map, a field's card over it, and its close back to
   await expect(rows.nth(1).getByTestId("nearest-arrow")).toHaveAttribute("style", /rotate\(55deg\)/);
 
   await rows.nth(1).click();
-  // The field's card rides the sheet; the list put away while it is up.
   await expect(sideDrawer(page).getByTestId("place-card")).toBeVisible();
-  await expect(card).toBeHidden();
   await closeCard(page, "place-close");
   await expect(card).toBeVisible();
   // Its Back, as every list in full has one: the search's own page, the
@@ -88,8 +82,9 @@ test("Nearest floats over the map, a field's card over it, and its close back to
   await expect(sideDrawer(page).getByTestId("pill-section-nearest-more")).toBeVisible();
   await sideDrawer(page).getByTestId("pill-section-nearest-more").click();
   await expect(card).toBeVisible();
-  // Back to the route: the list is a card floating over the sheet, its ✕
-  // first, then the search's Cancel and FPL, the plan under it.
+  // Back to the route: the list is a card over the sheet, the Drawer's own
+  // nested drawer (sheet/CardStack), its ✕ first, then the search's Cancel
+  // and FPL, the plan under it.
   await card.getByTestId("nearest-page-close").click();
   await showPlan(page);
   await expect(card).toHaveCount(0);
@@ -132,7 +127,7 @@ test(
     );
     await page.goto("/app/plan?near=1");
     await settle(page);
-    const card = page.getByTestId("nearest-card");
+    const card = sideDrawer(page).getByTestId("nearest-card");
     // NRST's field is the one search, scoped to where from (the one card rule).
     const field = sideDrawer(page).getByTestId("nearest-from");
     await expect(field).toHaveAttribute("placeholder", "Current position");

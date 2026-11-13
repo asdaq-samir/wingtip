@@ -313,7 +313,7 @@ for (const path of PAGES) {
     expect(await page.locator("[data-map-controls]").getByTestId("account-button").count()).toBe(0);
     await expect(first).toHaveAttribute("data-testid", "map-settings-button");
     await first.click();
-    await expect(page.getByTestId("map-settings").getByRole("heading", { name: "Map", level: 2 })).toBeVisible();
+    await expect(sideDrawer(page).getByTestId("map-settings").getByRole("heading", { name: "Map", level: 2 })).toBeVisible();
     await expect(page.getByTestId("map-settings").getByTestId("base-chart-select")).toBeVisible();
     await expect(page.getByTestId("map-settings").getByTestId("waypoints-toggle")).toBeVisible();
     await page.keyboard.press("Escape");

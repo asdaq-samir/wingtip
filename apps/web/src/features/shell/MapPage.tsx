@@ -143,8 +143,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
     setConsoleOpen(false);
   }, [setConsoleOpen]);
   const consoleInPanel = useMemo(() => ({ close: closeConsole }), [closeConsole]);
-  // You, the avatar's card, floating over the map and its sheet (the
-  // owner's Apple Maps screenshot, 2026-11-13): the sheet under it stays
+  // You, the avatar's card, a nested drawer over the map's sheet as every
+  // card is (ConsoleLayer; the owner, 2026-11-13): the sheet under it stays
   // as it was, the search or the route, for when it is put away. Escape
   // puts it away, unless something open in it (a menu) took the key.
   const consoleLayer = consoleOpen;
@@ -278,8 +278,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
                     {pieces.sidebar}
                   </MapPanel>,
                 )}
-                {/* You, over the map and the sheet alike, outside the sheet's
-                    drawer: a dialog of its own, not one nested in it. */}
+                {/* You, put in its nested drawer over the sheet (CardLayer's
+                    portal), drawn here for the workspace's providers. */}
                 {setupDrawn && consoleLayerOf(pieces)}
               </div>
             );

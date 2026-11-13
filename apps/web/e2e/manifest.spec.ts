@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { settle } from "./helpers";
+import { settle, sideDrawer } from "./helpers";
 
 /**
  * The installed web app's manifest (docs/design/web.md, section 15): its
@@ -29,5 +29,5 @@ test("the manifest names the app, keeps one window and lists the screens' shortc
   await page.goto("/app/plan?open=nearest");
   expect(urls).toContain("/app/plan?open=nearest");
   await settle(page);
-  await expect(page.getByTestId("nearest-card")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("nearest-card")).toBeVisible();
 });

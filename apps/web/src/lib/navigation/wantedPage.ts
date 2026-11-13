@@ -13,8 +13,12 @@ import { create } from "zustand";
  */
 export const useWantedPage = create<{
   path: string[];
-  want: (path: string[]) => void;
+  /** Asked from inside the console already up (You's own gear opening
+   *  Settings): opened as its row opens it, its close back to the list,
+   *  not out of the console. */
+  inside: boolean;
+  want: (path: string[], inside?: boolean) => void;
   /** The first key taken by the console that had it: the rest is for
    *  the pages inside. */
   took: () => void;
-}>((set) => ({ path: [], want: (path) => set({ path }), took: () => set((s) => ({ path: s.path.slice(1) })) }));
+}>((set) => ({ path: [], inside: false, want: (path, inside = false) => set({ path, inside }), took: () => set((s) => ({ path: s.path.slice(1) })) }));

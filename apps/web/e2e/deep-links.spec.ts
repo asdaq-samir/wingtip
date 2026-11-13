@@ -25,7 +25,7 @@ test("a link opens a screen by its name, and the word leaves the address", { tag
 
   await page.goto("/app/plan?open=nearest");
   await settle(page);
-  await expect(page.getByTestId("nearest-card")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("nearest-card")).toBeVisible();
   await expect(page).not.toHaveURL(/[?&]open=/);
 });
 
