@@ -7,6 +7,7 @@ import MyPositionButton from "./MyPositionButton";
 import MapSettingsButton, { MapSettingsCard } from "./MapSettingsButton";
 import RadioButton from "./RadioButton";
 import ThreeDButton from "./ThreeDButton";
+import ClearanceKey from "./ClearanceKey";
 import { useAtcRadio } from "../lib/atcRadio";
 import { useIsMobile } from "../hooks/use-mobile";
 import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "../lib/mapChrome";
@@ -200,7 +201,13 @@ function MapControlsDrawn() {
             {!onPhone && mic()}
             {/* The 3D button, its own circle under the mic's (ThreeDButton);
                 on the ground only, as the settings are. */}
-            {!onPhone && !flying && <ThreeDButton />}
+            {!onPhone && !flying && (
+              // Its key to the 3D ground's colours at its left, clear of the route's side panel.
+              <div className="flex flex-row-reverse items-center gap-2">
+                <ThreeDButton />
+                <ClearanceKey />
+              </div>
+            )}
             {group}
           </div>
         )}
@@ -237,7 +244,14 @@ function MapControlsDrawn() {
               )}
             >
               {mic(riding)}
-              {!flying && <ThreeDButton />}
+              {!flying && (
+                // Its key to the 3D ground's colours at its right, over the
+                // chart's edge rather than the route's middle.
+                <div className="flex items-center gap-2">
+                  <ThreeDButton />
+                  <ClearanceKey />
+                </div>
+              )}
             </div>
           )}
         </OnSheetTop>

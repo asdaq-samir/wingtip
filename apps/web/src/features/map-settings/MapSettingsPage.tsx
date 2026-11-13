@@ -16,7 +16,6 @@ import { googleMapsQuery } from "../../lib/queryClient";
 import { keepingAvailable } from "../../lib/map/route/keepRoute";
 import { openMapPage } from "../../lib/mapCard";
 import { CHART } from "../../lib/tokens";
-import { clearanceWords } from "../../lib/map/terrainClearanceWords";
 
 /**
  * The Map card's Map Settings page, from the row at the card's foot (the
@@ -49,10 +48,9 @@ function LookGroup() {
         {/* The ground under the chart in 2D (TerrainGl): flat as printed,
             or its relief shaded over it, segmented. 3D is the map's own
             round button (ThreeDButton, the owner 2026-11-13, as Apple
-            Maps' 3D is), over either; while it is on, what the ground's
-            colours near a route are, and that they are a view, not
-            clearance, under this row. */}
-        <ListRow title="Terrain" description={prefs.threeD ? clearanceWords() : undefined}>
+            Maps' 3D is), over either, with its key to the ground's colours
+            near a route beside it (ClearanceKey). */}
+        <ListRow title="Terrain">
           <Segmented
             label="Terrain"
             value={prefs.terrain}
