@@ -20,13 +20,16 @@ export const DRAWER_MS = MOTION.drawer * 1000;
  *   a bottom sheet (SheetParts' barRowPad: the grabber's 16-point room, the
  *   least iOS keeps, the 46-point field, six under: the owner, 2026-11-13,
  *   "taking minimal space"); on a top sheet the band's 4.25 rem and the
- *   grabber's own 1 rem row under it, 5.25 rem. Over the tab bar on a phone
- *   (SheetTabBar), which the Drawer's viewport stands on. One value for
- *   every page and card, never one a page: FPL's pill is the route's
- *   figures (the owner, 2026-11-11), a name's 18-point line over a value's
- *   25, 2.6875 rem, which under the grabber's 1 rem is 3.6875 rem: it
- *   fits, so the pill stays the search's 4.25; a card's pill is its title
- *   row with its short line under the name (PinnedHead), as tall.
+ *   grabber's own 1 rem row under it, 5.25 rem. Standing on the screen's
+ *   foot (the home indicator's inset), nothing under it: the pages' tab
+ *   bar it stood on is one round toggle riding its top (PageToggle; the
+ *   owner, 2026-11-13). One value for every page and card, never one a
+ *   page: FPL's pill is the route's figures (the owner, 2026-11-11), a
+ *   name's 18-point line over a value's 25, 2.6875 rem, which under the
+ *   grabber's 1 rem and over the sheet's 8-point edge (where there is no
+ *   home indicator) is 4.1875 rem: it fits, so the pill stays the
+ *   search's 4.25; a card's pill is its title row with its short line
+ *   under the name (PinnedHead), as tall.
  * - Half: 23 rem, the owner's ("Let's make the half card this tall", their
  *   iPhone's sheet 368 points tall: the route's box, its chips, the side
  *   view and the figures).
@@ -75,20 +78,6 @@ export function halfPx(popupHeight: number) {
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   return Math.min(parseFloat(String(BOTTOM_SNAPS.half)) * rem, popupHeight);
 }
-
-/** The tab bar's height (SheetTabBar), the capsule's and the round search button's: Apple
- *  Maps' 48-point glass buttons (design/tokens.json size.map-button), the
- *  compact Liquid Glass bar, the least that holds an icon over its label. */
-export const TAB_BAR_PX = SIZE.mapButton;
-/** Where the bar stands: on the home indicator's inset, as iOS's floating
- *  bar hugs it, and four points off a screen with none, so its glass edge
- *  and shade are not cut by the screen's. */
-const FLOOR_PX = 4;
-const TAB_BAR_BASE = `max(env(safe-area-inset-bottom), ${FLOOR_PX}px)`;
-/** What the bar takes at the screen's foot, under the sheet's sizes. */
-export const TAB_BAR_ROOM = `calc(${TAB_BAR_BASE} + ${TAB_BAR_PX}px)`;
-/** The same in px, with the home indicator's inset read (useSafeArea). */
-export const tabBarRoomPx = (safeBottom: number) => TAB_BAR_PX + Math.max(safeBottom, FLOOR_PX);
 
 /** The side panel's width from `md` up (design/tokens.json size.panel),
  *  and a desktop's from 1024 wide (panel-wide). */

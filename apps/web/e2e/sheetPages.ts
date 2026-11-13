@@ -1,21 +1,26 @@
 import { expect, type Page } from "@playwright/test";
 import { airportMarks, searchAirports, sideDrawer, slow } from "./helpers";
+export { showPage } from "./oneSearch";
 
 /**
- * The sheet's two pages, Search and FPL, picked from the tab bar under the
- * sheet (SheetTabBar), for the specs that read which is up: sheet-tab-bar,
- * sheet-pages-cards and sheet-fly-here.
+ * The sheet's two pages, Search and FPL, turned by the one round toggle
+ * riding the sheet's top at the right (PageToggle; the owner, 2026-11-13),
+ * for the specs that read which is up: sheet-page-toggle,
+ * sheet-pages-cards, sheet-fly-here and first-flight.
  */
 
 const pages = (page: Page) => sideDrawer(page).getByTestId("sheet-pages");
-/** A page's tab in the tab bar: 0 Search, 1 FPL. */
-export const tab = (page: Page, at: 0 | 1) => page.locator(`[data-page-tab="${at}"]`);
+/** The toggle: it shows the page a tap goes to (data-shows), FPL's route
+ *  glyph on Search, the magnifier on FPL. */
+export const toggle = (page: Page) => page.getByTestId("sheet-page-toggle");
 
-/** The page `at` up: its tab picked. The bar stays under a card too. */
+/** The page `at` up, and the toggle offering the other, by name: a
+ *  button never pressed, its name where it goes. It stays under a card. */
 export async function expectPage(page: Page, at: 0 | 1) {
   await expect(pages(page)).toHaveAttribute("data-page", String(at));
-  await expect(tab(page, at)).toHaveAttribute("aria-selected", "true");
-  await expect(tab(page, at === 0 ? 1 : 0)).toHaveAttribute("aria-selected", "false");
+  await expect(toggle(page)).toHaveAttribute("data-shows", String(at === 0 ? 1 : 0));
+  await expect(toggle(page)).toHaveAccessibleName(at === 0 ? "Show flight plan" : "Show search");
+  await expect(toggle(page)).toHaveAttribute("aria-pressed", "false");
 }
 
 /** The page `at` is the one in sight and live: its panel shown, the

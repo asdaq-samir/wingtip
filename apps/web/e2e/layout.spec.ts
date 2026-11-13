@@ -76,12 +76,12 @@ test.describe("/app/plan", () => {
     await expect(figures).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
     if ((page.viewportSize()?.width ?? 0) < 768) {
       await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeHidden();
-      // The pill no taller for them: the search's own 4.25 rem, over the
-      // tab bar's room (its 48 points on the screen's 4, sheet/insets'
-      // TAB_BAR_ROOM, with no home indicator here).
+      // The pill no taller for them: the search's own 4.25 rem, on the
+      // screen's foot (no home indicator here; the pages' toggle rides its
+      // top, PageToggle, with no bar under it).
       const pill = await sideDrawer(page).evaluate((el) => el.getBoundingClientRect().top);
       const rem = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
-      expect((page.viewportSize()?.height ?? 0) - pill).toBeLessThanOrEqual(4.25 * rem + 52 + 2);
+      expect((page.viewportSize()?.height ?? 0) - pill).toBeLessThanOrEqual(4.25 * rem + 2);
     } else await expect(firstRow(page)).toBeVisible();
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");

@@ -45,7 +45,7 @@ test(
     await grabberTo(page, "full");
     await settled(panel(page));
     // Search's page, the one up with no route: each of the sheet's two pages
-    // (SheetTabBar's panels) has its own scroller and head band.
+    // (SheetPage) has its own scroller and head band.
     const search = panel(page).locator('[data-sheet-page="0"]');
     const scroller = search.locator("[data-sheet-scroll]").first();
     await scroller.evaluate((el) => el.scrollTo({ top: 240 }));

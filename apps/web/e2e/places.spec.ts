@@ -604,7 +604,7 @@ test("an airport tapped on the chart while Setup is up puts Setup away and opens
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   // A route's link opens on FPL; the account button is the Search page's
-  // (its tab in the tab bar, SheetTabBar).
+  // (its toggle, PageToggle).
   await showPage(page, 0);
   await openConsole(page);
   await expect(consoleSheet(page)).toBeVisible();

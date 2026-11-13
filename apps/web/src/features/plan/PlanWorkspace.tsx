@@ -30,9 +30,6 @@ import { listSearchOf } from "./components/workspace/listSearch";
 import OneSearchField from "./components/search/OneSearchField";
 import { useOneSearch } from "./hooks/useOneSearch";
 
-/** The sheet's pages' names, their tabs' labels (SheetTabBar). */
-const PAGE_NAMES = ["Search", "FPL"] as const;
-
 /**
  * The planner: two idents in, a charted course with checkpoints and a
  * dead-reckoning nav log out -- the pilot's workspace on the page
@@ -425,11 +422,10 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // an airport's, the airspace's, an airplane's -- over the tab it was
         // opened from, its close back to it.
         sidebar: <PlanSidebar vm={vm} model={search} />,
-        // The pages, picked from the tab bar under the sheet (SheetTabBar; the owner, 2026-11-13): Search over `sidebar`, FPL's `route` over the plan.
+        // The pages, turned by the round toggle on the sheet's top (PageToggle; the owner, 2026-11-13): Search over `sidebar`, FPL's `route` over the plan.
         pages: {
           at: view === "plan" ? 1 : 0,
           go: pickPage,
-          names: PAGE_NAMES,
           second: <PlanPage vm={vm} navLog={navLog} navLogCard={navLogCard} briefContents={briefContents} briefNotice={briefNotice} />,
         },
         // The one search's Autocomplete round the whole panel, so its field

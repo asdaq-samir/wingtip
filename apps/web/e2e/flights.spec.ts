@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { consoleSheet, controlsInSight, grabberTo, library, openBrief, openConsole, openPanel, showTabs, sideDrawer } from "./helpers";
 import { openMapSettingsPage } from "./mapCard";
 import { pickAirplane } from "./startState";
-import { bar } from "./sheetPages";
+import { showPage } from "./sheetPages";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -51,8 +51,7 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   const filed: Record<string, unknown>[] = [];
   await signedIn(page, filed);
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
-  // Save is in the half panel's Share menu: all the way up the head is
-  // the tab bar.
+  // Save is in the half panel's Share menu.
   await controlsInSight(page);
   const save = page.getByTestId("save-flight-button");
 
@@ -206,8 +205,8 @@ test("a saved flight opened from FPL's Saved opens its page, and Open on the map
   await page.goto("/app/plan");
   // The saved flights are FPL's page's (FplStrip; the owner: "We can remove
   // plan button and saved from search"), all the way up.
+  await showPage(page, 1);
   await grabberTo(page, "full");
-  await bar(page, 1).click();
   const panel = sideDrawer(page);
   await panel.getByTestId("pill-section-saved-more").click();
   await panel.getByRole("button", { name: /^KMSP → KDLH/ }).click();
@@ -293,8 +292,8 @@ test("a saved flight's ••• and its long press offer Edit, Share and Remove
   await page.goto("/app/plan");
   // The saved flights are FPL's page's (FplStrip; the owner: "We can remove
   // plan button and saved from search"), all the way up.
+  await showPage(page, 1);
   await grabberTo(page, "full");
-  await bar(page, 1).click();
   const panel = sideDrawer(page);
   await panel.getByTestId("pill-section-saved-more").click();
   // A right click, as a long press on a phone, brings the same menu up.

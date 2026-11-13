@@ -13,7 +13,7 @@ const FplTip = lazy(() => import("./FplTip"));
  * The first flight (useFirstFlight; the owner's option A, 2026-11-13):
  * the welcome sheet the first time the planner opens with no route on
  * this device, whose Let's Go Flying leaves the one search ready for
- * where to; then, after the first route, the tip on the FPL tab. Each once.
+ * where to; then, after the first route, the tip on the FPL toggle. Each once.
  */
 export default function FirstFlight({
   routed,

@@ -7,6 +7,7 @@ import MyPositionButton from "./MyPositionButton";
 import MapSettingsButton, { MapSettingsCard } from "./MapSettingsButton";
 import RadioButton from "./RadioButton";
 import ThreeDButton from "./ThreeDButton";
+import PageToggle from "./PageToggle";
 import ClearanceKey from "./ClearanceKey";
 import { useAtcRadio } from "../lib/atcRadio";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -23,7 +24,9 @@ import { OnSheetTop } from "./sheet/sheetTop";
  * row, riding it as the radio's button does at the left (the owner,
  * 2026-11-11: "keep the top right map button to just above the search bar
  * on the right"); over a top sheet at the bottom right, riding its edge;
- * beside a desktop's side panel at the bottom right.
+ * beside a desktop's side panel at the bottom right. Under them, a circle
+ * of its own nearest the sheet, the toggle that turns the sheet's pages
+ * (PageToggle).
  *
  * Ghost buttons on the group's glass, eight apart inside it, so
  * each one's 44-point hit area (index.css) meets the next one's rather
@@ -207,6 +210,10 @@ function MapControlsDrawn() {
               </div>
             )}
             {group}
+            {/* The sheet's pages turned (PageToggle), a circle of its own
+                under the group, nearest the sheet's top edge: level with
+                the 3D circle at the left on a phone (the owner, 2026-11-13). */}
+            <PageToggle />
           </div>
         )}
       </OnSheetTop>
