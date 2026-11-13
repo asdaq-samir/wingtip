@@ -50,38 +50,38 @@ test("Checklists are inside Airplanes, and Training holds the Coach and Practice
   await expect(sheet.getByTestId("hold-entry")).toBeVisible();
 });
 
-test("You is Apple Maps' account card: floating clear of the screen's edges, the avatar over one list, its ✕ and a tap outside closing it", async ({
+test("You is a card over the sheet as every card is: the avatar over one list, the gear and the ✕ its head row, Escape and the ✕ closing it", async ({
   page,
 }) => {
   const sheet = await you(page);
-  // A dialog of its own, not a layer of the map's sheet.
-  await expect(page.getByRole("dialog").filter({ has: page.getByTestId("library-section") })).toBeVisible();
-  expect(await sheet.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(false);
-  // In from both sides and the foot, its top short of the screen's.
-  const box = (await sheet.boundingBox())!;
-  const size = page.viewportSize()!;
-  if (size.width < 640) {
-    expect(box.x).toBeGreaterThan(4);
-    expect(size.width - box.x - box.width).toBeGreaterThan(4);
-    expect(size.height - box.y - box.height).toBeGreaterThan(4);
-  }
-  expect(box.y).toBeGreaterThan(0);
+  // The stock Drawer's nested drawer over the map's sheet (the owner,
+  // 2026-11-13: "make everything a nested drawer except the welcome one").
+  expect(await sheet.evaluate((el) => !!el.closest('[data-slot="map-panel"] [data-sheet-card]'))).toBe(true);
   // One list of rows in order, each opening its page.
   const rows = sheet.getByTestId("library-section").getByRole("button");
   await expect(rows).toHaveText([/^Pilot Details/, /^Airplanes/, /^Flights/, /^Logbook/, /^Minimums/, /^Training/, /^Emergency/]);
   await expect(sheet.getByTestId("library-section").getByRole("group")).toHaveCount(1);
-  // No title and no grabber: the gear at the top left (Settings, the
-  // owner, 2026-11-13) and the ✕ at the right.
-  await expect(sheet.getByRole("heading", { name: "You", exact: true })).toHaveCount(0);
+  // Signed out: Sign In said once, the head's large line, no "You" and no
+  // "Sign In to Use" on the greyed rows (the owner, 2026-11-13: "Instead
+  // of saying you, just say sign in once").
+  const head = sheet.getByTestId("setup-pill-account");
+  await expect(head.getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
+  await expect(head).not.toContainText("You");
+  await expect(sheet.getByRole("button", { name: /^Sign in$/i })).toHaveCount(1);
+  for (const row of [/^Flights/, /^Logbook/]) await expect(rows.filter({ hasText: row })).toBeDisabled();
+  await expect(sheet.getByTestId("library-section")).not.toContainText("Sign In to Use");
+  // Its one head row: the gear at the top left (Settings, the owner,
+  // 2026-11-13) and the ✕ at the right, level.
+  const box = (await sheet.boundingBox())!;
   const gear = (await sheet.getByTestId("settings-row").boundingBox())!;
   const close = (await sheet.getByTestId("console-close").boundingBox())!;
-  expect(gear.x).toBeLessThan(box.x + 24);
+  expect(gear.x).toBeLessThan(box.x + 32);
   expect(Math.abs(gear.y - close.y)).toBeLessThan(2);
   await sheet.getByTestId("console-close").click();
   await expect(consoleSheet(page)).toHaveCount(0);
-  // A tap outside it, on the map over it, closes it too.
+  // Escape closes it too.
   await openConsole(page);
-  await page.mouse.click(size.width / 2, 20);
+  await page.keyboard.press("Escape");
   await expect(consoleSheet(page)).toHaveCount(0);
 });
 

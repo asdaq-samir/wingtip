@@ -1,10 +1,12 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import {
   cardClose,
   closeCard,
+  firstRow,
   grabberTo,
   openMapSettings,
   openTab,
+  panelTabs,
   settle,
   settled,
   sideDrawer,
@@ -12,61 +14,61 @@ import {
   tapTheChart,
   mapStill,
 } from "./helpers";
-import { drawnMarks, markWith, tapMark, type DrawnMark } from "./marks";
+import { drawnMarks, markWith, tapMark } from "./marks";
 
 /**
- * What a control opens (ResponsivePopover, on a phone) and what a tap on
- * the chart opens (MapPopup) is a card floating over the map and its sheet,
- * as Apple Maps' iOS 27 cards float (the owner, 2026-11-13: "Except for
- * airport card, redesign the others as recommended"): the stock Dialog in
- * You's floating shell (FloatingCard), ten points in from the sides and
- * the foot, as tall as it is, the sheet under it left where it was. Its
- * close, Escape and a device's Back put it away, back to what was under
- * it; one opened from another floats over it and closes back to it.
- * An airport's card alone rides the sheet (CardStack).
+ * On a phone, what a control opens (ResponsivePopover) and what a tap on
+ * the chart opens (MapPopup) is a card in the map's one sheet, as Maps
+ * opens everything in its sheet, at the owner's ask ("Yes to all, let's
+ * have consistency and common code", 2026-10-27): not a sheet floating
+ * over it, nor a popup over the chart (SheetCard). The card is its own
+ * nested drawer with its own snap point, half way at the least, the panel
+ * under it left where it was (the owner, 2026-11-11: "Just let the drawer
+ * do what it does"); its close, Escape and a device's Back put it away,
+ * back to what was under it.
  */
 
-test("the Map settings float over the map, the sheet left as it was, and its close goes back to what was under it", async ({ page }) => {
+test("the Map settings open as a card in the map's sheet, and its close goes back to what was under it", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's sheet and its heights; the side panel's card is in layout.spec");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const panel = sideDrawer(page);
   await settled(panel);
   await expect(panel).toHaveAttribute("data-panel", "peek");
-  const sheetTop = (await panel.boundingBox())!.y;
 
-  // From the pill: the card floating over it, ten points in from the
-  // screen's sides and foot, the panel left at the pill where it was.
+  // From the pill: the card half way up over it, the panel left at the pill.
   await openMapSettings(page);
-  const card = page.getByRole("dialog", { name: "Map", exact: true });
+  const card = panel.getByRole("region", { name: "Map", exact: true });
   await expect(card).toBeVisible();
   await expect(card).toHaveAttribute("data-testid", "map-settings");
-  await expect(card).toHaveAttribute("data-floating-card", "");
-  await expect(panel.getByTestId("map-settings")).toHaveCount(0);
-  const view = page.viewportSize()!;
-  const box = (await card.boundingBox())!;
-  expect(box.x).toBeCloseTo(10, 0);
-  expect(view.width - box.x - box.width).toBeCloseTo(10, 0);
-  expect(view.height - box.y - box.height).toBeCloseTo(10, 0);
+  await expect(card).toHaveAttribute("data-panel", "half");
   await expect(panel).toHaveAttribute("data-panel", "peek");
-  expect((await panel.boundingBox())!.y).toBeCloseTo(sheetTop, 0);
-  // No dim over the map: it is no modal.
-  await expect(page.locator("[data-slot=dialog-overlay], [data-slot=sheet-content]")).toHaveCount(0);
-  // Its name where a screen reader starts reading it, in its head row.
+  // Nothing floating over the panel, and nothing made modal: the one
+  // dialog the sheet itself, the stock Drawer's non-modal popup (MapPanel),
+  // not the card in it, which is a region.
+  await expect(page.locator("[data-slot=sheet-content]")).toHaveCount(0);
+  await expect(page.locator('[role="dialog"]:not([data-slot="map-panel"]), [aria-modal="true"]')).toHaveCount(0);
+  // Its name where a screen reader starts reading it.
   await expect(card.getByRole("heading", { name: "Map", level: 2 })).toBeFocused();
+  // Its name and close in its own head, the top of the sheet: the one
+  // search put away under a card, as Apple Maps' is (the owner, 2026-11-10);
+  // the panel still at the pill as it closes.
+  await expect(card.getByRole("heading", { name: "Map", level: 2 })).toBeVisible();
+  await expect(firstRow(page)).toBeHidden();
+  await expect(panelTabs(page)).toHaveCount(0);
   await closeCard(page, "sheet-card-close");
   await expect(card).toHaveCount(0);
   await expect(panel).toHaveAttribute("data-panel", "peek");
 
-  // From half, over the route's box: the box left as it was under it, and
-  // Escape puts the card away, the panel still half way and the focus back
-  // on the map's button.
+  // From half, over the route's box: the box out of sight under it, and
+  // there again as Escape puts it away, the panel still half way and the
+  // focus back on the map's button.
   await grabberTo(page, "half");
   const dest = panel.getByTestId("route-dest");
   await expect(dest).toBeVisible();
   await openMapSettings(page);
   await expect(card).toBeVisible();
-  await expect(panel).toHaveAttribute("data-panel", "half");
+  await expect(dest).toBeHidden();
   await page.keyboard.press("Escape");
   await expect(card).toHaveCount(0);
   await expect(panel).toHaveAttribute("data-panel", "half");
@@ -127,7 +129,7 @@ test("the Map card's gear opens Settings over it at Map, and Settings' close goe
   await expect(card.getByTestId("map-settings-more")).toHaveCount(0);
 });
 
-test("the approaches' pull-down is a floating card, and the list it opens takes its place", async ({ page }) => {
+test("the approaches' pull-down is a card in the sheet, and the list it opens takes its place there", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's card; wider it is a popover");
   await page.route(
     (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
@@ -140,24 +142,24 @@ test("the approaches' pull-down is a floating card, and the list it opens takes 
   await expect(panel).toHaveAttribute("data-panel", "full");
   const arrive = panel.getByRole("region", { name: "KDLH · Arrive" });
   await arrive.locator("[data-testid=procedure-kind][data-kind=approach]").click({ timeout: slow(30000) });
-  const menu = page.getByTestId("procedure-menu");
+  const menu = panel.getByTestId("procedure-menu");
   await expect(menu).toBeVisible();
-  await expect(menu).toHaveAttribute("data-floating-card", "");
-  // The route's list under it, left as it was.
-  await expect(panel).toHaveAttribute("data-panel", "full");
+  await expect(menu).toHaveAttribute("data-sheet-card", "");
+  // The route's list under it, kept out of sight.
+  await expect(arrive).toBeHidden();
   // Its foot opens the field's whole list, a card of its own in its place.
   await page.getByTestId("procedure-menu-all").click();
   await expect(menu).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "KDLH approaches" })).toBeVisible();
-  await expect(page.getByTestId("procedures-none")).toBeVisible();
+  await expect(panel.getByRole("heading", { name: "KDLH approaches" })).toBeVisible();
+  await expect(panel.getByTestId("procedures-none")).toBeVisible();
   // Closed: the route's list again, the panel all the way up as it was.
   await cardClose(page, "procedures-close").click();
-  await expect(page.getByRole("heading", { name: "KDLH approaches" })).toHaveCount(0);
+  await expect(panel.getByRole("heading", { name: "KDLH approaches" })).toHaveCount(0);
   await expect(arrive).toBeVisible();
   await expect(panel).toHaveAttribute("data-panel", "full");
 });
 
-test("a checkpoint tapped on the chart opens its floating card; one opened over it closes back to it", async ({ page }) => {
+test("a checkpoint tapped on the chart opens its card in the sheet; one opened over it closes back to it", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's card; wider it is the chart's popup");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -167,17 +169,16 @@ test("a checkpoint tapped on the chart opens its floating card; one opened over 
   // left out by MapLibre's collision until the map is closer in, and a tap
   // goes to the nearest drawn within a finger's reach (useGlSymbols).
   await tapMark(page, "route-marks", /^\d+$/);
-  const head = page.locator("[data-floating-card][data-open]");
-  await expect(head).toBeVisible();
+  await expect(panel.locator("[data-sheet-card]")).toBeVisible();
   // Its name in its own head beside its close, which names the card.
+  const head = panel.locator("[data-sheet-card]");
   await expect(head).toContainText("nm along");
   const name = head.getByRole("heading", { level: 2 });
   await expect(name).toBeVisible();
   const named = (await name.innerText()).trim();
-  const checkpoint = page.getByRole("dialog", { name: named, exact: true });
+  const checkpoint = panel.getByRole("region", { name: named, exact: true });
   await expect(checkpoint).toBeVisible();
-  // The sheet under it left as it was.
-  await expect(panel).toHaveAttribute("data-panel", "peek");
+  await expect(head).not.toHaveAttribute("data-panel", "peek");
   // Not a popup over the chart.
   await expect(page.locator(".maplibregl-popup:visible")).toHaveCount(0);
   // Its ring on the map is drawn by MapLibre now (PickedGl's picked-ring
@@ -187,11 +188,12 @@ test("a checkpoint tapped on the chart opens its floating card; one opened over 
   // The Map settings over it: its card on top, the checkpoint's kept
   // under it, and back to it as the top one is closed.
   await page.locator("[data-map-controls]").getByTestId("map-settings-button").click();
-  const map = page.getByRole("dialog", { name: "Map", exact: true });
+  const map = panel.getByRole("region", { name: "Map", exact: true });
   await expect(map).toBeVisible();
-  // The last opened floats over the one under it (FloatingCard's layer),
-  // so what a finger finds on the Map's card is the Map's, and the
-  // checkpoint's is kept under it.
+  // The cards are the stock Drawer's nested drawers (CardStack): the one
+  // under stays drawn behind the top one, its top showing over it as Apple
+  // Maps stacks them, so what a finger finds on the Map's card is the
+  // Map's, and the checkpoint's is kept under it.
   const onTop = (region: typeof map) =>
     region.evaluate((el) => {
       const r = el.getBoundingClientRect();
@@ -212,11 +214,12 @@ test("a checkpoint tapped on the chart opens its floating card; one opened over 
 });
 
 // The owner's iPhone, 2026-11-12: KSJT's card all the way up and a NOTAM's
-// card over it, the map's buttons drawn over the airport card's NOTAM rows
-// at the NOTAM card's top. The NOTAM's card floats now (the owner,
-// 2026-11-13), over the airport's card and its buttons, which stay on the
-// airport card's top, its size left as it was.
-test("a NOTAM's card floats over the airport's, which keeps its size and the map's buttons", async ({ page }) => {
+// card over it at half, the map's buttons drawn over the airport card's
+// NOTAM rows at the NOTAM card's top. They follow the card that covers the
+// map most (coverCard), not the last one opened: all the way up they give
+// way, as Apple Maps' do at its large detent; with the card under at half
+// and the one on top lowered to its pill, they ride the card under.
+test("a card opened over a higher one leaves the map's buttons with the higher", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's cards and their heights");
   const raw = "!DLH 11/101 DLH OBST TOWER LGT (ASN 2026-AGL-1) 465000N0921200W (1.2NM SE DLH) 1600FT (210FT AGL) U/S 2611101200-2611202359";
   await page.route(
@@ -264,69 +267,73 @@ test("a NOTAM's card floats over the airport's, which keeps its size and the map
   const controls = page.locator("[data-map-controls]");
   const radio = page.getByTestId("mic-circle");
 
-  // All the way up, a NOTAM's card floating over it: the buttons give way
-  // with the airport's card all the way up, as they did.
+  // All the way up, a NOTAM's card over it at half: the buttons give way.
   await place.getByTestId("place-notam").first().click();
-  const notam = page.getByTestId("place-notam-card");
-  await expect(notam).toBeVisible();
-  await expect(notam).toHaveAttribute("data-floating-card", "");
-  await expect(placeDrawer).toHaveAttribute("data-panel", "full");
+  const notam = sideDrawer(page).getByTestId("place-notam-card");
+  await expect(notam).toHaveAttribute("data-panel", "half");
+  await settled(notam);
   await expect(page.locator("body")).toHaveAttribute("data-map-panel", "full");
   await expect(placeDrawer.locator("[data-map-controls]")).toHaveCount(1);
   await expect(controls).toHaveCSS("opacity", "0");
   await expect(radio).toHaveCSS("opacity", "0");
-  // Its close back to the airport's card, still all the way up.
+
+  // The airport's card at half, the NOTAM's over it lowered to its pill:
+  // the buttons over the airport card's top, in sight.
   await notam.getByTestId("sheet-card-close").click();
   await expect(notam).toHaveCount(0);
-  await expect(place).toBeVisible();
-  await expect(placeDrawer).toHaveAttribute("data-panel", "full");
-
-  // At half, the buttons on the airport card's top and in sight, the
-  // NOTAM's card floating over them; Escape back to the airport's.
   await grabberTo(page, "half");
   await place.getByTestId("place-notam").first().click();
-  await expect(notam).toBeVisible();
-  await expect(placeDrawer).toHaveAttribute("data-panel", "half");
+  await expect(notam).toHaveAttribute("data-panel", "half");
+  await settled(notam);
+  await expect(notam.locator("[data-map-controls]")).toHaveCount(1);
+  await grabberTo(page, "peek");
+  await expect(page.locator("body")).toHaveAttribute("data-map-panel", "half");
   await expect(placeDrawer.locator("[data-map-controls]")).toHaveCount(1);
   await expect(controls).toHaveCSS("opacity", "1");
-  await page.keyboard.press("Escape");
-  await expect(notam).toHaveCount(0);
-  await expect(place).toBeVisible();
 });
 
 // The owner's iPhone, 2026-11-12: "Why are all the cards jumping like
 // this?" A card opened from the chart (TFR 6/2478 over San Angelo) came in
-// near the top and dropped to half, the map panned at each change and the
-// map's buttons redrew on the card's top. Floating now (the owner,
-// 2026-11-13), it fades up over the map where it rests, and the sheet, the
-// map's buttons and the chart under it stay where they were.
-test("a card tapped open on the chart floats up over it, the sheet, its buttons and the chart left where they were", async ({ page }) => {
+// near the top and dropped to half, or arrived at half and shifted again;
+// the map panned at each change and again as it closed; and the map's
+// buttons sat over the card's lines. A card's drawer mounted already open,
+// which Base UI draws where it rests from its first frame, all the way up
+// before it has measured itself (CardStack). And the owner's iPhone,
+// 2026-11-13: the buttons hidden while a card slid up from the screen's
+// foot and back on its top once it was up, "redrawing" at every card. Now
+// it comes up where the sheet's top is, as Apple Maps' place card does,
+// and eases once to half, the chart still under it, the buttons on its top
+// in every frame.
+test("a card tapped open on the chart comes up at the sheet's top and eases once to half, its buttons on its top throughout", async ({
+  page,
+}) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's cards and their heights");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await settled(sideDrawer(page));
   await mapStill(page);
   await expect.poll(markWith(page, "route-marks", /^\d+$/), { timeout: slow(60000) }).not.toBeNull();
-  // The checkpoint highest on the screen, clear of where the card comes
-  // up: one it would hide is brought out from under it (the next test).
-  const tapped = (await checkpoints(page)).sort((a, b) => a.y - b.y)[0]!;
-  // Every frame for a second from the tap, as painted: the sheet's top,
-  // the map's buttons, and whether the chart is moving.
+  const tapped = (await markWith(page, "route-marks", /^\d+$/)())!;
+  const sheetTop = (await sideDrawer(page).boundingBox())!.y;
+  // Every frame for a second and a half from the tap, as painted: the
+  // card's top, the map's buttons, and whether the chart is moving (the
+  // map's data-moving, from a move's start to its end).
   const recording = page.evaluate(
     () =>
-      new Promise<{ sheet: number; buttons: number | null; moving: boolean }[]>((done) => {
-        const out: { sheet: number; buttons: number | null; moving: boolean }[] = [];
+      new Promise<{ card: number | null; buttons: number | null; shown: boolean; moving: boolean }[]>((done) => {
+        const out: { card: number | null; buttons: number | null; shown: boolean; moving: boolean }[] = [];
         const map = document.querySelector<HTMLElement>("[data-testid=gl-map]")!;
-        const panel = document.querySelector('[data-slot="map-panel"]')!;
         const start = performance.now();
         const frame = () => {
+          const card = document.querySelector("[data-sheet-card][data-open]");
           const buttons = document.querySelector("[data-map-controls]");
           out.push({
-            sheet: panel.getBoundingClientRect().top,
+            card: card ? card.getBoundingClientRect().top : null,
             buttons: buttons ? buttons.getBoundingClientRect().bottom : null,
+            shown: !!buttons && getComputedStyle(buttons).opacity !== "0",
             moving: "moving" in map.dataset,
           });
-          if (performance.now() - start < 1000) requestAnimationFrame(frame);
+          if (performance.now() - start < 1500) requestAnimationFrame(frame);
           else done(out);
         };
         requestAnimationFrame(frame);
@@ -334,57 +341,34 @@ test("a card tapped open on the chart floats up over it, the sheet, its buttons 
   );
   await page.mouse.click(tapped.x, tapped.y);
   const frames = await recording;
-  const card = page.locator("[data-floating-card][data-open]");
-  await expect(card).toBeVisible();
-  for (const f of frames) {
-    expect(f.sheet).toBeCloseTo(frames[0]!.sheet, 0);
-    expect(f.buttons).toBeCloseTo(frames[0]!.buttons!, 0);
-    expect(f.moving).toBe(false);
+  const card = sideDrawer(page).locator("[data-sheet-card][data-open]");
+  await expect(card).toHaveAttribute("data-panel", "half");
+  const tops = frames.map((f) => f.card).filter((top): top is number => top !== null);
+  const rest = tops[tops.length - 1]!;
+  // Its first frame where the sheet's top was, then one way to where it rests.
+  expect(tops[0]!).toBeCloseTo(sheetTop, -1);
+  const way = Math.sign(rest - tops[0]!);
+  tops.slice(1).forEach((top, i) => expect((top - tops[i]!) * way).toBeGreaterThanOrEqual(-1));
+  // The buttons in sight in every frame the card is, over its top.
+  for (const f of frames.filter((f) => f.card !== null)) {
+    expect(f.shown).toBe(true);
+    expect(f.buttons!).toBeLessThanOrEqual(f.card! + 1);
   }
-
-  // Put away, the chart stays where it is.
+  // The chart moves at most once, to bring the checkpoint out from under
+  // the card; the mark tapped ends in sight over it.
+  const starts = frames.filter((f, i) => f.moving && !frames[i - 1]?.moving).length;
+  expect(starts).toBeLessThanOrEqual(1);
+  await mapStill(page);
   const key = tapped.key;
   const at = async () => (await drawnMarks(page, "route-marks")).find((m) => m.key === key) ?? null;
+  await expect.poll(async () => (await at())?.y ?? Infinity).toBeLessThan(rest);
+
+  // Put away, the chart stays where it is.
   const before = (await at())!.y;
   await closeCard(page, "sheet-card-close");
   await expect(card).toHaveCount(0);
-  await mapStill(page);
-  expect((await at())!.y).toBeCloseTo(before, 0);
-});
-
-/** The route's numbered checkpoints drawn now, on the page's points. */
-const checkpoints = async (page: Page): Promise<DrawnMark[]> =>
-  (await drawnMarks(page, "route-marks")).filter((m) => /^\d+$/.test(String(m.text ?? "")));
-
-// A floating card covers the map apart from the sheet: what it is about,
-// tapped low on the screen where the card comes up, was left under it as
-// the map made room for the sheet alone. The map now eases it into the
-// room the card leaves, as Apple Maps keeps a place clear of its card
-// (map/cardRoom's useFloatingInSight); one already in sight stays put (the
-// test before).
-test("a checkpoint tapped where its floating card comes up is brought out from under the card", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's floating card, at the screen's foot");
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
   await settled(sideDrawer(page));
   await mapStill(page);
-  await expect.poll(async () => (await checkpoints(page)).length, { timeout: slow(60000) }).toBeGreaterThan(0);
-  // The lowest drawn, nearest the sheet: where the card comes up.
-  const tapped = (await checkpoints(page)).sort((a, b) => b.y - a.y)[0]!;
-  await page.mouse.click(tapped.x, tapped.y);
-  const card = page.locator("[data-floating-card][data-open]");
-  await expect(card).toBeVisible();
-  await expect(card).toContainText("nm along");
-  await mapStill(page);
-  const box = (await card.boundingBox())!;
-  const view = page.viewportSize()!;
-  // Its point on the screen, above the card's top and below the screen's.
-  const at = async () => (await checkpoints(page)).find((m) => m.key === tapped.key) ?? null;
-  await expect.poll(async () => (await at())?.y ?? Infinity).toBeLessThan(box.y);
-  const now = (await at())!;
-  expect(now.y).toBeGreaterThan(0);
-  expect(now.x).toBeGreaterThan(0);
-  expect(now.x).toBeLessThan(view.width);
-  const outside = now.y < box.y || now.y > box.y + box.height || now.x < box.x || now.x > box.x + box.width;
-  expect(outside).toBe(true);
+  // Within a pixel: the mark's box is rounded as the map's padding is put back.
+  expect(Math.abs((await at())!.y - before)).toBeLessThanOrEqual(1.5);
 });

@@ -85,6 +85,14 @@ export function setCardPill(entry: OpenCard, pill: PillHead | undefined) {
   useOpenCards.setState(counted());
 }
 
+/** Every card closed, the top one first: the sheet's page toggle tapped
+ *  with cards over the page (PageToggle; the owner, 2026-11-13: "airport
+ *  card hides the fpl toggle"), as Android's SheetNav.show closes the
+ *  cards over the search before it turns the page. */
+export function closeEveryCard() {
+  for (const entry of [...open].reverse()) entry.close();
+}
+
 /** The top card closed; whether there was one. */
 export function closeTopCard(): boolean {
   const top = open[open.length - 1];

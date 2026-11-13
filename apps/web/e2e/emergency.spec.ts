@@ -54,10 +54,9 @@ test("in flight, Emergency opens the best fields, the squawk and the MAYDAY", { 
     await expect(sheet.getByTestId("emergency-field").filter({ hasText: name }).first()).toHaveAttribute("aria-checked", "true");
   }
   await expect(sheet.getByTestId("emergency-call-911")).toHaveAttribute("href", "tel:911");
-  // A card floating over the map, not a modal dialog, on a phone too (the
-  // one card rule; the owner, 2026-11-13): nothing dimmed, the map usable
-  // (docs/design/web.md §8).
-  await expect(sheet).toHaveAttribute("data-floating-card", "");
+  // A card in the map's sheet, not a modal dialog, on a phone too (the one
+  // card rule, 2026-11-10): nothing dimmed, the map usable (docs/design/web.md §8).
+  await expect(sheet).toHaveAttribute("role", "region");
   await expect(page.locator('[role="dialog"][aria-modal="true"]')).toHaveCount(0);
   // The map's own buttons are as they were: no EMER (the owner, 2026-11-08).
   await expect(page.getByTestId("map-emergency")).toHaveCount(0);

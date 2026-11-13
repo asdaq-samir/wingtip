@@ -3,7 +3,6 @@ import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, usePanelDragging } from "../../lib/mapChrome";
 import { sheetTopRef } from "./sheetTopSlot";
-import { answerClose, floatingOnTop } from "./cardClose";
 import { SheetViewport } from "./SheetViewport";
 
 /** The Drawer's keyboard inset, 0 or a keyboard's height. */
@@ -92,17 +91,13 @@ export function SheetDrawer({
       snapToSequentialPoints
       snapPoint={snapPoint}
       onSnapPointChange={snapped}
-      // Never closed. Its Escape, with no card over it (a riding card's own
-      // drawer takes that; a floating card's, floatingOnTop), lowers it;
-      // taken, so a device's Back (lib/backNavigation) goes no further.
+      // Never closed. Its Escape, with no card over it (the card's own
+      // drawer takes that), lowers it; taken, so a device's Back
+      // (lib/backNavigation) goes no further.
       onOpenChange={(open, details) => {
         if (open) return;
         details.cancel();
-        if (details.reason !== "escape-key" || details.event.defaultPrevented) return;
-        // A floating card over it hears it first, as from its own dialog.
-        const floating = floatingOnTop();
-        if (floating) answerClose(floating, true, details);
-        else if (lower()) details.event.preventDefault();
+        if (details.reason === "escape-key" && !details.event.defaultPrevented && lower()) details.event.preventDefault();
       }}
     >
       <Drawer.VirtualKeyboardProvider>

@@ -212,27 +212,14 @@ close does.
   MapLibre's corner controls move on the Drawer's time and curve too
   (`motion.drawer` and `motion.drawer-ease` in design/tokens.json, which
   every web class that runs the Drawer's figures reads).
-- Every card but an airport's floats over the map and its sheet (the
-  owner, 2026-11-13; rules.md §1): `components/FloatingCard`, the stock
-  Base UI Dialog (non-modal; You's modal while it is on top), drawn by
-  `components/sheet/FloatingCards` beside the sheet's Drawer, never in
-  it, so Base UI counts none as a drawer nested over the sheet and the
-  sheet's content stays as it was. Its entry in `lib/sheetCards` carries
-  `float`; `coverCard` passes it by (the map's buttons and room follow
-  the riding cards alone), `topCard` decides who hears Escape and a tap
-  outside (`sheet/cardClose`), `floatLayer` stacks the last opened on
-  top (z 41 up, under the menus' 50), and You joins the stack while it
-  is open (`useOwnFloat`) so Settings from the Map card's gear floats
-  over the Map card and a card opened from You over You. Its material is
-  `card-glass` (index.css; `material.card-fill`, `card-blur`), denser
-  than the map's buttons' glass, so the buttons and the search under it
-  are not read through it. Its scroller is `data-floating-scroll`, not
-  the sheet's `data-sheet-scroll`, which index.css stops scrolling at
-  the pill and half.
-- The riding cards -- an airport's (`SheetCard`'s `ride`) and the
-  route's Brief, Nav Log, Profile and Stops (`CardLayer`) -- are the
-  Drawer's own nested drawers over the sheet (the owner,
-  2026-11-11; `components/sheet/CardStack`): each with its own snap point
+- Cards over the sheet are the Drawer's own nested drawers (the owner,
+  2026-11-11; `components/sheet/CardStack`), every card but the welcome
+  (the owner, 2026-11-13: "For webapp, why don't we make everything a
+  nested drawer except the welcome one?"): `SheetCard` for a thing's
+  card, the Map card, an airplane's profile and Emergency; `CardLayer`
+  for the route's Brief, Nav Log, Profile and Stops and for You
+  (`features/shell/ConsoleLayer`, its one head row Settings' gear and
+  the ✕, Settings and its pages inside it). Each with its own snap point
   among the sheet's three sizes, its grabber and its swipe, the sheet's
   swipe the card's while one is up, and its own Escape closing it. Each
   card sizes its own drawer (the owner, 2026-11-11): its snap point is its
@@ -552,13 +539,15 @@ inset), the bar's 48 points and its 4-point floor given back. Each page
 grabber is the plain `SheetGrabber`, its box 16 points tall (the owner,
 2026-11-13: "minimal space"), its 44-point hit area reaching off the
 sheet's edge over the map. The toggle gives way with the map's buttons
-all the way up and while a card slides (index.css), goes while flying
-and under Settings' layer, and rides a card's top while one is up. The
+all the way up and while a card slides (index.css), goes while flying,
+and rides a card's top while one is up, any card (the owner,
+2026-11-13: "airport card hides the fpl toggle"). The
 first flight's tip (`FplTip`) points at it while it shows FPL. The page up is the
 planner's place (`usePanelView`'s `view`: the plan is FPL, the search
-and the traffic are Search); the toggle picks it as a place is picked,
-so what each kept open comes back with it, and the toggle tapped over a
-card puts the card away with its page. The pill is the page's one row (the
+and the traffic are Search); the toggle picks it as a place is picked
+(`pickPage`), and tapped with cards up it closes them all first
+(`lib/openCards`' `closeEveryCard`, and You), as Android's
+`SheetNav.show` does, none of them kept to come back with its page. The pill is the page's one row (the
 route's figures on FPL); the route's figures sit at the foot on FPL
 alone. The Brief, the Nav Log, the Profile and the Stops are cards over
 FPL (`PlanPage`, `CardLayer`), the last three kept between their

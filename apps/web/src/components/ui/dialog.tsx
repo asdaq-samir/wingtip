@@ -80,12 +80,6 @@ function DialogContent({
   );
 }
 
-/** The stock popup alone, placed and dressed by its caller: a card that
- *  floats over the map with no dim behind it (You, ConsoleLayer). */
-function DialogPopup(props: DialogPrimitive.Popup.Props) {
-  return <DialogPrimitive.Popup data-slot="dialog-content" {...props} />;
-}
-
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return <div data-slot="dialog-header" className={cn("flex flex-col gap-1.5 text-center sm:text-left", className)} {...props} />;
 }
@@ -110,15 +104,4 @@ function DialogDescription({ className, ...props }: DialogPrimitive.Description.
   );
 }
 
-export {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogOverlay,
-  DialogPopup,
-  DialogPortal,
-  DialogTitle,
-  DialogTrigger,
-};
+export { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger };

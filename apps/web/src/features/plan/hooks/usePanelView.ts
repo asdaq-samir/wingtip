@@ -235,10 +235,13 @@ export function usePanelView({
   // it and the one kept for the place picked opened again. The place up
   // picked again puts its card away. At the height the panel is.
   const pickView = useCallback(
-    (next: PanelView) => {
+    (next: PanelView, forget = false) => {
       const leaving = next !== view;
       if (leaving && view !== "plan") firstPage.current = view;
-      if (leaving) {
+      // The page toggle's turn forgets the cards it closed (PageToggle):
+      // none comes back as its page is turned to again.
+      if (forget) keptCards.current = {};
+      else if (leaving) {
         keptCards.current[view] = Object.fromEntries(CARD_KEYS.map((key) => [key, address[key]])) as AddressChange;
         const replay = usePastFlight.getState();
         if (flight && past && replay.hex === flight && replay.id === past) {
@@ -261,8 +264,9 @@ export function usePanelView({
   // opened -- which nuqs makes at once, not in a transition: the pick at
   // once too, so the two land in one commit.
   // A page of the sheet picked (its toggle, PageToggle): FPL's
-  // the plan, the first the search's page as it was left.
-  const pickPage = useCallback((page: number) => pickView(page ? "plan" : firstPage.current), [pickView]);
+  // the plan, the first the search's page as it was left; the cards over
+  // either closed by the toggle and not kept.
+  const pickPage = useCallback((page: number) => pickView(page ? "plan" : firstPage.current, true), [pickView]);
   const pickLater = useCallback((next: PanelView) => setViewPick(next), []);
   // "Pick an airplane" asked from a screen that needs one (lib/pickAirplane).
   usePickAirplaneRequest(pickView);

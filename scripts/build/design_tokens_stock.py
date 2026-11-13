@@ -36,8 +36,6 @@ def css(tree):
         ("glass-fill-light", "%g%%" % (mat["glass-fill"] * 100)),
         ("glass-fill-dark", "%g%%" % (mat["glass-fill-dark"] * 100)),
         ("sheet-blur", "%gpx" % mat["sheet-blur"]),
-        ("card-fill", "%g%%" % (mat["card-fill"] * 100)),
-        ("card-blur", "%gpx" % mat["card-blur"]),
     ]
     for k, t in _tokens(g["motion"]).items():
         v = t["$value"]

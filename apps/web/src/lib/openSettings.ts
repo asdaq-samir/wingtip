@@ -21,11 +21,14 @@ export const useSettingsGroup = create<{ group: SettingsGroup | null }>(() => ({
 
 /** The app's Settings, the one way in to it: You opened with its Settings
  *  page over it (the page's row's key, components/ConsolePages), its ✕
- *  back to what was up, at `group` where one is asked for -- the Map
+ *  back to what was up (You itself where it was already up), at `group` where one is asked for -- the Map
  *  card's gear opens it at Map (components/SettingsButton; the owner,
  *  2026-11-13). */
 export function openSettings(group?: SettingsGroup) {
+  // From You's own gear, You already up: Settings is a page of it, its
+  // close back to You rather than out to the map.
+  const inside = useConsoleOpen.getState().open;
   openYou();
   useSettingsGroup.setState({ group: group ?? null });
-  useWantedPage.getState().want(["settings"]);
+  useWantedPage.getState().want(["settings"], inside);
 }

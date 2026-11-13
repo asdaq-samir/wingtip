@@ -46,12 +46,8 @@ export async function settle(page: Page) {
  *  Its `data-panel` is its own size, under a card too (a card's is on its
  *  own drawer, frontSheet): peek at rest, half or full when it is out. */
 export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]');
-/** The sheet in front: the top riding card's own drawer (CardStack: an
- *  airport's, the route's Brief, Nav Log, Profile, Stops), else the map's.
- *  A floating card (FloatingCards) has no sheet sizes; the sheet under it
- *  stays as it was. */
-export const frontSheet = (page: Page) =>
-  page.locator('[data-slot="map-panel"], [data-sheet-card]:not([data-floating-card])[data-open]').last();
+/** The sheet in front: the top card's own drawer (CardStack), else the map's. */
+export const frontSheet = (page: Page) => page.locator('[data-slot="map-panel"], [data-sheet-card][data-open]').last();
 
 /** The first row in sight: the sheet's, static over a card, at the pill too. */
 export async function showTabs(page: Page) {
@@ -128,8 +124,6 @@ export async function inSheet(page: Page, locator: Locator) {
   const panel = frontSheet(page);
   await locator.waitFor();
   const under = await locator.evaluate((el) => {
-    // A floating card scrolls inside itself, whatever the sheet's size.
-    if (el.closest("[data-floating-card]")) return false;
     const sheet = el.closest("[data-sheet-card], [data-slot=map-panel]");
     if (!sheet || sheet.getAttribute("data-panel") === "full") return false;
     const box = sheet.getBoundingClientRect();
@@ -204,8 +198,8 @@ export async function openConsole(page: Page) {
   await showTabs(page);
   if (!(await page.getByTestId("account-button").isVisible())) await grabberTo(page, "half");
   await page.getByTestId("account-button").click();
-  // You floats over the map whole, as tall as it is (ConsoleLayer): no sheet to raise.
-  await expect(page.getByTestId("console-sheet")).toBeVisible();
+  await expect(page.getByTestId("console-sheet")).toBeVisible(); // there before it is raised
+  await expandConsole(page);
 }
 
 /** Settings, You's row, all the way out, its Look tiles on top
@@ -233,11 +227,15 @@ export async function openMapSettings(page: Page) {
   await expect(page.getByTestId("map-settings")).toBeVisible();
 }
 
-/** The console all the way out: You is a floating card as tall as what
- *  is in it (ConsoleLayer, the owner's Apple Maps screenshot, 2026-11-13),
- *  scrolling inside past the screen's top, so it is out once it is open. */
+/** The console all the way out. On a phone it is a card of its own over
+ *  the map's sheet (ConsoleLayer's CardLayer, the stock Drawer's nested
+ *  drawer, as every card is; the owner, 2026-11-13), opened half way as
+ *  every card is: its grabber brings it all the way, as a finger's drag
+ *  does. From `md` up the side panel has one height, and this does nothing. */
 export async function expandConsole(page: Page) {
+  if (page.viewportSize()!.width >= 768) return;
   await expect(page.getByTestId("console-sheet")).toBeVisible();
+  await grabberTo(page, "full");
 }
 
 /** The console's title, a menu of roles -- Pilot, Developer for whoever

@@ -70,13 +70,12 @@ test(
     await expect(pilot).toBeVisible();
     // You, from the account button beside the search: its own close at its top.
     await expect(pilot.getByTestId("console-close")).toBeVisible();
-    // A floating card of its own over the map (ConsoleLayer), not a layer of the sheet.
-    expect(await pilot.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(false);
+    // A card over the map's sheet, its nested drawer as every card is
+    // (ConsoleLayer's CardLayer; the owner, 2026-11-13), not a dialog of its own.
+    expect(await pilot.evaluate((el) => !!el.closest('[data-slot="map-panel"] [data-sheet-card]'))).toBe(true);
     // The role, a menu, in Pilot Details: Pilot (chosen here), Developer for
-    // a developer, and Sign out last; who is signed in beside it. You is a
-    // dialog of its own, named for the console.
+    // a developer, and Sign out last; who is signed in beside it.
     await expect(pilot).toHaveAccessibleName("Pilot");
-    await expect(page.getByRole("dialog", { name: "Pilot" })).toBeVisible();
     await openAccount(page);
     await expect(pilot.getByTestId("role-menu")).toHaveText("Pilot");
     // Who is signed in, the role menu's title.
@@ -121,40 +120,36 @@ test(
   },
 );
 
-test("You floats over the map as Apple Maps' account card does: in from a phone's sides and foot, the sheet under it left as it was", async ({
+test("You is a card over the map's sheet as every card is: its nested drawer, half as it opens, the sheet under it left as it was", async ({
   page,
 }) => {
-  // A card of its own over the map and its buttons (ConsoleLayer, the
-  // owner's Apple Maps screenshot, 2026-11-13), where it was a layer of
-  // the map's panel: ten points in from a phone's sides and foot, only as
-  // tall as what is in it; from `sm` up at the top corner over the panel.
+  // The stock Drawer's nested drawer over the sheet (ConsoleLayer's
+  // CardLayer; the owner, 2026-11-13: "For webapp, why don't we make
+  // everything a nested drawer except the welcome one?"): the sheet's
+  // sizes, half as it opens, its one head row the gear and the ✕.
   await page.goto("/app/plan");
   await settle(page);
   const panel = page.locator('[data-slot="map-panel"]');
   await grabberTo(page, "half");
   await settled(panel);
   const before = (await panel.boundingBox())!;
-  await openConsole(page);
+  await page.getByTestId("account-button").click();
   const pilot = consoleSheet(page);
   await expect(pilot.getByTestId("setup-page")).toBeVisible();
-  await pilot.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
-  const viewport = page.viewportSize();
-  if (!viewport) throw new Error("no viewport configured");
-  const box = (await pilot.boundingBox())!;
+  const card = page.locator("[data-sheet-card]").filter({ has: pilot });
+  await expect(card).toHaveCount(1);
+  expect(await card.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
+  const viewport = page.viewportSize()!;
+  if (viewport.width < 768) await expect(card).toHaveAttribute("data-panel", "half");
   // The sheet under it where it was.
   await expect(panel).toHaveAttribute("data-panel", "half");
   const now = (await panel.boundingBox())!;
   expect(Math.abs(now.y - before.y)).toBeLessThan(1);
-  if (viewport.width < 640) {
-    expect(Math.round(box.x)).toBe(10);
-    expect(Math.round(viewport.width - box.x - box.width)).toBe(10);
-    expect(Math.round(viewport.height - box.y - box.height)).toBe(10);
-  } else {
-    expect(Math.round(box.x)).toBe(10);
-    expect(Math.round(box.y)).toBe(10);
-  }
-  // Within the screen, scrolling inside where it is taller.
-  expect(box.y).toBeGreaterThan(0);
+  // Its one head row: the gear at the left, level with the ✕ at the right.
+  const gear = (await pilot.getByTestId("settings-row").boundingBox())!;
+  const close = (await pilot.getByTestId("console-close").boundingBox())!;
+  expect(Math.abs(gear.y - close.y)).toBeLessThan(2);
+  expect(gear.x).toBeLessThan(close.x);
   // The name large and the address smaller under it, as Apple's card
   // (the owner, 2026-11-13); an address is never the large line -- with
   // no name given it asks for one.

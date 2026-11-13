@@ -90,7 +90,8 @@ export function ConsolePages({
     if (wanted && known.split(" ").includes(wanted)) {
       setFrom(wanted);
       setOpen(wanted);
-      setDirect(true);
+      // Asked from inside the console (You's gear), as its row opens it.
+      setDirect(!useWantedPage.getState().inside);
     }
   }
   useEffect(() => {

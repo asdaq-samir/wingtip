@@ -55,16 +55,3 @@ test("a card closed over another leaves the sheet knowing the one under it is st
   act(() => useSheetCards.setState((s) => ({ stack: s.stack.map((e) => ({ ...e, state: "kept" as const })) })));
   await waitFor(() => expect(cardUp()).toBe(false));
 });
-
-// Every card but an airport's floats over the map (FloatingCards; the
-// owner, 2026-11-13), drawn beside the sheet's Drawer: none of them is a
-// drawer nested over the sheet, whose content stays as it was under it.
-test("a floating card is no drawer over the sheet, alone or over a riding one", async () => {
-  render(<Sheet />);
-  act(() => useSheetCards.setState({ stack: [{ ...card("map"), at: undefined, float: true }] }));
-  await waitFor(() => expect(screen.queryByTestId("map")).toBeNull());
-  expect(cardUp()).toBe(false);
-  act(() => useSheetCards.setState({ stack: [card("airport"), { ...card("notam"), at: undefined, float: true }] }));
-  await waitFor(() => expect(cardUp()).toBe(true));
-  expect(screen.queryByTestId("notam")).toBeNull();
-});

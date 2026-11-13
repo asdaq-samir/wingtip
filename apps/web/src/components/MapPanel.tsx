@@ -15,7 +15,6 @@ import { useDrawn } from "./sheet/useDrawn";
 import { SHEET_BELOW, SheetParts, type PartsProps } from "./sheet/SheetParts";
 import { SheetGrabber } from "./sheet/SheetGrabber";
 import { CardStack, type StackProps } from "./sheet/CardStack";
-import { FloatingCards } from "./sheet/FloatingCards";
 import { SheetDrawer } from "./sheet/SheetDrawer";
 import { useRidingCard } from "./sheet/sheetTopSlot";
 import type { SheetPages } from "./sheet/SheetPages";
@@ -146,12 +145,12 @@ export default function MapPanel(props: Props) {
   // card alone over them (`layer` "card") is drawn from inside one, the
   // Brief from FPL's (PlanPage), so put away with them it never opened.
   const pages = props.pages && !flying ? props.pages : undefined;
-  // Turned by their toggle (PageToggle) only with no card over them (a page
-  // picked puts the card away with it, usePanelView). Told to the toggle,
-  // drawn with the map's buttons.
-  const toggled = layer === "tab" ? pages : undefined;
-  const pageAt = toggled?.at;
-  const pageGo = toggled?.go;
+  // Turned by their toggle (PageToggle), a card over them or not: tapped
+  // with one up it closes the cards and turns the page (the owner,
+  // 2026-11-13: "airport card hides the fpl toggle"). Told to the toggle,
+  // drawn with the map's buttons, which ride the front card's top.
+  const pageAt = pages?.at;
+  const pageGo = pages?.go;
   useEffect(() => {
     usePageToggle.setState({ pages: pageGo && pageAt !== undefined ? { at: pageAt, go: pageGo } : null });
   }, [pageAt, pageGo]);
@@ -256,63 +255,54 @@ export default function MapPanel(props: Props) {
 
   if (!onPhone)
     return (
-      <>
-        {/* eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the side panel hears the Escape pressed in it, a keyboard convenience; its controls are its own */}
-        <section
-          {...common}
-          ref={setSheetNode}
-          // Escape a level back first, a page's close in it (use-shortcuts'
-          // backOne), then the panel lowered; taken, so the shortcuts' own
-          // Escape on the document does not go back a second level.
-          onKeyDown={(event: KeyboardEvent) => {
-            if (event.key !== "Escape" || event.defaultPrevented) return;
-            if (backOne(event.currentTarget.ownerDocument) || lower()) event.preventDefault();
-          }}
-          className={cn(
-            "fixed left-[max(1rem,env(safe-area-inset-left))] z-40 flex flex-col pb-4 overflow-clip text-foreground outline-none print:static",
-            look,
-          )}
-          // Out, the window's height inside its float on either side.
-          style={{ top: FLOAT_PX, bottom: size === "peek" ? undefined : FLOAT_PX, borderRadius: PILL_RADIUS }}
-        >
-          <SheetParts {...shared} />
-          {!cardsUp && sheetGrabber}
-          {/* The cards over it, each covering the panel, its own scroller. */}
-          <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40 rounded-[inherit]" />
-          <CardStack {...stackProps} />
-        </section>
-        {/* The cards that float over it and the map (FloatingCards). */}
-        <FloatingCards />
-      </>
+      // eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the side panel hears the Escape pressed in it, a keyboard convenience; its controls are its own
+      <section
+        {...common}
+        ref={setSheetNode}
+        // Escape a level back first, a page's close in it (use-shortcuts'
+        // backOne), then the panel lowered; taken, so the shortcuts' own
+        // Escape on the document does not go back a second level.
+        onKeyDown={(event: KeyboardEvent) => {
+          if (event.key !== "Escape" || event.defaultPrevented) return;
+          if (backOne(event.currentTarget.ownerDocument) || lower()) event.preventDefault();
+        }}
+        className={cn(
+          "fixed left-[max(1rem,env(safe-area-inset-left))] z-40 flex flex-col pb-4 overflow-clip text-foreground outline-none print:static",
+          look,
+        )}
+        // Out, the window's height inside its float on either side.
+        style={{ top: FLOAT_PX, bottom: size === "peek" ? undefined : FLOAT_PX, borderRadius: PILL_RADIUS }}
+      >
+        <SheetParts {...shared} />
+        {!cardsUp && sheetGrabber}
+        {/* The cards over it, each covering the panel, its own scroller. */}
+        <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40 rounded-[inherit]" />
+        <CardStack {...stackProps} />
+      </section>
     );
 
   return (
-    <>
-      <SheetDrawer
-        fromBottom={fromBottom}
-        snapPoints={snaps.points}
-        snapPoint={snaps.at[size]}
-        snapped={snapped}
-        popupRef={setSheetNode}
-        lower={lower}
-        ready={ready}
-        popup={common}
-        look={look}
-        grabber={!cardsUp && sheetGrabber}
-        topSlot={ridingCard === null}
-        cards={
-          // The cards over it, inside its popup: its place.
-          <>
-            <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40" />
-            <CardStack {...stackProps} />
-          </>
-        }
-      >
-        <SheetParts {...shared} />
-      </SheetDrawer>
-      {/* The cards that float over the sheet and the map, beside its Drawer,
-          not in it: none of them is a drawer nested over it (FloatingCards). */}
-      <FloatingCards />
-    </>
+    <SheetDrawer
+      fromBottom={fromBottom}
+      snapPoints={snaps.points}
+      snapPoint={snaps.at[size]}
+      snapped={snapped}
+      popupRef={setSheetNode}
+      lower={lower}
+      ready={ready}
+      popup={common}
+      look={look}
+      grabber={!cardsUp && sheetGrabber}
+      topSlot={ridingCard === null}
+      cards={
+        // The cards over it, inside its popup: its place.
+        <>
+          <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40" />
+          <CardStack {...stackProps} />
+        </>
+      }
+    >
+      <SheetParts {...shared} />
+    </SheetDrawer>
   );
 }

@@ -1,5 +1,5 @@
 import * as maplibregl from "maplibre-gl";
-import type { LayerSpecification, MapMouseEvent, StyleSpecification } from "maplibre-gl";
+import type { LayerSpecification, MapMouseEvent, PaddingOptions, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 // The worker MapLibre parses its sources in (worker.ts).
 import "../../lib/map/gl/worker";
@@ -17,7 +17,7 @@ import { DRAWER_MS } from "../sheet/insets";
 import { drawerEasing } from "./drawerEasing";
 import { watchMapErrors } from "./mapErrors";
 import { useRouteFit } from "./useRouteFit";
-import { inRoom, keepStill, padOf, useTappedInSight } from "./cardRoom";
+import { inRoom, keepStill, useTappedInSight } from "./cardRoom";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
 import { usePreferences } from "../../lib/preferences";
@@ -551,4 +551,9 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       {!bare && <MapControls />}
     </div>
   );
+}
+
+/** What the panel covers, as MapLibre's padding: its middle is the map's. */
+function padOf({ top, bottom, left }: MapInsets): Required<PaddingOptions> {
+  return { top, bottom, left, right: 0 };
 }

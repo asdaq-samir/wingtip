@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, settle, settled, sideDrawer, frontSheet } from "./helpers";
-import { expectPage, toggle } from "./sheetPages";
+import { consoleSheet, grabberTo, openMapSettings, settle, settled, sideDrawer, frontSheet } from "./helpers";
+import { expectPage, expectShown, openAirport, toggle } from "./sheetPages";
 
 /**
  * The sheet's two pages, Search and FPL, turned by one round glass button
@@ -12,8 +12,10 @@ import { expectPage, toggle } from "./sheetPages";
  * magnifier on FPL. No bar under the sheet: its sizes stand on the
  * screen's foot. No sideways swipe turns a page; the grabber is the one
  * plain bar. With no route FPL is its empty box, a route made goes to FPL,
- * and a drag up or down still sizes the sheet on either page. The cards
- * over the pages: sheet-pages-cards.spec.
+ * and a drag up or down still sizes the sheet on either page. With a card
+ * open it stays in sight, riding the front card's top, and a tap closes
+ * the cards and turns the page (the owner, 2026-11-13: "airport card hides
+ * the fpl toggle"). The cards over the pages: sheet-pages-cards.spec.
  */
 
 test("Search to FPL and back by the toggle, the sheet's size kept", { tag: "@smoke" }, async ({ page }) => {
@@ -139,10 +141,11 @@ test("the toggle gives way all the way up, as the map's buttons do, and the deep
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "full");
-  // As the map's buttons do (index.css): only a sliver showed past the edge.
-  await expect(toggle(page)).toHaveCSS("opacity", "0");
+  // As the map's buttons do (index.css): only a sliver showed past the
+  // edge. The fade is its glass's, the button's parent (data-map-food).
+  await expect(toggle(page).locator("..")).toHaveCSS("opacity", "0");
   await grabberTo(page, "half");
-  await expect(toggle(page)).toHaveCSS("opacity", "1");
+  await expect(toggle(page).locator("..")).toHaveCSS("opacity", "1");
   // The deep links still name the pages.
   await page.goto("/app/plan?open=fpl");
   await settle(page);
@@ -221,4 +224,55 @@ test("a sideways drag on the Nearest row is the row's, and no page turns", async
   await page.mouse.move(box.x + box.width * 0.1, box.y + box.height / 2, { steps: 12 });
   await page.mouse.up();
   await expectPage(page, 0);
+});
+
+test("with a card open the toggle stays in sight on its top, and a tap closes the cards and turns the page", async ({ page }) => {
+  // The owner, 2026-11-13: "airport card hides the fpl toggle". As
+  // Android's SheetNav.show closes the cards over the search first.
+  const phone = page.viewportSize()!.width < 768;
+  const openCards = page.locator("[data-sheet-card][data-open]");
+  await page.goto("/app/plan");
+  await settle(page);
+  await grabberTo(page, "half");
+  await expectPage(page, 0);
+
+  // An airport's card over Search: the toggle in sight, riding the card's top.
+  await openAirport(page, "KOSH");
+  await expect(toggle(page)).toBeVisible();
+  await expect(toggle(page).locator("..")).toHaveCSS("opacity", "1");
+  if (phone) {
+    const card = (await frontSheet(page).boundingBox())!;
+    const glass = (await toggle(page).locator("..").boundingBox())!;
+    expect(glass.y + glass.height).toBeLessThanOrEqual(card.y + 1);
+    expect(card.y - (glass.y + glass.height)).toBeLessThanOrEqual(32);
+  }
+  await toggle(page).click();
+  await expect(page).not.toHaveURL(/[?&]place=/);
+  await expect(openCards).toHaveCount(0);
+  await expectShown(page, 1);
+  // Turned back, the card it closed does not come back with its page.
+  await toggle(page).click();
+  await expectShown(page, 0);
+  await expect(openCards).toHaveCount(0);
+
+  // The Map card the same.
+  await openMapSettings(page);
+  await expect(toggle(page)).toBeVisible();
+  await toggle(page).click();
+  await expect(page.getByTestId("map-settings")).toHaveCount(0);
+  await expectShown(page, 1);
+
+  // And You, from the avatar on Search.
+  await toggle(page).click();
+  await expectShown(page, 0);
+  // The search typed into under the airport's card kept as it was left.
+  const cancel = sideDrawer(page).getByRole("button", { name: "Cancel", exact: true });
+  if (await cancel.isVisible()) await cancel.click();
+  await page.getByTestId("account-button").click();
+  await expect(consoleSheet(page)).toBeVisible();
+  await expect(toggle(page)).toBeVisible();
+  await toggle(page).click();
+  await expect(consoleSheet(page)).toHaveCount(0);
+  await expect(openCards).toHaveCount(0);
+  await expectShown(page, 1);
 });
