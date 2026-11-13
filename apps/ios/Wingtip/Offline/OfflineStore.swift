@@ -167,10 +167,8 @@ final class OfflineStore: @unchecked Sendable {
     static func archive(kind: String, scale: Int) -> String { scale == 1 ? kind : "\(kind)@\(scale)x" }
 
     static func centre(z: Int, x: Int, y: Int) -> (Double, Double) {
-        let n = pow(2.0, Double(z))
-        let lon = (Double(x) + 0.5) / n * 360 - 180
-        let lat = atan(sinh(.pi * (1 - 2 * (Double(y) + 0.5) / n))) * 180 / .pi
-        return (lat, lon)
+        let c = TileMath.centre(z: z, x: x, y: y)
+        return (c.lat, c.lon)
     }
 }
 

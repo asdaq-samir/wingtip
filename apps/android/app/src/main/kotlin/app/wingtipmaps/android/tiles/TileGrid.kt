@@ -2,9 +2,11 @@ package app.wingtipmaps.android.tiles
 
 import org.maplibre.android.constants.GeometryConstants
 import kotlin.math.PI
+import kotlin.math.atan
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.ln
+import kotlin.math.sinh
 import kotlin.math.tan
 
 /**
@@ -29,4 +31,10 @@ object TileGrid {
         val r = Math.toRadians(lat.coerceIn(GeometryConstants.MIN_MERCATOR_LATITUDE, GeometryConstants.MAX_MERCATOR_LATITUDE))
         return floor((1.0 - ln(tan(r) + 1.0 / cos(r)) / PI) / 2.0 * n).toInt().coerceIn(0, n - 1)
     }
+
+    /** Web Mercator's y of a latitude on the unit sphere, in radians. */
+    fun mercatorY(lat: Double): Double = ln(tan(PI / 4 + Math.toRadians(lat) / 2))
+
+    /** The latitude of a Web Mercator y on the unit sphere. */
+    fun latitude(mercatorY: Double): Double = Math.toDegrees(atan(sinh(mercatorY)))
 }

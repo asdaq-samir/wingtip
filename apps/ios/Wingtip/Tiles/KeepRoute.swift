@@ -14,11 +14,8 @@ enum KeepRoute {
     }
 
     static func tile(lat: Double, lon: Double, zoom: Int) -> Tile {
-        let n = pow(2.0, Double(zoom))
-        let x = Int(((lon + 180) / 360 * n).rounded(.down))
-        let latRad = lat * .pi / 180
-        let y = Int(((1 - log(tan(latRad) + 1 / cos(latRad)) / .pi) / 2 * n).rounded(.down))
-        return Tile(z: zoom, x: min(max(x, 0), Int(n) - 1), y: min(max(y, 0), Int(n) - 1))
+        let t = TileMath.tile(lat: lat, lon: lon, zoom: zoom)
+        return Tile(z: zoom, x: t.x, y: t.y)
     }
 
     /// The tiles a corridor `halfWidthNm` either side of the line needs
