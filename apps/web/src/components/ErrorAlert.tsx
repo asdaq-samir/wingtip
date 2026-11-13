@@ -14,7 +14,8 @@ import { useFailedAction } from "../lib/problems";
  * nothing to say (2026-10-10).
  */
 export default function ErrorAlert() {
-  const failed = useFailedAction((s) => s.failed);
+  // Held back while the welcome is up (lib/problems' `held`): shown once it closes.
+  const failed = useFailedAction((s) => (s.held ? null : s.failed));
   // Kept once it has been, so it closes as it opened.
   const [needed, setNeeded] = useState(false);
   if (failed && !needed) setNeeded(true);

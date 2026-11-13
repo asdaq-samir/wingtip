@@ -61,7 +61,7 @@ export default function WelcomeSheet({ open, onGo }: { open: boolean; onGo: () =
           finalFocus={false}
           className="h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)]"
         >
-          <PhoneSheetBody edge={edge} className="flex flex-1 flex-col px-6 pt-10">
+          <PhoneSheetBody edge={edge} className="flex flex-1 flex-col px-6 pt-7">
             <Welcome title={<Drawer.Title className={TITLE}>{TITLE_WORDS}</Drawer.Title>} onGo={onGo} />
           </PhoneSheetBody>
         </PhoneSheetContent>
@@ -91,7 +91,7 @@ function Welcome({ title, onGo }: { title: ReactNode; onGo: () => void }) {
   return (
     <>
       {title}
-      <ul className="mt-8 flex flex-col gap-5 px-2">
+      <ul className="mt-6 flex flex-col gap-4 px-2">
         {ROWS.map(({ icon: Icon, title: name, line }) => (
           <li key={name} className="flex items-start gap-4">
             <Icon className="mt-0.5 size-8 shrink-0 text-tint" aria-hidden="true" />
@@ -104,7 +104,7 @@ function Welcome({ title, onGo }: { title: ReactNode; onGo: () => void }) {
       </ul>
       <LookRows />
       {/* The one way on at the sheet's foot, the space above it its own. */}
-      <div className="mt-auto pt-6">
+      <div className="mt-auto pt-5">
         <Button
           type="button"
           size="lg"
@@ -126,7 +126,7 @@ function LookRows() {
   const theme = useThemePick();
   const { value, onChange, options } = useAppearancePick();
   return (
-    <ListGroup className="mt-7">
+    <ListGroup className="mt-6">
       <ListRow title="Theme">
         <PullDown label="Theme" {...theme} align="end" testId="welcome-theme" />
       </ListRow>
