@@ -19,6 +19,10 @@ import java.time.Instant
  * hangs, which no handler in the app sees.
  */
 object ExitReasons {
+    /** How much of a thread dump is read into memory; the gateway holds
+     *  the limit of what it keeps (DiagnosticsController). */
+    private const val TRACE_READ_MAX = 64_000
+
     /** The fault kind of an exit reason, or null for an ordinary end. */
     fun kindOf(reason: Int): String? = when (reason) {
         ApplicationExitInfo.REASON_CRASH, ApplicationExitInfo.REASON_CRASH_NATIVE -> "crash"
@@ -51,7 +55,7 @@ object ExitReasons {
         return FaultReport(
             kind = kind,
             signature = signature,
-            detail = trace.orEmpty().take(DiagnosticsBodies.MAX_DETAIL),
+            detail = trace.orEmpty(),
             at = Instant.ofEpochMilli(timestampMs).toString(),
         )
     }
@@ -82,7 +86,7 @@ object ExitReasons {
         if (exit.reason != ApplicationExitInfo.REASON_ANR) return null
         return runCatching {
             exit.traceInputStream?.bufferedReader()?.use { reader ->
-                val out = CharArray(DiagnosticsBodies.MAX_DETAIL)
+                val out = CharArray(TRACE_READ_MAX)
                 var n = 0
                 while (n < out.size) {
                     val read = reader.read(out, n, out.size - n)

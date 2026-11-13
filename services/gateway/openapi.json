@@ -782,8 +782,6 @@
             "items" : {
               "$ref" : "#/components/schemas/FaultReport"
             },
-            "maxItems" : 20,
-            "minItems" : 0,
             "type" : "array"
           },
           "metrics" : {
@@ -794,8 +792,6 @@
             "type" : "object"
           },
           "os" : {
-            "maxLength" : 40,
-            "minLength" : 0,
             "type" : "string"
           },
           "page" : {
@@ -1114,8 +1110,6 @@
             "type" : "string"
           },
           "detail" : {
-            "maxLength" : 64000,
-            "minLength" : 0,
             "type" : "string"
           },
           "kind" : {
@@ -1123,8 +1117,6 @@
             "type" : "string"
           },
           "signature" : {
-            "maxLength" : 2000,
-            "minLength" : 0,
             "type" : "string"
           }
         },

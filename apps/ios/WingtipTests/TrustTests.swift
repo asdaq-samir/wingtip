@@ -22,26 +22,19 @@ struct TrustTests {
         #expect(GWDiagnosticsReport(version: "1", os: "iOS", tablet: true).device == "tablet")
     }
 
-    @Test func aFaultIsOneLineWithinTheGatewaysLimits() {
-        var report = GWDiagnosticsReport(version: "1", os: String(repeating: "x", count: 60), tablet: false)
-        #expect(report.os.count == 40)
+    @Test func aFaultIsOneLineAndTheGatewayHoldsTheLimits() {
+        var report = GWDiagnosticsReport(version: "1", os: "iOS", tablet: false)
         report.add(kind: "crash", signature: "NSRangeException:\nindex 3 beyond bounds", detail: String(repeating: "a", count: 70_000), at: .now)
-        report.add(kind: "hang", signature: String(repeating: "s", count: 3000), detail: nil, at: .now)
         report.add(kind: "cpu", signature: "  ", detail: nil, at: .now)
         #expect(report.faults[0].signature == "NSRangeException: index 3 beyond bounds")
-        #expect(report.faults[0].detail.count == 64_000)
-        #expect(report.faults[1].signature.count == 2000)
-        #expect(report.faults[2].signature == "cpu")
-        for _ in 0..<30 { report.add(kind: "hang", signature: "Hang", detail: nil, at: .now) }
-        #expect(report.faults.count == 20)
+        #expect(report.faults[0].detail.count == 70_000)
+        #expect(report.faults[1].signature == "cpu")
     }
 
-    @Test func onlyFiguresTheGatewayKeepsAreMeasured() {
+    @Test func onlyFiniteFiguresAreMeasured() {
         var report = GWDiagnosticsReport(version: "1", os: "iOS", tablet: false)
         report.measure("launch_ms_p50", 420)
         report.measure("hang_s", nil)
-        report.measure("bad", -1)
-        report.measure("huge", 2e8)
         report.measure("nan", .nan)
         #expect(report.metrics.additionalProperties == ["launch_ms_p50": 420])
         #expect(!report.isEmpty)
