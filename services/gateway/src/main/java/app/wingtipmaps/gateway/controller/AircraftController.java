@@ -14,6 +14,7 @@ import app.wingtipmaps.gateway.dto.SquawkRequest;
 import app.wingtipmaps.gateway.dto.VorCheckRequest;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerVorCheckOutput;
+import app.wingtipmaps.gateway.service.AircraftLimits;
 import app.wingtipmaps.gateway.service.AircraftService;
 import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.service.PilotService;
@@ -50,10 +51,16 @@ public class AircraftController {
     private final SquawkService squawks;
     private final DueItemService dueItems;
     private final AircraftDtos dtos;
+    private final AircraftLimits limits;
 
     public AircraftController(
-            AircraftService aircraftService, SquawkService squawks, PlannerClient planner, DueItemService dueItems) {
+            AircraftService aircraftService,
+            SquawkService squawks,
+            PlannerClient planner,
+            DueItemService dueItems,
+            AircraftLimits limits) {
         this.aircraftService = aircraftService;
+        this.limits = limits;
         this.squawks = squawks;
         this.dueItems = dueItems;
         this.dtos = new AircraftDtos(squawks, planner, dueItems);
@@ -67,6 +74,7 @@ public class AircraftController {
 
     @PostMapping
     public ResponseEntity<AircraftDto> add(Pilot pilot, @Valid @RequestBody AircraftRequest request) {
+        limits.check(request);
         return ResponseEntity.ok(toDto(aircraftService.add(
                 pilot,
                 request.tailNumber(),
@@ -86,6 +94,7 @@ public class AircraftController {
     @PutMapping("/{id}")
     public ResponseEntity<AircraftDto> update(
             Pilot pilot, @PathVariable Long id, @Valid @RequestBody AircraftRequest request) {
+        limits.check(request);
         return ResponseEntity.of(aircraftService
                 .update(
                         pilot,

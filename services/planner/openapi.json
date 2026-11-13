@@ -24188,6 +24188,51 @@
         "summary": "Inspections"
       }
     },
+    "/api/aircraft/problems": {
+      "post": {
+        "description": "`{field: words}` for each field of the request that may not be\nsaved, in the words the apps show under it; `{}` where it may be. The\nfigures come as the gateway's JSON numbers and are read as the form's\ntyped text, as the engine takes them; a field left out or null is\nblank.",
+        "operationId": "check_airplane_api_aircraft_problems_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Form",
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Check Airplane Api Aircraft Problems Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Check Airplane",
+        "x-internal": "gateway"
+      }
+    },
     "/api/airport-aerial/{ident}.jpg": {
       "get": {
         "description": "The field's aerial photo from the USGS National Map's imagery\n(public domain), framed on its runways (wingtip.airport_photos.aerial):\nasked of the USGS once and kept, a week in the browser.",

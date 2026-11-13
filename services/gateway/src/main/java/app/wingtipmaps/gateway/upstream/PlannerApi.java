@@ -15,6 +15,7 @@ import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
 import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -57,6 +58,11 @@ public interface PlannerApi {
 
     @PostExchange("/api/aircraft/inspections")
     PlannerInspections inspections(@RequestBody PlannerInspectionsAsk ask);
+
+    /** What is wrong with an airplane's fields, by field (the engine's
+     *  aircraft_problems): AircraftLimits. */
+    @PostExchange("/api/aircraft/problems")
+    Map<String, String> aircraftProblems(@RequestBody Map<String, Object> form);
 
     /** The changes' sources, the two briefings embedded as the JSON they
      *  came as (PlannerClient.changesAsk), never parsed here. */

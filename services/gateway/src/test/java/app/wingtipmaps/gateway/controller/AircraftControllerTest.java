@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -20,6 +22,7 @@ import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.AircraftDto;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerVorCheckOutput;
+import app.wingtipmaps.gateway.service.AircraftLimits;
 import app.wingtipmaps.gateway.service.AircraftService;
 import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.service.PilotService;
@@ -27,6 +30,7 @@ import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.SquawkService;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,6 +67,10 @@ class AircraftControllerTest {
      *  due here unless a test says. */
     @MockitoBean
     private PlannerClient planner;
+
+    /** The engine's limits, asked through the planner: nothing wrong unless a test says. */
+    @MockitoBean
+    private AircraftLimits limits;
 
     private static final PlannerInspections NOTHING_DUE = new PlannerInspections();
 
@@ -104,50 +112,26 @@ class AircraftControllerTest {
                 .andExpect(jsonPath("$[0].tailNumber").value("N12345"));
     }
 
+    /** What the engine's aircraft_problems finds wrong (AircraftLimits,
+     *  its cases the engine's own tests and the shared fixture
+     *  aircraftForm.json) is a 400 naming each field, and nothing is saved. */
     @Test
-    void add_returns400_whenTailNumberIsBlank() throws Exception {
+    void add_returns400_namingEachField_whenTheLimitsRefuseIt() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
+        willThrow(new AircraftLimits.Refused(Map.of("cruisePowerPct", "Cruise power must be between 40 and 100%")))
+                .given(limits)
+                .check(any());
 
-        mockMvc.perform(
-                        post("/api/aircraft")
-                                .with(oidcLogin())
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        "{\"tailNumber\":\"\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":110,\"fuelBurnGph\":8.5}"))
+        mockMvc.perform(post("/api/aircraft")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"tailNumber\":\"N1\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":110,"
+                                + "\"fuelBurnGph\":8.5,\"cruisePowerPct\":30}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.startsWith("Invalid request: ")));
-    }
-
-    /** Longer than the column was a database error, reported as a
-     *  tail number already on file. */
-    @Test
-    void add_returns400_namingTheField_whenTheTailNumberIsLongerThanItsColumn() throws Exception {
-        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-
-        mockMvc.perform(
-                        post("/api/aircraft")
-                                .with(oidcLogin())
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        "{\"tailNumber\":\"N12345678901234567\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":110,\"fuelBurnGph\":8.5}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[0]").value("tailNumber: tailNumber must be at most 16 characters"));
-    }
-
-    @Test
-    void add_returns400_whenCruiseTasIsNotPositive() throws Exception {
-        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-
-        mockMvc.perform(
-                        post("/api/aircraft")
-                                .with(oidcLogin())
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        "{\"tailNumber\":\"N1\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":0,\"fuelBurnGph\":8.5}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.startsWith("Invalid request: ")))
+                .andExpect(jsonPath("$.errors[0]").value("cruisePowerPct: Cruise power must be between 40 and 100%"));
+        verifyNoInteractions(aircraftService);
     }
 
     @Test
@@ -247,60 +231,6 @@ class AircraftControllerTest {
                 .andExpect(jsonPath("$.equipment").value("SDFGRY"))
                 .andExpect(jsonPath("$.surveillance").value("B1"))
                 .andExpect(jsonPath("$.colour").value("White blue stripes"));
-    }
-
-    /** Item 10a is letters and figures (TBL 4-2's E1, J1, P1 among them),
-     *  at most 40 here; item 10b at most 20 (TBL 4-3); the colour at most
-     *  its column's 40. Anything else is refused, naming the field. */
-    @Test
-    void add_returns400_forAFlightPlanItemTheFormDoesNotTake() throws Exception {
-        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-        String[][] cases = {
-            {"\"equipment\":\"S/D\"", "equipment"},
-            {"\"equipment\":\"" + "S".repeat(41) + "\"", "equipment"},
-            {"\"surveillance\":\"B1 C\"", "surveillance"},
-            {"\"surveillance\":\"" + "C".repeat(21) + "\"", "surveillance"},
-            {"\"colour\":\"" + "w".repeat(41) + "\"", "colour"},
-        };
-        for (String[] c : cases) {
-            mockMvc.perform(post("/api/aircraft")
-                            .with(oidcLogin())
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"tailNumber\":\"N1\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":110,"
-                                    + "\"fuelBurnGph\":8.5," + c[0] + "}"))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.errors[0]").value(org.hamcrest.Matchers.startsWith(c[1] + ":")));
-        }
-    }
-
-    /** A power no cruise table has is refused, as the planner refuses it. */
-    @Test
-    void add_returns400_whenTheCruisePowerIsOutsideACruiseTable() throws Exception {
-        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-
-        for (int power : new int[] {30, 101}) {
-            mockMvc.perform(post("/api/aircraft")
-                            .with(oidcLogin())
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"tailNumber\":\"N1\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":110,"
-                                    + "\"fuelBurnGph\":8.5,\"cruisePowerPct\":" + power + "}"))
-                    .andExpect(status().isBadRequest());
-        }
-    }
-
-    @Test
-    void add_returns400_whenTheClimbSpeedIsNotPositive() throws Exception {
-        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-
-        mockMvc.perform(post("/api/aircraft")
-                        .with(oidcLogin())
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"tailNumber\":\"N1\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":110,"
-                                + "\"fuelBurnGph\":8.5,\"climbTasKt\":0}"))
-                .andExpect(status().isBadRequest());
     }
 
     @Test
