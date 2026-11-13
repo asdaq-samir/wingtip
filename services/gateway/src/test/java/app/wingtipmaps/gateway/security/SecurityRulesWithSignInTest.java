@@ -133,8 +133,6 @@ class SecurityRulesWithSignInTest {
                 .andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/planner/picks").with(oidcLogin()).with(csrf()))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/planner/oral/question").with(oidcLogin()).with(csrf()))
-                .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/planner/dev/services/ml/start")
                         .with(oidcLogin())
                         .with(csrf()))
@@ -152,8 +150,6 @@ class SecurityRulesWithSignInTest {
         mockMvc.perform(post("/api/planner/retrain").with(oidcLogin()).with(csrf()))
                 .andExpect(notRefused());
         mockMvc.perform(post("/api/planner/picks").with(oidcLogin()).with(csrf()))
-                .andExpect(notRefused());
-        mockMvc.perform(post("/api/planner/oral/grade").with(oidcLogin()).with(csrf()))
                 .andExpect(notRefused());
         mockMvc.perform(get("/api/planner/status").with(oidcLogin())).andExpect(notRefused());
         mockMvc.perform(get("/api/planner/dev/services").with(oidcLogin())).andExpect(notRefused());

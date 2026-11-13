@@ -1115,6 +1115,7 @@
             "type" : "string"
           },
           "signature" : {
+            "minLength" : 1,
             "type" : "string"
           }
         },
