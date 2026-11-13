@@ -2,6 +2,7 @@ import type { TrafficAircraft } from "../../../lib/api/types";
 import { callEngine, type EngineAnswer } from "../../../lib/engine/engine";
 import { M_PER_NM, type Geo, type LatLon } from "../../../lib/geo";
 import type { Fix } from "../../../lib/map/position/ownShip";
+import { WORLD_WIDTH_M } from "../../../lib/map/tileMath";
 
 /*
  * The rules here -- the height under an airplane as TCAS writes it, whether
@@ -118,12 +119,13 @@ export function carriedOn(geo: Geo, plane: TrafficAircraft, seconds: number): La
 }
 
 /** How long its trend line is on the screen, points: TREND_S at its
- *  ground speed, at the map's scale there (Web Mercator's 156,543 m a
- *  point at zoom 0 on the equator), at most `max` (160). */
+ *  ground speed, at the map's scale there (the Web Mercator world's
+ *  width over a 256-point tile at zoom 0 on the equator), at most `max`
+ *  (160). */
 export function trendPx(speedKt: number | null | undefined, lat: number, zoom: number, max = 160): number {
   if (!speedKt) return 0;
   const metres = ((speedKt * TREND_S) / 3600) * M_PER_NM;
-  const metresPerPoint = (156543.03392 * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
+  const metresPerPoint = ((WORLD_WIDTH_M / 256) * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
   return Math.min(max, metres / metresPerPoint);
 }
 

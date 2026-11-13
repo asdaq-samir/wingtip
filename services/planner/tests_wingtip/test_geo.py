@@ -258,6 +258,19 @@ def test_a_known_tile():
     assert (int(x), int(y)) == (737, 1607)
 
 
+def test_a_pole_falls_on_the_grids_edge():
+    # Web Mercator ends at arctan(sinh(pi)) = 85.0511 N and S: a pole, or
+    # anything past the edge, is clamped to the grid's top or bottom row
+    # rather than off it (tan(90) is infinite).
+    for zoom in (0, 10, 20):
+        n = 2**zoom
+        assert tile_xy(90.0, 0.0, zoom)[1] == pytest.approx(0.0, abs=1e-9)
+        assert tile_xy(85.06, 0.0, zoom)[1] == pytest.approx(0.0, abs=1e-9)
+        assert tile_xy(-90.0, 0.0, zoom)[1] == pytest.approx(n, abs=1e-9)
+    ys = tile_xy(np.array([90.0, 0.0, -90.0]), np.array([0.0, 0.0, 0.0]), 1)[1]
+    assert list(ys) == pytest.approx([0.0, 1.0, 2.0], abs=1e-9)
+
+
 def test_tiles_take_arrays_and_give_plain_floats_for_scalars():
     lats, lons = np.array([36.08, 44.0]), np.array([-115.152, -89.0])
     xs, ys = tile_xy(lats, lons, 10)

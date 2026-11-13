@@ -7,7 +7,7 @@
 
 use super::{num, opt, rad};
 use crate::figures::words::{grouped, js_round};
-use crate::geo::{angle_between, bearing_deg, destination, distance_nm};
+use crate::geo::{angle_between, bearing_deg, destination, distance_nm, Flat};
 use crate::json::{self, Value};
 
 /// Within this of own ship's height an airplane is drawn amber, the traffic
@@ -145,9 +145,8 @@ pub fn own_ship_hex<'a>(planes: &'a [Plane], fix: Option<&Fix>) -> Option<&'a st
 pub fn closest_approach(own: &Fix, plane: &Plane) -> Option<(f64, f64, Option<f64>)> {
     let (heading, speed) = (own.heading_deg?, own.speed_kt?);
     let (track, kt) = (plane.track_deg?, plane.speed_kt?);
-    let cos_lat = rad(own.lat).cos();
     // Nautical miles east and north of own ship, and knots each way.
-    let (rx, ry) = ((plane.lon - own.lon) * 60.0 * cos_lat, (plane.lat - own.lat) * 60.0);
+    let (rx, ry) = Flat::about(own.lat, own.lon).nm(plane.lat, plane.lon);
     let vx = kt * rad(track).sin() - speed * rad(heading).sin();
     let vy = kt * rad(track).cos() - speed * rad(heading).cos();
     let closing = vx * vx + vy * vy;

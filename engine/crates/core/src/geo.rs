@@ -19,6 +19,7 @@ use std::sync::OnceLock;
 
 use geographiclib_rs::{DirectGeodesic, Geodesic, InverseGeodesic};
 
+pub use crate::flat::Flat;
 use crate::json::{self, Value};
 use crate::units::M_PER_NM;
 

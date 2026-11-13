@@ -1,7 +1,7 @@
 //! Where a point stands to a course: wingtip.geo's `_track`, crate::geo's
 //! on WGS-84, and the flat measure the IFR floor's 4 nm is taken on.
 
-use crate::geo::{bearing_deg, destination, distance_nm};
+use crate::geo::{bearing_deg, destination, distance_nm, Flat};
 
 /// A point as (lat, lon), degrees.
 pub type Point = (f64, f64);
@@ -19,8 +19,8 @@ pub fn track_nm(p: Point, a: Point, b: Point) -> (f64, f64) {
 /// on a flat plane about the segment's middle: wingtip.ifr's measure,
 /// a few metres off the sphere's at 4 nm on a piece of 10 nm.
 pub fn from_segment_nm(p: Point, a: Point, b: Point) -> f64 {
-    let k = ((a.0 + b.0) / 2.0).to_radians().cos() * 60.0;
-    let plane = |q: Point| ((q.1 - a.1) * k, (q.0 - a.0) * 60.0);
+    let flat = Flat::scaled_at((a.0 + b.0) / 2.0, a.0, a.1);
+    let plane = |q: Point| flat.nm(q.0, q.1);
     let (px, py) = plane(p);
     let (bx, by) = plane(b);
     let length2 = bx * bx + by * by;

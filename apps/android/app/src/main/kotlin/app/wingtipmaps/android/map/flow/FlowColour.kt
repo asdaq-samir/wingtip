@@ -3,6 +3,7 @@ package app.wingtipmaps.android.map.flow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import app.wingtipmaps.android.tiles.TileGrid
+import org.maplibre.android.constants.GeometryConstants
 import kotlin.math.roundToInt
 
 /** A ramp's stop: a value in the field's unit and its colour, ARGB, its
@@ -62,8 +63,9 @@ data class Painted(val pixels: IntArray, val width: Int, val height: Int, val we
     override fun hashCode(): Int = pixels.contentHashCode()
 
     companion object {
-        /** The highest latitude painted: Web Mercator's own edge. */
-        private const val MERCATOR_EDGE = 85.0511
+        /** The highest latitude painted: Web Mercator's own edge, the
+         *  one TileGrid clamps to (MapLibre's). */
+        private const val MERCATOR_EDGE = GeometryConstants.MAX_MERCATOR_LATITUDE
 
         /** `grid` painted by `ramp`, as wide as the grid and as tall as the
          *  same span of Mercator at that width. */

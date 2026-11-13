@@ -15,6 +15,7 @@
  "web_unit_literals": 0,
  "phone_unit_literals": 0,
  "phone_tile_maths": 0,
+ "mercator_literals": 0,
  "copy_paste_clones": 36,
  "one_home_findings": 30,
  "rules_outside_engine": 22,
