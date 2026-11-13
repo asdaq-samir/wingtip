@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from "react";
-import { BookOpenCheck, Diamond, LocateFixed, MoveUpRight, Plane, Search, Siren, SquareArrowOutUpRight } from "lucide-react";
+import { BookOpenCheck, Diamond, LocateFixed, MoveUpRight, Navigation, Plane, Search, Siren, SquareArrowOutUpRight } from "lucide-react";
 import { cn } from "cn";
 import { CommandEmpty, CommandList, CommandShortcut } from "../../../../components/ui/command";
 import { TEXT } from "../../../../lib/text";
@@ -13,10 +13,11 @@ import { useVoiceInput } from "../../../voice";
 import { AirportIcon, Matched, QuickAction, ResultGroup, ResultRow, RoundIcon, RowLine } from "./ResultRows";
 import { FieldError } from "../../../../components/ui/field";
 
-/** A Do row's glyph: the arrow for Direct To, the Brief's, Nearest's, the
- *  emergency's in red, the traffic's, a screen's. */
+/** A Do row's glyph: the arrow for Direct To, My Position's filled one,
+ *  the Brief's, Nearest's, the emergency's in red, the traffic's, a screen's. */
 function doGlyph(hit: DoHit) {
   if (hit.key.startsWith("direct")) return <MoveUpRight />;
+  if (hit.key === "my-position") return <Navigation className="fill-current" />;
   if (hit.key === "screen-brief") return <BookOpenCheck />;
   if (hit.key === "screen-nearest") return <LocateFixed />;
   if (hit.key === "screen-emergency") return <Siren className="text-destructive-ink" />;

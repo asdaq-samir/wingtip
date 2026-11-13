@@ -346,20 +346,20 @@ export function PatternChips({
     );
   }
   return (
-    // The chips alone, the wind the airport's under its ident and how the
-    // runway picked is flown in its chip's name (the owner's "No need for
-    // info button").
-    <div ref={line} className="flex items-center gap-2" data-testid="procedure-patterns">
-      {a.runways === null ? (
+    // The chips alone, the wind under the ident, how the runway is flown in its chip's name ("No need for info button").
+    <div ref={line} className="flex flex-wrap items-center gap-2" data-testid="procedure-patterns">
+      {a.runways === null || !ends.length ? (
         <>
-          {/* The runways' chips in outline while they come (the style
-              audit, 2026-10-26), their words for a screen reader. */}
-          <span role="status" className={cn("flex items-center gap-2", TRAY_BODY)}>
-            <span className="sr-only">Fetching the runways…</span>
-            {[0, 1, 2].map((k) => (
-              <Skeleton key={k} aria-hidden="true" className="h-8 w-11 rounded-full" />
-            ))}
-          </span>
+          {/* The runways' chips in outline while they come (the style audit, 2026-10-26), their words for a screen
+              reader; none for a field with none to give. The pull-downs wrap under them, never cut to "+ A…". */}
+          {a.runways === null && (
+            <span role="status" className={cn("flex items-center gap-2", TRAY_BODY)}>
+              <span className="sr-only">Fetching the runways…</span>
+              {[0, 1, 2].map((k) => (
+                <Skeleton key={k} aria-hidden="true" className="h-8 w-11 rounded-full" />
+              ))}
+            </span>
+          )}
           {trailing}
         </>
       ) : (
