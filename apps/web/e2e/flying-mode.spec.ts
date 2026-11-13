@@ -42,7 +42,8 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   await expect(sideDrawer(page).getByTestId("search-airports")).toBeHidden();
   await expect(page.getByTestId("done-flying")).toBeVisible();
   // The map's buttons: NRST, D→ and the location arrow at the right, the
-  // microphone at the left, each 60 points.
+  // microphone's circle over them in the same column (the owner,
+  // 2026-11-13: the page toggle has its place at the left), each 60 points.
   const buttons = [
     page.getByTestId("flying-nearest"),
     page.getByTestId("flying-direct"),

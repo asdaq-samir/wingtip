@@ -7,9 +7,11 @@ import { keepPlanButton, usePageToggle } from "./sheet/pageToggle";
 /**
  * The sheet's two pages, Search and FPL, turned by one round glass button
  * (the owner, 2026-11-13: "Why not make the same tab on the right toggle
- * between search and fpl"), its own circle under the map's buttons where
- * they ride the sheet's top at the right, the same size and glass as the
- * 3D and the microphone's. It shows the page a tap goes to, as Apple
+ * between search and fpl"), its own circle the same size and glass as the
+ * 3D and the microphone's: on a phone riding the sheet's top at the left,
+ * under the 3D, where the radio's button was (the owner, 2026-11-13:
+ * "replace the radio button on the left with the fpl toggle but below
+ * 3d"); from md up under the map's buttons at the right (MapControls). It shows the page a tap goes to, as Apple
  * Maps' 2D/3D button shows the mode it switches to: on Search FPL's route
  * glyph, on FPL the magnifier. The stock Toggle (Base UI's, ui/toggle),
  * never pressed -- a tap goes somewhere, it turns nothing on -- so to a

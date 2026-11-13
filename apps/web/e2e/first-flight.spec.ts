@@ -96,9 +96,15 @@ test("a new pilot is welcomed, Let's Go Flying leaves the one search ready, the 
   await expect(tip).toBeVisible();
   await expect(tip).toContainText("Your flight plan is one tap away");
   await expect(tip).toContainText("Tap here any time");
-  // Over the toggle, its arrow at it.
+  // Over the toggle, its arrow at it: wherever the toggle is (on a phone at
+  // the left under the 3D, the owner 2026-11-13), the tip's edge reaches
+  // over it, on the screen.
   const [tipBox, toggleBox] = [await tip.boundingBox(), await toggle(page).boundingBox()];
   expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(toggleBox!.y);
+  expect(tipBox!.x).toBeLessThanOrEqual(toggleBox!.x + toggleBox!.width / 2);
+  expect(tipBox!.x + tipBox!.width).toBeGreaterThanOrEqual(toggleBox!.x + toggleBox!.width / 2);
+  expect(tipBox!.x).toBeGreaterThanOrEqual(0);
+  expect(tipBox!.x + tipBox!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   await tip.getByTestId("fpl-tip-close").click();
   await expect(tip).toHaveCount(0);
 

@@ -286,13 +286,13 @@ for (const path of PAGES) {
     const viewport = page.viewportSize();
     if (!viewport) throw new Error("no viewport configured");
 
-    // The group's own first, not the radio's mic, which from md up stands
-    // over it in the same column (the owner, 2026-11-06).
+    // The group's own first, not the radio's mic, which stands over it in
+    // the same column (the owner, 2026-11-06; on a phone too, 2026-11-13).
     const first = page.locator("[data-map-controls] > div:not([data-map-food]) button").first();
     const firstBox = (await first.boundingBox())!;
     // On the map, flush with its right edge -- the same on both pages: on a
     // phone just over the sheet's top, the search's row, riding it as the
-    // radio's button does at the left (the owner, 2026-11-11), at the
+    // 3D and the page toggle do at the left (the owner, 2026-11-11), at the
     // bottom under a desktop's card.
     expect(viewport.width - (firstBox.x + firstBox.width)).toBeLessThan(20);
     if (viewport.width < 768) {
@@ -302,11 +302,11 @@ for (const path of PAGES) {
       expect(Math.round(sheet.y - (group.y + group.height))).toBe(24);
     } else {
       expect(firstBox.y).toBeGreaterThan(viewport.height / 2);
-      // The mic a button of its own right over the group, at the same edge.
-      const mic = (await page.locator("[data-map-controls]").getByTestId("mic-circle").boundingBox())!;
-      expect(mic.y + mic.height).toBeLessThanOrEqual(firstBox.y);
-      expect(viewport.width - (mic.x + mic.width)).toBeLessThan(20);
     }
+    // The mic a button of its own right over the group, at the same edge.
+    const mic = (await page.locator("[data-map-controls]").getByTestId("mic-circle").boundingBox())!;
+    expect(mic.y + mic.height).toBeLessThanOrEqual(firstBox.y);
+    expect(viewport.width - (mic.x + mic.width)).toBeLessThan(20);
     // Never among the map's buttons, on either page: their first is the
     // map's own, its card the map's settings in the sheet (a desktop's side
     // panel too), as Apple Maps' Choose Map card is (the owner, 2026-11-10).

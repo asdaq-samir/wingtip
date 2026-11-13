@@ -44,7 +44,7 @@ test("Search to FPL and back by the toggle, the sheet's size kept", { tag: "@smo
   await expectPage(page, 0);
 });
 
-test("the toggle rides the sheet's top at the right, under the map's buttons, and the sheet stands on the screen's foot", async ({
+test("the toggle rides the sheet's top at the left, under the 3D, the radio over the map's buttons at the right, and the sheet stands on the screen's foot", async ({
   page,
 }) => {
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
@@ -56,25 +56,32 @@ test("the toggle rides the sheet's top at the right, under the map's buttons, an
     const m = await page.evaluate(() => {
       const box = (sel: string) => document.querySelector(sel)!.getBoundingClientRect();
       const glass = document.querySelector('[data-testid="sheet-page-toggle"]')!.parentElement!.getBoundingClientRect();
-      const group = document.querySelector("[data-map-controls] > .liquid-glass")!.getBoundingClientRect();
+      // The map's buttons' group: the Map button's card of glass.
+      const group = document.querySelector('[data-map-controls] [data-testid="map-settings-button"]')!.closest(".rounded-2xl")!.getBoundingClientRect();
       return {
         sheet: box('[data-slot="map-panel"]'),
-        glass: { top: glass.top, bottom: glass.bottom, right: glass.right, w: glass.width, h: glass.height },
-        groupBottom: group.bottom,
-        // The 3D button's glass circle at the left.
+        glass: { top: glass.top, bottom: glass.bottom, left: glass.left, w: glass.width, h: glass.height },
+        group: { top: group.top, bottom: group.bottom },
+        mic: box("[data-map-controls] [data-testid='mic-circle']"),
+        // The 3D button's glass circle, over the toggle at the left.
         threeD: document.querySelector('[data-testid="map-3d-button"]')!.parentElement!.getBoundingClientRect(),
         viewport: { w: innerWidth, h: innerHeight },
       };
     });
-    // Over the sheet's top, at the right, under the group, not over it.
+    // Over the sheet's top, at the left, nearest the sheet, under the 3D.
     expect(m.glass.bottom, `at ${size}`).toBeLessThanOrEqual(m.sheet.top);
     expect(m.sheet.top - m.glass.bottom, `at ${size}`).toBeLessThanOrEqual(32);
-    expect(m.viewport.w - m.glass.right, `at ${size}`).toBeLessThanOrEqual(16);
-    expect(m.glass.top, `at ${size}`).toBeGreaterThanOrEqual(m.groupBottom);
-    // The 3D circle's size and level at the left.
+    expect(m.glass.left, `at ${size}`).toBeLessThanOrEqual(16);
+    expect(m.glass.top - m.threeD.bottom, `at ${size}`).toBeCloseTo(8, 0);
+    expect(m.threeD.left).toBeCloseTo(m.glass.left, 0);
+    // The 3D circle's size.
     expect(m.glass.w).toBeCloseTo(m.threeD.width, 0);
     expect(m.glass.h).toBeCloseTo(m.threeD.height, 0);
-    expect(m.glass.bottom).toBeCloseTo(m.threeD.bottom, 0);
+    // The radio's circle over the map's buttons at the right, the group
+    // nearest the sheet, level with the toggle.
+    expect(m.mic.bottom, `at ${size}`).toBeLessThanOrEqual(m.group.top);
+    expect(m.viewport.w - m.mic.right, `at ${size}`).toBeLessThanOrEqual(16);
+    expect(m.group.bottom).toBeCloseTo(m.glass.bottom, 0);
   }
   // No bar under the sheet: the pill is the search's own 4.25 rem off the
   // screen's foot (no home indicator here), its 44 points back.
@@ -106,7 +113,7 @@ test("the toggle is 44 points to a finger without growing, and the grabber is on
     return {
       toggle: hit(button),
       // The finger finds the toggle at its glass's edge, not the map.
-      edge: document.elementFromPoint(box.left - 3, box.top + box.height / 2)?.closest('[data-testid="sheet-page-toggle"]') != null,
+      edge: document.elementFromPoint(box.right + 3, box.top + box.height / 2)?.closest('[data-testid="sheet-page-toggle"]') != null,
       grabber: hit(grabber),
       bar: grabber.querySelector("span")!.getBoundingClientRect(),
       bars: document.querySelectorAll('[data-slot="map-panel"] [data-testid="sidebar-trigger-button"] span').length,
