@@ -79,8 +79,13 @@ function MapGroup() {
   // before, as opening sets its size afresh (useCardFrame); let go once
   // it is up, or after a few seconds, the pilot's to drag from then.
   useEffect(() => {
-    if (!wanted || !card) return;
+    if (!wanted) return;
     useSettingsGroup.setState({ group: null });
+    // In You's floating card (ConsoleLayer), no sheet to raise: scrolled to.
+    if (!card) {
+      at.current?.scrollIntoView({ block: "start" });
+      return;
+    }
     const raise = () => {
       const entry = useSheetCards.getState().stack.find((e) => e.id === card);
       if (entry?.at === "full") {

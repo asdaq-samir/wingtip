@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import AboutPanel from "../../components/AboutPanel";
 import StatusPanel from "../../components/StatusPanel";
 import LoadLogPanel from "../../components/LoadLogPanel";
-import { ConsolePages, PageLink, PageRow } from "../../components/ConsolePages";
+import { ConsolePages, PageRow } from "../../components/ConsolePages";
 import EmptyState from "../../components/EmptyState";
 import { ListGroup } from "../../components/GroupedList";
 import { RowBadge } from "../../components/RowBadge";
@@ -19,17 +19,17 @@ import { shortName } from "../../lib/aircraftChoice";
 import { usePreferences } from "../../lib/preferences";
 import type { Minimums } from "../../lib/minimums";
 import { TEXT } from "../../lib/text";
+import { useDevMode } from "../../hooks/use-dev-mode";
 import { SettingsPage, type HelpPages } from "../settings";
 import { FlightsPanel } from "./AccountPanels";
 import { AccountFace } from "./AccountFace";
-import { AccountMenu } from "./AccountMenu";
 import { LogbookPanel } from "./LogbookPanel";
 import MinimumsPanel from "./MinimumsPanel";
 import SubscriptionPanel from "./SubscriptionPanel";
 import { standing, subscriptionQuery, useSold } from "../../lib/subscription";
 import PilotGuide from "./PilotGuide";
 import PilotPage from "./PilotPage";
-import { AirplanesPage, EmergencyGroup, TrainingPage, TrainingRow } from "./YouRows";
+import { AirplanesPage, EmergencyRow, TrainingPage, TrainingRow } from "./YouRows";
 import TabPage, { TAB_PAGE_GAP } from "../../components/TabPage";
 
 // Loaded when it is drawn, as PaidPrompt does: imported here it put the
@@ -61,6 +61,8 @@ function Personal({
   const aircraft = usePreferences((s) => s.aircraft);
   const minimums = usePreferences((s) => s.minimums);
   const signedIn = pilot !== "loading" && pilot !== "error" && pilot !== null;
+  // Pilot Details holds the role's menu, the developer's switch signed out too.
+  const devAllowed = useDevMode().allowed;
   // While the sign-in is checked, or where it could not be, said under
   // the head (signed out, its way in is the head's own Sign In).
   const account =
@@ -110,7 +112,7 @@ function Personal({
     training: { title: "Training", content: <TrainingPage signedIn={signedIn} /> },
     settings: { title: "Settings", content: <SettingsPage help={help} /> },
     subscription: { title: "Subscription", content: <SubscriptionPanel /> },
-    pilot: { title: "Pilot details", content: <PilotPage /> },
+    pilot: { title: "Pilot Details", content: <PilotPage /> },
   };
   return (
     <>
@@ -121,24 +123,38 @@ function Personal({
           away Minimums, which needs no sign-in, or an edit in it. */}
       <ConsolePages key={pilot === null || pilot === "error" ? "out" : "in"} back="You" pages={pages}>
         <div className={cn("flex flex-col", TAB_PAGE_GAP)}>
-          {/* Who the pilot is, then what is theirs, then Settings: You, as
-              Apple Maps' avatar opens yours (the owner's pick, option A of
-              the account canvas, 2026-11-13), where the card was Settings
-              with Setup's tiles on top; the tiles are Settings' Look now. */}
+          {/* Who the pilot is, then one list of what is theirs and
+              Settings, as Apple Maps' account card is (the owner's
+              screenshot of iOS 27, 2026-11-13): the avatar, the name and
+              the address over a single inset group, each row a round
+              badge, its name, where it stands at its end and the chevron. */}
           <YouHead pilot={signedIn ? pilot : null} />
           {account}
-          {/* The pilot's things, a row each with where it stands, as iOS's
-              Settings lists its parts: the account's greyed until there is
-              one; the minimums and the checklists (in Airplanes) are this
-              device's. */}
+          {/* The account's rows greyed until there is one; the minimums
+              and the checklists (in Airplanes) are this device's. */}
           <div data-testid="library-section">
-            <ListGroup>
+            <ListGroup glass>
+              {/* Pilot Details, with the role's menu in it (sign out,
+                  export, delete), where it sat beside the name: the
+                  developer's switch too, signed out. */}
+              <PageRow
+                page="pilot"
+                title="Pilot Details"
+                testId="pilot-row"
+                disabled={!signedIn && !devAllowed}
+                value={!signedIn && !devAllowed ? SIGNED_OUT : signedIn ? (pilot.homeBase ?? undefined) : undefined}
+                media={
+                  <RowBadge colour={SETTING_BADGE.pilot} round>
+                    <UserRound />
+                  </RowBadge>
+                }
+              />
               <PageRow
                 page="aircraft"
                 title="Airplanes"
                 value={aircraft.label ? shortName(aircraft.label) : undefined}
                 media={
-                  <RowBadge colour={SETTING_BADGE.aircraft}>
+                  <RowBadge colour={SETTING_BADGE.aircraft} round>
                     <Plane />
                   </RowBadge>
                 }
@@ -149,7 +165,7 @@ function Personal({
                 disabled={!signedIn}
                 value={!signedIn ? SIGNED_OUT : flights ? `${flights.length} saved` : undefined}
                 media={
-                  <RowBadge colour={SETTING_BADGE.flights}>
+                  <RowBadge colour={SETTING_BADGE.flights} round>
                     <Route />
                   </RowBadge>
                 }
@@ -160,7 +176,7 @@ function Personal({
                 disabled={!signedIn}
                 value={!signedIn ? SIGNED_OUT : hours !== undefined && entries?.length ? `${hours.toFixed(1)} h` : undefined}
                 media={
-                  <RowBadge colour={SETTING_BADGE.logbook}>
+                  <RowBadge colour={SETTING_BADGE.logbook} round>
                     <BookOpen />
                   </RowBadge>
                 }
@@ -170,30 +186,28 @@ function Personal({
                 title="Minimums"
                 value={settings ?? undefined}
                 media={
-                  <RowBadge colour={SETTING_BADGE.minimums}>
+                  <RowBadge colour={SETTING_BADGE.minimums} round>
                     <ShieldCheck />
                   </RowBadge>
                 }
               />
+              <TrainingRow />
+              <EmergencyRow />
+              {/* The app's Settings, one page (features/settings): the Map
+                  card's gear opens the same page at its Map group. */}
+              <PageRow
+                page="settings"
+                title="Settings"
+                testId="settings-row"
+                media={
+                  <RowBadge colour={SETTING_BADGE.settings} round>
+                    <Settings />
+                  </RowBadge>
+                }
+              />
+              {signedIn && sold && <SubscriptionRow />}
             </ListGroup>
           </div>
-          <TrainingRow />
-          <EmergencyGroup />
-          <ListGroup>
-            {/* The app's Settings, one page (features/settings): the Map
-                card's gear opens the same page at its Map group. */}
-            <PageRow
-              page="settings"
-              title="Settings"
-              testId="settings-row"
-              media={
-                <RowBadge colour={SETTING_BADGE.settings}>
-                  <Settings />
-                </RowBadge>
-              }
-            />
-            {signedIn && sold && <SubscriptionRow />}
-          </ListGroup>
         </div>
       </ConsolePages>
     </>
@@ -211,38 +225,41 @@ function minimumsWords(m: Minimums): string | null {
   return parts.length ? parts.join(" · ") : null;
 }
 
-/** Who is signed in, at You's top, as Apple Maps' avatar opens yours
- *  (the owner's pick, option A, 2026-11-13): their initials in a large
- *  round avatar, their name under it, and Pilot Details, the page of
- *  their details for their flight plans, with the role's menu beside it
- *  (sign out, delete). Signed out, the avatar's glyph and Sign In. */
+/** Who is signed in, at You's top, as Apple Maps' account card heads
+ *  itself (the owner's screenshot, 2026-11-13): their initials in a large
+ *  round avatar, their name in large bold under it -- or their address,
+ *  with no name given -- and the address in grey under that. Signed out,
+ *  the avatar's glyph and Sign In. Room over it for the card's ✕. */
 function YouHead({ pilot }: { pilot: Pilot | null }) {
   const name = pilot ? pilot.fullName || pilot.displayName : null;
+  const address = pilot?.email && pilot.email !== name ? pilot.email : null;
   return (
-    <div role="group" aria-label="Account" className="flex flex-col items-center gap-1.5 pt-2" data-testid="setup-pill-account">
+    <div role="group" aria-label="Account" className="flex flex-col items-center gap-1 pt-6" data-testid="setup-pill-account">
       <span
         aria-hidden="true"
         className={cn(
-          "grid size-18 place-items-center rounded-full font-bold [&_svg]:size-8",
+          "mb-2 grid size-18 place-items-center rounded-full font-bold [&_svg]:size-8",
           name ? "bg-tint text-white" : "bg-foreground/8 text-tint",
           TEXT.hero,
         )}
       >
         <AccountFace name={name} />
       </span>
-      <span className={cn("max-w-full truncate font-bold text-foreground", TEXT.title)}>{name ?? "You"}</span>
-      <div className="flex min-h-11 items-center gap-4">
-        {pilot ? (
-          <PageLink page="pilot" testId="pilot-row">
-            Pilot Details
-          </PageLink>
-        ) : (
+      <span className={cn("max-w-full truncate font-bold tracking-tight text-foreground", TEXT.hero)} data-testid="you-name">
+        {name ?? "You"}
+      </span>
+      {address && (
+        <span className={cn("max-w-full truncate text-muted-foreground", TEXT.detail)} data-testid="you-address">
+          {address}
+        </span>
+      )}
+      {!pilot && (
+        <div className="flex min-h-11 items-center">
           <Suspense fallback={null}>
             <SignInModal plain />
           </Suspense>
-        )}
-        <AccountMenu />
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -256,7 +273,7 @@ function SubscriptionRow() {
       title="Subscription"
       value={subscription ? standing(subscription) : undefined}
       media={
-        <RowBadge colour={SETTING_BADGE.subscription}>
+        <RowBadge colour={SETTING_BADGE.subscription} round>
           <Sparkles />
         </RowBadge>
       }

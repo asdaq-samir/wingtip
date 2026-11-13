@@ -42,9 +42,8 @@ interface Props {
   /** The planner's one search, the developer's places (DevBar): the
    *  sheet's first row, and at rest the pill itself. */
   bar?: ReactNode;
-  /** What the panel is showing: the workspace, a card open alone over it,
-   *  or the console's layer (the account page). */
-  layer?: "tab" | "card" | "console";
+  /** What the panel is showing: the workspace, or a card open alone over it. */
+  layer?: "tab" | "card";
   /** A card from elsewhere open over the workspace. */
   cardOver?: boolean;
   /** Pinned at the sheet's foot at every size: the route's figures -- in
@@ -116,10 +115,10 @@ export default function MapPanel(props: Props) {
   // page's own (SheetParts), beside Search's row. The pill is one fixed
   // height for every page and card (sheet/insets), which the figures fit.
   const footShown = !!foot && !cardsUp && (!onPhone || props.state !== "peek" || flying || !!props.pages);
-  // A card or a page open (the account page too) is the whole sheet, its own head and ✕ at the top
+  // A card or a page open is the whole sheet, its own head and ✕ at the top
   // (one card rule, 2026-11-10); closed, the search is back -- kept with the keyboard up, as it is typed in.
   const barShown = !!bar && !flying && !cardsUp && layer === "tab";
-  const toEdge = layer !== "console" && !!props.toEdge && !cardsUp;
+  const toEdge = !!props.toEdge && !cardsUp;
 
   // The sheet's own size is the page's (MapPanel's state, its setPanel); a
   // card over it sizes its own drawer (CardStack, useCardSize). What is in

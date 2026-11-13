@@ -1,5 +1,5 @@
 import { expect, request, type Page } from "@playwright/test";
-import { openConsole, openAccount } from "./helpers";
+import { consolePage, openConsole } from "./helpers";
 
 /**
  * Signing in the way a person does on the local stack: the emailed
@@ -64,8 +64,8 @@ export async function openLinkFor(page: Page, address: string): Promise<string> 
   const console = page.getByTestId("console-sheet");
   const before = new Set(await messagesTo(address));
   if (!(await console.isVisible())) await openConsole(page);
-  // The account is Personal's, at the owner's ask (AccountMenu).
-  await openAccount(page);
+  // Signed out, Sign In is You's head's, under the avatar (YouHead).
+  await consolePage(console, "Account");
   await console.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByLabel("Email address").fill(address);
   await page.getByRole("button", { name: "Send Link" }).click();

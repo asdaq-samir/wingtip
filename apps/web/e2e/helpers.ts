@@ -198,8 +198,8 @@ export async function openConsole(page: Page) {
   await showTabs(page);
   if (!(await page.getByTestId("account-button").isVisible())) await grabberTo(page, "half");
   await page.getByTestId("account-button").click();
-  await expect(page.getByTestId("console-sheet")).toBeVisible(); // there before it is raised, or the sheet under it went up
-  await grabberTo(page, "full");
+  // You floats over the map whole, as tall as it is (ConsoleLayer): no sheet to raise.
+  await expect(page.getByTestId("console-sheet")).toBeVisible();
 }
 
 /** Settings, You's row, all the way out, its Look tiles on top
@@ -227,15 +227,11 @@ export async function openMapSettings(page: Page) {
   await expect(page.getByTestId("map-settings")).toBeVisible();
 }
 
-/** The console all the way out. On a phone it is a card of its own over
- *  the map's sheet (ConsoleLayer's CardLayer, the stock Drawer's nested
- *  drawer), opened half way as every card is (e7bb15ec8): its grabber
- *  brings it all the way, as a finger's drag does. From `md` up the side
- *  panel has one height, and this does nothing. */
+/** The console all the way out: You is a floating card as tall as what
+ *  is in it (ConsoleLayer, the owner's Apple Maps screenshot, 2026-11-13),
+ *  scrolling inside past the screen's top, so it is out once it is open. */
 export async function expandConsole(page: Page) {
-  if (page.viewportSize()!.width >= 768) return;
   await expect(page.getByTestId("console-sheet")).toBeVisible();
-  await grabberTo(page, "full");
 }
 
 /** The console's title, a menu of roles -- Pilot, Developer for whoever
@@ -247,9 +243,8 @@ export async function roleMenu(page: Page) {
   const sheet = page.getByTestId("console-sheet");
   if (!(await sheet.isVisible())) await openConsole(page);
   await expect(sheet).toBeVisible();
-  // In the Account row (AccountMenu), first on Setup's page (the developer's
-  // console has it on its Account tab).
-  await consolePage(sheet, "Account");
+  // In Pilot Details (AccountGroup), You's first row.
+  await openAccount(page);
   const trigger = sheet.getByTestId("role-menu");
   // The menu comes with who is signed in, or dev mode, once known.
   await trigger.waitFor({ timeout: 3000 }).catch(() => {});
@@ -653,7 +648,14 @@ export async function closeCard(page: Page, closeTestId: string) {
 /** The console's Personal tab, where who is signed in and the mode are
  *  (AccountMenu), at the owner's ask: they were the console's title row. */
 export async function openAccount(page: Page) {
-  await consolePage(page.getByTestId("console-sheet"), "Account");
+  const sheet = page.getByTestId("console-sheet");
+  await consolePage(sheet, "Account");
+  // Pilot Details, where the role's menu is (AccountGroup; the You card,
+  // 2026-11-13), once the sign-in is known: greyed signed out with no dev
+  // mode, You's own head then the way in (its Sign In).
+  await expect(sheet.getByText("Checking your sign-in…")).toHaveCount(0);
+  const row = sheet.getByTestId("pilot-row");
+  if (await row.isEnabled()) await row.click();
 }
 
 /** One of the console's places by name: the developer's console's tab of
