@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { settle, sideDrawer, slow } from "./helpers";
+import { openMapSettings, settle, sideDrawer, slow } from "./helpers";
 
 /**
  * The map's microphone on a phone: a circle of its own over the map's
@@ -60,4 +60,17 @@ test("the map's microphone is over the map's buttons at the right, and its pill 
   expect(Math.abs(open.x + open.width - (shut.x + shut.width))).toBeLessThanOrEqual(1);
   expect(open.x).toBeGreaterThanOrEqual(0);
   expect(open.y + open.height).toBeLessThanOrEqual(threeD.y);
+});
+
+test("the radio's button is on the map only while Comms Assist is on in Map Settings", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("wingtip.commsAssist", "false");
+  });
+  await page.goto("/app/plan?layout=tabs");
+  await settle(page);
+  await expect(page.getByTestId("map-settings-button")).toBeVisible({ timeout: slow(30000) });
+  await expect(page.getByTestId("radio-button")).toHaveCount(0);
+  await openMapSettings(page);
+  await page.getByTestId("comms-assist-toggle").click();
+  await expect(page.getByTestId("radio-button")).toBeVisible();
 });

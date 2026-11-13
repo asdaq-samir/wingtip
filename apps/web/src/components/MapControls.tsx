@@ -10,6 +10,7 @@ import ThreeDButton from "./ThreeDButton";
 import PageToggle from "./PageToggle";
 import ClearanceKey from "./ClearanceKey";
 import { useAtcRadio } from "../lib/atcRadio";
+import { useCommsAssist } from "../lib/atc/commsAssist";
 import { useIsMobile } from "../hooks/use-mobile";
 import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "../lib/mapChrome";
 import { EngineGate } from "../lib/engine/engineGate";
@@ -60,6 +61,7 @@ function MapControlsDrawn() {
   const flying = useFlying((s) => s.flying);
   const nearest = useFlying((s) => s.nearest);
   const direct = useFlying((s) => s.direct);
+  const comms = useCommsAssist((s) => s.value);
   const pill = useAtcRadio((s) => s.pill !== null);
   // The pill heard and done (its words or why not, its ✕ there): the mic
   // beside its close put away, at the owner's ask ("No mic button needed
@@ -80,7 +82,7 @@ function MapControlsDrawn() {
   // margins, above the group and the 3D and the toggle at the left (the
   // pill's foot is level with the toggle's top or higher); from md up
   // clear of the side panel.
-  const mic = (
+  const mic = !comms ? null : (
     <div
       data-map-food=""
       className={cn(

@@ -273,7 +273,9 @@ turned by one round toggle button riding its top, and the one search is
 still the only field. The same day the toggle took the radio's button's
 place at the left, under the 3D ("Let's replace the radio button on the
 left with the fpl toggle but below 3d"), the radio's button going over
-the map's buttons at the right.
+the map's buttons at the right, and then ("Or actually make it a setting
+instead") only where Comms Assist is on: a switch in Map Settings' More,
+off by default (the owner, 2026-11-13).
 
 1. **Search** (the first page): the search's row (field, microphone,
    account button) and its home list (Favorites, Recents, Nearest,
@@ -441,7 +443,8 @@ gone on every platform.
    the left with the fpl toggle but below 3d"), the map's buttons (Map,
    My Position) at the right, just above the search row (the owner,
    2026-11-11: "keep the top right map button to just above the search
-   bar on the right"), with the radio's button a circle of its own over
+   bar on the right"), with the radio's button, where Comms Assist is turned on in Map
+   Settings (off by default, 2026-11-13), a circle of its own over
    them, its listening pill widening to the left (as from md up; in
    flight its circle grown to 60 points over NRST, D→ and the arrow),
    clear of each other and of the
