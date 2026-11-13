@@ -30,13 +30,14 @@
 //! outside the plan view's box, or inside an inset, is not drawn at all.
 
 use crate::ask::{num_in, Ask};
-use crate::geo::{destination, py_mod};
+use crate::geo::{destination, py_mod, EQUATORIAL_RADIUS_M};
 use crate::json::{self, Value};
 
 /// GRS 80, NAD 83's ellipsoid (H. Moritz, "Geodetic Reference System
 /// 1980", Bulletin Geodesique 54:395-405, 1980): a = 6,378,137 m and
-/// 1/f = 298.257222101, as the plates' WKT gives it.
-const GRS80_A: f64 = 6_378_137.0;
+/// 1/f = 298.257222101, as the plates' WKT gives it. Its a is WGS-84's,
+/// geo's one; its flattening is its own.
+const GRS80_A: f64 = EQUATORIAL_RADIUS_M;
 const GRS80_INV_F: f64 = 298.257_222_101;
 
 /// How far ahead along the track a second point is taken, nm, for the

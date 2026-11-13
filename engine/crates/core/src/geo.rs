@@ -30,6 +30,13 @@ use crate::units::M_PER_NM;
 /// within 0.4% of the ellipsoid.
 pub const EARTH_RADIUS_NM: f64 = 3440.065;
 
+/// The earth's equatorial radius (semi-major axis), metres: WGS-84's
+/// (NGA TR8350.2, table 3.1) and GRS 80's alike, since WGS-84 took GRS 80's
+/// a (Moritz, "Geodetic Reference System 1980"); only their flattenings
+/// differ. The one home for it in the engine (the simplicity ratchet's
+/// mercator_literals), for a projection worked by hand (plate.rs).
+pub const EQUATORIAL_RADIUS_M: f64 = 6_378_137.0;
+
 /// WGS-84 (NGA TR8350.2), made once: `Geodesic::wgs84()` copies it a call.
 fn wgs84() -> &'static Geodesic {
     static WGS84: OnceLock<Geodesic> = OnceLock::new();
