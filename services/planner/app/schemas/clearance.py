@@ -30,9 +30,9 @@ class ClearanceAsk(BaseModel):
 
 
 class SpokenPlace(BaseModel):
-    """A place a clearance said, as found (wingtip.spoken): `ident` None where
-    nothing near was like it, `sure` false where it was found by its sound
-    alone, for the pilot to check."""
+    """A place a clearance said, as found (the engine's clearance_places):
+    `ident` None where nothing near was like it, `sure` false where it was
+    found by its sound alone, for the pilot to check."""
 
     said: str
     ident: str | None = None

@@ -26,6 +26,19 @@
       ],
       "description": "Anything else is read as not known."
     },
+    "lat": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Where it is, where it was found."
+    },
+    "lon": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
     "sure": {
       "type": [
         "boolean",

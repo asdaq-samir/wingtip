@@ -72,7 +72,14 @@ fn cleared_route(ask: &Ask) -> Result<String, String> {
             Some(Value::Bool(b)) => *b,
             _ => true,
         };
-        Ok(Found { said: str_in(v, "said").unwrap_or_default(), ident: str_in(v, "ident"), name: str_in(v, "name"), kind, sure })
+        Ok(Found {
+            said: str_in(v, "said").unwrap_or_default(),
+            ident: str_in(v, "ident"),
+            name: str_in(v, "name"),
+            kind,
+            sure,
+            ..Found::default()
+        })
     };
     let procedure_in = |v: Option<&Value>| -> Result<Option<FoundProcedure>, String> {
         match v {

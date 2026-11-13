@@ -20362,7 +20362,7 @@
         "type": "object"
       },
       "SpokenPlace": {
-        "description": "A place a clearance said, as found (wingtip.spoken): `ident` None where\nnothing near was like it, `sure` false where it was found by its sound\nalone, for the pilot to check.",
+        "description": "A place a clearance said, as found (the engine's clearance_places):\n`ident` None where nothing near was like it, `sure` false where it was\nfound by its sound alone, for the pilot to check.",
         "properties": {
           "ident": {
             "anyOf": [

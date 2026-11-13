@@ -99,7 +99,7 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
 | An ATC clearance heard, read into its items and the route it gives (AIM 4-4-3, 5-2-6; figures AIM 4-2-8, 4-2-9) | `lib/clearance.ts` | the engine: `read_clearance`, `cleared_route` (`Clearance`) | `clearances.json` |
 | An ATIS or AWOS/ASOS broadcast heard, read into its figures (AIM 4-1-13, 7-1-11; JO 7110.65 2-6-6, 2-7-2) | `features/plan/lib/atis.ts` | the engine: `read_atis` (`Atis`) | `atis.json` |
 | A transmission said to us by its call sign, and where its "direct" sends us (AIM 4-2-4) | `lib/heardCall.ts` | the engine: `our_call`, `direct_of` (`HeardCall`) | `heardCalls.json` |
-| A clearance's places found with no signal, among the kept regions' airports, navaids and fixes (the planner's wingtip.spoken) | `wingtip/spoken.py` | the engine's `spoken.rs` (`Engine.hear` on `CyclePacks.keptPacks`) | the engine's own tests, test_spoken.py's cases |
+| A clearance's places found among the airports, navaids and fixes given: the planner's near the route, or the kept regions' with no signal | the planner's /api/clearance/places | the engine: `clearance_places` (the planner), `spoken.rs` (`Engine.hear` on `CyclePacks.keptPacks`) | `clearancePlaces.json` |
 
 Where the Swift copies still differ, the fixtures leave the case out:
 

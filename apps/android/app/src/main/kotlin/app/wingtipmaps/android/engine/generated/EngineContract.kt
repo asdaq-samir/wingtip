@@ -2056,6 +2056,11 @@ object EngineContract {
          */
         val kind: String? = null,
         /**
+         * Where it is, where it was found.
+         */
+        val lat: Double? = null,
+        val lon: Double? = null,
+        /**
          * True where left out.
          */
         val sure: Boolean? = null,
@@ -2065,6 +2070,96 @@ object EngineContract {
     data class ClearanceFoundProcedure(
         val id: String,
         val transition: String? = null,
+    )
+
+    @Serializable
+    data class ClearancePlacesAnswer(
+        val limit: EngineContract.ClearanceFound? = null,
+        val route: List<List<EngineContract.ClearanceFound>>,
+        val departure: EngineContract.ClearancePlacesAnswerDeparture? = null,
+        val arrival: EngineContract.ClearancePlacesAnswerArrival? = null,
+    )
+
+    @Serializable
+    data class ClearancePlacesAnswerArrival(
+        val id: String,
+        val transition: String? = null,
+        val sure: Boolean,
+    )
+
+    @Serializable
+    data class ClearancePlacesAnswerDeparture(
+        val id: String,
+        val transition: String? = null,
+        val sure: Boolean,
+    )
+
+    @Serializable
+    data class ClearancePlacesInput(
+        val places: List<EngineContract.SpokenCandidate>,
+        val limit: String? = null,
+        /**
+         * The field the planner's airport search found for each run of the limit's words, by the run in capitals ("DULUTH"): the one for the longest run is the limit where it is said with "airport", or where its name starts with every word said.
+         */
+        @SerialName("limit_airports")
+        val limitAirports: Map<String, EngineContract.SpokenCandidate>? = null,
+        val route: List<String>? = null,
+        val departure: EngineContract.ClearancePlacesInputDeparture? = null,
+        val arrival: EngineContract.ClearancePlacesInputArrival? = null,
+    )
+
+    @Serializable
+    data class ClearancePlacesInputArrival(
+        /**
+         * The name said: "Bunyan", or the navaid's a procedure is named for, "Gopher".
+         */
+        val name: String,
+        val number: String,
+        /**
+         * The transition's words, where one was said.
+         */
+        val transition: String? = null,
+        /**
+         * The field's own procedures, as the CIFP codes them.
+         */
+        val procedures: List<EngineContract.ClearancePlacesInputArrivalProceduresItem>,
+    )
+
+    @Serializable
+    data class ClearancePlacesInputArrivalProceduresItem(
+        /**
+         * "BUNYN1": the name's letters and the number.
+         */
+        val id: String,
+        val kind: String,
+        val transitions: List<String>? = null,
+    )
+
+    @Serializable
+    data class ClearancePlacesInputDeparture(
+        /**
+         * The name said: "Bunyan", or the navaid's a procedure is named for, "Gopher".
+         */
+        val name: String,
+        val number: String,
+        /**
+         * The transition's words, where one was said.
+         */
+        val transition: String? = null,
+        /**
+         * The field's own procedures, as the CIFP codes them.
+         */
+        val procedures: List<EngineContract.ClearancePlacesInputDepartureProceduresItem>,
+    )
+
+    @Serializable
+    data class ClearancePlacesInputDepartureProceduresItem(
+        /**
+         * "BUNYN1": the name's letters and the number.
+         */
+        val id: String,
+        val kind: String,
+        val transitions: List<String>? = null,
     )
 
     @Serializable
@@ -10936,6 +11031,18 @@ object EngineContract {
         val ft: Double? = null,
         val code: String? = null,
         val desc: String? = null,
+    )
+
+    /**
+     * A place a clearance may name, as the planner or a phone's pack holds it: an airport, a navaid (NASR NAV_BASE, by its NAME) or a fix (no name).
+     */
+    @Serializable
+    data class SpokenCandidate(
+        val ident: String,
+        val name: String? = null,
+        val what: String,
+        val lat: Double,
+        val lon: Double,
     )
 
     @Serializable

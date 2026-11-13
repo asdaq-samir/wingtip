@@ -1,0 +1,35 @@
+{
+  "title": "SpokenCandidate",
+  "type": "object",
+  "description": "A place a clearance may name, as the planner or a phone's pack holds it: an airport, a navaid (NASR NAV_BASE, by its NAME) or a fix (no name).",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "what": {
+      "enum": [
+        "airport",
+        "navaid",
+        "fix"
+      ]
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "ident",
+    "what",
+    "lat",
+    "lon"
+  ]
+}

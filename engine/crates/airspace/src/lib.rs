@@ -8,7 +8,8 @@
 //! - view: the map's airspace, airports and VORs in view from the packs,
 //!   as the planner's in-view endpoints answer them;
 //! - ahead: the alerts ahead of the airplane from the phone's packs;
-//! - spoken: the places a clearance names, found in the phone's packs;
+//! - spoken, spoken_ask: the places a clearance names, found among those
+//!   the planner gives or the phone's packs keep, and its SID and STAR;
 //! - view_marks, sua_tab: the special-use areas, their tabs and the fixes in view;
 //! - volume_span: how high a 3D map stands a volume, from its limits;
 //! - drills: the oral's flash cards (91.125, 91.155) and 91.155 by name.
@@ -21,6 +22,7 @@ pub mod pack;
 pub mod pack_query;
 pub mod rules;
 pub mod spoken;
+pub mod spoken_ask;
 pub mod sua_tab;
 pub mod view;
 pub mod view_marks;

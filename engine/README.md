@@ -60,7 +60,7 @@ table, and its why below, in the same commit.
 | `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), autolog (a logbook entry drawn from a flown track: 1.1, 61.1(b), 61.57), aircraft (with figures: an airplane's figures and where each comes from, and what a figure lacks), documents (a photographed page's figures checked before the pilot sees them), coach (a pilot's proficiency plan: what is due under 61.56 and 61.57, the weak areas their debriefs show, the sessions) | core, flight, procedures, route (without its options) |
 | `brief` | gonogo, runway (with marks: a field's wind on the map), alternates (91.169's IFR alternate), fields (the best fields to land at: a glide or a diversion), icing_forecast (the AWC's forecast icing on an IFR route), passengers (the passengers' SAFETY briefing, 91.107(a)) | core, flight, procedures |
 | `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours), motion (with along: where the airplane is on the route), approach, navlog | core, flight, weather, procedures |
-| `airspace` | airspace, pack, rules, pack_query, view, spoken, ahead, drills (91.125's light signals and 91.155's minimums as cards and by name) | core, flight, procedures, radio |
+| `airspace` | airspace, pack, rules, pack_query, view, spoken (with spoken_ask: the places a clearance names and its SID and STAR, `clearance_places`), ahead, drills (91.125's light signals and 91.155's minimums as cards and by name) | core, flight, procedures, radio |
 | `wording` | wording (with script: the radio calls' words) | core, procedures, airspace, brief, route (without its options) |
 | `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words, the cautions on a pilot's own altitude, 91.119(b)'s congested areas) | core, flight, weather, procedures |
 | `inflight` | watch, checks, message (`copilot_watch`: the in-flight copilot's ranked messages), fields (its alternative: brief's best_fields in diversion mode, held to its weather and fuel checks) | core, flight, weather, procedures, brief |
@@ -139,6 +139,11 @@ itself, with these exceptions, each weighed for its bytes and its build
   have it, a georust port, MIT, rather than a Vincenty of our own. Plain
   Rust; its default `accurate` feature (the polygon area's sums) is off.
   It is in the WebAssembly, since every app's distance is asked there.
+- `similar` (airspace's `spoken`): how alike two sounds are, a word heard
+  and a fix's letters, as a diff's ratio, mitsuhiko's diff crate rather
+  than a port of Python's difflib of our own. Its features are off (no
+  text or Unicode layer); the web asks no clearance's places, so it is
+  not in the WebAssembly.
 
 A build-dependency runs on the host when a crate is built and is in no
 build of the engine, so it needs no entry: the facade's `build.rs` reads
@@ -218,7 +223,8 @@ Then the callers switch to the name and the old copy is deleted.
   to us by its call sign (`crates/radio`, the web's lib/clearance and
   lib/heardCall, held to their fixtures in `apps/web/src/lib/fixtures`), and
   finds the places it names in the phone's kept packs with no signal
-  (`crates/airspace`, wingtip.spoken's matching): `wt_clearance_hear`.
+  (`crates/airspace`, the matcher the planner asks as
+  `clearance_places`): `wt_clearance_hear`.
 - The four pilot pages' figures are the engine's too (`crates/procedures`): a
   flight debriefed against its flown track (ACS PA.VI.A), the diversion
   drill (PA.VI.C), a hold's entry and its legs in the wind (AIM 5-3-8)

@@ -2109,6 +2109,9 @@ enum EngineContract {
         var name: String?
         /// Anything else is read as not known.
         var kind: String?
+        /// Where it is, where it was found.
+        var lat: Double?
+        var lon: Double?
         /// True where left out.
         var sure: Bool?
     }
@@ -2116,6 +2119,78 @@ enum EngineContract {
     struct ClearanceFoundProcedure: Codable, Equatable, Sendable {
         var id: String
         var transition: String?
+    }
+
+    struct ClearancePlacesAnswer: Codable, Equatable, Sendable {
+        var limit: EngineContract.ClearanceFound?
+        var route: [[EngineContract.ClearanceFound]]
+        var departure: EngineContract.ClearancePlacesAnswerDeparture?
+        var arrival: EngineContract.ClearancePlacesAnswerArrival?
+    }
+
+    struct ClearancePlacesAnswerArrival: Codable, Equatable, Sendable {
+        var id: String
+        var transition: String?
+        var sure: Bool
+    }
+
+    struct ClearancePlacesAnswerDeparture: Codable, Equatable, Sendable {
+        var id: String
+        var transition: String?
+        var sure: Bool
+    }
+
+    struct ClearancePlacesInput: Codable, Equatable, Sendable {
+        var places: [EngineContract.SpokenCandidate]
+        var limit: String?
+        /// The field the planner's airport search found for each run of the limit's words, by the run in capitals ("DULUTH"): the one for the longest run is the limit where it is said with "airport", or where its name starts with every word said.
+        var limitAirports: [String: EngineContract.SpokenCandidate]?
+        var route: [String]?
+        var departure: EngineContract.ClearancePlacesInputDeparture?
+        var arrival: EngineContract.ClearancePlacesInputArrival?
+
+        enum CodingKeys: String, CodingKey {
+            case places
+            case limit
+            case limitAirports = "limit_airports"
+            case route
+            case departure
+            case arrival
+        }
+    }
+
+    struct ClearancePlacesInputArrival: Codable, Equatable, Sendable {
+        /// The name said: "Bunyan", or the navaid's a procedure is named for, "Gopher".
+        var name: String
+        var number: String
+        /// The transition's words, where one was said.
+        var transition: String?
+        /// The field's own procedures, as the CIFP codes them.
+        var procedures: [EngineContract.ClearancePlacesInputArrivalProceduresItem]
+    }
+
+    struct ClearancePlacesInputArrivalProceduresItem: Codable, Equatable, Sendable {
+        /// "BUNYN1": the name's letters and the number.
+        var id: String
+        var kind: String
+        var transitions: [String]?
+    }
+
+    struct ClearancePlacesInputDeparture: Codable, Equatable, Sendable {
+        /// The name said: "Bunyan", or the navaid's a procedure is named for, "Gopher".
+        var name: String
+        var number: String
+        /// The transition's words, where one was said.
+        var transition: String?
+        /// The field's own procedures, as the CIFP codes them.
+        var procedures: [EngineContract.ClearancePlacesInputDepartureProceduresItem]
+    }
+
+    struct ClearancePlacesInputDepartureProceduresItem: Codable, Equatable, Sendable {
+        /// "BUNYN1": the name's letters and the number.
+        var id: String
+        var kind: String
+        var transitions: [String]?
     }
 
     struct ClearanceRoute: Codable, Equatable, Sendable {
@@ -10981,6 +11056,15 @@ enum EngineContract {
         var ft: Double?
         var code: String?
         var desc: String?
+    }
+
+    /// A place a clearance may name, as the planner or a phone's pack holds it: an airport, a navaid (NASR NAV_BASE, by its NAME) or a fix (no name).
+    struct SpokenCandidate: Codable, Equatable, Sendable {
+        var ident: String
+        var name: String?
+        var what: String
+        var lat: Double
+        var lon: Double
     }
 
     struct SquawkMeaningInput: Codable, Equatable, Sendable {

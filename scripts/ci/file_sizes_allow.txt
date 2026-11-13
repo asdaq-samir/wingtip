@@ -57,7 +57,7 @@ apps/web/src/lib/preferences.ts 625
 apps/web/src/lib/queryClient.ts 442
 engine/crates/airspace/src/ahead.rs 1035
 engine/crates/airspace/src/rules.rs 553
-engine/crates/airspace/src/spoken.rs 560
+engine/crates/airspace/src/spoken.rs 551
 engine/crates/airspace/src/view.rs 820
 engine/crates/brief/src/gonogo/calls.rs 740
 engine/crates/brief/src/gonogo/frat.rs 482

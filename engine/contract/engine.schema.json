@@ -4649,6 +4649,262 @@
       ],
       "additionalProperties": false
     },
+    "clearance_places": {
+      "description": "The places an ATC clearance heard named, found as idents among the places given (the nearest to the route first; nothing is fetched): a navaid by its name (\"Gopher\" is GEP, NASR NAV_BASE's NAME), a fix said as a word by its sound (\"pickla\" is PYKLA, offered unsure for the pilot to check), an airport by its name followed by \"airport\", as AIM 4-4-3 a gives a clearance limit (\"cleared to the Duluth airport\": an airport and its navaid often share a name), or the field the planner's search found for the limit's name (`limit_airports`), and anything spelled by its ident. Each phrase of the route is its places in order, the longest names first; a word that names nothing is kept, unfound. The SID and STAR by their name and number among the field's own procedures (\"Bunyan One departure\" is BUNYN1), their transition by its fix's name or sound.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ClearancePlacesInput",
+          "type": "object",
+          "properties": {
+            "places": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/SpokenCandidate"
+              }
+            },
+            "limit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "limit_airports": {
+              "type": "object",
+              "description": "The field the planner's airport search found for each run of the limit's words, by the run in capitals (\"DULUTH\"): the one for the longest run is the limit where it is said with \"airport\", or where its name starts with every word said.",
+              "additionalProperties": {
+                "$ref": "#/definitions/SpokenCandidate"
+              }
+            },
+            "route": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "departure": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "The name said: \"Bunyan\", or the navaid's a procedure is named for, \"Gopher\"."
+                    },
+                    "number": {
+                      "type": "string"
+                    },
+                    "transition": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "The transition's words, where one was said."
+                    },
+                    "procedures": {
+                      "type": "array",
+                      "description": "The field's own procedures, as the CIFP codes them.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "\"BUNYN1\": the name's letters and the number."
+                          },
+                          "kind": {
+                            "enum": [
+                              "departure",
+                              "arrival",
+                              "approach"
+                            ]
+                          },
+                          "transitions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "kind"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "number",
+                    "procedures"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "arrival": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "The name said: \"Bunyan\", or the navaid's a procedure is named for, \"Gopher\"."
+                    },
+                    "number": {
+                      "type": "string"
+                    },
+                    "transition": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "The transition's words, where one was said."
+                    },
+                    "procedures": {
+                      "type": "array",
+                      "description": "The field's own procedures, as the CIFP codes them.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "\"BUNYN1\": the name's letters and the number."
+                          },
+                          "kind": {
+                            "enum": [
+                              "departure",
+                              "arrival",
+                              "approach"
+                            ]
+                          },
+                          "transitions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "kind"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "number",
+                    "procedures"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "places"
+          ]
+        },
+        "answer": {
+          "title": "ClearancePlacesAnswer",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ClearanceFound"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "route": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/ClearanceFound"
+                }
+              }
+            },
+            "departure": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "transition": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "sure": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "transition",
+                    "sure"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "arrival": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "transition": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "sure": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "transition",
+                    "sure"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "limit",
+            "route",
+            "departure",
+            "arrival"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "cleared_route": {
       "description": "The route a clearance gives, from the words heard, the planner's places found for them (ClearancePlaces) and the route planned.",
       "type": "object",
@@ -28621,6 +28877,7 @@
     "checkpoints_select",
     "class_b_detours",
     "class_b_entered",
+    "clearance_places",
     "cleared_route",
     "closest_approach",
     "cloud_clearance_at_ft",
@@ -30793,6 +31050,19 @@
             null
           ],
           "description": "Anything else is read as not known."
+        },
+        "lat": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Where it is, where it was found."
+        },
+        "lon": {
+          "type": [
+            "number",
+            "null"
+          ]
         },
         "sure": {
           "type": [
@@ -36039,6 +36309,41 @@
           ]
         }
       }
+    },
+    "SpokenCandidate": {
+      "title": "SpokenCandidate",
+      "type": "object",
+      "description": "A place a clearance may name, as the planner or a phone's pack holds it: an airport, a navaid (NASR NAV_BASE, by its NAME) or a fix (no name).",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "what": {
+          "enum": [
+            "airport",
+            "navaid",
+            "fix"
+          ]
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "ident",
+        "what",
+        "lat",
+        "lon"
+      ]
     },
     "TafPeriod": {
       "title": "TafPeriod",
