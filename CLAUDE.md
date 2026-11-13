@@ -38,8 +38,9 @@ Functional core, imperative shell, four layers, each with one job
   gateway keeps only the pilot's records of them. Add no new rule there.
 - **Each app is a shell that gets data, keeps state and draws**, and asks
   the engine the rest by name: the web through `callEngine`
-  (apps/web/src/lib/engine, the engine built to WebAssembly), the iPhone
-  through `wt_call`, Android through its JNI shim over `wt_call`. A rule
+  (apps/web/src/lib/engine, the engine built to WebAssembly), the phones
+  through the bindings uniffi generates from engine/bindings/ffi
+  (`call(name, json)`), with the typed EngineCalls on top. A rule
   found in a component, a hook, a Swift view, a Java service or a route
   handler is a bug: move it into the engine and delete the copy (#482).
 - **Screens are view and view model** (MVVM): the view draws, one hook (web)
