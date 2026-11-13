@@ -24,6 +24,8 @@ import org.springframework.security.util.matcher.InetAddressMatchers;
  * <p>In memory, so a restart forgets what it counted. That is the right
  * trade for a limit that only has to hold back a burst or a runaway day,
  * not account for every call.
+ *
+ * <p>Kept by hand rather than Bucket4j, which isn't a dependency, since a token bucket refills and counts differently from the sliding window SlidingWindowLimiterTest and MagicLinkThrottleTest pin.
  */
 public final class SlidingWindowLimiter {
 

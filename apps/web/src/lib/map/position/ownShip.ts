@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { browserStorage } from "../../storage";
-import { M_PER_FT } from "../../geo";
+import { KT_PER_M_S, M_PER_FT } from "../../geo";
 import { useShownStore } from "../../shown";
 
 /**
@@ -171,7 +171,7 @@ function applyFix(set: (patch: Partial<OwnShip>) => void, position: GeolocationP
       lon: longitude,
       accuracyM: accuracy,
       headingDeg: heading === null || Number.isNaN(heading) ? null : heading,
-      speedKt: speed === null || Number.isNaN(speed) ? null : speed * 1.943844,
+      speedKt: speed === null || Number.isNaN(speed) ? null : speed * KT_PER_M_S,
       altitudeFt: altitude === null || Number.isNaN(altitude) ? null : altitude / M_PER_FT,
       at: position.timestamp,
     },

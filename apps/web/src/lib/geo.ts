@@ -51,6 +51,21 @@ export const M_PER_FT = 0.3048;
  *  rounded 6,076.12. */
 export const FT_PER_NM = M_PER_NM / M_PER_FT;
 
+/** Knots in a metre a second: a knot is a nautical mile an hour, so 3,600
+ *  seconds over the 1,852 m above (1.943 844 49...), not the rounded
+ *  1.943844 the browser's GPS speed was once multiplied by (NIST SP 811
+ *  B.9). The phones derive it the same way (Units.swift, Units.kt). */
+export const KT_PER_M_S = 3600 / M_PER_NM;
+
+/** Feet in a statute mile, the international mile of the 1959 yard and
+ *  pound agreement: 5,280 international feet exactly (NIST SP 811 B.9),
+ *  the mile flight visibility and cloud distances are given in. */
+export const FT_PER_SM = 5280;
+
+/** Metres in a statute mile, from the two exact definitions above
+ *  (1,609.344, NIST SP 811 B.9). */
+export const M_PER_SM = FT_PER_SM * M_PER_FT;
+
 const ends = (a: LatLon, b: LatLon) => ({ lat1: a.lat, lon1: a.lon, lat2: b.lat, lon2: b.lon });
 
 function distanceNm(a: LatLon, b: LatLon): number {

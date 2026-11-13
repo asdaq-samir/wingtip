@@ -172,6 +172,18 @@ METRICS = {
         ),
         "a unit factor written in the engine: take it from wingtip_core::units",
     ),
+    # The web's unit literals, the engine's list, set or used inline outside
+    # lib/geo.ts, its one units home: web_unit_constants sees only a
+    # `const … =` line, so `speed * 1.943844` passed it (round 3's K6).
+    # Comments and double-quoted strings are taken out as in Rust.
+    "web_unit_literals": (
+        lambda: sum(
+            len(ENGINE_UNIT.findall(rust_code(text(p))))
+            for p in files("apps/web/src", ".ts") + files("apps/web/src", ".tsx")
+            if not p.endswith("lib/geo.ts")
+        ),
+        "a unit factor written on the web: take it from lib/geo (M_PER_FT, M_PER_NM, KT_PER_M_S, FT_PER_SM, M_PER_SM)",
+    ),
     # The phones' unit literals, the engine's list, outside each phone's one
     # units home (Foundation's Measurement and Units.swift; format/Units.kt).
     "phone_unit_literals": (
