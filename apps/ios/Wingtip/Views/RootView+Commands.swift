@@ -9,7 +9,7 @@ extension RootView {
     /// (Plan.flyHere); with neither, the plan with the destination in for
     /// the pilot to give the departure.
     func route(to ident: String) async {
-        await plan.flyHere(ident, near: ownShip.fix)
+        await flight.plan.flyHere(ident, near: flight.ownShip.fix)
         showPlan()
     }
 
@@ -18,6 +18,7 @@ extension RootView {
     /// field's card; then the screen a link or a card named after it.
     func apply(_ command: AppCommand, then next: Screen? = nil) async {
         defer { if let next { openScreen(next) } }
+        let (plan, ownShip) = (flight.plan, flight.ownShip)
         switch command {
         case .planTo(let ident):
             await route(to: ident)
@@ -59,7 +60,7 @@ extension RootView {
             plan.plan()
         case .aircraft(let hex):
             // The airplane's card, tracked from its next report on.
-            tracking.track(hex)
+            flight.tracking.track(hex)
             nav.open(.traffic(hex.lowercased()))
         case .open(let screen):
             openScreen(screen)

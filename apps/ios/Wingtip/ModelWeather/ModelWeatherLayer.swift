@@ -81,6 +81,7 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
     private var airmetLines: [AirmetLine] = []
     private var airmetLabels: [AirmetLabel] = []
     private var airmetsDrawn: [APIWeatherArea] = []
+    private var labelsDrawn: [String: String] = [:]
     private var badge: FlowPointAnnotation?
 
     func attach(_ map: MKMapView) {
@@ -98,7 +99,7 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
         withObservationTracking {
             let model = ModelWeather.shared
             draw(model.field == .off ? nil : model.painted, radar: model.field == .off ? nil : model.radarTiles)
-            drawAirmets(model.field == .off ? [] : model.airmets)
+            drawAirmets(model.field == .off ? [] : model.airmets, labels: model.airmetLabels)
             drawBadge(model.field == .off ? nil : model.point, reading: model.reading)
         } onChange: { [weak self] in
             Task { @MainActor in self?.follow() }
@@ -135,12 +136,14 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
     /// Over the chart, which is the first overlay, and under the rest.
     private static func justAboveChart(_ map: MKMapView) -> Int { min(1, map.overlays(in: .aboveLabels).count) }
 
-    private func drawAirmets(_ areas: [APIWeatherArea]) {
-        guard let map, areas != airmetsDrawn else { return }
-        airmetsDrawn = areas
+    /// The outlines and their labels: AWC's short names where the engine
+    /// gave them, else the hazard as sent, the failure said in the bar
+    /// (ModelWeather.airmetsProblem) rather than here.
+    private func drawAirmets(_ areas: [APIWeatherArea], labels: [String: String]) {
+        guard let map, areas != airmetsDrawn || labels != labelsDrawn else { return }
+        (airmetsDrawn, labelsDrawn) = (areas, labels)
         map.removeOverlays(airmetLines)
         map.removeAnnotations(airmetLabels)
-        let labels = (try? Engine.gairmetHazards())?.labels ?? [:]
         airmetLines = []
         airmetLabels = []
         for area in areas {

@@ -11,6 +11,10 @@ final class Session {
     private(set) var pilot: Pilot?
     private(set) var loaded = false
     var problem: String?
+    /// The flight (FlightSession) whose records signing out and deleting
+    /// the account forget too: the app gives it (WingtipApp); a preview's
+    /// or a test's session has none, and forgets the same stores' records.
+    @ObservationIgnored var flight: FlightSession?
 
     var signedIn: Bool { pilot != nil }
 
@@ -149,23 +153,25 @@ final class Session {
         pilot = nil
         await ServerFeatures.shared.refresh(signedIn: false, developer: false)
         Session.forgetPilot()
-        Tracking.shared.forgetFavorites()
+        (flight?.tracking ?? Tracking()).forgetFavorites()
         WidgetFeed.shared.forgetPilot()
         // The session's cookies too: with no signal the gateway's logout
         // never ran, and the next person would still be signed in.
         Session.forgetCookies()
-        Session.forgetDevice()
+        Session.forgetDevice(trail: flight?.ownShip.trail, recorder: flight?.ownShip.recorder)
     }
 
     /// What this iPhone recorded or kept of the pilot outside the settings:
     /// the path flown (OwnTrail) and the flight recorder's track, their
     /// files deleted, and the gateway's and planner's answers kept in the
     /// session's cache (the account, the logbook, saved flights). Signing
-    /// out and deleting the account both (the store audit's P7).
-    static func forgetDevice(trail: OwnTrail = .shared, recorder: FlightRecorder = .shared,
+    /// out and deleting the account both (the store audit's P7). The trail
+    /// and the recorder are the flight's (OwnShip); with none in hand their
+    /// files are deleted all the same.
+    static func forgetDevice(trail: OwnTrail?, recorder: FlightRecorder?,
                              cache: URLCache? = Gateway.session.configuration.urlCache) {
-        trail.erase()
-        recorder.erase()
+        (trail ?? OwnTrail()).erase()
+        (recorder ?? FlightRecorder()).erase()
         cache?.removeAllCachedResponses()
     }
 
@@ -200,9 +206,9 @@ final class Session {
         if let id = Bundle.main.bundleIdentifier { UserDefaults.standard.removePersistentDomain(forName: id) }
         Kept.forget()
         KeptForAir.forgetPilotOwn()
-        Tracking.shared.erase()
+        (flight?.tracking ?? Tracking()).erase()
         Session.forgetCookies()
-        Session.forgetDevice()
+        Session.forgetDevice(trail: flight?.ownShip.trail, recorder: flight?.ownShip.recorder)
         WidgetFeed.shared.forgetPilot()
         pilot = nil
     }

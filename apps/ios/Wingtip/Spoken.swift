@@ -11,8 +11,6 @@ import Observation
 @MainActor
 @Observable
 final class SpokenAlerts {
-    static let shared = SpokenAlerts()
-
     var on: Bool = UserDefaults.standard.bool(forKey: "speakAlerts") {
         didSet {
             UserDefaults.standard.set(on, forKey: "speakAlerts")

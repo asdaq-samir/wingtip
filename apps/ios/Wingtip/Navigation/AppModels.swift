@@ -8,27 +8,27 @@ import SwiftUI
 struct AppModels: ViewModifier {
     let session: Session
     let charts: Charts
-    let plan: Plan
-    let ownShip: OwnShip
-    let dryRun: DryRun
-    let traffic: Traffic
-    let verdict: Verdict
     let nav: Navigator
-    let inFlight: InFlight
     let screens: ScreenModels
 
     func body(content: Content) -> some View {
+        let flight = screens.flight
         content
             .environment(session)
             .environment(charts)
-            .environment(plan)
-            .environment(ownShip)
-            .environment(dryRun)
-            .environment(traffic)
-            .environment(verdict)
             .environment(nav)
-            .environment(inFlight)
             .environment(screens)
+            // The flight (FlightSession) whole, for the root and its loops,
+            // and each of its parts by its type, for the view that draws it.
+            .environment(flight)
+            .environment(flight.plan)
+            .environment(flight.ownShip)
+            .environment(flight.dryRun)
+            .environment(flight.traffic)
+            .environment(flight.verdict)
+            .environment(flight.inFlight)
+            .environment(flight.tracking)
+            .environment(flight.alternate)
             .modifier(ReachedModels(screens: screens))
     }
 }
@@ -55,13 +55,11 @@ private struct ReachedModels: ViewModifier {
             .environment(screens.briefAsk)
             .environment(screens.autoLogbook)
             .environment(screens.sharedFlight)
-            .environment(Tracking.shared)
             .environment(ClearanceListener.shared)
             .environment(Receiver.shared)
             .environment(AirportShelf.shared)
             .environment(Airplanes.shared)
             .environment(ReadyToFly.shared)
-            .environment(AlternateCheck.shared)
             .environment(KeepForAir.shared)
             .environment(KeptShown.shared)
             .environment(VoiceInput.shared)
@@ -74,18 +72,18 @@ private struct ReachedModels: ViewModifier {
 extension RootView {
     /// The models this root was given, for a view hosted outside it.
     var models: AppModels {
-        AppModels(session: session, charts: charts, plan: plan, ownShip: ownShip, dryRun: dryRun,
-                  traffic: traffic, verdict: verdict, nav: nav, inFlight: inFlight, screens: screens)
+        AppModels(session: session, charts: charts, nav: nav, screens: screens)
     }
 }
 
 /// The screens' own models the app makes once, given to the views in the
 /// environment (AppModels) and to the intents and the app's loops as
 /// arguments or App Intents' dependencies (WingtipApp), in place of a
-/// singleton each.
+/// singleton each; the flight (FlightSession) among them.
 @MainActor
 @Observable
 final class ScreenModels {
+    let flight: FlightSession
     let firstFlight = FirstFlightModel()
     let sheetEdge = SheetEdge()
     let flightUI = FlightUI()
@@ -96,6 +94,13 @@ final class ScreenModels {
     let atcCopilot = AtcCopilot()
     let screenAsk = ScreenAsk()
     let briefAsk = BriefAsk()
-    let autoLogbook = AutoLogbook()
+    let autoLogbook: AutoLogbook
     let sharedFlight = SharedFlightModel()
+
+    init() {
+        let flight = FlightSession()
+        self.flight = flight
+        // The flight logged from the flight's own recorder (OwnShip.recorder).
+        autoLogbook = AutoLogbook(recorder: flight.ownShip.recorder)
+    }
 }

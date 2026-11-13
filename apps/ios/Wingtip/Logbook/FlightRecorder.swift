@@ -17,8 +17,6 @@ import Observation
 @MainActor
 @Observable
 final class FlightRecorder {
-    static let shared = FlightRecorder()
-
     typealias Point = EngineContract.TrackPoint
 
     /// A point every 5 s: four hours are under 3,000 points, and the

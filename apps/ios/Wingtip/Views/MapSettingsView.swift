@@ -67,4 +67,5 @@ struct MapSettingsView: View {
 #Preview("MapSettingsView") {
     NavigationStack { MapSettingsView() }
         .environment(Traffic())
+        .environment(FlightSession())
 }

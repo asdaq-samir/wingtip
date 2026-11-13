@@ -45,16 +45,17 @@ struct StorePrivacyTests {
         #expect(!recorder.points.isEmpty)
         try FileManager.default.createDirectory(at: OwnTrail.file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data("[]".utf8).write(to: OwnTrail.file)
+        let trail = OwnTrail()
         let cache = URLCache(memoryCapacity: 1 << 20, diskCapacity: 0)
         let request = URLRequest(url: URL(string: "https://example.com/api/me")!)
         cache.storeCachedResponse(CachedURLResponse(response: URLResponse(url: request.url!, mimeType: "application/json", expectedContentLength: 2, textEncodingName: nil),
                                                     data: Data("{}".utf8)), for: request)
         #expect(cache.cachedResponse(for: request) != nil)
 
-        Session.forgetDevice(recorder: recorder, cache: cache)
+        Session.forgetDevice(trail: trail, recorder: recorder, cache: cache)
 
         #expect(recorder.points.isEmpty && !FileManager.default.fileExists(atPath: file.path))
-        #expect(OwnTrail.shared.points.isEmpty && !FileManager.default.fileExists(atPath: OwnTrail.file.path))
+        #expect(trail.points.isEmpty && !FileManager.default.fileExists(atPath: OwnTrail.file.path))
         #expect(cache.cachedResponse(for: request) == nil)
     }
 

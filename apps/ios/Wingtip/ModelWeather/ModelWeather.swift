@@ -71,6 +71,11 @@ final class ModelWeather {
     private(set) var painted: PaintedField?
     /// The hour's G-AIRMETs (the planner's weather map at its time).
     private(set) var airmets: [APIWeatherArea] = []
+    /// Their labels by hazard, AWC's short names as the engine has them
+    /// (`gairmet_hazards`), read once; and why they could not be, said in
+    /// the bar (ProblemLine) while the outlines carry the hazard as sent.
+    private(set) var airmetLabels: [String: String] = [:]
+    private(set) var airmetsProblem: String?
     /// Where the pilot tapped, and what the field is there.
     private(set) var point: CLLocationCoordinate2D?
     private(set) var reading: FlowReading?
@@ -180,6 +185,7 @@ final class ModelWeather {
         fetching?.cancel()
         pause()
         (point, reading, readingProblem, painted, airmets, airmetsAt, index) = (nil, nil, nil, nil, [], nil, nil)
+        airmetsProblem = nil
         guard field != .off else { return }
         fetching = Task { await self.fetchForever() }
     }
@@ -253,6 +259,7 @@ final class ModelWeather {
             }
             guard airmetsAt == at else { return }
             airmets = (map?.advisories ?? []).filter { $0.kind == "gairmet" }
+            if !airmets.isEmpty, airmetLabels.isEmpty { (airmetLabels, airmetsProblem) = Self.airmetLabels() }
         }
     }
 

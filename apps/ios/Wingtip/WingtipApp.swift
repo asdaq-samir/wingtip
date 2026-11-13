@@ -7,18 +7,13 @@ import SwiftUI
 /// product until this one passes the plan's gates.
 @main
 struct WingtipApp: App {
-    @State private var session = Session()
+    @State private var session: Session
     @State private var charts = Charts()
-    @State private var plan = Plan()
-    @State private var ownShip = OwnShip()
-    @State private var dryRun = DryRun()
-    @State private var traffic = Traffic()
-    @State private var verdict = Verdict()
     /// Where every card and page opens (Navigator): one for the app, the
     /// views given it in the environment.
     @State private var nav: Navigator
-    @State private var inFlight = InFlight()
-    /// The screens' own models (ScreenModels), one each for the app.
+    /// The screens' own models (ScreenModels), one each for the app, the
+    /// flight (FlightSession) among them.
     @State private var screens: ScreenModels
     @Environment(\.scenePhase) private var scenePhase
     /// iOS's hand-over of the chart downloads finished in the background.
@@ -38,9 +33,15 @@ struct WingtipApp: App {
         let nav = Navigator()
         nav.screens = screens
         _nav = State(initialValue: nav)
+        // Signing out forgets the flight's own records too (Session.signOut).
+        let session = Session()
+        session.flight = screens.flight
+        _session = State(initialValue: session)
     }
 
     var body: some Scene {
+        let flight = screens.flight
+        let (plan, ownShip) = (flight.plan, flight.ownShip)
         WindowGroup {
             RootView()
                 // Every list's section titles the system's prominent ones,
@@ -50,8 +51,7 @@ struct WingtipApp: App {
                 .headerProminence(.increased)
                 // An emailed sign-in link asks before it signs anyone in.
                 .modifier(LinkSignInPrompt(session: session))
-                .modifier(AppModels(session: session, charts: charts, plan: plan, ownShip: ownShip, dryRun: dryRun,
-                                    traffic: traffic, verdict: verdict, nav: nav, inFlight: inFlight, screens: screens))
+                .modifier(AppModels(session: session, charts: charts, nav: nav, screens: screens))
                 .task { ownShip.start() }
                 .task { await session.refresh() }
                 // The deletes an earlier launch held behind their Undo and
@@ -64,14 +64,15 @@ struct WingtipApp: App {
                 .task { await plan.restore() }
                 // Under IFR, the alternate checked for the plan's ETA, asked
                 // again as the plan or the alternate filed changes (AlternateCheck).
-                .task(id: AlternateCheck.key(for: plan)) { await AlternateCheck.shared.refresh(plan: plan) }
+                .task(id: AlternateCheck.key(for: plan)) { await flight.alternate.refresh(plan: plan) }
                 // The flight in progress on the Lock Screen and in the
                 // Dynamic Island (FlightActivity, a Live Activity: the
                 // owner's ask, 2026-11-03, as Apple recommends for anything
                 // ongoing), watched every few seconds: the dry run's, or
                 // own ship's with a route planned.
-                .task { await Repeating.every(5) { FlightActivity.shared.observe(plan: plan, dryRun: dryRun, ownShip: ownShip, inFlight: inFlight,
-                                                                                 copilot: screens.copilot, atc: screens.atcCopilot) } }
+                .task { await Repeating.every(5) { FlightActivity.shared.observe(plan: plan, dryRun: flight.dryRun, ownShip: ownShip, inFlight: flight.inFlight,
+                                                                                 copilot: screens.copilot, atc: screens.atcCopilot,
+                                                                                 weather: flight.weatherWatch.latest) } }
                 // The next flight on the Home Screen and the Lock Screen
                 // (WidgetFeed, FlightWidget in WingtipWidgets): the plan, its
                 // verdict and the departure's weather, written to the App
@@ -79,22 +80,22 @@ struct WingtipApp: App {
                 // fields the weather widget's settings offer first.
                 .task {
                     await Repeating.every(15) {
-                        WidgetFeed.shared.update(plan: plan, verdict: verdict)
+                        WidgetFeed.shared.update(plan: plan, verdict: flight.verdict)
                         WidgetFeed.shared.airports(homeBase: session.pilot?.homeBase, favorites: AirportShelf.shared.favorites)
                     }
                 }
                 // The route's weather watched after the Brief (WeatherWatch):
                 // a look every quarter hour while the app runs, and iOS's
                 // background refresh asked for as it goes behind.
-                .task { await Repeating.every(60) { WeatherWatch.shared.tick(plan: plan) } }
+                .task { await Repeating.every(60) { flight.weatherWatch.tick(plan: plan) } }
                 .onChange(of: scenePhase) { _, phase in if phase == .background { Task { await WeatherWatch.schedule() } } }
-                .task { await WatchLink.shared.run(plan: plan, ownShip: ownShip) }
+                .task { await flight.watchLink.run(plan: plan, ownShip: ownShip) }
                 // The cockpit's ADS-B receiver on the Wi-Fi, read once a
                 // second while the setting is Auto (Receiver).
                 .task { await Receiver.shared.run() }
         }
-        .backgroundTask(.appRefresh(WeatherWatch.taskId)) {
-            await WeatherWatch.shared.look()
+        .backgroundTask(.appRefresh(WeatherWatch.taskId)) { [watch = flight.weatherWatch] in
+            await watch.look()
             await WeatherWatch.schedule()
         }
     }

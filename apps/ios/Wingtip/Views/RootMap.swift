@@ -16,14 +16,10 @@ struct RootMap: View {
     let ask: (String?) -> Void
     @Environment(Replay.self) private var replay
     @Environment(Emergency.self) private var emergency
-    @Environment(Tracking.self) private var tracking
-    @Environment(InFlight.self) private var inFlight
     @Environment(Navigator.self) private var nav
     @Environment(Charts.self) private var charts
-    @Environment(Plan.self) private var plan
-    @Environment(OwnShip.self) private var ownShip
-    @Environment(DryRun.self) private var dryRun
-    @Environment(Traffic.self) private var traffic
+    /// The flight (FlightSession), its parts read where they are drawn.
+    @Environment(FlightSession.self) private var flight
     @Environment(\.undoManager) private var undoManager
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("layout") private var layoutName = "plan"
@@ -39,13 +35,19 @@ struct RootMap: View {
     @AppStorage(PlateLook.Keys.inverted) private var plateInverted = false
     @AppStorage(PlateLook.Keys.annotations) private var plateAnnotations = true
 
+    private var plan: Plan { flight.plan }
+    private var ownShip: OwnShip { flight.ownShip }
+    private var dryRun: DryRun { flight.dryRun }
+    private var traffic: Traffic { flight.traffic }
+    private var tracking: Tracking { flight.tracking }
+
     /// What the map draws of the airplane tracked and the flights flown,
     /// and its taps for them: an airplane's card, a point pressed.
     private var flightLayer: FlightLayer {
         return FlightLayer(
             trackedHex: tracking.hex, tracked: tracking.latest, follow: tracking.follow,
             path: tracking.path, past: tracking.past, flown: tracking.flown,
-            glide: inFlight.glide?.coordinates ?? [],
+            glide: flight.inFlight.glide?.coordinates ?? [],
             emergency: emergency.line(from: dryRun.fix ?? ownShip.fix),
             onTraffic: { plane in
                 tracking.track(plane.hex, plane: plane)
@@ -97,7 +99,7 @@ struct RootMap: View {
             // airplane's demonstrated crosswind for the wind barbs' red.
             fieldWeather: FieldWeatherInput(
                 worse: FieldWeatherMarks.worse(plan.briefing, fields: Set([plan.dep, plan.dest] + plan.stops).subtracting([""])),
-                alternates: AlternateCheck.shared.atEta,
+                alternates: flight.alternate.atEta,
                 demonstratedKt: FieldWeatherMarks.demonstratedKt(plan)),
             hazardLegs: plan.hazardLegs,
             bottomInset: inset,

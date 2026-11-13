@@ -44,7 +44,7 @@ final class AutoLogbook {
     /// What was logged, for the sheet's last word.
     private(set) var logged: LogbookEntryRequest?
 
-    init(recorder: FlightRecorder = .shared) {
+    init(recorder: FlightRecorder) {
         self.recorder = recorder
     }
 

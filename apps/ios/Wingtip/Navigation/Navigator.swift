@@ -155,7 +155,7 @@ final class Navigator {
     private func left(_ page: SheetPage, for next: SheetPage?) {
         switch page {
         case .traffic:
-            if case .traffic = next {} else { Tracking.shared.track(nil) }
+            if case .traffic = next {} else { screens?.flight.tracking.track(nil) }
         case .sharedFlight:
             if let shared = screens?.sharedFlight, shared.showing { shared.notNow() }
         case .flightLogged:
