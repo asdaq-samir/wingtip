@@ -1,0 +1,70 @@
+{
+  "x-call": "wingtip_core::geo_many::call",
+  "description": "distance_nm and bearing_deg over many legs at once, columns in and columns out: row i is the great circle from (lat1[i], lon1[i]) to (lat2[i], lon2[i]) on the same sphere of 3,440.065 nm (wingtip.geo), its distance in nm and its initial course in degrees true 0 to 360, 0 for two points that coincide. The lists are all as long as each other, so a corridor of points, a route's legs or a map's stops cross into the engine once.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GreatCirclesInput",
+      "type": "object",
+      "properties": {
+        "lat1": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "lon1": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "lat2": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "lon2": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "lat1",
+        "lon1",
+        "lat2",
+        "lon2"
+      ]
+    },
+    "answer": {
+      "title": "GreatCirclesAnswer",
+      "type": "object",
+      "properties": {
+        "distance_nm": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "bearing_deg": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "distance_nm",
+        "bearing_deg"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

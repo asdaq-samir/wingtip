@@ -6,7 +6,7 @@
  * there.
  */
 import type { Briefing, Course } from "../../../../lib/api/types";
-import { distanceNm } from "../../../../lib/geo";
+import { legsNm } from "../../../../lib/geo";
 import { categoryOf } from "../../../../lib/map/marks/flightCategory";
 import { callEngine } from "../../../../lib/engine/engine";
 
@@ -27,9 +27,10 @@ export function placesOf(course: Course): Place[] {
     const p = points[0]!;
     return [{ ident: p.ident, role: "Local", lat: p.lat, lon: p.lon, alongNm: 0 }];
   }
+  const legs = legsNm(points);
   let along = 0;
   return points.flatMap((p, i) => {
-    if (i > 0) along += distanceNm(points[i - 1]!, p);
+    if (i > 0) along += legs[i - 1]!;
     if (p.kind === "fix") return [];
     const role = i === 0 ? "Departure" : i === points.length - 1 ? "Destination" : "Stop";
     return [{ ident: p.ident, role, lat: p.lat, lon: p.lon, alongNm: along }];

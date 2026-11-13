@@ -5137,6 +5137,22 @@ object EngineContract {
     )
 
     @Serializable
+    data class GreatCirclesAnswer(
+        @SerialName("distance_nm")
+        val distanceNm: List<Double>,
+        @SerialName("bearing_deg")
+        val bearingDeg: List<Double>,
+    )
+
+    @Serializable
+    data class GreatCirclesInput(
+        val lat1: List<Double>,
+        val lon1: List<Double>,
+        val lat2: List<Double>,
+        val lon2: List<Double>,
+    )
+
+    @Serializable
     data class GroundspeedKtInput(
         @SerialName("true_course_deg")
         val trueCourseDeg: Double,

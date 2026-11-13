@@ -3,7 +3,8 @@
 //! geodesy and the general readers, no aviation rule.
 //!
 //! - base64: bytes carried in JSON (RFC 4648), as a receiver's are;
-//! - geo: great-circle distances, as wingtip.geo has them;
+//! - geo: great-circle distances, as wingtip.geo has them, and geo_many:
+//!   the same figures over columns of points at once;
 //! - wmm: magnetic variation from the World Magnetic Model;
 //! - grid: route options' straight lines over the grid (sums: the
 //!   Python's float sums, kept exactly);
@@ -19,6 +20,7 @@
 pub mod ask;
 pub mod base64;
 pub mod geo;
+pub mod geo_many;
 pub mod grid;
 pub mod json;
 pub mod sort;

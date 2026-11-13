@@ -5183,6 +5183,23 @@ enum EngineContract {
         var detail: String
     }
 
+    struct GreatCirclesAnswer: Codable, Equatable, Sendable {
+        var distanceNm: [Double]
+        var bearingDeg: [Double]
+
+        enum CodingKeys: String, CodingKey {
+            case distanceNm = "distance_nm"
+            case bearingDeg = "bearing_deg"
+        }
+    }
+
+    struct GreatCirclesInput: Codable, Equatable, Sendable {
+        var lat1: [Double]
+        var lon1: [Double]
+        var lat2: [Double]
+        var lon2: [Double]
+    }
+
     struct GroundspeedKtInput: Codable, Equatable, Sendable {
         var trueCourseDeg: Double
         var windFromDeg: Double

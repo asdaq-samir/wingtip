@@ -31,17 +31,17 @@ feed and the reading takes nothing from the planning a pilot waits on.
 
 A feed is off where its SWIM_* settings are not all set (ingest.settings);
 a dropped connection is made again after a pause, growing to a few
-minutes. Nothing here states a figure: a NOTAM's reading (notams_fns) and
-a track's course and speed (velocity_track) are the engine's.
+minutes. Nothing here states a figure: a NOTAM's reading (notams_fns), a
+track's course and speed (velocity_track) and how far a track is from a
+view (wingtip.geo.distance_nm) are the engine's.
 """
 
 import logging
-import math
 import re
 import threading
 import time
 
-from wingtip import datis, departures, filed_routes, flow, itws, notams, rvr, saa, traffic
+from wingtip import datis, departures, filed_routes, flow, geo, itws, notams, rvr, saa, traffic
 
 from .radar_tracks import tracks
 from .settings import get_settings
@@ -105,15 +105,10 @@ def _bytes(data: bytes | str) -> bytes:
     return data.encode("utf-8", "replace") if isinstance(data, str) else data
 
 
-def _nm(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """About how far apart two places are, nm, on a flat chart a minute of
-    latitude to the mile: near enough to say a facility is out of sight
-    with hundreds of miles to spare, and cheap enough for every message."""
-    return 60.0 * math.hypot(lat2 - lat1, (lon2 - lon1) * math.cos(math.radians((lat1 + lat2) / 2)))
-
-
 def _in_view(lat: float, lon: float, views, margin: float) -> bool:
-    return any(_nm(lat, lon, v_lat, v_lon) <= radius + margin for v_lat, v_lon, radius in views)
+    """Whether a place is within `margin` of any view's circle: the
+    great circle's distance, the engine's (wingtip.geo.distance_nm)."""
+    return any(geo.distance_nm(lat, lon, v_lat, v_lon) <= radius + margin for v_lat, v_lon, radius in views)
 
 
 def raw(message) -> bytes | str:

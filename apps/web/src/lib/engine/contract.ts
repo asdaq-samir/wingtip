@@ -2209,6 +2209,13 @@ export interface EngineContract {
     answer: GonogoWithAlternateAnswer;
   };
   /**
+   * distance_nm and bearing_deg over many legs at once, columns in and columns out: row i is the great circle from (lat1[i], lon1[i]) to (lat2[i], lon2[i]) on the same sphere of 3,440.065 nm (wingtip.geo), its distance in nm and its initial course in degrees true 0 to 360, 0 for two points that coincide. The lists are all as long as each other, so a corridor of points, a route's legs or a map's stops cross into the engine once.
+   */
+  great_circles: {
+    input: GreatCirclesInput;
+    answer: GreatCirclesAnswer;
+  };
+  /**
    * The nav log's ground speed once the heading holds the course: the airspeed's share along it less the wind's.
    */
   groundspeed_kt: {
@@ -7301,6 +7308,16 @@ export interface GonogoWithAlternateInput {
     finding: string;
     detail: string;
   } | null;
+}
+export interface GreatCirclesInput {
+  lat1: number[];
+  lon1: number[];
+  lat2: number[];
+  lon2: number[];
+}
+export interface GreatCirclesAnswer {
+  distance_nm: number[];
+  bearing_deg: number[];
 }
 export interface GroundspeedKtInput {
   true_course_deg: number;

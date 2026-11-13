@@ -1,5 +1,5 @@
 {
-  "about": "The sphere's figures every app asks the engine rather than working out itself (distance_nm, bearing_deg, destination; wingtip.geo's sphere of 3,440.065 nm, pyproj's Geod with f = 0): the phones' traffic notice, own trail, replay and stop placing. Compared to 1e-9. Web: lib/geo (the map's own, deliberate). iOS: Engine.distanceNm, bearingDeg, destination. Android: the same.",
+  "about": "The sphere's figures every app asks the engine rather than working out itself (distance_nm, bearing_deg, destination, and great_circles for many legs at once; the engine's sphere of 3,440.065 nm, which pyproj's Geod with f = 0 answers too): the planner's wingtip.geo, the phones' traffic notice, own trail, replay and stop placing. Compared to 1e-9. Web: lib/geo. iOS: Engine.distanceNm, bearingDeg, destination. Android: the same.",
   "distance": [
     {
       "lat1": 41.9786,

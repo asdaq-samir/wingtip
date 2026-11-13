@@ -46,10 +46,6 @@ CODED_REVERSAL_DEG = 90.0
 ENTRY_TURN_NM = 120 * (120 / 3600) / (2 * math.pi)
 
 
-def _nm(a: tuple, b: tuple) -> float:
-    return float(geo.distance_nm(a[0], a[1], b[0], b[1]))
-
-
 def _bearing(a: tuple, b: tuple) -> float:
     return float(geo.bearing_deg(a[0], a[1], b[0], b[1]))
 
@@ -60,7 +56,7 @@ def _toward(a: tuple, bearing: float, nm: float) -> tuple:
 
 def length_nm(path: list) -> float:
     """The length of a path of (lat, lon) points, nm."""
-    return sum(_nm(a, b) for a, b in zip(path, path[1:]))
+    return sum(geo.distance_nm(*a, *b) for a, b in zip(path, path[1:]))
 
 
 def joined_lines(lines: list) -> list:
@@ -71,7 +67,7 @@ def joined_lines(lines: list) -> list:
     for line in lines:
         part = [tuple(p) for p in line]
         if points:
-            joined = next((i for i, p in enumerate(part) if _nm(p, points[-1]) < SAME_PLACE_NM), None)
+            joined = next((i for i, p in enumerate(part) if geo.distance_nm(*p, *points[-1]) < SAME_PLACE_NM), None)
             part = part[joined + 1 :] if joined is not None else part
         points.extend(part)
     return points
@@ -88,7 +84,7 @@ def _crossings(drawing: dict, points: list) -> dict | None:
     crossed = [f for f in drawing.get("fixes", []) if not f["missed"]]
 
     def ft(p):
-        fix = next((f for f in crossed if _nm((f["lat"], f["lon"]), p) < SAME_PLACE_NM), None)
+        fix = next((f for f in crossed if geo.distance_nm(f["lat"], f["lon"], *p) < SAME_PLACE_NM), None)
         return None if fix is None else fix["min_ft"] if fix["min_ft"] is not None else fix["max_ft"]
 
     holds = [h for h in drawing.get("holds", []) if not h["missed"]]
@@ -119,7 +115,7 @@ def approach_path(drawing: dict) -> dict | None:
     if path:
         path["map_at"] = len(path["points"]) - 1
         end = drawing.get("threshold")
-        if end and _nm(tuple(end), path["points"][-1]) >= SAME_PLACE_NM:
+        if end and geo.distance_nm(*end, *path["points"][-1]) >= SAME_PLACE_NM:
             path["points"].append(tuple(end))
             path["ft"].append(None)
     return path
@@ -153,7 +149,7 @@ def procedure_path(drawing: dict, toward: tuple | None = None, runway: str | Non
     if drawing["kind"] == "departure":
         lines = [ln for ln in drawing.get("lines", []) if ln["role"] == "runway"]
         return _crossings(drawing, joined_lines(_runway_line(lines, runway) + _of(drawing, "common", "transition")))
-    nearest = min(runways, key=lambda ln: _nm(tuple(ln[-1]), toward)) if toward is not None and runways else None
+    nearest = min(runways, key=lambda ln: geo.distance_nm(*ln[-1], *toward)) if toward is not None and runways else None
     return _crossings(drawing, joined_lines(_of(drawing, "transition", "common") + ([nearest] if nearest else [])))
 
 
@@ -166,10 +162,10 @@ def missed_path(drawing: dict, start: tuple) -> dict | None:
     climb to: the highest its fixes set, the hold's as a rule. None where
     the approach draws none."""
     path = joined_lines(_of(drawing, "missed"))
-    at = next((i for i, p in enumerate(path) if _nm(p, start) < SAME_PLACE_NM), None)
+    at = next((i for i, p in enumerate(path) if geo.distance_nm(*p, *start) < SAME_PLACE_NM), None)
     points = path[at + 1 :] if at is not None else path
     hold = next(([tuple(p) for p in h["points"]] for h in drawing.get("holds", []) if h["missed"]), None)
-    if hold and len(hold) > 2 and points and _nm(hold[0], points[-1]) < SAME_PLACE_NM:
+    if hold and len(hold) > 2 and points and geo.distance_nm(*hold[0], *points[-1]) < SAME_PLACE_NM:
         points = points + hold[1:]
     if not points:
         return None
@@ -193,7 +189,7 @@ def vectors_join(final: list, start: tuple) -> list:
     first = final[0]
     course = _bearing(first, final[1])
     off = ((_bearing(first, start) - course + 540) % 360) - 180
-    distance = _nm(first, start)
+    distance = geo.distance_nm(*first, *start)
     side = 1 if off >= 0 else -1
     join = _toward(first, course + 180 - 30 * side, INTERCEPT_NM)
     # How far ahead of the first fix the airplane is, toward the runway or
@@ -289,7 +285,7 @@ def with_reversals(path: list, ft: list, holds: list) -> tuple[list, list]:
         # audit of 2026-10-21: Rockford's ILS 01 via KENNY, and nine in ten
         # of the RNAV approaches checked); else, past its first fix, a
         # teardrop where the path doubles back.
-        hold = next((h for h in holds if len(h["points"]) > 2 and _nm(tuple(h["points"][0]), fix) < SAME_PLACE_NM), None)
+        hold = next((h for h in holds if len(h["points"]) > 2 and geo.distance_nm(*h["points"][0], *fix) < SAME_PLACE_NM), None)
         if hold and turn > CODED_REVERSAL_DEG:
             round_ = _entered(hold, fix, cin)
         elif not hold and i > 1 and turn > REVERSAL_DEG:
@@ -311,7 +307,7 @@ def _direct(piece: dict | None, drawing: dict | None) -> dict | None:
     fix = next((f for f in drawing.get("fixes", []) if f["ident"] == ident and not f["missed"]), None)
     if fix is None:
         return piece
-    at = next((i for i, p in enumerate(piece["points"]) if _nm(p, (fix["lat"], fix["lon"])) < SAME_PLACE_NM), None)
+    at = next((i for i, p in enumerate(piece["points"]) if geo.distance_nm(*p, fix["lat"], fix["lon"]) < SAME_PLACE_NM), None)
     if at is None:
         return piece
     sent = {**piece, "points": piece["points"][at:], "ft": piece["ft"][at:]}
@@ -371,7 +367,7 @@ def flown(
                 raw_ft.append(None)
         for p, ft in zip(piece["points"], piece["ft"]):
             # A point where the last piece ended is the one place.
-            if raw and _nm(p, raw[-1]) < SAME_PLACE_NM:
+            if raw and geo.distance_nm(*p, *raw[-1]) < SAME_PLACE_NM:
                 continue
             raw.append(p)
             raw_ft.append(ft)
@@ -379,7 +375,7 @@ def flown(
     # onto the route, and an arrival on to its field from where it ends --
     # most end in vectors (FM, VM), Rockford's ALEXS1 29 miles out, where the
     # dry run came down to the field's elevation (the audit of 2026-10-21).
-    if not app and not circuit_in and _nm(raw[-1], tuple(end)) >= SAME_PLACE_NM:
+    if not app and not circuit_in and geo.distance_nm(*raw[-1], *end) >= SAME_PLACE_NM:
         raw.append(tuple(end))
         raw_ft.append(None)
     path, ft = with_reversals(raw, raw_ft, [h for piece in pieces for h in piece["holds"]])
@@ -389,10 +385,10 @@ def flown(
     if app:
         faf = next((f for f in approach.get("fixes", []) if not f["missed"] and "FAF" in f["roles"]), None)
         if faf:
-            hits = [i for i, p in enumerate(path) if _nm(p, (faf["lat"], faf["lon"])) < SAME_PLACE_NM]
+            hits = [i for i, p in enumerate(path) if geo.distance_nm(*p, faf["lat"], faf["lon"]) < SAME_PLACE_NM]
             final_at = hits[-1] if hits else None
         map_point = app["points"][app.get("map_at", len(app["points"]) - 1)]
-        hits = [i for i, p in enumerate(path) if _nm(p, map_point) < SAME_PLACE_NM]
+        hits = [i for i, p in enumerate(path) if geo.distance_nm(*p, *map_point) < SAME_PLACE_NM]
         map_at = hits[-1] if hits else None
         missed = missed_path(approach, map_point)
     return {
