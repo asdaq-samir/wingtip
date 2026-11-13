@@ -137,7 +137,7 @@ def test_metars_are_kept_however_long_an_outage_with_their_own_times():
     assert weather_store.read("metars").until is None
     with (
         patch("app.fetch.requests.get", side_effect=requests.ConnectionError("no route to host")),
-        patch("wingtip.retry.time.sleep"),
+        patch("tenacity.nap.time.sleep"),
         pytest.raises(fetch.FetchFailed),
     ):
         aviationweather.fetch_source("metars")
@@ -226,7 +226,7 @@ def test_a_certificate_failure_is_not_retried():
     the back-off would only delay the same answer by six seconds."""
     with (
         patch("app.fetch.requests.get", side_effect=requests.exceptions.SSLError("certificate has expired")) as mock_get,
-        patch("wingtip.retry.time.sleep") as mock_sleep,
+        patch("tenacity.nap.time.sleep") as mock_sleep,
     ):
         with pytest.raises(fetch.FetchFailed, match="certificate has expired"):
             aviationweather.fetch_source("metars")
@@ -242,7 +242,7 @@ def test_a_request_refused_as_asked_is_not_retried_and_one_too_many_is():
     26-47) is the same answer on every try: three tries and their back-off
     put 6.5 s on a plan. A 429 asks to be tried later, and is."""
     refused = Mock(status_code=400, text='{"status":"error","error":"Wind/temp tables have been discontinued"}')
-    with patch("app.fetch.requests.get", return_value=refused) as mock_get, patch("wingtip.retry.time.sleep") as mock_sleep:
+    with patch("app.fetch.requests.get", return_value=refused) as mock_get, patch("tenacity.nap.time.sleep") as mock_sleep:
         with pytest.raises(fetch.FetchFailed, match="refused: 400"):
             fetch.get("https://aviationweather.gov/api/data/windtemp", {"fcst": "06"})
     assert mock_get.call_count == 1
@@ -250,7 +250,7 @@ def test_a_request_refused_as_asked_is_not_retried_and_one_too_many_is():
 
     busy = Mock(status_code=429, text="slow down")
     busy.raise_for_status.side_effect = requests.HTTPError("429 Client Error")
-    with patch("app.fetch.requests.get", return_value=busy) as mock_get, patch("wingtip.retry.time.sleep"):
+    with patch("app.fetch.requests.get", return_value=busy) as mock_get, patch("tenacity.nap.time.sleep"):
         with pytest.raises(fetch.FetchFailed, match="after 3 attempts"):
             fetch.get("https://aviationweather.gov/api/data/windtemp", {"fcst": "06"})
     assert mock_get.call_count == 3

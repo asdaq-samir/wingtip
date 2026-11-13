@@ -37,6 +37,8 @@ import time
 from pathlib import Path
 from typing import NamedTuple
 
+from cachetools import TTLCache
+
 from . import tracing
 from .atomic import atomic_path
 from .config import get_settings
@@ -196,7 +198,8 @@ def servable(record: Record | None, now: float | None = None) -> bool:
     return record.until is None or (time.time() if now is None else now) < record.until
 
 
-_ASKED = {"at": 0.0}
+# One entry that lives ASKED_EVERY_S: while it is there, the mark is fresh.
+_ASKED: TTLCache = TTLCache(maxsize=1, ttl=ASKED_EVERY_S, timer=lambda: time.time())
 
 
 def mark_asked() -> None:
@@ -205,7 +208,7 @@ def mark_asked() -> None:
     planner cannot write to is left alone, the service then keeping its
     slow pace."""
     now = time.time()
-    if now - _ASKED["at"] < ASKED_EVERY_S:
+    if "at" in _ASKED:
         return
     _ASKED["at"] = now
     try:

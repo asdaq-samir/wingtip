@@ -5,9 +5,8 @@ data downloads -- and the one way this package reads a service's own
 reason out of an error response (upstream_detail). A plain request to
 an outside source is retried by wingtip.outside's session instead."""
 
-import time
-
 import requests
+from tenacity import Retrying, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
 
 
 def with_retries(
@@ -20,24 +19,28 @@ def with_retries(
     error: type = RuntimeError,
 ):
     """Runs `action()` up to `retries` times, sleeping `backoff_s`, then
-    twice that, and so on between attempts, and raises `error` -- naming
-    `describe` and the last failure -- once they are spent.
+    twice that, and so on (exponential, plus up to a second of jitter so
+    callers that failed together do not retry together) between attempts,
+    and raises `error` -- naming `describe` and the last failure -- once
+    they are spent.
 
     A certificate problem is raised at once instead: it fails identically
     on every attempt (aviationweather.gov's own certificate expired on
     2026-09-19), so the back-off would only delay the same answer.
     """
-    last_err = None
-    for attempt in range(retries):
-        try:
-            return action()
-        except requests.exceptions.SSLError as err:
-            raise error(f"{describe} failed: {err}") from err
-        except transient as err:
-            last_err = err
-            if attempt < retries - 1:
-                time.sleep(backoff_s * (attempt + 1))
-    raise error(f"{describe} failed after {retries} attempts: {last_err}") from last_err
+    try:
+        for attempt in Retrying(
+            stop=stop_after_attempt(retries),
+            wait=wait_exponential_jitter(initial=backoff_s, jitter=1.0),
+            retry=retry_if_exception_type(transient) & ~retry_if_exception_type(requests.exceptions.SSLError),
+            reraise=True,
+        ):
+            with attempt:
+                return action()
+    except requests.exceptions.SSLError as err:
+        raise error(f"{describe} failed: {err}") from err
+    except transient as err:
+        raise error(f"{describe} failed after {retries} attempts: {err}") from err
 
 
 def upstream_detail(response, service: str) -> str:

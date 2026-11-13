@@ -30,11 +30,13 @@ import io
 import json
 import math
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
 import requests
+from cachetools import TTLCache
 
 from . import geo, outside
 from .elevation import terrarium_m
@@ -86,21 +88,21 @@ _HELD_LOCK = threading.Lock()
 #: s: a server builds its grid in the background after a deploy, and the
 #: planner beside it takes it up once it is there, with no restart.
 LOOK_AGAIN_S = 600
+_NOT_BUILT: TTLCache = TTLCache(maxsize=1, ttl=LOOK_AGAIN_S, timer=lambda: time.monotonic())
 
 
 def _grids() -> tuple[np.ndarray, np.ndarray] | None:
     """The built grids, memory-mapped once; None where none is built."""
-    import time
-
     with _HELD_LOCK:
-        held = _HELD.get("grids")
-        if held is not None and (held[1] is not None or time.monotonic() - held[0] < LOOK_AGAIN_S):
-            return held[1]
-        grids = None
+        if "grids" in _HELD:
+            return _HELD["grids"]
+        if "not built" in _NOT_BUILT:
+            return None
         if HIGH_PATH.exists() and LOW_PATH.exists() and not DONE_PATH.exists():
-            grids = (np.load(HIGH_PATH, mmap_mode="r"), np.load(LOW_PATH, mmap_mode="r"))
-        _HELD["grids"] = (time.monotonic(), grids)
-        return grids
+            _HELD["grids"] = (np.load(HIGH_PATH, mmap_mode="r"), np.load(LOW_PATH, mmap_mode="r"))
+            return _HELD["grids"]
+        _NOT_BUILT["not built"] = True
+        return None
 
 
 def _cells(lats: np.ndarray, lons: np.ndarray) -> tuple[np.ndarray, np.ndarray] | None:
@@ -226,6 +228,7 @@ def build(workers: int = 12) -> None:
     DONE_PATH.unlink()
     with _HELD_LOCK:
         _HELD.pop("grids", None)
+        _NOT_BUILT.clear()
 
 
 if __name__ == "__main__":
