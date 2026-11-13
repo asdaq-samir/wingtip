@@ -4,7 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AirportPlace, PlateOverlay, TerminalChart } from "../../lib/api/types";
+import fixture from "../../lib/fixtures/platePagePoint.json";
 import { CardCloseContext } from "../../lib/map/cards/cardClose";
+import { useOwnShip } from "../../lib/map/position/ownShip";
 import { airportQuery, plateQuery } from "../../lib/queryClient";
 import { usePreferences } from "../../lib/preferences";
 import { LEAST_PLATE_OPACITY, PLATE_OPACITY, useHiddenPlates, usePlateLook } from "./plateLook";
@@ -17,9 +19,9 @@ const charts: TerminalChart[] = [
   ILS36,
 ];
 
-function setUp() {
+function setUp(page: Partial<NonNullable<PlateOverlay["page"]>> | null = null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
-  client.setQueryData(plateQuery("KOSH", "I36").queryKey, { name: "ILS OR LOC RWY 36", cycle: "2611" } as PlateOverlay);
+  client.setQueryData(plateQuery("KOSH", "I36").queryKey, { name: "ILS OR LOC RWY 36", cycle: "2611", page } as PlateOverlay);
   client.setQueryData(airportQuery("KOSH").queryKey, { procedures: charts } as unknown as AirportPlace);
   const close = vi.fn();
   const wrapper = ({ children }: { children: ReactNode }) =>
@@ -59,6 +61,35 @@ describe("the plate's card", () => {
     expect(result.current.fullScreen).toBe(true);
     act(() => result.current.closeFullScreen());
     expect(result.current.fullScreen).toBe(false);
+  });
+
+  it("puts own ship on the plate full screen, by its georeference", () => {
+    // The fixture's plate (KRFD's, platePagePoint.json), 42.2 N 89.1 W.
+    useOwnShip.setState({
+      enabled: true,
+      fix: { lat: 42.2, lon: -89.1, accuracyM: 5, headingDeg: 90, speedKt: 90, altitudeFt: null, at: 0 },
+    });
+    const { result } = setUp({ georeference: fixture.georeference });
+    // Not drawn while the card is on the map: only full screen.
+    expect(result.current.mark).toBeNull();
+    act(() => result.current.openFullScreen());
+    expect(result.current.mark).toMatchObject({ moving: true });
+    expect(result.current.mark!.x).toBeCloseTo(0.6416, 3);
+    // Own ship turned off: the mark goes.
+    act(() => useOwnShip.setState({ enabled: false }));
+    expect(result.current.mark).toBeNull();
+    useOwnShip.setState({ fix: null });
+  });
+
+  it("draws no position on a plate whose page is not placed", () => {
+    useOwnShip.setState({
+      enabled: true,
+      fix: { lat: 42.2, lon: -89.1, accuracyM: 5, headingDeg: 90, speedKt: 90, altitudeFt: null, at: 0 },
+    });
+    const { result } = setUp(null);
+    act(() => result.current.openFullScreen());
+    expect(result.current.mark).toBeNull();
+    useOwnShip.setState({ enabled: false, fix: null });
   });
 
   it("hides the plate and puts the card away", () => {

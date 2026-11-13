@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState, type ReactNode } from "react";
 import { ListRow } from "../../../components/GroupedList";
 import { Spinner } from "../../../components/ui/spinner";
-import { diagramPicture } from "../../../lib/diagram";
+import { diagramPicture, type PageMark } from "../../../lib/diagram";
 
 const ChartViewer = lazy(() => import("./AirportDiagramViewer"));
 const FaaChartViewer = lazy(() => import("./AirportDiagramViewer").then((m) => ({ default: m.FaaChartViewer })));
@@ -131,11 +131,24 @@ export function ChartRow({
 
 /** One of the FAA's charts full screen by its address, its code fetched
  *  at the first one (FaaChartViewer): for a caller with a button of its
- *  own, the card's runway sketch. */
-export function FaaChart({ title, url, airport, onClose }: { title: string; url: string; airport: string; onClose: () => void }) {
+ *  own, the card's runway sketch and the plate's card (`mark`, own ship on
+ *  the plate). */
+export function FaaChart({
+  title,
+  url,
+  airport,
+  mark = null,
+  onClose,
+}: {
+  title: string;
+  url: string;
+  airport: string;
+  mark?: PageMark | null;
+  onClose: () => void;
+}) {
   return (
     <Suspense fallback={null}>
-      <FaaChartViewer title={title} url={url} airport={airport} onClose={onClose} />
+      <FaaChartViewer title={title} url={url} airport={airport} mark={mark} onClose={onClose} />
     </Suspense>
   );
 }
