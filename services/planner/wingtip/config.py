@@ -96,8 +96,7 @@ class Settings(BaseSettings):
     """Every environment variable wingtip and the planner read, by its
     own name (case aside; the field `log_level` is LOG_LEVEL), with its
     default. Unset optional keys (the ADS-B keys) are None,
-    which is how each feature knows it is off. The Claude models and ANTHROPIC_API_KEY are the assistant
-    service's (services/assistant, app.settings): the planner calls no model."""
+    which is how each feature knows it is off. The planner calls no model."""
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
 

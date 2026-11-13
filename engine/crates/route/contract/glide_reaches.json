@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_route::motion::call",
   "description": "Whether a field distance_nm off is within still-air glide, arriving at pattern height (AC 90-66C's 1,000 ft), at the picked airplane's own glide_ratio; false with no glide ratio (no airplane, or none in its profile).",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

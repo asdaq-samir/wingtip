@@ -148,8 +148,7 @@ Each rule says what it is in one file beside its code:
 `crates/<crate>/contract/<name>.json` (or `facade/contract/<name>.json`
 for the rules `call.rs`'s `rule` answers itself), named for the rule. The
 file is the rule's entry in the contract -- its description, with the
-AIM, 14 CFR or ACS source of each figure, `"x-tool"` where the assistant
-may ask it, and its `input` and `answer` as JSON Schema -- and two members
+AIM, 14 CFR or ACS source of each figure, and its `input` and `answer` as JSON Schema -- and two members
 for the build: `"x-call"`, the Rust function that answers it (a path
 from the facade, `fn(&str, &Value) -> Result<String, String>`, which gets
 the name, so one function may answer several), and `"x-feature"` where a
@@ -175,8 +174,7 @@ copies: the web's `apps/web/src/lib/engine/contract.ts`
 by name, so a renamed field fails the web's typecheck rather than a screen
 on a phone; the phones' typed calls and answer types
 (`scripts/build/engine-contract-apps.sh`, into `apps/ios/Wingtip/Engine/Generated`
-and `apps/android/.../engine/generated`); and the assistant's tools
-(`scripts/build/assistant-client.sh`, from `"x-tool"`).
+and `apps/android/.../engine/generated`).
 `facade/tests/contract.rs` holds every name's function to answering it
 and the shared fixtures' answers to the schema; `contract.test.ts` holds
 the web's generated file to the schema.
@@ -187,15 +185,10 @@ A rule goes in this way, each step in the same pull request:
    source cited in a comment: a function reading the input `Value` and
    writing JSON, or an arm in the module's existing `call(name, v)`.
 2. Its file, `crates/<crate>/contract/<name>.json`: `"x-call"`, the
-   description with its source, `"x-tool": true` where it is a figure a
-   pilot asks about (an altitude, a wind, a reserve, minimums, currency;
-   its description is then what the model reads), and its `input` and
-   `answer`.
+   description with its source, and its `input` and `answer`.
 3. `cargo run -p wingtip-contract-gen` in `engine/`, then `npm run types`
-   in `apps/web/`, `scripts/build/engine-contract-apps.sh` and, for a
-   tool, `scripts/build/assistant-client.sh` (the planner's `POST
-   /api/engine/{name}`, #569, then answers it with no other code); commit
-   what they write.
+   in `apps/web/` and `scripts/build/engine-contract-apps.sh`; commit what
+   they write.
 4. A test against the shared fixtures in `apps/web/src/lib/fixtures`, so the
    web, the phones and the planner are held to the same examples.
 5. Where the web asks it, `python3 scripts/build/web_rules.py` (the web's

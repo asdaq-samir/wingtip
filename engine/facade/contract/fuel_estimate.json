@@ -1,7 +1,6 @@
 {
   "x-call": "crate::call::rule",
   "description": "The figures from the airplane's book alone, before the nav log's: at cruise speed with no wind the minutes over the distance, the fuel at the cruise burn over them, and the fuel required, that with the airplane's own start and taxi allowance (taxi_fuel_gal, its profile's; left out where it has none, never a stock airplane's) and 45 minutes' reserve at the cruise burn, the most the rules ask (14 CFR 91.151(a)(2), 91.167(a)(3)), so an estimate is never short of a reserve. Null where the book gives no speed, or no burn for the fuel.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

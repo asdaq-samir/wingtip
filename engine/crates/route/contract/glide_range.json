@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_route::motion::call",
   "description": "Still-air glide range, nm, at the picked airplane's own glide ratio (glide_ratio: feet forward for each foot down, its POH's Section 3 maximum glide, as its profile gives it), or null on the ground, with no height, or with no glide ratio: no airplane, or none in its profile, has no glide worked out.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

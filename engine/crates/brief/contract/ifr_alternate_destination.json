@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_brief::alternates::call",
   "description": "Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast that does not indicate at least 2,000 ft and 3 sm for an hour either side of the ETA (TEMPO and PROB included; a TAF not covering the whole window, a ceiling of unknown height or no visibility does not); no TAF needs one.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

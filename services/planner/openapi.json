@@ -10274,32 +10274,6 @@
         "title": "GAirmet",
         "type": "object"
       },
-      "GenerateNotesRequest": {
-        "properties": {
-          "departure_ident": {
-            "title": "Departure Ident",
-            "type": "string"
-          },
-          "destination_ident": {
-            "title": "Destination Ident",
-            "type": "string"
-          },
-          "stops": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Stops",
-            "type": "array"
-          }
-        },
-        "required": [
-          "departure_ident",
-          "destination_ident"
-        ],
-        "title": "GenerateNotesRequest",
-        "type": "object"
-      },
       "GlideFigures": {
         "description": "The POH's best-glide speed and glide ratio (Section 3). A pilot's\nown airplane of no stock type has its glide ratio alone, as its pilot\ngave it: no best-glide speed (none is taken from another airplane) and\nits source the pilot.",
         "properties": {
@@ -14653,108 +14627,6 @@
         "title": "NotamsRankedAsk",
         "type": "object"
       },
-      "NoteSeeded": {
-        "description": "A generated note offered as the shared one: kept (`written`), or\nthe shared one saved meanwhile, which stays (`description` is it).",
-        "properties": {
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "written": {
-            "title": "Written",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "description",
-          "written"
-        ],
-        "title": "NoteSeeded",
-        "type": "object"
-      },
-      "NoteToWrite": {
-        "description": "A route's checkpoint as the assistant writes its note\n(POST /api/checkpoint-notes/pending): where it is, what it is, the\nhop its note is kept under, and the note already kept for it -- the\npilot's own, else the shared one -- or None, for the assistant to\nwrite and seed.",
-        "properties": {
-          "along_track_nm": {
-            "title": "Along Track Nm",
-            "type": "number"
-          },
-          "category": {
-            "title": "Category",
-            "type": "string"
-          },
-          "hop_key": {
-            "title": "Hop Key",
-            "type": "string"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "lat": {
-            "title": "Lat",
-            "type": "number"
-          },
-          "lon": {
-            "title": "Lon",
-            "type": "number"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "saved": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Saved"
-          }
-        },
-        "required": [
-          "lat",
-          "lon",
-          "id",
-          "category",
-          "along_track_nm",
-          "hop_key"
-        ],
-        "title": "NoteToWrite",
-        "type": "object"
-      },
-      "NotesToWrite": {
-        "description": "A route's checkpoints in along-track order, for their notes.",
-        "properties": {
-          "checkpoints": {
-            "items": {
-              "$ref": "#/components/schemas/NoteToWrite"
-            },
-            "title": "Checkpoints",
-            "type": "array"
-          },
-          "departure_ident": {
-            "title": "Departure Ident",
-            "type": "string"
-          }
-        },
-        "required": [
-          "departure_ident",
-          "checkpoints"
-        ],
-        "title": "NotesToWrite",
-        "type": "object"
-      },
       "NtsbEvent": {
         "description": "One NTSB case of the airplane (wingtip.history.ntsb), its texts\nverbatim: where and when (the local date), its phase of flight and\nhighest injury in the NTSB's words, its probable cause once the final\nreport is out, and its narrative (the final report's, else the\npreliminary's factual one).",
         "properties": {
@@ -18562,6 +18434,115 @@
         "title": "RouteHazard",
         "type": "object"
       },
+      "RouteNote": {
+        "description": "A route's checkpoint with its note (POST /api/checkpoint-notes/route):\nwhere it is, what it is, the hop its note is kept under, and the note\nkept for it -- the pilot's own, else the shared one -- or None.",
+        "properties": {
+          "along_track_nm": {
+            "title": "Along Track Nm",
+            "type": "number"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "hop_key": {
+            "title": "Hop Key",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "saved": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Saved"
+          }
+        },
+        "required": [
+          "lat",
+          "lon",
+          "id",
+          "category",
+          "along_track_nm",
+          "hop_key"
+        ],
+        "title": "RouteNote",
+        "type": "object"
+      },
+      "RouteNotes": {
+        "description": "A route's checkpoints in along-track order, for their notes.",
+        "properties": {
+          "checkpoints": {
+            "items": {
+              "$ref": "#/components/schemas/RouteNote"
+            },
+            "title": "Checkpoints",
+            "type": "array"
+          },
+          "departure_ident": {
+            "title": "Departure Ident",
+            "type": "string"
+          }
+        },
+        "required": [
+          "departure_ident",
+          "checkpoints"
+        ],
+        "title": "RouteNotes",
+        "type": "object"
+      },
+      "RouteNotesRequest": {
+        "properties": {
+          "departure_ident": {
+            "title": "Departure Ident",
+            "type": "string"
+          },
+          "destination_ident": {
+            "title": "Destination Ident",
+            "type": "string"
+          },
+          "stops": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Stops",
+            "type": "array"
+          }
+        },
+        "required": [
+          "departure_ident",
+          "destination_ident"
+        ],
+        "title": "RouteNotesRequest",
+        "type": "object"
+      },
       "RouteOption": {
         "description": "One way to fly the route (wingtip.route_options): the points between\nits ends in order, as the address's `stops` takes them -- turns as the\npilot's own points off a fix, fuel stops as fields (`fuel`) -- and the\nkinds of way it is the best of, with its estimate of the flight. The\nhazards it still crosses and the marginal weather it passes, by their\nindex in RouteOptions.hazards.",
         "properties": {
@@ -19995,35 +19976,6 @@
           "areas"
         ],
         "title": "SaaStatuses",
-        "type": "object"
-      },
-      "SeedNoteRequest": {
-        "properties": {
-          "description": {
-            "maxLength": 500,
-            "title": "Description",
-            "type": "string"
-          },
-          "hop_key": {
-            "title": "Hop Key",
-            "type": "string"
-          },
-          "lat": {
-            "title": "Lat",
-            "type": "number"
-          },
-          "lon": {
-            "title": "Lon",
-            "type": "number"
-          }
-        },
-        "required": [
-          "hop_key",
-          "lat",
-          "lon",
-          "description"
-        ],
-        "title": "SeedNoteRequest",
         "type": "object"
       },
       "ServiceStatus": {
@@ -26038,10 +25990,10 @@
         "summary": "Pilots Notes"
       }
     },
-    "/api/checkpoint-notes/pending": {
+    "/api/checkpoint-notes/route": {
       "post": {
-        "description": "A route's selected checkpoints in along-track order, each with the\nnote already kept for it (the pilot's own edit, else the shared one)\nor None, and the hop its note is kept under: what the assistant\nservice writes the missing notes from (its POST\n/api/checkpoint-notes/generate, which the apps reach). Asked by the\nassistant alone; the gateway forwards no app here.",
-        "operationId": "notes_to_write_api_checkpoint_notes_pending_post",
+        "description": "A route's selected checkpoints in along-track order, each with the\nnote kept for it (the pilot's own edit, else the shared one) or None,\nand the hop its note is kept under.",
+        "operationId": "route_notes_api_checkpoint_notes_route_post",
         "parameters": [
           {
             "in": "header",
@@ -26064,7 +26016,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GenerateNotesRequest"
+                "$ref": "#/components/schemas/RouteNotesRequest"
               }
             }
           },
@@ -26075,7 +26027,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NotesToWrite"
+                  "$ref": "#/components/schemas/RouteNotes"
                 }
               }
             },
@@ -26092,46 +26044,12 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Notes To Write"
-      }
-    },
-    "/api/checkpoint-notes/seed": {
-      "post": {
-        "description": "A generated note offered as the shared one at its place: kept where\nnone is there yet, else the one saved meanwhile stays and is\nanswered. The assistant's alone, as /pending is.",
-        "operationId": "seed_note_api_checkpoint_notes_seed_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SeedNoteRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NoteSeeded"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Seed Note"
+        "summary": "Route Notes",
+        "x-gateway": {
+          "access": "signed-in",
+          "csrf": false,
+          "pilot": true
+        }
       }
     },
     "/api/checkpoints": {
@@ -27216,96 +27134,6 @@
         "x-gateway": {
           "access": "public"
         }
-      }
-    },
-    "/api/engine/{name}": {
-      "post": {
-        "description": "The engine's rule `name` on the input given, its answer as the\nengine gives it (the contract's `answer` for the name). An input not\nof the rule's shape is a 422 with the engine's words.",
-        "operationId": "engine_rule_api_engine__name__post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "name",
-            "required": true,
-            "schema": {
-              "enum": [
-                "airspace_entry_rules",
-                "altitude_allowed",
-                "altitude_limits",
-                "approach_category",
-                "approach_descent_fpm",
-                "below_vfr_minimums",
-                "cloud_clearance_at_ft",
-                "distance_nm",
-                "filed_endurance",
-                "flight_category",
-                "fuel_estimate",
-                "glide_range",
-                "glide_reaches",
-                "gonogo_density_altitude",
-                "handbook_read_check",
-                "highest_under_clouds_ft",
-                "holding",
-                "holding_leg_minutes",
-                "ifr_alternate_check",
-                "ifr_alternate_destination",
-                "isa_temp_c",
-                "legal_cruising_altitudes",
-                "logbook_read_check",
-                "lowest_vfr_cruising_altitude",
-                "magnetic_variation",
-                "pattern_altitude",
-                "pilot_currency",
-                "pressure_altitude_ft",
-                "reserve_min",
-                "service_ceiling_on_the_day",
-                "squawk_meaning",
-                "vfr_basic_minimums",
-                "vfr_minimums",
-                "vor_check_limit_deg",
-                "wind_components",
-                "wind_triangle"
-              ],
-              "title": "Name",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "additionalProperties": true,
-                "title": "Given",
-                "type": "object"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response Engine Rule Api Engine  Name  Post"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Engine Rule",
-        "x-internal": "assistant"
       }
     },
     "/api/faa-chart": {

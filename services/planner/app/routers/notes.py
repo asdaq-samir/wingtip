@@ -1,10 +1,9 @@
 """Per-checkpoint identification notes: a short, pilot-facing "how to
 spot it" sentence, kept here and edited by a pilot. Persisted separately
 from chart_picks.csv (that file is ML training data); this is an
-operational annotation a pilot edits, not a label. The notes are written
-by Claude in the assistant service (services/assistant, app.notes),
-which asks /pending for the checkpoints still without one and /seed to
-keep each it writes."""
+operational annotation a pilot edits, not a label. The apps read a
+route's notes from POST /api/checkpoint-notes/route and save a pilot's
+edit with POST /api/checkpoint-notes."""
 
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
@@ -13,7 +12,7 @@ from wingtip import checkpoint_notes
 from wingtip import geo
 
 from ..router_basics import load_route
-from ..schemas.notes import CheckpointNote, CheckpointNoteSaved, NoteSeeded, NotesToWrite, NoteToWrite, PilotNotes, PilotNotesForgotten
+from ..schemas.notes import CheckpointNote, CheckpointNoteSaved, PilotNotes, PilotNotesForgotten, RouteNote, RouteNotes
 from ..checkpoint_scoring import route_checkpoints
 from ..gateway import gateway
 
@@ -32,7 +31,7 @@ class CheckpointNoteRequest(BaseModel):
     description: str = Field(max_length=500)
 
 
-class GenerateNotesRequest(BaseModel):
+class RouteNotesRequest(BaseModel):
     departure_ident: str
     destination_ident: str
     stops: list[str] = []
@@ -56,14 +55,13 @@ def _hop_of(r, lat: float, lon: float):
 PILOT_HEADER = "X-Pilot-Id"
 
 
-@router.post("/api/checkpoint-notes/pending")
-def notes_to_write(request: GenerateNotesRequest, x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER)) -> NotesToWrite:
+# A POST that changes nothing (the route rides in its body), so no CSRF
+# token: the native app holds none.
+@router.post("/api/checkpoint-notes/route", openapi_extra=gateway("signed-in", csrf=False, pilot=True))
+def route_notes(request: RouteNotesRequest, x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER)) -> RouteNotes:
     """A route's selected checkpoints in along-track order, each with the
-    note already kept for it (the pilot's own edit, else the shared one)
-    or None, and the hop its note is kept under: what the assistant
-    service writes the missing notes from (its POST
-    /api/checkpoint-notes/generate, which the apps reach). Asked by the
-    assistant alone; the gateway forwards no app here."""
+    note kept for it (the pilot's own edit, else the shared one) or None,
+    and the hop its note is kept under."""
     r = load_route(request.departure_ident, request.destination_ident, request.stops)
     _, selected, _ = route_checkpoints(r)  # already along-track order
     # Notes are matched by place, so the same corridor flown the other
@@ -81,7 +79,7 @@ def notes_to_write(request: GenerateNotesRequest, x_pilot_id: str | None = Heade
     for cp in selected:
         saved = checkpoint_notes.find_note(existing, cp["lat"], cp["lon"], x_pilot_id)
         checkpoints.append(
-            NoteToWrite(
+            RouteNote(
                 lat=cp["lat"],
                 lon=cp["lon"],
                 id=cp["id"],
@@ -92,25 +90,7 @@ def notes_to_write(request: GenerateNotesRequest, x_pilot_id: str | None = Heade
                 saved=saved["description"] if saved is not None else None,
             )
         )
-    return NotesToWrite(departure_ident=r.dep_ident, checkpoints=checkpoints)
-
-
-class SeedNoteRequest(BaseModel):
-    hop_key: str
-    lat: float
-    lon: float
-    description: str = Field(max_length=500)
-
-
-@router.post("/api/checkpoint-notes/seed")
-def seed_note(note: SeedNoteRequest) -> NoteSeeded:
-    """A generated note offered as the shared one at its place: kept where
-    none is there yet, else the one saved meanwhile stays and is
-    answered. The assistant's alone, as /pending is."""
-    if not note.description.strip():
-        raise HTTPException(422, "description must not be empty")
-    held, written = checkpoint_notes.seed_note(note.hop_key, note.lat, note.lon, note.description.strip())
-    return NoteSeeded(description=held["description"], written=written)
+    return RouteNotes(departure_ident=r.dep_ident, checkpoints=checkpoints)
 
 
 @router.post("/api/checkpoint-notes", openapi_extra=gateway("signed-in", pilot=True))

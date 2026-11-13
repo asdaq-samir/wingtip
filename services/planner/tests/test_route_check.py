@@ -1,5 +1,4 @@
-"""GET /api/route-check: a route checked as a typed one is, for the
-assistant service's proposals of a change to the plan; nothing planned."""
+"""GET /api/route-check: a route checked as a typed one is, nothing planned."""
 
 from fastapi import HTTPException
 from fastapi.testclient import TestClient

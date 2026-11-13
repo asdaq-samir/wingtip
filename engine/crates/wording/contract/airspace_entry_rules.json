@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_wording::wording::answer",
   "description": "A Class B, C or D's entry, equipment and speed rules (14 CFR 91.117, 91.129-91.131, 91.215, 91.225), each with its cite, and whom to call. Any other one-letter class answers no rules.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

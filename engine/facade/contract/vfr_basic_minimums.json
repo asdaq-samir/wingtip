@@ -1,7 +1,6 @@
 {
   "x-call": "crate::call::rule",
   "description": "The surface-area minimums (14 CFR 91.155(c), (d)), which the planner holds every route to: no VFR under a 1,000 ft ceiling or in under 3 statute miles within a surface area of controlled airspace. Not the least VFR ever asks (Class G at or below 1,200 ft above the surface by day: 1 sm and clear of clouds, 91.155(a)).",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

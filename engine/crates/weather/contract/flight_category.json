@@ -1,7 +1,6 @@
 {
   "x-call": "wingtip_weather::forecast::calls::call",
   "description": "A field's flight category (AIM 7-1-7); with no visibility, LIFR only under a 500 ft ceiling and else null.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

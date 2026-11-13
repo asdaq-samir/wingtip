@@ -1,7 +1,6 @@
 {
   "x-call": "crate::call::rule",
   "description": "Item 19's endurance in whole minutes: the fuel aboard at the cruise burn, to the minute below (AIM Appendix 4); null where the burn is not a positive figure.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

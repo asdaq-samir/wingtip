@@ -1,7 +1,6 @@
 {
   "x-call": "crate::call::rule",
   "description": "Where the pilot stands on a day, from the logbook and the dates they give: passengers by day (14 CFR 61.57(a)) and at night (61.57(b)), the flight review (61.56(c)), the medical, the logbook's totals and instrument currency (61.57(c)(1), (d)). The gateway's CurrencyDto.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {

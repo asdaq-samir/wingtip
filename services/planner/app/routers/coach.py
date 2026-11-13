@@ -2,9 +2,8 @@
 engine's proficiency plan (proficiency_plan: what is due and when under
 14 CFR 61.56 and 61.57, the weak areas the pilot's own debriefs show, and
 the sessions, each at a field near home found by wingtip.coach), and POST
-/api/words/coach/sources puts a plan as lines a sentence can cite, for
-the assistant service's POST /api/words/coach (services/assistant
-app/coach.py), which the gateway forwards and never these sources.
+/api/words/coach/sources puts a plan as lines a sentence can cite. The
+gateway forwards neither the sources nor anything that words them.
 
 Nothing is decided here: the plan is the engine's, and the lines say its
 figures as it gave them. The ids a sentence cites: "due:<key>",
@@ -97,5 +96,5 @@ def plan_sources(p: ProficiencyPlan) -> list[Source]:
 
 @router.post("/api/words/coach/sources")
 def coach_sources(p: ProficiencyPlan) -> WordsSources:
-    """A proficiency plan's lines for the assistant to put into words."""
+    """A proficiency plan's lines, each a source a sentence can cite."""
     return WordsSources(sources=plan_sources(p))

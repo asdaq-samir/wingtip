@@ -1,6 +1,5 @@
 {
   "x-call": "wingtip_pilot::documents::call",
-  "x-assistant": true,
   "description": "A paper logbook page as read off a photograph, each row a draft of the gateway's logbook entry with what to check (14 CFR 61.51(b): the date, total time, where from and to, the airplane; each kind of time no longer than the flight; dual and solo not overlapping, 61.51(d); approaches and holds with instrument time, 61.51(g)(1), 61.57(c); night landings with night time, 61.57(b); cross-country with a landing elsewhere, 61.1), and the page's own totals against its rows.",
   "type": "object",
   "properties": {

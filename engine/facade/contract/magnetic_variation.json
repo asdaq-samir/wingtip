@@ -1,7 +1,6 @@
 {
   "x-call": "crate::call::rule",
   "description": "Magnetic variation, degrees east (west negative), the World Magnetic Model's (WMM) at a place and day, as wingtip.magnetic works it out.",
-  "x-tool": true,
   "type": "object",
   "properties": {
     "input": {
