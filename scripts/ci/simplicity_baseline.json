@@ -12,6 +12,7 @@
  "python_unit_constants": 1,
  "web_unit_constants": 0,
  "engine_unit_literals": 0,
+ "web_unit_literals": 0,
  "phone_unit_literals": 0,
  "phone_tile_maths": 0,
  "copy_paste_clones": 36,

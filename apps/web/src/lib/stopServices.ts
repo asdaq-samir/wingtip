@@ -1,5 +1,6 @@
 import type { NearbyPlace } from "./api/types";
 import { callEngine } from "./engine/engine";
+import { M_PER_SM } from "./geo";
 
 /** NASR's fuel codes as the pump is labelled: its jet fuels by name, the
  *  rest (100LL, UL94, MOGAS) as the codes they are -- the shared engine's
@@ -9,7 +10,7 @@ export const fuelNames = (types: string[]) => (types.length ? callEngine("fuel_n
 /** How far a place is from the field, as a pilot on foot or in a car reads
  *  it: the minutes' walk where it is a walk, else statute miles. */
 export function awayWords(place: Pick<NearbyPlace, "distance_m" | "walk_min">): string {
-  return place.walk_min != null ? `${place.walk_min} min walk` : `${(place.distance_m / 1609.344).toFixed(1)} mi`;
+  return place.walk_min != null ? `${place.walk_min} min walk` : `${(place.distance_m / M_PER_SM).toFixed(1)} mi`;
 }
 
 type Near = Pick<NearbyPlace, "distance_m" | "walk_min">;

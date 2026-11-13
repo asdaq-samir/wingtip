@@ -1,7 +1,7 @@
 /** How the airspace over a point is written (AirspaceCard). */
 import type { VfrMinimums } from "./api/types";
 import { callEngine } from "./engine/engine";
-import type { LatLon } from "./geo";
+import { FT_PER_SM, type LatLon } from "./geo";
 import { altFt } from "./format";
 
 export { degreesMinutes } from "./coords";
@@ -10,7 +10,7 @@ export { degreesMinutes } from "./coords";
  *  horizontal", or "1 sm, clear of clouds". */
 export function minimumsLine(m: VfrMinimums): string {
   if (m.clear_of_clouds) return `${m.visibility_sm} sm, clear of clouds`;
-  const horizontal = m.horizontal_ft === 5280 ? "1 sm" : altFt(m.horizontal_ft);
+  const horizontal = m.horizontal_ft === FT_PER_SM ? "1 sm" : altFt(m.horizontal_ft);
   return `${m.visibility_sm} sm, ${altFt(m.below_ft)} below, ${altFt(m.above_ft)} above, ${horizontal} horizontal`;
 }
 
