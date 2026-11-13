@@ -15,7 +15,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** The engine's in-flight names (#218) as Android asks them through JNI:
+/** The engine's in-flight names (#218) as Android asks them through the bindings:
  *  in_flight as InFlight asks it, the vertical speed, and
  *  own ship on KDLH's diagram, which is drawn with north to the page's
  *  left. The same cases as the iPhone's InFlightTests. */

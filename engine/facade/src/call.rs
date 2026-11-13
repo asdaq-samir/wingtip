@@ -1,8 +1,8 @@
 //! One way in for every host: a rule asked by its name, its input a JSON
 //! object, its answer JSON. The web app (engine/bindings/wasm, from
-//! TypeScript), the planner (wingtip_native.call) and the phones (wt_call)
-//! all come in here, so a rule moved into the engine needs no new function
-//! on any of them. The answers are the planner's endpoints' own JSON,
+//! TypeScript), the planner (wingtip_native.call) and the phones (the
+//! `call` engine/bindings/ffi exports through UniFFI) all come in here,
+//! so a rule moved into the engine needs no new function on any of them. The answers are the planner's endpoints' own JSON,
 //! snake_case, where a rule has an endpoint.
 //!
 //! Which function answers which name is not listed here, and none is

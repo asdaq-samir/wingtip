@@ -15,8 +15,8 @@ enum PackMapData {
     /// The fields in the box: the packs' (pack_airports_in_view), else the
     /// planner's /api/airports/in-view.
     static func airports(south: Double, west: Double, north: Double, east: Double) async throws -> [AirportPin] {
-        // The packs first, through the engine's C reader (CyclePacks.airportsInView,
-        // wt_airports_in_view): a region never kept, or no index yet, is nil.
+        // The packs first, through the engine's reader (CyclePacks.airportsInView,
+        // WingtipEngine.airportsInView): a region never kept, or no index yet, is nil.
         // Off the main actor, as the map's own asks are.
         if let kept = await CyclePacks.shared.airportsInView(ViewBox(south: south, west: west, north: north, east: east)) {
             return kept

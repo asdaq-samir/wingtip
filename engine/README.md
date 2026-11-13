@@ -224,7 +224,7 @@ Then the callers switch to the name and the old copy is deleted.
   drill (PA.VI.C), a hold's entry and its legs in the wind (AIM 5-3-8)
   and lost communications' altitudes (14 CFR 91.185), with their words.
   app.figures only carries the dicts across; the phones get the
-  planner's very answers from `wt_call` (`debrief`, `diversion`,
+  planner's very answers from `call` (`debrief`, `diversion`,
   `holding`, `lost_comms`).
 - The Brief's Go / No-Go is the engine's too (`crates/brief`): the seven
   findings and the line over them, the pilot's minimums, icing under IFR,
@@ -233,7 +233,7 @@ Then the callers switch to the name and the old copy is deleted.
   the modules it is fed from). Each is a name in `call.rs`
   (`gonogo_verdict_items`, `gonogo_risk`, `gonogo_runway_checks` ...), asked by
   the web app (callEngine), the planner's app.gonogo (wingtip_native.call)
-  and the phones (wt_call).
+  and the phones (the generated `call`).
 - Runways, the wind on them and the traffic pattern are the engine's too
   (`crates/brief`): a wind along and across a runway and the end it favours,
   the runway flown (the pilot's pick, else into the wind, AC 90-66C
@@ -378,21 +378,31 @@ Then the callers switch to the name and the old copy is deleted.
   the web's words (`words_*`) are asked by name from wingtip and
   app.gonogo, held to the planner's answers from before the move in
   `apps/web/src/lib/fixtures/plannerRules.json`.
-- `bindings/ffi` (`wingtip-ffi`): the engine's C functions for the phones
-  (`bindings/ffi/include/wingtip_engine.h`), a static library: the airspace over a
-  point from a phone's cycle pack, as the planner's /api/airspace/at
-  answers it. A plain C interface rather than UniFFI, whose bindgen
-  brings dozens of crates for five functions.
-  `bindings/ffi/build-xcframework.sh` builds it for the iPhone and the simulator
-  into `apps/ios/Frameworks/WingtipEngine.xcframework` (native-ios.yml, on
-  GitHub's macOS runner), which the app imports as `WingtipEngine`.
+- `bindings/ffi` (`wingtip-ffi`): the engine for the phones through
+  Mozilla's UniFFI (proc-macro mode, `#[uniffi::export]` in
+  `bindings/ffi/src/lib.rs`): `call`, every rule by name with JSON in and
+  out, and the readers of the phone's cycle packs (the airspace over a
+  point, what is ahead, the map's view, a clearance heard), which take
+  the packs by their files' paths and map each for the call. The Swift
+  and the Kotlin round it are written by uniffi-bindgen
+  (`bindings/ffi/bindgen`, at the `uniffi` crate's own version) from the
+  built library each time it is built, and never committed or edited
+  (`bindings/ffi/uniffi.toml` names their modules).
+  `bindings/ffi/build-xcframework.sh` builds a static library for the
+  iPhone and the simulator into
+  `apps/ios/Frameworks/WingtipEngine/WingtipEngineFFI.xcframework` with
+  the C header and module map, beside the generated
+  `Generated/WingtipEngine.swift`, which project.yml builds as the `WingtipEngine`
+  module the app imports (native-ios.yml, on GitHub's macOS runner);
+  `bindings/ffi/build-android.sh` a shared library for each ABI and the
+  Kotlin into `apps/android/app/engine/`, loaded through JNA.
 
 - `bindings/wasm` (`wingtip-wasm`): the engine for the web app, as WebAssembly
   with no wasm-bindgen. Every host asks a rule the same way, by name with
   JSON in and JSON out (`facade/src/call.rs`, which looks each name up in
   the table its contract files give): the browser through `wt_call` in the module
   (`apps/web/src/lib/engine/engine.ts`, `callEngine`), the planner through
-  `wingtip_native.call`, the phones through `wt_call` in the header. A rule
+  `wingtip_native.call`, the phones through the generated `call`. A rule
   moved into the engine needs only a name there. The module's ABI is in
   `bindings/wasm/src/lib.rs`. `scripts/build/build-engine-wasm.sh` builds it in Docker
   (the Rust image pinned by digest, so the bytes are the same anywhere)

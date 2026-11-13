@@ -3,7 +3,7 @@ import Testing
 @testable import Wingtip
 
 /// The airport weather marks (the owner's pick, 2026-11-10) as the map
-/// asks the engine for them through wt_call, against the shared fixture
+/// asks the engine for them through its call, against the shared fixture
 /// the engine's, the web's and Android's tests read too
 /// (apps/web/src/lib/fixtures/airportWeatherMarks.json): the barb drawn
 /// zoomed out or not, red or not, its parts and calm, and the ↓ shown or not.

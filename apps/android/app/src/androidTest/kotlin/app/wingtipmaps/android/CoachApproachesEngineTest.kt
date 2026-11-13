@@ -20,7 +20,7 @@ import kotlin.math.tan
 
 /**
  * The coach's approaches found by the engine on the phone (approach_find,
- * through the JNI shim): KBUR's ILS Y RWY 08 flown as charted, among the
+ * through the generated bindings): KBUR's ILS Y RWY 08 flown as charted, among the
  * field's approaches as the planner draws them from the CIFP of 1 Oct
  * 2026 (approachKbur.json, the web's and the engine's fixture), found and
  * trimmed for proficiency_plan as the web's coachDebriefs does.
@@ -34,8 +34,8 @@ class CoachApproachesEngineTest {
 
     private fun drawing(id: String) = CoachApproaches.drawing(kbur.getValue(id).toString())
 
-    /** The engine's distance, nm, on WGS-84 (distance_nm through the JNI
-     *  shim): where along the line a point is, by the one measure every
+    /** The engine's distance, nm, on WGS-84 (distance_nm through the
+     *  generated bindings): where along the line a point is, by the one measure every
      *  app asks. */
     private fun nm(a: Pair<Double, Double>, b: Pair<Double, Double>): Double =
         Engine.distanceNm(a.first, a.second, b.first, b.second).getOrThrow()

@@ -3,16 +3,22 @@ name = "wingtip-ffi"
 version = "0.1.0"
 edition = "2024"
 publish = false
-description = "The engine's C functions, for the phones: a static library the iOS app links (engine/bindings/ffi/build-xcframework.sh)"
+description = "The engine for the phones through UniFFI: a static library for the iPhone (build-xcframework.sh), a shared one for Android (build-android.sh), their Swift and Kotlin generated from it"
 
+# The scripts build the kind each phone links (cargo rustc --crate-type):
+# staticlib for the iPhone's XCFramework, cdylib for Android, whose
+# generated Kotlin loads it through JNA.
 [lib]
 name = "wingtip_ffi"
-crate-type = ["staticlib"]
 
-# None but the engine: a plain C interface rather than UniFFI, whose
-# bindgen brings dozens of crates with it for five functions.
 [dependencies]
 wingtip-engine = { path = "../../facade" }
+# Mozilla's bindings generator (the owner's "generate over hand-write",
+# 2026-11-12): proc-macro mode, its newest release.
+uniffi = "0.32.2"
+# A pack mapped by its path for a call, read in place as the phones' own
+# mapping was (Data(.alwaysMapped), FileChannel.map).
+memmap2 = "0.9.12"
 
 [lints]
 workspace = true

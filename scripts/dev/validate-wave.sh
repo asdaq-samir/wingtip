@@ -84,7 +84,7 @@ ds = [d for r, ds in json.load(sys.stdin)["devices"].items() if "iOS" in r for d
       if d["name"].startswith("iPad Pro")]
 print(sorted(ds, key=lambda d: d["name"])[-1]["udid"] if ds else "")')
   [ -n "$sim" ] || { echo "validate-wave: no iPad Pro simulator in this Xcode"; return 1; }
-  [ -d "$here/apps/ios/Frameworks/WingtipEngine.xcframework" ] || { echo "validate-wave: no engine for the iPad (run the ios step first)"; return 1; }
+  [ -d "$here/apps/ios/Frameworks/WingtipEngine/WingtipEngineFFI.xcframework" ] || { echo "validate-wave: no engine for the iPad (run the ios step first)"; return 1; }
   xcodegen generate --spec "$here/apps/ios/project.yml" --project "$here/apps/ios" --quiet || return 1
   "$turn" "validate-wave ipad ($(basename "$here"))" \
     xcodebuild -quiet -project "$here/apps/ios/Wingtip.xcodeproj" -scheme Wingtip -configuration Debug \

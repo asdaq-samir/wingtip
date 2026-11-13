@@ -8,7 +8,7 @@ import Testing
 /// heading and fuel from FAA-H-8083-25C ch. 16, 14 CFR 91.159 and 91.179
 /// altitudes, 91.151 and 91.167 reserves, 91.155 minimums, AIM 5-3-8 hold
 /// entries, glide at a ratio) asked through this app's own bridge
-/// (wt_call), as the engine's Rust test (flight_critical.rs) asks it in
+/// (the engine's call), as the engine's Rust test (flight_critical.rs) asks it in
 /// process; the nav log's case through the typed call the app's screens
 /// decode; and the emergency's general guidance with no airplane picked.
 /// Android's FlightCriticalEngineTest is the twin.

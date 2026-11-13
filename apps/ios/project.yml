@@ -87,10 +87,10 @@ targets:
         buildPhase: resources
     dependencies:
       # The engine (engine/bindings/ffi/build-xcframework.sh, built on the runner
-      # before this project is made): the airspace at a point from the
-      # phone's cycle packs, with no network. A static library, linked in.
-      - framework: Frameworks/WingtipEngine.xcframework
-        embed: false
+      # before this project is made): every rule by name and the readers of
+      # the phone's cycle packs, with no network, through the Swift
+      # uniffi-bindgen writes (WingtipEngine, below). Static, linked in.
+      - target: WingtipEngine
       # The servers' generated clients (WingtipAPI), linked in, and the
       # packages the app calls them and its pictures and Keychain through.
       - target: PlannerAPI
@@ -270,6 +270,25 @@ targets:
         # Native look's, and the brand looks set theirs at the root at run
         # time (Look.swift's lookTint: SwiftUI's tint and the window's).
         ENABLE_USER_SCRIPT_SANDBOXING: NO
+  # The engine's Swift, written by uniffi-bindgen from the Rust each time
+  # the XCFramework is built (engine/bindings/ffi/build-xcframework.sh,
+  # not committed), over the XCFramework's C module (WingtipEngineFFI):
+  # the app's `import WingtipEngine`.
+  WingtipEngine:
+    type: framework.static
+    platform: iOS
+    sources: [Frameworks/WingtipEngine/Generated/WingtipEngine.swift]
+    dependencies:
+      - framework: Frameworks/WingtipEngine/WingtipEngineFFI.xcframework
+        embed: false
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: $(WINGTIP_BUNDLE_ID).$(TARGET_NAME)
+        SKIP_INSTALL: YES
+        # The engine's static library is merged into this one by libtool,
+        # which names each of Rust's empty compiler-builtins objects.
+        OTHER_LIBTOOLFLAGS: -no_warning_for_no_symbols
   # The servers' clients, one module a document, written by
   # scripts/build/api-models-apps.sh with swift-openapi-generator from
   # services/{planner,gateway}/openapi.json and committed. A

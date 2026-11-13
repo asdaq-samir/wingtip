@@ -1,4 +1,0 @@
-module WingtipEngine {
-    header "wingtip_engine.h"
-    export *
-}
