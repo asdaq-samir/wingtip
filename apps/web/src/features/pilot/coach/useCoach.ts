@@ -27,6 +27,11 @@ export const CERTIFICATES: { value: Certificate; label: string }[] = [
  *  app's persisted store (keptStore: one store for every caller, a refused
  *  or full storage kept for the visit). */
 const KEY = "wingtip.coach.certificate";
+/** Made once here, named as the hook it is: made inside useCoach, the React
+ *  Compiler took keptStore for a plain call and memoised the store's
+ *  selector hook with it, so a render that reused the memo called one hook
+ *  fewer and React threw (#311) as the plan came in. */
+const useKeptCertificate = keptStore<Certificate | null>(KEY, null);
 const isCertificate = (v: unknown): v is Certificate => CERTIFICATES.some((c) => c.value === v);
 
 /** The certificate a pilot most likely holds, until they say: a student
@@ -68,10 +73,9 @@ export function useCoach() {
   const { data: currency } = useQuery(currencyQuery);
   const { data: training } = useQuery(trainingQuery);
   const { data: pilot } = useQuery(pilotQuery);
-  const kept = keptStore<Certificate | null>(KEY, null);
-  const chosen = kept((s) => s.value);
+  const chosen = useKeptCertificate((s) => s.value);
   const certificate = isCertificate(chosen) ? chosen : guessed(entries.data, currency, training);
-  const choose = (c: Certificate) => kept.setState({ value: c });
+  const choose = (c: Certificate) => useKeptCertificate.setState({ value: c });
 
   const plan = useMutation({
     mutationFn: async (): Promise<ProficiencyPlan> => {

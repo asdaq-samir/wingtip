@@ -16,6 +16,7 @@ import {
   openPanel,
   searchAirports,
   settle,
+  settled,
   showTabs,
   sideDrawer,
   slow,
@@ -24,7 +25,7 @@ import {
   frontSheet,
 } from "./helpers";
 import { markWith } from "./marks";
-import { airportToTap, card, cardWeather, tafFromNow, withPrivateFields } from "./placeCard";
+import { airportToTap, card, cardWeather, closeInOn, holdPlannerSearch, tafFromNow, withPrivateFields } from "./placeCard";
 import { ownHomeBase, showPage } from "./oneSearch";
 import { pickAirplane } from "./startState";
 
@@ -165,8 +166,9 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
   // The route's destination: the hour the flight lands in outlined, once
   // its nav log has the time.
   await expect(card(page).locator("[data-testid=place-hour][data-arrival]")).toContainText(/You\s*\d\d:\d\d/, { timeout: slow(30000) });
-  // The reports as sent right under it, so the sentence is not a button.
-  await expect(card(page).getByTestId("place-weather-summary").getByRole("button")).toHaveCount(0);
+  // The reports as sent right under it, so the sentence is not a button:
+  // the row's one button is the card's Refresh at its end (334548b54).
+  await expect(card(page).getByTestId("place-weather-summary").getByRole("button")).toHaveAccessibleName(/Refresh KDLH/);
   await expect(card(page).getByTestId("place-weather")).toContainText("KDLH 102155Z 27008KT");
 });
 
@@ -557,6 +559,8 @@ test("a Favorite's card names it and the map goes to it before the card's answer
   // in their places, the star a Favorite's, waiting on the answer.
   await expect(card(page).getByTestId("place-favorite")).toHaveAttribute("aria-pressed", "true");
   await expect(card(page).getByTestId("place-favorite")).toBeDisabled();
+  // Measured once the card has come up: its slide in is not a move.
+  await settled(sideDrawer(page));
   const actionsBefore = (await card(page).getByTestId("fly-here").boundingBox())!;
 
   answer();
@@ -743,27 +747,8 @@ test("the map's Private setting draws the private fields, off by default and kep
   // "Make private airports hidden by default". Donald Alfred Gade (IL11),
   // a private field north of Campbell in the suite's overlay tiles, drawn
   // from the app's level 10 (wingtip.vector_tiles' AIRPORT_MIN_ZOOM): its
-  // card's map brought a level in, round it.
-  const closeIn = async () => {
-    await page.goto("/app/plan?place=IL11");
-    await settle(page);
-    await mapStill(page);
-    const map = (await page.locator(".maplibregl-map").boundingBox())!;
-    const at = await page.evaluate(() => {
-      const panel = document.querySelector('[data-slot="map-panel"]')?.getBoundingClientRect();
-      const m = document.querySelector(".maplibregl-map")!.getBoundingClientRect();
-      if (panel && panel.width > m.width * 0.8) return { x: m.left + m.width / 2, y: m.top + (panel.top - m.top) / 2 };
-      if (panel) return { x: panel.right + (m.right - panel.right) / 2, y: m.top + m.height / 2 };
-      return { x: m.left + m.width / 2, y: m.top + m.height / 2 };
-    });
-    expect(at.x).toBeGreaterThan(map.x);
-    for (let notch = 0; notch < 2; notch++) {
-      await page.mouse.move(at.x, at.y);
-      await page.mouse.wheel(0, -60);
-      await mapStill(page);
-    }
-  };
-  await closeIn();
+  // card's map brought in to it, round it.
+  await closeInOn(page, "IL11", 10);
   // Other fields drawn round it, it not.
   await expect.poll(async () => (await airportMarks(page)).length, { timeout: slow(15000) }).toBeGreaterThan(0);
   expect(await airportMark(page, "IL11")).toBeFalsy();
@@ -777,7 +762,7 @@ test("the map's Private setting draws the private fields, off by default and kep
   // The airport's card kept under the settings', as it was.
   await expect(page).toHaveURL(/[?&]place=IL11/);
   // Loaded afresh: the setting kept.
-  await closeIn();
+  await closeInOn(page, "IL11", 10);
   await expect.poll(async () => (await airportMark(page, "IL11"))?.use, { timeout: slow(15000) }).toBe("private");
 });
 
@@ -888,6 +873,8 @@ test("the airport search answers from the phone's own copy, asking the planner n
         },
       }),
   );
+  // The planner's answer held (holdPlannerSearch): the airports the phone's.
+  const release = await holdPlannerSearch(page);
   const asked: string[] = [];
   page.on("request", (request) => {
     if (request.url().includes("/airports/search")) asked.push(request.url());
@@ -910,6 +897,7 @@ test("the airport search answers from the phone's own copy, asking the planner n
   // copy (the waypoints and navaids beside them are the planner's).
   await expect(searchAirports(page)).toHaveText([/KOSH/, /2WN8/]);
   expect(asked.filter((url) => !/fixes=true/.test(url))).toEqual([]);
+  release();
 });
 
 test("with no route the panel is a search bar: Home is set from Favorites, an airport found is starred onto Favorites, and Fly Here flies from Home", async ({
@@ -952,7 +940,10 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
   await card(page).getByTestId("place-favorite").click();
   await expect(card(page).getByTestId("place-favorite")).toHaveAttribute("aria-pressed", "true");
+  // Put away, back to the search as typed (29eabc410); cleared, Favorites.
   await closeCard(page, "place-close");
+  await expect(search).toHaveValue("duluth");
+  await sideDrawer(page).getByTestId("search-clear").click();
   await search.click();
   const kept = page.getByTestId("pill-favorites").getByRole("button", { name: /^KDLH\b.*Class [BCDEG]$/ });
   await expect(kept).toBeVisible();
@@ -962,8 +953,9 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await card(page).getByTestId("fly-here").click();
   await expect(page).toHaveURL(/dep=C81/);
   await expect(page).toHaveURL(/dest=KDLH/);
-  // Half way, as the card was, the route over it.
-  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
+  // The card away, the sheet the size it was under it, full (571dc31a0).
+  await expect(card(page)).toHaveCount(0);
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
 
   // Lowered, the route rests as the one row (its figures under it in the
   // side panel, on a phone from half), the departure Home in the box half way; Clear the route, in its
@@ -985,7 +977,8 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(sideDrawer(page).getByTestId("panel-tab-enroute")).toBeHidden();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   await showTabs(page);
-  // The search's own page all the way up, as the sheet was.
+  // The search's own page (the sheet's first) all the way up, as it was.
+  await showPage(page, 0);
   await search.click();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   await expect(sideDrawer(page).getByTestId("search-home")).toBeVisible();

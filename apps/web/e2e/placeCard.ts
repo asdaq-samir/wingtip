@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
-import { airportMarks, mapStill, sideDrawer, slow } from "./helpers";
+import { airportMarks, mapStill, settle, sideDrawer, slow } from "./helpers";
+import { mapZoom, wheelIn } from "./mapZoom";
 import { appMarks, markWith } from "./marks";
 
 /* The airport card's specs' own parts (places.spec): the card, its answer
@@ -122,4 +123,47 @@ export async function airportToTap(page: Page) {
   const at = await find();
   expect(at, "an airport on the chart with nothing over it").not.toBeNull();
   return at!;
+}
+
+/** A field's card opened from the address, and the map brought in round
+ *  it to `level`, the wheel over the map's middle above the sheet (or
+ *  beside the side panel): the card opens the map at 9 (GlMapShell's
+ *  PLACE_ZOOM) wherever it was. */
+export async function closeInOn(page: Page, ident: string, level: number) {
+  await page.goto(`/app/plan?place=${ident}`);
+  await settle(page);
+  await mapStill(page);
+  const map = (await page.locator(".maplibregl-map").boundingBox())!;
+  const at = await page.evaluate(() => {
+    const panel = document.querySelector('[data-slot="map-panel"]')?.getBoundingClientRect();
+    const m = document.querySelector(".maplibregl-map")!.getBoundingClientRect();
+    if (panel && panel.width > m.width * 0.8) return { x: m.left + m.width / 2, y: m.top + (panel.top - m.top) / 2 };
+    if (panel) return { x: panel.right + (m.right - panel.right) / 2, y: m.top + m.height / 2 };
+    return { x: m.left + m.width / 2, y: m.top + m.height / 2 };
+  });
+  expect(at.x).toBeGreaterThan(map.x);
+  await wheelIn(
+    page,
+    async () => at,
+    async () => (await mapZoom(page)) >= level,
+  );
+}
+
+/** The planner's answer to the one search held back until the release
+ *  returned: the one search asks it for the waypoints too (fixes=true),
+ *  and its answer brings its own airports with it (useAirportSearch), so
+ *  held, what shows is the answer the phone gives as it is typed. */
+export async function holdPlannerSearch(page: Page): Promise<() => void> {
+  let release = () => {};
+  const held = new Promise<void>((go) => {
+    release = go;
+  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airports/search"),
+    async (route) => {
+      await held;
+      await route.abort();
+    },
+  );
+  return release;
 }

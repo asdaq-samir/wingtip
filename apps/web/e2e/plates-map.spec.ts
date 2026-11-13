@@ -13,8 +13,9 @@ import { drawnMarks } from "./marks";
  */
 
 const KOSH = JSON.parse(readFileSync(new URL("../src/lib/fixtures/approachKosh.json", import.meta.url), "utf8")) as {
-  drawings: Record<string, unknown>;
+  drawings: Record<string, { fixes: { ident: string; lat: number; lon: number }[] }>;
 };
+const FIX = Object.fromEntries(KOSH.drawings["I36:OSH"]!.fixes.map((f) => [f.ident, f]));
 
 // The page between four corners round the final, as the planner places it
 // (PlateOverlay.page): wide enough that its middle is clear of every mark.
@@ -65,10 +66,16 @@ test("a tap on the plate opens its card; Show Annotations and Hide Plate change 
   expect(String((await tag("POBER"))!.lines)).toContain("GS 2,610'");
   expect(String((await tag("RW36"))!.lines)).toContain("TCH 53'");
 
-  // A tap on the page west of the final, clear of the marks: its card.
+  // A tap on the page west of the final, half way to its edge, clear of
+  // the marks: its card. Where that is on the screen is worked out from
+  // two tags' fixes, as the route is fitted at whatever zoom the sheet
+  // leaves room for (Web Mercator: a degree of longitude is a degree of
+  // latitude's pixels times the cosine of the latitude).
   const a = (await tag("POBER"))!;
   const b = (await tag("RW36"))!;
-  await page.mouse.click((a.x + b.x) / 2 - 90, (a.y + b.y) / 2);
+  const perDegree = (a.y - b.y) / (FIX.RW36!.lat - FIX.POBER!.lat);
+  const west = (FIX.RW36!.lon - PLATE.page.top_left.lon) / 2;
+  await page.mouse.click(b.x - west * perDegree * Math.cos((FIX.RW36!.lat * Math.PI) / 180), (a.y + b.y) / 2);
   const card = page.getByTestId("plate-card");
   await expect(card).toBeVisible({ timeout: slow(10_000) });
   await expect(page.getByRole("heading", { name: "KOSH ILS or LOC rwy 36" })).toBeVisible();

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import track from "./fixtures/studio-track.json" with { type: "json" };
-import { roleMenu, settle, showTabs } from "./helpers";
+import { closeConsole, roleMenu, settle, showTabs } from "./helpers";
 
 /**
  * The Studio (`/studio`): a real flight replayed in the 3D view. The
@@ -71,6 +71,9 @@ test("studio: switched to from the account menu, and back to the map", async ({ 
   await roleMenu(page);
   await page.getByTestId("mode-studio").click();
   await expect(page).toHaveURL(/\/app\/studio/);
+  // Settings still out across the switch, as it stays to Developer
+  // (useDevMode, switch.spec); put away, the Studio's own bar under it.
+  await closeConsole(page);
   await expect(page.getByTestId("studio-bar")).toBeVisible();
   await roleMenu(page);
   await page.getByRole("menuitemradio", { name: "Pilot" }).click();

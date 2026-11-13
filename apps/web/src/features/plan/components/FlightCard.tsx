@@ -7,6 +7,7 @@ import { Button } from "../../../components/ui/button";
 import { Progress } from "../../../components/ui/progress";
 import { SheetCard } from "../../../components/SheetCard";
 import { CardTitle } from "../../../components/CardTitle";
+import FlightWhat from "./FlightWhat";
 import { CardPictures, type CardSlide } from "../../../components/CardPictures";
 import { PhotoSlide } from "../../../components/PictureSlides";
 import { FavoriteTile } from "../../../components/FavoriteTile";
@@ -509,8 +510,7 @@ export default function FlightCard({
         title={name}
         testId="flight-head"
         titleTestId="flight-name"
-        subtitleTestId="flight-what"
-        subtitle={[model, operator].filter(Boolean).join(" · ") || "\u00a0"}
+        sub={<FlightWhat what={[model, operator].filter(Boolean).join(" · ")} />}
         onClose={onClose}
         onShare={share}
         closeTestId="flight-close"

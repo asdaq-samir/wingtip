@@ -1,6 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { cardClose, drawn, grabberTo, openTab, settle, settled, sideDrawer, slow } from "./helpers";
-import { procedureRuns as runs, tapMark } from "./marks";
+import { procedureRuns as runs, tapMarkApart } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -731,7 +731,7 @@ test("a procedure's fixes branch off the route, each sent direct to or given an 
   await cardClose(page, "fix-card-close").click();
   await expect(card).toHaveCount(0);
   await grabberTo(page, "peek"); // the same card from the fix on the map, the sheet down
-  await tapMark(page, "procedure-fixes", "FAKER");
+  await tapMarkApart(page, "procedure-fixes", "FAKER", "OFOFO"); // at the route's zoom KDLH lies by them
   await expect(page.getByTestId("fix-card")).toBeVisible();
   await expect(page.getByTestId("fix-card-direct")).toContainText("as Charted");
 });

@@ -103,17 +103,12 @@ export function useAddressCards(address: Address, setAddress: SetAddress, setPan
     (hex: string | null, plane?: TrafficAircraft) => {
       track(hex, plane);
       // An airplane's card half way, wherever it is opened from, as an
-      // airport's is (the owner's ask; FlightCard's `opens`).
-      void setAddress({
-        flight: hex || null,
-        place: null,
-        at: null,
-        near: null,
-        nearAt: null,
-        nearName: null,
-        past: null,
-        view: hex ? null : undefined,
-      });
+      // airport's is (the owner's ask; FlightCard's `opens`). The sheet
+      // under it is left at its size, as selectPlace leaves it: `view`
+      // holds the sheet all the way up (MapPage), and clearing it here
+      // dropped a list out at full to the pill under the card, so its close
+      // came back to the map, not the list.
+      void setAddress({ flight: hex || null, place: null, at: null, near: null, nearAt: null, nearName: null, past: null });
     },
     [setAddress],
   );

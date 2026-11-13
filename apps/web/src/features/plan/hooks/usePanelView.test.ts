@@ -56,6 +56,19 @@ describe("the place under the one search", () => {
     expect(hook.result.current.address.place).toBe("KOSH");
   });
 
+  it("keeps an airplane's past flight over the traffic while the search is up, and gives it back", () => {
+    // The owner's ask (5fa10bde7): "if ... aircraft track is being played it
+    // should show that when coming back". The cards over the sheet hide the
+    // search in the browser now, so the hook's the place to prove it.
+    const hook = setUp("aircraft=1&flight=a0b7d8&past=1794536008", false);
+    act(() => hook.result.current.pickView("search"));
+    expect(hook.result.current.address.flight).toBeNull();
+    expect(hook.result.current.address.past).toBeNull();
+    act(() => hook.result.current.pickView("traffic"));
+    expect(hook.result.current.address.flight).toBe("a0b7d8");
+    expect(hook.result.current.address.past).toBe(1794536008);
+  });
+
   it("turns back to the traffic on the first page where that is what was left there", () => {
     // The sheet audit, 2026-11-12: swiped to FPL and back, the traffic came back as the plain search.
     const hook = setUp("dep=KMSN&dest=KOSH&aircraft=1", true);

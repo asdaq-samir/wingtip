@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import { drawn, mapStill, slow } from "./helpers";
+import { wheelIn } from "./mapZoom";
 
 // The app's own marks on the map -- the route's fields and checkpoints,
 // the weather's chips, the stops' pins -- drawn on the canvas by MapLibre
@@ -74,3 +75,24 @@ export async function tapMark(page: Page, source: string, words: string | RegExp
  *  name, as a run cut across the map's tiles is two rows of one name. */
 export const procedureRuns = async (page: Page, kind?: "line" | "missed" | "hold") =>
   new Set((await drawn(page, "instrument-procedure")).filter((r) => !kind || r.kind === kind).map((r) => r.name)).size;
+
+/** A tap on a mark of `source` once the map is in close enough that it
+ *  stands 60 points from `other`'s: at a route's whole zoom an approach's
+ *  fixes and its airport's mark lie a few points apart, and a tap takes
+ *  the nearest tappable mark (the map's GlTap registry), which may be the
+ *  airport. The wheel over the mark, as a pilot closes in on it. */
+export async function tapMarkApart(page: Page, source: string, words: string, other: string) {
+  await expect
+    .poll(async () => !!(await markWith(page, source, words)()) && !!(await markWith(page, source, other)()), { timeout: slow(30000) })
+    .toBe(true);
+  const gap = async () => {
+    const [a, b] = [(await markWith(page, source, words)())!, (await markWith(page, source, other)())!];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  };
+  await wheelIn(
+    page,
+    async () => (await markWith(page, source, words)())!,
+    async () => (await gap()) >= 60,
+  );
+  await tapMark(page, source, words);
+}

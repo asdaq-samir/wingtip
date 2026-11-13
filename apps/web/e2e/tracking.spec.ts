@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { closeCard, drawn, grabberTo, inSheet, settle, showSearch, showTraffic, sideDrawer, slow, stripShows } from "./helpers";
+import { closeCard, drawn, frontSheet, grabberTo, inSheet, settle, settled, showTraffic, sideDrawer, slow, stripShows } from "./helpers";
 import { FAA } from "./faaRecord";
 
 /**
@@ -437,14 +437,11 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   await page.getByTestId("replay-speed-200").click();
   await flight.getByTestId("replay-play").click();
   await expect(flight.getByTestId("replay-now")).toContainText(/ft · 100 kt · S/);
-  // The search and back to the traffic, at the owner's ask: the past
-  // flight still out over the traffic, its replay on where it was.
-  await showSearch(page);
-  await expect(flight).toHaveCount(0);
-  await showTraffic(page);
-  await expect(page).toHaveURL(/[?&]past=\d+/);
-  await expect(flight.getByTestId("replay-now")).toContainText(/ft · 100 kt · S/);
-  await grabberTo(page, "full");
+  // The cards are a stack over the sheet now, as Apple Maps' are (7e8aa7b29):
+  // the search and the pager's bars are under it until its close, so the
+  // past flight kept over the traffic while the search is up is
+  // usePanelView.test's to prove, not a journey here (the owner's ask of
+  // 5fa10bde7, "the cards should stay where they are when coming back").
   await flight.getByTestId("replay-stop").click();
   await expect(flight.getByTestId("replay-now")).toHaveCount(0);
   // Closed: back to the airplane's card, the path put away.
@@ -680,6 +677,7 @@ test("an airplane's card has Follow, Alert, Debrief and Favorite in a row, Share
   await settle(page);
   const card = page.getByTestId("flight-card");
   await expect(card.getByTestId("flight-follow")).toBeVisible({ timeout: slow(15_000) });
+  await settled(frontSheet(page)); // measured once it has slid up, not on its way
   const row = await Promise.all(
     ["flight-follow", "flight-alert", "flight-debrief", "flight-favorite"].map(async (id) => (await card.getByTestId(id).boundingBox())!),
   );
