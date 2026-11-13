@@ -47,7 +47,7 @@ export function callOf(text: string, tail: string | null): Call {
  *  ourCall does: the registration with its N, or a type's name in its
  *  place, or the prefix and its last three, within the first words. Null
  *  where `tail` is no registration. The engine's call_pattern, so the
- *  phone can ask for it through wt_call too. */
+ *  phone can ask for it through the generated `call` too. */
 export function callPattern(tail: string): string | null {
   return callEngine("call_pattern", { tail });
 }

@@ -50,7 +50,7 @@ class FlowGrid(
         fun sample(input: EngineContract.FlowSampleInput): Result<EngineContract.FlowSampleAnswer?>
     }
 
-    /** The engine through the JNI shim (Engine.rule logs a failure). */
+    /** The engine through the generated bindings (Engine.rule logs a failure). */
     object EngineRules : Rules {
         override fun cell(input: EngineContract.FlowCellInput) = Engine.flowCell(input.bounds, input.width, input.height, input.lat, input.lon)
 

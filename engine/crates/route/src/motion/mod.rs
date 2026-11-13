@@ -1,5 +1,5 @@
 //! The rules of the things that move on the map, one copy for the web app
-//! (through the WebAssembly), the planner and the phones (wt_call):
+//! (through the WebAssembly), the planner and the phones (the generated `call`):
 //!
 //! - traffic: another airplane's height against own ship's as TCAS writes
 //!   it and whether it is near own ship's (14 CFR 91.159's spacing), which

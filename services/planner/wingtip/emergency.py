@@ -3,7 +3,7 @@ nearest the airplane with their runways (each end's true heading), their
 METAR's wind, altimeter and temperature, their ATC and CTAF frequencies,
 phone and owner, and the wind aloft at the airplane's altitude. Nothing is
 ranked or judged here: the engine's best_fields does that in the app
-(the web's callEngine, the phones' wt_call), so it works on what the
+(the web's callEngine, the phones' `call`), so it works on what the
 app last fetched. One request where the web's Nearest makes one and each
 field's card another, as a phone in an emergency should not wait on ten.
 """

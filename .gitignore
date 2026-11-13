@@ -84,7 +84,7 @@ engine/target/
 apps/android/app/engine/
 apps/android/.gradle/
 apps/android/**/build/
-# The JNI shim's CMake state, which the Gradle plugin writes.
+# The native build state, which the Gradle plugin writes.
 apps/android/app/.cxx/
 apps/android/local.properties
 # Android Studio's project state, and a machine's own compose overlay:

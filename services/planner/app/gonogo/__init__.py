@@ -6,7 +6,7 @@ the phone shows the planner's answer and computes no rule of its own
 (docs/NATIVE.md). The rules themselves are the shared engine's
 (wingtip_engine::gonogo, engine/crates/brief/src/gonogo), asked by name with
 JSON in and out (`ask`, through wingtip_native.call), as the web app asks
-them in the browser and the phones through wt_call; these modules keep
+them in the browser and the phones through the generated `call`; these modules keep
 their names and dicts and only carry them across. Each module names the
 web file it mirrors, and the tests are the web's cases.
 

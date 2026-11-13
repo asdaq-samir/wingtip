@@ -235,19 +235,19 @@ pub(crate) fn write_words(o: &mut String, t: &Tab) {
     json::string(o, t.ceiling.1);
 }
 
+/// The `{"ft", "code", "desc"}` limit under `key`; none is no figure.
+pub fn read_limit<'a>(v: &'a Value, key: &str) -> Limit<'a> {
+    let at = |k: &str| v.get(key).filter(|o| !matches!(o, Value::Null)).and_then(|o| o.get(k));
+    Limit { ft: at("ft").and_then(Value::as_f64), code: at("code").and_then(Value::as_str), desc: at("desc").and_then(Value::as_str) }
+}
+
 /// `special_use_tab`: `{"name", "type", "floor": {"ft", "code", "desc"},
 /// "ceiling": {...}, "excluded"}` to the tab's words and `text`, or null.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
-    fn text<'a>(o: Option<&'a Value>, key: &str) -> Option<&'a str> {
-        o.and_then(|o| o.get(key)).and_then(Value::as_str)
-    }
-    let read = |key: &str| {
-        let o = v.get(key).filter(|o| !matches!(o, Value::Null));
-        Limit { ft: o.and_then(|o| o.get("ft")).and_then(Value::as_f64), code: text(o, "code"), desc: text(o, "desc") }
-    };
-    let area = text(Some(v), "name").ok_or_else(|| format!("{name}: \"name\" is not text"))?;
-    let excluded = matches!(v.get("excluded"), Some(Value::Bool(true)));
-    Ok(match tab(area, text(Some(v), "type").unwrap_or(""), read("floor"), read("ceiling"), excluded) {
+    let text = |key: &str| v.get(key).and_then(Value::as_str);
+    let area = text("name").ok_or_else(|| format!("{name}: \"name\" is not text"))?;
+    let (floor, ceiling) = (read_limit(v, "floor"), read_limit(v, "ceiling"));
+    Ok(match tab(area, text("type").unwrap_or(""), floor, ceiling, v.get("excluded") == Some(&Value::Bool(true))) {
         None => "null".to_owned(),
         Some(t) => {
             let mut o = String::from("{");

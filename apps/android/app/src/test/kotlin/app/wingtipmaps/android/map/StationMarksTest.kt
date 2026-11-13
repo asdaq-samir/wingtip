@@ -28,7 +28,7 @@ import org.junit.Test
  * field (`weather_worse`). The engine itself does not load on the JVM, so
  * the rules here answer from the fixture, and each checks it was asked
  * what the fixture asks; AirportWeatherEngineTest runs the engine itself
- * through the JNI shim on the same file.
+ * through the generated bindings on the same file.
  */
 class StationMarksTest {
     private val json = Json { ignoreUnknownKeys = true }
