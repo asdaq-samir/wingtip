@@ -1,7 +1,7 @@
 # 0004. Spring Boot for accounts, FastAPI and the engine for aviation; services split by job
 
 - **Date:** 2026-11-06
-- **Status:** Accepted
+- **Status:** Accepted; its `services/assistant` superseded by [0041](0041-claude-taken-out.md) (2026-11-12)
 
 ## Context
 

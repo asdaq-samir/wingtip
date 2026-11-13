@@ -47,9 +47,6 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                         infra/docker-compose.prod.yml), its fixed address and data disk
                         taken over by whichever server is running
                           caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process)
-                                     │    ▲
-                                     │    └── assistant (every Claude call, 256 MB; off, decision 0035) ─▶ Anthropic
-                                     ├──▶ assistant (the Claude paths)
                                      └──▶ db (Postgres 18, on the data disk)
                           ingest (the FAA's SWIM feeds, the followed airplanes, 384 MB) ─▶ SQLite
                           weather (METARs, TAFs, advisories, the GFS's winds, GLMP, TFRs, 384 MB)
@@ -358,7 +355,7 @@ docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml log
 ```
 
 `/srv/wingtip` is the data disk: `data` the data folder the planner shares
-with ingest, weather and the assistant,
+with ingest and weather,
 `postgres` the database, `repo` this repository. Never edit
 `/srv/wingtip/.env`; `deploy.sh` writes it.
 
@@ -401,7 +398,7 @@ with the next cycle.
 At 07:17 UTC every night `backup.sh` copies to
 `s3://<ServerBucketName>/backups/<date>/` what the server alone holds:
 the database (`postgres.dump`: accounts, aircraft, flights) and the planner's `data/labels` (`labels.tar.gz`: the
-checkpoint notes pilots and Claude have written). The bucket keeps 14
+checkpoint notes pilots have written). The bucket keeps 14
 days, and is versioned: a backup overwritten or deleted stays as an
 older version for 30 days more (`aws s3api list-object-versions`). The
 server may write only `backups/` and `ground_grid/`. The dump is written to a file and checked with `pg_restore --list`

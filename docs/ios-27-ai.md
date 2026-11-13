@@ -16,14 +16,12 @@ The rules over all of it:
   engine's own words are shown, saying why.
 - **Warn, never limit.** Siri confirms a route change ("Go direct?") the
   way a delete is confirmed; nothing refuses.
-- **On-device first, then Apple's cloud, then Claude.** Apple's
-  on-device model and Vision on the phone; Apple's Private Cloud Compute
-  where the phone's model cannot answer (the owner, 2026-11-09: "Yes to AI
-  cloud"); the planner's Claude only where a feature has a Claude path,
-  neither of Apple's could, and the Claude features are on. They are off
-  until the subscription is decided ([decision 0035](decisions/0035-claude-off-until-subscription.md);
-  `API/ServerFeatures.swift`), so today the chain stops at the phone and
-  the engine. No AI at all is a working state.
+- **On-device first, then Apple's cloud.** Apple's on-device model and
+  Vision on the phone; Apple's Private Cloud Compute where the phone's
+  model cannot answer (the owner, 2026-11-09: "Yes to AI cloud"). The
+  planner's Claude, once the last step, was taken out on 2026-11-12
+  ([decision 0041](decisions/0041-claude-taken-out.md)), so the chain
+  stops at Apple's models and the engine. No AI at all is a working state.
 
 ## What iOS 27 has (read from the 27.2 SDK, Xcode 27.2, 27B52)
 
@@ -68,8 +66,8 @@ branch (`claude/ios27-ai`). Built in order of value to a pilot.
 | Camera | Point at a sectional, a plate, a METAR printout or a sign: the fields in it, opened in Wingtip | `IntentValueQuery` over `SemanticContentDescriptor`, Vision text recognition | **On-device** read; idents looked up | Built |
 | Notifications | A notification's field or flight is what Siri's "what does this mean" is about | `appEntityIdentifiers` | Phone | Built (API in `Notifications.tell`) |
 | Brief | The ranked NOTAMs in plain words ("The NOTAMs in words" under the Brief's NOTAMs), each sentence citing its NOTAM | Foundation Models guided generation (`WordsAnswer`) over the engine's `notams_ranked` and its reasons (`Words/NotamsInWords.swift`) | **On-device only**; hidden where the model can't run | Built (part 2) |
-| Brief | The briefing at a glance and the weather in words | `BriefSummary` (on-device glance from the Go / No-Go), `WordsFor` (planner's Claude, then on-device) | Both | Already there before iOS 27; unchanged |
-| Documents | Handbook performance and weight-and-balance pages, logbook pages and clearance notes read on the phone; the engine on the phone checks the figures (`handbook_read_check`, `logbook_read_check`) as the server's reader has them checked; the assistant reads only where the phone can't | iOS 27 image prompts (`Attachment(CGImage)`), `capabilities.contains(.vision)`, `OCRTool` as the model's tool (device SDK only; the simulator SDK has no `_Vision_FoundationModels`), `@Generable` drafts member for member the assistant's (`Documents/DocumentDrafts.swift`, `OnDeviceDocumentReader.swift`) | **On-device first**, Claude fallback | Built (part 2) |
+| Brief | The briefing at a glance and the weather in words | `BriefSummary` (on-device glance from the Go / No-Go), `WordsFor` (on-device, then PCC; the planner's Claude path taken out, decision 0041) | On-device, then PCC | Already there before iOS 27; unchanged |
+| Documents | Handbook performance and weight-and-balance pages, logbook pages and clearance notes read on the phone; the engine on the phone checks the figures (`handbook_read_check`, `logbook_read_check`); a page Apple's models can't read is said so, and "From a Photo" is offered only where they can see images | iOS 27 image prompts (`Attachment(CGImage)`), `capabilities.contains(.vision)`, `OCRTool` as the model's tool (device SDK only; the simulator SDK has no `_Vision_FoundationModels`), `@Generable` drafts member for member the engine contract's reads (`Documents/DocumentDrafts.swift`, `OnDeviceDocumentReader.swift`) | **On-device**, then PCC | Built (part 2) |
 | ATC / clearance | "Said in Full" under the clearance's words: a clearance typed in shorthand or as the recognizer wrote it, said as the controller would say it, offered with what the engine reads in it that it did not before, and put in only on Use These Words; offered only where every number in it is one the words as typed hold (the engine's `tokens` for spoken figures), the engine reads every item it read before the same, and it reads more (`Words/ClearanceInFull.swift`, `Views/ClearanceInFullRow.swift`). The sheet was split first (`ClearanceCraftSection`, `ClearanceSheetParts`), nothing changed | `OnDeviceDocumentReader.said(clearance:)`, guided `ClearanceTextDraft` | On-device, then PCC | Built (part 3) |
 | Logbook | Draft a Remark, as Android's: under Remarks in a logbook entry and in Flight Logged (which gains a Remarks field), from the entry's columns as typed and, for a flight drawn from its track, the approaches, holds and landings the engine found; into the field for the pilot to keep, change or clear, saved only with Save or Log (`Logbook/RemarkDraft.swift`, `DraftRemarkButton.swift`) | Guided `WordsAnswer` (`WordsKind.remark`), `Words.checked`, `NumberGuard` | On-device, then PCC | Built (part 3) |
 | Profile / altitude wheel | "Why This Altitude?" under How the Altitude Was Chosen: the altitude flown and the engine's direction-of-flight rule on the phone (`is_eastbound`, `legal_cruising_altitudes`; 14 CFR 91.159(a), 91.179(b)) in the prompt, the floor (91.119; 91.177 IFR), ceiling, clouds (91.155), Class B (91.131), freezing level, the plans' winds, fuel and oxygen (91.211) and the cautions (`own_altitude_caution`) by three tools; the engine's own sentences where the model's do not pass (`Words/AltitudeWhy.swift`, `AltitudeWhyTools.swift`, `Views/AltitudeWhySection.swift`) | Tool calling + guided `WordsAnswer`, `FigureLog`, `Words.checked`, `NumberGuard` | On-device, then PCC | Built (part 3) |
@@ -107,21 +105,12 @@ branch (`claude/ios27-ai`). Built in order of value to a pilot.
   `_Vision_FoundationModels` overlay, which the iOS 27.2 device SDK has
   and the simulator SDK does not; the simulator build reads a photo with
   the model alone, and a phone gives it the tool.
-- **Claude where Private Cloud Compute cannot serve, once it is on.** The
-  order is on-device, then Private Cloud Compute, then Claude, and the
-  last step is skipped while the Claude features are off (the default,
-  decision 0035: Ask answers on the phone whatever its picker says, the
-  picker is hidden, and the words come from the phone or not at all).
-  With them on, Claude is used for:
-  a photographed page where neither of Apple's models takes images (the
-  assistant's reader); Ask under Automatic with a signal, which goes to
-  the planner's assistant first because its tools (plan a flight, the
-  briefing, the Go / No-Go, divert) are the planner's and Apple's models
-  have only the phone's five; and the Brief's weather and risk words
-  (`WordsFor`, planner first), which were never on-device features. The
-  NOTAMs in words, the clearance said in full, the remark and why this
-  altitude have no Claude path: with neither of Apple's models they are
-  hidden, as before.
+- **Claude where Private Cloud Compute cannot serve.** Taken out with the
+  server's Claude features on 2026-11-12 (decision 0041): where neither of
+  Apple's models can answer, a feature says why or is hidden, and Ask's
+  picker between the planner and this iPhone is gone. Ask's tools are the
+  phone's own, so planning a flight or diverting by voice is the
+  screens' and Siri's, not Ask's.
 
 ## Private Cloud Compute
 

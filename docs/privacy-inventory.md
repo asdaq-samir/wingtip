@@ -27,7 +27,6 @@ longer than it takes to answer the request.
 | Identifiers, User ID | The AI apps a pilot connects Wingtip to (the MCP connector, `docs/design/mcp-connector.md`): the app's registration (its name and callback, no pilot's), and for the pilot the consent given and the connection's tokens, under the account's id; no record of what was asked | Yes | App Functionality (answering the pilot's own AI app) | `oauth2_registered_client`, `oauth2_authorization`, `oauth2_authorization_consent` (Postgres, V40); the tokens last 15 minutes and refresh for 30 days |
 | Location, Precise | A flight's track, when a pilot saves it to a flight (the phones' flight recorder, the logbook drafted from it): linked to the account, unlike the live position below | Yes | App Functionality | `flight_tracks` |
 | Purchases, Purchase History | The subscription: when the free month started and ends, and a paid plan's term, its store and the store's own id for it | Yes | App Functionality (the paid features) | `subscriptions` |
-| Usage Data, Product Interaction | How many of each Claude-written feature (the written briefing, checkpoint descriptions, the mock oral) a pilot used this month, a count, for its monthly cap | Yes | App Functionality (the cap) | `paid_feature_uses` |
 | Diagnostics, Crash Data | A fault on the device: the web's uncaught errors (message, stack, page path, browser; `lib/errorReports`), the iPhone's MetricKit crash, hang, CPU and disk-write diagnostics (`Diagnostics/`), Android's exit reasons, ANR traces and uncaught exceptions (`diagnostics/`); each with the app's version, the OS version and phone/tablet/desktop, scrubbed of queries, emails, home folders and UUIDs (`DiagnosticText`) | No | App Functionality (finding faults) | `diagnostics` (Postgres), 30 days; a line in the server's log (30 days) |
 | Diagnostics, Performance Data | How fast the app was on the device: the web's Core Web Vitals (LCP, INP, CLS, FCP, TTFB) and long tasks, the iPhone's launch, resume, hang and scroll-hitch figures, peak memory and memory exits (MetricKit), Android's launch time and janky frames (JankStats); the page's name, phone, tablet or desktop, and the app's build; nothing of the pilot's (`lib/speed`, `lib/longTasks`, SpeedController, DiagnosticsController) | No | App Functionality (keeping the app fast) | `speed_samples` (Postgres), 400 days |
 
@@ -80,7 +79,7 @@ longer than it takes to answer the request.
   mean for me" and the Brief's "NOTAMs in words" are written by Apple's
   on-device model from the NOTAMs and the engine's reasons
   (`Intents/AskIntents.swift`, `Words/NotamsInWords.swift`); nothing is
-  sent to us or to Anthropic for them. The same model drafts a logbook
+  sent to us for them. The same model drafts a logbook
   remark from the entry (`Logbook/RemarkDraft.swift`), says a clearance in
   full for the engine to read (`Words/ClearanceInFull.swift`) and says why
   the plan flies its altitude (`Words/AltitudeWhy.swift`).
@@ -90,7 +89,7 @@ longer than it takes to answer the request.
   `WingtipPrivateCloudCompute`). Where the on-device model cannot answer
   (still downloading, a page it cannot see, an answer it could not give
   or whose every sentence the guard dropped), the same ask goes to
-  Apple's Private Cloud Compute before any Claude path: the NOTAMs and
+  Apple's Private Cloud Compute: the NOTAMs and
   their engine reasons; a NOTAM asked about; the logbook entry's columns
   and, for a flight drawn from its track, the approaches, holds and
   landings found in it; a clearance's words as typed or heard; the
@@ -103,13 +102,8 @@ longer than it takes to answer the request.
   checked by outside researchers (WWDC26 session 319). Apple counts it
   against the pilot's iCloud account's daily limit. Apple is the
   processor; we receive nothing more than with the on-device model.
-  Claude is then asked only where a feature has a Claude path (the
-  photographed page, through the assistant, where neither of Apple's
-  models can see it; Ask under Automatic with a signal, whose planner
-  tools Apple's models do not have; the Brief's weather and risk words),
-  and only while the Claude features are on: off, the default
-  (`API/ServerFeatures.swift`), the chain stops at the phone's models
-  and the engine's own words.
+  Nothing goes further: where neither of Apple's models can answer, the
+  app shows the engine's own words or says why.
 - **The route's weather watched on the iPhone** (`WeatherWatch/`): the
   kept route's briefing is fetched again from the planner every quarter
   hour while the app runs and on iOS's background refresh, as the Brief
@@ -121,12 +115,10 @@ longer than it takes to answer the request.
   (`ai/OnPhoneAsk.kt`), In Plain Words (`ai/AiWords.kt`), a drafted
   logbook remark and a photographed page (ML Kit's on-device text
   recognition, then Nano, `ai/read/OnPhoneReader.kt`) are made on the
-  phone and nothing of them goes to Anthropic or Google. Ask's tools
+  phone and nothing of them goes to us or Google. Ask's tools
   fetch from the planner what the screens fetch (an airport, the route's
-  NOTAMs); the question itself stays on the phone. Without Nano they go
-  to Claude as in the table below, signed in only, and only while the
-  Claude features are on (`ai/ClaudeGate.kt`); off, the default, they
-  are not offered.
+  NOTAMs); the question itself stays on the phone. Without Nano they are
+  not offered.
 - **Gemini and the system's agents on Android** (AppFunctions,
   `ai/functions/`, Android 16+). An agent the pilot asks may read the
   airport's card, frequencies, approaches, the nearest fields (from the
@@ -176,7 +168,6 @@ longer than it takes to answer the request.
 
 | Recipient | What | Personal |
 |---|---|---|
-| Anthropic (Claude) | **Nothing while the Claude features are off**, the default since 2026-11-10 (docs/decisions/0035-claude-off-until-subscription.md): the gateway's `app.claude-features` (`APP_CLAUDE_FEATURES=OFF`) refuses every assistant route before the assistant is asked, the flight watch uses the planner's own lines (`ChangeLines`), the assistant service is not started, and the web, iPhone and Android apps read the switch from `/api/auth/capabilities` and do not ask. **With them on**, through the assistant service only (`services/assistant`): Ask: the conversation (typed or spoken), the route, stops, airplane, altitude, departure time, the pilot's minimums, currency lines and home base, and the live position (3 decimals), altitude, track and groundspeed where known (`services/assistant/app/assistant.py`). The trip planner (`/api/trip-plan`): the pilot's request in words and the same plan context as Ask. The written briefing (`narrative.py`): the route, the nav log, the weather and NOTAM text on it and the airplane's type. The Brief's words (`words.py`): the NOTAMs on the route as sent and their ranking (`notam_rank.py`), the weather reports and forecasts on it, and for the risk words the Go / No-Go's findings with the pilot's minimums and currency. The debrief's words: a flown flight's debrief figures (time in the air, each leg's altitude and course held, checkpoint times, pattern entries, the pilot's notes on it). The Coach's words (`coach.py`): the proficiency plan the engine made from the logbook (currency dates and what is due). A checkpoint note (`notes.py`): the checkpoint and the route around it. The mock oral (`oral.py`): the plan as text and the typed answers. Flight watch: what changed on the route (the METARs, TAFs, SIGMETs, AIRMETs, TFRs before and after). A photographed page (handbook, logbook, clearance) and today's date, to read it (`services/assistant/app/documents/`), only where the phone cannot read it itself (Android with Gemini Nano, and an iPhone on iOS 27 with Apple Intelligence that can see images, `Documents/OnDeviceDocumentReader.swift`, read it on the phone). Nothing kept: the conversation is the client's | No name, address, account; a tail number only where the pilot typed it into a question |
 | The pilot's own AI app (Claude, ChatGPT), only where the pilot connects Wingtip to it | The connector's answers to what the pilot asks it: airports, weather, NOTAMs, a route's nav log and briefing, the pilot's airplanes (tail number, type, figures, inspections, squawks) and saved flights | Yes, the pilot's own, sent to the app they chose; Wingtip sends none of it otherwise |
 | Amazon SES | The address a sign-in link is sent to, and the link; an instructor's address a student asks in, with the student's name and address; the endorsements and reviews between the two, to each | Yes, to deliver it |
 | The student's instructor | Once they take the student on: the student's name and address, 61.109 experience from their logbook, knowledge test codes, endorsements, and the saved flights the student puts to them | Yes: the student asks them in, and either ends it |
@@ -199,8 +190,9 @@ longer than it takes to answer the request.
 - **No tracking**, in Apple's sense: no advertising, no analytics SDK, no
   data broker, nothing joined with others' data. App Store Connect:
   "Data Not Used to Track You".
-- **No analytics**: the only usage kept is the month's count of each
-  Claude-written feature, for its cap (above).
+- **No analytics**: no count of what a pilot uses is kept. The month's
+  count of each Claude-written feature went with those features
+  (2026-11-12, decision 0041).
 - **Purchases** are the stores' own: the app keeps only the plan's term
   and the store's id for it (above), never a card.
 - Deleting an account (`DELETE /api/me` from Setup, or from the web

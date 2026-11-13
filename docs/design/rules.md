@@ -225,8 +225,8 @@ Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXz
   Favorites (airports and airplanes), Recents and Nearest.
 - **Typing:** one list in groups: Airports; Waypoints and Navaids;
   Airplanes (your own, an N-number from the FAA registry, a type); Do
-  (Direct To, Brief, Nearest, Emergency and every screen by name, and
-  "Ask: …" to the assistant). Results come from the existing endpoints
+  (Direct To, Brief, Nearest, Emergency and every screen by name, and on
+  the phones "Ask: …", answered on the phone). Results come from the existing endpoints
   and generated models; the search holds no aviation logic.
 - **Picking:** an airport opens its card with Fly Here, Add as Stop, Call
   and Favorite at the top (its address the town link and the Info tab's

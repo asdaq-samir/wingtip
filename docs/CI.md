@@ -18,7 +18,7 @@ script can check, and the rest are for whoever writes a test or a job.
    app's build too. Each job's budget, in minutes (`BUDGETS` in
    `scripts/ci/ci_budget.py`): `changes`, `api-compat`,
    `dependency-review` 1; `engine-wheel`, `infra`, `test-jobs`,
-   `test-ingest`, `test-assistant`, `test-weather` 2; `test-xplane` 1;
+   `test-ingest`, `test-weather` 2; `test-xplane` 1;
    `guards`, `test-web`, `test-engine`, `test-gateway`, `test-planner`,
    `test-wingtip`, `test-sim` 3; Android 5, iOS 6. After merge: the image builds 4,
    each `e2e` shard 8, main's push 14 in all. The `budget` job writes
@@ -176,7 +176,7 @@ they are what the budgets allow, to be lowered once runs show them:
 | `guards` | Every quick check on one runner, all started at once (`scripts/ci/guards.sh`): the paths filter, the rules boundary, the legal pages, the tiers, warnings fatal, the workflows' rules, the links; file sizes, toolchain versions, the brand tokens, unused Python, the simplicity rules (Semgrep, jscpd, the ratchet); ruff and the Python's layout; where the change touched them, the website, the web app's tsc, ESLint, Prettier, knip and layers, SwiftLint and detekt, the web's engine rules, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; and flight-critical | 1-3 min (its slowest check: ESLint on a web change, clippy on an engine change) |
 | `test-web` | The generated files are the committed ones; Vitest over the tests the change reaches (`--changed`); `vite build` and the first-load budget | 1.5-2.5 min |
 | `test-engine` | `cargo test` over the touched crates, those that use them and the contract test (`scripts/ci/engine_affected.py`); the committed WebAssembly, where its inputs changed | 1-3 min |
-| `test-python` | One leg per suite the change touches: `test-planner`, `test-wingtip`, `test-jobs`, `test-ingest`, `test-assistant`, `test-weather`, `test-xplane` (`scripts/ci/python_suite.sh`), and `test-sim`, the replay agent's dotnet build, format check and tests (`scripts/ci/sim_suite.sh`) | 1-3 min each |
+| `test-python` | One leg per suite the change touches: `test-planner`, `test-wingtip`, `test-jobs`, `test-ingest`, `test-weather`, `test-xplane` (`scripts/ci/python_suite.sh`), and `test-sim`, the replay agent's dotnet build, format check and tests (`scripts/ci/sim_suite.sh`) | 1-3 min each |
 | `test-gateway` | The Java's layout and `mvn test`, when the gateway changed | 2-3 min |
 | `api-compat`, `dependency-review`, `infra` | An API document's breaking changes; a manifest's or lock's new advisories; the production files | under 1 min |
 | `android` | `native-android.yml`: the engine (cached), compiled, `testDebugUnitTest lintDebug` with Gradle's caches | 4-5 min |
@@ -371,7 +371,7 @@ change needs; a job it skips counts as passing.
 | `test-engine` | The engine's `cargo test`: on a pull request the crates it touched, those that use them and the contract test (`scripts/ci/engine_affected.py`), elsewhere every crate; that the committed WebAssembly matches the engine, where its inputs changed. Tier 1 |
 | `test-web` | `npm run types`, the generated files (the phones' API models and engine calls, the tokens, the screens, the icons) are the committed ones, Vitest (`--changed` on a pull request), `vite build` and the first-load budget. Tier 1 |
 | `test-gateway` | The Java's layout and `mvn test`: the gateway's JUnit suite, with a real Postgres in Testcontainers. Tier 1 |
-| `test-python` | One matrix leg per Python suite a change touches (`test-planner`, `test-wingtip`, `test-jobs`, `test-ingest`, `test-assistant`, `test-weather`, `test-xplane`, the X-Plane driver's): pytest over the suite on its own requirements (`scripts/ci/python_suite.sh`); the planner's, ingest's, jobs', weather's and assistant's legs also run `lint-imports`, the assistant's checks its generated client. `changes` lists the legs (its `python` output, from each suite's filter in `scripts/areas.yml`); none skips the job, which counts as passing. Tier 1 |
+| `test-python` | One matrix leg per Python suite a change touches (`test-planner`, `test-wingtip`, `test-jobs`, `test-ingest`, `test-weather`, `test-xplane`, the X-Plane driver's): pytest over the suite on its own requirements (`scripts/ci/python_suite.sh`); the planner's, ingest's, jobs' and weather's legs also run `lint-imports`, and the planner's checks its MCP connector's generated calls (`scripts/build/planner_calls.py --check`). `changes` lists the legs (its `python` output, from each suite's filter in `scripts/areas.yml`); none skips the job, which counts as passing. Tier 1 |
 | `engine-wheel` | wingtip's Rust extension (`engine/bindings/py`), built once a run by `.github/actions/engine-wheel` (`mode: build`) and uploaded as the `engine-wheel` artifact, which `guards`, `test-python`, `docs` and the flake hunt install (`mode: install`). The wheel's cache is keyed on everything under `engine/` and the toolchains, so a run that leaves the engine alone restores it in seconds; an engine change builds from main's last Cargo build. Main and the night save both. It was built in six jobs before (2026-11-10). Tier 1 |
 | `android`, `ios` | The phone builds (`native-android.yml`, `native-ios.yml` with `unit_only`), when a pull request touches them (above). Tier 1 |
 | `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): the `@smoke` and `@flight-critical` sets over two shards on main's push, everything over ten at night. Tier 2 |
@@ -396,7 +396,7 @@ ECR and deploys them ([README-AWS.md](README-AWS.md#deploys)).
 | `engine/` (`cargo test`) | Every engine rule against the shared fixtures in `apps/web/src/lib/fixtures`, and the contract |
 | `services/planner/tests_wingtip/` | wingtip's data work: geo, features, the model registry, the remote-URI guards, parsing with the network mocked |
 | `services/planner/tests/` | The planner's HTTP contract: status codes and shapes, a failing source reaching the caller as a clean 502, the committed `openapi.json` matching the app, the chart model's scores and reload |
-| `services/{ingest,assistant,weather}/tests/` | Each service's readers and stores; the assistant with the model and the planner stood in |
+| `services/{ingest,weather}/tests/` | Each service's readers and stores |
 | `services/gateway/src/test/` | The HTTP contract (`@WebMvcTest`: 400, 405, 409), the pilot-scoping guards, the committed `openapi.json`, and Flyway's migrations against a real Postgres with `ddl-auto: validate` |
 | `apps/web` (Vitest) | The pages' decisions as pure functions: filters, ordering, the nav log's rows |
 | `apps/web/e2e` (Playwright) | Pages in a real browser at phone and desktop sizes, against the whole stack |
@@ -414,7 +414,7 @@ Every aviation rule or figure is the engine's (CLAUDE.md, issue #482).
 The `guards` job, on every run and one of the jobs "CI passed" waits on,
 runs `scripts/ci/rules_boundary.py`: in the web app, the
 phones (and their widgets and watch), every service (the gateway, the
-planner's app and wingtip, weather, ingest, jobs, the assistant) and
+planner's app and wingtip, weather, ingest, jobs) and
 `tools/` it finds a constant set to a number, or to a list of numbers,
 with a regulatory source cited beside it or in the comment above
 (14 CFR, a part 61/91/71/73/95/97 section, the AIM, an AC, the ACS, an
@@ -435,9 +435,7 @@ architecture"), each layer by a check that fails the run:
   feature reaches a feature only through its `index.ts`
   ([apps/web/README.md](../apps/web/README.md#project-layout)).
 - **The Python services:** `lint-imports` (each service's `.importlinter`,
-  in `test-python`'s planner, ingest, jobs, weather and assistant legs; the
-  weather service makes no Claude call and the assistant's only importer
-  of `app.main` is `app.openapi`): `wingtip` never
+  in `test-python`'s planner, ingest, jobs and weather legs): `wingtip` never
   imports `app`, no router imports another, only `app.main` imports the
   routers; the crash pipeline is the jobs' alone (the planner and ingest
   import none of it but today's listed exceptions, an `ignore_imports`

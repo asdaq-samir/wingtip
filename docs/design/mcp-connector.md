@@ -1,7 +1,8 @@
 # The Wingtip connector: Wingtip in a pilot's own Claude or ChatGPT
 
 The owner, 2026-11-10: server-side Claude stays off until there is a
-subscription (decision 0035). Instead, Wingtip is published as an MCP
+subscription (decision 0035); on 2026-11-12 it was taken out altogether
+(decision 0041). Instead, Wingtip is published as an MCP
 **connector** that a pilot adds to the Claude or ChatGPT they already pay for.
 Their subscription pays for the model; Wingtip only answers tool calls, from
 the engine and the planner, for the pilot signed in with their Wingtip
@@ -159,7 +160,7 @@ sequenceDiagram
 - **Each tool asks the planner's own HTTP API, in-process** (`calls.planner`,
   an ASGI transport onto the planner's app): `GET /api/plan`,
   `POST /api/go-no-go`, `GET /api/airport/{ident}` and the rest. The answer
-  is the one the app and the assistant get, shaped by its response model; no
+  is the one the apps get, shaped by its response model; no
   figure is worked out in `app/mcp`, and only `app.main` imports a router
   (`.importlinter`).
 - **The gateway is the authorization server**, because it owns accounts:

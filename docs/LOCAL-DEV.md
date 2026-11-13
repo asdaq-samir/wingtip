@@ -9,15 +9,9 @@ scripts that keep the owner's Mac tidy. What the services are is
 - **Docker Desktop** with Compose v2. Nothing else is installed natively:
   every service builds its own image, and the checks run in containers.
 - **Git** and **make** (it ships with macOS and every Linux).
-- **No Anthropic API key.** The Claude features (the Brief's narrative,
-  checkpoint notes, the words, the assistant, the mock oral) are off
-  until the subscription is decided
-  ([decision 0035](decisions/0035-claude-off-until-subscription.md)), and
-  the assistant service is not started. To try them, put
-  `ANTHROPIC_API_KEY=sk-...`, `APP_CLAUDE_FEATURES=EVERYONE` and
-  `COMPOSE_PROFILES=claude` in `.env` at the repository's root
-  (gitignored; Compose reads it). The key is read with
-  `${ANTHROPIC_API_KEY:-}`, so a missing key fails no command.
+- **No API key for a model.** The server calls none: its Claude features
+  were taken out on 2026-11-12
+  ([decision 0041](decisions/0041-claude-taken-out.md)).
 - **Xcode and XcodeGen**, or **the Android SDK and a JDK 25** (the Android build's, as the gateway's;
   Gradle fetches a Temurin 25 into `~/.gradle/jdks` itself where there is none),
   only for the phone apps ([NATIVE.md](NATIVE.md), [NATIVE-ANDROID.md](NATIVE-ANDROID.md)).
@@ -39,10 +33,10 @@ make dev
    a line marked FAIL saying what to do, and nothing is started.
 2. Makes `.env` from `.env.example` when there is none, and says what to
    fill in: your address in `APP_DEVELOPER_EMAILS` for the developer
-   role (the Claude features stay off). Nothing in it is
+   role. Nothing in it is
    required.
 3. Builds the images, runs `docker compose up -d --wait` (gateway,
-   planner, ingest, weather, assistant, db, mailpit, dev-services) and
+   planner, ingest, weather, db, mailpit, dev-services) and
    waits for every service's health, up to 25 minutes
    (`WINGTIP_WAIT_SECONDS`).
 4. Prints the app's address, the API docs, the Mailpit inbox and how to
@@ -101,13 +95,12 @@ Every port is on `127.0.0.1` unless `.env` says otherwise (below).
 | The gateway's API docs and spec | [/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html), [/v3/api-docs](http://localhost:8080/v3/api-docs) | gateway |
 | Health | [localhost:8080/actuator/health](http://localhost:8080/actuator/health) | gateway |
 | The planner's API docs | [localhost:8084/docs](http://localhost:8084/docs) | planner |
-| The assistant's API docs | [localhost:8085/docs](http://localhost:8085/docs) | assistant |
 | The sign-in inbox | [localhost:8025](http://localhost:8025) | mailpit |
 | Jupyter (token `wingtip`) | [localhost:8888](http://localhost:8888) | ml, on request |
 | Traces | [localhost:16686](http://localhost:16686) | jaeger, on request |
 
 The apps only ever talk to the gateway; it proxies `/api/planner/*` to
-the planner and the assistant. Port 8084 is for debugging. The database
+the planner. Port 8084 is for debugging. The database
 is never published.
 
 ## On a phone, over the Wi-Fi
@@ -141,8 +134,8 @@ docker compose up -d
   log. The briefing and the weather are not kept, since a cached METAR
   could only be shown as if it were current.
 - `DEV_PUBLISH_ADDRESS=0.0.0.0` opens Jupyter (8888) too. It has no
-  password and runs code. The planner (8084), the assistant and the
-  database stay on loopback whatever it says: the planner answers without
+  password and runs code. The planner (8084) and the database stay on
+  loopback whatever it says: the planner answers without
   sign-in, and its developer routes are checked by the gateway alone, so
   another device reaches it through the gateway.
 
@@ -206,8 +199,7 @@ time. [services/jobs/README.md](../services/jobs/README.md) has the rest.
 
 One request can be followed end to end in Jaeger: the page's call, the
 gateway, the planner, every rule it asks of the engine, every weather
-product it reads and every source it fetches, and the assistant's
-Claude calls. It is off unless asked for, and costs nothing off: no
+product it reads and every source it fetches. It is off unless asked for, and costs nothing off: no
 service makes a span or imports OpenTelemetry, and nothing is sent.
 Production sets none of it (`infra/docker-compose.prod.yml`).
 
@@ -228,9 +220,8 @@ network:
 
 | Service | Spans | Set up in |
 |---|---|---|
-| gateway | each request (Micrometer Tracing), tagged `wingtip.request_id`; the `traceparent` and `X-Request-Id` on every call to the planner and the assistant | `management.tracing` in application.yml, `gateway/tracing/` |
+| gateway | each request (Micrometer Tracing), tagged `wingtip.request_id`; the `traceparent` and `X-Request-Id` on every call to the planner | `management.tracing` in application.yml, `gateway/tracing/` |
 | planner | each request (FastAPI) under the gateway's; each rule asked of the engine, `engine <rule>` with `wingtip.engine.rule` and no payload; each weather product read, `weather_store.read`; each source asked with requests; threads and pools kept in the trace | `app/tracing.py` over `wingtip/tracing.py` |
-| assistant | each request (FastAPI); each Claude call, `chat <model>` with `wingtip.feature`, `gen_ai.request.model` and the tokens used (`gen_ai.usage.*`), never the prompt or the answer; the planner calls (requests) | `app/tracing.py` |
 | weather | each product's fetch, `fetch <product>`, a trace of its own, the sources under it | `wingtip/tracing.py` |
 | ingest | each round of following airplanes, `follow round`, with its adsb.fi asks | `wingtip/tracing.py` |
 
@@ -253,7 +244,7 @@ All in `scripts/dev/`, each with its usage at its top.
 
 | Script | What it does |
 |---|---|
-| `check.sh <area>` or `check.sh all-changed` | The quick checks for a part of the repo (web, py, planner, ingest, assistant, weather, jobs, engine, java, ios, android), in Docker, warm from any worktree's first run ([CI.md](CI.md)) |
+| `check.sh <area>` or `check.sh all-changed` | The quick checks for a part of the repo (web, py, planner, ingest, weather, jobs, engine, java, ios, android), in Docker, warm from any worktree's first run ([CI.md](CI.md)) |
 | `dev.sh doctor` or `dev.sh up` | What `make dev` and `make doctor` run (First run, above) |
 | `one-at-a-time.sh "<label>" <command>` | Runs a heavy command (a suite, an image build, a browser run) in one of the turns the swap watcher allows (below), waiting while memory is short; `--alone` takes the whole machine for a measurement |
 | `swap-watch.sh`, `install-swap-watch.sh` | Full throttle without swapping: a LaunchAgent that holds the heavy-turn limit as high as the Mac takes (below) |

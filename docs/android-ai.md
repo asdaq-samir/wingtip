@@ -16,13 +16,10 @@ The rules over all of it, as on the iPhone:
   screen says how many were.
 - **Warn, never limit.** The words and the agents never refuse a plan;
   the instructions every model is under say to warn, and the pilot decides.
-- **On the phone only, for now.** Gemini Nano where the phone has it.
-  Wingtip's assistant (Claude, on the server) is off until the
-  subscription is decided ([decision 0035](decisions/0035-claude-off-until-subscription.md)):
-  `ai/ClaudeGate.kt` reads the gateway's `claudeFeatures`, and while it
-  is off, or not yet known, no call goes to the server's assistant. A
-  feature with neither Nano nor Claude is hidden (`ai/AiOffered.kt`).
-  "Claude" in the table below applies only once the owner turns it on.
+- **On the phone only.** Gemini Nano where the phone has it. The
+  server's Claude, once the fallback, was taken out on 2026-11-12
+  ([decision 0041](decisions/0041-claude-taken-out.md)): a feature with
+  no Nano on the phone is hidden (`ai/AiOffered.kt`).
   No AI at all is a working state, and every screen keeps its figures.
 - **No assumed airplane.** With none chosen, Nano is told to give no
   airplane figure (`OnPhoneAsk.contextWords`).
@@ -44,8 +41,9 @@ The rules over all of it, as on the iPhone:
 | On-screen context | No new Android API: the Assist API's `Activity.onProvideAssistContent` (a web link and schema.org JSON-LD) is what an assistant asked "about this screen" reads; Computer Control is the OEM assistant's, not the app's | platform | [AssistContent](https://developer.android.com/reference/android/app/assist/AssistContent) |
 | Firebase AI Logic | Gemini in the cloud, with hybrid on-device/cloud routing | `firebase-ai` 18.1.0 | [Android AI](https://developer.android.com/ai/gemini) |
 
-Firebase AI Logic is **not used**: the app's server AI is Claude through
-the assistant service, kept as the fallback, as the owner asked.
+Firebase AI Logic is **not used**: it is Gemini in Google's cloud, paid
+per call, and the app's AI stays on the phone (the server's Claude was
+taken out on 2026-11-12, decision 0041).
 
 ## What is built
 
@@ -88,14 +86,14 @@ each bound to `OPEN_APP_FEATURE`.
 
 | Screen | Capability | Where it runs | Code |
 |---|---|---|---|
-| Ask | The question answered by Nano with the app's AppFunctions as its tools ("plan KPAO to KSQL", "what's the weather at my destination", "open the emergency assistant"), "Answered on this phone" under it, the tools' answers as source chips | Phone; tools ask the planner as the screens do. No Nano: Claude as before | `ai/OnPhoneAsk.kt`, `ai/functions/AgentTools.kt`, `api/Assistant.kt` |
-| Brief / Go-No-Go | In Plain Words: the verdict and findings | Phone, else Claude | `ui/BriefScreen.kt` |
-| Airport card | In Plain Words: the METAR (with the planner's decoded wind, ceiling, visibility) and TAF | Phone, else Claude | `ui/AirportScreen.kt` |
-| NOTAMs (Ready to Fly) | In Plain Words: which matter and why, each by its number | Phone, else Claude | `ready/ReadyToFlyRow.kt` |
-| Route / nav log | In Plain Words: legs, altitude, time, fuel | Phone, else Claude | `ui/FPLScreen.kt` |
-| Coach | In Plain Words: the debriefs' weak areas | Phone, else Claude | `coach/CoachScreen.kt` |
-| Logbook | Draft a Remark from the entry's facts, into the field to edit | Phone, else Claude | `logbook/LogbookEntryRow.kt`, `ai/AiDraftButton.kt` |
-| Documents: clearance, logbook page, handbook page (Airplane profile) | The photo read on the phone: ML Kit text recognition, then Nano into the assistant's own read (the generated `LogbookPageRead`, `HandbookRead`, `ClearanceNote`, its JSON shape sketched from the class), checked by the engine on the phone (`logbook_read_check`, `handbook_read_check`); "Read on this phone" in its notes | Phone; the photo goes to the server only where the phone cannot read it | `ai/read/OnPhoneReader.kt`, `documents/Documents.kt` |
+| Ask | The question answered by Nano with the app's AppFunctions as its tools ("plan KPAO to KSQL", "what's the weather at my destination", "open the emergency assistant"), "Answered on this phone" under it, the tools' answers as source chips | Phone; tools ask the planner as the screens do. No Nano: "Ask needs Gemini Nano on this phone" | `ai/OnPhoneAsk.kt`, `ai/functions/AgentTools.kt`, `api/Assistant.kt` |
+| Brief / Go-No-Go | In Plain Words: the verdict and findings | Phone | `ui/BriefScreen.kt` |
+| Airport card | In Plain Words: the METAR (with the planner's decoded wind, ceiling, visibility) and TAF | Phone | `ui/AirportScreen.kt` |
+| NOTAMs (Ready to Fly) | In Plain Words: which matter and why, each by its number | Phone | `ready/ReadyToFlyRow.kt` |
+| Route / nav log | In Plain Words: legs, altitude, time, fuel | Phone | `ui/FPLScreen.kt` |
+| Coach | In Plain Words: the debriefs' weak areas | Phone | `coach/CoachScreen.kt` |
+| Logbook | Draft a Remark from the entry's facts, into the field to edit | Phone | `logbook/LogbookEntryRow.kt`, `ai/AiDraftButton.kt` |
+| Documents: clearance, logbook page, handbook page (Airplane profile) | The photo read on the phone: ML Kit text recognition, then Nano into the read (`LogbookPageRead` and `HandbookRead`, the engine contract's own types, and `ClearanceNote`, its JSON shape sketched from the class), checked by the engine on the phone (`logbook_read_check`, `handbook_read_check`); "Read on this phone" in its notes | Phone only; a page Nano cannot read is said so, and nothing is sent | `ai/read/OnPhoneReader.kt`, `documents/Documents.kt` |
 | Setup | On-Phone AI: whether Nano is here, Add Gemini Nano where Android can fetch it | Phone | `ai/OnPhoneAiRow.kt` |
 | Map | Assist API's route context | Phone | `MainActivity.kt` |
 
@@ -115,8 +113,9 @@ each bound to `OPEN_APP_FEATURE`.
   beside the Prompt API's beta5; one model client does every task here.
 - **JSON sketched from the read's class over `@Generable`.** The Prompt
   API's typed output needs a hand-written `@Generable` copy of each read;
-  the assistant's generated classes are the source instead
-  (`SchemaSketch`), and a read that does not decode goes to the server.
+  the read's own classes, the engine contract's generated types where it
+  has them, are the source instead (`SchemaSketch`), and a read that does
+  not decode is said so on the phone.
 
 ## Left out, and why
 
@@ -172,5 +171,5 @@ The checks here compile, lint and unit-test; none runs a model.
 ## Privacy
 
 On the phone first; see docs/privacy-inventory.md, docs/legal/privacy.md
-("Features Claude writes", "Assistants on your phone") and
+("Assistants on your phone") and
 docs/store/privacy-labels.md.

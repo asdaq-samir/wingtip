@@ -22,7 +22,7 @@ Run the `market-gap` skill for the job. Add each competitor's current price, fro
 
 ## 4. What serving them costs
 - Fixed: the AWS design's monthly cost (`docs/README-AWS.md`, "What it costs") and the developer accounts.
-- Per use: each Claude call at the model's current rate (the `claude-api` skill's pricing table), data licences, SMS or email, card and store fees (Apple and Google 15% under their small-business programs, 30% without).
+- Per use: any model call the server would make at the model's current rate (none today: the server's Claude was taken out on 2026-11-12, decision 0041; the AI left runs on the phone or in the pilot's own AI app), data licences, SMS or email, card and store fees (Apple and Google 15% under their small-business programs, 30% without).
 - New work: the build, in the issues it would take, and anything that needs a partner or an approval (Leidos for filing, an FAA-approved USS for LAANC, a fuel-price feed).
 
 ## 5. Unit economics
