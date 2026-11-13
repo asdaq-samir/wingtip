@@ -5,7 +5,7 @@ import { expectPage, toggle } from "./sheetPages";
 /**
  * The first flight (FirstFlight, useFirstFlight; the owner's option A,
  * 2026-11-13): the welcome sheet the first time the planner opens with no
- * route on this device; Let's Go Flying leaves the one search ready for
+ * route on this device; Later leaves the one search ready for
  * where to, the airport picked is planned to from where the airplane is, FPL comes
  * up and one tip points at the page toggle once it shows FPL; each once. The suite's session has the
  * tips all seen, these with them; this spec starts with none seen, once,
@@ -53,7 +53,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("a new pilot is welcomed, Let's Go Flying leaves the one search ready, the pick is planned from where the airplane is and the FPL toggle is pointed out once", async ({
+test("a new pilot is welcomed, Later leaves the one search ready, the pick is planned from where the airplane is and the FPL toggle is pointed out once", async ({
   page,
 }) => {
   test.setTimeout(slow(90_000));
@@ -64,12 +64,14 @@ test("a new pilot is welcomed, Let's Go Flying leaves the one search ready, the 
   await expect(welcome.getByRole("heading", { name: "Welcome to Wingtip Maps" })).toBeVisible();
   for (const row of ["Search, like Maps", "FPL, like your EFB", "FAA charts that move like Maps"])
     await expect(welcome.getByText(row)).toBeVisible();
-  // One way on (the owner, 2026-11-13).
-  await expect(welcome.getByRole("button")).toHaveCount(1);
+  // The position not yet allowed: Turn On Location and Later at its foot
+  // (Apple's permission priming, the owner, 2026-11-13), Later going on
+  // without asking.
+  await expect(welcome.getByTestId("first-flight-location")).toBeVisible();
 
-  // Let's Go Flying: the sheet gone, Search up and its field asking for
+  // Later: the sheet gone, Search up and its field asking for
   // the destination -- not focused, so no keyboard jumps up.
-  await welcome.getByTestId("first-flight-go").click();
+  await welcome.getByTestId("first-flight-later").click();
   await expect(welcome).toHaveCount(0);
   await expectPage(page, 0);
   // Risen from the pill to half, so the search's page is seen (rule 11).

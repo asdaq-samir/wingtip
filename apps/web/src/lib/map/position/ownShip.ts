@@ -333,6 +333,19 @@ export function endSimulation() {
  */
 let askHeld = false;
 
+/** The first flight's Turn On Location (WelcomeSheet): own ship on and
+ *  the map on it, the browser asked at the pilot's tap; a refusal then is
+ *  their answer, with no "No position" after it (as locateOnOpen's). */
+export function askPositionQuietly() {
+  if (!ownShipAvailable()) return;
+  const { enabled, setEnabled, recentre } = useOwnShip.getState();
+  if (!enabled) {
+    quiet = true;
+    setEnabled(true);
+  }
+  recentre(OPEN_ZOOM);
+}
+
 /** The first flight's welcome up (FirstFlight): locateOnOpen asks nothing
  *  by itself while it is, the welcome's Location row asking instead. */
 export function holdAskOnOpen(held: boolean) {
