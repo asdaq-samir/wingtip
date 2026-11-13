@@ -250,12 +250,16 @@ export function AircraftFavoriteStrip({
   onOpen,
   onAddMine,
   onAddFavorite,
+  showAdd = true,
 }: {
   onOpen: (hex: string) => void;
   /** My Airplane's Add: the panel up and the search asked for it. */
   onAddMine: () => void;
   /** The Favorites' Add, at the strip's end: the search asked for one. */
   onAddFavorite: () => void;
+  /** False where the strip's Add is drawn by the row it is in (the search's
+   *  one Add for airports and airplanes). */
+  showAdd?: boolean;
 }) {
   const favorites = usePreferences((s) => s.favoriteAircraft);
   const mine = usePreferences((s) => s.myAircraft);
@@ -276,7 +280,7 @@ export function AircraftFavoriteStrip({
       {/* One Add at a time: with no airplane of the pilot's own, its tile's
           Add is the strip's, where a second Add tile beside it read as the
           same twice (the UI audit, 2026-11-09). */}
-      {(mine || favorites.length > 0) && (
+      {showAdd && (mine || favorites.length > 0) && (
         <SmallTile
           mark={<SmallMark icon={<Plus />} className="bg-foreground/8 text-tint" />}
           title="Add"

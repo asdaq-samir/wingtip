@@ -1,5 +1,5 @@
-import { CircleMinus, House, ListFilter, Plus } from "lucide-react";
-import type { CSSProperties, ReactNode } from "react";
+import { CircleMinus, House, ListFilter } from "lucide-react";
+import type { ComponentProps, CSSProperties, ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { airportMarkSvg } from "../lib/map/marks/airportMark";
@@ -81,7 +81,8 @@ export function SmallTile({
   onClick,
   testId,
   wide = false,
-}: {
+  ...rest
+}: Omit<ComponentProps<"button">, "title" | "children" | "className" | "type"> & {
   mark: ReactNode;
   title: string;
   detail?: string;
@@ -94,6 +95,7 @@ export function SmallTile({
   return (
     <button
       type="button"
+      {...rest}
       onClick={onClick}
       data-testid={testId}
       className={cn(
@@ -342,7 +344,6 @@ export function FavoriteStrip({
   favorites,
   onOpen,
   onAddHome,
-  onAddFavorite,
 }: {
   home: RecentAirport | null;
   favorites: RecentAirport[];
@@ -350,8 +351,6 @@ export function FavoriteStrip({
   /** Home's Add, where none is kept yet: listed all the same, as the
    *  search's Favorites list it (FavoriteTiles). */
   onAddHome: () => void;
-  /** The Favorites' Add, at the strip's end, as the full card's. */
-  onAddFavorite: () => void;
 }) {
   const away = useAway();
   return (
@@ -367,16 +366,6 @@ export function FavoriteStrip({
       {favorites.map((a) => (
         <SmallAirportTile key={a.ident} airport={a} detail={away(a)} onClick={() => onOpen(a)} />
       ))}
-      {/* One Add at a time, as Airplane's strip (AircraftFavoriteStrip). */}
-      {(home || favorites.length > 0) && (
-        <SmallTile
-          mark={<SmallMark icon={<Plus />} className="bg-foreground/8 text-tint" />}
-          title="Add"
-          label="Add a Favorite"
-          onClick={onAddFavorite}
-          testId="pill-favorite-add"
-        />
-      )}
     </PillStrip>
   );
 }

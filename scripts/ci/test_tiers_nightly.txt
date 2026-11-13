@@ -26,6 +26,7 @@ direct-to.spec.ts
 diversion.spec.ts
 dry-run-bar.spec.ts
 export.spec.ts
+favorites-add.spec.ts
 field-lights.spec.ts
 field-notams.spec.ts
 first-flight.spec.ts
