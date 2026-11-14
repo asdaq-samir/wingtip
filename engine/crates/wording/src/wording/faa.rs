@@ -10,6 +10,7 @@
 //! spaces; the scans below keep to those, so an accented letter or an odd
 //! space is treated as the web treated it.
 
+use super::notam_text::{compass_point, ident_by_place, slashed_code, whole_notam};
 use crate::figures::words::{alt_ft, js_round_f};
 
 /// JavaScript's `\w` without the u flag: ASCII letters, figures and `_`.
@@ -43,8 +44,11 @@ const CODES: [&str; 72] = [
     "FU", "DU", "SA", "RA", "SN", "DZ", "TS", "PCPN", "MTN", "MTNS", "OBSC", "OBSCN", "CLDS", "BKN", "OVC", "SCT", "FEW", "N", "S", "E",
     "W", "NE", "NW", "SE", "SW", "APP", "DEP", "TWR", "GND", "CTAF", "UNICOM", "ATIS", "AWOS", "ASOS", "CLNC", "DEL",
 ];
-/// The rest of the radio's codes (the list ran past one array's line).
-const MORE_CODES: [&str; 2] = ["RDO", "ANG"];
+/// The rest of the radio's codes (the list ran past one array's line), and
+/// a NOTAM's references to an obstacle's file: the FCC's Antenna Structure
+/// Registration (ASR) and the FAA's aeronautical study number (ASN, 14 CFR
+/// 77's obstruction evaluation).
+const MORE_CODES: [&str; 4] = ["RDO", "ANG", "ASR", "ASN"];
 
 /// An instrument procedure's codes as its title on the plate writes them
 /// (AIM 5-4-5, the approach charts' naming; the d-TPP's chart names): the
@@ -59,7 +63,7 @@ const PROCEDURE_CODES: [&str; 26] = [
 ];
 
 fn is_code(word: &str) -> bool {
-    CODES.contains(&word) || MORE_CODES.contains(&word) || PROCEDURE_CODES.contains(&word)
+    CODES.contains(&word) || MORE_CODES.contains(&word) || PROCEDURE_CODES.contains(&word) || compass_point(word)
 }
 
 fn day(word: &str) -> Option<&'static str> {
@@ -95,9 +99,11 @@ fn sentence_word(word: &str) -> String {
 /// 0700) is a code too, its letters before a hyphen and all (R-4401A),
 /// and an airspace's class is written as the AIM writes it, "Class B"
 /// (AIM 3-2-1). Text with any lower case is someone's own writing and is
-/// left as it is, and so are raw reports, which pilots read as sent.
+/// left as it is, and so are raw reports, which pilots read as sent: a
+/// NOTAM given whole, and inside other text a NOTAM's slashed codes
+/// (U/S) and idents by where they stand (notam_text).
 pub fn faa_words(text: &str) -> String {
-    if text.bytes().any(|b| b.is_ascii_lowercase()) {
+    if text.bytes().any(|b| b.is_ascii_lowercase()) || whole_notam(text) {
         return text.to_owned();
     }
     let c: Vec<char> = text.chars().collect();
@@ -144,13 +150,22 @@ pub fn faa_words(text: &str) -> String {
                 continue;
             }
         }
+        if edge_before && let Some(len) = slashed_code(&c, i) {
+            out.extend(&c[i..i + len]);
+            i += len;
+            continue;
+        }
         if upper_or_figure(c[i]) {
             let mut j = i;
             while j < c.len() && upper_or_figure(c[j]) {
                 j += 1;
             }
             let word: String = c[i..j].iter().collect();
-            out.push_str(&sentence_word(&word));
+            if ident_by_place(&c, i, j) {
+                out.push_str(&word);
+            } else {
+                out.push_str(&sentence_word(&word));
+            }
             i = j;
             continue;
         }

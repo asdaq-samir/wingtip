@@ -10,6 +10,7 @@
 
 pub mod faa;
 pub mod navaid;
+mod notam_text;
 pub mod radio;
 pub mod script;
 

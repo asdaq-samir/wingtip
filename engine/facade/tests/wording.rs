@@ -56,6 +56,20 @@ fn the_faas_capitals_in_sentence_case_keep_the_codes_and_figures() {
     assert!(call("faa_words", r#"{"text": 3}"#).is_err());
 }
 
+/// A NOTAM's codes and idents kept, and a NOTAM given whole read as sent,
+/// held to the shared cases (apps/web/src/lib/fixtures/faaWords.json),
+/// real NOTAMs from the other fixtures and the iPhone audit's two.
+#[test]
+fn a_notams_codes_and_idents_are_kept() {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/faaWords.json");
+    let fixture: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    for case in fixture["cases"].as_array().unwrap() {
+        let input = serde_json::json!({ "text": case["text"] }).to_string();
+        let got: serde_json::Value = serde_json::from_str(&call("faa_words", &input).unwrap()).unwrap();
+        assert_eq!(got, case["want"], "{}", case["about"]);
+    }
+}
+
 #[test]
 fn a_name_in_capitals_is_written_as_a_name() {
     assert_eq!(text("title_case", r#"{"text": "CHICAGO CLASS B"}"#), "Chicago Class B");
