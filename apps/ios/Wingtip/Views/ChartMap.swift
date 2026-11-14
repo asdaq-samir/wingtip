@@ -190,7 +190,7 @@ struct ChartMap: UIViewRepresentable {
             // app's replay keeps its airplane (useReplayMarker).
             if context.coordinator.simulatedAt != simulated.at {
                 context.coordinator.simulatedAt = simulated.at
-                Self.keepInSight(simulated.coordinate, on: map)
+                MapCamera.keepInSight(simulated.coordinate, on: map)
             }
         } else if let plane = context.coordinator.plane {
             map.removeAnnotation(plane)
@@ -243,19 +243,6 @@ struct ChartMap: UIViewRepresentable {
             return UIEdgeInsets(top: safe.top + 80, left: safe.left + 40, bottom: safe.bottom + 120, right: safe.right + 40)
         }
         return UIEdgeInsets(top: 80, left: safe.left + 40, bottom: map.bounds.height * 0.5 + 40, right: safe.right + 40)
-    }
-
-    /// A moving airplane's point brought back into the part of the map in
-    /// sight, the route's padding in from its edges, once it leaves it.
-    static func keepInSight(_ at: CLLocationCoordinate2D, on map: MKMapView) {
-        guard map.bounds.width > 0 else { return }
-        let clear = map.bounds.inset(by: routePadding(in: map))
-        let point = map.convert(at, toPointTo: map)
-        guard clear.width > 0, clear.height > 0, !clear.contains(point) else { return }
-        let middle = CGPoint(x: map.bounds.midX + point.x - clear.midX, y: map.bounds.midY + point.y - clear.midY)
-        // A step, not a glide, with Reduce Motion on: the replay's and the
-        // dry run's airplane then jumps back into sight.
-        map.setCenter(map.convert(middle, toCoordinateFrom: map), animated: MapMotion.animated)
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -404,16 +391,14 @@ struct ChartMap: UIViewRepresentable {
             return view
         }
 
+        /// A mark tapped opens its card; the map moves only where the card
+        /// would hide the mark (MapCamera.easeIntoSight).
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            if flight?.selected(view, on: mapView) == true { return }
-            if let vor = view.annotation as? VorAnnotation {
-                mapView.deselectAnnotation(vor, animated: false)
-                onNavaid?(vor.vor.key)
-                return
-            }
-            guard let field = view.annotation as? AirportAnnotation else { return }
-            mapView.deselectAnnotation(field, animated: false)
-            onAirport?(field.ident)
+            guard let mark = view.annotation else { return }
+            if flight?.selected(view, on: mapView) == true { return MapCamera.easeIntoSight(mark.coordinate, on: mapView) }
+            if let vor = mark as? VorAnnotation { onNavaid?(vor.vor.key) } else if let field = mark as? AirportAnnotation { onAirport?(field.ident) } else { return }
+            mapView.deselectAnnotation(mark, animated: false)
+            MapCamera.easeIntoSight(mark.coordinate, on: mapView)
         }
 
         /// The first position moves the map there once, at the web app's
