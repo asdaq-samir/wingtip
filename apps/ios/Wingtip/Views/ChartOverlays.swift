@@ -86,6 +86,23 @@ struct VorPin: Decodable, Equatable, Sendable {
     var freq: String?
     let lat: Double
     let lon: Double
+    /// What its card says of it (NavaidCard), as the engine's
+    /// navaids_in_view reads NASR's NAV_BASE: its magnetic variation, east
+    /// positive; its elevation; its DME channel; its standard service
+    /// volume's code (AIM 1-1-8); its hours; whether it is in service with
+    /// restrictions, and its remarks.
+    var magVar: Double?
+    var elevationFt: Double?
+    var channel: String?
+    var serviceVolume: String?
+    var hours: String?
+    var restricted: Bool?
+    var remarks: [String]?
+
+    /// Its link's key and its card's (`navaid=`, the web's navaidAt):
+    /// "OBK@42.2214,-87.9517", the ident and its place, as one ident names
+    /// navaids in more than one place.
+    var key: String { NavaidKey(ident: ident, lat: lat, lon: lon).text }
 }
 
 // MARK: - Airspace
@@ -363,9 +380,9 @@ final class VorMarkView: MKAnnotationView {
         addSubview(mark)
         addSubview(tagLabel)
         canShowCallout = false
-        isEnabled = false
+        // A tap opens its card (NavaidCard), as the web's VOR does.
         isAccessibilityElement = true
-        accessibilityTraits = .staticText
+        accessibilityTraits = .button
         collisionMode = .rectangle
         displayPriority = MKFeatureDisplayPriority(rawValue: 550)
     }

@@ -27,6 +27,8 @@ struct ChartMap: UIViewRepresentable {
     var onRegion: ((CLLocationCoordinate2D, Double) -> Void)?
     /// A field's mark tapped.
     var onAirport: ((String) -> Void)?
+    /// A VOR's mark tapped: its key (VorPin.key), for its card.
+    var onNavaid: ((String) -> Void)?
     /// Own ship kept in the middle; a pan by the pilot ends it.
     @Binding var following: Bool
     /// Whether the route is out of the view, for the arrow's other face.
@@ -101,6 +103,7 @@ struct ChartMap: UIViewRepresentable {
 
     func updateUIView(_ map: MKMapView, context: Context) {
         context.coordinator.onAirport = onAirport
+        context.coordinator.onNavaid = onNavaid
         context.coordinator.onReveal = onReveal
         let shade = (ChartNight(rawValue: chartNight) ?? .dimmed).shade(dark: colorScheme == .dark)
         context.coordinator.dim(shade)
@@ -268,6 +271,7 @@ struct ChartMap: UIViewRepresentable {
         /// Whether the checkpoints' names show at the zoom now.
         var checkpointNames = false
         var onAirport: ((String) -> Void)?
+        var onNavaid: ((String) -> Void)?
 
         /// The checkpoints' marks brought to `checkpoints`: a new one
         /// added, a gone one taken off, one whose number, name, place or
@@ -416,6 +420,11 @@ struct ChartMap: UIViewRepresentable {
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
             if flight?.selected(view, on: mapView) == true { return }
+            if let vor = view.annotation as? VorAnnotation {
+                mapView.deselectAnnotation(vor, animated: false)
+                onNavaid?(vor.vor.key)
+                return
+            }
             guard let field = view.annotation as? AirportAnnotation else { return }
             mapView.deselectAnnotation(field, animated: false)
             onAirport?(field.ident)

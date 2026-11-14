@@ -40,6 +40,9 @@ enum AppCommand: Equatable, Sendable {
     /// The route kept for the air: charts, briefing, NOTAMs, cards
     /// (KeepForAirIntent, KeepForAir).
     case keepForAir
+    /// A card a link names by its key (`tfr=`, `navaid=`): a TFR's or a
+    /// VOR's, opened as a tap on it opens it.
+    case card(SheetPage)
 }
 
 /// The root view's commands, handed down the views as SwiftUI hands down
