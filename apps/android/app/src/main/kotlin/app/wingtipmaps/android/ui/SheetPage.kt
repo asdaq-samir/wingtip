@@ -133,6 +133,15 @@ sealed interface SheetPage {
      *  carousel's pages. */
     val covers: Boolean get() = this != Home && this != Plan
 
+    /** Whether a swipe down closes it, as Apple Maps closes its settings
+     *  (the owner, 2026-11-14: "Apple Maps closes all setting drawers on
+     *  swipe down"; the web's swipeCloses since claude/flyhere-flicker):
+     *  You and what it opens of the pilot's own (Pilot Details, Minimums,
+     *  Settings and its pages), and the Map card. The content cards still
+     *  rest at their peek on a swipe down, and Emergency closes by its ✕
+     *  alone. */
+    val swipeCloses: Boolean get() = this in SWIPE_CLOSES
+
     /** Whether it opens at the sheet's full height rather than at half:
      *  Emergency alone (the card rule's 2 and 4). */
     val opensFull: Boolean get() = this == Emergency
@@ -147,6 +156,8 @@ sealed interface SheetPage {
     companion object {
         // "page" names the kind, as the airplane's own `type` is taken.
         private val KeyJson = Json { classDiscriminator = "page" }
+
+        private val SWIPE_CLOSES: Set<SheetPage> = setOf(You, PilotDetails, Minimums, Settings, Atc, Help, About, Downloads, Passengers, MapSettings)
 
         fun of(key: String): SheetPage = runCatching { KeyJson.decodeFromString(serializer(), key) }.getOrDefault(Home)
 
