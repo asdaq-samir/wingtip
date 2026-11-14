@@ -56,7 +56,6 @@ enum BadgeStatus: String, CaseIterable, Sendable {
         case .emergency: WingtipColor.Badge.statusEmergency
         }
     }
-
 }
 
 /// The badge itself: a capsule in the status's fill, its word in white.
