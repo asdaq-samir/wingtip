@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import type { Course, Leg, NavLogAltitude } from "../../../lib/api/types";
+import type { Course, Leg, NavLogAltitude, Totals } from "../../../lib/api/types";
 import { directOnDevice } from "./directOnDevice";
 
 const KMSN = { ident: "KMSN", name: "Dane County Regional", lat: 43.14, lon: -89.34 };
@@ -50,6 +50,32 @@ describe("a Direct To worked out on the device", () => {
     expect(made.course.departure).toMatchObject({ name: "Present position", lat: 43.5, lon: -89.0 });
     expect(made.course.course_line[0]).toEqual([43.5, -89.0]);
     expect(made.course.course_line.at(-1)).toEqual([43.98, -88.56]);
+  });
+
+  test("the direct's fuel required is the engine's fuel plan over its legs: their fuel and a reserve after them", () => {
+    const made = directOnDevice({ course, legs, nav, totals: null }, "KOSH", fix)!;
+    const done = made.messages.find((m) => m.type === "done") as unknown as { totals: Totals };
+    const { fuel_gal, fuel_required_gal, reserve_min, reserve_gal } = done.totals;
+    // 14 CFR 91.151(a): 30 minutes by day, 45 at night, at 8.5 gal/h.
+    expect([30, 45]).toContain(reserve_min);
+    expect(reserve_gal).toBeCloseTo((reserve_min! / 60) * 8.5, 1);
+    expect(fuel_required_gal).toBeCloseTo(fuel_gal! + reserve_gal!, 0);
+    // Under IFR, 45 whatever the hour (14 CFR 91.167(a)(3)), the alternate's leg before it.
+    const ifr = directOnDevice(
+      { course, legs, nav, totals: { rules: "ifr", alternate: { fuel_gal: 3 } } as unknown as Totals },
+      "KOSH",
+      fix,
+    )!;
+    const ifrDone = ifr.messages.find((m) => m.type === "done") as unknown as { totals: Totals };
+    expect(ifrDone.totals.reserve_min).toBe(45);
+    expect(ifrDone.totals.fuel_required_gal).toBeCloseTo(ifrDone.totals.fuel_gal! + 3 + ifrDone.totals.reserve_gal!, 0);
+  });
+
+  test("with no airplane the direct still flies, its fuel required unknown, never guessed", () => {
+    const made = directOnDevice({ course, legs, nav: null, totals: null }, "KOSH", fix)!;
+    expect(made).not.toBeNull();
+    const done = made.messages.find((m) => m.type === "done") as unknown as { totals: Totals };
+    expect(done.totals.fuel_required_gal ?? null).toBeNull();
   });
 
   test("nothing worked out for a point not on the route, or with no legs yet", () => {
