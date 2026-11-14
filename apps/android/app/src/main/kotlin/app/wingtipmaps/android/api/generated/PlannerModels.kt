@@ -515,6 +515,9 @@ data class AirportPlace (
     @SerialName("airspace_class")
     val airspaceClass: String? = null,
 
+    @SerialName("airspace_hours")
+    val airspaceHours: String? = null,
+
     @SerialName("chart_supplement_url")
     val chartSupplementUrl: String? = null,
 
@@ -562,6 +565,7 @@ data class AirportPlace (
 
     val pattern: TrafficPattern? = null,
     val phone: String? = null,
+    val phones: List<Phone>? = null,
     @SerialName("private")
     val isPrivate: Boolean? = null,
     val procedures: List<TerminalChart>? = null,
@@ -581,6 +585,10 @@ data class AirportPlace (
     val surfaceAirspace: SurfaceAirspace? = null,
 
     val taf: String? = null,
+
+    @SerialName("time_zone")
+    val timeZone: String? = null,
+
     val towered: Boolean,
 
     @SerialName("weather_unavailable")
@@ -742,6 +750,12 @@ data class TrafficPattern (
 
     val published: Boolean? = null,
     val remarks: List<String>? = null
+)
+
+@Serializable
+data class Phone (
+    val number: String,
+    val who: String
 )
 
 /**
@@ -945,12 +959,14 @@ data class AirportSuggestion (
 )
 
 /**
- * What a field offers a pilot who lands there: from its Chart
- * Supplement entry (NASR's APT_BASE and its remarks) the fuel, fees,
- * parking, repair and oxygen, and from Overture Maps (wingtip.nearby) the
- * places to eat, sleep and hire a car within five miles.
- * `nearby_unavailable` where Overture could not be read: not the same
- * as nothing near.
+ * What a field offers a pilot who lands there: from its Chart Supplement entry (NASR's
+ * APT_BASE and
+ * its remarks) the fuel, fees, parking, repair and oxygen, and from Overture Maps
+ * (wingtip.nearby) the
+ * places to eat, sleep and hire a car within five miles and the airport's own website (its
+ * listing on
+ * the field). `nearby_unavailable` where Overture could not be read: not the same as
+ * nothing near.
  */
 @Serializable
 data class AirportServices (
@@ -993,7 +1009,9 @@ data class AirportServices (
     val powerplantRepair: String? = null,
 
     @SerialName("tie_down")
-    val tieDown: Boolean? = null
+    val tieDown: Boolean? = null,
+
+    val website: String? = null
 )
 
 /**

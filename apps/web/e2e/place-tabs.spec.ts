@@ -71,10 +71,12 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   const order = await facts.locator(":scope > div").evaluateAll((f) => f.map((e) => (e as HTMLElement).dataset.testid));
   expect(order).toEqual(["weather", "airspace", "elevation", "pattern", "distance"].map((n) => `place-fact-${n}`));
   await expect(card(page).getByTestId("place-fact-category")).toHaveText("MVFR");
-  await expect(card(page).getByTestId("place-fact-airspace")).toHaveText(/^AirspaceClass [BCDEG]/);
-  await expect(card(page).getByTestId("place-fact-elevation")).toHaveText(/^Elevation[\d,]+ ft$/);
-  await expect(card(page).getByTestId("place-fact-pattern")).toHaveText(/^Pattern[\d,]+ ft/);
-  await expect(card(page).getByTestId("place-fact-distance")).toHaveText(/^From C81\d+ nm [NSEW]+$/);
+  await expect(card(page).getByTestId("place-fact-airspace")).toHaveText(/^Airspace[BCDEG]/);
+  await expect(card(page).getByTestId("place-fact-elevation")).toHaveText(/^Elev\.[\d,]+ ft$/);
+  await expect(card(page).getByTestId("place-fact-pattern")).toHaveText(/^Pattern[\d,]+ ft$/);
+  await expect(card(page).getByTestId("place-fact-distance")).toHaveText(/^From C81\d+ nm$/);
+  // All five across the card, no sideways scroll (the owner, 2026-11-14: "compact enough so pilot doesn't have to scroll").
+  expect(await facts.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
   // T4's one-line report is gone into them.
   await expect(card(page).getByTestId("place-weather-line")).toHaveCount(0);
   // Under the actions, the pictures under them.
@@ -276,4 +278,23 @@ test("the airport's card opens once, its tabs turn in place, and its close close
         .then(() => expect(card(page)).toHaveCount(0)),
     { maxMoves: 0 },
   );
+});
+
+test("a part-time Class D says its next change, and a tap on it opens its week after the frequencies", async ({ page }) => {
+  // KPWK's AIRSPACE line and manager's phone, on KDLH's card.
+  const airspace_hours = "CLASS D SVC 0600-2200 MON-FRI, 0700-2200 SAT-SUN; OTHER TIMES CLASS E";
+  const phones = [{ who: "Manager", number: "847-537-2580" }];
+  const surface_airspace = { class: "D", part_time: true, otherwise: "E", otherwise_part_time: false };
+  await kdlh(page, { surface_airspace, airspace_hours, phones, time_zone: "America/Chicago" });
+  await page.goto("/app/plan?place=KDLH");
+  await settle(page);
+  const tile = card(page).getByTestId("place-fact-airspace");
+  await expect(tile.getByTestId("place-fact-airspace-note")).toHaveText(/^(E after|D from) \d\d:00$/, { timeout: slow(15000) });
+  await tile.getByTestId("place-fact-airspace-open").click();
+  await expect(card(page).getByTestId("place-airspace-day")).toHaveText(["Mon – Fri06:00–22:00", "Sat – Sun07:00–22:00"]);
+  // Frequencies, then the hours, then the Details.
+  const ys = ["place-frequencies", "place-airspace-hours", "place-details"].map((id) => card(page).getByTestId(id).boundingBox());
+  const [radio, week, details] = (await Promise.all(ys)).map((b) => b!.y) as [number, number, number];
+  expect([radio < week, week < details]).toEqual([true, true]);
+  await expect(card(page).getByTestId("place-phone")).toHaveAttribute("href", "tel:+18475372580");
 });

@@ -11807,6 +11807,71 @@ enum EngineContract {
         }
     }
 
+    struct SurfaceHoursAnswer: Codable, Equatable, Sendable {
+        var known: Bool
+        /// The class at other times, as the line names it.
+        var other: String?
+        var days: [EngineContract.SurfaceHoursAnswerDaysItem]
+        var inForce: Bool?
+        var change: EngineContract.SurfaceHoursAnswerChange?
+
+        enum CodingKeys: String, CodingKey {
+            case known
+            case other
+            case days
+            case inForce = "in_force"
+            case change
+        }
+    }
+
+    struct SurfaceHoursAnswerChange: Codable, Equatable, Sendable {
+        var at: Int
+        var nextDay: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case at
+            case nextDay = "next_day"
+        }
+    }
+
+    struct SurfaceHoursAnswerDaysItem: Codable, Equatable, Sendable {
+        var weekday: Int
+        var spans: [EngineContract.SurfaceHoursAnswerDaysItemSpansItem]?
+    }
+
+    struct SurfaceHoursAnswerDaysItemSpansItem: Codable, Equatable, Sendable {
+        var from: Int
+        var to: Int
+    }
+
+    struct SurfaceHoursInput: Codable, Equatable, Sendable {
+        /// NASR CLS_ARSP AIRSPACE_HRS as sent.
+        var hours: String?
+        var year: Int
+        /// The field's local month, 1-12.
+        var month: Int
+        var day: Int
+        /// The field's local weekday, Monday 0 to Sunday 6.
+        var weekday: Int
+        /// Minutes since the field's local midnight now.
+        var minute: Int
+        /// The field's offset from UTC now, minutes (UTC-6 is -360).
+        var utcOffsetMin: Int
+        /// Whether the field keeps daylight saving time now.
+        var dst: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case hours
+            case year
+            case month
+            case day
+            case weekday
+            case minute
+            case utcOffsetMin = "utc_offset_min"
+            case dst
+        }
+    }
+
     /// One period of a TAF as the weather store keeps it (awc_tafs_read): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
     struct TafPeriod: Codable, Equatable, Sendable {
         var timeFrom: Double

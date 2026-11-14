@@ -1448,6 +1448,8 @@ extension Components {
             public var airportDiagramUrl: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/airspace_class`.
             public var airspaceClass: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/airspace_hours`.
+            public var airspaceHours: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/chart_supplement_url`.
             public var chartSupplementUrl: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/closed`.
@@ -1494,6 +1496,8 @@ extension Components {
             public var pattern: Components.Schemas.TrafficPattern?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/phone`.
             public var phone: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/phones`.
+            public var phones: [Components.Schemas.Phone]?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/private`.
             public var isPrivate: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/procedures`.
@@ -1512,6 +1516,8 @@ extension Components {
             public var surfaceAirspace: Components.Schemas.SurfaceAirspace?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/taf`.
             public var taf: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/time_zone`.
+            public var timeZone: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/towered`.
             public var towered: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/AirportPlace/weather_unavailable`.
@@ -1524,6 +1530,7 @@ extension Components {
             ///   - airportDiagramRunways:
             ///   - airportDiagramUrl:
             ///   - airspaceClass:
+            ///   - airspaceHours:
             ///   - chartSupplementUrl:
             ///   - closed:
             ///   - dataSource:
@@ -1547,6 +1554,7 @@ extension Components {
             ///   - notamId:
             ///   - pattern:
             ///   - phone:
+            ///   - phones:
             ///   - isPrivate:
             ///   - procedures:
             ///   - radioNotes:
@@ -1556,6 +1564,7 @@ extension Components {
             ///   - status:
             ///   - surfaceAirspace:
             ///   - taf:
+            ///   - timeZone:
             ///   - towered:
             ///   - weatherUnavailable:
             public init(
@@ -1564,6 +1573,7 @@ extension Components {
                 airportDiagramRunways: Swift.Bool? = nil,
                 airportDiagramUrl: Swift.String? = nil,
                 airspaceClass: Swift.String? = nil,
+                airspaceHours: Swift.String? = nil,
                 chartSupplementUrl: Swift.String? = nil,
                 closed: Swift.String? = nil,
                 dataSource: Swift.String? = nil,
@@ -1587,6 +1597,7 @@ extension Components {
                 notamId: Swift.String? = nil,
                 pattern: Components.Schemas.TrafficPattern? = nil,
                 phone: Swift.String? = nil,
+                phones: [Components.Schemas.Phone]? = nil,
                 isPrivate: Swift.Bool? = nil,
                 procedures: [Components.Schemas.TerminalChart]? = nil,
                 radioNotes: [Swift.String]? = nil,
@@ -1596,6 +1607,7 @@ extension Components {
                 status: Swift.String? = nil,
                 surfaceAirspace: Components.Schemas.SurfaceAirspace? = nil,
                 taf: Swift.String? = nil,
+                timeZone: Swift.String? = nil,
                 towered: Swift.Bool,
                 weatherUnavailable: Swift.Bool? = nil
             ) {
@@ -1604,6 +1616,7 @@ extension Components {
                 self.airportDiagramRunways = airportDiagramRunways
                 self.airportDiagramUrl = airportDiagramUrl
                 self.airspaceClass = airspaceClass
+                self.airspaceHours = airspaceHours
                 self.chartSupplementUrl = chartSupplementUrl
                 self.closed = closed
                 self.dataSource = dataSource
@@ -1627,6 +1640,7 @@ extension Components {
                 self.notamId = notamId
                 self.pattern = pattern
                 self.phone = phone
+                self.phones = phones
                 self.isPrivate = isPrivate
                 self.procedures = procedures
                 self.radioNotes = radioNotes
@@ -1636,6 +1650,7 @@ extension Components {
                 self.status = status
                 self.surfaceAirspace = surfaceAirspace
                 self.taf = taf
+                self.timeZone = timeZone
                 self.towered = towered
                 self.weatherUnavailable = weatherUnavailable
             }
@@ -1645,6 +1660,7 @@ extension Components {
                 case airportDiagramRunways = "airport_diagram_runways"
                 case airportDiagramUrl = "airport_diagram_url"
                 case airspaceClass = "airspace_class"
+                case airspaceHours = "airspace_hours"
                 case chartSupplementUrl = "chart_supplement_url"
                 case closed
                 case dataSource = "data_source"
@@ -1668,6 +1684,7 @@ extension Components {
                 case notamId = "notam_id"
                 case pattern
                 case phone
+                case phones
                 case isPrivate = "private"
                 case procedures
                 case radioNotes = "radio_notes"
@@ -1677,6 +1694,7 @@ extension Components {
                 case status
                 case surfaceAirspace = "surface_airspace"
                 case taf
+                case timeZone = "time_zone"
                 case towered
                 case weatherUnavailable = "weather_unavailable"
             }
@@ -1722,12 +1740,10 @@ extension Components {
                 case airports
             }
         }
-        /// What a field offers a pilot who lands there: from its Chart
-        /// Supplement entry (NASR's APT_BASE and its remarks) the fuel, fees,
-        /// parking, repair and oxygen, and from Overture Maps (wingtip.nearby) the
-        /// places to eat, sleep and hire a car within five miles.
-        /// `nearby_unavailable` where Overture could not be read: not the same
-        /// as nothing near.
+        /// What a field offers a pilot who lands there: from its Chart Supplement entry (NASR's APT_BASE and
+        /// its remarks) the fuel, fees, parking, repair and oxygen, and from Overture Maps (wingtip.nearby) the
+        /// places to eat, sleep and hire a car within five miles and the airport's own website (its listing on
+        /// the field). `nearby_unavailable` where Overture could not be read: not the same as nothing near.
         ///
         /// - Remark: Generated from `#/components/schemas/AirportServices`.
         public struct AirportServices: Codable, Hashable, Sendable {
@@ -1763,6 +1779,8 @@ extension Components {
             public var powerplantRepair: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportServices/tie_down`.
             public var tieDown: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/AirportServices/website`.
+            public var website: Swift.String?
             /// Creates a new `AirportServices`.
             ///
             /// - Parameters:
@@ -1782,6 +1800,7 @@ extension Components {
             ///   - oxygen:
             ///   - powerplantRepair:
             ///   - tieDown:
+            ///   - website:
             public init(
                 airframeRepair: Swift.String? = nil,
                 cars: [Components.Schemas.NearbyPlace]? = nil,
@@ -1798,7 +1817,8 @@ extension Components {
                 nearbyUnavailable: Swift.Bool? = nil,
                 oxygen: Swift.Bool? = nil,
                 powerplantRepair: Swift.String? = nil,
-                tieDown: Swift.Bool? = nil
+                tieDown: Swift.Bool? = nil,
+                website: Swift.String? = nil
             ) {
                 self.airframeRepair = airframeRepair
                 self.cars = cars
@@ -1816,6 +1836,7 @@ extension Components {
                 self.oxygen = oxygen
                 self.powerplantRepair = powerplantRepair
                 self.tieDown = tieDown
+                self.website = website
             }
             public enum CodingKeys: String, CodingKey {
                 case airframeRepair = "airframe_repair"
@@ -1834,6 +1855,7 @@ extension Components {
                 case oxygen
                 case powerplantRepair = "powerplant_repair"
                 case tieDown = "tie_down"
+                case website
             }
         }
         /// An airport the search answers -- or, asked with `fixes`, a named
@@ -15082,6 +15104,29 @@ extension Components {
                 case crosswindKt = "crosswind_kt"
                 case visibilitySm = "visibility_sm"
                 case windKt = "wind_kt"
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Phone`.
+        public struct Phone: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Phone/number`.
+            public var number: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Phone/who`.
+            public var who: Swift.String
+            /// Creates a new `Phone`.
+            ///
+            /// - Parameters:
+            ///   - number:
+            ///   - who:
+            public init(
+                number: Swift.String,
+                who: Swift.String
+            ) {
+                self.number = number
+                self.who = who
+            }
+            public enum CodingKeys: String, CodingKey {
+                case number
+                case who
             }
         }
         /// A pilot's own mark on the chart. `rated` is derived from the

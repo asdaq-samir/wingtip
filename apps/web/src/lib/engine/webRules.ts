@@ -210,6 +210,7 @@ export const WEB_RULES = [
   "strip_fuel",
   "sua_altitudes",
   "sun_down",
+  "surface_hours",
   "terrain_view_bands",
   "tfr_read",
   "thin_track",

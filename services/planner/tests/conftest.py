@@ -6,7 +6,7 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 from wingtip import airports, airspace, airspace_at, diagram_crops, faa_data, field_marks, fixes, pattern, planning, publications, remarks
-from wingtip import tfr, weather
+from wingtip import field_details, tfr, weather
 from wingtip.config import get_settings
 
 from app import chart_model, chart_scorer, detection, prefetch, checkpoint_scoring
@@ -141,6 +141,7 @@ def known_patterns(monkeypatch):
     monkeypatch.setattr(faa_data, "airport_contact", lambda ident, cache_dir: {"phone": None, "address": None})
     monkeypatch.setattr(pattern, "right_traffic_ends", lambda ident, cache_dir=None: set())
     monkeypatch.setattr(remarks, "pattern_notes", lambda faa_id, cache_dir=None: [])
+    monkeypatch.setattr(field_details, "_table", lambda name, reader, cache_dir: {})  # no APT_CON or CLS_ARSP fetched
 
 
 @pytest.fixture(autouse=True)

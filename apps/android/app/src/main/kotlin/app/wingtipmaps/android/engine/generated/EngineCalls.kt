@@ -2071,6 +2071,12 @@ fun Engine.surfaceAirspace(elevationFt: Double? = null, volumes: List<EngineCont
     rule("surface_airspace", EngineContract.SurfaceAirspaceInput(elevationFt = elevationFt, volumes = volumes))
 
 /**
+ * When a part-time surface area is in effect, day by day from the field's today for a week, read from NASR's CLS_ARSP AIRSPACE_HRS, the Chart Supplement's AIRSPACE line ("CLASS D SVC 0600-2200 MON-FRI, 0700-2200 SAT-SUN; OTHER TIMES CLASS E"): the class at other times the one the line names (AIM 3-2-5a1; 14 CFR 71.61, 71.71(b)), never a guess. A time with no Z is the field's local time; Z is UTC at the offset now; Z++ is the Chart Supplement's double dagger, one hour earlier in daylight saving time, so the figure at the field's standard offset all year. Reads CONTINUOUS, time ranges, days (MON-FRI, SAT & SUN, WKEND) and seasons (16 MAR-31 OCT, OCT-MAR); anything else (holidays, BY NOTAM, SR-SS) leaves the hours not known (`known` false). Spans are local minutes from midnight, [from, to), a span past midnight carried into the next day. `in_force` and `change` are now's: in effect until `change.at`, or not until `change.at`, `next_day` where that is tomorrow; null where today's hours are not known. The engine has no clock: the host gives the field's local date, minute, UTC offset and whether in daylight saving time.
+ */
+fun Engine.surfaceHours(hours: String? = null, year: Int, month: Int, day: Int, weekday: Int, minute: Int, utcOffsetMin: Int, dst: Boolean? = null): Result<EngineContract.SurfaceHoursAnswer> =
+    rule("surface_hours", EngineContract.SurfaceHoursInput(hours = hours, year = year, month = month, day = day, weekday = weekday, minute = minute, utcOffsetMin = utcOffsetMin, dst = dst))
+
+/**
  * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
  */
 fun Engine.tafWindow(fcsts: List<EngineContract.TafPeriod>, start: Double, end: Double? = null): Result<EngineContract.TafWindowAnswer> =

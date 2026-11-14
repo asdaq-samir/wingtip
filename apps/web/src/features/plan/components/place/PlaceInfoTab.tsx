@@ -3,7 +3,7 @@ import PlaceAge from "./PlaceAge";
 import { Radio } from "lucide-react";
 import { PillSection } from "../../../../components/Favorites";
 import { FirstFew } from "../../../../components/FirstFew";
-import { ListGroup, ListRow } from "../../../../components/GroupedList";
+import { ListRow } from "../../../../components/GroupedList";
 import { RowBadge } from "../../../../components/RowBadge";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { BADGE } from "../../../../lib/rowBadges";
@@ -11,7 +11,7 @@ import { callEngine } from "../../../../lib/engine/engine";
 import { inUseOrder } from "../../../../lib/frequencies";
 import { FrequencyRow } from "../FrequencyRow";
 import { StopServices } from "../StopServices";
-import { mapsLink } from "./mapsLink";
+import { PlaceDetails } from "./PlaceDetails";
 import { PlaceLights } from "./PlaceLights";
 import { PlaceNotamsSection } from "./PlaceNotams";
 import { NotamBadge, NotamSheet } from "./NotamBadge";
@@ -43,10 +43,10 @@ function CardSection({
 }
 
 /**
- * An airport's card's Info tab (PlaceCard), under the facts and the
- * pictures: its details first -- the address, the elevation, airspace and
- * distance being the facts' (the owner, 2026-11-14: "Since the details are
- * in the info strip, we can remove them except address") -- then its frequencies, its
+ * An airport's card's Info tab (PlaceInfoPage), under the facts, the
+ * pictures: its frequencies, then a part-time surface area's hours and its
+ * Details, its phones, website and address (PlaceDetails; the elevation,
+ * airspace and distance are the facts'; the owner, 2026-11-14) -- then its
  * NOTAMs, its lights, and what it offers on the ground. A frequency, a
  * light or the fuel a NOTAM addresses has its badge by its name, and a tap
  * opens that NOTAM over the card (notamBadges).
@@ -54,10 +54,13 @@ function CardSection({
 export function PlaceInfoTab({
   place,
   where,
+  hours,
 }: {
   place: AirportPlace;
   /** Its town and state, for the address where the FAA lists none. */
   where: string | null;
+  /** A part-time surface area's hours (AirspaceHours), after the frequencies. */
+  hours?: ReactNode;
 }) {
   const marks = useNotamMarks(place.ident, place);
   const sheet = useNotamSheet();
@@ -76,19 +79,6 @@ export function PlaceInfoTab({
   return (
     <>
       <PlaceAge ident={place.ident} kind="airports" />
-      {/* The Details first, then the radio (the owner, 2026-11-11:
-          "move the details before frequency"). */}
-      <CardSection title="Details" testId="place-details">
-        <ListGroup>
-          {/* Where it is on the ground, in Maps: an action of the
-              card's until the star took its place (A2). */}
-          {/* The address written out, the way to it in Maps, at the
-              owner's ask (2026-10-29: "write the address in
-              details"); the town where the FAA lists none. */}
-          <ListRow title="Address" description={place.address ?? where ?? undefined} href={mapsLink(place)} data-testid="place-address" />
-          {data && <ListRow muted title={data} data-testid="place-data-source" />}
-        </ListGroup>
-      </CardSection>
       {/* The first few frequencies, in the order they are dialled (the
           engine's, lib/frequencies inUseOrder), the title the way to every one, as
           every section's title is the way to its list in full
@@ -132,6 +122,12 @@ export function PlaceInfoTab({
         />
       </div>
 
+      {/* After the radio, the airspace's hours and the Details (the owner, 2026-11-14:
+          "Details and airspace section can move after frequency"). */}
+      {hours}
+      <CardSection title="Details" testId="place-details">
+        <PlaceDetails place={place} where={where} data={data} />
+      </CardSection>
       {/* The field's own NOTAMs and the TFRs near it, the engine's order
           (PlaceNotams), after its radio, before its details. */}
       <PlaceNotamsSection ident={place.ident} none={noNotams} />

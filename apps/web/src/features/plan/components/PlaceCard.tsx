@@ -29,13 +29,11 @@ import { sameField } from "../../../lib/procedures";
 import { airportQuery, photosQuery, servicesQuery } from "../../../lib/queryClient";
 import { StopStrip, type SuggestedStop } from "./StopServices";
 import { PlaceChartsTab } from "./place/PlaceChartsTab";
-import { PlaceInfoTab } from "./place/PlaceInfoTab";
+import { PlaceInfoPage } from "./place/PlaceInfoPage";
 import { PlaceRunwaysTab } from "./place/PlaceRunwaysTab";
 import { PlaceWeatherTab } from "./place/PlaceWeatherTab";
 import { PlaceSubtitle } from "./place/PlaceSubtitle";
 import { PlaceTabBar, type PlaceTab } from "./place/PlaceTabBar";
-import { PlaceFacts } from "./place/PlaceFacts";
-import { PlacePictures } from "./place/PlacePictures";
 import { runwaysPictureOf } from "./place/runwayPicks";
 import { useFlyHereMinutes } from "./place/flyHereTime";
 import { useShown } from "../../../lib/shown";
@@ -392,23 +390,13 @@ export default function PlaceCard({
           {/* Info's page alone starts with the facts and pictures (the owner, 2026-11-14: "Switching tabs should not show those"). */}
           <CardTabPanel value="radio" className="space-y-0 pt-0">
             {place && (
-              <>
-                <PlaceFacts
-                  place={place}
-                  category={category}
-                  approximate={weather?.category ? null : (approximate?.said ?? null)}
-                  away={distance}
-                />
-                <PlacePictures
-                  place={place}
-                  photos={photos}
-                  sketchedRunways={sketchedRunways}
-                  leftOut={leftOut}
-                  noRunwaysPicture={noRunwaysPicture}
-                  onNoRunwaysPicture={() => setNoRunwaysPicture(true)}
-                />
-                <PlaceInfoTab place={place} where={where} />
-              </>
+              <PlaceInfoPage
+                place={place}
+                now={now}
+                where={where}
+                facts={{ category, approximate: weather?.category ? null : (approximate?.said ?? null), away: distance }}
+                pictures={{ photos, sketchedRunways, leftOut, noRunwaysPicture, onNoRunwaysPicture: () => setNoRunwaysPicture(true) }}
+              />
             )}
           </CardTabPanel>
           <CardTabPanel value="weather" className="space-y-0">

@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from .airport_lights import LightingNote, LightingSystem
-from .airport_record import AirportRecord
+from .airport_record import AirportDetails, AirportRecord
 from .field import Frequency, Metar, Runway, SurfaceAirspace, TrafficPattern
 from .plates import ApproachFacts
 
@@ -304,7 +304,7 @@ class ChartPages(BaseModel):
     pages: list[ChartPage]
 
 
-class AirportPlace(AirportRecord):
+class AirportPlace(AirportRecord, AirportDetails):
     """One airport the way the map's card shows it: its name and place, the class of the airspace at
     its surface, its tower, runways and radio, and the weather now. `metar` is None for a field with
     no reporting station; `weather_unavailable`, the weather service could not be asked at all."""
@@ -410,12 +410,10 @@ class AirportPhotos(BaseModel):
 
 
 class AirportServices(BaseModel):
-    """What a field offers a pilot who lands there: from its Chart
-    Supplement entry (NASR's APT_BASE and its remarks) the fuel, fees,
-    parking, repair and oxygen, and from Overture Maps (wingtip.nearby) the
-    places to eat, sleep and hire a car within five miles.
-    `nearby_unavailable` where Overture could not be read: not the same
-    as nothing near."""
+    """What a field offers a pilot who lands there: from its Chart Supplement entry (NASR's APT_BASE and
+    its remarks) the fuel, fees, parking, repair and oxygen, and from Overture Maps (wingtip.nearby) the
+    places to eat, sleep and hire a car within five miles and the airport's own website (its listing on
+    the field). `nearby_unavailable` where Overture could not be read: not the same as nothing near."""
 
     ident: str
     fuel_types: list[str] = []
@@ -435,6 +433,7 @@ class AirportServices(BaseModel):
     food: list[NearbyPlace] = []
     lodging: list[NearbyPlace] = []
     cars: list[NearbyPlace] = []
+    website: str | None = None
     nearby_unavailable: bool = False
 
 
