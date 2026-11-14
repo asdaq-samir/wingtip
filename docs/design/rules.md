@@ -72,7 +72,11 @@ Compose. Nothing here is built by hand where a stock part does it.
    a field of their own. The airport card's NOTAM list has none: it shows every NOTAM in the
    engine's order, three first and the rest on the title (the owner,
    2026-11-13: "I don't want search notams"). Nearest's scoped field stays
-   as it is.
+   as it is. The route box's own as-you-type suggestions
+   (the web's `routeBox/RouteSuggestions`) are a written
+   exception (the owner, 2026-11-14): typing a route's idents in place is
+   faster than leaving for the search, and the suggestions only complete
+   the ident being typed.
 6. **Back and Escape close the top card first**, then go back a level.
    Neither only lowers the sheet while a card is open; with no card open
    they may lower it.
