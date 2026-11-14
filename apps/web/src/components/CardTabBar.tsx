@@ -54,7 +54,7 @@ export function TabCount({ count, testId }: { count: number; testId?: string }) 
  * Tabs' list of icons (the owner, 2026-11-14: "can you make the tabs icons
  * instead so it takes less space?"), then made like an iOS 26
  * tab bar (the owner, 2026-11-14: "more like this with similar size and see
- * through"): a 64-point capsule 16 points in from each side, every tab its
+ * through"): a compact 64-point capsule, as narrow as its tabs need and centred, every tab its
  * icon with its word under it in equal columns, the picked tab in the tint
  * on a soft lighter pill, each named by its aria-label.
  *
@@ -92,10 +92,10 @@ export function CardTabBar<T extends string>({
       data-testid={testId}
     >
       {/* The capsule of glass round the stock list, the list itself clear on it. */}
-      <div className="liquid-glass pointer-events-auto [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)] mx-auto w-full max-w-xl rounded-full p-1">
+      <div className="liquid-glass pointer-events-auto [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)] mx-auto w-fit max-w-full rounded-full p-1">
         <TabsList
           activateOnFocus
-          className="grid w-full auto-cols-fr grid-flow-col rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-14"
+          className="inline-grid max-w-full auto-cols-fr grid-flow-col rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-14"
         >
           {tabs.map((t) => (
             <TabsTrigger
@@ -103,7 +103,7 @@ export function CardTabBar<T extends string>({
               value={t.value}
               className={cn(
                 // The picked tab in the tint on a soft lighter pill, as iOS 26's tab bar, not a solid fill.
-                "group/tab h-full min-w-0 flex-none flex-col gap-0.5 rounded-full px-2 data-active:bg-foreground/10 data-active:text-primary data-active:shadow-none dark:data-active:border-transparent dark:data-active:bg-foreground/15 dark:data-active:text-primary group-data-[variant=default]/tabs-list:data-active:shadow-none",
+                "group/tab h-full min-w-0 flex-none flex-col gap-0.5 rounded-full px-3 data-active:bg-foreground/10 data-active:text-primary data-active:shadow-none dark:data-active:border-transparent dark:data-active:bg-foreground/15 dark:data-active:text-primary group-data-[variant=default]/tabs-list:data-active:shadow-none",
                 TEXT.row,
                 TRIGGER_AREA,
               )}

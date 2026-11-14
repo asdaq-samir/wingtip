@@ -526,7 +526,7 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    then the tabs, Info, Weather, Runways, Charts (`place/PlaceTabBar` on
    the shared `CardTabBar`, the pages in `CardTabPages`; each tab an icon
    from lucide-react, required on `CardTab` (Info, CloudSun, PlaneLanding,
-   FileText), every tab with its word under it (12 points, `TEXT.badge`) in equal columns, 56 points tall in a 64-point bar 16 points in from each side, the picked one in the tint on a soft `foreground/10` pill, all named
+   FileText), every tab with its word under it (12 points, `TEXT.badge`) in equal columns, 56 points tall in a compact, centred 64-point bar, the picked one in the tint on a soft `foreground/10` pill, all named
    by aria-label, the dot and count over the icon's corner; a tab picked
    opens at its own top, just under the actions (`useTabScroll`'s
    `scrollOnPick`: the pages' top where the card was scrolled into the last
