@@ -93,7 +93,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await card(page).getByTestId("place-tab-radio").click();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   await expect(card(page).getByTestId("place-fact-elevation")).toContainText(/[\d,]+ ft$/);
-  await expect(card(page).getByTestId("place-fact-airspace")).toHaveText(/^AirspaceD/);
+  await expect(card(page).getByTestId("place-fact-airspace")).toHaveText(/^AirspaceClass D/);
   await expect(card(page).getByTestId("place-fact-distance")).toHaveText(/^From C81\d+ nm$/);
   // The tower's, named in words, its frequency as pilots write it.
   const tower = card(page).getByTestId("place-frequency").filter({ hasText: "Tower" });

@@ -8,11 +8,11 @@ describe("airspaceWords", () => {
   // The engine's answers in the shared cases (surface_airspace), as the strip writes them.
   const said = Object.fromEntries(fixture.cases.map((c) => [c.about, airspaceWords(c.answer as Surface, null)]));
   it("writes the class at the surface in a letter, a shelf over the field not it", () => {
-    expect(said["KORD, Chicago O'Hare: the Class B surface area, its shelves over it"]).toEqual({ value: "B", note: null });
-    expect(said["A field under a Class B shelf and a 700 ft Class E: G at its surface"]).toEqual({ value: "G", note: null });
+    expect(said["KORD, Chicago O'Hare: the Class B surface area, its shelves over it"]).toEqual({ value: "Class B", note: null });
+    expect(said["A field under a Class B shelf and a 700 ft Class E: G at its surface"]).toEqual({ value: "Class G", note: null });
   });
   it("says a part-time class with no hours to read as part-time alone, never E or G", () => {
-    expect(said["A part-time Class D and a part-time Class E surface area: E or G other times"]).toEqual({ value: "D", note: "Part-time" });
+    expect(said["A part-time Class D and a part-time Class E surface area: E or G other times"]).toEqual({ value: "Class D", note: "Part-time" });
   });
   it("is a dash where the airspace could not be read", () => {
     expect(airspaceWords(null, null)).toEqual({ value: "—", note: null });
