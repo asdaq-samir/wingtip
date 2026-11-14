@@ -11,6 +11,7 @@ use wingtip_core::ask::{opt_num_in, Ask};
 use wingtip_flight::limits;
 
 /// A hold (holding.rs, AIM 5-3-8).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn hold(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();
@@ -72,6 +73,7 @@ pub fn lost_comms(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// The diversion drill (diversion.rs, ACS PA.VI.C).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn diversion(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     match name {
@@ -129,6 +131,7 @@ pub fn diversion(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// The fuel strip's figures (strip.rs: 91.151, 91.167).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn fuel(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     match name {
@@ -229,6 +232,7 @@ fn strip_fuel(ask: &Ask) -> Result<String, String> {
 /// planner's words that are compared with the web's word for word; and an
 /// altitude as said (AIM 4-2-9: feet below 18,000 ft, a flight level from
 /// there up, limits.rs).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn written(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();

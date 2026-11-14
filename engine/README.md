@@ -442,6 +442,17 @@ Then the callers switch to the name and the old copy is deleted.
   with `--check`, and `engine.test.ts` asks every listed rule of the
   module. The 143 rules left out were 194 KB (2026-11-10); the module's
   size is held to a budget (`scripts/ci/wasm_size.py`).
+- In that module each rule is its own small call: the table `build.rs`
+  writes for wasm32 holds a closure per rule that asks the crate's function
+  with the rule's name as a constant. A function answering more than one
+  rule carries `#[cfg_attr(target_arch = "wasm32", inline(always))]`, so it
+  is inlined into each closure and the constant folds its `match name` to
+  the one arm; the arms of rules the web never asks are then reached from
+  nothing and left out. It took the module from 1,293,813 bytes (563,754
+  gzipped) to 1,099,029 (492,654) on 2026-11-14. A new function answering
+  several rules takes the same line; without it the module still works,
+  only carrying every arm. The planner's wheel and the phones are built as
+  before, the table naming the function itself.
 - The planner's own copies are going (#482 phase 0): the airspace column
   (its bands split at 1,500 ft above the surface, where 71.71(a)(2)'s
   14,500 ft Class E stops, and 91.215(b)'s general arms asked before a

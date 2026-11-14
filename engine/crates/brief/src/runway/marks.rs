@@ -129,6 +129,7 @@ pub fn wind_barb(speed_kt: f64) -> Barb {
 
 /// The rules by name, as their contract files (crates/brief/contract) name
 /// them to the dispatcher.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> R<String> {
     let i = In { name };
     match name {

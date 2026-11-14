@@ -85,6 +85,7 @@ fn obstacle_at(name: &str, o: &Value) -> R<((f64, f64), f64)> {
 }
 
 /// The rule `name` worked on `v`.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> R<String> {
     match name {
         "legal_cruising_altitudes" => {

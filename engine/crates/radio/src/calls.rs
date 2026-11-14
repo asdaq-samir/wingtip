@@ -10,6 +10,7 @@ use crate::json::{self, Value};
 use wingtip_core::ask::Ask;
 
 /// A clearance, an ATIS or a D-ATIS heard, read.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();

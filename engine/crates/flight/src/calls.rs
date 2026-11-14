@@ -10,6 +10,7 @@ use wingtip_core::ask::Ask;
 use wingtip_core::json::{self, Value};
 
 /// A figure of the flight's own (flight.rs).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();
@@ -44,6 +45,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// Night and civil twilight (sun.rs, 14 CFR 1.1, 61.57(b)).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn night(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let pair = |key: &str| -> Result<(f64, f64), String> {
@@ -67,6 +69,7 @@ pub fn night(name: &str, v: &Value) -> Result<String, String> {
 
 /// The altitudes a flight may be planned at (limits.rs: 71.33, 91.119(c),
 /// 91.121, 91.159, 91.179).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn altitudes(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();
@@ -101,6 +104,7 @@ pub fn altitudes(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// FAA Form 7233-4's items as AIM Appendix 4 writes them (filing.rs).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn filed(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();

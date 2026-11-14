@@ -117,8 +117,8 @@ fn members(v: Option<&Value>) -> &[(String, Value)] {
     }
 }
 
-/// The rule `name` on `v`, as the Go / No-Go's contract files
-/// (crates/brief/contract) name it to the dispatcher.
+/// The rule `name` on `v`, as the Go / No-Go's contract files (crates/brief/contract) name it to the dispatcher.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> R<String> {
     let i = In { name };
     match name {

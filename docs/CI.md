@@ -469,7 +469,9 @@ architecture"), each layer by a check that fails the run:
   differs from the code fails, and `test` rebuilds the module and fails
   where it differs from the committed one. `scripts/ci/wasm_size.py` (in
   `guards`, "Engine: WebAssembly size") fails the module over its budget,
-  raw and gzipped, about 10% above its size.
+  raw and gzipped, about 10% above its size, and says its size in Brotli
+  beside them (what a browser that asks for Brotli downloads), not
+  budgeted.
 - **Every language:** `guards` ("File sizes") runs
   `scripts/ci/file_sizes.py`: no tracked TypeScript, Python, Rust, Swift,
   Kotlin, Java, shell, build JavaScript, C# or Gradle file over 400 lines,

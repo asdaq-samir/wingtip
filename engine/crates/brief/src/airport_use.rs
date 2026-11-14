@@ -152,6 +152,7 @@ pub fn notams_none_words(notam_id: Option<&str>, use_: Use) -> Option<&'static s
 
 /// The rules by name (crates/brief/contract: airport_use_words,
 /// public_use, airport_data_words, airport_notams_none).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> R<String> {
     let text = |key: &str| -> R<Option<&str>> {
         match v.get(key) {

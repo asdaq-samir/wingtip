@@ -205,6 +205,7 @@ fn ranges() -> String {
 /// `aircraft_problems`: `{field: words}` from the form's fields as typed
 /// (strings, the gateway's names), `{}` where it may be saved; and
 /// `airplane_figure_ranges`, the ranges it checks the figures against.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     if name == "airplane_figure_ranges" {
         return Ok(ranges());

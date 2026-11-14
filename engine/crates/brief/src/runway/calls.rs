@@ -14,6 +14,7 @@ type R<T> = Result<T, String>;
 
 /// The rule `name` on `v`, as the runway rules' contract files
 /// (crates/brief/contract) name it to the dispatcher.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> R<String> {
     let i = In { name };
     match name {

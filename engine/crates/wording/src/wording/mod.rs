@@ -94,6 +94,7 @@ fn station(name: &str, v: &Value) -> Result<navaid::Station, String> {
 }
 
 /// The rule `name` worked on `v`, as its contract file (crates/wording/contract) names it.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn answer(name: &str, v: &Value) -> Result<String, String> {
     match name {
         // Each of `texts` where it is given, else `text`: a list's rows in

@@ -96,6 +96,7 @@ pub(crate) fn present(v: &Value, key: &str) -> bool {
 
 /// The rules of this module by name, as their contract files
 /// (crates/route/contract) name it to the dispatcher.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {
         "traffic_marks" => traffic::marks_rule(v),
