@@ -1148,10 +1148,9 @@ by its model through `CardTriggers`; its own map at the top):**
 3. **Squawk 7700 and 121.5**, as two large figure tiles. They copy on
    tap, and VoiceOver says them in full.
 4. **The nearest fields**, a `List`. Each row is ident, distance and
-   bearing, the longest runway, and the flight category. The reported
-   visibility the web shows beside them ("10+ sm", nothing where the
-   report has none) is in the generated model (`visibility_sm`,
-   `visibility_plus`) and is drawn in the phone phase. Each row has
+   bearing, the longest runway, and the flight category, then the
+   reported visibility, "Visibility 10+ sm" (`visibility_sm`,
+   `visibility_plus`; nothing where the report has none). Each row has
    one filled **Direct To** button, the row's primary action. With no
    planner the fields are the cycle packs' (`PackFields`), ranked by the
    engine, under one row: "From this iPhone, without weather". A Direct

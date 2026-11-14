@@ -18,7 +18,7 @@ import SwiftUI
 final class OneSearchModel {
     /// The field's prompt, a key so the string catalog gathers it and a
     /// second language translates it (Localizable.xcstrings).
-    static let prompt: LocalizedStringKey = "Search airports, airplanes, or ask"
+    static let prompt: LocalizedStringKey = "Search airports and airplanes"
     /// The field's prompt while Ask by voice listens, nothing said yet.
     static let speak: LocalizedStringKey = "Speak your question"
     /// The field's prompt after the welcome, asking for the first flight's

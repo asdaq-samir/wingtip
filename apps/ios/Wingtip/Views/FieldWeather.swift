@@ -111,8 +111,8 @@ struct WeatherModules: View {
                 module("Wind", "wind", AirportWords.windLine(dirTrueDeg: metar.windDirTrueDeg, speedKt: metar.windSpeedKt, gustKt: metar.windGustKt),
                        line: "From true north, as reported")
             }
-            module("Visibility", "eye", metar.visibilitySm.map { "\(AirportWords.plain($0)) sm" } ?? "—", line: nil,
-                   spoken: metar.visibilitySm.map(SpokenFigures.statuteMiles))
+            module("Visibility", "eye", AirportWords.miles(metar.visibilitySm, plus: metar.visibilityPlus) ?? "—", line: nil,
+                   spoken: metar.visibilitySm.map { SpokenFigures.statuteMiles($0) + (metar.visibilityPlus == true ? " or more" : "") })
             module("Ceiling", "cloud", metar.ceilingFt.map { Format.altitude($0) } ?? "None", line: metar.ceilingFt == nil ? "No broken or overcast layer" : "Above the field",
                    spoken: metar.ceilingFt.map(SpokenFigures.feet))
             if let altimeter = metar.altimeterInHg {

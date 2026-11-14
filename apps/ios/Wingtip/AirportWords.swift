@@ -84,6 +84,13 @@ enum AirportWords {
         return "\(from) \(Int(speedKt.rounded()))\(gust) kt"
     }
 
+    /// A reported visibility: "3 sm", "1.5 sm", and "10+ sm" or "6+ sm"
+    /// for a more-than report (P6SM, the AWC's "10+"; FAA JO 7900.5), as
+    /// the web's miles writes it; nil with none, never a guessed figure.
+    static func miles(_ sm: Double?, plus: Bool?) -> String? {
+        sm.map { "\(plain($0))\(plus == true ? "+" : "") sm" }
+    }
+
     /// The field's own report in a line under the airport card's tabs
     /// (the owner's T4, 2026-11-14), after its category chip: "Ceiling
     /// 1,800 ft · 310°T 4 kt · 1255Z". The ceiling is the planner's reading
