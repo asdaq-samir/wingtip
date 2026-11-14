@@ -110,11 +110,7 @@ struct SearchSuggestions: View {
     }
 
     /// The registry's make and model, as the FAA writes them.
-    static func registryLine(_ registration: AircraftRegistration) -> String {
-        let name = [registration.manufacturer, registration.model].compactMap { $0?.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }.joined(separator: " ")
-        return name.isEmpty ? "FAA registry" : "\(name) · FAA registry"
-    }
+    static func registryLine(_ registration: AircraftRegistration) -> String { AirplaneHits.registryLine(registration) }
 }
 
 /// The flight at the top of the search with nothing typed (the Main

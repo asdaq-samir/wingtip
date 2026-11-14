@@ -54,26 +54,14 @@ final class OneSearchModel {
     var query: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     /// The airplane types whose name, designator or type matches.
-    var matchingTypes: [AircraftProfile] {
-        let q = query.lowercased()
-        guard q.count >= 2 else { return [] }
-        return types.filter { [$0.name, $0.designator, $0.type].compactMap { $0?.lowercased() }.contains { $0.contains(q) } }.prefix(4).map { $0 }
-    }
+    var matchingTypes: [AircraftProfile] { AirplaneHits.types(query, in: types) }
 
     /// The pilot's own airplanes whose N-number or type matches.
-    func ownMatching(_ records: [OwnAircraftRecord]) -> [OwnAircraftRecord] {
-        let q = query.uppercased()
-        guard !q.isEmpty else { return [] }
-        return records.filter { $0.tailNumber.uppercased().contains(q) || $0.typeDesignator.uppercased().contains(q) }
-    }
+    func ownMatching(_ records: [OwnAircraftRecord]) -> [OwnAircraftRecord] { AirplaneHits.own(query, in: records) }
 
     /// The N-number typed, where it is one (the engine's n_number,
     /// 14 CFR 47.15(b)) and not already one of the pilot's own.
-    func typedTail(_ records: [OwnAircraftRecord]) -> String? {
-        let tail = query.uppercased()
-        guard isNNumber(tail), !records.contains(where: { $0.tailNumber.uppercased() == tail }) else { return nil }
-        return tail
-    }
+    func typedTail(_ records: [OwnAircraftRecord]) -> String? { AirplaneHits.typedTail(query, own: records) }
 
     /// The Do rows for what is typed (SearchActions): Direct To the first
     /// open field found, never one NASR lists as closed (decision 0043).

@@ -14,6 +14,8 @@ struct AircraftView: View {
     @State private var typed = ""
     /// Why what was typed could not be flown, said under the field.
     @State private var tailProblem: String?
+    /// The FAA record of the N-number typed, for its suggestion's line.
+    @State private var registered: AircraftRegistration?
     private var profiles: [AircraftProfile] { model.profiles }
     private var own: [OwnAircraftRecord] { model.own }
 
@@ -38,6 +40,12 @@ struct AircraftView: View {
                         .buttonBorderShape(.capsule)
                 }
                 ProblemLine(tailProblem)
+                // Suggestions as it is typed, the one search's own rows
+                // (AirplaneHits; the owner's S1, 2026-11-14): a tap flies it.
+                AircraftFieldSuggestions(typed: typed, own: own, profiles: profiles, registered: registered) { tail in
+                    typed = tail
+                    fly()
+                }
                 // No airplane: the route's own figures alone, none
                 // assumed (docs/decisions/0011); the plan's start.
                 Button { plan.flyNoAirplane() } label: {
@@ -128,6 +136,15 @@ struct AircraftView: View {
                 }
             }
         }
+        // The typed N-number's FAA record, once the typing stops (the
+        // registry alone, at once: /api/traffic/registered).
+        .task(id: typed) {
+            registered = nil
+            guard let tail = AirplaneHits.typedTail(typed, own: own) else { return }
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            registered = (try? await Planner.registered(tail)) ?? nil
+        }
         .navigationTitle("Airplane")
         .task { await model.loadProfiles() }
         .task(id: session.signedIn) { await model.loadOwn(signedIn: session.signedIn) }
@@ -153,4 +170,35 @@ struct AircraftView: View {
     return NavigationStack { AircraftView() }
         .environment(plan)
         .environment(Session())
+}
+
+/// The FPL airplane field's suggestions under it, from the one search's
+/// rows (AirplaneHits): the pilot's own that match, the N-number typed with
+/// its FAA record once it is a whole one, and the planner's types; nothing
+/// with nothing typed.
+private struct AircraftFieldSuggestions: View {
+    let typed: String
+    let own: [OwnAircraftRecord]
+    let profiles: [AircraftProfile]
+    let registered: AircraftRegistration?
+    let pick: (String) -> Void
+
+    var body: some View {
+        let query = typed.trimmingCharacters(in: .whitespaces)
+        let mine = AirplaneHits.own(query, in: own)
+        let tail = AirplaneHits.typedTail(query, own: own)
+        ForEach(mine, id: \.tailNumber) { airplane in
+            Button { pick(airplane.tailNumber) } label: {
+                SearchRowLabel(title: airplane.tailNumber, detail: airplane.typeDesignator, systemImage: WingtipIcon.airplane)
+            }
+            .foregroundStyle(.primary)
+        }
+        if let tail {
+            Button { pick(tail) } label: {
+                SearchRowLabel(title: tail, detail: registered.map(AirplaneHits.registryLine) ?? "FAA registry", systemImage: WingtipIcon.airplane)
+            }
+            .foregroundStyle(.primary)
+            .accessibilityHint("Flies it")
+        }
+    }
 }

@@ -634,7 +634,27 @@ The card starts with the title, then the actions and the facts.
   example "Departed Gate", "Taxiing for 13m", "Landed / It's 6:32am
   (22m early)" ([flighty.com][flighty]).
 
-**Your airplane, top to bottom:**
+**Built (the owner's P1, 2026-11-14, rules.md's airplane card):**
+`AirplaneProfileView` is the airplane card by its N-number, its own and
+any other. `AirplanePlaceHead`: the N-number, the registry's make, model
+and year under it (from `/api/traffic/registered`, the registry alone,
+at once), the Planespotters.net photo beside its credit only once
+`/api/airplanes/{n}/photo` answers with one, and four tiles -- Fly This
+filled, Follow (a menu of the takes-off and lands alerts), Favorite and
+Share, Follow and Favorite greyed without the registry's ICAO address.
+Then the stock `.tabs` picker, Flights · Info · Figures, the picked one in
+the tint and Flights with its count, and one status line under it
+(`AirplaneLookup.status`: "Checking whether it's in the air…" while the
+live find is out, "In the air · 4,500 ft · 108 kt" as a tap that tracks
+it, else where its last flight ended, else "Not heard in the last 6
+weeks"). Flights lists its past flights by that address, each ▶ row
+pushing its replay (`PastFlightCard`); Info is `AirplaneInfoSections`, the
+FAA groups in the web's order with the owner shown; Figures holds every
+figure, the endurance, the handbook photo and the checklists. The FPL's
+N-number field suggests under it from the one search's rows
+(`AirplaneHits`).
+
+**Your airplane, top to bottom (the earlier plan):**
 
 1. A **pass-like hero card**, white and rounded `radius.card` (navy at
    night). On it:
