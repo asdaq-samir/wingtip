@@ -20,7 +20,8 @@ import { clearProblem, noConnection, raiseProblem } from "../../../lib/problems"
  * speed, time and fuel (PHAK ch. 16) -- flown at the altitude, in the
  * wind and with the airplane of the planned leg into that point; the
  * planned legs after it are kept as they were, and the totals are the
- * engine's navlog_totals over them all. Nothing is worked out where a
+ * engine's navlog_totals over them all, with its fuel check (fuelPlan).
+ * Nothing is worked out where a
  * piece is missing: no route changed then, rather than half of one.
  */
 
@@ -72,6 +73,45 @@ function legBetween(
 }
 
 /**
+ * The direct's fuel check, as the planner makes it for a route
+ * (wingtip.planning.flight_totals): the engine's navlog_fuel_plan over the
+ * legs' fuel -- the reserve after the destination, 30 minutes by day and
+ * 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR with the leg on
+ * to the alternate before it (14 CFR 91.167(a)) -- with night judged by
+ * the engine at both ends (night_at_either_end, 14 CFR 1.1), leaving now
+ * from where the airplane is. Nothing where the engine refuses it (an
+ * airplane with no fuel burn): the direct still flies, its Fuel req "—".
+ */
+function fuelPlan(
+  summed: { fuel_gal?: number | null; ete_min?: number | null },
+  fix: { lat: number; lon: number },
+  destination: { lat: number; lon: number },
+  profile: NavLogAltitude["aircraft"] | null,
+  totals: Totals | null,
+) {
+  try {
+    const now = Date.now() / 1000;
+    const minutes = summed.ete_min ?? null;
+    const night = callEngine("night_at_either_end", {
+      start: [fix.lat, fix.lon],
+      depart_s: now,
+      // With no time aloft, the departure's alone, as the planner judges it.
+      end: minutes == null ? [fix.lat, fix.lon] : [destination.lat, destination.lon],
+      arrive_s: now + (minutes ?? 0) * 60,
+    });
+    return callEngine("navlog_fuel_plan", {
+      total_fuel_gal: summed.fuel_gal ?? null,
+      profile: (profile ?? null) as EngineInput<"navlog_fuel_plan">["profile"],
+      night,
+      rules: totals?.rules === "ifr" ? "ifr" : "vfr",
+      alternate_gal: totals?.alternate?.fuel_gal ?? 0,
+    });
+  } catch {
+    return {};
+  }
+}
+
+/**
  * The route direct from `fix` to the route's point `ident`, then on as
  * planned; null where it cannot be worked out here -- no course or legs
  * yet, a point not on them, or the engine refusing the figures.
@@ -100,6 +140,7 @@ export function directOnDevice(
     } as Leg;
     const flown = [direct, ...legs.slice(into + 1)];
     const summed = callEngine("navlog_totals", { legs: flown as EngineInput<"navlog_totals">["legs"] });
+    const fuel = fuelPlan(summed, fix, course.destination, nav?.aircraft ?? null, totals);
     // The course's own distance and bearing, departure to destination, as
     // the planner's are: the engine's great circle, no airplane needed.
     const whole = legBetween(fix, course.destination, null, null, air.altitude_ft);
@@ -121,6 +162,9 @@ export function directOnDevice(
           unflyable_legs: summed.unflyable_legs,
           legs_without_wind: summed.legs_without_wind,
           rules: totals?.rules,
+          // The fuel required, the reserve and the margin, the strip's Fuel req.
+          ...fuel,
+          alternate: totals?.alternate ?? null,
           // No hop of its own: the page reads the next landing from the
           // hops (figures' nextLanding), and totals without them threw
           // there, the whole page lost to "No connection" at an offline
