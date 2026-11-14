@@ -82,7 +82,11 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
     // white space collapsed: the field keeps every space typed
     // (white-space: pre), which in a pill took 12 points beside its ident
     // and put the next arrow's hit area over it.
-    <span className="inline-flex items-center gap-x-px align-middle font-sans leading-normal whitespace-nowrap normal-case">
+    // Every pill, chip and arrow `gap-2` apart, each one's 44-point area
+    // reaching half way across the gap to meet its neighbour's, not under
+    // it: the arrow between C81 and KDLH was a 16 by 20 control whose area
+    // the pills on both sides took (the audit's WEB-4).
+    <span className="inline-flex items-center gap-x-2 align-middle font-sans leading-normal whitespace-nowrap normal-case">
       {/* Before the first point an arrow only with no departure yet: the
           departure is asked for there, the word for it in the same button,
           as a field's placeholder takes the tap that fills it -- a tap on
@@ -97,11 +101,13 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
           data-testid="route-arrow"
           aria-label={i === 0 ? "Add the departure" : `Add a stop between ${points[i - 1]} and ${point}`}
           // The stock Button at the arrow's own size, in the grey, tinted under
-          // a pointer; a point's width from the pill before it, as the box's
-          // row spaced every pill and arrow (gap-x-px).
+          // a pointer, never grown: its area a pseudo-element 44 tall and
+          // half the gap wider each side (ml-2 from the pill before it,
+          // which ends the token before).
           className={cn(
             "h-5 w-4 rounded-full text-muted-foreground hover:bg-transparent hover:text-tint native:text-muted-foreground disabled:opacity-40",
-            i > 0 && "ml-px",
+            "after:-inset-x-1 after:-inset-y-3",
+            i > 0 && "ml-2",
             i === 0 && "w-auto",
           )}
         >
@@ -178,7 +184,7 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
           pilot's ask -- what is typed there is the new destination, the old
           one a stop. */}
       {last && (!hasDest || box.focused || box.typedAtEnd) && (
-        <ArrowRight className={cn(ARROW, "ml-px")} aria-hidden="true" data-testid="route-arrow-on" />
+        <ArrowRight className={ARROW} aria-hidden="true" data-testid="route-arrow-on" />
       )}
       {last && !hasDest && !box.typedAtEnd && (
         <span aria-hidden="true" className={ASKING}>

@@ -229,7 +229,7 @@ export function PatternChips({
     const ring = fitted?.short
       ? "ring-2 ring-destructive"
       : fitted && (fitted.crosswindOver || fitted.close)
-        ? "ring-2 ring-amber-500"
+        ? "ring-2 ring-caution"
         : undefined;
     const said = fitted?.short ? ", too short today" : fitted?.close ? ", little to spare in length" : "";
     const words = `Runway ${id}${windward ? ", into the wind" : ""}${fitted?.crosswindOver ? `, crosswind ${fitted.crosswindKt} knots, past the airplane's demonstrated` : ""}${said}`;

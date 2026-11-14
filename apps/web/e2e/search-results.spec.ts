@@ -176,7 +176,7 @@ test("a search's fuel, approach, surface and VFR at… filters narrow its fields
   const rows = list.getByTestId("search-result");
   await expect(rows).toHaveCount(3);
   // The METAR's wind and visibility, and what the field has.
-  await expect(rows.first().getByTestId("search-result-weather")).toContainText("Wind 270° at 12 kt, gusts 18 · 10 SM");
+  await expect(rows.first().getByTestId("search-result-weather")).toContainText("Wind 270°T at 12 kt, gusts 18 · 10 SM");
   await expect(rows.first().getByTestId("search-result-facts")).toContainText("Paved, Turf · Approach · 100LL");
 
   // Jet A from the fuel chip's menu: Waukegan alone.

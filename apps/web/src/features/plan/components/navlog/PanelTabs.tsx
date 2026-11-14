@@ -213,7 +213,11 @@ export default function PanelTabs({
         {tab !== null && (
           <TabsList
             data-testid="panel-tabs"
-            className="mx-4 my-2 w-auto shrink-0 group-data-[orientation=horizontal]/tabs:h-9 pointer-coarse:group-data-[orientation=horizontal]/tabs:h-11 print:hidden"
+            // The stock 36 at every pointer, never grown to a finger's 44
+            // (CLAUDE.md: controls never grow; the audit's WEB-7): each
+            // segment's 44 a ::before (its ::after the stock indicator),
+            // 7 over and under its 30, the segments' areas meeting.
+            className="mx-4 my-2 w-auto shrink-0 group-data-[orientation=horizontal]/tabs:h-9 print:hidden"
           >
             {TABS.map((t) => (
               <TabsTrigger
@@ -221,7 +225,7 @@ export default function PanelTabs({
                 value={t.value}
                 data-testid={`panel-tab-${t.value}`}
                 aria-description={marks?.[t.value] ? (marks[t.value] === "stop" ? "Warning" : "Caution") : undefined}
-                className="min-w-0"
+                className="relative min-w-0 pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:-inset-y-[7px] pointer-coarse:before:content-['']"
               >
                 <span className="truncate">{t.label}</span>
                 {marks?.[t.value] && (

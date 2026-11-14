@@ -15,7 +15,7 @@ import {
 } from "../../../../../components/ui/popover";
 import { useIsMobile } from "../../../../../hooks/use-mobile";
 import { callEngine } from "../../../../../lib/engine/engine";
-import { duration, flightLevel, one } from "../../../../../lib/format";
+import { duration, flightLevel, gal, nm } from "../../../../../lib/format";
 import type { Leg } from "../../../../../lib/api/types";
 import { TEXT } from "../../../../../lib/text";
 
@@ -76,9 +76,9 @@ function changeWords(point: ProfilePoint, feet: number, mode: ChangeMode, profil
     c.begins_nm === c.ends_nm
       ? `at ${point.ident}`
       : mode === "start_at"
-        ? `from ${point.ident}, done ${one(c.ends_nm - c.begins_nm)} nm on`
-        : `${one(c.ends_nm - c.begins_nm)} nm before ${point.ident}, done by it`;
-  const cost = c.minutes != null ? ` · ${duration(c.minutes)}${c.gallons != null ? ` · ${one(c.gallons)} gal` : ""}` : "";
+        ? `from ${point.ident}, done ${nm(c.ends_nm - c.begins_nm)} on`
+        : `${nm(c.ends_nm - c.begins_nm)} before ${point.ident}, done by it`;
+  const cost = c.minutes != null ? ` · ${duration(c.minutes)}${c.gallons != null ? ` · ${gal(c.gallons)}` : ""}` : "";
   return `${c.kind === "climb" ? "Climb" : "Descent"} ${where}${cost}`;
 }
 
@@ -170,7 +170,7 @@ export default function LegAltitude({
       aria-label={`${point.ident}: set the altitude at it`}
       data-testid="profile-waypoint"
       className={cn(
-        "absolute bottom-6 size-3 -translate-x-1/2 rotate-45 rounded-[2px] border-2 border-background bg-tint shadow-sm outline-none",
+        "absolute bottom-6 size-3 -translate-x-1/2 rotate-45 rounded-[2px] border-2 border-background bg-tint shadow-(--depth-mark) outline-none",
         "after:absolute after:-inset-4 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
       )}
       style={{ left: `calc(0.5rem + (100% - 1rem) * ${point.share})` }}

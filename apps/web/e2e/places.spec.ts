@@ -1072,7 +1072,7 @@ test("the Weather tab listens to an ATIS and shows the runway in use and the alt
   const rows = card(page).getByTestId("place-atis-row");
   await expect(rows).toHaveText([
     /Information.*C · 1852Z/,
-    /Wind.*210° at 12 kt, gusts 18/,
+    /Wind.*210°T at 12 kt, gusts 18/,
     /Visibility.*10 sm/,
     /Sky.*Few 4,500 ft/,
     /Temperature.*18 °C, dew point 12 °C/,

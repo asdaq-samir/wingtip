@@ -1,7 +1,7 @@
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import type { Totals } from "../../../lib/api/types";
 import { one } from "../format";
-import { gal } from "../../../lib/format";
+import { gal, nm } from "../../../lib/format";
 import { AskFigure } from "../../../components/airplane/AskFigure";
 import { tailOf } from "../../../lib/aircraftChoice";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
@@ -45,7 +45,7 @@ export default function FuelBreakdown({
     <div className="flex flex-col gap-3" data-testid="fuel-breakdown">
       {shortOnes.some((f) => f.name) && (
         <p className="font-semibold text-destructive-ink" data-testid="fuel-short-flights">
-          Short: {shortOnes.map((f) => `${f.name}, ${one(f.shortGal)} gal`).join("; ")}
+          Short: {shortOnes.map((f) => `${f.name}, ${gal(f.shortGal)}`).join("; ")}
         </p>
       )}
       <ListGroup>
@@ -56,7 +56,7 @@ export default function FuelBreakdown({
           // miles more in the legs' fuel (the planner's with_procedures).
           description={
             totals.procedure_nm
-              ? `Climb, cruise and descent, with the winds, and ${one(totals.procedure_nm)} nm more by the procedures picked`
+              ? `Climb, cruise and descent, with the winds, and ${nm(totals.procedure_nm)} more by the procedures picked`
               : "Climb, cruise and descent, with the winds"
           }
         />
@@ -101,15 +101,13 @@ export default function FuelBreakdown({
         <ListGroup>
           <ListRow
             title="Usable fuel"
-            description={
-              short === null && totals.fuel_margin_gal != null ? `${one(totals.fuel_margin_gal)} gal more than required` : undefined
-            }
+            description={short === null && totals.fuel_margin_gal != null ? `${gal(totals.fuel_margin_gal)} more than required` : undefined}
             value={
               short === null ? (
-                `${totals.usable_fuel_gal} gal`
+                gal(totals.usable_fuel_gal)
               ) : (
                 <span className="font-semibold text-destructive">
-                  {totals.usable_fuel_gal} gal, {one(short)} short
+                  {gal(totals.usable_fuel_gal)}, {one(short)} short
                 </span>
               )
             }

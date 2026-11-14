@@ -13,7 +13,7 @@ import { callEngine } from "../../../../lib/engine/engine";
 import { ALLOWANCES, divert, diversionFields, reasonable, type Diversion, type EstimateKey } from "../../../../lib/diversion";
 import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../format";
-import { bearing, grouped, stopwatch, windCorrection } from "../../../../lib/format";
+import { bearing, gal, grouped, nm, stopwatch, windCorrection } from "../../../../lib/format";
 import { FINDING_TONE } from "../../../../lib/findings";
 import { written } from "./workings";
 import { api } from "../../../../lib/api/client";
@@ -27,13 +27,13 @@ function whoMayLand(f: { private: boolean; military: "military" | "joint" | null
 /** The diversion worked out, step by step, once checked. */
 function Answer({ ident, d }: { ident: string; d: Diversion }) {
   const steps: [string, string][] = [
-    ["True course", `${bearing(d.tc)}, ${d.distanceNm.toFixed(1)} nm`],
+    ["True course", `${bearing(d.tc)}, ${nm(d.distanceNm)}`],
     ["Wind correction", windCorrection(d.wca)],
     ["True heading", bearing(d.th)],
     ["Magnetic heading", bearing(d.mh)],
     ["Ground speed", `${Math.round(d.gs)} kt`],
     ["Time", `${Math.round(d.ete)} min`],
-    ["Fuel", `${d.fuel.toFixed(1)} gal`],
+    ["Fuel", gal(d.fuel)],
   ];
   return (
     <ListGroup title={`To ${ident}, worked out`}>

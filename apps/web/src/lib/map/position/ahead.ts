@@ -6,7 +6,7 @@ import type { AheadAlert } from "../../api/types";
 import { faaWords } from "../../advisories";
 import { shortAirspaceName } from "../../airspace";
 import { usePreferences } from "../../preferences";
-import { altFt } from "../../format";
+import { altFt, nm } from "../../format";
 import { underway } from "./glide";
 import { useOwnShip, type Fix } from "./ownShip";
 
@@ -179,5 +179,5 @@ export function alertWhere(a: AheadAlert): string {
   if (a.clearance_ft != null) {
     return a.clearance_ft >= 0 ? `${altFt(a.clearance_ft)} ft below you` : `${altFt(-a.clearance_ft)} ft above you`;
   }
-  return `${a.distance_nm.toFixed(1)} nm`;
+  return nm(a.distance_nm);
 }

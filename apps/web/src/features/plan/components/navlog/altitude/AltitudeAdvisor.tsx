@@ -2,7 +2,7 @@ import { TriangleAlert } from "lucide-react";
 import { cn } from "cn";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "../../../../../components/ui/item";
 import { Badge } from "../../../../../components/ui/badge";
-import { altFt, duration, flightLevel, one } from "../../../../../lib/format";
+import { altFt, duration, flightLevel, gal } from "../../../../../lib/format";
 import { TEXT } from "../../../../../lib/text";
 import SectionTitle from "../../../../../components/SectionTitle";
 import type { AdvisorRow } from "./plans";
@@ -42,7 +42,7 @@ export default function AltitudeAdvisor({
         {rows.map((r) => {
           const figures = [
             airplane && r.ete_min != null ? duration(r.ete_min) : null,
-            airplane && r.fuel_gal != null ? `${one(r.fuel_gal)} gal` : null,
+            airplane && r.fuel_gal != null ? gal(r.fuel_gal) : null,
             r.tailwind_kt != null ? windWords(r.tailwind_kt) : null,
           ].filter(Boolean);
           return (

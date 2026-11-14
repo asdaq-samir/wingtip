@@ -8,7 +8,7 @@
  */
 import type { Leg } from "../../../../lib/api/types";
 import { callEngine } from "../../../../lib/engine/engine";
-import { bearing, grouped, magneticVariation, windCorrection } from "../../../../lib/format";
+import { bearing, gal, grouped, magneticVariation, windCorrection } from "../../../../lib/format";
 
 /** What the student works out; how far off an E6B allows is the
  *  engine's (`workings_right`). */
@@ -29,7 +29,7 @@ export type AnswerKey = (typeof ANSWERS)[number]["key"];
 export function written(key: AnswerKey, value: number): string {
   if (key === "th" || key === "mh") return bearing(value);
   if (key === "wca") return windCorrection(value);
-  if (key === "fuel") return `${value.toFixed(1)} gal`;
+  if (key === "fuel") return gal(value);
   return `${Math.round(value)} ${key === "gs" ? "kt" : "min"}`;
 }
 
@@ -135,8 +135,8 @@ export function workingsOf(leg: Leg, phase: Phase = "cruise"): Workings | null {
     { name: "Time", sum: `${r1(leg.distance_nm)} nm ÷ ${Math.round(gs)} kt × 60`, result: `${Math.round(ete)} min` },
     {
       name: "Fuel",
-      sum: `${Math.round(ete)} min at ${phase === "cruise" ? "" : `the ${phase}'s `}${r1(leg.fuel_burn_gph)} gal/h`,
-      result: `${r1(fuel)} gal`,
+      sum: `${Math.round(ete)} min at ${phase === "cruise" ? "" : `the ${phase}'s `}${r1(leg.fuel_burn_gph)} gph`,
+      result: gal(fuel),
     },
   ];
   return {

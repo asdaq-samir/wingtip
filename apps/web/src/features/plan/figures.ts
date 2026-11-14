@@ -3,6 +3,7 @@ import type { Flown } from "./components/navlog/dryRun";
 import { decimalHours, etaAt, one } from "./format";
 import { duration, NOT_KNOWN, spokenDistance, spokenDuration, spokenFuel } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
+import { pointName } from "../../lib/identSchema";
 
 /** One of the flight's figures: its name over it, its unit after it. */
 interface Figure {
@@ -159,9 +160,15 @@ export function tripFigures(
  *  between two landings, or the whole route with no stops -- "C81 → KMSN". */
 export function shortFlights(totals: Totals | null): { name: string; shortGal: number }[] {
   if (!totals) return [];
-  return stripFuel(totals).short.map((s) => ({ name: s.name, shortGal: s.short_gal }));
+  // Each named by its two ends' own names (pointName), found by the
+  // flight's index (`hop`), not the engine's raw idents, where a pilot's
+  // own point read "@43.1,-89.3,4500" (the code audit's CODE-13). A route
+  // with no stops has no flight to name: "".
+  return stripFuel(totals).short.map((s) => {
+    const hop = s.hop == null ? undefined : totals.hops[s.hop];
+    return { name: hop ? `${pointName(hop.departure)} → ${pointName(hop.destination)}` : "", shortGal: s.short_gal };
+  });
 }
-
 /** The figures from the airplane's book alone (FlightLine's `estimate`):
  *  the distance as the course has it, and at cruise speed with no wind
  *  the time, and the fuel required at the cruise burn over that time with

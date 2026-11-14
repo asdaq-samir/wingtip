@@ -143,7 +143,7 @@ describe("a reported wind", () => {
   it("is calm only at 00000KT, and not said at all with no speed", () => {
     expect(windLine({ wind_speed_kt: 0, wind_dir_true_deg: 0 })).toBe("Calm");
     expect(windLine({ wind_speed_kt: null })).toBe("Not reported");
-    expect(windLine({ wind_speed_kt: 15, wind_dir_true_deg: 240, wind_gust_kt: 25 })).toBe("240° at 15 kt, gusts 25");
+    expect(windLine({ wind_speed_kt: 15, wind_dir_true_deg: 240, wind_gust_kt: 25 })).toBe("240°T at 15 kt, gusts 25");
     expect(reportedWind(0, 0, null)).toBe("calm");
     expect(reportedWind(null, null, null)).toBeNull();
     expect(reportedWind(240, 12, 20)).toEqual({ dir: "240°T", speed: "12G20", spoken: "240 true at 12 knots, gusts 20" });

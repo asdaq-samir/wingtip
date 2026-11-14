@@ -19,6 +19,8 @@ import { mhzText } from "../../../lib/frequencies";
 import { chipFillOf, colourOf } from "../../../lib/map/marks/flightCategory";
 import { glideRangeNm, reachesField, underway } from "../../../lib/map/position/glide";
 import { useGlideRatio } from "../../../lib/map/position/useGlideRatio";
+import { nearestFrom } from "../../../lib/map/position/nearestFrom";
+import { useGeo } from "../../../lib/geo";
 import { AskFigure } from "../../../components/airplane/AskFigure";
 import { airportMarkSvg } from "../../../lib/map/marks/airportMark";
 import { positionNow, useOwnShip, useOwnFixShown } from "../../../lib/map/position/ownShip";
@@ -272,7 +274,10 @@ export default function NearestCard({
   const fix = useOwnFixShown();
   const origin = from ?? fix;
   const nearestAsked = useQuery({ ...nearestQuery(origin?.lat ?? 0, origin?.lon ?? 0), enabled: !!origin });
-  const data = nearestAsked.data;
+  // From the point itself, not the rounded one the list is asked from
+  // (nearestFrom): the engine's great circles, once it is loaded.
+  const geo = useGeo();
+  const data = nearestAsked.data && origin && geo ? nearestFrom(nearestAsked.data, origin, geo) : nearestAsked.data;
   // Asked for the nearest fields, the position is wanted: own ship turned
   // on quietly where the browser already lets it be read (positionNow),
   // as Fly Here does; else the card offers to show it.

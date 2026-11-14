@@ -17,12 +17,13 @@ import { SectionPane } from "../../../../components/SectionPane";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../../../components/ui/table";
 import type { Candidate, Leg, NavLogAltitude, Totals } from "../../../../lib/api/types";
-import { magneticVariation, windCorrection } from "../../../../lib/format";
+import { gal, magneticVariation, weekdayDayMonthTime, windCorrection } from "../../../../lib/format";
 import { routeName } from "../../../../lib/identSchema";
 import { revealRow } from "../../../../lib/revealRow";
 import { GROUP_HEADING, TEXT } from "../../../../lib/text";
+import SectionTitle from "../../../../components/SectionTitle";
 import { type Description, descriptionKey } from "../../hooks/useCheckpointNotes";
-import { altFt, bearing, clockTime, etaAt, feetBelowClouds, legsWithoutWind, one, plannedWords, windAloft } from "../../format";
+import { altFt, bearing, etaAt, feetBelowClouds, legsWithoutWind, one, plannedWords, windAloft } from "../../format";
 import type { BriefingPart } from "../briefing/sections";
 import { flownNmOf, isLegPoint, legOf, navLogRows, phaseOf, rowPoint, type NavLogRow, type RouteEnds } from "./rows";
 import LegWorkings from "./LegWorkings";
@@ -186,12 +187,14 @@ function LegLine({ leg, at, phase }: { leg: Leg; at: { name: string; lat: number
   const figures: [string, string][] = [
     ["TC", bearing(leg.true_course_deg)],
     ["Wind", leg.wind ? windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt) : "no data"],
-    ["WCA", leg.wca_deg != null ? windCorrection(leg.wca_deg, 1) : "—"],
+    // Whole degrees, as a pilot flies them and the workings write them (the
+    // owner's pick of the code audit's CODE-30), the variation too.
+    ["WCA", leg.wca_deg != null ? windCorrection(leg.wca_deg) : "—"],
     ["TH", leg.true_heading_deg != null ? bearing(leg.true_heading_deg) : "—"],
-    ["Var", magneticVariation(leg.magnetic_variation_deg, 1)],
+    ["Var", magneticVariation(leg.magnetic_variation_deg)],
     ["TAS", tas(leg)],
     ["GS", leg.groundspeed_kt === null ? "—" : String(Math.round(leg.groundspeed_kt))],
-    ["Fuel", `${one(leg.fuel_gal)} gal`],
+    ["Fuel", gal(leg.fuel_gal)],
   ];
   return (
     // mb-5: the links' 44-point hit areas (index.css) reach 11 below them,
@@ -410,7 +413,7 @@ export default function NavLogView({
       id: "wca",
       header: () => <Heading name="WCA" unit="°" spoken="Wind correction angle" />,
       meta: PAPER,
-      cell: ({ row }) => (legOf(row.original)?.wca_deg != null ? windCorrection(legOf(row.original)!.wca_deg!, 1) : "—"),
+      cell: ({ row }) => (legOf(row.original)?.wca_deg != null ? windCorrection(legOf(row.original)!.wca_deg!) : "—"),
     },
     {
       id: "th",
@@ -422,7 +425,7 @@ export default function NavLogView({
       id: "var",
       header: () => <Heading name="Var" unit="°" spoken="Magnetic variation" />,
       meta: PAPER,
-      cell: ({ row }) => (legOf(row.original) ? magneticVariation(legOf(row.original)!.magnetic_variation_deg, 1) : "—"),
+      cell: ({ row }) => (legOf(row.original) ? magneticVariation(legOf(row.original)!.magnetic_variation_deg) : "—"),
     },
     {
       id: "mh",
@@ -718,9 +721,11 @@ export default function NavLogView({
     ) : (
       <>
         <div className="flex items-center justify-between pt-2 pl-1.5" data-testid="navlog-head">
-          <span className={GROUP_HEADING}>
-            {checkpointCount} checkpoint{checkpointCount === 1 ? "" : "s"}
-          </span>
+          {/* A section's one title, in Title Case: no small grey capitals
+              over a section (rules.md §1.8; the audit's WEB-8). */}
+          <SectionTitle>
+            {checkpointCount} Checkpoint{checkpointCount === 1 ? "" : "s"}
+          </SectionTitle>
         </div>
         <NavLogList
           rows={data}
@@ -810,8 +815,7 @@ export default function NavLogView({
                 </div>
                 <div className="text-muted-foreground">
                   {aircraftLabel}
-                  {depart &&
-                    ` · departing ${new Date(depart).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })} ${clockTime(new Date(depart))}`}
+                  {depart && ` · departing ${weekdayDayMonthTime(new Date(depart))}`}
                   {plannedWords(totals) && ` · ${plannedWords(totals)}`}
                 </div>
               </div>

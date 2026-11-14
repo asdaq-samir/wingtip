@@ -47,7 +47,7 @@ export default function MapMarksList({ fields, onSelect }: { fields: Field[]; on
   return (
     <nav
       aria-label="Airports on the map"
-      className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:top-2 focus-within:left-2 focus-within:z-[1100] focus-within:max-h-[50%] focus-within:overflow-y-auto focus-within:rounded-xl focus-within:bg-popover focus-within:p-2 focus-within:shadow-lg"
+      className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:top-2 focus-within:left-2 focus-within:z-[1100] focus-within:max-h-[50%] focus-within:overflow-y-auto focus-within:rounded-xl focus-within:bg-popover focus-within:p-2 focus-within:shadow-(--depth-overlay)"
       data-testid="map-marks-list"
     >
       <ul className="flex flex-col gap-2">

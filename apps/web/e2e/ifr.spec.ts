@@ -54,7 +54,7 @@ test("under IFR the altitude is chosen from the minimum IFR altitude by directio
   await expect(popover).not.toContainText("14 CFR 91.159");
   // How the floor was found, under its step.
   // How it was chosen, folded under the altitude's figures.
-  await popover.getByText("How the altitude was chosen").click();
+  await popover.getByText("How the Altitude Was Chosen").click();
   await popover.getByRole("button", { name: /Minimum IFR altitude/ }).click();
   await expect(popover).toContainText("14 CFR 91.177");
   await closeCard(page, "profile-close");
@@ -131,7 +131,7 @@ test("under IFR an airway in the route is flown fix by fix, its published MEA th
   await openProfile(page);
   const popover = page.getByTestId("profile-card");
   // How it was chosen, folded under the altitude's figures.
-  await popover.getByText("How the altitude was chosen").click();
+  await popover.getByText("How the Altitude Was Chosen").click();
   await popover.getByRole("button", { name: /Minimum IFR altitude/ }).click();
   await expect(popover).toContainText(/Along V191 from BAE the published MEA, [\d,]+ ft/);
   await closeCard(page, "profile-close");

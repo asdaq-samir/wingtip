@@ -211,7 +211,7 @@ export default function AltitudeGroup({
                 // by its top, not a translate, which the stock press's own
                 // one-point nudge would replace.
                 className={cn(
-                  "absolute top-[calc(50%-0.875rem)] left-2 z-20 h-7 rounded-full border-0 bg-card px-3 font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10",
+                  "absolute top-[calc(50%-0.875rem)] left-2 z-20 h-7 rounded-full border-0 bg-card px-3 font-semibold shadow-(--depth-float)",
                   "after:absolute after:-inset-2 after:content-['']",
                   TEXT.row,
                 )}

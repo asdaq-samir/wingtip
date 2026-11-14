@@ -48,10 +48,10 @@ interface Step {
   body: ReactNode;
 }
 
-/** The two halves of the direction of flight, in the rule's own words:
- *  "a magnetic course of zero degrees through 179 degrees", "180 degrees
- *  through 359 degrees" (14 CFR 91.159(a), 91.179(b)). */
-const EASTBOUND = "eastbound (0° through 179°)";
+/** The two halves of the direction of flight (14 CFR 91.159(a), 91.179(b)),
+ *  north written 360 as every course is (lib/format's bearing): 0.4° read
+ *  "360° is eastbound (0° through 179°)" (the code audit's CODE-15). */
+const EASTBOUND = "eastbound (360° through 179°)";
 const WESTBOUND = "westbound (180° through 359°)";
 
 /** A course as the rule sorts it: cut to the whole degree, not rounded,

@@ -4,6 +4,7 @@ import { cn } from "cn";
 import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-group";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
+import { gal } from "../../../../lib/format";
 import { useRouteLineOpen } from "../../lib/routeLine";
 
 /** FPL's route line's choices (PlanWorkspace's routeLine): each chip's
@@ -33,7 +34,7 @@ export interface RouteLineChoices {
  *  own; else a rounded row of its own over the list. */
 /** A card's miles and fuel, "105 nm · 10.3 gal", as far as they are known. */
 const figures = (c: RouteLineChoices["chips"][number]) =>
-  [c.nm != null ? `${Math.round(c.nm)} nm` : null, c.gal != null ? `${c.gal.toFixed(1)} gal` : null].filter(Boolean).join(" · ");
+  [c.nm != null ? `${Math.round(c.nm)} nm` : null, c.gal != null ? gal(c.gal) : null].filter(Boolean).join(" · ");
 
 export function RouteLine({ line: asked, grouped = false }: { line: RouteLineChoices; grouped?: boolean }) {
   const open = useRouteLineOpen((s) => s.open);
@@ -112,9 +113,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
               {(airplane || c.time) && (
                 <span className={cn("font-semibold", TEXT.row, c.key === line.picked && "text-tint")}>{c.time ?? "—"}</span>
               )}
-              <span className={cn("whitespace-normal", TEXT.note, c.warning ? "text-amber-700 dark:text-amber-400" : "text-foreground")}>
-                {c.label}
-              </span>
+              <span className={cn("whitespace-normal", TEXT.note, c.warning ? "text-caution-ink" : "text-foreground")}>{c.label}</span>
               {figures(c) && (
                 <span className={cn("text-muted-foreground tabular-nums", TEXT.note)} data-testid="route-line-figures">
                   {figures(c)}

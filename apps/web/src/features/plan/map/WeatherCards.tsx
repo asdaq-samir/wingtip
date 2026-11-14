@@ -1,7 +1,7 @@
 import type { MapPirep, StationWind, WeatherArea } from "../../../lib/api/types";
 import { faaWords } from "../../../lib/advisories";
 import { areaWords, routeThrough } from "../lib/weatherMap";
-import { bearing, knots, mapLevel } from "../../../lib/format";
+import { bearing, knots, mapLevel, zuluTime } from "../../../lib/format";
 import { WINDS_MODELLED } from "../../../lib/windsAloft";
 import { useGeo } from "../../../lib/geo";
 import { MapCard } from "../../../lib/map/cards/MapCard";
@@ -12,7 +12,9 @@ import { MapCard } from "../../../lib/map/cards/MapCard";
  * weatherLayer's tiles, box and marks: features/plan/map/layers/WeatherGl).
  */
 
-const zulu = (unix: number) => `${new Date(unix * 1000).toISOString().slice(11, 16)}Z`;
+/** UTC as reports give it, "1255Z": lib/format's one form (the code
+ *  audit's CODE-32), where it was cut by hand from an ISO string. */
+const zulu = (unix: number) => zuluTime(new Date(unix * 1000));
 
 export function AreaCard({ area, line, altitudeFt }: { area: WeatherArea; line: [number, number][] | null; altitudeFt: number | null }) {
   const { title, altitudes } = areaWords(area);
@@ -52,7 +54,7 @@ export function PirepCard({ pirep }: { pirep: MapPirep }) {
   return (
     <MapCard
       title={pirep.urgent ? "Urgent PIREP" : "PIREP"}
-      subtitle={[pirep.observed_at && `${pirep.observed_at.slice(11, 16)}Z`, pirep.aircraft].filter(Boolean).join(" · ")}
+      subtitle={[pirep.observed_at && zuluTime(new Date(pirep.observed_at)), pirep.aircraft].filter(Boolean).join(" · ")}
     >
       <div className="space-y-1 text-left" data-testid="pirep-card">
         {pirep.altitude_ft != null && <p>At {mapLevel(pirep.altitude_ft)}</p>}
