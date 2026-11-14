@@ -41,14 +41,12 @@ enum FlightActivityContent {
         let progress = inputs.progress
         let next = progress?.next
         let destination = progress?.destination
-        // The fuel the plan expects left now: the usable fuel less the
-        // engine's planned burn to this point along the route (in_flight's
-        // burnt_gal, motion::instruments) -- planning data, as the nav
-        // log's fuel column is, not the airplane's gauge.
-        let fuelLeft: Double? = {
-            guard inputs.airplaneChosen, let usable = inputs.usableFuelGal else { return nil }
-            return max(0, usable - (progress?.burntGal ?? 0))
-        }()
+        // The fuel the plan expects left now, the engine's in_flight
+        // fuel_now_gal: from the last fuel stop passed, the tanks filled
+        // there, less the start and taxi allowance (AV-4) -- planning
+        // data, as the nav log's fuel column is, not the airplane's gauge.
+        // Before the first fix the plan's tanks are as they start.
+        let fuelLeft: Double? = inputs.airplaneChosen ? (progress.map { $0.fuelNowGal } ?? inputs.usableFuelGal) : nil
         // A message the alerts-ahead banner draws is not the copilot's own.
         let message = inputs.copilot.flatMap { $0.elsewhere ? nil : $0 }
         // The share of the route flown, for the progress bar and arc: the

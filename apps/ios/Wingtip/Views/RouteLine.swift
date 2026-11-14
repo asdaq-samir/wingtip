@@ -27,6 +27,19 @@ enum RouteLine {
         guard let routes, problem == nil, picked == nil else { return true }
         return !(routes.chips ?? []).isEmpty
     }
+
+    /// The way a chip stands for, for its warning: "Your Route" the
+    /// planner's own way, a way by its stops, and the route as typed the
+    /// own way where its stops are the typed ones (the web's wayCards).
+    static func way(_ chip: RouteChip, in routes: RouteOptions?) -> RouteOption? {
+        guard let routes else { return nil }
+        let same = { (a: [String], b: [String]) in a.map { $0.uppercased() } == b.map { $0.uppercased() } }
+        switch chip.key {
+        case "fuel": return routes.own
+        case "none": return routes.own.flatMap { same($0.stops, chip.stops) ? $0 : nil }
+        default: return routes.options.first { same($0.stops, chip.stops) }
+        }
+    }
 }
 
 /// The route line under the route's ends: the system's menu picker of
@@ -50,6 +63,21 @@ struct RouteLineRow: View {
             }
             if let problem = plan.routesProblem {
                 Label(problem, systemImage: "exclamationmark.triangle")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            // The way's one warning, the worst it crosses in the engine's
+            // words and ranking (route_way_warning: a prohibited area or a
+            // TFR, a restricted area, storms, high ground ... a MOA; 14 CFR
+            // 91.133, 91.137-91.145, AIM 3-4).
+            if let warning = RouteLine.way(picked, in: plan.routes)?.warning {
+                Label(warning, systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote.weight(.semibold)).foregroundStyle(WingtipInk.caution)
+            }
+            // What the ways could not be checked for (AV-8: "service
+            // ceiling", "fuel", "start and taxi fuel"), never passed off as
+            // checked.
+            if let unchecked = plan.routes?.unchecked, !unchecked.isEmpty {
+                Text("Not checked: \(unchecked.formatted(.list(type: .and)))")
                     .font(.footnote).foregroundStyle(.secondary)
             }
             // What the way flown still crosses, as the planner names it:

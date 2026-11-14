@@ -155,7 +155,8 @@ struct InstrumentsBar: View {
     /// The destination's arrival and the fuel the plan leaves there.
     static func arrival(_ dest: InFlight.Waypoint, eta: Double) -> String {
         var line = "\(dest.name) at \(zulu(eta)), \(Format.distance(dest.distanceNm, decimals: 0))"
-        if let fuel = dest.fuelLeftGal { line += ", about \(Format.fuel(max(0, fuel))) left by the plan" }
+        // The engine's figure, from the last fuel stop passed (AV-4).
+        if let fuel = dest.fuelLeftGal { line += fuel >= 0 ? ", about \(Format.fuel(fuel)) left by the plan" : ", \(Format.fuel(-fuel)) short by the plan" }
         return line
     }
 }

@@ -12,7 +12,7 @@ final class FlightActivityTests: XCTestCase {
         InFlight.Progress(
             onRoute: true, alongNm: 40, totalNm: 142, leftNm: 102.4, offNm: 0.2, offSide: nil,
             desiredTrackDeg: 270, desiredTrackMagDeg: nil, trackMagDeg: nil, trackErrorDeg: nil, variationDeg: nil,
-            burntGal: burnt,
+            burntGal: burnt, fuelNowGal: 31.1, taxiCounted: true,
             next: .init(index: 2, name: "PIPER", distanceNm: 21, bearingDeg: 271, bearingMagDeg: nil,
                         eteMin: nextEte, etaS: nil, fuelLeftGal: nil),
             destination: .init(index: 5, name: "KDLH", distanceNm: 102.4, bearingDeg: 300, bearingMagDeg: nil,
@@ -37,8 +37,9 @@ final class FlightActivityTests: XCTestCase {
         XCTAssertEqual(state.toGoNm, 102.4)
         XCTAssertEqual(state.destEteMin, 65)
         XCTAssertEqual(state.eta, now.addingTimeInterval(65 * 60))
-        // The usable fuel less the engine's planned burn so far.
-        XCTAssertEqual(state.fuelLeftGal ?? 0, 33.6, accuracy: 1e-9)
+        // The engine's fuel_now_gal, from the last fuel stop passed less
+        // the taxi allowance (AV-4), not the app's own subtraction.
+        XCTAssertEqual(state.fuelLeftGal ?? 0, 31.1, accuracy: 1e-9)
     }
 
     func testNoAirplaneNoFuel() {
@@ -77,11 +78,11 @@ final class FlightActivityTests: XCTestCase {
         // The compact island's figure is the time to the destination.
         XCTAssertEqual(lines.compact, "1h 5m")
         XCTAssertEqual(lines.toGo, "1h 5m · 102 nm")
-        XCTAssertEqual(lines.fuel, "33.6 gal")
+        XCTAssertEqual(lines.fuel, "31.1 gal")
         XCTAssertEqual(lines.glyph, "airplane")
         XCTAssertEqual(lines.nextSentence, "Next PIPER in 12m")
         XCTAssertTrue(lines.spoken.contains("Approach 124.35"))
-        XCTAssertTrue(lines.spoken.contains("33.6 gal planned left"))
+        XCTAssertTrue(lines.spoken.contains("31.1 gal planned left"))
     }
 
     func testNarrowIslandsFigureIsShort() {

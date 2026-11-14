@@ -51,6 +51,14 @@ struct LegFigureSections: View {
                 if let ete = leg.eteMin { LabeledContent("Time", value: Format.duration(ete)).accessibilityValue(SpokenFigures.minutes(ete)) }
                 if let fuel = leg.fuelGal { LabeledContent("Fuel", value: Format.fuel(fuel)).accessibilityValue(SpokenFigures.gallons(fuel)) }
                 if let climb = leg.climbMin, climb > 0 { LabeledContent("Climbing", value: Format.duration(climb)).accessibilityValue(SpokenFigures.minutes(climb)) }
+                // No climb fuel flow in the airplane's profile: the climb's
+                // fuel is missing, never nought (AV-8, decision 0011), and
+                // the figure is asked for in place.
+                if leg.climbFuelUnknown == true {
+                    LabeledContent("Climb fuel", value: "Not known")
+                        .foregroundStyle(WingtipInk.caution)
+                    AskFigureRow(needs: [.climb])
+                }
             }
             // Where the climb tops out and the descent starts, each piece in
             // its own phase's figures (LegPhase).

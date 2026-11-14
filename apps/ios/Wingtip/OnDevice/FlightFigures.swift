@@ -42,7 +42,10 @@ enum FlightFigures {
                                  from: "the planner's nav log (reserves 14 CFR 91.151(a), 91.167(a)(3)), held on this iPhone\(FieldFigures.asOf(facts))"))
         }
         if let destination = facts.destination, let left = destination.fuelLeftGal {
-            var said = "From here the plan leaves \(Format.fuel(left)) at \(destination.name), \(Format.distance(destination.distanceNm)) on"
+            // The engine's figure, from the last fuel stop passed (AV-4);
+            // below nothing the plan runs dry first, said as such.
+            var said = left >= 0 ? "From here the plan leaves \(Format.fuel(left)) at \(destination.name), \(Format.distance(destination.distanceNm)) on"
+                : "From here the plan runs \(Format.fuel(-left)) short of \(destination.name), \(Format.distance(destination.distanceNm)) on"
             if let ete = destination.eteMin { said += ", \(Format.duration(ete)) to go" }
             out.append(AskFigure(id: "fuel:ahead", label: "Fuel at \(destination.name)", said: said + ".",
                                  from: "the engine's in_flight from own ship's GPS fix and the nav log's legs: a planning figure, not a fuel gauge"))
