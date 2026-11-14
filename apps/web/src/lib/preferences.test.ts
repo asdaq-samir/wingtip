@@ -64,8 +64,18 @@ describe("the settings taken out (2026-11-13)", () => {
     const kept = migratePreferences({ navBar: "top", terrain: "flat", ownShipLook: "arrow", base: "ifr_low" }, 8);
     expect(kept).not.toHaveProperty("navBar");
     expect(kept).not.toHaveProperty("terrain");
-    expect(kept).not.toHaveProperty("ownShipLook");
+    expect(kept).toMatchObject({ ownShipLook: "single" });
     expect(kept).toMatchObject({ base: "ifr_low" });
+  });
+});
+
+describe("own ship's look, the Map card's Own Ship (2026-11-14)", () => {
+  it("is the airplane for every browser coming to it, and kept from then on", () => {
+    expect(usePreferences.getInitialState()).toMatchObject({ ownShipLook: "single" });
+    // Let go at 9, and an old pick not brought back.
+    expect(migratePreferences({ ownShipLook: "arrow" }, 8)).toMatchObject({ ownShipLook: "single" });
+    expect(migratePreferences({}, 10)).toMatchObject({ ownShipLook: "single" });
+    expect(keptPreferences({ ...usePreferences.getInitialState(), ownShipLook: "jet" })).toMatchObject({ ownShipLook: "jet" });
   });
 });
 

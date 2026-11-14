@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import { Monitor, Moon, Palette, Sun, SunDim, SunMedium, SunMoon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { BRANDS } from "../lib/brand";
-import { usePreferences, type Brand, type ChartLight, type ChartNight } from "../lib/preferences";
+import { usePreferences, type Brand, type ChartLight, type ChartNight, type OwnShipLook } from "../lib/preferences";
+import { OWN_SHIP_LOOKS, ownShipSvg } from "../lib/map/position/ownShipLook";
 import MenuTile from "./MenuTile";
 import type { PullDownOption } from "./PullDown";
 import { LayerMenuTile } from "./LayerTile";
@@ -119,6 +120,43 @@ export function SunlightLayerTile() {
       options={SUNLIGHT_OPTIONS}
       on={value === "on"}
       testId="sunlight-select"
+    />
+  );
+}
+
+const OWN_SHIP_OPTIONS: PullDownOption<OwnShipLook>[] = OWN_SHIP_LOOKS.map((o) => ({ ...o, testId: `own-ship-${o.value}` }));
+
+/** A look's own drawing as the tile's glyph, in the tile's colour: what the
+ *  chart will draw, not a stand-in (lib/map/position/ownShipLook). */
+function drawnGlyph(look: OwnShipLook) {
+  const svg = ownShipSvg(look, "currentColor", 20);
+  return function OwnShipGlyph({ className }: { className?: string }) {
+    return <span aria-hidden="true" className={className} dangerouslySetInnerHTML={{ __html: svg }} />;
+  };
+}
+const OWN_SHIP_GLYPHS: Record<OwnShipLook, ReturnType<typeof drawnGlyph>> = {
+  single: drawnGlyph("single"),
+  twin: drawnGlyph("twin"),
+  jet: drawnGlyph("jet"),
+  arrow: drawnGlyph("arrow"),
+};
+
+/** Own Ship's tile on the Map card: how own ship is drawn on the chart --
+ *  the Airplane, a Twin, a Jet or the Arrow (a dot with no heading) -- its
+ *  glyph the one picked, drawn as the chart draws it. The look's fourth
+ *  tile at the owner's ask (2026-11-14: "Maybe replace the position with
+ *  the choice of own ship?"), back after You on the Map went on 2026-11-13. */
+export function OwnShipLayerTile() {
+  const value = usePreferences((s) => s.ownShipLook);
+  const onChange = usePreferences((s) => s.setOwnShipLook);
+  return (
+    <LayerMenuTile
+      name="Own Ship"
+      glyph={OWN_SHIP_GLYPHS[value]}
+      value={value}
+      onChange={onChange}
+      options={OWN_SHIP_OPTIONS}
+      testId="own-ship-select"
     />
   );
 }

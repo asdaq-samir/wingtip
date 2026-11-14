@@ -731,9 +731,11 @@ way: three homes, and every control in one of them.
    Emergency Assistant is open), two by two, every tile one size and
    every name on one line; then Look's tiles: Theme, Appearance and
    Sunlight, each its value under its name and a tap its menu, Sunlight
-   in the tint while On; the fourth, the sheet's Position (Top or
-   Bottom, the owner, 2026-11-14), is to come, as a phone's sheet is only
-   at the bottom since 2026-11-13 (Sunlight was Settings' Display until the owner's
+   in the tint while On, and Own Ship, how own ship is drawn on the
+   chart -- the Airplane (the default), a Twin, a Jet or the Arrow, a dot
+   with no heading -- its glyph the one picked as the chart draws it (the
+   owner, 2026-11-14: "Maybe replace the position with the choice of own
+   ship?"; You on the Map's pick, back) (Sunlight was Settings' Display until the owner's
    "Sunlight should also move to map settings", 2026-11-14; Settings has
    no Display now). Every section is four tiles two by two in the layers'
    size and form, the sections lined up (the owner, 2026-11-14: "every
@@ -751,8 +753,8 @@ way: three homes, and every control in one of them.
 
 Taken out the same day, with no home: the sheet's Position (a phone's
 sheet is always at the bottom), Terrain's Flat (the 2D chart is always
-shaded; 3D is the map's own button) and You on the Map (own ship is
-always the airplane). A new control goes into one of the three, never a
+shaded; 3D is the map's own button) and You on the Map (own ship's
+look, back on 2026-11-14 as the Map card's Own Ship). A new control goes into one of the three, never a
 second home; the web first (`features/pilot`, `features/settings`,
 `features/map-settings`), the phones on the owner's word.
 

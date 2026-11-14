@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { SHEET_SECONDS } from "../../../mapChrome";
 import { underway } from "../../position/glide";
 import { ownShipHtml } from "../../marks/icons";
+import { usePreferences } from "../../../preferences";
 import { drawOwnShip, ownShipMarker } from "./ownShipMarker";
 import { useOwnShip } from "../../position/ownShip";
 import { useGlMap } from "../glLayer";
@@ -28,6 +29,8 @@ const LOCAL_ZOOM = 9;
  */
 export function OwnShipGl() {
   const { map } = useGlMap();
+  // How it is drawn, the Map card's Own Ship (lib/map/position/ownShipLook).
+  const look = usePreferences((s) => s.ownShipLook);
   const enabled = useOwnShip((s) => s.enabled);
   const fix = useOwnShip((s) => s.fix);
   const simulated = useOwnShip((s) => s.simulated);
@@ -62,11 +65,11 @@ export function OwnShipGl() {
     // The app's own mark (icons.ts ownShipHtml, with the
     // `data-own-ship` the specs find), turned by the marker to the heading.
     const heading = enabled ? fix.headingDeg : null;
-    drawOwnShip(m, drawn, ownShipHtml(heading == null ? null : 0, !enabled, enabled && (simulated || underway(fix))));
+    drawOwnShip(m, drawn, ownShipHtml(heading == null ? null : 0, !enabled, look, enabled && (simulated || underway(fix))));
     m.setLngLat([fix.lon, fix.lat])
       .setRotation(heading ?? 0)
       .addTo(map);
-  }, [map, fix, enabled, simulated]);
+  }, [map, fix, enabled, simulated, look]);
   useEffect(() => {
     if (!fix || !enabled) return;
     const camera = cameraOf(map);

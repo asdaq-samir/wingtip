@@ -20,7 +20,7 @@ export {
   type MapOverlay,
   type OverlayStrength,
 } from "./prefs/mapSlice";
-export type { Brand, FlightRules, NavEdge, RouteEdit } from "./prefs/lookSlice";
+export type { Brand, FlightRules, NavEdge, OwnShipLook, RouteEdit } from "./prefs/lookSlice";
 export { airplaneChosen, NO_AIRPLANE, STOCK_C172, type RouteWeather } from "./prefs/airplaneSlice";
 export { recentRouteKey, type AirspaceClass, type KeptAircraft, type RecentAirport, type RecentRoute } from "./prefs/keptSlice";
 
@@ -50,7 +50,10 @@ type Kept = Pick<Preferences, (typeof KEPT)[number]>;
 export function migratePreferences(kept: unknown, from: number): Preferences {
   // 9: the sheet's edge, the flat ground and own ship's look let go, none a
   // setting now (2026-11-13): a browser's kept top, flat or arrow falls
-  // back to the bottom, the shaded ground and the airplane, unsaid.
+  // back to the bottom, the shaded ground and the airplane, unsaid. 11:
+  // own ship's look a setting again (the Map card's Own Ship, 2026-11-14),
+  // the airplane, today's, for every browser: one kept from before 9 was
+  // let go then and is not brought back.
   const {
     navBar: _navBar,
     terrain,
@@ -64,6 +67,7 @@ export function migratePreferences(kept: unknown, from: number): Preferences {
   } = kept as { navBar?: unknown; terrain?: string; ownShipLook?: unknown } & Partial<Record<OldLayer, boolean>>;
   return {
     ...rest,
+    ...(from < 11 ? { ownShipLook: "single" } : {}),
     ...(from < 10 ? layerGroups({ airspace, navaids, military, privateFields }, from) : {}),
     ...(from < 1 ? { waypoints: false } : {}),
     ...(from < 6 && isStockDefault((kept as { aircraft?: AircraftChoice }).aircraft) ? { aircraft: NO_AIRPLANE } : {}),
@@ -120,8 +124,9 @@ export const usePreferences = create<Preferences>()(
     // its strength kept from 2026-11-14 need no step: a browser without
     // them starts from None at half, as before; nor 3D's heights
     // stretched (2026-11-14), a browser without them starting at three.
-    // 10: the Map card's four layers (layerGroups, 2026-11-14).
-    version: 10,
+    // 10: the Map card's four layers (layerGroups, 2026-11-14). 11: own
+    // ship's look kept again, the airplane to start (migratePreferences).
+    version: 11,
     migrate: migratePreferences,
     partialize: keptPreferences,
   }),

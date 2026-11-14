@@ -192,10 +192,10 @@ test("The Map card's Appearance control is system, light, dark or dark with the 
   await expect(html).not.toHaveClass(/dark/);
 });
 
-test("The Map card's Look is tiles in the layers' grid: Theme, Appearance and Sunlight, each its value under its name", async ({
+test("The Map card's Look is four tiles in the layers' grid, each its value under its name, Own Ship's pick drawn on the map", async ({
   page,
 }) => {
-  // The owner, 2026-11-14: "every section should have 4 tiles like Layers one."
+  // The owner, 2026-11-14: "every section should have 4 tiles like Layers one"; "Maybe replace the position with the choice of own ship?"
   await page.goto("/app/plan");
   await settle(page);
   await openMapSettings(page);
@@ -203,4 +203,13 @@ test("The Map card's Look is tiles in the layers' grid: Theme, Appearance and Su
   await expect(look.getByTestId("brand-select")).toHaveAccessibleName(/^Theme: /);
   await expect(look.getByTestId("theme-select")).toHaveAccessibleName(/^Appearance: /);
   await expect(look.getByTestId("sunlight-select")).toHaveAccessibleName(/^Sunlight: /);
+  const ownShip = look.getByTestId("own-ship-select");
+  await expect(ownShip).toHaveAccessibleName("Own Ship: Airplane");
+  await ownShip.click();
+  await page.getByTestId("own-ship-jet").click();
+  await expect(ownShip).toHaveAccessibleName("Own Ship: Jet");
+  await page.reload();
+  await settle(page);
+  await openMapSettings(page);
+  await expect(page.getByTestId("map-look").getByTestId("own-ship-select")).toHaveAccessibleName("Own Ship: Jet");
 });
