@@ -534,4 +534,13 @@
     <string name="flights">Flights</string>
     <string name="saved_flights">Saved Flights</string>
     <string name="saved_flights_none">No saved flights yet. Save a plan from its share menu to see it here.</string>
+    <string name="replay_play">Play</string>
+    <string name="replay_pause">Pause</string>
+    <string name="airplane_tab_flights">Flights</string>
+    <string name="airplane_tab_info">Info</string>
+    <string name="airplane_follow">Follow</string>
+    <string name="airplane_unfollow">Following</string>
+    <string name="airplane_photo_by">Photo: %1$s, Planespotters.net</string>
+    <string name="said_replay_flight">Replay %1$s</string>
+    <string name="share_airplane">Share the airplane</string>
 </resources>

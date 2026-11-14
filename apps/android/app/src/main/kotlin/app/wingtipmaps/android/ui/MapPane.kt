@@ -38,6 +38,8 @@ import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
+import app.wingtipmaps.android.airplane.PastFlightReplay
+import app.wingtipmaps.android.airplane.PastFlightReplayBar
 import app.wingtipmaps.android.api.AirportPin
 import app.wingtipmaps.android.atc.AtcCopilotHost
 import app.wingtipmaps.android.copilot.CopilotBanner
@@ -221,6 +223,9 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val emergency by hiltViewModel<EmergencyModel>().state.collectAsStateWithLifecycle()
     // The dry run's airplane, drawn as own ship while a run is open (DryRun).
     val dryRun by hiltViewModel<DryRun>().state.collectAsStateWithLifecycle()
+    // A past flight played from an airplane's card, drawn as own ship is
+    // with the path it has flown behind it, while it is open.
+    val replay by PastFlightReplay.state.collectAsStateWithLifecycle()
     // The approach plates on the chart and their fixes' tags.
     val plates = rememberPlatesShown()
 
@@ -251,8 +256,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             night = night,
             bottomInset = with(density) { covered.roundToPx() },
             opensAt = opensAt,
-            ownShip = { app.wingtipmaps.android.map.OwnShipMark.of(fix.value, ownShip.on, dryRun.fix) },
-            trail = flown,
+            ownShip = { app.wingtipmaps.android.map.OwnShipMark.of(fix.value, ownShip.on, dryRun.fix ?: replay.fix) },
+            trail = if (replay.open) replay.flown else flown,
             glide = { if (ringShown) inFlight.value.glide?.ring.orEmpty() else emptyList() },
             emergency = if (emergencyFrom != null && ownShip.on) EmergencyLine.of(emergency) else null,
             selectedField = openField,
@@ -290,6 +295,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             WeatherLoopBar()
             app.wingtipmaps.android.map.flow.ModelWeatherBar()
             DryRunBar(rules = state.rules)
+            PastFlightReplayBar()
         }
         if (ownShip.on && !approximate && !denied) {
             // What is ahead and the flight's instruments, at the top left of

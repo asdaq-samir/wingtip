@@ -578,6 +578,24 @@ placement wins, and the difference is noted.
   3. Actions as a `ButtonGroup`: Track first and filled, then the
      card's others from `CARD_ACTIONS`.
   4. Details in `ListItem`s.
+- **Structure, an N-number's card** (`airplane/AirplaneCard`, the owner's
+  P1 of 2026-11-14, as the web's): the N-number with "Piper PA-28-140,
+  1971" under it from the FAA's record, asked by itself
+  (`/api/traffic/registered`) and drawn at once; its Planespotters.net
+  photo with its photographer only where that call answers; Fly This,
+  Follow (its takeoff and landing watches), Favorite and Share as a
+  `ButtonGroup`; the tabs Flights, Info and Figures (its checklists under
+  its figures); and one status line under them, "Checking whether it's in
+  the air…" until the live find answers, then in the air, where it last
+  landed, or not heard in six weeks (`AirplaneLookup`'s `statusLine`).
+  Flights lists its past flights by its ICAO address, each with ▶, which
+  plays it on the map with its path behind it (`PastFlightReplay`, its bar
+  over the map). Info is its public record in groups: Registration (the
+  owner shown, the FAA registry being public), Airplane, Engine,
+  Airworthiness, Usually based at, Safety history (the NTSB's cases, each
+  its CAROL report), Ownership history and Documents filed
+  (`airplane/AirplaneInfo`). The search's registry row draws the record's
+  type at once with the same status after it.
 - **Primary action**: the first, filled button of the row.
   - **Fly Here** on an airport.
   - **Direct To** on a point.
