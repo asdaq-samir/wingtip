@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { showPage } from "./oneSearch";
-import { frontSheet, grabberTo, searchAirports, settle, settled, sheetUpToType, showTabs } from "./helpers";
+import { frontSheet, grabberTo, searchAirports, settle, settled, sheetUpToType, showTabs, slow } from "./helpers";
 
 /**
  * A card opens once and closes once, never put back for a moment: the
@@ -12,8 +12,9 @@ import { frontSheet, grabberTo, searchAirports, settle, settled, sheetUpToType, 
  * the pill ("Flashing when I tap account button"): opened again it came
  * back at the size it was put away at, not at half as every card opens.
  * Apple Maps closes its account and settings sheets on a swipe down (the
- * owner, 2026-11-14): You and the Map card close so, a content card parks
- * at the pill (the card rule's 10).
+ * owner, 2026-11-14): You and the Map card close so from half, come to
+ * half from all the way up, and a content card parks at the pill (the
+ * card rule's 10).
  */
 test.use({ hasTouch: true, geolocation: { latitude: 42.3246, longitude: -88.0741 }, permissions: ["geolocation"] });
 
@@ -43,12 +44,12 @@ const seen = (page: Page) => page.evaluate(() => (window as unknown as { cardSee
 
 /** A drag down from the front card's grabber, by the pointer, as a finger
  *  swipes it, as sheet-page-toggle.spec drags the sheet. */
-async function swipeDown(page: Page) {
+async function swipeDown(page: Page, by = 200) {
   const grabber = (await frontSheet(page).getByTestId("sidebar-trigger-button").first().boundingBox())!;
   const x = grabber.x + grabber.width / 2;
   await page.mouse.move(x, grabber.y + 6);
   await page.mouse.down();
-  await page.mouse.move(x, grabber.y + 200, { steps: 12 });
+  await page.mouse.move(x, grabber.y + by, { steps: 12 });
   await page.mouse.up();
 }
 
@@ -142,6 +143,26 @@ test.describe("by a pointer's drag", () => {
     await expect(drawer).toHaveAttribute("data-panel", "peek");
     await expect(card).toHaveCount(1);
   });
+
+  // A settings card closes on a swipe down only from half: all the way up,
+  // the swipe brings it to half and it stays open (the owner, 2026-11-14:
+  // "Settings cards should only close from a swipe down when in medium
+  // detents").
+  test("a swipe down brings You from all the way up to half, open, and from half closes it", async ({ page }) => {
+    await page.goto("/app/plan");
+    await settle(page);
+    await showPage(page, 0);
+    await grabberTo(page, "half");
+    await page.getByTestId("account-button").click();
+    await expect(youCard(page)).toHaveAttribute("data-panel", "half");
+    await grabberTo(page, "full");
+    await swipeDown(page, 300);
+    await expect(youCard(page)).toHaveAttribute("data-panel", "half");
+    await settled(youCard(page));
+    await expect(page.getByTestId("console-sheet").getByTestId("you-name")).toBeInViewport();
+    await swipeDown(page);
+    await expect(page.getByTestId("console-sheet")).toHaveCount(0);
+  });
 });
 
 test("the Map card's gear opens Settings on top of it, and its close goes back to the Map card", async ({ page }) => {
@@ -164,4 +185,63 @@ test("the Map card's gear opens Settings on top of it, and its close goes back t
   await frontSheet(page).getByTestId("console-page-close").first().click();
   await expect(page.getByTestId("console-sheet")).toHaveCount(0);
   await expect(frontSheet(page)).toHaveAttribute("data-testid", "map-settings");
+});
+
+/**
+ * A field tapped on the chart over another field's card: the new card is
+ * at half from the first frame it is drawn in, never all the way up for a
+ * frame first. The owner's iPhone, 2026-11-14, KVWU tapped over 43Y's card
+ * ("The app flashes sometimes"): one frame of KVWU's card all the way up,
+ * its photos still grey, then at half. The card under it, put away, gave
+ * the new one its place in the nested drawers (CardStack), so React drew
+ * the new one's drawer afresh, already open, where Base UI draws it all
+ * the way up until it has measured itself.
+ */
+test("a field tapped on the chart over another's card comes up at half from its first frame", async ({ page }) => {
+  await page.goto("/app/plan?place=KUGN");
+  await settle(page);
+  const name = page.getByTestId("place-card").getByTestId("place-name");
+  await expect(name.last()).toHaveText("KUGN");
+  const first = page.locator("[data-sheet-card]").filter({ has: page.getByTestId("place-card") });
+  await expect(first).toHaveAttribute("data-panel", "half");
+  await settled(first);
+  const half = (await first.boundingBox())!.y;
+  // From the tap, the top of each field's card drawn and up: every frame,
+  // and every change to the page before one is painted (WebKit's headless
+  // frames are few).
+  await page.evaluate(() => {
+    const tops: { ident: string; top: number }[] = [];
+    (window as unknown as { cardTops: typeof tops }).cardTops = tops;
+    const look = () => {
+      for (const popup of document.querySelectorAll("[data-sheet-card][data-open]")) {
+        const ident = popup.querySelector('[data-testid="place-name"]')?.textContent;
+        if (!ident || popup.hasAttribute("data-ending-style")) continue;
+        if (getComputedStyle(popup).visibility === "hidden") continue;
+        tops.push({ ident, top: popup.getBoundingClientRect().top });
+      }
+    };
+    const frame = () => {
+      look();
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    new MutationObserver(look).observe(document.body, { subtree: true, childList: true, attributes: true });
+  });
+  // Another field in sight on the chart, opened as a tap on its symbol
+  // opens it: by the chart's list of its marks (MapMarksList), the same
+  // select, which needs no WebGL to find where it is drawn.
+  const marks = page.getByRole("navigation", { name: "Airports on the map" }).getByRole("button");
+  const field = marks.filter({ hasNotText: /^KUGN,/ }).first();
+  await expect(field).toBeAttached({ timeout: slow(30_000) });
+  const other = (await field.textContent())!.split(",")[0]!;
+  await field.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(new RegExp(`[?&]place=${other}(&|$)`));
+  await expect(name.last()).toHaveText(other);
+  await page.waitForTimeout(1500);
+  const tops = await page.evaluate(() => (window as unknown as { cardTops: { ident: string; top: number }[] }).cardTops);
+  const drawn = tops.filter((t) => t.ident === other).map((t) => Math.round(t.top));
+  expect(drawn.length).toBeGreaterThan(0);
+  // Never higher than half, from its first frame to its last.
+  expect(Math.min(...drawn), `${other}'s card's top, frame by frame: ${drawn.join(" ")}`).toBeGreaterThanOrEqual(Math.round(half) - 2);
 });

@@ -57,8 +57,9 @@ export default function ConsoleLayer({
     // Its drawer open while it is up (CardLayer's `open`), and each time it
     // is opened at half, as every card opens: kept by lib/shown alone, it
     // came back at the size it was put away at, the pill, its head alone
-    // (the owner's iPhone, 2026-11-14). A swipe down closes it, as Apple
-    // Maps' account sheet (the owner, 2026-11-14).
+    // (the owner's iPhone, 2026-11-14). A swipe down from half closes it,
+    // as Apple Maps' account sheet; from all the way up it comes to half
+    // (the owner, 2026-11-14).
     <Shown.Provider value={shown}>
       <CardLayer label={label} dismiss={dismiss} onSwipeClose={onClose} finalFocus={finalFocus} open={shown}>
         <section

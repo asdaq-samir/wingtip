@@ -24,10 +24,12 @@ export type CardFrame = {
    *  them, the card on top only; none for the frame's own way (CardStack):
    *  Escape a level back, the rest refused. */
   dismiss?: (details: Drawer.Root.ChangeEventDetails) => void;
-  /** Its close on a swipe down, at any size, for the cards that are
-   *  settings -- You, the Map card -- as Apple Maps closes its account and
-   *  settings sheets (the owner, 2026-11-14). None, and a swipe past the
-   *  pill parks the card there (the card rule's 10). */
+  /** Its close on a swipe down from half, for the cards that are settings
+   *  -- You, the Map card -- as Apple Maps closes its account and settings
+   *  sheets (the owner, 2026-11-14); from all the way up a swipe down brings
+   *  it to half, open ("Settings cards should only close from a swipe down
+   *  when in medium detents", the owner, 2026-11-14). None, and a swipe
+   *  past the pill parks the card there (the card rule's 10). */
   onSwipeClose?: () => void;
   initialFocus?: Drawer.Popup.Props["initialFocus"];
   finalFocus?: Drawer.Popup.Props["finalFocus"];
@@ -47,6 +49,9 @@ export type CardEntry = {
   /** Where the front sheet's top was as it opened, the Drawer's snap
    *  offset there (sheetTopSlot's frontOffset): where it comes up from. */
   from?: string;
+  /** The drawer it is drawn in, once that drawer is on the page: a drawer
+   *  drawn anew opens the render after, never mounted open (CardStack). */
+  drawer?: object;
   /** Open; kept closed under a page put away (lib/shown) or between its
    *  openings; or leaving, its caller gone: its drawer closes by Base UI's
    *  own close (its focus handed back, its parent told), then the entry

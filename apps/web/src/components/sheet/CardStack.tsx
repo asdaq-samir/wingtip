@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
@@ -149,24 +149,55 @@ function CardDrawer({
   useLayoutEffect(() => {
     if (unset) setCard(id, { at, from: frontOffset() });
   }, [unset, id, at]);
+  // A card drawn afresh with its size already set comes up closed too, and
+  // opens the render after (`open`): React draws a card's drawer anew when
+  // the card under it in the nested drawers goes (CardStack), and one
+  // mounted open is drawn all the way up until it has measured itself
+  // (RISE). Tapping KVWU over 43Y's card, 43Y's put away under KVWU's drew
+  // KVWU's afresh, one frame all the way up (the owner's iPhone,
+  // 2026-11-14: "The app flashes sometimes"; Chromium at 393x852, its top
+  // at 8 px for a frame, then sliding down to 484).
+  // Each drawer drawn is its own (`drawer`), told to the entry once it is
+  // on the page, before the first paint.
+  const [drawer] = useState(() => ({}));
+  const mounted = entry.drawer === drawer;
+  useLayoutEffect(() => {
+    if (!mounted) setCard(id, { drawer });
+  }, [mounted, id, drawer]);
+  // And it comes up where it was, its own snap offset as it went, not
+  // where the front sheet's top was as it first opened (RISE): read off
+  // its popup as React takes it away, Base UI's own on its style.
+  const popup = useRef<HTMLDivElement>(null);
+  useLayoutEffect(
+    () => () => {
+      const was = popup.current?.style.getPropertyValue("--drawer-snap-point-offset");
+      if (was) setCard(id, { from: was });
+    },
+    [id],
+  );
   const ask = useCallback((size: PanelState) => setCard(id, { at: size }), [id]);
   // Gone, it is no longer up (the map's room, map/cardRoom).
   useEffect(() => () => cardSettled(id, false), [id]);
+  // A settings card swiped down closes from half or below; from all the way
+  // up it comes down to half, the Drawer's own next snap point, and stays
+  // open (the owner, 2026-11-14: "Settings cards should only close from a
+  // swipe down when in medium detents").
+  const swipeCloses = !!frame.onSwipeClose && at !== "full";
   // A drag let go: the size of the snap point the Drawer picked, one of ours.
   const snapped = (point: Drawer.Root.SnapPoint | null) => {
     if (point === null || !top) return;
     const target = sizeAt(fromBottom, point);
     if (!target || target === at) return;
-    // A settings card swiped down closes, from any size (onSwipeClose).
-    if (frame.onSwipeClose && REACH[target] < REACH[at]) frame.onSwipeClose();
-    else ask(target);
+    if (swipeCloses && REACH[target] < REACH[at]) frame.onSwipeClose?.();
+    else ask(frame.onSwipeClose && target === "peek" ? "half" : target);
   };
   const topSlot = onPhone && fromBottom && riding;
   return (
     <Drawer.Root
-      // Mounted closed, opened once its size is set (the layout effect
-      // above, before the first paint): so it comes up from the front's top (RISE).
-      open={entry.state === "open" && entry.at !== undefined}
+      // Mounted closed, opened once its size is set and it is on the page
+      // (the layout effects above, before the first paint): so it comes up
+      // from the front's top (RISE), or where it was, at its own size.
+      open={mounted && entry.state === "open" && entry.at !== undefined}
       modal={false}
       swipeDirection={fromBottom ? "down" : "up"}
       snapPoints={onPhone ? snaps.points : undefined}
@@ -186,15 +217,16 @@ function CardDrawer({
         // open: it is no modal.
         if (!top || details.reason === "focus-out") return details.cancel();
         // A swipe past the pill is no close: the card stays at the pill
-        // with its title row (the card rule's 10) -- but a settings card's,
-        // which closes, the Drawer's own close carrying it down.
-        if (details.reason === "swipe" && frame.onSwipeClose) {
-          frame.onSwipeClose();
+        // with its title row (the card rule's 10) -- but a settings card's
+        // at half, which closes, the Drawer's own close carrying it down;
+        // all the way up, it comes down to half.
+        if (details.reason === "swipe" && swipeCloses) {
+          frame.onSwipeClose?.();
           return;
         }
         if (details.reason === "swipe") {
           details.cancel();
-          ask("peek");
+          ask(frame.onSwipeClose ? "half" : "peek");
           return;
         }
         if (frame.dismiss) return frame.dismiss(details);
@@ -216,6 +248,7 @@ function CardDrawer({
             style={{ bottom: "var(--drawer-keyboard-inset, 0px)" }}
           >
             <Drawer.Popup
+              ref={popup}
               role="region"
               aria-label={frame.label}
               aria-labelledby={frame.label ? undefined : frame.labelledBy}
