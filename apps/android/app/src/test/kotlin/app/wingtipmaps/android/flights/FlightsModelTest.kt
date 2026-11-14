@@ -22,7 +22,7 @@ class FlightsModelTest {
         model.load()
         assertEquals(listOf(flight), model.state.value.flights)
         assertEquals("KDPA → KJVL → KMSN", FlightsModel.route(flight))
-        assertEquals("saved 14 Nov 2026", FlightsModel.savedOn(flight.createdAt, ZoneOffset.UTC))
+        assertEquals("14 Nov 2026", FlightsModel.savedOn(flight.createdAt, ZoneOffset.UTC))
     }
 
     @Test

@@ -32,7 +32,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.airplane.OwnRecord
-import app.wingtipmaps.android.airplane.inAirWords
+import app.wingtipmaps.android.airplane.inAirStatus
+import app.wingtipmaps.android.airplane.words
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.NearestAirport
 import app.wingtipmaps.android.design.Loading
@@ -220,7 +221,7 @@ private fun AirplaneRow(hit: AirplaneHit, onPick: (SearchPick) -> Unit) {
             val tail = "N" + r.nNumber.uppercase().removePrefix("N")
             val what = listOfNotNull(r.manufacturer, r.model).joinToString(" ")
             // The record's type at once, then whether it is in the air.
-            val (air, _) = inAirWords(hit.inAir)
+            val air = inAirStatus(hit.inAir).words()
             ResultRow(tail, null, listOf(what, stringResource(R.string.airplane_registry), air).filter { it.isNotEmpty() }.joinToString(" · "), WingtipIcons.airplane) {
                 onPick(SearchPick.Airplane(tail, null, tail))
             }

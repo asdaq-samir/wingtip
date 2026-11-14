@@ -2,7 +2,6 @@ package app.wingtipmaps.android.airplane
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.airplaneDetails
@@ -15,7 +14,6 @@ import app.wingtipmaps.android.api.generated.PastFlightSummary
 import app.wingtipmaps.android.api.generated.TrafficFound
 import app.wingtipmaps.android.api.pastFlights
 import app.wingtipmaps.android.api.registered
-import app.wingtipmaps.android.format.Format
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -25,7 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.roundToInt
 
 /** Whether an airplane is in the air, from the live find
  *  (/api/traffic/find), which waits on the live sources: checking until it
@@ -48,46 +45,6 @@ sealed interface InAir {
                 else -> Ground
             }
         }
-    }
-}
-
-/** What a page says of an airplane's air, and whether it is a problem
- *  (said in the error style): the web's inAirWords. A target's altitude
- *  to the hundred feet, as ATC gives it (Format.reportedAltitude). */
-fun inAirWords(inAir: InAir): Pair<String, Boolean> = when (inAir) {
-    InAir.Checking -> "Checking whether it's in the air…" to false
-    is InAir.Flying -> (listOf("In the air") + listOfNotNull(inAir.altitudeFt?.let(Format::reportedAltitude), inAir.speedKt?.let { "${it.roundToInt()} kt" })).joinToString(" · ") to false
-    InAir.Ground -> "Not in the air now" to false
-    InAir.Unknown -> "Whether it's in the air isn't known now. Try again in a moment." to true
-    is InAir.Failed -> inAir.why to true
-}
-
-/**
- * The airplane card's one status line, under its tabs (the owner's P1,
- * 2026-11-14; the web's statusLine): in the air from the live find; else
- * where its last flight ended, from its past flights; else that none was
- * heard in adsb.lol's archive, about six weeks (wingtip.traffic
- * ARCHIVE_DAYS). `flights` newest first, null while still looked for.
- */
-fun statusLine(inAir: InAir, flights: List<PastFlightSummary>?, nowMs: Long = AppClock.nowMs()): Pair<String, Boolean> {
-    if (inAir != InAir.Ground) return inAirWords(inAir)
-    val latest = flights?.firstOrNull { !it.inAir }
-    if (latest != null) {
-        val since = ago(nowMs - (latest.on * 1000).toLong())
-        val at = latest.destination?.ident
-        return (if (latest.landed && at != null) "On the ground · landed $at $since" else "Not in the air · last heard $since") to false
-    }
-    if (flights != null && flights.isEmpty()) return "Not heard in the last 6 weeks" to false
-    return inAirWords(inAir)
-}
-
-/** "5 min ago", "3 h ago", "2 days ago": how long since, in the largest unit. */
-fun ago(ms: Long): String {
-    val min = (ms / 60_000).coerceAtLeast(0)
-    return when {
-        min < 60 -> "$min min ago"
-        min < 48 * 60 -> "${min / 60} h ago"
-        else -> "${min / (24 * 60)} days ago"
     }
 }
 

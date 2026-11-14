@@ -141,10 +141,10 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
             if (tail != null) {
                 // The one status line under the tabs: in the air, else where
                 // it last landed, else not heard (statusLine).
-                val (words, problem) = statusLine(looked.inAir, looked.flights)
+                val status = statusLine(looked.inAir, looked.flights)
                 Text(
-                    words, style = MaterialTheme.typography.bodyMedium,
-                    color = if (problem) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    status.words(), style = MaterialTheme.typography.bodyMedium,
+                    color = if (status.problem) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs),
                 )
             }
