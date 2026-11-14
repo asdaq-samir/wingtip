@@ -1545,6 +1545,11 @@ extension Engine {
         try Self.rule("region_of", EngineContract.RegionOfInput(lat: lat, lon: lon))
     }
 
+    /// The phone packs' regions (region_of's 4-degree squares) ahead of the airplane, in the order it reaches them: its own first, then those its track over the ground and its route (from the point on it nearest the airplane) cross within look_ahead_nm, each line padded pad_nm either side (1 nm, the pad the alerts ahead read volumes within, where left out). A shell reads these packs for what is ahead rather than a fixed span of degrees round itself, which at 48 N fell short of five minutes at 200 kt (the iPhone audit's IOS-20). Geometry only, on the WGS-84 ellipsoid.
+    static func regionsAhead(lat: Double, lon: Double, trackDeg: Double? = nil, route: [[Double]]? = nil, lookAheadNm: Double, padNm: Double? = nil) throws -> [String] {
+        try Self.rule("regions_ahead", EngineContract.RegionsAheadInput(lat: lat, lon: lon, trackDeg: trackDeg, route: route, lookAheadNm: lookAheadNm, padNm: padNm))
+    }
+
     /// The stock profile an airplane the FAA's registry names flies on, or null.
     static func registeredProfile(manufacturer: String? = nil, model: String? = nil, year: Double? = nil) throws -> String? {
         try Self.rule("registered_profile", EngineContract.RegisteredProfileInput(manufacturer: manufacturer, model: model, year: year))

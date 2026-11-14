@@ -882,6 +882,10 @@ export type ReadTrackAnswer =
     };
 export type ReceiverTrafficAnswer = HeardPlane[];
 export type RegionOfAnswer = string;
+/**
+ * Region names ("n40w088"), the airplane's own first, each once.
+ */
+export type RegionsAheadAnswer = string[];
 export type RegisteredProfileAnswer = string | null;
 export type ReserveMinAnswer = number;
 export type RoutePositionAnswer = {
@@ -3243,6 +3247,13 @@ export interface EngineContract {
   region_of: {
     input: RegionOfInput;
     answer: RegionOfAnswer;
+  };
+  /**
+   * The phone packs' regions (region_of's 4-degree squares) ahead of the airplane, in the order it reaches them: its own first, then those its track over the ground and its route (from the point on it nearest the airplane) cross within look_ahead_nm, each line padded pad_nm either side (1 nm, the pad the alerts ahead read volumes within, where left out). A shell reads these packs for what is ahead rather than a fixed span of degrees round itself, which at 48 N fell short of five minutes at 200 kt (the iPhone audit's IOS-20). Geometry only, on the WGS-84 ellipsoid.
+   */
+  regions_ahead: {
+    input: RegionsAheadInput;
+    answer: RegionsAheadAnswer;
   };
   /**
    * The stock profile an airplane the FAA's registry names flies on, or null.
@@ -11544,6 +11555,26 @@ export interface HeardPlane {
 export interface RegionOfInput {
   lat: number;
   lon: number;
+}
+export interface RegionsAheadInput {
+  lat: number;
+  lon: number;
+  /**
+   * The track over the ground, degrees true; null or left out where there is none (standing still), and only the route is looked along.
+   */
+  track_deg?: number | null;
+  /**
+   * The route's line, [lat, lon] points in the order flown; left out, none.
+   */
+  route?: [number, number][] | null;
+  /**
+   * How far along the track and the route to look, nm: for the alerts ahead, the groundspeed over their five minutes.
+   */
+  look_ahead_nm: number;
+  /**
+   * Either side of each line, nm; 1 where left out.
+   */
+  pad_nm?: number | null;
 }
 export interface RegisteredProfileInput {
   manufacturer?: string | null;

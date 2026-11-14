@@ -24791,6 +24791,77 @@
       ],
       "additionalProperties": false
     },
+    "regions_ahead": {
+      "description": "The phone packs' regions (region_of's 4-degree squares) ahead of the airplane, in the order it reaches them: its own first, then those its track over the ground and its route (from the point on it nearest the airplane) cross within look_ahead_nm, each line padded pad_nm either side (1 nm, the pad the alerts ahead read volumes within, where left out). A shell reads these packs for what is ahead rather than a fixed span of degrees round itself, which at 48 N fell short of five minutes at 200 kt (the iPhone audit's IOS-20). Geometry only, on the WGS-84 ellipsoid.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RegionsAheadInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "track_deg": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The track over the ground, degrees true; null or left out where there is none (standing still), and only the route is looked along."
+            },
+            "route": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "description": "The route's line, [lat, lon] points in the order flown; left out, none."
+            },
+            "look_ahead_nm": {
+              "type": "number",
+              "minimum": 0,
+              "description": "How far along the track and the route to look, nm: for the alerts ahead, the groundspeed over their five minutes."
+            },
+            "pad_nm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "description": "Either side of each line, nm; 1 where left out."
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "look_ahead_nm"
+          ]
+        },
+        "answer": {
+          "title": "RegionsAheadAnswer",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Region names (\"n40w088\"), the airplane's own first, each once."
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "registered_profile": {
       "description": "The stock profile an airplane the FAA's registry names flies on, or null.",
       "type": "object",
@@ -30738,6 +30809,7 @@
     "receiver_reports",
     "receiver_traffic",
     "region_of",
+    "regions_ahead",
     "registered_profile",
     "remarks_read",
     "replay_track",

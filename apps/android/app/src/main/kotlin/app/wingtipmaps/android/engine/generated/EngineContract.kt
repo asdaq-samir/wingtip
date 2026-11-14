@@ -10559,6 +10559,31 @@ object EngineContract {
     )
 
     @Serializable
+    data class RegionsAheadInput(
+        val lat: Double,
+        val lon: Double,
+        /**
+         * The track over the ground, degrees true; null or left out where there is none (standing still), and only the route is looked along.
+         */
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        /**
+         * The route's line, [lat, lon] points in the order flown; left out, none.
+         */
+        val route: List<List<Double>>? = null,
+        /**
+         * How far along the track and the route to look, nm: for the alerts ahead, the groundspeed over their five minutes.
+         */
+        @SerialName("look_ahead_nm")
+        val lookAheadNm: Double,
+        /**
+         * Either side of each line, nm; 1 where left out.
+         */
+        @SerialName("pad_nm")
+        val padNm: Double? = null,
+    )
+
+    @Serializable
     data class RegisteredProfileInput(
         val manufacturer: String? = null,
         val model: String? = null,

@@ -10359,6 +10359,28 @@ enum EngineContract {
         var lon: Double
     }
 
+    struct RegionsAheadInput: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+        /// The track over the ground, degrees true; null or left out where there is none (standing still), and only the route is looked along.
+        var trackDeg: Double?
+        /// The route's line, [lat, lon] points in the order flown; left out, none.
+        var route: [[Double]]?
+        /// How far along the track and the route to look, nm: for the alerts ahead, the groundspeed over their five minutes.
+        var lookAheadNm: Double
+        /// Either side of each line, nm; 1 where left out.
+        var padNm: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case lat
+            case lon
+            case trackDeg = "track_deg"
+            case route
+            case lookAheadNm = "look_ahead_nm"
+            case padNm = "pad_nm"
+        }
+    }
+
     struct RegisteredProfileInput: Codable, Equatable, Sendable {
         var manufacturer: String?
         var model: String?

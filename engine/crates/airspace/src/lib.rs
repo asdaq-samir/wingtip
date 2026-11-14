@@ -6,6 +6,7 @@
 //! - pack: the cycle pack, one file per FAA cycle;
 //! - rules: the airspace over a point in bands, with the rules of each;
 //! - pack_query: the planner's airspace-at-a-point answer from a phone's pack;
+//! - regions_ahead: the phone packs' regions ahead of the airplane, in order;
 //! - view, view_airports: the map's airspace, airports and VORs in view
 //!   from the packs, as the planner's in-view endpoints answer them;
 //! - ahead: the alerts ahead of the airplane from the phone's packs;
@@ -25,6 +26,7 @@ pub mod drills;
 pub mod field_name;
 pub mod pack;
 pub mod pack_query;
+pub mod regions_ahead;
 pub mod rules;
 pub mod shelf_label;
 pub mod spoken;

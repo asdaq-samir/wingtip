@@ -333,6 +333,9 @@ Then the callers switch to the name and the old copy is deleted.
   field carries the overlay tiles' mark, `mark_order` and `mark_size`
   (`field_mark_rank`, its longest hard runway the pack's HARD_FT
   column), so a phone ranks its marks offline as the tiles rank them.
+  Which packs to read for what is ahead is the engine's as well
+  (`regions_ahead`): the airplane's own region, then those its track and
+  its route cross within a look-ahead distance, in the order reached.
 - The altitude a flight is planned at is the engine's too (`crates/altitude`,
   #482 phase 3): each leg's floor -- the terrain and DOF obstacles with
   14 CFR 91.119's clearances (`vfr_floors`, asked once a leg with the
