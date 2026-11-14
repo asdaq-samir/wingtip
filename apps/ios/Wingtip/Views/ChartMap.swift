@@ -556,7 +556,7 @@ struct ChartMap: UIViewRepresentable {
                         (mapView.view(for: mark) as? CheckpointMarkView)?.showName(names)
                     }
                 }
-                let scale = SectionalSymbol.scale(zoom: zoom)
+                let scale = FieldMark.scale(zoom: zoom)
                 if abs(scale - symbolScale) > 0.02 {
                     symbolScale = scale
                     for case let field as AirportAnnotation in mapView.annotations {

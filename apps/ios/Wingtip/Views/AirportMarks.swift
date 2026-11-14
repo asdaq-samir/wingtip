@@ -1,11 +1,11 @@
 import MapKit
 import UIKit
 
-/// A field on the chart: its mark in the sectional's own symbology, as
-/// the web map draws it over the chart (lib/map/airportMark.ts
-/// sectionalAirportSvg), its ident beside it in the field's ink, and its
+/// A field on the chart: the planner's own mark (FieldMark), as the web
+/// map draws it over the chart (lib/map/marks/airportMark.ts
+/// airportMarkSvg), its ident beside it in the field's ink, and its
 /// weather where it reports (FieldWeatherMark): the flight category's
-/// halo, the wind and the ↓, as Settings' Airport Weather asks.
+/// disc, the wind and the ↓, as Settings' Airport Weather asks.
 final class AirportAnnotation: NSObject, MKAnnotation {
     let ident: String
     let kind: String
@@ -41,32 +41,43 @@ final class AirportAnnotation: NSObject, MKAnnotation {
         use = pin.military == "military" ? "military" : pin.isPrivate == true ? "private" : nil
         coordinate = CLLocationCoordinate2D(latitude: pin.lat, longitude: pin.lon)
         self.onRoute = onRoute
+        rank = Self.rank(pin)
     }
+
+    /// The engine's word on the mark (field_mark_rank): its place where
+    /// marks overlap and the step it is drawn at. Nil where the engine
+    /// refuses (logged by Engine.rule): the mark is then drawn at the
+    /// regular step and kept after every ranked one.
+    let rank: EngineContract.FieldMarkRankAnswer?
+
+    /// The engine asked with what the map's pin carries of NASR's
+    /// columns: every pin is a landing field (SITE_TYPE_CODE A, the
+    /// planner's and the packs' lists leave the heliports out), its use,
+    /// its tower and the class it is the primary of (B or C; D counts as
+    /// none). The pin carries no longest hard runway, so a public field
+    /// without a tower is ranked by its tower and use alone until the
+    /// in-view answer carries it (see the wave's report).
+    private static func rank(_ pin: AirportPin) -> EngineContract.FieldMarkRankAnswer? {
+        let primary = pin.primaryOf == "B" || pin.primaryOf == "C" ? pin.primaryOf : nil
+        return try? Engine.fieldMarkRank(siteType: "A", use: pin.isPrivate == true ? "PR" : "PU", towered: pin.towered, primaryOf: primary)
+    }
+
+    /// How much larger the mark is drawn than the regular step (FieldMark.step).
+    var step: CGFloat { FieldMark.step(rank?.size) }
 
     var title: String? { ident }
 
-    /// Which marks MapKit keeps when they would overlap, as the web app's
-    /// AirportsLayer ranks the fields far out (PRIMARY_RANK, shownFrom
-    /// and KIND_RANK: the field each class of airspace is named for
-    /// before every other, so Dallas's rings show DFW and not Love, then
-    /// a Class B field from the country's zoom, a Class C from a few
-    /// states', the airline airports before the regional ones, the small
-    /// fields at the sectional's own scale): the route's fields always,
-    /// then the primaries of Class B and C, then the large and the Class B
-    /// and C, then the primary of a Class D, then medium and Class D,
-    /// then the rest. Hundreds of views at a low zoom drew over each
-    /// other with nothing dropping any (the owner, 2026-11-03).
+    /// Which marks MapKit keeps when they would overlap: the route's
+    /// fields always, then the engine's order (field_mark_rank, lower kept
+    /// first, as the web's overlay tiles sort by their `rank`: a Class B's
+    /// field, a Class C's, then each tier). The order, up to 699,999, is
+    /// laid on MapKit's 1 to 999 in thousands, so each class and tier keeps
+    /// its own band. Hundreds of views at a low zoom drew over each other
+    /// with nothing dropping any (the owner, 2026-11-03).
     var priority: MKFeatureDisplayPriority {
         if onRoute { return .required }
-        switch primaryOf {
-        case "B": return MKFeatureDisplayPriority(rawValue: 900)
-        case "C": return MKFeatureDisplayPriority(rawValue: 800)
-        default: break
-        }
-        if kind == "large" || airspaceClass == "B" || airspaceClass == "C" { return .defaultHigh }
-        if primaryOf == "D" { return MKFeatureDisplayPriority(rawValue: 700) }
-        if kind == "medium" || airspaceClass == "D" { return MKFeatureDisplayPriority(rawValue: 500) }
-        return .defaultLow
+        guard let order = rank?.order else { return MKFeatureDisplayPriority(rawValue: 1) }
+        return MKFeatureDisplayPriority(rawValue: Float(max(1, 990 - order / 1000)))
     }
 
     /// The field's flight category as its halo draws it (FlightCategory).
@@ -80,10 +91,10 @@ final class AirportAnnotation: NSObject, MKAnnotation {
     }
 }
 
-/// The mark: the sectional's symbol (SectionalSymbol) with the ident to
-/// its right in bold, in the field's ink on a halo, as the web map sets
-/// it (glOverlays' airportMarksLayer). One view class reused for every
-/// field; the symbol grows a little closer in (SectionalSymbol.scale).
+/// The mark: the field's mark (FieldMark), at the engine's step, with the
+/// ident to its right in bold, in the field's ink on a halo, as the web
+/// map sets it (glOverlays' airportMarksLayer). One view class reused for
+/// every field; the mark grows a little closer in (FieldMark.scale).
 final class AirportMarkView: MKAnnotationView {
     static let reuse = "airport"
     /// The symbol, the ident, the ring and the weather, moved together
@@ -106,22 +117,17 @@ final class AirportMarkView: MKAnnotationView {
     /// ring and is never dropped for another: one at a time, as one card
     /// is open at a time.
     static var selected: String?
-    /// The symbol's box, the mark's height, and the gap to the ident.
-    static let box: CGFloat = 26
-    static let height: CGFloat = 30
+    /// The mark's box at its step, the mark's height, and the gap to the ident.
+    private var box: CGFloat = FieldMark.side
+    private var height: CGFloat = 30
     private static let gap: CGFloat = 2
 
     override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
-        // The symbol's image is wider than the box, for its halo; centred
-        // on the box's middle, the frame MapKit collides kept the box's.
-        let side = SectionalSymbol.side
-        symbol.frame = CGRect(x: (Self.box - side) / 2, y: (Self.height - side) / 2, width: side, height: side)
         label.font = UIFont.systemFont(ofSize: 12, weight: .bold)
         // A halo round the words, white by day and the night's ground in
         // dark appearance (NightPalette.halo), as the web map's LABEL_HALO.
         label.haloFollowing(self)
-        halo.place(round: CGPoint(x: Self.box / 2, y: Self.height / 2))
         content.layer.addSublayer(halo)
         content.layer.addSublayer(weatherLayer)
         content.addSubview(symbol)
@@ -156,10 +162,10 @@ final class AirportMarkView: MKAnnotationView {
     /// a far barb's room in it too, and a taller one dropped more of its
     /// neighbours.
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        markFrame.insetBy(dx: 0, dy: -(44 - Self.height) / 2).contains(point)
+        markFrame.insetBy(dx: 0, dy: -max(0, 44 - height) / 2).contains(point)
     }
 
-    /// The symbol drawn at a zoom's size (SectionalSymbol.scale).
+    /// The mark drawn at a zoom's size (FieldMark.scale).
     func scaleSymbol(_ scale: CGFloat) {
         symbol.transform = CGAffineTransform(scaleX: scale, y: scale)
     }
@@ -168,23 +174,29 @@ final class AirportMarkView: MKAnnotationView {
         guard let field = annotation as? AirportAnnotation else { return }
         let ink = SectionalInk.airport(towered: field.towered)
         let choice = Self.choice
-        // A stale report's halo grey (FlightCategory's no-report colour),
-        // its age beside the ident.
+        // A stale report's disc grey (FlightCategory's no-report colour),
+        // its age beside the ident; the setting Off greys every disc.
         let stale = field.weather?.heardAgo
-        symbol.image = SectionalSymbol.image(towered: field.towered, kind: field.kind, use: field.use,
-                                             category: stale != nil && field.category != nil ? "STALE" : field.category, style: choice.style)
+        let step = field.step
+        box = FieldMark.side * step
+        height = max(30, box + 4)
+        symbol.bounds = CGRect(x: 0, y: 0, width: box, height: box)
+        symbol.center = CGPoint(x: box / 2, y: height / 2)
+        halo.place(round: symbol.center)
+        symbol.image = FieldMark.image(space: field.airspaceClass, category: choice.style == .off || stale != nil ? nil : field.category,
+                                       use: field.use, step: step)
         label.text = stale.map { "\(field.ident) · \($0)" } ?? field.ident
         label.textColor = ink
         label.sizeToFit()
-        let width = Self.box + Self.gap + label.bounds.width
-        let mark = CGRect(x: 0, y: 0, width: width, height: Self.height)
+        let width = box + Self.gap + label.bounds.width
+        let mark = CGRect(x: 0, y: 0, width: width, height: height)
         content.frame.size = mark.size
-        label.frame.origin = CGPoint(x: Self.box + Self.gap, y: (Self.height - label.bounds.height) / 2)
-        let middle = CGPoint(x: Self.box / 2, y: Self.height / 2)
+        label.frame.origin = CGPoint(x: box + Self.gap, y: (height - label.bounds.height) / 2)
+        let middle = CGPoint(x: box / 2, y: height / 2)
         let room = weatherLayer.show(field.weather, choice: choice, station: choice.station(zoom: Self.zoom), far: FarBarb.scale(zoom: Self.zoom),
                                      heading: Self.heading, middle: middle,
-                                     symbolRadius: SectionalSymbol.reach(kind: field.kind, use: field.use, halo: field.category != nil && choice.style == .halo),
-                                     linesAt: CGPoint(x: Self.box + Self.gap, y: label.frame.maxY - 1))
+                                     symbolRadius: FieldMark.reach(step: step),
+                                     linesAt: CGPoint(x: box + Self.gap, y: label.frame.maxY - 1))
         // The view the mark and its far barb's room, so MapKit's collision
         // has a barb give way to another's, the lesser field's, as the
         // web's far barbs give way (AirportWeatherGl's icon-allow-overlap
