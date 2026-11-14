@@ -68,8 +68,15 @@ jobs:
     # GitHub's xcode-27 image, the one hosted image with .tool-versions'
     # Xcode 27.2 (actions/runner-images, images/macos/xcode-27-arm64-Readme.md).
     runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
-    # A pull request's set is a few minutes; the night's three simulators
-    # and every UI suite about sixty.
+    # The iPhone by day; at night the iPad and iPhone Duo too, each its own
+    # runner: the three on one ran every UI suite over 80 minutes, cancelled
+    # at the limit twice (#572). The iPhone's leg keeps the job's name.
+    name: ${{ matrix.device == 'iPhone' && 'test' || format('test ({0})', matrix.device) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        device: ${{ fromJSON((inputs.full || github.event_name == 'schedule') && '["iPhone", "iPad", "iPhone Duo"]' || '["iPhone"]') }}
+    # A pull request's set is a few minutes; a night's device and every UI suite about thirty.
     timeout-minutes: ${{ (inputs.full || github.event_name == 'schedule') && 100 || 25 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -128,38 +135,26 @@ jobs:
           restore-keys: ios-derived-v1-${{ hashFiles('.tool-versions', 'apps/ios/project.yml') }}-
       - if: steps.derived.outputs.cache-matched-key == ''
         run: echo "::notice title=Cache miss::ios-derived-data"
-      - name: The simulators to test on
+      # This leg's device, the newest the runner's Xcode has (an iPad a Pro
+      # where there is one), by its id, picked as on the Mac.
+      - name: The simulator to test on
         id: sim
-        run: |
-          # The newest iPhone the runner's Xcode has, and at night an iPad
-          # (a Pro where there is one) and iPhone Duo, each by its id, picked
-          # as on the Mac (scripts/dev/newest_simulator.py).
-          pick() {
-            xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "$1"
-          }
-          echo "iphone=$(pick iPhone)" >> "$GITHUB_OUTPUT"
-          if [ "$FULL" = true ]; then
-            echo "ipad=$(pick iPad)" >> "$GITHUB_OUTPUT"
-            echo "duo=$(pick 'iPhone Duo')" >> "$GITHUB_OUTPUT"
-          fi
+        env:
+          DEVICE: ${{ matrix.device }}
+        run: echo "id=$(xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "$DEVICE")" >> "$GITHUB_OUTPUT"
       # A pull request: the unit tests, in WingtipUnit, which builds no UI
       # test. Main's push: those and CardSmokeTests, the one UI smoke (the
       # airport card opened, scrolled and closed). The launch, flow and
       # accessibility tests, the card suites and the store shots are the night's.
       - name: Built and tested on the simulator
         env:
-          IPHONE: ${{ steps.sim.outputs.iphone }}
-          IPAD: ${{ steps.sim.outputs.ipad }}
-          DUO: ${{ steps.sim.outputs.duo }}
+          SIM: ${{ steps.sim.outputs.id }}
         run: |
           host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")
-          dest=(-destination "platform=iOS Simulator,id=$IPHONE")
+          dest=(-destination "platform=iOS Simulator,id=$SIM")
           only=(-only-testing:WingtipTests) scheme=WingtipUnit
           [ "$UNIT_ONLY" = true ] || only+=(-only-testing:WingtipUITests/CardSmokeTests) scheme=Wingtip
-          if [ "$FULL" = true ]; then
-            only=() scheme=Wingtip
-            for id in $IPAD $DUO; do dest+=(-destination "platform=iOS Simulator,id=$id"); done
-          fi
+          [ "$FULL" = true ] && only=() scheme=Wingtip
           xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme "$scheme" -configuration Debug "${dest[@]}" \
             -derivedDataPath "$RUNNER_TEMP/derived" -resultBundlePath "$RUNNER_TEMP/Wingtip.xcresult" "${only[@]}" \
             CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= COMPILER_INDEX_STORE_ENABLE=NO WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" \
@@ -176,7 +171,7 @@ jobs:
       - name: The string catalog is what the Swift says
         run: scripts/build/ios-strings.sh --check --derived-data "$RUNNER_TEMP/derived"
       - name: DerivedData, kept
-        if: always() && steps.derived.outputs.cache-hit != 'true' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+        if: always() && matrix.device == 'iPhone' && steps.derived.outputs.cache-hit != 'true' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
         continue-on-error: true
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
@@ -185,38 +180,34 @@ jobs:
             !${{ runner.temp }}/derived/Logs
           key: ${{ steps.derived.outputs.cache-primary-key }}
       - name: Each device's first screen
-        # At night, for a reader: what each device shows on launch, a
-        # picture, not a check.
+        # At night, for a reader: what the device shows on launch (an iPad
+        # its search too), a picture, not a check.
         if: env.FULL == 'true'
         continue-on-error: true
         env:
-          IPHONE: ${{ steps.sim.outputs.iphone }}
-          IPAD: ${{ steps.sim.outputs.ipad }}
-          DUO: ${{ steps.sim.outputs.duo }}
+          SIM: ${{ steps.sim.outputs.id }}
+          NAME: ${{ matrix.device }}
         run: |
           app="$RUNNER_TEMP/derived/Build/Products/Debug-iphonesimulator/Wingtip.app"
+          name=$(echo "$NAME" | tr 'A-Z ' 'a-z-')
           mkdir -p "$RUNNER_TEMP/screens"
-          pairs=("iphone:$IPHONE" "ipad:$IPAD")
-          [ -n "$DUO" ] && pairs+=("iphone-duo:$DUO")
-          for pair in "${pairs[@]}"; do
-            name=${pair%%:*}; id=${pair#*:}
-            xcrun simctl boot "$id" 2>/dev/null || true
-            xcrun simctl bootstatus "$id" -b > /dev/null
-            xcrun simctl install "$id" "$app"
-            xcrun simctl privacy "$id" grant location "$WINGTIP_BUNDLE_ID" || true
-            xcrun simctl launch "$id" "$WINGTIP_BUNDLE_ID"
-            sleep 25
-            xcrun simctl io "$id" screenshot "$RUNNER_TEMP/screens/$name.png"
-          done
-          xcrun simctl terminate "$IPAD" "$WINGTIP_BUNDLE_ID" || true
-          xcrun simctl launch "$IPAD" "$WINGTIP_BUNDLE_ID" -screen airport
+          xcrun simctl boot "$SIM" 2>/dev/null || true
+          xcrun simctl bootstatus "$SIM" -b > /dev/null
+          xcrun simctl install "$SIM" "$app"
+          xcrun simctl privacy "$SIM" grant location "$WINGTIP_BUNDLE_ID" || true
+          xcrun simctl launch "$SIM" "$WINGTIP_BUNDLE_ID"
+          sleep 25
+          xcrun simctl io "$SIM" screenshot "$RUNNER_TEMP/screens/$name.png"
+          [ "$name" = ipad ] || exit 0
+          xcrun simctl terminate "$SIM" "$WINGTIP_BUNDLE_ID" || true
+          xcrun simctl launch "$SIM" "$WINGTIP_BUNDLE_ID" -screen airport
           sleep 15
-          xcrun simctl io "$IPAD" screenshot "$RUNNER_TEMP/screens/ipad-search.png"
+          xcrun simctl io "$SIM" screenshot "$RUNNER_TEMP/screens/ipad-search.png"
       - name: The screens
         if: always() && env.FULL == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
-          name: native-ios-screens
+          name: native-ios-screens-${{ strategy.job-index }}
           path: ${{ runner.temp }}/screens
           if-no-files-found: ignore
           retention-days: 7
@@ -224,7 +215,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
-          name: native-ios-log
+          name: native-ios-log-${{ strategy.job-index }}
           path: ${{ runner.temp }}/xcodebuild.log
           retention-days: 7
 

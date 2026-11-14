@@ -59,8 +59,11 @@ in three tiers ([docs/CI.md, "The tiers"](../CI.md#the-tiers)):
    `@smoke` and `@flight-critical` shards, the image builds, and the
    iPhone's `CardSmokeTests` (native-ios.yml's own run). A failure opens
    or updates one issue, "Main CI failed (after merge)", labelled
-   `ready`, in one write, as the night's does. CodeQL stays GitHub's
-   default setup, in the repository's settings.
+   `ready`, in one write, as the night's does. CodeQL is a workflow of
+   this tier (`codeql.yml`, main's push and weekly, no dependency cache)
+   since 2026-11-14: GitHub's default setup, kept here at first, ran on
+   every pull request push too and filled the cache store (docs/CI.md,
+   rule 4); it is switched off in the repository's settings.
 3. **The night**, unchanged: everything.
 
 #499's guarantee holds in its new form: a pull request that changes an
