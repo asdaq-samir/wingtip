@@ -66,12 +66,17 @@ struct ProfileChart: View {
                         .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                         .accessibilityHidden(true)
                 }
-                ForEach(waypoints, id: \.ident) { point in
+                // A dot at each point, the route's two ends named: the
+                // points' own names piled into one unreadable strip on a
+                // route of eight (IOS-5); they are in the nav log's rows,
+                // and a tap on a dot opens its point.
+                ForEach(Array(waypoints.enumerated()), id: \.offset) { i, point in
+                    let end = i == 0 || i == waypoints.count - 1
                     PointMark(x: .value("Along", point.alongNm), y: .value("Altitude", altitude(at: point.alongNm)))
                         .foregroundStyle(.tint)
                         .symbolSize(50)
                         .annotation(position: .top, spacing: WingtipSpace.xs) {
-                            Text(point.ident).font(.caption2.monospaced()).foregroundStyle(.tint)
+                            if end { Text(point.ident).font(.caption2.monospaced()).foregroundStyle(.tint) }
                         }
                         .accessibilityHidden(true)
                 }

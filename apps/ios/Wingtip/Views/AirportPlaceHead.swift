@@ -50,7 +50,9 @@ struct AirportPlaceHead: View {
             ProblemLine(distance, "The distance").padding(.horizontal, WingtipSpace.lg)
         }
         .padding(.bottom, WingtipSpace.md)
-        .padding(.top, expanded ? 0 : WingtipSpace.xl)
+        // Half way the name starts under the bar, no room kept for a
+        // large title (IOS-10), so the facts sit above the toolbar.
+        .padding(.top, expanded ? 0 : WingtipSpace.sm)
         .animation(.default, value: expanded)
     }
 
@@ -224,7 +226,9 @@ struct ActionFace: View {
     var body: some View {
         VStack(spacing: WingtipSpace.xxs) {
             Image(systemName: systemImage).font(.title3).foregroundStyle(symbolColour.map(AnyShapeStyle.init) ?? AnyShapeStyle(.foreground))
-            Text(title).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.7)
+            // One size for every tile's words, wrapping to a second line at
+            // the larger text sizes rather than one tile's shrinking (IOS-18).
+            Text(title).font(.subheadline.weight(.semibold)).lineLimit(2).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, minHeight: 52)
     }

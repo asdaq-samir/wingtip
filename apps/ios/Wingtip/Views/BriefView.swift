@@ -218,12 +218,23 @@ struct BriefView: View {
         .glassFoot { if plan.routed { StartFlightBar() } }
         // The UI tests' sign the Brief is up (WingtipUITests/FlowTests).
         .accessibilityIdentifier("brief")
-        // Pulled down: the briefing and the Go / No-Go asked afresh, the
-        // weather being live; the reports stay on the page meanwhile.
-        .refreshable {
-            guard plan.routed else { return }
-            await plan.brief(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin)
-            await verdict.refresh(plan: plan, signedIn: session.signedIn)
+        // No pull to refresh in a sheet, where the drag down lowers it
+        // (rules.md §2.2, IOS-3): the Brief's Refresh is in its ••• menu
+        // (§1.8), the briefing and the Go / No-Go asked afresh, the
+        // reports staying on the page meanwhile.
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Menu("More", systemImage: "ellipsis") {
+                    Button("Refresh", systemImage: "arrow.clockwise") {
+                        Task {
+                            guard plan.routed else { return }
+                            await plan.brief(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin)
+                            await verdict.refresh(plan: plan, signedIn: session.signedIn)
+                        }
+                    }
+                    .disabled(!plan.routed)
+                }
+            }
         }
         .task {
             if plan.briefing == nil, plan.routed {

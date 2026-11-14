@@ -37,7 +37,6 @@ struct TrainingView: View {
             guard session.signedIn else { return }
             await act { try await Gateway.training() }
         }
-        .refreshable { await act { try await Gateway.training() } }
     }
 
     /// A change sent, and the record as the gateway answers it kept.

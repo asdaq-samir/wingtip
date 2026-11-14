@@ -127,6 +127,25 @@ enum AirportWords {
         return "\(Format.zulu(when)) · \(ago)"
     }
 
+    /// Whether a METAR still counts at `now`: the engine's
+    /// weather_in_force (a METAR counts for the hour after it was observed,
+    /// AIM 7-1-28's "METAR-hourly"), the rule the web's Observed and the
+    /// planner go by. Nil where the time cannot be read or the engine
+    /// refuses (logged by Engine.rule): the report is then shown plain,
+    /// its time and age still said.
+    static func reportInForce(_ iso: String?, now: Date = Date()) -> Bool? {
+        guard let when = date(iso) else { return nil }
+        return try? Engine.weatherInForce(product: "metar", now: now.timeIntervalSince1970.rounded(.down),
+                                          observed: when.timeIntervalSince1970.rounded(.down))
+    }
+
+    /// "1255Z · 3 h ago — an old report" where the report no longer counts
+    /// (reportInForce), the web's words (IOS-2); as observed() otherwise.
+    static func observedSaid(_ iso: String, now: Date = Date()) -> String? {
+        guard let said = observed(iso, now: now) else { return nil }
+        return reportInForce(iso, now: now) == false ? said + " — an old report" : said
+    }
+
     // MARK: Runways
 
     /// A runway's surface in words: OurAirports' "ASPH-G" is asphalt.

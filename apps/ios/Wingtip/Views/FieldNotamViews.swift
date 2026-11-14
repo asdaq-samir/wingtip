@@ -228,7 +228,7 @@ struct FieldNotamPage: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationSubtitle(number)
         .toolbar {
-            ToolbarItem(placement: .pinnedTrailing) {
+            ToolbarItem(placement: .topBarLeading) {
                 ShareLink(item: notam.raw) { Label("Share", systemImage: WingtipIcon.share) }
             }
         }

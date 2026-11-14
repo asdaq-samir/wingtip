@@ -73,7 +73,7 @@ struct AirportCard: View {
                     }
                     AirportReadyCard(ident: place.ident)
                     AirportInfoTab(place: place)
-                case .weather: AirportWeatherTab(place: place)
+                case .weather: AirportWeatherTab(place: place, refresh: refresh)
                 case .runways: AirportRunwaysTab(place: place)
                 case .charts: AirportChartsTab(place: place, shown: $shown)
                 }
@@ -122,7 +122,6 @@ struct AirportCard: View {
         .navigationDestination(item: $notams.opened) { NotamsOnPage(notams: notams, open: $0) }
         .onChange(of: place) { _, fresh in notams.attach(fresh) }
         .fullScreenCover(item: $shown) { PictureViewer(picture: $0) }
-        .refreshable { async let field: Void = load(); async let notices: Void = notams.load(ident, force: true); await live.loadDatis(ident); await live.loadRvr(ident, minimumSm: verdict.minimums.visibilitySm); await field; await notices } // pulled: the field's weather, the ATIS and the RVR again
         // The live reports, asked again while the card is open; the RVR
         // judged against the pilot's own visibility minimum.
         .task(id: "\(ident)|\(verdict.minimums.visibilitySm ?? -1)") { await live.watch(ident, minimumSm: verdict.minimums.visibilitySm) }
@@ -142,6 +141,18 @@ struct AirportCard: View {
                 if let fresh = try? await KeptForAir.answer(.airports, key: ident, fetch: { try await Planner.place(ident) }) { place = fresh.value }
             }
         }
+    }
+
+    /// The Weather tab's Refresh (no pull to refresh in a sheet, IOS-3;
+    /// rules.md: an airport card's refresh is in its Weather tab): the
+    /// field's weather, its NOTAMs, the ATIS and the RVR asked again.
+    private func refresh() async {
+        async let field: Void = load()
+        async let notices: Void = notams.load(ident, force: true)
+        await live.loadDatis(ident)
+        await live.loadRvr(ident, minimumSm: verdict.minimums.visibilitySm)
+        await field
+        await notices
     }
 
     private func load() async {
@@ -176,6 +187,9 @@ struct AirportCard: View {
 struct AirportWeatherTab: View {
     @Environment(ClearanceListener.self) private var listener
     let place: AirportPlace
+    /// The card's Refresh, asked from the tab's foot; none in a preview.
+    var refresh: (() async -> Void)?
+    @State private var refreshing = false
 
     var body: some View {
         if let metar = place.metar {
@@ -202,12 +216,24 @@ struct AirportWeatherTab: View {
         if listener.canListen { AtisSection() } // heard on the iPhone or not offered
         if place.metar == nil, let nearby = place.nearbyMetar {
             Section("Nearest Report, \(Format.distance(nearby.distanceNm, decimals: 0)) \(AirportWords.compassPoint(Double(nearby.bearingDeg)))") {
-                CardRow(title: nearby.ident, detail: nearby.metar.observedAt.flatMap { AirportWords.observed($0) }) {
+                CardRow(title: nearby.ident, detail: nearby.metar.observedAt.flatMap { AirportWords.observedSaid($0) }) {
                     if let category = nearby.metar.flightCategory {
                         Text(category).fontWeight(.semibold).accessibilityLabel(SpokenFigures.flightCategory(category))
                     }
                 }
                 if let raw = nearby.metar.raw { Text(raw).font(.footnote.monospaced()).textSelection(.enabled) }
+            }
+        }
+        if let refresh {
+            Section {
+                Button(refreshing ? "Refreshing…" : "Refresh Weather", systemImage: "arrow.clockwise") {
+                    refreshing = true
+                    Task {
+                        await refresh()
+                        refreshing = false
+                    }
+                }
+                .disabled(refreshing)
             }
         }
     }

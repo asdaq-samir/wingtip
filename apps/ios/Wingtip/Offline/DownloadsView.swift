@@ -36,7 +36,6 @@ struct DownloadsView: View {
         .navigationTitle("Downloads")
         .searchable(text: $search, prompt: "Sheet or State")
         .task { await model.load() }
-        .refreshable { await model.load() }
         .onChange(of: progress.landed) { model.refresh() }
         .confirmationDialog(asking.map { "Download \($0.name)?" } ?? "", isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }),
                             titleVisibility: .visible, presenting: asking) { region in
