@@ -43,7 +43,7 @@ test(
     const row = firstRow(page);
     // Short in sight, so it fits beside the mic and Cancel at larger text;
     // the whole sentence its name (the sheet audit's F-S2).
-    await expect(row.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search airports");
+    await expect(row.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search airports and airplanes");
     await expect(row.getByTestId("search-airports")).toHaveAttribute("aria-label", "Search airports and airplanes");
     await expect(row.getByTestId("account-button")).toBeVisible();
     await expect(sideDrawer(page).getByTestId("sheet-title")).toHaveCount(0);
