@@ -50,8 +50,11 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
   the shared engine (`engine/facade`), the same Rust the web app and the
   planner run, asked by name through `Engine.call` (the engine's `call`,
   through the Swift UniFFI writes from the Rust: the `WingtipEngine`
-  module, `engine/bindings/ffi/build-xcframework.sh`;
-  `engine/facade/src/call.rs` lists every name, and
+  module, `engine/bindings/ffi/build-xcframework.sh`, which writes the
+  engine's hash beside the framework, `engine.hash`, so
+  `scripts/dev/xcodebuild.sh` refuses to build against one made from
+  another engine; a panic in the engine comes back as `Engine.Refused`,
+  never a crash; `engine/facade/src/call.rs` lists every name, and
   `engine/contract/engine.schema.json` types each input and answer). An
   answer the app decodes can use a type generated from that contract,
   `apps/ios/Wingtip/Engine/EngineContract.swift` (`scripts/build/engine-contract-apps.sh`,
