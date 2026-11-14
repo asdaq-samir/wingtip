@@ -55,7 +55,8 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-head")).toBeInViewport();
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
   // The name under the ident, and no town, distance or elevation in the head (the owner, 2026-11-11).
-  await expect(card(page).getByTestId("place-full-name")).toHaveText("Duluth International Airport");
+  // NASR's name for it, as the FAA files it (ARPT_NAME, wingtip.field_use.named).
+  await expect(card(page).getByTestId("place-full-name")).toHaveText("Duluth Intl");
   await expect(card(page).getByTestId("place-ident")).toHaveCount(0);
   // Measured from the route's departure while the pilot's own position is not known, a row of the Details.
   await expect(card(page).getByTestId("place-line")).toHaveCount(0);
@@ -593,7 +594,10 @@ test("an airport's card that could not be had says so, and Try again brings it",
   await card(page).getByTestId("place-retry").click();
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
   await expect(card(page).getByTestId("place-retry")).toHaveCount(0);
-  await expect(card(page).getByTestId("place-full-name")).toContainText("Duluth International Airport");
+  // The answer in: its star enabled, and NASR's name (wingtip.field_use.named),
+  // which the map's mark had given the card while it waited.
+  await expect(card(page).getByTestId("place-favorite")).toBeEnabled();
+  await expect(card(page).getByTestId("place-full-name")).toContainText("Duluth Intl");
 });
 
 test("an airport tapped on the chart while Setup is up puts Setup away and opens its card on Airport", async ({ page }) => {
