@@ -181,6 +181,7 @@ describe("useTraining", () => {
     expect(result.current.detections[0]!.rating).toBe(5);
     expect(result.current.detections[0]!.rated).toBe(true);
     expect(result.current.canUndo).toBe(true);
+    expect(result.current.rateFailed).toBe(false);
   });
 
   test("a rate that fails to save changes nothing on screen, and leaves nothing to undo", async () => {
@@ -191,10 +192,15 @@ describe("useTraining", () => {
     const { result } = renderLabels();
     await loaded(result);
     act(() => result.current.select(result.current.detections[0]!));
+    let kept = true;
     await act(async () => {
-      await result.current.rate(5);
+      kept = await result.current.rate(5);
     });
 
+    // Not kept, so the page stays on the point, and its card says so
+    // (WEB-37: it stepped on as if it had been).
+    expect(kept).toBe(false);
+    expect(result.current.rateFailed).toBe(true);
     // The write never landed, so the point is still unrated -- and
     // there is nothing real to step back to, unlike a genuine undo.
     expect(result.current.detections[0]!.rating).toBeNull();
@@ -424,7 +430,7 @@ describe("useTraining", () => {
     const { result, rerender } = renderLabels();
     await loaded(result);
     act(() => result.current.select(result.current.detections[0]!));
-    let pending!: Promise<void>;
+    let pending!: Promise<boolean>;
     act(() => {
       pending = result.current.rate(5);
     });

@@ -258,13 +258,17 @@ export function useTraining(dep: string, dest: string) {
     [update],
   );
 
-  // A rating has to feel instant while walking the route, so every
-  // call site fires these without waiting; a failed write is the
-  // query client's to report, and changes nothing here.
+  // The point whose last rating could not be saved, said at its card
+  // (RatingCard) until a rating of it lands: the failure was swallowed and
+  // the page stepped on to the next point as if it had been kept (the web
+  // audit's WEB-37).
+  const [rateFailed, setRateFailed] = useState<string | null>(null);
+  // A rating has to feel instant while walking the route; it answers
+  // whether it was kept, so the page steps on only once it is.
   const rate = useCallback(
-    async (rating: Rating) => {
+    async (rating: Rating): Promise<boolean> => {
       const target = selectedPick();
-      if (!target) return;
+      if (!target) return false;
       const before = editOf(target.p);
       const key = pointKey(target.p);
       try {
@@ -277,8 +281,12 @@ export function useTraining(dep: string, dest: string) {
             undo: { key, kind: target.kind, before },
           };
         });
+        setRateFailed((was) => (was === key ? null : was));
+        return true;
       } catch {
         update((e) => ({ ...e, undo: null })); // nothing landed, so nothing to step back to
+        setRateFailed(key);
+        return false;
       }
     },
     [savePick, update],
@@ -407,6 +415,8 @@ export function useTraining(dep: string, dest: string) {
     selected,
     select,
     rate,
+    /** That the point picked's last rating could not be saved. */
+    rateFailed: selected != null && rateFailed === pointKey(selected),
     setCategory,
     addPick,
     removeSelected,

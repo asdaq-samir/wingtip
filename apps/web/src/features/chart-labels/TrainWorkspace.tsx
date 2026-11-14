@@ -42,7 +42,7 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   // lists exactly what it reads, and the actions are stable (useTraining
   // reads its own latest state through a ref) so listing them costs
   // nothing.
-  const { selected: point, course, select, rate, setCategory, removeSelected, addPick } = store;
+  const { selected: point, course, select, rate, rateFailed, setCategory, removeSelected, addPick } = store;
   // Where the map is brought to, a new object each time it is asked: the
   // map flies there (GlMapShell's focus), in to FOCUS_ZOOM at least.
   const [flyTo, setFlyTo] = useState<{ lat: number; lon: number } | null>(null);
@@ -128,7 +128,10 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
     <RatingCard
       point={point}
       number={point ? positionOf(point) + 1 || null : null}
-      onRate={(r) => void rate(r).then(() => step(1))}
+      // On to the next only once the rating is kept; a failure stays on
+      // the point, said at its card.
+      onRate={(r) => void rate(r).then((kept) => kept && step(1))}
+      failed={rateFailed}
       onStart={firstUnrated ? () => focus(firstUnrated) : undefined}
     />
   );
@@ -223,7 +226,7 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
       }
       if (/^[0-5]$/.test(e.key) && point && !isEndpoint(point)) {
         e.preventDefault();
-        void rate(Number(e.key) as Rating).then(() => step(1));
+        void rate(Number(e.key) as Rating).then((kept) => kept && step(1));
       }
     },
     [point, rate, step],
