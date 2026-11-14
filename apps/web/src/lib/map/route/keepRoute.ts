@@ -6,6 +6,7 @@ import { diagramPicture, diagramRunwaysPicture } from "../../diagram";
 import { M_PER_NM, rad } from "../../geo";
 import { kindCycle, tileUrl } from "../sources/tiles";
 import { tileOf, WORLD_WIDTH_M } from "../tileMath";
+import { routeAnswersAsked } from "./routeAnswers";
 
 /**
  * The tiles a route needs in the air, fetched now so the service
@@ -29,7 +30,9 @@ import { tileOf, WORLD_WIDTH_M } from "../tileMath";
  * (2026-10-23): the map's Stops list, and for each of its fields and the
  * route's own their services, their pictures' list and their aerial and
  * photo from the ground (routeStopsKept), so the list and a field's Info
- * and pictures open over a field with no signal.
+ * and pictures open over a field with no signal. And the route's own
+ * answers, its course and nav log among them (routeAnswers), which the
+ * page's first load asked before the worker held it.
  */
 export const CORRIDOR_NM = 10;
 const CONCURRENCY = 6;
@@ -160,6 +163,10 @@ async function keepRouteCharts(
   signal?: AbortSignal,
 ): Promise<KeepProgress> {
   if (!(await workerReady())) throw new NoServiceWorker();
+  // The route's own answers first -- its course, checkpoints, nav log and
+  // briefing, as the page asked them (routeAnswers) -- each read to its
+  // end so the worker keeps it whole: a kept route then plans offline.
+  await Promise.allSettled(routeAnswersAsked().map((url) => fetch(url, { signal }).then((res) => res.arrayBuffer())));
   const urls = [
     ...(await routeDiagrams(course)),
     ...(await routeStopsKept(course)),
