@@ -10,7 +10,7 @@ import { PINNED_BELOW } from "../../../components/PinnedHead";
 import { CardTitle } from "../../../components/CardTitle";
 import { CardPictures, type CardSlide } from "../../../components/CardPictures";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { CardTabBar, CardTabPanel } from "../../../components/CardTabs";
+import { CardTabPanel } from "../../../components/CardTabs";
 import { Tabs } from "../../../components/ui/tabs";
 import { useCardTab } from "../lib/cardTab";
 import { useTabScroll } from "../lib/tabScroll";
@@ -42,6 +42,7 @@ import { PlaceInfoTab } from "./place/PlaceInfoTab";
 import { PlaceRunwaysTab } from "./place/PlaceRunwaysTab";
 import { PlaceWeatherTab } from "./place/PlaceWeatherTab";
 import { PlaceSubtitle } from "./place/PlaceSubtitle";
+import { PlaceTabBar, PlaceWeatherLine, type PlaceTab } from "./place/PlaceTabBar";
 import { useShown } from "../../../lib/shown";
 import { Badge } from "../../../components/ui/badge";
 import { callEngine } from "../../../lib/engine/engine";
@@ -92,30 +93,15 @@ function knownOf(queryClient: QueryClient, ident: string): { name: string; categ
   return null;
 }
 
-type CardTab = "radio" | "weather" | "runways" | "diagrams";
-/** The card's pages, in the pilot's order, right under its actions, brought
- *  back at the owner's ask (2026-10-29, "bring back the tabs after the
- *  buttons") after a day as one scroll (A2): the radio first, what is
- *  wanted first on the way in, named Info at the owner's ask ("Rename
- *  Freq. to Info"). Their values are the old ones, which the specs and a
- *  kept tab know them by. */
-const CARD_TABS: { value: CardTab; label: string }[] = [
-  { value: "radio", label: "Info" },
-  { value: "weather", label: "Weather" },
-  { value: "runways", label: "Runways" },
-  { value: "diagrams", label: "Charts" },
-];
-
 /**
  * An airport's card in the panel, as a place's is in Maps, laid out at
- * the owner's pick of its redesign (A2, 2026-10-29): the field's pictures
- * across its top -- its runways, from the air, from the ground -- its ident
- * large over them with its name and town, its star beside its Share; four
- * things to do under them -- fly there, land there on the way, call it,
- * find it in Maps (the owner, 2026-11-11) -- and
- * right under them its four tabs, back at the owner's ask: Info (its
- * details, frequencies, lights and services), Weather (the weather there
- * hour by hour, G1, over the reports as sent), Runways and Charts. Opened
+ * the owner's pick of its redesign (A2, 2026-10-29): its ident with its
+ * name and town, Share and ✕; four things to do under them -- fly there,
+ * land there on the way, call it, keep it a Favorite (the owner,
+ * 2026-11-11) -- and directly under them its four tabs (the owner's T4,
+ * 2026-11-14), the field's report in a line under them: Info (its
+ * pictures first, then its details, frequencies, lights and services), Weather (the weather there hour by hour, G1, over the
+ * reports as sent), Runways and Charts. Opened
  * by a tap on the airport on the chart (AirportsGl), and held in the
  * address (`?place=KDLH`), so a link lands on it.
  *
@@ -184,7 +170,7 @@ export default function PlaceCard({
   const [flying, setFlying] = useState(false);
 
   // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the card opens on its approaches; each tab its own place in the scroll (useTabScroll).
-  const [tab, setPicked] = useCardTab<CardTab>(`place:${ident}`, "radio", startOn ? "diagrams" : null);
+  const [tab, setPicked] = useCardTab<PlaceTab>(`place:${ident}`, "radio", startOn ? "diagrams" : null);
   const [tabBar, setTabBar] = useTabScroll(tab);
   // Opened on its approaches (the route's Approaches): at half as every
   // card opens (the owner, 2026-11-11), Charts open on the approaches once
@@ -316,6 +302,8 @@ export default function PlaceCard({
   const landsAt = arrival ? (arrival.depart ? Date.parse(arrival.depart) : now) + arrival.minutes * 60_000 : null;
   const landsIn = landsAt != null && !Number.isNaN(landsAt) ? arrivalHour(hourly.hours, landsAt) : null;
   const ident4 = place?.ident ?? ident;
+  // The Charts tab's count: the d-TPP's charts it lists, the diagram once.
+  const charts = (place?.procedures ?? []).filter((c) => c.kind !== "APD").length + (place?.airport_diagram_url ? 1 : 0);
   // The pictures, a swipe across (PictureSlides): the field from the air
   // first, then its runways, then the field from the ground, at the
   // owner's ask (2026-10-29: "make the aerial view as the first image and
@@ -492,19 +480,6 @@ export default function PlaceCard({
             onAddStop={onAddStop}
             addStopOff={addStopOff}
           />
-          {/* The field from the air, its runways and from the ground, a row
-              of large tiles under the actions, as Apple Maps' place card
-              has its photos (the owner's screenshot, 2026-11-10), a click
-              each to its lightbox. */}
-          {place && (
-            <div className="pt-3">
-              <CardPictures
-                slides={slides}
-                label={`${ident4}: its runways${photos ? ", from the air" : ""}${photos?.photo ? ", from the ground" : ""}`}
-                testId="place-pictures"
-              />
-            </div>
-          )}
           {place && stop && <StopStrip ident={place.ident} stop={stop} />}
         </>
       ) : (
@@ -522,19 +497,33 @@ export default function PlaceCard({
         </div>
       )}
 
-      {/* The card's four tabs under its actions (the owner, 2026-10-29),
-          greyed until the answer comes: a tap would raise the sheet over
-          empty pages. Tapped, the panel all the way up, the open one
-          tapped again there back half way (CardTabBar). */}
+      {/* The card's four tabs directly under its actions (the owner,
+          2026-10-29, and T4, 2026-11-14: they sat under the pictures, at the
+          half card's foot), greyed until the answer comes: a tap would raise
+          the sheet over empty pages. */}
       {!(error && !place) && (
         <Tabs value={tab} onValueChange={(next) => setPicked(next as typeof tab)} className="gap-0">
           {/* Pinned directly under the card's head (PINNED_BELOW, plain CSS), frosted as it is, edge to edge, the
               control at the card's margins: on the control itself the -mx-4 kept its 100% width, so it began at
               the sheet's edge and stopped 32 short of the other, the content showing through (the owner's KORD). */}
           <div ref={setTabBar} className={cn("frost-head sticky z-10 -mx-4 mt-3 scroll-mt-28 px-4 py-1", PINNED_BELOW)}>
-            <CardTabBar tabs={CARD_TABS} value={tab} onPick={setPicked} activateOnFocus testIdPrefix="place-tab" disabled={!place} />
+            <PlaceTabBar onPick={setPicked} disabled={!place} category={metar?.flight_category ?? null} charts={charts} />
           </div>
+          <PlaceWeatherLine metar={metar} />
           <CardTabPanel value="radio" className="space-y-0">
+            {/* The field from the air, its runways and from the ground, a
+                row of large tiles first on Info, as Apple Maps' place card
+                has its photos (the owner's screenshot, 2026-11-10), a click
+                each to its lightbox. */}
+            {place && (
+              <div className="pb-5">
+                <CardPictures
+                  slides={slides}
+                  label={`${ident4}: its runways${photos ? ", from the air" : ""}${photos?.photo ? ", from the ground" : ""}`}
+                  testId="place-pictures"
+                />
+              </div>
+            )}
             {place && <PlaceInfoTab place={place} where={where} distance={distance} />}
           </CardTabPanel>
           <CardTabPanel value="weather" className="space-y-0">

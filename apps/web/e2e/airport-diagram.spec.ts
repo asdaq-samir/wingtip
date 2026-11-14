@@ -140,11 +140,11 @@ test("where the diagram's picture cannot be had, the card links the FAA's PDF", 
   await withDiagram(page, "missing");
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
-  // On the Charts tab, the card's last.
-  await toCharts(page);
-  // And the card's own sketch of the runways where the crop is not had.
+  // Info's pictures, first on it (T4): the card's own sketch of the runways where the crop is not had.
   await expect(card(page).getByTestId("runway-sketch")).toBeVisible();
   await expect(card(page).getByTestId("place-diagram-runways")).toHaveCount(0);
+  // On the Charts tab, the card's last.
+  await toCharts(page);
   // A row that draws the FAA's PDF in the app instead, not a link out.
   const row = card(page).getByTestId("airport-diagram");
   await expect(row).not.toHaveAttribute("href", /.*/);

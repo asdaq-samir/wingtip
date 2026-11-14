@@ -71,7 +71,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-actions").locator(":scope > *")).toHaveText([/Fly Here/, /Add Stop/, /Call/, /Favorite/]);
   await expect(card(page).getByTestId("place-add-stop")).toBeDisabled();
   await expect(card(page).getByTestId("place-add-stop")).toHaveAccessibleName(/already on the route/);
-  await expect(card(page).getByRole("tab")).toHaveText(["Info", "Weather", "Runways", "Charts"]);
+  await expect(card(page).getByRole("tab")).toHaveText(["Info", "Weather", "Runways", /^Charts\d*$/]);
   await expect(card(page).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
   const [actions, bar] = await Promise.all(
     [card(page).getByTestId("place-actions"), card(page).getByRole("tablist")].map(async (l) => (await l.boundingBox())!),
@@ -383,12 +383,12 @@ test("an airport's card has four tabs right under its actions, in sight at half,
   await expect(card(page).getByTestId("fly-here")).toBeEnabled({ timeout: slow(15000) });
   await expect(card(page).getByTestId("place-actions")).toBeInViewport({ ratio: 1 });
   const tabs = card(page).getByRole("tab");
-  await expect(tabs).toHaveText(["Info", "Weather", "Runways", "Charts"]);
+  await expect(tabs).toHaveText(["Info", "Weather", "Runways", /^Charts\d*$/]);
   await expect(card(page).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
   // No weather summary over the bar: the weather is its tab's.
   await expect(card(page).getByTestId("place-weather-summary")).toHaveCount(0);
 
-  // All the way up, the bar in sight under the pictures; Runways: the pattern and the runways.
+  // All the way up, the bar in sight under the actions; Runways: the pattern and the runways.
   await grabberTo(page, "full");
   await expect(card(page).getByRole("tablist")).toBeInViewport({ ratio: 1 });
   await card(page).getByTestId("place-tab-runways").click();
@@ -419,7 +419,7 @@ test("an airport's Info lists its first frequencies, and its title the way to ev
 }) => {
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
-  await grabberTo(page, "full"); // the tabs under the pictures, out of a phone's half sheet
+  await grabberTo(page, "full"); // Info's frequencies, under its pictures, out of a phone's half sheet
   await card(page).getByTestId("place-tab-radio").click();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   const rows = card(page).getByTestId("place-frequency");

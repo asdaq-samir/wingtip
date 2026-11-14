@@ -198,7 +198,13 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    grabber from the start, the content scrolling under it blurred through
    its frost ("just keep the title on top and content moves under with a
    frosty style"). A card's tabs or segmented control pin under the head,
-   frosted the same way. On Android, at half height a
+   frosted the same way. The airport card's tabs sit directly under its
+   four actions, above its pictures, so they are in sight at half (the
+   owner's T4, 2026-11-14, canvas
+   https://claude.ai/artifact/V1d9RDbmY1aczc4LfXed7a, "Airport card
+   tabs"): the picked tab filled in the tint, Weather with the field's
+   category dot and Charts with its count, the field's report in a line
+   under them, the pictures first on Info. On Android, at half height a
    card shows the small bar, its title and actions on one row, and at
    full the large flexible bar, folding as it scrolls (owner decision
    2026-11-10, on the Android sheet audit's H-1), so the half-height card
