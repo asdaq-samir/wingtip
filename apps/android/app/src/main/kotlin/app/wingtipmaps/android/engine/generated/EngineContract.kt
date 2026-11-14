@@ -11938,6 +11938,69 @@ object EngineContract {
         val hours: String? = null,
     )
 
+    @Serializable
+    data class SurfaceHoursAnswer(
+        val known: Boolean,
+        /**
+         * The class at other times, as the line names it.
+         */
+        val other: String? = null,
+        val days: List<EngineContract.SurfaceHoursAnswerDaysItem>,
+        @SerialName("in_force")
+        val inForce: Boolean? = null,
+        val change: EngineContract.SurfaceHoursAnswerChange? = null,
+    )
+
+    @Serializable
+    data class SurfaceHoursAnswerChange(
+        val at: Int,
+        @SerialName("next_day")
+        val nextDay: Boolean,
+    )
+
+    @Serializable
+    data class SurfaceHoursAnswerDaysItem(
+        val weekday: Int,
+        val spans: List<EngineContract.SurfaceHoursAnswerDaysItemSpansItem>? = null,
+    )
+
+    @Serializable
+    data class SurfaceHoursAnswerDaysItemSpansItem(
+        val from: Int,
+        val to: Int,
+    )
+
+    @Serializable
+    data class SurfaceHoursInput(
+        /**
+         * NASR CLS_ARSP AIRSPACE_HRS as sent.
+         */
+        val hours: String? = null,
+        val year: Int,
+        /**
+         * The field's local month, 1-12.
+         */
+        val month: Int,
+        val day: Int,
+        /**
+         * The field's local weekday, Monday 0 to Sunday 6.
+         */
+        val weekday: Int,
+        /**
+         * Minutes since the field's local midnight now.
+         */
+        val minute: Int,
+        /**
+         * The field's offset from UTC now, minutes (UTC-6 is -360).
+         */
+        @SerialName("utc_offset_min")
+        val utcOffsetMin: Int,
+        /**
+         * Whether the field keeps daylight saving time now.
+         */
+        val dst: Boolean? = null,
+    )
+
     /**
      * One period of a TAF as the weather store keeps it (awc_tafs_read): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
      */

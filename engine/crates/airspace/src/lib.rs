@@ -17,7 +17,8 @@
 //! - volume_span: how high a 3D map stands a volume, from its limits;
 //! - drills: the oral's flash cards (91.125, 91.155) and 91.155 by name;
 //! - class_b_band: which Class B band of a profile holds an altitude (91.131);
-//! - surface_class: the class of the airspace at a field's surface (14 CFR 71).
+//! - surface_class: the class of the airspace at a field's surface (14 CFR 71);
+//! - surface_hours: when a part-time surface area is in effect (AIM 3-2-5a1).
 
 pub mod ahead;
 pub mod airspace;
@@ -38,6 +39,7 @@ pub mod sua_limit;
 pub mod sua_place;
 pub mod sua_tab;
 pub mod surface_class;
+pub mod surface_hours;
 pub mod view;
 pub mod view_airports;
 pub mod view_marks;

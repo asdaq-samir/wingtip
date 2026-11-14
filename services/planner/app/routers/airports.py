@@ -27,6 +27,7 @@ from wingtip import (
     faa_data,
     field_facts,
     field_forecast,
+    field_details,
     field_marks,
     field_use,
     geocode,
@@ -447,8 +448,7 @@ def airport_place(ident: str) -> AirportPlace:
         "modelled_weather": modelled,
         "taf": taf,
         "weather_unavailable": unavailable,
-        # Its phone and street address, for the card's Call and Address.
-        **faa_data.airport_contact(place["ident"], altitude.DEFAULT_FAA_CACHE_DIR),
+        **field_details.of(place, altitude.DEFAULT_FAA_CACHE_DIR),  # its phones, address, airspace hours and zone
         "airport_diagram_url": publications.airport_diagram_url(place["ident"]),
         "airport_diagram_cycle": publications.airport_diagram_cycle(place["ident"]),
         # Whether its diagram's crop to the runways is worth asking for: not

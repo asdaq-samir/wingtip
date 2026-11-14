@@ -464,39 +464,41 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    `fuel_estimate` over its great-circle distance at the airplane's cruise
    TAS, no wind, so marked "≈" and said "about 38 minutes at 110 knots, no
    wind" (`place/flyHereTime`); "Fly Here" otherwise.
-3. Facts, a sideways strip at the head of the Info tab alone (the owner,
+3. Facts, a strip at the head of the Info tab alone (the owner,
    2026-11-14: "Info tab should start from the info strip and images and
    the rest. Switching tabs should not show those"; `place/PlaceFacts` on
-   the shared `CardFacts`), each a small grey name over its value, as
-   Maps' Hours, Yelp, Accepts and Distance, and a grey note under it where
-   it has one. Always the same five, in this order, "—" where one is not
-   known, so the strip never changes shape (the owner, 2026-11-14: "the
-   info strip can have these fixed things: weather, airspace, elevation,
-   pattern altitude and distance"); the words are `place/factWords`:
+   the shared `CardFacts` with `fit`), each a small grey name over its
+   value, as Maps' Hours, Yelp, Accepts and Distance, at most one note
+   under it at the caption's size. Always the same five, in this order,
+   "—" where one is not known, short so all five fit across an iPhone
+   with no sideways scroll (the owner: "the info strip can have these
+   fixed things: weather, airspace, elevation, pattern altitude and
+   distance", then "keep the info strip compact enough so pilot doesn't
+   have to scroll"); the words are `place/factWords`:
    - Weather: the flight category chip, "≈" where it is the model's or a
      near station's.
-   - Airspace: "Class D", the class at the field's surface, the engine's
-     `surface_airspace` (engine/crates/airspace/src/surface_class.rs; 14
-     CFR 71.41, 71.51, 71.61, 71.71(b), AIM 3-3-1), which the planner asks
-     of the NASR Class Airspace volumes holding the field and sends as the
-     airport's `surface_airspace` (`airspace_class` too). Only a volume from
-     the surface counts: a Class B or C shelf over the field is not its
-     class. Part-time where NASR's WKHR_CODE is NOTAM or RMK, the note
-     saying its other times as the Chart Supplement does (AIM 3-2-5a1):
-     "Part-time, E other times", "Part-time, G other times", "Part-time,
-     E or G other times".
-   - Elevation: NASR's field elevation, feet MSL.
-   - Pattern: the traffic pattern altitude, feet MSL, the engine's
-     `pattern_altitude` the planner sends as `pattern`: NASR APT_BASE's TPA
-     (feet above the field) over the field's elevation, the note its
-     height ("807 ft AGL"); with none published, AIM 4-3-3a's 1,000 ft over
-     the field for a propeller-driven airplane, the note "AIM, none
-     published". APT_BASE gives one TPA; where NASR's remarks on it
-     (APT_RMK, TPA: a large airplane's, a helicopter's, or the TPA itself)
-     say more, the planner sends them in words (`pattern.remarks`), the
-     note adds "others differ" ("AIM; FAA remarks differ" with none in
-     APT_BASE), and the Runways tab's Pattern altitude row reads them.
-   - Distance: from the pilot, else "From C81".
+   - Airspace: "D", the class at the field's surface now. The class is
+     the engine's `surface_airspace` (engine/crates/airspace/src/
+     surface_class.rs; 14 CFR 71.41, 71.51, 71.61, 71.71(b), AIM 3-3-1),
+     which the planner asks of the NASR Class Airspace volumes holding the
+     field (`surface_airspace`, `airspace_class` too); a Class B or C shelf
+     over the field is not its class. Part-time (NASR's WKHR_CODE NOTAM or
+     RMK), the note is the day's next change at the field's own clock, "E
+     after 22:00" or "D from 07:00", from the engine's `surface_hours`
+     (surface_hours.rs) reading NASR CLS_ARSP's AIRSPACE_HRS, the Chart
+     Supplement's AIRSPACE line, which names the class at other times (AIM
+     3-2-5a1): never "E or G", and "Part-time" alone where the hours cannot
+     be read (holidays, BY NOTAM, sunrise to sunset). Times with no Z are
+     local; Z++ is the legend's ‡. The field's clock is `lib/fieldClock`
+     in the planner's `time_zone`. Its value is in the tint and a tap
+     scrolls to the Airspace hours and opens the week, as Maps' Hours fact.
+   - Elev.: NASR's field elevation, feet MSL.
+   - Pattern: the traffic pattern altitude, feet MSL, no note (the owner:
+     "don't have to mention AIM either"): the engine's `pattern_altitude`,
+     NASR APT_BASE's TPA (feet above the field) over the elevation, else
+     AIM 4-3-3a's 1,000 ft. The Runways tab's Pattern altitude row says
+     which, and NASR's remarks on it (APT_RMK, TPA; `pattern.remarks`).
+   - Distance: "12 nm", from the pilot, else "From C81"; the figure alone.
    The wind, the longest runway and the fuel are the Weather tab's, the
    Runways tab's and the Info tab's services, not the strip's.
 4. The pictures (`place/PlacePictures`): large rounded tiles sliding
@@ -504,8 +506,23 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    on the Info tab;
    a tap opens one full screen to pinch in on (ChartViewer's MapLibre
    map, its pages kept across the card's redraws so a pinch holds).
-5. The tab's page (Info: the facts and the pictures, then its Details, the address alone since the facts have the rest (the owner, 2026-11-14: "Since the details are in the info strip, we can remove them except address"), the frequencies a pilot needs first,
-   each copying on click, lights and services; Weather; Runways; Charts),
+5. The tab's page (Info, `place/PlaceInfoPage`: the facts and the
+   pictures; the frequencies a pilot needs first, each copying on click;
+   then (the owner, 2026-11-14: "Details and airspace section can move
+   after frequency") Airspace hours where the surface area is part-time
+   (`place/AirspaceHours`, as Maps' Hours: the class in force now, in the
+   tint while the part-time class is, today's times at its right,
+   "06:00–22:00, then E"; Normal hours, the stock Collapsible closed by
+   default, Monday first, days alike grouped, "Mon – Fri 06:00–22:00",
+   today in bold; the Chart Supplement's line where it cannot be read);
+   Details in Maps' row form, a grey label at the left and the value at
+   the right in the tint (`place/PlaceDetails`: each phone NASR's APT_CON
+   holds by whose it is, Manager or Owner, dialled; the Website, the
+   airport's own listing on the field in Overture's places, its host
+   alone, in a new tab; the Address, in Maps; a row with nothing to say
+   left out; "Since the details are in the info strip, we can remove them
+   except address", then "we can add phone numbers, website and address
+   in details"); then the NOTAMs, lights and services; Weather; Runways; Charts),
    then the tabs, Info, Weather, Runways, Charts (`place/PlaceTabBar` on
    the shared `CardTabBar`, the pages in `CardTabPages`; each tab an icon
    from lucide-react, required on `CardTab` (Info, CloudSun, PlaneLanding,

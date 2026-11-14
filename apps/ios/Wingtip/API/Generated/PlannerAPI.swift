@@ -266,6 +266,7 @@ typealias APIPastFlights = PlannerAPI.Components.Schemas.PastFlights
 typealias APIPastRegistration = PlannerAPI.Components.Schemas.PastRegistration
 typealias APIPatternEntry = PlannerAPI.Components.Schemas.PatternEntry
 typealias APIPersonalMinimums = PlannerAPI.Components.Schemas.PersonalMinimums
+typealias APIPhone = PlannerAPI.Components.Schemas.Phone
 typealias APIPick = PlannerAPI.Components.Schemas.Pick
 typealias APIPickDeleted = PlannerAPI.Components.Schemas.PickDeleted
 typealias APIPickRequest = PlannerAPI.Components.Schemas.PickRequest

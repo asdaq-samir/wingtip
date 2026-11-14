@@ -1,14 +1,10 @@
 import { cn } from "cn";
 import { faaWords } from "../../../../lib/advisories";
 import { TEXT } from "../../../../lib/text";
+import { dial } from "./contactLinks";
 import { readTfr, type FieldNotam } from "./fieldNotams";
 
 type Contact = NonNullable<NonNullable<FieldNotam["tfr"]>["facility"]>;
-
-/** "817-858-7503" as a number the phone dials: tel:+18178587503. */
-function dial(phone: string): string {
-  return `tel:+1${phone.replace(/\D/g, "")}`;
-}
 
 /** One whom-to-call line: its name as the engine writes it ("Fort Worth
  *  ARTCC", tfr_detail_read), its telephone a link the phone dials, its

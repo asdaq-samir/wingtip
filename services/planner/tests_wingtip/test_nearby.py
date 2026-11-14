@@ -131,3 +131,26 @@ def test_food_at_the_field_is_a_place_on_it_or_a_walk_from_it(tmp_path, monkeypa
     assert nearby.food_at("KDLH", tmp_path) is True
     assert nearby.food_at("KOSH", tmp_path) is False
     assert nearby.food_at("KMSN", tmp_path) is None
+
+
+def test_the_airports_own_website_is_its_listing_on_the_field(monkeypatch):
+    # The airport's own listing, filed as an airport inside its outline: its
+    # website the card's; one across town, or a restaurant's, is not.
+    from shapely.geometry import box
+
+    def row(primary, lat, lon, site):
+        bbox = {"xmin": lon, "xmax": lon, "ymin": lat, "ymax": lat}
+        listing = {"names": {"primary": primary.title()}, "taxonomy": {"primary": primary}, "basic_category": primary}
+        return {**listing, "confidence": 0.9, "bbox": bbox, "websites": [site]}
+
+    rows = [row("airport", 42.115, -87.90, "https://www.chiexec.com"), row("airport", 42.2, -87.8, "https://elsewhere.example")]
+
+    class Table:
+        def to_table(self, columns, filter):
+            return type("T", (), {"to_pylist": lambda self: rows})()
+
+    monkeypatch.setattr(nearby, "_dataset", lambda release: Table())
+    monkeypatch.setattr(nearby, "_outline", lambda lat, lon, release: box(-87.91, 42.10, -87.89, 42.13))
+    assert nearby._read(42.1142, -87.9015, "r")["website"] == "https://www.chiexec.com"
+    rows.pop(0)
+    assert nearby._read(42.1142, -87.9015, "r")["website"] is None

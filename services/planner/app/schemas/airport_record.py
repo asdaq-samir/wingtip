@@ -29,3 +29,22 @@ class AirportRecord(BaseModel):
     #: Go / No-Go's fields row does: "closed indefinitely (NASR)", not a
     #: bare "closed" (decision 0043). None where NASR has no record of it.
     status: str | None = None
+
+
+class Phone(BaseModel):
+    #: Whose number it is, as NASR's APT_CON titles it: "Manager", "Owner".
+    who: str
+    number: str
+
+
+class AirportDetails(BaseModel):
+    """What the card's Details and Airspace hours list beyond NASR's record
+    (wingtip.field_details): each phone NASR holds for the field, by whose
+    it is (APT_CON); its Class Airspace hours as the Chart Supplement's
+    AIRSPACE line gives them (NASR CLS_ARSP AIRSPACE_HRS), which the
+    engine's surface_hours reads; and the IANA time zone the field keeps
+    (wingtip.time_zone), for its local clock."""
+
+    phones: list[Phone] = []
+    airspace_hours: str | None = None
+    time_zone: str | None = None

@@ -3502,6 +3502,13 @@ export interface EngineContract {
     answer: SurfaceAirspaceAnswer;
   };
   /**
+   * When a part-time surface area is in effect, day by day from the field's today for a week, read from NASR's CLS_ARSP AIRSPACE_HRS, the Chart Supplement's AIRSPACE line ("CLASS D SVC 0600-2200 MON-FRI, 0700-2200 SAT-SUN; OTHER TIMES CLASS E"): the class at other times the one the line names (AIM 3-2-5a1; 14 CFR 71.61, 71.71(b)), never a guess. A time with no Z is the field's local time; Z is UTC at the offset now; Z++ is the Chart Supplement's double dagger, one hour earlier in daylight saving time, so the figure at the field's standard offset all year. Reads CONTINUOUS, time ranges, days (MON-FRI, SAT & SUN, WKEND) and seasons (16 MAR-31 OCT, OCT-MAR); anything else (holidays, BY NOTAM, SR-SS) leaves the hours not known (`known` false). Spans are local minutes from midnight, [from, to), a span past midnight carried into the next day. `in_force` and `change` are now's: in effect until `change.at`, or not until `change.at`, `next_day` where that is tomorrow; null where today's hours are not known. The engine has no clock: the host gives the field's local date, minute, UTC offset and whether in daylight saving time.
+   */
+  surface_hours: {
+    input: SurfaceHoursInput;
+    answer: SurfaceHoursAnswer;
+  };
+  /**
    * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
    */
   taf_window: {
@@ -12442,6 +12449,55 @@ export interface SurfaceAirspaceAnswer {
    * That class is part-time too: G at the times neither is in effect.
    */
   otherwise_part_time: boolean;
+}
+export interface SurfaceHoursInput {
+  /**
+   * NASR CLS_ARSP AIRSPACE_HRS as sent.
+   */
+  hours?: string | null;
+  year: number;
+  /**
+   * The field's local month, 1-12.
+   */
+  month: number;
+  day: number;
+  /**
+   * The field's local weekday, Monday 0 to Sunday 6.
+   */
+  weekday: number;
+  /**
+   * Minutes since the field's local midnight now.
+   */
+  minute: number;
+  /**
+   * The field's offset from UTC now, minutes (UTC-6 is -360).
+   */
+  utc_offset_min: number;
+  /**
+   * Whether the field keeps daylight saving time now.
+   */
+  dst?: boolean | null;
+}
+export interface SurfaceHoursAnswer {
+  known: boolean;
+  /**
+   * The class at other times, as the line names it.
+   */
+  other: ("B" | "C" | "D" | "E" | "G") | null;
+  days: {
+    weekday: number;
+    spans:
+      | {
+          from: number;
+          to: number;
+        }[]
+      | null;
+  }[];
+  in_force: boolean | null;
+  change: {
+    at: number;
+    next_day: boolean;
+  } | null;
 }
 export interface TafWindowInput {
   fcsts: TafPeriod[];

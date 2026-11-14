@@ -235,11 +235,16 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    Runways and Charts straight under the actions. The strip is always the
    same five, in this order, a dash where one is not known (the owner the
    same day: "the info strip can have these fixed things: weather,
-   airspace, elevation, pattern altitude and distance"): Weather (the
-   category), Airspace (the class at the field's surface, "Part-time, E
-   other times" under it where it is part-time), Elevation, Pattern (the
-   TPA in feet MSL, its height over the field under it, or the AIM's
-   1,000 ft over the field marked "AIM"), Distance. A tab picked opens
+   airspace, elevation, pattern altitude and distance"), short so all
+   five fit across an iPhone with no sideways scroll, at most one note:
+   Weather (the category), Airspace ("D", the class at the surface now,
+   its note the day's next change at the field's clock, "E after 22:00",
+   or "Part-time" where the hours cannot be known; a tap opens its hours),
+   Elev., Pattern (the TPA in feet MSL, no note), Distance ("12 nm").
+   After the frequencies come Airspace hours (as Maps' Hours: the class
+   now and today's times, then Normal hours, closed by default) and
+   Details in Maps' row form, a grey label at the left and the value at
+   the right in the tint (phones, website, address). A tab picked opens
    at its own top, just under the actions, the card's height unchanged.
    Its tabs (Info, Weather,
    Runways, Charts) float in a glass bar at the card's foot, as Maps'

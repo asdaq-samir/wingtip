@@ -95,9 +95,8 @@ _NASR_FILES = {
     # restrictions are ("VOR UNUSBL 072-090 BYD 34 NM", wingtip.fixes).
     "NAV_RMK.csv": "NAV",
     "APT_BASE.csv": "APT",
-    # In the same zip as APT_BASE: every airport's remarks, the Chart
-    # Supplement's own text (wingtip.remarks).
-    "APT_RMK.csv": "APT",
+    "APT_RMK.csv": "APT",  # every airport's remarks, the Chart Supplement's text (wingtip.remarks)
+    "CLS_ARSP.csv": "CLS_ARSP",  # each field's Class Airspace hours, its AIRSPACE line (wingtip.field_details)
     # And each runway end's: which way its traffic pattern is flown
     # (wingtip.pattern).
     "APT_RWY_END.csv": "APT",
