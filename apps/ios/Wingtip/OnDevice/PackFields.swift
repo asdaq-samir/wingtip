@@ -26,11 +26,13 @@ enum PackFields {
     }
 
     /// The pins as the engine's candidates: no elevation, runway or METAR,
-    /// which the packs do not hold.
+    /// which the packs do not hold; `military` as the packs give it,
+    /// "military" or "joint", for the engine to tell them apart. The packs
+    /// hold open fields only (NASR ARPT_STATUS O), so no status is sent.
     static func candidates(_ found: [AirportPin]) -> [EngineContract.BestFieldsInputFieldsItem] {
         found.map {
             EngineContract.BestFieldsInputFieldsItem(ident: $0.ident, name: $0.name, lat: $0.lat, lon: $0.lon, elevationFt: nil, runways: [],
-                                                     metar: nil, towered: $0.towered, private: $0.isPrivate, military: $0.military != nil)
+                                                     metar: nil, towered: $0.towered, private: $0.isPrivate, military: $0.military)
         }
     }
 
@@ -115,7 +117,8 @@ enum PackSearch {
 
     /// The fields matching what was typed, best first: the ident itself
     /// (KOSH, or OSH for KOSH), an ident starting with it, a name starting
-    /// with it, then a name holding it.
+    /// with it, then a name holding it; each with its use, the engine's,
+    /// as the planner's search marks it.
     static func search(_ q: String, in pins: [AirportPin], limit: Int = 12) -> [AirportSuggestion] {
         let typed = q.trimmingCharacters(in: .whitespaces).uppercased()
         guard typed.count >= 2 else { return [] }
@@ -130,6 +133,7 @@ enum PackSearch {
         return pins.compactMap { pin in rank(pin).map { ($0, pin) } }
             .sorted { ($0.0, $0.1.ident) < ($1.0, $1.1.ident) }
             .prefix(limit)
-            .map { AirportSuggestion(ident: $0.1.ident, kind: $0.1.kind, name: $0.1.name) }
+            .map { AirportSuggestion(ident: $0.1.ident, kind: $0.1.kind, name: $0.1.name,
+                                     use: FieldUse.code(isPrivate: $0.1.isPrivate, military: $0.1.military)) }
     }
 }

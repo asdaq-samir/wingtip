@@ -34,7 +34,17 @@ data class MapLayers(
     val tac: Boolean = false,
     val privateFields: Boolean = false,
     val military: Boolean = false,
-)
+) {
+    /**
+     * What the chart draws while the emergency assistant is open: every
+     * private and military field too, whatever their switches say, since in
+     * an emergency the pilot may land at any of them (14 CFR 91.3(b)) and
+     * the assistant's list ranks them (the owner, 2026-11-13). The switches
+     * themselves are not touched, so they are as the pilot left them once
+     * it closes.
+     */
+    fun duringEmergency(open: Boolean): MapLayers = if (open) copy(privateFields = true, military = true) else this
+}
 
 /**
  * The map's switches kept in the app's settings file, each under its own

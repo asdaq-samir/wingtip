@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_flight::calls::filed",
-  "description": "Whether a field's identifier has a figure in it (C81, 06A) and so no ICAO four-letter location indicator: filed as ZZZZ with its name in item 18 (DEP/, DEST/, ALTN/; AIM Appendix 4) where a service takes only indicators.",
+  "description": "Whether a field is filed as ZZZZ with its name in item 18 (DEP/, DEST/, ALTN/; AIM Appendix 4: ZZZZ where the field has no ICAO location indicator), where a service takes only indicators. Decided by NASR's ICAO_ID (APT_BASE.csv) where the host has the field's row: null or empty is none listed (IL11, BGTL), a four-letter one is filed as it is (Z13 is PFZK). Only where icao_id is left out is the identifier read: one with a figure in it (C81, 06A) is the FAA's own.",
   "type": "object",
   "properties": {
     "input": {
@@ -9,6 +9,13 @@
       "properties": {
         "ident": {
           "type": "string"
+        },
+        "icao_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_BASE's ICAO_ID for the field: null or \"\" where NASR lists none. Leave it out only where the host has no NASR row for the field."
         }
       },
       "required": [

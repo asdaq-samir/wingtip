@@ -39,8 +39,10 @@ enum AlertActions {
         .place(lat: alert.lat, lon: alert.lon)
     }
 
-    /// The kinds whose id's second part is the field.
-    static let fieldKinds: Set<String> = ["weather", "itws", "fuel", "night"]
+    /// The kinds whose id's second part is the field: "closed:00MO", the
+    /// destination NASR lists as closed (decision 0043), opens its card,
+    /// labelled so, and its fix is Direct To the engine's alternative.
+    static let fieldKinds: Set<String> = ["weather", "itws", "fuel", "closed", "night"]
 
     static func target(_ message: Copilot.Message) -> AlertTarget? {
         let parts = message.id.split(separator: ":", maxSplits: 2).map(String.init)

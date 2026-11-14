@@ -28,6 +28,7 @@ from wingtip import (
     faa_data,
     field_facts,
     field_forecast,
+    field_use,
     fuelstops,
     geo,
     geocode,
@@ -405,12 +406,9 @@ def _with_turf(runways: list[dict], ident: str) -> list[dict]:
 def airport_place(ident: str) -> AirportPlace:
     """One US airport's card, by any ident it goes by (C81, KC81, KDLH).
 
-    `airspace_class` is the class of the airspace at the surface at the
-    field: B, C or D, E in a Class E surface area, G where the ground is
-    uncontrolled (wingtip.airspace.surface_class_at).
-    `towered` is whether it lists a tower frequency. A field with no
-    reporting station has no `metar`; `weather_unavailable` is set only
-    when the weather service could not be asked."""
+    `airspace_class` is the surface's class (wingtip.airspace.surface_class_at).
+    `towered` is whether it lists a tower frequency. No reporting station,
+    no `metar`; `weather_unavailable` only where the service was not asked."""
     place = airports.find_place(ident)
     if place is None:
         raise HTTPException(404, f"No US airport goes by {ident.strip().upper()!r}.")
@@ -454,6 +452,7 @@ def airport_place(ident: str) -> AirportPlace:
         "private": private,
         "towered": any(f["type"] == "TWR" for f in frequencies),
         **_notes(place["ident"]),
+        **{k: v for k, v in (field_use.record_of(source) or {}).items() if k not in ("name", "status")},  # NASR's record (AirportRecord)
         "pattern": pattern.pattern_at(place["ident"], place["elevation_ft"]),
         # Calm now, the field's last wind for the runway in use.
         "runways": _with_turf(

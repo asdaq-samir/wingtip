@@ -86,8 +86,9 @@ export function TrainingRow() {
 }
 
 /** Training's page: the coach -- the pilot's logbook and flights read, so
- *  kept to an account as the Logbook is -- and the drills: light gun, VFR
- *  minimums, holding entries, lost comms. */
+ *  kept to an account as the Logbook is, greyed with no words signed out
+ *  as the other account rows are ("Sign In" said once, on You's head) --
+ *  and the drills: light gun, VFR minimums, holding entries, lost comms. */
 export function TrainingPage({ signedIn }: { signedIn: boolean }) {
   return (
     <ConsolePages
@@ -109,7 +110,6 @@ export function TrainingPage({ signedIn }: { signedIn: boolean }) {
           page="coach"
           title="Coach"
           disabled={!signedIn}
-          value={signedIn ? undefined : "Sign In to Use"}
           testId="setup-coach-row"
           media={
             <RowBadge colour={SETTING_BADGE.coach}>

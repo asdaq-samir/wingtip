@@ -372,8 +372,9 @@ function setState(map: MlMap, key: string, value: unknown) {
 }
 
 /** The settings on the tile layers: Airspace, VORs and Fixes on or off,
- *  and the armed services' own fields and private ones shown or not. */
-export function applyOverlayFilters(map: MlMap) {
+ *  and the armed services' own fields and private ones shown or not, or
+ *  shown whatever the switches say in an emergency (overlayFilters). */
+export function applyOverlayFilters(map: MlMap, emergency = false) {
   if (!map.style) return;
   const prefs = usePreferences.getState();
   const visible = (ids: string[], on: boolean) => {
@@ -381,8 +382,8 @@ export function applyOverlayFilters(map: MlMap) {
   };
   visible(AIRSPACE_TILE_LAYERS, prefs.airspace);
   visible(NAVAID_TILE_LAYERS, prefs.navaids);
-  setState(map, SHOW_MILITARY, prefs.military);
-  setState(map, SHOW_PRIVATE, prefs.privateFields);
+  setState(map, SHOW_MILITARY, prefs.military || emergency);
+  setState(map, SHOW_PRIVATE, prefs.privateFields || emergency);
 }
 
 /** The idents the route draws itself (its fields' chips, its waypoints),

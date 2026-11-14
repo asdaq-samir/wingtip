@@ -17,6 +17,8 @@
 //! - `runways`: the runway check at each field (lib/runwayCheck,
 //!   lib/takeoffLanding, lib/pattern's runwayFlown);
 //! - `weight_balance`: the weight and balance (lib/weightBalance);
+//! - `permission`: a private or military-only departure, destination or
+//!   stop, a row of its own after the seven;
 //! - `pass_times`: when the flight passes a point, and a TFR's or a
 //!   special-use area's times then (lib/passTimes);
 //! - `window`: "When should I go?" -- the findings for each departure hour
@@ -33,6 +35,7 @@ pub mod frat;
 pub mod icing;
 pub mod minimums;
 pub mod pass_times;
+pub mod permission;
 pub mod runways;
 pub mod verdict;
 pub mod weight_balance;

@@ -9,14 +9,20 @@ import { Button } from "../../../../components/ui/button";
 import { NumberField } from "../../../../components/ui/number-field";
 import type { Leg } from "../../../../lib/api/types";
 import { useClock } from "../../../../lib/useMinuteClock";
-import { ALLOWANCES, divert, reasonable, type Diversion, type EstimateKey } from "../../../../lib/diversion";
+import { callEngine } from "../../../../lib/engine/engine";
+import { ALLOWANCES, divert, diversionFields, reasonable, type Diversion, type EstimateKey } from "../../../../lib/diversion";
 import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../format";
 import { bearing, grouped, stopwatch, windCorrection } from "../../../../lib/format";
 import { FINDING_TONE } from "../../../../lib/findings";
 import { written } from "./workings";
-import { nearestQuery } from "../../../../lib/queryClient";
+import { api } from "../../../../lib/api/client";
 import { AskFigure } from "../../../../components/airplane/AskFigure";
+
+/** Who may land at a field, the engine's card line, for a row. */
+function whoMayLand(f: { private: boolean; military: "military" | "joint" | null }): string | null {
+  return callEngine("airport_use_words", { private: f.private, military: f.military }).words;
+}
 
 /** The diversion worked out, step by step, once checked. */
 function Answer({ ident, d }: { ident: string; d: Diversion }) {
@@ -41,8 +47,8 @@ function Answer({ ident, d }: { ident: string; d: Diversion }) {
 /**
  * The diversion drill (ACS PA.VI.C): over a point on the route, the
  * examiner says divert. The clock starts, the student picks a field
- * (the nearest ten, with their runways and weather, and not how far or
- * which way: that is off the chart), estimates the heading, ground speed,
+ * (six round the point, with their runways and weather, and who may use
+ * them, and not how far or which way: that is off the chart), estimates the heading, ground speed,
  * time and fuel, and checks them against the exact solution in the
  * leg's own air (lib/diversion). The drill keeps its clock and answers
  * while its sheet is closed, for a look at the chart.
@@ -55,16 +61,22 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
   const [field, setField] = useState<string | null>(null);
   // The estimates as typed (React Aria's NumberField, in the pilot's locale).
   const [typed, setTyped] = useState<Partial<Record<EstimateKey, number | null>>>({});
-  // The fields nearest, as Nearest asks for them (nearestQuery), one
-  // answer for both where they were asked under two keys.
-  const nearest = useQuery({ ...nearestQuery(at.lat, at.lon), enabled: started != null });
+  // The fields round the point with their runways and weather, as the
+  // emergency assistant asks for them (/api/emergency/fields).
+  const nearest = useQuery({
+    queryKey: ["diversionFields", at.lat, at.lon],
+    queryFn: () => api.emergencyFields(at.lat, at.lon, leg.altitude_ft, null, null),
+    enabled: started != null,
+    staleTime: 10 * 60_000,
+  });
   // Counting while the drill runs and FPL is in sight (useClock).
   const now = useClock(1000, started != null && stopped == null);
 
-  // A field under the point is where the airplane is, not a diversion.
-  const fields = (nearest.data ?? []).filter((f) => f.distance_nm >= 2).slice(0, 6);
+  // In the engine's order for a diversion (best_fields): a field under the
+  // point is where the airplane is, not a diversion.
+  const fields = (nearest.data ? diversionFields(nearest.data, at, leg) : []).filter((f) => f.distance_nm >= 2).slice(0, 6);
   const chosen = fields.find((f) => f.ident === field) ?? null;
-  const exact = chosen ? divert(leg, chosen.bearing_deg, chosen.distance_nm) : null;
+  const exact = chosen ? divert(leg, chosen.course_deg, chosen.distance_nm) : null;
   const checked = stopped != null;
   const number = (key: EstimateKey) => typed[key] ?? null;
   const start = () => {
@@ -124,8 +136,10 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
                 <span>{stopwatch(Math.floor(Math.max(0, (stopped ?? now) - started) / 1000))}</span>
               </p>
               <ListChoices value={field ?? ""} onChange={setField} label="Divert to">
-                {/* The nearest fields, with their longest runway and their
-                  weather: how far and which way are the chart's to read. */}
+                {/* The fields, with their longest runway, their weather and
+                  who may use them (the engine's card line, "Private:
+                  permission required"): how far and which way are the
+                  chart's to read. */}
                 <ListGroup title="Divert to">
                   {nearest.isPending ? (
                     <ListRow muted title="Finding the nearest fields…" />
@@ -139,9 +153,12 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
                         disabled={checked}
                         title={`${f.ident} · ${f.name}`}
                         description={[
-                          f.longest_runway_ft ? `${grouped(f.longest_runway_ft)} ft runway` : "no runway length",
+                          f.runway?.length_ft ? `${grouped(f.runway.length_ft)} ft runway` : "no runway length",
                           f.flight_category ?? "no weather report",
-                        ].join(" · ")}
+                          whoMayLand(f),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                         data-testid="diversion-field"
                       />
                     ))
@@ -195,7 +212,8 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
                 ))}
               {checked && chosen && fields[0] && fields[0].ident !== chosen.ident && (
                 <p className={cn("text-muted-foreground", TEXT.note)} data-testid="diversion-nearest">
-                  The nearest was {fields[0].ident}, {fields[0].distance_nm.toFixed(0)} nm: was {chosen.ident} the better choice?
+                  The best by runway, weather and time was {fields[0].ident}, {fields[0].distance_nm.toFixed(0)} nm: was {chosen.ident} the
+                  better choice?
                 </p>
               )}
               <div className="flex justify-end gap-2">

@@ -1,0 +1,92 @@
+{
+  "x-call": "wingtip_brief::gonogo::permission::call",
+  "description": "The Go / No-Go's \"fields\" row for a departure, destination or stop that NASR lists as closed (APT_BASE ARPT_STATUS not O: \"00MO is closed indefinitely (NASR): it cannot be planned as a landing field\", decision 0043), private (FACILITY_USE_CODE PR: \"IL11 is private: land only with the owner's permission (call 847-323-8911)\") or military-only (\"prior permission required (PPR)\"), the phone NASR APT_CON's; 14 CFR 91.103 (all available information). A caution, opening the Depart tab for the departure and Arrive otherwise; null where every field is open and public or joint use. The hosts add it to gonogo_verdict_items' list before gonogo_verdict_line.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoFieldPermissionInput",
+      "type": "object",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "role": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "departure",
+                  "destination",
+                  "stop",
+                  null
+                ],
+                "description": "Null is taken as destination."
+              },
+              "private": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "NASR FACILITY_USE_CODE PR, not owned by the armed services."
+              },
+              "military": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "military",
+                  "joint",
+                  null
+                ],
+                "description": "\"military\" or \"joint\" for a field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG)."
+              },
+              "phone": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "NASR APT_CON's phone, the manager's or else the owner's."
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where the host has no NASR record."
+              }
+            },
+            "required": [
+              "ident"
+            ]
+          }
+        }
+      },
+      "required": [
+        "fields"
+      ]
+    },
+    "answer": {
+      "title": "GonogoFieldPermissionAnswer",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/GonogoItem"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

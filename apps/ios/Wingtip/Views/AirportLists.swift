@@ -107,12 +107,16 @@ struct NearFromView: View {
 
 /// A field near the phone: its identifier and name, how far and which
 /// way (true, as the planner gives it), and its longest runway, with its
-/// flight category's colour.
+/// flight category's colour; a private, military or joint-use field's use
+/// first, the engine's (FieldUse), as the web's Nearest says it. Nearest
+/// never lists a closed field (the planner's and the packs' lists are
+/// open fields only, decision 0043).
 struct NearestRow: View {
     let field: NearestAirport
     /// Differentiate Without Color: the category's code beside the ident,
     /// where the ring's colour alone says it otherwise.
     @Environment(\.accessibilityDifferentiateWithoutColor) private var withoutColour
+    private var flag: FieldUse.Flag? { FieldUse.flag(closed: nil, use: FieldUse.code(isPrivate: field.isPrivate, military: field.military)) }
 
     var body: some View {
         let bearing = field.bearingDeg.truncatingRemainder(dividingBy: 360)
@@ -123,8 +127,11 @@ struct NearestRow: View {
                     Text(field.ident).font(.headline)
                     if withoutColour, let category = field.flightCategory { Text(category).font(.caption.weight(.semibold)).foregroundStyle(.secondary) }
                 }
-                Text([field.name, field.longestRunwayFt.map { Format.altitude(Double($0)) }].compactMap { $0 }.joined(separator: " · "))
-                    .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                let detail = [field.name, field.longestRunwayFt.map { Format.altitude(Double($0)) }].compactMap { $0 }.joined(separator: " · ")
+                Group {
+                    if let flag { Text("\(Text(flag.words).foregroundStyle(flag.ink)) · \(detail)") } else { Text(detail) }
+                }
+                .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
@@ -135,7 +142,7 @@ struct NearestRow: View {
         // One row, read as a pilot would say it: the ident, its weather,
         // the field, the runway, how far and which way.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel([field.ident, SpokenFigures.flightCategory(field.flightCategory), field.name,
+        .accessibilityLabel([field.ident, SpokenFigures.flightCategory(field.flightCategory), flag?.words, field.name,
                              field.longestRunwayFt.map { "longest runway \(SpokenFigures.feet(Double($0)))" },
                              SpokenFigures.nauticalMiles(field.distanceNm.rounded()), "bearing \(SpokenFigures.degrees(bearing)) true"]
                 .compactMap { $0 }.joined(separator: ", "))

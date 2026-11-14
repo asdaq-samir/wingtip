@@ -107,3 +107,23 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   await expect(glance.locator("button[data-testid^='brief-glance-']")).toHaveCount(4);
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
+
+test("a private destination is a line of the Brief: land only with the owner's permission, with the FAA's phone for it", async ({
+  page,
+}) => {
+  // IL11, Donald Alfred Gade, private (NASR FACILITY_USE_CODE PR), its
+  // phone NASR APT_CON's; the engine's gonogo_field_permission row, after
+  // the tabs' findings.
+  await page.goto("/app/plan?dep=C81&dest=IL11&view=briefing");
+  await settle(page);
+  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await openBrief(page);
+  const glance = sideDrawer(page).getByTestId("brief-glance");
+  await expect(glance.getByTestId("brief-verdict")).toBeVisible({ timeout: slow(30_000) });
+  const fields = glance.locator("[data-testid=brief-line-fields], [data-testid=brief-rest-fields]");
+  await expect(fields).toHaveCount(1, { timeout: slow(15_000) });
+  if (await glance.getByTestId("brief-line-fields").count()) {
+    await expect(glance.getByTestId("brief-line-fields")).toHaveAttribute("data-finding", "caution");
+    await expect(glance.getByTestId("brief-line-fields").getByTestId("brief-line-words")).toContainText("IL11 is private");
+  }
+});

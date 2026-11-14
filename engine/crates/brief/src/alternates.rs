@@ -30,6 +30,7 @@
 //! only good with a descent from the MEA and a landing under basic VFR,
 //! which the planner does not work out: it is not called good.
 
+use crate::airport_use::{self, Use};
 use crate::figures::words::grouped;
 use crate::json::{self, Value};
 use wingtip_core::sort::StableSort;
@@ -191,7 +192,7 @@ fn destination(ident: &str, procs: &Approaches, forecast: Option<&Forecast>) -> 
 /// Whether a field will do as the alternate at its ETA (91.169(c)):
 /// `good` true, false, or null where the pilot has to look (nonstandard
 /// minimums, no approach, no TAF), with why.
-fn alternate(ident: &str, procs: &Approaches, forecast: Option<&Forecast>) -> Value {
+fn alternate(ident: &str, procs: &Approaches, forecast: Option<&Forecast>, usage: Use) -> Value {
     let minimums = if procs.precision { PRECISION_MINIMUMS } else { NONPRECISION_MINIMUMS };
     let mut reasons = Vec::new();
     let mut good = Some(true);
@@ -251,6 +252,11 @@ fn alternate(ident: &str, procs: &Approaches, forecast: Option<&Forecast>) -> Va
         reasons.push(format!(
             "{ident} publishes its own alternate minimums, higher than standard or not authorized for some approaches: check its alternate minimums page."
         ));
+    }
+    // Landed at only with leave (airport_use): 91.169(c) met, still the pilot's to check.
+    if let Some(words) = usage.permission_line(ident, false) {
+        good = good.filter(|g| !g);
+        reasons.push(format!("{words}."));
     }
     obj(vec![
         ("ident", Value::String(ident.to_owned())),
@@ -331,7 +337,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             let f = forecast(v);
             match name {
                 "ifr_alternate_destination" => destination(ident, &procs, f.as_ref()),
-                "ifr_alternate_check" => alternate(ident, &procs, f.as_ref()),
+                "ifr_alternate_check" => alternate(ident, &procs, f.as_ref(), airport_use::read(name, v)?),
                 _ => return Err(format!("the engine has no rule called {name:?}")),
             }
         }

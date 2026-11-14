@@ -1,5 +1,6 @@
 import type { NearestAirport } from "../../../lib/api/types";
 import { clockTime } from "../../../lib/format";
+import { callEngine } from "../../../lib/engine/engine";
 
 /** A fuel a search filters by (the planner's, from NASR's fuel codes). */
 export type Fuel = NonNullable<NearestAirport["fuel"]>[number];
@@ -15,7 +16,8 @@ export type Surface = Exclude<NonNullable<NearestAirport["runway_surfaces"]>[num
  * longest open runway, the distance, public or private, the fuel sold, the
  * runways' surfaces, an instrument approach in the CIFP, and the forecast
  * category at a time from the engine's reading of the TAF); none works
- * anything out. No fuel price is offered: the app reads no price feed.
+ * anything out, and Public asks the engine (public_use: neither private
+ * nor the armed services' own, a joint-use field public). No fuel price is offered: the app reads no price feed.
  */
 export interface SearchFilters {
   /** Reporting VFR now (the METAR's flight category, AIM 7-1-7). */
@@ -77,7 +79,7 @@ export function filterFields(fields: readonly NearestAirport[], f: SearchFilters
       (!f.vfrNow || a.flight_category === "VFR") &&
       (f.vfrInHours == null || a.forecast?.category === "VFR") &&
       (!f.towered || a.towered) &&
-      (!f.publicOnly || !a.private) &&
+      (!f.publicOnly || callEngine("public_use", { private: a.private, military: a.military ?? null })) &&
       (!f.approach || a.instrument_approach === true) &&
       (f.fuel.length === 0 || f.fuel.some((k) => a.fuel?.includes(k))) &&
       (f.surface.length === 0 || f.surface.some((k) => a.runway_surfaces?.includes(k))) &&

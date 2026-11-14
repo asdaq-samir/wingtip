@@ -235,14 +235,15 @@ function kindsOf(notams: FieldNotam[], ident: string): [string, FieldNotam[]][] 
  * the owner, 2026-11-11: "Can notams also show as a list of three like
  * others", then "Notams should open like other sections"). The list has no
  * search field: the app keeps one search (the owner, 2026-11-13: "I don't
- * want search notams").
+ * want search notams"). `none` is what an empty list says in place of
+ * "None heard", where the field is outside the NOTAM system.
  */
-export function PlaceNotamsSection({ ident }: { ident: string }) {
+export function PlaceNotamsSection({ ident, none = null }: { ident: string; none?: string | null }) {
   const { data, isError, total, shown, long, all, toggle } = useFieldNotams(ident);
   if (!data && !isError) return null;
   // "3 of 9" at the right while closed, as FirstFew's sections.
   const count = long && !all ? <span className={cn("text-muted-foreground", TEXT.note)}>{`${shown.length} of ${total}`}</span> : undefined;
-  const state = <NotamsState data={data} isError={isError} />;
+  const state = <NotamsState data={data} isError={isError} none={none} />;
   return (
     <div className="scroll-mt-16 pt-5" data-testid={SECTION}>
       <PillSection

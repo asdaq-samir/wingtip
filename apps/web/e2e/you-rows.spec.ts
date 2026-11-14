@@ -40,10 +40,11 @@ test("Checklists are inside Airplanes, and Training holds the Coach and Practice
   await sheet.getByRole("button", { name: "Back to Airplanes", exact: true }).click();
   await sheet.getByRole("button", { name: "Back to You", exact: true }).click();
 
-  // Training: the Coach kept to an account, greyed and saying why; Practice the drills, each a row.
+  // Training: the Coach kept to an account, greyed with no words, as the
+  // other account rows are ("Sign In" said once); Practice the drills, each a row.
   await sheet.getByTestId("training-row").click();
   await expect(sheet.getByTestId("setup-coach-row")).toBeDisabled();
-  await expect(sheet.getByTestId("setup-coach-row")).toContainText("Sign In to Use");
+  await expect(sheet.getByTestId("setup-coach-row")).not.toContainText("Sign In");
   await sheet.getByTestId("practice-row").click();
   await expect(sheet.getByTestId("practice-page")).toBeVisible();
   await sheet.getByRole("button", { name: /^Holding entries/ }).click();

@@ -126,6 +126,9 @@ def round_oshkosh(monkeypatch):
                 "longitude_deg": lon,
                 "elevation_ft": elevation,
                 "type": kind,
+                # NASR's status and the engine's label, as the table carries them.
+                "_status": "O",
+                "_closed": None,
             }
             for ident, name, lat, lon, elevation, kind in FIELDS
         ]

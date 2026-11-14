@@ -89,7 +89,22 @@ pub fn flight(name: &str, v: &Value) -> R<Flight> {
     let fields = input::fields(name, v)?;
     let candidates = fields_of(name, v)?;
     let dest_id = input::text(name, v, "dest")?.ok_or_else(|| format!("{name}: \"dest\" is missing"))?;
-    let dest = find(&fields, dest_id).ok_or_else(|| format!("{name}: \"dest\" {dest_id:?} is not among \"fields\""))?;
+    // A destination not among the fields (the planner leaves a closed one
+    // out of its lists, decision 0043, unless it sends it with its status)
+    // is still watched for: where it is not known, so neither its weather
+    // nor its distance, and `remaining_nm` the host's. Never an error: the
+    // copilot keeps watching the rest of the flight.
+    let dest = find(&fields, dest_id).unwrap_or_else(|| Field {
+        ident: dest_id.to_owned(),
+        name: None,
+        lat: ask.own.lat,
+        lon: ask.own.lon,
+        metar: None,
+        raw: None,
+        planned_category: None,
+        fuel: false,
+        status: None,
+    });
     let alternate = input::text(name, v, "alternate")?.and_then(|a| find(&fields, a));
     let o = &ask.own;
     let remaining_nm = input::num(name, v, "remaining_nm")?.unwrap_or_else(|| geo::distance_nm(o.lat, o.lon, dest.lat, dest.lon));
@@ -150,6 +165,7 @@ pub fn rule(name: &str, v: &Value) -> R<Value> {
     messages.extend(checks::ahead(&f));
     messages.extend(checks::itws(&f));
     messages.extend(checks::fuel(&f));
+    messages.extend(checks::closed(&f));
     messages.extend(checks::weather(&f));
     messages.extend(checks::areas(&f));
     messages.extend(checks::night(&f));

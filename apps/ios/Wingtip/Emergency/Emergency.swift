@@ -130,7 +130,7 @@ final class Emergency {
         let byIdent = Dictionary(kept.pins.map { ($0.ident, $0) }, uniquingKeysWith: { a, _ in a })
         let fields = kept.ranked.fields.map { field in
             APIEmergencyField(bearingDeg: field.courseDeg, distanceNm: field.distanceNm, elevationFt: nil, frequencies: nil, ident: field.ident,
-                              lat: field.lat, lon: field.lon, metar: nil, military: byIdent[field.ident]?.military != nil, name: field.name,
+                              lat: field.lat, lon: field.lon, metar: nil, military: byIdent[field.ident]?.military, name: field.name,
                               phone: nil, isPrivate: field.private, runways: [], towered: field.towered)
         }
         let airplane = aircraft.flatMap { name in
@@ -154,13 +154,14 @@ final class Emergency {
         try? Engine.magneticVariation(lat: at.latitude, lon: at.longitude, date: String(ISO8601DateFormatter().string(from: day).prefix(10)))
     }
 
-    /// The fields ranked from the airplane in "glide" mode, the airplane's
-    /// figures as the planner sent them (none: the glide is not guessed).
-    /// The planner's members are the engine's, in its snake case.
-    static func bestFields(_ answer: APIEmergencyFields, fix: OwnShip.Fix, variationDeg: Double?) throws -> Ranked {
+    /// The fields ranked from the airplane in "glide" mode (or the
+    /// diversion drill's "diversion"), the airplane's figures as the
+    /// planner sent them (none: the glide is not guessed). The planner's
+    /// members are the engine's, in its snake case.
+    static func bestFields(_ answer: APIEmergencyFields, fix: OwnShip.Fix, variationDeg: Double?, mode: String = "glide") throws -> Ranked {
         let snake = Planner.snakeEncoder
         return try Engine.bestFields(
-            mode: "glide",
+            mode: mode,
             at: .init(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude),
             altitudeFt: fix.altitudeFt, speedKt: fix.groundspeedKt,
             wind: try answer.wind.map { try Engine.recoded($0, encoder: snake) },

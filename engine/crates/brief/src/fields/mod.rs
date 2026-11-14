@@ -17,10 +17,21 @@
 //!   90-66C's 1,000 ft), reachable but lower, then beyond -- and only then
 //!   by the runway and the distance. In "diversion" mode every field is
 //!   reachable and the runway, the weather and the time decide.
-//! - Nothing is refused (the owner's "warn, never limit"): a private or a
+//! - A field NASR lists as closed (its `status` not ARPT_STATUS O,
+//!   wingtip_flight::field) is never ranked or offered as a landing site,
+//!   in either mode: it is left out (the owner's hard rule, decision 0043).
+//!   No candidate's status is refused for being missing: the host's own
+//!   list then decides, as it did.
+//! - Nothing else is refused (the owner's "warn, never limit"): a private or a
 //!   military field, a runway shorter than the POH's distance, a crosswind
 //!   past the demonstrated one, a field in IFR stay in the list with the
-//!   reason said, ranked lower.
+//!   reason said. The runway and, for a diversion, the weather rank a
+//!   field lower; so does being private or military-only in a diversion,
+//!   where the owner's or the service's permission stands, so a public
+//!   field wins a tie. In a glide it does not: in an emergency the pilot
+//!   in command may deviate from any rule to meet it (14 CFR 91.3(b)),
+//!   and the nearest field reached is the one to take. A joint-use field
+//!   is public use and is never marked (airport_use).
 //! - With no airplane's glide figures the glide is not guessed: the fields
 //!   are ranked by distance alone and the answer says the glide needs an
 //!   airplane (`needs_airplane`).
@@ -29,6 +40,7 @@ pub mod calls;
 mod rank;
 mod reasons;
 
+use crate::airport_use::Use;
 use crate::figures::glide::Glide;
 use crate::runway::performance::{EndFit, FieldReport, FitWind, ShortField};
 use crate::runway::pick::Runway;
@@ -92,8 +104,10 @@ pub struct Field {
     pub report: FieldReport,
     pub flight_category: Option<String>,
     pub towered: bool,
-    pub private: bool,
-    pub military: bool,
+    /// Who may land there: public, private, military or joint use.
+    pub usage: Use,
+    /// NASR APT_BASE's ARPT_STATUS, None where the host has no NASR record.
+    pub status: Option<String>,
 }
 
 /// How a field is reached.

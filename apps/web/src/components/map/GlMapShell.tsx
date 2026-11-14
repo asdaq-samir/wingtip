@@ -20,7 +20,6 @@ import { useRouteFit } from "./useRouteFit";
 import { inRoom, keepStill, useTappedInSight } from "./cardRoom";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
-import { usePreferences } from "../../lib/preferences";
 import { chartQuery, overlayTilesQuery, queryClient } from "../../lib/queryClient";
 import { CardCloseContext } from "../../lib/map/cards/cardClose";
 import { prefetchRing, registerOverlayProtocol } from "../../lib/map/sources/overlayTiles";
@@ -38,7 +37,8 @@ import {
   type GlTap,
   type Slot,
 } from "../../lib/map/gl/glLayer";
-import { OVERLAY_SOURCE, addOverlays, applyOverlayFilters, overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
+import { OVERLAY_SOURCE, addOverlays, overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
+import { watchOverlayFilters } from "../../lib/map/gl/overlayFilters";
 import { glZoom } from "../../lib/map/gl/glStyle";
 import { probeLayers } from "../../lib/map/gl/useGlProbe";
 import { RulerGl } from "../../lib/map/gl/layers/RulerGl";
@@ -352,13 +352,9 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     };
   }, [map, overlays, tiles]);
 
-  // The settings' filters on the overlay tiles as they change
-  // (applyOverlayFilters).
-  useEffect(() => {
-    if (!map || !overlays) return;
-    applyOverlayFilters(map);
-    return usePreferences.subscribe(() => applyOverlayFilters(map));
-  }, [map, overlays]);
+  // The settings' filters on the overlay tiles as they change, and the
+  // emergency's (watchOverlayFilters).
+  useEffect(() => (map && overlays ? watchOverlayFilters(map) : undefined), [map, overlays]);
 
   // A remote has no pinch: its zoom keys zoom the map while it is focused.
   useEffect(() => {

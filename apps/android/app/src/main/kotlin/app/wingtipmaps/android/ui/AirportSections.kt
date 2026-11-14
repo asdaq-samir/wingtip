@@ -58,6 +58,7 @@ class AirportCardView(
     val notams: CardNotams,
     val onNotam: (NotamMark) -> Unit,
     val onDiagram: (() -> Unit)?,
+    val words: AirportReads.PlaceWords = AirportReads.PlaceWords(),
 )
 
 /**
@@ -84,6 +85,9 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
                 PhotoCarousel(pictures, Modifier.padding(vertical = WingtipSpace.Sm))
             }
             place.elevationFt?.let { ft -> item(key = "elevation") { Row(stringResource(R.string.elevation), Format.altitude(ft), pad) } }
+            // How far the field's figures are to be trusted: the owner's own,
+            // never inspected, and how old (NASR INSPECT_METHOD_CODE 1 or 2).
+            view.words.data?.let { d -> item(key = "data-source") { Row(d, null, pad) } }
             place.airspaceClass?.let { c -> item(key = "airspace") { Row(stringResource(R.string.airspace_class, c), null, pad) } }
             // The address in the phone's maps app, where the card's Address
             // action was (the owner, 2026-11-11: "replace address button

@@ -57,20 +57,19 @@ struct MapSpeedTests {
         let file = BackgroundFile(url)
         for n in 1...50 { file.write(Array(0..<n)) }
         file.write([7])
-        // The 51 writes land off the main actor as fast as the machine
-        // lets them: waited for until the last is on disk, not for a fixed
-        // second (a CI runner's took longer, 2026-11-13). A write out of
-        // order would leave another array there, and the wait runs out.
+        // The writes run off the main actor at utility priority, as fast
+        // as the machine lets them; a CI runner busy with the rest of the
+        // suite landed 31 of 51 in ten seconds (run 43549667532). So the
+        // test waits for the chain itself, not a clock: once it has run,
+        // the last write asked is what the file holds.
+        await file.settled()
         let read = { try? JSONDecoder().decode([Int].self, from: Data(contentsOf: url)) }
-        let deadline = ContinuousClock.now + .seconds(10)
-        while read() != [7], ContinuousClock.now < deadline {
-            try await Task.sleep(for: .milliseconds(50))
-        }
         #expect(read() == [7])
+        // An erase after a write still under way: the write may land after
+        // the erase made at once, but the erase chained behind it is last.
         file.write(Array(0..<5000))
         file.remove()
-        #expect(!FileManager.default.fileExists(atPath: url.path))
-        try await Task.sleep(for: .seconds(1))
+        await file.settled()
         #expect(!FileManager.default.fileExists(atPath: url.path))
     }
 }

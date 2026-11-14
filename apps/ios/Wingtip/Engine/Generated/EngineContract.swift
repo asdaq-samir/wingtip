@@ -130,6 +130,58 @@ enum EngineContract {
         var figure: String
     }
 
+    struct AirportDataWordsInput: Codable, Equatable, Sendable {
+        /// The planner's AirportPlace data_source.
+        var dataSource: String?
+        /// The planner's AirportPlace info_date, YYYY-MM-DD: NASR's LAST_INFO_RESPONSE, else LAST_INSPECTION.
+        var infoDate: String?
+
+        enum CodingKeys: String, CodingKey {
+            case dataSource = "data_source"
+            case infoDate = "info_date"
+        }
+    }
+
+    struct AirportNamesInput: Codable, Equatable, Sendable {
+        var names: [String]
+    }
+
+    struct AirportNotamsNoneInput: Codable, Equatable, Sendable {
+        /// The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
+        var `private`: Bool?
+        /// A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where not open to the public, "joint" where it is (FACILITY_USE_CODE PU).
+        var military: String?
+        /// NASR APT_BASE's NOTAM_ID: null or empty where it lists none.
+        var notamId: String?
+
+        enum CodingKeys: String, CodingKey {
+            case `private`
+            case military
+            case notamId = "notam_id"
+        }
+    }
+
+    struct AirportUseWordsAnswer: Codable, Equatable, Sendable {
+        var use: String
+        /// The card's line; null for a public or joint-use field.
+        var words: String?
+        /// Open to any civil pilot: public or joint use.
+        var publicUse: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case use
+            case words
+            case publicUse = "public_use"
+        }
+    }
+
+    struct AirportUseWordsInput: Codable, Equatable, Sendable {
+        /// The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
+        var `private`: Bool?
+        /// A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where not open to the public, "joint" where it is (FACILITY_USE_CODE PU).
+        var military: String?
+    }
+
     /// A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
     struct AirspaceBand: Codable, Equatable, Sendable {
         var floorFt: Double
@@ -1644,7 +1696,8 @@ enum EngineContract {
         var arriveAglFt: Double?
         var towered: Bool
         var `private`: Bool
-        var military: Bool
+        /// As the input's: "military", "joint" or null.
+        var military: String?
         var flightCategory: String?
         /// The end to land on: the POH's distance fits, the crosswind within the demonstrated, the most headwind, the most nearly straight in, the longest.
         var runway: EngineContract.BestFieldRunway?
@@ -1818,8 +1871,12 @@ enum EngineContract {
         var runways: [EngineContract.Runway]
         var metar: EngineContract.BestFieldsInputFieldsItemMetar?
         var towered: Bool?
+        /// NASR FACILITY_USE_CODE PR and not owned by the armed services.
         var `private`: Bool?
-        var military: Bool?
+        /// A field the armed services own (NASR OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where it is not open to the public, "joint" where it is (FACILITY_USE_CODE PU), a public-use field never marked as military.
+        var military: String?
+        /// NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record.
+        var status: String?
 
         enum CodingKeys: String, CodingKey {
             case ident
@@ -1832,6 +1889,7 @@ enum EngineContract {
             case towered
             case `private`
             case military
+            case status
         }
     }
 
@@ -2392,6 +2450,10 @@ enum EngineContract {
         var fuel: Bool
         var fuelAtLandingMin: Double?
         var reserveMin: Double
+        /// Private use: the owner's permission needed (the message says so).
+        var `private`: Bool
+        /// "military": the service's prior permission needed (the message says so); "joint": public use.
+        var military: String?
         /// best_fields' reasons.
         var reasons: [String]
 
@@ -2409,6 +2471,8 @@ enum EngineContract {
             case fuel
             case fuelAtLandingMin = "fuel_at_landing_min"
             case reserveMin = "reserve_min"
+            case `private`
+            case military
             case reasons
         }
     }
@@ -2423,12 +2487,16 @@ enum EngineContract {
         var runways: [EngineContract.Runway]
         var metar: EngineContract.CopilotFieldMetar?
         var towered: Bool?
+        /// NASR FACILITY_USE_CODE PR and not owned by the armed services.
         var `private`: Bool?
-        var military: Bool?
+        /// A field the armed services own (NASR OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where it is not open to the public, "joint" where it is (FACILITY_USE_CODE PU), a public-use field never marked as military.
+        var military: String?
         /// NASR lists fuel sold there.
         var fuel: Bool?
         /// Its flight category when the copilot first saw it, so a worse one is said as a change.
         var plannedCategory: String?
+        /// NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record.
+        var status: String?
 
         enum CodingKeys: String, CodingKey {
             case ident
@@ -2443,6 +2511,7 @@ enum EngineContract {
             case military
             case fuel
             case plannedCategory = "planned_category"
+            case status
         }
     }
 
@@ -2508,6 +2577,7 @@ enum EngineContract {
         var fuelGal: Double?
         var burnGph: Double?
         var tasKt: Double?
+        /// The destination's ident. Sent among `fields` with its `status`, a closed one (NASR ARPT_STATUS not O) is said in a "closed" warning with the best alternative; not among them at all, it is still watched for, its weather and position unknown and `remaining_nm` the host's.
         var dest: String
         var alternate: String?
         var remainingNm: Double?
@@ -3664,6 +3734,18 @@ enum EngineContract {
         var end: [Double]
     }
 
+    struct FieldStatusAnswer: Codable, Equatable, Sendable {
+        /// Whether the field may be shown or offered as an open one.
+        var `open`: Bool
+        /// A closed field's label: Closed indefinitely, Closed permanently, or Closed; null for an open one.
+        var closed: String?
+    }
+
+    struct FieldStatusInput: Codable, Equatable, Sendable {
+        /// NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where NASR has no record.
+        var status: String?
+    }
+
     struct FieldTafAnswer: Codable, Equatable, Sendable {
         /// The station's index in `stations`; null for none within reach.
         var index: Int?
@@ -3768,6 +3850,13 @@ enum EngineContract {
 
     struct FiledZzzzInput: Codable, Equatable, Sendable {
         var ident: String
+        /// NASR APT_BASE's ICAO_ID for the field: null or "" where NASR lists none. Leave it out only where the host has no NASR row for the field.
+        var icaoId: String?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case icaoId = "icao_id"
+        }
     }
 
     struct FixRadialDistanceInput: Codable, Equatable, Sendable {
@@ -4631,6 +4720,24 @@ enum EngineContract {
         var group: String?
         /// Its mark; null for a self check.
         var finding: String?
+    }
+
+    struct GonogoFieldPermissionInput: Codable, Equatable, Sendable {
+        var fields: [EngineContract.GonogoFieldPermissionInputFieldsItem]
+    }
+
+    struct GonogoFieldPermissionInputFieldsItem: Codable, Equatable, Sendable {
+        var ident: String
+        /// Null is taken as destination.
+        var role: String?
+        /// NASR FACILITY_USE_CODE PR, not owned by the armed services.
+        var `private`: Bool?
+        /// "military" or "joint" for a field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG).
+        var military: String?
+        /// NASR APT_CON's phone, the manager's or else the owner's.
+        var phone: String?
+        /// NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where the host has no NASR record.
+        var status: String?
     }
 
     struct GonogoFlown: Codable, Equatable, Sendable {
@@ -5962,6 +6069,10 @@ enum EngineContract {
         var approaches: EngineContract.IfrAlternateInApproaches
         /// The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
         var forecast: EngineContract.IfrAlternateInForecast?
+        /// ifr_alternate_check's: NASR FACILITY_USE_CODE PR, not owned by the armed services.
+        var `private`: Bool?
+        /// ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
+        var military: String?
     }
 
     /// The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
@@ -9186,6 +9297,13 @@ enum EngineContract {
 
     struct ProhibitedCautionInput: Codable, Equatable, Sendable {
         var selection: [String: OpenAPIValueContainer]
+    }
+
+    struct PublicUseInput: Codable, Equatable, Sendable {
+        /// The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
+        var `private`: Bool?
+        /// A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where not open to the public, "joint" where it is (FACILITY_USE_CODE PU).
+        var military: String?
     }
 
     struct RadialOfAnswer: Codable, Equatable, Sendable {

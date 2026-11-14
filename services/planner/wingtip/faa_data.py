@@ -28,7 +28,7 @@ import pandas as pd
 import requests
 import wingtip_native
 
-from . import apra, dof
+from . import apra, dof, field_status
 
 # The obstacle file's reader is wingtip.dof; its callers read the table
 # through this module, which downloads it with the NASR tables.
@@ -700,11 +700,11 @@ def load_route_airports(apt_csv_path, bbox: tuple, exclude_idents: tuple = ()) -
     does not draw cannot be rated, which is why towers, water towers,
     quarries and unnamed lakes were dropped too.
 
-    Private-use fields are kept: the sectional draws a registered private
-    airport as a circled magenta "R", verified at Wag-Aero (WI92), so it
-    is identifiable on the chart. Whether a grass strip is *easy* to pick
-    out is a different question, and that is exactly what the 1-5 rating
-    is there to answer.
+    Private-use fields are kept but are not all on the chart: the Chart
+    User's Guide charts one (the circled magenta "R", as at Wag-Aero,
+    WI92) only where it has emergency or landmark value, so the planner's
+    checkpoints score one down unless a chart pick confirms it (app.
+    checkpoint_scoring PRIVATE_UNCHARTED_SCORE); the 1-5 rating says the rest.
 
     exclude_idents drops the departure and destination fields -- both sit
     in the corridor by construction, and neither is a checkpoint: you are
@@ -737,7 +737,7 @@ def _charted_open_airports(path: str, _mtime: float) -> tuple:
     and the route's own two fields are the route's (py-spy on the live
     planner, 2026-10-28)."""
     df = _read_apt_base_cached(path, _mtime)
-    df = df[df["SITE_TYPE_CODE"].map(_SITE_TYPE_NAMES).isin(CHARTED_FACILITY_TYPES) & (df["ARPT_STATUS"] == "O")]
+    df = df[df["SITE_TYPE_CODE"].map(_SITE_TYPE_NAMES).isin(CHARTED_FACILITY_TYPES) & field_status.open_mask(df["ARPT_STATUS"].fillna(""))]
     lat = df["LAT_DECIMAL"].astype(float)
     lon = df["LONG_DECIMAL"].astype(float)
     fields = pd.DataFrame(

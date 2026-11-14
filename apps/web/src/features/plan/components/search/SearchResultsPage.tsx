@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { cn } from "cn";
 import { useScrollPlace } from "../../../../lib/scrollPlace";
 import { ChartMark } from "../../../../components/Favorites";
+import { USE_WORDS } from "../../../../lib/airportIndex";
 import type { NearestAirport } from "../../../../lib/api/types";
 import { chipFillOf } from "../../../../lib/map/marks/flightCategory";
 import { visibilityWords } from "../../../../lib/map/marks/airportWeather";
@@ -34,7 +35,9 @@ function Category({ category, children }: { category: string; children?: string 
  *  right in a rounded square, where Apple has a photo. */
 function ResultRow({ field, onOpen }: { field: NearestAirport; onOpen: () => void }) {
   const use = field.military === "military" ? "military" : field.private ? "private" : null;
-  const grey = ["Airport", field.municipality, nmAway(field.distance_nm)].filter(Boolean).join(" · ");
+  // Who may use it where it is not a public field, as every search row says it.
+  const used = field.military ?? (field.private ? "private" : null);
+  const grey = ["Airport", used && USE_WORDS[used], field.municipality, nmAway(field.distance_nm)].filter(Boolean).join(" · ");
   const surfaces = (field.runway_surfaces ?? []).filter((k): k is Surface => k in SURFACE_WORDS).map((k) => SURFACE_WORDS[k]);
   const known = [
     field.towered ? "Towered" : null,

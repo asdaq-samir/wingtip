@@ -2,6 +2,7 @@
 //! wingtip-procedures and wingtip-radio (engine/README.md).
 //!
 //! - airspace: whether an airspace volume holds a point;
+//! - field_name: a field's NASR name as every app writes it, codes kept;
 //! - pack: the cycle pack, one file per FAA cycle;
 //! - rules: the airspace over a point in bands, with the rules of each;
 //! - pack_query: the planner's airspace-at-a-point answer from a phone's pack;
@@ -18,11 +19,14 @@ pub mod ahead;
 pub mod airspace;
 pub mod calls;
 pub mod drills;
+pub mod field_name;
 pub mod pack;
 pub mod pack_query;
 pub mod rules;
 pub mod spoken;
 pub mod spoken_ask;
+#[cfg(test)]
+mod spoken_closed_tests;
 pub mod sua_tab;
 pub mod view;
 pub mod view_marks;

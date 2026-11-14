@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Header, ListBox, ListBoxItem, ListBoxSection } from "react-aria-components";
 import { cn } from "cn";
-import { AirportRowFace } from "../../../../components/AirportResults";
+import { AirportRowFace, type ShownAirport } from "../../../../components/AirportResults";
 import type { Detour } from "../../../../lib/api/types";
 import { bearing } from "../../../../lib/format";
 import { frdOf } from "../../../../lib/identSchema";
@@ -80,7 +80,7 @@ export default function RouteSuggestions({
       {fields.length > 0 && (
         <Group heading="Airports">
           {fields.map((r) => {
-            const airport = { ident: r.ident, name: r.name, municipality: r.municipality };
+            const airport = { ident: r.ident, name: r.name, municipality: r.municipality, closed: r.closed, use: r.use };
             return <Row key={`airport-${r.ident}`} id={`airport-${r.ident}`} airport={airport} onAction={() => onPick(r.ident, airport)} />;
           })}
         </Group>
@@ -133,7 +133,7 @@ function Row({
 }: {
   /** Its key in the list, unique across the groups. */
   id: string;
-  airport: RecentAirport;
+  airport: ShownAirport;
   waypoint?: boolean;
   onAction: () => void;
   testId?: string;

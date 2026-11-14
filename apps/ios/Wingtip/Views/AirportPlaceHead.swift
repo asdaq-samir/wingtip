@@ -119,9 +119,20 @@ struct AirportPlaceHead: View {
                     .accessibilityLabel([place.elevationFt.map { "elevation \(SpokenFigures.feet($0))" }, place.airspaceClass.map { "Class \($0)" }]
                         .compactMap { $0 }.joined(separator: ", "))
             }
-            if let restriction = AirportHead.restriction(place) {
-                Text(restriction).font(.subheadline).foregroundStyle(WingtipInk.caution)
+            // Closed, from NASR (decision 0043), then who may land here and
+            // how far its figures are to be trusted, each the engine's words.
+            if let closed = place.closed {
+                Text(closed).font(.subheadline.weight(.semibold)).foregroundStyle(WingtipInk.problem)
+                    .accessibilityIdentifier("airport-card-closed")
             }
+            let use = FieldUse.cardUse(place)
+            if case .success(let words?) = use {
+                Text(words).font(.subheadline).foregroundStyle(WingtipInk.caution).accessibilityIdentifier("airport-card-use")
+            }
+            ProblemLine(use, "Who may land here")
+            let data = FieldUse.cardData(place)
+            if case .success(let words?) = data { Text(words).font(.subheadline).foregroundStyle(.secondary) }
+            ProblemLine(data, "Where its figures come from")
             // A NOTAM in force that closes the field, or a TFR near it, its
             // badge under the name, a tap opening it (the owner, 2026-11-11:
             // "tapping the affected thing should show the notam").
@@ -151,7 +162,8 @@ struct AirportPlaceHead: View {
     /// plan's destination), Add Stop (greyed where it can't be one), Call
     /// (the FAA's phone for the field, greyed where it lists none) and
     /// Favorite. Depart From is in the foot's Add to Plan, the diagram the
-    /// first picture tile.
+    /// first picture tile. A field NASR lists as closed is never offered
+    /// to land at (decision 0043): Fly Here and Add Stop are greyed.
     private var actions: some View {
         let here = plan.dest == place.ident
         let ete = here ? plan.totals?.eteMin.map(Format.duration) : nil
@@ -162,13 +174,14 @@ struct AirportPlaceHead: View {
                 ActionFace(systemImage: CardAction.flyHere.systemImage, title: ete ?? CardAction.flyHere.title)
             }
             .glassProminentButton()
+            .disabled(place.closed != nil)
             .accessibilityLabel(ete.map { "Fly Here, \($0)" } ?? "Fly Here")
             .accessibilityIdentifier("fly-here")
             Button { plan.addStop(place.ident); done() } label: {
                 ActionFace(systemImage: CardAction.addStop.systemImage, title: "Add Stop")
             }
             .glassButton()
-            .disabled(!plan.canAddStop(place.ident))
+            .disabled(place.closed != nil || !plan.canAddStop(place.ident))
             .accessibilityLabel(plan.canAddStop(place.ident) ? CardAction.addStop.title : "\(CardAction.addStop.title): already on the route")
             .accessibilityIdentifier("place-add-stop")
             Group {
@@ -250,9 +263,9 @@ extension EnvironmentValues {
     @Entry var cardExpanded = true
 }
 
-/// What the card's head says of a field: its weather's colour -- its own
+/// What the card's head says of a field's weather: its colour -- its own
 /// report's, or with none the modelled one or a near station's, marked
-/// "≈" -- and a field to keep out of.
+/// "≈".
 enum AirportHead {
     /// The category the chip shows, and whether it is the field's own.
     static func category(_ place: AirportPlace) -> (category: String, own: Bool)? {
@@ -260,15 +273,5 @@ enum AirportHead {
         if place.metar == nil, let modelled = place.modelledWeather?.flightCategory { return (modelled, false) }
         if place.metar == nil, let near = place.nearbyMetar, near.near, let category = near.metar.flightCategory { return (category, false) }
         return nil
-    }
-
-    /// A field the armed services own (the FAA's airport file), or a
-    /// private one: a field most pilots may not land at unasked.
-    static func restriction(_ place: AirportPlace) -> String? {
-        switch place.military {
-        case "military": return "Military, permission required"
-        case "joint": return "Joint use"
-        default: return place.isPrivate == true ? "Private, permission required" : nil
-        }
     }
 }

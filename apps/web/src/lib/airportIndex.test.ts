@@ -44,6 +44,8 @@ describe("the phone's own airport search", () => {
       municipality: "Grayslake",
       region: "US-IL",
       kind: "airport",
+      closed: null,
+      use: null,
     });
   });
 
@@ -62,6 +64,39 @@ describe("the phone's own airport search", () => {
   });
 });
 
+describe("a field NASR lists as closed (decision 0043)", () => {
+  // The planner's index sends each closed field's label beside the rows
+  // (wingtip.airports.search_index's `closed`, the engine's field_status).
+  const index = indexOf(
+    [
+      ["9II2", "Campbell Nelund Field", "Grayslake", "IL", 2, 42.3, -88.06],
+      ["C81", "Campbell Airport", "Grayslake", "IL", 2, 42.32, -88.07, "KC81"],
+    ],
+    { "9II2": "Closed indefinitely" },
+  );
+
+  test("is found by its ident, labelled", () => {
+    expect(searchIndex(index, "9II2")).toEqual([
+      {
+        ident: "9II2",
+        name: "Campbell Nelund Field",
+        municipality: "Grayslake",
+        region: "US-IL",
+        kind: "airport",
+        closed: "Closed indefinitely",
+        use: null,
+      },
+    ]);
+  });
+
+  test("comes after the open fields it is found with, never first", () => {
+    expect(searchIndex(index, "campbell").map((r) => [r.ident, r.closed])).toEqual([
+      ["C81", null],
+      ["9II2", "Closed indefinitely"],
+    ]);
+  });
+});
+
 describe("placeOf", () => {
   test("places an airport by any of its idents, a present position by itself, and nothing else", () => {
     const index = indexOf([
@@ -72,5 +107,25 @@ describe("placeOf", () => {
     expect(placeOf(index, "C81")).toEqual({ lat: 42.3246, lon: -88.0741 });
     expect(placeOf(index, "@42.3,-88.1")).toEqual({ lat: 42.3, lon: -88.1 });
     expect(placeOf(index, "VPBNG")).toBeNull();
+  });
+});
+
+describe("who may use a field", () => {
+  // The planner's index sends each private, military or joint-use field's
+  // use beside the rows (wingtip.airports.search_index's `use`).
+  const index = indexOf(
+    [
+      ["IL11", "Donald Alfred Gade", "Antioch", "IL", 2, 42.4, -88.1],
+      ["KMXF", "Maxwell AFB", "Montgomery", "AL", 1, 32.38, -86.36],
+      ["C81", "Campbell Airport", "Grayslake", "IL", 2, 42.32, -88.07, "KC81"],
+    ],
+    {},
+    { IL11: "private", KMXF: "military" },
+  );
+
+  test("is said on its search row, and nothing for a public field", () => {
+    expect(searchIndex(index, "IL11")[0]!.use).toBe("private");
+    expect(searchIndex(index, "maxwell")[0]!.use).toBe("military");
+    expect(searchIndex(index, "C81")[0]!.use).toBeNull();
   });
 });

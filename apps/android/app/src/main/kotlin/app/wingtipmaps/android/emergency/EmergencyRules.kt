@@ -94,7 +94,9 @@ object EngineEmergency : EmergencyRules {
                 EngineContract.BestFieldsInputFieldsItem(
                     ident = f.ident, name = f.name, lat = f.lat, lon = f.lon, elevationFt = f.elevationFt,
                     runways = f.runways.map { recast(it) }, metar = f.metar?.let { recast(it) },
-                    towered = f.towered, private = f.isPrivate, military = f.military,
+                    // NASR's status too: best_fields never ranks a closed
+                    // field, whatever is sent (decision 0043).
+                    towered = f.towered, private = f.isPrivate, military = f.military, status = f.status,
                 )
             },
         )

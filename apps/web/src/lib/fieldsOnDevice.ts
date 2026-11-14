@@ -8,8 +8,8 @@ import type { LatLon } from "./geo";
  * (lib/airportIndex, the planner's search index, kept a week by the
  * service worker), for Emergency and Nearest when the planner cannot be
  * asked: in the air, most of a flight. The index holds each field's
- * ident, name, town, size and position, and nothing else -- no runway,
- * elevation, weather or whether it is private -- so what is said from it
+ * ident, name, town, size and position, and who may use it, and nothing
+ * else -- no runway, elevation or weather -- so what is said from it
  * says so ("From this device, without weather"), and the engine's
  * best_fields ranks them nearest first, its distances and courses on the
  * great circle (FAA-H-8083-25C ch. 16), as it does the planner's.
@@ -33,12 +33,14 @@ export function fieldsNear(index: AirportIndex, at: LatLon, limit: number): Devi
   const near: [number, number][] = [];
   for (let row = 0; row < index.rows.length; row++) {
     const lat = index.lat[row]!;
-    if (Number.isNaN(lat) || index.rows[row]![4] > LANDING_SIZE_MAX) continue;
+    // Never a field NASR lists as closed (decision 0043).
+    if (Number.isNaN(lat) || index.rows[row]![4] > LANDING_SIZE_MAX || index.closed[row]) continue;
     near.push([(lat - at.lat) ** 2 + ((index.lon[row]! - at.lon) * shrink) ** 2, row]);
   }
   near.sort((a, b) => a[0] - b[0]);
   return near.slice(0, limit).map(([, row]) => {
     const [ident, name, town, , size] = index.rows[row]!;
+    const use = index.use[row];
     return {
       ident,
       name,
@@ -50,8 +52,10 @@ export function fieldsNear(index: AirportIndex, at: LatLon, limit: number): Devi
       runways: [],
       metar: null,
       towered: null,
-      private: null,
-      military: null,
+      // As the planner's index says it: "military" or "joint" passed on as
+      // it comes, for the engine to weigh (best_fields).
+      private: use === "private",
+      military: use === "military" || use === "joint" ? use : null,
     };
   });
 }
@@ -90,7 +94,8 @@ export function nearestOnDevice(index: AirportIndex, at: LatLon, limit: number):
       fuel: [],
       runway_surfaces: [],
       towered: false,
-      private: false,
+      private: field.private === true,
+      military: field.military ?? null,
     };
   });
 }

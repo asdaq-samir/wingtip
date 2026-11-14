@@ -232,6 +232,25 @@ fn the_airports_in_view_are_the_planners_fields() {
     }
 }
 
+/// The fixture packs' fields NASR lists as closed indefinitely (ARPT_STATUS
+/// CI, cycle 2026-10-29): 9II2 Nelund Field and IL63 Mays Aviation are
+/// never drawn as fields (decision 0043), where the open fields round them
+/// are.
+#[test]
+fn a_closed_field_is_not_in_view() {
+    let bytes = pack_bytes();
+    let packs: Vec<Pack> = bytes.iter().map(|b| Pack::read(b).unwrap()).collect();
+    let idents = |south, west, north, east| -> BTreeSet<String> {
+        let v: Value = serde_json::from_str(&view::airports_in_view(&packs, south, west, north, east)).unwrap();
+        v["airports"].as_array().unwrap().iter().map(|a| a["ident"].as_str().unwrap().to_owned()).collect()
+    };
+    let near_9ii2 = idents(41.6, -86.3, 41.8, -86.0);
+    assert!(!near_9ii2.contains("9II2"), "{near_9ii2:?}");
+    assert!(!near_9ii2.is_empty());
+    let near_il63 = idents(40.6, -88.8, 40.8, -88.5);
+    assert!(!near_il63.contains("IL63"), "{near_il63:?}");
+}
+
 #[test]
 fn the_navaids_in_view_are_the_planners_vors() {
     let bytes = pack_bytes();

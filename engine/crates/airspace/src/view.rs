@@ -561,8 +561,8 @@ fn primaries(packs: &[Pack]) -> Vec<(String, char)> {
     found
 }
 
-/// The planner's AirportsInView for the box, JSON: the landing fields of
-/// the packs' tables inside it, the biggest first, at most AIRPORT_LIMIT.
+/// The planner's AirportsInView for the box, JSON: the open landing fields (wingtip_flight::field)
+/// of the packs' tables inside it, the biggest first, at most AIRPORT_LIMIT.
 pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east: f64) -> String {
     let view: Bbox = [west, south, east, north];
     let mut pins: Vec<Pin> = Vec::new();
@@ -583,7 +583,7 @@ pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
         );
         for r in &t.rows {
             let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(|s| s.trim()).unwrap_or("");
-            if get(site) != "A" || get(status) != "O" {
+            if get(site) != "A" || !wingtip_flight::field::is_open(Some(get(status))) {
                 continue;
             }
             let (Ok(la), Ok(lo)) = (get(lat).parse::<f64>(), get(lon).parse::<f64>()) else { continue };
@@ -608,7 +608,7 @@ pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
             pins.push(Pin {
                 ident: ident.to_owned(),
                 faa_id: get(id).to_uppercase(),
-                name: crate::spoken::title(get(name)),
+                name: crate::field_name::field_name(get(name)),
                 lat: la,
                 lon: lo,
                 kind,

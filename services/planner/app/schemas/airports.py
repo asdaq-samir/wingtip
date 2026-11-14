@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from .airport_lights import LightingNote, LightingSystem
+from .airport_record import AirportRecord
 from .common import Frequency, Metar, Runway, TrafficPattern
 from .plates import ApproachFacts
 
@@ -303,7 +304,7 @@ class ChartPages(BaseModel):
     pages: list[ChartPage]
 
 
-class AirportPlace(BaseModel):
+class AirportPlace(AirportRecord):
     """One airport the way the map's card shows it: its name and place,
     the class of the airspace over it, whether it has a tower, its
     runways and radio, and the weather there now. `metar` is None for a
@@ -321,9 +322,10 @@ class AirportPlace(BaseModel):
     airspace_class: Literal["B", "C", "D", "E", "G"] | None = None
     #: A field the armed services own, as AirportPin's.
     military: Literal["military", "joint"] | None = None
-    #: Closed to the public, as AirportPin's: the card says so, since a
-    #: pilot who taps the R needs to know to ask the owner first.
+    #: Closed to the public, as AirportPin's (ask the owner first); and where
+    #: NASR lists it closed (CI, CP), the engine's label, never offered (0043).
     private: bool = False
+    closed: str | None = None
     towered: bool
     # Its remarks a pilot acts on from the cockpit (wingtip.remarks): its
     # lighting remarks as sent (`lighting`), read by the engine into each
@@ -349,14 +351,12 @@ class AirportPlace(BaseModel):
     #: field for the hour (wingtip.glmp): the card's category, marked
     #: modelled, before a near station's.
     modelled_weather: ModelledWeather | None = None
-    #: Its own TAF as issued, where it has one -- most fields have none:
-    #: the card's hour-by-hour forecast is read from it (web lib/hourly),
-    #: and the text is the pilot's to read as sent.
+    #: Its own TAF as issued, where it has one (most have none): the card's
+    #: hours are read from it (web lib/hourly), the text the pilot's as sent.
     taf: str | None = None
     weather_unavailable: bool = False
     # Its phone and one-line street address, from the FAA's airport file
-    # (wingtip.faa_data.airport_contact): the manager's, else the owner's; None
-    # where the FAA lists none.
+    # (faa_data.airport_contact): the manager's, else the owner's; None if none.
     phone: str | None = None
     address: str | None = None
     # The FAA's airport diagram and Chart Supplement page for the current

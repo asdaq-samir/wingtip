@@ -124,6 +124,16 @@ describe("the FAA flight plan form, filled in from a plan", () => {
     expect(form!.items.find((f) => f.key === "endurance")!.note).toBe("38 gal at 8.5 gph.");
   });
 
+  it("ZZZZ by NASR's ICAO_ID where the field's card had it (AIM Appendix 4)", () => {
+    // IL11 lists none: ZZZZ though its ident has a figure; KDLH lists KDLH;
+    // C81 not had, read by its ident.
+    const [form] = flightPlanForms({ ...BASE, rules: "vfr", route: [], dest: "IL11", icaoIds: { IL11: null, KDLH: "KDLH" } });
+    expect(form!.items.find((f) => f.key === "departure")!.note).toContain("DEP/C81");
+    expect(form!.items.find((f) => f.key === "destination")!.note).toContain("DEST/IL11");
+    const [named] = flightPlanForms({ ...BASE, rules: "vfr", route: [], dep: "Z13", icaoIds: { Z13: "PFZK" } });
+    expect(named!.items.find((f) => f.key === "departure")!.note).toBeUndefined();
+  });
+
   it("a VFR flight: no alternate, and the date of flight where it is not today, in UTC", () => {
     const [form] = flightPlanForms({ ...BASE, rules: "vfr", route: [], depart: new Date("2026-10-12T01:30:00Z") });
     expect(value(form!, "rules")).toBe("VFR");

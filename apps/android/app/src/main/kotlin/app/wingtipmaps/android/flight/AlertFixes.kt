@@ -32,7 +32,9 @@ object AlertFixes {
      *  field the message names (its id, the engine's "kind:IDENT:..."). */
     data class CopilotFix(val about: String?, val flyTo: String?)
 
-    private val FIELD_KINDS = setOf("weather", "itws", "night", "fuel")
+    // "closed": the destination NASR lists as closed (decision 0043), its
+    // card a tap away and Fly To the open field best_fields picked instead.
+    private val FIELD_KINDS = setOf("weather", "itws", "night", "fuel", "closed")
 
     fun copilot(m: EngineContract.CopilotMessage): CopilotFix {
         val named = m.id.split(':').getOrNull(1)?.takeIf { m.kind in FIELD_KINDS && it.isNotBlank() }

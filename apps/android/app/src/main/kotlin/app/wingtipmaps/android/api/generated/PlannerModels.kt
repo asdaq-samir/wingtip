@@ -163,11 +163,24 @@ data class AirportPlace (
     @SerialName("chart_supplement_url")
     val chartSupplementUrl: String? = null,
 
+    val closed: String? = null,
+
+    @SerialName("data_source")
+    val dataSource: String? = null,
+
     @SerialName("elevation_ft")
     val elevationFt: Double? = null,
 
     val frequencies: List<Frequency>,
+
+    @SerialName("icao_id")
+    val icaoId: String? = null,
+
     val ident: String,
+
+    @SerialName("info_date")
+    val infoDate: String? = null,
+
     val kind: String,
     val lat: Double,
 
@@ -188,6 +201,9 @@ data class AirportPlace (
 
     @SerialName("nearby_metar")
     val nearbyMetar: NearbyMetar? = null,
+
+    @SerialName("notam_id")
+    val notamId: String? = null,
 
     val pattern: TrafficPattern? = null,
     val phone: String? = null,
@@ -521,11 +537,13 @@ data class AirportSearch (
  */
 @Serializable
 data class AirportSuggestion (
+    val closed: String? = null,
     val ident: String,
     val kind: String? = null,
     val municipality: String? = null,
     val name: String,
-    val region: String? = null
+    val region: String? = null,
+    val use: String? = null
 )
 
 /**
@@ -1853,12 +1871,13 @@ data class CopilotField (
     val lat: Double,
     val lon: Double,
     val metar: EmergencyMetar? = null,
-    val military: Boolean? = null,
+    val military: String? = null,
     val name: String,
     val phone: String? = null,
     @SerialName("private")
     val isPrivate: Boolean? = null,
     val runways: List<EmergencyRunway>,
+    val status: String? = null,
     val towered: Boolean? = null
 )
 
@@ -3047,12 +3066,13 @@ data class EmergencyField (
     val lat: Double,
     val lon: Double,
     val metar: EmergencyMetar? = null,
-    val military: Boolean? = null,
+    val military: String? = null,
     val name: String,
     val phone: String? = null,
     @SerialName("private")
     val isPrivate: Boolean? = null,
     val runways: List<EmergencyRunway>,
+    val status: String? = null,
     val towered: Boolean? = null
 )
 

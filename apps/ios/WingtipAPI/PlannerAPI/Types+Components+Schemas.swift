@@ -1154,12 +1154,20 @@ extension Components {
             public var airspaceClass: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/chart_supplement_url`.
             public var chartSupplementUrl: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/closed`.
+            public var closed: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/data_source`.
+            public var dataSource: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/elevation_ft`.
             public var elevationFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/frequencies`.
             public var frequencies: [Components.Schemas.Frequency]
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/icao_id`.
+            public var icaoId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/ident`.
             public var ident: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/info_date`.
+            public var infoDate: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/kind`.
             public var kind: Swift.String
             /// - Remark: Generated from `#/components/schemas/AirportPlace/lat`.
@@ -1184,6 +1192,8 @@ extension Components {
             public var name: Swift.String
             /// - Remark: Generated from `#/components/schemas/AirportPlace/nearby_metar`.
             public var nearbyMetar: Components.Schemas.NearbyMetar?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/notam_id`.
+            public var notamId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/pattern`.
             public var pattern: Components.Schemas.TrafficPattern?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/phone`.
@@ -1214,9 +1224,13 @@ extension Components {
             ///   - airportDiagramUrl:
             ///   - airspaceClass:
             ///   - chartSupplementUrl:
+            ///   - closed:
+            ///   - dataSource:
             ///   - elevationFt:
             ///   - frequencies:
+            ///   - icaoId:
             ///   - ident:
+            ///   - infoDate:
             ///   - kind:
             ///   - lat:
             ///   - lighting:
@@ -1229,6 +1243,7 @@ extension Components {
             ///   - municipality:
             ///   - name:
             ///   - nearbyMetar:
+            ///   - notamId:
             ///   - pattern:
             ///   - phone:
             ///   - isPrivate:
@@ -1246,9 +1261,13 @@ extension Components {
                 airportDiagramUrl: Swift.String? = nil,
                 airspaceClass: Swift.String? = nil,
                 chartSupplementUrl: Swift.String? = nil,
+                closed: Swift.String? = nil,
+                dataSource: Swift.String? = nil,
                 elevationFt: Swift.Double? = nil,
                 frequencies: [Components.Schemas.Frequency],
+                icaoId: Swift.String? = nil,
                 ident: Swift.String,
+                infoDate: Swift.String? = nil,
                 kind: Swift.String,
                 lat: Swift.Double,
                 lighting: [Swift.String]? = nil,
@@ -1261,6 +1280,7 @@ extension Components {
                 municipality: Swift.String? = nil,
                 name: Swift.String,
                 nearbyMetar: Components.Schemas.NearbyMetar? = nil,
+                notamId: Swift.String? = nil,
                 pattern: Components.Schemas.TrafficPattern? = nil,
                 phone: Swift.String? = nil,
                 isPrivate: Swift.Bool? = nil,
@@ -1278,9 +1298,13 @@ extension Components {
                 self.airportDiagramUrl = airportDiagramUrl
                 self.airspaceClass = airspaceClass
                 self.chartSupplementUrl = chartSupplementUrl
+                self.closed = closed
+                self.dataSource = dataSource
                 self.elevationFt = elevationFt
                 self.frequencies = frequencies
+                self.icaoId = icaoId
                 self.ident = ident
+                self.infoDate = infoDate
                 self.kind = kind
                 self.lat = lat
                 self.lighting = lighting
@@ -1293,6 +1317,7 @@ extension Components {
                 self.municipality = municipality
                 self.name = name
                 self.nearbyMetar = nearbyMetar
+                self.notamId = notamId
                 self.pattern = pattern
                 self.phone = phone
                 self.isPrivate = isPrivate
@@ -1311,9 +1336,13 @@ extension Components {
                 case airportDiagramUrl = "airport_diagram_url"
                 case airspaceClass = "airspace_class"
                 case chartSupplementUrl = "chart_supplement_url"
+                case closed
+                case dataSource = "data_source"
                 case elevationFt = "elevation_ft"
                 case frequencies
+                case icaoId = "icao_id"
                 case ident
+                case infoDate = "info_date"
                 case kind
                 case lat
                 case lighting
@@ -1326,6 +1355,7 @@ extension Components {
                 case municipality
                 case name
                 case nearbyMetar = "nearby_metar"
+                case notamId = "notam_id"
                 case pattern
                 case phone
                 case isPrivate = "private"
@@ -1500,6 +1530,8 @@ extension Components {
         ///
         /// - Remark: Generated from `#/components/schemas/AirportSuggestion`.
         public struct AirportSuggestion: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AirportSuggestion/closed`.
+            public var closed: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportSuggestion/ident`.
             public var ident: Swift.String
             /// - Remark: Generated from `#/components/schemas/AirportSuggestion/kind`.
@@ -1510,33 +1542,43 @@ extension Components {
             public var name: Swift.String
             /// - Remark: Generated from `#/components/schemas/AirportSuggestion/region`.
             public var region: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirportSuggestion/use`.
+            public var use: Swift.String?
             /// Creates a new `AirportSuggestion`.
             ///
             /// - Parameters:
+            ///   - closed:
             ///   - ident:
             ///   - kind:
             ///   - municipality:
             ///   - name:
             ///   - region:
+            ///   - use:
             public init(
+                closed: Swift.String? = nil,
                 ident: Swift.String,
                 kind: Swift.String? = nil,
                 municipality: Swift.String? = nil,
                 name: Swift.String,
-                region: Swift.String? = nil
+                region: Swift.String? = nil,
+                use: Swift.String? = nil
             ) {
+                self.closed = closed
                 self.ident = ident
                 self.kind = kind
                 self.municipality = municipality
                 self.name = name
                 self.region = region
+                self.use = use
             }
             public enum CodingKeys: String, CodingKey {
+                case closed
                 case ident
                 case kind
                 case municipality
                 case name
                 case region
+                case use
             }
         }
         /// - Remark: Generated from `#/components/schemas/AirportsInView`.
@@ -4763,7 +4805,7 @@ extension Components {
             /// - Remark: Generated from `#/components/schemas/CopilotField/metar`.
             public var metar: Components.Schemas.EmergencyMetar?
             /// - Remark: Generated from `#/components/schemas/CopilotField/military`.
-            public var military: Swift.Bool?
+            public var military: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CopilotField/name`.
             public var name: Swift.String
             /// - Remark: Generated from `#/components/schemas/CopilotField/phone`.
@@ -4772,6 +4814,8 @@ extension Components {
             public var isPrivate: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/CopilotField/runways`.
             public var runways: [Components.Schemas.EmergencyRunway]
+            /// - Remark: Generated from `#/components/schemas/CopilotField/status`.
+            public var status: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CopilotField/towered`.
             public var towered: Swift.Bool?
             /// Creates a new `CopilotField`.
@@ -4791,6 +4835,7 @@ extension Components {
             ///   - phone:
             ///   - isPrivate:
             ///   - runways:
+            ///   - status:
             ///   - towered:
             public init(
                 bearingDeg: Swift.Double,
@@ -4802,11 +4847,12 @@ extension Components {
                 lat: Swift.Double,
                 lon: Swift.Double,
                 metar: Components.Schemas.EmergencyMetar? = nil,
-                military: Swift.Bool? = nil,
+                military: Swift.String? = nil,
                 name: Swift.String,
                 phone: Swift.String? = nil,
                 isPrivate: Swift.Bool? = nil,
                 runways: [Components.Schemas.EmergencyRunway],
+                status: Swift.String? = nil,
                 towered: Swift.Bool? = nil
             ) {
                 self.bearingDeg = bearingDeg
@@ -4823,6 +4869,7 @@ extension Components {
                 self.phone = phone
                 self.isPrivate = isPrivate
                 self.runways = runways
+                self.status = status
                 self.towered = towered
             }
             public enum CodingKeys: String, CodingKey {
@@ -4840,6 +4887,7 @@ extension Components {
                 case phone
                 case isPrivate = "private"
                 case runways
+                case status
                 case towered
             }
         }
@@ -7561,7 +7609,7 @@ extension Components {
             /// - Remark: Generated from `#/components/schemas/EmergencyField/metar`.
             public var metar: Components.Schemas.EmergencyMetar?
             /// - Remark: Generated from `#/components/schemas/EmergencyField/military`.
-            public var military: Swift.Bool?
+            public var military: Swift.String?
             /// - Remark: Generated from `#/components/schemas/EmergencyField/name`.
             public var name: Swift.String
             /// - Remark: Generated from `#/components/schemas/EmergencyField/phone`.
@@ -7570,6 +7618,8 @@ extension Components {
             public var isPrivate: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/EmergencyField/runways`.
             public var runways: [Components.Schemas.EmergencyRunway]
+            /// - Remark: Generated from `#/components/schemas/EmergencyField/status`.
+            public var status: Swift.String?
             /// - Remark: Generated from `#/components/schemas/EmergencyField/towered`.
             public var towered: Swift.Bool?
             /// Creates a new `EmergencyField`.
@@ -7588,6 +7638,7 @@ extension Components {
             ///   - phone:
             ///   - isPrivate:
             ///   - runways:
+            ///   - status:
             ///   - towered:
             public init(
                 bearingDeg: Swift.Double,
@@ -7598,11 +7649,12 @@ extension Components {
                 lat: Swift.Double,
                 lon: Swift.Double,
                 metar: Components.Schemas.EmergencyMetar? = nil,
-                military: Swift.Bool? = nil,
+                military: Swift.String? = nil,
                 name: Swift.String,
                 phone: Swift.String? = nil,
                 isPrivate: Swift.Bool? = nil,
                 runways: [Components.Schemas.EmergencyRunway],
+                status: Swift.String? = nil,
                 towered: Swift.Bool? = nil
             ) {
                 self.bearingDeg = bearingDeg
@@ -7618,6 +7670,7 @@ extension Components {
                 self.phone = phone
                 self.isPrivate = isPrivate
                 self.runways = runways
+                self.status = status
                 self.towered = towered
             }
             public enum CodingKeys: String, CodingKey {
@@ -7634,6 +7687,7 @@ extension Components {
                 case phone
                 case isPrivate = "private"
                 case runways
+                case status
                 case towered
             }
         }

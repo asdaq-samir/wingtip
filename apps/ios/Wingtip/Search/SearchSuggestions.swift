@@ -41,7 +41,7 @@ struct SearchSuggestions: View {
                     Button { pick(.airport(field.ident)) } label: { found(field) }
                         .foregroundStyle(.primary)
 
-                        .airportPreview(field.ident) { pick(.plan) }
+                        .airportPreview(field.ident, closed: field.closed != nil) { pick(.plan) }
                         // The UI tests' handle on a result (WingtipUITests/FlowTests).
                         .accessibilityIdentifier("airport-result-\(field.ident)")
                 }
@@ -96,9 +96,12 @@ struct SearchSuggestions: View {
 
     // MARK: Rows
 
+    /// A field found, its closed label or its use first ("Closed
+    /// indefinitely · Cooper Flying Service", "Private · Ravenwood").
     private func found(_ field: AirportSuggestion) -> some View {
-        row(field.ident, [field.name, field.municipality, field.region].compactMap { $0 }.joined(separator: " · "),
-            systemImage: field.kind == "fix" ? WingtipIcon.waypoint : WingtipIcon.departFrom)
+        SearchRowLabel(title: field.ident, detail: [field.name, field.municipality, field.region].compactMap { $0 }.joined(separator: " · "),
+                       systemImage: field.kind == "fix" ? WingtipIcon.waypoint : WingtipIcon.departFrom,
+                       flag: FieldUse.flag(closed: field.closed, use: field.use))
     }
 
     /// A result's two lines (SearchRowLabel).

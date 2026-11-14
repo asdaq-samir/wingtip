@@ -101,6 +101,17 @@ struct MapExtrasInput {
     /// A waypoint's card's action (CardKind.navaid): Direct To, Add to
     /// Route, Copy.
     var onWaypoint: ((String, CLLocationCoordinate2D, CardAction) -> Void)?
+    /// The emergency card open: the private and military fields drawn
+    /// whatever Setup's switches say, since in an emergency the pilot in
+    /// command may land where it needs (14 CFR 91.3(b); the owner,
+    /// 2026-11-13). The switches themselves are never changed, so they are
+    /// as they were once the card closes.
+    var emergency = false
+
+    /// Which of Setup's field switches the map draws by now.
+    func fieldSwitches(military: Bool, privateFields: Bool) -> (military: Bool, privateFields: Bool) {
+        (military || emergency, privateFields || emergency)
+    }
 
     /// Setup's switches, kept on the device (the web app's preferences:
     /// waypoints and Class B off until a pilot turns them on, plates on).

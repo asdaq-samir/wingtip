@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { verdictItems, verdictLine, type VerdictInput } from "./verdict";
+import { fieldPermission, verdictItems, verdictLine, type VerdictInput } from "./verdict";
 
 const quiet: VerdictInput = {
   weather: { pending: false, failed: null, vfrNotRecommended: [], underMinimums: [], hazards: [], unchecked: [], worst: "3,500 ft · 6 sm" },
@@ -86,5 +86,26 @@ describe("the Go / No-Go", () => {
       finding: "ok",
       detail: "2 TFRs near, none in force on the route; 1 special-use area not scheduled then",
     });
+  });
+
+  it("adds the fields row for a private destination and a closed stop, and none where every field is public (gonogo_field_permission)", () => {
+    const open = { private: false, military: null, phone: null, status: "O" };
+    expect(
+      fieldPermission([
+        { ident: "C81", role: "departure", ...open },
+        { ident: "KDLH", role: "destination", ...open },
+      ]),
+    ).toBeNull();
+    const row = fieldPermission([
+      { ident: "C81", role: "departure", ...open },
+      { ident: "00MO", role: "stop", ...open, status: "CI" },
+      { ident: "IL11", role: "destination", ...open, private: true, phone: "847-323-8911" },
+    ])!;
+    expect(row).toMatchObject({ key: "fields", finding: "caution" });
+    expect(row.detail).toContain("00MO is closed indefinitely");
+    expect(row.detail).toContain("IL11 is private");
+    expect(row.detail).toContain("847-323-8911");
+    // After the tabs' findings, the line weighs it as any other.
+    expect(verdictLine([...verdictItems(quiet), row]).finding).toBe("caution");
   });
 });

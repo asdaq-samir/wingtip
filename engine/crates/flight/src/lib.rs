@@ -10,6 +10,8 @@
 //! - performance: a light piston airplane in the day's air -- its cruise
 //!   at an altitude and its climbs (the planner's wingtip.performance,
 //!   #482 phase 4).
+//! - field: whether a field is open, from NASR's ARPT_STATUS (the owner's
+//!   hard rule: a closed field is never shown or offered as open);
 //! - limits: the altitudes a flight may be planned at (71.33, 91.119(c),
 //!   91.121, 91.159, 91.179);
 //! - filing: FAA Form 7233-4's items as AIM Appendix 4 writes them;
@@ -19,6 +21,7 @@
 //! - calls: these rules asked by name.
 
 pub mod calls;
+pub mod field;
 pub mod filing;
 pub mod flight;
 pub mod limits;

@@ -31,7 +31,7 @@ sealed interface DoAction {
 
 /** What a tap in the search picked, done by the root (SearchPicks). */
 sealed interface SearchPick {
-    data class Airport(val ident: String, val name: String) : SearchPick
+    data class Airport(val ident: String, val name: String, val closed: String? = null) : SearchPick
 
     data class Waypoint(val ident: String) : SearchPick
 

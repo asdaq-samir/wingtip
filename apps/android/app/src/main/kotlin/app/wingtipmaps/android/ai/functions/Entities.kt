@@ -37,6 +37,8 @@ data class AirportEntity(
     val towered: Boolean,
     /** The link that opens the field's card in the app. */
     val link: String,
+    /** "Closed indefinitely" or "Closed permanently" where NASR lists the field as closed: it is never to be offered or planned as a landing field. Null for an open field. */
+    val closed: String? = null,
 )
 
 /** A radio frequency at a field, as NASR lists it. */

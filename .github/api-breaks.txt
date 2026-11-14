@@ -171,3 +171,7 @@
 2026-11-13 PUT /api/aircraft/{id} added the new required request property `descentIasKt` -- the same
 2026-11-13 PUT /api/aircraft/{id} added the new required request property `descentFuelBurnGph` -- the same
 2026-11-13 POST /api/diagnostics the `faults/items/signature` request property's minLength was set to `1` -- springdoc's own document since 7010a2132, the gateway already refusing an empty signature; no app is released
+2026-11-13 GET /api/copilot/around response property `fields/items/military` list-of-types was widened by adding types `string and null` to media type `application/json` of response `200` -- military is now "military" | "joint" | null so a joint-use field is no longer called military (the private-field audit's PF-4, claude/audit-core); no app is released, and all three apps send and read the string
+2026-11-13 POST /api/departure-window added the new `fields` enum value to the `hours/items/reasons/items/key` response property for the response status `200` -- the Go/No-Go's new fields row (PF-6, a private, military or closed departure, destination or stop); no app is released
+2026-11-13 GET /api/emergency/fields response property `fields/items/military` list-of-types was widened by adding types `string and null` to media type `application/json` of response `200` -- the same as /api/copilot/around's
+2026-11-13 POST /api/go-no-go added the new `fields` enum value to the `items/items/key` response property for the response status `200` -- the same as /api/departure-window's

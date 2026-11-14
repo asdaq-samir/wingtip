@@ -58,6 +58,59 @@ fn the_fixtures_first_messages() {
     }
 }
 
+/// A diversion's pick that is private or military-only says so: with the
+/// engine running the owner's or the service's permission stands (14 CFR
+/// 91.3(b) is for an emergency). Every field but the destination made
+/// private, the pick is one, and the words carry it.
+#[test]
+fn a_private_or_military_alternative_is_said_so() {
+    let f = fixture();
+    let ifr = json!({ "KOSH": { "raw": "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992", "flight_category": "IFR" } });
+    for (usage, words) in
+        [(json!({ "private": true }), "private: permission needed"), (json!({ "military": "military" }), "military: prior permission")]
+    {
+        let mut input = common::copilot_input(&f["base"], &json!({ "metars": ifr }));
+        for field in input["fields"].as_array_mut().unwrap() {
+            if field["ident"] != "KOSH" {
+                for (k, v) in usage.as_object().unwrap() {
+                    field[k] = v.clone();
+                }
+            }
+        }
+        let said = ask("copilot_watch", &input);
+        let first = &said["messages"][0];
+        assert!(first["title"].as_str().unwrap().contains(words), "{first}");
+        assert!(first["say"].as_str().unwrap().contains(words), "{first}");
+        assert_eq!(first["alternative"]["private"], json!(usage.get("private").is_some()), "{first}");
+    }
+}
+
+/// A destination NASR lists as closed (decision 0043): sent with its
+/// status it is a "closed" warning with the best alternative, never the
+/// alternative itself; left out of the fields altogether the copilot still
+/// watches the flight rather than failing.
+#[test]
+fn a_closed_destination_is_said_and_never_an_error() {
+    let f = fixture();
+    let mut input = common::copilot_input(&f["base"], &json!({}));
+    let dest = input["dest"].as_str().unwrap().to_owned();
+    for field in input["fields"].as_array_mut().unwrap() {
+        if field["ident"] == json!(dest) {
+            field["status"] = json!("CI");
+        }
+    }
+    let said = ask("copilot_watch", &input);
+    let first = &said["messages"][0];
+    assert_eq!(first["kind"], json!("closed"), "{said}");
+    assert_eq!(first["level"], json!("warning"));
+    assert!(first["title"].as_str().unwrap().starts_with(&format!("{dest} is closed indefinitely (NASR)")), "{first}");
+    assert_ne!(first["alternative"]["ident"], json!(dest), "{first}");
+    let mut gone = common::copilot_input(&f["base"], &json!({}));
+    gone["fields"].as_array_mut().unwrap().retain(|field| field["ident"] != json!(dest));
+    let watched = ask("copilot_watch", &gone);
+    assert!(watched["messages"].as_array().unwrap().iter().all(|m| m["kind"] != json!("closed")), "{watched}");
+}
+
 /// The alternative is the emergency assistant's ranking, not a second
 /// one: with every other field good, it is best_fields' first diversion
 /// pick after the destination.

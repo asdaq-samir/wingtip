@@ -162,7 +162,7 @@ interface PlannerApi {
     /**
      * GET airport/{ident}
      * Airport Place
-     * One US airport&#39;s card, by any ident it goes by (C81, KC81, KDLH).  &#x60;airspace_class&#x60; is the class of the airspace at the surface at the field: B, C or D, E in a Class E surface area, G where the ground is uncontrolled (wingtip.airspace.surface_class_at). &#x60;towered&#x60; is whether it lists a tower frequency. A field with no reporting station has no &#x60;metar&#x60;; &#x60;weather_unavailable&#x60; is set only when the weather service could not be asked.
+     * One US airport&#39;s card, by any ident it goes by (C81, KC81, KDLH).  &#x60;airspace_class&#x60; is the surface&#39;s class (wingtip.airspace.surface_class_at). &#x60;towered&#x60; is whether it lists a tower frequency. No reporting station, no &#x60;metar&#x60;; &#x60;weather_unavailable&#x60; only where the service was not asked.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error

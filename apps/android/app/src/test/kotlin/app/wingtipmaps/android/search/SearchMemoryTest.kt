@@ -2,6 +2,7 @@ package app.wingtipmaps.android.search
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -42,5 +43,19 @@ class SearchMemoryTest {
         assertTrue(again.isFavorite("c29"))
         assertFalse(again.isFavorite("KJVL"))
         assertEquals(listOf("KJVL"), again.recents.value.map { it.ident })
+    }
+
+    @Test
+    fun aFieldsClosedLabelIsPutOnItsRememberedRowsAndTakenOff() {
+        val list = listOf(airport("00MO"), airport("C81"), Remembered(Remembered.Kind.AIRPLANE, "00MO"))
+        val closed = SearchMemory.statused(list, "00mo", "Closed indefinitely")
+        assertEquals(listOf("Closed indefinitely", null, null), closed.map { it.closed })
+        assertEquals(list, SearchMemory.statused(closed, "00MO", null))
+    }
+
+    @Test
+    fun aRowKeptBeforeTheLabelIsReadAsOpen() {
+        val kept = app.wingtipmaps.android.api.Gateway.json.decodeFromString(Remembered.serializer(), """{"kind":"AIRPORT","ident":"C81","name":"Campbell"}""")
+        assertNull(kept.closed)
     }
 }

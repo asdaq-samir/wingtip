@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import app.wingtipmaps.android.R
@@ -85,7 +86,12 @@ fun LazyListScope.searchResults(
     state.problem?.let { item(key = "problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg)) } }
     if (shows(ResultKind.AIRPORTS)) {
         group("airports", R.string.group_airports, state.airports) { a ->
-            ResultRow(a.ident, a.name, where(a), Icons.Filled.LocalAirport) { onPick(SearchPick.Airport(a.ident, a.name)) }
+            // A closed field labelled first in the error ink (decision 0043),
+            // then its use, then where it is.
+            val use = FieldMarks.use(a.use)?.let { stringResource(it) }
+            ResultRow(a.ident, a.name, listOfNotNull(use, where(a).ifEmpty { null }).joinToString(" · "), Icons.Filled.LocalAirport, alert = a.closed?.ifBlank { null }) {
+                onPick(SearchPick.Airport(a.ident, a.name, FieldMarks.closed(a.closed)))
+            }
         }
     }
     if (shows(ResultKind.WAYPOINTS)) {
@@ -127,16 +133,22 @@ fun LazyListScope.nothingTyped(
         item(key = "favorites") {
             LazyRow(contentPadding = PaddingValues(horizontal = WingtipSpace.Lg), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                 items(starred, key = { it.kind.name + it.ident }) { f ->
-                    AssistChip(onClick = { onPick(pickOf(f)) }, label = { Text(listOf(f.ident, f.name).filter { it.isNotEmpty() }.joinToString(" ")) })
+                    // A closed field's label after its name, in the error ink (decision 0043).
+                    val error = MaterialTheme.colorScheme.error
+                    val label = buildAnnotatedString {
+                        append(listOf(f.ident, f.name).filter { it.isNotEmpty() }.joinToString(" "))
+                        f.closed?.let { withStyle(SpanStyle(color = error)) { append(" · $it") } }
+                    }
+                    AssistChip(onClick = { onPick(pickOf(f)) }, label = { Text(label) })
                 }
             }
         }
     }
-    group("recents", R.string.recents, recents) { r -> ResultRow(r.ident, r.name, null, Icons.Filled.History) { onPick(pickOf(r)) } }
+    group("recents", R.string.recents, recents) { r -> ResultRow(r.ident, r.name, null, Icons.Filled.History, alert = r.closed) { onPick(pickOf(r)) } }
 }
 
 private fun pickOf(r: Remembered): SearchPick = when (r.kind) {
-    Remembered.Kind.AIRPORT -> SearchPick.Airport(r.ident, r.name)
+    Remembered.Kind.AIRPORT -> SearchPick.Airport(r.ident, r.name, r.closed)
     Remembered.Kind.AIRPLANE -> SearchPick.Airplane(tail = r.ident.takeIf { SearchGroups.looksLikeTail(it) }, type = r.type, name = r.ident)
 }
 
@@ -166,12 +178,19 @@ private fun ResultRow(
     supporting: String?,
     glyph: ImageVector?,
     tint: Boolean = false,
+    alert: String? = null,
     onClick: () -> Unit,
 ) {
+    val error = MaterialTheme.colorScheme.error
+    val under = buildAnnotatedString {
+        alert?.let { withStyle(SpanStyle(color = error)) { append(it) } }
+        if (alert != null && !supporting.isNullOrEmpty()) append(" · ")
+        supporting?.let { append(it) }
+    }
     ListItem(
         onClick = onClick,
         leadingContent = glyph?.let { { Icon(it, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) } },
-        supportingContent = supporting?.takeIf { it.isNotEmpty() }?.let { { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
+        supportingContent = under.takeIf { it.isNotEmpty() }?.let { { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth(),
         content = {

@@ -49,6 +49,30 @@ fun Engine.airplaneNeeds(profile: Map<String, JsonElement>? = null, figure: Stri
     rule("airplane_needs", EngineContract.AirplaneNeedsInput(profile = profile, figure = figure))
 
 /**
+ * How far a field's figures are to be trusted, in the card's words: "Owner-reported, last updated Aug 2023" where NASR's INSPECT_METHOD_CODE is 1 or 2 (the 5010-1 and 5010-2 mailouts: the owner's own figures, never inspected), null where they were inspected (F, S, C) or the source is not known.
+ */
+fun Engine.airportDataWords(dataSource: String? = null, infoDate: String? = null): Result<String?> =
+    rule("airport_data_words", EngineContract.AirportDataWordsInput(dataSource = dataSource, infoDate = infoDate))
+
+/**
+ * Fields' names as every app writes them: NASR APT_BASE's ARPT_NAME title-cased as Python's str.title() does, the FAA's codes kept in capitals (AAF, AFB, AHP, ANGB, ARB, JRB, MCAS, MCAF, NAS, NAF, NAWS, NOLF, OLF, USAF, USCG, CGAS, LLC): "SIERRA VISTA MUNI-LIBBY AAF" is "Sierra Vista Muni-Libby AAF". The phones' packs name fields so too.
+ */
+fun Engine.airportNames(names: List<String>): Result<List<String>> =
+    rule("airport_names", EngineContract.AirportNamesInput(names = names))
+
+/**
+ * What a field's empty NOTAM list says where NASR gives a private field no NOTAM_ID: it is outside the NOTAM system, so "No NOTAMs are issued for this private-use field." rather than none heard. Null where the ordinary empty state is right. (FAA JO 7930.2 could not be fetched to quote on 2026-11-13; the plainer wording was chosen for that reason.)
+ */
+fun Engine.airportNotamsNone(private: Boolean? = null, military: String? = null, notamId: String? = null): Result<String?> =
+    rule("airport_notams_none", EngineContract.AirportNotamsNoneInput(private = private, military = military, notamId = notamId))
+
+/**
+ * Who may use a field and the airport card's line for it, the owner's words (2026-11-13), one for the web, the iPhone and Android: "Private: permission required" (NASR FACILITY_USE_CODE PR: non-public use, the sectional's circled R, FAA Aeronautical Chart User's Guide) and "Military: prior permission required" (a field the armed services own, not open to the public); none for a public or a joint-use field, where a civil pilot lands as at any public field.
+ */
+fun Engine.airportUseWords(private: Boolean? = null, military: String? = null): Result<EngineContract.AirportUseWordsAnswer> =
+    rule("airport_use_words", EngineContract.AirportUseWordsInput(private = private, military = military))
+
+/**
  * The airspace over a point in bands, from the ground to FL600 (14 CFR 71.33, 71.71): a B, C or D where it is drawn, the most restrictive where they overlap, E from its floor or 14,500 ft, G under it all, A from 18,000 ft, split where 91.155's minimums, 91.117's speed or 91.215's transponder rule changes. The volumes are the caller's, read from the NASR shapefile or a cycle pack.
  */
 fun Engine.airspaceColumn(groundFt: Double? = null, inVeil: Boolean? = null, volumes: List<EngineContract.AirspaceColumnInputVolumesItem>): Result<List<EngineContract.AirspaceBand>> =
@@ -301,7 +325,7 @@ fun Engine.belowVfrMinimums(ceilingFt: Double? = null, visibilitySm: Double? = n
     rule("below_vfr_minimums", EngineContract.BelowVfrMinimumsInput(ceilingFt = ceilingFt, visibilitySm = visibilitySm))
 
 /**
- * The best fields to land at from where the airplane is, ranked with their reasons: in "glide" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in "diversion" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower. A glide ratio with no best-glide speed gives a reach only with no wind aloft: a headwind's loss needs the glide's airspeed, and a still-air reach into one would be too far.
+ * The best fields to land at from where the airplane is, ranked with their reasons: in "glide" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in "diversion" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower. In "diversion" mode a private or military-only field counts against it as an IFR report does (the owner's or the service's permission stands with no emergency), so a public or joint-use field comes first of fields otherwise alike, and its reasons give the card's line ("Private: permission required", "Military: prior permission required"); in "glide" mode it does not count (14 CFR 91.3(b)) and is said as a caution. A glide ratio with no best-glide speed gives a reach only with no wind aloft: a headwind's loss needs the glide's airspeed, and a still-air reach into one would be too far.
  */
 fun Engine.bestFields(mode: String? = null, at: EngineContract.BestFieldsInputAt, altitudeFt: Double? = null, speedKt: Double? = null, wind: EngineContract.BestFieldsInputWind? = null, variationDeg: Double? = null, airplane: EngineContract.BestFieldsInputAirplane? = null, fields: List<EngineContract.BestFieldsInputFieldsItem>, limit: Double? = null): Result<EngineContract.BestFieldsAnswer> =
     rule("best_fields", EngineContract.BestFieldsInput(mode = mode, at = at, altitudeFt = altitudeFt, speedKt = speedKt, wind = wind, variationDeg = variationDeg, airplane = airplane, fields = fields, limit = limit))
@@ -649,6 +673,12 @@ fun Engine.fieldRelation(plane: EngineContract.FieldRelationInputPlane, field: E
     rule("field_relation", EngineContract.FieldRelationInput(plane = plane, field = field))
 
 /**
+ * Whether a field is open, from the FAA's NASR APT_BASE.csv ARPT_STATUS: O operational is open; CI closed indefinitely, CP closed permanently and any other code are closed, and a closed field is never shown or offered as an open one (the owner's hard rule, decision 0043): hidden from the map and every list, and where it appears at all (a search for its ident, its card) labelled with `closed`. `status` null where NASR has no record of the field: not judged, open, unlabelled.
+ */
+fun Engine.fieldStatus(status: String? = null): Result<EngineContract.FieldStatusAnswer> =
+    rule("field_status", EngineContract.FieldStatusInput(status = status))
+
+/**
  * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (FAA-H-8083-28B 27.4.1, 24.4.3.8.2).
  */
 fun Engine.fieldTaf(ident: String, at: EngineContract.FieldTafInputAt? = null, stations: List<EngineContract.FieldTafInputStationsItem>): Result<EngineContract.FieldTafAnswer> =
@@ -709,10 +739,10 @@ fun Engine.filedWake(maxTakeoffLb: Double? = null): Result<String?> =
     rule("filed_wake", EngineContract.FiledWakeInput(maxTakeoffLb = maxTakeoffLb))
 
 /**
- * Whether a field's identifier has a figure in it (C81, 06A) and so no ICAO four-letter location indicator: filed as ZZZZ with its name in item 18 (DEP/, DEST/, ALTN/; AIM Appendix 4) where a service takes only indicators.
+ * Whether a field is filed as ZZZZ with its name in item 18 (DEP/, DEST/, ALTN/; AIM Appendix 4: ZZZZ where the field has no ICAO location indicator), where a service takes only indicators. Decided by NASR's ICAO_ID (APT_BASE.csv) where the host has the field's row: null or empty is none listed (IL11, BGTL), a four-letter one is filed as it is (Z13 is PFZK). Only where icao_id is left out is the identifier read: one with a figure in it (C81, 06A) is the FAA's own.
  */
-fun Engine.filedZzzz(ident: String): Result<Boolean> =
-    rule("filed_zzzz", EngineContract.FiledZzzzInput(ident = ident))
+fun Engine.filedZzzz(ident: String, icaoId: String? = null): Result<Boolean> =
+    rule("filed_zzzz", EngineContract.FiledZzzzInput(ident = ident, icaoId = icaoId))
 
 /**
  * A point as a fix-radial-distance off the nearest station with a variation, "JOT 045° 12 nm" (AIM 5-1-6), or null.
@@ -905,6 +935,12 @@ fun Engine.gonogoDensityAltitude(pressureAltFt: Double, tempC: Double): Result<D
  */
 fun Engine.gonogoEndDistance(table: EngineContract.ShortFieldTable, runway: EngineContract.Runway? = null, pressureAltFt: Double, tempC: Double, weightLb: Double? = null, headwindKt: Double): Result<EngineContract.GonogoEndDistanceAnswer> =
     rule("gonogo_end_distance", EngineContract.GonogoEndDistanceInput(table = table, runway = runway, pressureAltFt = pressureAltFt, tempC = tempC, weightLb = weightLb, headwindKt = headwindKt))
+
+/**
+ * The Go / No-Go's "fields" row for a departure, destination or stop that NASR lists as closed (APT_BASE ARPT_STATUS not O: "00MO is closed indefinitely (NASR): it cannot be planned as a landing field", decision 0043), private (FACILITY_USE_CODE PR: "IL11 is private: land only with the owner's permission (call 847-323-8911)") or military-only ("prior permission required (PPR)"), the phone NASR APT_CON's; 14 CFR 91.103 (all available information). A caution, opening the Depart tab for the departure and Arrive otherwise; null where every field is open and public or joint use. The hosts add it to gonogo_verdict_items' list before gonogo_verdict_line.
+ */
+fun Engine.gonogoFieldPermission(fields: List<EngineContract.GonogoFieldPermissionInputFieldsItem>): Result<EngineContract.GonogoItem?> =
+    rule("gonogo_field_permission", EngineContract.GonogoFieldPermissionInput(fields = fields))
 
 /**
  * Whether a flight in a hazard from `enter` to `leave` is there while it is valid: "before" it starts, "after" it ends, else "during", its window widened by `margin_min` either way (30, PASS_MARGIN_MIN, where missing: an ETA is an estimate); null where it gives no window.
@@ -1123,16 +1159,16 @@ fun Engine.icingSeverity(category: Double): Result<String?> =
     rule("icing_severity", EngineContract.IcingSeverityInput(category = category))
 
 /**
- * Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility).
+ * Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility). A private or military-only field (private, military) is the pilot's to check too, with "KMXF is military: prior permission required (PPR)." or the owner's permission said.
  */
-fun Engine.ifrAlternateCheck(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = null): Result<EngineContract.IfrAlternateCheck> =
-    rule("ifr_alternate_check", EngineContract.IfrAlternateIn(ident = ident, approaches = approaches, forecast = forecast))
+fun Engine.ifrAlternateCheck(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = null, private: Boolean? = null, military: String? = null): Result<EngineContract.IfrAlternateCheck> =
+    rule("ifr_alternate_check", EngineContract.IfrAlternateIn(ident = ident, approaches = approaches, forecast = forecast, private = private, military = military))
 
 /**
  * Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast that does not indicate at least 2,000 ft and 3 sm for an hour either side of the ETA (TEMPO and PROB included; a TAF not covering the whole window, a ceiling of unknown height or no visibility does not); no TAF needs one.
  */
-fun Engine.ifrAlternateDestination(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = null): Result<EngineContract.IfrAlternateDestinationAnswer> =
-    rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident = ident, approaches = approaches, forecast = forecast))
+fun Engine.ifrAlternateDestination(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = null, private: Boolean? = null, military: String? = null): Result<EngineContract.IfrAlternateDestinationAnswer> =
+    rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident = ident, approaches = approaches, forecast = forecast, private = private, military = military))
 
 /**
  * The window, unix seconds, a field's TAF is read over for 14 CFR 91.169: the destination's from an hour before to an hour after the ETA (91.169(b)(2)(i), aircraft other than helicopters); an alternate's the ETA there alone, at the estimated time of arrival at the alternate airport (91.169(c)).
@@ -1661,6 +1697,12 @@ fun Engine.profileClearance(altitudeFt: Double, alongNm: List<Double>, groundFt:
  */
 fun Engine.prohibitedCaution(selection: Map<String, JsonElement>): Result<List<String>> =
     rule("prohibited_caution", EngineContract.ProhibitedCautionInput(selection = selection))
+
+/**
+ * Whether a field is open to any civil pilot: neither private (NASR FACILITY_USE_CODE PR) nor military-only; a joint-use field is public use. The search's Public filter.
+ */
+fun Engine.publicUse(private: Boolean? = null, military: String? = null): Result<Boolean> =
+    rule("public_use", EngineContract.PublicUseInput(private = private, military = military))
 
 /**
  * The radial from a VOR a point is on, the course to the station and the distance, or null where the station has no magnetic variation.

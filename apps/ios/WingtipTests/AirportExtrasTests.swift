@@ -22,7 +22,6 @@ struct AirportExtrasTests {
         // No report of its own: the modelled category is the chip's, marked as not its own.
         let chip = AirportHead.category(place)
         #expect(chip?.category == "MVFR" && chip?.own == false)
-        #expect(AirportHead.restriction(place) == nil)
     }
 
     @Test func photosAndServices() throws {
@@ -160,15 +159,52 @@ struct AirportExtrasTests {
         #expect(groups.last?.charts.map(\.url) == ["d"])
     }
 
-    @Test func aMilitaryFieldIsOneToKeepOutOf() throws {
+    @Test func theCardsUseLineIsTheEngines() throws {
+        // The owner's words of 2026-11-13, one line on all three apps; none
+        // for a joint-use field, open to civil pilots, or a public one.
+        #expect(try Engine.airportUseWords(private: false, military: "military").words == "Military: prior permission required")
+        #expect(try Engine.airportUseWords(private: true, military: nil).words == "Private: permission required")
+        #expect(try Engine.airportUseWords(private: false, military: "joint").words == nil)
+        #expect(try Engine.airportUseWords(private: false, military: nil).words == nil)
         var place = AirportPlace(frequencies: [], ident: "KSKF", kind: "large", lat: 29.38, lon: -98.58, name: "Kelly Field", runways: [], towered: false)
-        place.military = "military"
-        #expect(AirportHead.restriction(place) == "Military, permission required")
-        place.military = nil
-        place.isPrivate = true
-        #expect(AirportHead.restriction(place) == "Private, permission required")
         place.metar = Metar(flightCategory: "IFR")
         #expect(AirportHead.category(place)?.own == true)
+    }
+
+    @Test func aPrivateFieldsDataAndNotamsAreSaidForWhatTheyAre() throws {
+        // IL11's figures came from its owner (NASR INSPECT_METHOD_CODE 2).
+        #expect(try Engine.airportDataWords(dataSource: "owner-reported", infoDate: "2023-08-23") == "Owner-reported, last updated Aug 2023")
+        #expect(try Engine.airportDataWords(dataSource: "inspected", infoDate: "2025-04-01") == nil)
+        let notams = FieldNotams()
+        var il11 = AirportPlace(frequencies: [], ident: "IL11", kind: "small_airport", lat: 42.2, lon: -88.3, name: "Il11", runways: [], towered: false)
+        il11.isPrivate = true
+        notams.attach(il11)
+        #expect(try notams.outsideNotams.get() == "No NOTAMs are issued for this private-use field.")
+        var c81 = il11
+        c81.ident = "C81"; c81.isPrivate = false; c81.notamId = "C81"
+        notams.attach(c81)
+        #expect(try notams.outsideNotams.get() == nil)
+    }
+
+    @Test func rowsMarkAClosedFieldFirstThenItsUse() {
+        #expect(FieldUse.flag(closed: "Closed indefinitely", use: "private") == .init(words: "Closed indefinitely", kind: .closed))
+        #expect(FieldUse.flag(closed: nil, use: "private") == .init(words: "Private", kind: .permission))
+        #expect(FieldUse.flag(closed: nil, use: "military")?.words == "Military")
+        #expect(FieldUse.flag(closed: nil, use: "joint") == .init(words: "Joint use", kind: .joint))
+        #expect(FieldUse.flag(closed: nil, use: nil) == nil)
+        // The use is the engine's: KFHU, joint use, is no military-only field.
+        #expect(FieldUse.code(isPrivate: false, military: "joint") == "joint")
+        #expect(FieldUse.code(isPrivate: true, military: nil) == "private")
+        #expect(FieldUse.code(isPrivate: false, military: nil) == nil)
+    }
+
+    @Test func theEmergencyDrawsPrivateAndMilitaryFieldsAndLeavesTheSwitches() {
+        var extras = MapExtrasInput()
+        #expect(extras.fieldSwitches(military: false, privateFields: false) == (false, false))
+        extras.emergency = true
+        #expect(extras.fieldSwitches(military: false, privateFields: false) == (true, true))
+        extras.emergency = false
+        #expect(extras.fieldSwitches(military: true, privateFields: false) == (true, false))
     }
 
     // MARK: The map

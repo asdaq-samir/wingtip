@@ -13,8 +13,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from . import geo, publications, weather
+from . import field_status, field_use, geo, publications, weather
 from .engine import ask as engine
+from .terrain import DEFAULT_FAA_CACHE_DIR
 
 #: Alternates offered within this of the destination.
 NEAR_NM = 100.0
@@ -55,9 +56,12 @@ _FORECAST_KEYS = ("ceiling_ft", "ceiling_unknown", "visibility_sm", "covers", "r
 
 
 def _asked(ident: str, procs: Approaches, forecast: dict | None) -> dict:
-    """What the engine reads of a field: its approaches and its forecast."""
+    """What the engine reads of a field: its approaches, its forecast, and
+    who may land there (wingtip.field_use: a private or military-only
+    field is the pilot's to check, its permission said)."""
     return {
         "ident": ident,
+        **field_use.use_of(ident),
         "approaches": {"names": list(procs.names), "alternate_minimums_url": procs.alternate_minimums_url},
         "forecast": None if forecast is None else {k: forecast.get(k) for k in _FORECAST_KEYS},
     }
@@ -90,7 +94,13 @@ def nearby(dest: tuple[float, float], dest_ident: str, eta_of, limit: int = 5) -
     own for the pilot to check -- those that will do first, then nearest
     first (the engine's `ifr_alternates_ranked`): `eta_of(lat, lon)` the
     ETA there. Read nearest first until twice `limit` are kept."""
-    stations = [s for s in weather._dataset("tafs") if s["icaoId"] != dest_ident and geo.distance_nm(*dest, s["lat"], s["lon"]) <= NEAR_NM]
+    # Never a field NASR lists as closed (decision 0043), TAF or none.
+    closed = field_status.closed_fields(DEFAULT_FAA_CACHE_DIR)
+    stations = [
+        s
+        for s in weather._dataset("tafs")
+        if s["icaoId"] != dest_ident and s["icaoId"] not in closed and geo.distance_nm(*dest, s["lat"], s["lon"]) <= NEAR_NM
+    ]
     stations.sort(key=lambda s: geo.distance_nm(*dest, s["lat"], s["lon"]))
     kept: list[dict] = []
     for station in stations:

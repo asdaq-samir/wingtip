@@ -1,0 +1,41 @@
+{
+  "x-call": "wingtip_brief::airport_use::call",
+  "description": "Whether a field is open to any civil pilot: neither private (NASR FACILITY_USE_CODE PR) nor military-only; a joint-use field is public use. The search's Public filter.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PublicUseInput",
+      "type": "object",
+      "properties": {
+        "private": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services."
+        },
+        "military": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "military",
+            "joint",
+            null
+          ],
+          "description": "A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): \"military\" where not open to the public, \"joint\" where it is (FACILITY_USE_CODE PU)."
+        }
+      }
+    },
+    "answer": {
+      "title": "PublicUseAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

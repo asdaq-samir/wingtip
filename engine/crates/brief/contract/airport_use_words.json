@@ -1,0 +1,68 @@
+{
+  "x-call": "wingtip_brief::airport_use::call",
+  "description": "Who may use a field and the airport card's line for it, the owner's words (2026-11-13), one for the web, the iPhone and Android: \"Private: permission required\" (NASR FACILITY_USE_CODE PR: non-public use, the sectional's circled R, FAA Aeronautical Chart User's Guide) and \"Military: prior permission required\" (a field the armed services own, not open to the public); none for a public or a joint-use field, where a civil pilot lands as at any public field.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AirportUseWordsInput",
+      "type": "object",
+      "properties": {
+        "private": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services."
+        },
+        "military": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "military",
+            "joint",
+            null
+          ],
+          "description": "A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): \"military\" where not open to the public, \"joint\" where it is (FACILITY_USE_CODE PU)."
+        }
+      }
+    },
+    "answer": {
+      "title": "AirportUseWordsAnswer",
+      "type": "object",
+      "properties": {
+        "use": {
+          "type": "string",
+          "enum": [
+            "public",
+            "private",
+            "military",
+            "joint"
+          ]
+        },
+        "words": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The card's line; null for a public or joint-use field."
+        },
+        "public_use": {
+          "type": "boolean",
+          "description": "Open to any civil pilot: public or joint use."
+        }
+      },
+      "required": [
+        "use",
+        "words",
+        "public_use"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

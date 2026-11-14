@@ -12,12 +12,14 @@ offered "Collect this route" for every new one. The chart is read in
 seconds for any route it covers, and it is what the pilot will be
 looking at."""
 
+import re
 import threading
 
 from cachetools import LRUCache
 from fastapi import HTTPException
-from wingtip import chartlabels, charts, model_registry, places
+from wingtip import chartlabels, charts, faa_data, geo, model_registry, places
 from wingtip.engine import ask as engine
+from wingtip.terrain import DEFAULT_FAA_CACHE_DIR
 
 from . import chart_model
 
@@ -57,9 +59,48 @@ def _checkpoint(landmark, predicted: float | None) -> dict:
     }
 
 
+# A private-use field's score where nothing says the sectional draws it.
+# The FAA's Aeronautical Chart User's Guide (VFR Terms and Symbols,
+# Airports) charts a private, non-public-use field only where it has
+# emergency or landmark value, so most of NASR's 14,000 private fields
+# are not on the chart; a checkpoint named after one the pilot cannot see
+# is no checkpoint. Under the engine's 2.5 floor (checkpoints_select),
+# so such a field is offered only where a pilot's chart pick on the route
+# says it is there to be seen.
+PRIVATE_UNCHARTED_SCORE = 2.0
+
+# The FAA airports' candidates are named "Title (IDENT)" (faa_data.
+# load_route_airports); the identifier is read back from it.
+_IDENT = re.compile(r"\(([A-Z0-9]{3,4})\)$")
+
+
+def _weigh_private(checkpoints: list, dep: str, dest: str) -> list:
+    """Each private-use field among the airport checkpoints scored down to
+    PRIVATE_UNCHARTED_SCORE unless a chart pick rated 1-5 on this route
+    stands within chartlabels.SAME_PLACE_NM of it: one a pilot saw on the
+    chart and would use."""
+    private = faa_data.private_fields(DEFAULT_FAA_CACHE_DIR)
+    picks = [p for p in chartlabels.load_picks(chartlabels.route_key(dep, dest)) if (p.get("rating") or 0) >= 1]
+    for c in checkpoints:
+        found = _IDENT.search(c["name"] or "") if c["category"] == "airport" else None
+        if not found or found.group(1) not in private:
+            continue
+        seen = any(geo.distance_nm(c["lat"], c["lon"], p["lat"], p["lon"]) <= chartlabels.SAME_PLACE_NM for p in picks)
+        if not seen:
+            c["predicted_score"] = min(c["predicted_score"], PRIVATE_UNCHARTED_SCORE)
+    return checkpoints
+
+
 def score(dep: str, dest: str) -> list:
     """Every detection within HALF_WIDTH_NM of the course, scored, in
-    along-track order. A failed read of the chart is a 502."""
+    along-track order, a private-use field the chart may not draw scored
+    down (_weigh_private). A failed read of the chart is a 502."""
+    return _weigh_private(_scored(dep, dest), dep, dest)
+
+
+def _scored(dep: str, dest: str) -> list:
+    """The chart's detections within HALF_WIDTH_NM of the course, scored,
+    in along-track order, remembered per route."""
     cycle = charts.serving_cycle()
     key = (cycle, charts.tiles_revision(cycle), _mtime_or_none(model_registry.CHART_CURRENT_DIR / "metrics.json"))
     with _SCORE_CACHE_LOCK:

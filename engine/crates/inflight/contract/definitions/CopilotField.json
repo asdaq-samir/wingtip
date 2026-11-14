@@ -89,13 +89,20 @@
       "type": [
         "boolean",
         "null"
-      ]
+      ],
+      "description": "NASR FACILITY_USE_CODE PR and not owned by the armed services."
     },
     "military": {
       "type": [
-        "boolean",
+        "string",
         "null"
-      ]
+      ],
+      "enum": [
+        "military",
+        "joint",
+        null
+      ],
+      "description": "A field the armed services own (NASR OWNERSHIP_TYPE_CODE MA, MN, MR, CG): \"military\" where it is not open to the public, \"joint\" where it is (FACILITY_USE_CODE PU), a public-use field never marked as military."
     },
     "fuel": {
       "type": [
@@ -110,6 +117,13 @@
         "null"
       ],
       "description": "Its flight category when the copilot first saw it, so a worse one is said as a change."
+    },
+    "status": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record."
     }
   },
   "required": [

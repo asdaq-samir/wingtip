@@ -34,6 +34,14 @@ describe("filterFields", () => {
   it("keeps every field with no filter on", () => {
     expect(filterFields(fields, NO_FILTERS).map((a) => a.ident)).toEqual(["KMSN", "C29", "8WI1", "W12"]);
   });
+  it("keeps the armed services' own fields out of Public, and a joint-use field in (the engine's public_use)", () => {
+    const owned = [
+      field({ ident: "KMXF", military: "military", distance_nm: 2 }),
+      field({ ident: "KFHU", military: "joint", distance_nm: 4 }),
+      field({ ident: "IL11", private: true, distance_nm: 6 }),
+    ];
+    expect(filterFields(owned, { ...NO_FILTERS, publicOnly: true }).map((a) => a.ident)).toEqual(["KFHU"]);
+  });
   it("narrows by each filter, together", () => {
     expect(filterFields(fields, { ...NO_FILTERS, towered: true }).map((a) => a.ident)).toEqual(["KMSN"]);
     expect(filterFields(fields, { ...NO_FILTERS, vfrNow: true }).map((a) => a.ident)).toEqual(["KMSN", "8WI1", "W12"]);

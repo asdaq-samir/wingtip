@@ -75,6 +75,32 @@ fn an_alternate_by_its_minimums() {
 }
 
 #[test]
+fn a_military_or_private_alternate_is_the_pilots_to_check() {
+    // A field that meets 91.169(c)'s minimums is still landed at only with
+    // the service's prior permission or the owner's: offered (meets_standard)
+    // but not called good, with why.
+    let f = fixture();
+    let case = cases(&f, "alternate_check").iter().find(|c| c["answer"]["good"] == json!(true)).unwrap();
+    for (usage, words) in [
+        (json!({ "military": "military" }), "is military: prior permission required (PPR)."),
+        (json!({ "private": true }), "is private: land only with the owner's permission."),
+    ] {
+        let mut input = json!({ "ident": case["ident"], "approaches": case["approaches"], "forecast": case["forecast"] });
+        for (k, v) in usage.as_object().unwrap() {
+            input[k] = v.clone();
+        }
+        let got = ask("ifr_alternate_check", input);
+        assert_eq!(got["good"], Value::Null, "{got}");
+        assert_eq!(got["meets_standard"], json!(true), "{got}");
+        assert!(got["reasons"].as_array().unwrap().iter().any(|r| r.as_str().unwrap().ends_with(words)), "{got}");
+    }
+    // Joint use is public use: as good as before.
+    let mut input = json!({ "ident": case["ident"], "approaches": case["approaches"], "forecast": case["forecast"] });
+    input["military"] = json!("joint");
+    assert_same(&ask("ifr_alternate_check", input), &case["answer"], case);
+}
+
+#[test]
 fn the_alternates_offered_good_first_then_nearest() {
     let f = fixture();
     for case in cases(&f, "alternates_ranked") {

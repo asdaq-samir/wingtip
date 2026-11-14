@@ -102,7 +102,12 @@ def fields_near(lat: float, lon: float, limit: int = 12) -> list[dict]:
                 "metar": _metar(metars.get(p["source_ident"])),
                 "towered": any((f["type"] or "").upper() == "TWR" for f in listed),
                 "private": ident in private or source in private,
-                "military": bool(military.get(ident) or military.get(source)),
+                # "military", "joint" or None: a joint-use field is public
+                # use, never "Military field" (engine airport_use).
+                "military": military.get(ident) or military.get(source),
+                # NASR's ARPT_STATUS, for best_fields to hold to its rule too
+                # (airports.nearest already leaves a closed field out).
+                "status": p.get("status"),
                 "frequencies": _frequencies(listed),
                 # The FAA's listed phone for the field (NASR APT_CON), for a
                 # call once down; none invented where it lists none.

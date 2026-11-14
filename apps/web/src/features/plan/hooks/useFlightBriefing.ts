@@ -25,6 +25,7 @@ import { usePrinting } from "../lib/usePrinting";
 import { fieldCategory } from "../components/briefing/fieldWeather";
 import { flightPlanForms, type FiledProcedure } from "../lib/flightPlanForm";
 import { alternateFinding, useAlternate } from "./useAlternate";
+import { useRouteFields } from "./useRouteFields";
 import { flowQuery, itwsLines, itwsQuery, liveWhen, programLines, saaQuery } from "../../../lib/liveReports";
 import { icingAtAltitude, icingLine } from "../lib/icing";
 import { useIcingForecast } from "./useIcingForecast";
@@ -340,14 +341,14 @@ export function useFlightBriefing({
   // limits and the weight and balance are an airplane's, and are not
   // judged on one assumed (the owner, 2026-11-08: "don't assume").
   const airplane = useAirplaneChosen();
-  const found: VerdictItem[] = alternateFound
-    ? verdictFound.map((i) =>
-        i.key === "weather" && (i.finding === "ok" || (alternateFound.finding === "stop" && i.finding !== "stop"))
-          ? { ...i, ...alternateFound, tab: "arrive", section: "Alternate" }
-          : i,
-      )
-    : verdictFound;
-  const items = found.filter((i) => airplane || !AIRPLANE_ITEMS.includes(i.key));
+  const found: VerdictItem[] = verdictFound.map((i) =>
+    alternateFound && i.key === "weather" && (i.finding === "ok" || (alternateFound.finding === "stop" && i.finding !== "stop"))
+      ? { ...i, ...alternateFound, tab: "arrive", section: "Alternate" }
+      : i,
+  );
+  // Then the fields row, after the tabs' findings (gonogo_field_permission).
+  const fields = useRouteFields(dep, stops, dest, totals?.alternate?.ident ?? null);
+  const items = [...found, ...(fields.permission ? [fields.permission] : [])].filter((i) => airplane || !AIRPLANE_ITEMS.includes(i.key));
   const itemsKey = `${airplane}|` + items.map((i) => `${i.key}:${i.finding}:${i.detail}`).join("|");
   const publishItems = useEffectEvent(() => {
     if (publish) setItems(items);
@@ -451,17 +452,15 @@ export function useFlightBriefing({
     [setGlance, publish],
   );
 
-  // Preflight's sections a tile opens and the paperwork, folded on screen
-  // under the checks (BriefChecks), each opened by its tile or a tap on
-  // its title; on paper, laid open.
+  // Preflight's sections a tile opens and the paperwork, folded on screen under the
+  // checks (BriefChecks), each opened by its tile or its title; on paper, laid open.
   const printing = usePrinting();
   const [folds, setFolds] = useState<string[]>([]);
 
   // The flight plan's airplane: the pilot's own by its registration and
   // the type designator they gave it, or a stock profile's type; item 9's
   // wake category from the profile's maximum takeoff weight only where
-  // the profile is that type's. Worked out only for Preflight, which
-  // shows the forms.
+  // the profile is that type's. Only for Preflight, which shows the forms.
   const ownType = flying.aircraftId != null ? (flying.label.split(" · ")[1] ?? null) : null;
   const profileType = nav?.aircraft?.designator ?? null;
   const planType = flying.aircraftId != null ? ownType : profileType;
@@ -491,6 +490,7 @@ export function useFlightBriefing({
           pilot: pilot ? { name: pilot.fullName ?? null, phone: pilot.phone ?? null, homeBase: pilot.homeBase ?? null } : null,
           fuelGal: load?.fuelGal ?? null,
           alternate: totals?.alternate?.ident ?? null,
+          icaoIds: fields.icaoIds,
           departureProcedure: procedures?.departure,
           arrivalProcedure: procedures?.arrival,
         })

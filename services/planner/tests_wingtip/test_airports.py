@@ -538,10 +538,9 @@ def test_only_the_fields_the_faa_lists_are_drawn_searched_and_nearest(us_airport
     # would take it out if it's not showing with FAA". With the FAA's
     # airport file beside OurAirports', a field it doesn't list by any of
     # its idents is left out.
-    (tmp_path / "faa_nasr").mkdir()
-    pd.DataFrame(
-        [{"ARPT_ID": "DLH", "ICAO_ID": "KDLH"}, {"ARPT_ID": "C81", "ICAO_ID": None}, {"ARPT_ID": "PWK", "ICAO_ID": "KPWK"}]
-    ).to_csv(tmp_path / "faa_nasr" / "APT_BASE.csv", index=False)
+    (nasr := tmp_path / "faa_nasr").mkdir()
+    listed = [("DLH", "KDLH"), ("C81", None), ("PWK", "KPWK")]
+    pd.DataFrame([{"ARPT_ID": a, "ICAO_ID": i, "ARPT_STATUS": "O"} for a, i in listed]).to_csv(nasr / "APT_BASE.csv", index=False)
     everywhere = [p["ident"] for p in places_in(40, -95, 48, -87, cache_path=us_airports_csv)]
     assert sorted(everywhere) == ["C81", "KDLH", "KPWK"]
     assert search_airports("minneapolis", cache_path=us_airports_csv) == []

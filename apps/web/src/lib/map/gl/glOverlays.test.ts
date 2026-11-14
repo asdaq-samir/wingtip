@@ -2,6 +2,8 @@ import type { Map as MlMap, SymbolLayerSpecification } from "maplibre-gl";
 import { describe, expect, it, vi } from "vitest";
 import type { OverlayTiles } from "../../api/types";
 import { usePreferences } from "../../preferences";
+import { closeEmergency, openEmergency } from "../../emergencyStore";
+import { watchOverlayFilters } from "./overlayFilters";
 import { OVERLAY_LAYERS } from "../sources/overlayTiles";
 import {
   AIRSPACE_TILE_LAYERS,
@@ -133,6 +135,25 @@ describe("the overlay tiles' layers", () => {
       expect(JSON.stringify((marks.find((l) => l.id === id) as SymbolLayerSpecification).filter)).toContain(
         JSON.stringify(["global-state", "routeWaypoints"]),
       );
+  });
+
+  it("show the private and military fields while the emergency assistant is open, the switches theirs again once it closes", () => {
+    const { map, set } = fakeMap(["airports"]);
+    usePreferences.setState({ military: false, privateFields: false });
+    const stop = watchOverlayFilters(map);
+    expect(set.state.get("showPrivate")).toBe(false);
+    openEmergency("flying");
+    expect(set.state.get("showPrivate")).toBe(true);
+    expect(set.state.get("showMilitary")).toBe(true);
+    // The pilot's switches are left as they were.
+    expect(usePreferences.getState().privateFields).toBe(false);
+    closeEmergency();
+    expect(set.state.get("showPrivate")).toBe(false);
+    expect(set.state.get("showMilitary")).toBe(false);
+    stop();
+    openEmergency("flying");
+    expect(set.state.get("showPrivate")).toBe(false);
+    closeEmergency();
   });
 
   it("join each field's weather pip onto its symbol by ident, from the map's state", () => {

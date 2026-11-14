@@ -5,7 +5,7 @@
 //! planned at (limits.rs) and FAA Form 7233-4's items (filing.rs), as the
 //! planner's wingtip_native functions of the same names work them out.
 
-use crate::{filing, flight, limits, sun};
+use crate::{field, filing, flight, limits, sun};
 use wingtip_core::ask::Ask;
 use wingtip_core::json::{self, Value};
 
@@ -109,7 +109,17 @@ pub fn filed(name: &str, v: &Value) -> Result<String, String> {
         "filed_speed" => json::string(&mut out, &filing::speed(ask.num("tas_kt")?)),
         "filed_duration" => json::string(&mut out, &filing::duration(ask.num("minutes")?)),
         "filed_wake" => json::opt_string(&mut out, filing::wake(ask.opt_num("max_takeoff_lb")?)),
-        "filed_zzzz" => out.push_str(&filing::needs_zzzz(ask.str("ident")?).to_string()),
+        // NASR's ICAO_ID where the host has the field's row: present and
+        // null or "" is "NASR lists none"; absent, the identifier decides.
+        "filed_zzzz" => {
+            let icao = match v.get("icao_id") {
+                None => None,
+                Some(Value::Null) => Some(""),
+                Some(Value::String(s)) => Some(s.as_str()),
+                Some(_) => return Err("filed_zzzz: \"icao_id\" is not a string".to_owned()),
+            };
+            out.push_str(&filing::needs_zzzz(ask.str("ident")?, icao).to_string())
+        }
         // Item 19's endurance, item 18's date of flight and a T or Q route
         // (the web's lib/flightPlanForm before #482).
         "filed_endurance" => match filing::endurance_minutes(ask.num("fuel_gal")?, ask.num("burn_gph")?) {
@@ -153,4 +163,19 @@ fn filed_route(ask: &Ask) -> Result<String, String> {
     let (stops, airways) = (words("stops")?, words("airways")?);
     let (departure, arrival) = (procedure("departure")?, procedure("arrival")?);
     Ok(filing::route(&stops, |w| airways.contains(&w), departure.as_ref(), arrival.as_ref()))
+}
+
+/// Whether a field is open, and the words a closed one is labelled with
+/// (field.rs, NASR APT_BASE's ARPT_STATUS): `status` null or missing where
+/// NASR has no record of the field.
+pub fn field_status(name: &str, v: &Value) -> Result<String, String> {
+    let code = match v.get("status") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(s)) => Some(s.as_str()),
+        Some(_) => return Err(format!("{name}: \"status\" is not a string or null")),
+    };
+    let mut out = format!("{{\"open\":{},\"closed\":", field::is_open(code));
+    json::opt_string(&mut out, field::closed_words(code));
+    out.push('}');
+    Ok(out)
 }

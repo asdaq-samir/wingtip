@@ -140,7 +140,7 @@ fun OneSearch(
 
     val pick: (SearchPick) -> Unit = { picked ->
         when (picked) {
-            is SearchPick.Airport -> memory.picked(Remembered(Remembered.Kind.AIRPORT, picked.ident, picked.name))
+            is SearchPick.Airport -> memory.picked(Remembered(Remembered.Kind.AIRPORT, picked.ident, picked.name, closed = picked.closed))
             is SearchPick.Airplane -> memory.picked(Remembered(Remembered.Kind.AIRPLANE, picked.tail ?: picked.name, type = picked.type))
             else -> {}
         }
@@ -261,7 +261,7 @@ fun OneSearch(
         val typed = textFieldState.text.isNotBlank()
         val asked = rememberAiOffered()
         val actions = remember(state.query, state.airports, state.waypoints, planState.routed, fix != null, asked) {
-            SearchGroups.actions(state.query, planState.routed, fix != null, (state.airports + state.waypoints).firstOrNull()?.ident, asked)
+            SearchGroups.actions(state.query, planState.routed, fix != null, FieldMarks.firstOffered(state.airports, state.waypoints), asked)
         }
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
             if (typed) {
