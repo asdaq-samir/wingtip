@@ -136,3 +136,31 @@ test("from the emergency checklists, the assistant is a row away", async ({ page
   await sheet.getByTestId("checklist-emergency").click();
   await expect(page.getByTestId("emergency-sheet")).toBeVisible();
 });
+
+test("each field's row says its reported visibility, and none where the report gives none", async ({ page }) => {
+  // The planner's own answer (/api/planner/emergency/fields), the first
+  // field's report said as 10+ sm (the AWC's "10+", the engine's
+  // visibility_plus) and every other's without a visibility, so the row
+  // is read against a known report.
+  await page.route(
+    (url) => url.pathname.endsWith("/emergency/fields"),
+    async (route) => {
+      const answer = await route.fetch();
+      const body = await answer.json();
+      const blank = { raw: null, visibility_sm: null, visibility_plus: false };
+      body.fields = body.fields.map((f: { metar: object | null }, i: number) => ({
+        ...f,
+        metar:
+          i === 0 ? { ...(f.metar ?? blank), visibility_sm: 10, visibility_plus: true } : f.metar && { ...f.metar, visibility_sm: null },
+      }));
+      await route.fulfill({ response: answer, json: body });
+    },
+  );
+  await flying(page);
+  await page.getByTestId("flying-emergency").click();
+  const sheet = page.getByTestId("emergency-sheet");
+  await expect(sheet.getByTestId("emergency-field").first()).toBeVisible({ timeout: slow(20_000) });
+  const said = sheet.getByTestId("emergency-field-visibility");
+  await expect(said).toHaveCount(1);
+  await expect(said).toHaveText("Visibility 10+ sm");
+});

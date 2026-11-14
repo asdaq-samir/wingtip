@@ -868,7 +868,10 @@ that needs an answer ([APG alertdialog][apg-alertdialog]).
 
 **Structure, top to bottom.** Title (Emergency, the card's name as drawn; its screen is "Emergency Assistant" in design/screens.json, its short label "Emergency"); 7700 and 121.5
 as large copyable figures; the nearest fields with bearing, distance and
-the engine's glide reach, nearest first; the picked airplane's emergency
+the engine's glide reach, nearest first, each row with the engine's
+reasons (its runway, its flight category) and the field's reported
+visibility as the METAR gives it ("Visibility 3 sm", "10+ sm" for a
+more-than report; nothing where the report has none, never a guess); the picked airplane's emergency
 checklist (or "No airplane picked", with the generic actions the engine
 gives); the guidance list.
 

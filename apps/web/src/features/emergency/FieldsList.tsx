@@ -45,7 +45,7 @@ function useBestFieldSaid(best: Field | undefined) {
 }
 
 export default function FieldsList({ vm }: { vm: EmergencyModel }) {
-  const { ranked, picked, pick, asked, fix, showPosition } = vm;
+  const { ranked, picked, pick, asked, fix, showPosition, visibility } = vm;
   useBestFieldSaid(ranked?.fields[0]);
   if (!fix) {
     return (
@@ -118,6 +118,14 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
                           </span>
                         );
                       })}
+                      {/* The field's reported visibility beside the
+                          engine's weather line; none where the report
+                          gives none. */}
+                      {visibility.has(f.ident) && (
+                        <span className="block" data-testid="emergency-field-visibility">
+                          Visibility {visibility.get(f.ident)}
+                        </span>
+                      )}
                     </span>
                   }
                 />

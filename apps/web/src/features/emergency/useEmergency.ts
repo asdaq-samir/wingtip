@@ -5,7 +5,16 @@ import { plannerAircraft } from "../../lib/api/airplaneQuery";
 import { aircraftKey, shortName } from "../../lib/aircraftChoice";
 import { checklistOf } from "../../lib/checklist";
 import { checklistText, useChecklists } from "../../lib/checklists";
-import { bestFields, bestFieldsOnDevice, checklistSection, emergencyGuidance, maydayCall, positionWords, variationAt } from "./emergency";
+import {
+  bestFields,
+  bestFieldsOnDevice,
+  checklistSection,
+  emergencyGuidance,
+  maydayCall,
+  positionWords,
+  variationAt,
+  visibilities,
+} from "./emergency";
 import { useEmergencyLine } from "../../lib/map/marks/emergencyLine";
 import { usePointActions } from "../../lib/map/cards/pointActions";
 import { useOwnFix, useOwnShip } from "../../lib/map/position/ownShip";
@@ -84,6 +93,8 @@ export function useEmergency() {
   const [pickedIdent, pick] = useState<string | null>(null);
   const picked = ranked?.fields.find((f) => f.ident === pickedIdent) ?? ranked?.fields[0] ?? null;
   const pickedData = data?.fields.find((f) => f.ident === picked?.ident) ?? null;
+  // Each field's reported visibility, written for its row.
+  const visibility = useMemo(() => visibilities(data), [data]);
 
   // The airplane's own emergency checklist, opened at the emergency asked;
   // with no airplane none, but the AIM's and the AFH's general guidance
@@ -149,6 +160,7 @@ export function useEmergency() {
     pick,
     phone: pickedData?.phone ?? null,
     metar: pickedData?.metar?.raw ?? null,
+    visibility,
     airplaneName: aircraft.none ? null : shortName(aircraft.label),
     guidance,
     sections,

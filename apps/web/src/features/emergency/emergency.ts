@@ -20,6 +20,7 @@
 import type { EmergencyFields } from "../../lib/api/types";
 import type { DeviceField } from "../../lib/fieldsOnDevice";
 import { compassPoint } from "../../lib/compass";
+import { miles } from "../../lib/format";
 import { callEngine, type EngineAnswer, type EngineInput } from "../../lib/engine/engine";
 import type { LatLon } from "../../lib/geo";
 import type { Fix } from "../../lib/map/position/ownShip";
@@ -127,6 +128,19 @@ export function positionWords(
   if (!nearest) return null;
   // The airplane from the field: the reciprocal of the bearing to it.
   return `${Math.round(nearest.distance_nm)} nm ${compassPoint(nearest.bearing_deg + 180)} of ${nearest.name}`;
+}
+
+/** Each field's reported visibility, by ident, as the pilot reads it:
+ *  "3 sm", or "10+ sm" where the report says more than that (the
+ *  engine's visibility_plus; FAA JO 7900.5). A field whose report has no
+ *  visibility, or that has no report, is left out: nothing is guessed. */
+export function visibilities(data: EmergencyFields | undefined): ReadonlyMap<string, string> {
+  const out = new Map<string, string>();
+  for (const f of data?.fields ?? []) {
+    const sm = f.metar?.visibility_sm;
+    if (sm != null) out.set(f.ident, miles(sm, f.metar?.visibility_plus ?? false));
+  }
+  return out;
 }
 
 /** Magnetic variation at a point today, east positive (the engine's WMM). */

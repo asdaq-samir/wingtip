@@ -7778,6 +7778,10 @@ extension Components {
             public var speedKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/EmergencyMetar/temp_c`.
             public var tempC: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/EmergencyMetar/visibility_plus`.
+            public var visibilityPlus: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/EmergencyMetar/visibility_sm`.
+            public var visibilitySm: Swift.Double?
             /// Creates a new `EmergencyMetar`.
             ///
             /// - Parameters:
@@ -7788,6 +7792,8 @@ extension Components {
             ///   - raw:
             ///   - speedKt:
             ///   - tempC:
+            ///   - visibilityPlus:
+            ///   - visibilitySm:
             public init(
                 altimeterInHg: Swift.Double? = nil,
                 dirTrueDeg: Swift.Double? = nil,
@@ -7795,7 +7801,9 @@ extension Components {
                 gustKt: Swift.Double? = nil,
                 raw: Swift.String? = nil,
                 speedKt: Swift.Double? = nil,
-                tempC: Swift.Double? = nil
+                tempC: Swift.Double? = nil,
+                visibilityPlus: Swift.Bool? = nil,
+                visibilitySm: Swift.Double? = nil
             ) {
                 self.altimeterInHg = altimeterInHg
                 self.dirTrueDeg = dirTrueDeg
@@ -7804,6 +7812,8 @@ extension Components {
                 self.raw = raw
                 self.speedKt = speedKt
                 self.tempC = tempC
+                self.visibilityPlus = visibilityPlus
+                self.visibilitySm = visibilitySm
             }
             public enum CodingKeys: String, CodingKey {
                 case altimeterInHg = "altimeter_in_hg"
@@ -7813,6 +7823,8 @@ extension Components {
                 case raw
                 case speedKt = "speed_kt"
                 case tempC = "temp_c"
+                case visibilityPlus = "visibility_plus"
+                case visibilitySm = "visibility_sm"
             }
         }
         /// An open runway (OurAirports' runways.csv).

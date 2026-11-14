@@ -880,6 +880,10 @@ a Material `Badge` at the top of the map, beside the receiver's, says
     2. The nearest suitable fields from the engine as `ListItem`s, each
        with distance, bearing and the runway, and the glide ring's
        answer (`GlideRingRow`). The first row is the engine's pick.
+       The reported visibility the web shows on each row ("10+ sm",
+       nothing where the report has none) is in the generated model
+       (`visibility_sm`, `visibility_plus`) and is drawn in the phone
+       phase.
     3. The airplane's own emergency checklists
        (`EmergencyGuidance`).
     4. The frequencies (121.5, the nearest facility) with copy and

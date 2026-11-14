@@ -8443,6 +8443,22 @@
               }
             ],
             "title": "Temp C"
+          },
+          "visibility_plus": {
+            "default": false,
+            "title": "Visibility Plus",
+            "type": "boolean"
+          },
+          "visibility_sm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visibility Sm"
           }
         },
         "title": "EmergencyMetar",
