@@ -161,6 +161,12 @@ object WingtipColors {
         /** The glidepath in the air to a runway's threshold in the 3D view: the final approach segment's cyan, as it is the same descent. */
         val Glidepath = Color(0xFF00B4E6)
         const val GLIDEPATH_HEX = "#00b4e6"
+        /** What a 3D airspace volume's class ink is mixed toward the lower its floor (features/plan/map/terrain/airspaceShelves): a surface area darkest, so a Class B's shelves step up in shade as they do in altitude. */
+        val AirspaceFloorLow = Color(0xFF0A141C)
+        const val AIRSPACE_FLOOR_LOW_HEX = "#0a141c"
+        /** And toward the higher its floor: the highest shelf lightest. */
+        val AirspaceFloorHigh = Color(0xFFFFFFFF)
+        const val AIRSPACE_FLOOR_HIGH_HEX = "#ffffff"
         /** An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red. */
         val Obstacle = Color(0xFF7A1F1F)
         const val OBSTACLE_HEX = "#7a1f1f"
@@ -1166,6 +1172,11 @@ object WingtipMap {
     const val ZOOM_BARB_FULL = 9
     const val ZOOM_WORLD_WIND = 4
     const val ZOOM_STREAK_NEAR = 7
+    const val AIRSPACE_SHADE_MIX = 0.45
+    const val AIRSPACE_SHADE_TOP_FT = 10000
+    const val AIRSPACE_FADED = 0.35
+    const val AIRSPACE_HELD = 1.8
+    const val AIRSPACE_LABEL_FADED = 0.6
 }
 
 /** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */

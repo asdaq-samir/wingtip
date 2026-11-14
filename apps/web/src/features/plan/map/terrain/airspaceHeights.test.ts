@@ -9,13 +9,16 @@ describe("volumeSpan", () => {
   // metres, over ground given in metres.
   it.each(fixture.cases)("$about", (c) => {
     const ground = "ground" in c.input && c.input.ground ? { low: c.input.ground.low_ft * FT, high: c.input.ground.high_ft * FT } : null;
-    const span = volumeSpan({ floor: c.input.floor, ceiling: c.input.ceiling }, ground);
+    const altitudes = "altitudes_ft" in c.input ? c.input.altitudes_ft : null;
+    const span = volumeSpan({ floor: c.input.floor, ceiling: c.input.ceiling }, ground, altitudes);
     if (c.answer === null) expect(span).toBeNull();
     else
       expect(span).toEqual({
         floorM: expect.closeTo(c.answer.floor_ft * FT, 6),
         ceilingM: expect.closeTo(c.answer.ceiling_ft * FT, 6),
+        floorFt: c.answer.floor_ft,
         surface: c.answer.surface,
+        holds: "holds" in c.answer ? c.answer.holds : null,
       });
   });
 

@@ -25,6 +25,7 @@ pub mod field_name;
 pub mod pack;
 pub mod pack_query;
 pub mod rules;
+pub mod shelf_label;
 pub mod spoken;
 pub mod spoken_ask;
 #[cfg(test)]

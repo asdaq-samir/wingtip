@@ -333,6 +333,33 @@ enum EngineContract {
         var `class`: String
     }
 
+    struct AirspaceShelfLabelAnswer: Codable, Equatable, Sendable {
+        /// The ceiling as the chart writes it: "100", "T", "-30".
+        var ceiling: String
+        /// The floor as the chart writes it, "30" or "SFC"; null for a Class D.
+        var floor: String?
+        /// The label as the map sets it: the ceiling, a line break and the floor; a Class D's ceiling alone.
+        var text: String
+    }
+
+    struct AirspaceShelfLabelInput: Codable, Equatable, Sendable {
+        var `class`: String
+        var floorFt: Double?
+        var floorRef: String?
+        /// Feet MSL.
+        var ceilingFt: Double?
+        /// The ceiling is to but not including its figure (NASR UPPER_DESC TNI).
+        var ceilingExcluded: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case `class`
+            case floorFt = "floor_ft"
+            case floorRef = "floor_ref"
+            case ceilingFt = "ceiling_ft"
+            case ceilingExcluded = "ceiling_excluded"
+        }
+    }
+
     struct AirspaceVolumeSpanAnswer: Codable, Equatable, Sendable {
         /// Feet MSL.
         var floorFt: Double
@@ -340,11 +367,14 @@ enum EngineContract {
         var ceilingFt: Double
         /// Whether the floor is the surface, drawn from the sea up.
         var surface: Bool
+        /// Whether any of altitudes_ft is inside the volume; only where altitudes_ft was given.
+        var holds: Bool?
 
         enum CodingKeys: String, CodingKey {
             case floorFt = "floor_ft"
             case ceilingFt = "ceiling_ft"
             case surface
+            case holds
         }
     }
 
@@ -353,6 +383,15 @@ enum EngineContract {
         var ceiling: EngineContract.SpecialUseTabLimit?
         /// The ground under the volume, ft MSL: its lowest and its highest. Null where the map has none in yet.
         var ground: EngineContract.AirspaceVolumeSpanInputGround?
+        /// The altitudes the plan flies, ft MSL: its cruise and each leg's own. Absent or null for no plan.
+        var altitudesFt: [Double]?
+
+        enum CodingKeys: String, CodingKey {
+            case floor
+            case ceiling
+            case ground
+            case altitudesFt = "altitudes_ft"
+        }
     }
 
     struct AirspaceVolumeSpanInputGround: Codable, Equatable, Sendable {

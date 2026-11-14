@@ -254,6 +254,14 @@ Then the callers switch to the name and the old copy is deleted.
   and the phones (the generated `call`). Which Class B band of a route's
   profile holds an altitude is `class_b_at_altitude` (crates/airspace,
   14 CFR 91.131), the Profile card's "clearance needed".
+- The 3D map's airspace is the engine's too (`crates/airspace`): how high
+  a volume stands (`airspace_volume_span`) and, given the plan's
+  altitudes, whether it holds any of them (its `holds`, for the volumes at
+  the pilot's altitude to stand out), and a Class B, C or D shelf's
+  altitudes as the sectional writes them, ceiling over floor in hundreds
+  of feet MSL (`airspace_shelf_label`, the FAA's Chart User's Guide: "100"
+  over "30", "T", "-30"), held to the web's fixtures
+  `airspaceVolumeSpan.json` and `airspaceShelfLabel.json`.
 - Runways, the wind on them and the traffic pattern are the engine's too
   (`crates/brief`): a wind along and across a runway and the end it favours,
   the runway flown (the pilot's pick, else into the wind, AC 90-66C

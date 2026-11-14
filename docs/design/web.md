@@ -1267,6 +1267,33 @@ sheet scrolls one way on a phone:
 - The search row stays while the keyboard is up, as it is typed in (it
   went with the keyboard, the field and the keyboard with it).
 
+**The airspace in 3D (the owner, 2026-11-14: "the class B airspace
+shelves are not differentiating altitudes").** The 3D button stands the
+Class B, C and D, the special use areas and the TFRs up at true height
+(`features/plan/map/terrain/AirspaceVolumesGl`, deck.gl), never
+exaggerated, so three things tell the altitudes apart
+(`terrain/airspaceShelves`):
+
+- Each Class B, C and D shelf is labelled at its top, on the edge nearest
+  the viewer and facing the screen, as the sectional writes it: the
+  ceiling over the floor in hundreds of feet MSL, "100" over "30", "100"
+  over "SFC", a Class C's "T", a Class D's ceiling alone ("-30"), in the
+  2D chart's airspace tab (the engine's `airspace_shelf_label`; the FAA's
+  Chart User's Guide). One a shelf, lifted with MapLibre's
+  `symbol-height-offset`, kept apart by MapLibre's own collision and
+  placed after the airports' and navaids' marks, which they never hide;
+  the chart's own tabs on the ground are hidden meanwhile.
+- Each volume is shaded by its floor within its class's ink, the lower
+  the darker (the tokens' `chart.airspace-floor-low`/`-high` and
+  `map.airspace-shade-*`), with a solid rim along its top and along its
+  floor where that is off the ground.
+- With a route planned, the volumes holding its altitudes (the cruise and
+  each leg's own) are drawn stronger and the rest fainter
+  (`map.airspace-held`, `map.airspace-faded`), their labels fainter but
+  legible (`map.airspace-label-faded`); whether a volume holds an
+  altitude is the engine's (`airspace_volume_span`'s `holds`). With no
+  plan nothing is faded.
+
 **Desktop.** Apple Maps on the web uses a left side panel there; Wingtip
 keeps its side panel, with the same search row at its top.
 

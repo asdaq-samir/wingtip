@@ -106,6 +106,10 @@ enum WingtipColor {
         static let centreline = rgb(0xFFFFFF)
         /// The glidepath in the air to a runway's threshold in the 3D view: the final approach segment's cyan, as it is the same descent.
         static let glidepath = rgb(0x00B4E6)
+        /// What a 3D airspace volume's class ink is mixed toward the lower its floor (features/plan/map/terrain/airspaceShelves): a surface area darkest, so a Class B's shelves step up in shade as they do in altitude.
+        static let airspaceFloorLow = rgb(0x0A141C)
+        /// And toward the higher its floor: the highest shelf lightest.
+        static let airspaceFloorHigh = rgb(0xFFFFFF)
         /// An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red.
         static let obstacle = rgb(0x7A1F1F)
         /// The map's ground before its first tiles are drawn, by day (Tailwind slate-100, as it was).
@@ -955,6 +959,11 @@ enum WingtipMap {
     static let zoomBarbFull: Double = 9
     static let zoomWorldWind: Double = 4
     static let zoomStreakNear: Double = 7
+    static let airspaceShadeMix: Double = 0.45
+    static let airspaceShadeTopFt: Double = 10000
+    static let airspaceFaded: Double = 0.35
+    static let airspaceHeld: Double = 1.8
+    static let airspaceLabelFaded: Double = 0.6
 }
 
 /// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.

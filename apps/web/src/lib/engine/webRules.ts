@@ -12,6 +12,7 @@ export const WEB_RULES = [
   "airport_notams_none",
   "airport_use_words",
   "airspace_entry_rules",
+  "airspace_shelf_label",
   "airspace_volume_span",
   "alert_fires",
   "altitude_advisor",
