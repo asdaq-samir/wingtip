@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { clearTheRoute, openPanel, settle, sideDrawer, stopsAre } from "./helpers";
+import { clearTheRoute, openPanel, settle, sideDrawer } from "./helpers";
+import { stopsAre } from "./stopsParam";
 
 /**
  * Undo in place of asking first (the owner's "make the pilot aware, never

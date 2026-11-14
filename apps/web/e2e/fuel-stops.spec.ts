@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { inSheet, mapStill, openPanel, settle, sideDrawer, slow, stopsAre } from "./helpers";
+import { inSheet, mapStill, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { stopsAre } from "./stopsParam";
 import { drawnMarks } from "./marks";
 import { noCheckpoints } from "./startState";
 

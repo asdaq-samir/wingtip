@@ -1,5 +1,6 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { grabberTo, inSheet, settle, showSearch, sideDrawer, slow, frontSheet, stopsAre } from "./helpers";
+import { grabberTo, inSheet, settle, showSearch, sideDrawer, slow, frontSheet } from "./helpers";
+import { stopsAre } from "./stopsParam";
 import { drawnMarks } from "./marks";
 
 const origin = new URL(process.env.BASE_URL ?? "http://localhost:8080").origin;

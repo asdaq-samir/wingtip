@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { frontSheet, grabberTo, mapStill, openPanel, settle, settled, sideDrawer, slow, waypointMarks, stopsAre } from "./helpers";
+import { frontSheet, grabberTo, mapStill, openPanel, settle, settled, sideDrawer, slow, waypointMarks } from "./helpers";
+import { stopsAre } from "./stopsParam";
 import { markWith } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)

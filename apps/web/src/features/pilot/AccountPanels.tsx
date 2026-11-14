@@ -29,20 +29,15 @@ import type { Aircraft, AircraftRequest, InspectionsRequest } from "../../lib/ap
 import { cruiseReferenceFt } from "../../lib/performance";
 import { usePreferences } from "../../lib/preferences";
 import { TEXT } from "../../lib/text";
-import { altFt } from "../../lib/format";
-import { localDay } from "../../lib/format";
+import { altFt, localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
 import { aircraftProfilesQuery } from "../../lib/queryClient";
 import TogglePill from "../../components/TogglePill";
-import { daysBetween, daysWords, dueFinding } from "./paperwork";
+import { daysBetween, daysWords, dueFinding, kebab } from "./paperwork";
 import { callEngine } from "../../lib/engine/engine";
 import DueItemsGroup from "./DueItemsGroup";
 import { VorCheckGroup } from "./VorCheckGroup";
 import { FieldError } from "../../components/ui/field";
-
-/** A figure's key as a test id's words, kebab-case as every other id is
- *  ("annualOn" is "annual-on"; the web audit's WEB-34). */
-const kebab = (key: string) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
 /** A form field as the request carries it: blank is null. */
 const orNull = (value: string) => (value.trim() ? Number(value) : null);

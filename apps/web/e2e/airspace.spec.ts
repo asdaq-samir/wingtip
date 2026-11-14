@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, grabberTo, settle, slow, stopsAre } from "./helpers";
+import { closeCard, grabberTo, settle, slow } from "./helpers";
+import { stopsAre } from "./stopsParam";
 
 // A route's handler still running as the test ends -- the Recents and
 // Saved planned ahead at idle ask the planner then -- found the page

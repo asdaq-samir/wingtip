@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { inSheet, openPanel, settle, sideDrawer, stopsAre } from "./helpers";
+import { inSheet, openPanel, settle, sideDrawer } from "./helpers";
+import { stopsAre } from "./stopsParam";
 
 /**
  * The route's points moved, by a mouse or the keyboard in FPL's list

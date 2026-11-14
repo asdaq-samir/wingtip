@@ -13,8 +13,8 @@ import {
   showTabs,
   sideDrawer,
   slow,
-  stopsAre,
 } from "./helpers";
+import { stopsAre } from "./stopsParam";
 import { markWith } from "./marks";
 import { pickAirplane } from "./startState";
 import { departTime, fillTime } from "./ariaFields";
@@ -54,7 +54,6 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   const stop = sideDrawer(page).getByTestId("stop");
   await expect(stop).toHaveCount(1);
   await expect(stop).toContainText("KMSN");
-
   // The nav log lands at it, at the field's elevation, and the fuel is
   // checked flight by flight.
   await openNavLog(page);

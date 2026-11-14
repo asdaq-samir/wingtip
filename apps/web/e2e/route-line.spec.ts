@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { drawn, openPanel, settle, sideDrawer, slow, stopsAre } from "./helpers";
+import { drawn, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 

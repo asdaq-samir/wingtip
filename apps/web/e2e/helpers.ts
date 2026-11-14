@@ -268,8 +268,6 @@ export async function closeConsole(page: Page) {
     await expect(sheet).toHaveCount(0, { timeout: 1000 });
   }).toPass({ timeout: 10000 });
 }
-export { stopsAre } from "./stopsParam";
-
 /** The console: a stock Sheet from the top from `md` up, a sheet up from
  *  the bottom edge on a phone (shadcn's Drawer). */
 export const consoleSheet = (page: Page) => page.getByTestId("console-sheet");

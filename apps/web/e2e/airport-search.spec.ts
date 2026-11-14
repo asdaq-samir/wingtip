@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { openPanel, sideDrawer, slow, stopsAre } from "./helpers";
+import { openPanel, sideDrawer, slow } from "./helpers";
+import { stopsAre } from "./stopsParam";
 
 /**
  * The route picker's search -- the one search, scoped to the field it

@@ -12,8 +12,8 @@ import {
   showTabs,
   sideDrawer,
   slow,
-  stopsAre,
 } from "./helpers";
+import { stopsAre } from "./stopsParam";
 import { showPage } from "./oneSearch";
 
 /**
