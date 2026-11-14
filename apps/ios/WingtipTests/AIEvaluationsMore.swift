@@ -24,12 +24,8 @@ final class AIEvaluationsMoreTests: XCTestCase {
     static let keptFloor = EvalBar.quality(device: 0.5, simulator: 0.35)
     static let namesFloor = EvalBar.quality(device: 0.5, simulator: 0.35)
 
-    private func modelOrSkip() throws {
-        if let why = OnDeviceWords.unavailableWhy { throw XCTSkip("No on-device model here: \(why)") }
-    }
-
     func testARemarkKeepsToTheEntry() async throws {
-        try modelOrSkip()
+        try await EvalBar.modelOrSkip()
         let evaluation = RemarkEvaluation(samples: try EvalBar.asked(try RemarkEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
@@ -39,7 +35,7 @@ final class AIEvaluationsMoreTests: XCTestCase {
     }
 
     func testWhyThisAltitudeKeepsToTheEnginesReasons() async throws {
-        try modelOrSkip()
+        try await EvalBar.modelOrSkip()
         let evaluation = AltitudeWhyEvaluation(samples: try EvalBar.asked(try AltitudeWhyEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
