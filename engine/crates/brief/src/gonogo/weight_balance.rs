@@ -140,12 +140,24 @@ pub fn balance(loading: &Loading, load: &Load, trip_fuel_gal: Option<f64>) -> Ba
             pounds(landing.weight_lb - loading.max_landing_lb)
         ));
     }
+    // The envelope's top need not be the maximum weight: a POH's envelope
+    // may stop below it (the POH's section 6; 14 CFR 91.9(a)). Only a
+    // condition already said to be over its maximum weight is left out
+    // here; one above the envelope's top but within its maximum weight is
+    // still out of limits, and said so.
     let heaviest = envelope.iter().map(|p| p.1).fold(f64::NEG_INFINITY, f64::max);
-    for (name, c) in [("takeoff", takeoff), ("landing", landing)] {
-        if c.weight_lb > heaviest {
+    let over = [takeoff.weight_lb > loading.max_takeoff_lb, landing.weight_lb > loading.max_landing_lb];
+    for ((name, c), said) in [("takeoff", takeoff), ("landing", landing)].into_iter().zip(over) {
+        if said {
             continue; // said above, as a weight
         }
-        if !in_envelope(envelope, c.arm_in, c.weight_lb) {
+        if c.weight_lb > heaviest {
+            problems.push(format!(
+                "At {name} the weight, {}, is above the envelope's heaviest point, {}",
+                pounds(c.weight_lb),
+                pounds(heaviest)
+            ));
+        } else if !in_envelope(envelope, c.arm_in, c.weight_lb) {
             let limits = limits_at(envelope, c.weight_lb);
             let side = match limits {
                 Some((fwd, _)) if c.arm_in < fwd => format!("forward of its limit, {} in", to_fixed(fwd, 1)),
@@ -225,4 +237,42 @@ pub fn load_json(load: &Load) -> String {
     json::number(&mut out, load.fuel_gal);
     out.push('}');
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// An envelope whose top (2,400 lb) stops below the maximum takeoff
+    /// weight (2,550 lb): a 2,500 lb loading is within the maximum weight
+    /// and still out of limits, as the POH's envelope does not reach it.
+    #[test]
+    fn a_weight_above_the_envelopes_top_but_within_the_maximum_is_out_of_limits() {
+        let loading = Loading {
+            max_ramp_lb: 2558.0,
+            max_takeoff_lb: 2550.0,
+            max_landing_lb: 2550.0,
+            fuel_arm_in: 48.0,
+            fuel_max_gal: 53.0,
+            fuel_lb_per_gal: 6.0,
+            envelope: vec![(35.0, 1500.0), (35.0, 1950.0), (39.5, 2400.0), (47.3, 2400.0), (47.3, 1500.0)],
+            stations: vec![Station { name: "Front seats".into(), arm_in: 37.0, max_lb: None }],
+            ..Loading::default()
+        };
+        // 1,700 lb empty at 40 in, 500 lb up front, 50 gal (300 lb): a
+        // 2,500 lb ramp, 2,500 lb takeoff with no taxi fuel.
+        let load = Load { empty_weight_lb: 1700.0, empty_arm_in: 40.0, stations_lb: vec![Some(500.0)], fuel_gal: 50.0 };
+        let b = balance(&loading, &load, Some(0.0));
+        assert_eq!(b.takeoff.weight_lb, 2500.0);
+        assert!(
+            b.problems.iter().any(|p| p.starts_with("At takeoff the weight") && p.contains("envelope's heaviest point")),
+            "{:?}",
+            b.problems
+        );
+        // Over the maximum, it is said once, as a weight.
+        let heavy = Load { stations_lb: vec![Some(600.0)], ..load };
+        let b = balance(&loading, &heavy, Some(0.0));
+        assert!(b.problems.iter().any(|p| p.starts_with("The takeoff weight")));
+        assert!(!b.problems.iter().any(|p| p.starts_with("At takeoff")), "{:?}", b.problems);
+    }
 }
