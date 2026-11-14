@@ -47,16 +47,16 @@ The owner, 2026-11-09, standing:
 
 | Tool | Version | Read by |
 |---|---|---|
-| Java | Temurin 25 (`temurin-25`, the LTS) | the gateway (pom `java.version`, `maven:3.10-eclipse-temurin-25`, `eclipse-temurin:25-jre`) and Android (Gradle's daemon JVM, Java 25 bytecode) |
+| Java | Temurin 25 (`temurin-25`, the LTS) | the gateway (pom `java.version`, `maven:4.0.0-rc-7-eclipse-temurin-25`, `eclipse-temurin:25-jre`) and Android (Gradle's daemon JVM, Java 25 bytecode) |
 | Python | 3.15.2 | every service and job image (`python:3.15-slim`), CI's setup-python, the dev container |
 | Rust | 1.100.0, edition 2024 | `engine/rust-toolchain.toml`, every engine crate, the WebAssembly build |
 | Node | 26 | `apps/web/.nvmrc`, the web build (`node:26-slim`), CI |
 | Gradle | 9.9.1 | `apps/android/gradle/wrapper/gradle-wrapper.properties` |
-| Maven | 3.10.0 | the gateway's build image |
+| Maven | 4.0.0-rc-7 | the gateway: its build image (`maven:4.0.0-rc-7-eclipse-temurin-25`) and `./mvnw`, the Maven Wrapper CI and a Mac without Docker run (`services/gateway/.mvn/wrapper`, checked by its sha256) |
 | Xcode | 27.2 (the iOS 27.2 SDK) | `scripts/ci/select-xcode.sh`, CI's `xcode-27` runner and the Mac mini |
 | Debian | trixie | every Debian-based image (`postgres:18-trixie`; a `-slim` tag is trixie) |
-| Formatters | ruff 0.17.4, SwiftFormat 0.64.6, ktlint 1.8.0, palantir-java-format 2.103.0, Prettier 3.9.10 | `scripts/dev/format.sh` (SwiftFormat and ktlint installed by mise) |
-| Linters | shellcheck 0.11.0, actionlint 1.7.12, zizmor 1.32.0, lychee 0.24.2, SwiftLint 0.65.1, Semgrep 1.185.0; mise 2026.11.7 installs them | `scripts/build/tool.sh`, CI's `guards` job, the pre-push hook |
+| Formatters | ruff 0.17.5, SwiftFormat 0.64.6, ktlint 2.0.0-ALPHA-4, palantir-java-format 2.103.0, Prettier 3.9.10 | `scripts/dev/format.sh` (SwiftFormat and ktlint installed by mise) |
+| Linters | shellcheck 0.11.0, actionlint 1.7.12, zizmor 1.32.0, lychee 0.24.2, SwiftLint 0.65.1, Semgrep 1.185.0; mise 2026.11.8 installs them | `scripts/build/tool.sh`, CI's `guards` job, the pre-push hook |
 
 Not held to `.tool-versions` on purpose (`scripts/build/toolchain.py`
 says why): ruff's `target-version` and the engine wheel's `abi3-py311`
@@ -98,9 +98,9 @@ SDK), targetSdk 37, minSdk 26.
 
 ### Servers (`services/*/requirements*.txt`, `services/gateway/pom.xml`)
 
-- **Gateway:** Spring Boot 4.1.2 on Java 25, Maven 3.10.
+- **Gateway:** Spring Boot 4.2.0-RC2 on Java 25, Maven 4.0.0-rc-7.
 - **Planner, weather, ingest, jobs:** Python 3.15 with FastAPI
-  0.162.2, pydantic 2.14.3, uvicorn 0.54.0, numpy 2.5.4, pandas 3.1.1,
+  0.162.7, pydantic 2.14.3, uvicorn 0.54.0, numpy 2.5.4, pandas 3.1.1,
   shapely 2.2.0, pyproj 3.8.0, rasterio 1.5.2, scikit-learn 1.9.1,
   pytest 9.2.0; the engine's Python binding on PyO3
   0.30.1.
@@ -127,6 +127,8 @@ written here.
 | TypeScript | 6.0.3 | 7.x | typescript-eslint 8.72 supports TypeScript below 6.1 only ([its support range](https://typescript-eslint.io/users/dependency-versions/)), and openapi-typescript 7.13, its newest, asks for 5.x (let onto 6 by an override in package.json); on 7 neither the lint nor `npm run types` would run (commit dd9dae944, 2026-11-09) | typescript-eslint declares TypeScript 7, and openapi-typescript runs on it |
 | Material 3 (Android) | 1.5.0-rc01 | 1.5.0-rc01 (1.4.0 the newest stable) | Not held back: the release candidate is taken on purpose, as 1.4.0 keeps Expressive internal (decision 0016); it comes from the alpha BOM since 2026-11-12 | 1.5.0 stable ships |
 | Java | 25 (LTS) | 27 (non-LTS, September 2026) | The gateway and Android stay on one Java, the LTS the owner named on 2026-11-09 ("Java 25 everywhere"), which AGP's D8 and Spring Boot 4.1 both take | The next LTS, or the owner's word |
+| APScheduler (`wingtip.schedule`) | 3.11.3 | 4.0.0a6 | 4.0's alphas rewrite the API (data stores, async first) and have had no release since 2025-04-27, while 3.11.3, its maintained line, came on 2026-06-28 | 4.0 has a release newer than the 3.x line's |
+| maven-compiler-plugin | 3.16.0 | 4.0.0-beta-5 | 4.0's beta deprecates `annotationProcessorPaths` (a warning on every build), and its replacement, a dependency of type `classpath-processor`, put Lombok on javac's processor path alone, not its class path, so the gateway did not compile (`target/javac.args`, 2026-11-14, on Maven 4.0.0-rc-7); Lombok as a `jar` and a `processor` dependency both is read as one | A compiler 4.0 release that puts a `classpath-processor` on both paths |
 | CI's Android emulator | API 35 x86_64 | API 37 | The instrumented tests' emulator image (`native-android.yml`); the app itself compiles against 37.2 | No reason is recorded: try API 37 at the next pass that touches the job |
 
 ## Planned upgrades

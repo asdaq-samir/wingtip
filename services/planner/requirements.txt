@@ -10,7 +10,7 @@
 # python:3.15-slim (this service's own base image) currently resolves.
 -r requirements-wingtip-charts.txt   # wingtip's own list, charts included: this service draws them
 # Pillow among them is pinned once, 13.0.0, in services/planner/requirements-wingtip-charts.txt.
-fastapi==0.162.2
+fastapi==0.162.7
 uvicorn[standard]==0.54.0
 # The FastAPI app's spans (app.tracing); the rest of tracing is wingtip's
 # (requirements-wingtip.txt, wingtip.tracing).

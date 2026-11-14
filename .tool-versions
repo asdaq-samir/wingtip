@@ -13,7 +13,7 @@ python 3.15.2
 rust 1.100.0
 nodejs 26
 gradle 9.9.1
-maven 3.10.0
+maven 4.0.0-rc-7
 # The .NET SDK of tools/msfs-agent (the MSFS replay agent): its global.json.
 dotnet 11.0.100
 # Below, tools mise and asdf do not install: read by this repo's scripts only.
@@ -34,14 +34,14 @@ rust-edition 2024
 sccache 0.19.0
 # The formatters (scripts/dev/format.sh); Prettier is apps/web's package,
 # pinned with its lockfile there, and only checked against this line.
-ruff 0.17.4
+ruff 0.17.5
 swiftformat 0.64.6
-ktlint 1.8.0
+ktlint 2.0.0-ALPHA-4
 palantir-java-format 2.103.0
 prettier 3.9.10
 # The release binary scripts/build/tool.sh fetches to install the tools
 # below (mise cannot install itself); its sums are in that script.
-mise 2026.11.7
+mise 2026.11.8
 # Installed by mise through scripts/build/tool.sh, at these versions, on the
 # Mac, in the pre-push hook and in CI (ci.yml's guards job).
 shellcheck 0.11.0

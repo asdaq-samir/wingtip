@@ -22,9 +22,10 @@
              and the eclipse-temurin:25-jre image the Dockerfile runs on.
              26 is a six-month release, out of support once 27 ships. -->
         <java.version>25</java.version>
-        <!-- Newer than Spring Boot manages: the newest stable releases, as
-             the owner asks of every tool. The compiler's 4.0 betas need
-             Maven 4, which the build image is not yet. -->
+        <!-- Newer than Spring Boot manages. The compiler's 4.0 beta is
+             held back (docs/versions.md, "Held back"): it deprecates
+             annotationProcessorPaths below, and its replacement leaves
+             Lombok off the class path. -->
         <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.6.1</maven-surefire-plugin.version>
         <!-- Newer than Spring Boot 4.2.0-RC2 manages (3.1.8, 2.21.8,

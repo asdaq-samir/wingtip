@@ -85,6 +85,8 @@ PLACES = [
         "exact",
         "npm install -D -E dependency-cruiser@{v}, in apps/web",
     ),
+    # The Maven CI and anyone without Docker run, through the wrapper.
+    (["services/gateway/.mvn/wrapper/maven-wrapper.properties"], r"apache-maven/([^/]+)/", "maven", "exact", None),
     (["tools/msfs-agent/global.json"], r'"version": "([^"]+)"', "dotnet", "exact", None),
     ([".devcontainer/devcontainer.json"], r'features/node:1": \{ "version": "([^"]+)"', "nodejs", "exact", None),
     ([".devcontainer/devcontainer.json"], r'features/python:1": \{ "version": "([^"]+)"', "python", "exact", None),
@@ -93,7 +95,8 @@ PLACES = [
     (IMAGE_FILES, r"\bpython:(\d+(?:\.\d+)*)-", "python", "prefix", None),
     (IMAGE_FILES, r"\brust:(\d+(?:\.\d+)*)-", "rust", "prefix", None),
     (IMAGE_FILES, r"\bnode:(\d+(?:\.\d+)*)-", "nodejs", "prefix", None),
-    (IMAGE_FILES, r"\bmaven:(\d+(?:\.\d+)*)-", "maven", "prefix", None),
+    # Maven's release candidates are tagged in full (maven:4.0.0-rc-7-...).
+    (IMAGE_FILES, r"\bmaven:(\d+(?:\.\d+)*(?:-rc-\d+)?)-", "maven", "prefix", None),
     (IMAGE_FILES, r"\beclipse-temurin[:-](\d+)\b", "java", "exact", None),
     # One Debian under every image that names its release.
     (IMAGE_FILES, r"\b(?:python|rust|node|postgres):[\w.]+?-(?:slim-)?(bookworm|bullseye|trixie|forky)\b", "debian", "exact", None),
@@ -173,7 +176,7 @@ def exact_tag(ref: str, versions: dict[str, str]) -> str:
     """python:3.15-slim -> python:3.15.2-slim: the tag that names the file's version alone."""
     repo, tag = ref.split(":", 1)
     name = {"python": "python", "rust": "rust", "node": "nodejs", "maven": "maven"}.get(repo)
-    return repo + ":" + re.sub(r"^[\d.]+", versions[name], tag) if name else ref
+    return repo + ":" + re.sub(r"^[\d.]+(?:-rc-\d+)?", versions[name], tag) if name else ref
 
 
 def image_files(paths: list[str]) -> list[str]:
