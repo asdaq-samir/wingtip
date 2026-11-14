@@ -12,7 +12,7 @@ from fastapi import APIRouter
 from ..router_basics import load_route
 from ..gonogo.frat import assessment as risk_assessment, self_checks
 from ..gonogo.schemas import GoNoGo, GoNoGoAsk
-from ..gonogo.verdict import alternate_finding, verdict_items, verdict_line, with_alternate
+from ..gonogo.verdict import alternate_finding, field_permission, verdict_items, verdict_line, with_alternate
 from ..plan_query import PlanQuery
 from ..gonogo import flight
 from ..gateway import PUBLIC_READ_BY_POST
@@ -46,6 +46,9 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
     if q.rules == "ifr" and totals and totals.get("ete_min") is not None and tas:
         eta = depart + timedelta(minutes=totals["ete_min"])
         items = with_alternate(items, alternate_finding(flight.alternate_for(r.idents[-1], eta, tas, q.alternate)))
+    # A private or military-only field on the route, a row of its own.
+    if permission := field_permission(r.idents):
+        items = [*items, permission]
 
     return GoNoGo(
         line=verdict_line(items),

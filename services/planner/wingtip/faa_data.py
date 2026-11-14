@@ -700,11 +700,11 @@ def load_route_airports(apt_csv_path, bbox: tuple, exclude_idents: tuple = ()) -
     does not draw cannot be rated, which is why towers, water towers,
     quarries and unnamed lakes were dropped too.
 
-    Private-use fields are kept: the sectional draws a registered private
-    airport as a circled magenta "R", verified at Wag-Aero (WI92), so it
-    is identifiable on the chart. Whether a grass strip is *easy* to pick
-    out is a different question, and that is exactly what the 1-5 rating
-    is there to answer.
+    Private-use fields are kept but are not all on the chart: the Chart
+    User's Guide charts one (the circled magenta "R", as at Wag-Aero,
+    WI92) only where it has emergency or landmark value, so the planner's
+    checkpoints score one down unless a chart pick confirms it (app.
+    checkpoint_scoring PRIVATE_UNCHARTED_SCORE); the 1-5 rating says the rest.
 
     exclude_idents drops the departure and destination fields -- both sit
     in the corridor by construction, and neither is a checkpoint: you are

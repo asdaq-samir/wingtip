@@ -416,9 +416,9 @@ def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path |
                 "faa_id": faa_id,
                 "name": (row.get("ARPT_NAME") or "").strip(),
                 "type": SITE_TYPES.get(site_type, site_type.lower()),
-                "use": {"PU": "public", "PR": "private"}.get(use, use.lower()),
-                # As wingtip.faa_data.military_fields: a field the armed services
-                # own, "joint" where it is open to the public as well.
+                # As faa_data: the services' own field "military", not "private", so the Private switch leaves it to the Military one.
+                "use": "military" if military and use != "PU" else {"PU": "public", "PR": "private"}.get(use, use.lower()),
+                # As wingtip.faa_data.military_fields: "joint" where open to the public as well.
                 "military": ("joint" if use == "PU" else "military") if military else None,
                 "towered": towered,
                 "elevation_ft": _number(row.get("ELEV")),

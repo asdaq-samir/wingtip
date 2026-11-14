@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from . import geo, publications, weather
+from . import field_use, geo, publications, weather
 from .engine import ask as engine
 
 #: Alternates offered within this of the destination.
@@ -55,9 +55,12 @@ _FORECAST_KEYS = ("ceiling_ft", "ceiling_unknown", "visibility_sm", "covers", "r
 
 
 def _asked(ident: str, procs: Approaches, forecast: dict | None) -> dict:
-    """What the engine reads of a field: its approaches and its forecast."""
+    """What the engine reads of a field: its approaches, its forecast, and
+    who may land there (wingtip.field_use: a private or military-only
+    field is the pilot's to check, its permission said)."""
     return {
         "ident": ident,
+        **field_use.use_of(ident),
         "approaches": {"names": list(procs.names), "alternate_minimums_url": procs.alternate_minimums_url},
         "forecast": None if forecast is None else {k: forecast.get(k) for k in _FORECAST_KEYS},
     }

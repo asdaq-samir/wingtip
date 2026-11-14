@@ -12,7 +12,9 @@ from pydantic import BaseModel, Field
 from ..schemas.common import AltitudeChoice, FlightRules, Loading
 
 Finding = Literal["ok", "caution", "stop", "unknown", "pending"]
-VerdictKey = Literal["weather", "airspace", "altitude", "fuel", "runways", "balance", "risk"]
+#: "permission": a private or military-only field on the route, a row
+#: after the seven only where there is one (gonogo_field_permission).
+VerdictKey = Literal["weather", "airspace", "altitude", "fuel", "runways", "balance", "risk", "permission"]
 VerdictTab = Literal["preflight", "depart", "enroute", "arrive"]
 RiskLevel = Literal["low", "caution", "high"]
 

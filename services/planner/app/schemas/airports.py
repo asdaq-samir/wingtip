@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from .airport_lights import LightingNote, LightingSystem
+from .airport_record import AirportRecord
 from .common import Frequency, Metar, Runway, TrafficPattern
 from .plates import ApproachFacts
 
@@ -303,7 +304,7 @@ class ChartPages(BaseModel):
     pages: list[ChartPage]
 
 
-class AirportPlace(BaseModel):
+class AirportPlace(AirportRecord):
     """One airport the way the map's card shows it: its name and place,
     the class of the airspace over it, whether it has a tower, its
     runways and radio, and the weather there now. `metar` is None for a
@@ -349,9 +350,8 @@ class AirportPlace(BaseModel):
     #: field for the hour (wingtip.glmp): the card's category, marked
     #: modelled, before a near station's.
     modelled_weather: ModelledWeather | None = None
-    #: Its own TAF as issued, where it has one -- most fields have none:
-    #: the card's hour-by-hour forecast is read from it (web lib/hourly),
-    #: and the text is the pilot's to read as sent.
+    #: Its own TAF as issued, where it has one (most have none): the card's
+    #: hours are read from it (web lib/hourly), the text the pilot's as sent.
     taf: str | None = None
     weather_unavailable: bool = False
     # Its phone and one-line street address, from the FAA's airport file
