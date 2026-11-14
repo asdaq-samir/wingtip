@@ -75,9 +75,10 @@ final class OneSearchModel {
         return tail
     }
 
-    /// The Do rows for what is typed (SearchActions).
+    /// The Do rows for what is typed (SearchActions): Direct To the first
+    /// open field found, never one NASR lists as closed (decision 0043).
     func actions(routed: Bool) -> [SearchAction] {
-        SearchActions.list(for: query, routed: routed, firstIdent: airports.first?.ident ?? fixes.first?.ident)
+        SearchActions.list(for: query, routed: routed, firstIdent: airports.first { $0.closed == nil }?.ident ?? fixes.first?.ident)
     }
 
     /// Asked again as the text changes, once the typing stops: the fields

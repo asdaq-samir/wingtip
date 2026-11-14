@@ -1559,7 +1559,7 @@
     "Find any airport, town or fix the way you would in Apple or Google Maps." : {
 
     },
-    "Finding the nearest fields…" : {
+    "Finding the fields round you…" : {
 
     },
     "Finding your position…" : {
@@ -2992,6 +2992,16 @@
     "Ran out %@" : {
 
     },
+    "Ranked first for a diversion: %@, %lld nm. Was %@ the better choice?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ranked first for a diversion: %1$@, %2$lld nm. Was %3$@ the better choice?"
+          }
+        }
+      }
+    },
     "Read Back" : {
 
     },
@@ -3701,16 +3711,6 @@
     },
     "The nearest is %@. Go direct?" : {
 
-    },
-    "The nearest was %@, %lld nm: was %@ the better choice?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "The nearest was %1$@, %2$lld nm: was %3$@ the better choice?"
-          }
-        }
-      }
     },
     "The next one is due %@." : {
 

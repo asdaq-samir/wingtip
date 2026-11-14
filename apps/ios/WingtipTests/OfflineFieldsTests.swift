@@ -34,6 +34,12 @@ struct OfflineFieldsTests {
         // No weather, runways or elevation: the packs hold none.
         #expect(kept.fields.allSatisfy { $0.metar == nil && $0.runways.isEmpty && $0.elevationFt == nil })
         #expect(kept.airplane == nil && kept.wind == nil)
+        // The packs' use goes to the engine as sent, "joint" no military field.
+        let joint: PackFields.Pins = { _, _, _, _ in
+            [AirportPin(ident: "KFHU", kind: "medium", lat: 46.83, lon: -92.21, military: "joint", name: "Joint field")]
+        }
+        #expect(PackFields.candidates(joint(0, 0, 0, 0) ?? []).first?.military == "joint")
+        #expect(try Emergency.deviceFields(fix: fix, aircraft: nil, glideRatio: nil, pins: joint)?.fields.first?.military == "joint")
         // No airplane: no glide is guessed, and the engine says so.
         let ranked = try Emergency.bestFields(kept, fix: fix, variationDeg: nil)
         #expect(ranked.needsAirplane)
@@ -57,6 +63,12 @@ struct OfflineFieldsTests {
         #expect(PackSearch.search("camp", in: kept).map(\.ident) == ["C81"])
         #expect(PackSearch.search("state", in: kept).map(\.ident) == ["KOSU"])
         #expect(PackSearch.search("k", in: kept).isEmpty)
+        // Each marked with its use, the engine's, as the planner's search is.
+        let il11 = AirportPin(ident: "IL11", kind: "small", lat: 42.2, lon: -88.3, name: "Il11", isPrivate: true)
+        let kfhu = AirportPin(ident: "KFHU", kind: "medium", lat: 31.59, lon: -110.34, military: "joint", name: "Sierra Vista Muni-Libby AAF")
+        #expect(PackSearch.search("IL11", in: [il11]).first?.use == "private")
+        #expect(PackSearch.search("KFHU", in: [kfhu]).first?.use == "joint")
+        #expect(PackSearch.search("KOSH", in: kept).first?.use == nil)
         // No connection is said as such.
         #expect(OneSearchModel.failedWords(URLError(.notConnectedToInternet), kept: true).hasPrefix("No connection"))
     }

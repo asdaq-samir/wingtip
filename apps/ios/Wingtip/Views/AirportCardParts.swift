@@ -151,6 +151,8 @@ struct AirportCardToolbar: ToolbarContent {
             } label: {
                 Label("Add to Plan", systemImage: "plus")
             }
+            // Never offered for the plan where NASR lists it closed (decision 0043).
+            .disabled(place.closed != nil)
             ShareLink(item: URL(string: "https://\(Config.host)/app/plan?place=\(place.ident)")!, subject: Text(place.name)) {
                 Label("Share", systemImage: WingtipIcon.share)
             }

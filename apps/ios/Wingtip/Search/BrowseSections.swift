@@ -91,12 +91,19 @@ struct SearchRowLabel: View {
     let title: String
     let detail: String
     let systemImage: String
+    /// A field closed, or one to ask leave of, said first (FieldUse).
+    var flag: FieldUse.Flag?
 
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(title).font(.headline)
-                if !detail.isEmpty { Text(detail).font(.subheadline).foregroundStyle(.secondary) }
+                if let flag {
+                    Text("\(Text(flag.words).foregroundStyle(flag.ink))\(detail.isEmpty ? "" : " · \(detail)")")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                } else if !detail.isEmpty {
+                    Text(detail).font(.subheadline).foregroundStyle(.secondary)
+                }
             }
         } icon: {
             Image(systemName: systemImage).foregroundStyle(.tint)

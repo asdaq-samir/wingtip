@@ -88,7 +88,8 @@ struct RootMap: View {
                     // Fly Here does, the sheet at the size it was left.
                     search.close()
                     nav.showPlan()
-                } : nil),
+                } : nil,
+                emergency: emergency.open != nil),
             // A tap on the course opens its nearest leg's card, that leg
             // cased in green while it is in sight (RouteLegView).
             routeLegs: RouteLegInput(

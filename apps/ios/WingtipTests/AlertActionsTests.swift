@@ -11,7 +11,7 @@ struct AlertActionsTests {
         Copilot.Message(id: id, kind: kind, level: "caution", title: "", say: "", detail: [], sources: [], elsewhere: false,
                         alternative: alternative.map {
                             EngineContract.CopilotAlternative(ident: $0, lat: 47.4, lon: -92.9, distanceNm: 18, courseDeg: 300,
-                                                              fuel: true, reserveMin: 30, reasons: [])
+                                                              fuel: true, reserveMin: 30, private: false, military: nil, reasons: [])
                         })
     }
 
@@ -26,6 +26,10 @@ struct AlertActionsTests {
         #expect(AlertActions.target(Self.message(id: "weather:KDLH:ifr", kind: "weather")) == .field("KDLH"))
         #expect(AlertActions.target(Self.message(id: "itws:KORD:Microburst alert: 30 kt loss", kind: "itws")) == .field("KORD"))
         #expect(AlertActions.target(Self.message(id: "night:KHIB", kind: "night")) == .field("KHIB"))
+        // A destination NASR lists as closed opens its own card, labelled so;
+        // its fix is the engine's alternative (decision 0043).
+        let closed = Self.message(id: "closed:00MO", kind: "closed", alternative: "KMBY")
+        #expect(AlertActions.target(closed) == .field("00MO") && AlertActions.fix(closed) == .directTo("KMBY"))
         #expect(AlertActions.target(Self.message(id: "groundspeed:10", kind: "groundspeed")) == nil)
         #expect(AlertActions.target(Self.message(id: "tfr:FDC 6/1234", kind: "tfr", alternative: "KHIB")) == .field("KHIB"))
     }

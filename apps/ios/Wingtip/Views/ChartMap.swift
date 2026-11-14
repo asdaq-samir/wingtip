@@ -106,7 +106,7 @@ struct ChartMap: UIViewRepresentable {
         context.coordinator.dim(shade)
         context.coordinator.open(map, bottomInset: bottomInset)
         context.coordinator.onRegion = onRegion
-        context.coordinator.useFields(military: militaryFields, privateFields: privateFields, on: map)
+        context.coordinator.useFields(extras.fieldSwitches(military: militaryFields, privateFields: privateFields), on: map)
         context.coordinator.weather.update(map, choice: airportWeather.choice, input: fieldWeather, zoom: Coordinator.zoom(of: map))
         context.coordinator.show(traffic, ownFt: ownFt, on: map)
         context.coordinator.flight?.update(map, flight)
@@ -682,9 +682,9 @@ struct ChartMap: UIViewRepresentable {
 
         /// Setup's settings put to the marks already drawn, at once.
         @MainActor
-        func useFields(military: Bool, privateFields: Bool, on map: MKMapView) {
-            guard fieldUse.military != military || fieldUse.privateFields != privateFields else { return }
-            fieldUse = (military: military, privateFields: privateFields)
+        func useFields(_ use: (military: Bool, privateFields: Bool), on map: MKMapView) {
+            guard fieldUse.military != use.military || fieldUse.privateFields != use.privateFields else { return }
+            fieldUse = use
             showFields(on: map)
         }
 
