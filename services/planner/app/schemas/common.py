@@ -144,6 +144,7 @@ class Metar(BaseModel):
     #: ("OVC///"): the ceiling is not known, not absent (14 CFR 1.1).
     ceiling_unknown: bool = False
     visibility_sm: float | None = None
+    visibility_plus: bool = False  # at least visibility_sm: P6SM, the AWC's "10+" (awc_metars_read)
     wind_dir_true_deg: float | None = None
     wind_speed_kt: float | None = None
     wind_gust_kt: float | None = None
