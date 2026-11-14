@@ -263,8 +263,8 @@ Check the files against this list before each submission.
 
 The planner's live store (`wingtip.traffic.store`, a SQLite file the
 planner and ingest share) holds nothing that names a pilot or an account,
-and the planner prunes it every minute (`wingtip.traffic.prune_forever`,
-started in `app.main`), whether or not ingest runs:
+and the planner prunes it every minute (`wingtip.traffic.prune`, a job
+on `wingtip.schedule` started in `app.main`), whether or not ingest runs:
 
 - **Where the map asks for traffic** (`looked`): the region adsb.lol is
   asked about for the view, the 0.5 degree cell (2 degrees zoomed out)

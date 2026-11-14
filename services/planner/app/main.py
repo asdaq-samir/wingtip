@@ -344,10 +344,9 @@ async def _lifespan(app: FastAPI):
     # stores the planner reads: none here.
     on = schedule.scheduler()
     schedule.every(on, feeds_watch.CHECK_EVERY_S, feeds_watch.check, name="feed-watch")
+    schedule.every(on, traffic_store.PRUNE_EVERY_S, traffic_store.prune, name="live-store-prune")
     on.start()
     threading.Thread(target=_warm_reference_data, args=(on,), name="reference-data-warm-up", daemon=True).start()
-    # The live store pruned (wingtip.traffic.prune).
-    threading.Thread(target=traffic_store.prune_forever, name="live-store-prune", daemon=True).start()
     yield
     on.shutdown(wait=False)
 
