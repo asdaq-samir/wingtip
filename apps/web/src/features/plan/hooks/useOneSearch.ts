@@ -71,6 +71,12 @@ const OFFERED: ScreenId[] = [
 /** What is typed found in a name, ignoring case. */
 const finds = (typed: string, name: string) => name.toLowerCase().includes(typed.toLowerCase());
 
+/** Where the airplane is now, as a route's point, read at the tap. */
+const positionNow = () => {
+  const fix = useOwnShip.getState().fix;
+  return fix ? positionIdent(fix) : null;
+};
+
 /**
  * The one search's view model (the one-search design, 2026-11-09) over the
  * planner's: what is typed (the planner's query, so Home, a Favorite and a
@@ -211,14 +217,15 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     }
   };
 
-  // Where the airplane is, for a route's departure asked for (useStopAsked).
-  const fix = useOwnShip((s) => (s.enabled ? s.fix : null));
+  // Whether a position is known, for a departure asked for (useStopAsked); the fix read at the tap:
+  // the whole fix drew the workspace again at every GPS fix (PERF-1).
+  const positioned = useOwnShip((s) => s.enabled && s.fix !== null);
   const does: DoHit[] = [];
   // The departure asked for: where the airplane is, first, as Maps' From
   // offers My Location -- a route may start at a present position, as Fly
   // Here's does (the owner's "Departure → HSKEL → KJAX", 2026-11-13).
-  if (pick?.label === "Departure" && fix && (!typed || finds(typed, "My Position")))
-    does.push({ key: "my-position", label: "My Position", kind: "action", run: () => pickIdent(positionIdent(fix)) });
+  if (pick?.label === "Departure" && positioned && (!typed || finds(typed, "My Position")))
+    does.push({ key: "my-position", label: "My Position", kind: "action", run: () => pickIdent(positionNow() ?? "") });
   if (!direct && !pick) {
     const out = does;
     const first = airports[0];
@@ -262,6 +269,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   };
 
   const pickIdent = (ident: string) => {
+    if (!ident) return; // My Position with the fix gone since
     const to = pick;
     done();
     to?.onPick(ident.toUpperCase());
