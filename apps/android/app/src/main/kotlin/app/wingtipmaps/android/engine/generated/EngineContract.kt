@@ -4327,8 +4327,37 @@ object EngineContract {
     )
 
     @Serializable
-    data class FrequenciesInOrderInput(
-        val frequencies: List<EngineContract.FieldFrequency>,
+    data class FreezingPrecipAnswer(
+        val found: List<EngineContract.FreezingPrecipAnswerFoundItem>,
+        val line: String? = null,
+    )
+
+    @Serializable
+    data class FreezingPrecipAnswerFoundItem(
+        val ident: String,
+        val source: String,
+        /**
+         * The group as sent, "-FZRA".
+         */
+        val group: String,
+    )
+
+    @Serializable
+    data class FreezingPrecipInput(
+        val fields: List<EngineContract.FreezingPrecipInputFieldsItem>,
+    )
+
+    @Serializable
+    data class FreezingPrecipInputFieldsItem(
+        val ident: String,
+        /**
+         * The METAR as sent.
+         */
+        val metar: String? = null,
+        /**
+         * The TAF as sent.
+         */
+        val taf: String? = null,
     )
 
     @Serializable
@@ -4893,6 +4922,32 @@ object EngineContract {
     )
 
     @Serializable
+    data class GonogoIcingUncheckedInput(
+        val selection: EngineContract.GonogoIcingUncheckedInputSelection? = null,
+        /**
+         * The altitudes flown.
+         */
+        @SerialName("flown_ft")
+        val flownFt: List<Double>? = null,
+    )
+
+    @Serializable
+    data class GonogoIcingUncheckedInputSelection(
+        @SerialName("freezing_level_ft")
+        val freezingLevelFt: Double? = null,
+        /**
+         * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
+         */
+        @SerialName("icing_possible")
+        val icingPossible: Boolean? = null,
+        /**
+         * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
+         */
+        @SerialName("freezing_level_at_or_below")
+        val freezingLevelAtOrBelow: Boolean? = null,
+    )
+
+    @Serializable
     data class GonogoInspections(
         /**
          * yyyy-mm-dd, 14 CFR 91.409(a).
@@ -5343,6 +5398,11 @@ object EngineContract {
         val crosswindKt: Double,
         @SerialName("gust_crosswind_kt")
         val gustCrosswindKt: Double? = null,
+        /**
+         * The unrounded crosswind (RunwayWindOut's), judged against the limits where sent; the rounded one where not.
+         */
+        @SerialName("crosswind_exact_kt")
+        val crosswindExactKt: Double? = null,
         /**
          * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
          */
@@ -6319,6 +6379,16 @@ object EngineContract {
         val variationDeg: Double? = null,
         @SerialName("burnt_gal")
         val burntGal: Double,
+        /**
+         * The fuel the plan leaves in the tanks here, from the last fuel stop passed; null without fuel_start_gal.
+         */
+        @SerialName("fuel_now_gal")
+        val fuelNowGal: Double? = null,
+        /**
+         * Whether the start and taxi allowance was taken off the fuel figures (taxi_fuel_gal given).
+         */
+        @SerialName("taxi_counted")
+        val taxiCounted: Boolean? = null,
         val next: EngineContract.InFlightAnswerNext? = null,
         val destination: EngineContract.InFlightAnswerDestination? = null,
     )
@@ -6367,6 +6437,21 @@ object EngineContract {
         val legs: List<EngineContract.InFlightInputLegsItem>? = null,
         @SerialName("fuel_start_gal")
         val fuelStartGal: Double? = null,
+        /**
+         * What the tanks are filled to at a fuel stop; left out, fuel_start_gal.
+         */
+        @SerialName("fuel_full_gal")
+        val fuelFullGal: Double? = null,
+        /**
+         * The airplane's start and taxi allowance, taken off at the start and at each fuel stop; left out where its profile gives none, and then nothing is taken off (taxi_counted false), never another airplane's figure.
+         */
+        @SerialName("taxi_fuel_gal")
+        val taxiFuelGal: Double? = null,
+        /**
+         * The points (indices into points) the plan refuels at: the stops the planner's totals' hops begin at.
+         */
+        @SerialName("refuel_at")
+        val refuelAt: List<Int>? = null,
         @SerialName("now_s")
         val nowS: Double? = null,
     )
@@ -7705,6 +7790,9 @@ object EngineContract {
         val tasKt: Double? = null,
         @SerialName("fuel_burn_gph")
         val fuelBurnGph: Double? = null,
+        /**
+         * The power flown; null where the profile names no cruise power (no power model: its TAS and burn as given at every altitude, no other airplane's power assumed).
+         */
         @SerialName("power_pct")
         val powerPct: Double? = null,
         @SerialName("oat_c")
@@ -7713,6 +7801,11 @@ object EngineContract {
         val densityAltitudeFt: Double? = null,
         @SerialName("climb_min")
         val climbMin: Double? = null,
+        /**
+         * True on a leg with climb minutes where the profile gives no climb fuel flow: the climb's gallons are not counted in its fuel, for the app to ask for the figure (no multiple of the cruise burn is assumed).
+         */
+        @SerialName("climb_fuel_unknown")
+        val climbFuelUnknown: Boolean? = null,
         /**
          * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
          */
@@ -8676,7 +8769,10 @@ object EngineContract {
     @Serializable
     data class PerformanceClimbAnswer(
         val minutes: Double,
-        val gallons: Double,
+        /**
+         * Null where the profile gives no climb fuel flow: not known, never a multiple of the cruise burn.
+         */
+        val gallons: Double? = null,
     )
 
     @Serializable
@@ -8696,8 +8792,11 @@ object EngineContract {
         val tasKt: Double,
         @SerialName("fuel_burn_gph")
         val fuelBurnGph: Double,
+        /**
+         * Null where the profile names no cruise power: the TAS and burn as given, no power model.
+         */
         @SerialName("power_pct")
-        val powerPct: Double,
+        val powerPct: Double? = null,
         @SerialName("density_altitude_ft")
         val densityAltitudeFt: Double,
     )
@@ -10414,8 +10513,15 @@ object EngineContract {
         @SerialName("fuel_gal")
         val fuelGal: Double? = null,
         val landings: Int,
+        /**
+         * The hazards it crosses, indices into hazards, in the order flown: what closes a cell, and the restricted, MOA, warning and alert areas it is flown through.
+         */
         val crosses: List<Int>,
         val marginal: List<Int>,
+        /**
+         * The card's one warning, the worst it crosses, in the engine's words: a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where it crosses nothing.
+         */
+        val warning: String? = null,
         val bands: List<EngineContract.RouteOptionsBand>,
         @SerialName("tail_kt")
         val tailKt: Double,
@@ -10548,9 +10654,15 @@ object EngineContract {
         val cellDeg: Double,
         @SerialName("per_cell")
         val perCell: Int,
+        /**
+         * The highest VFR cruising altitude either way under the ceiling (the lower of the two), over which a cell's ground is closed where the ceiling is known.
+         */
         @SerialName("top_ft")
         val topFt: Double,
         val window: List<Double>,
+        /**
+         * Every VFR cruising altitude from 3,500 ft to the airplane's ceiling under 18,000 ft (none known: 17,500), the winds aloft wanted at each: each way tries its own half of 91.159 among them, so westbound reaches 12,500 under a 13,000 ft ceiling.
+         */
         @SerialName("altitudes_ft")
         val altitudesFt: List<Double>,
         @SerialName("lowest_cruise_ft")
@@ -10568,6 +10680,9 @@ object EngineContract {
 
     @Serializable
     data class RouteOptionsHazard(
+        /**
+         * What it is: prohibited, tfr, storm, terrain, sigmet, weather, marginal or fuel; or a special-use area a way is flown through and told of (AIM 3-4): restricted, moa, warning or alert.
+         */
         val kind: String,
         val name: String,
     )
@@ -10821,8 +10936,22 @@ object EngineContract {
 
     @Serializable
     data class RunwayEndFitInputEnd(
+        /**
+         * The end's ident: a landing reads that end's displaced threshold and LDA from the runway's ends where the end does not send its own.
+         */
+        val ident: String? = null,
         @SerialName("heading_true_deg")
         val headingTrueDeg: Double? = null,
+        /**
+         * The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length.
+         */
+        @SerialName("displaced_threshold_ft")
+        val displacedThresholdFt: Double? = null,
+        /**
+         * The landing distance available the airport declares for this end, feet (AC 150/5300-13B, declared distances); where given, a landing is judged against it.
+         */
+        @SerialName("lda_ft")
+        val ldaFt: Double? = null,
     )
 
     @Serializable
@@ -10877,6 +11006,16 @@ object EngineContract {
         val ident: String,
         @SerialName("heading_true_deg")
         val headingTrueDeg: Double? = null,
+        /**
+         * The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length.
+         */
+        @SerialName("displaced_threshold_ft")
+        val displacedThresholdFt: Double? = null,
+        /**
+         * The landing distance available the airport declares for this end, feet (AC 150/5300-13B, declared distances); where given, a landing is judged against it.
+         */
+        @SerialName("lda_ft")
+        val ldaFt: Double? = null,
     )
 
     @Serializable
@@ -10905,6 +11044,11 @@ object EngineContract {
         val crosswindKt: Double,
         @SerialName("gust_crosswind_kt")
         val gustCrosswindKt: Double? = null,
+        /**
+         * The crosswind, the gust's where more, unrounded: what a limit (the POH's demonstrated crosswind, the pilot's own) is judged against, so 10.4 kt is past 10 (AV-10). There only where the wind blew.
+         */
+        @SerialName("crosswind_exact_kt")
+        val crosswindExactKt: Double? = null,
         /**
          * There only where calm picked the runway in use.
          */

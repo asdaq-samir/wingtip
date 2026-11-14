@@ -4,10 +4,10 @@
 //! ShortField -- and answers JSON.
 
 use super::circuit::{self, CircuitEnd, CircuitRunway, Pattern, Point};
-use super::performance::{self, FieldReport, FitWind};
+use super::performance;
 use super::pick;
 use super::wind::{self, Favoured, Nearby, Reported, RunwayWind, WindPick};
-use crate::gonogo::calls::{runway, runway_list, table, truth, In};
+use crate::gonogo::calls::{runway_list, truth, In};
 use crate::json::{self, Value};
 
 type R<T> = Result<T, String>;
@@ -109,7 +109,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 .collect();
             Ok(format!("[{}]", each.join(",")))
         })(),
-        "runway_end_fit" => end_fit_rule(i, v),
+        "runway_end_fit" => performance::end_fit_rule(i, v),
         "traffic_pattern" => (|| {
             let r = circuit_runway(i, v)?;
             pattern_json(i, v, circuit::arrival(&r, &i.str(v, "end_ident")?).as_ref())
@@ -183,6 +183,7 @@ fn runway_wind_of(i: In, v: &Value) -> R<RunwayWind> {
         crosswind_kt: i.num(w, "crosswind_kt")?,
         gust_crosswind_kt: i.opt_num(w, "gust_crosswind_kt")?,
         in_use: truth(w, "in_use"),
+        crosswind_exact_kt: i.opt_num(w, "crosswind_exact_kt")?,
     })
 }
 
@@ -246,6 +247,10 @@ fn favoured_json(f: Option<&Favoured>) -> String {
     match f.gust_crosswind_kt {
         Some(g) => figure(&mut out, g),
         None => out.push_str("null"),
+    }
+    if !f.calm {
+        out.push_str(",\"crosswind_exact_kt\":");
+        json::number(&mut out, f.crosswind_exact_kt);
     }
     if f.in_use {
         out.push_str(",\"in_use\":true");
@@ -372,49 +377,5 @@ fn pattern_json(i: In, v: &Value, p: Option<&Pattern>) -> R<String> {
     out.push_str(",\"name\":");
     json::string(&mut out, name);
     out.push_str("}}");
-    Ok(out)
-}
-
-/// `{"aircraft"?: {"takeoff"?, "landing"?, "crosswind"?: {"demonstrated_kt"?}},
-/// "runway", "end": {"heading_true_deg"?}, "wind"?: {"dir_true_deg"?,
-/// "speed_kt"?, "gust_kt"?}, "elevation_ft"? (null: not known, no distance), "altimeter_in_hg"?, "temp_c"?,
-/// "weight_lb"?, "kind": "takeoff"|"landing"}`.
-fn end_fit_rule(i: In, v: &Value) -> R<String> {
-    let aircraft = i.obj(v, "aircraft")?;
-    let takeoff = i.str(v, "kind")? == "takeoff";
-    let t = match aircraft.map(|a| i.obj(a, if takeoff { "takeoff" } else { "landing" })).transpose()?.flatten() {
-        Some(t) => Some(table(i, t)?),
-        None => None,
-    };
-    let demonstrated = match aircraft.map(|a| i.obj(a, "crosswind")).transpose()?.flatten() {
-        Some(c) => i.opt_num(c, "demonstrated_kt")?,
-        None => None,
-    };
-    let r = runway(i, i.obj(v, "runway")?.map_or_else(|| i.err("runway", "is missing"), Ok)?)?;
-    let heading = match i.obj(v, "end")? {
-        Some(e) => i.opt_num(e, "heading_true_deg")?,
-        None => None,
-    };
-    let wind = match i.obj(v, "wind")? {
-        Some(w) => Some(FitWind {
-            dir_true_deg: i.opt_num(w, "dir_true_deg")?,
-            speed_kt: i.opt_num(w, "speed_kt")?,
-            gust_kt: i.opt_num(w, "gust_kt")?,
-        }),
-        None => None,
-    };
-    let field = FieldReport {
-        elevation_ft: i.opt_num(v, "elevation_ft")?,
-        altimeter_in_hg: i.opt_num(v, "altimeter_in_hg")?,
-        temp_c: i.opt_num(v, "temp_c")?,
-    };
-    let f = performance::end_fit(t.as_ref(), demonstrated, &r, heading, wind.as_ref(), &field, i.opt_num(v, "weight_lb")?);
-    let mut out = String::from("{\"crosswind_kt\":");
-    json::number(&mut out, f.crosswind_kt);
-    out.push_str(&format!(",\"crosswind_over\":{},\"needed_ft\":", f.crosswind_over));
-    json::opt_number(&mut out, f.needed_ft);
-    out.push_str(",\"length_ft\":");
-    json::opt_number(&mut out, f.length_ft);
-    out.push_str(&format!(",\"short\":{},\"close\":{},\"unknown\":{},\"beyond\":{}}}", f.short, f.close, f.unknown, f.beyond));
     Ok(out)
 }

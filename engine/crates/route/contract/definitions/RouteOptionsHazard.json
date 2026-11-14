@@ -3,7 +3,8 @@
   "type": "object",
   "properties": {
     "kind": {
-      "type": "string"
+      "type": "string",
+      "description": "What it is: prohibited, tfr, storm, terrain, sigmet, weather, marginal or fuel; or a special-use area a way is flown through and told of (AIM 3-4): restricted, moa, warning or alert."
     },
     "name": {
       "type": "string"

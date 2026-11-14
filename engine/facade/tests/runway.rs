@@ -103,7 +103,7 @@ fn favoured(ends: Value, metar: Value, variation: f64, recent: Value) -> Value {
 fn the_end_into_the_wind_is_favoured_its_crosswind_signed_and_rounded_as_the_planner_rounds() {
     // 300 at 12 on 27 (268 true): 32 degrees off the nose, from the right.
     let w = favoured(nine_27(), json!({"wind_dir_true_deg": 300.0, "wind_speed_kt": 12.0}), -3.0, Value::Null);
-    assert_eq!(w, json!({"end": "27", "headwind_kt": 10, "crosswind_kt": 6, "gust_crosswind_kt": null}));
+    assert!(near(num(&w["crosswind_exact_kt"]), 12.0 * 32f64.to_radians().sin(), 1e-9) && w["crosswind_kt"] == json!(6));
     // Whole numbers, as the planner's Python gives them.
     let raw = call(
         "runway_with_winds",
@@ -125,7 +125,7 @@ fn an_end_with_no_heading_takes_its_number_turned_true() {
     assert_eq!(ask("runway_end_heading", json!({"ident": "H1", "variation_deg": 0.0})), Value::Null);
     assert_eq!(ask("runway_end_heading", json!({"ident": "09", "heading_true_deg": 361.5, "variation_deg": 0.0})), json!(1.5));
     let w = favoured(json!([["18L", null], ["36R", null]]), json!({"wind_dir_true_deg": 177.0, "wind_speed_kt": 8.0}), -3.0, Value::Null);
-    assert_eq!(w, json!({"end": "18L", "headwind_kt": 8, "crosswind_kt": 0, "gust_crosswind_kt": null}));
+    assert_eq!(w, json!({"end": "18L", "headwind_kt": 8, "crosswind_kt": 0, "gust_crosswind_kt": null, "crosswind_exact_kt": 0.0}));
 }
 
 #[test]

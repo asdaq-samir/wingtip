@@ -22,6 +22,10 @@
             "null"
           ]
         },
+        "crosswind_exact_kt": {
+          "type": "number",
+          "description": "The crosswind, the gust's where more, unrounded: what a limit (the POH's demonstrated crosswind, the pilot's own) is judged against, so 10.4 kt is past 10 (AV-10). There only where the wind blew."
+        },
         "in_use": {
           "const": true,
           "description": "There only where calm picked the runway in use."

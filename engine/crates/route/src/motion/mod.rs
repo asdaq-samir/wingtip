@@ -44,6 +44,7 @@ pub mod alerts;
 pub mod along;
 pub mod diagram;
 pub mod dry_run;
+pub mod fuel_left;
 pub mod glide;
 pub mod instruments;
 pub mod profile;

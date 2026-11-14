@@ -97,7 +97,7 @@ fn answer(name: &str, v: &Value) -> R<String> {
                 "{{\"tas_kt\":{},\"fuel_burn_gph\":{},\"power_pct\":{},\"density_altitude_ft\":{}}}",
                 write(&Value::Number(c.tas_kt)),
                 write(&Value::Number(c.fuel_burn_gph)),
-                write(&Value::Number(c.power_pct)),
+                c.power_pct.map_or_else(|| "null".to_owned(), |p| write(&Value::Number(p))),
                 write(&Value::Number(c.density_altitude_ft))
             )
         }
@@ -109,7 +109,9 @@ fn answer(name: &str, v: &Value) -> R<String> {
                 num(name, v, "to_ft")?,
                 opt_num(name, v, "isa_dev_c")?.unwrap_or(0.0),
             );
-            format!("{{\"minutes\":{},\"gallons\":{}}}", write(&Value::Number(c.minutes)), write(&Value::Number(c.gallons)))
+            // The gallons null where the profile gives no climb fuel flow.
+            let gallons = p.airplane.climb_burn_gph().map_or_else(|| "null".to_owned(), |_| write(&Value::Number(c.gallons)));
+            format!("{{\"minutes\":{},\"gallons\":{gallons}}}", write(&Value::Number(c.minutes)))
         }
         "navlog_leg" => {
             let p = match v.get("profile") {

@@ -11,8 +11,9 @@ use wingtip_flight::vfr;
 /// wingtip_flight::limits.
 pub use wingtip_flight::limits::CLASS_A_FLOOR_FT;
 /// Class E from here up wherever nothing lower is designated, but not
-/// within 1,500 ft of the surface (71.71(b)).
+/// below 1,500 ft above the surface (71.71(a)(2)).
 pub const CLASS_E_EVERYWHERE_FT: f64 = 14500.0;
+pub const CLASS_E_ABOVE_SURFACE_FT: f64 = 1500.0;
 /// Where 91.117's speed and 91.215's transponder rule change; 91.155's
 /// minimums change there too (wingtip_flight::vfr::HIGH_FROM_MSL_FT).
 pub const TEN_THOUSAND_FT: f64 = 10000.0;
@@ -165,7 +166,7 @@ pub fn entry_rules(class: char) -> Vec<(String, &'static str)> {
 
 /// The frequencies to call before entering, by the primary airport's
 /// types (NASR FRQ): approach for a Class B or C (91.131(a)(1),
-/// 91.130(c)(1)), the tower for a Class D (91.129(c)(1)).
+/// 91.130(c)(1)), the tower for a Class D (91.129(c)).
 pub fn call_types(class: char) -> &'static [&'static str] {
     if class == 'D' {
         &["TWR"]
@@ -184,26 +185,41 @@ pub fn equipment(class: char, floor_msl: f64, agl: f64, in_veil: bool, above_bc:
         // IFR only: the instrument flight asks for far more than this.
         'A' => None,
         'B' | 'C' => Some(TRANSPONDER),
-        // 91.215(b)(2) asks for the transponder in "all airspace" within
-        // 30 nm of a Class B primary airport, surface to 10,000 ft MSL.
-        'D' if in_veil && floor_msl < TEN_THOUSAND_FT => Some(
-            "A two-way radio, and a transponder with altitude reporting and ADS-B Out: \
-             inside a 30 nm Mode C veil (91.215(b)(2), 91.225(d)(2)).",
-        ),
-        'D' => Some("A two-way radio."),
-        _ if floor_msl >= TEN_THOUSAND_FT && agl >= TRANSPONDER_EXEMPT_AGL_FT => Some(TRANSPONDER),
-        // Above a Class B or C, within its lateral limits, up to 10,000 ft
-        // MSL (91.215(b)(4), 91.225(d)(3)).
-        _ if above_bc && floor_msl < TEN_THOUSAND_FT => Some(
-            "A transponder with altitude reporting and ADS-B Out: above a Class B or C, \
-             within its lateral limits, to 10,000 ft MSL (91.215(b)(4), 91.225(d)(3)).",
-        ),
-        _ if in_veil && floor_msl < TEN_THOUSAND_FT => {
-            Some("A transponder with altitude reporting and ADS-B Out: inside a 30 nm Mode C veil (91.215(b)(2), 91.225(d)(2)).")
-        }
-        _ => None,
+        // A Class D asks for a two-way radio (91.129(c)), and the
+        // transponder too wherever 91.215(b)'s general arms reach it.
+        'D' => Some(general(floor_msl, agl, in_veil, above_bc).map_or("A two-way radio.", |k| WITH_RADIO[k])),
+        _ => general(floor_msl, agl, in_veil, above_bc).map(|k| ALONE[k]),
     }
 }
+
+/// 91.215(b)'s arms that hold in any class, the first that does, in the
+/// rule's own order of reach: (b)(5)(i), at and above 10,000 ft MSL but
+/// not within 2,500 ft of the surface (here at 2,500 ft too, the safer
+/// side); (b)(4), above a Class B or C, within its lateral limits, to
+/// 10,000 ft MSL; (b)(2), within 30 nm of a Class B primary airport,
+/// surface to 10,000 ft MSL. Each before any class's own arm, so a Class
+/// D reaching one is asked for the transponder too.
+fn general(floor_msl: f64, agl: f64, in_veil: bool, above_bc: bool) -> Option<usize> {
+    if floor_msl >= TEN_THOUSAND_FT {
+        (agl >= TRANSPONDER_EXEMPT_AGL_FT).then_some(0)
+    } else if above_bc {
+        Some(1)
+    } else {
+        in_veil.then_some(2)
+    }
+}
+
+/// The general arms' words (general's index), alone and in a Class D.
+const ALONE: [&str; 3] = [
+    TRANSPONDER,
+    "A transponder with altitude reporting and ADS-B Out: above a Class B or C, within its lateral limits, to 10,000 ft MSL (91.215(b)(4), 91.225(d)(3)).",
+    "A transponder with altitude reporting and ADS-B Out: inside a 30 nm Mode C veil (91.215(b)(2), 91.225(d)(2)).",
+];
+const WITH_RADIO: [&str; 3] = [
+    "A two-way radio, and a transponder with altitude reporting and ADS-B Out: at or above 10,000 ft MSL (91.215(b)(5), 91.225(d)(4)).",
+    "A two-way radio, and a transponder with altitude reporting and ADS-B Out: above a Class B or C, within its lateral limits, to 10,000 ft MSL (91.215(b)(4), 91.225(d)(3)).",
+    "A two-way radio, and a transponder with altitude reporting and ADS-B Out: inside a 30 nm Mode C veil (91.215(b)(2), 91.225(d)(2)).",
+];
 
 /// The 91.117 speed limit, where one applies: 200 kt under a Class B's
 /// shelf (91.117(c)), 200 kt at or below 2,500 ft above the surface in a
@@ -258,6 +274,8 @@ pub fn column(ground_ft: f64, volumes: &[Volume], in_veil: bool) -> Vec<Band> {
         ground_ft + G_LOW_AGL_FT,
         ground_ft + TRANSPONDER_EXEMPT_AGL_FT,
         ground_ft + SPEED_200_KT_AGL_FT,
+        // 71.71(a)(2): the 14,500 ft Class E stops 1,500 ft above the surface.
+        ground_ft + CLASS_E_ABOVE_SURFACE_FT,
         TEN_THOUSAND_FT,
         vfr::HIGH_FROM_MSL_FT,
         CLASS_E_EVERYWHERE_FT,
@@ -287,7 +305,7 @@ pub fn column(ground_ft: f64, volumes: &[Volume], in_veil: bool) -> Vec<Band> {
         let (class, name) = match holding {
             Some(v) => (v.class, Some(v.name.clone())),
             None if class_e.iter().any(|l| l.0 <= middle && middle < l.1)
-                || (middle >= CLASS_E_EVERYWHERE_FT && middle >= ground_ft + 1500.0) =>
+                || (middle >= CLASS_E_EVERYWHERE_FT && middle >= ground_ft + CLASS_E_ABOVE_SURFACE_FT) =>
             {
                 ('E', None)
             }
@@ -488,66 +506,4 @@ pub fn veil_json(v: &json::Value) -> Result<String, String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn volume(class: char, floor_ft: f64, floor_ref: FloorRef, ceiling_ft: f64) -> Volume {
-        Volume { class, name: format!("{class} test"), floor_ft, floor_ref, ceiling_ft }
-    }
-
-    #[test]
-    fn a_class_d_under_open_sky() {
-        // A Class D to 3,300 ft over 800 ft ground, Class E at 700 ft round it.
-        let bands = column(800.0, &[volume('D', 0.0, FloorRef::Sfc, 3300.0), volume('E', 700.0, FloorRef::Agl, 18000.0)], false);
-        assert_eq!(bands[0].class, 'D');
-        assert_eq!(bands.last().unwrap().class, 'A');
-        assert_eq!((bands[0].floor_ft, bands[0].ceiling_ft), (800.0, 3300.0));
-        assert_eq!(bands[0].speed_kt, Some(200));
-        assert_eq!(bands.last().unwrap().ceiling_ft, TOP_FT);
-    }
-
-    #[test]
-    fn the_91_117_speed_limit_by_class_and_height() {
-        // 91.117(b): 200 kt at or below 2,500 ft above the surface in a
-        // Class C or D; (a): 250 kt below 10,000 ft MSL; (c): 200 kt under
-        // a Class B. (Moved from services/planner/tests_wingtip/test_airspace_at.py, #482.)
-        for (class, floor, agl, under_b, limit) in [
-            ('D', 640.0, 0.0, false, Some(200)),
-            ('C', 640.0, 2499.0, false, Some(200)),
-            ('C', 3140.0, 2500.0, false, Some(250)),
-            ('D', 3140.0, 2500.0, false, Some(250)),
-            ('E', 640.0, 0.0, false, Some(250)),
-            ('G', 640.0, 0.0, false, Some(250)),
-            ('B', 3000.0, 2000.0, false, Some(250)),
-            ('E', 640.0, 0.0, true, Some(200)),
-            ('E', 10000.0, 9000.0, false, None),
-            ('A', 18000.0, 17000.0, false, None),
-        ] {
-            assert_eq!(speed_kt(class, floor, under_b, agl), limit, "{class} {floor} {agl} {under_b}");
-        }
-    }
-
-    #[test]
-    fn the_91_155_minimums_by_class() {
-        for (class, floor, agl, day_vis, clear) in [
-            ('B', 3000.0, 2000.0, 3.0, true),
-            ('C', 0.0, 0.0, 3.0, false),
-            ('D', 0.0, 0.0, 3.0, false),
-            ('E', 5000.0, 4000.0, 3.0, false),
-            ('E', 11000.0, 9000.0, 5.0, false),
-            ('G', 1000.0, 500.0, 1.0, true),
-        ] {
-            let day = minimums(class, floor, agl).unwrap().day;
-            assert_eq!((day.visibility_sm, day.below_ft.is_none()), (day_vis, clear), "{class} {floor}");
-        }
-        assert!(minimums('A', 18000.0, 17000.0).is_none());
-    }
-
-    #[test]
-    fn g_alone_splits_at_1200_agl() {
-        let bands = column(0.0, &[], false);
-        assert_eq!(bands[0].class, 'G');
-        assert_eq!(bands[0].ceiling_ft, 1200.0);
-        assert_eq!(bands[0].minimums.unwrap().day.visibility_sm, 1.0);
-    }
-}
+mod tests;

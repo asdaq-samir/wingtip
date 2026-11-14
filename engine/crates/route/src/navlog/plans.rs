@@ -282,13 +282,12 @@ impl Plan<'_> {
             best_path(&self.candidates, &gallons, &fuel_step)?,
         ];
 
-        // The plans' own legs carry their climbs -- from the field to the
-        // first altitude, and up again at every step -- so the times and
-        // fuel compared, and then flown, are the climbs' included. The
-        // search above used the quicker penalty to choose; the legs are
-        // the truth.
+        // The plans' own legs carry their climbs, so the times and fuel
+        // compared are the climbs' included; the legs are the truth. With no
+        // climb fuel flow in the profile, no economical plan: its climbs'
+        // fuel is not known, and none is assumed (the owner, 2026-11-09).
         let mut plans = Vec::with_capacity(4);
-        for (kind, altitudes) in PLAN_KINDS.iter().zip(&paths) {
+        for (kind, altitudes) in PLAN_KINDS.iter().zip(&paths).take(if climber.burn_known() { 4 } else { 3 }) {
             let legs = f.legs_flown(altitudes, self.departure_elevation_ft)?;
             let t = totals(&legs)?;
             let climb_min = py_round(py_sum(legs.iter().map(|l| l.opt("climb_min")).collect::<R<Vec<_>>>()?.into_iter().flatten()), 1);

@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_route::motion::call",
-  "description": "A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves from fuel_start_gal. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).",
+  "description": "A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves there (fuel_left): from fuel_start_gal less the start and taxi allowance (taxi_fuel_gal), and from each fuel stop passed (refuel_at) with the tanks filled again (fuel_full_gal, else fuel_start_gal) less another allowance, never from the first tank past a fuel stop; fuel_now_gal is what it leaves here. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).",
   "type": "object",
   "properties": {
     "input": {
@@ -102,6 +102,31 @@
             "null"
           ]
         },
+        "fuel_full_gal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "What the tanks are filled to at a fuel stop; left out, fuel_start_gal."
+        },
+        "taxi_fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The airplane's start and taxi allowance, taken off at the start and at each fuel stop; left out where its profile gives none, and then nothing is taken off (taxi_counted false), never another airplane's figure."
+        },
+        "refuel_at": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "The points (indices into points) the plan refuels at: the stops the planner's totals' hops begin at."
+        },
         "now_s": {
           "type": [
             "number",
@@ -170,6 +195,17 @@
             },
             "burnt_gal": {
               "type": "number"
+            },
+            "fuel_now_gal": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The fuel the plan leaves in the tanks here, from the last fuel stop passed; null without fuel_start_gal."
+            },
+            "taxi_counted": {
+              "type": "boolean",
+              "description": "Whether the start and taxi allowance was taken off the fuel figures (taxi_fuel_gal given)."
             },
             "next": {
               "anyOf": [

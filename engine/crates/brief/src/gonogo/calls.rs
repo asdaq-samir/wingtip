@@ -9,7 +9,7 @@
 //! them apart (a VOR check, an alternate's `good`).
 
 use super::frat::{self, Currency, Inspections, Squawk, VorCheck};
-use super::icing::{self, Selection};
+use super::icing;
 use super::minimums::{self, Landing, Minimums, Report as Winds, RunwayWind};
 use super::pass_times;
 use super::runways::{self, Airplane, End, Field, Picks, Report, Runway, ShortField};
@@ -353,6 +353,7 @@ pub(crate) fn runway_wind(i: In, v: &Value) -> R<Option<RunwayWind>> {
         crosswind_kt: i.num(w, "crosswind_kt")?,
         gust_crosswind_kt: i.opt_num(w, "gust_crosswind_kt")?,
         in_use: truth(w, "in_use"),
+        crosswind_exact_kt: i.opt_num(w, "crosswind_exact_kt")?,
     }))
 }
 
@@ -364,7 +365,10 @@ pub(crate) fn runway(i: In, r: &Value) -> R<Runway> {
         ends: i
             .list(r, "runway_ends")?
             .iter()
-            .map(|e| Ok(End { ident: i.str(e, "ident")?, heading_true_deg: i.opt_num(e, "heading_true_deg")? }))
+            .map(|e| {
+                let (displaced_threshold_ft, lda_ft) = (i.opt_num(e, "displaced_threshold_ft")?, i.opt_num(e, "lda_ft")?);
+                Ok(End { ident: i.str(e, "ident")?, heading_true_deg: i.opt_num(e, "heading_true_deg")?, displaced_threshold_ft, lda_ft })
+            })
             .collect::<R<_>>()?,
         wind: runway_wind(i, r)?,
     })
@@ -439,15 +443,7 @@ fn under_minimums_rule(i: In, v: &Value) -> R<String> {
 // --- icing ------------------------------------------------------------------
 
 fn icing_rule(i: In, v: &Value) -> R<String> {
-    let s = i.obj(v, "selection")?;
-    let selection = match s {
-        None => Selection::default(),
-        Some(s) => Selection {
-            freezing_level_ft: i.opt_num(s, "freezing_level_ft")?,
-            possible: truth(s, "icing_possible"),
-            at_or_below: truth(s, "freezing_level_at_or_below"),
-        },
-    };
+    let selection = icing::selection_of(i, v)?;
     // A report's icing as sent; one that is not a string says none.
     let reports: Vec<Option<String>> =
         i.list(v, "pireps")?.iter().map(|p| p.get("icing").and_then(Value::as_str).map(str::to_owned)).collect();
@@ -599,6 +595,7 @@ fn end_distance_rule(i: In, v: &Value) -> R<String> {
     let (d, over) = runways::end_distance(
         &t,
         r.as_ref(),
+        r.as_ref().and_then(|r| r.length_ft),
         (i.num(v, "pressure_alt_ft")?, i.num(v, "temp_c")?),
         i.opt_num(v, "weight_lb")?,
         i.num(v, "headwind_kt")?,
