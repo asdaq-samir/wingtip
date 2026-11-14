@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useDrawnStretch } from "./heightStretch";
 import { useGlMap } from "../../../../lib/map/gl/glLayer";
 import AirspaceVolumesGl from "./AirspaceVolumesGl";
 import { planAltitudes } from "./airspaceShelves";
@@ -7,7 +8,6 @@ import ApproachGl from "./ApproachGl";
 import type { ProcedureDrawing } from "../../../../lib/api/types";
 import ClearanceGl from "./ClearanceGl";
 import { MAP } from "../../../../lib/tokens";
-import { usePreferences } from "../../../../lib/preferences";
 import { DEM } from "./dem";
 import type { AloftPoint } from "./geometry";
 import ObstaclesGl from "./ObstaclesGl";
@@ -94,8 +94,9 @@ export default function TerrainGl({
     };
   }, [map, raised]);
   // The ground stood up by the pilot's Heights (HeightStretch), as
-  // everything drawn over it is; picked again, only the ground changes.
-  const stretch = usePreferences((s) => s.heightStretch);
+  // everything drawn over it is, true in the pilot's and the replay
+  // cameras' views (heightStretch); picked again, only the ground changes.
+  const stretch = useDrawnStretch();
   useEffect(() => {
     if (!raised) return;
     map.setTerrain({ source: DEM, exaggeration: stretch });

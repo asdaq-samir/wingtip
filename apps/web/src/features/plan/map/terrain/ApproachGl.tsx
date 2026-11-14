@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useDrawnStretch } from "./heightStretch";
 import { PathLayer } from "@deck.gl/layers";
 import { useEffect, useMemo } from "react";
 import type { ProcedureDrawing } from "../../../../lib/api/types";
@@ -6,7 +7,6 @@ import { deckColour, deckSlot, useDeckLayers } from "../../../../lib/map/gl/deck
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../../lib/map/gl/glLayer";
 import { useGeo } from "../../../../lib/geo";
 import { airportQuery } from "../../../../lib/queryClient";
-import { usePreferences } from "../../../../lib/preferences";
 import { CHART } from "../../../../lib/tokens";
 import { curtainLayer } from "./curtain";
 import { aloft, approachScene, centrelineFeatures, pickedApproach, ringPoints } from "./approachScene";
@@ -49,7 +49,7 @@ export default function ApproachGl({ ident, picked }: { ident: string; picked: P
 
   const geo = useGeo();
   // The lines in the air stood up by the Heights' stretch, as the ground is.
-  const stretch = usePreferences((s) => s.heightStretch);
+  const stretch = useDrawnStretch();
   const layers = useMemo(() => {
     if (!scene) return [];
     const path = scene.path ? aloft(scene.path) : [];

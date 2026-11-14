@@ -1,5 +1,4 @@
 import type { Map as MlMap } from "maplibre-gl";
-import { usePreferences } from "../../../lib/preferences";
 import { positionAt, usePastFlight } from "../../../lib/replay/clock";
 import { poseOf, type Pose } from "./cameraPose";
 import { useReplayCamera, type CameraKind } from "./cameraStore";
@@ -35,8 +34,7 @@ export function replayView(map: MlMap, at: number, clockS: number): View | null 
   if (!here) return null;
   const followed = { lat: here.lat, lon: here.lon, altFt: here.alt_ft ?? null, trackDeg: here.track_deg ?? null };
   const ground = (lat: number, lon: number) => map.queryTerrainElevation([lon, lat]) ?? 0;
-  const stretch = usePreferences.getState().heightStretch;
-  const ofKind = (k: CameraKind) => viewOf(map, poseOf(k, followed, ground, { clockS, tower: tower ?? points[0] ?? null, stretch }));
+  const ofKind = (k: CameraKind) => viewOf(map, poseOf(k, followed, ground, { clockS, tower: tower ?? points[0] ?? null }));
   if (keyed && keys.length) return keyedView(keys, at, (key) => (key.kind === "fixed" ? key.fixed : ofKind(key.kind)));
   return kind ? ofKind(kind) : null;
 }

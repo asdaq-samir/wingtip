@@ -76,19 +76,18 @@ export function lookAt(
  * - top: straight down on it, north up.
  *
  * `groundM` is the ground's height under a point, m (the 3D map's own,
- * queryTerrainElevation, stood up by its Heights); every eye is kept
- * OVER_GROUND_M over it, and the airplane is stood up by `stretch`, the
- * same Heights (lib/prefs' HeightStretch), to keep its place over it.
+ * queryTerrainElevation, at true height while a camera follows:
+ * heightStretch's drawnStretch); every eye is kept OVER_GROUND_M over it.
  */
 export function poseOf(
   kind: CameraKind,
   at: Followed,
   groundM: (lat: number, lon: number) => number,
-  opts: { clockS: number; tower: { lat: number; lon: number } | null; stretch?: number },
+  opts: { clockS: number; tower: { lat: number; lon: number } | null },
 ): Pose {
   const track = at.trackDeg ?? 0;
   const ground = groundM(at.lat, at.lon);
-  const plane = { lat: at.lat, lon: at.lon, altM: Math.max((at.altFt ?? 0) * M_PER_FT * (opts.stretch ?? 1), ground + OVER_GROUND_M) };
+  const plane = { lat: at.lat, lon: at.lon, altM: Math.max((at.altFt ?? 0) * M_PER_FT, ground + OVER_GROUND_M) };
   const eyeAt = (p: { lat: number; lon: number }, altM: number): Pose => {
     const altKept = Math.max(altM, groundM(p.lat, p.lon) + OVER_GROUND_M);
     const look = lookAt({ ...p, altM: altKept }, plane);

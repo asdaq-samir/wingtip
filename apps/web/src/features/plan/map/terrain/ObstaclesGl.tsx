@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useDrawnStretch } from "./heightStretch";
 import type { Map as MlMap } from "maplibre-gl";
 import { useEffect } from "react";
 import { api } from "../../../../lib/api/client";
@@ -7,7 +8,6 @@ import { glZoom } from "../../../../lib/map/gl/glStyle";
 import { useGlView } from "../../../../lib/map/gl/useGlView";
 import { obstacleFeatures } from "./geometry";
 import { setExtrusionData, useExtrusion } from "./useExtrusion";
-import { usePreferences } from "../../../../lib/preferences";
 import { CHART } from "../../../../lib/tokens";
 
 type Box = { south: number; west: number; north: number; east: number };
@@ -43,7 +43,7 @@ export default function ObstaclesGl() {
     },
   });
   const { box } = useGlView(obstacleBox, "rest");
-  const stretch = usePreferences((s) => s.heightStretch);
+  const stretch = useDrawnStretch();
   const { data } = useQuery({
     queryKey: ["obstacles", box],
     queryFn: () => api.obstacles(box!),

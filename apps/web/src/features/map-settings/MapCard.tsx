@@ -18,6 +18,8 @@ import { USGS_URL } from "../../lib/map/sources/imagery";
 import { useGoogleSession } from "../../lib/map/sources/googleSession";
 import { googleMapsQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
+import { useTrueHeightView } from "../plan/map/terrain/heightStretch";
+import { useTerrainView } from "../plan/map/terrain/useTerrainView";
 
 /**
  * The Map card, what is on the map and nothing else, one screen at a
@@ -45,7 +47,7 @@ export default function MapCard() {
         options={BASE_CHARTS.map((b) => ({ value: b.kind, label: b.label, src: chartPicture(b.kind) }))}
       />
       <OverlayChoice />
-      {prefs.threeD && <HeightsChoice />}
+      <HeightsChoice />
       <MapLayers />
     </div>
   );
@@ -119,20 +121,33 @@ function OverlayChoice() {
  * segmented control, as a discrete setting is (docs/design/rules.md),
  * only while 3D is on, as the overlay's strength only with an overlay;
  * it says the stretch, "×3", and the map's words keep the true altitudes.
+ * In the pilot's view and a replay camera's the heights are true
+ * whatever is picked (heightStretch's drawnStretch), and a line under it
+ * says so, where it applies, not a toast.
  */
 function HeightsChoice() {
   const stretch = usePreferences((s) => s.heightStretch);
   const setStretch = usePreferences((s) => s.setHeightStretch);
+  const threeD = useTerrainView().mode === "3d";
+  const trueView = useTrueHeightView();
+  if (!threeD) return null;
   return (
-    <div className="flex items-center justify-between gap-3 px-1">
-      <span className={cn("text-foreground", TEXT.row)}>Heights</span>
-      <Segmented
-        label="Heights"
-        value={String(stretch)}
-        onChange={(v) => setStretch(Number(v) as HeightStretch)}
-        testId="heights-stretch"
-        options={HEIGHT_STRETCHES.map((k) => ({ value: String(k), label: `×${k}` }))}
-      />
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between gap-3 px-1">
+        <span className={cn("text-foreground", TEXT.row)}>Heights</span>
+        <Segmented
+          label="Heights"
+          value={String(stretch)}
+          onChange={(v) => setStretch(Number(v) as HeightStretch)}
+          testId="heights-stretch"
+          options={HEIGHT_STRETCHES.map((k) => ({ value: String(k), label: `×${k}` }))}
+        />
+      </div>
+      {trueView && (
+        <p className={cn("px-1 text-muted-foreground", TEXT.note)} data-testid="heights-true">
+          {trueView === "pilot" ? "True height in the pilot's view" : "True height while a replay camera follows"}
+        </p>
+      )}
     </div>
   );
 }

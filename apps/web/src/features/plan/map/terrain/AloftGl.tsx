@@ -1,8 +1,8 @@
 import { PathLayer } from "@deck.gl/layers";
+import { useDrawnStretch } from "./heightStretch";
 import { useEffect, useMemo } from "react";
 import { deckColour, deckSlot, useDeckLayers } from "../../../../lib/map/gl/deckLayers";
 import { useGlMap } from "../../../../lib/map/gl/glLayer";
-import { usePreferences } from "../../../../lib/preferences";
 import { CHART } from "../../../../lib/tokens";
 import { ALOFT_MIN_PX, ALOFT_WIDTH_M, curtainLayer } from "./curtain";
 import { aloftPath, curtainWalls, type AloftPoint } from "./geometry";
@@ -17,7 +17,7 @@ import { aloftPath, curtainWalls, type AloftPoint } from "./geometry";
  */
 export default function AloftGl({ points }: { points: AloftPoint[] }) {
   const { map } = useGlMap();
-  const stretch = usePreferences((s) => s.heightStretch);
+  const stretch = useDrawnStretch();
   const layers = useMemo(
     () => [
       curtainLayer("route-aloft-curtain", curtainWalls(points, stretch), CHART.course, 0.22),

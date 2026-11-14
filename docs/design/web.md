@@ -1338,7 +1338,13 @@ apart (`terrain/airspaceShelves`):
   height for the engine's AGL floors). A display factor, not an
   aviation figure: the words on the map keep the true altitudes
   ("100" over "30"), and the ground's clearance colours read the
-  terrain's true heights. The map tilts to 85 degrees in 3D
+  terrain's true heights. The dry run's pilot's view and the replay's
+  cameras always draw at true height, whatever Heights says: a view from
+  the airplane is read for its clearance over the ground, and a stretched
+  mountain there would mislead (`terrain/heightStretch`'s
+  `drawnStretch`); the Heights picked come back as the view ends, and a
+  line under the control says "True height in the pilot's view" (or
+  while a replay camera follows) meanwhile, no toast. The map tilts to 85 degrees in 3D
   (`map.pitch-max`), low enough to see the shelves from the side.
 
 - Each Class B, C and D shelf is labelled at its top, on the edge nearest
@@ -1348,7 +1354,8 @@ apart (`terrain/airspaceShelves`):
   2D chart's airspace tab (the engine's `airspace_shelf_label`; the FAA's
   Chart User's Guide). One a shelf, lifted with MapLibre's
   `symbol-height-offset`, kept apart by MapLibre's own collision and
-  placed after the airports' and navaids' marks, which they never hide;
+  placed after the airports' and navaids' marks, which they never hide,
+  and before the special use areas' names where they meet at a low tilt;
   the chart's own tabs on the ground are hidden meanwhile.
 - Each volume is shaded by its floor within its class's ink, the lower
   the darker (the tokens' `chart.airspace-floor-low`/`-high` and

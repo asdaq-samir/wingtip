@@ -1,4 +1,5 @@
 import { LineLayer } from "@deck.gl/layers";
+import { useDrawnStretch } from "./heightStretch";
 import { useEffect, useMemo, useState } from "react";
 import { deckColour, deckSlot, useDeckLayers } from "../../../../lib/map/gl/deckLayers";
 import { EMPTY, useGlData, useGlLayer, useGlMap, useGlTap } from "../../../../lib/map/gl/glLayer";
@@ -56,7 +57,7 @@ function Aloft({ geo }: { geo: Geo }) {
   const seen = useTracking((s) => s.seen);
   const hex = useTracking((s) => s.hex);
   const ownFt = useOwnFix()?.altitudeFt ?? null;
-  const stretch = usePreferences((s) => s.heightStretch);
+  const stretch = useDrawnStretch();
   useGlLayer("top", SOURCES, LAYERS);
   useEffect(() => {
     addTrafficPictures(map);
