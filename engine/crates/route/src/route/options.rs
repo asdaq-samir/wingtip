@@ -355,8 +355,13 @@ fn read_grid(a: &Ask, unchecked: &mut Vec<String>) -> Result<(Grid, Vec<f64>), S
     let ceiling = LEGAL_CEILING_FT.max(a.min_ceiling_ft.unwrap_or(0.0));
     let visibility = LEGAL_VISIBILITY_SM.max(a.min_visibility_sm.unwrap_or(0.0));
     let mut grid = Grid::new(start, end, &via(a));
+    // No ceiling known (no airplane, or none in its profile): no ground
+    // closed on it, and the pilot told (the owner, 2026-11-09).
+    if a.profile.ceiling_ft.is_none() {
+        unchecked.push("service ceiling".into());
+    }
     match &a.terrain_ft {
-        Some(h) => read::ground(&mut grid, h, top)?,
+        Some(h) => read::ground(&mut grid, h, a.profile.ceiling_ft.map(|_| top))?,
         // The tiles not to be had: the ways offered over level ground, and
         // the pilot told.
         None => unchecked.push("terrain".into()),
@@ -422,6 +427,14 @@ fn options(a: &Ask) -> Result<String, String> {
     if a.fields.is_none() {
         unchecked.push("fuel fields".into());
     }
+    // An airplane whose usable fuel or start and taxi allowance is not
+    // known: its fuel stops are not worked out, nor said to be needed or
+    // not, and none is assumed (the owner, 2026-11-09).
+    if a.profile.airplane && a.profile.usable_gal.is_none() {
+        unchecked.push("fuel".into());
+    } else if a.profile.airplane && a.profile.taxi_gal.is_none() {
+        unchecked.push("start and taxi fuel".into());
+    }
     // Not the route's own fields: a landing the pilot makes is not a stop
     // to add.
     let skip: Vec<&str> =
@@ -430,8 +443,8 @@ fn options(a: &Ask) -> Result<String, String> {
     let fuel = Fuel {
         tas_kt: a.profile.tas_kt,
         burn_gph: a.profile.burn_gph,
-        usable_gal: a.profile.usable_gal,
-        taxi_gal: a.profile.taxi_gal,
+        usable_gal: a.profile.usable_gal.unwrap_or(0.0),
+        taxi_gal: a.profile.taxi_gal.unwrap_or(0.0),
         reserve_gal,
         fields: table.as_deref(),
         food: a.food,

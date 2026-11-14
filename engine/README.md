@@ -274,7 +274,13 @@ Then the callers switch to the name and the old copy is deleted.
   approach's fix), the four altitude plans and the altitude wheel's
   figures, a route with stops' plans joined, the fuel plan (14 CFR
   91.151, 91.167) and the IFR alternate's leg, and a pilot's hold flown
-  on its leg (AIM 5-3-8). The planner looks up the air -- the winds and
+  on its leg (AIM 5-3-8). A figure the airplane's profile lacks is never
+  filled with another's (the owner, 2026-11-09): no cruise power, no
+  power model (`power_pct` null, the TAS and burn as given); no climb
+  fuel flow, the climb's gallons not counted (`climb_fuel_unknown` on the
+  leg) and no economical plan; and route options with no service ceiling,
+  usable fuel or start and taxi fuel close no ground on a ceiling and say
+  in `unchecked` what was not worked out. The planner looks up the air -- the winds and
   temperatures aloft at each leg's midpoint, at every altitude the plans
   may fly (`navlog_candidates`), and the variation -- and asks
   `navlog_plans`, `navlog_legs`, `navlog_with_descents` ... by name;

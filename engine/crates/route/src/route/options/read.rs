@@ -64,10 +64,10 @@ pub const GAIRMET_MARKS: [&str; 3] = ["Turbulence", "Icing", "Low-level wind she
 
 /// The highest VFR cruising altitude the airplane reaches either way:
 /// 91.159's odd thousands plus 500 eastbound, even westbound, under its
-/// ceiling and under 18,000 ft (Class A, 71.33) -- the lower of the two,
-/// so a way works whichever way its legs go.
-pub fn highest_cruise_ft(ceiling_ft: f64) -> f64 {
-    let top = ceiling_ft.min(limits::VFR_HIGHEST_FT);
+/// ceiling (none known: none but Class A's) and under 18,000 ft (Class A,
+/// 71.33) -- the lower of the two, so a way works whichever way its legs go.
+pub fn highest_cruise_ft(ceiling_ft: Option<f64>) -> f64 {
+    let top = ceiling_ft.unwrap_or(limits::VFR_HIGHEST_FT).min(limits::VFR_HIGHEST_FT);
     // From the first of each direction's altitudes over 3,000 ft (3,500
     // eastbound, 4,500 westbound: flight's lowest_vfr_cruising_altitude),
     // up by its 2,000 ft steps (odd or even thousands plus 500) to the top.
@@ -99,8 +99,10 @@ pub fn cruising_altitudes(top_ft: f64) -> Vec<f64> {
 /// Each cell's floor, ft, from the ground's height at its samples
 /// (PER_CELL a side, rows from the south): its highest ground with
 /// 91.119's 1,000 ft and the coarse read's margin; cells whose floor is
-/// over `top_ft` closed.
-pub fn ground(grid: &mut Grid, heights_ft: &[f64], top_ft: f64) -> Result<(), String> {
+/// over `top_ft` closed -- none where the airplane's ceiling is not known
+/// (None): no other airplane's ceiling is assumed, and the answer says
+/// the ceiling was not checked.
+pub fn ground(grid: &mut Grid, heights_ft: &[f64], top_ft: Option<f64>) -> Result<(), String> {
     let (rows, cols) = (grid.rows, grid.cols);
     let width = cols * PER_CELL;
     if heights_ft.len() != rows * PER_CELL * width {
@@ -116,7 +118,7 @@ pub fn ground(grid: &mut Grid, heights_ft: &[f64], top_ft: f64) -> Result<(), St
             }
             let at = r * cols + c;
             grid.floor[at] = highest + TERRAIN_MARGIN_FT + COARSE_MARGIN_FT;
-            if grid.floor[at] > top_ft {
+            if top_ft.is_some_and(|top| grid.floor[at] > top) {
                 over.push(at);
             }
         }
