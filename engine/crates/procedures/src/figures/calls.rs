@@ -184,7 +184,7 @@ pub fn fuel(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// The strip's fuel (strip::fuel_figure): `{"required_gal", "short":
-/// [{"name", "short_gal"}]}`.
+/// [{"hop", "name", "short_gal"}]}`.
 fn strip_fuel(ask: &Ask) -> Result<String, String> {
     let name = ask.name;
     let hops = match ask.v.get("hops") {
@@ -213,7 +213,9 @@ fn strip_fuel(ask: &Ask) -> Result<String, String> {
         if i > 0 {
             out.push(',');
         }
-        out.push_str("{\"name\":");
+        out.push_str("{\"hop\":");
+        out.push_str(&s.hop.map_or_else(|| "null".to_owned(), |h| h.to_string()));
+        out.push_str(",\"name\":");
         json::string(&mut out, &s.name);
         out.push_str(",\"short_gal\":");
         json::number(&mut out, s.short_gal);

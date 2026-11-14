@@ -83,15 +83,23 @@
           "items": {
             "type": "object",
             "properties": {
+              "hop": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "The flight's index in `hops`, whose two ends an app names with its own point names (a pilot's own point is \"@lat,lon\" in the idents); null for a route with no stops."
+              },
               "name": {
                 "type": "string",
-                "description": "\"C81 → KMSN\"; \"\" for a route with no stops."
+                "description": "The flight's idents as sent, \"C81 → KMSN\"; \"\" for a route with no stops. A pilot's own point shows here as its raw \"@lat,lon\": name the ends from `hop` instead."
               },
               "short_gal": {
                 "type": "number"
               }
             },
             "required": [
+              "hop",
               "name",
               "short_gal"
             ]
