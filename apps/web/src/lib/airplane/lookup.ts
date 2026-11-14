@@ -70,16 +70,27 @@ export function inAirOf(
   return { state: "ground" };
 }
 
+/** A status line's words: all of them (`text`), whether they are a
+ *  problem's, and where they lead with a status a pilot scans for, that
+ *  status (a StatusBadge's variant, components/StatusBadge) and the words
+ *  after it. */
+export interface StatusWords {
+  text: string;
+  problem: boolean;
+  badge?: "inAir" | "ground";
+  rest?: string;
+}
+
 /** What a list or a card says of it, in place (lib/problems): the words,
  *  and whether they are a problem's. */
-export function inAirWords(inAir: InAir): { text: string; problem: boolean } {
+export function inAirWords(inAir: InAir): StatusWords {
   switch (inAir.state) {
     case "checking":
       return { text: "Checking whether it's in the air…", problem: false };
     case "flying": {
       const { altitude_ft: ft, speed_kt: kt } = inAir.plane;
       const how = [ft == null ? null : reportedAltitude(ft), kt == null ? null : `${Math.round(kt)} kt`].filter(Boolean);
-      return { text: ["In the air", ...how].join(" · "), problem: false };
+      return { text: ["In the air", ...how].join(" · "), problem: false, badge: "inAir", rest: how.join(" · ") };
     }
     case "ground":
       return { text: "Not in the air now", problem: false };

@@ -109,6 +109,16 @@ export const BADGE = {
   home: "#0d9488",
   airplane: "#0284c7",
   air: "#0f766e",
+  statusActive: "#b42318",
+  statusLater: "#b45309",
+  statusCold: "#6b7280",
+  statusClosed: "#991b1b",
+  statusOutOfService: "#9a3412",
+  statusPrivate: "#475569",
+  statusMilitary: "#4d7c0f",
+  statusJoint: "#3f6212",
+  statusEmergency: "#dc2626",
+  statusGround: "#52525b",
 };
 
 export const WEATHER = {
@@ -199,6 +209,7 @@ export const TYPE_CLASS = {
   note: "text-(length:--type-note) leading-(--lead-note)",
   tab: "text-(length:--type-tab) leading-(--lead-tab)",
   tabBar: "text-(length:--type-tab-bar) leading-(--lead-tab-bar)",
+  badge: "text-(length:--type-badge) leading-(--lead-badge)",
   caption: "text-(length:--type-caption) leading-(--lead-caption)",
   chip: "text-xs pointer-coarse:text-[min(0.8125rem,14px)]",
   label: "font-display text-(length:--type-label) leading-(--lead-label) font-semibold uppercase native:normal-case tracking-[0.1em] native:tracking-normal",
@@ -218,6 +229,7 @@ export const TYPE_POINTS = {
   note: 13,
   tab: 13,
   tabBar: 12,
+  badge: 12,
   caption: 11,
   chip: 13,
   label: 13,
