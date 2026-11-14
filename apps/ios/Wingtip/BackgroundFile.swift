@@ -31,6 +31,12 @@ final class BackgroundFile {
         then { try? FileManager.default.removeItem(at: url) }
     }
 
+    /// Returns once every write and erase asked so far is done, so a test
+    /// waits on the work itself rather than on a clock.
+    func settled() async {
+        await last?.value
+    }
+
     private func then(_ work: @escaping @Sendable () -> Void) {
         let before = last
         last = Task.detached(priority: .utility) {
