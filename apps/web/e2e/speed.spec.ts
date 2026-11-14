@@ -1,5 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
-import { consolePage, expandConsole, noTips, openConsole, showTabs } from "./helpers";
+import { test, expect } from "@playwright/test";
+import { consolePage, expandConsole, noTips, openConsole, showTabs, consoleSheet } from "./helpers";
 
 /**
  * The speed trend (SpeedController): the Dev console's Speed page, under
@@ -11,8 +11,6 @@ import { consolePage, expandConsole, noTips, openConsole, showTabs } from "./hel
 
 // The built app's service worker would answer /api itself, past the stubs.
 test.use({ serviceWorkers: "block" });
-
-const consoleSheet = (page: Page) => page.getByTestId("console-sheet");
 
 const DAYS = [
   { day: "2026-10-10", source: "field", metric: "LCP", device: "phone", p50: 1600, p75: 2300, count: 40, version: "aaa" },

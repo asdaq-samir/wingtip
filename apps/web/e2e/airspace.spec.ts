@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, grabberTo, settle, slow } from "./helpers";
+import { closeCard, grabberTo, settle, slow, stopsAre } from "./helpers";
 
 // A route's handler still running as the test ends -- the Recents and
 // Saved planned ahead at idle ask the planner then -- found the page
@@ -81,7 +81,7 @@ test("a point held on the chart goes into the route as the pilot's own point off
   };
   // Added: in the stops, the card put away.
   await (await open()).getByTestId("point-add").click();
-  await expect(page).toHaveURL(/[?&]stops=VPBNG(%2F|\/)280(%2F|\/)20(&|$)/);
+  await expect(page).toHaveURL(stopsAre("VPBNG/280/20"));
   await expect(page).not.toHaveURL(/[?&]at=/);
   // Flown to direct: from the departure with no position, the route as it
   // was kept for Cancel.
@@ -90,7 +90,7 @@ test("a point held on the chart goes into the route as the pilot's own point off
   await expect(page).toHaveURL(/[?&]was=/);
   // Held at: its hold's sheet once the plan has the leg to it.
   await (await open()).getByTestId("point-hold").click();
-  await expect(page).toHaveURL(/[?&]stops=VPBNG(%2F|\/)280(%2F|\/)20(&|$)/);
+  await expect(page).toHaveURL(stopsAre("VPBNG/280/20"));
   const sheet = page.getByTestId("hold-sheet");
   await expect(sheet).toBeVisible({ timeout: slow(60000) });
   await expect(sheet.getByTestId("hold-course")).toHaveValue(/^\d{3}$/);

@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { inSheet, openPanel, settle, sideDrawer } from "./helpers";
+import { inSheet, openPanel, settle, sideDrawer, stopsAre } from "./helpers";
 
 /**
  * The route's points moved, by a mouse or the keyboard in FPL's list
@@ -87,7 +87,6 @@ test("a point's grip in FPL's list moves it anywhere, by a mouse or the keyboard
       .filter({ has: page.locator(`[data-ident="${ident}"]`) })
       .first();
   const grip = (ident: string) => list.locator(`[data-testid=route-grip][data-ident="${ident}"]`);
-  const stopsAre = (stops: string) => new RegExp(`[?&]stops=(${stops.replaceAll(",", "%2C")}|${stops})(&|$)`);
 
   // KDLH's grip let go at the top of C81's row: before it, the departure.
   // Its row under half's edge, reached by pulling the sheet up, as a
@@ -137,6 +136,6 @@ test.describe("on a touch screen", () => {
     await expect(page.getByRole("menuitem", { name: "Remove", exact: true })).toBeVisible();
     await letGo();
     await page.getByRole("menuitem", { name: "Move Down", exact: true }).click();
-    await expect(page).toHaveURL(/[?&]stops=(KMSN%2CKRYV|KMSN,KRYV)(&|$)/);
+    await expect(page).toHaveURL(stopsAre("KMSN,KRYV"));
   });
 });

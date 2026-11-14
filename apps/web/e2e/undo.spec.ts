@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { clearTheRoute, openPanel, settle, sideDrawer } from "./helpers";
+import { clearTheRoute, openPanel, settle, sideDrawer, stopsAre } from "./helpers";
 
 /**
  * Undo in place of asking first (the owner's "make the pilot aware, never
@@ -42,7 +42,7 @@ test("a cleared route comes back from the toast's Undo, and again from the keybo
   await bar.getByRole("button", { name: "Undo" }).click();
   await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
-  await expect(page).toHaveURL(/[?&]stops=KMSN(&|$)/);
+  await expect(page).toHaveURL(stopsAre("KMSN"));
   await expect(bar).toHaveCount(0);
 
   // Redone and undone by the keys, away from any field.
@@ -62,10 +62,10 @@ test("a stop taken out comes back from the Undo toast that names it", async ({ p
   const lines = sideDrawer(page).getByTestId("route-slide");
   await lines.getByRole("group", { name: "Stop 2 KMSN" }).focus();
   await page.keyboard.press("Delete");
-  await expect(page).toHaveURL(/[?&]stops=KRYV(&|$)/);
+  await expect(page).toHaveURL(stopsAre("KRYV"));
   const bar = undoToast(page, "KMSN Removed");
   await expect(bar).toBeVisible();
   await bar.getByRole("button", { name: "Undo" }).click();
-  await expect(page).toHaveURL(/[?&]stops=KRYV%2CKMSN(&|$)|[?&]stops=KRYV,KMSN(&|$)/);
+  await expect(page).toHaveURL(stopsAre("KRYV,KMSN"));
   await expect(lines.getByRole("group", { name: "Stop 2 KMSN" })).toBeVisible();
 });

@@ -268,6 +268,19 @@ export async function closeConsole(page: Page) {
     await expect(sheet).toHaveCount(0, { timeout: 1000 });
   }).toPass({ timeout: 10000 });
 }
+
+/** The address's stops are these, in this order ("C81,KRYV"; a user point
+ *  "VPBNG/280/20"), whether the browser wrote the commas and slashes as
+ *  they are or escaped (%2C, %2F): the one test of the `stops` parameter
+ *  every spec makes. */
+export function stopsAre(stops: string): RegExp {
+  const each = stops
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    .replaceAll(",", "(%2C|,)")
+    .replaceAll("/", "(%2F|\\/)");
+  return new RegExp(`[?&]stops=${each}(&|$)`);
+}
+
 /** The console: a stock Sheet from the top from `md` up, a sheet up from
  *  the bottom edge on a phone (shadcn's Drawer). */
 export const consoleSheet = (page: Page) => page.getByTestId("console-sheet");

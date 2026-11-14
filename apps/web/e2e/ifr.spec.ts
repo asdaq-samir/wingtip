@@ -1,5 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, closeNavLog, controlsInSight, emptyPlan, openNavLog, openProfile, openSection, openTab, settle, slow } from "./helpers";
+import {
+  closeCard,
+  closeNavLog,
+  controlsInSight,
+  emptyPlan,
+  openNavLog,
+  openProfile,
+  openSection,
+  openTab,
+  settle,
+  slow,
+  stopsAre,
+} from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -180,7 +192,7 @@ test(
     // The points without the two, the two the fields' procedures.
     await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
     await expect(page).toHaveURL(/[?&]dest=KATW(&|$)/);
-    await expect(page).toHaveURL(/[?&]stops=BAE(%2C|,)OSH(&|$)/);
+    await expect(page).toHaveURL(stopsAre("BAE,OSH"));
     await expect
       .poll(() => new URL(page.url()).searchParams.get("procs")?.split(",").sort().join(","))
       .toBe("C81:BAEE1:BAE,KATW:OSHH2:OSH");
