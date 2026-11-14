@@ -14,7 +14,7 @@ import {
   openNavLog,
   navLogSheet,
 } from "./helpers";
-import { beforeTheRoute } from "./mapCard";
+import { routeMenuSwitch } from "./mapCard";
 import { drawnMarks, markWith, tapMark } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -55,11 +55,8 @@ test("plan page: every popup the map opens dismisses the same way", async ({ pag
   // one and left the other sitting there, over the markers underneath
   // it, swallowing their clicks. `MapPopup` gives all of them one
   // dismissal, and this is the test that says so.
-  // Class B on from the start, from the search bar's settings.
-  await beforeTheRoute(page, async () => {
-    await grabberTo(page, "full");
-    await page.getByTestId("class-b-toggle").click();
-  });
+  // Class B on from the start, from the route's ••• menu.
+  await routeMenuSwitch(page, "class-b-toggle", true);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expect(page.locator("[data-chart-zoom]")).toBeAttached();
@@ -165,15 +162,10 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   // The landmarks' dim dots, in their slate outline.
   await expect.poll(async () => (await drawn(page, "candidate-marks")).length).toBeGreaterThan(0);
 
-  // Off, from the search bar's settings, and the route again: no
-  // checkpoints on the map, none asked for, and the nav log from the
+  // Off, from the route's ••• menu's Checkpoints, and the route again:
+  // no checkpoints on the map, none asked for, and the nav log from the
   // departure to the destination alone, as the pilot asked.
-  await beforeTheRoute(page, async () => {
-    await grabberTo(page, "full");
-    const toggle = page.getByTestId("waypoints-toggle");
-    await expect(toggle).toHaveAttribute("aria-pressed", "true");
-    await toggle.click();
-  });
+  await routeMenuSwitch(page, "waypoints-toggle", false);
   const asked: string[] = [];
   page.on("request", (r) => {
     if (/\/(checkpoints|navlog)\?/.test(r.url())) asked.push(new URL(r.url()).pathname.split("/").pop()!);

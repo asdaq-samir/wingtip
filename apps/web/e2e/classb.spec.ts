@@ -1,6 +1,6 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { chartZoom, grabberTo, openMapSettings, sideDrawer, slow, tapNear } from "./helpers";
-import { beforeTheRoute } from "./mapCard";
+import { routeMenuSwitch } from "./mapCard";
 import { markWith, tapMark } from "./marks";
 
 /**
@@ -87,20 +87,11 @@ async function mockClassB(page: Page) {
   );
 }
 
-async function showClassB(page: Page) {
-  await openMapSettings(page);
-  // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
-  await grabberTo(page, "full");
-  await page.getByTestId("class-b-toggle").click();
-  await page.keyboard.press("Escape");
-}
-
-/** On, from the planner's search bar, before the route is loaded. */
+/** On, from the route's ••• menu's Class B Weather (since the Map card's
+ *  layers became four, 2026-11-14), before the route is loaded; kept per
+ *  browser, so the training map has them too. */
 async function showClassBFirst(page: Page) {
-  await beforeTheRoute(page, async () => {
-    await grabberTo(page, "full");
-    await page.getByTestId("class-b-toggle").click();
-  });
+  await routeMenuSwitch(page, "class-b-toggle", true);
 }
 
 test("off until asked for: a route does not come covered in them", async ({ page }) => {
@@ -175,8 +166,8 @@ test("on the training map, which has no card, a tap goes to the field at its ter
   // terminal charts from zoom 10 and a whole route fits at about 6 --
   // so the tap goes to where the sheet is.
   await mockClassB(page);
+  await showClassBFirst(page);
   await page.goto("/app/dev?dep=C81&dest=KDLH");
-  await showClassB(page);
   await expect.poll(ord(page), { timeout: 20000 }).not.toBeNull();
 
   // The chart's tile level drawn (ChartGl's data-chart-zoom).
@@ -196,11 +187,11 @@ test("on an IFR base, the settings' TAC draws the IFR area chart at a Class B fi
     if (r.url().includes("/ifr_area/")) areaTiles.push(r.url());
   });
   await mockClassB(page);
+  await showClassBFirst(page);
   await page.goto("/app/dev?dep=C81&dest=KDLH");
   await openMapSettings(page);
   await grabberTo(page, "full");
   await page.getByTestId("base-chart-select").getByRole("button", { name: "IFR low" }).click();
-  await page.getByTestId("class-b-toggle").click();
   await expect(page.getByTestId("map-settings").getByText("IFR Area Charts")).toBeVisible();
   await page.getByTestId("tac-toggle").click();
   await page.keyboard.press("Escape");

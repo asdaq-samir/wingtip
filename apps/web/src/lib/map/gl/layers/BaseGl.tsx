@@ -6,7 +6,9 @@ import { usePreferences, type OverlayStrength } from "../../../preferences";
 import { googleReferrer, googleTiles, useGoogleSession } from "../../sources/googleSession";
 import { USGS_CREDIT, USGS_MAX_ZOOM, USGS_URL } from "../../sources/imagery";
 import { useShownOverlay } from "../../sources/useShownOverlay";
+import { CHART } from "../../../tokens";
 import { useGlLayer, useGlMap, useGlPaint, type Slot } from "../glLayer";
+import { useDarkTheme } from "../useDarkTheme";
 import { glZoom } from "../glStyle";
 import { MapCredits } from "../MapCredits";
 import { useGoogleAttribution } from "../googleCredit";
@@ -47,8 +49,31 @@ const LAND_WATER_LATEST_MS = 4000;
  *  both (nightly Lighthouse, 2026-11-07: Largest Contentful Paint 12.5 s,
  *  a land-and-water tile). Drawn the same once it is in. */
 export function LandWaterGl() {
+  const none = usePreferences((s) => s.base === "none");
   const chartFirst = useChartDrawnFirst();
+  if (none) return <PlainGround />;
   return chartFirst ? <LandWater /> : null;
+}
+
+/** With the chart None, the map's ground under the overlay and the vector
+ *  layers: one plain colour of the look's tokens (CHART.mapGround, the
+ *  map's ground before its first tiles), by day and at night, rather than
+ *  the USGS's land and water, a map of its own, bright at night. Drawn in
+ *  the map itself, not only behind its canvas, so an export has it too. */
+function PlainGround() {
+  const dark = useDarkTheme();
+  useGlLayer("base", {}, [{ id: "plain-ground", type: "background", paint: { "background-color": CHART.mapGround } }]);
+  useGlPaint(["plain-ground"], { "background-color": dark ? CHART.mapGroundNight : CHART.mapGround });
+  // For the browser tests: the plain ground is what is under the map.
+  const { map } = useGlMap();
+  useEffect(() => {
+    const el = map.getContainer();
+    el.dataset.ground = "plain";
+    return () => {
+      delete el.dataset.ground;
+    };
+  }, [map]);
+  return null;
 }
 
 function LandWater() {

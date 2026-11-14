@@ -18,7 +18,7 @@ import { navLogRows } from "./navlog/rows";
 import { useShareLink } from "../hooks/useShareLink";
 import { refreshLive } from "../../../lib/liveRefresh";
 import type { RouteEdit } from "../../../lib/preferences";
-import ShowRouteAs from "./ShowRouteAs";
+import ShowRouteAs, { RouteMapChoices } from "./ShowRouteAs";
 
 const SHARE_LABEL: Record<"route" | RouteCard, string> = {
   // The route box's is More, a "…", at the owner's ask ("Don't call it
@@ -360,6 +360,7 @@ export default function ShareMenu({
               {/* A band after the route's actions; none over it alone. */}
               {routed && <DropdownMenuSeparator />}
               <ShowRouteAs {...showRouteAs} />
+              <RouteMapChoices />
             </>
           )}
           {onClear && (

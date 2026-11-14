@@ -48,7 +48,7 @@ export function tafFromNow(now = new Date()): string {
 export async function withPrivateFields(page: Page) {
   await page.addInitScript(() => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? "null") ?? { state: {}, version: 1 };
-    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, privateFields: true } }));
+    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, privateMilitary: true } }));
   });
 }
 

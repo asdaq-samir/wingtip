@@ -54,8 +54,8 @@ test("Chicago's airspace is drawn over the chart with its altitudes, and the swi
   await expect.poll(() => vors(page), { timeout: slow(15000) }).toContain("OBK");
 
   await openMapSettings(page);
-  await page.getByTestId("airspace-toggle").click();
-  await page.getByTestId("navaids-toggle").click();
+  // The Map card's Aeronautical, the airspace and the VORs together.
+  await page.getByTestId("aeronautical-toggle").click();
   await page.keyboard.press("Escape");
   await expect.poll(() => lines(page)).toBe(0);
   await expect.poll(async () => (await labels(page)).length).toBe(0);

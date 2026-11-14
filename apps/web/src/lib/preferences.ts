@@ -7,6 +7,8 @@ import { ALERTS_KEPT, alertsSlice, type AlertsSlice } from "./prefs/alertsSlice"
 import { KEPT_KEPT, keptSlice, type KeptSlice, type RecentAirport } from "./prefs/keptSlice";
 import { LOOK_KEPT, lookSlice, type LookSlice } from "./prefs/lookSlice";
 import { MAP_KEPT, mapSlice, type MapSlice } from "./prefs/mapSlice";
+import { useAirportWeatherPrefs } from "./map/marks/airportWeatherPrefs";
+import { useWeatherLayers } from "./map/sources/weatherLayers";
 
 export {
   BASE_CHARTS,
@@ -53,17 +55,45 @@ export function migratePreferences(kept: unknown, from: number): Preferences {
     navBar: _navBar,
     terrain,
     ownShipLook: _ownShipLook,
+    airspace,
+    navaids,
+    tfrs: _tfrs,
+    military,
+    privateFields,
     ...rest
-  } = kept as { navBar?: unknown; terrain?: string; ownShipLook?: unknown };
+  } = kept as { navBar?: unknown; terrain?: string; ownShipLook?: unknown } & Partial<Record<OldLayer, boolean>>;
   return {
     ...rest,
-    ...(from < 6 && isStockDefault((kept as { aircraft?: AircraftChoice }).aircraft) ? { aircraft: NO_AIRPLANE } : {}),
+    ...(from < 10 ? layerGroups({ airspace, navaids, military, privateFields }, from) : {}),
     ...(from < 1 ? { waypoints: false } : {}),
-    ...(from < 2 ? { airspace: true, navaids: true } : {}),
+    ...(from < 6 && isStockDefault((kept as { aircraft?: AircraftChoice }).aircraft) ? { aircraft: NO_AIRPLANE } : {}),
     ...(from < 3 ? { chartLight: "auto" } : {}),
     ...(from < 7 && (kept as { brand?: string }).brand !== "ink" ? { brand: "wingtip" } : {}),
     ...(from < 8 && terrain === "3d" ? { threeD: true } : {}),
   } as Preferences;
+}
+
+/** The Map card's layer switches before its four (2026-11-14). */
+type OldLayer = "airspace" | "navaids" | "tfrs" | "military" | "privateFields";
+
+/** 10: the Map card's eleven layer tiles folded into its four (the owner,
+ *  2026-11-14), each group on where any of its old layers was on, so a
+ *  pilot's choices carry over. A switch never kept was at its default
+ *  then (the airspace and the VORs on from version 2); the fields'
+ *  weather marks (Settings' Airport Weather) were drawn unless Off, so
+ *  Weather is on for nearly everyone; the TFRs need none, drawn always
+ *  now. The checkpoints and the Class B chips keep their own switches,
+ *  in the route's ••• menu. */
+function layerGroups(old: Partial<Record<OldLayer, boolean>>, from: number) {
+  const airspaceOn = old.airspace ?? true;
+  const navaidsOn = old.navaids ?? true;
+  const kept = useWeatherLayers.getState();
+  const weatherPicked = kept.areas || kept.pireps || kept.winds !== "off" || kept.loop !== "off" || kept.flow !== "off";
+  return {
+    aeronautical: from < 2 ? true : airspaceOn || navaidsOn,
+    weather: useAirportWeatherPrefs.getState().show !== "off" || weatherPicked,
+    privateMilitary: !!old.military || !!old.privateFields,
+  };
 }
 
 /** What of the preferences is written: every value, the map's overlay
@@ -90,7 +120,8 @@ export const usePreferences = create<Preferences>()(
     // its strength kept from 2026-11-14 need no step: a browser without
     // them starts from None at half, as before; nor 3D's heights
     // stretched (2026-11-14), a browser without them starting at three.
-    version: 9,
+    // 10: the Map card's four layers (layerGroups, 2026-11-14).
+    version: 10,
     migrate: migratePreferences,
     partialize: keptPreferences,
   }),

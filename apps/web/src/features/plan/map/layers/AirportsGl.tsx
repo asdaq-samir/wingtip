@@ -12,7 +12,7 @@ import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { GL_FONT_BOLD, TAP } from "../../../../lib/map/gl/layers/common";
 import MapMarksList from "./MapMarksList";
 import AirportHover from "./AirportHover";
-import { useAirportWeatherPrefs } from "../../../../lib/map/marks/airportWeatherPrefs";
+import { useAirportWeatherShown } from "../../../../lib/map/marks/useAirportWeatherShown";
 import AirportWeatherGl from "./AirportWeatherGl";
 import { CHART } from "../../../../lib/tokens";
 
@@ -165,7 +165,7 @@ function TileAirports(props: Props) {
       for (const a of list ?? []) if (a.flight_category) out.set(a.ident, colourOf(a.flight_category));
     return out;
   }, [alongRoute, inView]);
-  const off = useAirportWeatherPrefs((s) => s.show) === "off";
+  const off = useAirportWeatherShown() === "off";
   const known = useRef(colours);
   useEffect(() => {
     known.current = colours;

@@ -338,7 +338,7 @@ export default memo(function RouteMap({
   const aloft = useRouteAloft(useTerrainView().mode, routeRows, courseLine);
 
   // The chosen checkpoints and the candidates they were chosen from, at
-  // every zoom, or neither: the settings' VFR Checkpoints. Their dots in
+  // every zoom, or neither: the route's ••• menu's Checkpoints. Their dots in
   // their scores' colours, or the Chart ink look's brown
   // (checkpointColour), each with the card a tap opens.
   const showCheckpoints = usePreferences((s) => s.waypoints);

@@ -17,8 +17,8 @@ const CLASS_B = "class-b-fields";
 const CLASS_B_LAYERS = [labelledLayer(CLASS_B, CLASS_B)];
 
 /**
- * The Class B fields' weather, as marks over the chart, at the settings'
- * Class B Weather, on the planner's map and the training map alike: a
+ * The Class B fields' weather, as marks over the chart, at the route's
+ * ••• menu's Class B Weather, on the planner's map and the training map alike: a
  * tap the field's card where the map has one (`onSelectPlace`), and on
  * the training map, which has none, the map goes to the field at the zoom
  * its terminal chart starts at; a hover shows the terminal sheet over it

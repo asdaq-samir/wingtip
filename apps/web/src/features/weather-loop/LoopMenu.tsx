@@ -1,5 +1,5 @@
-import { Radar } from "lucide-react";
-import { LayerMenu, LayerPickGroup, type LayerPick } from "../../components/LayerTile";
+import { LayerPickGroup, LayerSubmenu, type LayerPick } from "../../components/LayerTile";
+import { DropdownMenuSeparator } from "../../components/ui/dropdown-menu";
 import { useWeatherLayers, type LoopKind, type LoopSpeed } from "../../lib/map/sources/weatherLayers";
 import { SPEEDS } from "./loopFrames";
 
@@ -13,12 +13,12 @@ const KINDS: { value: LoopKind; label: string }[] = [
 ];
 
 /**
- * The loop's tile among the Map card's layers (features/map-settings),
- * where its two menu rows were: a tap is one menu of which loop, and,
- * with one on, how fast it plays. Menus, as discrete settings are here,
- * not sliders.
+ * The loop's submenu in the Map card's Weather menu (features/map-settings,
+ * since the four layers, the owner, 2026-11-14), where it was a tile of
+ * its own: which loop, and, with one on, how fast it plays. Menus, as
+ * discrete settings are here, not sliders. Off by default.
  */
-export function LoopTile() {
+export function LoopMenu() {
   const loop = useWeatherLayers((s) => s.loop);
   const speed = useWeatherLayers((s) => s.loopSpeed);
   const set = useWeatherLayers((s) => s.set);
@@ -38,13 +38,13 @@ export function LoopTile() {
     groupTestId: "weather-loop-speed",
   };
   return (
-    <LayerMenu
-      name="Radar"
-      glyph={Radar}
-      testId="weather-loop"
-      off="off"
-      pick={kind}
-      more={loop !== "off" && <LayerPickGroup pick={pace} />}
-    />
+    <LayerSubmenu name="Radar" testId="weather-loop" pick={kind}>
+      {loop !== "off" && (
+        <>
+          <DropdownMenuSeparator />
+          <LayerPickGroup pick={pace} />
+        </>
+      )}
+    </LayerSubmenu>
   );
 }
