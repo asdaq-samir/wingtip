@@ -502,6 +502,24 @@ Autocomplete through `CommandRoot` and `CommandField` in `InlineField`,
 the list in a Popover under the field), the record alone, no live find. No airplane picked shows "No airplane
 picked" and Pick Airplane, never a default type (decision 0011).
 
+**Structure, VOR and TFR cards** (the owner's iPhone screenshots of OBK's
+and TFR 6/4116's cards, 2026-11-14). Both heads are the shared one: Share
+at the start sending the card's own link (`?navaid=OBK@42.2214,-87.9517`,
+`?tfr=6/4116`), the name centred with its line under it, ✕ at the end,
+and no mark before the name. The VOR's line is its name and frequency as
+the dial shows it ("Northbrook · 113.0"); its action row is always the
+full row of `CardAction` tiles, Direct To (the plan's), Add to Route
+(the point a waypoint) and the frequency to copy, "Copied" in place,
+the first two greyed while there is no route (Direct To also needs the
+airplane's position); no Favorite, as the Favorites hold airports and
+airplanes only. Its service volume is every band of AIM 1-1-8's TBL
+1-1-1 for its class (the engine's `service_volume`). A TFR's line is its
+kind and a badge, Active in force now and Later before it starts; the
+badges are the stock Badge through `StatusBadge` (a local one in
+`components/map/cards` until claude/badges lands). A navaid's "Out of
+service" badge waits for the data: NASR's SHUTDOWN stations are left
+out of the chart's tiles, so no card shows one.
+
 **Stock parts.** Desktop: the panel's own side panel (`MapPanel` wide).
 Phone: the sheet (Base UI Drawer: `snapPoints`, swipe, nested drawers,
 `Drawer.VirtualKeyboardProvider`) ([Base UI Drawer][bui-drawer],

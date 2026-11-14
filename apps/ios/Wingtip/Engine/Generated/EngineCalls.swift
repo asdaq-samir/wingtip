@@ -1650,7 +1650,7 @@ extension Engine {
         try Self.rule("service_ceiling_on_the_day", EngineContract.ServiceCeilingOnTheDayInput(bookFt: bookFt, profile: profile))
     }
 
-    /// A VOR's standard service volume by NASR's ALT_CODE (AIM 1-1-8 TBL 1-1-1), or null for a code not in the table.
+    /// A station's standard service volume by its class, NASR's ALT_CODE or DME_SSV (T, L, H, VL, VH, DL, DH; AIM 1-1-8 TBL 1-1-1), every band of it, or null for a code not in the table.
     static func serviceVolume(code: String? = nil) throws -> String? {
         try Self.rule("service_volume", EngineContract.ServiceVolumeInput(code: code))
     }

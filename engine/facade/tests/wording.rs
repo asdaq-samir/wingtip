@@ -232,9 +232,6 @@ fn a_vors_radial_its_morse_and_its_service_volume() {
     assert_eq!(call("fix_radial_distance", r#"{"at": {"lat": 41, "lon": -88}, "stations": []}"#).unwrap(), "null");
     assert_eq!(text("morse", r#"{"ident": "JOT"}"#), "·−−−  −−−  −");
     assert_eq!(text("morse", r#"{"ident": "k-9"}"#), "−·−  −−−−·");
-    assert_eq!(text("service_volume", r#"{"code": "T"}"#), "Terminal · 25 nm, 1,000–12,000 ft above it");
-    assert_eq!(text("service_volume", r#"{"code": "VL"}"#), "VOR Low · 40 nm under 5,000 ft above it, 70 nm to 18,000");
-    assert_eq!(call("service_volume", r#"{"code": "X"}"#).unwrap(), "null");
     assert_eq!(text("navaid_hours", r#"{"hours": "24"}"#), "Continuous");
     assert_eq!(call("navaid_hours", r#"{"hours": ""}"#).unwrap(), "null");
 }
@@ -257,4 +254,19 @@ fn the_variation_agrees_with_noaas_calculator() {
     assert!((at(42.3, -88.1, "2099-01-01") - at(42.3, -88.1, "2029-11-12")).abs() < 0.05);
     assert!(call("magnetic_variation", r#"{"lat": 1, "lon": 1, "date": "2026-02-30"}"#).is_err());
     assert!(call("magnetic_variation", r#"{"lat": 1, "lon": 1, "date": "today"}"#).is_err());
+}
+
+/// Each class's service volume held to the shared cases
+/// (apps/web/src/lib/fixtures/serviceVolume.json), written from AIM
+/// 1-1-8's TBL 1-1-1: VOR High's 130 nm from 18,000 to 45,000 ft above
+/// the station and its 100 nm on to 60,000, which the card left out.
+#[test]
+fn a_stations_service_volume_is_the_aims_table() {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/serviceVolume.json");
+    let fixture: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    for case in fixture["cases"].as_array().unwrap() {
+        let input = serde_json::json!({ "code": case["code"] }).to_string();
+        let answer: serde_json::Value = serde_json::from_str(&call("service_volume", &input).unwrap()).unwrap();
+        assert_eq!(answer, case["answer"], "{input}");
+    }
 }
