@@ -71,8 +71,12 @@ export default function ConsoleLayer({
           // ✕ in sight, not two (the owner's testing, 2026-11-10). Laid out
           // whole in its drawer's scroller (CardStack), its head row sticky
           // at the top over it.
+          // Its gear and close float over You's head, at the avatar's own
+          // level, with no frosted bar of their own (Apple Maps' account card,
+          // the owner's screenshot, 2026-11-14: "Look at this in comparison").
           className={cn(
             "shrink-0 flex-col print:hidden [&:has([data-slot=console-page])>[data-slot=layer-head]]:hidden",
+            "[&>[data-slot=layer-head]]:bg-transparent! [&>[data-slot=layer-head]]:backdrop-blur-none!",
             shown ? "flex" : "hidden",
           )}
         >

@@ -124,10 +124,7 @@ function Personal({
           out of the key, so the session check finishing does not throw
           away Minimums, which needs no sign-in, or an edit in it. */}
       <ConsolePages key={pilot === null || pilot === "error" ? "out" : "in"} back="You" pages={pages}>
-        {/* The head close over the list, as Apple Maps' account card sits (the
-            owner's screenshot, 2026-11-14: "So much space between buttons and
-            avatar and list"): the rows below keep the page's own gap. */}
-        <div className={cn("flex flex-col", TAB_PAGE_GAP, "[&>[data-testid=setup-pill-account]]:-mb-3")}>
+        <div className={cn("flex flex-col", TAB_PAGE_GAP)}>
           {/* Who the pilot is, then one list of what is theirs and
               Settings by the gear, as Apple Maps' account card is (the owner's
               screenshot of iOS 27, 2026-11-13): the avatar, the name and
@@ -233,11 +230,14 @@ function YouHead({ pilot }: { pilot: Pilot | null }) {
   // Pilot Details as its row opens it, its close back to You.
   const openPage = useOpenPage();
   return (
-    <div role="group" aria-label="Account" className="flex flex-col items-center gap-1" data-testid="setup-pill-account">
+    // Up beside the card's gear and close, which float over it (ConsoleLayer),
+    // the avatar large: Apple Maps' account card, the owner's screenshot of
+    // 2026-11-14 ("So much space between buttons and avatar and list").
+    <div role="group" aria-label="Account" className="-mt-11 flex flex-col items-center gap-1" data-testid="setup-pill-account">
       <span
         aria-hidden="true"
         className={cn(
-          "grid size-18 place-items-center rounded-full font-bold [&_svg]:size-8",
+          "mb-2 grid size-22 place-items-center rounded-full font-bold [&_svg]:size-10",
           name ? "bg-tint text-white" : "bg-foreground/8 text-tint",
           TEXT.hero,
         )}
