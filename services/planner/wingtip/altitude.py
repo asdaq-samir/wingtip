@@ -157,8 +157,10 @@ def select_cruise_altitude(
         return _timed(label, fn, pending)
 
     total_nm = distance_nm(*route_start, *route_end)
-    # Along-track breakpoints for the floor: the fixes' own positions
-    # projected onto the direct line, pinned to the route's ends.
+    # Along-track breakpoints for the segments' from_nm and to_nm: the
+    # fixes' own positions projected onto the direct line, pinned to the
+    # route's ends. The VFR floor itself is read under each leg flown
+    # (terrain.floor_profile's `fixes`), not under this line.
     breaks_nm = [0.0, total_nm]
     if fixes and len(fixes) > 2:
         inner = [along_track_distance_nm(lat, lon, route_start, route_end) for lat, lon in fixes[1:-1]]
@@ -191,7 +193,12 @@ def select_cruise_altitude(
             else pool.submit(timed("ifr.floor_profile", ifr.floor_profile), fixes or [route_start, route_end], faa_cache_dir)
             if under_ifr
             else pool.submit(
-                timed("terrain.floor_profile", terrain.floor_profile), route_start, route_end, breaks_nm, faa_cache_dir=faa_cache_dir
+                timed("terrain.floor_profile", terrain.floor_profile),
+                route_start,
+                route_end,
+                breaks_nm,
+                faa_cache_dir=faa_cache_dir,
+                fixes=fixes,
             )
         )
         # The legs flown, or the direct line as the one leg: one path
