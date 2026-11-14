@@ -33,8 +33,7 @@ struct TfrCard: View {
                 .listRowBackground(Color.clear)
             }
             if let tfr {
-                let read = try? Engine.tfrRead(kind: tfr.kind, rule: tfr.rule, floorFt: tfr.floorFt, floorRef: tfr.floorRef,
-                                               ceilingFt: tfr.ceilingFt, ceilingRef: tfr.ceilingRef)
+                let read = FieldNotamWords.readTfr(tfr)
                 Section {
                     if let place = read?.where { Text(place) }
                     if let times = Self.times(tfr) { Text(times).accessibilityIdentifier("tfr-times") }

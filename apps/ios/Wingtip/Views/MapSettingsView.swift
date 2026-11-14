@@ -220,8 +220,6 @@ struct SettingsGear: View {
     NavigationStack { MapSettingsView() }
         .environment(Traffic())
         .environment(Charts())
-        .environment(WeatherLoop.shared)
-        .environment(ModelWeather.shared)
         .environment(Navigator())
         .environment(FlightSession())
 }

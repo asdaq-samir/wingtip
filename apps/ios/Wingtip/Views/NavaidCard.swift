@@ -130,8 +130,7 @@ struct NavaidCard: View {
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
-            if let fix, let on = try? Engine.radialOf(station: .init(ident: vor.ident, lat: vor.lat, lon: vor.lon, magVar: vor.magVar),
-                                                      at: .init(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude)) {
+            if let fix, let on = NavaidWords.radial(vor, from: fix.coordinate) {
                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     Text("On the \(Format.heading(on.radial)) radial · \(Format.distance(on.nm))").font(.headline.monospacedDigit())
                     Text("\(Format.heading(on.toCourse))° to fly to it").font(.subheadline).foregroundStyle(.secondary)
@@ -144,12 +143,12 @@ struct NavaidCard: View {
         Section {
             // Its identifier as it sends it: the only sure way to know the
             // station tuned is the one meant (AIM 1-1-3).
-            if let morse = try? Engine.morse(ident: vor.ident) {
+            if let morse = NavaidWords.morse(vor) {
                 LabeledContent("Identifier") { Text(morse).fontWeight(.semibold) }
                     .accessibilityValue(SpokenFigures.digits(vor.ident))
             }
             if let channel = vor.channel { LabeledContent("DME channel", value: channel) }
-            if let volume = try? Engine.serviceVolume(code: vor.serviceVolume) {
+            if let volume = NavaidWords.serviceVolume(vor) {
                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     Text("Service volume")
                     Text(volume).font(.subheadline).foregroundStyle(.secondary)
@@ -157,7 +156,7 @@ struct NavaidCard: View {
             }
             if let elevation = vor.elevationFt { LabeledContent("Elevation", value: Format.altitude(elevation)) }
             if let east = vor.magVar { LabeledContent("Declination", value: "\(Format.tenths(abs(east)))° \(east < 0 ? "W" : "E")") }
-            if let hours = try? Engine.navaidHours(hours: vor.hours) { LabeledContent("Hours", value: hours) }
+            if let hours = NavaidWords.hours(vor) { LabeledContent("Hours", value: hours) }
         }
         // Where its signal is not to be used, as the Chart Supplement lists
         // it (NASR NAV_RMK), folded: a busy station's run to a screenful.
