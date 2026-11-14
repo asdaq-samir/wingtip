@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mapStill, settle, settled, sideDrawer, slow } from "./helpers";
+import { setMap3d } from "./mapCard";
 
 // A route's handler still running as the test ends found the page closed
 // and failed the test (devconsole.spec): taken off, errors let go.
@@ -112,4 +113,24 @@ test("a TFR's link opens its card, and its Share sends that link", async ({ page
   await page.getByTestId("sheet-card-close").filter({ visible: true }).click();
   await expect(card).toBeHidden();
   expect(new URL(page.url()).searchParams.get("tfr")).toBeNull();
+});
+
+// In 3D the TFR stands as a volume (AirspaceVolumesGl), and a tap on it
+// opens its card the way a tap in 2D does: by its address, so the two act
+// alike and the card has its link.
+test("in 3D a tap on a TFR's volume opens its card by its address", async ({ page }) => {
+  await stubTfr(page);
+  await setMap3d(page, true);
+  await page.goto("/app/plan");
+  await settle(page);
+  await settled(sideDrawer(page));
+  const gl = page.getByTestId("gl-map").first();
+  await expect(gl).toHaveAttribute("data-terrain", "3d", { timeout: slow(20_000) });
+  await expect.poll(async () => Number((await gl.getAttribute("data-tfr3d")) ?? 0), { timeout: slow(60_000) }).toBeGreaterThan(0);
+  await mapStill(page);
+  const map = (await gl.boundingBox())!;
+  await page.mouse.click(map.x + map.width * 0.4, map.y + Math.min(map.height * 0.25, 200));
+
+  await expect(page.getByTestId("tfr-card")).toBeVisible();
+  expect(new URL(page.url()).searchParams.get("tfr")).toBe("6/4116");
 });

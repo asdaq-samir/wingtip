@@ -11,10 +11,10 @@ import { SUA_INK } from "../../../../lib/map/gl/glStyle";
 import { useGlView } from "../../../../lib/map/gl/useGlView";
 import { suaTabLayout } from "../../../../lib/map/gl/glSuaLabels";
 import { GL_FONT_BOLD, TAP } from "../../../../lib/map/gl/layers/common";
+import { useAddressKey } from "../../../../lib/address";
 import { usePreferences } from "../../../../lib/preferences";
 import { tfrsQuery } from "../../../../lib/queryClient";
 import { CHART } from "../../../../lib/tokens";
-import { TfrCard } from "../TfrCard";
 import { inForce } from "../tfrMarks";
 import { DEM } from "./dem";
 import type { GroundPoint } from "./airspaceHeights";
@@ -159,6 +159,9 @@ const LABEL_LAYER: SymbolLayerSpecification = {
  *  holding them drawn stronger and the rest fainter; null with no plan. */
 export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: number[] | null }) {
   const { map, openCard } = useGlMap();
+  // A TFR's card is opened by its address (`tfr`), as a tap on it in 2D
+  // does (TfrGl, which draws the card), so the two act alike.
+  const [, openTfr] = useAddressKey("tfr");
   const eye = useEye(map);
   const showAirspace = usePreferences((s) => s.airspace);
   const showTfrs = usePreferences((s) => s.tfrs);
@@ -272,8 +275,9 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
   useDeckTap([FILLS], 1, TAP.rank.area + 0.5, (picked, event) => {
     const p = picked.properties;
     if (p.layer === "tfr") {
-      const tfr = tfrs?.find((t) => t.notam_id === p.id);
-      if (tfr) openCard(<TfrCard key={tfr.notam_id} tfr={tfr} active={inForce(tfr, now)} />);
+      if (typeof p.id !== "string" || !tfrs?.some((t) => t.notam_id === p.id)) return;
+      openCard(null);
+      void openTfr(p.id);
     } else if (p.layer === "special_use") {
       const colour = kindOf(p) === "restricted" ? SUA_INK.restricted : SUA_INK.moa;
       openCard(<SuaVolumeCard key={String(p.name)} area={suaOfVolume(p)} colour={colour} />);
