@@ -32637,6 +32637,61 @@
         }
       }
     },
+    "/api/traffic/registered": {
+      "get": {
+        "description": "The FAA's record of a US airplane named by its N-number or ICAO\naddress (wingtip.traffic.registered), null for any other name: the\nregistry is on this service's disk, so this answers in milliseconds,\nwhere /api/traffic/find waits on the live sources, seconds at a time\nwhen adsb.lol's API is busy. A page asks both at once, drawing the\nrecord as soon as it is here and whether the airplane is in the air\nwhen the find answers (the owner, 2026-11-14: \"Why does looking up a\nplane takes a long time?\").",
+        "operationId": "traffic_registered_api_traffic_registered_get",
+        "parameters": [
+          {
+            "description": "N-number or ICAO address",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "N-number or ICAO address",
+              "maxLength": 12,
+              "minLength": 2,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AircraftRegistration"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Traffic Registered Api Traffic Registered Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Traffic Registered",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
     "/api/traffic/route": {
       "get": {
         "description": "The route a flight number is scheduled to fly -- TJSJ to KORD for\nUAL2088 -- and whether the airplane at lat/lon is on or near it, from\nVirtual Radar Server's route database (CC0); null for a callsign that\nis not an airline's flight number or one it does not know. Not the\nflight plan filed for today's flight.",

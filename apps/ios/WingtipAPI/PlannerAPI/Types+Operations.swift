@@ -22975,6 +22975,196 @@ public enum Operations {
             }
         }
     }
+    /// Traffic Registered
+    ///
+    /// The FAA's record of a US airplane named by its N-number or ICAO
+    /// address (wingtip.traffic.registered), null for any other name: the
+    /// registry is on this service's disk, so this answers in milliseconds,
+    /// where /api/traffic/find waits on the live sources, seconds at a time
+    /// when adsb.lol's API is busy. A page asks both at once, drawing the
+    /// record as soon as it is here and whether the airplane is in the air
+    /// when the find answers (the owner, 2026-11-14: "Why does looking up a
+    /// plane takes a long time?").
+    ///
+    /// - Remark: HTTP `GET /api/traffic/registered`.
+    /// - Remark: Generated from `#/paths//api/traffic/registered/get(traffic_registered)`.
+    public enum TrafficRegistered {
+        public static let id: Swift.String = "traffic_registered"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/traffic/registered/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// N-number or ICAO address
+                ///
+                /// - Remark: Generated from `#/paths/api/traffic/registered/GET/query/q`.
+                public var q: Swift.String
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - q: N-number or ICAO address
+                public init(q: Swift.String) {
+                    self.q = q
+                }
+            }
+            public var query: Operations.TrafficRegistered.Input.Query
+            /// - Remark: Generated from `#/paths/api/traffic/registered/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.TrafficRegistered.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.TrafficRegistered.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.TrafficRegistered.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.TrafficRegistered.Input.Query,
+                headers: Operations.TrafficRegistered.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/traffic/registered/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/traffic/registered/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AircraftRegistration)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AircraftRegistration {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.TrafficRegistered.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.TrafficRegistered.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Successful Response
+            ///
+            /// - Remark: Generated from `#/paths//api/traffic/registered/get(traffic_registered)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.TrafficRegistered.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.TrafficRegistered.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct UnprocessableContent: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/traffic/registered/GET/responses/422/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/traffic/registered/GET/responses/422/content/application\/json`.
+                    case json(Components.Schemas.HTTPValidationError)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.HTTPValidationError {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.TrafficRegistered.Output.UnprocessableContent.Body
+                /// Creates a new `UnprocessableContent`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.TrafficRegistered.Output.UnprocessableContent.Body) {
+                    self.body = body
+                }
+            }
+            /// Validation Error
+            ///
+            /// - Remark: Generated from `#/paths//api/traffic/registered/get(traffic_registered)/responses/422`.
+            ///
+            /// HTTP response code: `422 unprocessableContent`.
+            case unprocessableContent(Operations.TrafficRegistered.Output.UnprocessableContent)
+            /// The associated value of the enum case if `self` is `.unprocessableContent`.
+            ///
+            /// - Throws: An error if `self` is not `.unprocessableContent`.
+            /// - SeeAlso: `.unprocessableContent`.
+            public var unprocessableContent: Operations.TrafficRegistered.Output.UnprocessableContent {
+                get throws {
+                    switch self {
+                    case let .unprocessableContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unprocessableContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Traffic Route
     ///
     /// The route a flight number is scheduled to fly -- TJSJ to KORD for

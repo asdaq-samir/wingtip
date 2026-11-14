@@ -20,7 +20,7 @@ apps/web/e2e/ifr.spec.ts 442
 apps/web/e2e/ios/metrics.ts 793
 apps/web/e2e/ios/screens.ts 600
 apps/web/e2e/places.spec.ts 1091
-apps/web/e2e/plans.spec.ts 552
+apps/web/e2e/plans.spec.ts 543
 apps/web/e2e/procedures.spec.ts 737
 apps/web/e2e/route-fit.spec.ts 441
 apps/web/e2e/stops.spec.ts 756

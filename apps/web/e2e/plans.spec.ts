@@ -216,17 +216,8 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   // Archer, flown on its type's profile once the registry answers -- and
   // the field's end a button to its card.
   await page.route(
-    (url) => url.pathname.endsWith("/traffic/find"),
-    (route) =>
-      route.fulfill({
-        json: {
-          aircraft: [],
-          checked: true,
-          source: "adsb.lol",
-          license: "ODbL 1.0",
-          registered: { n_number: "N181PA", mode_s_hex: "A1B2C3", manufacturer: "Piper", model: "PA-28-181", year: 1999 },
-        },
-      }),
+    (url) => url.pathname.endsWith("/traffic/registered"),
+    (route) => route.fulfill({ json: { n_number: "N181PA", mode_s_hex: "A1B2C3", manufacturer: "Piper", model: "PA-28-181", year: 1999 } }),
   );
   await picker.fill("N181PA");
   await picker.press("Enter");
