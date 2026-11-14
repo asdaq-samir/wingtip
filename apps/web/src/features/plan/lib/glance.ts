@@ -124,6 +124,10 @@ const WHY: Record<VerdictItem["key"], { why: string; cite: string }> = {
     why: "The risk assessment follows the FAA's PAVE and IMSAFE checklists (Risk Management Handbook, FAA-H-8083-2): the points are the planner's guide, and the decision is yours as pilot in command under 14 CFR 91.3.",
     cite: "FAA-H-8083-2; 14 CFR 91.3",
   },
+  fields: {
+    why: "A private field is its owner's, landed at with their permission, and a military one with the service's prior permission (PPR); a field the FAA lists as closed is no landing field. 14 CFR 91.103 asks you to know all of it before you go.",
+    cite: "14 CFR 91.103; NASR APT_BASE",
+  },
 };
 
 /** What to do about a finding, by its key and whether it stops the flight. */
@@ -135,6 +139,7 @@ const ACTION: Record<VerdictItem["key"], { stop: string; caution: string }> = {
   runways: { stop: "pick a longer runway, or a lighter load", caution: "ask for another runway, or wait for the wind" },
   balance: { stop: "move or leave some weight", caution: "move or leave some weight" },
   risk: { stop: "talk it over with your instructor before you go", caution: "tick the risk assessment and look at its factors" },
+  fields: { stop: "plan another field", caution: "settle it before you go, or plan another field" },
 };
 
 /** A line's lead and its action in one sentence of at most LINE_MAX

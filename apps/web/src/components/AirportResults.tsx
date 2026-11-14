@@ -5,6 +5,7 @@ import { TEXT } from "../lib/text";
 import { CommandEmpty, CommandGroup, CommandItem, CommandList } from "./ui/command";
 import type { RecentAirport } from "../lib/preferences";
 import type { AirportSearchRow } from "../lib/useAirportSearch";
+import { USE_WORDS, type FieldUse } from "../lib/airportIndex";
 
 /**
  * What an airport search answers, as a list: the one list for every place
@@ -82,7 +83,7 @@ function SearchRows({
           {fields.map((r) => (
             <AirportRow
               key={r.ident}
-              airport={{ ident: r.ident, name: r.name, municipality: r.municipality, closed: r.closed }}
+              airport={{ ident: r.ident, name: r.name, municipality: r.municipality, closed: r.closed, use: r.use }}
               onSelect={() => onAirport({ ident: r.ident, name: r.name, municipality: r.municipality })}
             />
           ))}
@@ -139,8 +140,9 @@ export function AirportRow({
 
 /** An airport as a row shows it: with, where NASR lists it as closed, the
  *  engine's label ("Closed indefinitely"), said before its town so a pilot
- *  never takes it for an open field (decision 0043). */
-export type ShownAirport = RecentAirport & { closed?: string | null };
+ *  never takes it for an open field (decision 0043); and who may use it
+ *  where it is not a public field (the search's `use`). */
+export type ShownAirport = RecentAirport & { closed?: string | null; use?: FieldUse | null };
 
 /** What an airport's row shows, whatever list it is in (AirportRow here,
  *  the route box's suggestions): the icon and the two lines. Its magenta
@@ -168,9 +170,9 @@ export function AirportRowFace({
         <span className={cn("block truncate", TEXT.row)}>
           <span className="font-mono font-bold">{airport.ident}</span> · {airport.name}
         </span>
-        {(airport.closed || airport.municipality) && (
+        {(airport.closed || airport.use || airport.municipality) && (
           <span className={cn("block truncate text-muted-foreground", TEXT.detail)}>
-            <AirportDetail closed={airport.closed} municipality={airport.municipality} />
+            <AirportDetail closed={airport.closed} use={airport.use} municipality={airport.municipality} />
           </span>
         )}
       </span>
@@ -179,8 +181,20 @@ export function AirportRowFace({
 }
 
 /** An airport's grey line: where NASR lists it as closed, the engine's
- *  label first, in the warning ink, then its town. */
-export function AirportDetail({ closed, municipality }: { closed?: string | null; municipality?: string | null }) {
+ *  label first, in the warning ink; then, where it is not a public field,
+ *  who may use it (Private, Military, Joint use: NASR's use and owner, as
+ *  the planner's search sends them), so a private strip is never taken for
+ *  a public one; then its town. */
+export function AirportDetail({
+  closed,
+  use,
+  municipality,
+}: {
+  closed?: string | null;
+  use?: FieldUse | null;
+  municipality?: string | null;
+}) {
+  const after = [use ? USE_WORDS[use] : null, municipality].filter(Boolean).join(" · ");
   return (
     <>
       {closed && (
@@ -188,8 +202,8 @@ export function AirportDetail({ closed, municipality }: { closed?: string | null
           {closed}
         </span>
       )}
-      {closed && municipality && " · "}
-      {municipality}
+      {closed && after && " · "}
+      {use ? <span data-testid="airport-use">{after}</span> : after}
     </>
   );
 }

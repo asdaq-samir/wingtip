@@ -23,7 +23,8 @@ describe("the fields round a point from the browser's index", () => {
   test("landing fields only, nearest first, and nothing said that the index does not hold", () => {
     const fields = fieldsNear(index, at, 3);
     expect(fields.map((f) => f.ident)).toEqual(["C02", "KENW", "KUGN"]);
-    expect(fields[0]).toMatchObject({ elevation_ft: null, runways: [], metar: null, private: null, towered: null });
+    // Who may use it the index holds: a field it lists no use for is public.
+    expect(fields[0]).toMatchObject({ elevation_ft: null, runways: [], metar: null, private: false, military: null, towered: null });
   });
 
   test("Nearest's rows carry the engine's great-circle distance and course", () => {
@@ -35,5 +36,29 @@ describe("the fields round a point from the browser's index", () => {
     expect(rows[0]!.distance_nm).toBeLessThan(6);
     expect(rows[0]!.bearing_deg).toBeGreaterThan(90);
     expect(rows[0]!.bearing_deg).toBeLessThan(180);
+  });
+});
+
+describe("who may use a field the browser offers", () => {
+  const owned = indexOf(
+    [
+      ["IL11", "Donald Alfred Gade", "Antioch", "IL", 2, 42.47, -88.1],
+      ["KFHU", "Sierra Vista Muni-Libby AAF", "Fort Huachuca", "AZ", 1, 42.5, -88.1],
+      ["C81", "Campbell Airport", "Grayslake", "IL", 2, 42.32, -88.07],
+    ],
+    {},
+    { IL11: "private", KFHU: "joint" },
+  );
+
+  test('is passed as the index says it, military as "joint" or "military", for the engine to weigh', () => {
+    const fields = fieldsNear(owned, { lat: 42.47, lon: -88.1 }, 3);
+    expect(fields.map((f) => [f.ident, f.private, f.military])).toEqual([
+      ["IL11", true, null],
+      ["KFHU", false, "joint"],
+      ["C81", false, null],
+    ]);
+    const rows = nearestOnDevice(owned, { lat: 42.47, lon: -88.1 }, 3);
+    expect(rows.find((r) => r.ident === "IL11")).toMatchObject({ private: true, military: null });
+    expect(rows.find((r) => r.ident === "KFHU")).toMatchObject({ private: false, military: "joint" });
   });
 });

@@ -32,6 +32,16 @@ describe("the copilot on the KUGN to KOSH dry run (copilot.json)", () => {
   });
 });
 
+describe("a destination NASR lists as closed (decision 0043)", () => {
+  test("is the copilot's \"closed\" warning, the banner's as any other kind, never offered as the alternative", () => {
+    const input = inputOf({ name: "closed", expect: null });
+    input.fields = input.fields.map((f) => (f.ident === "KOSH" ? { ...f, status: "CI", runways: [] } : f));
+    const first = watch(input)!.messages[0]!;
+    expect(first).toMatchObject({ kind: "closed", level: "warning" });
+    expect(first.alternative?.ident).not.toBe("KOSH");
+  });
+});
+
 const flight: CopilotFlight = {
   dest: "KOSH",
   alternate: null,

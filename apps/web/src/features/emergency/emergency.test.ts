@@ -21,7 +21,7 @@ function planner(airplane = true): EmergencyFields {
       distance_nm: 0,
       bearing_deg: 0,
       private: "private" in f ? f.private : false,
-      military: false,
+      military: null,
       towered: false,
       metar: "metar" in f ? f.metar : null,
       frequencies: [],
@@ -39,6 +39,21 @@ describe("the emergency assistant, by the engine", () => {
     expect(ranked.fields.map((f) => f.ident)).toEqual(fixture.lakeGeneva.order);
     expect(ranked.fields.map((f) => f.reach)).toEqual(fixture.lakeGeneva.reach);
     expect(ranked.glide?.ring).toHaveLength(36);
+  });
+
+  test("the planner's military passed as it comes: a joint-use field is no military field (private-fields audit PF-4)", () => {
+    const data = planner();
+    const [first, second] = data.fields;
+    data.fields = data.fields.map((f) => (f === first ? { ...f, military: "joint" } : f === second ? { ...f, military: "military" } : f));
+    const ranked = bestFields(data, FIX, -3.5);
+    const said = (ident: string) =>
+      ranked.fields
+        .find((f) => f.ident === ident)!
+        .reasons.map((r) => r.text)
+        .join(" ");
+    expect(ranked.fields.find((f) => f.ident === first!.ident)!.military).toBe("joint");
+    expect(said(first!.ident)).not.toMatch(/military/i);
+    expect(said(second!.ident)).toMatch(/military/i);
   });
 
   test("with no airplane the glide is not guessed: nearest first", () => {

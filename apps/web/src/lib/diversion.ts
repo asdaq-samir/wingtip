@@ -17,7 +17,7 @@
  * labels and the type of its keys; diversion.test.ts holds it to the
  * engine's. Its stopwatch's figures are lib/format's (stopwatch).
  */
-import type { Leg } from "./api/types";
+import type { EmergencyFields, Leg } from "./api/types";
 import { callEngine, type EngineAnswer } from "./engine/engine";
 
 /** The figures a student estimates, and how far off is still reasonable. */
@@ -72,4 +72,37 @@ export function divert(leg: Leg, tcDeg: number, distanceNm: number): Diversion |
  *  round the compass (358° is 4° from 002°). */
 export function reasonable(key: EstimateKey, typed: number, exact: number): boolean {
   return callEngine("diversion_reasonable", { key, typed, exact });
+}
+
+/** The fields to divert to from a point on `leg`, the engine's pick
+ *  (best_fields in "diversion" mode, ACS PA.VI.C's suitable airport): by
+ *  the runway and the weather, then the time, a private or military-only
+ *  field after a public or joint-use one of fields otherwise alike (with
+ *  no emergency the owner's or the service's permission stands), each
+ *  with its reasons; never a field NASR lists as closed (decision 0043).
+ *  The fields are the planner's round the point (/api/emergency/fields),
+ *  as the emergency assistant's are. */
+export function diversionFields(data: EmergencyFields, at: { lat: number; lon: number }, leg: Leg) {
+  return callEngine("best_fields", {
+    mode: "diversion",
+    at,
+    altitude_ft: leg.altitude_ft,
+    speed_kt: leg.tas_kt,
+    wind: leg.wind ? { from_deg: leg.wind.wind_dir_true_deg, kt: leg.wind.wind_speed_kt } : null,
+    variation_deg: null,
+    airplane: leg.tas_kt != null ? { cruise_tas_kt: leg.tas_kt } : null,
+    fields: data.fields.map((f) => ({
+      ident: f.ident,
+      name: f.name,
+      lat: f.lat,
+      lon: f.lon,
+      elevation_ft: f.elevation_ft ?? null,
+      runways: f.runways,
+      metar: f.metar ?? null,
+      towered: f.towered,
+      private: f.private,
+      military: f.military ?? null,
+      status: f.status ?? null,
+    })),
+  }).fields;
 }

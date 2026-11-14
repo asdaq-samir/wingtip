@@ -23,4 +23,24 @@ describe("an airport's search row", () => {
     expect(screen.queryByTestId("airport-closed")).toBeNull();
     expect(screen.getByText("Grayslake")).toBeTruthy();
   });
+
+  test("marks a private, military or joint-use field before its town, and a public one not", () => {
+    render(<AirportRowFace airport={{ ident: "IL11", name: "Donald Alfred Gade", municipality: "Antioch", use: "private" }} />);
+    expect(screen.getByTestId("airport-use").textContent).toBe("Private · Antioch");
+    cleanup();
+    render(
+      <AirportRowFace airport={{ ident: "KFHU", name: "Sierra Vista Muni-Libby AAF", municipality: "Fort Huachuca", use: "joint" }} />,
+    );
+    expect(screen.getByTestId("airport-use").textContent).toBe("Joint use · Fort Huachuca");
+    cleanup();
+    render(
+      <AirportRowFace
+        airport={{ ident: "00MO", name: "Cooper Flying Service", municipality: "Alba", closed: "Closed indefinitely", use: "private" }}
+      />,
+    );
+    expect(screen.getByText(/Closed indefinitely/).parentElement?.textContent).toBe("Closed indefinitely · Private · Alba");
+    cleanup();
+    render(<AirportRowFace airport={{ ident: "C81", name: "Campbell Airport", municipality: "Grayslake", use: null }} />);
+    expect(screen.queryByTestId("airport-use")).toBeNull();
+  });
 });

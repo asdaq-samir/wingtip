@@ -6,6 +6,9 @@ airborne_now
 aircraft_problems
 airplane_figures
 airplane_needs
+airport_data_words
+airport_notams_none
+airport_use_words
 airspace_entry_rules
 airspace_volume_span
 alert_fires
@@ -105,6 +108,7 @@ gonogo_balance
 gonogo_default_load
 gonogo_density_altitude
 gonogo_end_distance
+gonogo_field_permission
 gonogo_icing
 gonogo_icing_line
 gonogo_pass_minutes
@@ -168,6 +172,7 @@ procedures_read
 procedures_write
 proficiency_plan
 profile_clearance
+public_use
 radial_of
 radio_call_sign
 radio_place_name

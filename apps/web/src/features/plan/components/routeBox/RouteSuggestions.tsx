@@ -80,7 +80,7 @@ export default function RouteSuggestions({
       {fields.length > 0 && (
         <Group heading="Airports">
           {fields.map((r) => {
-            const airport = { ident: r.ident, name: r.name, municipality: r.municipality, closed: r.closed };
+            const airport = { ident: r.ident, name: r.name, municipality: r.municipality, closed: r.closed, use: r.use };
             return <Row key={`airport-${r.ident}`} id={`airport-${r.ident}`} airport={airport} onAction={() => onPick(r.ident, airport)} />;
           })}
         </Group>

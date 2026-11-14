@@ -80,6 +80,9 @@ export interface FormInput {
   fuelGal: number | null;
   /** Under IFR, the alternate filed, for the last flight. */
   alternate: string | null;
+  /** NASR's ICAO_ID by ident where the field's card was had (null: none
+   *  listed); an ident not in it is read by the engine. */
+  icaoIds?: Record<string, string | null>;
   /** Under IFR, the departure procedure picked at the departure and the
    *  arrival at the destination. */
   departureProcedure?: FiledProcedure | null;
@@ -116,10 +119,12 @@ export function routeItem(
   return callEngine("filed_route", { stops, airways: stops.filter(isAirway), departure, arrival });
 }
 
-/** ZZZZ's note, where an identifier has no ICAO four-letter location
- *  indicator (the engine's `filed_zzzz`: one with a figure in it, C81). */
-function zzzz(ident: string, slot: "DEP" | "DEST" | "ALTN"): string | undefined {
-  return callEngine("filed_zzzz", { ident })
+/** ZZZZ's note, where a field has no ICAO four-letter location indicator
+ *  (the engine's `filed_zzzz`, AIM Appendix 4: by NASR's ICAO_ID where
+ *  the card had it -- IL11 none, Z13 PFZK -- else by the ident, one with
+ *  a figure in it, C81). */
+function zzzz(ident: string, slot: "DEP" | "DEST" | "ALTN", icaoIds: FormInput["icaoIds"]): string | undefined {
+  return callEngine("filed_zzzz", icaoIds && ident in icaoIds ? { ident, icao_id: icaoIds[ident] } : { ident })
     ? `Where a filing service takes only four-letter indicators: ZZZZ, and ${slot}/${ident} in item 18 (AIM Appendix 4).`
     : undefined;
 }
@@ -173,7 +178,7 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     add("10a", "equipment", "Equipment", input.aircraft.equipment || null, input.aircraft.equipment ? undefined : where);
     add("10b", "surveillance", "Surveillance", input.aircraft.surveillance || null, input.aircraft.surveillance ? undefined : where);
 
-    add("13", "departure", "Departure", hop.departure, zzzz(hop.departure, "DEP"));
+    add("13", "departure", "Departure", hop.departure, zzzz(hop.departure, "DEP", input.icaoIds));
     // Item 13's time is UTC, four figures; a later flight's is when the
     // airplane leaves the stop, which the plan does not know.
     const depart = i === 0 ? input.depart : null;
@@ -218,10 +223,10 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
         .join(" ") || undefined,
     );
 
-    add("16", "destination", "Destination", hop.destination, zzzz(hop.destination, "DEST"));
+    add("16", "destination", "Destination", hop.destination, zzzz(hop.destination, "DEST", input.icaoIds));
     add("16", "eet", "Total EET", totals?.ete_min != null ? hhmmForm(Math.ceil(totals.ete_min)) : null);
     const alternate = ifr && last ? input.alternate : null;
-    if (alternate) add("16", "alternate", "Alternate", alternate, zzzz(alternate, "ALTN"));
+    if (alternate) add("16", "alternate", "Alternate", alternate, zzzz(alternate, "ALTN", input.icaoIds));
 
     // Item 18's date of flight, where it is not today: the engine's
     // `filed_dof` (AIM Appendix 4, TBL 4-1, the UTC date).

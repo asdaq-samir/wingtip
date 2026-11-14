@@ -297,12 +297,13 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     departFrom({ ident: r.ident });
     pickView("plan");
   };
-  // Those that apply: Fly Here unless it is the destination, Depart From unless the
-  // departure -- one, a single wide pill, where only one does (Apple's "Directions").
+  // Those that apply: Fly Here unless it is the destination, Depart From unless the departure --
+  // one, a single wide pill, where only one does (Apple's "Directions"); none for a closed field (0043).
   const quick = (r: AirportSearchRow) =>
     [
-      r.ident !== vm.route.planned.dest && { label: "Fly Here", run: () => flyTo(r), testId: "search-top-fly-here" },
-      r.ident !== vm.route.planned.dep && { label: "Depart From", run: () => departFromHit(r), testId: "search-top-depart-from" },
+      r.ident !== vm.route.planned.dest && !r.closed && { label: "Fly Here", run: () => flyTo(r), testId: "search-top-fly-here" },
+      r.ident !== vm.route.planned.dep &&
+        !r.closed && { label: "Depart From", run: () => departFromHit(r), testId: "search-top-depart-from" },
     ].filter((a): a is { label: string; run: () => void; testId: string } => !!a);
   const flyAirplane = (hit: AirplaneHit) => {
     if (!hit.fly) return;

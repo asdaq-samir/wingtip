@@ -26,7 +26,17 @@ export interface AirportIndex {
    *  indefinitely", the engine's field_status, as the planner sends it);
    *  null where it is open. Never offered to land (decision 0043). */
   closed: (string | null)[];
+  /** Each row's use where it is not a public-use field the armed services
+   *  do not own (the planner's `use`, NASR APT_BASE's FACILITY_USE_CODE and
+   *  OWNERSHIP_TYPE_CODE): "private", "military" or "joint"; null else. */
+  use: (FieldUse | null)[];
 }
+
+/** Who may use a field, as the planner's index and search say it. */
+export type FieldUse = "private" | "military" | "joint";
+
+/** A field's use as a search row marks it, the word Nearest says it with. */
+export const USE_WORDS: Record<FieldUse, string> = { private: "Private", military: "Military", joint: "Joint use" };
 
 /**
  * The index's lookups: each row's idents and its words, upper-cased, and
@@ -36,7 +46,7 @@ export interface AirportIndex {
  * longest task (measured 2026-10-09, CPU 4x); these take a tenth of that,
  * and a search through them some 8 to 13 ms (on this Mac, unthrottled).
  */
-export function indexOf(rows: Entry[], closed: Record<string, string> = {}): AirportIndex {
+export function indexOf(rows: Entry[], closed: Record<string, string> = {}, use: Record<string, FieldUse> = {}): AirportIndex {
   const placed = (row: Entry) => typeof row[5] === "number";
   return {
     rows,
@@ -46,6 +56,7 @@ export function indexOf(rows: Entry[], closed: Record<string, string> = {}): Air
     keys: rows.map((row) => [row[0].toUpperCase(), ...(row.slice(placed(row) ? 7 : 5) as string[])]),
     words: rows.map(([, name, town]) => ` ${name} ${town}`.toUpperCase()),
     closed: rows.map(([ident]) => closed[ident] ?? null),
+    use: rows.map(([ident]) => use[ident] ?? null),
   };
 }
 
@@ -105,7 +116,15 @@ export function searchIndex(
   );
   return ranked.slice(0, limit).map(([, , , , , , row]) => {
     const [ident, name, town, state] = index.rows[row]!;
-    return { ident, name, municipality: town || null, region: state ? `US-${state}` : null, kind: "airport", closed: index.closed[row]! };
+    return {
+      ident,
+      name,
+      municipality: town || null,
+      region: state ? `US-${state}` : null,
+      kind: "airport",
+      closed: index.closed[row]!,
+      use: index.use[row]!,
+    };
   });
 }
 
@@ -181,7 +200,7 @@ export function forgetAirportIndex() {
 
 async function read(): Promise<AirportIndex> {
   await warming?.catch(() => {});
-  reading = api.airportIndex().then(({ airports, closed }) => indexOf(airports as Entry[], closed));
+  reading = api.airportIndex().then(({ airports, closed, use }) => indexOf(airports as Entry[], closed, use));
   return reading;
 }
 

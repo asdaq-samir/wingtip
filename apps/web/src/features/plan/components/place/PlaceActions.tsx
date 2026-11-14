@@ -46,8 +46,14 @@ export default function PlaceActions({
 }) {
   const desktop = useIsDesktop();
   const shown = useShown();
+  // A field NASR lists as closed is never offered to land at (decision
+  // 0043): neither flown to nor added as a stop, its label said instead.
+  const closed = place?.closed ?? null;
   const keyed = desktop && shown && !!place;
-  useCardKeys(keyed, { F: () => place && onFlyHere(place), S: onAddStop && !addStopOff ? () => place && onAddStop(place) : undefined });
+  useCardKeys(keyed, {
+    F: closed ? undefined : () => place && onFlyHere(place),
+    S: onAddStop && !addStopOff && !closed ? () => place && onAddStop(place) : undefined,
+  });
   // The card keeps itself fresh as the window or the card comes back into
   // sight, whichever tab is open; its Refresh, in the Weather tab, asks now.
   useLiveRefresh("airport");
@@ -58,7 +64,8 @@ export default function PlaceActions({
         label={ACTION.flyHere.label}
         filled
         busy={flying}
-        disabled={!place}
+        disabled={!place || !!closed}
+        spoken={closed ? `${ACTION.flyHere.label}: ${closed}` : undefined}
         testId="fly-here"
         keys={keyed ? keyHint("F") : undefined}
         onClick={() => place && onFlyHere(place)}
@@ -67,8 +74,8 @@ export default function PlaceActions({
         <Action
           icon={<ACTION.addStop.icon />}
           label={ACTION.addStop.label}
-          disabled={!place || !!addStopOff}
-          spoken={addStopOff ? `${ACTION.addStop.label}: ${addStopOff}` : undefined}
+          disabled={!place || !!addStopOff || !!closed}
+          spoken={addStopOff || closed ? `${ACTION.addStop.label}: ${addStopOff ?? closed}` : undefined}
           onClick={() => place && onAddStop(place)}
           testId="place-add-stop"
           keys={keyed ? keyHint("S") : undefined}

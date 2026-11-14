@@ -15,7 +15,7 @@
  * their sources live there. Only the shapes are made here.
  */
 import { create } from "zustand";
-import { callEngine } from "./engine/engine";
+import { callEngine, type EngineInput } from "./engine/engine";
 import type { Finding } from "./findings";
 
 /** Where a finding is shown in full: a tab of the planning panel, and a
@@ -26,7 +26,7 @@ export interface Where {
 }
 
 export interface VerdictItem extends Where {
-  key: "weather" | "airspace" | "altitude" | "fuel" | "runways" | "balance" | "risk";
+  key: "weather" | "airspace" | "altitude" | "fuel" | "runways" | "balance" | "risk" | "fields";
   label: string;
   finding: Finding;
   /** What was found, in a line. */
@@ -150,6 +150,16 @@ export function verdictItems(input: VerdictInput): VerdictItem[] {
   // The engine's items are plain strings; its keys, tabs and findings are
   // the ones VerdictItem names (gonogo/verdict.rs verdict_items).
   return callEngine("gonogo_verdict_items", engineInput(input)) as VerdictItem[];
+}
+
+/** The row for a departure, destination or stop that NASR lists as
+ *  closed, or that is private or the armed services' own (the engine's
+ *  gonogo_field_permission: decision 0043; the owner's permission or the
+ *  service's PPR, with NASR APT_CON's phone; 14 CFR 91.103), to go after
+ *  the tabs' findings and before the line; null where every field is open
+ *  and public or joint use. */
+export function fieldPermission(fields: EngineInput<"gonogo_field_permission">["fields"]): VerdictItem | null {
+  return callEngine("gonogo_field_permission", { fields }) as VerdictItem | null;
 }
 
 /** What the findings come to, in a line over them. */
