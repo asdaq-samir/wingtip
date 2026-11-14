@@ -434,7 +434,7 @@ off by default (the owner, 2026-11-13).
    (the owner, 2026-11-11: "We don't need plan a flight either with two
    buttons"). The first time, a welcome sheet says what the app is
    (Search like Maps, FPL like an EFB, the FAA charts), offers Theme and
-   Appearance (the Map card's Look tiles), and its one
+   Appearance (as tiles, the picks the Map card's Look rows make), and its one
    button, Let's Go Flying, goes on to the map with the one search ready
    for where to (Search up at half, its field not focused), the airport picked
    planned from where the airplane is; after that first route one tip points at the toggle while it shows FPL ("Your flight plan is one tap away ... tap here any time"), once (the
@@ -695,9 +695,10 @@ way: three homes, and every control in one of them.
    chart, only the overlay over a plain ground in the look's colours,
    with every vector layer over it; the owner, 2026-11-14: "chart should
    also have none option") with the terminal charts' switch under them
-   while there is a chart, the overlay (None, USGS, Google Map, Google
-   Satellite, Google's only with a key) with its Strength while one is
-   picked, in 3D its Heights (×1, ×3 or ×5, ×3 unless picked; the owner,
+   while there is a chart, the base map under it ("Overlay" until the
+   owner's "How can this be better?", 2026-11-14; None, USGS, Google Map,
+   Google Satellite, Google's only with a key) with its Strength while
+   one is picked, in 3D its Heights (×1, ×3 or ×5, ×3 unless picked; the owner,
    2026-11-14), and four layers (the owner, 2026-11-14: "I want to keep
    it simple though. can we just have four layers aeronautical, weather,
    traffic, private/military in the map settings?"): Aeronautical (the
@@ -706,8 +707,18 @@ way: three homes, and every control in one of them.
    the tile turns it on or off, and the ••• in its corner is a menu of
    which weather: AIRMETs and SIGMETs and PIREPs as checkbox items, Winds
    Aloft, Radar and Model Weather as submenus, each off by default),
-   Traffic, and Private/Military (drawn whatever it says while the
-   Emergency Assistant is open), the row exactly four tiles. The public
+   Traffic, and Private & Military (drawn whatever it says while the
+   Emergency Assistant is open), two by two, every tile one size and
+   every name on one line; then Look, Theme and Appearance as two rows of
+   one inset grouped list, each its name and its pull-down, as iOS
+   Settings sets a choice. Laid out as Apple Maps' Map card and iOS
+   Settings are (the owner, 2026-11-14: "How can this be better?"): the
+   Chart and Base map pictures one size, a quarter of the card, each word
+   under its picture on one line (the row slides sideways when a word is
+   longer, never wraps), both Nones an empty map (the surface under a
+   faint grid); the terminal charts', Strength's and Heights' switches and
+   segments rows of an inset grouped list at the tiles' edges, in the
+   list's row type; one section gap (space.xl) between the parts. The public
    fields, the route and the plan's points, own ship and the TFRs have no
    switch: always drawn. The route's VFR checkpoints and the Class B
    fields' weather chips are switches of the route's ••• menu, On the Map
@@ -729,7 +740,8 @@ Display: no Sunlight, which needs a light sensor iOS gives no app; Data
 holds what is kept for the air, Downloads, the ADS-B receiver and the
 checkpoint notes), and the Map card the base charts as their pictures,
 None first, the Approach Plates switch under them while a chart is
-drawn, the four layers (Aeronautical, Weather, Traffic, Private/Military)
+drawn, the four layers (Aeronautical, Weather, Traffic, Private/Military;
+the web's words are Private & Military since 2026-11-14)
 as the stock toggle's button style, and Look, Theme and Appearance as
 menus (2026-11-14), with no overlay row (Google's tiles are not drawn on the iPhone, and the USGS
 imagery already comes in by itself close in). Show Route As (Route Box or

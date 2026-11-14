@@ -4,7 +4,8 @@ import { useTheme } from "next-themes";
 import { BRANDS } from "../lib/brand";
 import { usePreferences, type Brand, type ChartNight } from "../lib/preferences";
 import MenuTile from "./MenuTile";
-import type { PullDownOption } from "./PullDown";
+import PullDown, { type PullDownOption } from "./PullDown";
+import { ListRow } from "./GroupedList";
 
 /**
  * The app's look, two picks: Theme (Wingtip, Glass Cockpit, Chart ink,
@@ -13,9 +14,10 @@ import type { PullDownOption } from "./PullDown";
  * the first flight's welcome (WelcomeSheet, the owner, 2026-11-13: "give
  * theme and appearance selection on the welcome screen"): each a
  * PullDown's value, options and setter, drawn as Settings' tile (ThemeTile,
- * AppearanceTile) in both, so they look the same in each (the owner,
- * 2026-11-13: "Make the appearance and theme the same look as in the
- * settings").
+ * AppearanceTile) on the welcome, and as rows of an inset grouped list on
+ * the Map card (ThemeRow, AppearanceRow), its label at the left and the
+ * pick's pull-down at the right, as iOS Settings sets a choice (the
+ * owner's "How can this be better?", 2026-11-14).
  */
 interface LookPick<V extends string> {
   value: V;
@@ -76,4 +78,24 @@ export function ThemeTile() {
 export function AppearanceTile() {
   const { icon, ...pick } = useAppearancePick();
   return <MenuTile label="Appearance" {...pick} on={false} testId="theme-select" icon={icon} />;
+}
+
+/** Theme's row of a grouped list (ListRow): its name, and the pick's
+ *  pull-down at its end. */
+export function ThemeRow() {
+  return (
+    <ListRow title="Theme">
+      <PullDown label="Theme" {...useThemePick()} align="end" testId="brand-select" />
+    </ListRow>
+  );
+}
+
+/** Appearance's row of a grouped list, as Theme's. */
+export function AppearanceRow() {
+  const { value, onChange, options } = useAppearancePick();
+  return (
+    <ListRow title="Appearance">
+      <PullDown label="Appearance" value={value} onChange={onChange} options={options} align="end" testId="theme-select" />
+    </ListRow>
+  );
 }

@@ -1,3 +1,4 @@
+import { ScrollArea } from "@base-ui/react/scroll-area";
 import { cn } from "cn";
 import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
 import SectionTitle from "../../components/SectionTitle";
@@ -9,19 +10,20 @@ export interface PictureChoice {
   src?: string;
   /** The picture's own look where it has no picture: a swatch. */
   className?: string;
-  faded?: boolean;
 }
 
 /**
- * A pick of one of a few, each a picture with its word on a strip across
- * its foot, as Apple Maps' "Choose Map" card sets its maps (the owner's
- * screenshot, 2026-11-10), three to a row so the Map card is one screen
- * (option A of the map settings canvas, 2026-11-13), or four where there
- * are four (the overlays, Google's two among them); the one picked
- * ringed in the tint. The stock ToggleGroup underneath, so
- * each is a radio to a screen reader and the arrow keys move between them;
- * a pick applies at once, with nothing to confirm. A picture that does not
- * load leaves its muted box.
+ * A pick of one of a few, each a picture with its word under it on one
+ * line, as Apple Maps' "Choose Map" card sets its maps (the owner's
+ * screenshot, 2026-11-10; its words under the picture, not over it, the
+ * owner's "How can this be better?", 2026-11-14). The Chart and Base map
+ * rows' tiles are one size, a quarter of the card's width; where a word
+ * is longer than that (Google Satellite at an iPhone's 393 points) the
+ * row's tiles grow to it together and the row slides sideways (Base UI's
+ * ScrollArea), never wrapping a word. The one picked ringed in the tint.
+ * The stock ToggleGroup underneath, so each is a radio to a screen reader
+ * and the arrow keys move between them; a pick applies at once, with
+ * nothing to confirm. A picture that does not load leaves its muted box.
  */
 export default function MapPictureChoices({
   title,
@@ -43,59 +45,69 @@ export default function MapPictureChoices({
       <div className="pb-1.5">
         <SectionTitle>{title}</SectionTitle>
       </div>
-      <ToggleGroup
-        value={[value]}
-        onValueChange={(v) => {
-          if (v[0]) onChange(v[0]);
-        }}
-        aria-label={title}
-        data-testid={testId}
-        className={cn("grid w-full gap-2", options.length > 3 ? "grid-cols-4" : "grid-cols-3")}
-      >
-        {options.map((o) => (
-          <ToggleGroupItem
-            key={o.value}
-            value={o.value}
-            aria-label={o.label}
-            className={cn(
-              "group relative block h-auto min-w-0 overflow-hidden rounded-xl border-0 bg-muted p-0 shadow-none",
-              "hover:bg-muted data-pressed:bg-muted",
-              // The one picked ringed in the tint, two points, as Apple's is.
-              "ring-1 ring-border data-pressed:ring-2 data-pressed:ring-tint",
-            )}
+      {/* The row's width is the container the tiles' quarter is taken of. */}
+      <ScrollArea.Root className="@container min-w-0">
+        <ScrollArea.Viewport style={{ overflowY: "hidden" }} className="overscroll-x-contain">
+          <ToggleGroup
+            value={[value]}
+            onValueChange={(v) => {
+              if (v[0]) onChange(v[0]);
+            }}
+            aria-label={title}
+            data-testid={testId}
+            // Every column a quarter of the row less its three gaps, or the
+            // longest word's width if that is more, all of them the same
+            // (a track sized by its content, each one fraction); half a step
+            // round them for the picked one's ring, which the viewport clips.
+            className="grid w-max auto-cols-[minmax(calc((100cqw_-_1.75rem)/4),1fr)] grid-flow-col gap-2 p-0.5"
           >
-            {/* 16:10, flatter than the 4:3 they were, so the Map card's charts,
-                overlay and layers fit one iPhone screen with nothing to scroll. */}
-            <span aria-hidden="true" className={cn("block aspect-[16/10]", o.className)}>
-              {o.src && (
-                <img
-                  src={o.src}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                  className={cn("size-full object-cover", o.faded && "opacity-40")}
-                  onError={(e) => {
-                    e.currentTarget.style.visibility = "hidden";
-                  }}
-                />
-              )}
-            </span>
-            {/* Its word on a strip of the card's own colour across the
-                picture's foot. */}
-            <span
-              className={cn(
-                "absolute inset-x-0 bottom-0 bg-card/90 py-1 text-left text-foreground group-data-pressed:font-semibold group-data-pressed:text-tint",
-                // Four to a row, a long name (Google Satellite) on two lines, not cut short.
-                options.length > 3 ? "line-clamp-2 px-1.5 leading-tight whitespace-normal" : "truncate px-2",
-                TEXT.note,
-              )}
-            >
-              {o.label}
-            </span>
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
+            {options.map((o) => (
+              <ToggleGroupItem
+                key={o.value}
+                value={o.value}
+                aria-label={o.label}
+                className={cn(
+                  "group flex h-auto min-w-0 flex-col items-stretch gap-1 rounded-xl border-0 bg-transparent p-0 shadow-none",
+                  "hover:bg-transparent data-pressed:bg-transparent",
+                )}
+              >
+                {/* 16:10, flatter than 4:3, so the card's rows fit an iPhone's screen. */}
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "block aspect-[16/10] overflow-hidden rounded-xl bg-muted",
+                    // The one picked ringed in the tint, two points, as Apple's is.
+                    "ring-1 ring-border group-data-pressed:ring-2 group-data-pressed:ring-tint",
+                    o.className,
+                  )}
+                >
+                  {o.src && (
+                    <img
+                      src={o.src}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      draggable={false}
+                      className="size-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.visibility = "hidden";
+                      }}
+                    />
+                  )}
+                </span>
+                <span
+                  className={cn(
+                    "px-0.5 text-left whitespace-nowrap text-foreground group-data-pressed:font-semibold group-data-pressed:text-tint",
+                    TEXT.note,
+                  )}
+                >
+                  {o.label}
+                </span>
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </ScrollArea.Viewport>
+      </ScrollArea.Root>
     </section>
   );
 }

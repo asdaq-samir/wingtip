@@ -27,7 +27,7 @@ const WINDS: { value: WindsAt; label: string }[] = [
  * (LayerTile), each on or off and kept in the preferences (the owner,
  * 2026-11-14: "I want to keep it simple though. can we just have four
  * layers aeronautical, weather, traffic, private/military in the map
- * settings?"), where there were eleven. The public fields, the route and
+ * settings?"), where there were eleven; two by two since 2026-11-14. The public fields, the route and
  * the plan's points, own ship and the TFRs have no switch: always drawn;
  * the route's checkpoints and the Class B chips are the route's ••• menu's
  * (ShowRouteAs). Which weather the Weather layer draws is its tile's own
@@ -41,7 +41,8 @@ export default function MapLayers() {
       <div className="pb-1.5">
         <SectionTitle id={id}>Layers</SectionTitle>
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      {/* Two by two, each row as tall as the other (auto-rows-fr). */}
+      <div className="grid auto-rows-fr grid-cols-2 gap-2">
         {/* The Class B, C and D and special-use airspace (AirspaceGl), and
             the VORs, fixes and VFR waypoints (NavaidsGl): on unless turned off. */}
         <LayerToggle
@@ -72,9 +73,8 @@ export default function MapLayers() {
             default, as each is landed at only by leave; drawn whatever
             this says while the emergency assistant is open. */}
         <LayerToggle
-          // A break after the slash, as four tiles to a row leave its
-          // name too narrow a line at a phone's width.
-          name={"Private/\u200bMilitary"}
+          // The words only; the preference is still privateMilitary.
+          name="Private & Military"
           glyph={Shield}
           on={prefs.privateMilitary}
           onChange={prefs.setPrivateMilitary}

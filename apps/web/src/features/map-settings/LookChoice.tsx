@@ -1,26 +1,23 @@
-import { useId } from "react";
-import { AppearanceTile, ThemeTile } from "../../components/lookPicks";
-import SectionTitle from "../../components/SectionTitle";
+import { AppearanceRow, ThemeRow } from "../../components/lookPicks";
+import { ListGroup } from "../../components/GroupedList";
 
 /**
- * The app's look, two tiles under the layers: Theme (Wingtip, Glass
- * Cockpit, Chart ink or Native) and Appearance (System, Light, Dark, or
- * Dark + Bright). They were Settings' Look group and moved to the Map
- * card at the owner's ask (2026-11-14: "Can we move the look to map
- * settings too?"), so each control has one home; the first flight's
- * welcome draws the same two (lookPicks is shared).
+ * The app's look, under the layers: Theme (Wingtip, Glass Cockpit, Chart
+ * ink or Native) and Appearance (System, Light, Dark, or Dark + Bright),
+ * two rows of one inset grouped list, each its name and its pull-down, as
+ * iOS Settings sets a choice (the owner's "How can this be better?",
+ * 2026-11-14, where they were two tiles). They were Settings' Look group
+ * and moved to the Map card at the owner's ask (2026-11-14: "Can we move
+ * the look to map settings too?"), so each control has one home; the
+ * first flight's welcome draws the same two picks as tiles (lookPicks).
  */
 export default function LookChoice() {
-  const id = useId();
   return (
-    <section role="group" aria-labelledby={id} className="flex flex-col" data-testid="map-look">
-      <div className="pb-1.5">
-        <SectionTitle id={id}>Look</SectionTitle>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <ThemeTile />
-        <AppearanceTile />
-      </div>
-    </section>
+    <div data-testid="map-look">
+      <ListGroup title="Look">
+        <ThemeRow />
+        <AppearanceRow />
+      </ListGroup>
+    </div>
   );
 }

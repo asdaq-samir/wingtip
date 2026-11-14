@@ -21,19 +21,22 @@ import { TEXT } from "../lib/text";
 type Glyph = ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
 
 /**
- * The Map card's layers as tiles, three to a row, as Apple Maps' Choose
- * Map card and Control Center set theirs (the owner's pick, option A of
- * the map settings canvas, 2026-11-13): each its glyph over its name, in
- * the card's own colour, filled in the tint while on. A tile's whole face
- * is its hit area, at least 44 points every way, so nothing round it is
- * needed (index.css's rule). The grid's gap-2 is the rows' own gap.
+ * The Map card's layers as tiles, two by two, as Apple Maps' Choose Map
+ * card and Control Center set theirs (the owner's pick, option A of the
+ * map settings canvas, 2026-11-13; two to a row since the owner's "How
+ * can this be better?", 2026-11-14, where four to a row wrapped and cut
+ * their names): each its glyph over its name on one line, in the card's
+ * own colour, filled in the tint while on, and every tile the grid row's
+ * height (h-full), so the four are one size. A tile's whole face is its
+ * hit area, at least 44 points every way, so nothing round it is needed
+ * (index.css's rule). The grid's gap-2 is the rows' own gap.
  */
 const TILE = cn(
-  "relative flex h-auto min-h-16 w-full min-w-0 flex-col items-start justify-between gap-1 rounded-(--radius-card) border-0 bg-card px-2.5 py-2 text-left whitespace-normal text-foreground shadow-none",
+  "relative flex h-full min-h-16 w-full min-w-0 flex-col items-start justify-between gap-1 rounded-(--radius-card) border-0 bg-card px-3 py-2.5 text-left whitespace-nowrap text-foreground shadow-none",
   "ring-1 ring-border hover:bg-muted data-pressed:bg-tint data-pressed:text-white data-pressed:ring-tint hover:data-pressed:bg-tint/90",
   "[&_svg:not([class*='size-'])]:size-5",
 );
-const NAME = cn("font-semibold", TEXT.note);
+const NAME = cn("max-w-full truncate font-semibold", TEXT.detail);
 
 /** An on-or-off layer: Base UI's Toggle (ui/toggle), so it is a pressed
  *  or unpressed button to a screen reader (`aria-pressed`), named by its
@@ -93,7 +96,7 @@ export function LayerToggleMenu({
   ...tile
 }: Parameters<typeof LayerToggle>[0] & { menuLabel: string; menuTestId: string; children: ReactNode }) {
   return (
-    <div className="relative min-w-0">
+    <div className="relative h-full min-w-0">
       <LayerToggle {...tile} />
       <DropdownMenu>
         <DropdownMenuTrigger
@@ -104,7 +107,7 @@ export function LayerToggleMenu({
               aria-label={menuLabel}
               data-testid={menuTestId}
               className={cn(
-                "absolute top-1.5 right-1.5 rounded-full",
+                "absolute top-2 right-2 rounded-full",
                 // White on the tint while on, open or not; the stock ghost's muted
                 // fill would put white dots on near-white.
                 tile.on ? "text-white hover:bg-white/15 hover:text-white aria-expanded:bg-white/20 native:text-white" : "text-tint",

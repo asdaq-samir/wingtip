@@ -3,6 +3,7 @@ import { cn } from "cn";
 import { FieldError } from "../../components/ui/field";
 import Segmented from "../../components/Segmented";
 import { Switch } from "../../components/ui/switch";
+import { ListGroup, ListRow } from "../../components/GroupedList";
 import MapPictureChoices from "./MapPictureChoices";
 import MapLayers from "./MapLayers";
 import LookChoice from "./LookChoice";
@@ -39,7 +40,10 @@ import { useTerrainView, useTrueHeightView } from "../plan";
  */
 export default function MapCard() {
   return (
-    <div className="flex flex-col gap-5" data-testid="map-settings-groups">
+    // One section gap between them all, the tokens' xl (space.xl, 24),
+    // and each section's own rows a row gap (space.sm) under its pictures,
+    // as iOS Settings spaces its groups.
+    <div className="flex flex-col gap-6" data-testid="map-settings-groups">
       <ChartChoice />
       <OverlayChoice />
       <HeightsChoice />
@@ -68,24 +72,36 @@ function ChartChoice() {
         testId="base-chart-select"
         options={BASE_CHARTS.map((b) => ({ value: b.kind, label: b.label, ...chartPicture(b.kind) }))}
       />
+      {/* An inset grouped list's row, its edges the tiles' edges, as
+          iOS Settings sets a switch: the words a tap on the switch too. */}
       {prefs.base !== "none" && (
-        <div className="flex items-center justify-between gap-3 px-1">
-          <label htmlFor="tac-toggle" className={cn("text-foreground", TEXT.row)}>
-            {prefs.base === "sec" ? "Terminal Area Charts" : "IFR Area Charts"}
-          </label>
-          <Switch id="tac-toggle" checked={prefs.tac} onCheckedChange={prefs.setTac} data-testid="tac-toggle" />
-        </div>
+        <ListGroup>
+          <ListRow id="tac-toggle" title={prefs.base === "sec" ? "Terminal Area Charts" : "IFR Area Charts"}>
+            <Switch id="tac-toggle" checked={prefs.tac} onCheckedChange={prefs.setTac} data-testid="tac-toggle" />
+          </ListRow>
+        </ListGroup>
       )}
     </div>
   );
 }
+
+/** An empty map, the picture of None in both rows: the card's plain
+ *  surface under a faint grid of the look's hairline colour, so it reads
+ *  as a map with nothing drawn on it, where a blank white box read as a
+ *  picture that had not loaded (the owner's screenshot, 2026-11-14). */
+const EMPTY_MAP = cn(
+  "bg-muted",
+  "bg-[linear-gradient(var(--border)_1px,transparent_1px),linear-gradient(90deg,var(--border)_1px,transparent_1px)] bg-size-[0.75rem_0.75rem]",
+);
 
 /** The Google swatch: a picture of Google's land and water, not the
  *  app's look; its satellite's the same, darkened. */
 const GOOGLE_SWATCH = "bg-[linear-gradient(135deg,#a8d5f2,#d9ecd1)]";
 
 /**
- * Over the chart, at the pilot's ask (OverlayTiles), one row of pictures
+ * Under the chart, the base map (lib/prefs' overlay; the words were
+ * "Overlay" until 2026-11-14, the preference keeps its name), at the
+ * pilot's ask (OverlayTiles), one row of pictures
  * (the owner, 2026-11-13): none, the USGS's aerial imagery, or Google's
  * map or its satellite imagery where this deployment has a Google key --
  * Google's two its own pictures here, where they were one picture and a
@@ -104,12 +120,12 @@ function OverlayChoice() {
   return (
     <div className="flex flex-col gap-2">
       <MapPictureChoices
-        title="Overlay"
+        title="Base map"
         value={overlay}
         testId="overlay-select"
         onChange={(v) => prefs.setOverlay(v as MapOverlay)}
         options={[
-          { value: "none", label: "None", ...chartPicture(prefs.base), faded: true },
+          { value: "none", label: "None", className: EMPTY_MAP },
           { value: "usgs", label: "USGS", src: USGS_PICTURE },
           ...(google
             ? [
@@ -120,20 +136,21 @@ function OverlayChoice() {
         ]}
       />
       {overlay !== "none" && (
-        <div className="flex items-center justify-between gap-3 px-1">
-          <span className={cn("text-foreground", TEXT.row)}>Strength</span>
-          <Segmented
-            label="Strength"
-            value={prefs.overlayStrength}
-            onChange={(v) => prefs.setOverlayStrength(v as OverlayStrength)}
-            testId="overlay-strength"
-            options={[
-              { value: "faint", label: "Faint" },
-              { value: "half", label: "Half" },
-              { value: "full", label: "Full" },
-            ]}
-          />
-        </div>
+        <ListGroup>
+          <ListRow title="Strength">
+            <Segmented
+              label="Strength"
+              value={prefs.overlayStrength}
+              onChange={(v) => prefs.setOverlayStrength(v as OverlayStrength)}
+              testId="overlay-strength"
+              options={[
+                { value: "faint", label: "Faint" },
+                { value: "half", label: "Half" },
+                { value: "full", label: "Full" },
+              ]}
+            />
+          </ListRow>
+        </ListGroup>
       )}
       <GoogleProblem />
     </div>
@@ -159,9 +176,16 @@ function HeightsChoice() {
   const trueView = useTrueHeightView();
   if (!threeD) return null;
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between gap-3 px-1">
-        <span className={cn("text-foreground", TEXT.row)}>Heights</span>
+    <ListGroup
+      footer={
+        trueView && (
+          <span data-testid="heights-true">
+            {trueView === "pilot" ? "True height in the pilot's view" : "True height while a replay camera follows"}
+          </span>
+        )
+      }
+    >
+      <ListRow title="Heights">
         <Segmented
           label="Heights"
           value={String(stretch)}
@@ -169,17 +193,12 @@ function HeightsChoice() {
           testId="heights-stretch"
           options={HEIGHT_STRETCHES.map((k) => ({ value: String(k), label: `×${k}` }))}
         />
-      </div>
-      {trueView && (
-        <p className={cn("px-1 text-muted-foreground", TEXT.note)} data-testid="heights-true">
-          {trueView === "pilot" ? "True height in the pilot's view" : "True height while a replay camera follows"}
-        </p>
-      )}
-    </div>
+      </ListRow>
+    </ListGroup>
   );
 }
 
-/** Where it happens, under the overlay's pictures: a key restricted to
+/** Where it happens, under the base map's pictures: a key restricted to
  *  another site, the Map Tiles API off or no quota leave Google's map
  *  blank otherwise (useGoogleSession). */
 function GoogleProblem() {
@@ -193,19 +212,17 @@ function GoogleProblem() {
   );
 }
 
-/** The one tile the overlay's imagery picture is cut from, z/x/y: Chicago
+/** The one tile the base map's imagery picture is cut from, z/x/y: Chicago
  *  at zoom 9, where the charts' own pictures (public/map-tiles) are from. */
 const PICTURE_TILE = [9, 130, 190] as const;
 
 /** A chart's own picture, cut once from that tile of the 2026-10-29 cycle's
  *  @2x PMTiles (the planner image's pmtiles and Pillow: the tile's middle,
  *  16:9, 360 by 202, WebP) and kept with the app, so the card shows it
- *  with no request to the planner, offline too. None is the plain ground
- *  the map draws with no chart (BaseGl's PlainGround), in its own token. */
+ *  with no request to the planner, offline too. None is an empty map
+ *  (EMPTY_MAP), as the base map's None is. */
 const chartPicture = (kind: BaseChart): { src?: string; className?: string } =>
-  kind === "none"
-    ? { className: "bg-(--chart-map-ground) dark:bg-(--chart-map-ground-night)" }
-    : { src: `${import.meta.env.BASE_URL}map-tiles/${kind}.webp` };
+  kind === "none" ? { className: EMPTY_MAP } : { src: `${import.meta.env.BASE_URL}map-tiles/${kind}.webp` };
 /** The USGS's imagery of the same tile (OverlayTiles' service). */
 const USGS_PICTURE = USGS_URL.replace("{z}", String(PICTURE_TILE[0]))
   .replace("{x}", String(PICTURE_TILE[1]))
