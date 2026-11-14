@@ -10779,6 +10779,11 @@ enum EngineContract {
         }
     }
 
+    struct RouteWayWarningInput: Codable, Equatable, Sendable {
+        /// The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
+        var kinds: [String]
+    }
+
     /// A runway as the planner sends one.
     struct Runway: Codable, Equatable, Sendable {
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.

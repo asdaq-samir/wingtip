@@ -1166,6 +1166,11 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
   and `navlog_totals`, `features/plan/hooks/directOnDevice`), "Worked out
   on this device" under the Direct strip; where it cannot, the route is
   left as it was and "Not changed: no connection" is said.
+- Keep for the Air keeps the route's own answers -- its course,
+  checkpoints, nav log and briefing, by the addresses the page asked
+  (`lib/map/route/routeAnswers`) -- asked again through the worker, as the
+  page's first load asked them before the worker held it; a kept route
+  opened again offline plans from them (flight-critical.spec).
 - Keep for the Air keeps the map's overlay archive whole once a cycle,
   where the browser has room (`overlay-archive`, answered in ranges by
   Workbox's range-requests plugin), the route's side view, and the

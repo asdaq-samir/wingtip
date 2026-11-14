@@ -9,7 +9,7 @@ import { usePlanHistory } from "../../../hooks/use-plan-history";
 import { holdsOf, holdsParam } from "../lib/routeHolds";
 import { picksOf } from "../../../lib/flightLink";
 import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
-import { procedureQuery } from "../../../lib/queryClient";
+import { airportQuery, procedureQuery } from "../../../lib/queryClient";
 import type { PlanParams } from "./usePlan";
 import { departureRunways, landingRunways, namesRoute, type PlannedRoute } from "./planAddress";
 import { drawnOnly } from "./useProcedurePicks";
@@ -106,7 +106,16 @@ export function usePlanRoute() {
   // after the render that would otherwise have asked for the nav log
   // without them (the store read here, after them). A route not settled
   // yet -- each new one -- waits that one commit.
-  const settlingNow = picksComing || windPending;
+  // The route's fields' cards too, whose reports the runways are picked
+  // into the wind from: the route list that picks them may be drawn after
+  // the plan is first asked for, and the cards are asked for with the
+  // route in any case.
+  const fieldIdents = routeFields.split(",").filter(Boolean);
+  const cardsComing = useQueries({
+    queries: fieldIdents.map((ident) => airportQuery(ident)),
+    combine: (rs) => rs.some((r) => r.isPending && r.fetchStatus !== "idle"),
+  });
+  const settlingNow = picksComing || windPending || cardsComing;
   const settledFor = useWindPicks((w) => w.settledFor);
   useEffect(() => {
     useWindPicks.setState({ settledFor: !settlingNow && !useWindPicks.getState().pending ? routeFields : null });

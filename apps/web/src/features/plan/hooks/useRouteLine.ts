@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, type Dispatch, type SetStateAction } from "react";
 import type { RouteChip, RouteOptions } from "../../../lib/api/types";
 import { duration } from "../../../lib/format";
+import { callEngine } from "../../../lib/engine/engine";
 import type { RouteWay } from "../../../lib/map/route/routeWays";
 import { useRouteLineOpen } from "../lib/routeLine";
 import { gridScale, sameStops, wayTime } from "../lib/routeWays";
@@ -26,15 +27,17 @@ interface WayCard {
   gal: number | null;
 }
 
-/** A way as the engine answers it (route_options' RouteOption), its one
- *  warning with it: the worst it crosses, in the engine's words, ranked
- *  there -- a prohibited area or a TFR, a restricted area, storms, high
- *  ground, a SIGMET, no fuel stop in reach, other weather, then a warning
- *  area, a MOA and an alert area (14 CFR 91.133, 91.137-91.145; AIM 3-4).
- *  The web ranked its own copy, which named no restricted area or MOA.
- *  TODO(claude/planner-follow): the planner's RouteOption schema gains
- *  `warning`; read it from the generated type once it is there. */
-type Way = NonNullable<RouteOptions["own"]> & { warning?: string | null };
+/** What a chip's way meets, said on it: the worst it crosses, the
+ *  engine's words and ranking (route_way_warning, the same rule as each
+ *  route option's `warning`) -- a prohibited area or a TFR, a restricted
+ *  area, storms, high ground, a SIGMET, no fuel stop in reach, other
+ *  weather, then a warning area, a MOA and an alert area (14 CFR 91.133,
+ *  91.137-91.145; AIM 3-4). From the chip's own crossings, so the route
+ *  as typed says it too. The web ranked its own copy (wayWarning), which
+ *  named no restricted area or MOA. */
+function wayWarning(hazards: RouteOptions["hazards"], crosses: number[]): string | null {
+  return callEngine("route_way_warning", { kinds: crosses.flatMap((i) => (hazards[i] ? [hazards[i].kind] : [])) });
+}
 
 /**
  * The route line's cards (useRouteLine), each way's whole time as its line
@@ -66,13 +69,10 @@ export function wayCards({
   typedNm: number | null;
   typedGal: number | null;
 }): WayCard[] | null {
+  const hazards = routeWays?.hazards ?? [];
   const scale = gridScale(routeWays, minutes);
-  const wayOf = (chip: RouteChip): Way | undefined =>
-    (chip.key === "fuel" ? routeWays?.own : routeWays?.options.find((o) => sameStops(o.stops, chip.stops))) ?? undefined;
-  // The route as typed is the planner's own way where its stops are the
-  // typed ones, for its warning.
-  const typedWay = (chip: RouteChip): Way | undefined =>
-    routeWays?.own && sameStops(routeWays.own.stops, chip.stops) ? routeWays.own : undefined;
+  const wayOf = (chip: RouteChip) =>
+    chip.key === "fuel" ? routeWays?.own : routeWays?.options.find((o) => sameStops(o.stops, chip.stops));
   const timeOf = (chip: RouteChip): string | null => {
     if (chip.key === "none") return minutes === null ? null : duration(minutes + ground);
     const way = wayOf(chip);
@@ -88,7 +88,7 @@ export function wayCards({
     .map((c) => ({
       key: c.key,
       label: c.key === "none" ? "As typed" : c.label,
-      warning: (c.key === "none" ? typedWay(c) : wayOf(c))?.warning ?? null,
+      warning: wayWarning(hazards, c.crosses ?? []),
       time: timeOf(c),
       ...figuresOf(c),
     }))

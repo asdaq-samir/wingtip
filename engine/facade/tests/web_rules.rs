@@ -121,3 +121,11 @@ fn the_go_no_go_route_figures() {
         assert_same(&ask("gonogo_route_figures", case["input"].clone()), &case["answer"], &case["about"]);
     }
 }
+
+/// A way's warning, the worst it crosses, for every app (route_way_warning).
+#[test]
+fn a_ways_warning_is_the_worst_it_crosses() {
+    for case in fixture()["routeWayWarning"].as_array().unwrap() {
+        assert_eq!(ask("route_way_warning", json!({ "kinds": case["kinds"] })), case["warning"], "{}", case["about"]);
+    }
+}

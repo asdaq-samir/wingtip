@@ -10898,6 +10898,14 @@ object EngineContract {
         val fuelGal: Double? = null,
     )
 
+    @Serializable
+    data class RouteWayWarningInput(
+        /**
+         * The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
+         */
+        val kinds: List<String>,
+    )
+
     /**
      * A runway as the planner sends one.
      */

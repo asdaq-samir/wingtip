@@ -53,33 +53,14 @@ pub fn special_use(grid: &mut Grid, areas: &[Airspace]) {
     }
 }
 
-/// The order a way's card says what it meets in, worst first: airspace a
-/// pilot may not enter (prohibited, a TFR) or not without permission while
-/// it is active (restricted), then storms and high ground, a SIGMET, no
-/// fuel in reach, other weather, and last the areas flown through with a
-/// caution (warning, MOA, alert).
-const ORDER: [&str; 11] = ["prohibited", "tfr", "restricted", "storm", "terrain", "sigmet", "fuel", "weather", "warning", "moa", "alert"];
-
 /// A way's card's one warning, the worst of what it crosses (`crosses`,
 /// indexes into `hazards`), None where it crosses nothing: the engine's
-/// words for every app (they were the web's wayWarning), each way's
-/// `warning` in route_options' answer.
+/// words for every app (route::way_warning, its order and its sources),
+/// each way's `warning` in route_options' answer.
 pub fn way_warning(hazards: &[Hazard], crosses: &[i64]) -> Option<&'static str> {
-    let rank = |kind: &str| ORDER.iter().position(|k| *k == kind).unwrap_or(7);
-    let worst = crosses.iter().filter_map(|&i| usize::try_from(i).ok().and_then(|i| hazards.get(i))).min_by_key(|h| rank(&h.kind))?;
-    Some(match worst.kind.as_str() {
-        "fuel" => "No fuel stop in reach",
-        "prohibited" => "Crosses a prohibited area",
-        "tfr" => "Crosses a TFR",
-        "restricted" => "Crosses a restricted area",
-        "storm" => "Crosses storms",
-        "terrain" => "Crosses high ground",
-        "sigmet" => "Crosses a SIGMET",
-        "warning" => "Crosses a warning area",
-        "moa" => "Crosses a MOA",
-        "alert" => "Crosses an alert area",
-        _ => "Crosses weather",
-    })
+    crate::route::way_warning::worst(
+        crosses.iter().filter_map(|&i| usize::try_from(i).ok().and_then(|i| hazards.get(i))).map(|h| h.kind.as_str()),
+    )
 }
 
 #[cfg(test)]

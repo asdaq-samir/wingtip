@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_route::route::way_warning::call",
+  "description": "A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- \"Crosses a restricted area\", \"Crosses a MOA\" ...; null where nothing is crossed.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RouteWayWarningInput",
+      "type": "object",
+      "properties": {
+        "kinds": {
+          "description": "The kinds of the hazards the way crosses (RouteOptionsHazard's kind).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "kinds"
+      ]
+    },
+    "answer": {
+      "title": "RouteWayWarningAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ]
+}

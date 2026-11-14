@@ -1879,6 +1879,12 @@ fun Engine.routePosition(at: EngineContract.RoutePositionInputAt, line: List<Lis
     rule("route_position", EngineContract.RoutePositionInput(at = at, line = line, points = points, legs = legs))
 
 /**
+ * A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where nothing is crossed.
+ */
+fun Engine.routeWayWarning(kinds: List<String>): Result<String?> =
+    rule("route_way_warning", EngineContract.RouteWayWarningInput(kinds = kinds))
+
+/**
  * Whether a runway's wind is a calm one: no head-, cross- or gust's crosswind.
  */
 fun Engine.runwayCalm(wind: EngineContract.RunwayCalmInputWind): Result<Boolean> =

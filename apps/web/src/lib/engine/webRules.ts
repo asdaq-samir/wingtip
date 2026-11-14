@@ -192,6 +192,7 @@ export const WEB_RULES = [
   "registered_profile",
   "replay_track",
   "route_position",
+  "route_way_warning",
   "runway_calm",
   "runway_crosswind",
   "runway_end_fit",

@@ -385,5 +385,11 @@
     {"about": "the least margin of the route and its two flights; the route's own required fuel and reserve; one of two TFRs crossed in force", "input": {"totals": {"fuel_margin_gal": 12.0, "fuel_required_gal": 30.0, "reserve_min": 30, "hops": [{"totals": {"fuel_margin_gal": 4.5, "fuel_required_gal": 14.0, "reserve_min": 30}}, {"totals": {"fuel_margin_gal": 9.0, "fuel_required_gal": 16.0, "reserve_min": 30}}]}, "tfr_count": 2, "crossed": ["6/1234"]}, "answer": {"least_margin_gal": 4.5, "required_gal": 30.0, "reserve_min": 30, "tfrs_in_force": ["6/1234"], "tfrs_near": 1}},
     {"about": "no figure of the route's own: the most any flight needs, the first flight's reserve (45 minutes, by night: 91.151(a)(2))", "input": {"totals": {"fuel_margin_gal": null, "fuel_required_gal": null, "reserve_min": null, "hops": [{"totals": {"fuel_margin_gal": null, "fuel_required_gal": 18.0, "reserve_min": 45}}, {"totals": {"fuel_margin_gal": null, "fuel_required_gal": 22.0, "reserve_min": 30}}]}, "tfr_count": 0, "crossed": []}, "answer": {"least_margin_gal": null, "required_gal": 22.0, "reserve_min": 45, "tfrs_in_force": [], "tfrs_near": 0}},
     {"about": "before the nav log, nothing", "input": {"totals": null, "tfr_count": null, "crossed": []}, "answer": {"least_margin_gal": null, "required_gal": null, "reserve_min": null, "tfrs_in_force": [], "tfrs_near": 0}}
+  ],
+  "routeWayWarning": [
+    {"about": "a restricted area before a MOA (91.133(a), AIM 3-4-3 and 3-4-5)", "kinds": ["moa", "restricted"], "warning": "Crosses a restricted area"},
+    {"about": "a TFR before a SIGMET (91.137-91.145)", "kinds": ["sigmet", "tfr"], "warning": "Crosses a TFR"},
+    {"about": "a kind not ranked is other weather", "kinds": ["icing"], "warning": "Crosses weather"},
+    {"about": "nothing crossed, no warning", "kinds": [], "warning": null}
   ]
 }

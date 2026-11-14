@@ -60,17 +60,22 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   const rows = card.getByTestId("nearest-airport");
   await expect(rows).toHaveCount(3, { timeout: slow(15000) });
-  await expect(rows.nth(2)).toContainText("joint use");
+  // Nearest first, measured from the airplane's own fix (the engine's
+  // geodesic), not the planner's rounded point (WEB-3): Libby AAF, 8.9 nm,
+  // before Waukegan's 11.
+  await expect(rows.nth(1)).toContainText("KFHU");
+  await expect(rows.nth(1)).toContainText("joint use");
   // Each row its weather, its runway and its listed frequency, and
   // how far and which way, its arrow pointing there (north up, the
   // airplane not moving).
-  await expect(rows.nth(1)).toContainText("VFR");
-  await expect(rows.nth(1)).toContainText("3,500 ft · TWR 120.4");
-  await expect(rows.nth(1)).toContainText("11 nm");
-  await expect(rows.nth(1)).toContainText("NE");
-  await expect(rows.nth(1).getByTestId("nearest-arrow")).toHaveAttribute("style", /rotate\(55deg\)/);
+  const kugn = rows.nth(2);
+  await expect(kugn).toContainText("VFR");
+  await expect(kugn).toContainText("3,500 ft · TWR 120.4");
+  await expect(kugn).toContainText("11 nm");
+  await expect(kugn).toContainText("NE");
+  await expect(kugn.getByTestId("nearest-arrow")).toHaveAttribute("style", /rotate\(5[4-6](\.\d+)?deg\)/);
 
-  await rows.nth(1).click();
+  await kugn.click();
   await expect(sideDrawer(page).getByTestId("place-card")).toBeVisible();
   await closeCard(page, "place-close");
   await expect(card).toBeVisible();
