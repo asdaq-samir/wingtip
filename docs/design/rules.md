@@ -729,16 +729,15 @@ way: three homes, and every control in one of them.
    Aloft, Radar and Model Weather as submenus, each off by default),
    Traffic, and Private & Military (drawn whatever it says while the
    Emergency Assistant is open), two by two, every tile one size and
-   every name on one line; then Look, four tiles: Theme, Appearance and
+   every name on one line; then Look's tiles: Theme, Appearance and
    Sunlight, each its value under its name and a tap its menu, Sunlight
-   in the tint while On, and Position, own ship on the map, the location
-   arrow's on and off, in the tint while on, asking for the position as the
-   welcome does (Sunlight was Settings' Display until the owner's
+   in the tint while On; the fourth, the sheet's Position (Top or
+   Bottom, the owner, 2026-11-14), is to come, as a phone's sheet is only
+   at the bottom since 2026-11-13 (Sunlight was Settings' Display until the owner's
    "Sunlight should also move to map settings", 2026-11-14; Settings has
    no Display now). Every section is four tiles two by two in the layers'
    size and form, the sections lined up (the owner, 2026-11-14: "every
-   section should have 4 tiles like Layers one. The fourth tile for look
-   can be position"): the Chart and Base map tiles their picture as the
+   section should have 4 tiles like Layers one"): the Chart and Base map tiles their picture as the
    face and their name on one line in the name's place, the one picked
    marked as a layer that is on, both Nones an empty map (the surface
    under a faint grid); Strength and Heights rows of an inset grouped
