@@ -46,9 +46,9 @@ import app.wingtipmaps.android.search.Remembered
 import app.wingtipmaps.android.search.SearchMemory
 import app.wingtipmaps.android.ui.card.CardTabBar
 import app.wingtipmaps.android.ui.card.CardTabBarRoom
-import app.wingtipmaps.android.ui.card.cardFoot
 import app.wingtipmaps.android.ui.card.Status
 import app.wingtipmaps.android.ui.card.StatusBadge
+import app.wingtipmaps.android.ui.card.cardFoot
 import app.wingtipmaps.android.ui.card.rememberCardFoot
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage

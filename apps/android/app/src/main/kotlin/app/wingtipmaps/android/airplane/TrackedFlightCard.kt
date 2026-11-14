@@ -40,8 +40,8 @@ import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.card.CardTab
 import app.wingtipmaps.android.ui.card.CardTabBar
 import app.wingtipmaps.android.ui.card.CardTabBarRoom
-import app.wingtipmaps.android.ui.card.cardFoot
 import app.wingtipmaps.android.ui.card.StatusBadge
+import app.wingtipmaps.android.ui.card.cardFoot
 import app.wingtipmaps.android.ui.card.rememberCardFoot
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
