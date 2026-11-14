@@ -31,7 +31,7 @@ export const DATA_SOURCES: { name: string; licence: string; href?: string }[] = 
   },
   { name: "USGS The National Map imagery", licence: PUBLIC_DOMAIN },
   { name: "US Census Bureau geocoder and gazetteer", licence: PUBLIC_DOMAIN },
-  { name: "OurAirports: runways, frequencies and fields abroad", licence: PUBLIC_DOMAIN, href: "https://ourairports.com/data/" },
+  { name: "OurAirports: fields abroad, fields NASR does not list, and field sizes", licence: PUBLIC_DOMAIN, href: "https://ourairports.com/data/" },
   { name: "Overture Maps places: services near a field", licence: "CDLA Permissive 2.0", href: "https://cdla.dev/permissive-2-0/" },
   { name: "adsb.lol ADS-B traffic", licence: "ODbL 1.0", href: "https://opendatacommons.org/licenses/odbl/1-0/" },
   { name: "ADS-B Exchange traffic", licence: "ADS-B Exchange's API terms", href: "https://www.adsbexchange.com" },

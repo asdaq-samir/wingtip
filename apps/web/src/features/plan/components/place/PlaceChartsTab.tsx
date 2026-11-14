@@ -1,3 +1,4 @@
+import { faaWords } from "../../../../lib/advisories";
 import { PlaneLanding, PlaneTakeoff, Route } from "lucide-react";
 import { PillSection } from "../../../../components/Favorites";
 import { FirstFew } from "../../../../components/FirstFew";

@@ -23,7 +23,7 @@ the terms it is used under.
 | NOAA GOES East and West satellite loop, via NOAA nowCOAST; not for navigation, check official weather | Public domain | As above for NOAA's; nowCOAST asks no fees and sets no constraints |
 | USGS The National Map imagery | Public domain | As above; the aerial imagery close in on the web and Android, "Imagery USGS The National Map" |
 | US Census Bureau geocoder and gazetteer | Public domain | As above |
-| OurAirports: runways, frequencies and fields abroad | Public domain | OurAirports dedicates its data to the public domain |
+| OurAirports: fields abroad, fields NASR does not list, and field sizes (runways, elevation and frequencies are NASR's wherever NASR lists the field) | Public domain | OurAirports dedicates its data to the public domain |
 | Overture Maps places: services near a field | CDLA Permissive 2.0 | The licence asks that its terms go with the data |
 | adsb.lol ADS-B traffic | ODbL 1.0 | ODbL 4.3 asks for this credit |
 | ADS-B Exchange traffic | ADS-B Exchange's API terms | Credited as its terms ask |

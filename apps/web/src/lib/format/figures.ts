@@ -96,9 +96,12 @@ export function feetRange(alts: number[]): string {
   return low === high ? `${altFt(low)} ft` : `${altFt(low)}–${altFt(high)} ft`;
 }
 
-/** Statute miles as reported: "2.5 sm". */
-export function miles(sm: number | null | undefined): string {
-  return sm === null || sm === undefined ? "—" : `${sm} sm`;
+/** Statute miles as reported: "2.5 sm", and "6+ sm" where the report
+ *  says more than that (a METAR's P6SM, FAA JO 7900.5; the engine's
+ *  visibility_plus): it printed a bare "6 sm" (the commonality audit's
+ *  FIG-3, CODE-12). */
+export function miles(sm: number | null | undefined, plus = false): string {
+  return sm === null || sm === undefined ? "—" : `${sm}${plus ? "+" : ""} sm`;
 }
 
 /**

@@ -289,7 +289,7 @@ export default function PlaceCard({
   const weatherLine = metar
     ? [
         placeWind(metar),
-        metar.visibility_sm != null ? miles(metar.visibility_sm) : null,
+        metar.visibility_sm != null ? miles(metar.visibility_sm, metar.visibility_plus ?? false) : null,
         metar.ceiling_ft == null ? "No ceiling" : `Ceiling ${feet(metar.ceiling_ft)}`,
       ]
         .filter(Boolean)

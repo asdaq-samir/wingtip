@@ -124,7 +124,7 @@ export function PlaceWeatherTab({
                     </RowBadge>
                   }
                   title="Visibility"
-                  value={<span className="font-semibold text-foreground">{miles(metar.visibility_sm)}</span>}
+                  value={<span className="font-semibold text-foreground">{miles(metar.visibility_sm, metar.visibility_plus ?? false)}</span>}
                 />
                 <ListRow
                   media={
