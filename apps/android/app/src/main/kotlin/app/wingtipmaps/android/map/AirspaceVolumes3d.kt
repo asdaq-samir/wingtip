@@ -1,9 +1,14 @@
 package app.wingtipmaps.android.map
 
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipMap
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.airspaceShelfLabel
 import app.wingtipmaps.android.engine.generated.airspaceVolumeSpan
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import app.wingtipmaps.android.format.Units
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -104,8 +109,57 @@ object AirspaceVolumes3d {
         ),
     )
 
-    /** The engine's floor and top, ft MSL (Engine.rule logs a failure). */
-    private fun engineSpan(input: EngineContract.AirspaceVolumeSpanInput) = Engine.airspaceVolumeSpan(input.floor, input.ceiling, input.ground)
+    /** The engine's floor and top, ft MSL, and whether the volume holds
+     *  any of the plan's altitudes (Engine.rule logs a failure). */
+    private fun engineSpan(input: EngineContract.AirspaceVolumeSpanInput) = Engine.airspaceVolumeSpan(input.floor, input.ceiling, input.ground, input.altitudesFt)
+
+    /** The plan's altitudes, ft MSL, the volumes are held against: each
+     *  leg's own (the nav log's), set as the plan changes (MapPane); null
+     *  with no plan, when nothing fades (the web's planAltitudes). */
+    private val _planAltitudes = MutableStateFlow<List<Double>?>(null)
+    val planAltitudes: StateFlow<List<Double>?> = _planAltitudes.asStateFlow()
+
+    fun planAltitudes(legsFt: List<Double?>) {
+        val ft = legsFt.filterNotNull().map { Math.round(it).toDouble() }.distinct()
+        _planAltitudes.value = ft.ifEmpty { null }
+    }
+
+    /** How strongly a volume is drawn: as its kind with no plan, stronger
+     *  where it holds the plan's altitudes, fainter where it does not (the
+     *  tokens' airspace-held and -faded); one extrusion layer each, as a
+     *  layer's opacity is its own, not a feature's. */
+    enum class Strength(val times: Double) { NONE(1.0), HELD(WingtipMap.AIRSPACE_HELD), FADED(WingtipMap.AIRSPACE_FADED) }
+
+    /**
+     * A volume's colour: its class's ink mixed toward the tokens' dark
+     * (airspace-floor-low) at a surface floor and toward their light
+     * (airspace-floor-high) at airspace-shade-top-ft and over, through the
+     * ink itself half way, so a Class B's shelves step up in shade as they
+     * do in altitude (the owner, 2026-11-14: "the class B airspace shelves
+     * are not differentiating altitudes"; the web's shadeOf). "#rrggbb".
+     */
+    fun shadeOf(ink: String, floorFt: Double): String {
+        val t = (floorFt / WingtipMap.AIRSPACE_SHADE_TOP_FT).coerceIn(0.0, 1.0)
+        val (toward, by) = if (t < 0.5) WingtipColors.Chart.AIRSPACE_FLOOR_LOW_HEX to (0.5 - t) * 2 else WingtipColors.Chart.AIRSPACE_FLOOR_HIGH_HEX to (t - 0.5) * 2
+        val a = rgb(ink)
+        val b = rgb(toward)
+        val k = by * WingtipMap.AIRSPACE_SHADE_MIX
+        val mixed = a.indices.map { i -> Math.round(a[i] + (b[i] - a[i]) * k).toInt() }
+        return String.format(java.util.Locale.US, "#%02x%02x%02x", mixed[0], mixed[1], mixed[2])
+    }
+
+    private fun rgb(hex: String): List<Int> = hex.removePrefix("#").let { h -> listOf(0, 2, 4).map { h.substring(it, it + 2).toInt(16) } }
+
+    /** A shelf's altitudes as the sectional writes them, its ceiling over
+     *  its floor in hundreds ("100\n30"), the engine's
+     *  `airspace_shelf_label`; null for what the chart writes none for (a
+     *  Class E surface area, a special use area, a TFR). */
+    fun shelfText(p: JsonObject): String? {
+        if (text(p["layer"]) != "airspace") return null
+        val cls = text(p["class"]) ?: return null
+        return Engine.airspaceShelfLabel(cls, number(p["floor_ft"]), text(p["floor_ref"]), number(p["ceiling_ft"]), (p["ceiling_excluded"] as? JsonPrimitive)?.content == "true")
+            .getOrNull()?.text
+    }
 
     /**
      * The planner's features as one GeoJSON collection for the
@@ -116,6 +170,7 @@ object AirspaceVolumes3d {
     fun geoJson(
         features: JsonArray,
         appZoom: Double,
+        altitudes: List<Double>? = null,
         span: (EngineContract.AirspaceVolumeSpanInput) -> Result<EngineContract.AirspaceVolumeSpanAnswer?> = ::engineSpan,
     ): String = buildJsonObject {
         put("type", "FeatureCollection")
@@ -129,7 +184,12 @@ object AirspaceVolumes3d {
                 if (appZoom < ink.from) continue
                 // Nothing to draw, or a rule that failed (logged): the
                 // volume is left out rather than drawn at a guess.
-                val v = span(spanInput(p)).getOrNull() ?: continue
+                val v = span(spanInput(p).copy(altitudesFt = altitudes)).getOrNull() ?: continue
+                val strength = when (v.holds) {
+                    null -> Strength.NONE
+                    true -> Strength.HELD
+                    false -> Strength.FADED
+                }
                 add(
                     buildJsonObject {
                         put("type", "Feature")
@@ -139,12 +199,63 @@ object AirspaceVolumes3d {
                             put("kind", kind)
                             put("base_m", v.floorFt * Units.M_PER_FT)
                             put("height_m", v.ceilingFt * Units.M_PER_FT)
+                            put("floor_ft", v.floorFt)
+                            put("shade", shadeOf(ink.hex, v.floorFt))
+                            put("strength", strength.name)
                         }
                     },
                 )
             }
         }
     }.toString()
+
+    /**
+     * One label a shelf, its altitudes (shelfText) at the southernmost
+     * point of its ring, the camera's side when the map faces north: its
+     * words, its class for its tab, its floor (the lower placed first) and
+     * whether the plan is at it. MapLibre Native lifts no symbol off the
+     * ground, so the label stands at the shelf's foot on the chart, where
+     * the web's stands on its top.
+     */
+    fun shelfLabels(features: JsonArray, altitudes: List<Double>? = null): String = buildJsonObject {
+        put("type", "FeatureCollection")
+        putJsonArray("features") {
+            for (element in features) {
+                val f = element as? JsonObject ?: continue
+                val p = f["properties"] as? JsonObject ?: continue
+                val words = shelfText(p) ?: continue
+                val at = southernmost(f["geometry"] as? JsonObject) ?: continue
+                val held = altitudes == null || engineSpan(spanInput(p).copy(altitudesFt = altitudes)).getOrNull()?.holds != false
+                add(
+                    buildJsonObject {
+                        put("type", "Feature")
+                        putJsonObject("geometry") {
+                            put("type", "Point")
+                            putJsonArray("coordinates") { add(JsonPrimitive(at.first)); add(JsonPrimitive(at.second)) }
+                        }
+                        putJsonObject("properties") {
+                            put("text", words)
+                            put("class", text(p["class"]))
+                            put("floor_ft", number(p["floor_ft"]) ?: 0.0)
+                            put("held", held)
+                        }
+                    },
+                )
+            }
+        }
+    }.toString()
+
+    /** The southernmost point of a polygon's or multipolygon's outer rings. */
+    private fun southernmost(geometry: JsonObject?): Pair<Double, Double>? {
+        val coords = geometry?.get("coordinates") as? JsonArray ?: return null
+        val rings = when (text(geometry["type"])) {
+            "Polygon" -> listOfNotNull(coords.firstOrNull() as? JsonArray)
+            "MultiPolygon" -> coords.mapNotNull { (it as? JsonArray)?.firstOrNull() as? JsonArray }
+            else -> emptyList()
+        }
+        return rings.flatMap { ring -> ring.mapNotNull { pt -> (pt as? JsonArray)?.let { a -> number(a.getOrNull(0))?.let { lon -> number(a.getOrNull(1))?.let { lat -> lon to lat } } } } }
+            .minByOrNull { it.second }
+    }
 
     private fun text(v: JsonElement?): String? = (v as? JsonPrimitive)?.takeIf { it.isString || it.content != "null" }?.content?.ifEmpty { null }
 

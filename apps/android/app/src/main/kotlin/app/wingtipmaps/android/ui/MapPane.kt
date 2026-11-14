@@ -49,6 +49,7 @@ import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.GlideRing
 import app.wingtipmaps.android.flight.StartFlightAsk
+import app.wingtipmaps.android.map.AirspaceVolumes3d
 import app.wingtipmaps.android.map.AirportWeatherMarks
 import app.wingtipmaps.android.map.AirportWeatherMode
 import app.wingtipmaps.android.map.AirportWeatherStore
@@ -206,6 +207,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         ship.fix.collect { taken -> flight.took(if (ownShip.on) taken else null, planNow) }
     }
     LaunchedEffect(ahead) { flight.hear(ahead) }
+    // The plan's legs' altitudes, which the 3D airspace is held against.
+    LaunchedEffect(state.legs) { AirspaceVolumes3d.planAltitudes(state.legs.map { it.altitudeFt }) }
     // While the emergency assistant is open, the line from the airplane
     // to the field it picked (the same model EmergencyCard holds).
     val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()

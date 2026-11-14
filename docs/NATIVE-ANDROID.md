@@ -282,6 +282,15 @@ and `glOverlays.ts`):
   the route's destination (the engine's `approach_scene`,
   `ApproachScene3d`: the centrelines dashed, the glidepaths, the
   approach's line and the pattern's ring). Flat and north up again after.
+  As the web's since claude/3d-altitudes (the owner, 2026-11-14: "the
+  class B airspace shelves are not differentiating altitudes"): each
+  volume is shaded by its floor within its class's ink (the tokens'
+  `airspace-floor-low` and `-high`, `airspace-shade-*`); with a plan, its
+  legs' altitudes go to `airspace_volume_span` and a volume at them is
+  drawn stronger, the rest fainter (`airspace-held`, `-faded`; one layer a
+  kind and strength); and each Class B, C or D shelf carries its
+  altitudes in the chart's tab (`airspace_shelf_label`, "100" over "30"),
+  standing at its foot on the camera's side, as Native lifts no symbol.
 - **What MapLibre Native can't do yet** (13.7.1, the newest stable on
   2026-11-12; the `-globe` pre-releases add only the globe): no 3D
   terrain (no `terrain` in the style or `setTerrain`; MapLibre's

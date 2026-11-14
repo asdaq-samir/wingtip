@@ -60,6 +60,7 @@ object Map3dLayer {
     private const val DEM = "terrain-dem"
     private const val HILLSHADE = "terrain-hillshade"
     private const val VOLUMES = "airspace-3d"
+    private const val SHELF_LABELS = "airspace-3d-labels"
     private const val APPROACH = "approach-3d"
     private const val APPROACH_LINE = "approach-3d-line"
     private const val APPROACH_DASH = "approach-3d-centreline"
@@ -80,6 +81,10 @@ object Map3dLayer {
     private var mode = TerrainMode.OFF
     private var field: String? = null
     private var volumes: String? = null
+    private var labels: String? = null
+    /** The planner's last answer and the zoom it was read at, read again
+     *  for the plan's altitudes as they change. */
+    private var answered: Pair<kotlinx.serialization.json.JsonArray, Double>? = null
     private var asked: Pair<AirspaceVolumes3d.Box, List<String>>? = null
     private var scene: String? = null
     private var sceneOf: String? = null
@@ -94,6 +99,10 @@ object Map3dLayer {
             override fun onViewAttachedToWindow(v: View) {
                 val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
                 scope = s
+                s.launch {
+                    // The plan's altitudes changed: the volumes held against them again.
+                    AirspaceVolumes3d.planAltitudes.collect { reread(view) }
+                }
                 job = s.launch {
                     terrain.mode.combine(MapTerrain.field) { m, f -> m to f }.collect { (m, f) ->
                         val turned = m != mode
@@ -127,9 +136,8 @@ object Map3dLayer {
             try {
                 val (b, classes) = want
                 val answer = Planner.api.airspaceVolumesIn(b.south, b.west, b.north, b.east, classes.joinToString(",")).planned()
-                // Read off the main thread: each polygon's floor and ceiling is asked of the engine.
-                volumes = withContext(Dispatchers.Default) { AirspaceVolumes3d.geoJson(answer.features, appZoom) }
-                redraw(view, camera = false)
+                answered = answer.features to appZoom
+                reread(view)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
@@ -137,6 +145,19 @@ object Map3dLayer {
                 asked = null
             }
         }
+    }
+
+    /** The volumes and their shelves' labels read from the last answer,
+     *  off the main thread: each polygon's floor and ceiling, and whether
+     *  it holds the plan's altitudes, is asked of the engine. */
+    private suspend fun reread(view: MapView) {
+        val (features, appZoom) = answered ?: return
+        val altitudes = AirspaceVolumes3d.planAltitudes.value
+        withContext(Dispatchers.Default) {
+            volumes = AirspaceVolumes3d.geoJson(features, appZoom, altitudes)
+            labels = AirspaceVolumes3d.shelfLabels(features, altitudes)
+        }
+        redraw(view, camera = false)
     }
 
     /** The field's way in, its card's answer and the engine's scene. */
@@ -193,6 +214,7 @@ object Map3dLayer {
         relief(style, mode != TerrainMode.OFF)
         val three = mode == TerrainMode.THREE_D
         volumes(style, if (three) volumes else null)
+        shelfLabels(style, if (three) labels else null)
         approach(style, if (three) scene else null)
     }
 
@@ -225,11 +247,13 @@ object Map3dLayer {
         if (top != null) style.addLayerAbove(layer, top) else below(style, layer)
     }
 
-    /** The volumes, one extrusion layer a kind: MapLibre's
+    /** The volumes, one extrusion layer a kind and strength: MapLibre's
      *  fill-extrusion-opacity is the layer's alone, not a feature's, so
-     *  each kind's see-through is its own layer's. */
+     *  each kind's see-through, stronger where the plan is at it and
+     *  fainter where not (the tokens' airspace-held and -faded), is its own
+     *  layer's; each volume's colour its floor's shade (shadeOf). */
     private fun volumes(style: Style, json: String?) {
-        val ids = AirspaceVolumes3d.KINDS.keys.map { "$VOLUMES-$it" }
+        val ids = AirspaceVolumes3d.KINDS.keys.flatMap { k -> AirspaceVolumes3d.Strength.entries.map { "$VOLUMES-$k-${it.name}" } }
         if (json == null) {
             ids.forEach { id -> style.getLayer(id)?.let(style::removeLayer) }
             style.getSource(VOLUMES)?.let(style::removeSource)
@@ -238,18 +262,58 @@ object Map3dLayer {
         val source = style.getSourceAs<GeoJsonSource>(VOLUMES)
         if (source != null) source.setGeoJson(json) else style.addSource(GeoJsonSource(VOLUMES, json))
         for ((kind, ink) in AirspaceVolumes3d.KINDS) {
-            val id = "$VOLUMES-$kind"
-            if (style.getLayer(id) != null) continue
-            val layer = FillExtrusionLayer(id, VOLUMES).withProperties(
-                PropertyFactory.fillExtrusionColor(ink.hex.toColorInt()),
-                PropertyFactory.fillExtrusionOpacity(ink.opacity),
-                PropertyFactory.fillExtrusionBase(Expression.get("base_m")),
-                PropertyFactory.fillExtrusionHeight(Expression.get("height_m")),
-                PropertyFactory.fillExtrusionVerticalGradient(false),
-            )
-            layer.setFilter(Expression.eq(Expression.get("kind"), Expression.literal(kind)))
-            below(style, layer)
+            for (strength in AirspaceVolumes3d.Strength.entries) {
+                val id = "$VOLUMES-$kind-${strength.name}"
+                if (style.getLayer(id) != null) continue
+                val layer = FillExtrusionLayer(id, VOLUMES).withProperties(
+                    PropertyFactory.fillExtrusionColor(Expression.toColor(Expression.get("shade"))),
+                    PropertyFactory.fillExtrusionOpacity(minOf(1f, (ink.opacity * strength.times).toFloat())),
+                    PropertyFactory.fillExtrusionBase(Expression.get("base_m")),
+                    PropertyFactory.fillExtrusionHeight(Expression.get("height_m")),
+                    PropertyFactory.fillExtrusionVerticalGradient(false),
+                )
+                layer.setFilter(Expression.all(Expression.eq(Expression.get("kind"), Expression.literal(kind)), Expression.eq(Expression.get("strength"), Expression.literal(strength.name))))
+                below(style, layer)
+            }
         }
+    }
+
+    /** Each shelf's altitudes in the 2D chart's airspace tab (a dark tab
+     *  bordered in its class's ink, OverlayPictures), facing the screen,
+     *  kept off each other by MapLibre's collision: Class B first, then C
+     *  and D, the lower floor first; a shelf the plan is not at fainter
+     *  (the tokens' airspace-label-faded), still legible. */
+    private fun shelfLabels(style: Style, json: String?) {
+        if (json == null) {
+            style.getLayer(SHELF_LABELS)?.let(style::removeLayer)
+            style.getSource(SHELF_LABELS)?.let(style::removeSource)
+            return
+        }
+        val source = style.getSourceAs<GeoJsonSource>(SHELF_LABELS)
+        if (source != null) {
+            source.setGeoJson(json)
+            return
+        }
+        style.addSource(GeoJsonSource(SHELF_LABELS, json))
+        val faded = Expression.switchCase(Expression.get("held"), Expression.literal(1f), Expression.literal(WingtipMap.AIRSPACE_LABEL_FADED.toFloat()))
+        val layer = org.maplibre.android.style.layers.SymbolLayer(SHELF_LABELS, SHELF_LABELS).withProperties(
+            PropertyFactory.textField(Expression.get("text")),
+            PropertyFactory.textFont(arrayOf(MapStyle.FONT)),
+            PropertyFactory.textSize(12f),
+            PropertyFactory.textLineHeight(1.1f),
+            PropertyFactory.textColor(app.wingtipmaps.android.design.generated.WingtipColors.Chart.CASING_HEX.toColorInt()),
+            PropertyFactory.textPitchAlignment(Property.TEXT_PITCH_ALIGNMENT_VIEWPORT),
+            PropertyFactory.textRotationAlignment(Property.TEXT_ROTATION_ALIGNMENT_VIEWPORT),
+            PropertyFactory.iconImage(Expression.concat(Expression.literal(MapStyle.airspaceTab("")), Expression.get("class"))),
+            PropertyFactory.iconTextFit(Property.ICON_TEXT_FIT_BOTH),
+            PropertyFactory.iconTextFitPadding(arrayOf(2f, 6f, 2f, 6f)),
+            PropertyFactory.iconPitchAlignment(Property.ICON_PITCH_ALIGNMENT_VIEWPORT),
+            PropertyFactory.textPadding(4f),
+            PropertyFactory.symbolSortKey(Expression.sum(Expression.product(Expression.match(Expression.get("class"), Expression.literal(2), Expression.stop("B", 0), Expression.stop("C", 1)), Expression.literal(100_000)), Expression.get("floor_ft"))),
+            PropertyFactory.textOpacity(faded),
+            PropertyFactory.iconOpacity(faded),
+        )
+        style.addLayer(layer)
     }
 
     /** The way in, draped: each line in its role's ink, the centrelines
