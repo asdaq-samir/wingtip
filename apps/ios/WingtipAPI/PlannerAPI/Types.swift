@@ -1357,6 +1357,20 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}/status`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/status/get(traffic_status)`.
     func trafficStatus(_ input: Operations.TrafficStatus.Input) async throws -> Operations.TrafficStatus.Output
+    /// Traffic Registered
+    ///
+    /// The FAA's record of a US airplane named by its N-number or ICAO
+    /// address (wingtip.traffic.registered), null for any other name: the
+    /// registry is on this service's disk, so this answers in milliseconds,
+    /// where /api/traffic/find waits on the live sources, seconds at a time
+    /// when adsb.lol's API is busy. A page asks both at once, drawing the
+    /// record as soon as it is here and whether the airplane is in the air
+    /// when the find answers (the owner, 2026-11-14: "Why does looking up a
+    /// plane takes a long time?").
+    ///
+    /// - Remark: HTTP `GET /api/traffic/registered`.
+    /// - Remark: Generated from `#/paths//api/traffic/registered/get(traffic_registered)`.
+    func trafficRegistered(_ input: Operations.TrafficRegistered.Input) async throws -> Operations.TrafficRegistered.Output
     /// Traffic Route
     ///
     /// The route a flight number is scheduled to fly -- TJSJ to KORD for
@@ -3667,6 +3681,28 @@ extension APIProtocol {
     ) async throws -> Operations.TrafficStatus.Output {
         try await trafficStatus(Operations.TrafficStatus.Input(
             path: path,
+            headers: headers
+        ))
+    }
+    /// Traffic Registered
+    ///
+    /// The FAA's record of a US airplane named by its N-number or ICAO
+    /// address (wingtip.traffic.registered), null for any other name: the
+    /// registry is on this service's disk, so this answers in milliseconds,
+    /// where /api/traffic/find waits on the live sources, seconds at a time
+    /// when adsb.lol's API is busy. A page asks both at once, drawing the
+    /// record as soon as it is here and whether the airplane is in the air
+    /// when the find answers (the owner, 2026-11-14: "Why does looking up a
+    /// plane takes a long time?").
+    ///
+    /// - Remark: HTTP `GET /api/traffic/registered`.
+    /// - Remark: Generated from `#/paths//api/traffic/registered/get(traffic_registered)`.
+    public func trafficRegistered(
+        query: Operations.TrafficRegistered.Input.Query,
+        headers: Operations.TrafficRegistered.Input.Headers = .init()
+    ) async throws -> Operations.TrafficRegistered.Output {
+        try await trafficRegistered(Operations.TrafficRegistered.Input(
+            query: query,
             headers: headers
         ))
     }
