@@ -17,7 +17,7 @@ import { DRAWER_MS } from "../sheet/insets";
 import { drawerEasing } from "./drawerEasing";
 import { watchMapErrors } from "./mapErrors";
 import { useRouteFit } from "./useRouteFit";
-import { inRoom, keepStill, useTappedInSight } from "./cardRoom";
+import { useTappedInSight } from "./cardRoom";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
 import { chartQuery, overlayTilesQuery, queryClient } from "../../lib/queryClient";
@@ -42,7 +42,8 @@ import { watchOverlayFilters } from "../../lib/map/gl/overlayFilters";
 import { glZoom } from "../../lib/map/gl/glStyle";
 import { probeLayers } from "../../lib/map/gl/useGlProbe";
 import { RulerGl } from "../../lib/map/gl/layers/RulerGl";
-import { picked, watchPilotMoves } from "../../lib/map/gl/pilotCamera";
+import { cameraOf } from "../../lib/map/gl/camera";
+import { inRoom } from "../../lib/map/gl/cameraParts";
 import { tvPlatform, zoomInKey, zoomOutKey } from "../../lib/tv";
 
 const COUNTRY: [number, number] = [39.5, -98.35];
@@ -254,11 +255,8 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   const [revealed, setRevealed] = useState(() => !!parked && "revealed" in parked.holder.dataset);
   const insets = useMapInsets();
   const insetsRef = useRef(insets);
-  // Where a point picked is being flown to (flyTo below), for the sheet
-  // turning under the flight to aim it again rather than stop it.
-  const flying = useRef<{ center: [number, number]; zoom: number } | null>(null);
   // What a tap opened a card for, brought into sight once the card is up if it hides it.
-  const noteTap = useTappedInSight(map, insetsRef, padOf, flying);
+  const { note: noteTap, fresh: tapFresh } = useTappedInSight(map, insetsRef, padOf);
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const known = !!(course ?? chartOnly);
   // The overlay tiles' name and the overlays' pictures, for the map's
@@ -310,6 +308,9 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       // the sheet as it was, and the pilot's position off the middle --
       // below the loading mark (MapLoading), which keeps to the sheet.
       m.setPadding(padOf(insetsRef.current));
+      // The camera's one owner (lib/map/gl/camera), made with the map so it
+      // hears the pilot's first drag.
+      cameraOf(m);
       setOverlays(!!m.getSource(OVERLAY_SOURCE));
       setMap(m);
     };
@@ -401,7 +402,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       for (const t of [...registry.taps].sort((a, b) => a.rank - b.rank)) {
         const hit = tapHit(map, t, e.point);
         if (hit) {
-          noteTap(e.lngLat);
+          noteTap(e.lngLat.toArray());
           t.onTap(hit, e);
           return;
         }
@@ -426,8 +427,9 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   }, [api]);
 
   // Fit to the route: once for each set of its points, clear of the panel
-  // and the buttons, and aimed again as the sheet turns under it (useRouteFit).
-  const aimFitAgain = useRouteFit(map, course, insetsRef, padOf, flight());
+  // and the buttons, and aimed again as the sheet turns under it (the
+  // camera's room).
+  useRouteFit(map, course, insetsRef, flight());
 
   // The map follows the sheet: MapLibre's padding is what the panel
   // covers, eased in the sheet's own time, so what was in the middle of
@@ -435,95 +437,55 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   // snap point set (MapPanel's insets). Only padded, never fitted again:
   // the sheet moving is no pick (the owner, 2026-11-11, "I like the stock
   // behavior": Apple Maps slides its map with the sheet and leaves its
-  // zoom alone).
+  // zoom alone). A route's fit or a point picked still on its way is aimed
+  // again at the room now left by the camera's owner, not stopped by a
+  // second move.
   const follow = useCallback(
     (to: MapInsets) => {
       const was = insetsRef.current;
       insetsRef.current = to;
       if (!map || (was.top === to.top && was.bottom === to.bottom && was.left === to.left)) return;
-      // A route's fit still flying: aimed again at the room now left.
-      if (aimFitAgain(to)) return;
-      // A point still being flown to (a checkpoint tapped, whose card is what
-      // turned the sheet): the flight aimed again with the new padding. A
-      // second camera move stops MapLibre's first where it is, so an ease of
-      // the padding alone left the map near the route's whole view, never
-      // in to the point.
-      const aim = flying.current;
-      if (aim && map.isMoving()) {
-        map.flyTo({ ...aim, padding: padOf(to), duration: DRAWER_MS });
-        return;
-      }
       // A card come or gone: its room is the map's from now on, the chart
-      // kept where it is under it (cardRoom), what was tapped brought into
-      // sight once the card is up if it hides it (useTappedInSight).
-      if (to.card || was.card) {
-        keepStill(map, padOf(to));
-        return;
-      }
-      // Half way to all the way up and back the map stays put.
-      if (to.up !== was.up && to.out === was.out) {
-        map.setPadding(padOf(to));
-        return;
-      }
-      map.easeTo({ padding: padOf(to), duration: DRAWER_MS, easing: drawerEasing });
+      // kept where it is under it, what was tapped brought into sight once
+      // the card is up if it hides it (useTappedInSight). Half way to all
+      // the way up and back the map stays put.
+      const how = to.card || was.card ? "still" : to.up !== was.up && to.out === was.out ? "set" : "ease";
+      cameraOf(map).room(padOf(to), how, { duration: DRAWER_MS, easing: drawerEasing });
     },
-    [map, aimFitAgain],
+    [map],
   );
   useEffect(() => {
     follow(insets);
   }, [insets, follow]);
 
-  // A point picked -- a checkpoint, an airport's card -- flown to, in
-  // close enough, as FocusOn; own ship stops pulling the map back.
+  // A point picked -- a checkpoint, an airport's card -- brought into
+  // sight, in close enough, as FocusOn; every follow ends (the camera's pick).
   const flyTo = useCallback(
     (point: { lat: number; lon: number } | null, zoom: number) => {
       if (!map || !point) return;
-      picked();
-      const ownShip = useOwnShip.getState();
-      if (ownShip.enabled && ownShip.follow) ownShip.setFollow(false);
-      flying.current = { center: [point.lon, point.lat], zoom: Math.max(map.getZoom(), glZoom(zoom)) };
-      map.flyTo({ ...flying.current, duration: flight() });
+      cameraOf(map).pick([point.lon, point.lat], { zoom: Math.max(map.getZoom(), glZoom(zoom)), duration: flight() });
     },
     [map],
   );
-  // The flight's aim is let go once the map is at rest, or the pilot moves
-  // it by hand. Not at the moveend a flight aimed again fires: MapLibre
-  // stops the old one and starts the new in the same call, so the map is
-  // moving again by the next microtask.
-  useEffect(() => {
-    if (!map) return;
-    const rested = () =>
-      queueMicrotask(() => {
-        if (!map.isMoving()) flying.current = null;
-      });
-    // Moved by hand, the map is the pilot's until they next pick something
-    // (lib/map/gl/pilotCamera).
-    const byHand = (e: { originalEvent?: unknown }) => {
-      if (e.originalEvent) flying.current = null;
-    };
-    map.on("moveend", rested);
-    map.on("movestart", byHand);
-    const unwatch = watchPilotMoves(map);
-    return () => {
-      map.off("moveend", rested);
-      map.off("movestart", byHand);
-      unwatch();
-    };
-  }, [map]);
   useEffect(() => {
     flyTo(focus, focusZoom);
   }, [flyTo, focus, focusZoom]);
-  // A field tapped on the chart is in sight already: not flown to, only
-  // brought into the card's room once its card is up, if the card hides it
-  // (useTappedInSight). One picked elsewhere -- the search, a list, a link
-  // -- is flown to.
+  // A field tapped on the chart is in sight already: never flown to, at
+  // any zoom, only brought into the card's room once its card is up, if
+  // the card hides it (useTappedInSight). Flown to below zoom 9, the
+  // flight was aimed again as the card's room came, two moves for one tap
+  // (the flicker audit's FL-8, 2026-11-14). One picked elsewhere -- the
+  // search, a list, a link -- is flown to, unless it is close in and in
+  // the room already.
   useEffect(() => {
-    if (map && place && map.getZoom() >= glZoom(PLACE_ZOOM) && inRoom(map, [place.lon, place.lat], padOf(insetsRef.current))) {
-      noteTap([place.lon, place.lat]);
+    if (!map || !place) return;
+    const at: [number, number] = [place.lon, place.lat];
+    if (tapFresh() || (map.getZoom() >= glZoom(PLACE_ZOOM) && inRoom(map, at, padOf(insetsRef.current)))) {
+      noteTap(at);
       return;
     }
     flyTo(place, PLACE_ZOOM);
-  }, [map, flyTo, place, noteTap]);
+  }, [map, flyTo, place, noteTap, tapFresh]);
 
   return (
     <div className="relative h-full w-full">

@@ -2,6 +2,7 @@ import type { CircleLayerSpecification, GeoJSONSource, SymbolLayerSpecification 
 import { useMemo } from "react";
 import { CATEGORY, CHART } from "../../../../lib/tokens";
 import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../../lib/map/gl/glLayer";
+import { cameraOf } from "../../../../lib/map/gl/camera";
 import { GL_FONT_BOLD, TAP } from "../../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { useSearchResultRows, useSearchResults } from "../../hooks/useSearchResults";
@@ -113,7 +114,7 @@ export function SearchResultsGl() {
     const id = feature.properties.cluster_id as number | undefined;
     if (!source || id == null || feature.geometry.type !== "Point") return;
     const [lon, lat] = feature.geometry.coordinates as [number, number];
-    void source.getClusterExpansionZoom(id).then((zoom) => map.easeTo({ center: [lon, lat], zoom }));
+    void source.getClusterExpansionZoom(id).then((zoom) => cameraOf(map).pick([lon, lat], { zoom }));
   });
   return null;
 }

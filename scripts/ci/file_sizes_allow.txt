@@ -29,7 +29,7 @@ apps/web/src/components/ApproachDebrief.tsx 415
 apps/web/src/components/ClearanceCard.tsx 464
 apps/web/src/components/RadioLayer.tsx 516
 apps/web/src/components/audioGear.ts 1484
-apps/web/src/components/map/GlMapShell.tsx 555
+apps/web/src/components/map/GlMapShell.tsx 517
 apps/web/src/features/chart-labels/dev/DevPanel.tsx 1095
 apps/web/src/features/chart-labels/hooks/useTraining.test.ts 483
 apps/web/src/features/chart-labels/hooks/useTraining.ts 422

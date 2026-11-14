@@ -27,6 +27,7 @@ devswitch.spec.ts
 direct-to.spec.ts
 diversion.spec.ts
 dry-run-bar.spec.ts
+dry-run-follow.spec.ts
 export.spec.ts
 favorites-add.spec.ts
 field-lights.spec.ts
@@ -102,6 +103,7 @@ subscription.spec.ts
 sunlight.spec.ts
 switch.spec.ts
 tab-consistency.spec.ts
+tap-in-sight.spec.ts
 terrain.spec.ts
 tiles.spec.ts
 tracking.spec.ts

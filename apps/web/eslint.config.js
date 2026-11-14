@@ -103,6 +103,33 @@ export default defineConfig(
     rules: { "no-restricted-syntax": ["error", ...STOCK_BANS, ...GEO_BANS] },
   },
   { files: ["src/**/*.ts"], ignores: ["src/lib/geo.ts", "src/**/*.test.ts"], rules: { "no-restricted-syntax": ["error", ...GEO_BANS] } },
+  // The map's camera has one owner (lib/map/gl/camera, the flicker audit's
+  // cause D): every mover asks it with an intent, none moves the map itself
+  // (each holds it as `map`).
+  // Kept out: the 3D view's tilt and the cockpit's and the replay's cameras,
+  // which hold the map whole while they run (terrain/, replay/), and the
+  // airport diagram's own map.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: [
+      "src/lib/map/gl/camera.ts",
+      "src/lib/map/gl/cameraParts.ts",
+      "src/features/plan/map/terrain/**",
+      "src/features/replay/**",
+      "src/features/plan/components/AirportDiagramViewer.tsx",
+      "src/**/*.test.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-properties": [
+        "error",
+        ...["easeTo", "flyTo", "jumpTo", "fitBounds"].map((property) => ({
+          object: "map",
+          property,
+          message: "Ask the camera's owner (cameraOf(map) in lib/map/gl/camera) with an intent instead of moving the map.",
+        })),
+      ],
+    },
+  },
 
   { files: ["e2e/**/*.ts", "**/*.test.ts", "**/*.test.tsx"], languageOptions: { globals: globals.node } },
   // The usual causes of a flaky test, caught as it is written (docs/CI.md,

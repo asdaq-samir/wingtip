@@ -5,6 +5,7 @@ import { CHART } from "../../../tokens";
 import { MAP_BLUE } from "../../marks/chartColors";
 import { useLessonMap } from "../../route/lessonMap";
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../glLayer";
+import { cameraOf } from "../camera";
 import { pictureLayer } from "../markLayers";
 import { useGlLines, type GlRun } from "../useGlLines";
 import { svgPicture, useGlSymbols, type GlSymbol } from "../useGlSymbols";
@@ -62,7 +63,7 @@ export function LessonGl() {
   );
   useGlData(RING, ring);
   useEffect(() => {
-    if (fix) map.easeTo({ center: [fix.lon, fix.lat], duration: 400 });
+    if (fix) cameraOf(map).pick([fix.lon, fix.lat], { duration: 400 });
   }, [map, fix]);
 
   // The airplane where the flight ends, flown there from the last fix over

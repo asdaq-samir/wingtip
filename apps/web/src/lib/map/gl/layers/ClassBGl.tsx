@@ -7,6 +7,7 @@ import { colourOf } from "../../marks/flightCategory";
 import { fieldMarkPicture } from "../../marks/markPictures";
 import { chartPair, sheetAt } from "../../sources/tiles";
 import { useGlMap } from "../glLayer";
+import { cameraOf } from "../camera";
 import { glZoom } from "../glStyle";
 import { labelledLayer } from "../markLayers";
 import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
@@ -59,7 +60,7 @@ export function ClassBGl({
                 onTap: () => {
                   onPreview(false);
                   if (onSelectPlace) onSelectPlace(a.ident);
-                  else map.flyTo({ center: [a.lon, a.lat], zoom: Math.max(map.getZoom(), glZoom(overlayFromZoom)), duration: 600 });
+                  else cameraOf(map).pick([a.lon, a.lat], { zoom: Math.max(map.getZoom(), glZoom(overlayFromZoom)), duration: 600 });
                 },
               };
             })
