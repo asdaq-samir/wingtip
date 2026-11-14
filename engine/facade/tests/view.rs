@@ -197,7 +197,12 @@ fn the_airports_in_view_are_the_planners_fields() {
         assert!(common * 10 >= b.len() * 9 && common * 10 >= a.len() * 9, "{tag}");
         for want in theirs {
             let Some(got) = ours.iter().find(|v| ident(v) == ident(want)) else { continue };
-            assert_eq!(keys(got), keys(want), "{tag}: the fields of {}", want["ident"]);
+            // The mark's order and size (field_mark_rank) came to the pack's
+            // answer on 2026-11-14, after these were captured: the rest
+            // are the planner's fields.
+            let mut ours_keys = keys(got);
+            assert!(ours_keys.remove("mark_order") && ours_keys.remove("mark_size"), "{tag}: {} has its mark", want["ident"]);
+            assert_eq!(ours_keys, keys(want), "{tag}: the fields of {}", want["ident"]);
             // `towered` was put into the captured answers on 2026-11-08 by
             // the planner's own rule (wingtip.faa_data.towered_fields, NASR
             // APT_BASE's TWR_TYPE_CODE), after /api/airports/in-view gained it.

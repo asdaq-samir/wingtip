@@ -56,7 +56,7 @@ apps/web/src/lib/queryClient.ts 442
 engine/crates/airspace/src/ahead.rs 1032
 engine/crates/airspace/src/rules.rs 509
 engine/crates/airspace/src/spoken.rs 551
-engine/crates/airspace/src/view.rs 818
+engine/crates/airspace/src/view.rs 667
 engine/crates/brief/src/gonogo/calls.rs 737
 engine/crates/brief/src/gonogo/frat.rs 482
 engine/crates/brief/src/gonogo/verdict.rs 488
@@ -70,7 +70,7 @@ engine/crates/radio/src/clearance.rs 930
 engine/crates/route/src/approach/debrief.rs 1332
 engine/crates/route/src/approach/lesson.rs 888
 engine/crates/route/src/motion/dry_run.rs 715
-engine/crates/route/src/motion/instruments.rs 460
+engine/crates/route/src/motion/instruments.rs 418
 engine/crates/route/src/navlog/plans.rs 495
 engine/crates/route/src/route/options.rs 671
 engine/crates/route/src/route/options/ask.rs 401
@@ -117,7 +117,7 @@ services/planner/wingtip/airspace.py 611
 services/planner/wingtip/chart_faces.py 937
 services/planner/wingtip/charts.py 2336
 services/planner/wingtip/chartvision.py 1070
-services/planner/wingtip/cycle_pack.py 906
+services/planner/wingtip/cycle_pack.py 893
 services/planner/wingtip/elevation.py 460
 services/planner/wingtip/faa_data.py 816
 services/planner/wingtip/fixes.py 434

@@ -117,7 +117,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "route_position" => along::position_rule(v),
         "in_flight" => instruments::in_flight_rule(v),
         "vertical_speed" => instruments::vertical_speed_rule(v),
-        "glide_ring" => instruments::glide_ring_rule(v),
+        "glide_ring" => glide::ring_rule(v),
         "diagram_labels" => diagram::labels_rule(v),
         "diagram_graticule" => diagram::graticule_rule(v),
         "diagram_point" => diagram::point_rule(v),
