@@ -2,7 +2,6 @@ package app.wingtipmaps.gateway.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Positive;
 import org.jspecify.annotations.Nullable;
 
@@ -10,35 +9,23 @@ import org.jspecify.annotations.Nullable;
  *  gives them (V37): with them an airplane of a type the planner has no
  *  stock profile for is planned on its own figures alone, never another
  *  airplane's (the owner, 2026-11-09). Each may be left out, and is then
- *  missing: the app asks for it where it is needed. The limits are the
- *  planner's own (app.plan_query): a ceiling from a powered glider's to
- *  past a piston single's highest, a climb rate under any piston
- *  airplane's, a start and taxi allowance of a few gallons, a glide
- *  ratio from a light airplane's to a glider's. Kept as sent: the gateway
- *  works none of it out. */
+ *  missing: the app asks for it where it is needed. The service ceiling,
+ *  climb rate, taxi fuel and glide ratio are held to the engine's ranges
+ *  (airplane_figure_ranges), which AircraftLimits asks before a save, as
+ *  the planner builds its own bounds from them: no copy here. Kept as sent:
+ *  the gateway works none of it out. */
 @Schema(description = "An airplane's own performance figures from its handbook; each null where not given")
 public record OwnFigures(
-        @Schema(description = "Its service ceiling, ft (the altitude where its best climb is 100 fpm)")
-        @DecimalMin(value = "1000", message = "serviceCeilingFt must be between 1,000 and 30,000 ft")
-        @DecimalMax(value = "30000", message = "serviceCeilingFt must be between 1,000 and 30,000 ft")
-        @Nullable
+        @Schema(description = "Its service ceiling, ft (the altitude where its best climb is 100 fpm)") @Nullable
         Double serviceCeilingFt,
 
-        @Schema(description = "Its best rate of climb at sea level, fpm")
-        @Positive(message = "climbRateFpm must be a positive number")
-        @DecimalMax(value = "5000", message = "climbRateFpm must be at most 5,000 fpm")
-        @Nullable
+        @Schema(description = "Its best rate of climb at sea level, fpm") @Nullable
         Double climbRateFpm,
 
-        @Schema(description = "Its fuel for engine start, taxi and takeoff, gal")
-        @DecimalMin(value = "0", message = "taxiFuelGal cannot be negative")
-        @DecimalMax(value = "50", message = "taxiFuelGal must be at most 50 gal")
-        @Nullable
+        @Schema(description = "Its fuel for engine start, taxi and takeoff, gal") @Nullable
         Double taxiFuelGal,
 
         @Schema(description = "Its still-air glide ratio, propeller windmilling, flaps up (its handbook's Section 3)")
-        @DecimalMin(value = "1", inclusive = false, message = "glideRatio must be more than 1")
-        @DecimalMax(value = "80", message = "glideRatio must be at most 80")
         @Nullable
         Double glideRatio,
 

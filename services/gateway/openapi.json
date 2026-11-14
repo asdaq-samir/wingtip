@@ -2171,9 +2171,7 @@
         "properties" : {
           "climbRateFpm" : {
             "description" : "Its best rate of climb at sea level, fpm",
-            "exclusiveMinimum" : 0,
             "format" : "double",
-            "maximum" : 5000,
             "type" : [ "number", "null" ]
           },
           "emptyMomentLbIn" : {
@@ -2191,23 +2189,17 @@
           },
           "glideRatio" : {
             "description" : "Its still-air glide ratio, propeller windmilling, flaps up (its handbook's Section 3)",
-            "exclusiveMinimum" : 1,
             "format" : "double",
-            "maximum" : 80,
             "type" : [ "number", "null" ]
           },
           "serviceCeilingFt" : {
             "description" : "Its service ceiling, ft (the altitude where its best climb is 100 fpm)",
             "format" : "double",
-            "maximum" : 30000,
-            "minimum" : 1000,
             "type" : [ "number", "null" ]
           },
           "taxiFuelGal" : {
             "description" : "Its fuel for engine start, taxi and takeoff, gal",
             "format" : "double",
-            "maximum" : 50,
-            "minimum" : 0,
             "type" : [ "number", "null" ]
           }
         },

@@ -1,6 +1,7 @@
 package app.wingtipmaps.gateway.service;
 
 import app.wingtipmaps.gateway.dto.AircraftRequest;
+import app.wingtipmaps.gateway.dto.OwnFigures;
 import app.wingtipmaps.gateway.upstream.PlannerApi;
 import java.io.Serial;
 import java.util.LinkedHashMap;
@@ -16,10 +17,12 @@ import org.springframework.web.ErrorResponseException;
  * An airplane a pilot saves, held to the limits the apps check the "Your
  * Airplane" form with: the engine's aircraft_problems
  * (engine/crates/pilot/src/aircraft/form.rs), asked through the planner's
- * POST /api/aircraft/problems. The limits are stated there once -- the
- * cruise power a cruise table has, the columns' lengths, FAA Form 7233-4's
- * items 10a and 10b -- and this app keeps no copy of them (CLAUDE.md:
- * Spring Boot holds no aviation logic).
+ * POST /api/aircraft/problems. The limits are stated there once -- each
+ * figure's range (airplane_figure_ranges: the speeds, burns and fuel, and
+ * its own handbook figures, the service ceiling, climb rate, taxi fuel and
+ * glide ratio), the columns' lengths, FAA Form 7233-4's items 10a and 10b
+ * -- and this app keeps no copy of them (CLAUDE.md: Spring Boot holds no
+ * aviation logic).
  */
 @Component
 public class AircraftLimits {
@@ -39,8 +42,34 @@ public class AircraftLimits {
      * @throws PlannerUnavailableException when the planner cannot be asked
      */
     public void check(AircraftRequest request) {
-        Map<String, String> problems =
-                PlannerClient.rule("the airplane's limits", () -> planner.aircraftProblems(form(request)), p -> p);
+        refuse(ask(form(request)));
+    }
+
+    /** The airplane's own handbook figures the engine checks, by its names. */
+    static final List<String> OWN_FIGURES = List.of("serviceCeilingFt", "climbRateFpm", "taxiFuelGal", "glideRatio");
+
+    /**
+     * Refuses {@code figures}, an inline ask's own figures saved on their
+     * own (PUT /api/aircraft/{id}/figures), where the engine finds one
+     * wrong. Sent alone, the form's other fields are missing, which the
+     * engine names too; only these figures' problems count here.
+     *
+     * @throws Refused when a figure may not be saved
+     * @throws PlannerUnavailableException when the planner cannot be asked
+     */
+    public void checkFigures(OwnFigures figures) {
+        Map<String, Object> form = new LinkedHashMap<>();
+        putFigures(form, figures);
+        Map<String, String> problems = new LinkedHashMap<>(ask(form));
+        problems.keySet().retainAll(OWN_FIGURES);
+        refuse(problems);
+    }
+
+    private Map<String, String> ask(Map<String, Object> form) {
+        return PlannerClient.rule("the airplane's limits", () -> planner.aircraftProblems(form), p -> p);
+    }
+
+    private static void refuse(Map<String, String> problems) {
         if (!problems.isEmpty()) {
             throw new Refused(problems);
         }
@@ -63,7 +92,20 @@ public class AircraftLimits {
         put(form, "equipment", r.equipment());
         put(form, "surveillance", r.surveillance());
         put(form, "colour", r.colour());
+        putFigures(form, r.figures());
         return form;
+    }
+
+    /** The four of its own figures the engine holds to their ranges; the
+     *  empty weight and moment are not its to check. */
+    private static void putFigures(Map<String, Object> form, @Nullable OwnFigures f) {
+        if (f == null) {
+            return;
+        }
+        put(form, "serviceCeilingFt", f.serviceCeilingFt());
+        put(form, "climbRateFpm", f.climbRateFpm());
+        put(form, "taxiFuelGal", f.taxiFuelGal());
+        put(form, "glideRatio", f.glideRatio());
     }
 
     private static void put(Map<String, Object> form, String key, @Nullable Object value) {
