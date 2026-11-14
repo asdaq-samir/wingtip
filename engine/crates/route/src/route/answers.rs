@@ -108,6 +108,7 @@ fn opt_str_json(out: &mut String, s: Option<&str>) {
 }
 
 /// The rule `name` worked on `v`, as its contract file (crates/route/contract) names it.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn answer(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     match name {

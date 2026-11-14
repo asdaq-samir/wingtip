@@ -83,6 +83,7 @@ fn plan<'a>(name: &'a str, v: &'a Value, p: Option<&'a Profile>, air: &'a [super
 }
 
 /// The rule `name` on `v`, its answer as JSON.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> R<String> {
     context(name, answer(name, v))
 }
