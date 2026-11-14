@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { frontSheet, grabberTo, mapStill, openPanel, settle, settled, sideDrawer, slow, waypointMarks } from "./helpers";
+import { stopsAre } from "./stopsParam";
 import { markWith } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -30,7 +31,7 @@ test("a stop may be a VFR waypoint, offered after the airports as it is typed an
   const waypoint = page.getByTestId("search-waypoint").filter({ hasText: "VPBNG" }).first();
   await expect(waypoint).toBeVisible({ timeout: slow(10000) });
   await waypoint.click();
-  await expect(page).toHaveURL(/[?&]stops=VPBNG(&|$)/);
+  await expect(page).toHaveURL(stopsAre("VPBNG"));
 
   // On the map in the sectional's magenta, not as an airport's chip. With
   // the whole route in sight it lies under C81's mark, 4 nm off, and

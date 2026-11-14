@@ -12,7 +12,7 @@ import { TEXT } from "../lib/text";
  *  Each keeps 44 across everywhere, so a short word's (Top, VFR) is its
  *  own to tap: VFR's 43 lost its area's edge to IFR's (the iOS audit's
  *  P1, 2026-11-05). */
-const SEGMENT = `h-7 min-w-11 rounded-md px-2.5 ${TEXT.note} text-foreground data-pressed:bg-background data-pressed:shadow-sm dark:data-pressed:bg-foreground/20 [&_svg:not([class*='size-'])]:size-3.5 @max-[22.5rem]/settings:px-2 @max-[22.5rem]/settings:[&_svg]:hidden`;
+const SEGMENT = `h-7 min-w-11 rounded-md px-2.5 ${TEXT.note} text-foreground data-pressed:bg-background data-pressed:shadow-card dark:data-pressed:bg-foreground/20 [&_svg:not([class*='size-'])]:size-3.5 @max-[22.5rem]/settings:px-2 @max-[22.5rem]/settings:[&_svg]:hidden`;
 
 /** Two to three choices, one of which is picked: shadcn's ToggleGroup as
  *  a segmented control -- the choice raised out of a muted track, as iOS

@@ -5,7 +5,7 @@ import json
 
 import pytest
 from fastapi.testclient import TestClient
-from wingtip import airports, airspace, faa_data, fixes, pattern, planning, publications, tfr, weather
+from wingtip import airports, airspace, diagram_crops, faa_data, fixes, pattern, planning, publications, tfr, weather
 from wingtip.config import get_settings
 
 from app import chart_model, chart_scorer, detection, prefetch, checkpoint_scoring
@@ -172,6 +172,7 @@ def no_publications(monkeypatch):
     indexes."""
     monkeypatch.setattr(publications, "airport_diagram_url", lambda ident: None)
     monkeypatch.setattr(publications, "airport_diagram_cycle", lambda ident: None)
+    monkeypatch.setattr(diagram_crops, "runways_missing", lambda ident, ends: False)
     monkeypatch.setattr(publications, "terminal_charts", lambda ident: [])
     monkeypatch.setattr(publications, "chart_supplement_url", lambda ident: None)
 

@@ -11,6 +11,7 @@ import { Input } from "../../components/ui/input";
 import { TEXT } from "../../lib/text";
 import { SimExportMenu } from "../replay";
 import { StudioDrafts } from "./StudioDrafts";
+import { wholeNm } from "../../lib/format";
 import { utcToday, type Studio } from "./useStudio";
 
 /**
@@ -61,7 +62,7 @@ export function StudioPanel({ studio, tools }: { studio: Studio; tools?: ReactNo
 
       {track && (
         <p className={cn("text-muted-foreground", TEXT.note)} data-testid="studio-track">
-          <span className="font-semibold text-foreground">{track.label}</span> · {Math.round(track.lengthNm)} nm ·{" "}
+          <span className="font-semibold text-foreground">{track.label}</span> · {wholeNm(track.lengthNm)} ·{" "}
           {track.gaps.length === 0 ? "no gaps" : track.gaps.length === 1 ? "1 gap" : `${track.gaps.length} gaps`}
           {track.credit && <span data-testid="studio-credit"> · {track.credit}</span>}
         </p>

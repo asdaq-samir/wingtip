@@ -355,6 +355,7 @@ export type FreezingLevelAnswer = {
   ft: number;
   at_or_below: boolean;
 } | null;
+export type FrequenciesInOrderAnswer = number[];
 export type FrequencyOfAnswer = number | null;
 export type FuelInTanksAnswer = ({
   gal: number;
@@ -2027,6 +2028,13 @@ export interface EngineContract {
   freezing_precip: {
     input: FreezingPrecipInput;
     answer: FreezingPrecipAnswer;
+  };
+  /**
+   * A field's frequencies in the order a pilot dials them -- its weather (ATIS, AWOS), clearance, ground, the tower or CTAF, approach and departure, then UNICOM and the rest (AIM 4-1-13, 4-1-11) -- as indices into frequencies, the file's order kept within a kind.
+   */
+  frequencies_in_order: {
+    input: FrequenciesInOrderInput;
+    answer: FrequenciesInOrderAnswer;
   };
   /**
    * A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.
@@ -7187,6 +7195,9 @@ export interface FreezingPrecipAnswer {
     group: string;
   }[];
   line: string | null;
+}
+export interface FrequenciesInOrderInput {
+  frequencies: FieldFrequency[];
 }
 export interface FrequencyLineInput {
   type?: string | null;

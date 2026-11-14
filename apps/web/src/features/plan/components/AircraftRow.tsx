@@ -4,7 +4,7 @@ import type { TrafficAircraft } from "../../../lib/api/types";
 import { useGeo, type LatLon } from "../../../lib/geo";
 import { awayFrom } from "../../../lib/useAway";
 import { trafficLabel } from "../map/traffic";
-import { altFt } from "../../../lib/format";
+import { reportedAltitude } from "../../../lib/format";
 
 /** One airplane in a list: its name, what it is and how it flies, and
  *  how far and which way it is from `from`. */
@@ -23,12 +23,7 @@ export default function AircraftRow({
 }) {
   const geo = useGeo();
   const where = from && geo ? awayFrom(geo, from, plane) : undefined;
-  const height =
-    plane.altitude_ft == null
-      ? null
-      : ownFt != null
-        ? trafficLabel(plane, ownFt)
-        : `${altFt(Math.round(plane.altitude_ft / 100) * 100)} ft`;
+  const height = plane.altitude_ft == null ? null : ownFt != null ? trafficLabel(plane, ownFt) : reportedAltitude(plane.altitude_ft);
   return (
     <ListRow
       media={<PlaneMark small trackDeg={plane.track_deg ?? 45} />}

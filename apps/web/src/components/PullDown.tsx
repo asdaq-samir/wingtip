@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { cloneElement, useState, type ComponentProps, type ReactElement, type ReactNode } from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "cn";
@@ -56,8 +57,7 @@ export function PullDownWords<V extends string>({
   return (
     // Its 44-point area a pseudo-element round the words, never a bigger
     // button (index.css's rule for every control).
-    <button
-      type="button"
+    <BaseButton
       aria-label={`${label}: ${words}`}
       data-testid={testId}
       {...button}
@@ -74,7 +74,7 @@ export function PullDownWords<V extends string>({
         {picked?.label ?? placeholder}
       </span>
       <ChevronsUpDown className="size-4" aria-hidden="true" />
-    </button>
+    </BaseButton>
   );
 }
 

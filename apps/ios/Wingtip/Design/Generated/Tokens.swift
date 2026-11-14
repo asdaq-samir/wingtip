@@ -108,6 +108,10 @@ enum WingtipColor {
         static let glidepath = rgb(0x00B4E6)
         /// An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red.
         static let obstacle = rgb(0x7A1F1F)
+        /// The map's ground before its first tiles are drawn, by day (Tailwind slate-100, as it was).
+        static let mapGround = rgb(0xF1F5F9)
+        /// And at night (slate-900).
+        static let mapGroundNight = rgb(0x0F172A)
     }
     enum Category {
         static let vfr = rgb(0x1A7F37)
@@ -161,6 +165,12 @@ enum WingtipColor {
         static let stopFood = rgb(0xDC2626)
         static let stopRepair = rgb(0x0F766E)
         static let stopTraining = rgb(0x0369A1)
+        /// Home's mark, a Favorite tile's and a row's (Tailwind teal-600, as it was drawn).
+        static let home = rgb(0x0D9488)
+        /// An airplane's own mark on a tile or a row: its profile's, a Favorite's (Tailwind sky-600, as it was drawn).
+        static let airplane = rgb(0x0284C7)
+        /// A tracked airplane's "In the air" badge on its card, white on it (Tailwind teal-700, as it was drawn).
+        static let air = rgb(0x0F766E)
     }
     enum Weather {
         static let convective = rgb(0xC2410C)

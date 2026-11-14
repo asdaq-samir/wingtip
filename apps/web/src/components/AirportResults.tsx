@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Diamond, History, Search } from "lucide-react";
 import { cn } from "cn";
-import { TEXT } from "../lib/text";
+import { SECTION_TITLE, TEXT } from "../lib/text";
 import { CommandEmpty, CommandGroup, CommandItem, CommandList } from "./ui/command";
 import type { RecentAirport } from "../lib/preferences";
 import type { AirportSearchRow } from "../lib/useAirportSearch";
@@ -49,8 +49,9 @@ export default function AirportResults({
   );
 }
 
-/** A group's heading as a grouped list's is (GroupedList): 13, semibold,
- *  in small capitals. */
+/** A group's heading as every section's title is (SectionTitle's
+ *  SECTION_TITLE, 20 points, its words as written): no small grey capitals
+ *  over a section (docs/design/rules.md 1.8; the web audit's WEB-8). */
 export function PickerGroup({ heading, children }: { heading: string; children: ReactNode }) {
   return (
     <CommandGroup heading={heading} className="p-0" headingClassName={HEADING}>
@@ -59,9 +60,7 @@ export function PickerGroup({ heading, children }: { heading: string; children: 
   );
 }
 
-// The group's heading at GROUP_HEADING's note sizes (TEXT.note, 12 and 13).
-const HEADING =
-  "px-1 pt-0 pb-1.5 font-semibold uppercase tracking-wide text-muted-foreground text-xs pointer-coarse:text-(length:--type-note)";
+const HEADING = cn("px-1 pt-0 pb-1.5", SECTION_TITLE);
 
 /** The search's own rows: the airports, then a stop's waypoints -- flown
  *  through, not kept among the recent airports. */

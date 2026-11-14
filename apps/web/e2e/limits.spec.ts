@@ -51,5 +51,5 @@ test("the map's settings credit adsb.lol for the traffic as they credit the FAA 
   const settings = page.getByTestId("console-sheet");
   // Rows of their own, where they were a footnote.
   await expect(settings.getByTestId("chart-edition")).toContainText("FAA");
-  await expect(settings).toContainText("adsb.lol · ODbL");
+  await expect(settings).toContainText("adsb.lol, ODbL");
 });

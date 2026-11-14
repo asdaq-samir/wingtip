@@ -35,7 +35,7 @@ import wingtip_native
 from PIL import Image
 from scipy import ndimage
 
-from . import data_cycles, outside
+from . import data_cycles, diagram_crops, outside
 from .atomic import atomic_path
 from .config import DATA_DIR
 from .config import FAA_HEADERS as HEADERS
@@ -516,11 +516,7 @@ def airport_diagram_runways_png(ident: str, cycle: str, ends: list, on: date | N
     url = airport_diagram_url(ident, on)
     if not url:
         return None
-    # What is drawn depends on the ends: with none the sheet's strokes
-    # alone place the crop, and that must not stand in for the labels'
-    # once NASR's ends are there.
-    kind = "runways-wide" if ends else "runways-wide-noends"  # wider margin, 2026-11-13
-    path = CACHE_DIR / "diagrams" / cycle / f"{Path(url).stem}-{kind}.png"
+    path = diagram_crops.runways_path(CACHE_DIR, url, cycle, bool(ends))
     none = path.with_suffix(".none")
     if path.exists():
         return path

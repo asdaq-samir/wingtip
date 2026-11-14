@@ -1,7 +1,7 @@
 import { createContext } from "react";
 import { create } from "zustand";
 import { TEXT } from "./text";
-import { MOTION } from "./tokens";
+import { MOTION, TYPE_CLASS } from "./tokens";
 
 /**
  * What the map's chrome shares -- the panel over it (MapPanel), its
@@ -123,9 +123,11 @@ export const GLASS = "liquid-glass";
  *  see-through look (the weather flow's legend and timeline). */
 export const GLASS_CARD = "liquid-glass!";
 
-/** The same glass for a sheet, frostier -- more of the material, less of
- *  the chart -- as what is on it is read: the console, the dialogs. */
-export const GLASS_SHEET = "bg-[var(--sheet)] shadow-(--depth-sheet)";
+/** A sheet's look: solid, the look's --sheet, never glass (CLAUDE.md: on
+ *  the web the sheet is solid at every size; glass only on what floats
+ *  over the map) -- the map's sheet and side panel, the console, the
+ *  dialogs. Named for the glass it once was. */
+export const GLASS_SHEET = "bg-[var(--sheet)] shadow-sheet";
 
 /** The app's sheet-sized move, in seconds (design/tokens.json motion.sheet):
  *  a point picked flown to, own ship found. The map's sheet itself moves
@@ -167,8 +169,9 @@ export const GLASS_PICKED =
 /** A chip's words on the panel's row (the airplane, the cruising altitude,
  *  the time): a note's 13 to a finger, as Maps' route options are, growing
  *  with the reader's text size only to 14, so the row stays one line at
- *  the pilot's, a step up from iOS's default. */
-export const CHIP_TEXT = "text-xs pointer-coarse:text-[min(0.8125rem,14px)]";
+ *  the pilot's, a step up from iOS's default: design/tokens.json's chip
+ *  role, its cap there. */
+export const CHIP_TEXT = TYPE_CLASS.chip;
 
 /** A tinted capsule that adds a field to the route -- the Stops' Add
  *  Stop and Direct To (StopsCard) -- one height, padding and hit area (the

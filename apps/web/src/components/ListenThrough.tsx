@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { useEffect, useState } from "react";
 import { cn } from "cn";
 import PullDown from "./PullDown";
@@ -111,8 +112,7 @@ export default function ListenThrough() {
         ) : (
           // Its 44-point area a pseudo-element round the words, as the
           // pull-down's that takes its place.
-          <button
-            type="button"
+          <BaseButton
             onClick={() => void find()}
             data-testid="listen-find"
             className={cn(
@@ -124,7 +124,7 @@ export default function ListenThrough() {
             {/* Cut short inside, not the button itself, which would clip
                 its area. */}
             <span className="truncate">{remembered ?? "Find Inputs"}</span>
-          </button>
+          </BaseButton>
         )}
       </div>
       {/* What the input brings, with its level: "Hearing" while a

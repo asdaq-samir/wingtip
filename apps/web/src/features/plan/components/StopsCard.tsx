@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { cn } from "cn";
@@ -74,12 +75,11 @@ function StopFieldCard({
       role="listitem"
       data-testid="stops-field"
       aria-current={picked || undefined}
-      className={cn("gap-2.5 rounded-2xl border-0 py-4 shadow-none", picked && "bg-muted")}
+      className={cn("gap-2.5 rounded-(--radius-card) border-0 py-4 shadow-none", picked && "bg-muted")}
     >
       <CardHeader className="gap-1 px-4">
         <CardTitle className={cn("leading-snug font-normal", TEXT.row)}>
-          <button
-            type="button"
+          <BaseButton
             onClick={() => onOpenField(field.ident)}
             data-testid="stops-field-open"
             data-ident={field.ident}
@@ -87,20 +87,19 @@ function StopFieldCard({
           >
             <span className="font-bold text-tint">{field.ident}</span>
             {field.city && <span className="font-semibold"> {placeWords(field.city)}</span>}
-          </button>
+          </BaseButton>
         </CardTitle>
         <CardDescription className={cn("tabular-nums", TEXT.detail)}>{whereWords(field, along)}</CardDescription>
         {along && (
           <CardAction>
-            <button
-              type="button"
+            <BaseButton
               onClick={() => onAddStop(field)}
               data-testid="stops-add-stop"
               aria-label={`Add ${field.ident} as a stop`}
               className={cn(ADD_CAPSULE, "whitespace-nowrap")}
             >
               Add Stop
-            </button>
+            </BaseButton>
           </CardAction>
         )}
       </CardHeader>

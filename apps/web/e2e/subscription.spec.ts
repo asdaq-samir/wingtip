@@ -70,7 +70,7 @@ test("without the subscription, Personal's Subscription page says what it adds, 
   await consolePage(console, "Account");
   await console.getByRole("button", { name: /^Subscription/ }).click();
   const panel = console.getByTestId("subscription-panel");
-  const prompt = panel.getByTestId("paid-prompt-DEBRIEF");
+  const prompt = panel.getByTestId("paid-prompt-debrief");
   await expect(prompt).toBeVisible({ timeout: slow(30000) });
   await expect(prompt).toContainText("$1 a month or $10 a year, the first month free");
   expect(asked).toEqual([]);

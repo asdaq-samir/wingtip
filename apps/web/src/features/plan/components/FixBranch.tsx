@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { cn } from "cn";
@@ -58,17 +59,12 @@ export default function FixBranch({
         </span>
         {fixes.length > 0 ? (
           <CollapsibleTrigger
-            render={
-              <button
-                type="button"
-                aria-label={`${name}, its fixes`}
-                data-testid="fix-branch-toggle"
-                className={cn(
-                  "group relative flex min-w-0 flex-1 flex-col items-start text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  "after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']",
-                )}
-              />
-            }
+            aria-label={`${name}, its fixes`}
+            data-testid="fix-branch-toggle"
+            className={cn(
+              "group relative flex min-w-0 flex-1 flex-col items-start text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']",
+            )}
           >
             <span className={cn("flex max-w-full items-center gap-1 font-semibold text-tint", TEXT.row)}>
               <span className="truncate">{name}</span>
@@ -129,14 +125,13 @@ export default function FixBranch({
                         ),
                   )}
                 />
-                <button
-                  type="button"
+                <BaseButton
                   onClick={() => onOpen(fix.ident)}
                   className={cn("flex min-w-0 flex-1 flex-col py-1 text-left", skipped && "opacity-50")}
                 >
                   <span className={cn("font-semibold", TEXT.row, isDirect && "text-tint")}>{fix.ident}</span>
                   {sub && <span className={cn(TEXT.note, isDirect ? "font-semibold text-tint" : "text-muted-foreground")}>{sub}</span>}
-                </button>
+                </BaseButton>
                 <PointFigures
                   time={null}
                   kind={own != null ? "set" : "pub"}

@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { wholeNm } from "../../../../lib/format";
 import { ChevronRight } from "lucide-react";
 import { cn } from "cn";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
@@ -72,7 +73,7 @@ function PirepRow({ p }: { p: Pirep }) {
           {p.raw && <span className="block font-mono whitespace-pre-wrap">{p.raw}</span>}
         </>
       }
-      value={`${Math.round(p.along_track_nm)} nm`}
+      value={`${wholeNm(p.along_track_nm)}`}
       data-testid="pirep"
     />
   );
@@ -220,9 +221,7 @@ export default function WeatherAlongRoute({
                       description={
                         <>
                           <span className="block text-foreground">{atEta(station ?? nearest!.s)}</span>
-                          {!station && (
-                            <span className="block">{`No TAF here: ${nearest!.s.icaoId}'s, ${Math.round(nearest!.nm)} nm away`}</span>
-                          )}
+                          {!station && <span className="block">{`No TAF here: ${nearest!.s.icaoId}'s, ${wholeNm(nearest!.nm)} away`}</span>}
                         </>
                       }
                       data-testid="place-taf"
@@ -283,7 +282,7 @@ export default function WeatherAlongRoute({
                         <ListRow
                           key={`v${run.stations[0]!.icaoId}`}
                           title={`${run.stations.length} TAFs, VFR at each`}
-                          description={`${run.stations.map((st) => st.icaoId).join(", ")} · ${Math.round(run.stations[0]!.along_track_nm!)}–${Math.round(run.stations.at(-1)!.along_track_nm!)} nm along`}
+                          description={`${run.stations.map((st) => st.icaoId).join(", ")} · ${Math.round(run.stations[0]!.along_track_nm!)}–${wholeNm(run.stations.at(-1)!.along_track_nm!)} along`}
                           data-testid="enroute-vfr"
                         >
                           <CategoryBadge category="VFR" />
@@ -294,7 +293,7 @@ export default function WeatherAlongRoute({
                           title={run.stations[0]!.icaoId}
                           description={[
                             atEta(run.stations[0]!),
-                            `${Math.round(run.along)} nm along`,
+                            `${wholeNm(run.along)} along`,
                             run.stations[0]!.eta && `about ${clockTime(new Date(run.stations[0]!.eta))}`,
                           ]
                             .filter(Boolean)

@@ -17,6 +17,7 @@ const VFR_METAR: Metar = {
   ceiling_ft: null,
   ceiling_unknown: false,
   visibility_sm: 10,
+  visibility_plus: false,
   wind_dir_true_deg: 270,
   wind_speed_kt: 10,
   wind_gust_kt: null,
@@ -74,6 +75,7 @@ describe("a field's weather hour by hour", () => {
       flight_category: "IFR",
       ceiling_ft: 800,
       visibility_sm: 2,
+      visibility_plus: false,
     };
     const hours = series("TAF KDLH 291720Z 2918/3018 27008KT 2SM BR OVC008 FM292100 29010KT P6SM SCT040", ifr);
     expect(hours[0]).toMatchObject({ category: "IFR", sky: "cloudy" });

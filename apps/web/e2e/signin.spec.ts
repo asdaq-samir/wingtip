@@ -1,6 +1,17 @@
 import { test, expect, type Page } from "@playwright/test";
 import { DEVELOPER, openLinkFor, signInByEmail } from "./emailSignIn";
-import { closeConsole, library, noTips, openConsole, openAccount, roleMenu, showTabs, sideDrawer, consolePage } from "./helpers";
+import {
+  closeConsole,
+  library,
+  noTips,
+  openConsole,
+  openAccount,
+  roleMenu,
+  showTabs,
+  sideDrawer,
+  consolePage,
+  consoleSheet,
+} from "./helpers";
 
 /**
  * Signing in and out on the running stack, from a browser with no
@@ -13,8 +24,6 @@ test.use({ storageState: { cookies: [], origins: [] } });
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(noTips);
 });
-
-const consoleSheet = (page: Page) => page.getByTestId("console-sheet");
 
 /** Dev mode, Developer in the console's role menu: the console and the
  *  menu opened first. Present or absent, it is looked for there. */

@@ -129,7 +129,12 @@ export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
           <LogbookTable entries={entries} vm={vm} />
         </Suspense>
       ) : (
-        entries.map((e) => <EntryRow key={e.id} e={e} vm={vm} />)
+        // Each row drawn as it nears the screen (index.css row-lazy).
+        entries.map((e) => (
+          <div key={e.id} className="row-lazy">
+            <EntryRow e={e} vm={vm} />
+          </div>
+        ))
       )}
     </ListGroup>
   );

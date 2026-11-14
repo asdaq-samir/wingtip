@@ -83,7 +83,7 @@ export default function FavoritesList({
               />
             ) : (
               <ListRow
-                media={<Mark icon={<House />} className="bg-teal-600 text-white" />}
+                media={<Mark icon={<House />} className="bg-(--badge-home) text-white" />}
                 chevron
                 title={
                   <>

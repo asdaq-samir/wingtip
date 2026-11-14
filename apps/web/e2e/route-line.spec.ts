@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { drawn, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -144,7 +145,7 @@ test("FPL's route line folds to the way picked, As typed at first, and a chip ta
 
   // A chip tapped: the route at once, its fuel stop named, and planned.
   await chips.filter({ hasText: "Avoid Weather" }).click();
-  await expect(page).toHaveURL(/[?&]stops=KEAU(&|$)/);
+  await expect(page).toHaveURL(stopsAre("KEAU"));
   await expect(page).toHaveURL(/[?&]fuel=KEAU(&|$)/);
   await expect.poll(() => planned.some((stops) => stops.includes("KEAU")), { timeout: slow(15_000) }).toBe(true);
   await expect(chips.filter({ hasText: "Avoid Weather" })).toHaveAttribute("data-pressed", "");

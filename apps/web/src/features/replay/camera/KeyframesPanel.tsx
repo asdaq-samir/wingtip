@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { KeyRound, Trash2 } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
@@ -54,13 +55,12 @@ export function KeyframesPanel() {
             <ListRow
               key={k.id}
               title={
-                <button
-                  type="button"
+                <BaseButton
                   className="relative tabular-nums text-primary after:absolute after:-inset-3 after:content-['']"
                   onClick={() => usePastFlight.setState({ at: k.t })}
                 >
                   {replayTimes(k.t).zulu}
-                </button>
+                </BaseButton>
               }
               value={
                 <span className="inline-flex items-center gap-2">

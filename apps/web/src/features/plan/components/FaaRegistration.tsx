@@ -4,10 +4,11 @@ import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { RowBadge } from "../../../components/RowBadge";
 import type { AircraftRegistration } from "../../../lib/api/types";
 import { BADGE } from "../../../lib/rowBadges";
-import { grouped } from "../../../lib/format";
+import { dayMonthYear, grouped } from "../../../lib/format";
 
-/** An ISO date as a day, in the phone's own way: "Jan 31, 2033". */
-const day = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
+/** An ISO date as a day, as the app writes every one: "31 Jan 2033"
+ *  (lib/format days; it was the phone's own form, CODE-33). */
+const day = (iso: string) => dayMonthYear(new Date(`${iso}T00:00:00`));
 
 /**
  * A US airplane's FAA registration, at the pilot's ask: who it is

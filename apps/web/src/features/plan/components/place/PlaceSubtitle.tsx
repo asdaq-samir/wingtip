@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
 import FitLine from "../../../../components/FitLine";
 import type { AirportPlace } from "../../../../lib/api/types";
@@ -55,14 +56,13 @@ export function PlaceSubtitle({
     );
   return (
     <>
-      <button
-        type="button"
+      <BaseButton
         onClick={() => sheet.show(mark)}
         className="relative flex min-w-0 items-center justify-center gap-2 outline-none after:absolute after:-inset-y-3 after:inset-x-0 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
         data-testid="place-full-name"
       >
         {words}
-      </button>
+      </BaseButton>
       {kindLine}
       {sheet.shown && <NotamSheet notams={sheet.shown} ident={place?.ident ?? ident} onClose={sheet.close} />}
     </>

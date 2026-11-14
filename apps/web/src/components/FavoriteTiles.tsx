@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { House } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "cn";
@@ -39,7 +40,7 @@ export function FavoriteTiles({
       {(home || onAddHome) && (
         <PlaceTile
           icon={<House />}
-          className="bg-teal-600 text-white"
+          className="bg-(--badge-home) text-white"
           title="Home"
           detail={home ? away(home) : "Add"}
           tinted={!home}
@@ -100,8 +101,7 @@ function PlaceTile({
   testId?: string;
 }) {
   return (
-    <button
-      type="button"
+    <BaseButton
       onClick={onClick}
       data-testid={testId}
       disabled={disabled}
@@ -118,6 +118,6 @@ function PlaceTile({
       )}
       {/* Named by its words, the rest after them (WCAG 2.5.3, Label in Name). */}
       {label && <span className="sr-only">, {label}</span>}
-    </button>
+    </BaseButton>
   );
 }

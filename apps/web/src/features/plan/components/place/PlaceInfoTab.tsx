@@ -9,6 +9,7 @@ import type { AirportPlace } from "../../../../lib/api/types";
 import { BADGE } from "../../../../lib/rowBadges";
 import { feet } from "../../../../lib/format";
 import { callEngine } from "../../../../lib/engine/engine";
+import { inUseOrder } from "../../../../lib/frequencies";
 import { FrequencyRow } from "../FrequencyRow";
 import { StopServices } from "../StopServices";
 import { mapsLink } from "./mapsLink";
@@ -16,6 +17,7 @@ import { PlaceLights } from "./PlaceLights";
 import { PlaceNotamsSection } from "./PlaceNotams";
 import { NotamBadge, NotamSheet } from "./NotamBadge";
 import { useNotamMarks, useNotamSheet } from "./notamBadges";
+import { NO_FREQUENCIES } from "../../../../lib/emptyWords";
 
 /** A section of the Info tab, which has several: its title over its rows
  *  (PillSection), the title the way to its list in full where it has more. */
@@ -114,7 +116,8 @@ export function PlaceInfoTab({
           {data && <ListRow muted title={data} data-testid="place-data-source" />}
         </ListGroup>
       </CardSection>
-      {/* The first few frequencies, the title the way to every one, as
+      {/* The first few frequencies, in the order they are dialled (the
+          engine's, lib/frequencies inUseOrder), the title the way to every one, as
           every section's title is the way to its list in full
           (PillSection); how many of how many at its right. */}
       <div className="pt-5 first:pt-0">
@@ -124,7 +127,8 @@ export function PlaceInfoTab({
           testId="place-frequencies"
           rows={
             place.frequencies.length
-              ? place.frequencies.map((f, i) => {
+              ? inUseOrder(place.frequencies).map((i) => {
+                  const f = place.frequencies[i]!;
                   const mark = marks.frequency.get(i);
                   return (
                     <FrequencyRow
@@ -137,7 +141,7 @@ export function PlaceInfoTab({
                     />
                   );
                 })
-              : [<ListRow key="none" title="None listed" />]
+              : [<ListRow key="none" title={NO_FREQUENCIES} />]
           }
           // What some fields read out on so many clicks of the mic on
           // the CTAF: the weather, a radio check (wingtip.remarks).

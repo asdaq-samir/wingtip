@@ -8,7 +8,7 @@ import { CardHead } from "../../../components/CardHead";
 import { SheetCard } from "../../../components/SheetCard";
 import { RowBadge } from "../../../components/RowBadge";
 import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../../lib/api/types";
-import { clockTime } from "../../../lib/format";
+import { clockTime, wholeNm } from "../../../lib/format";
 import { compassPoint } from "../../../lib/compass";
 import { useGeo } from "../../../lib/geo";
 import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight } from "../map/pastFlight";
@@ -127,7 +127,7 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
               </RowBadge>
             }
             title="Flown"
-            value={value(`${Math.round(flown)} nm`)}
+            value={value(`${wholeNm(flown)}`)}
             data-testid="past-flight-flown"
           />
           <ListRow

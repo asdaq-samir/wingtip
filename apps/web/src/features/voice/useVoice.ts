@@ -8,6 +8,16 @@ import { useVoiceInput } from "./voiceStore";
 let voice: typeof import("./voiceInput") | null = null;
 const load = () => import("./voiceInput").then((m) => (voice = m));
 
+/** The listening code could not be fetched (offline, its chunk gone with a
+ *  new release): said under the field, in place, and nothing listening. A
+ *  tap did nothing and said nothing (the web audit's WEB-35). */
+const unloaded = (field: string) =>
+  useVoiceInput.setState({
+    field: null,
+    words: "",
+    error: { field, text: "Ask by voice could not be loaded. Check your connection and try again." },
+  });
+
 /**
  * Ask by voice for one field: whether a mic is offered here (on-device
  * speech, lib/speechLocal), whether it is listening, the words so far for
@@ -21,7 +31,8 @@ export function useVoice(field: string, onSaid: (words: string) => void) {
   const words = useVoiceInput((s) => (s.field === field ? s.words : ""));
   const error = useVoiceInput((s) => (s.error?.field === field ? s.error.text : null));
   useEffect(() => {
-    if (offered) void load();
+    // Fetched ahead; a failure here is said only if the mic is tapped.
+    if (offered) load().catch(() => {});
   }, [offered]);
   const press = () => {
     if (listening) {
@@ -33,7 +44,7 @@ export function useVoice(field: string, onSaid: (words: string) => void) {
         if (said) onSaid(said);
       });
     if (voice) hear(voice);
-    else void load().then(hear);
+    else load().then(hear, () => unloaded(field));
   };
   return {
     offered,

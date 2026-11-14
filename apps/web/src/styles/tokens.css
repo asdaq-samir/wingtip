@@ -30,6 +30,7 @@
   --type-tab: 0.8125rem;
   --type-tab-bar: 0.75rem;
   --type-caption: 0.6875rem;
+  --type-chip: 0.8125rem;
   --type-label: 0.8125rem;
   --type-figure: 1.625rem;
   --lead-hero: 2.125rem;
@@ -89,6 +90,8 @@
   --chart-centreline: #ffffff;
   --chart-glidepath: #00b4e6;
   --chart-obstacle: #7a1f1f;
+  --chart-map-ground: #f1f5f9;
+  --chart-map-ground-night: #0f172a;
   --category-vfr: #1a7f37;
   --category-mvfr: #1f6feb;
   --category-ifr: #b3261e;
@@ -122,6 +125,9 @@
   --badge-stop-food: #dc2626;
   --badge-stop-repair: #0f766e;
   --badge-stop-training: #0369a1;
+  --badge-home: #0d9488;
+  --badge-airplane: #0284c7;
+  --badge-air: #0f766e;
   --weather-convective: #c2410c;
   --weather-icing: #2563eb;
   --weather-turbulence: #d97706;
@@ -200,6 +206,7 @@
   --depth-float: 0 0 0 0.5px rgb(0 0 0 / 0.059), 0 1px 2px 0 rgb(0 0 0 / 0.059), 0 4px 16px 0 rgb(0 0 0 / 0.102);
   --depth-card: 0 1px 4px 0 rgb(0 0 0 / 0.078);
   --depth-sheet: 0 -1px 12px 0 rgb(0 0 0 / 0.122);
+  --depth-hairline: 0 0 0 0.5px var(--border);
   --depth-mark: 0 1px 3px 0 rgb(0 0 0 / 0.349);
   --depth-overlay: 0 0 0 0.5px rgb(0 0 0 / 0.078), 0 4px 8px 0 rgb(0 0 0 / 0.059), 0 16px 40px 0 rgb(0 0 0 / 0.18);
   --tap-target: 44px;
@@ -293,6 +300,7 @@
   --depth-float: 0 0 0 0.5px rgb(255 255 255 / 0.078), 0 1px 2px 0 rgb(0 0 0 / 0.251), 0 6px 20px 0 rgb(0 0 0 / 0.4);
   --depth-card: 0 1px 4px 0 rgb(0 0 0 / 0.078);
   --depth-sheet: 0 -1px 12px 0 rgb(0 0 0 / 0.502);
+  --depth-hairline: 0 0 0 0.5px var(--border);
   --depth-mark: 0 1px 3px 0 rgb(0 0 0 / 0.349);
   --depth-overlay: 0 0 0 0.5px rgb(255 255 255 / 0.102), 0 4px 8px 0 rgb(0 0 0 / 0.349), 0 18px 44px 0 rgb(0 0 0 / 0.549);
 }

@@ -13,6 +13,7 @@ import {
   sideDrawer,
   slow,
 } from "./helpers";
+import { stopsAre } from "./stopsParam";
 import { showPage } from "./oneSearch";
 
 /**
@@ -83,7 +84,7 @@ test(
 
     // Add Stop: KOSH a landing on the way, both ends kept.
     await card.getByTestId("place-add-stop").click();
-    await expect(page).toHaveURL(/[?&]stops=KOSH(&|$)/);
+    await expect(page).toHaveURL(stopsAre("KOSH"));
     await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
     await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
     // The plan up (FPL, the sheet's second page), and the search, its own

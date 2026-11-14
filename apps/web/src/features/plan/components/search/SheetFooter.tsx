@@ -3,6 +3,14 @@ import { cn } from "cn";
 import { LEGAL_PAGES } from "../../../../lib/legal";
 import { wantScreen } from "../../../../lib/navigation/wanted";
 import { TEXT } from "../../../../lib/text";
+import { Button as BaseButton } from "@base-ui/react/button";
+
+/** A foot link: grey words, its 44-point hit area a pseudo-element round
+ *  them, the links far enough apart that their areas meet without
+ *  overlapping (CLAUDE.md; the web audit's WEB-45: Privacy and Terms were
+ *  42 and 35 by 26 with no area of their own). */
+const FOOT_LINK =
+  "relative outline-none after:absolute after:-inset-x-2 after:-inset-y-3.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring";
 
 /**
  * The foot of the search's page, as Apple Maps on the web ends its sheet
@@ -25,27 +33,18 @@ export default function SheetFooter() {
       className={cn("flex flex-col items-center gap-3 px-4 pt-6 pb-4 text-center text-muted-foreground", TEXT.note)}
       data-testid="sheet-footer"
     >
-      <nav aria-label="Legal" className="flex flex-wrap items-center justify-center gap-x-2">
+      <nav aria-label="Legal" className="flex flex-wrap items-center justify-center gap-x-2 gap-y-6">
         {links.map((l) => (
           <Fragment key={l.key}>
-            <a
-              href={l.href}
-              target="_blank"
-              rel="noopener"
-              className="relative py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
+            <a href={l.href} target="_blank" rel="noopener" className={FOOT_LINK}>
               {l.label}
             </a>
             <span aria-hidden="true">|</span>
           </Fragment>
         ))}
-        <button
-          type="button"
-          onClick={() => wantScreen("about")}
-          className="relative py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
+        <BaseButton onClick={() => wantScreen("about")} className={FOOT_LINK}>
           Legal
-        </button>
+        </BaseButton>
       </nav>
       <p>© {new Date().getFullYear()} Wingtip Maps</p>
     </footer>

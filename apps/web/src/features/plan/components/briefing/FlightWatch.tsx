@@ -116,7 +116,7 @@ export default function FlightWatch() {
     <section className="flex flex-col gap-2" data-testid="flight-watch" aria-label="Flight watch">
       {/* The picker's 44-point area reaches 10 past it and the switch's 12
           (their ::after insets): gap-6 keeps the two apart. */}
-      <div className="flex items-center gap-6 rounded-xl bg-card px-3.5 py-2.5 shadow-[0_0_0_0.5px_var(--border)]">
+      <div className="flex items-center gap-6 rounded-(--radius-card) bg-card px-3.5 py-2.5 shadow-hairline">
         <label htmlFor="flight-watch-switch" className={cn("min-w-0 flex-1 font-medium", TEXT.row)}>
           Watch this flight
         </label>

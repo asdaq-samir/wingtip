@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import type { ReactNode } from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "cn";
@@ -8,7 +9,7 @@ import { TEXT } from "../lib/text";
  *  its setting. Its own height is past 44, so it needs no area of its
  *  own. */
 const TILE = cn(
-  "group flex h-auto min-h-14 w-full min-w-0 items-center justify-start gap-2.5 rounded-2xl bg-card px-2.5 py-2 text-left outline-none",
+  "group flex h-auto min-h-14 w-full min-w-0 items-center justify-start gap-2.5 rounded-(--radius-card) bg-card px-2.5 py-2 text-left outline-none",
   "hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 data-pressed:bg-card",
 );
 
@@ -62,9 +63,9 @@ export default function MenuTile<V extends string>({
       options={options}
       align="start"
       trigger={
-        <button type="button" aria-label={`${label}: ${words}`} data-testid={testId} data-pressed={on ? "" : undefined} className={TILE}>
+        <BaseButton aria-label={`${label}: ${words}`} data-testid={testId} data-pressed={on ? "" : undefined} className={TILE}>
           <Face icon={icon} label={label} value={words} menu />
-        </button>
+        </BaseButton>
       }
     />
   );

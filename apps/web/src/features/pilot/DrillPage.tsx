@@ -96,7 +96,7 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
         {practice ? "Practice: no score kept" : `${queue.length} to go`}
         {done ? ` · ${done} done` : ""}
       </p>
-      <div className="space-y-4 rounded-lg border border-border bg-card p-4">
+      <div className="space-y-4 rounded-(--radius-card) border border-border bg-card p-4">
         {card.light && <Lamp light={card.light} />}
         <p className={cn("font-semibold", TEXT.title)} data-testid="drill-prompt">
           {card.prompt}

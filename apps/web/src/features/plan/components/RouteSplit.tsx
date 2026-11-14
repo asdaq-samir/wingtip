@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "cn";
@@ -48,8 +49,7 @@ export default function RouteSplit({
       <End value={dep} name={depName} onChange={onDep} label="Departure" testId="route-split-departure">
         <Mark round filled={!!dep} />
       </End>
-      <button
-        type="button"
+      <BaseButton
         onClick={onStops}
         disabled={!dep || !dest}
         data-testid="route-split-stops"
@@ -67,7 +67,7 @@ export default function RouteSplit({
             <ArrowRight className="size-3.5" aria-hidden />
           </>
         )}
-      </button>
+      </BaseButton>
       <End value={dest} name={destName} onChange={onDest} label="Destination" testId="route-split-destination" end>
         <Mark filled={!!dest} />
       </End>

@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { Link2Off, Pencil, Route, Share, Trash2 } from "lucide-react";
 import { cn } from "cn";
 import EmptyState from "../../../components/EmptyState";
@@ -10,13 +11,14 @@ import { RemovableRow } from "../../../components/RemovableRow";
 import type { FlightSummary } from "../../../lib/api/types";
 import { planHrefOf } from "../../../lib/flightLink";
 import { sharedPlanLink } from "../../../lib/sharedFlight";
-import { feet, nm } from "../../../lib/format";
+import { dayMonthYear, feet, nm } from "../../../lib/format";
 import { LEVEL_TONE, riskLine, type RiskLevel } from "../../../lib/frat";
 import { routeName } from "../../../lib/identSchema";
 import FlightPage from "../FlightPage";
 import FlightFields from "./FlightFields";
 import { flightTitle } from "./flightEdit";
 import { useSavedFlights, type SavedFlightsModel } from "./useSavedFlights";
+import { NO_FLIGHTS } from "../../../lib/emptyWords";
 
 // Edit's row menu's Share: the plan in the link itself, opened as a preview
 // (lib/sharedFlight); the menu's is the saved flight's own, which can be stopped.
@@ -53,7 +55,7 @@ function rowOf(f: FlightSummary) {
       <span className="tabular-nums">
         {f.name && <span className="block font-mono">{route}</span>}
         {feet(f.cruiseAltitudeFt)}
-        {f.totalDistanceNm != null && ` · ${nm(f.totalDistanceNm)}`} · filed {new Date(f.createdAt).toLocaleDateString()}
+        {f.totalDistanceNm != null && ` · ${nm(f.totalDistanceNm)}`} · saved {dayMonthYear(new Date(f.createdAt))}
         {/* The risk assessment it was saved with (lib/frat). */}
         {f.risk && (
           <span className={cn("block", LEVEL_TONE[f.risk.level as RiskLevel])} data-testid="flight-risk">
@@ -98,14 +100,13 @@ function SavedFlightRow({ f, vm }: { f: FlightSummary; vm: SavedFlightsModel }) 
         // In Edit, the name is what changes it, as iOS's lists rename a
         // row tapped in Edit.
         title={
-          <button
-            type="button"
+          <BaseButton
             className="relative text-left text-tint after:absolute after:-inset-y-3 after:inset-x-0"
             onClick={() => vm.startChange(f.id)}
             data-testid="saved-flight-rename"
           >
             {row.title}
-          </button>
+          </BaseButton>
         }
         media={<RemoveMinus label={`Delete ${title}…`} />}
       />
@@ -177,7 +178,7 @@ export function FlightsPanel({
           // the list showed nothing.
           <QueryState query={vm.asked} fetching="Fetching your flights…" failed="Your flights could not be fetched." />
         ) : list.length === 0 ? (
-          <EmptyState icon={<Route />} title="No Flights">
+          <EmptyState icon={<Route />} title={NO_FLIGHTS}>
             Plan a route and Save it from Share; it is kept here.
           </EmptyState>
         ) : (

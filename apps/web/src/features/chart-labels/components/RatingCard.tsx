@@ -1,4 +1,5 @@
 import { cn } from "cn";
+import { Alert } from "../../../components/ui/alert";
 import { Button } from "../../../components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group";
 import { isEndpoint, type Point, type Rating } from "../../../lib/api/types";
@@ -6,6 +7,7 @@ import { inkOn } from "../../../lib/scoreScale";
 import { TEXT } from "../../../lib/text";
 import { COLORS, RATINGS, modelNote, prettyCategory } from "../logic";
 import { capitalised } from "../../../lib/advisories";
+import { nm } from "../../../lib/format";
 
 /** What the scale's ends and middle mean, under the buttons -- the
  *  Guide's scale (RatingGuide) in one line, each term kept whole where
@@ -17,7 +19,8 @@ const SCALE_KEY = ["0 not a feature", "3 workable", "5 unmistakable"].map((term)
  *  fill kept inside -- its colour the scale's (inline), the one given
  *  ringed. */
 const RATING = cn(
-  "h-10 w-full cursor-pointer rounded-md border border-transparent bg-clip-padding px-0 text-base font-bold select-none pointer-coarse:text-(length:--type-row)",
+  "h-10 w-full cursor-pointer rounded-md border border-transparent bg-clip-padding px-0 font-bold select-none",
+  TEXT.row,
   "data-pressed:ring-2 data-pressed:ring-foreground data-pressed:ring-offset-2 data-pressed:ring-offset-background",
 );
 
@@ -35,6 +38,7 @@ export default function RatingCard({
   number,
   onRate,
   onStart,
+  failed,
 }: {
   /** The point picked, if it is one to rate (not an end of the route). */
   point: Point | null;
@@ -43,6 +47,8 @@ export default function RatingCard({
   onRate: (rating: Rating) => void;
   /** To the first point not yet rated; none when every one is. */
   onStart?: () => void;
+  /** Its last rating could not be saved: said here, in place. */
+  failed?: boolean;
 }) {
   if (!point || isEndpoint(point)) {
     return (
@@ -60,7 +66,7 @@ export default function RatingCard({
   }
   const rating = (point as { rating: Rating | null }).rating;
   const kind = prettyCategory((point as { category: string }).category);
-  const where = [`${point.along_track_nm.toFixed(1)} nm out`, modelNote(point)].filter(Boolean).join(" · ");
+  const where = [`${nm(point.along_track_nm)} out`, modelNote(point)].filter(Boolean).join(" · ");
   return (
     <div className="flex w-full flex-col gap-2 rounded-xl bg-background/70 px-3 py-2" data-testid="rating-card">
       <div className="flex min-w-0 items-baseline gap-2">
@@ -99,6 +105,14 @@ export default function RatingCard({
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
+      {/* A rating that could not be saved, said on the point it is of, and
+          the page left on it to rate again (lib/problems: errors where they
+          happen). */}
+      {failed && (
+        <Alert variant="destructive" className={cn("border-0 bg-transparent px-0 py-0", TEXT.note)} data-testid="rating-failed">
+          That rating could not be saved. Rate it again.
+        </Alert>
+      )}
       {/* All the way up, under the buttons; in the pill the room is theirs
           (MapPanel's data-pill-hides). */}
       <p className={cn("text-foreground/70 in-data-capsule:hidden", TEXT.note)}>{SCALE_KEY}</p>

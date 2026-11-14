@@ -4,6 +4,7 @@ import { ListGroup } from "../../components/GroupedList";
 import { Button, buttonVariants } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { TEXT } from "../../lib/text";
+import { zuluTime } from "../../lib/format";
 import type { StudioHistory } from "./useStudioHistory";
 
 /** A raw report, as it was sent: monospaced, wrapped. */
@@ -36,7 +37,7 @@ export function WeatherThen({ history }: { history: StudioHistory }) {
         </Collapsible>
       )}
       <p className={cn("text-muted-foreground", TEXT.caption)}>
-        {radar ? `Radar on the map: the ${radar.valid.slice(11, 16)}Z mosaic. ` : ""}
+        {radar ? `Radar on the map: the ${zuluTime(new Date(radar.valid))} mosaic. ` : ""}
         {weather.credit}
       </p>
     </div>
