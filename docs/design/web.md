@@ -1347,12 +1347,14 @@ apart (`terrain/airspaceShelves`):
   while a replay camera follows) meanwhile, no toast. The map tilts to 85 degrees in 3D
   (`map.pitch-max`), low enough to see the shelves from the side.
 
-- Each Class B, C and D shelf is labelled at its top, on the edge nearest
-  the viewer and facing the screen, as the sectional writes it: the
-  ceiling over the floor in hundreds of feet MSL, "100" over "30", "100"
+- Each Class B, C and D shelf is labelled at its top, facing the screen,
+  in up to eight places spread along its edge at least 8 km apart, the
+  one nearest the viewer tried first and every shelf's first before any
+  shelf's next, MapLibre's collision keeping whichever fit, as the
+  sectional writes it: the ceiling over the floor in hundreds of feet MSL, "100" over "30", "100"
   over "SFC", a Class C's "T", a Class D's ceiling alone ("-30"), in the
   2D chart's airspace tab (the engine's `airspace_shelf_label`; the FAA's
-  Chart User's Guide). One a shelf, lifted with MapLibre's
+  Chart User's Guide). Lifted with MapLibre's
   `symbol-height-offset`, kept apart by MapLibre's own collision and
   placed after the airports' and navaids' marks, which they never hide,
   and before the special use areas' names where they meet at a low tilt;
