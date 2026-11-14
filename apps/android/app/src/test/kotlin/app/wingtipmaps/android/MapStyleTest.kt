@@ -166,14 +166,20 @@ class MapStyleTest {
     }
 
     @Test
-    fun theAirportsWearTheSectionalsSymbolsAndLeaveOffMilitaryAndPrivateFields() {
+    fun theAirportsWearThePlannersMarkSizedByTheFieldAndLeaveOffMilitaryAndPrivateFields() {
         val airports = layer(style(tiles("airports")), "airports")
         assertEquals(
             """["all",["!=",["get","military"],"military"],["!=",["get","use"],"private"]]""",
             airports["filter"].toString(),
         )
-        assertEquals("apt|t|large||", MapStyle.airportMarkId(true, "large", "", ""))
-        assertEquals("apt|u|other|#1a7f37|private", MapStyle.airportMarkId(false, "other", "#1a7f37", "private"))
+        assertEquals("apt|B||", MapStyle.airportMarkId("B", "", ""))
+        assertEquals("apt||h#1a7f37|private", MapStyle.airportMarkId("", "h#1a7f37", "private"))
+        val layout = airports["layout"]!!.jsonObject
+        // The ring is the tiles' surface airspace, "" for an older archive.
+        assertEquals("""["coalesce",["get","airspace"],""]""", layout["icon-image"]!!.jsonArray[2].toString())
+        // Each zoom's size times the engine's size step (field_mark_rank).
+        val size = layout["icon-size"]!!.toString()
+        assertTrue(size, size.contains("""["match",["get","size"],"largest",1.5,"larger",1.2,"small",0.82,1]"""))
         val colour = airports["paint"]!!.jsonObject["text-color"]!!.jsonArray
         assertEquals(MapStyle.BLUE, colour[2].jsonPrimitive.content)
         assertEquals(MapStyle.MAGENTA, colour[3].jsonPrimitive.content)
