@@ -46,6 +46,8 @@ struct FlightLoops: ViewModifier {
             // (InFlight); again when the route changes under it.
             .onChange(of: dryRun.fix ?? ownShip.fix, initial: true) { _, fix in inFlight.took(fix, plan: plan, emergency: emergency.open != nil) }
             .onChange(of: plan.course) { _, _ in inFlight.took(dryRun.fix ?? ownShip.fix, plan: plan, emergency: emergency.open != nil) }
+            // The route's line for the packs read ahead (regions_ahead).
+            .onChange(of: plan.course, initial: true) { _, course in ownShip.routeLine = course?.coordinates.map { [$0.latitude, $0.longitude] } }
             .onChange(of: ownShip.groundFt) { _, ft in inFlight.terrainFt = ft }
     }
 }

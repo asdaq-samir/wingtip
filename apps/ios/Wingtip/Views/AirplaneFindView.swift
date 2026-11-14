@@ -34,7 +34,7 @@ struct AirplaneRow: View {
 
     /// The line as VoiceOver says it: the height and speed in words.
     static func spoken(_ plane: TrafficAircraft) -> String {
-        [plane.type, plane.altitudeFt.map { SpokenFigures.feet(($0 / 100).rounded() * 100) }, plane.speedKt.map(SpokenFigures.knots)]
+        [plane.type, plane.altitudeFt.map { SpokenFigures.feet(Format.trafficFeet($0)) }, plane.speedKt.map(SpokenFigures.knots)]
             .compactMap { $0 }.joined(separator: ", ")
     }
 
@@ -42,7 +42,7 @@ struct AirplaneRow: View {
     static func line(_ plane: TrafficAircraft) -> String {
         var parts: [String] = []
         if let type = plane.type { parts.append(type) }
-        if let ft = plane.altitudeFt { parts.append(Format.altitude((ft / 100).rounded() * 100)) }
+        if let ft = plane.altitudeFt { parts.append(Format.trafficAltitude(ft)) }
         if let kt = plane.speedKt { parts.append(Format.speed(kt)) }
         return parts.joined(separator: " · ")
     }

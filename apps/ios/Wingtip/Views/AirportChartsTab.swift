@@ -87,7 +87,9 @@ struct AirportChartsTab: View {
     private func chartRow(_ chart: TerminalChart) -> some View {
         let symbol = chart.kind == "IAP" ? "airplane.arrival" : chart.kind == "DP" || chart.kind == "ODP" ? "airplane.departure"
             : chart.kind == "STR" ? "point.topleft.down.to.point.bottomright.curvepath" : "doc.richtext"
-        let plate = row(chart.name, symbol, colour: chart.kind == "IAP" || chart.kind == "DP" || chart.kind == "ODP" || chart.kind == "STR" ? Badge.approach : Badge.chart) {
+        // The FAA's capitalised name in sentence case, its codes kept
+        // ("ILS or LOC RWY 36" reads "ILS or LOC rwy 36"): faa_words.
+        let plate = row(AirportWords.faaWords(chart.name), symbol, colour: chart.kind == "IAP" || chart.kind == "DP" || chart.kind == "ODP" || chart.kind == "STR" ? Badge.approach : Badge.chart) {
             shown = .faaChart(chart.name, url: chart.url, airport: place.ident)
         }
         if let mark = notams.marks.approach[chart.url] {

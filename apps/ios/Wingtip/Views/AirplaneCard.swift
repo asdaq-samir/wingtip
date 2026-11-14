@@ -198,11 +198,11 @@ struct NowFlightRow: View {
 
     private var started: Double? { detail?.departed?.at ?? detail?.trail?.first?.t }
 
-    /// Its height to the 25 ft, its climb, ground speed and track, as sent.
+    /// Its height to the 100 ft (Format.trafficAltitude), its climb, ground speed and track, as sent.
     private var flying: String {
         let rate = plane.verticalFpm ?? 0
         let climb = abs(rate) >= 100 ? "\(rate > 0 ? "↑" : "↓") \((Int((abs(rate) / 100).rounded()) * 100).formatted()) fpm" : "level"
-        let height = Format.altitude(plane.altitudeFt.map { ($0 / 25).rounded() * 25 })
+        let height = Format.trafficAltitude(plane.altitudeFt)
         let speed = Format.speed(plane.speedKt)
         let track = plane.trackDeg.map { " · \(Format.heading($0)) true" } ?? ""
         return "\(height) \(climb) · \(speed)\(track)"
@@ -212,7 +212,7 @@ struct NowFlightRow: View {
     private var spokenFlying: String {
         let rate = plane.verticalFpm ?? 0
         let climb = abs(rate) >= 100 ? "\(rate > 0 ? "climbing" : "descending") \(SpokenFigures.feetPerMinute((abs(rate) / 100).rounded() * 100))" : "level"
-        return [plane.altitudeFt.map { SpokenFigures.feet(($0 / 25).rounded() * 25) }, climb, plane.speedKt.map(SpokenFigures.knots),
+        return [plane.altitudeFt.map { SpokenFigures.feet(Format.trafficFeet($0)) }, climb, plane.speedKt.map(SpokenFigures.knots),
                 plane.trackDeg.map { "track \(SpokenFigures.degrees($0)) true" }].compactMap { $0 }.joined(separator: ", ")
     }
 }

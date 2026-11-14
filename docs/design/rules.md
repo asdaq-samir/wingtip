@@ -179,7 +179,7 @@ Compose. Nothing here is built by hand where a stock part does it.
 | Questions | `SheetDialog`: a bottom sheet on a phone with ✕ or Cancel, centred from `md` up | `.alert` and `.confirmationDialog`, hung on the top of the stack (`TopHosts`) so they always show | `AlertDialog` (`ui/SourceDialog` for a source report) |
 | Emergency | The one full-height card, ✕ at the top right, the map not dimmed | A card on the system sheet (`SheetPage.emergency`) at the large detent, the card's own close; the iPad's inspector | A card on the sheet's stack (`SheetPage.Emergency`) at full height, the card's bar; at half the glide ring shows |
 | One search | Search's page, turned to by one round toggle button riding the sheet's top at the left, under the 3D (`PageToggle`; the owner, 2026-11-13), its magnifier showing while FPL is up; the traffic's airplane and Nearest's place are the search scoped to them (`listSearchOf`; Nearest's at its card's top, `nearSearch`, where the card covers the sheet's first row); the route's points ask it for an airport (`askSearchPick`) | The one `.searchable` field, on the TabView's `Tab(role: .search)` | Search a `NavigationBar` item beside FPL's; Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`) |
-| At the pill | The card's pinned head (`data-sheet-head`: `PinnedHead`, Settings' title row, a console page's head) is all of the card left in sight there (CardStack's scroller), with its short line under its name (`CardHead`'s `sub`); a tap on the row raises the card to half. A swipe down parks a card there; a settings card's frame has `onSwipeClose` (`lib/sheetCards`; You's `CardLayer`, the Map card's `SheetCard swipeCloses`), and a swipe down from half closes it by the Drawer's own close, from all the way up brings it to half (the owner, 2026-11-14: "Settings cards should only close from a swipe down when in medium detents") | The system sheet's smallest detent shows the card's bar | The sheet's peek shows the card's bar |
+| At the pill | The card's pinned head (`data-sheet-head`: `PinnedHead`, Settings' title row, a console page's head) is all of the card left in sight there (CardStack's scroller), with its short line under its name (`CardHead`'s `sub`); a tap on the row raises the card to half. A swipe down parks a card there; a settings card's frame has `onSwipeClose` (`lib/sheetCards`; You's `CardLayer`, the Map card's `SheetCard swipeCloses`), and a swipe down from half closes it by the Drawer's own close, from all the way up brings it to half (the owner, 2026-11-14: "Settings cards should only close from a swipe down when in medium detents") | The system sheet's smallest detent shows the card's bar, where a swipe down parks a content card (`SheetPage.detents`); You, Settings and the Map card have no pill detent, so a swipe down closes them (`SheetPage.swipeCloses`, the owner, 2026-11-14), and Emergency is `interactiveDismissDisabled`, closed by its ✕ alone | The sheet's peek shows the card's bar |
 | By name | `useOpenScreen` through `lib/navigation/wanted` | `RootView.openScreen`, which opens the card by `Navigator.open` | `OpenScreen` through `ScreenRequests` |
 
 Each "by name" path is a `switch` or `when` over the generated list of
@@ -314,9 +314,9 @@ the suite prints that reason. What runs when is [docs/CI.md](../CI.md).
 The sheet's Search page (§4a: its pages turned by one round toggle
 button riding the sheet's top at the left, under the 3D, the owner,
 2026-11-13) has one field as its first row, "Search airports and
-airplanes" on the web (the owner, 2026-11-14: "Just say Search airports
-and airplanes"; no Ask there since decision 0041; the phones' "Search airports,
-airplanes, or ask"), with the on-device microphone and the account button
+airplanes" on every app (the owner, 2026-11-14: "Just say Search airports
+and airplanes"; no Ask on the web since decision 0041, the phones' on-device
+answers still offered among the suggestions), with the on-device microphone and the account button
 beside it; the account button opens You, who the pilot is and what is
 theirs, with Settings one of its rows (§8), where Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXzCV>.
 

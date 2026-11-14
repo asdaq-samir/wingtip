@@ -566,6 +566,16 @@ The card starts with the title, then the actions and the facts.
    - The Info / Weather / Runways / Charts switch is `.pickerStyle(.tabs)`
      (iOS 27, already adopted). Apple says it looks like a segmented
      control, but VoiceOver reads it as tabs.
+   - Since the owner's T4 (2026-11-14) the switch (`AirportTabBar`) sits
+     directly under the actions and facts, in sight at half, and pins
+     under the bar as the head scrolls away. The picked tab is filled in
+     the look's tint (`.tint`). Charts carries its count ("Charts 9": the
+     d-TPP plates and the diagram), and Weather's name says the field's
+     own category to VoiceOver ("Weather, MVFR"); the stock control draws
+     a segment's words in one colour, so the category's colour is the
+     chip in the line under the tabs (`AirportWeatherLine`: "MVFR ·
+     Ceiling 1,800 ft · 310°T 4 kt · 1255Z", only for a field with a
+     report of its own). The image tiles (8) are the first thing on Info.
 10. **The floating glass toolbar** at the foot, over the content:
     - Add to Route (+), Favorite (☆), Set as Home, and More (•••)
     - More holds Hold Here…, Copy Ident, Report a Problem and Open in
@@ -624,7 +634,27 @@ The card starts with the title, then the actions and the facts.
   example "Departed Gate", "Taxiing for 13m", "Landed / It's 6:32am
   (22m early)" ([flighty.com][flighty]).
 
-**Your airplane, top to bottom:**
+**Built (the owner's P1, 2026-11-14, rules.md's airplane card):**
+`AirplaneProfileView` is the airplane card by its N-number, its own and
+any other. `AirplanePlaceHead`: the N-number, the registry's make, model
+and year under it (from `/api/traffic/registered`, the registry alone,
+at once), the Planespotters.net photo beside its credit only once
+`/api/airplanes/{n}/photo` answers with one, and four tiles -- Fly This
+filled, Follow (a menu of the takes-off and lands alerts), Favorite and
+Share, Follow and Favorite greyed without the registry's ICAO address.
+Then the stock `.tabs` picker, Flights · Info · Figures, the picked one in
+the tint and Flights with its count, and one status line under it
+(`AirplaneLookup.status`: "Checking whether it's in the air…" while the
+live find is out, "In the air · 4,500 ft · 108 kt" as a tap that tracks
+it, else where its last flight ended, else "Not heard in the last 6
+weeks"). Flights lists its past flights by that address, each ▶ row
+pushing its replay (`PastFlightCard`); Info is `AirplaneInfoSections`, the
+FAA groups in the web's order with the owner shown; Figures holds every
+figure, the endurance, the handbook photo and the checklists. The FPL's
+N-number field suggests under it from the one search's rows
+(`AirplaneHits`).
+
+**Your airplane, top to bottom (the earlier plan):**
 
 1. A **pass-like hero card**, white and rounded `radius.card` (navy at
    night). On it:
@@ -1138,10 +1168,9 @@ by its model through `CardTriggers`; its own map at the top):**
 3. **Squawk 7700 and 121.5**, as two large figure tiles. They copy on
    tap, and VoiceOver says them in full.
 4. **The nearest fields**, a `List`. Each row is ident, distance and
-   bearing, the longest runway, and the flight category. The reported
-   visibility the web shows beside them ("10+ sm", nothing where the
-   report has none) is in the generated model (`visibility_sm`,
-   `visibility_plus`) and is drawn in the phone phase. Each row has
+   bearing, the longest runway, and the flight category, then the
+   reported visibility, "Visibility 10+ sm" (`visibility_sm`,
+   `visibility_plus`; nothing where the report has none). Each row has
    one filled **Direct To** button, the row's primary action. With no
    planner the fields are the cycle packs' (`PackFields`), ranked by the
    engine, under one row: "From this iPhone, without weather". A Direct

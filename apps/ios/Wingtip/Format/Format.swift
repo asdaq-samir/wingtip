@@ -77,6 +77,18 @@ enum Format {
 
     /// Nautical miles to a tenth, as the planner sends them: "102.4 nm";
     /// `decimals: 0` for a distance only roughly meant ("12 nm of you").
+    /// Another airplane's reported altitude to the hundred feet, "4,500
+    /// ft": as ATC gives traffic's altitude in hundreds of feet (FAA Order
+    /// JO 7110.65, 2-1-21), one form wherever a target is shown (the
+    /// web's trafficFt, WEB-38 and CODE-34), where the airplane's card
+    /// rounded to 25 ft and the find list to 100.
+    static func trafficAltitude(_ ft: Double?) -> String {
+        altitude(ft.map(trafficFeet))
+    }
+
+    /// A target's altitude rounded to the hundred feet, for saying it.
+    static func trafficFeet(_ ft: Double) -> Double { (ft / 100).rounded() * 100 }
+
     static func distance(_ nm: Double?, decimals: Int = 1) -> String {
         guard let nm else { return none }
         return "\(number(nm, decimals: decimals)) nm"

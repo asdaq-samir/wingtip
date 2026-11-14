@@ -122,12 +122,6 @@ struct TrafficFindView: View {
         // SwiftUI's own debounce: the task is cancelled and begun again
         // each time the text (or the turn) changes, and when the view goes.
         .task(id: Asking(text: wanted, turn: turn)) { await search(wanted) }
-        // Pulled down: the traffic round the airplane asked now, and the
-        // search asked again, the airplanes being live.
-        .refreshable {
-            turn += 1
-            await traffic.ask(near: ownShip.fix)
-        }
     }
 
     /// Asked once the typing pauses, half a second, or at once on a submit

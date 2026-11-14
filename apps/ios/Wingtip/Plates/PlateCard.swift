@@ -41,6 +41,8 @@ struct PlateCard: View {
                 .controlSize(.large)
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
+                // Why View Full Screen is off, where it happened (IOS-6).
+                if let problem = model.problem { ProblemLine(problem) }
             }
             Section {
                 Toggle("Show Annotations", isOn: $annotations)
@@ -76,10 +78,18 @@ struct PlateCard: View {
 final class PlateCardModel {
     private(set) var plate: PlateOverlay?
     private(set) var chartURL: String?
+    /// Why the plate could not be had, said under the buttons.
+    private(set) var problem: String?
 
     func load(_ key: String) async {
         guard let parts = PlateKey.parts(key) else { return }
-        plate = try? await Planner.plate(parts.ident, procedure: parts.procedure)
+        do {
+            plate = try await Planner.plate(parts.ident, procedure: parts.procedure)
+            problem = nil
+        } catch {
+            plate = nil
+            problem = "The plate couldn't be fetched: \(error.localizedDescription)"
+        }
         guard let name = plate?.name, let place = try? await Planner.place(parts.ident) else { return }
         chartURL = Self.chart(named: name, in: place.procedures ?? [])?.url
     }

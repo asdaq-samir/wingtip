@@ -78,6 +78,26 @@ enum SheetPage: Hashable {
     /// medium by default").
     var opensFull: Bool { self == .emergency }
 
+    /// A settings card, You (Settings in it) and the Map card: a swipe down
+    /// closes it rather than parking it at the pill, as Apple Maps
+    /// dismisses its account and settings sheets while a place stays at
+    /// hand (the owner, 2026-11-14: "Apple Maps closes all setting drawers
+    /// on swipe down"; docs/design/rules.md, card rule 10).
+    var swipeCloses: Bool {
+        switch self {
+        case .mapSettings, .settings, .screen(.setup): true
+        default: false
+        }
+    }
+
+    /// The sizes the card's sheet stops at on the iPhone. A content card
+    /// parks at the pill on a swipe down, its bar in sight there; a
+    /// settings card has no pill, so the swipe closes it; Emergency keeps
+    /// the pill out too and is closed by its ✕ alone (CardHost).
+    var detents: Set<PresentationDetent> {
+        swipeCloses || self == .emergency ? [.half, .large] : [RootView.pill, .half, .large]
+    }
+
     /// Whether the page brings its own way out (an edit form's Cancel, a
     /// question's Not Now), so the card adds no close of its own: HIG
     /// Sheets puts Cancel where the close would be.

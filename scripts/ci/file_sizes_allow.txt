@@ -12,7 +12,7 @@ apps/ios/Wingtip/Tiles/ChartTileOverlay.swift 404
 apps/ios/Wingtip/Views/ChartMap.swift 729
 apps/ios/Wingtip/Views/ChartOverlays.swift 807
 apps/ios/Wingtip/Views/InFlightViews.swift 418
-apps/ios/Wingtip/Views/InstructorView.swift 409
+apps/ios/Wingtip/Views/InstructorView.swift 407
 apps/ios/Wingtip/Views/PlannerFiguresViews.swift 464
 apps/web/e2e/dry-run.spec.ts 423
 apps/web/e2e/helpers.ts 772

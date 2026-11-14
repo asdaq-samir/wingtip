@@ -32,6 +32,10 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     /// The ground under the airplane from the packs kept on the phone,
     /// asked with what is ahead: the glide ring's ground (InFlight).
     private(set) var groundFt: Double?
+    /// The plan's route line, [lat, lon] in the order flown, so the packs
+    /// read ahead are those the route crosses too (regions_ahead); set by
+    /// FlightLoops as the route changes.
+    var routeLine: [[Double]]?
 
     private let manager = CLLocationManager()
     private var asking: Task<Void, Never>?
@@ -147,7 +151,8 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
             // The packs' answer is asked either way, for the ground under
             // the airplane the glide ring stands on, network or none.
             // Off the main actor (CyclePacks.aheadOffMain).
-            let offline = await CyclePacks.shared.aheadOffMain(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt)
+            let offline = await CyclePacks.shared.aheadOffMain(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt,
+                                                               route: self?.routeLine)
             self?.groundFt = offline?.groundFt
             if let online = try? await Planner.ahead(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt) {
                 alerts = online

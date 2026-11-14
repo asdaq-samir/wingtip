@@ -27,7 +27,9 @@ private struct CardHost: ViewModifier {
         content
             .sheet(item: $nav.presented) { card in
                 CardStack(card: card, search: search)
-                    .presentationDetents([.half, .large], selection: $nav.cardDetent)
+                    .presentationDetents(card.page.detents, selection: $nav.cardDetent)
+                    // Emergency closes by its ✕ alone, never by a swipe.
+                    .interactiveDismissDisabled(card.page == .emergency)
                     // The map usable above a card up to half height; a
                     // question or a form stays modal (the scrolling rule).
                     .presentationBackgroundInteraction(card.page.modal ? .disabled : .enabled(upThrough: .half))

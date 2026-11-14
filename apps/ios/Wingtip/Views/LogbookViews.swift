@@ -139,7 +139,6 @@ struct LogbookView: View {
             Task { await bringIn(result) }
         }
         .task(id: session.signedIn) { await load() }
-        .refreshable { await load() }
         // Left with deletes still to undo: they are sent, and their Undo goes.
         .onDisappear {
             undoManager?.forget(flights)

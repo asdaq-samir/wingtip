@@ -50,6 +50,16 @@ final class Emergency {
     var picked: Field? { ranked?.fields.first { $0.ident == pickedIdent } ?? ranked?.fields.first }
     var pickedPhone: String? { answer?.fields.first { $0.ident == picked?.ident }?.phone }
 
+    /// A field's reported visibility as its row says it, "Visibility 10+
+    /// sm", from the planner's METAR (the engine's awc_metars_read, FAA JO
+    /// 7900.5); nil where the report has none or the field none, never a
+    /// guessed figure (the owner, 2026-11-14). Keyed by ident, so the
+    /// engine's ranking order is kept.
+    func visibility(_ ident: String) -> String? {
+        let metar = answer?.fields.first { $0.ident == ident }?.metar
+        return AirportWords.miles(metar?.visibilitySm, plus: metar?.visibilityPlus).map { "Visibility \($0)" }
+    }
+
     func close() {
         open = nil
         pickedIdent = nil

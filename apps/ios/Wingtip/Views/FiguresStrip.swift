@@ -15,10 +15,15 @@ struct FiguresStrip: View {
     /// engine's `in_flight`, InFlight) -- the figures count down from where
     /// the airplane is, as the web app's do in a dry run: what is left to
     /// the destination at the groundspeed now, and the fuel still required.
-    private var flying: (leftNm: Double, minutes: Double?, fuelGal: Double?)? {
+    /// The fuel is the engine's for the flight being flown: the hop the
+    /// airplane is on and what it has burnt since that hop began (in_flight's
+    /// hop and hop_burnt_gal, the tanks filled at each fuel stop), as the
+    /// web's stripFuel sends them. A refusal is carried, so it is said as on
+    /// the ground (IOS-23).
+    private var flying: (leftNm: Double, minutes: Double?, fuel: Result<StripFuel, any Error>)? {
         guard let progress = inFlight.progress, progress.onRoute else { return nil }
-        let required = (try? StripFuel.of(plan.totals, burntGal: progress.burntGal))?.requiredGal
-        return (progress.destination?.distanceNm ?? progress.leftNm, progress.destination?.eteMin, required)
+        let fuel = Result { try StripFuel.of(plan.totals, hop: progress.hop, burntGal: progress.hopBurntGal) }
+        return (progress.destination?.distanceNm ?? progress.leftNm, progress.destination?.eteMin, fuel)
     }
 
     var body: some View {
@@ -37,8 +42,10 @@ struct FiguresStrip: View {
     @ViewBuilder private var figures: some View {
         // A fuel the engine could not work out is shown as unknown and in
         // the warning's colour, never as fuel enough.
-        let asked = Result { try StripFuel.of(plan.totals) }
+        let asked = flying?.fuel ?? Result { try StripFuel.of(plan.totals) }
         let fuel = (try? asked.get()) ?? StripFuel(requiredGal: nil, short: [])
+        // Which flight is short, by its ends, for VoiceOver (CODE-13).
+        let shortSaid = fuel.shortWords(plan.course).joined(separator: "; ")
         let refused = (try? asked.get()) == nil
         let warn = plan.airplaneChosen && (!fuel.short.isEmpty || refused)
         FigureRow {
@@ -52,18 +59,25 @@ struct FiguresStrip: View {
             } else if let flying {
                 stripFigure("DIST", Format.distance(flying.leftNm), spoken: SpokenFigures.nauticalMiles(flying.leftNm))
                 stripFigure("ETE", flying.minutes.map(Format.duration) ?? "—", spoken: flying.minutes.map(SpokenFigures.minutes))
-                stripFigure("FUEL", flying.fuelGal.map { Format.fuel($0) } ?? "—", spoken: flying.fuelGal.map(SpokenFigures.gallons), warn: warn)
+                stripFigure("FUEL", fuel.requiredGal.map { Format.fuel($0) } ?? (refused ? "?" : "—"),
+                            spoken: Self.fuelSaid(fuel, refused: refused, short: shortSaid), warn: warn)
             } else {
                 let distance = plan.totals?.distanceNm ?? plan.course?.distanceNm
                 stripFigure("DIST", distance.map { Format.distance($0) } ?? "—", spoken: distance.map(SpokenFigures.nauticalMiles))
                 stripFigure("ETE", plan.totals?.eteMin.map(Format.duration) ?? "—", spoken: plan.totals?.eteMin.map(SpokenFigures.minutes))
                 stripFigure("FUEL", fuel.requiredGal.map { Format.fuel($0) } ?? (refused ? "?" : "—"),
-                            spoken: fuel.requiredGal.map(SpokenFigures.gallons) ?? (refused ? "Fuel not worked out" : nil), warn: warn)
+                            spoken: Self.fuelSaid(fuel, refused: refused, short: shortSaid), warn: warn)
             }
         }
         .padding(.horizontal)
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
+    }
+
+    /// The fuel as VoiceOver says it, with the flights it falls short on.
+    private static func fuelSaid(_ fuel: StripFuel, refused: Bool, short: String) -> String? {
+        let said = fuel.requiredGal.map(SpokenFigures.gallons) ?? (refused ? "Fuel not worked out" : nil)
+        return short.isEmpty ? said : [said, short].compactMap { $0 }.joined(separator: ", ")
     }
 }
 

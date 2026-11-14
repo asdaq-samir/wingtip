@@ -23,7 +23,7 @@ struct DepartureWindowSection: View {
                     Text("No TAF along the route reaches past the next hour.").foregroundStyle(.secondary)
                 } else {
                     if answer.windows.isEmpty, let last = answer.hours.last {
-                        Text("No hour with nothing against it before \(DepartureWindow.clock(last.depart)).").foregroundStyle(.secondary)
+                        Text("No hour with nothing against it before \(DepartureWindow.zoned(last.depart)).").foregroundStyle(.secondary)
                     }
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: WingtipSpace.sm) {
@@ -64,7 +64,7 @@ struct DepartureWindowSection: View {
 
     private func detail(_ hour: WindowHour) -> some View {
         VStack(alignment: .leading, spacing: WingtipSpace.xs) {
-            Label("\(DepartureWindow.word(hour.verdict)) leaving \(DepartureWindow.clock(hour.depart))", systemImage: Self.symbol(hour.verdict))
+            Label("\(DepartureWindow.word(hour.verdict)) leaving \(DepartureWindow.zoned(hour.depart))", systemImage: Self.symbol(hour.verdict))
                 .fontWeight(.semibold).foregroundStyle(Self.ink(hour.verdict))
             ForEach(hour.reasons) { reason in
                 Text("\(Text(reason.label).fontWeight(.medium)) · \(reason.detail)").font(.subheadline)

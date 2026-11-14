@@ -65,7 +65,6 @@ struct OwnAircraftListView: View {
             NavigationStack { AircraftFormView(record: nil) { _ in Task { await load() } } }
         }
         .task { if session.signedIn { await load() } }
-        .refreshable { await load() }
     }
 
     private func load() async {

@@ -65,6 +65,15 @@ struct ProfileCard: View {
                 .pickerStyle(.segmented)
                 .onChange(of: rules) { _, _ in plan.plan() }
                 AltitudeAdvisorRows(rows: rows) { model.fly($0, plan: plan, rows: rows) }
+                // With no climb fuel flow in the airplane's profile the
+                // engine offers no economical plan, its climbs' fuel not
+                // known (navlog_plans, AV-8): said, and the figure asked
+                // for in place, never a guessed one (decision 0011).
+                if plan.airplaneChosen, rows.contains(where: { $0.fuelGal != nil }), !rows.contains(where: \.economical) {
+                    Text("No most-economical plan: the climb's fuel flow isn't known for this airplane.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    AskFigureRow(needs: [.climb])
+                }
             }
             ProfileReasons()
         }

@@ -65,11 +65,6 @@ struct SettingsView: View {
             .onAppear { if atMap { reader.scrollTo(SettingsView.mapGroup, anchor: .top) } }
         }
         .task { keptBytes = TileStore.shared.bytes() }
-        .refreshable {
-            await charts.load()
-            await session.refresh()
-            keptBytes = TileStore.shared.bytes()
-        }
     }
 
     static let mapGroup = "settings-map"

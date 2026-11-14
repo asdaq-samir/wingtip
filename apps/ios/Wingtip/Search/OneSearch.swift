@@ -23,7 +23,7 @@ struct SearchHost {
 extension View {
     /// The one search on this screen of a NavigationStack (the owner's
     /// one-search design, 2026-11-09): the system's search field in the
-    /// bar, "Search airports, airplanes, or ask", its suggestions grouped
+    /// bar, "Search airports and airplanes", its suggestions grouped
     /// in the system's list under it, the microphone and the account
     /// button beside it. The iPhone's sheet, its strip and the iPad's
     /// sidebar all put it here, so there is one search.
