@@ -10,6 +10,7 @@ import type { Tfr } from "../../../lib/api/types";
 import { MapCard } from "../../../lib/map/cards/MapCard";
 import { shareOrCopy } from "../../../lib/share";
 import { tfrLink } from "../../../lib/address";
+import { StatusBadge } from "../../../components/map/cards/StatusBadge";
 
 /**
  * A temporary flight restriction's card (the map draws them, in tfrMarks'
@@ -40,7 +41,15 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
     <MapCard
       start={<CardShareButton onShare={share} />}
       title={title}
-      subtitle={[tfr.kind, active ? "In force now" : "Not yet in force"].filter(Boolean).join(" · ")}
+      // Its kind, and whether it is in force now, a badge beside it (the
+      // owner, 2026-11-14: "Use badges where we can for example tfr
+      // active"): Active, or Later before it starts.
+      subtitle={
+        <span className="inline-flex items-center gap-2">
+          {tfr.kind}
+          <StatusBadge kind={active ? "active" : "later"} />
+        </span>
+      }
     >
       <div className="space-y-1 text-left" data-testid="tfr-card">
         {tfrAltitudes(tfr) && <p>{tfrAltitudes(tfr)}</p>}

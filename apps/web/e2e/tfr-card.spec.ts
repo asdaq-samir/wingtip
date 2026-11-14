@@ -79,6 +79,8 @@ test("a TFR's card has every card's head, its rule as the regulation and its tim
   await expect(head.locator("[data-slot=head-start]").getByTestId("card-share")).toBeVisible();
   await expect(head.locator("[data-slot=head-end] button")).toHaveCount(1);
   await expect(head.locator("svg.lucide-ban")).toHaveCount(0);
+  // In force now: "Active", a badge beside its kind under the name.
+  await expect(head.getByTestId("status-active")).toHaveText("Active");
 
   // The rule in words with its section, a row like the rest (14 CFR 99.7).
   await expect(card.getByTestId("tfr-purpose")).toHaveText("Special security instructions, 14 CFR 99.7");
