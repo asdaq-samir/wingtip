@@ -13,13 +13,13 @@ import org.junit.Test
 class FlightUpdateTest {
     private fun answer(burnt: Double = 4.0) = EngineContract.InFlightAnswer(
         onRoute = true, alongNm = 25.0, totalNm = 100.0, leftNm = 75.0, offNm = 0.2,
-        desiredTrackDeg = 90.0, burntGal = burnt,
+        desiredTrackDeg = 90.0, burntGal = burnt, fuelNowGal = 36.0,
         next = EngineContract.InFlightAnswerNext(index = 1, name = "PIPER", distanceNm = 12.0, bearingDeg = 91.0, eteMin = 12.0),
         destination = EngineContract.InFlightAnswerDestination(index = 3, name = "KDLH", distanceNm = 75.0, bearingDeg = 88.0, eteMin = 65.0, etaS = 1_793_620_000.0),
     )
 
     private fun update(airplane: Boolean = true, underway: Boolean = true, nowMs: Long = 0L) =
-        FlightUpdate.of(answer(), underway, dep = "C81", dest = "KDLH", airplaneChosen = airplane, usableFuelGal = 40.0, nowMs = nowMs)
+        FlightUpdate.of(answer(), underway, dep = "C81", dest = "KDLH", airplaneChosen = airplane, nowMs = nowMs)
 
     @Test
     fun carriesTheEnginesFigures() {
@@ -41,7 +41,7 @@ class FlightUpdateTest {
     @Test
     fun nothingOnTheGround() {
         assertNull(update(underway = false))
-        assertNull(FlightUpdate.of(null, true, "C81", "KDLH", true, 40.0, 0L))
+        assertNull(FlightUpdate.of(null, true, "C81", "KDLH", true, 0L))
     }
 
     @Test
@@ -55,7 +55,7 @@ class FlightUpdateTest {
 
     @Test
     fun theBarHasASegmentALegAndAPointAtEachWaypointBetween() {
-        val u = FlightUpdate.of(answer(), true, "C81", "KDLH", true, 40.0, 0L, legsNm = listOf(12.0, 38.0, 50.0))!!
+        val u = FlightUpdate.of(answer(), true, "C81", "KDLH", true, 0L, legsNm = listOf(12.0, 38.0, 50.0))!!
         val bar = u.bar(1000)
         assertEquals(listOf(120, 380, 500), bar.segments)
         assertEquals(listOf(120, 500), bar.points)

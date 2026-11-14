@@ -62,6 +62,17 @@ fun LegTops(leg: Leg, plan: Plan) {
         toc.magneticHeadingDeg?.let { Figure(stringResource(R.string.leg_magnetic_heading), Format.heading(it), Spoken.headingMagnetic(it)) }
         toc.fuelBurnGph?.let { Figure(stringResource(R.string.leg_fuel_flow), Format.burn(it)) }
     }
+    // Where the airplane gave no climb fuel flow, the climb's fuel is not
+    // counted: said as missing and asked for in place (the engine's
+    // climb_fuel_unknown, the aviation audit's AV-8; nothing assumed, the
+    // owner, 2026-11-09).
+    if (leg.climbFuelUnknown == true) {
+        Text(
+            stringResource(R.string.climb_fuel_unknown), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs),
+        )
+        AskFigures(rememberAirplaneNow(plan), "climb", Modifier.padding(top = WingtipSpace.Xs))
+    }
     leg.tod?.let { tod ->
         Top(stringResource(R.string.top_of_descent), stringResource(R.string.top_along, Format.distance(tod.alongNm), from))
         Figure(stringResource(R.string.leg_descent_rate), fpm(tod.fpm))

@@ -145,6 +145,7 @@
     <string name="stops_help">Idents, separated by commas</string>
     <string name="plan">Plan</string>
     <string name="under_reserve">Under the reserve the planner holds the flight to. Fly it with a fuel stop.</string>
+    <string name="under_reserve_on">Under the reserve the planner holds the flight to on %1$s. Fly it with a fuel stop.</string>
 
     <!-- A leg (LegSheet). -->
     <string name="leg_altitude">Cruise Altitude</string>
@@ -528,4 +529,5 @@
     <string name="plate_no_page">The FAA\'s page for this plate could not be had.</string>
     <string name="plate_show_on_map">Show on Map</string>
     <string name="plate_not_placed">This plate can\'t be placed on the map.</string>
+    <string name="climb_fuel_unknown">Climb fuel not counted: the airplane has no climb fuel flow</string>
 </resources>
