@@ -8,6 +8,7 @@
  "android_composables_calling_engine": 0,
  "ios_views_calling_engine": 2,
  "ios_try_engine_default": 7,
+ "planner_airplane_figure_literals": 0,
  "gateway_http_client_builders": 2,
  "python_unit_constants": 1,
  "web_unit_constants": 0,

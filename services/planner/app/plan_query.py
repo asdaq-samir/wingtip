@@ -22,29 +22,39 @@ from .checkpoint_scoring import route_checkpoints
 from .router_basics import Route
 from .schemas.common import AltitudeChoice, FlightRules
 
-# A pilot's own cruise speed: above zero, since every leg's time divides
-# by it -- zero was a ZeroDivisionError and a 500 rather than a 422.
-CruiseTas = Annotated[float | None, Query(gt=0, le=1000)]
-# The power a pilot's own cruise figures are at, in percent: from the
-# lowest a handbook's cruise table goes, about 40, to full power.
-CruisePower = Annotated[float | None, Query(ge=40, le=100)]
-#: An airplane's own service ceiling, ft, as the pilot sets it for their
-#: N-number: from a powered glider's to past a piston single's highest.
-ServiceCeiling = Annotated[float | None, Query(ge=1000, le=30000)]
-#: An airplane's own sea-level best rate of climb, fpm, from its
-#: handbook: above zero, and under any piston single's or twin's.
-ClimbRate = Annotated[float | None, Query(gt=0, le=5000)]
-#: Its own fuel for start, taxi and takeoff, gal, from its handbook.
-TaxiFuel = Annotated[float | None, Query(ge=0, le=50)]
-#: Its own still-air glide ratio, from its handbook's Section 3: a
-#: light airplane's is about 7 to 12 to 1, a glider's past 40.
-GlideRatio = Annotated[float | None, Query(gt=1, le=80)]
-#: Its own descent's indicated airspeed, kt, as a handbook gives it (the
-#: engine turns it to true at the altitudes the descent passes through),
-#: and the descent's fuel flow, gal/h: above zero, and in the range a
-#: light piston airplane's, a twin's or a single turboprop's descent covers.
-DescentIas = Annotated[float | None, Query(ge=30, le=300)]
-DescentBurn = Annotated[float | None, Query(ge=1, le=150)]
+# Each of an airplane's own figures, bounded by the range the engine
+# states for it (airplane_figure_ranges, engine/crates/pilot/src/aircraft/
+# form.rs) -- the one the "Your Airplane" form and the gateway check a
+# saved airplane with, so an airplane they take is never a 422 here. The
+# speeds above zero, since every leg's time divides by them (zero was a
+# ZeroDivisionError and a 500 rather than a 422).
+_RANGES = {r["query"]: r for r in engine("airplane_figure_ranges")["ranges"]}
+
+
+def _figure(query: str, *, needed: bool = False) -> object:
+    """The query parameter `query`: a number in its range, or none where
+    not `needed`."""
+    r = _RANGES[query]
+    # Whole bounds as whole numbers, as the API's document writes them.
+    low, high = (int(b) if float(b).is_integer() else b for b in (r["min"], r["max"]))
+    bound = {"ge": low} if r["min_inclusive"] else {"gt": low}
+    return Annotated[float if needed else float | None, Query(**bound, le=high)]
+
+
+CruiseTas = _figure("cruise_tas_kt")
+#: A true airspeed an endpoint cannot answer without.
+TasNeeded = _figure("cruise_tas_kt", needed=True)
+FuelBurn = _figure("fuel_burn_gph")
+UsableFuel = _figure("usable_fuel_gal")
+ClimbTas = _figure("climb_tas_kt")
+ClimbBurn = _figure("climb_fuel_burn_gph")
+DescentIas = _figure("descent_ias_kt")
+DescentBurn = _figure("descent_fuel_burn_gph")
+CruisePower = _figure("cruise_power_pct")
+ServiceCeiling = _figure("service_ceiling_ft")
+ClimbRate = _figure("climb_rate_fpm")
+TaxiFuel = _figure("taxi_fuel_gal")
+GlideRatio = _figure("glide_ratio")
 
 
 @dataclass
@@ -79,10 +89,10 @@ class PlanQuery:
     #: airplane profile, don't assume."
     aircraft: str | None = None
     cruise_tas_kt: CruiseTas = None
-    fuel_burn_gph: float | None = None
-    usable_fuel_gal: float | None = None
-    climb_tas_kt: CruiseTas = None
-    climb_fuel_burn_gph: float | None = None
+    fuel_burn_gph: FuelBurn = None
+    usable_fuel_gal: UsableFuel = None
+    climb_tas_kt: ClimbTas = None
+    climb_fuel_burn_gph: ClimbBurn = None
     descent_ias_kt: DescentIas = None
     descent_fuel_burn_gph: DescentBurn = None
     cruise_power_pct: CruisePower = None

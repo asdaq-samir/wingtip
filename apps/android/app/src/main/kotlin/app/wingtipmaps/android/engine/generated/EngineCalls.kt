@@ -31,10 +31,16 @@ fun Engine.airborneNow(before: Boolean? = null, airborne: Boolean? = null, arriv
     rule("airborne_now", EngineContract.AirborneNowInput(before = before, airborne = airborne, arrived = arrived, heardS = heardS))
 
 /**
- * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's, the descent's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
+ * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest and OwnFigures names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn required; every figure inside its range, airplane_figure_ranges' (sanity bounds, no regulation: cruise and climb speed above 0 and at most 1,000 kt, descent 30 to 300 kt and 1 to 150 gal/h, cruise power 40 to 100%, the cruise and climb burns above 0 and at most 150 gal/h, usable fuel above 0 and at most 2,000 gal, service ceiling 1,000 to 30,000 ft, climb rate above 0 and at most 5,000 fpm, start and taxi fuel 0 to 50 gal, glide ratio more than 1 and at most 80); equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
  */
-fun Engine.aircraftProblems(tailNumber: String? = null, typeDesignator: String? = null, cruiseTasKt: String? = null, fuelBurnGph: String? = null, cruisePowerPct: String? = null, climbTasKt: String? = null, climbFuelBurnGph: String? = null, descentIasKt: String? = null, descentFuelBurnGph: String? = null, usableFuelGal: String? = null, equipment: String? = null, surveillance: String? = null, colour: String? = null): Result<EngineContract.AircraftProblemsAnswer> =
-    rule("aircraft_problems", EngineContract.AircraftProblemsInput(tailNumber = tailNumber, typeDesignator = typeDesignator, cruiseTasKt = cruiseTasKt, fuelBurnGph = fuelBurnGph, cruisePowerPct = cruisePowerPct, climbTasKt = climbTasKt, climbFuelBurnGph = climbFuelBurnGph, descentIasKt = descentIasKt, descentFuelBurnGph = descentFuelBurnGph, usableFuelGal = usableFuelGal, equipment = equipment, surveillance = surveillance, colour = colour))
+fun Engine.aircraftProblems(tailNumber: String? = null, typeDesignator: String? = null, cruiseTasKt: String? = null, fuelBurnGph: String? = null, cruisePowerPct: String? = null, climbTasKt: String? = null, climbFuelBurnGph: String? = null, descentIasKt: String? = null, descentFuelBurnGph: String? = null, usableFuelGal: String? = null, serviceCeilingFt: String? = null, climbRateFpm: String? = null, taxiFuelGal: String? = null, glideRatio: String? = null, equipment: String? = null, surveillance: String? = null, colour: String? = null): Result<EngineContract.AircraftProblemsAnswer> =
+    rule("aircraft_problems", EngineContract.AircraftProblemsInput(tailNumber = tailNumber, typeDesignator = typeDesignator, cruiseTasKt = cruiseTasKt, fuelBurnGph = fuelBurnGph, cruisePowerPct = cruisePowerPct, climbTasKt = climbTasKt, climbFuelBurnGph = climbFuelBurnGph, descentIasKt = descentIasKt, descentFuelBurnGph = descentFuelBurnGph, usableFuelGal = usableFuelGal, serviceCeilingFt = serviceCeilingFt, climbRateFpm = climbRateFpm, taxiFuelGal = taxiFuelGal, glideRatio = glideRatio, equipment = equipment, surveillance = surveillance, colour = colour))
+
+/**
+ * Every one of an airplane's own figures with the range it may take, in the form's order: the one statement of them (engine/crates/pilot/src/aircraft/form.rs), which aircraft_problems checks the "Your Airplane" form against and the planner builds its query parameters' bounds from, so a figure the form and the gateway take is one every plan takes. Each is a sanity bound that keeps a typo out of the plan, no regulation or handbook figure: above min (or at it where min_inclusive) and at most max.
+ */
+fun Engine.airplaneFigureRanges(): Result<EngineContract.AirplaneFigureRangesAnswer> =
+    rule("airplane_figure_ranges", EngineContract.AirplaneFigureRangesInput())
 
 /**
  * An airplane's figures, each with where it comes from: its pilot's own where they differ from the book's ("pilot"), else its photographed handbook page's ("handbook"), else its type's stock profile's ("book"); a figure none has is null, never another airplane's (the owner, 2026-11-09). The empty weight and moment are the pilot's alone (a stock profile's are its handbook's sample airplane's). `profile` is the book's with the picked figures over it, the airplane every other rule takes; null with no book, handbook or own figures (no airplane).
@@ -665,6 +671,12 @@ fun Engine.faaWords(text: String? = null, texts: List<String?>? = null): Result<
  */
 fun Engine.fieldHours(metar: Map<String, JsonElement>? = null, taf: String? = null, now: Double, count: Double? = null): Result<List<EngineContract.FieldHour>> =
     rule("field_hours", EngineContract.FieldHoursInput(metar = metar, taf = taf, now = now, count = count))
+
+/**
+ * Whether a field is the armed services' own, from the FAA's NASR APT_BASE.csv: OWNERSHIP_TYPE_CODE MA (Air Force), MN (Navy), MR (Army) or CG (Coast Guard) is; "joint" where FACILITY_USE_CODE is PU, open to the public as well (a civil airport on a military one, where a civil pilot may land), else "military", where a civil airplane lands only with the service's permission (for the Air Force a Civil Aircraft Landing Permit, 32 CFR part 855); null for any other owner. The one statement the planner, the cycle pack's overlays and the engine's map pins read.
+ */
+fun Engine.fieldMilitary(ownership: String? = null, use: String? = null): Result<EngineContract.FieldMilitaryAnswer> =
+    rule("field_military", EngineContract.FieldMilitaryInput(ownership = ownership, use = use))
 
 /**
  * Whether an airplane is around a field, inbound to it or departing it.

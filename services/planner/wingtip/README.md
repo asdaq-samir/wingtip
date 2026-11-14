@@ -35,8 +35,8 @@ docker run --rm -v "$PWD":/w -w /w/services/planner python:3.15-slim \
   sh -c "apt-get update -qq && apt-get install -y -qq libexpat1 && pip install -q -r requirements-dev-wingtip.txt && ruff check wingtip tests_wingtip && pytest tests_wingtip/ -q"
 ```
 
-The pipeline images deliberately carry no test tooling — they mirror what
-a SageMaker Processing or Training job needs and nothing more — so tests
+The pipeline images deliberately carry no test tooling — only what the
+training run needs — so tests
 run in a plain `python:3.15-slim` against `requirements-dev-wingtip.txt`, plus
 the one system library (`libexpat1`) rasterio's wheel expects and the
 slim image leaves out -- without it `services/planner/tests_wingtip/test_charts.py` fails to import.
@@ -93,7 +93,10 @@ question the previous rung raises.
 
 2. **Where are the airports?** (`airports.py`, +pandas). A distance
    needs coordinates, and typing them by hand stops being funny quickly.
-   Parse OurAirports' CSV and look up by identifier.
+   Parse OurAirports' CSV and look up by identifier; then take each
+   field's position, elevation and runways from the FAA's NASR files
+   (`nasr_fields.py`), since OurAirports' local codes have been reused
+   for other fields.
 
 3. **How long will it take?** (`navlog.py`, stdlib). Distance over
    airspeed is a first answer, and it is wrong, because air moves. The

@@ -18,7 +18,7 @@ from wingtip.aircraft import aircraft_profile
 from wingtip.winds_aloft import winds_key_for
 from ..schemas.route_options import RouteOptions
 from ..gateway import PUBLIC
-from ..plan_query import CruiseTas, GlideRatio, ServiceCeiling, TaxiFuel
+from ..plan_query import CruiseTas, FuelBurn, GlideRatio, ServiceCeiling, TaxiFuel, UsableFuel
 
 router = APIRouter()
 
@@ -116,8 +116,8 @@ def route_options(
     #: engine's route_options with a null profile).
     aircraft: str | None = None,
     cruise_tas_kt: CruiseTas = None,
-    fuel_burn_gph: Annotated[float | None, Query(gt=0, le=200)] = None,
-    usable_fuel_gal: Annotated[float | None, Query(gt=0, le=2000)] = None,
+    fuel_burn_gph: FuelBurn = None,
+    usable_fuel_gal: UsableFuel = None,
     service_ceiling_ft: ServiceCeiling = None,
     #: A pilot's own airplane's start and taxi fuel and glide ratio
     #: (PlanQuery's), for the fuel stops and the water out of glide.

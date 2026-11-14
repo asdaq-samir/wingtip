@@ -74,6 +74,10 @@ enum EngineContract {
         var descentIasKt: String?
         var descentFuelBurnGph: String?
         var usableFuelGal: String?
+        var serviceCeilingFt: String?
+        var climbRateFpm: String?
+        var taxiFuelGal: String?
+        var glideRatio: String?
         var equipment: String?
         var surveillance: String?
         var colour: String?
@@ -90,9 +94,49 @@ enum EngineContract {
         var descentIasKt: String?
         var descentFuelBurnGph: String?
         var usableFuelGal: String?
+        var serviceCeilingFt: String?
+        var climbRateFpm: String?
+        var taxiFuelGal: String?
+        var glideRatio: String?
         var equipment: String?
         var surveillance: String?
         var colour: String?
+    }
+
+    struct AirplaneFigureRangesAnswer: Codable, Equatable, Sendable {
+        var ranges: [EngineContract.AirplaneFigureRangesAnswerRangesItem]
+    }
+
+    struct AirplaneFigureRangesAnswerRangesItem: Codable, Equatable, Sendable {
+        /// The form's and the gateway's name, cruiseTasKt.
+        var field: String
+        /// The planner's query parameter, cruise_tas_kt.
+        var query: String
+        /// The field's name in the form's words, Cruise speed.
+        var label: String
+        /// kt, gal/h, gal, %, ft, fpm, or empty for a ratio.
+        var unit: String
+        var min: Double
+        /// min itself is inside; otherwise only above it.
+        var minInclusive: Bool
+        /// The highest inside.
+        var max: Double
+        /// The form needs it (the cruise speed and burn).
+        var required: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case field
+            case query
+            case label
+            case unit
+            case min
+            case minInclusive = "min_inclusive"
+            case max
+            case required
+        }
+    }
+
+    struct AirplaneFigureRangesInput: Codable, Equatable, Sendable {
     }
 
     struct AirplaneFiguresAnswer: Codable, Equatable, Sendable {
@@ -1610,6 +1654,8 @@ enum EngineContract {
         /// The ceiling layer's cover as a METAR writes the ceiling (OVC008, VV002; FMH-1 ch. 9): BKN, OVC or VV for an obscuration; null with no ceiling or one of unknown height.
         var ceilingCover: String?
         var visibilitySm: Double?
+        /// The visibility is at least visibility_sm: the feed's "10+", the report's P6SM or 10SM and more.
+        var visibilityPlus: Bool
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
         var windGustKt: Double?
@@ -1628,6 +1674,7 @@ enum EngineContract {
             case ceilingUnknown = "ceiling_unknown"
             case ceilingCover = "ceiling_cover"
             case visibilitySm = "visibility_sm"
+            case visibilityPlus = "visibility_plus"
             case windDirTrueDeg = "wind_dir_true_deg"
             case windSpeedKt = "wind_speed_kt"
             case windGustKt = "wind_gust_kt"
@@ -3651,6 +3698,18 @@ enum EngineContract {
         var now: Double
         /// Hours after Now; 24 where not given.
         var count: Double?
+    }
+
+    struct FieldMilitaryAnswer: Codable, Equatable, Sendable {
+        /// military, joint, or null for a field the services do not own.
+        var military: String?
+    }
+
+    struct FieldMilitaryInput: Codable, Equatable, Sendable {
+        /// NASR APT_BASE's OWNERSHIP_TYPE_CODE (PU, PR, MA, MN, MR, CG).
+        var ownership: String?
+        /// NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
+        var use: String?
     }
 
     struct FieldRelationAnswer: Codable, Equatable, Sendable {
@@ -11301,11 +11360,14 @@ enum EngineContract {
     }
 
     struct StripFuelAnswerShortItem: Codable, Equatable, Sendable {
-        /// "C81 → KMSN"; "" for a route with no stops.
+        /// The flight's index in `hops`, whose two ends an app names with its own point names (a pilot's own point is "@lat,lon" in the idents); null for a route with no stops.
+        var hop: Int?
+        /// The flight's idents as sent, "C81 → KMSN"; "" for a route with no stops. A pilot's own point shows here as its raw "@lat,lon": name the ends from `hop` instead.
         var name: String
         var shortGal: Double
 
         enum CodingKeys: String, CodingKey {
+            case hop
             case name
             case shortGal = "short_gal"
         }

@@ -1071,11 +1071,18 @@ export interface EngineContract {
     answer: AirborneNowAnswer;
   };
   /**
-   * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's, the descent's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
+   * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest and OwnFigures names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn required; every figure inside its range, airplane_figure_ranges' (sanity bounds, no regulation: cruise and climb speed above 0 and at most 1,000 kt, descent 30 to 300 kt and 1 to 150 gal/h, cruise power 40 to 100%, the cruise and climb burns above 0 and at most 150 gal/h, usable fuel above 0 and at most 2,000 gal, service ceiling 1,000 to 30,000 ft, climb rate above 0 and at most 5,000 fpm, start and taxi fuel 0 to 50 gal, glide ratio more than 1 and at most 80); equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
    */
   aircraft_problems: {
     input: AircraftProblemsInput;
     answer: AircraftProblemsAnswer;
+  };
+  /**
+   * Every one of an airplane's own figures with the range it may take, in the form's order: the one statement of them (engine/crates/pilot/src/aircraft/form.rs), which aircraft_problems checks the "Your Airplane" form against and the planner builds its query parameters' bounds from, so a figure the form and the gateway take is one every plan takes. Each is a sanity bound that keeps a typo out of the plan, no regulation or handbook figure: above min (or at it where min_inclusive) and at most max.
+   */
+  airplane_figure_ranges: {
+    input: AirplaneFigureRangesInput;
+    answer: AirplaneFigureRangesAnswer;
   };
   /**
    * An airplane's figures, each with where it comes from: its pilot's own where they differ from the book's ("pilot"), else its photographed handbook page's ("handbook"), else its type's stock profile's ("book"); a figure none has is null, never another airplane's (the owner, 2026-11-09). The empty weight and moment are the pilot's alone (a stock profile's are its handbook's sample airplane's). `profile` is the book's with the picked figures over it, the airplane every other rule takes; null with no book, handbook or own figures (no airplane).
@@ -1811,6 +1818,13 @@ export interface EngineContract {
   field_hours: {
     input: FieldHoursInput;
     answer: FieldHoursAnswer;
+  };
+  /**
+   * Whether a field is the armed services' own, from the FAA's NASR APT_BASE.csv: OWNERSHIP_TYPE_CODE MA (Air Force), MN (Navy), MR (Army) or CG (Coast Guard) is; "joint" where FACILITY_USE_CODE is PU, open to the public as well (a civil airport on a military one, where a civil pilot may land), else "military", where a civil airplane lands only with the service's permission (for the Air Force a Civil Aircraft Landing Permit, 32 CFR part 855); null for any other owner. The one statement the planner, the cycle pack's overlays and the engine's map pins read.
+   */
+  field_military: {
+    input: FieldMilitaryInput;
+    answer: FieldMilitaryAnswer;
   };
   /**
    * Whether an airplane is around a field, inbound to it or departing it.
@@ -3737,6 +3751,10 @@ export interface AircraftProblemsInput {
   descentIasKt?: string | null;
   descentFuelBurnGph?: string | null;
   usableFuelGal?: string | null;
+  serviceCeilingFt?: string | null;
+  climbRateFpm?: string | null;
+  taxiFuelGal?: string | null;
+  glideRatio?: string | null;
   equipment?: string | null;
   surveillance?: string | null;
   colour?: string | null;
@@ -3752,9 +3770,48 @@ export interface AircraftProblemsAnswer {
   descentIasKt?: string;
   descentFuelBurnGph?: string;
   usableFuelGal?: string;
+  serviceCeilingFt?: string;
+  climbRateFpm?: string;
+  taxiFuelGal?: string;
+  glideRatio?: string;
   equipment?: string;
   surveillance?: string;
   colour?: string;
+}
+export interface AirplaneFigureRangesInput {}
+export interface AirplaneFigureRangesAnswer {
+  ranges: AirplaneFigureRange[];
+}
+export interface AirplaneFigureRange {
+  /**
+   * The form's and the gateway's name, cruiseTasKt.
+   */
+  field: string;
+  /**
+   * The planner's query parameter, cruise_tas_kt.
+   */
+  query: string;
+  /**
+   * The field's name in the form's words, Cruise speed.
+   */
+  label: string;
+  /**
+   * kt, gal/h, gal, %, ft, fpm, or empty for a ratio.
+   */
+  unit: string;
+  min: number;
+  /**
+   * min itself is inside; otherwise only above it.
+   */
+  min_inclusive: boolean;
+  /**
+   * The highest inside.
+   */
+  max: number;
+  /**
+   * The form needs it (the cruise speed and burn).
+   */
+  required: boolean;
 }
 export interface AirplaneFiguresInput {
   /**
@@ -4860,6 +4917,10 @@ export interface AwcMetar {
    */
   ceiling_cover: "BKN" | "OVC" | "VV" | null;
   visibility_sm: number | null;
+  /**
+   * The visibility is at least visibility_sm: the feed's "10+", the report's P6SM or 10SM and more.
+   */
+  visibility_plus: boolean;
   wind_dir_true_deg: number | null;
   wind_speed_kt: number | null;
   wind_gust_kt: number | null;
@@ -6615,6 +6676,22 @@ export interface FieldHour {
    * The worse weather at times comes only from a PROB group (FAA-H-8083-28B 27.4.2.10.3).
    */
   at_times_chance: boolean;
+}
+export interface FieldMilitaryInput {
+  /**
+   * NASR APT_BASE's OWNERSHIP_TYPE_CODE (PU, PR, MA, MN, MR, CG).
+   */
+  ownership?: string | null;
+  /**
+   * NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
+   */
+  use?: string | null;
+}
+export interface FieldMilitaryAnswer {
+  /**
+   * military, joint, or null for a field the services do not own.
+   */
+  military: "military" | "joint" | null;
 }
 export interface FieldRelationInput {
   plane: {
@@ -11867,7 +11944,11 @@ export interface StripFuelAnswer {
   required_gal: number | null;
   short: {
     /**
-     * "C81 → KMSN"; "" for a route with no stops.
+     * The flight's index in `hops`, whose two ends an app names with its own point names (a pilot's own point is "@lat,lon" in the idents); null for a route with no stops.
+     */
+    hop: number | null;
+    /**
+     * The flight's idents as sent, "C81 → KMSN"; "" for a route with no stops. A pilot's own point shows here as its raw "@lat,lon": name the ends from `hop` instead.
      */
     name: string;
     short_gal: number;

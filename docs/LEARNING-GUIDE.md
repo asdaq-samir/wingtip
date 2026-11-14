@@ -495,9 +495,10 @@ orchestrator earns its place when there is a schedule, fan-out, retries
 across machines or many pipelines to watch; reach for one then.
 
 Each stage still runs alone (`docker compose run --rm retrain
-collect`), and `retrain()` still reads `SM_CHANNEL_*` and `SM_MODEL_DIR`
-when they are set, so the image would serve as a SageMaker Training
-Job's as it is.
+collect`). The SageMaker hooks `retrain()` kept for an AWS training job
+(`SM_CHANNEL_*`, `SM_MODEL_DIR`) were deleted on 2026-11-14 with the AWS
+retrain path, as the launch design has no training job: retraining runs
+on the owner's machine.
 
 ---
 

@@ -118,10 +118,6 @@ class Settings(BaseSettings):
     weather_store: Path = DATA_DIR / "raw" / "weather"
     #: wingtip.notams' SQLite store of NOTAMs.
     notam_store: Path = DATA_DIR / "raw" / "faa_notams" / "notams.sqlite"
-    #: SageMaker's channel folders and model folder, set only inside a Training Job (wingtip.pipeline).
-    sm_channel_features: str | None = None
-    sm_channel_labels: str | None = None
-    sm_model_dir: str | None = None
     #: ADS-B Exchange's RapidAPI key; None turns that source off (wingtip.traffic).
     adsbx_rapidapi_key: str | None = None
     #: ADS-B Exchange requests a month at most, short of the plan's 10,000.

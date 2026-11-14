@@ -53,7 +53,7 @@ table, and its why below, in the same commit.
 | Crate | Modules | Uses |
 |---|---|---|
 | `core` | geo, flat (nm east and north of a point, the small flat frame), wmm, grid, sums, time, json, xml, sort, text (a whole number with its thousands grouped, "12,500"), units (the SI's foot, nautical mile and kelvin, one copy), ask (a rule's input read by its name, for every crate's `call`) | nothing |
-| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy), field (whether a field is open: NASR's ARPT_STATUS, O alone; decision 0043) | core |
+| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy), field (whether a field is open: NASR's ARPT_STATUS, O alone; decision 0043; and whether it is military or joint) | core |
 | `weather` | metar, sky (a report's ceiling and its cover, for the station model), taf, winds, forecast (with run: the dry run against the forecast), validity, notam, notam_read (a NOTAM as a pilot reads it: its keyword as a heading, its words written out, its window) over contractions (the FAA's contractions, the one table, which the radio's D-ATIS reads by too), notam_rank (the NOTAMs that matter to a flight, best first), tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table), ready (ready to fly: what the device holds against the cycles and the weather's age; kept: a kept answer's age), worse (a route's weather worse since the briefing) | core, flight |
 | `procedures` | figures (debrief, diversion, endurance (91.151(a) and 91.167(a)(3)'s reserve kept back), holding, lost comms, words), paths (a procedure's legs as drawn: arcs, CIFP holds, procedure turns), occurrence (an accident report, the registry and an ADS-B track as one airplane: the Studio's crash drafts) | core, flight |
 | `radio` | clearance, callsign (our call sign and where it was said, AIM 4-2-3 c, 4-2-4), instruction (an instruction heard in flight read into its items), readback (AIM 4-4-7 b), atc (the ATC copilot's `atc_call` and `readback_check`), atis, datis (a digital ATIS as the tower's data link writes it), mayday (the distress call, AIM 6-3-2), guidance (an emergency's general good practice with no airplane picked) | core, flight, weather, procedures |
@@ -299,7 +299,8 @@ Then the callers switch to the name and the old copy is deleted.
   flight category, a navaid's remarks -- answered null or empty.
 - The altitude a flight is planned at is the engine's too (`crates/altitude`,
   #482 phase 3): each leg's floor -- the terrain and DOF obstacles with
-  14 CFR 91.119's clearances (`vfr_floors`), or 91.177(a)'s minimum IFR
+  14 CFR 91.119's clearances (`vfr_floors`, asked once a leg with the
+  ground and obstacles under that leg as flown, wingtip.terrain), or 91.177(a)'s minimum IFR
   altitude over Part 95's mountainous areas (`ifr_floors`, the areas drawn
   in `mountainous.rs`), or an airway's MEA -- the band under the Class B
   shelf (only Class B bounds it: Class B takes a clearance, 91.131(a)(1),
@@ -359,7 +360,17 @@ Then the callers switch to the name and the old copy is deleted.
   figure needs that the profile lacks, so the app asks for them where the
   figure is) and `endurance` (`crates/procedures`: usable fuel over the
   cruise burn, and what is left once 91.151(a)'s or 91.167(a)(3)'s
-  reserve is kept back, a warning below it, never a refusal).
+  reserve is kept back, a warning below it, never a refusal). Each
+  figure's range is stated once, `airplane_figure_ranges` (`crates/pilot`'s
+  aircraft form, sanity bounds, no regulation): `aircraft_problems` checks
+  the "Your Airplane" form and the gateway's save against it, and the
+  planner builds its query parameters' bounds from it (app.plan_query),
+  so an airplane the form takes is one every plan takes.
+- Whether a field is the armed services' own is the engine's too:
+  `field_military` (`crates/flight`'s field, NASR APT_BASE's
+  OWNERSHIP_TYPE_CODE and FACILITY_USE_CODE: "military", "joint" or
+  null), asked by the planner (wingtip.field_status), the cycle pack's
+  overlays (services/jobs) and the engine's own map pins.
 - `emergency_guidance` (`crates/radio`): with no airplane picked, an
   emergency's general good practice only, each item with its source
   (FAA-H-8083-3C ch. 18; AIM 6-1-1, 6-1-2, 6-2-1, 6-2-2, 6-3-1, 6-3-2;

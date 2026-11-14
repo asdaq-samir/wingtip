@@ -19,9 +19,8 @@ import hashlib
 import threading
 import time
 from datetime import datetime, timezone
-from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import TypeAdapter
 from wingtip import data_cycles, tfr, weather
 from wingtip import icing_forecast
@@ -29,6 +28,7 @@ from wingtip import icing_forecast
 from .. import exposure, route_briefing
 from ..feeds import status_rows
 from ..feeds import watch as feeds_watch
+from ..plan_query import TasNeeded
 from ..route_briefing import read_fixes, read_numbers
 from ..schemas.common import Briefing
 from ..schemas.briefing import Alternates, IcingForecast, MapLayerAges, Tfrs
@@ -146,7 +146,7 @@ def briefing(
 
 
 @router.get("/api/alternate", openapi_extra=PUBLIC)
-def alternate(dest: str, eta: datetime, tas_kt: Annotated[float, Query(gt=0, le=1000)], alternate: str = "") -> Alternates:
+def alternate(dest: str, eta: datetime, tas_kt: TasNeeded, alternate: str = "") -> Alternates:
     """The IFR alternate for a flight arriving at `dest` at `eta` (UTC when
     naive): whether the destination needs one (14 CFR 91.169(b), the
     "1-2-3" rule, from its TAF an hour either side of the ETA), the

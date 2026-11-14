@@ -13385,6 +13385,11 @@
             ],
             "title": "Temp C"
           },
+          "visibility_plus": {
+            "default": false,
+            "title": "Visibility Plus",
+            "type": "boolean"
+          },
           "visibility_sm": {
             "anyOf": [
               {
@@ -19971,8 +19976,19 @@
         "type": "object"
       },
       "RunwayEnd": {
-        "description": "One end of a runway (wingtip.pattern): its true heading, None for a\nhelipad, which way its traffic pattern is flown -- left unless the FAA\nflags it right (14 CFR 91.126(b)(1)) -- and where it is.",
+        "description": "One end of a runway (wingtip.pattern): its true heading, None for a helipad, which way its traffic pattern is flown -- left\nunless the FAA flags it right (14 CFR 91.126(b)(1)) -- where it is, and its displaced threshold and landing distance available\n(LDA), feet: NASR APT_RWY_END's DISPLACED_THR_LEN and LNDG_DIST_AVBL, None where NASR gives none.",
         "properties": {
+          "displaced_threshold_ft": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Displaced Threshold Ft"
+          },
           "heading_true_deg": {
             "anyOf": [
               {
@@ -19998,6 +20014,17 @@
               }
             ],
             "title": "Lat"
+          },
+          "lda_ft": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lda Ft"
           },
           "lon": {
             "anyOf": [
@@ -27394,7 +27421,7 @@
               "anyOf": [
                 {
                   "exclusiveMinimum": 0,
-                  "maximum": 100,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -28564,6 +28591,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -28580,6 +28609,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 2000,
                   "type": "number"
                 },
                 {
@@ -28614,6 +28645,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -29202,6 +29235,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -29218,6 +29253,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 2000,
                   "type": "number"
                 },
                 {
@@ -29252,6 +29289,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -30404,6 +30443,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -30420,6 +30461,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 2000,
                   "type": "number"
                 },
                 {
@@ -30454,6 +30497,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -30924,7 +30969,7 @@
               "anyOf": [
                 {
                   "exclusiveMinimum": 0,
-                  "maximum": 200,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {

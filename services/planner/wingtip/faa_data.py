@@ -302,22 +302,17 @@ def published_pattern_agl_ft(ident: str, cache_dir) -> float | None:
     return patterns.get(ident.strip().upper())
 
 
-#: APT_BASE's OWNERSHIP_TYPE_CODE for a field the armed services own: the
-#: Air Force's (MA), the Navy's (MN), the Army's (MR) and the Coast
-#: Guard's (CG).
-MILITARY_OWNERS = frozenset({"MA", "MN", "MR", "CG"})
-
-
 @once(maxsize=2)
 def _military_of(path: str, _mtime: float) -> dict:
     df = _read_apt_base_cached(path, _mtime)
-    df = df[df["OWNERSHIP_TYPE_CODE"].isin(MILITARY_OWNERS)]
+    # The engine's field_military: the services' own fields, "joint" where
+    # open to the public as well (a civil airport on a military one, Libby
+    # AAF and Sierra Vista Municipal, where a civil pilot may land).
+    kinds = field_status.military_column(df["OWNERSHIP_TYPE_CODE"], df["FACILITY_USE_CODE"])
     by_ident = {}
-    for arpt_id, icao_id, use in zip(df["ARPT_ID"], df["ICAO_ID"], df["FACILITY_USE_CODE"]):
-        # Open to the public as well (FACILITY_USE_CODE PU): a joint-use
-        # field, a civil airport on a military one (Libby AAF and Sierra
-        # Vista Municipal), where a civil pilot may land.
-        kind = "joint" if use == "PU" else "military"
+    for arpt_id, icao_id, kind in zip(df["ARPT_ID"], df["ICAO_ID"], kinds):
+        if kind is None:
+            continue
         for ident in (arpt_id, icao_id):
             if isinstance(ident, str) and ident.strip():
                 by_ident[ident.strip().upper()] = kind
@@ -326,7 +321,7 @@ def _military_of(path: str, _mtime: float) -> dict:
 
 def military_fields(cache_dir) -> dict:
     """Every field the armed services own (APT_BASE's OWNERSHIP_TYPE_CODE,
-    MILITARY_OWNERS), by its FAA and ICAO identifiers: "military" where it
+    the engine's field_military), by its FAA and ICAO identifiers: "military" where it
     is not open to the public -- a civil airplane lands there only with
     the service's permission, for the Air Force a Civil Aircraft Landing
     Permit (32 CFR part 855) -- and "joint" where it is (FACILITY_USE_CODE
@@ -342,7 +337,8 @@ def military_fields(cache_dir) -> dict:
 @once(maxsize=2)
 def _private_of(path: str, _mtime: float) -> frozenset:
     df = _read_apt_base_cached(path, _mtime)
-    df = df[(df["FACILITY_USE_CODE"] == "PR") & ~df["OWNERSHIP_TYPE_CODE"].isin(MILITARY_OWNERS)]
+    # Private use, and not the services' own: theirs are "military".
+    df = df[(df["FACILITY_USE_CODE"] == "PR") & field_status.military_column(df["OWNERSHIP_TYPE_CODE"], df["FACILITY_USE_CODE"]).isna()]
     return frozenset(ident.strip().upper() for ident in [*df["ARPT_ID"], *df["ICAO_ID"]] if isinstance(ident, str) and ident.strip())
 
 

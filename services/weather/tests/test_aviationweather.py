@@ -105,8 +105,7 @@ def test_the_metars_are_the_newest_report_per_station_from_the_cache_file():
     result = metar_for_idents(["KDLH", "KORD", "C81"])
     assert result["KDLH"]["flight_category"] == "VFR"  # the 0153Z SPECI, not the 0053Z METAR
     assert result["KDLH"]["ceiling_ft"] is None  # CLR
-    assert result["KDLH"]["wind_dir_true_deg"] is None  # VRB
-    assert result["KDLH"]["wind_speed_kt"] == 3.0
+    assert result["KDLH"]["wind_dir_true_deg"] is None and result["KDLH"]["wind_speed_kt"] == 3.0  # VRB at 3 kt
     assert result["KORD"] == {
         "raw": "KORD 200151Z 09008KT 2SM BR OVC006 14/13 A2998",
         "observed_at": "2026-09-20T01:51:00.000Z",
@@ -116,6 +115,7 @@ def test_the_metars_are_the_newest_report_per_station_from_the_cache_file():
         "ceiling_unknown": False,
         "ceiling_cover": "OVC",  # the ceiling layer's own, for the station model's "OVC 006"
         "visibility_sm": 2.0,
+        "visibility_plus": False,
         "wind_dir_true_deg": None,
         "wind_speed_kt": None,
         "wind_gust_kt": None,

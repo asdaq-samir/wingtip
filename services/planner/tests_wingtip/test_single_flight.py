@@ -1,7 +1,7 @@
 import threading
 import time
 
-from wingtip.single_flight import once
+from wingtip.single_flight import _WORKING, once, one_at_a_time
 
 
 def test_callers_at_once_build_it_once_and_share_the_answer():
@@ -75,3 +75,23 @@ def test_it_keeps_the_newest_maxsize_keys_and_counts_like_lru_cache():
     assert built == ["a", "b", "c", "b"]
     info = table.cache_info()
     assert (info.hits, info.misses, info.maxsize, info.currsize) == (1, 4, 2, 2)
+
+
+def test_one_key_is_worked_on_one_at_a_time_and_forgotten_after():
+    inside, most = [], []
+
+    def work():
+        with one_at_a_time("page-3.png"):
+            inside.append(1)
+            most.append(len(inside))
+            time.sleep(0.01)
+            inside.pop()
+
+    threads = [threading.Thread(target=work) for _ in range(4)]
+    for t in threads:
+        t.start()
+    with one_at_a_time("another.png"):  # a different key is not held up
+        pass
+    for t in threads:
+        t.join()
+    assert max(most) == 1 and _WORKING == {}

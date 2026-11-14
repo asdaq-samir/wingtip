@@ -19,7 +19,8 @@ HTTP layer over it: `app/main.py` builds the app, `app/routers/` holds
 the endpoints one module per concern (plan, chart, classb, briefing,
 gonogo, notes, devml, devservices, system ...), and the work they share --
 resolving a route (`router_basics.py`), what a plan is asked
-(`plan_query.py`), a route's briefing (`route_briefing.py`), the Go / No-Go's
+(`plan_query.py`, each airplane figure bounded by the engine's
+`airplane_figure_ranges`), a route's briefing (`route_briefing.py`), the Go / No-Go's
 plan and findings (`gonogo/flight.py`), the dev-services sidecar
 (`dev_services.py`), scoring the checkpoints (`checkpoint_scoring.py`), the
 corridor read (`detection.py`) -- sits beside them. A router only parses,

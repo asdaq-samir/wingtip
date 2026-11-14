@@ -67,6 +67,7 @@ pub mod taf;
 pub mod tfr;
 pub mod tfr_contact;
 pub mod validity;
+pub mod visibility;
 pub mod winds;
 pub mod worse;
 
