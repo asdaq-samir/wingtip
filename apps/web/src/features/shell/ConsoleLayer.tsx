@@ -76,9 +76,11 @@ export default function ConsoleLayer({
           // level, with no frosted bar of their own (Apple Maps' account card,
           // the owner's screenshot, 2026-11-14: "Look at this in comparison").
           className={cn(
-            "shrink-0 flex-col print:hidden [&:has([data-slot=console-page])>[data-slot=layer-head]]:hidden",
+            // Drawn while its drawer closes too, so it fades out with its
+            // content, not an empty card; kept, the drawer is hidden
+            // (index.css, the kept cards).
+            "flex shrink-0 flex-col print:hidden [&:has([data-slot=console-page])>[data-slot=layer-head]]:hidden",
             "[&>[data-slot=layer-head]]:bg-transparent! [&>[data-slot=layer-head]]:backdrop-blur-none!",
-            shown ? "flex" : "hidden",
           )}
         >
           {/* Every card's one head row (PinnedHead, HeadGrid), at the

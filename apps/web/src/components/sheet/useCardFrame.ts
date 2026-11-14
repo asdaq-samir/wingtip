@@ -12,10 +12,11 @@ import { useShown } from "../../lib/shown";
  * Held in a layout effect, so the drawer and the content are on the page
  * in the same frame as the tap, never an empty card for a frame. The
  * content is drawn in the card's own host, which the drawer's scroller
- * takes in (CardStack): a drawer made anew as the stack changes order (a
- * kept card opened again, on top) moves the host, not the content -- put
- * straight in the scroller, it was built again, and You opened on Settings
- * from the Map card's gear lost the page it was asked to open on.
+ * takes in (CardStack): the content is drawn once for the card's life, a
+ * new scroller given the host, not the content -- put straight in the
+ * scroller, it was built again whenever the drawer was drawn anew, and You
+ * opened on Settings from the Map card's gear lost the page it was asked
+ * to open on.
  */
 export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: string; open?: boolean }, id: string): HTMLElement | null {
   // A card kept between its openings (`open`, CardLayer's) is shown only

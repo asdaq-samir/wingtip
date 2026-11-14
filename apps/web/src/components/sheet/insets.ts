@@ -1,5 +1,6 @@
 import type { Drawer } from "@base-ui/react/drawer";
 import { SHEET_MARGIN, type MapInsets, type PanelState } from "../../lib/mapChrome";
+import { REACH } from "../../lib/sheetCards";
 import { MOTION, SIZE } from "../../lib/tokens";
 
 /** How long the stock Drawer takes to settle, ms: the time and curve of
@@ -71,12 +72,53 @@ export function sizeAt(fromBottom: boolean, point: Drawer.Root.SnapPoint): Panel
   return SIZES.find((size) => Object.is(at[size], point));
 }
 
-/** Half's height in px as the Drawer resolves it ("23rem", no taller than
- *  the popup), for the map's room all the way up: what shows once it comes
- *  down. */
-export function halfPx(popupHeight: number) {
-  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  return Math.min(parseFloat(String(BOTTOM_SNAPS.half)) * rem, popupHeight);
+/**
+ * A drag let go, the sheet's or a card's (MapPanel, CardStack), as the
+ * Drawer tells it (onSnapPointChange): the size of the snap point it
+ * picked, one of ours, asked for. Let go past the pill (no snap point),
+ * the Drawer reads a close, refused here before it starts one, and the
+ * surface goes to the pill (`park`: half for a settings card) -- let
+ * through, the close had begun, the card faded out and dropped off the
+ * screen's foot before onOpenChange took it back, and it faded in again
+ * at the pill (the flicker audit, 2026-11-14, FL-3). A settings card at
+ * half (`close`) is the one that closes on a swipe down, the Drawer's own
+ * close carrying it, and down to a lower size too.
+ */
+export function letGo(
+  point: Drawer.Root.SnapPoint | null,
+  details: Pick<Drawer.Root.SnapPointChangeEventDetails, "cancel">,
+  s: { fromBottom: boolean; at: PanelState; ask: (size: PanelState) => void; park: PanelState; close?: () => void },
+) {
+  if (point === null) {
+    if (s.close) return;
+    details.cancel();
+    if (s.park !== s.at) s.ask(s.park);
+    return;
+  }
+  const target = sizeAt(s.fromBottom, point);
+  if (!target || target === s.at) return;
+  if (s.close && REACH[target] < REACH[s.at]) s.close();
+  else s.ask(target === "peek" ? s.park : target);
+}
+
+/**
+ * How much of a sheet or a card is in sight at rest at `size`, px, as the
+ * stock Drawer resolves its snap point (useDrawerSnapPoints, @base-ui/react
+ * 1.9.0: a rem value at the page's root font size, a fraction of its
+ * viewport, either no taller than the popup; the viewport is never shorter
+ * than the popup here, MapPanel's height). Worked out from the size the
+ * page holds, not read off a popup: Base UI writes its offset as 0 until it
+ * has measured, which read as the whole card in sight for a frame as one
+ * opened (the flicker audit, 2026-11-14, FL-4).
+ */
+export function shownPx(size: PanelState, fromBottom: boolean, popupHeight: number, rem = rootRem()) {
+  const point = snapsOf(fromBottom).at[size];
+  return typeof point === "number" ? popupHeight : Math.min(parseFloat(point) * rem, popupHeight);
+}
+
+/** The page's root font size, px, which the Drawer's rem snap points use. */
+function rootRem() {
+  return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 }
 
 /** The side panel's width from `md` up (design/tokens.json size.panel),

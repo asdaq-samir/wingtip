@@ -5,8 +5,11 @@
  * content and hands its swipe to the card). Base UI sets a parent's count
  * from its child, not adds to it, so two cards drawn side by side in the
  * sheet left it with the last one's word: one closed over another, the
- * sheet thought none was up. Nested one in another (CardStack), the sheet
- * hears the one under them all.
+ * sheet thought none was up. Their own Drawer, open while any card is
+ * (CardStack's Cards), is what the sheet hears. And each card's drawer
+ * keeps one place in React's tree for its life, so none is drawn anew as
+ * the others open, close, are kept or raised (the flicker audit,
+ * 2026-11-14, FL-1 and FL-2).
  */
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { Drawer } from "@base-ui/react/drawer";
@@ -61,4 +64,39 @@ test("a card closed over another leaves the sheet knowing the one under it is st
   // Both gone: the sheet is the one in sight again.
   act(() => useSheetCards.setState((s) => ({ stack: s.stack.map((e) => ({ ...e, state: "kept" as const })) })));
   await waitFor(() => expect(cardUp()).toBe(false));
+});
+
+const kept = (id: string) => (e: CardEntry) => (e.id === id ? { ...e, state: "kept" as const } : e);
+
+test("a card's drawer is never drawn anew as the cards around it open, close, are kept and raised", async () => {
+  render(<Sheet />);
+  act(() => useSheetCards.setState({ stack: [card("airport"), card("notam")] }));
+  await waitFor(() => expect(cardUp()).toBe(true));
+  const airport = screen.getByTestId("airport");
+  const notam = screen.getByTestId("notam");
+
+  // The one under put away (kept): the one over it is the same drawer.
+  act(() => useSheetCards.setState((s) => ({ stack: s.stack.map(kept("airport")) })));
+  await waitFor(() => expect(screen.getByTestId("airport")).toHaveProperty("hidden", true));
+  expect(screen.getByTestId("notam")).toBe(notam);
+  expect(cardUp()).toBe(true);
+
+  // Opened again and raised over it: both the same drawers, the raised one drawn over.
+  act(() =>
+    useSheetCards.setState((s) => ({
+      stack: [...s.stack.filter((e) => e.id !== "airport"), { ...card("airport"), state: "open" as const }],
+    })),
+  );
+  await waitFor(() => expect(screen.getByTestId("airport")).toHaveProperty("hidden", false));
+  expect(screen.getByTestId("airport")).toBe(airport);
+  expect(screen.getByTestId("notam")).toBe(notam);
+
+  // A third over them, then the one under all of them leaving: still the same.
+  act(() => useSheetCards.setState((s) => ({ stack: [...s.stack, card("traffic")] })));
+  const traffic = await screen.findByTestId("traffic");
+  act(() => useSheetCards.setState((s) => ({ stack: s.stack.map((e) => (e.id === "notam" ? { ...e, state: "leaving" as const } : e)) })));
+  await waitFor(() => expect(screen.queryByTestId("notam")).toBeNull());
+  expect(screen.getByTestId("airport")).toBe(airport);
+  expect(screen.getByTestId("traffic")).toBe(traffic);
+  expect(cardUp()).toBe(true);
 });

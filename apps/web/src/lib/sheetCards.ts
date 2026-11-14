@@ -49,9 +49,6 @@ export type CardEntry = {
   /** Where the front sheet's top was as it opened, the Drawer's snap
    *  offset there (sheetTopSlot's frontOffset): where it comes up from. */
   from?: string;
-  /** The drawer it is drawn in, once that drawer is on the page: a drawer
-   *  drawn anew opens the render after, never mounted open (CardStack). */
-  drawer?: object;
   /** Open; kept closed under a page put away (lib/shown) or between its
    *  openings; or leaving, its caller gone: its drawer closes by Base UI's
    *  own close (its focus handed back, its parent told), then the entry
@@ -61,9 +58,8 @@ export type CardEntry = {
   /** The drawer's scroller, where the content's host is put. */
   slot: HTMLElement | null;
   /** The card's own box its content is drawn in, the same for the card's
-   *  life (useCardFrame), put in whichever drawer's scroller it has: a
-   *  drawer drawn anew -- the card opened again over another, raised to
-   *  the top -- moves it, and the content is not built again. */
+   *  life (useCardFrame), put in its drawer's scroller: a card opened again
+   *  while its last drawer still closes keeps its content, not built again. */
   host: HTMLElement;
 };
 

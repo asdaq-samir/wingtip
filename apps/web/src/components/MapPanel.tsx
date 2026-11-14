@@ -7,9 +7,9 @@ import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useSafeArea } from "../hooks/use-viewport";
 import { GLASS_SHEET, PILL_RADIUS, type MapInsets, type PanelState } from "../lib/mapChrome";
-import { coverCard, useSheetCards } from "../lib/sheetCards";
+import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
-import { FLOAT_PX, insetsOf, sizeAt, snapsOf } from "./sheet/insets";
+import { FLOAT_PX, insetsOf, letGo, snapsOf } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
 import { useDrawn } from "./sheet/useDrawn";
 import { SHEET_BELOW, SheetParts, type PartsProps } from "./sheet/SheetParts";
@@ -81,7 +81,7 @@ interface Props {
  * leaves to its user is a thin layer here: the parts held in sight at its
  * free edge (by the Drawer's own CSS variables, SheetParts), the room over
  * its top where the radio's and the map's buttons ride it (OnSheetTop), the room it
- * leaves the map (insetsOf, read from the Drawer by useSheetCover). The
+ * leaves the map (insetsOf, from its size by useSheetCover). The
  * cards over it are its own nested drawers, each with its own snap point
  * (CardStack); the keyboard's inset is the Drawer's
  * (VirtualKeyboardProvider), and a swipe moves one size however fast, by
@@ -126,7 +126,8 @@ export default function MapPanel(props: Props) {
   // and the rules over the map (all the way up, its buttons give way,
   // index.css), and for the side panel, which a card covers.
   const ask = props.onStateChange;
-  const front: PanelState = coverEntry ? (coverEntry.at ?? "half") : props.state;
+  // A card opening, the size it opens at (Emergency's all the way up), not half for its first render.
+  const front: PanelState = coverEntry ? (coverEntry.at ?? cardOpening(coverEntry)) : props.state;
   const size = onPhone ? props.state : front;
   const ready = useDrawn();
   const hasPill = !!bar || !!compact;
@@ -138,9 +139,9 @@ export default function MapPanel(props: Props) {
   const snaps = snapsOf(fromBottom);
 
   // The room the sheet in sight (the top card, else the sheet) leaves the
-  // map, read from the Drawer as its snap point is set: the map eases with
-  // the sheet (GlMapShell, in the Drawer's time).
-  const { cover, card: coverIsCard } = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  // map, from the size it is set to: the map eases with the sheet
+  // (GlMapShell, in the Drawer's time).
+  const cover = useSheetCover(sheetNode, front, onPhone, fromBottom);
   // The pages, drawn whenever the workspace has them and is not flying: a
   // card alone over them (`layer` "card") is drawn from inside one, the
   // Brief from FPL's (PlanPage), so put away with them it never opened.
@@ -157,8 +158,8 @@ export default function MapPanel(props: Props) {
   useEffect(() => () => usePageToggle.setState({ pages: null }), []);
   const tellInsets = props.onInsetsChange;
   const insetsNow = useMemo(
-    () => ({ ...insetsOf(front, cover, onPhone, fromBottom, safe.top, desktop), card: cardsUp || coverIsCard }),
-    [front, cover, onPhone, fromBottom, safe.top, desktop, cardsUp, coverIsCard],
+    () => ({ ...insetsOf(front, cover, onPhone, fromBottom, safe.top, desktop), card: cardsUp }),
+    [front, cover, onPhone, fromBottom, safe.top, desktop, cardsUp],
   );
   useEffect(() => tellInsets(insetsNow), [insetsNow, tellInsets]);
 
@@ -230,19 +231,10 @@ export default function MapPanel(props: Props) {
     "aria-label": label,
   };
 
-  // A drag let go at a snap point: its size, the point being one of ours.
-  // Let go past the pill, the Drawer reads a close, which is refused for
-  // the pill.
+  // A drag let go (letGo); a swipe past the pill lands on it. A card's drag
+  // is its own drawer's (CardStack).
   const snapped = (point: Drawer.Root.SnapPoint | null, details: Drawer.Root.SnapPointChangeEventDetails) => {
-    // A card's drag is its own drawer's (CardStack).
-    if (cardsUp) return;
-    if (point === null) {
-      details.cancel();
-      if (size !== "peek") ask("peek");
-      return;
-    }
-    const target = sizeAt(fromBottom, point);
-    if (target && target !== size) ask(target);
+    if (!cardsUp) letGo(point, details, { fromBottom, at: size, ask, park: "peek" });
   };
 
   // The cards over it, its nested drawers (CardStack), with its sizes.
