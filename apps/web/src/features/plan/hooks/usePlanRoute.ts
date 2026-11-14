@@ -101,6 +101,16 @@ export function usePlanRoute() {
   // asked for (usePlan's `settling`), once, not again for each as it came.
   const picksComing = useQueries({ queries: pickQueries, combine: (rs) => rs.some((r) => r.isPending && r.fetchStatus !== "idle") });
   const windPending = useWindPicks((w) => w.pending);
+  // Settled for this route only once a commit has gone by with nothing
+  // coming: the route list's wind picks are set in its effects, which run
+  // after the render that would otherwise have asked for the nav log
+  // without them (the store read here, after them). A route not settled
+  // yet -- each new one -- waits that one commit.
+  const settlingNow = picksComing || windPending;
+  const settledFor = useWindPicks((w) => w.settledFor);
+  useEffect(() => {
+    useWindPicks.setState({ settledFor: !settlingNow && !useWindPicks.getState().pending ? routeFields : null });
+  }, [settlingNow, routeFields]);
   // Those the CIFP has, once drawn, each with the fix ATC sent the airplane
   // direct to where there is one: one string, so the plan's key changes
   // only as a procedure does.
@@ -171,7 +181,7 @@ export function usePlanRoute() {
     procedures,
     runways: runwaysText,
     patterns: landingsText,
-    settling: picksComing || windPending,
+    settling: settlingNow || settledFor !== routeFields,
     crossings: altitudesParam(crossings),
     ground: altitudesParam(ground),
     holds: holdsParam(holds),

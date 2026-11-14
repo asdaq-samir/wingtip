@@ -165,11 +165,14 @@ test(
     // Emergency: fields ranked on the device, or No connection.
     await page.getByTestId("flying-emergency").click();
     const sheet = page.getByTestId("emergency-sheet");
+    // Either, or both: offline the fields ranked on the device come with a
+    // line saying they are the chart data kept, not the planner's.
     await expect(
       sheet
         .getByTestId("emergency-field")
         .first()
-        .or(sheet.getByText(/No connection/).first()),
+        .or(sheet.getByText(/No connection/).first())
+        .first(),
     ).toBeVisible({ timeout: slow(20_000) });
     await expect(sheet.getByTestId("emergency-squawk")).toContainText("7700");
     await sheet.getByTestId("sheet-card-close").click();
