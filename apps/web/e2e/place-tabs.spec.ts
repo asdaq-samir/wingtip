@@ -91,6 +91,9 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   await expect(card(page).getByTestId("place-tab-runways")).toHaveAccessibleName("Runways");
   await expect(card(page).getByTestId("place-tab-category")).toBeVisible();
   await expect(card(page).getByTestId("place-tab-charts")).toHaveText("3");
+  // Icons: the picked tab shows its word too, the others the icon alone.
+  await expect(card(page).getByTestId("place-tab-radio")).toHaveText("Info");
+  await expect(card(page).getByTestId("place-tab-runways")).toHaveText("");
 
   // The picked tab filled as Fly Here is, the look's tint; the others not.
   const fill = (testId: string) =>

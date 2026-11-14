@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { TabsList, TabsTrigger } from "./ui/tabs";
 import { TEXT } from "../lib/text";
@@ -18,18 +19,23 @@ const FLOATING =
  *  `::before`, as the stock trigger's `::after` is its underline. */
 const TRIGGER_AREA = "before:absolute before:inset-x-0 before:-inset-y-1 before:content-['']";
 
-/** One tab of the bar: its value and word, and why to open it where there
- *  is a reason -- `hint` said in its name ("Weather, MVFR", "Flights, 10"),
- *  as the marks drawn before (`lead`) or after (`trail`) its word are not words. */
-export type CardTab<T extends string> = { value: T; label: string; hint?: string | null; lead?: ReactNode; trail?: ReactNode };
+/** One tab of the bar: its value, its word and its icon (required, so none
+ *  is bare), and why to open it where there is a reason -- `hint` said in
+ *  its name ("Weather, MVFR", "Flights, 10"), as the mark (`badge`) drawn
+ *  over the icon's corner is not words. Every tab's name is its aria-label,
+ *  as only the picked tab shows its word. */
+export type CardTab<T extends string> = { value: T; label: string; icon: LucideIcon; hint?: string | null; badge?: ReactNode };
 
-/** A count after a tab's word (the airport's charts, the airplane's flights). */
+/** A count over an icon's corner (the airport's charts, the airplane's flights). */
 export function TabCount({ count, testId }: { count: number; testId?: string }) {
   return (
     <span
       aria-hidden
       data-testid={testId}
-      className={cn("shrink-0 rounded-full bg-current/15 px-1.5 font-semibold tabular-nums", TEXT.caption)}
+      className={cn(
+        "pointer-events-none absolute -top-2 left-full -ml-2 min-w-4 rounded-full bg-foreground px-1 text-center leading-4 font-semibold tabular-nums text-background",
+        TEXT.caption,
+      )}
     >
       {count}
     </span>
@@ -44,8 +50,10 @@ export function TabCount({ count, testId }: { count: number; testId?: string }) 
  * V1d9RDbmY1aczc4LfXed7a, "Airport card after Apple Maps"): the airport
  * card's (PlaceTabBar) and the airplane cards' (the owner the same day:
  * "make sure the airplane card looks similar to airport card"). The stock
- * Tabs' list, the picked tab filled in the look's tint (the `tint`
- * variant) as a capsule, the others' words in the foreground colour.
+ * Tabs' list of icons (the owner, 2026-11-14: "can you make the tabs icons
+ * instead so it takes less space?"), the picked tab filled in the look's
+ * tint (the `tint` variant) as a capsule showing its icon and its word, the
+ * others' icons alone, each named by its aria-label.
  *
  * The bar is glass (liquid-glass): it floats over the card, the one place
  * glass is kept on the web (rules.md; the owner, 2026-11-10: glass only on
@@ -91,17 +99,20 @@ export function CardTabBar<T extends string>({
             <TabsTrigger
               key={t.value}
               value={t.value}
-              className={cn("group/tab h-full min-w-0 flex-none rounded-full px-3.5", TEXT.row, TRIGGER_AREA)}
+              className={cn("group/tab h-full min-w-0 flex-none rounded-full px-3", TEXT.row, TRIGGER_AREA)}
               disabled={disabled}
-              aria-label={t.hint ? `${t.label}, ${t.hint}` : undefined}
+              aria-label={t.hint ? `${t.label}, ${t.hint}` : t.label}
               data-testid={`${tabTestId}${t.value}`}
               // A tap picks the tab and nothing else: the sheet keeps the size
               // it was dragged to (the owner, 2026-11-11).
               onClick={() => onPick(t.value)}
             >
-              {t.lead}
-              <span className="truncate">{t.label}</span>
-              {t.trail}
+              {/* The icon's own box carries the badge over its corner. */}
+              <span className="relative flex shrink-0">
+                <t.icon aria-hidden className="size-5" />
+                {t.badge}
+              </span>
+              <span className="hidden truncate group-data-active/tab:inline">{t.label}</span>
             </TabsTrigger>
           ))}
         </TabsList>
