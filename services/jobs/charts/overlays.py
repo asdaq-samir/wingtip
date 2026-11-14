@@ -392,7 +392,6 @@ def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path |
     """The `airports` layer's lines: every operational field in APT_BASE
     (the engine's field_status: ARPT_STATUS O; CI and CP are not drawn),
     with its runways (runways_by_site)."""
-    from wingtip.faa_data import MILITARY_OWNERS
 
     runways = runways_by_site(rwy_path, rwy_end_path) if rwy_path is not None else {}
     for row in _rows(apt_path):
@@ -408,7 +407,8 @@ def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path |
         # ATCT, ATCT-A/C, ATCT-TRACON and the rest; NON-ATCT is none.
         towered = (row.get("TWR_TYPE_CODE") or "").strip().upper().startswith("ATCT")
         ways = runways.get((row.get("SITE_NO") or "").strip(), {})
-        military = (row.get("OWNERSHIP_TYPE_CODE") or "").strip() in MILITARY_OWNERS
+        # The engine's field_military: "military", "joint" (open to the public as well) or None.
+        military = field_status.military(row.get("OWNERSHIP_TYPE_CODE"), use)
         rank = airport_rank(site_type, use, towered, ways.get("hard_ft", 0))
         yield _feature(
             {
@@ -417,9 +417,8 @@ def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path |
                 "name": (row.get("ARPT_NAME") or "").strip(),
                 "type": SITE_TYPES.get(site_type, site_type.lower()),
                 # As faa_data: the services' own field "military", not "private", so the Private switch leaves it to the Military one.
-                "use": "military" if military and use != "PU" else {"PU": "public", "PR": "private"}.get(use, use.lower()),
-                # As wingtip.faa_data.military_fields: "joint" where open to the public as well.
-                "military": ("joint" if use == "PU" else "military") if military else None,
+                "use": "military" if military == "military" else {"PU": "public", "PR": "private"}.get(use, use.lower()),
+                "military": military,
                 "towered": towered,
                 "elevation_ft": _number(row.get("ELEV")),
                 "longest_ft": ways.get("longest_ft"),

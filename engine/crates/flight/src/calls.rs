@@ -179,3 +179,18 @@ pub fn field_status(name: &str, v: &Value) -> Result<String, String> {
     out.push('}');
     Ok(out)
 }
+
+/// `field_military`: whether a field is the armed services' own, from
+/// NASR APT_BASE's OWNERSHIP_TYPE_CODE and FACILITY_USE_CODE (field.rs):
+/// `{"military": "military" | "joint" | null}`.
+pub fn field_military(name: &str, v: &Value) -> Result<String, String> {
+    let code = |key: &str| match v.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(s)) => Ok(Some(s.as_str())),
+        Some(_) => Err(format!("{name}: \"{key}\" is not a string or null")),
+    };
+    let mut out = String::from("{\"military\":");
+    json::opt_string(&mut out, field::military(code("ownership")?, code("use")?));
+    out.push('}');
+    Ok(out)
+}

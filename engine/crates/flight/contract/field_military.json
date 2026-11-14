@@ -1,0 +1,50 @@
+{
+  "x-call": "wingtip_flight::calls::field_military",
+  "description": "Whether a field is the armed services' own, from the FAA's NASR APT_BASE.csv: OWNERSHIP_TYPE_CODE MA (Air Force), MN (Navy), MR (Army) or CG (Coast Guard) is; \"joint\" where FACILITY_USE_CODE is PU, open to the public as well (a civil airport on a military one, where a civil pilot may land), else \"military\", where a civil airplane lands only with the service's permission (for the Air Force a Civil Aircraft Landing Permit, 32 CFR part 855); null for any other owner. The one statement the planner, the cycle pack's overlays and the engine's map pins read.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FieldMilitaryInput",
+      "type": "object",
+      "properties": {
+        "ownership": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_BASE's OWNERSHIP_TYPE_CODE (PU, PR, MA, MN, MR, CG)."
+        },
+        "use": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_BASE's FACILITY_USE_CODE (PU, PR)."
+        }
+      }
+    },
+    "answer": {
+      "title": "FieldMilitaryAnswer",
+      "type": "object",
+      "properties": {
+        "military": {
+          "enum": [
+            "military",
+            "joint",
+            null
+          ],
+          "description": "military, joint, or null for a field the services do not own."
+        }
+      },
+      "required": [
+        "military"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}
