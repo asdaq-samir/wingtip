@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { boxOf, classesAt, kindOf, labelsOf, piecesOf } from "./airspaceVolumes";
+import type { GroundPoint } from "./airspaceHeights";
+import { VolumeDrawing, boxOf, classesAt, kindOf, labelsOf, piecesOf } from "./airspaceVolumes";
 
 const FT = 0.3048;
 const square = (w: number, s: number, d = 0.5) => [
@@ -102,13 +103,41 @@ describe("the volumes in view", () => {
       },
     });
     const features = [part(0), part(1)];
-    const labels = labelsOf(
-      features,
-      piecesOf(features, () => null),
-    );
+    const labels = labelsOf(piecesOf(features, () => null));
     expect(labels.features).toHaveLength(1);
     // Its top is the drawn top, the floor of Class A (14 CFR 71.33).
     expect(labels.features[0]!.properties!.top_m).toBeCloseTo(18000 * FT, 6);
+  });
+
+  it("keeps a volume on its last good ground and the drawing the same while the terrain loads after a pan", () => {
+    const brady = () => ({
+      geometry: { type: "Polygon", coordinates: square(-99.5, 31) },
+      properties: {
+        layer: "special_use",
+        type: "MOA",
+        name: "BRADY LOW MOA",
+        floor_ft: 500,
+        floor_ref: "SFC",
+        ceiling_ft: 6000,
+        ceiling_ref: "MSL",
+        label: [-99.3, 31.2],
+      },
+    });
+    const drawing = new VolumeDrawing();
+    const first = drawing.pieces([brady()], () => 520, null, 1);
+    expect(first[0]!.polygon[0]![0]![2]).toBeCloseTo(520 + 500 * FT, 6);
+    // Panned: some of the outline's tiles loading, the planner asked again
+    // (a new answer, the same volume). The same drawing, not a lower one.
+    let i = 0;
+    const loading = (): GroundPoint => (i++ % 2 ? "loading" : 0);
+    expect(drawing.pieces([brady()], loading, null, 1)).toBe(first);
+    expect(drawing.pieces([brady()], () => null, null, 1)).toBe(first);
+    expect(labelsOf(first).features).toHaveLength(1);
+    // Every tile in: the fresh ground, a new drawing.
+    const settled = drawing.pieces([brady()], () => 600, null, 1);
+    expect(settled).not.toBe(first);
+    expect(settled[0]!.polygon[0]![0]![2]).toBeCloseTo(600 + 500 * FT, 6);
+    expect(drawing.pieces([brady()], () => 600, null, 1)).toBe(settled);
   });
 
   it("inks each kind as the chart does", () => {

@@ -10,7 +10,7 @@ import { ceilingAndVisibility } from "../../format";
 import { identOf } from "../../../../lib/identSchema";
 import { WeightBalanceSection } from "./PreflightSections";
 import OnRouteRow from "./OnRouteRow";
-import { faaWords, suaAltitudes, tfrAltitudes, tfrPage, tfrTimes } from "../../../../lib/advisories";
+import { faaWords, suaAltitudes, tfrAltitudes, tfrPage, tfrPurpose, tfrTimes } from "../../../../lib/advisories";
 import { passLine, tfrWhen } from "../../lib/passTimes";
 import { FINDING_TONE } from "../../../../lib/findings";
 import BriefChecks from "./BriefChecks";
@@ -176,7 +176,7 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
                           {/* When the flight gets there, in the planner's words
                             on the row under where it placed it. */}
                           {!t.on_route?.legs.length && <PassNote when={pass && { pass, state: tfrWhen(t, pass) }} />}
-                          {(t.purpose ?? t.rule) && <span className="block">{faaWords(t.purpose ?? t.rule)}</span>}
+                          {tfrPurpose(t) && <span className="block">{tfrPurpose(t)}</span>}
                         </>
                       }
                       value={t.crosses ? "On the route" : `${wholeNm(t.along_track_nm)} along`}

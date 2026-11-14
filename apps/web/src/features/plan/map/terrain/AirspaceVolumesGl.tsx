@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useDrawnStretch } from "./heightStretch";
 import { PathLayer, SolidPolygonLayer } from "@deck.gl/layers";
-import type { Map as MlMap, SymbolLayerSpecification } from "maplibre-gl";
+import { LngLat, type Map as MlMap, type SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useState } from "react";
 import { AirspaceCardBody } from "../../../../components/map/cards/AirspaceCard";
 import { deckSlot, useDeckLayers, useDeckTap } from "../../../../lib/map/gl/deckLayers";
@@ -11,13 +11,14 @@ import { SUA_INK } from "../../../../lib/map/gl/glStyle";
 import { useGlView } from "../../../../lib/map/gl/useGlView";
 import { suaTabLayout } from "../../../../lib/map/gl/glSuaLabels";
 import { GL_FONT_BOLD, TAP } from "../../../../lib/map/gl/layers/common";
+import { useAddressKey } from "../../../../lib/address";
 import { usePreferences } from "../../../../lib/preferences";
 import { tfrsQuery } from "../../../../lib/queryClient";
 import { CHART } from "../../../../lib/tokens";
-import { TfrCard } from "../TfrCard";
 import { inForce } from "../tfrMarks";
 import { DEM } from "./dem";
-import { KINDS, boxOf, classesAt, kindOf, labelsOf, piecesOf, suaOfVolume, volumesQuery, type VolumePiece } from "./airspaceVolumes";
+import type { GroundPoint } from "./airspaceHeights";
+import { KINDS, VolumeDrawing, boxOf, classesAt, kindOf, labelsOf, suaOfVolume, volumesQuery, type VolumePiece } from "./airspaceVolumes";
 import { shadeOf, shelfLabelLayer, shelfLabelsOf } from "./airspaceShelves";
 import { SuaVolumeCard } from "./SuaVolumeCard";
 
@@ -35,8 +36,10 @@ import { SuaVolumeCard } from "./SuaVolumeCard";
  *
  * Heights (airspaceHeights): deck.gl draws at the heights it is given,
  * metres above the sea, and the 3D ground hides what is under it; only a
- * floor or ceiling above the ground reads the terrain, once a volume, as
- * its tiles come in. Each stood up by the Heights' stretch with the
+ * floor or ceiling above the ground reads the terrain, once its tiles
+ * under the volume's whole outline are in, and keeps that ground until
+ * they are all in again (VolumeDrawing), so nothing drops or jumps while
+ * a pan's tiles load. Each stood up by the Heights' stretch with the
  * ground (piecesOf), the names and shelves' tabs lifted to the stretched
  * tops, their words the true altitudes. Only the volumes in view are asked for, and far out
  * only Class B and the special use areas (KINDS' `from`).
@@ -92,6 +95,31 @@ function useEye(map: MlMap) {
   return eye;
 }
 
+/** The terrain under a point as the map has it now (airspaceHeights'
+ *  GroundPoint), metres as drawn, stretched. "loading" where a tile on
+ *  the screen is drawn from a parent's heights while its own are still to
+ *  come: a coarser tile's heights a few hundred metres off, and a volume
+ *  stood on them would drop and rise as the tiles come in after a pan.
+ *  Off the drawn tiles (an outline running past the screen) a point is
+ *  read from loaded heights where there are some, and is otherwise none
+ *  (null), never the 0 MapLibre gives for want of them, the sea, and never
+ *  "loading" either: a tile off the screen may never load, and a volume
+ *  waiting on it would never stand. The fallback zoom is MapLibre's
+ *  tileZoom, the map's zoom floored (transform_helper). */
+function groundReader(map: MlMap): (at: [number, number]) => GroundPoint {
+  const terrain = map.terrain;
+  if (!terrain) return () => null;
+  const tileZoom = Math.max(0, Math.floor(map.getZoom()));
+  return ([lon, lat]) => {
+    const at = new LngLat(lon, lat);
+    const own = terrain.getDrawnElevationForLngLat(at, true);
+    if (own !== undefined) return own;
+    if (terrain.getDrawnElevationForLngLat(at) !== undefined) return "loading";
+    const { elevation, demState } = terrain.getElevationAndDEMStateForLngLat(at, tileZoom);
+    return demState === "loaded" ? elevation : null;
+  };
+}
+
 /** The terrain's tiles' coming in, a quarter second after the last, for
  *  the volumes above the ground to be read over it again. */
 function useGroundTick(map: MlMap) {
@@ -131,6 +159,9 @@ const LABEL_LAYER: SymbolLayerSpecification = {
  *  holding them drawn stronger and the rest fainter; null with no plan. */
 export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: number[] | null }) {
   const { map, openCard } = useGlMap();
+  // A TFR's card is opened by its address (`tfr`), as a tap on it in 2D
+  // does (TfrGl, which draws the card), so the two act alike.
+  const [, openTfr] = useAddressKey("tfr");
   const eye = useEye(map);
   const showAirspace = usePreferences((s) => s.airspace);
   const showTfrs = usePreferences((s) => s.tfrs);
@@ -142,7 +173,7 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
   const { data: tfrs, dataUpdatedAt: now } = useQuery({ ...tfrsQuery, enabled: showTfrs });
 
   const features = useMemo(() => {
-    const areas = showAirspace ? ((volumes?.features ?? []) as unknown as Parameters<typeof piecesOf>[0]) : [];
+    const areas = showAirspace ? ((volumes?.features ?? []) as unknown as Parameters<VolumeDrawing["pieces"]>[0]) : [];
     const restrictions = (showTfrs ? (tfrs ?? []) : []).map((t) => ({
       geometry: t.geometry as unknown as { type: string },
       properties: {
@@ -160,10 +191,15 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
     return [...areas.filter((f) => zoom >= KINDS[kindOf(f.properties)].from), ...restrictions];
   }, [volumes, tfrs, showAirspace, showTfrs, now, zoom]);
 
+  // The drawing held across renders (VolumeDrawing): each volume's last
+  // good ground, and the same pieces given again while nothing changed, so
+  // deck.gl's data and the labels' sources are not set anew as the
+  // terrain's tiles come in after a pan.
+  const [drawing] = useState(() => new VolumeDrawing());
   const pieces = useMemo(
-    () => piecesOf(features, (at) => map.queryTerrainElevation(at), altitudes, stretch),
+    () => drawing.pieces(features, groundReader(map), altitudes, stretch),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- tick: the terrain came in
-    [features, map, tick, altitudes, stretch],
+    [drawing, features, map, tick, altitudes, stretch],
   );
   const layers = useMemo(
     () => [
@@ -205,11 +241,11 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
   useGlLayer("lines", { [LABELS]: { type: "geojson", data: EMPTY } }, [LABEL_LAYER], SHELVES);
   useGlData(
     LABELS,
-    useMemo(() => labelsOf(features, pieces), [features, pieces]),
+    useMemo(() => labelsOf(pieces), [pieces]),
   );
   useGlData(
     SHELVES,
-    useMemo(() => shelfLabelsOf(pieces, eye), [pieces, eye]),
+    useMemo(() => drawing.shelves(shelfLabelsOf(pieces, eye)), [drawing, pieces, eye]),
   );
   // The chart's own tabs on the ground, hidden while the volumes carry
   // theirs at their tops.
@@ -239,8 +275,9 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
   useDeckTap([FILLS], 1, TAP.rank.area + 0.5, (picked, event) => {
     const p = picked.properties;
     if (p.layer === "tfr") {
-      const tfr = tfrs?.find((t) => t.notam_id === p.id);
-      if (tfr) openCard(<TfrCard key={tfr.notam_id} tfr={tfr} active={inForce(tfr, now)} />);
+      if (typeof p.id !== "string" || !tfrs?.some((t) => t.notam_id === p.id)) return;
+      openCard(null);
+      void openTfr(p.id);
     } else if (p.layer === "special_use") {
       const colour = kindOf(p) === "restricted" ? SUA_INK.restricted : SUA_INK.moa;
       openCard(<SuaVolumeCard key={String(p.name)} area={suaOfVolume(p)} colour={colour} />);

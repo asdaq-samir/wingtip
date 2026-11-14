@@ -113,6 +113,7 @@ export function SheetCard({
     if (held.current) setCardPill(held.current, pill);
   }, []);
   const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const [startSlot, setStartSlot] = useState<HTMLElement | null>(null);
   // A close of the caller's own in the head (`action`, the app's
   // CloseButton): one that goes back a page first, the procedures'. With
   // the tab bar naming the card it is the bar's close that does it, and
@@ -214,7 +215,10 @@ export function SheetCard({
 
   // The name in its own head row, where the content draws it (a map
   // card's, MapCard).
-  const headSlot = useMemo(() => (title === undefined ? { slot, headingId, setPill } : null), [title, slot, headingId, setPill]);
+  const headSlot = useMemo(
+    () => (title === undefined ? { slot, startSlot, headingId, setPill } : null),
+    [title, slot, startSlot, headingId, setPill],
+  );
   if (!target) return null;
   if (!head)
     return createPortal(
@@ -251,7 +255,7 @@ export function SheetCard({
           the card scrolling under it (the owner, 2026-11-10). Where the
           content draws its name (a map card's, MapCard), its slot. */}
       {title === undefined ? (
-        <CardHeadSlot slot={setSlot} leading={leading} end={end} />
+        <CardHeadSlot slot={setSlot} startSlot={setStartSlot} leading={leading} end={end} />
       ) : (
         <CardHeadRow name={title} sub={description} nameId={headingId} leading={leading} wrap end={end} hidden={titleHidden} />
       )}
@@ -273,11 +277,36 @@ export function SheetCard({
 }
 
 /** The head row's room for a name its content draws (MapCard's mark and
- *  name), centred, the close at its end, as CardHeadRow's (HeadGrid). */
-function CardHeadSlot({ slot, leading, end }: { slot: (node: HTMLDivElement | null) => void; leading?: ReactNode; end?: ReactNode }) {
+ *  name), centred, the close at its end, as CardHeadRow's (HeadGrid); and
+ *  at its start, after a form's Cancel, room for the card's Share
+ *  (MapCard's `start`), where CardHeadRow has it. */
+function CardHeadSlot({
+  slot,
+  startSlot,
+  leading,
+  end,
+}: {
+  slot: (node: HTMLDivElement | null) => void;
+  startSlot: (node: HTMLSpanElement | null) => void;
+  leading?: ReactNode;
+  end?: ReactNode;
+}) {
   return (
     <PinnedHead className="shrink-0">
-      <HeadGrid start={leading} middle={null} middleRef={slot} middleClassName="flex-row justify-center gap-2.5" end={end} />
+      <HeadGrid
+        start={
+          <>
+            {leading}
+            {/* Laid out as the start's own children (contents), so a
+                Share put here sits in the row as CardHeadRow's does. */}
+            <span ref={startSlot} className="contents" />
+          </>
+        }
+        middle={null}
+        middleRef={slot}
+        middleClassName="flex-row justify-center gap-2.5"
+        end={end}
+      />
     </PinnedHead>
   );
 }

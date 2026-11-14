@@ -14,8 +14,9 @@ import { M_PER_FT } from "../../../../lib/geo";
  * the sea, and the 3D ground (MapLibre's terrain, stood up by the 3D
  * view's Heights, which piecesOf undoes for the ground and does to the
  * volume) hides what is under it. The ground
- * under a volume is read once from the terrain at points round its
- * outline (groundSpan), its lowest and its highest.
+ * under a volume is read from the terrain at points round its outline
+ * (groundSpan), its lowest and its highest, and a volume is drawn on the
+ * last reading taken with every point's tile in (keptGround).
  */
 
 /** A volume's limits as its data set has them: each its figure in feet
@@ -66,17 +67,42 @@ export function volumeSpan(v: VolumeHeights, ground: GroundSpan | null, altitude
   );
 }
 
-/** The ground's lowest and highest at the points, metres; null where the
- *  terrain has none of them in yet (a point off its loaded tiles reads
- *  null, MapLibre's queryTerrainElevation). */
-export function groundSpan(points: number[][], ground: (at: [number, number]) => number | null): GroundSpan | null {
+/** The terrain at a point (groundReader): its height in metres, "loading"
+ *  where its tile's own heights are still to come, or null where none
+ *  will (off the source's bounds, or its tile not asked for). */
+export type GroundPoint = number | "loading" | null;
+
+/** The ground read under a volume's outline: its lowest and highest over
+ *  the points read (null where none was), and whether it is settled, no
+ *  point of it waiting for its tile. */
+export interface GroundReading {
+  span: GroundSpan | null;
+  settled: boolean;
+}
+
+/** The ground's lowest and highest at the points, metres (GroundReading). */
+export function groundSpan(points: number[][], ground: (at: [number, number]) => GroundPoint): GroundReading {
   let low = Infinity,
-    high = -Infinity;
+    high = -Infinity,
+    settled = true;
   for (const p of points) {
     const g = ground([p[0]!, p[1]!]);
-    if (g == null) continue;
+    if (g === "loading") settled = false;
+    if (typeof g !== "number") continue;
     low = Math.min(low, g);
     high = Math.max(high, g);
   }
-  return low <= high ? { low, high } : null;
+  return { span: low <= high ? { low, high } : null, settled };
+}
+
+/** The ground a volume is drawn on, given the one it was last drawn on
+ *  (`was`) and a fresh reading: the fresh one only once it is settled,
+ *  every point of the outline read from its own loaded tile. Meanwhile
+ *  the last is kept, so a volume is never drawn lower, or dropped, while
+ *  the terrain under it comes in after a pan -- the flicker the owner saw
+ *  on 2026-11-14, when a point still loading read as the sea (MapLibre's
+ *  queryTerrainElevation gives 0 there). With none kept, a volume above
+ *  the ground waits for a settled reading. */
+export function keptGround(was: GroundSpan | null, now: GroundReading): GroundSpan | null {
+  return now.settled && now.span ? now.span : was;
 }

@@ -35,6 +35,13 @@ import type { LatLon } from "./geo";
 
 /** A key that is there ("1") or not: a card or a list open, a choice
  *  made. False takes it out of the address. */
+/** An FDC NOTAM's number as tfr.faa.gov lists a TFR: "6/4116". */
+const TFR_ID = /^\d{1,2}\/\d{3,5}$/;
+
+/** A TFR's own link, its card opened from the address (`tfr`), at
+ *  `origin` (the site's, for a link to share). */
+export const tfrLink = (notamId: string, origin = "") => `${origin}${SCREEN_LINK.path}?tfr=${encodeURIComponent(notamId)}`;
+
 const flag = createParser<boolean>({ parse: (v) => (v === "1" ? true : null), serialize: () => "1" }).withDefault(false);
 
 /** A point on Earth, `42.3172,-88.0905`, to four places (11 m). */
@@ -117,6 +124,10 @@ export const addressParsers = {
   brief: flag,
   lesson: parseAsString,
   airplane: parseAsString,
+  // A TFR's card by its FDC NOTAM number, "6/4116" (FAA JO 7930.2's
+  // numbering: the year's last figure, a slash, its serial); anything else
+  // read as none.
+  tfr: createParser({ parse: (v) => (TFR_ID.test(v) ? v : null), serialize: (v: string) => v }),
   // Read once and taken off: a screen a link opens (`open`,
   // lib/navigation's SCREEN_LINK), favorites a link brings, a sign-in the
   // gateway refused.

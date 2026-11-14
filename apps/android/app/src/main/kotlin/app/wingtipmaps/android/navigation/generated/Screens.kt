@@ -49,6 +49,7 @@ enum class LinkKey(
     PLACE("place"),
     FLIGHT("flight"),
     AIRPLANE("airplane"),
+    TFR("tfr"),
     ALTITUDE_FT("altitude_ft"),
     DEPART("depart"),
     TYPE("type"),

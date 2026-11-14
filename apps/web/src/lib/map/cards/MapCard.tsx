@@ -27,6 +27,7 @@ export function MapCard({
   subtitle,
   media,
   pill,
+  start,
   children,
 }: {
   title: ReactNode;
@@ -40,6 +41,10 @@ export function MapCard({
    *  drawn small (PillPicture): its name, one line, and its colour on the
    *  chart behind them, at the owner's ask (2026-10-29). */
   pill?: PillHead;
+  /** At the head row's start, where every card has it: its Share
+   *  (CardHead's CardShareButton), the name then centred between it and
+   *  the close (the card rule's 8). */
+  start?: ReactNode;
   children?: ReactNode;
 }) {
   // Its mark and its name in the sheet card's head (SheetCardHead), at a
@@ -66,8 +71,11 @@ export function MapCard({
               <h2
                 id={inSheet.headingId}
                 tabIndex={-1}
+                // Centred, as the line under it is and as every card's
+                // name is (CardHeadRow): left-set, it sat off the line's
+                // centre (the owner's iPhone, 2026-11-14, a TFR's card).
                 className={cn(
-                  "flex items-center gap-x-2 font-bold tracking-tight text-foreground outline-none",
+                  "flex items-center justify-center gap-x-2 font-bold tracking-tight text-foreground outline-none",
                   cn("flex-wrap", TEXT.card),
                 )}
               >
@@ -78,6 +86,7 @@ export function MapCard({
           </>,
           inSheet.slot,
         )}
+      {inSheet?.startSlot && start && createPortal(start, inSheet.startSlot)}
       <div className={cn("space-y-3", TEXT.detail)}>{children}</div>
     </>
   );

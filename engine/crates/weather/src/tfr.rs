@@ -56,6 +56,18 @@ pub fn rule_code(rule: &str) -> Option<&'static str> {
     RULES.iter().find(|(code, name)| *name == r || *code == r).map(|(code, _)| *code)
 }
 
+/// A rule's words and its code, as crate::tfr names it ("special security
+/// instructions (99.7)" is "special security instructions" under 99.7),
+/// or a code given as it is; None where it is none of RULES.
+pub fn rule_words(rule: &str) -> Option<(&'static str, &'static str)> {
+    let code = rule_code(rule)?;
+    let (_, name) = RULES.iter().find(|(c, _)| *c == code)?;
+    // The name's own "(99.7)" off: the section is said once, as the
+    // regulation (notam_read::tfr's cited).
+    let words = name.strip_suffix(')').and_then(|n| n.strip_suffix(code)).and_then(|n| n.strip_suffix(" (")).unwrap_or(name);
+    Some((words, code))
+}
+
 /// An XNOTAM time (UTC with no zone, "2026-11-02T14:00:00") as ISO 8601
 /// with its Z; None where it is no such time.
 pub fn utc(text: &str) -> Option<String> {
