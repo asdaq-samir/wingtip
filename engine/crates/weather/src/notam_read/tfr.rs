@@ -17,6 +17,7 @@ use crate::contractions::{compass, lookup};
 use crate::geo::{bearing_deg, distance_nm};
 use crate::json::{self, Value};
 use crate::text::grouped_int as grouped;
+use wingtip_core::faa_case::faa_words;
 
 /// tfr.faa.gov's kinds (its list's LEGAL column, as the weather service
 /// keeps it, in title case) in our words, a line each.
@@ -32,6 +33,29 @@ const KINDS: &str = concat!(
 fn cited(rule: &str) -> Option<String> {
     let code = crate::tfr::rule_code(rule)?;
     Some(if code == "44812" { "49 U.S.C. 44812".to_owned() } else { ["14 CFR ", code].concat() })
+}
+
+/// The rule it is issued under in words, with the section a pilot looks
+/// it up by: "Special security instructions, 14 CFR 99.7" (eCFR, 14 CFR
+/// 99.7 "Special security instructions"), "Disaster or hazard, 14 CFR
+/// 91.137(a)(1)", "Unmanned aircraft near a public gathering, 49 U.S.C.
+/// 44812". The FAA's own "(99.7)" is the section's number alone; said as
+/// the regulation it is, as the TFR's NOTAM itself does ("PURSUANT TO 14
+/// CFR 99.7, SPECIAL SECURITY INSTRUCTIONS"). A rule it does not know is
+/// said as given, in sentence case (faa_words), never guessed; its first
+/// letter a capital, as a line opening a row is.
+pub fn rule_said(rule: &str) -> Option<String> {
+    let given = rule.trim();
+    if given.is_empty() {
+        return None;
+    }
+    let said = match (crate::tfr::rule_words(given), cited(given)) {
+        (Some((words, _)), Some(section)) => [words, ", ", &section].concat(),
+        _ => faa_words(given),
+    };
+    let mut c = said.chars();
+    let first = c.next()?;
+    Some(first.to_uppercase().chain(c).collect())
 }
 
 /// What it is: "Security TFR", or "TFR" where its kind is not given.
@@ -169,6 +193,8 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     json::string(&mut out, &heading);
     out.push_str(",\"what\":");
     json::string(&mut out, &what);
+    out.push_str(",\"rule\":");
+    json::opt_string(&mut out, text("rule").and_then(rule_said).as_deref());
     out.push_str(",\"where\":");
     json::opt_string(&mut out, where_.as_deref());
     out.push_str(",\"place\":");
@@ -190,7 +216,7 @@ mod tests {
         let got = call("tfr_read", &v).unwrap();
         assert_eq!(
             got,
-            r#"{"heading":"Security TFR","what":"Security TFR, 14 CFR 99.7","where":"3,500 to 18,000 ft MSL, over the field","place":"San Angelo, TX"}"#
+            r#"{"heading":"Security TFR","what":"Security TFR, 14 CFR 99.7","rule":"Special security instructions, 14 CFR 99.7","where":"3,500 to 18,000 ft MSL, over the field","place":"San Angelo, TX"}"#
         );
     }
 
@@ -216,6 +242,25 @@ mod tests {
         assert_eq!(heading(Some("Hazards")), "Hazard TFR");
         assert_eq!(heading(Some("Air Shows/Sports")), "Air show or sports TFR");
         assert_eq!(heading(None), "TFR");
+    }
+
+    #[test]
+    fn its_rule_reads_in_words_with_the_regulation_not_the_faas_bare_number() {
+        // The owner's iPhone, 2026-11-14 (TFR 6/4116, Grand Forks): the card
+        // read "special security instructions (99.7)", lower case and the
+        // section a bare number.
+        assert_eq!(rule_said("special security instructions (99.7)").as_deref(), Some("Special security instructions, 14 CFR 99.7"));
+        assert_eq!(rule_said("99.7").as_deref(), Some("Special security instructions, 14 CFR 99.7"));
+        assert_eq!(rule_said("disaster or hazard (91.137(a)(1))").as_deref(), Some("Disaster or hazard, 14 CFR 91.137(a)(1)"));
+        assert_eq!(rule_said("VIP movement (91.141)").as_deref(), Some("VIP movement, 14 CFR 91.141"));
+        assert_eq!(
+            rule_said("unmanned aircraft near a public gathering").as_deref(),
+            Some("Unmanned aircraft near a public gathering, 49 U.S.C. 44812")
+        );
+        // Not one it knows: as given, sentence case, its first letter a capital.
+        assert_eq!(rule_said("SOMETHING NEW UNDER NOTAM").as_deref(), Some("Something new under NOTAM"));
+        assert_eq!(rule_said("something new").as_deref(), Some("Something new"));
+        assert_eq!(rule_said("  "), None);
     }
 
     #[test]

@@ -126,6 +126,9 @@ export function dropCard(id: string) {
  *  takes, which names the card, and what the pill shows of it there. */
 export const SheetCardHead = createContext<{
   slot: HTMLElement | null;
+  /** The head row's start, where a map card puts its Share (MapCard's
+   *  `start`), as every other card's head has it. */
+  startSlot: HTMLElement | null;
   headingId: string;
   setPill: (pill: PillHead | undefined) => void;
 } | null>(null);

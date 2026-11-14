@@ -103,6 +103,7 @@ sunlight.spec.ts
 switch.spec.ts
 tab-consistency.spec.ts
 terrain.spec.ts
+tfr-card.spec.ts
 tiles.spec.ts
 tracking.spec.ts
 tv-signin.spec.ts

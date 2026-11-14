@@ -1,6 +1,6 @@
 import type { Briefing } from "./api/types";
 import { callEngine } from "./engine/engine";
-import { altFt } from "./format";
+import { altFt, clockTime, dayMonth, dayMonthYear, weekdayShort, zoneName, zuluTime } from "./format";
 
 type GAirmet = Briefing["gairmets"][number];
 type Pirep = Briefing["pireps"][number];
@@ -87,25 +87,34 @@ export function tfrAltitudes(t: Pick<RouteTfr, "floor_ft" | "floor_ref" | "ceili
   return `${floor} to ${altFt(t.ceiling_ft)} ft ${t.ceiling_ref ?? ""}`.trim();
 }
 
-/** When a TFR is in force, in local time: "Tue 6 Oct 18:00 – 20:00",
- *  "from Thu 1 Oct 11:00 until further notice". */
-export function tfrTimes(t: Pick<RouteTfr, "effective" | "expires">): string | null {
+/** When a TFR is in force, on this device's clock with its zone and UTC
+ *  beside it, as the Brief and the airport card's NOTAMs write a time
+ *  (WEB-9: a clock time carries its zone; a NOTAM's own times are UTC,
+ *  FAA JO 7930.2 3-3-2): "Tue 6 Oct, 18:00 CDT (2300Z) – 20:00 CDT
+ *  (0100Z)", "From Thu 1 Oct, 11:00 CDT (1600Z) until further notice".
+ *  Each end's zone is its own, a TFR running across a change to or from
+ *  daylight time; the year is said on both ends where either is not this
+ *  year's ("Sun 1 Nov 2026, 01:00 CST (0700Z) – Sun 14 Mar 2027, ..."). */
+export function tfrTimes(t: Pick<RouteTfr, "effective" | "expires">, now: Date = new Date()): string | null {
   const from = t.effective ? new Date(t.effective) : null;
   const to = t.expires ? new Date(t.expires) : null;
-  if (from && to) return `${dayTime(from)} – ${from.toDateString() === to.toDateString() ? clock(to) : dayTime(to)}`;
-  if (from) return `From ${dayTime(from)} until further notice`;
-  if (to) return `Until ${dayTime(to)}`;
+  const year = now.getFullYear();
+  const withYear = [from, to].some((d) => d && d.getFullYear() !== year);
+  const clock = (d: Date) => `${clockTime(d)} ${zoneName(d)} (${zuluTime(d)})`;
+  const day = (d: Date) => `${weekdayShort(d)} ${withYear ? dayMonthYear(d) : dayMonth(d)}, ${clock(d)}`;
+  if (from && to) return `${day(from)} – ${from.toDateString() === to.toDateString() ? clock(to) : day(to)}`;
+  if (from) return `From ${day(from)} until further notice`;
+  if (to) return `Until ${day(to)}`;
   return null;
 }
 
-// "Tue 6 Oct 18:00" by the browser's own Intl, not date-fns, which this
-// one use kept on the first load (19.5 KB, the 20 Oct audit).
-const DAY = new Intl.DateTimeFormat("en-US", { weekday: "short", day: "numeric", month: "short" });
-const CLOCK = new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-const clock = (d: Date) => CLOCK.format(d);
-function dayTime(d: Date): string {
-  const part = (type: Intl.DateTimeFormatPartTypes) => DAY.formatToParts(d).find((p) => p.type === type)?.value ?? "";
-  return `${part("weekday")} ${part("day")} ${part("month")} ${clock(d)}`;
+/** A TFR's purpose as the FAA gives it, in sentence case (faaWords); else
+ *  the rule it is issued under in words with its section, the engine's
+ *  (tfr_read's rule: "Special security instructions, 14 CFR 99.7", where
+ *  the FAA's list names it "special security instructions (99.7)"). */
+export function tfrPurpose(t: { purpose?: string | null; rule?: string | null }): string | null {
+  if (t.purpose) return faaWords(t.purpose);
+  return t.rule ? callEngine("tfr_read", { rule: t.rule }).rule : null;
 }
 
 /** A special-use area's floor and ceiling as the chart's tables write

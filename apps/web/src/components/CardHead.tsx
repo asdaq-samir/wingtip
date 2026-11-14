@@ -200,7 +200,7 @@ export function CardClose({
 /** A card's Share at its head's start, as Apple Maps' place card has it
  *  (the owner, 2026-11-11): its own, or the route's menu (•••) for the
  *  Brief, the nav log and the profile. */
-function CardShareButton({ onShare }: { onShare?: CardShare }) {
+export function CardShareButton({ onShare }: { onShare?: CardShare }) {
   const routeShare = useContext(RouteShareMenu);
   if (typeof onShare === "string") return routeShare?.(onShare) ?? null;
   if (!onShare) return null;

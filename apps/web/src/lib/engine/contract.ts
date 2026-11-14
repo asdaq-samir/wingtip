@@ -12537,6 +12537,10 @@ export interface TfrReadAnswer {
    */
   what: string;
   /**
+   * The rule it is issued under in words with its section, the FAA's bare number said as the regulation: "Special security instructions, 14 CFR 99.7"; one it does not know as given, in sentence case; null where none is given.
+   */
+  rule: string | null;
+  /**
    * "3,500 to 18,000 ft MSL, 4.8 nm east of the field"; null where neither is known.
    */
   where: string | null;

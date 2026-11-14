@@ -4,13 +4,12 @@ import { areaFrom, lineEnters, outsides } from "../lib/areaPlace";
 import { useOwnFix } from "../../../lib/map/position/ownShip";
 import { useGeo } from "../../../lib/geo";
 import { usePointActions } from "../../../lib/map/cards/pointActions";
-import { Ban } from "lucide-react";
-import { RowBadge } from "../../../components/RowBadge";
-import { BADGE } from "../../../lib/rowBadges";
-import { faaWords, tfrAltitudes, tfrPage, tfrTimes } from "../../../lib/advisories";
+import { CardShareButton } from "../../../components/CardHead";
+import { tfrAltitudes, tfrPage, tfrPurpose, tfrTimes } from "../../../lib/advisories";
 import type { Tfr } from "../../../lib/api/types";
 import { MapCard } from "../../../lib/map/cards/MapCard";
-import { TFR_RED } from "./tfrMarks";
+import { shareOrCopy } from "../../../lib/share";
+import { tfrLink } from "../../../lib/address";
 
 /**
  * A temporary flight restriction's card (the map draws them, in tfrMarks'
@@ -24,33 +23,69 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
   const ship = useOwnFix();
   const geo = useGeo();
   const from = ship && geo ? areaFrom(geo, rings, ship) : null;
+  const title = `TFR ${tfr.notam_id}`;
+  // Its link, which opens this card (`tfr=`), shared where the device can,
+  // copied where not, as every card's Share is.
+  const share = () =>
+    void shareOrCopy({ title, url: tfrLink(tfr.notam_id, location.origin) }).catch(() => {
+      /* put away, or not allowed: nothing to say */
+    });
+  const purpose = tfrPurpose(tfr);
   return (
+    // Its head as every card's (the card rule's 8): Share at the start,
+    // its name centred with its line under it, the close at the end. No
+    // badge before the name: the head has no place for one, as the
+    // airport card's has none, and its kind is in the line (the owner's
+    // iPhone, 2026-11-14).
     <MapCard
-      // A TFR's badge, red while it is in force, as its shape is drawn.
-      media={
-        <RowBadge colour={active ? TFR_RED : BADGE.other}>
-          <Ban />
-        </RowBadge>
-      }
-      title={`TFR ${tfr.notam_id}`}
+      start={<CardShareButton onShare={share} />}
+      title={title}
       subtitle={[tfr.kind, active ? "In force now" : "Not yet in force"].filter(Boolean).join(" · ")}
     >
       <div className="space-y-1 text-left" data-testid="tfr-card">
         {tfrAltitudes(tfr) && <p>{tfrAltitudes(tfr)}</p>}
-        {tfrTimes(tfr) && <p>{tfrTimes(tfr)}</p>}
-        {/* The FAA's capitals in sentence case, its codes kept (faaWords),
-            as the Brief sets the same TFR's purpose. */}
-        {(tfr.purpose ?? tfr.rule) && <p className="text-muted-foreground">{faaWords(tfr.purpose ?? tfr.rule)}</p>}
+        {tfrTimes(tfr) && <p data-testid="tfr-times">{tfrTimes(tfr)}</p>}
+        {/* Its purpose, or the rule it is under with its section ("Special
+            security instructions, 14 CFR 99.7", tfrPurpose): a line of the
+            card's like the rest, not a grey note under them. */}
+        {purpose && <p data-testid="tfr-purpose">{purpose}</p>}
         {/* Where it is to the pilot, at the owner's ask for cards that
             say what a pilot does there (2026-10-30): whether the route
             goes through it, and how far it is. */}
         {rings.length > 0 && line && (
-          <p className={cn(enters ? "font-semibold text-caution-ink" : "text-muted-foreground")} data-testid="tfr-route">
+          <p className={cn(enters && "font-semibold text-caution-ink")} data-testid="tfr-route">
             {enters ? "Your route goes through it" : "Clear of your route"}
           </p>
         )}
         {from && <p data-testid="tfr-from">{from}</p>}
-        <a className="text-tint" href={tfrPage(tfr.notam_id)} target="_blank" rel="noreferrer">
+        {/* Its 44-point area from the link's own line, nothing grown. */}
+        <a
+          className="relative block w-fit text-tint after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"
+          href={tfrPage(tfr.notam_id)}
+          target="_blank"
+          rel="noreferrer"
+        >
+          The NOTAM on tfr.faa.gov
+        </a>
+      </div>
+    </MapCard>
+  );
+}
+
+/** A TFR's card opened by a link to one tfr.faa.gov no longer lists (it
+ *  has ended or been cancelled), or with the list not come in: said in
+ *  the card, its NOTAM's page still there to look at. */
+export function TfrGone({ notamId, failed }: { notamId: string; failed: boolean }) {
+  return (
+    <MapCard title={`TFR ${notamId}`}>
+      <div className="space-y-1 text-left" data-testid="tfr-gone">
+        <p>{failed ? "The TFRs didn't load. Check tfr.faa.gov before flight." : "Not on tfr.faa.gov's list now: ended or cancelled."}</p>
+        <a
+          className="relative block w-fit text-tint after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"
+          href={tfrPage(notamId)}
+          target="_blank"
+          rel="noreferrer"
+        >
           The NOTAM on tfr.faa.gov
         </a>
       </div>

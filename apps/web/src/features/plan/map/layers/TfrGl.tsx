@@ -6,7 +6,9 @@ import { usePreferences } from "../../../../lib/preferences";
 import { useMapHover } from "../../../../lib/map/marks/mapHover";
 import { CHART } from "../../../../lib/tokens";
 import { tfrsQuery } from "../../../../lib/queryClient";
-import { TfrCard } from "../TfrCard";
+import { useAddressKey } from "../../../../lib/address";
+import { SheetCard } from "../../../../components/SheetCard";
+import { TfrCard, TfrGone } from "../TfrCard";
 import { TFR_RED, inForce } from "../tfrMarks";
 import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../../lib/map/gl/glLayer";
 import { TAP } from "../../../../lib/map/gl/layers/common";
@@ -76,7 +78,11 @@ const DRAWN = [...ALL, HOVER];
  */
 export function TfrGl() {
   const show = usePreferences((s) => s.tfrs);
-  const { data, dataUpdatedAt: now } = useQuery({ ...tfrsQuery, enabled: show });
+  // The TFR whose card is open, in the address (`tfr`), so a link opens it
+  // as a tap does (the owner's rule: every card reached by a link); asked
+  // for with the layer off too, for a link's.
+  const [open, setOpen] = useAddressKey("tfr");
+  const { data, isError, dataUpdatedAt: now } = useQuery({ ...tfrsQuery, enabled: show || !!open });
   useGlLayer("areas", SOURCES, DRAWN);
   // Faded in as the first answer comes, not snapped on over the chart.
   useGlFadeIn(ALL, !!data);
@@ -108,8 +114,28 @@ export function TfrGl() {
     };
   }, [map, hovered, features]);
   useGlTap(["tfrs-fill", "tfrs-fill-later"], 1, TAP.rank.area, (feature) => {
-    const tfr = data?.find((t) => t.notam_id === feature.properties.id);
-    if (tfr) openCard(<TfrCard key={tfr.notam_id} tfr={tfr} active={inForce(tfr, now)} />);
+    const id = feature.properties.id;
+    if (typeof id !== "string" || !data?.some((t) => t.notam_id === id)) return;
+    // The map's own card (a checkpoint's) put away, as a tap on another
+    // thing does, and this one opened by its address.
+    openCard(null);
+    void setOpen(id);
   });
-  return null;
+  if (!open) return null;
+  const tfr = data?.find((t) => t.notam_id === open);
+  const close = () => void setOpen(null);
+  if (tfr)
+    return (
+      <SheetCard onClose={close}>
+        <TfrCard key={tfr.notam_id} tfr={tfr} active={inForce(tfr, now)} />
+      </SheetCard>
+    );
+  // A link to one no longer listed, or the list not come in: said in its
+  // card, where it was asked for (lib/problems' rule: errors in place).
+  if (!data && !isError) return null;
+  return (
+    <SheetCard onClose={close}>
+      <TfrGone notamId={open} failed={isError && !data} />
+    </SheetCard>
+  );
 }
