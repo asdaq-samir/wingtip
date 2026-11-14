@@ -40,8 +40,9 @@ object SettingsAt {
  * The app's Settings, one page (the owner's three homes, 2026-11-13: You,
  * Settings and the Map card), opened from the gear on You and on the Map
  * card, a link or "settings" typed: how the app behaves, in groups as
- * Android's own Settings groups its rows -- Look (Theme, Appearance and
- * the layout), Map (Airport Weather, Glide Ring, Clear Your Path), In
+ * Android's own Settings groups its rows -- Display (the layout; Theme
+ * and Appearance are the Map card's Look since 2026-11-14, the web's
+ * Sunlight having no Android twin), Map (Airport Weather, Glide Ring, Clear Your Path), In
  * Flight (the alerts said aloud, ATC to its page, the passenger
  * briefing, a receiver on the cockpit's Wi-Fi), Data (Downloads, the
  * on-phone AI) and Help & About to its page. What is the pilot's own --
@@ -60,8 +61,8 @@ fun SettingsScreen(open: (SheetPage) -> Unit) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
         verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md),
     ) {
-        SectionTitle(stringResource(R.string.settings_look))
-        SettingsGroup { LookRows() }
+        SectionTitle(stringResource(R.string.settings_display))
+        SettingsGroup { LayoutRow() }
 
         Column(Modifier.bringIntoViewRequester(mapGroup), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
             SectionTitle(stringResource(R.string.settings_map))
@@ -92,25 +93,23 @@ fun SettingsScreen(open: (SheetPage) -> Unit) {
     }
 }
 
-/** Look: the theme, the appearance and the screen's layout, each a row
- *  with its pick at the end and the stock menu (a setting of a few is a
- *  menu or a segmented control, decision 0017; the looks' names are too
- *  long to share a row at a large font, the sheet audit's P-2). */
+/** Display: the screen's layout, the plan under the one search or the
+ *  strip (StripLayout), a row with its pick at the end and the stock menu
+ *  (a setting of a few is a menu or a segmented control, decision 0017). */
 @Composable
-private fun LookRows() {
+private fun LayoutRow() {
     val context = LocalContext.current
-    ThemeRow(index = 0, count = 3)
-    AppearanceRow(index = 1, count = 3)
-    // The plan under the one search, or the strip (StripLayout).
     val layout by rememberLayout()
     val layouts = linkedMapOf(LayoutPreference.PLAN to stringResource(R.string.layout_plan), LayoutPreference.STRIP to stringResource(R.string.layout_strip))
     MenuSettingRow(
         stringResource(R.string.layout), layouts[layout] ?: layouts.getValue(LayoutPreference.PLAN),
-        layouts.map { (key, label) -> label to { LayoutPreference.set(context, key) } }, index = 2, count = 3,
+        layouts.map { (key, label) -> label to { LayoutPreference.set(context, key) } }, index = 0, count = 1,
     )
 }
 
-/** Settings' Theme, the welcome's too: one of the four looks. */
+/** The Map card's Theme, the welcome's too: one of the four looks; its
+ *  name too long to share a row at a large font, a menu at its end (the
+ *  sheet audit's P-2). */
 @Composable
 internal fun ThemeRow(index: Int, count: Int) {
     val context = LocalContext.current
@@ -118,7 +117,7 @@ internal fun ThemeRow(index: Int, count: Int) {
     MenuSettingRow(stringResource(R.string.theme), look.label, Look.entries.map { it.label to { LookPreference.set(context, it) } }, index = index, count = count)
 }
 
-/** Settings' Appearance, the welcome's too: System, Light, Dark, Dark + Bright. */
+/** The Map card's Appearance, the welcome's too: System, Light, Dark, Dark + Bright. */
 @Composable
 internal fun AppearanceRow(index: Int, count: Int) {
     val context = LocalContext.current

@@ -734,15 +734,21 @@ card among them, rides the sheet's stack as Google Maps' place cards and
 its Layers sheet do, nothing floats; You's and the Map card's gear is the
 card bar's first action, before the ✕, Material's place for a card's own
 actions (`ui/YouScreen`, `ui/MapCard`); the Map card is the Layers button
-on the map's right column, its layers Google Maps' tiles (the stock
-filled icon toggle over its name), and has no chart or overlay pictures,
-as the phone draws one chart and no imagery overlay yet; 3D and the
+on the map's right column: its Chart a segmented None or Sectional (the
+phone draws one FAA chart and no imagery overlay) with the terminal
+charts' switch under it, in 3D its Heights a segmented ×1, ×3, ×5
+(`ui/MapChartRows`), the four layers Google Maps' tiles in one row (the
+stock filled icon toggle over its name; Weather's `•••` a stock
+cascading `DropdownMenu` of the loop and the model weather,
+`map/WeatherMenu`), and the Look (Theme and Appearance, the 2026-11-14
+move; Settings' first group is Display, the layout, Android having no
+Sunlight); 3D and the
 pages' toggle are the left column's floating toolbar on the sheet
 (`SheetSideButtons`), the toggle the only way between Search and FPL;
 the welcome is Material's modal bottom sheet with Settings' own Theme
 and Appearance rows (`firstflight/WelcomeSheet`), the FPL tip the stock
 rich tooltip at the toggle; the route's Plan or Strip layout stays in
-Settings › Look, as Android has no route box, line or cards to choose.
+Settings › Display, as Android has no route box, line or cards to choose.
 
 ## 9. A status is a badge (the owner, 2026-11-14)
 

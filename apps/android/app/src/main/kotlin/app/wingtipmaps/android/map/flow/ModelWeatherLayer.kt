@@ -14,6 +14,7 @@ import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.aviationGridBands
 import app.wingtipmaps.android.engine.generated.gairmetHazards
 import app.wingtipmaps.android.engine.generated.modelWeatherBands
+import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.map.MapStyle
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.add
@@ -120,7 +122,7 @@ object ModelWeatherLayer {
             override fun onViewAttachedToWindow(v: View) {
                 val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
                 scope = s
-                job = s.launch { model.state.collect { state -> update(view, model, s, state) } }
+                job = s.launch { model.state.combine(MapLayersStore.weatherOn(view.context)) { state, on -> if (on) state else state.copy(field = null) }.collect { state -> update(view, model, s, state) } }
             }
 
             override fun onViewDetachedFromWindow(v: View) {

@@ -1,9 +1,7 @@
 package app.wingtipmaps.android.airplane
 
 import android.content.Intent
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,6 +17,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,7 +26,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -36,7 +35,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.api.generated.AirplanePhoto
 import app.wingtipmaps.android.checklist.ChecklistKind
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
@@ -52,10 +50,6 @@ import app.wingtipmaps.android.ui.GroupAction
 import app.wingtipmaps.android.ui.PhotoCarousel
 import app.wingtipmaps.android.ui.SheetPage
 import app.wingtipmaps.android.ui.WingtipIcons
-import app.wingtipmaps.android.ui.card.CardTab
-import app.wingtipmaps.android.ui.card.CardTabBar
-import app.wingtipmaps.android.ui.card.CardTabBarRoom
-import app.wingtipmaps.android.ui.card.rememberCardFoot
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 
@@ -65,10 +59,8 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * search's Airplanes, the plan's Airplane, a link's `airplane`, Ready to
  * Fly's Pick an Airplane and the logbook's N-numbers all open this. Its
  * bar where the search was (CardPage) -- ← and its N-number (or type)
- * large, its type under it, shrinking as the card scrolls -- with ✕; an
- * N-number's buttons, status line, fact strip and photo tile under it, as
- * the airport card's C1; its pages in the floating bar at the card's foot
- * (CardTabBar): Flights, Info and Figures for an N-number, its figures (AirplaneProfileScreen: each with
+ * large, its type under it, shrinking as the card scrolls -- with ✕; its
+ * sections in a tab row, its figures (AirplaneProfileScreen: each with
  * where it comes from, a tap to edit in place) and its checklists, each
  * opened on the card's own stack (`onOpen`); and Fly This Airplane as the
  * extended floating action button, which makes it the plan's airplane
@@ -115,7 +107,6 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
     }
     val tabs = if (tail != null) listOf(R.string.airplane_tab_flights, R.string.airplane_tab_info, R.string.profile_figures) else listOf(R.string.profile_figures, R.string.checklists)
 
-    val foot = rememberCardFoot()
     CardPage(
         title = name,
         exit = exit,
@@ -132,53 +123,44 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
             }
         },
     ) { padding ->
-        // An N-number's head, laid out as the airport card's C1 (the owner,
-        // 2026-11-14: "make sure the airplane card looks similar to airport
-        // card"): its four buttons, its status line, its facts in a sideways
-        // strip, its photo as a picture tile; then the page picked, in the
-        // same scroll, under the floating bar.
-        val top: @Composable ColumnScope.() -> Unit = {
+        Column(Modifier.padding(padding).fillMaxSize()) {
             if (tail != null) {
+                // Its photo, only where Planespotters.net answers, with its
+                // photographer beside it (their terms).
+                looked.photo?.let { p ->
+                    val credit = stringResource(R.string.airplane_photo_by, p.photographer ?: "Planespotters.net")
+                    PhotoCarousel(listOf(CardPicture(tail, p.thumbnailLarge ?: p.thumbnail ?: p.link, credit)), Modifier.padding(vertical = WingtipSpace.Xs))
+                }
                 AirplaneButtons(tail, looked, canFly, fly, Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs))
-                // In the air, else where it last landed, else not heard (statusLine).
-                StatusLine(statusLine(looked.inAir, looked.flights), Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs))
-                AirplaneFacts(AirplaneFactsSaid.of(record, looked.details?.model))
-                AirplanePhotoTile(name, looked.photo)
             }
-        }
-        val pageRoom = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = CardTabBarRoom)
-        Box(foot.frame(Modifier.padding(padding).fillMaxSize())) {
+            SecondaryTabRow(selectedTabIndex = section.coerceAtMost(tabs.lastIndex), containerColor = Color.Transparent) {
+                tabs.forEachIndexed { i, title ->
+                    Tab(selected = section == i, onClick = { section = i }, text = { Text(stringResource(title)) })
+                }
+            }
+            if (tail != null) {
+                // The one status line under the tabs: in the air, else where
+                // it last landed, else not heard (statusLine).
+                val status = statusLine(looked.inAir, looked.flights)
+                Text(
+                    status.words(), style = MaterialTheme.typography.bodyMedium,
+                    color = if (status.problem) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs),
+                )
+            }
             val page = tabs.getOrNull(section) ?: tabs.first()
             when (page) {
-                R.string.airplane_tab_flights -> Column(pageRoom) { top(); AirplaneFlights(looked, name) }
-                R.string.airplane_tab_info -> Column(pageRoom) { top(); AirplaneInfo(looked) }
-                R.string.profile_figures -> AirplaneProfileScreen(airplane, at.focus, bottom = CardTabBarRoom, top = top) {
+                R.string.airplane_tab_flights -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { AirplaneFlights(looked, name) }
+                R.string.airplane_tab_info -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { AirplaneInfo(looked) }
+                R.string.profile_figures -> AirplaneProfileScreen(airplane, at.focus) {
                     if (flownCard) FlownAirplaneRows(plan, onYourAirplanes = { onOpen(SheetPage.YourAirplanes) })
                     // An N-number's card has its checklists under its figures.
                     if (tail != null) ChecklistRows(airplane.name != null, openChecklist)
                 }
-                else -> Column(pageRoom) { top(); ChecklistRows(airplane.name != null, openChecklist) }
+                else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { ChecklistRows(airplane.name != null, openChecklist) }
             }
-            CardTabBar(
-                tabs.map { t -> CardTab(stringResource(t), count = looked.flights?.size?.takeIf { t == R.string.airplane_tab_flights && it > 0 }) },
-                picked = section.coerceAtMost(tabs.lastIndex),
-                onPick = { section = it },
-                foot = foot,
-                modifier = Modifier.align(Alignment.BottomCenter),
-                tag = "airplane-tab-bar",
-            )
         }
     }
-}
-
-/** Its Planespotters.net photo as the card's picture tile, a tap to its
- *  page there and its photographer named on it, as their terms ask. */
-@Composable
-private fun AirplanePhotoTile(name: String, photo: AirplanePhoto?) {
-    val p = photo ?: return
-    val credit = stringResource(R.string.airplane_photo_by, p.photographer ?: "Planespotters.net")
-    val label = stringResource(R.string.airplane_photo_label, name)
-    PhotoCarousel(listOf(CardPicture(label, p.thumbnailLarge ?: p.thumbnail ?: p.link, credit, link = p.link)), Modifier.padding(vertical = WingtipSpace.Sm))
 }
 
 /** An N-number's buttons, the four of the owner's P1 in a button group:

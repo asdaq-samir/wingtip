@@ -83,9 +83,10 @@ class MapParityTest {
 
     @Test
     fun theSwitchesHideTheirLayersAndFilterTheFields() {
-        val off = style(MapLayers(airspace = false, navaids = false, privateFields = true, military = true))
+        val off = style(MapLayers(aeronautical = false, privateMilitary = true))
         for (id in MapStyle.AIRSPACE_LAYERS + MapStyle.NAVAID_LAYERS) assertEquals(id, "none", visibility(off, id))
-        assertNull(visibility(off, "vfr-waypoints"))
+        assertEquals("none", visibility(off, "vfr-waypoints"))
+        assertNull(visibility(off, "airports"))
         assertEquals("""["all"]""", layer(off, "airports")["filter"].toString())
         val on = style()
         for (id in MapStyle.AIRSPACE_LAYERS + MapStyle.NAVAID_LAYERS) assertNull(id, visibility(on, id))
@@ -93,7 +94,6 @@ class MapParityTest {
             """["all",["!=",["get","military"],"military"],["!=",["get","use"],"private"]]""",
             MapStyle.airportsFilter(MapLayers()).toString(),
         )
-        assertEquals("""["all",["!=",["get","use"],"private"]]""", MapStyle.airportsFilter(MapLayers(military = true)).toString())
     }
 
     @Test

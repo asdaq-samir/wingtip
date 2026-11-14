@@ -843,9 +843,8 @@ placement wins, and the difference is noted.
      - the frame's time in Z and local
      - a `Slider` stepped to the frames (stateful `Slider(state)`,
        stable in 1.5), whose steps tick
-  4. Weather layers (METAR pips, NEXRAD, satellite, AIRMETs, PIREPs)
-     are chosen in the Map menu (one home, 0014). They are
-     `CheckableDropdownMenuItem`s in a `DropdownMenuGroup`.
+  4. Which weather is drawn is the Map card's Weather tile and its `•••`
+     menu (one home, 0014; [§3.19](#319-the-map-card-the-look-and-3ds-heights-2026-11-14-from-the-webs)).
 - **Primary action**: Play, at the left of the toolbar, under the
   thumb.
 - **Motion**: frames cross-fade with the effects spring (no overshoot).
@@ -1246,6 +1245,55 @@ From the offline and store audits of 2026-11-10:
   60 s; streams and downloads use `Gateway.streaming`.
 - **Sign-out and Delete Account** forget everything the phone kept of the
   pilot (`account/PhoneWipe`).
+
+### 3.19 The Map card, the Look and 3D's Heights (2026-11-14, from the web's)
+
+The web's Map card of 2026-11-14 (rules.md §8), the Android way:
+
+- **Chart** (`ui/MapChartRows`): Material's `SingleChoiceSegmentedButtonRow`,
+  None or Sectional (the phone draws one FAA chart). None hides the
+  chart's raster layers and draws one plain ground in the tokens'
+  `map-ground` (by day and at night) under every vector layer
+  (`map/ChartGround`); the USGS imagery still comes in close in. With a
+  chart, the Terminal Area Charts switch sits under it.
+- **Heights**, while 3D is on: a segmented row of ×1, ×3 and ×5, ×3
+  unless picked (`MapTerrain.stretch`, kept). MapLibre Native has no 3D
+  ground and lifts nothing but extrusions, so the stretch stands up the
+  airspace volumes alone (`Map3dLayer`'s base and height times it); the
+  words keep the true altitudes. The phone has no pilot's view or replay
+  camera in 3D, so the web's "true height in the pilot's view" has no
+  twin.
+- **The shelves' tabs** are offered in up to eight places along each
+  shelf's edge, 8 km apart at least, the southernmost first
+  (`map/ShelfPlaces`), every shelf's first place tried before any
+  shelf's next (the layer's sort key by rank, then class and floor), so
+  MapLibre's collision keeps a shelf's altitudes somewhere in view.
+- **Layers**: exactly four `FilledIconToggleButton` tiles in one row --
+  Aeronautical (airspace, special use areas, VORs, fixes, VFR
+  waypoints), Weather, Traffic, Private/Military (drawn whatever it says
+  while the emergency assistant is open). Weather's `•••` at the tile's
+  corner is the stock `DropdownMenu` of which weather, a cascading menu
+  (`map/WeatherMenu`): Radar and Satellite (and its Loop Speed) and Model
+  Weather, each its own page with a back row. Off, Weather hides the
+  fields' weather marks, the loop and the model weather and their bars.
+  The public fields, the route, own ship and the TFRs have no switch.
+  The old seven switches fold into the four once (`MapLayersStore`), each
+  group on where any of its old layers was; the approach plates' tile is
+  gone, a plate laid on and taken off from its card.
+- **Look**: Theme and Appearance, the two menu rows the welcome also
+  shows, moved here from Settings; Settings' first group is Display, the
+  Plan or Strip layout (Android has no light sensor's Sunlight).
+
+#### Where the route turns (option A, rules.md §10)
+
+A fix the route flies through (the planner's stop of kind "fix") is a
+white dot ringed in the course magenta exactly on the point, a
+`CircleLayer` that takes no room, and its ident on a white pill edged in
+the waypoint magenta, stretched to the name, on the outside of the turn
+(`map/RouteTurns`: the two legs leaving the point, added, point into the
+turn; a straight point or an end, square to the course on its upper
+side). The side follows the map's bearing as it turns in 3D. The fields
+keep their chart marks.
 
 ## 4. Not verified
 

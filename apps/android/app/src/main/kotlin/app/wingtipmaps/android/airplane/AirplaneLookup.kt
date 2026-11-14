@@ -10,13 +10,10 @@ import app.wingtipmaps.android.api.findAirplane
 import app.wingtipmaps.android.api.generated.AircraftRegistration
 import app.wingtipmaps.android.api.generated.AirplaneDetails
 import app.wingtipmaps.android.api.generated.AirplanePhoto
-import app.wingtipmaps.android.api.generated.PastFlightPoint
 import app.wingtipmaps.android.api.generated.PastFlightSummary
 import app.wingtipmaps.android.api.generated.TrafficFound
-import app.wingtipmaps.android.api.pastFlight
 import app.wingtipmaps.android.api.pastFlights
 import app.wingtipmaps.android.api.registered
-import app.wingtipmaps.android.search.SearchGroups
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -74,9 +71,6 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
         val flightsProblem: String? = null,
         /** Its ICAO address, the registry's or the find's, for its flights. */
         val hex: String? = null,
-        /** Where its newest flight went, for a tracked flight's sketch;
-         *  null while asked or where it has no flight heard. */
-        val trail: List<PastFlightPoint>? = null,
     )
 
     private val _state = MutableStateFlow(State())
@@ -121,23 +115,6 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
         }
     }
 
-    /**
-     * An airplane heard by its ICAO address (a tracked flight's card): the
-     * registry's record and the rest by its registration where it is an
-     * N-number, else its flights alone by the address it was heard on.
-     */
-    fun heard(hex: String, registration: String?) {
-        val key = hex.lowercase()
-        if (_state.value.hex == key) return
-        val tail = registration?.uppercase()?.takeIf(SearchGroups::looksLikeTail)
-        if (tail != null) open(tail) else {
-            jobs.forEach { it.cancel() }
-            jobs.clear()
-            _state.value = State(inAir = InAir.Unknown, recordAsked = true)
-        }
-        flightsOf(key)
-    }
-
     /** Its past flights, once its address is known (the registry's first). */
     private fun flightsOf(hex: String) {
         if (_state.value.hex != null) return
@@ -146,8 +123,6 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
             try {
                 val flights = Planner.pastFlights(hex).flights
                 _state.update { it.copy(flights = flights, flightsProblem = null) }
-                // Its newest flight's way, sketched on a tracked flight's card.
-                flights.firstOrNull()?.let { newest -> quietly { Planner.pastFlight(hex, newest.id) } }?.let { f -> _state.update { it.copy(trail = f.points) } }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

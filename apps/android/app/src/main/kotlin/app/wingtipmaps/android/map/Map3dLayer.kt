@@ -87,6 +87,9 @@ object Map3dLayer {
     private var answered: Pair<kotlinx.serialization.json.JsonArray, Double>? = null
     private var asked: Pair<AirspaceVolumes3d.Box, List<String>>? = null
     private var scene: String? = null
+    /** Heights' stretch (MapTerrain.stretch): the volumes' floors and tops
+     *  stood up by it, the words on them keeping the true altitudes. */
+    private var stretch = MapTerrain.DEFAULT_STRETCH
     private var sceneOf: String? = null
 
     fun follow(view: MapView) {
@@ -102,6 +105,12 @@ object Map3dLayer {
                 s.launch {
                     // The plan's altitudes changed: the volumes held against them again.
                     AirspaceVolumes3d.planAltitudes.collect { reread(view) }
+                }
+                s.launch {
+                    terrain.stretch.collect {
+                        stretch = it
+                        redraw(view, camera = false)
+                    }
                 }
                 job = s.launch {
                     terrain.mode.combine(MapTerrain.field) { m, f -> m to f }.collect { (m, f) ->
@@ -261,15 +270,22 @@ object Map3dLayer {
         }
         val source = style.getSourceAs<GeoJsonSource>(VOLUMES)
         if (source != null) source.setGeoJson(json) else style.addSource(GeoJsonSource(VOLUMES, json))
+        val times = Expression.literal(stretch)
         for ((kind, ink) in AirspaceVolumes3d.KINDS) {
             for (strength in AirspaceVolumes3d.Strength.entries) {
                 val id = "$VOLUMES-$kind-${strength.name}"
-                if (style.getLayer(id) != null) continue
+                val stood = arrayOf(
+                    PropertyFactory.fillExtrusionBase(Expression.product(Expression.get("base_m"), times)),
+                    PropertyFactory.fillExtrusionHeight(Expression.product(Expression.get("height_m"), times)),
+                )
+                style.getLayer(id)?.let {
+                    it.setProperties(*stood)
+                    continue
+                }
                 val layer = FillExtrusionLayer(id, VOLUMES).withProperties(
                     PropertyFactory.fillExtrusionColor(Expression.toColor(Expression.get("shade"))),
                     PropertyFactory.fillExtrusionOpacity(minOf(1f, (ink.opacity * strength.times).toFloat())),
-                    PropertyFactory.fillExtrusionBase(Expression.get("base_m")),
-                    PropertyFactory.fillExtrusionHeight(Expression.get("height_m")),
+                    *stood,
                     PropertyFactory.fillExtrusionVerticalGradient(false),
                 )
                 layer.setFilter(Expression.all(Expression.eq(Expression.get("kind"), Expression.literal(kind)), Expression.eq(Expression.get("strength"), Expression.literal(strength.name))))
@@ -280,8 +296,10 @@ object Map3dLayer {
 
     /** Each shelf's altitudes in the 2D chart's airspace tab (a dark tab
      *  bordered in its class's ink, OverlayPictures), facing the screen,
-     *  kept off each other by MapLibre's collision: Class B first, then C
-     *  and D, the lower floor first; a shelf the plan is not at fainter
+     *  kept off each other by MapLibre's collision, offered in several
+     *  places round each shelf (ShelfPlaces): every shelf's first place
+     *  tried before any shelf's next, then Class B, C and D, the lower floor
+     *  first (the web's 25c46fa25); a shelf the plan is not at fainter
      *  (the tokens' airspace-label-faded), still legible. */
     private fun shelfLabels(style: Style, json: String?) {
         if (json == null) {
@@ -309,7 +327,13 @@ object Map3dLayer {
             PropertyFactory.iconTextFitPadding(arrayOf(2f, 6f, 2f, 6f)),
             PropertyFactory.iconPitchAlignment(Property.ICON_PITCH_ALIGNMENT_VIEWPORT),
             PropertyFactory.textPadding(4f),
-            PropertyFactory.symbolSortKey(Expression.sum(Expression.product(Expression.match(Expression.get("class"), Expression.literal(2), Expression.stop("B", 0), Expression.stop("C", 1)), Expression.literal(100_000)), Expression.get("floor_ft"))),
+            PropertyFactory.symbolSortKey(
+                Expression.sum(
+                    Expression.product(Expression.get("rank"), Expression.literal(1_000_000)),
+                    Expression.product(Expression.match(Expression.get("class"), Expression.literal(2), Expression.stop("B", 0), Expression.stop("C", 1)), Expression.literal(100_000)),
+                    Expression.get("floor_ft"),
+                ),
+            ),
             PropertyFactory.textOpacity(faded),
             PropertyFactory.iconOpacity(faded),
         )

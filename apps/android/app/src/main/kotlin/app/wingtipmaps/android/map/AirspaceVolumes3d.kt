@@ -206,12 +206,14 @@ object AirspaceVolumes3d {
     }.toString()
 
     /**
-     * One label a shelf, its altitudes (shelfText) at the southernmost
-     * point of its ring, the camera's side when the map faces north: its
-     * words, its class for its tab, its floor (the lower placed first) and
-     * whether the plan is at it. MapLibre Native lifts no symbol off the
-     * ground, so the label stands at the shelf's foot on the chart, where
-     * the web's stands on its top.
+     * A shelf's label in several places along its edge (ShelfPlaces), the
+     * nearest the camera first: its altitudes (shelfText), its class for
+     * its tab, its floor (the lower placed first), whether the plan is at
+     * it and each place's rank, by which the layer tries every shelf's
+     * first place before any shelf's next. MapLibre Native lifts no symbol
+     * off the ground, so the label stands at the shelf's foot on the
+     * chart, where the web's stands on its top. A shelf drawn as several
+     * polygons is labelled along its first.
      */
     fun shelfLabels(features: JsonArray, altitudes: List<Double>? = null): String = buildJsonObject {
         put("type", "FeatureCollection")
@@ -220,37 +222,38 @@ object AirspaceVolumes3d {
                 val f = element as? JsonObject ?: continue
                 val p = f["properties"] as? JsonObject ?: continue
                 val words = shelfText(p) ?: continue
-                val at = southernmost(f["geometry"] as? JsonObject) ?: continue
                 val held = altitudes == null || engineSpan(spanInput(p).copy(altitudesFt = altitudes)).getOrNull()?.holds != false
-                add(
-                    buildJsonObject {
-                        put("type", "Feature")
-                        putJsonObject("geometry") {
-                            put("type", "Point")
-                            putJsonArray("coordinates") { add(JsonPrimitive(at.first)); add(JsonPrimitive(at.second)) }
-                        }
-                        putJsonObject("properties") {
-                            put("text", words)
-                            put("class", text(p["class"]))
-                            put("floor_ft", number(p["floor_ft"]) ?: 0.0)
-                            put("held", held)
-                        }
-                    },
-                )
+                ShelfPlaces.on(outerRing(f["geometry"] as? JsonObject)).forEachIndexed { rank, at ->
+                    add(
+                        buildJsonObject {
+                            put("type", "Feature")
+                            putJsonObject("geometry") {
+                                put("type", "Point")
+                                putJsonArray("coordinates") { add(JsonPrimitive(at.first)); add(JsonPrimitive(at.second)) }
+                            }
+                            putJsonObject("properties") {
+                                put("text", words)
+                                put("class", text(p["class"]))
+                                put("floor_ft", number(p["floor_ft"]) ?: 0.0)
+                                put("held", held)
+                                put("rank", rank)
+                            }
+                        },
+                    )
+                }
             }
         }
     }.toString()
 
-    /** The southernmost point of a polygon's or multipolygon's outer rings. */
-    private fun southernmost(geometry: JsonObject?): Pair<Double, Double>? {
-        val coords = geometry?.get("coordinates") as? JsonArray ?: return null
-        val rings = when (text(geometry["type"])) {
-            "Polygon" -> listOfNotNull(coords.firstOrNull() as? JsonArray)
-            "MultiPolygon" -> coords.mapNotNull { (it as? JsonArray)?.firstOrNull() as? JsonArray }
-            else -> emptyList()
-        }
-        return rings.flatMap { ring -> ring.mapNotNull { pt -> (pt as? JsonArray)?.let { a -> number(a.getOrNull(0))?.let { lon -> number(a.getOrNull(1))?.let { lat -> lon to lat } } } } }
-            .minByOrNull { it.second }
+    /** A polygon's outer ring, or a multipolygon's first, as [lon, lat] pairs. */
+    private fun outerRing(geometry: JsonObject?): List<Pair<Double, Double>> {
+        val coords = geometry?.get("coordinates") as? JsonArray ?: return emptyList()
+        val ring = when (text(geometry["type"])) {
+            "Polygon" -> coords.firstOrNull() as? JsonArray
+            "MultiPolygon" -> (coords.firstOrNull() as? JsonArray)?.firstOrNull() as? JsonArray
+            else -> null
+        } ?: return emptyList()
+        return ring.mapNotNull { pt -> (pt as? JsonArray)?.let { a -> number(a.getOrNull(0))?.let { lon -> number(a.getOrNull(1))?.let { lat -> lon to lat } } } }
     }
 
     private fun text(v: JsonElement?): String? = (v as? JsonPrimitive)?.takeIf { it.isString || it.content != "null" }?.content?.ifEmpty { null }

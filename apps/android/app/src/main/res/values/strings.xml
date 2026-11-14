@@ -240,12 +240,7 @@
     <string name="loop_old">Old: %1$s</string>
     <string name="loop_fetching">Fetching %1$s…</string>
     <string name="loop_unavailable">%1$s isn\'t available right now</string>
-    <string name="layer_airspace">Airspace</string>
-    <string name="layer_navaids">VORs and Fixes</string>
     <string name="layer_tac">Terminal Area Charts</string>
-    <string name="layer_private">Private Fields</string>
-    <string name="layer_military">Military Fields</string>
-    <string name="layer_plates">Approach Plates</string>
     <string name="airport_weather">Airport Weather</string>
     <string name="airport_weather_off">Off</string>
     <string name="airport_weather_category">Flight Category</string>

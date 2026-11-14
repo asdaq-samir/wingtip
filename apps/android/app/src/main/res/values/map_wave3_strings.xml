@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The Map card's chart, Heights and four layers, as the web's Map card says them (2026-11-14). -->
+    <string name="map_chart">Chart</string>
+    <string name="chart_none">None</string>
+    <string name="chart_sectional">Sectional</string>
+    <string name="map_heights">Heights</string>
+    <string name="map_heights_times">×%1$d</string>
+    <string name="layer_aeronautical">Aeronautical</string>
+    <string name="layer_weather">Weather</string>
+    <string name="layer_private_military">Private/Military</string>
+    <string name="weather_to_show">Weather to show</string>
+    <!-- Settings' first group, Display, now the Look is the Map card's. -->
+    <string name="settings_display">Display</string>
+</resources>

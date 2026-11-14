@@ -8,6 +8,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
@@ -45,7 +46,7 @@ object WeatherLoopLayer {
                 val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
                 scope = s
                 job = s.launch {
-                    loop.state.collect { state ->
+                    loop.state.combine(MapLayersStore.weatherOn(view.context)) { state, on -> if (on) state else state.copy(kind = LoopKind.OFF) }.collect { state ->
                         redraw(view, state)
                         if (!state.ready && state.frames.isNotEmpty() && cap?.isActive != true) {
                             cap = s.launch {

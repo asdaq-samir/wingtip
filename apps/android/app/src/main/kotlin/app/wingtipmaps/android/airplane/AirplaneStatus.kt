@@ -1,21 +1,12 @@
 package app.wingtipmaps.android.airplane
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.PastFlightSummary
-import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
-import app.wingtipmaps.android.ui.card.StatusBadge
-import app.wingtipmaps.android.ui.card.Status as BadgeStatus
 import kotlin.math.roundToInt
 
 /** How long since, in the largest unit: 5 min, 3 h, 2 days. */
@@ -99,37 +90,4 @@ fun Status.words(): String = when (this) {
     is Status.Landed -> stringResource(R.string.status_landed, at, since.words())
     is Status.LastHeard -> stringResource(R.string.status_last_heard, since.words())
     Status.NoneHeard -> stringResource(R.string.status_none_heard)
-}
-
-/** The status a pilot scans for that the line leads with, as a badge
- *  (rules.md 9; the web's StatusWords.badge): In the air, or On the
- *  ground where it landed; none for the rest, said in words alone. */
-val Status.badge: BadgeStatus?
-    get() = when (this) {
-        is Status.Flying -> BadgeStatus.InAir
-        is Status.Landed -> BadgeStatus.Ground
-        else -> null
-    }
-
-/** The words after the badge: how high and fast, or where it landed. */
-@Composable
-fun Status.rest(): String? = when (this) {
-    is Status.Flying -> listOfNotNull(altitude, speedKt?.let { stringResource(R.string.speed_kt, it) }).joinToString(" · ").ifEmpty { null }
-    is Status.Landed -> stringResource(R.string.status_landed_rest, at, since.words())
-    else -> words()
-}
-
-/** The card's status line: its badge, then the words after it; a problem
- *  in the error ink. */
-@Composable
-fun StatusLine(status: Status, modifier: Modifier = Modifier) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm), verticalAlignment = Alignment.CenterVertically) {
-        status.badge?.let { StatusBadge(it) }
-        status.rest()?.let {
-            Text(
-                it, style = MaterialTheme.typography.bodyMedium,
-                color = if (status.problem) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
 }

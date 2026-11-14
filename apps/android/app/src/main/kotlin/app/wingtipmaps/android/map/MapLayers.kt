@@ -5,12 +5,16 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import app.wingtipmaps.android.plates.PlateLookStore
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -18,48 +22,64 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * What the map draws over the chart, the web's map settings
- * (apps/web/src/lib/preferences.ts, components/MapSettings.tsx "On the
- * Map") with the web's defaults: the Class B, C and D and the VORs and
- * fixes on until turned off (the owner's pick of the map's looks,
- * 2026-10-29); the terminal area chart pinned over the sectional off; the
- * private fields off (the owner, 2026-10-27: one is landed at only with
- * its owner's leave, NASR APT_BASE facility use PR); the armed services'
- * own fields off (a civil airplane lands there only with the service's
- * permission). A joint-use field is drawn either way.
+ * What the map draws, the web's Map card (lib/prefs/mapSlice, the owner,
+ * 2026-11-14: "I want to keep it simple though. can we just have four
+ * layers aeronautical, weather, traffic, private/military in the map
+ * settings?"; "chart should also have none option"), with the web's
+ * defaults:
+ *
+ * - `chart`: the FAA chart drawn, or none -- a plain ground in the look's
+ *   colours with every vector layer over it;
+ * - `tac`: the terminal area chart pinned over the sectional, off, a switch
+ *   under the chart while there is one;
+ * - `aeronautical`: the Class B, C and D and the special use areas, the
+ *   VORs, fixes and VFR waypoints, on;
+ * - `weather`: the fields' weather marks (Settings' Airport Weather says
+ *   how), the radar and satellite loop and the model weather picked in
+ *   the Weather tile's menu, on;
+ * - `privateMilitary`: the private fields (landed at only with the
+ *   owner's leave, NASR APT_BASE facility use PR) and the armed services'
+ *   own, off. A joint-use field is drawn either way.
+ *
+ * Traffic is its own switch (TrafficSwitch). The public fields, the route
+ * and its points, own ship and the TFRs have none: always drawn.
  */
 data class MapLayers(
-    val airspace: Boolean = true,
-    val navaids: Boolean = true,
+    val chart: Boolean = true,
     val tac: Boolean = false,
-    val privateFields: Boolean = false,
-    val military: Boolean = false,
+    val aeronautical: Boolean = true,
+    val weather: Boolean = true,
+    val privateMilitary: Boolean = false,
 ) {
     /**
      * What the chart draws while the emergency assistant is open: every
-     * private and military field too, whatever their switches say, since in
+     * private and military field too, whatever the switch says, since in
      * an emergency the pilot may land at any of them (14 CFR 91.3(b)) and
-     * the assistant's list ranks them (the owner, 2026-11-13). The switches
-     * themselves are not touched, so they are as the pilot left them once
-     * it closes.
+     * the assistant's list ranks them (the owner, 2026-11-13). The switch
+     * itself is not touched, so it is as the pilot left it once it closes.
      */
-    fun duringEmergency(open: Boolean): MapLayers = if (open) copy(privateFields = true, military = true) else this
+    fun duringEmergency(open: Boolean): MapLayers = if (open) copy(privateMilitary = true) else this
 }
 
 /**
  * The map's switches kept in the app's settings file, each under its own
  * key, so a choice holds across launches; read once, a choice made before
- * the read lands winning, as TrafficSwitch does. Its own small piece so
- * its wiring is tested on a plain DataStore.
+ * the read lands winning, as TrafficSwitch does. The first read after the
+ * four layers came folds the old switches in (folded). Its own small
+ * piece so its wiring is tested on a plain DataStore.
  */
-class MapLayersStore(private val store: DataStore<Preferences>, private val scope: CoroutineScope) {
+class MapLayersStore(
+    private val store: DataStore<Preferences>,
+    private val scope: CoroutineScope,
+    private val onFolded: () -> Unit = {},
+) {
     /** One of the switches, by its key in the file. */
     enum class Switch(val key: Preferences.Key<Boolean>) {
-        AIRSPACE(booleanPreferencesKey("map_airspace")),
-        NAVAIDS(booleanPreferencesKey("map_navaids")),
+        CHART(booleanPreferencesKey("map_chart")),
         TAC(booleanPreferencesKey("map_tac")),
-        PRIVATE_FIELDS(booleanPreferencesKey("map_private_fields")),
-        MILITARY(booleanPreferencesKey("map_military")),
+        AERONAUTICAL(booleanPreferencesKey("map_aeronautical")),
+        WEATHER(booleanPreferencesKey("map_weather")),
+        PRIVATE_MILITARY(booleanPreferencesKey("map_private_military")),
     }
 
     private val _layers = MutableStateFlow(MapLayers())
@@ -71,11 +91,18 @@ class MapLayersStore(private val store: DataStore<Preferences>, private val scop
 
     val loaded: Job = scope.launch {
         val kept = store.data.first()
+        val old = OLD.mapValues { (_, key) -> kept[key] }
+        val fold = kept[Switch.AERONAUTICAL.key] == null && old.values.any { it != null }
+        val values = Switch.entries.associateWith { kept[it.key] } + if (fold) folded(old) else emptyMap()
         _layers.update { now ->
-            Switch.entries.fold(now) { acc, s ->
-                val value = kept[s.key]
-                if (value == null || s in touched) acc else turned(acc, s, value)
+            values.entries.fold(now) { acc, (s, value) -> if (value == null || s in touched) acc else turned(acc, s, value) }
+        }
+        if (fold) {
+            store.edit { file ->
+                folded(old).forEach { (s, v) -> if (s !in touched) file[s.key] = v }
+                OLD.values.forEach { file.remove(it) }
             }
+            onFolded()
         }
     }
 
@@ -87,24 +114,50 @@ class MapLayersStore(private val store: DataStore<Preferences>, private val scop
     }
 
     companion object {
+        /** The Map card's switches before its four layers (2026-11-14). */
+        private val OLD: Map<String, Preferences.Key<Boolean>> = listOf("airspace", "navaids", "private_fields", "military")
+            .associateWith { booleanPreferencesKey("map_$it") }
+
+        /**
+         * The old switches folded into the four layers, each group on where
+         * any of its old layers was on, so a pilot's choices carry over (the
+         * web's preferences version 10): a switch never kept was at its
+         * default then (the airspace and the VORs on). The fields' weather
+         * marks were drawn unless Settings' Airport Weather was Off, so
+         * Weather is left at its default, on, and Airport Weather still
+         * says how.
+         */
+        fun folded(old: Map<String, Boolean?>): Map<Switch, Boolean> = mapOf(
+            Switch.AERONAUTICAL to ((old["airspace"] ?: true) || (old["navaids"] ?: true)),
+            Switch.PRIVATE_MILITARY to (old["private_fields"] == true || old["military"] == true),
+        )
+
+        /** Whether the Weather layer is on, for the weather's own layers
+         *  and bars to draw nothing while it is off (the web's Weather
+         *  tile: the fields' marks, the loop and the model weather). */
+        fun weatherOn(context: Context): Flow<Boolean> = of(context).layers.map { it.weather }.distinctUntilChanged()
+
         fun turned(layers: MapLayers, switch: Switch, on: Boolean): MapLayers = when (switch) {
-            Switch.AIRSPACE -> layers.copy(airspace = on)
-            Switch.NAVAIDS -> layers.copy(navaids = on)
+            Switch.CHART -> layers.copy(chart = on)
             Switch.TAC -> layers.copy(tac = on)
-            Switch.PRIVATE_FIELDS -> layers.copy(privateFields = on)
-            Switch.MILITARY -> layers.copy(military = on)
+            Switch.AERONAUTICAL -> layers.copy(aeronautical = on)
+            Switch.WEATHER -> layers.copy(weather = on)
+            Switch.PRIVATE_MILITARY -> layers.copy(privateMilitary = on)
         }
 
         @Volatile
         private var shared: MapLayersStore? = null
 
-        /** The app's one store of the map's switches. */
+        /** The app's one store of the map's switches. The approach plates'
+         *  own tile went with the four layers: a plate is laid on from its
+         *  card and taken off there, so plates turned off by the old tile
+         *  are drawn again once the switches are folded. */
         fun of(context: Context): MapLayersStore =
             shared ?: synchronized(this) {
                 shared ?: MapLayersStore(
                     context.applicationContext.settings,
                     CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
-                ).also { shared = it }
+                ) { PlateLookStore.of(context.applicationContext).setShown(true) }.also { shared = it }
             }
     }
 }

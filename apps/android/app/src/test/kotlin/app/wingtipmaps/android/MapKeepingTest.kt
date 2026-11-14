@@ -1,6 +1,8 @@
 package app.wingtipmaps.android
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
 import app.wingtipmaps.android.map.MapLayers
 import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.map.OverlayStore
@@ -20,8 +22,8 @@ import org.junit.Test
 import java.io.File
 import kotlin.io.path.createTempDirectory
 
-/** What the map keeps on the phone: Setup's switches across launches
- *  (MapLayersStore) and the overlay archive's ranges for the air
+/** What the map keeps on the phone: the Map card's switches across
+ *  launches (MapLayersStore) and the overlay archive's ranges for the air
  *  (OverlayStore). */
 class MapKeepingTest {
     private val dir = createTempDirectory("map").toFile()
@@ -38,25 +40,55 @@ class MapKeepingTest {
         val store = PreferenceDataStoreFactory.create(scope = io) { File(dir, "settings.preferences_pb") }
         val first = MapLayersStore(store, this)
         first.loaded.join()
-        assertEquals(MapLayers(airspace = true, navaids = true, tac = false, privateFields = false, military = false), first.layers.value)
+        assertEquals(MapLayers(chart = true, tac = false, aeronautical = true, weather = true, privateMilitary = false), first.layers.value)
         first.set(MapLayersStore.Switch.TAC, true).join()
-        first.set(MapLayersStore.Switch.AIRSPACE, false).join()
+        first.set(MapLayersStore.Switch.CHART, false).join()
 
         val next = MapLayersStore(store, this)
         next.loaded.join()
         assertTrue(next.layers.value.tac)
-        assertFalse(next.layers.value.airspace)
-        assertTrue(next.layers.value.navaids)
+        assertFalse(next.layers.value.chart)
+        assertTrue(next.layers.value.aeronautical)
     }
 
     @Test
     fun aSwitchSetBeforeTheReadLandsWins() = runBlocking {
         val store = PreferenceDataStoreFactory.create(scope = io) { File(dir, "settings.preferences_pb") }
-        MapLayersStore(store, this).set(MapLayersStore.Switch.MILITARY, true).join()
+        MapLayersStore(store, this).set(MapLayersStore.Switch.PRIVATE_MILITARY, true).join()
         val switches = MapLayersStore(store, this)
-        switches.set(MapLayersStore.Switch.MILITARY, false).join()
+        switches.set(MapLayersStore.Switch.PRIVATE_MILITARY, false).join()
         switches.loaded.join()
-        assertFalse(switches.layers.value.military)
+        assertFalse(switches.layers.value.privateMilitary)
+    }
+
+    @Test
+    fun theOldSwitchesFoldIntoTheFourLayersOnce() = runBlocking {
+        // A pilot who had the airspace off but the VORs on, and the
+        // military fields on (the web's preferences version 10).
+        val store = PreferenceDataStoreFactory.create(scope = io) { File(dir, "settings.preferences_pb") }
+        store.edit {
+            it[booleanPreferencesKey("map_airspace")] = false
+            it[booleanPreferencesKey("map_military")] = true
+        }
+        var folds = 0
+        val first = MapLayersStore(store, this) { folds++ }
+        first.loaded.join()
+        assertTrue(first.layers.value.aeronautical)
+        assertTrue(first.layers.value.privateMilitary)
+        assertEquals(1, folds)
+        // Folded once: the old keys are gone and a later read is the new ones'.
+        MapLayersStore(store, this) { folds++ }.loaded.join()
+        assertEquals(1, folds)
+    }
+
+    @Test
+    fun eachGroupIsOnWhereAnyOfItsOldLayersWas() {
+        val off = MapLayersStore.folded(mapOf("airspace" to false, "navaids" to false))
+        assertEquals(false, off[MapLayersStore.Switch.AERONAUTICAL])
+        assertEquals(false, off[MapLayersStore.Switch.PRIVATE_MILITARY])
+        val one = MapLayersStore.folded(mapOf("navaids" to false, "private_fields" to true))
+        assertEquals(true, one[MapLayersStore.Switch.AERONAUTICAL])
+        assertEquals(true, one[MapLayersStore.Switch.PRIVATE_MILITARY])
     }
 
     @Test
@@ -106,8 +138,8 @@ class MapKeepingTest {
     fun anEmergencyDrawsPrivateAndMilitaryFieldsAndLeavesTheSwitches() {
         // 14 CFR 91.3(b): any field may be landed at, so the chart shows them
         // all while the assistant is open, and the pilot's switches after.
-        val kept = MapLayers(airspace = false, tac = true)
-        assertEquals(kept.copy(privateFields = true, military = true), kept.duringEmergency(true))
+        val kept = MapLayers(aeronautical = false, tac = true)
+        assertEquals(kept.copy(privateMilitary = true), kept.duringEmergency(true))
         assertEquals(kept, kept.duringEmergency(false))
     }
 

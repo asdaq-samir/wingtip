@@ -165,8 +165,8 @@ fun ChartMap(
     LaunchedEffect(holder, follow) { snapshotFlow { mark() }.collect { holder.ownShip(it, follow) } }
     LaunchedEffect(holder, trail) { holder.trail(trail) }
     LaunchedEffect(holder, layers) { holder.layers(layers) }
-    LaunchedEffect(holder, terminal, layers.tac) { holder.terminal(if (layers.tac) terminal else null) }
-    LaunchedEffect(holder, weather) { holder.weather(weather) }
+    LaunchedEffect(holder, terminal, layers.tac, layers.chart) { holder.terminal(if (layers.tac && layers.chart) terminal else null) }
+    LaunchedEffect(holder, weather, layers.weather) { holder.weather(if (layers.weather) weather else emptyMap()) }
     LaunchedEffect(holder, traffic, tracked) { holder.traffic(traffic, tracked) }
     LaunchedEffect(holder) { snapshotFlow { ring() }.collect(holder::glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
@@ -271,6 +271,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             }
             map.setStyle(builder) { style ->
                 styled = true
+                ChartGround.draw(style, lastLayers, night)
                 terminal(style, lastTerminal)
                 CloseMap.draw(style, chartTileMax)
                 route(style, line, lastPoints)
@@ -293,6 +294,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         view.getMapAsync { map ->
             map.getStyle { style ->
                 val paint = MapStyle.chartPaint(night)
+                ChartGround.draw(style, lastLayers, night)
                 RouteLegLayer.paint(style, night)
                 style.getLayerAs<LineLayer>(ROUTE_EDGE)?.setProperties(
                     PropertyFactory.lineColor(edgeColour(night)),
@@ -322,6 +324,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
                         PropertyFactory.visibility(if (MapStyle.visible(id, layers)) Property.VISIBLE else Property.NONE),
                     )
                 }
+                ChartGround.draw(style, layers, night)
                 style.getLayerAs<org.maplibre.android.style.layers.SymbolLayer>(MapStyle.AIRPORTS)
                     ?.setFilter(Expression.raw(MapStyle.airportsFilter(layers).toString()))
             }

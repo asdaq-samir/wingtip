@@ -1,22 +1,20 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Adjust
-import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Flight
-import androidx.compose.material.icons.filled.Hexagon
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
@@ -44,9 +42,7 @@ import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.map.MapLayersStore
-import app.wingtipmaps.android.map.ModelWeatherRow
-import app.wingtipmaps.android.map.WeatherLoopRows
-import app.wingtipmaps.android.plates.PlateCardModel
+import app.wingtipmaps.android.map.WeatherMoreButton
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 
@@ -59,12 +55,16 @@ object MapCardTags {
 /**
  * The Map card, the map's Layers button opens (the owner's three homes,
  * 2026-11-13; Google Maps' own Layers sheet, its "Map details" tiles):
- * what is on the map, and nothing else -- the layers as tiles three to a
- * row, each a glyph over its name, filled in the tint while on, then the
- * radar and satellite loop and the model weather. A gear in the card's
- * bar, Material's place for its own actions, opens Settings at its Map
- * group (SettingsAt), its ← back to this card. There is no Map Settings
- * page any more; 3D is the round map button (ThreeDButton).
+ * what is on the map, and nothing else, as the web's Map card since
+ * 2026-11-14 -- the chart (None or the sectional, MapChartRows) with the
+ * terminal charts' switch under it, in 3D its Heights, the four layers as
+ * tiles in one row, each a glyph over its name filled in the tint while
+ * on (Weather's ••• the menu of which weather), and the app's Look (Theme
+ * and Appearance, moved here from Settings). The public fields, the
+ * route and its points, own ship and the TFRs have no switch: always
+ * drawn. A gear in the card's bar, Material's place for its own actions,
+ * opens Settings at its Map group (SettingsAt), its ← back to this card.
+ * 3D is the round map button (ThreeDButton).
  */
 @Composable
 fun MapCard(exit: CardExit, open: (SheetPage) -> Unit) {
@@ -85,12 +85,16 @@ fun MapCard(exit: CardExit, open: (SheetPage) -> Unit) {
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md),
         ) {
+            MapChartRows()
             SectionTitle(stringResource(R.string.map_layers))
             LayerTiles()
-            // The radar and satellite loop and its speed (map/WeatherLoop),
-            // and the model weather's field (map/flow).
-            WeatherLoopRows()
-            ModelWeatherRow()
+            // The app's look: one home, here (the owner, 2026-11-14); the
+            // first flight's welcome keeps its own copy of the two rows.
+            SectionTitle(stringResource(R.string.settings_look))
+            SettingsGroup {
+                ThemeRow(index = 0, count = 2)
+                AppearanceRow(index = 1, count = 2)
+            }
         }
     }
 }
@@ -99,10 +103,14 @@ fun MapCard(exit: CardExit, open: (SheetPage) -> Unit) {
 private class Layer(val key: String, val name: String, val icon: ImageVector, val on: Boolean, val set: (Boolean) -> Unit)
 
 /**
- * What the map draws over the chart (MapLayersStore, kept across
- * launches), in the web's words and order: Airspace, VORs and Fixes,
- * Terminal Area Charts, Private Fields, Military Fields, then Traffic
- * and Approach Plates.
+ * The four layers (the owner, 2026-11-14: "can we just have four layers
+ * aeronautical, weather, traffic, private/military in the map
+ * settings?"), the row exactly four tiles: Aeronautical (the airspace,
+ * special use areas, VORs, fixes and VFR waypoints), Weather (the
+ * fields' weather marks as Settings' Airport Weather says, and what its
+ * ••• picks), Traffic, and Private/Military (drawn whatever it says while
+ * the emergency assistant is open). Kept across launches
+ * (MapLayersStore, TrafficSwitch).
  */
 @Composable
 private fun LayerTiles(flight: FlightModel = hiltViewModel()) {
@@ -111,46 +119,38 @@ private fun LayerTiles(flight: FlightModel = hiltViewModel()) {
     val layers by store.layers.collectAsStateWithLifecycle()
     val traffic = flight.traffic
     val trafficOn by traffic.on.collectAsStateWithLifecycle()
-    // The approach plates on the chart (the web's Plates); turned on,
-    // every plate hidden from its card comes back.
-    val plates = remember(context) { PlateCardModel.of(context) }
-    val look by plates.look.collectAsStateWithLifecycle()
     val tiles = listOf(
-        Layer("airspace", stringResource(R.string.layer_airspace), Icons.Filled.Adjust, layers.airspace) { store.set(MapLayersStore.Switch.AIRSPACE, it) },
-        Layer("navaids", stringResource(R.string.layer_navaids), Icons.Filled.Hexagon, layers.navaids) { store.set(MapLayersStore.Switch.NAVAIDS, it) },
-        Layer("tac", stringResource(R.string.layer_tac), Icons.Filled.Map, layers.tac) { store.set(MapLayersStore.Switch.TAC, it) },
-        Layer("private", stringResource(R.string.layer_private), Icons.Filled.Lock, layers.privateFields) { store.set(MapLayersStore.Switch.PRIVATE_FIELDS, it) },
-        Layer("military", stringResource(R.string.layer_military), Icons.Filled.Shield, layers.military) { store.set(MapLayersStore.Switch.MILITARY, it) },
+        Layer("aeronautical", stringResource(R.string.layer_aeronautical), Icons.Filled.Adjust, layers.aeronautical) { store.set(MapLayersStore.Switch.AERONAUTICAL, it) },
+        Layer("weather", stringResource(R.string.layer_weather), Icons.Filled.Cloud, layers.weather) { store.set(MapLayersStore.Switch.WEATHER, it) },
         Layer("traffic", stringResource(R.string.traffic), Icons.Filled.Flight, trafficOn) { traffic.setOn(it) },
-        Layer("plates", stringResource(R.string.layer_plates), Icons.Filled.Description, look.shown) { plates.setShown(it) },
+        Layer("private-military", stringResource(R.string.layer_private_military), Icons.Filled.Shield, layers.privateMilitary) { store.set(MapLayersStore.Switch.PRIVATE_MILITARY, it) },
     )
-    Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
-        tiles.chunked(TILES_A_ROW).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-                row.forEach { LayerTile(it, Modifier.weight(1f)) }
-                repeat(TILES_A_ROW - row.size) { Spacer(Modifier.weight(1f)) }
-            }
-        }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+        tiles.forEach { LayerTile(it, Modifier.weight(1f)) }
     }
 }
 
 /** A layer as Google Maps' Layers sheet draws one: the stock filled icon
  *  toggle, filled in the tint while on, its name under it. TalkBack reads
- *  the toggle by the name and says whether it is on. */
+ *  the toggle by the name and says whether it is on. Weather's carries
+ *  its ••• at the toggle's top end, the web's corner menu. */
 @Composable
 private fun LayerTile(layer: Layer, modifier: Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        FilledIconToggleButton(
-            checked = layer.on,
-            onCheckedChange = layer.set,
-            shapes = IconButtonDefaults.toggleableShapes(),
-            modifier = Modifier.size(WingtipSize.TapTarget + WingtipSpace.Md).testTag(MapCardTags.TILE + layer.key).semantics { contentDescription = layer.name },
-        ) { Icon(layer.icon, contentDescription = null) }
+        Box {
+            FilledIconToggleButton(
+                checked = layer.on,
+                onCheckedChange = layer.set,
+                shapes = IconButtonDefaults.toggleableShapes(),
+                modifier = Modifier.size(WingtipSize.TapTarget + WingtipSpace.Md).testTag(MapCardTags.TILE + layer.key).semantics { contentDescription = layer.name },
+            ) { Icon(layer.icon, contentDescription = null) }
+            if (layer.key == "weather") {
+                WeatherMoreButton(Modifier.align(Alignment.TopEnd).offset(x = WingtipSpace.Lg, y = -WingtipSpace.Md))
+            }
+        }
         Text(
             layer.name, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2,
             modifier = Modifier.padding(top = WingtipSpace.Xs).clearAndSetSemantics {},
         )
     }
 }
-
-private const val TILES_A_ROW = 3

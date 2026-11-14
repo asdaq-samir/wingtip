@@ -12,6 +12,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonObject
@@ -69,7 +70,7 @@ object StationLayer {
             override fun onViewAttachedToWindow(v: View) {
                 val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
                 scope = s
-                job = s.launch { _shown.collect { redraw(view, it) } }
+                job = s.launch { _shown.combine(MapLayersStore.weatherOn(view.context)) { shown, on -> if (on) shown else Shown() }.collect { redraw(view, it) } }
             }
 
             override fun onViewDetachedFromWindow(v: View) {

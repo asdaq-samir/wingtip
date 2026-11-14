@@ -3,6 +3,7 @@ package app.wingtipmaps.android.map
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CoroutineScope
@@ -33,11 +34,29 @@ class MapTerrain private constructor(private val context: Context, private val s
     val mode: StateFlow<TerrainMode> = _mode.asStateFlow()
     private var touched = false
 
+    /** How many times 3D stands its heights up (the Map card's Heights,
+     *  the web's heightStretch): ×3 unless picked, so a Class B reads as
+     *  the upside-down wedding cake it is (the owner, 2026-11-14). A
+     *  display factor, not an aviation figure: every word keeps the true
+     *  altitudes. */
+    private val _stretch = MutableStateFlow(DEFAULT_STRETCH)
+    val stretch: StateFlow<Int> = _stretch.asStateFlow()
+    private var stretchTouched = false
+
     init {
         scope.launch {
-            val kept = context.settings.data.first()[KEY]
-            if (!touched) _mode.value = if (kept == TerrainMode.THREE_D.key) TerrainMode.THREE_D else TerrainMode.RELIEF
+            val kept = context.settings.data.first()
+            if (!touched) _mode.value = if (kept[KEY] == TerrainMode.THREE_D.key) TerrainMode.THREE_D else TerrainMode.RELIEF
+            if (!stretchTouched) _stretch.value = kept[STRETCH]?.takeIf { it in STRETCHES } ?: DEFAULT_STRETCH
         }
+    }
+
+    /** Heights picked, kept. */
+    fun setStretch(times: Int) {
+        if (times !in STRETCHES) return
+        stretchTouched = true
+        _stretch.value = times
+        scope.launch { context.settings.edit { it[STRETCH] = times } }
     }
 
     /** 3D on or off, kept. */
@@ -50,6 +69,11 @@ class MapTerrain private constructor(private val context: Context, private val s
 
     companion object {
         private val KEY = stringPreferencesKey("map_terrain")
+        private val STRETCH = intPreferencesKey("map_height_stretch")
+
+        /** Heights' three, ×1 (true scale), ×3 and ×5 (the web's HEIGHT_STRETCHES). */
+        val STRETCHES = listOf(1, 3, 5)
+        const val DEFAULT_STRETCH = 3
 
         private val selected = MutableStateFlow<String?>(null)
         private val destination = MutableStateFlow<String?>(null)

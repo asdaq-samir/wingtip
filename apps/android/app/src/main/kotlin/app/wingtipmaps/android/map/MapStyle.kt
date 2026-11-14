@@ -248,23 +248,22 @@ object MapStyle {
         }
     }
 
-    /** The ids of the layers each switch turns off (the web's
+    /** The ids of the layers Aeronautical turns off (the web's
      *  AIRSPACE_TILE_LAYERS, NAVAID_TILE_LAYERS), and the ones a tap is
      *  looked for in (the web's useGlTap layers). */
     val AIRSPACE_LINES = listOf("airspace-D", "airspace-C", "airspace-B")
     val AIRSPACE_LAYERS = listOf("D", "C", "B").flatMap { listOf("airspace-$it-band", "airspace-$it") } + "airspace-labels" + SpecialUseLayers.IDS
-    val NAVAID_LAYERS = listOf("navaids", "navaids-idents", "fixes", "fixes-idents")
+    val NAVAID_LAYERS = listOf("navaids", "navaids-idents", "fixes", "fixes-idents", "vfr-waypoints", "vfr-waypoints-idents")
     const val AIRPORTS = "airports"
     const val VORS = "navaids"
     const val FIXES = "fixes"
     const val WAYPOINTS = "vfr-waypoints"
 
     /** Whether a layer is drawn with the switches as they are (the web's
-     *  applyOverlayFilters): the airspace's and the navaids' layers each
-     *  follow their switch; every other is always drawn. */
+     *  applyOverlayFilters): the airspace's, the navaids' and the VFR
+     *  waypoints' layers follow Aeronautical; every other is always drawn. */
     fun visible(id: String, layers: MapLayers): Boolean = when (id) {
-        in AIRSPACE_LAYERS -> layers.airspace
-        in NAVAID_LAYERS -> layers.navaids
+        in AIRSPACE_LAYERS, in NAVAID_LAYERS -> layers.aeronautical
         else -> true
     }
 
@@ -549,8 +548,8 @@ object MapStyle {
     fun airportsFilter(layers: MapLayers): JsonArray = e(
         "all",
         *listOfNotNull(
-            if (layers.military) null else e("!=", e("get", "military"), "military"),
-            if (layers.privateFields) null else e("!=", e("get", "use"), "private"),
+            if (layers.privateMilitary) null else e("!=", e("get", "military"), "military"),
+            if (layers.privateMilitary) null else e("!=", e("get", "use"), "private"),
         ).toTypedArray(),
     )
 

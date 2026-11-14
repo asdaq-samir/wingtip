@@ -46,8 +46,6 @@ import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ui.LocalWingtipPalette
-import app.wingtipmaps.android.ui.MenuSettingRow
-import app.wingtipmaps.android.ui.SettingsGroup
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
@@ -96,7 +94,8 @@ fun WeatherLoopBar(modifier: Modifier = Modifier) {
         onDispose { lifecycle.removeObserver(observer) }
     }
     val now by AppClock.ticking(30_000L)
-    if (state.kind == LoopKind.OFF) return
+    val weatherOn by remember(context) { MapLayersStore.weatherOn(context) }.collectAsStateWithLifecycle(true)
+    if (state.kind == LoopKind.OFF || !weatherOn) return
     val name = state.kind.label
     val time = state.frame?.let { FrameTime.of(it, Instant.ofEpochMilli(now), state.oldAfterS) }
     val caution = LocalWingtipPalette.current.cautionInk
@@ -165,24 +164,3 @@ fun WeatherLoopBar(modifier: Modifier = Modifier) {
  *  the clock tick below that. */
 private val FrameTick: Int
     get() = if (Build.VERSION.SDK_INT >= 34) HapticFeedbackConstants.SEGMENT_TICK else HapticFeedbackConstants.CLOCK_TICK
-
-/**
- * The loop's two menus in Setup's Map section (Android's map menu):
- * which loop, and, with one on, how fast it plays. Menus, as discrete
- * settings are here, not sliders.
- */
-@Composable
-fun WeatherLoopRows() {
-    val context = LocalContext.current
-    val loop = remember(context) { WeatherLoop.of(context) }
-    val state by loop.state.collectAsStateWithLifecycle()
-    // One group, the loop and its speed, as the map's switches below it
-    // are grouped (the sheet audit's B-1).
-    val count = if (state.kind != LoopKind.OFF) 2 else 1
-    SettingsGroup {
-        MenuSettingRow(stringResource(R.string.loop_kind), state.kind.label, LoopKind.entries.map { it.label to { loop.pick(it) } }, index = 0, count = count)
-        if (state.kind != LoopKind.OFF) {
-            MenuSettingRow(stringResource(R.string.loop_speed), state.speed.label, LoopSpeed.entries.map { it.label to { loop.speed(it) } }, index = 1, count = count)
-        }
-    }
-}

@@ -89,7 +89,8 @@ fun ModelWeatherBar(modifier: Modifier = Modifier) {
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    val field = state.field ?: return
+    val weatherOn by remember(context) { app.wingtipmaps.android.map.MapLayersStore.weatherOn(context) }.collectAsStateWithLifecycle(true)
+    val field = state.field?.takeIf { weatherOn } ?: return
     Column(
         modifier.widthIn(max = 360.dp).fillMaxWidth().padding(horizontal = WingtipSpace.Md),
         horizontalAlignment = Alignment.CenterHorizontally,
