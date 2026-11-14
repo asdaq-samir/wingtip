@@ -80,6 +80,16 @@ object Format {
     }
 
     /** Nautical miles to a tenth, as the planner sends them: "102.4 nm". */
+    /** Another airplane's reported altitude, to the hundred feet, "4,500
+     *  ft": as ATC gives traffic's altitude in hundreds of feet (FAA Order
+     *  JO 7110.65, 2-1-21), one form wherever a target is shown (the web's
+     *  reportedAltitude). */
+    fun reportedAltitude(ft: Double): String = String.format(Locale.US, "%,d ft", (ft / 100).roundToLong() * 100)
+
+    /** A distance in whole nautical miles, "38 nm": a field's distance on
+     *  its card, as the web writes it. */
+    fun wholeMiles(nm: Double): String = String.format(Locale.US, "%,d nm", nm.roundToLong())
+
     fun distance(nm: Double?): String = if (nm == null) NONE else String.format(Locale.US, "%.1f nm", nm)
 
     /** An airspeed, a ground speed or a wind speed in whole knots: "110 kt". */
