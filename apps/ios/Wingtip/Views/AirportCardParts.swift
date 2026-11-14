@@ -50,7 +50,11 @@ struct AirportTiles: View {
             HStack(spacing: WingtipSpace.md) {
                 // The diagram first (the owner's A2 pick), then the approaches.
                 if let cycle = place.airportDiagramCycle {
-                    tileButton("Diagram", picture: Planner.diagramPath(ident: place.ident, cycle: cycle, runwaysOnly: true), fit: true) {
+                    // The crop to the runways only where the planner says it
+                    // is worth asking for (airport_diagram_runways: false once
+                    // it has kept a miss for the cycle), else the whole page.
+                    let crop = place.airportDiagramRunways != false
+                    tileButton("Diagram", picture: Planner.diagramPath(ident: place.ident, cycle: cycle, runwaysOnly: crop), fit: true) {
                         shown = .paths("\(place.ident) airport diagram", [Planner.diagramPath(ident: place.ident, cycle: cycle)])
                     }
                 }

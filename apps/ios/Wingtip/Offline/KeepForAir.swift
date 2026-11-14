@@ -99,7 +99,9 @@ final class KeepForAir {
                 files.append(KeptForAir.file("pictures", KeptForAir.pdfKey(pdf), ext: "img"))
             }
             if let cycle = place.airportDiagramCycle {
-                pictures += [Planner.diagramPath(ident: ident, cycle: cycle), Planner.diagramPath(ident: ident, cycle: cycle, runwaysOnly: true)]
+                pictures.append(Planner.diagramPath(ident: ident, cycle: cycle))
+                // The runways' crop only where the planner has one to give.
+                if place.airportDiagramRunways != false { pictures.append(Planner.diagramPath(ident: ident, cycle: cycle, runwaysOnly: true)) }
             }
             guard ident == plan.dest else { continue }
             var plates = true

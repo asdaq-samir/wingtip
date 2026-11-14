@@ -191,6 +191,17 @@ enum AirportWords {
         return (line.name, FrequencyKind(rawValue: line.kind) ?? .other, line.detail)
     }
 
+    /// The indices of a field's frequencies in the order a pilot dials
+    /// them -- the weather (ATIS, AWOS), clearance, ground, the tower or
+    /// CTAF, approach and departure, then the rest (AIM 4-1-13, 4-1-11) --
+    /// the engine's `frequencies_in_order`. The file's own order where the
+    /// engine refuses (logged by Engine.rule): every frequency still shown.
+    static func frequencyOrder(_ frequencies: [Frequency]) -> [Int] {
+        let asked = frequencies.map { EngineContract.FieldFrequency(type: $0.type, description: $0.description, frequencyMhz: $0.frequencyMhz) }
+        let order = (try? Engine.frequenciesInOrder(frequencies: asked)) ?? []
+        return order.count == frequencies.count && Set(order) == Set(frequencies.indices) ? order : Array(frequencies.indices)
+    }
+
     /// A frequency as pilots write it: 120.7, 122.95, 124.475.
     static func mhz(_ value: Double) -> String {
         var text = String(format: "%.3f", value)

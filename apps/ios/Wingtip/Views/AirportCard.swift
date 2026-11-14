@@ -201,7 +201,7 @@ struct AirportWeatherTab: View {
         DigitalAtisSections()
         if listener.canListen { AtisSection() } // heard on the iPhone or not offered
         if place.metar == nil, let nearby = place.nearbyMetar {
-            Section("Nearest Report, \(Format.distance(nearby.distanceNm)) \(AirportWords.compassPoint(Double(nearby.bearingDeg)))") {
+            Section("Nearest Report, \(Format.distance(nearby.distanceNm, decimals: 0)) \(AirportWords.compassPoint(Double(nearby.bearingDeg)))") {
                 CardRow(title: nearby.ident, detail: nearby.metar.observedAt.flatMap { AirportWords.observed($0) }) {
                     if let category = nearby.metar.flightCategory {
                         Text(category).fontWeight(.semibold).accessibilityLabel(SpokenFigures.flightCategory(category))

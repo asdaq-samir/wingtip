@@ -62,7 +62,7 @@ final class TrafficMarkView: MKAnnotationView {
         label.text = drawn?.label ?? ""
         // Its height against own ship in words, and "near" said where the
         // amber alone says it on the screen.
-        let height = mark.plane.altitudeFt.map { ", \(SpokenFigures.feet($0))" } ?? ""
+        let height = mark.plane.altitudeFt.map { ", \(SpokenFigures.feet(Format.trafficFeet($0)))" } ?? ""
         let against = mark.ownFt.flatMap { own in mark.plane.altitudeFt.map { ", " + FlightWords.against($0 - own) } } ?? ""
         accessibilityLabel = "\(mark.title ?? "Airplane")\(height)\(against)\(drawn?.near == true ? ", near" : "")"
     }

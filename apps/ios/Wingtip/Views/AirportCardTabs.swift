@@ -14,7 +14,11 @@ struct AirportInfoTab: View {
         FlowProgramsSection()
         Section(place.airspaceClass.map { "Frequencies (Class \($0))" } ?? "Frequencies") {
             if place.frequencies.isEmpty { Text("None listed").foregroundStyle(.secondary) }
-            ForEach(Array(place.frequencies.enumerated()), id: \.offset) { i, f in
+            // In the order a pilot dials them, the weather first (the
+            // engine's frequencies_in_order, AIM 4-1-13); each keeps its
+            // index in the answer, which the NOTAM marks are keyed by.
+            ForEach(AirportWords.frequencyOrder(place.frequencies), id: \.self) { i in
+                let f = place.frequencies[i]
                 let mark = notams.marks.frequency[i]
                 NotamMarked(notams: notams, mark: mark) {
                     FrequencyRowView(frequency: f, mark: mark).appEntityIdentifier(SiriSaw.frequency(place.ident, f))
