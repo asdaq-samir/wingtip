@@ -309,6 +309,9 @@ data class Metar (
     @SerialName("temp_c")
     val tempC: Double? = null,
 
+    @SerialName("visibility_plus")
+    val visibilityPlus: Boolean? = null,
+
     @SerialName("visibility_sm")
     val visibilitySm: Double? = null,
 
