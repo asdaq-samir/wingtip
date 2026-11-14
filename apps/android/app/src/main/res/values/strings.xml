@@ -543,4 +543,18 @@
     <string name="airplane_photo_by">Photo: %1$s, Planespotters.net</string>
     <string name="said_replay_flight">Replay %1$s</string>
     <string name="share_airplane">Share the airplane</string>
+    <string name="coming_up_none">Nothing dated yet: your flight review, medical and airplanes\' inspections show here once given.</string>
+    <!-- Words once typed in Kotlin (the Android audit's AND-14). -->
+    <string name="checklist_write_it">Write It</string>
+    <string name="checklist_start_over">Start Over</string>
+    <string name="checklist_edit">Edit</string>
+    <string name="checklist_start_from_phases">Start from the Phases</string>
+    <string name="nearest_finding_position">Finding your position…</string>
+    <string name="nearest_fetching">Fetching the nearest fields…</string>
+    <string name="passenger_plan_first">Plan a route first, and the flight is written here to send.</string>
+    <string name="notify_own_ship_text">Your position is being read for the alerts ahead and the path flown.</string>
+    <string name="notify_atc_text">The ATC copilot is listening for calls to your airplane.</string>
+    <string name="notify_receiver_text">Traffic and FIS-B weather from the receiver on your Wi-Fi.</string>
+    <string name="traffic_near_you">Traffic near you</string>
+    <string name="traffic_place">%1$d nm %2$s of you</string>
 </resources>
