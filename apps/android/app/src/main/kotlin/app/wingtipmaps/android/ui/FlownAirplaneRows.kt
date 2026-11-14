@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -31,19 +32,26 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.aircraft.YourAirplanesRow
+import app.wingtipmaps.android.airplane.OwnAirplanes
+import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.api.AircraftProfileSummary
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
+import app.wingtipmaps.android.api.registered
 import app.wingtipmaps.android.documents.AddFromPhotoRow
 import app.wingtipmaps.android.documents.HandbookPhotoSheet
 import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.search.AirplaneHit
+import app.wingtipmaps.android.search.SearchGroups
+import app.wingtipmaps.android.search.SearchModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /** The airplane card's picker's model: the planner's airplane types
  *  (/api/aircraft-profiles), asked once, and again by Try Again. */
@@ -143,25 +151,69 @@ internal fun AirplanePicker(profiles: List<AircraftProfileSummary>, selected: St
 
 /** The airplane's registration (N-number), the call sign the ATC copilot
  *  listens for and the logbook's airplane; kept as typed, upper-cased.
- *  Its figures are the card's own, under it. */
+ *  Its figures are the card's own, under it. As it is typed it suggests
+ *  from the same rows as the one search's Airplanes (the owner's S1,
+ *  2026-11-14; the web's FPL airplane field): the pilot's own airplanes,
+ *  the FAA registry's record once the N-number is whole, and the stock
+ *  types, in Material's exposed dropdown; a pick fills the field. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RegistrationField() {
     val context = LocalContext.current
     val choices = remember(context) { FlightChoices.of(context) }
     val tail by choices.tail.collectAsStateWithLifecycle()
+    val own by remember(context) { OwnAirplanes.of(context) }.records.collectAsStateWithLifecycle()
     var typed by remember { mutableStateOf(tail.orEmpty()) }
-    OutlinedTextField(
-        value = typed,
-        onValueChange = {
-            typed = it.uppercase()
-            choices.setTail(it)
-        },
-        label = { Text(stringResource(R.string.registration)) },
-        placeholder = { Text(stringResource(R.string.registration_hint)) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Done),
-        modifier = Modifier.fillMaxWidth(),
-    )
+    var open by remember { mutableStateOf(false) }
+    val hits by produceState(emptyList<AirplaneHit>(), typed, own) {
+        value = emptyList()
+        if (typed.isBlank()) return@produceState
+        // A pause in the typing before the planner is asked (SearchModel's).
+        delay(SearchModel.PAUSE_MS)
+        val types = runCatching { Planner.aircraftProfiles() }.getOrDefault(emptyList())
+        val registered = if (SearchGroups.looksLikeTail(typed)) runCatching { Planner.registered(SearchGroups.compact(typed)) }.getOrNull() else null
+        value = listOfNotNull(registered?.takeUnless { SearchGroups.isOwn(it, own.values) }?.let { AirplaneHit.Registered(it) }) +
+            SearchGroups.airplanes(typed, own.values, types)
+    }
+    ExposedDropdownMenuBox(expanded = open && hits.isNotEmpty(), onExpandedChange = { open = it }) {
+        OutlinedTextField(
+            value = typed,
+            onValueChange = {
+                typed = it.uppercase()
+                choices.setTail(it)
+                open = true
+            },
+            label = { Text(stringResource(R.string.registration)) },
+            placeholder = { Text(stringResource(R.string.registration_hint)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Done),
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
+        )
+        ExposedDropdownMenu(expanded = open && hits.isNotEmpty(), onDismissRequest = { open = false }) {
+            hits.forEach { hit ->
+                val (name, line) = when (hit) {
+                    is AirplaneHit.Own -> (hit.record.tail ?: hit.record.type.uppercase()) to stringResource(R.string.airplane_yours)
+                    is AirplaneHit.Registered -> ("N" + hit.registration.nNumber.uppercase().removePrefix("N")) to
+                        listOfNotNull(hit.registration.manufacturer, hit.registration.model).joinToString(" ").ifEmpty { stringResource(R.string.airplane_registry) }
+                    is AirplaneHit.Type -> hit.profile.name.uppercase() to hit.profile.type
+                }
+                DropdownMenuItem(
+                    text = { Text("$name · $line") },
+                    onClick = {
+                        open = false
+                        when (hit) {
+                            // A type has no N-number: the plan's airplane, the field kept.
+                            is AirplaneHit.Type -> ProfileOpen.open(null, type = hit.profile.name)
+                            else -> {
+                                typed = name
+                                choices.setTail(name)
+                            }
+                        }
+                    },
+                )
+            }
+        }
+    }
 }
 
 /** Whether anyone but the pilot is aboard: where the web reads it from
