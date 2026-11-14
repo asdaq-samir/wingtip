@@ -14,8 +14,8 @@ airport_use, gonogo::permission).
   response or else the last inspection, YYYY-MM-DD; `icao_id` and
   `notam_id` as NASR lists them ("" where it lists none: filed_zzzz and
   airport_notams_none tell "none" from "not known" by it); `name`, NASR's
-  ARPT_NAME title-cased as the phones' packs write it (engine spoken::title
-  is Python's str.title()); `status`, NASR's ARPT_STATUS, which the engine's
+  ARPT_NAME as the phones' packs write it (the engine's airport_names:
+  title case with the FAA's codes kept, "Sierra Vista Muni-Libby AAF"); `status`, NASR's ARPT_STATUS, which the engine's
   field_status rules on (wingtip.field_status, decision 0043).
 
 Each is None or empty where the file cannot be had, never a failure: a
@@ -29,6 +29,7 @@ import logging
 import pandas as pd
 
 from . import faa_data
+from .engine import ask as engine
 from .single_flight import once
 from .terrain import DEFAULT_FAA_CACHE_DIR
 
@@ -58,14 +59,18 @@ def _records_of(path: str, _mtime: float) -> dict:
     by_ident: dict = {}
     # Each column NASR files; one a file lacks (a test's few columns) is blank.
     columns = ["ARPT_ID", "ICAO_ID", "NOTAM_ID", "ARPT_NAME", "INSPECT_METHOD_CODE", "LAST_INFO_RESPONSE", "LAST_INSPECTION", "ARPT_STATUS"]
-    for row in df.reindex(columns=columns).astype(object).fillna("").itertuples(index=False):
+    table = df.reindex(columns=columns).astype(object).fillna("")
+    # NASR's capitals as every app writes them, the FAA's codes kept (the
+    # engine's airport_names: "Sierra Vista Muni-Libby AAF"), in one call.
+    names = engine("airport_names", names=[n.strip() for n in table["ARPT_NAME"]])
+    for row, nasr_name in zip(table.itertuples(index=False), names):
         method = row.INSPECT_METHOD_CODE.strip().upper()
         record = {
             "data_source": "owner-reported" if method in _OWNER_REPORTED else "inspected" if method in _INSPECTED else None,
             "info_date": _date(row.LAST_INFO_RESPONSE) or _date(row.LAST_INSPECTION),
             "icao_id": row.ICAO_ID.strip().upper(),
             "notam_id": row.NOTAM_ID.strip().upper(),
-            "name": row.ARPT_NAME.strip().title() or None,
+            "name": nasr_name or None,
             "status": row.ARPT_STATUS.strip().upper() or None,
         }
         for ident in (row.ARPT_ID, row.ICAO_ID):
@@ -109,7 +114,7 @@ def _by_idents(us: pd.DataFrame, by_ident: dict) -> pd.Series:
 
 def named(us: pd.DataFrame, faa_path: str, faa_mtime: float) -> pd.DataFrame:
     """OurAirports' US table with each field NASR lists named as NASR files
-    it (ARPT_NAME, title-cased as the phones' packs write it: IL02 is
+    it (ARPT_NAME as the phones' packs write it, codes kept: IL02 is
     "Ravenwood", where OurAirports kept "Herbert C. Maas Airport"), and its
     use (`_use`: "private", "military", "joint" or None for public), so the
     planner's lists, its search and the packs name and mark a field alike.

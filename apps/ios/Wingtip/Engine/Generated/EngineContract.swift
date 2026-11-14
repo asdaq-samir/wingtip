@@ -142,6 +142,10 @@ enum EngineContract {
         }
     }
 
+    struct AirportNamesInput: Codable, Equatable, Sendable {
+        var names: [String]
+    }
+
     struct AirportNotamsNoneInput: Codable, Equatable, Sendable {
         /// The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
         var `private`: Bool?

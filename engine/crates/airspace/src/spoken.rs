@@ -18,7 +18,7 @@
 
 use crate::clearance::{Found, FoundPlaces};
 use crate::pack::Pack;
-use crate::{json, sort::StableSort};
+use crate::{field_name::field_name, json, sort::StableSort};
 
 /// A place a clearance may name.
 #[derive(Clone, Debug, PartialEq)]
@@ -328,7 +328,7 @@ pub fn places_of(pack: &Pack) -> Vec<Place> {
             }
             let (Some(la), Some(lo)) = (num(get(lat)), num(get(lon))) else { continue };
             let ident = if get(icao).is_empty() { get(id) } else { get(icao) };
-            out.push(Place { ident: ident.to_owned(), name: Some(title(get(name))), what: "airport", lat: la, lon: lo });
+            out.push(Place { ident: ident.to_owned(), name: Some(field_name(get(name))), what: "airport", lat: la, lon: lo });
         }
     }
     if let Some(t) = table("navaids") {

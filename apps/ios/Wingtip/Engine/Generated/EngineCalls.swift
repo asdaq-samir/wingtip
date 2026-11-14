@@ -45,6 +45,11 @@ extension Engine {
         try Self.rule("airport_data_words", EngineContract.AirportDataWordsInput(dataSource: dataSource, infoDate: infoDate))
     }
 
+    /// Fields' names as every app writes them: NASR APT_BASE's ARPT_NAME title-cased as Python's str.title() does, the FAA's codes kept in capitals (AAF, AFB, AHP, ANGB, ARB, JRB, MCAS, MCAF, NAS, NAF, NAWS, NOLF, OLF, USAF, USCG, CGAS, LLC): "SIERRA VISTA MUNI-LIBBY AAF" is "Sierra Vista Muni-Libby AAF". The phones' packs name fields so too.
+    static func airportNames(names: [String]) throws -> [String] {
+        try Self.rule("airport_names", EngineContract.AirportNamesInput(names: names))
+    }
+
     /// What a field's empty NOTAM list says where NASR gives a private field no NOTAM_ID: it is outside the NOTAM system, so "No NOTAMs are issued for this private-use field." rather than none heard. Null where the ordinary empty state is right. (FAA JO 7930.2 could not be fetched to quote on 2026-11-13; the plainer wording was chosen for that reason.)
     static func airportNotamsNone(`private`: Bool? = nil, military: String? = nil, notamId: String? = nil) throws -> String? {
         try Self.rule("airport_notams_none", EngineContract.AirportNotamsNoneInput(private: `private`, military: military, notamId: notamId))

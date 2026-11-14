@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_airspace::field_name::call",
+  "description": "Fields' names as every app writes them: NASR APT_BASE's ARPT_NAME title-cased as Python's str.title() does, the FAA's codes kept in capitals (AAF, AFB, AHP, ANGB, ARB, JRB, MCAS, MCAF, NAS, NAF, NAWS, NOLF, OLF, USAF, USCG, CGAS, LLC): \"SIERRA VISTA MUNI-LIBBY AAF\" is \"Sierra Vista Muni-Libby AAF\". The phones' packs name fields so too.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AirportNamesInput",
+      "type": "object",
+      "properties": {
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "names"
+      ]
+    },
+    "answer": {
+      "title": "AirportNamesAnswer",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

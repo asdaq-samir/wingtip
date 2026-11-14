@@ -608,7 +608,7 @@ pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
             pins.push(Pin {
                 ident: ident.to_owned(),
                 faa_id: get(id).to_uppercase(),
-                name: crate::spoken::title(get(name)),
+                name: crate::field_name::field_name(get(name)),
                 lat: la,
                 lon: lo,
                 kind,

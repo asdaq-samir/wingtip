@@ -167,6 +167,11 @@ object EngineContract {
     )
 
     @Serializable
+    data class AirportNamesInput(
+        val names: List<String>,
+    )
+
+    @Serializable
     data class AirportNotamsNoneInput(
         /**
          * The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.

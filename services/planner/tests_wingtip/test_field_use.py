@@ -58,3 +58,10 @@ def test_without_the_file_there_is_no_record(tmp_path, monkeypatch):
 
     monkeypatch.setattr(faa_data, "ensure_nasr_file", missing)
     assert field_use.record_of("IL11", tmp_path) is None
+
+
+def test_the_faas_codes_stay_in_capitals(tmp_path, monkeypatch):
+    # NASR's FHU and MXF: the field types are the FAA's codes, kept.
+    _apt(tmp_path, monkeypatch)
+    assert field_use.nasr_name("KFHU", tmp_path) == "Sierra Vista Muni-Libby AAF"
+    assert field_use.nasr_name("MXF", tmp_path) == "Maxwell AFB"
