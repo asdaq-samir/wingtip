@@ -4,7 +4,7 @@
 //! web's 3D view (features/plan/map/terrain/airspaceVolumes) asks it by
 //! name (`airspace_volume_span`), and the phones' 3D views are to.
 //!
-//! The limits are read as the special-use tab reads them (sua_tab
+//! The limits are read as the special-use tab reads them (sua_limit
 //! `limit`, the one reading of the FAA's codes and descriptors): SFC with
 //! a figure above 0 is that height above the ground, a ceiling "to but not
 //! including" a foot under its figure and a floor "above but not
@@ -46,7 +46,7 @@
 
 use crate::json::{self, Value};
 use crate::rules::CLASS_A_FLOOR_FT;
-use crate::sua_tab::{limit, read_limit, Limit};
+use crate::sua_limit::{limit, read_limit, Limit};
 
 /// The ground under a volume, ft MSL: its lowest and its highest.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -143,10 +143,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn lim<'a>(ft: Option<f64>, code: &'a str, desc: Option<&'a str>) -> Limit<'a> {
-        Limit { ft, code: Some(code), desc }
-    }
+    use crate::sua_limit::lim;
     const HILLS: Option<Ground> = Some(Ground { low_ft: 1_200.0, high_ft: 1_900.0 });
 
     #[test]
