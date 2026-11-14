@@ -9,12 +9,41 @@ first new route after the pool had been let go (measured 2026-10-07),
 where app.detection's are 3.8. (And app.landmarks, which imports no
 more than app.detection does.)"""
 
+import functools
 import logging
+
+from wingtip import chartvision
 
 from . import detection, landmarks
 from .detection import detect_job
 
 log = logging.getLogger(__name__)
+
+
+def _logged(read):
+    """The chart's corridor reader, its failure logged with its traceback
+    before it goes on: app.detection keeps only "Type: message" for the
+    pages that follow the read, and is not edited (a kept read is hashed
+    against its source, CLAUDE.md), so the traceback is logged here, at
+    the one place detection reads through (the 2026-11-14 audit's CODE-29;
+    the owner took option (c), log at the caller)."""
+
+    @functools.wraps(read)
+    def along(start, end, *args, **kwargs):
+        try:
+            yield from read(start, end, *args, **kwargs)
+        except Exception:
+            log.exception("The chart along %s to %s could not be read", start, end)
+            raise
+
+    along.logs_failures = True
+    return along
+
+
+# Once per process, in the planner's (app.chart_model imports this module)
+# and in each chart reader's.
+if not getattr(chartvision.iter_landmarks_along_route, "logs_failures", False):
+    chartvision.iter_landmarks_along_route = _logged(chartvision.iter_landmarks_along_route)
 
 
 def read_corridor(key: tuple, start: tuple, end: tuple, half_width_nm: float) -> str | None:

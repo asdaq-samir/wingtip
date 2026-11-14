@@ -72,9 +72,6 @@ pub fn tolerance_for(south: f64, north: f64) -> f64 {
     MIN_TOLERANCE_DEG.max((north - south) * TOLERANCE_PER_BOX)
 }
 
-/// wingtip.faa_data's MILITARY_OWNERS: the Air Force's, the Navy's, the
-/// Army's and the Coast Guard's fields.
-const MILITARY_OWNERS: &[&str] = &["MA", "MN", "MR", "CG"];
 /// wingtip.fixes' VOR_KINDS and NAVAID_KINDS, the likelier to fly to first.
 const VOR_KINDS: &[&str] = &["VORTAC", "VOR/DME", "VOR"];
 const NAVAID_KINDS: &[&str] = &["VORTAC", "VOR/DME", "VOR", "DME", "TACAN", "NDB/DME", "NDB"];
@@ -603,8 +600,9 @@ pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
             if pins.iter().any(|p| p.ident == ident) {
                 continue;
             }
-            let military =
-                (owner.is_some() && MILITARY_OWNERS.contains(&get(owner))).then(|| if get(use_) == "PU" { "joint" } else { "military" });
+            // The services' own fields, by the flight crate's one rule
+            // (field_military, NASR APT_BASE's ownership and use codes).
+            let military = wingtip_flight::field::military(owner.map(|_| get(owner)), Some(get(use_)));
             pins.push(Pin {
                 ident: ident.to_owned(),
                 faa_id: get(id).to_uppercase(),

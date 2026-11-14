@@ -10,7 +10,7 @@ import pytest
 import requests
 from PIL import Image
 
-from wingtip import publications
+from wingtip import publications, single_flight
 
 #: KDLH's charts in a kept index, by either ident.
 DLH_CHARTS = (
@@ -179,6 +179,7 @@ def test_a_booklets_pages_are_the_ones_naming_the_field_and_a_charts_its_own(mon
     approach = _pdf_with(["ILS OR LOC RWY 18"])
     answers = {"EC3TO.PDF": booklet, "00245IL18.PDF": approach}
     monkeypatch.setattr(publications.outside, "get", lambda url, **kw: _Answer(answers[url.rsplit("/", 1)[1]]))
+    publications._page_count.cache_clear()
     on = date(2026, 10, 3)
     pages = publications.chart_pages("https://aeronav.faa.gov/d-tpp/2610/EC3TO.PDF", "KMSN", on)
     assert [p["page"] for p in pages] == [2, 3]
@@ -194,7 +195,12 @@ def test_a_booklets_pages_are_the_ones_naming_the_field_and_a_charts_its_own(mon
     path = publications.chart_page_png("dtpp", "2610", "EC3TO.PDF", 3, on)
     with Image.open(path) as image:
         assert image.size == (387 * scale, 594 * scale)
+    # A page past the last is none, said before any draw, and no lock is
+    # kept for it or for the pages drawn (CODE-24).
+    drawn = []
+    monkeypatch.setattr(publications, "_drawn", lambda *a: drawn.append(a))
     assert publications.chart_page_png("dtpp", "2610", "EC3TO.PDF", 9, on) is None
+    assert drawn == [] and single_flight._WORKING == {}
 
 
 def test_only_the_faas_charts_in_force_are_read(monkeypatch, tmp_path):

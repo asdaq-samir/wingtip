@@ -144,6 +144,7 @@ class Metar(BaseModel):
     #: ("OVC///"): the ceiling is not known, not absent (14 CFR 1.1).
     ceiling_unknown: bool = False
     visibility_sm: float | None = None
+    visibility_plus: bool = False  # at least visibility_sm: P6SM, the AWC's "10+" (awc_metars_read)
     wind_dir_true_deg: float | None = None
     wind_speed_kt: float | None = None
     wind_gust_kt: float | None = None
@@ -168,17 +169,18 @@ class RunwayWind(BaseModel):
 
 
 class RunwayEnd(BaseModel):
-    """One end of a runway (wingtip.pattern): its true heading, None for a
-    helipad, which way its traffic pattern is flown -- left unless the FAA
-    flags it right (14 CFR 91.126(b)(1)) -- and where it is."""
+    """One end of a runway (wingtip.pattern): its true heading, None for a helipad, which way its traffic pattern is flown -- left
+    unless the FAA flags it right (14 CFR 91.126(b)(1)) -- where it is, and its displaced threshold and landing distance available
+    (LDA), feet: NASR APT_RWY_END's DISPLACED_THR_LEN and LNDG_DIST_AVBL, None where NASR gives none."""
 
     ident: str
     heading_true_deg: float | None = None
     traffic: Literal["left", "right"] = "left"
-    #: Where it is, for the card's sketch of the field's runways: NASR's
-    #: surveyed threshold, else OurAirports'; None where neither has it.
+    #: Where it is, for the card's sketch: NASR's surveyed threshold, else OurAirports'; None where neither has it.
     lat: float | None = None
     lon: float | None = None
+    displaced_threshold_ft: int | None = None
+    lda_ft: int | None = None
 
 
 class RunwayTurf(BaseModel):

@@ -30,7 +30,9 @@ def sources(monkeypatch):
     monkeypatch.setattr(
         terrain,
         "floor_profile",
-        lambda start, end, breaks, faa_cache_dir=None: [{"floor_ft": 2000.0, "lowest_ground_ft": 1500.0}] * (len(breaks) - 1),
+        lambda start, end, breaks, faa_cache_dir=None, fixes=None: (
+            state.update(floor_fixes=fixes) or [{"floor_ft": 2000.0, "lowest_ground_ft": 1500.0}] * (len(breaks) - 1)
+        ),
     )
     monkeypatch.setattr(airspace, "airspace_ceiling_profile", lambda start, end, fixes, shp: [None] * (len(fixes) - 1))
     monkeypatch.setattr(airspace, "airspace_transits", lambda start, end, shp, fixes=None: [])
@@ -181,6 +183,13 @@ def test_special_use_unavailable_is_said_rather_than_treated_as_none(sources, mo
     result = altitude.select_cruise_altitude(DEP, DEST, PROFILE)
 
     assert "special_use" in result["weather_unavailable"]
+
+
+def test_the_vfr_floor_is_read_under_the_legs_flown(sources):
+    # The fixes go to the floor (wingtip.terrain reads each leg's own
+    # ground and obstacles), not only the direct line's breaks (AV-2).
+    altitude.select_cruise_altitude(DEP, DEST, PROFILE, fixes=[DEP, DOGLEG, DEST])
+    assert sources["floor_fixes"] == [DEP, DOGLEG, DEST]
 
 
 def test_no_fixes_is_the_direct_line_as_one_leg(sources, monkeypatch):

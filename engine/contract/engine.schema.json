@@ -182,7 +182,7 @@
       "additionalProperties": false
     },
     "aircraft_problems": {
-      "description": "What is wrong with the \"Your Airplane\" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's, the descent's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.",
+      "description": "What is wrong with the \"Your Airplane\" form's fields as typed, by field (the gateway's AircraftRequest and OwnFigures names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn required; every figure inside its range, airplane_figure_ranges' (sanity bounds, no regulation: cruise and climb speed above 0 and at most 1,000 kt, descent 30 to 300 kt and 1 to 150 gal/h, cruise power 40 to 100%, the cruise and climb burns above 0 and at most 150 gal/h, usable fuel above 0 and at most 2,000 gal, service ceiling 1,000 to 30,000 ft, climb rate above 0 and at most 5,000 fpm, start and taxi fuel 0 to 50 gal, glide ratio more than 1 and at most 80); equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.",
       "type": "object",
       "properties": {
         "input": {
@@ -249,6 +249,30 @@
                 "null"
               ]
             },
+            "serviceCeilingFt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "climbRateFpm": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "taxiFuelGal": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "glideRatio": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "equipment": {
               "type": [
                 "string",
@@ -304,6 +328,18 @@
             "usableFuelGal": {
               "type": "string"
             },
+            "serviceCeilingFt": {
+              "type": "string"
+            },
+            "climbRateFpm": {
+              "type": "string"
+            },
+            "taxiFuelGal": {
+              "type": "string"
+            },
+            "glideRatio": {
+              "type": "string"
+            },
             "equipment": {
               "type": "string"
             },
@@ -314,6 +350,83 @@
               "type": "string"
             }
           },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "airplane_figure_ranges": {
+      "description": "Every one of an airplane's own figures with the range it may take, in the form's order: the one statement of them (engine/crates/pilot/src/aircraft/form.rs), which aircraft_problems checks the \"Your Airplane\" form against and the planner builds its query parameters' bounds from, so a figure the form and the gateway take is one every plan takes. Each is a sanity bound that keeps a typo out of the plan, no regulation or handbook figure: above min (or at it where min_inclusive) and at most max.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AirplaneFigureRangesInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "AirplaneFigureRangesAnswer",
+          "type": "object",
+          "properties": {
+            "ranges": {
+              "type": "array",
+              "items": {
+                "title": "AirplaneFigureRange",
+                "type": "object",
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "description": "The form's and the gateway's name, cruiseTasKt."
+                  },
+                  "query": {
+                    "type": "string",
+                    "description": "The planner's query parameter, cruise_tas_kt."
+                  },
+                  "label": {
+                    "type": "string",
+                    "description": "The field's name in the form's words, Cruise speed."
+                  },
+                  "unit": {
+                    "type": "string",
+                    "description": "kt, gal/h, gal, %, ft, fpm, or empty for a ratio."
+                  },
+                  "min": {
+                    "type": "number"
+                  },
+                  "min_inclusive": {
+                    "type": "boolean",
+                    "description": "min itself is inside; otherwise only above it."
+                  },
+                  "max": {
+                    "type": "number",
+                    "description": "The highest inside."
+                  },
+                  "required": {
+                    "type": "boolean",
+                    "description": "The form needs it (the cruise speed and burn)."
+                  }
+                },
+                "required": [
+                  "field",
+                  "query",
+                  "label",
+                  "unit",
+                  "min",
+                  "min_inclusive",
+                  "max",
+                  "required"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "ranges"
+          ],
           "additionalProperties": false
         }
       },
@@ -3741,6 +3854,10 @@
                   "null"
                 ]
               },
+              "visibility_plus": {
+                "type": "boolean",
+                "description": "The visibility is at least visibility_sm: the feed's \"10+\", the report's P6SM or 10SM and more."
+              },
               "wind_dir_true_deg": {
                 "type": [
                   "number",
@@ -3799,6 +3916,7 @@
               "ceiling_unknown",
               "ceiling_cover",
               "visibility_sm",
+              "visibility_plus",
               "wind_dir_true_deg",
               "wind_speed_kt",
               "wind_gust_kt",
@@ -8711,6 +8829,55 @@
           "items": {
             "$ref": "#/definitions/FieldHour"
           }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "field_military": {
+      "description": "Whether a field is the armed services' own, from the FAA's NASR APT_BASE.csv: OWNERSHIP_TYPE_CODE MA (Air Force), MN (Navy), MR (Army) or CG (Coast Guard) is; \"joint\" where FACILITY_USE_CODE is PU, open to the public as well (a civil airport on a military one, where a civil pilot may land), else \"military\", where a civil airplane lands only with the service's permission (for the Air Force a Civil Aircraft Landing Permit, 32 CFR part 855); null for any other owner. The one statement the planner, the cycle pack's overlays and the engine's map pins read.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FieldMilitaryInput",
+          "type": "object",
+          "properties": {
+            "ownership": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "NASR APT_BASE's OWNERSHIP_TYPE_CODE (PU, PR, MA, MN, MR, CG)."
+            },
+            "use": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "NASR APT_BASE's FACILITY_USE_CODE (PU, PR)."
+            }
+          }
+        },
+        "answer": {
+          "title": "FieldMilitaryAnswer",
+          "type": "object",
+          "properties": {
+            "military": {
+              "enum": [
+                "military",
+                "joint",
+                null
+              ],
+              "description": "military, joint, or null for a field the services do not own."
+            }
+          },
+          "required": [
+            "military"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -26435,15 +26602,23 @@
               "items": {
                 "type": "object",
                 "properties": {
+                  "hop": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "The flight's index in `hops`, whose two ends an app names with its own point names (a pilot's own point is \"@lat,lon\" in the idents); null for a route with no stops."
+                  },
                   "name": {
                     "type": "string",
-                    "description": "\"C81 \u2192 KMSN\"; \"\" for a route with no stops."
+                    "description": "The flight's idents as sent, \"C81 \u2192 KMSN\"; \"\" for a route with no stops. A pilot's own point shows here as its raw \"@lat,lon\": name the ends from `hop` instead."
                   },
                   "short_gal": {
                     "type": "number"
                   }
                 },
                 "required": [
+                  "hop",
                   "name",
                   "short_gal"
                 ]
@@ -29388,6 +29563,7 @@
     "ahead_frame",
     "airborne_now",
     "aircraft_problems",
+    "airplane_figure_ranges",
     "airplane_figures",
     "airplane_needs",
     "airport_data_words",
@@ -29493,6 +29669,7 @@
     "faa_ids",
     "faa_words",
     "field_hours",
+    "field_military",
     "field_relation",
     "field_status",
     "field_taf",

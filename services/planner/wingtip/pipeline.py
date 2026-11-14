@@ -34,7 +34,6 @@ from wingtip.config import (  # noqa: F401  (re-exported: callers import these f
     MIN_LABELED_ROWS,
     PROJECT_ROOT,
     corridor_paths,
-    get_settings,
 )
 
 RANDOM_STATE = 42
@@ -587,37 +586,6 @@ def retrain(
     return metrics
 
 
-def _find_one(directory: Path, pattern: str) -> Path:
-    matches = sorted(Path(directory).glob(pattern))
-    if not matches:
-        raise FileNotFoundError(f"No file matching {pattern!r} in {directory}")
-    return matches[0]
-
-
-def _retrain_defaults() -> dict:
-    """Local defaults, unless SageMaker script-mode env vars are present, in
-    which case those win -- SM_CHANNEL_FEATURES/SM_CHANNEL_LABELS are
-    directories SageMaker downloads one S3 "channel" into each (the actual
-    filename inside isn't guaranteed, hence the glob), SM_MODEL_DIR is where
-    a Training Job expects the model artifact written so it can tar and
-    upload it. Never set locally/in Docker Compose, so this is a no-op
-    there -- only takes effect when this script actually runs as a
-    SageMaker Training Job entry point.
-    """
-    settings = get_settings()
-    features_path = FEATURES_PATH
-    if channel := settings.sm_channel_features:
-        features_path = _find_one(channel, "*.parquet")
-
-    labels_path = LABELS_PATH
-    if channel := settings.sm_channel_labels:
-        labels_path = _find_one(channel, "*.csv")
-
-    out_dir = Path(settings.sm_model_dir) if settings.sm_model_dir is not None else CANDIDATE_MODEL_DIR
-
-    return {"features_path": features_path, "labels_path": labels_path, "out_dir": out_dir}
-
-
 # The exit code of a stage that has nothing to do -- too few ratings to
 # train on -- when one stage is run alone (`readiness`, `chart-retrain`):
 # skipped, not failed. run() treats the same news the same way, skipping
@@ -662,7 +630,7 @@ def _landmark_branch() -> list:
         ("landmarks_ready", landmarks_ready),
         ("collect", lambda: str(collect())),
         ("feature_engineer", lambda: str(engineer_features())),
-        ("retrain", lambda: f"cv_mae {retrain(**_retrain_defaults())['cv_mae']:.4f}"),
+        ("retrain", lambda: f"cv_mae {retrain()['cv_mae']:.4f}"),
         ("evaluate", evaluate),
         ("promote", lambda: str(model_registry.promote())),
     ]
@@ -781,17 +749,11 @@ def _cli() -> None:
     or one stage standalone, e.g. `docker compose run --rm retrain retrain`
     or `docker compose run --rm retrain collect`.
 
-    Kept deliberately close to a SageMaker script-mode entry point (one
-    stage per invocation, paths as arguments with sensible defaults, result
-    printed to stdout) -- this is the leanest, most reusable form of the
-    pipeline, independent of any orchestrator. `retrain`
-    specifically honors SM_CHANNEL_FEATURES/SM_CHANNEL_LABELS/SM_MODEL_DIR
-    when present (see _retrain_defaults) so this same entry point could
-    become an actual SageMaker Training Job's script without modification.
+    One stage per invocation, paths as arguments with the local defaults,
+    the result printed to stdout: the pipeline independent of any
+    orchestrator.
     """
     import argparse
-
-    retrain_defaults = _retrain_defaults()
 
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="stage", required=True)
@@ -810,9 +772,9 @@ def _cli() -> None:
     p.add_argument("--out-path", type=Path)
 
     p = sub.add_parser("retrain")
-    p.add_argument("--features-path", type=Path, default=retrain_defaults["features_path"])
-    p.add_argument("--labels-path", type=Path, default=retrain_defaults["labels_path"])
-    p.add_argument("--out-dir", type=Path, default=retrain_defaults["out_dir"])
+    p.add_argument("--features-path", type=Path, default=FEATURES_PATH)
+    p.add_argument("--labels-path", type=Path, default=LABELS_PATH)
+    p.add_argument("--out-dir", type=Path, default=CANDIDATE_MODEL_DIR)
     p.add_argument("--min-labeled-rows", type=int, default=MIN_LABELED_ROWS)
 
     # Whether retrain has enough ratings, before collect and the
