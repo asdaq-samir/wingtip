@@ -20,6 +20,7 @@ object AboutCredits {
         Credit("FAA NASR: airports, runways, navaids, fixes and airspace", PUBLIC_DOMAIN),
         Credit("FAA CIFP procedures, d-TPP plates and the Digital Obstacle File", PUBLIC_DOMAIN),
         Credit("FAA aircraft registry", PUBLIC_DOMAIN),
+        Credit("NTSB aviation accident database: accident and incident records", PUBLIC_DOMAIN),
         Credit("FAA SWIM: NOTAMs, flow programs, terminal data and airspace status", PUBLIC_DOMAIN),
         Credit("NOAA Aviation Weather Center: METARs, TAFs, PIREPs, SIGMETs and G-AIRMETs", PUBLIC_DOMAIN),
         Credit("NOAA models: GFS winds and temperatures aloft, GLMP, magnetic declination", PUBLIC_DOMAIN),
@@ -33,6 +34,7 @@ object AboutCredits {
         Credit("ADS-B Exchange traffic", "ADS-B Exchange's API terms"),
         Credit("adsb.fi ADS-B traffic", "Personal, non-commercial use, credited and linked"),
         Credit("Virtual Radar Server flight routes", "CC0"),
+        Credit("Planespotters.net aircraft photos, each credited to its photographer beside it", "Planespotters.net's photo API terms"),
     )
 
     val software: List<Credit> = listOf(
