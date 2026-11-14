@@ -87,4 +87,23 @@ class AirspaceVolumes3dTest {
         assertEquals(listOf("B"), AirspaceVolumes3d.classesAt(8.0))
         assertEquals(listOf("B", "C", "D", "E"), AirspaceVolumes3d.classesAt(10.0))
     }
+
+    @Test
+    fun aShelfIsShadedByItsFloorAndHeldOrFadedByThePlansAltitudes() {
+        val color = AirspaceVolumes3d.KINDS.getValue("B").color
+        val ink = MapStyle.hex(color)
+        // Half way to the top: the ink itself; the surface darker, the top lighter.
+        assertEquals(ink, AirspaceVolumes3d.shadeOf(color, 5000.0))
+        val surface = AirspaceVolumes3d.shadeOf(color, 0.0)
+        val top = AirspaceVolumes3d.shadeOf(color, 10_000.0)
+        fun sum(hex: String) = java.awt.Color.decode(hex).let { it.red + it.green + it.blue }
+        org.junit.Assert.assertTrue(sum(surface) < sum(ink) && sum(ink) < sum(top))
+        val features = Json.parseToJsonElement("[" + feature("""{"layer":"airspace","class":"B","floor_ft":3000,"floor_ref":"MSL","ceiling_ft":10000}""") + "]").jsonArray
+        fun strength(holds: Boolean?, altitudes: List<Double>?) = Json.parseToJsonElement(
+            AirspaceVolumes3d.geoJson(features, 10.0, altitudes) { Result.success(EngineContract.AirspaceVolumeSpanAnswer(3000.0, 10000.0, false, holds)) },
+        ).jsonObject["features"]!!.jsonArray[0].jsonObject["properties"]!!.jsonObject["strength"]!!.jsonPrimitive.content
+        assertEquals("NONE", strength(null, null))
+        assertEquals("HELD", strength(true, listOf(4500.0)))
+        assertEquals("FADED", strength(false, listOf(2500.0)))
+    }
 }

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.api.name
@@ -221,8 +222,8 @@ class Traffic(
             val nm = mark.nm ?: continue
             val bearing = mark.bearingDeg ?: continue
             val against = plane.altitudeFt?.let { ", ${against(it - ownFt)}" } ?: ""
-            val place = "${nm.roundToInt()} nm ${Geo.compassPoint(bearing)} of you"
-            Notifications.tell(context, Notifications.CHANNEL_TRAFFIC, "Traffic near you", "${plane.name}, $place$against", "traffic-${plane.hex}")
+            val place = context.getString(R.string.traffic_place, nm.roundToInt(), Geo.compassPoint(bearing))
+            Notifications.tell(context, Notifications.CHANNEL_TRAFFIC, context.getString(R.string.traffic_near_you), "${plane.name}, $place$against", "traffic-${plane.hex}")
         }
         nearHexes = near
     }

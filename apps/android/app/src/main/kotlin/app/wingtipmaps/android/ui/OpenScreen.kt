@@ -31,10 +31,8 @@ internal object OpenScreen {
         when (screen) {
             Screen.FPL -> Where.Plan
             Screen.NAVLOG -> Where.Page(SheetPage.NavLog)
-            // TODO(claude/carousel-web): Screen.SEARCH, the carousel's Search
-            // page (design/screens.json "search"), joins AIRPORT here once
-            // that branch's generated screens are merged.
-            Screen.AIRPORT -> Where.Search
+            // The carousel's Search page, by its own name or the old Airport tab's.
+            Screen.SEARCH, Screen.AIRPORT -> Where.Search
             Screen.BRIEF -> Where.Page(SheetPage.Brief)
             Screen.NEAREST -> Where.Page(SheetPage.Nearest)
             Screen.ASK -> Where.Page(SheetPage.Ask)
@@ -44,6 +42,7 @@ internal object OpenScreen {
             Screen.SETUP -> Where.Page(SheetPage.Settings)
             Screen.MINIMUMS -> Where.Page(SheetPage.Minimums)
             Screen.LOGBOOK, Screen.COACH -> Where.Page(SheetPage.Logbook)
+            Screen.FLIGHTS -> Where.Page(SheetPage.Flights)
             Screen.DOWNLOADS -> Where.Page(SheetPage.Downloads)
             Screen.PASSENGERS -> Where.Page(SheetPage.Passengers)
             Screen.ABOUT -> Where.Page(SheetPage.About)

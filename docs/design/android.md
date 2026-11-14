@@ -511,9 +511,8 @@ placement wins, and the difference is noted.
   `selectable` tab, 48 dp a side with an 8 dp dot (nothing grows), read
   as "Page 1 of 2, Search". The strip layout, whose field and timeline
   are its search and plan, has no carousel.
-- **Deep links**: `fpl` opens the FPL page; `search` is
-  `TODO(claude/carousel-web)` until that branch's screens.json entry is
-  generated.
+- **Deep links**: `fpl` opens the FPL page; `search` (and the old
+  `airport`) the Search page (`OpenScreen`).
 - **Test**: `androidTest/.../ui/SheetCarouselTest`, and `SheetNavTest`
   for the stack over the carousel.
 
@@ -548,9 +547,20 @@ placement wins, and the difference is noted.
        actions hurt.
      - Overflow goes into the group's own overflow menu, never a fifth
        button.
-  5. The detail tabs as `PrimaryTabRow` (Weather, Runways, Frequencies,
-     Procedures, Services, NOTAMs): Maps-like tabs under the buttons
-     (memory, A2 picks), with the airport diagram first in the body.
+     The row is in the card under its head and facts, not docked at the
+     sheet's foot, so it is in sight at half (audit AND-1, 2026-11-14).
+  5. The detail tabs directly under the buttons (the owner's T4,
+     2026-11-14; `ui/AirportTabs`' `AirportTabRow`): a
+     `SecondaryScrollableTabRow` (Overview, Weather, Frequencies,
+     Runways, Charts, NOTAMs) pinned as a `stickyHeader`, the picked tab
+     filled in the theme's `primary` with `onPrimary` words and no
+     underline; Weather with the dot of the field's own report's flight
+     category (none without one), Charts with its count (the d-TPP's
+     plates and the diagram); each tab's content description says the
+     hint, "Weather, MVFR", "Charts, 9". Under the tabs the field's report
+     in one line (`AirportWeatherLine`): its category chip, then "Ceiling
+     1,800 ft · 310°T 4 kt · 1255Z". Overview starts with the pictures;
+     Charts with the airport diagram.
   6. The body is `ListItem` rows inside `SegmentedListItem` groups:
      - runways with their winds, which the engine works out
      - frequencies, each with a trailing copy `IconButton`
@@ -567,6 +577,24 @@ placement wins, and the difference is noted.
   3. Actions as a `ButtonGroup`: Track first and filled, then the
      card's others from `CARD_ACTIONS`.
   4. Details in `ListItem`s.
+- **Structure, an N-number's card** (`airplane/AirplaneCard`, the owner's
+  P1 of 2026-11-14, as the web's): the N-number with "Piper PA-28-140,
+  1971" under it from the FAA's record, asked by itself
+  (`/api/traffic/registered`) and drawn at once; its Planespotters.net
+  photo with its photographer only where that call answers; Fly This,
+  Follow (its takeoff and landing watches), Favorite and Share as a
+  `ButtonGroup`; the tabs Flights, Info and Figures (its checklists under
+  its figures); and one status line under them, "Checking whether it's in
+  the air…" until the live find answers, then in the air, where it last
+  landed, or not heard in six weeks (`AirplaneLookup`'s `statusLine`).
+  Flights lists its past flights by its ICAO address, each with ▶, which
+  plays it on the map with its path behind it (`PastFlightReplay`, its bar
+  over the map). Info is its public record in groups: Registration (the
+  owner shown, the FAA registry being public), Airplane, Engine,
+  Airworthiness, Usually based at, Safety history (the NTSB's cases, each
+  its CAROL report), Ownership history and Documents filed
+  (`airplane/AirplaneInfo`). The search's registry row draws the record's
+  type at once with the same status after it.
 - **Primary action**: the first, filled button of the row.
   - **Fly Here** on an airport.
   - **Direct To** on a point.
@@ -880,10 +908,9 @@ a Material `Badge` at the top of the map, beside the receiver's, says
     2. The nearest suitable fields from the engine as `ListItem`s, each
        with distance, bearing and the runway, and the glide ring's
        answer (`GlideRingRow`). The first row is the engine's pick.
-       The reported visibility the web shows on each row ("10+ sm",
-       nothing where the report has none) is in the generated model
-       (`visibility_sm`, `visibility_plus`) and is drawn in the phone
-       phase.
+       Each row says the field's reported visibility as the web's does
+       ("Visibility 10+ sm", from `visibility_sm` and `visibility_plus`;
+       nothing where the report has none).
     3. The airplane's own emergency checklists
        (`EmergencyGuidance`).
     4. The frequencies (121.5, the nearest facility) with copy and
@@ -927,7 +954,14 @@ a Material `Badge` at the top of the map, beside the receiver's, says
   4. A new entry (`LogbookForm`) opens as a full-height sheet with its
      fields.
   5. Flights recorded automatically arrive as drafts (`DraftEntry`) at
-     the top, with Keep and Discard.
+     the top, with Keep and Discard. A logged flight is linked to the
+     saved flight whose ends are its route's, and its flown track is sent
+     to it (PUT /api/flights/{id}/track). Where that fails (no signal
+     after landing), the track is kept on the phone (`UnsentTracks`,
+     written before the recorder lets its copy go), Flight Logged says so
+     with Try Again, and it is sent again each time the app comes to the
+     front and as a network comes; signing out erases it with the
+     recording (`PhoneWipe`).
   6. A delete offers Undo in Material's `Snackbar`, in the screen's
      `Scaffold`; the delete is sent once it is let go.
 - **Primary action**: an `ExtendedFloatingActionButton` "Add Flight" at
@@ -1332,8 +1366,10 @@ Kept, each still a thin wrapper over stock parts:
 
 Left hand-built, with no stock equivalent:
 
-- The chart's own drawings: `map/OverlayPictures` (the sectional's
-  symbols for MapLibre), `ui/DiagramOwnShip`'s own-ship arrow on an
+- The chart's own drawings: `map/OverlayPictures` (the planner's airport
+  mark, its ring the field's surface airspace, and the sectional's other
+  symbols for MapLibre, each sized by the engine's `field_mark_rank` step
+  through the layer's `icon-size`), `ui/DiagramOwnShip`'s own-ship arrow on an
   airport diagram, and the course's magenta ribbon of the strip layout
   (`strip/StripRibbon`'s `RibbonLine`, `strip/StripList`'s timeline).
   These are chart graphics, not controls.

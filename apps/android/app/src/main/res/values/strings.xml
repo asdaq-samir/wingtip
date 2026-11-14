@@ -14,8 +14,8 @@
     <string name="settings">Settings</string>
     <!-- The bar's placeholder, one line at every font scale (Material's
          search bar is 56 dp); TalkBack reads the whole sentence. -->
-    <string name="search_hint">Search or ask</string>
-    <string name="search_hint_spoken">Search airports, airplanes, or ask</string>
+    <string name="search_hint">Search airports and airplanes</string>
+    <string name="search_hint_spoken">Search airports and airplanes</string>
     <string name="search_hint_flying">Tap the mic and say it</string>
     <string name="search_add_stop">Add a stop</string>
     <string name="say_it">Ask by voice</string>
@@ -56,7 +56,6 @@
     <string name="where_from">Where from?</string>
     <string name="where_to">Where to?</string>
     <!-- A field's card's chips and sections. -->
-    <string name="approaches">Approaches</string>
     <string name="notams">NOTAMs</string>
     <string name="diagram">Diagram</string>
     <string name="section_weather">Weather</string>
@@ -69,6 +68,9 @@
     <string name="picture_ground">Photo from the ground</string>
     <string name="picture_chart">The chart around the field</string>
     <string name="section_overview">Overview</string>
+    <string name="section_charts">Charts</string>
+    <string name="no_ceiling">No ceiling</string>
+    <string name="weather_line_ceiling">Ceiling %1$s</string>
     <string name="fact_weather">Weather</string>
     <string name="fact_wind">Wind</string>
     <string name="fact_longest_runway">Longest Runway</string>
@@ -142,6 +144,7 @@
     <string name="stops_help">Idents, separated by commas</string>
     <string name="plan">Plan</string>
     <string name="under_reserve">Under the reserve the planner holds the flight to. Fly it with a fuel stop.</string>
+    <string name="under_reserve_on">Under the reserve the planner holds the flight to on %1$s. Fly it with a fuel stop.</string>
 
     <!-- A leg (LegSheet). -->
     <string name="leg_altitude">Cruise Altitude</string>
@@ -525,4 +528,32 @@
     <string name="plate_no_page">The FAA\'s page for this plate could not be had.</string>
     <string name="plate_show_on_map">Show on Map</string>
     <string name="plate_not_placed">This plate can\'t be placed on the map.</string>
+    <string name="climb_fuel_unknown">Climb fuel not counted: the airplane has no climb fuel flow</string>
+    <string name="emergency_visibility">Visibility %1$s</string>
+    <string name="flights">Flights</string>
+    <string name="saved_flights">Saved Flights</string>
+    <string name="saved_flights_none">No saved flights yet. Save a plan from its share menu to see it here.</string>
+    <string name="replay_play">Play</string>
+    <string name="replay_pause">Pause</string>
+    <string name="airplane_tab_flights">Flights</string>
+    <string name="airplane_tab_info">Info</string>
+    <string name="airplane_follow">Follow</string>
+    <string name="airplane_unfollow">Following</string>
+    <string name="airplane_photo_by">Photo: %1$s, Planespotters.net</string>
+    <string name="said_replay_flight">Replay %1$s</string>
+    <string name="share_airplane">Share the airplane</string>
+    <string name="coming_up_none">Nothing dated yet: your flight review, medical and airplanes\' inspections show here once given.</string>
+    <!-- Words once typed in Kotlin (the Android audit's AND-14). -->
+    <string name="checklist_write_it">Write It</string>
+    <string name="checklist_start_over">Start Over</string>
+    <string name="checklist_edit">Edit</string>
+    <string name="checklist_start_from_phases">Start from the Phases</string>
+    <string name="nearest_finding_position">Finding your position…</string>
+    <string name="nearest_fetching">Fetching the nearest fields…</string>
+    <string name="passenger_plan_first">Plan a route first, and the flight is written here to send.</string>
+    <string name="notify_own_ship_text">Your position is being read for the alerts ahead and the path flown.</string>
+    <string name="notify_atc_text">The ATC copilot is listening for calls to your airplane.</string>
+    <string name="notify_receiver_text">Traffic and FIS-B weather from the receiver on your Wi-Fi.</string>
+    <string name="traffic_near_you">Traffic near you</string>
+    <string name="traffic_place">%1$d nm %2$s of you</string>
 </resources>

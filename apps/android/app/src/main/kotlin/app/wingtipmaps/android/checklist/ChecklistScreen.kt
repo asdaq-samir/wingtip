@@ -85,7 +85,7 @@ private fun RunView(state: ChecklistModel.State, model: ChecklistModel, modifier
                 },
                 style = MaterialTheme.typography.bodyLarge,
             )
-            Button(onClick = model::edit) { Text("Write It") }
+            Button(onClick = model::edit) { Text(stringResource(R.string.checklist_write_it)) }
         }
         return
     }
@@ -119,8 +119,8 @@ private fun RunView(state: ChecklistModel.State, model: ChecklistModel, modifier
             }
         }
         Row(Modifier.fillMaxWidth().padding(vertical = WingtipSpace.Sm), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-            OutlinedButton(onClick = model::startOver, enabled = state.ticked.isNotEmpty()) { Text("Start Over") }
-            TextButton(onClick = model::edit) { Text("Edit") }
+            OutlinedButton(onClick = model::startOver, enabled = state.ticked.isNotEmpty()) { Text(stringResource(R.string.checklist_start_over)) }
+            TextButton(onClick = model::edit) { Text(stringResource(R.string.checklist_edit)) }
         }
     }
 }
@@ -142,10 +142,10 @@ private fun EditView(state: ChecklistModel.State, model: ChecklistModel, modifie
             // The phases' headings only offered over an empty editor, so
             // nothing the pilot wrote is written over.
             if (state.draft.isBlank()) {
-                OutlinedButton(onClick = model::startFromPhases) { Text("Start from the Phases") }
+                OutlinedButton(onClick = model::startFromPhases) { Text(stringResource(R.string.checklist_start_from_phases)) }
             }
-            TextButton(onClick = model::cancelEdit) { Text("Cancel") }
-            Button(onClick = model::save) { Text("Save") }
+            TextButton(onClick = model::cancelEdit) { Text(stringResource(R.string.cancel)) }
+            Button(onClick = model::save) { Text(stringResource(R.string.save)) }
         }
     }
 }

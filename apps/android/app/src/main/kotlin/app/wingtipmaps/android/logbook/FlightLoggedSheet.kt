@@ -18,12 +18,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.LogbookDraft
 import app.wingtipmaps.android.design.Loading
@@ -53,6 +55,10 @@ fun FlightLoggedSheet(state: LogbookDraftModel.State, model: LogbookDraftModel) 
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 logged.currency.forEach { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                // The track not yet with its saved flight: kept here and said
+                // so, with Try Again (the track send, IOS-1's Android half).
+                val trackProblem by model.trackProblem.collectAsStateWithLifecycle()
+                ProblemLine(trackProblem, onRetry = model::sendUnsent)
                 return@Column
             }
             Text(stringResource(R.string.flight_logged_line), style = MaterialTheme.typography.bodyMedium)

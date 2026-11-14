@@ -57,7 +57,9 @@ fun FiguresStrip(state: Plan.State, model: FlightModel = hiltViewModel()) {
     val warn = model.stripFuel(state.totals).getOrNull()?.short?.isNotEmpty() == true
     // A failed rule reads "Failed" in the error colour, never as no fuel
     // required (Engine.rule logs the engine's words).
-    val fuel = model.stripFuel(state.totals, burntGal = progress?.burntGal)
+    // The hop being flown and what has burnt since it began, the engine's
+    // (in_flight's hop and hop_burnt_gal, the tanks filled at each stop).
+    val fuel = model.stripFuel(state.totals, hop = progress?.hop ?: 0, burntGal = progress?.hopBurntGal)
     val to = stringResource(R.string.figure_to)
     val dist = stringResource(R.string.figure_dist)
     val ete = stringResource(R.string.figure_ete)

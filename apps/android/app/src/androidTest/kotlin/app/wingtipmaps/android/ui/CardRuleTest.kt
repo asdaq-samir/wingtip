@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -212,6 +213,34 @@ class CardRuleTest {
         compose.waitUntil(TIMEOUT_MS) { !shown(airport) }
         // The FPL turned to: the toggle now offers the search back.
         compose.onNode(hasTestTag(PAGE_TOGGLE_TAG)).assertContentDescriptionEquals(text(R.string.show_search))
+    }
+
+    @Test
+    fun anAirportCardsActionsAndTabsAreInSightAtHalf() {
+        // The audit's AND-1 and the owner's T4 (2026-11-14): Fly Here and
+        // the section tabs under the head, on screen with the sheet at half.
+        val airport = CARDS.first()
+        open(airport, airport.ways.first())
+        compose.waitUntil(TIMEOUT_MS) { detent() == "PartiallyExpanded" }
+        val flyHere = text(R.string.action_fly_here)
+        compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(hasText(flyHere, substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onAllNodes(hasText(flyHere, substring = true))[0].assertIsDisplayed()
+        compose.onAllNodes(hasText(text(R.string.section_charts), substring = true))[0].assertIsDisplayed()
+    }
+
+    @Test
+    fun aSwipeDownClosesYouButAContentCardStaysAtItsPeek() {
+        // The owner, 2026-11-14: "Apple Maps closes all setting drawers on
+        // swipe down"; the content cards still rest at their peek.
+        val you = CARDS.first { it.page == SheetPage.You }
+        open(you, you.ways.first())
+        compose.onNode(hasTestTag(MAP_SHEET_TAG)).performTouchInput { swipeDown(startY = top + 10f, endY = bottom, durationMillis = 300) }
+        compose.waitUntil(TIMEOUT_MS) { !shown(you) && searchShown() }
+        val airport = CARDS.first()
+        open(airport, airport.ways.first())
+        compose.onNode(hasTestTag(MAP_SHEET_TAG)).performTouchInput { swipeDown(startY = top + 10f, endY = bottom, durationMillis = 300) }
+        compose.waitForIdle()
+        assertEquals(true, shown(airport))
     }
 
     @Test

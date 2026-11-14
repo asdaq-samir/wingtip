@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +26,7 @@ import app.wingtipmaps.android.ai.AiTask
 import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.engine.MapRules
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.live.LiveAirportRows
 import app.wingtipmaps.android.offline.KeptAgeLine
@@ -42,7 +42,7 @@ enum class AirportSection(@StringRes val title: Int) {
     WEATHER(R.string.section_weather),
     RADIO(R.string.frequencies),
     RUNWAYS(R.string.section_runways),
-    APPROACHES(R.string.approaches),
+    APPROACHES(R.string.section_charts),
     NOTAMS(R.string.notams),
 }
 
@@ -59,6 +59,9 @@ class AirportCardView(
     val onNotam: (NotamMark) -> Unit,
     val onDiagram: (() -> Unit)?,
     val words: AirportReads.PlaceWords = AirportReads.PlaceWords(),
+    /** The frequencies' indices in the order a pilot dials them, the
+     *  engine's frequencies_in_order (ATIS, AWOS and ASOS first). */
+    val frequencyOrder: List<Int>? = null,
 )
 
 /**
@@ -118,8 +121,10 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
             }
         }
         AirportSection.RADIO -> {
-            itemsIndexed(place.frequencies) { i, f ->
-                val mhz = f.frequencyMhz ?: return@itemsIndexed
+            val order = view.frequencyOrder ?: place.frequencies.indices.toList()
+            items(order, key = { "frequency-$it" }) { i ->
+                val f = place.frequencies[i]
+                val mhz = f.frequencyMhz ?: return@items
                 val mark = view.marks.frequency[i]
                 Column(pad) {
                     FrequencyRow(f.description ?: f.type.orEmpty(), Format.frequency(mhz), badge = mark?.let { { NotamBadgeButton(it, view.onNotam) } })
@@ -142,7 +147,8 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
                 val show: (@Composable () -> Unit)? = if (p.kind == APPROACH_CHART) ({ ShowPlateButton(place.ident, p.name) { placed = it } }) else null
                 val mark = view.marks.approach[p.url]
                 PlaceRow(
-                    headline = { Titled(p.name) { mark?.let { NotamBadgeButton(it, view.onNotam) } } },
+                    // The d-TPP's capitals in sentence case, its codes kept (faa_words).
+                    headline = { Titled(MapRules.faaWords(p.name)) { mark?.let { NotamBadgeButton(it, view.onNotam) } } },
                     supporting = if (placed) p.kind else stringResource(R.string.plate_not_placed),
                     modifier = pad,
                     trailing = show,

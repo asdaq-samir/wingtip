@@ -25,12 +25,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
@@ -116,7 +118,7 @@ private fun FieldCardRow(
                         if (onClearance != null) {
                             AssistChip(
                                 onClick = onClearance,
-                                label = { Text("Clearance", style = MaterialTheme.typography.labelMedium) },
+                                label = { Text(stringResource(R.string.clearance), style = MaterialTheme.typography.labelMedium) },
                                 modifier = Modifier.semantics { contentDescription = "The clearance card" },
                             )
                         }
@@ -234,7 +236,7 @@ fun StripWelcome(modifier: Modifier = Modifier) {
                     Icons.Filled.Flight, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp),
                 )
-                Text("Where to?", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.where_to), style = MaterialTheme.typography.titleLarge)
             }
             Text(
                 "Type or say a field, a town or a route below. Wingtip plans from where you are: the route, the checkpoints you'll see from the air, the nav log and a weather brief, all on one strip.",

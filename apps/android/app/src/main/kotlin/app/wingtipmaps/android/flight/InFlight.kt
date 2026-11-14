@@ -148,13 +148,30 @@ class InFlight {
     }
 
     companion object {
+        /** The points (indices into the fields in order) each of the
+         *  planner's hops after the first begins at: its fuel stops, in
+         *  order, each found after the one before. */
+        fun refuelAt(fields: List<String>, hopStarts: List<String>): List<Int> {
+            var from = 1
+            return hopStarts.drop(1).mapNotNull { ident ->
+                val i = (from until fields.size).firstOrNull { fields[it].equals(ident, ignoreCase = true) } ?: return@mapNotNull null
+                from = i + 1
+                i
+            }
+        }
+
         /** How often the nearest field is asked for the ring's ground: a
          *  field's elevation changes slowly as an airplane flies. */
         const val FIELD_EVERY_MS = 60_000L
 
         /** The engine's `in_flight` for a fix on the plan's route: the
          *  fields in order (the departure, the stops, the destination) are
-         *  its waypoints. Null with no route. */
+         *  its waypoints. The fuel is the engine's from the last fuel stop
+         *  passed (the aviation audit's AV-4): the tanks filled to the
+         *  plan's usable fuel at each stop a hop of the planner's totals
+         *  begins at (`refuel_at`), less the airplane's start and taxi
+         *  allowance (the totals' taxi_gal; none where its profile gives
+         *  none). Null with no route. */
         fun progress(fix: OwnShip.Fix, plan: Plan.State, nowMs: Long = AppClock.nowMs()): Result<EngineContract.InFlightAnswer?> {
             val course = plan.course ?: return Result.success(null)
             val line = course.courseLine.filter { it.size == 2 }
@@ -166,6 +183,9 @@ class InFlight {
                 points = ends.map { EngineContract.InFlightInputPointsItem(it.ident, it.lat, it.lon) },
                 legs = plan.legs.map { EngineContract.InFlightInputLegsItem(it.distanceNm, it.fuelGal) },
                 fuelStartGal = plan.totals?.usableFuelGal,
+                fuelFullGal = plan.totals?.usableFuelGal,
+                taxiFuelGal = plan.totals?.taxiGal,
+                refuelAt = refuelAt(ends.map { it.ident }, plan.totals?.hops.orEmpty().map { it.departure }),
                 nowS = nowMs / 1000.0,
             )
         }

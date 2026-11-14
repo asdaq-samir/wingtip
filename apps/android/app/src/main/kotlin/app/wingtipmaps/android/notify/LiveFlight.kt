@@ -56,7 +56,7 @@ object LiveFlight {
     fun took(context: Context, state: InFlight.State, plan: Plan.State, nowMs: Long = AppClock.nowMs()) {
         val update = FlightUpdate.of(
             progress = state.progress, underway = state.underway, dep = plan.dep, dest = plan.dest,
-            airplaneChosen = plan.airplane, usableFuelGal = plan.totals?.usableFuelGal, nowMs = nowMs,
+            airplaneChosen = plan.airplane, nowMs = nowMs,
             legsNm = plan.legs.map { it.distanceNm },
         )
         if (update == null) {

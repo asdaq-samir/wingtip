@@ -16,6 +16,7 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Emergency
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Icon
@@ -88,19 +89,22 @@ fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Lg),
         ) {
             YouHead(pilot, loaded, onDetails = { open(SheetPage.PilotDetails) })
-            val rows = 6
+            // rules.md's You (section 8.1): Airplanes, Flights, Logbook, Minimums,
+            // Training and Emergency, under the pilot's own details.
+            val rows = 7
             SettingsGroup {
                 YouRow(Icons.Filled.Person, stringResource(R.string.pilot_details), pilot?.homeBase, 0, rows) { open(SheetPage.PilotDetails) }
                 YouRow(Icons.Filled.Flight, stringResource(R.string.airplanes), tail, 1, rows) { open(SheetPage.YourAirplanes) }
-                YouRow(Icons.AutoMirrored.Filled.MenuBook, stringResource(R.string.logbook), null, 2, rows, enabled = signedIn) {
+                YouRow(Icons.Filled.Route, stringResource(R.string.flights), null, 2, rows, enabled = signedIn) { open(SheetPage.Flights) }
+                YouRow(Icons.AutoMirrored.Filled.MenuBook, stringResource(R.string.logbook), null, 3, rows, enabled = signedIn) {
                     open(SheetPage.Logbook)
                 }
                 val kept = if (minimums.ceilingFt != null || minimums.visibilitySm != null) Format.ceilingAndVisibility(minimums.ceilingFt, minimums.visibilitySm) else null
-                YouRow(Icons.Filled.VerifiedUser, stringResource(R.string.minimums), kept, 3, rows) { open(SheetPage.Minimums) }
-                YouRow(Icons.Filled.School, stringResource(R.string.training), null, 4, rows, enabled = signedIn) {
+                YouRow(Icons.Filled.VerifiedUser, stringResource(R.string.minimums), kept, 4, rows) { open(SheetPage.Minimums) }
+                YouRow(Icons.Filled.School, stringResource(R.string.training), null, 5, rows, enabled = signedIn) {
                     open(SheetPage.Coach)
                 }
-                YouRow(Icons.Filled.Emergency, stringResource(R.string.emergency), null, 5, rows) { EmergencyOpen.open(EmergencyOpen.From.LINK) }
+                YouRow(Icons.Filled.Emergency, stringResource(R.string.emergency), null, 6, rows) { EmergencyOpen.open(EmergencyOpen.From.LINK) }
             }
         }
     }

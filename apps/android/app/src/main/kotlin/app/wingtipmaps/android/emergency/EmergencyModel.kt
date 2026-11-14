@@ -8,6 +8,7 @@ import app.wingtipmaps.android.checklist.ChecklistSection
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.format.Format
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -52,6 +53,9 @@ class EmergencyModel(
         /** The field picked's phone and METAR, as the FAA lists them. */
         val phone: String? = null,
         val metar: String? = null,
+        /** Each field's reported visibility by ident, "10+ sm"; none where
+         *  the report has none. */
+        val visibility: Map<String, String> = emptyMap(),
         val loading: Boolean = false,
         val problem: String? = null,
         /** The fields are the packs' on this phone, the planner out of
@@ -62,6 +66,8 @@ class EmergencyModel(
          *  (`emergency_guidance`), and no glide or figure of any airplane's. */
         val guidance: List<EngineContract.EmergencyGuidanceAnswerItemsItem> = emptyList(),
         val sections: List<ChecklistSection> = emptyList(),
+        /** The pilot's own checklist could not be read: said on the card. */
+        val checklistProblem: String? = null,
         val section: Int? = null,
         val ticked: Set<String> = emptySet(),
         val mayday: EngineContract.MaydayCallAnswer? = null,
@@ -90,10 +96,15 @@ class EmergencyModel(
         this.aircraft = aircraft?.ifEmpty { null }
         this.glideRatio = glideRatio
         this.callsign = callsign
-        val sections = rules.sections(checklist)
+        val read = rules.sections(checklist)
+        val sections = read.getOrDefault(emptyList())
         val section = rules.checklistSection(sections.map { it.title }) ?: if (sections.isNotEmpty()) 0 else null
-        val guidance = if (this.aircraft == null) rules.guidance() else emptyList()
-        _state.update { it.copy(airplaneName = airplaneName, guidance = guidance, sections = sections, section = section, ticked = emptySet()) }
+        // The general guidance with no airplane, and also where the pilot's
+        // own checklist could not be read, which is said (the audit's
+        // AND-4): the one screen used in an emergency never goes blank.
+        val guidance = if (this.aircraft == null || read.isFailure) rules.guidance() else emptyList()
+        val problem = if (read.isFailure) "Your checklist could not be read" else null
+        _state.update { it.copy(airplaneName = airplaneName, guidance = guidance, sections = sections, section = section, ticked = emptySet(), checklistProblem = problem) }
         refill()
     }
 
@@ -164,7 +175,11 @@ class EmergencyModel(
         val ranked = if (fix != null && got != null) rules.bestFields(got, fix).getOrNull() else null
         val picked = ranked?.fields?.firstOrNull { it.ident == pickedIdent } ?: ranked?.fields?.firstOrNull()
         val field = got?.fields?.firstOrNull { it.ident == picked?.ident }
-        _state.update { it.copy(ranked = ranked ?: it.ranked, picked = picked ?: it.picked, phone = field?.phone, metar = field?.metar?.raw) }
+        // Each field's reported visibility beside the engine's weather line
+        // (EmergencyMetar's visibility_sm and visibility_plus, as the web's
+        // Emergency rows say it); none where the report has no visibility.
+        val visibility = got?.fields.orEmpty().mapNotNull { f -> f.metar?.visibilitySm?.let { f.ident to Format.visibility(it, f.metar.visibilityPlus == true) } }.toMap()
+        _state.update { it.copy(ranked = ranked ?: it.ranked, picked = picked ?: it.picked, phone = field?.phone, metar = field?.metar?.raw, visibility = visibility) }
         refill()
     }
 

@@ -29,8 +29,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -65,6 +67,10 @@ class MapSheetState internal constructor(internal val sheet: SheetState) {
     suspend fun expand() = sheet.expand()
 
     internal suspend fun lower() = sheet.partialExpand()
+
+    /** Whether the sheet was swiped away (only a card that closes on a
+     *  swipe lets it, rememberMapSheetState's canHide). */
+    val hidden: Boolean get() = sheet.currentValue == SheetValue.Hidden
 }
 
 /** Whether the sheet a card is drawn in is at its full height, where its
@@ -95,8 +101,18 @@ fun halfWindow(): Dp {
 // in material3 1.5.0-rc01; MapSheetState keeps the opt-in to this file.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun rememberMapSheetState(): MapSheetState {
-    val sheet = rememberBottomSheetState(initialValue = SheetValue.PartiallyExpanded, enabledValues = setOf(SheetValue.PartiallyExpanded, SheetValue.Expanded))
+fun rememberMapSheetState(canHide: () -> Boolean = { false }): MapSheetState {
+    // Hidden only where `canHide` says so, a swipe down from the peek then
+    // putting the sheet away (the cards a swipe closes, SheetPage.swipeCloses,
+    // which the screen closes as the sheet settles there); otherwise the
+    // sheet springs back to its peek, as the stock sheet does with a value
+    // it may not take.
+    val hide by rememberUpdatedState(canHide)
+    val sheet = rememberBottomSheetState(
+        initialValue = SheetValue.PartiallyExpanded,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.PartiallyExpanded, SheetValue.Expanded),
+        confirmValueChange = { it != SheetValue.Hidden || hide() },
+    )
     return remember(sheet) { MapSheetState(sheet) }
 }
 

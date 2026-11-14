@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.offline
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDone
@@ -21,6 +22,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ready.ReadyFacts
+import app.wingtipmaps.android.ui.ProblemLine
 import java.util.Locale
 
 /**
@@ -52,4 +54,5 @@ fun KeepForAirRow(plan: Plan, keeper: KeepForAirModel = hiltViewModel(), downloa
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         content = { Text(words, color = MaterialTheme.colorScheme.primary) },
     )
+    ProblemLine(state.problem.takeIf { mine }, Modifier.padding(horizontal = WingtipSpace.Lg))
 }

@@ -70,7 +70,7 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
   - `ui/`: Material 3 screens, one composable and one ViewModel per
     screen. `RootScreen` (the map, `MapPane`, under the docked sheet, whose
     first row is the one search, Material's `SearchBar`, with its mic and
-    the account button that opens Settings, and the figures' strip at the
+    the account button that opens You (Settings its gear), and the figures' strip at the
     sheet's foot; the four tabs went on 2026-11-09), every thing and page
     a card on the sheet's own stack (`ui/SheetNav`, `ui/sheet/CardPage`:
     ← and its name, ✕ at the end, the owner's card and scrolling rules of
@@ -225,7 +225,7 @@ and `glOverlays.ts`):
   (`weather_worse` over `/api/briefing`'s forecast stations,
   `RouteWorse`). Settings' Map section sets it (`AirportWeatherStore`):
   Off, Halo, Dot or Station, and three switches.
-- **Setup's Map switches** (`MapLayersStore`, in the DataStore settings
+- **The Map card's layer tiles** (`MapLayersStore`, in the DataStore settings
   file): Airspace, VORs and Fixes, Terminal Area Charts, Private Fields,
   Military Fields and Traffic, the web's "On the Map" rows with the
   web's defaults, applied as the overlay layers' visibility and the
@@ -270,8 +270,9 @@ and `glOverlays.ts`):
   (the engine's `own_ship_hex`). A tap opens its card, with Track, which
   rings it on the map.
 - **Terrain and 3D** (`Map3dLayer`, `MapTerrain`, the web's
-  `features/plan/map/terrain`): Map Settings' Terrain is a segmented
-  choice, Off, Relief or 3D. Relief shades the planner's terrain tiles
+  `features/plan/map/terrain`): the 2D chart is shaded (Relief) and 3D
+  is the map's own round button (`MapCard`; Terrain was taken out of the
+  settings on 2026-11-13). Relief shades the planner's terrain tiles
   (`/api/terrain-tile`, terrarium, to {z} 13, a `RasterDemSource`) over
   the chart with a `HillshadeLayer`, lit from the north-west as the
   web's. 3D adds the relief, lets the map tilt (to 60 degrees, opening at
@@ -282,6 +283,15 @@ and `glOverlays.ts`):
   the route's destination (the engine's `approach_scene`,
   `ApproachScene3d`: the centrelines dashed, the glidepaths, the
   approach's line and the pattern's ring). Flat and north up again after.
+  As the web's since claude/3d-altitudes (the owner, 2026-11-14: "the
+  class B airspace shelves are not differentiating altitudes"): each
+  volume is shaded by its floor within its class's ink (the tokens'
+  `airspace-floor-low` and `-high`, `airspace-shade-*`); with a plan, its
+  legs' altitudes go to `airspace_volume_span` and a volume at them is
+  drawn stronger, the rest fainter (`airspace-held`, `-faded`; one layer a
+  kind and strength); and each Class B, C or D shelf carries its
+  altitudes in the chart's tab (`airspace_shelf_label`, "100" over "30"),
+  standing at its foot on the camera's side, as Native lifts no symbol.
 - **What MapLibre Native can't do yet** (13.7.1, the newest stable on
   2026-11-12; the `-globe` pre-releases add only the globe): no 3D
   terrain (no `terrain` in the style or `setTerrain`; MapLibre's
@@ -302,8 +312,8 @@ and `glOverlays.ts`):
   rewritten against the plan (the web's `addProtocol`), which MapLibre
   Native has no hook for; it is not drawn. The volumes' taps open nothing
   of their own: their lines on the chart open the card as before.
-- **Model Weather** (`map/flow`, the web's `features/weather-flow`): Map
-  Settings' Weather has Model Weather, a menu of the web's twelve fields.
+- **Model Weather** (`map/flow`, the web's `features/weather-flow`): the
+  Map card has Model Weather, a menu of the web's twelve fields.
   `ModelWeather` holds the planner's timeline (`/api/weather/flow`, every
   ten minutes), the hour shown, play (once through, stopping on the last,
   never with animations off, paused in the background), the wind level
@@ -330,7 +340,7 @@ and `glOverlays.ts`):
 
 ## Downloads: the chart with no signal
 
-Setup → Downloads (`offline/`) keeps a region's chart on the phone, as
+Settings › Data › Downloads (`offline/`) keeps a region's chart on the phone, as
 the iPhone's does (docs/NATIVE.md): a sectional sheet's coverage, a
 state, or the map's view, picked on a list or a map of the sheets, the
 chart kinds and Sharp (@2x) or Smaller, each sized before it is fetched
@@ -539,7 +549,7 @@ the location button over the map (`ui/MapButtons`) as Apple Maps has
 it: a tap turns the reading on and follows, a drag lets go, a tap again
 turns it off. The system's permission dialogs for location and for
 notifications are asked from `RootScreen`, the one screen, since a
-request needs an Activity. Setup's Map section has the Traffic switch
+request needs an Activity. The Map card has the Traffic tile
 (`TrafficSwitch`, kept in the DataStore settings file under "traffic",
 on until turned off), where the iOS app's Setup has it.
 
@@ -553,10 +563,11 @@ headings alone, in the order of GAMA Specification No. 1's Sections 4
 and 3 (`ChecklistPhases`); the app ships no handbook's items. The run
 view ticks rows, counts each section's "n of m" and starts over; the
 ticks last while the app runs, and signing out forgets the lists
-(`ChecklistStore.forgetAll`). The Aircraft screen has Checklist and
-Emergency rows; the map has no emergency button (the owner, 2026-11-08).
+(`ChecklistStore.forgetAll`). The airplane card has the
+checklists and You has the Emergency row; the map has no emergency button
+(the owner, 2026-11-08).
 
-Passenger briefing (#223, `briefing/`): Setup's Flight section opens
+Passenger briefing (#223, `briefing/`): Settings › In Flight opens
 the SAFETY briefing's seven items for the planned flight, each with its
 source under it (14 CFR 91.107(a) for the belts, the FAASTeam's
 "Passenger SAFETY briefing" and the Private Pilot ACS PA.II.B.S2 for the
@@ -580,7 +591,7 @@ are within a still-air glide by `glide_reaches`); and "Planning aid ·
 not for navigation". The glide ring is a dashed line under the route
 (`ChartMap`'s `glide`), over the higher of the packs' ground (ahead's
 `ground_ft`) and the nearest field. FiguresStrip counts down from the
-airplane on the route. Setup's Map section has Speak Alerts Ahead
+airplane on the route. Settings › In Flight has Speak Alerts Ahead
 (`flight/SpokenAlerts.kt`, Android's TextToSpeech, the iPhone's words).
 A field's card has Diagram with Your Position (`ui/DiagramOwnShip.kt`):
 the FAA's PDF drawn by PdfRenderer, own ship placed by the diagram's own
@@ -597,12 +608,13 @@ screen off while a receiver is heard. Its traffic is drawn ahead of the
 internet's (`receiver_traffic`, through `Traffic`), a chip on the map
 names it, a field's FIS-B METAR and TAF show on its card with no report
 from the weather service (`receiver_reports`), and FIS-B NEXRAD is drawn
-over the chart (`receiver_nexrad`, `map/NexradLayer.kt`). Setup's Map
-section has ADS-B Receiver: Auto or Off.
+over the chart (`receiver_nexrad`, `map/NexradLayer.kt`). Settings › In
+Flight has ADS-B Receiver (`ReceiverSettingRows`): Auto or Off.
 
-Still to come: the tile store and the route's tiles for the air, the
-briefing, the checkpoints and the side view, the altitude wheel, the
-airplane by N-number and widgets. The launcher icon is the brand's own
+Still to come: Sunlight in Settings › Look (the owner's choice (b) of
+AND-6, 2026-11-14), the saved flights' Edit, Debrief and Delete, the
+approach list, and the route options' cards; the Brief, the Profile with
+its altitude slider, the airplane by N-number and the widgets are in. The launcher icon is the brand's own
 adaptive icon (`docs/brand/android-*.svg`, drawn to PNG per density by
 `scripts/build/app-icons.sh`, with the themed monochrome layer), and
 the splash screen is the mark on the launch ground on every Android from

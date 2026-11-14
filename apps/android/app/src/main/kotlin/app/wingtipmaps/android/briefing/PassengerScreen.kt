@@ -75,7 +75,7 @@ fun PassengerScreen(plan: Plan, modifier: Modifier = Modifier) {
         SectionTitle(stringResource(R.string.the_flight))
         val message = model.message(planState, state)
         if (message == null) {
-            Text("Plan a route first, and the flight is written here to send.", style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.passenger_plan_first), style = MaterialTheme.typography.bodyLarge)
         } else {
             Text(message, style = MaterialTheme.typography.bodyLarge)
             Button(

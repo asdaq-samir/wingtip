@@ -25,6 +25,7 @@ import app.wingtipmaps.android.checklist.ChecklistScreen
 import app.wingtipmaps.android.clearance.ClearancePage
 import app.wingtipmaps.android.coach.CoachScreen
 import app.wingtipmaps.android.emergency.EmergencyCard
+import app.wingtipmaps.android.flights.FlightsCard
 import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.offline.DownloadsScreen
 import app.wingtipmaps.android.plates.PlateCard
@@ -99,6 +100,7 @@ private fun Card(
         SheetPage.Atc -> Page(stringResource(R.string.atc), exit) { AtcPage() }
         SheetPage.Help -> Page(stringResource(R.string.help_and_about), exit) { HelpPage(open = sheet::push) }
         SheetPage.Logbook -> LogbookScreen(exit, onCoach = { sheet.push(SheetPage.Coach) })
+        SheetPage.Flights -> FlightsCard(plan, exit, onUsed = showPlan)
         SheetPage.Coach -> CoachScreen(exit)
         SheetPage.Downloads -> Page(stringResource(R.string.offline_downloads), exit) { DownloadsScreen() }
         SheetPage.Passengers -> Page(stringResource(R.string.passenger_briefing), exit) { PassengerScreen(plan) }
