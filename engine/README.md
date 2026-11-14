@@ -389,7 +389,10 @@ Then the callers switch to the name and the old copy is deleted.
   module. The 143 rules left out were 194 KB (2026-11-10); the module's
   size is held to a budget (`scripts/ci/wasm_size.py`).
 - The planner's own copies are going (#482 phase 0): the airspace column
-  and the Mode C veil (`airspace_column`, `mode_c_veil`), an FNS message's
+  (its bands split at 1,500 ft above the surface, where 71.71(a)(2)'s
+  14,500 ft Class E stops, and 91.215(b)'s general arms asked before a
+  Class D's own radio) and the Mode C veil (`airspace_column`,
+  `mode_c_veil`), an FNS message's
   NOTAMs (`notams_fns`), a report's ceiling and category (`ceiling_ft`,
   `flight_category`, `vfr_basic_minimums`), a hazard's window
   (`gonogo_hazard_window`), the reserve, the atmosphere and the descent
