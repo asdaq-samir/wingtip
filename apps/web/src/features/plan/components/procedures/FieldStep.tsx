@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ChevronRight, Fuel, PlaneLanding, PlaneTakeoff, Wind } from "lucide-react";
+import { Button } from "../../../../components/ui/button";
 import { cn } from "cn";
 import CardIdent from "../CardIdent";
 import { CardMark, CardThread } from "../routeCard";
@@ -213,12 +214,14 @@ export function FieldStep({
             {foldable ? (
               <CollapsibleTrigger
                 render={
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="inline"
                     type="button"
                     data-testid="runway-line-toggle"
                     data-disclosure=""
                     aria-label={lineOpen ? `${a.ident}: fold the runways` : `${a.ident}: all the runways`}
-                    className={cn(TRAY_HEAD, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
+                    className={cn("justify-start text-inherit", TRAY_HEAD, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
                   />
                 }
               >
@@ -318,32 +321,26 @@ export function FieldStep({
               )}
             >
               <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5">
-                {/* The disclosure, iOS's small chevron by the symbol, not
-                              an icon button (data-disclosure): the Collapsible's
-                              trigger, the arrow turned by its open state. */}
-                {/* A card's without its arrow, at the owner's ask (2026-11-05:
-                              "Now that it's a card, we don't need the expanding
-                              arrow next to airport", then "It should still become
-                              a smaller card with a tap"): its tap over the lines
-                              alone. */}
+                {/* The disclosure, iOS's small chevron by the symbol, the stock Button inline, not an icon button
+                    (data-disclosure): the Collapsible's trigger, the arrow turned by its open state. A card's without its
+                    arrow, at the owner's ask (2026-11-05: "Now that it's a card, we don't need the expanding arrow next to
+                    airport", then "It should still become a smaller card with a tap"): its tap over the lines alone. */}
                 <CollapsibleTrigger
                   render={
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="inline"
                       type="button"
                       data-testid="field-toggle"
                       data-ident={a.ident}
                       data-disclosure=""
                       aria-label={`${a.ident}: runways and procedures`}
-                      // Its area over the lines a ::before: on a touch screen
-                      // index.css gives every button's ::after its 44 points,
-                      // which overrode an ::after stretched here, and on the
-                      // owner's phone only the arrow opened the field ("make
-                      // the whole line tapable for unfolding"). Static, where
-                      // index.css positions every button on a touch screen:
-                      // its areas reach out to the lines' box, not its own; and
-                      // twelve over it, into the room above the field, where the
-                      // arrow's 44 points, round its line, reach (the iOS
-                      // audit's P1).
+                      // Its area over the lines a ::before: on a touch screen index.css gives every button's
+                      // ::after its 44 points, which overrode an ::after stretched here, and on the owner's phone
+                      // only the arrow opened the field ("make the whole line tapable for unfolding"). Static,
+                      // where index.css positions every button on a touch screen: its areas reach out to the
+                      // lines' box, not its own; and twelve over it, into the room above the field, where the
+                      // arrow's 44 points, round its line, reach (the iOS audit's P1).
                       className={cn(
                         "group static grid shrink-0 place-items-center text-tint outline-none before:absolute before:inset-x-0 before:-top-3 before:bottom-0 before:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
                         asCards ? "-ml-1.5 size-0" : "-ml-0.5 size-4",

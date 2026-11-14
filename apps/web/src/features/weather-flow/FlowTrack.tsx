@@ -1,5 +1,6 @@
 import { cn } from "cn";
 import { keepSliderKeys } from "../../components/playbackKeys";
+import { Button } from "../../components/ui/button";
 import { Slider } from "../../components/ui/slider";
 import { useIsMobile } from "../../hooks/use-mobile";
 import { TEXT } from "../../lib/text";
@@ -87,13 +88,16 @@ export function FlowTrack({
           if (i < now || (i - now) % stride !== 0) return null;
           const label = i === now ? "Now" : HOUR.format(new Date(frames[i]!.valid));
           return (
-            <button
+            <Button
+              variant="ghost"
+              size="inline"
               key={i}
               type="button"
               tabIndex={-1}
               onClick={() => (i === now ? onNow() : seek(i))}
               data-testid={i === now ? testIdNow : undefined}
               className={cn(
+                "justify-start text-inherit hover:bg-transparent",
                 "absolute top-0 -translate-x-1/2 font-semibold whitespace-nowrap outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-['']",
                 TEXT.caption,
                 i === shown ? "text-foreground" : "text-muted-foreground",
@@ -101,7 +105,7 @@ export function FlowTrack({
               style={{ left: place(k, n) }}
             >
               {label}
-            </button>
+            </Button>
           );
         })}
       </div>

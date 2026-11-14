@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, type ComponentProps } from "react";
 import { Search } from "lucide-react";
+import { Button } from "../../../../components/ui/button";
 import { cn } from "cn";
 import ClearButton from "../../../../components/ClearButton";
 import { PANEL_FIELD } from "../../../../components/panelField";
@@ -166,15 +167,21 @@ export default function OneSearchField({
         )}
       </label>
       {using && (
-        <button
+        <Button
+          variant="ghost"
+          size="inline"
           type="button"
           onClick={model.cancel}
           data-testid="one-search-cancel"
           // Its 44-point hit area the pseudo-element's (index.css), not its own height.
-          className={cn("relative shrink-0 px-1 text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring", TEXT.row)}
+          className={cn(
+            "justify-start text-inherit hover:bg-transparent",
+            "relative shrink-0 px-1 text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            TEXT.row,
+          )}
         >
           Cancel
-        </button>
+        </Button>
       )}
       {!using && <AccountButton />}
     </div>

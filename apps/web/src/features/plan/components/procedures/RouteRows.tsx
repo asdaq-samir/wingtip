@@ -65,12 +65,17 @@ export function NewStopCard({
         <ul className="mt-2 pl-9.5" aria-label="Suggested" data-testid="route-new-stop-via">
           {via.map((d) => (
             <li key={d.ident}>
-              <button
+              <Button
+                variant="ghost"
+                size="inline"
                 type="button"
                 onPointerDown={(e) => e.preventDefault()}
                 onClick={() => onCommit(d.ident)}
                 data-testid="picker-suggestion"
-                className="flex min-h-11 w-full items-center gap-2 pr-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className={cn(
+                  "justify-start text-inherit hover:bg-transparent",
+                  "flex min-h-11 w-full items-center gap-2 pr-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                )}
               >
                 <span className="min-w-0 flex-1">
                   <span className={cn("block font-semibold text-tint", TEXT.row)}>{d.ident}</span>
@@ -79,7 +84,7 @@ export function NewStopCard({
                   </span>
                 </span>
                 <span className={cn("shrink-0 text-muted-foreground tabular-nums", TEXT.detail)}>+{Math.round(d.added_nm)} nm</span>
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
@@ -103,11 +108,16 @@ export function HoldRow({ hold, flown, last, onOpen }: { hold: Hold; flown: LegH
           <rect x="2" y="2" width="24" height="12" rx="6" fill="none" className="stroke-course" strokeWidth="2.5" strokeDasharray="4 3" />
         </svg>
       </div>
-      <button
+      <Button
+        variant="ghost"
+        size="inline"
         type="button"
         onClick={onOpen}
         aria-label={`Hold at ${pointName(hold.fix)}: ${holdWords(hold)}${flown ? `, ${flown.entry} entry, ${Math.round(flown.minutes)} minutes more` : ""}: change`}
-        className="mb-4 flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-tint/8 px-2.5 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={cn(
+          "justify-start text-inherit",
+          "mb-4 flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-tint/8 px-2.5 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        )}
       >
         <span className="flex min-w-0 flex-1 flex-col">
           <span className={cn("font-semibold", TEXT.row)}>Hold</span>
@@ -118,7 +128,7 @@ export function HoldRow({ hold, flown, last, onOpen }: { hold: Hold; flown: LegH
         </span>
         {flown && <span className={cn("shrink-0 font-semibold tabular-nums", TEXT.detail)}>+{Math.round(flown.minutes)} min</span>}
         <ChevronRight className="size-5 shrink-0 text-tint" aria-hidden="true" />
-      </button>
+      </Button>
     </div>
   );
 }

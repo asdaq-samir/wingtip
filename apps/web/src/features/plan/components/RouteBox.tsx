@@ -248,7 +248,7 @@ export default function RouteBox({
                       data-testid="route-type"
                       data-placeholder={placeholder}
                       data-typed={typed.text}
-                      className="min-h-7 w-max min-w-full whitespace-pre! font-mono text-base leading-7 uppercase outline-none md:text-sm pointer-coarse:text-(length:--type-row)"
+                      className={cn("min-h-7 w-max min-w-full whitespace-pre! font-mono leading-7 uppercase outline-none", TEXT.row)}
                     >
                       {(segment) => (
                         <Token className="inline-block align-middle">
@@ -259,7 +259,7 @@ export default function RouteBox({
                     {placeholder === "Route" && !typed.text && (
                       <span
                         aria-hidden="true"
-                        className="pointer-events-none absolute inset-y-0 left-1 flex items-center text-base text-muted-foreground md:text-sm pointer-coarse:text-(length:--type-row)"
+                        className={cn("pointer-events-none absolute inset-y-0 left-1 flex items-center text-muted-foreground", TEXT.row)}
                       >
                         Route
                       </span>
@@ -275,18 +275,21 @@ export default function RouteBox({
                 iOS's Done ends an edit: the box's first line at its end.
                 Pressed, the field keeps the focus till it goes. */}
             {onDone && (
-              <button
+              <Button
+                variant="ghost"
+                size="inline"
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={done}
                 data-testid="route-box-done"
                 className={cn(
+                  "justify-start text-inherit hover:bg-transparent",
                   "relative mt-1 ml-1 h-7 shrink-0 rounded-full px-1.5 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
                   TEXT.row,
                 )}
               >
                 Done
-              </button>
+              </Button>
             )}
             {/* Its own taps, not the box's room (isRoom), which types at the
                 route's end. Under the lines only what keeps the 44-point

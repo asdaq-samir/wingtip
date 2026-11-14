@@ -1,5 +1,6 @@
 import type { Map as MlMap } from "maplibre-gl";
 import { cn } from "cn";
+import { Button } from "../../../../components/ui/button";
 import type { AirportsInView } from "../../../../lib/api/types";
 import { TEXT } from "../../../../lib/text";
 import { useGlView } from "../../../../lib/map/gl/useGlView";
@@ -53,9 +54,15 @@ export default function MapMarksList({ fields, onSelect }: { fields: Field[]; on
       <ul className="flex flex-col gap-2">
         {shown.map((f) => (
           <li key={f.ident}>
-            <button type="button" className={cn("text-left text-tint", TEXT.row)} onClick={() => onSelect(f.ident)}>
+            <Button
+              variant="ghost"
+              size="inline"
+              type="button"
+              className={cn("justify-start text-inherit hover:bg-transparent", "text-left text-tint", TEXT.row)}
+              onClick={() => onSelect(f.ident)}
+            >
               {fieldWords(f)}
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

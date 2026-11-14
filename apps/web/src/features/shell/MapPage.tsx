@@ -1,5 +1,7 @@
 import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { cn } from "cn";
 import { showError } from "../../lib/problems";
+import { TEXT } from "../../lib/text";
 import { useAddress } from "../../lib/address";
 import { Shown } from "../../lib/shown";
 import DevGuard from "../../components/DevGuard";
@@ -235,11 +237,14 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 {/* Dev mode's refusal: someone it is not for, on the dev page, is taken to the map. */}
                 <DevGuard />
                 {/* For a keyboard: past the panel to the map in one press.
-              Visible only while it has focus, so at a keyboard's 14
-              (text-sm), outside the touch type scale. */}
+              Visible only while it has focus, at a row's detail
+              (TEXT.detail, 14 with a keyboard's mouse). */}
                 <a
                   href="#content"
-                  className="sr-only z-50 rounded-md bg-background px-3 py-2 text-sm shadow outline-none focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  className={cn(
+                    "sr-only z-50 rounded-md bg-background px-3 py-2 shadow-(--depth-float) outline-none focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    TEXT.detail,
+                  )}
                 >
                   Skip to the map
                 </a>

@@ -95,7 +95,11 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
               weather: briefing?.metars[dest]
                 ? [
                     briefing.metars[dest]!.flight_category,
-                    ceilingAndVisibility(briefing.metars[dest]!.ceiling_ft ?? null, briefing.metars[dest]!.visibility_sm ?? null),
+                    ceilingAndVisibility(
+                      briefing.metars[dest]!.ceiling_ft ?? null,
+                      briefing.metars[dest]!.visibility_sm ?? null,
+                      briefing.metars[dest]!.visibility_plus,
+                    ),
                   ]
                     .filter(Boolean)
                     .join(", ")

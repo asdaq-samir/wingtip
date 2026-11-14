@@ -122,7 +122,11 @@ async function routeDiagrams(course: Course): Promise<string[]> {
     card.status === "fulfilled" && card.value.airport_diagram_cycle
       ? [
           diagramPicture(card.value.ident, card.value.airport_diagram_cycle),
-          diagramRunwaysPicture(card.value.ident, card.value.airport_diagram_cycle),
+          // The runways' crop only where the planner says the cycle has
+          // one: asked for anyway, it was a 404 on every keep (WEB-41).
+          ...(card.value.airport_diagram_runways === false
+            ? []
+            : [diagramRunwaysPicture(card.value.ident, card.value.airport_diagram_cycle)]),
         ]
       : [],
   );

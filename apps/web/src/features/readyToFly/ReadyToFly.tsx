@@ -1,5 +1,6 @@
 import { ChevronRight } from "lucide-react";
 import { cn } from "cn";
+import { Button } from "../../components/ui/button";
 import FindingIcon from "../../components/FindingIcon";
 import { Spinner } from "../../components/ui/spinner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
@@ -31,7 +32,9 @@ export function ReadyAction({ item, ready, onDone }: { item: Item; ready: Ready;
       </div>
     );
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="inline"
       type="button"
       disabled={busy}
       onClick={() => {
@@ -40,13 +43,14 @@ export function ReadyAction({ item, ready, onDone }: { item: Item; ready: Ready;
       }}
       data-testid={`ready-action-${item.key}`}
       className={cn(
+        "justify-start text-inherit hover:bg-transparent",
         "relative flex w-full items-center gap-2.5 text-left font-medium text-tint outline-none after:absolute after:-inset-y-2.5 after:inset-x-0 focus-visible:ring-2 focus-visible:ring-ring",
         TEXT.row,
       )}
     >
       {icon}
       <span className="min-w-0 flex-1">{item.line}</span>
-    </button>
+    </Button>
   );
 }
 

@@ -17,7 +17,8 @@ import { SectionPane } from "../../../../components/SectionPane";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../../../components/ui/table";
 import type { Candidate, Leg, NavLogAltitude, Totals } from "../../../../lib/api/types";
-import { gal, magneticVariation, weekdayDayMonthTime, windCorrection } from "../../../../lib/format";
+import { gal, magneticVariation, nm, weekdayDayMonthTime, windCorrection } from "../../../../lib/format";
+import { useAnnounce } from "../../../../lib/announce";
 import { routeName } from "../../../../lib/identSchema";
 import { revealRow } from "../../../../lib/revealRow";
 import { GROUP_HEADING, TEXT } from "../../../../lib/text";
@@ -187,8 +188,6 @@ function LegLine({ leg, at, phase }: { leg: Leg; at: { name: string; lat: number
   const figures: [string, string][] = [
     ["TC", bearing(leg.true_course_deg)],
     ["Wind", leg.wind ? windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt) : "no data"],
-    // Whole degrees, as a pilot flies them and the workings write them (the
-    // owner's pick of the code audit's CODE-30), the variation too.
     ["WCA", leg.wca_deg != null ? windCorrection(leg.wca_deg) : "—"],
     ["TH", leg.true_heading_deg != null ? bearing(leg.true_heading_deg) : "—"],
     ["Var", magneticVariation(leg.magnetic_variation_deg)],
@@ -504,7 +503,7 @@ export default function NavLogView({
   // where the airplane levels off is its climb's.
   const tableRows = useMemo(() => (onDesk && !airplane ? data.filter((r) => !isLegPoint(r)) : data), [onDesk, airplane, data]);
   const table = useTable({ features: navLogTableFeatures, data: tableRows, columns: shownColumns, getRowId: (row) => row.key });
-
+  useAnnounce(totals && data.length ? `Nav log ready, ${nm(totals.distance_nm)}` : null); // to VoiceOver, once (WEB-16)
   // The selected row as it is put in the page: the rows are drawn a moment
   // after the panel (PanelTabs' deferred draw), and on a busy page after
   // the drawer had opened, so a reveal asked for then found no row and the
@@ -721,11 +720,7 @@ export default function NavLogView({
     ) : (
       <>
         <div className="flex items-center justify-between pt-2 pl-1.5" data-testid="navlog-head">
-          {/* A section's one title, in Title Case: no small grey capitals
-              over a section (rules.md §1.8; the audit's WEB-8). */}
-          <SectionTitle>
-            {checkpointCount} Checkpoint{checkpointCount === 1 ? "" : "s"}
-          </SectionTitle>
+          <SectionTitle>{`${checkpointCount} Checkpoint${checkpointCount === 1 ? "" : "s"}`}</SectionTitle>
         </div>
         <NavLogList
           rows={data}
@@ -808,7 +803,7 @@ export default function NavLogView({
                   The panel's own head (the route form, the airplane and the
                   departure time) is print:hidden, so they are named here
                   instead, as a line of text. */}
-              <div className="hidden flex-col gap-1 border-b border-border px-4 py-3 text-sm print:flex">
+              <div className={cn("hidden flex-col gap-1 border-b border-border px-4 py-3 print:flex", TEXT.detail)}>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={cn("font-semibold", TEXT.title)}>Wingtip Maps</span>
                   <span className="text-muted-foreground">{title}</span>

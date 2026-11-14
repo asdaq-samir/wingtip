@@ -14,72 +14,7 @@
       "count": 1
     }
   },
-  "src/features/plan/components/ProceduresRoute.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/plan/components/navlog/MiniProfile.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "src/features/plan/components/navlog/altitude/AltitudeAdvisor.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/plan/components/navlog/altitude/LegAltitude.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/plan/components/procedures/FieldStep.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "src/features/plan/components/procedures/RouteLine.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/plan/components/procedures/RouteRows.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "src/features/plan/components/search/OneSearchField.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/plan/components/search/RecentCards.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/plan/components/search/SearchResultsPage.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/plan/map/layers/MapMarksList.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/readyToFly/ReadyToFly.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/weather-flow/FlowTrack.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/weather-loop/LoopBar.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }

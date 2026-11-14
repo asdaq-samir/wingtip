@@ -1,5 +1,6 @@
 import { useEffect, useState, type PointerEvent } from "react";
 import { cn } from "cn";
+import { Button } from "../../components/ui/button";
 import { PlaybackButton, PlaybackToolbar, PlayToggle } from "../../components/PlaybackBar";
 import { keepSliderKeys } from "../../components/playbackKeys";
 import { Slider } from "../../components/ui/slider";
@@ -122,9 +123,12 @@ export function LoopBar() {
       {/* The newest frame, from wherever the loop is (the GFA's Now). */}
       <PlaybackButton
         render={
-          <button
+          <Button
+            variant="ghost"
+            size="inline"
             type="button"
             className={cn(
+              "justify-start text-inherit hover:bg-transparent",
               "relative h-9 shrink-0 rounded-full px-2.5 font-semibold text-tint outline-none after:absolute after:-inset-1 after:content-[''] hover:bg-foreground/8 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
               TEXT.detail,
             )}

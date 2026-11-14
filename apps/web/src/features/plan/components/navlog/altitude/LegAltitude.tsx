@@ -165,11 +165,14 @@ export default function LegAltitude({
     </form>
   );
   const mark = (
-    <button
+    <Button
+      variant="ghost"
+      size="inline"
       type="button"
       aria-label={`${point.ident}: set the altitude at it`}
       data-testid="profile-waypoint"
       className={cn(
+        "justify-start text-inherit",
         "absolute bottom-6 size-3 -translate-x-1/2 rotate-45 rounded-[2px] border-2 border-background bg-tint shadow-(--depth-mark) outline-none",
         "after:absolute after:-inset-4 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
       )}

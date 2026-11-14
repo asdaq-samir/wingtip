@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "cn";
+import { TEXT } from "../../../../lib/text";
 import type { FuelStopSuggestion } from "../../../../lib/api/types";
 import { Button } from "../../../../components/ui/button";
 import { identOf } from "../../../../lib/identSchema";
@@ -47,9 +48,9 @@ interface TokenBox {
 
 const ARROW = "size-3 shrink-0 text-muted-foreground";
 // A missing end's word, where its field was: in the field's grey, at the
-// field's size (16 at the least on a phone, so as not to be smaller than
-// what is typed beside it).
-const ASKING = "px-1 font-sans text-base normal-case text-muted-foreground md:text-sm pointer-coarse:text-(length:--type-row)";
+// field's size, a row's (TEXT.row: 16 at the least, so as not to be
+// smaller than what is typed beside it, 17 to a finger).
+const ASKING = cn("px-1 font-sans normal-case text-muted-foreground", TEXT.row);
 
 /**
  * One point of the route in the box, as a token of its TokenField: the

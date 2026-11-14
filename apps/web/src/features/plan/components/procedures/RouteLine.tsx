@@ -1,5 +1,6 @@
 import { useAirplaneChosen } from "../../../../lib/preferences";
 import { ChevronDown, Route } from "lucide-react";
+import { Button } from "../../../../components/ui/button";
 import { cn } from "cn";
 import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-group";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
@@ -59,7 +60,9 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
     >
       <CollapsibleTrigger
         render={
-          <button
+          <Button
+            variant="ghost"
+            size="inline"
             type="button"
             data-testid="route-line-toggle"
             data-disclosure=""
@@ -70,6 +73,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
                 : `${picked.label}${picked.time ? ` ${picked.time}` : ""}${others > 0 ? ` ${others} more` : ""}, Routes: ${words(picked)}`
             }
             className={cn(
+              "justify-start text-inherit hover:bg-transparent",
               "flex min-h-11 w-full items-center gap-2.5 px-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
               TEXT.row,
             )}

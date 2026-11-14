@@ -1,5 +1,5 @@
 import type { AltitudeOption, Leg, Runway, Totals } from "../../lib/api/types";
-import { altFt, bearing, flightLevel, gal, one } from "../../lib/format";
+import { altFt, bearing, flightLevel, gal, miles, one } from "../../lib/format";
 import { clockTime, duration, zuluTime } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 import { calmOnRunway, isCalm } from "./lib/wind";
@@ -293,7 +293,13 @@ export function windAloft(dirTrueDeg: number, speedKt: number): string {
   return `${bearing(dirTrueDeg)}/${Math.round(speedKt)}`;
 }
 
-/** Ceiling and visibility the way a briefer says them. */
-export function ceilingAndVisibility(ceilingFt: number | null | undefined, visibilitySm: number | null | undefined): string {
-  return `${ceilingFt == null ? "no ceiling" : `${altFt(ceilingFt)} ft`} · ${visibilitySm == null ? "—" : `${visibilitySm} sm`}`;
+/** Ceiling and visibility the way a briefer says them, a report's "more
+ *  than" visibility as such ("6+ sm", P6SM: FAA JO 7900.5; lib/format's
+ *  miles, the code audit's CODE-12). */
+export function ceilingAndVisibility(
+  ceilingFt: number | null | undefined,
+  visibilitySm: number | null | undefined,
+  visibilityPlus = false,
+): string {
+  return `${ceilingFt == null ? "no ceiling" : `${altFt(ceilingFt)} ft`} · ${miles(visibilitySm, visibilityPlus)}`;
 }

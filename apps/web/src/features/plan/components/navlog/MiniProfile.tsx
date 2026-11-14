@@ -1,5 +1,6 @@
 import { memo, useId, useMemo, type CSSProperties } from "react";
 import { AIRSPACE, ceilingOverFloor, ceilings, nameFits, namedPieces } from "./profile";
+import { Button } from "../../../../components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import type { Candidate, Leg } from "../../../../lib/api/types";
@@ -304,15 +305,17 @@ export default memo(function MiniProfile({
     </>
   );
   return onOpen ? (
-    <button
+    <Button
+      variant="ghost"
+      size="inline"
       type="button"
       onClick={onOpen}
       data-testid="mini-profile"
       aria-label={`${label}; opens the nav log`}
-      className={cn(look, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
+      className={cn("justify-start text-inherit", look, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
     >
       {chart}
-    </button>
+    </Button>
   ) : (
     <div role="img" data-testid="mini-profile" aria-label={label} className={look}>
       {chart}
