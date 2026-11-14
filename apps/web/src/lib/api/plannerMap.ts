@@ -1,4 +1,12 @@
 import { planner, data } from "./http";
+import type { AirplaneDetails, AirplanePhoto } from "../airplane/details";
+
+/** A planner answer through the gateway, asked by hand where its path is not in the schema yet. */
+async function plannerJson<T>(path: string): Promise<T> {
+  const response = await fetch(path, { headers: { Accept: "application/json" } });
+  if (!response.ok) throw new Error(`The planner answered ${response.status}`);
+  return (await response.json()) as T;
+}
 import type {
   AircraftBases,
   AircraftRegistration,
@@ -104,6 +112,13 @@ export const plannerMap = {
    *  ICAO address, to track one (AircraftCard); with none in the air, the
    *  FAA's record of the one named, to open its card all the same. */
   trafficFind: (q: string) => planner.GET("/api/traffic/find", { params: { query: { q } } }).then(data<TrafficFound>),
+
+  // TODO(claude/plane-data): planner.GET("/api/airplanes/{n_number}") and its /photo, typed by the
+  // generated schema, once that branch's openapi.json is merged; by hand until then.
+  /** Everything public about a US airplane by its N-number (the airplane card's Info). */
+  airplaneDetails: (tail: string) => plannerJson<AirplaneDetails>(`/api/planner/airplanes/${encodeURIComponent(tail)}`),
+  /** Its newest Planespotters.net photo, on their terms; null where none. */
+  airplanePhoto: (tail: string) => plannerJson<AirplanePhoto | null>(`/api/planner/airplanes/${encodeURIComponent(tail)}/photo`),
 
   /** The FAA's record of a US airplane by its N-number or ICAO address,
    *  null for any other name: off the planner's disk, at once, where the

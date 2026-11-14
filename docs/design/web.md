@@ -469,7 +469,10 @@ PlaceCard's, Flights · Info · Figures; the status line (`airplaneStatus`)
 under them. It reads its N-number two ways at once (`lib/airplane/lookup`,
 `useTailLookup`, in `useAirplaneCard`): the FAA's record from the
 planner's `/api/traffic/registered`, off its disk in milliseconds, for
-the line, Info (`AirplaneInfo`) and the ICAO address; and
+the line, Info (`AirplaneInfo`) and the ICAO address, and the rest of
+its public record from `/api/airplanes/{n_number}` and its `/photo`
+(`lib/airplane/details`; History, Based at and Photos in
+`AirplaneHistory`); and
 `/api/traffic/find`, the live sources, seconds when adsb.lol's API is
 busy, for whether it is in the air. Flights is `PastFlights` by that
 address with a ▶ on each row (`play`), each opening `PastFlightCard`

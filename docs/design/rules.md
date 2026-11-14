@@ -324,8 +324,13 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   it's in the air…" while the find is out. Flights is the flight card's
   list of past flights (the last ten, more on asking, a day picked), each
   ▶ opening its replay over the card (the owner, 2026-11-14: "How do I
-  see the flights of airplane and play them?"); Info the FAA registry's
-  record in groups (Airplane, Engine, Registration, Owner); Figures every
+  see the flights of airplane and play them?"); Info the airplane's
+  public record in groups -- Airplane (with the type certificate data
+  sheet), Engine, Registration, Owner, History (past registrations, then
+  its NTSB reports, each linking to the NTSB's report), Based at (where
+  its own flights keep to) and Photos (Planespotters.net's, the
+  photographer credited and the picture linked to its page, on their
+  terms) -- each group saying in place where it has nothing; Figures every
   planning figure, edited in place, a missing one asked for there.
 - **The owner rule:** the FAA aircraft registry is public data, so Info's
   Owner group always shows the registry's owner for every airplane --

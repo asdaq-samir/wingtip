@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { airplaneDetailsQuery, airplanePhotoQuery } from "../../lib/airplane/details";
 import { useTailLookup } from "../../lib/airplane/lookup";
 import { useAddress } from "../../lib/address";
 import { aircraftKind } from "../../lib/aircraftKind";
@@ -22,6 +23,10 @@ export function useAirplaneCard(tail: string) {
   const lookup = useTailLookup(tail || null);
   const { record, hex, inAir } = lookup;
   const [, setAddress] = useAddress();
+  // The rest of its public record and its photo, for Info: by its N-number, apart from the record
+  // above, so the card never waits on them (lib/airplane/details).
+  const details = useQuery({ ...airplaneDetailsQuery(tail), enabled: !!tail });
+  const photo = useQuery({ ...airplanePhotoQuery(tail), enabled: !!tail });
   // Its flights, newest first: the Flights tab's list (PastFlights, the same query) and the status
   // line's last landing. Undefined while still being looked for, back through the archive.
   const past = useInfiniteQuery({ ...pastFlightsQuery(hex ?? "", null), enabled: !!hex });
@@ -36,6 +41,9 @@ export function useAirplaneCard(tail: string) {
   const line = record ? [[record.manufacturer, record.model].filter(Boolean).join(" "), record.year].filter(Boolean).join(", ") : null;
   return {
     record,
+    details: details.data,
+    detailsFailed: details.isError,
+    photo: photo.isError ? null : photo.data,
     hex,
     /** Under its name: "Piper PA-28-140, 1971", the registry's; null where it has none. */
     line,

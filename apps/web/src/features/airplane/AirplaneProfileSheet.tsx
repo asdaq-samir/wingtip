@@ -220,7 +220,7 @@ export default function AirplaneProfileSheet() {
             )}
           </CardTabPanel>
           <CardTabPanel value="info">
-            <AirplaneInfo record={card.record} />
+            <AirplaneInfo record={card.record} details={card.details} detailsFailed={card.detailsFailed} photo={card.photo} />
           </CardTabPanel>
           <CardTabPanel value="figures">
             <ListGroup title="Figures">

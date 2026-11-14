@@ -130,6 +130,64 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
 test("the airplane card's Info is the FAA's record, its owner named for an airplane not the pilot's", async ({ page }) => {
   const answer = await stubbed(page);
   answer({ aircraft: [], checked: true, source: "adsb.lol", license: "ODbL 1.0" });
+  // The rest of its public record (the planner's /api/airplanes/{n}) and its photo.
+  await page.route(
+    (url) => url.pathname === "/api/planner/airplanes/N654FL",
+    (route) =>
+      route.fulfill({
+        json: {
+          n_number: "N654FL",
+          registration: { ...PIPER, co_owner_names: [] },
+          model: {
+            code: "7102806",
+            manufacturer: "PIPER",
+            model: "PA-28-140",
+            category: "Land",
+            tc_data_sheet: "2A13",
+            tc_holder: "Piper Aircraft",
+          },
+          past_registrations: [
+            {
+              n_number: "N654FL",
+              owner: "Earlier Owner",
+              city: "Boise",
+              state: "ID",
+              status: "Sale reported",
+              cancel_date: "2015-03-02",
+              same_airframe: true,
+            },
+          ],
+          ntsb: [
+            {
+              ev_id: "20190101X00001",
+              ntsb_no: "WPR19LA001",
+              date: "2019-01-01",
+              city: "Nampa",
+              state: "ID",
+              kind: "Accident",
+              damage: "Substantial",
+              carol_url: "https://data.ntsb.gov/carol-repgen/api/Aviation/ReportMain/GenerateNewestReport/1/pdf",
+            },
+          ],
+          based: { field: LWM, count: 12, ends: 20 },
+          based_pending: false,
+        },
+      }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/planner/airplanes/N654FL/photo",
+    (route) =>
+      route.fulfill({
+        json: {
+          thumbnail_large: "data:image/gif;base64,R0lGODlhAQABAAAAACw=",
+          width: 420,
+          height: 280,
+          photographer: "Jane Spotter",
+          link: "https://www.planespotters.net/photo/1/n654fl",
+          source: "Planespotters.net",
+        },
+      }),
+  );
   await page.goto("/app/plan?airplane=N654FL");
   await settle(page);
   const card = page.getByTestId("airplane-profile");
@@ -141,6 +199,13 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
   await expect(info.getByTestId("airplane-info-owner")).toContainText("Jane Q Pilot");
   await expect(info).toContainText("Meridian, ID");
   await expect(info).toContainText("Individual");
+  await expect(info.getByTestId("airplane-info-tcds")).toContainText("2A13");
+  // History: past registrations, then the NTSB's, each its report; where it is based; its photo, credited.
+  await expect(info.getByTestId("airplane-past-registration")).toContainText("Earlier Owner");
+  await expect(info.getByTestId("airplane-ntsb")).toHaveAttribute("href", /data\.ntsb\.gov/);
+  await expect(info.getByTestId("airplane-based-field")).toContainText("LWM");
+  await expect(info.getByTestId("airplane-photo-credit")).toContainText("Jane Spotter");
+  await expect(info.getByTestId("airplane-photo-credit")).toHaveAttribute("href", "https://www.planespotters.net/photo/1/n654fl");
   // Figures: the planning figures, as the card had them.
   await card.getByTestId("airplane-tab-figures").click();
   await expect(card.locator("[data-figure]").first()).toBeVisible();
