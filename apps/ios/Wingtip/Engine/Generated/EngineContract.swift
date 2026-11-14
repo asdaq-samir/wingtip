@@ -11765,6 +11765,48 @@ enum EngineContract {
         }
     }
 
+    struct SurfaceAirspaceAnswer: Codable, Equatable, Sendable {
+        var `class`: String
+        var partTime: Bool
+        /// The class at other times where it is part-time; null where it is not.
+        var otherwise: String?
+        /// That class is part-time too: G at the times neither is in effect.
+        var otherwisePartTime: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case `class`
+            case partTime = "part_time"
+            case otherwise
+            case otherwisePartTime = "otherwise_part_time"
+        }
+    }
+
+    struct SurfaceAirspaceInput: Codable, Equatable, Sendable {
+        /// The field's elevation, feet MSL (NASR APT_BASE ELEV).
+        var elevationFt: Double?
+        var volumes: [EngineContract.SurfaceAirspaceInputVolumesItem]
+
+        enum CodingKeys: String, CodingKey {
+            case elevationFt = "elevation_ft"
+            case volumes
+        }
+    }
+
+    struct SurfaceAirspaceInputVolumesItem: Codable, Equatable, Sendable {
+        var `class`: String
+        var floorFt: Double?
+        var floorRef: String
+        /// NASR's WKHR_CODE: H24, NOTAM or RMK.
+        var hours: String?
+
+        enum CodingKeys: String, CodingKey {
+            case `class`
+            case floorFt = "floor_ft"
+            case floorRef = "floor_ref"
+            case hours
+        }
+    }
+
     /// One period of a TAF as the weather store keeps it (awc_tafs_read): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
     struct TafPeriod: Codable, Equatable, Sendable {
         var timeFrom: Double

@@ -86,10 +86,10 @@ const townOf = (field: { city?: string | null; region?: string | null; name?: st
  * 2026-10-29, and C1, 2026-11-14: "make sure the airplane card looks
  * similar to airport card"): its callsign with what it is and who flies it;
  * Follow (the map keeps it in the middle, TrafficGl), Alert, Debrief and
- * the star; its flight in a card (FlightNow); its facts in a sideways strip
- * (AirplaneFacts); its photo and where it has flown as the pictures; then
- * Info (FlightInfoTab) or Flights, its earlier ones, in the glass bar at
- * the card's foot. Seconds-old internet data from adsb.lol's receivers: for
+ * the star; its flight in a card (FlightNow); then Info (its facts in a
+ * sideways strip, AirplaneFacts, its photo and where it has flown as the
+ * pictures, then FlightInfoTab) or Flights, its earlier ones, in the glass
+ * bar at the card's foot. Seconds-old internet data from adsb.lol's receivers: for
  * knowing what is about, not for avoiding it.
  */
 export default function FlightCard({
@@ -359,20 +359,18 @@ export default function FlightCard({
           airport={airport}
         />
       )}
-      {/* Its facts in a strip and its pictures, then its pages under the glass bar at the card's foot,
-          as the airport card has them (C1; the owner, 2026-11-14: "make sure the airplane card looks
-          similar to airport card"). */}
-      <AirplaneFacts record={detail?.faa} type={detail?.type ?? plane?.type ?? null} year={detail?.year} testId="flight-facts" />
-      <div className="pt-4">
-        <CardPictures slides={slides} label={`${name}: ${photo ? "its photo, and " : ""}where it has flown`} testId="flight-pictures" />
-      </div>
+      {/* Its pages under the glass bar at the card's foot, Info's starting with its facts in a strip and its
+          pictures, as the airport card has them (C1; the owner, 2026-11-14: "make sure the airplane card
+          looks similar to airport card"; "Switching tabs should not show those"). */}
       <CardTabPages
         tab={tab}
         onPick={setTab}
         top={setTop}
         bar={<CardTabBar testId="flight-tab-bar" tabTestId="flight-tab-" onPick={setTab} tabs={TABS} />}
       >
-        <CardTabPanel value="info">
+        <CardTabPanel value="info" className="pt-0">
+          <AirplaneFacts record={detail?.faa} type={detail?.type ?? plane?.type ?? null} year={detail?.year} testId="flight-facts" />
+          <CardPictures slides={slides} label={`${name}: ${photo ? "its photo, and " : ""}where it has flown`} testId="flight-pictures" />
           <FlightInfoTab hex={hex} plane={plane} detail={detail} detailLoading={detailLoading} registered={registered} route={route} />
         </CardTabPanel>
         {/* The ones before the flight it is on, each replayed (PastFlights), and a day to look back from. */}

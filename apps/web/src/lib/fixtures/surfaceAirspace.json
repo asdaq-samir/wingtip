@@ -1,0 +1,64 @@
+{
+  "about": "The class of the airspace at a field's surface (the engine's surface_airspace), for the airport card's Airspace fact, held by the engine (engine/facade/tests/surface_airspace.rs) and the web (features/plan/components/place/factWords.test.ts). B, C, D or E where a volume of that class reaches the ground, the most restrictive where they overlap (14 CFR 71.41, 71.51, 71.61, 71.71(b)), G where none does (AIM 3-3-1); a shelf over the field is not its class; part-time by NASR's WKHR_CODE, with the class at other times (AIM 3-2-5a1). The volumes as the planner sends NASR's Class Airspace.",
+  "cases": [
+    {
+      "about": "KORD, Chicago O'Hare: the Class B surface area, its shelves over it",
+      "input": {
+        "elevation_ft": 680,
+        "volumes": [
+          { "class": "B", "floor_ft": 0, "floor_ref": "SFC", "hours": "H24" },
+          { "class": "B", "floor_ft": 1900, "floor_ref": "MSL", "hours": "H24" }
+        ]
+      },
+      "answer": { "class": "B", "part_time": false, "otherwise": null, "otherwise_part_time": false }
+    },
+    {
+      "about": "A field under a Class B shelf and a 700 ft Class E: G at its surface",
+      "input": {
+        "elevation_ft": 887,
+        "volumes": [
+          { "class": "B", "floor_ft": 3600, "floor_ref": "MSL", "hours": "H24" },
+          { "class": "E", "floor_ft": 700, "floor_ref": "AGL", "hours": "H24" }
+        ]
+      },
+      "answer": { "class": "G", "part_time": false, "otherwise": null, "otherwise_part_time": false }
+    },
+    {
+      "about": "No volume at all: G",
+      "input": { "elevation_ft": 788, "volumes": [] },
+      "answer": { "class": "G", "part_time": false, "otherwise": null, "otherwise_part_time": false }
+    },
+    {
+      "about": "A part-time Class D over a full-time Class E surface area: other times E",
+      "input": {
+        "elevation_ft": 400,
+        "volumes": [
+          { "class": "D", "floor_ft": 0, "floor_ref": "SFC", "hours": "NOTAM" },
+          { "class": "E", "floor_ft": 0, "floor_ref": "SFC", "hours": "H24" }
+        ]
+      },
+      "answer": { "class": "D", "part_time": true, "otherwise": "E", "otherwise_part_time": false }
+    },
+    {
+      "about": "A part-time Class D alone: other times G",
+      "input": { "elevation_ft": 400, "volumes": [{ "class": "D", "floor_ft": 0, "floor_ref": "SFC", "hours": "NOTAM" }] },
+      "answer": { "class": "D", "part_time": true, "otherwise": "G", "otherwise_part_time": false }
+    },
+    {
+      "about": "A part-time Class D and a part-time Class E surface area: E or G other times",
+      "input": {
+        "elevation_ft": 400,
+        "volumes": [
+          { "class": "D", "floor_ft": 0, "floor_ref": "SFC", "hours": "NOTAM" },
+          { "class": "E", "floor_ft": 0, "floor_ref": "SFC", "hours": "NOTAM" }
+        ]
+      },
+      "answer": { "class": "D", "part_time": true, "otherwise": "E", "otherwise_part_time": true }
+    },
+    {
+      "about": "A full-time Class E surface area",
+      "input": { "elevation_ft": 1000, "volumes": [{ "class": "E", "floor_ft": 0, "floor_ref": "SFC", "hours": "H24" }] },
+      "answer": { "class": "E", "part_time": false, "otherwise": null, "otherwise_part_time": false }
+    }
+  ]
+}

@@ -5,7 +5,7 @@ on them, so each file holds one kind of thing."""
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Metar(BaseModel):
@@ -98,6 +98,23 @@ class TrafficPattern(BaseModel):
     agl_ft: float
     altitude_ft: float | None = None
     published: bool = False
+    #: NASR's remarks on it (APT_RMK, TPA) in words: most often other
+    #: aircraft's heights, a large airplane's or a helicopter's, or the
+    #: TPA where APT_BASE gives none (wingtip.remarks.pattern_notes).
+    remarks: list[str] = []
+
+
+class SurfaceAirspace(BaseModel):
+    """The class of the airspace at a field's surface (the engine's
+    surface_airspace: 14 CFR 71, AIM 3-2-5a1): a shelf over it is not its
+    class; `part_time` where NASR has it in effect by NOTAM or remark, then
+    `otherwise` its class at other times, `otherwise_part_time` where that
+    one is part-time too (G when neither is in effect)."""
+
+    class_: Literal["B", "C", "D", "E", "G"] = Field(alias="class")
+    part_time: bool
+    otherwise: Literal["C", "D", "E", "G"] | None = None
+    otherwise_part_time: bool = False
 
 
 class Frequency(BaseModel):

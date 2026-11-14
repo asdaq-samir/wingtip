@@ -228,9 +228,20 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    after Apple Maps"), top to bottom: the head (Share, the ident with its
    name and "Towered" or "Non-towered", ✕); the four actions, glyph over
    word in 56-point tiles, Fly Here saying the time there ("≈ 38m") where
-   it can be worked out; a sideways strip of facts, a grey name over each
-   value (Weather, Wind, Longest, Elevation, Distance, Fuel); the pictures
-   as large rounded tiles; then the tab's page. Its tabs (Info, Weather,
+   it can be worked out; then the tab's page, Info's starting with a
+   sideways strip of facts and the pictures as large rounded tiles (the
+   owner, 2026-11-14: "Info tab should start from the info strip and
+   images and the rest. Switching tabs should not show those"), Weather,
+   Runways and Charts straight under the actions. The strip is always the
+   same five, in this order, a dash where one is not known (the owner the
+   same day: "the info strip can have these fixed things: weather,
+   airspace, elevation, pattern altitude and distance"): Weather (the
+   category), Airspace (the class at the field's surface, "Part-time, E
+   other times" under it where it is part-time), Elevation, Pattern (the
+   TPA in feet MSL, its height over the field under it, or the AIM's
+   1,000 ft over the field marked "AIM"), Distance. A tab picked opens
+   at its own top, just under the actions, the card's height unchanged.
+   Its tabs (Info, Weather,
    Runways, Charts) float in a glass bar at the card's foot, as Maps'
    group of buttons does, in reach at every height and hidden at the
    pill, the page scrolling under it and clearing it at its end: the
@@ -245,8 +256,9 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    The airplane cards are laid out the same way, with the same parts (the
    owner, 2026-11-14: "make sure the airplane card looks similar to
    airport card"): an N-number's card and a tracked flight's have their
-   facts in the strip (Type, Year, Seats, Engines, Registration, Owner),
-   their photos as the same picture tiles, and their tabs (Flights, Info,
+   facts in the strip (Type, Year, Seats, Engines, Registration, Owner)
+   and their photos as the same picture tiles at the head of their Info
+   tab alone, and their tabs (Flights, Info,
    Figures, icons too: History, Info, Gauge; a flight's Info and Flights) in the same floating glass bar. On
    Android, at half height a
    card shows the small bar, its title and actions on one row, and at
@@ -357,9 +369,10 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   one row of four buttons, the first filled -- Fly This, Follow (the
   flight card's alerts: takes off, lands, comes near), Favorite and Share,
   Follow and Favorite greyed where the registry gives no ICAO address;
-  one status line under them; the facts in a sideways strip, as the
-  airport card's (Type, Year, Seats, Engines, Registration, Owner); its
-  photo as the airport card's picture tiles; and the tabs **Flights ·
+  one status line under them; and the tabs, Info's page starting with
+  the facts in a sideways strip, as the airport card's (Type, Year, Seats,
+  Engines, Registration, Owner), and its photo as the airport card's
+  picture tiles (the owner, 2026-11-14); the tabs **Flights ·
   Info · Figures** in that order in the airport card's floating glass bar
   at the card's foot (C1; the owner, 2026-11-14: "make sure the airplane
   card looks similar to airport card"), Flights first with its count as

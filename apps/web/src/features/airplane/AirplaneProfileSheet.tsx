@@ -138,10 +138,10 @@ type ProfileTab = "flights" | "info" | "figures";
  * place card as the airport card's C1 is (the owner the same day: "make
  * sure the airplane card looks similar to airport card"): its N-number and
  * the registry's make, model and year under it; Fly This, Follow, Favorite
- * and Share in one row; its one status line; its facts in a sideways strip
- * (AirplaneFacts); its photo as the airport card's pictures (CardPictures);
- * then the page of the tab picked in the glass bar floating at the card's
- * foot, Flights, Info and Figures (CardTabBar). Every figure stays editable
+ * and Share in one row; its one status line; then the page of the tab
+ * picked in the glass bar floating at the card's foot, Flights, Info (its
+ * facts in a sideways strip, AirplaneFacts, and its photo as the airport
+ * card's pictures, CardPictures, at its head) and Figures (CardTabBar). Every figure stays editable
  * in place in Figures, a missing one asking there. Signed out, what is set
  * stays on this device. Its view model is useAirplaneProfile, the
  * airplane's own part useAirplaneCard.
@@ -149,7 +149,7 @@ type ProfileTab = "flights" | "info" | "figures";
 export default function AirplaneProfileSheet() {
   const vm = useAirplaneProfile();
   const { card } = vm;
-  // Opened for a figure: on Figures; else on Flights. Each tab its own place in the scroll (useTabScroll).
+  // Opened for a figure: on Figures; else on Flights. Each tab opening at its own top (useTabScroll).
   const [tab, setTab] = useState<ProfileTab>(vm.focus ? "figures" : "flights");
   const [, setTop] = useTabScroll(tab);
   const photo = card.photo;
@@ -212,36 +212,6 @@ export default function AirplaneProfileSheet() {
           <StatusLine words={card.status} />
         )}
       </p>
-      <AirplaneFacts record={card.details?.registration ?? card.record} model={card.details?.model} testId="airplane-facts" />
-      {/* Its photo once Planespotters.net answered with one, on its terms (docs/legal/credits.md):
-          the photographer named on it, the picture a plain link to its page, its address used as
-          given and never kept by the app. */}
-      {photo && src && (
-        <div className="pt-4">
-          <CardPictures
-            label={`${vm.tail}: its photo`}
-            testId="airplane-pictures"
-            slides={[
-              {
-                key: "photo",
-                href: photo.link,
-                label: `${vm.tail}'s photo on ${photo.source}`,
-                testId: "airplane-photo-open",
-                picture: (
-                  <PhotoSlide
-                    src={src}
-                    alt={`The airplane, photographed by ${photo.photographer ?? "a Planespotters.net photographer"}`}
-                    label={`${vm.tail}'s photo`}
-                    credit={`© ${photo.photographer ?? "Photographer"} · ${photo.source}`}
-                    testId="airplane-photo"
-                    creditTestId="airplane-photo-credit"
-                  />
-                ),
-              },
-            ]}
-          />
-        </div>
-      )}
       <CardTabPages
         tab={tab}
         onPick={setTab}
@@ -276,7 +246,38 @@ export default function AirplaneProfileSheet() {
             </ListGroup>
           )}
         </CardTabPanel>
-        <CardTabPanel value="info">
+        {/* Info's page alone starts with its facts and photo, as the airport card's (the owner, 2026-11-14). */}
+        <CardTabPanel value="info" className="pt-0">
+          <AirplaneFacts record={card.details?.registration ?? card.record} model={card.details?.model} testId="airplane-facts" />
+          {/* Its photo once Planespotters.net answered with one, on its terms (docs/legal/credits.md):
+              the photographer named on it, the picture a plain link to its page, its address used as
+              given and never kept by the app. */}
+          {photo && src && (
+            <div>
+              <CardPictures
+                label={`${vm.tail}: its photo`}
+                testId="airplane-pictures"
+                slides={[
+                  {
+                    key: "photo",
+                    href: photo.link,
+                    label: `${vm.tail}'s photo on ${photo.source}`,
+                    testId: "airplane-photo-open",
+                    picture: (
+                      <PhotoSlide
+                        src={src}
+                        alt={`The airplane, photographed by ${photo.photographer ?? "a Planespotters.net photographer"}`}
+                        label={`${vm.tail}'s photo`}
+                        credit={`© ${photo.photographer ?? "Photographer"} · ${photo.source}`}
+                        testId="airplane-photo"
+                        creditTestId="airplane-photo-credit"
+                      />
+                    ),
+                  },
+                ]}
+              />
+            </div>
+          )}
           <AirplaneInfo record={card.record} details={card.details} detailsFailed={card.detailsFailed} />
         </CardTabPanel>
         <CardTabPanel value="figures">

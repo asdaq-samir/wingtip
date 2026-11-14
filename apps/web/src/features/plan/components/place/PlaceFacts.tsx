@@ -1,31 +1,30 @@
-import { useQuery } from "@tanstack/react-query";
 import StatusBadge from "../../../../components/StatusBadge";
 import { CardFact as Fact, CardFacts } from "../../../../components/CardFacts";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { feet } from "../../../../lib/format";
-import { servicesQuery } from "../../../../lib/queryClient";
-import { fuelNames } from "../../../../lib/stopServices";
-import { useNotamMarks } from "./notamBadges";
-import { placeWind } from "./placeWind";
-import { longestOpen } from "./runwayPicks";
+import { airspaceWords, patternWords } from "./factWords";
 
 /**
- * The airport card's facts in a row under its actions, a sideways scroller
- * as Apple Maps' place card's (the owner, 2026-11-14: "How can we make our
- * airport card more similar to this?"; C1 on the canvas
- * V1d9RDbmY1aczc4LfXed7a, "Airport card after Apple Maps"). It takes the
- * place of T4's one-line report under the tabs. Each where the card's
- * data has it, in this order:
+ * The airport card's facts in a row at the head of its Info tab, a
+ * sideways scroller as Apple Maps' place card's (the owner, 2026-11-14:
+ * "How can we make our airport card more similar to this?"; C1 on the
+ * canvas V1d9RDbmY1aczc4LfXed7a, "Airport card after Apple Maps"). Five,
+ * always all five in this order, a dash where one is not known, so the
+ * row never changes shape (the owner the same day: "the info strip can
+ * have these fixed things: weather, airspace, elevation, pattern altitude
+ * and distance"):
  *  - Weather: the flight category (the planner's from the report, AIM
  *    7-1-7), its own or, marked "≈", the model's or a near station's.
- *  - Wind: the report's, true, as METAR winds are (FAA JO 7900.5).
- *  - Longest: the longest runway open, closed ones (NASR's or a NOTAM's)
- *    left out, as the Runways tab badges it; "Runway" where there is one.
+ *  - Airspace: the class at the field's surface, the engine's
+ *    (surface_airspace, 14 CFR 71), part-time with its other times
+ *    (factWords airspaceWords).
  *  - Elevation: NASR's field elevation, feet MSL.
+ *  - Pattern: the traffic pattern altitude, NASR's TPA or AIM 4-3-3's
+ *    recommendation marked as such (factWords patternWords).
  *  - Distance: from the pilot, else from the route's departure, the
  *    engine's great circle (useAway).
- *  - Fuel: NASR's fuel types for sale (the services' answer, the engine's
- *    fuel_names).
+ * The wind, the longest runway and the fuel are the Weather and Runways
+ * tabs' and the Info tab's services.
  */
 export function PlaceFacts({
   place,
@@ -40,17 +39,12 @@ export function PlaceFacts({
   /** How far and which way, and from what ("you" for own ship's fix). */
   away: { words: string; from: string | null } | null;
 }) {
-  const marks = useNotamMarks(place.ident, place);
-  const { data: services } = useQuery(servicesQuery(place.ident));
-  const runways = place.runways.map((r, i) => (marks.runway.get(i)?.severity === "unusable" ? { ...r, closed: true } : r));
-  const longest = longestOpen(runways);
-  const open = runways.filter((r) => !r.closed && r.length_ft != null).length;
-  const wind = place.metar?.wind_speed_kt != null ? placeWind(place.metar) : null;
-  const fuel = services?.fuel_types.length ? fuelNames(services.fuel_types) : null;
+  const airspace = airspaceWords(place.surface_airspace);
+  const pattern = patternWords(place.pattern);
   return (
     <CardFacts testId="place-facts">
-      {category && (
-        <Fact label="Weather" testId="place-fact-weather">
+      <Fact label="Weather" testId="place-fact-weather">
+        {category ? (
           <StatusBadge category={category} data-testid="place-fact-category">
             {approximate ? (
               <>
@@ -61,33 +55,22 @@ export function PlaceFacts({
               </>
             ) : undefined}
           </StatusBadge>
-        </Fact>
-      )}
-      {wind && (
-        <Fact label="Wind" testId="place-fact-wind">
-          {wind}
-        </Fact>
-      )}
-      {longest?.length_ft != null && (
-        <Fact label={open > 1 ? "Longest" : "Runway"} testId="place-fact-longest">
-          {feet(longest.length_ft)}
-        </Fact>
-      )}
-      {place.elevation_ft != null && (
-        <Fact label="Elevation" testId="place-fact-elevation">
-          {feet(place.elevation_ft)}
-        </Fact>
-      )}
-      {away && (
-        <Fact label={away.from ? `From ${away.from}` : "Distance"} testId="place-fact-distance">
-          {away.words}
-        </Fact>
-      )}
-      {fuel && (
-        <Fact label="Fuel" testId="place-fact-fuel">
-          {fuel}
-        </Fact>
-      )}
+        ) : (
+          "—"
+        )}
+      </Fact>
+      <Fact label="Airspace" testId="place-fact-airspace" note={airspace.note}>
+        {airspace.value}
+      </Fact>
+      <Fact label="Elevation" testId="place-fact-elevation">
+        {feet(place.elevation_ft)}
+      </Fact>
+      <Fact label="Pattern" testId="place-fact-pattern" note={pattern.note}>
+        {pattern.value}
+      </Fact>
+      <Fact label={away?.from ? `From ${away.from}` : "Distance"} testId="place-fact-distance">
+        {away?.words ?? "—"}
+      </Fact>
     </CardFacts>
   );
 }

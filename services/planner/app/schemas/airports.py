@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from .airport_lights import LightingNote, LightingSystem
 from .airport_record import AirportRecord
-from .field import Frequency, Metar, Runway, TrafficPattern
+from .field import Frequency, Metar, Runway, SurfaceAirspace, TrafficPattern
 from .plates import ApproachFacts
 
 
@@ -305,11 +305,9 @@ class ChartPages(BaseModel):
 
 
 class AirportPlace(AirportRecord):
-    """One airport the way the map's card shows it: its name and place,
-    the class of the airspace over it, whether it has a tower, its
-    runways and radio, and the weather there now. `metar` is None for a
-    field with no reporting station, and `weather_unavailable` says the
-    weather service could not be asked at all -- not the same thing."""
+    """One airport the way the map's card shows it: its name and place, the class of the airspace at
+    its surface, its tower, runways and radio, and the weather now. `metar` is None for a field with
+    no reporting station; `weather_unavailable`, the weather service could not be asked at all."""
 
     ident: str
     name: str
@@ -320,6 +318,7 @@ class AirportPlace(AirportRecord):
     elevation_ft: float | None = None
     kind: Literal["large", "medium", "small", "other"]
     airspace_class: Literal["B", "C", "D", "E", "G"] | None = None
+    surface_airspace: SurfaceAirspace | None = None  # the same, with its part-time hours
     #: A field the armed services own, as AirportPin's.
     military: Literal["military", "joint"] | None = None
     #: Closed to the public, as AirportPin's (ask the owner first); and where

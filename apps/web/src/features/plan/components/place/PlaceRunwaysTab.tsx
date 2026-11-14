@@ -42,8 +42,12 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
               </RowBadge>
             }
             title="Pattern altitude"
-            // 1,000 ft above the field where none is published (AIM 4-3-3).
-            description={place.pattern.published ? "As the FAA publishes it" : "1,000 ft above the field: none published"}
+            // 1,000 ft above the field where none is published (AIM 4-3-3a), and NASR's remarks on it after
+            // (APT_RMK's TPA: other aircraft's heights), which the facts' Pattern says differ.
+            description={[
+              place.pattern.published ? "As the FAA publishes it" : "1,000 ft above the field: none published",
+              ...(place.pattern.remarks ?? []),
+            ].join(" ")}
             value={<span className="font-semibold text-foreground">{feet(place.pattern.altitude_ft)}</span>}
             data-testid="place-pattern"
           />

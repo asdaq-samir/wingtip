@@ -327,10 +327,10 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   const card = page.getByTestId("flight-card");
   await grabberTo(page, "full"); // from the pill's size, as every card opens
   await card.getByTestId("flight-tab-flights").click(); // its flights, on their tab (C1)
+  await expect(card.getByTestId("flight-facts")).toBeHidden(); // the facts and pictures Info's alone (2026-11-14)
   const rows = card.getByTestId("past-flight");
   await expect(rows).toHaveCount(2, { timeout: slow(15_000) });
-  // FlightAware's row: how it ended and how long, then each end's field,
-  // its town and when.
+  // FlightAware's row: how it ended and how long, then each end's field, its town and when.
   await expect(rows.first()).toContainText("Landed · 1h 19m");
   await expect(rows.first()).toContainText(/LCI\s*Laconia, NH/);
   await expect(rows.first()).toContainText(/LWM\s*Lawrence, MA/);

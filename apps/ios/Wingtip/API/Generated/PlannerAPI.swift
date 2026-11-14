@@ -381,6 +381,7 @@ typealias APIStudioTrack = PlannerAPI.Components.Schemas.StudioTrack
 typealias APIStudioWatched = PlannerAPI.Components.Schemas.StudioWatched
 typealias APIStudioWeather = PlannerAPI.Components.Schemas.StudioWeather
 typealias APIStudioWeatherAsk = PlannerAPI.Components.Schemas.StudioWeatherAsk
+typealias APISurfaceAirspace = PlannerAPI.Components.Schemas.SurfaceAirspace
 typealias APITerminalChart = PlannerAPI.Components.Schemas.TerminalChart
 typealias APITfr = PlannerAPI.Components.Schemas.Tfr
 typealias APITfrContact = PlannerAPI.Components.Schemas.TfrContact

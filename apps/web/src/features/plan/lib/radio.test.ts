@@ -15,7 +15,7 @@ const WAUKEGAN: Facilities = {
   name: "Waukegan National Airport",
   elevation_ft: 727,
   airspace_class: "D",
-  pattern: { agl_ft: 1000, altitude_ft: 1727, published: false },
+  pattern: { agl_ft: 1000, altitude_ft: 1727, published: false, remarks: [] },
   runways: [
     {
       ends: "05/23",
@@ -53,7 +53,7 @@ const DACY: Facilities = {
   name: "Dacy Airport",
   elevation_ft: 913,
   airspace_class: "G",
-  pattern: { agl_ft: 1000, altitude_ft: 1913, published: false },
+  pattern: { agl_ft: 1000, altitude_ft: 1913, published: false, remarks: [] },
   runways: [
     {
       ends: "09/27",

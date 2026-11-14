@@ -42,6 +42,16 @@ async def check_airplane(*, body: dict[str, Any] | None = None) -> Any:
     return await _send('POST', '/api/aircraft/problems', query={}, body=body, headers={})
 
 
+async def airplane(*, n_number: str) -> Any:
+    """GET /api/airplanes/{n_number}: Airplane"""
+    return await _send('GET', f"/api/airplanes/{_seg(n_number)}", query={}, body=None, headers={})
+
+
+async def airplane_photo(*, n_number: str) -> Any:
+    """GET /api/airplanes/{n_number}/photo: Airplane Photo"""
+    return await _send('GET', f"/api/airplanes/{_seg(n_number)}/photo", query={}, body=None, headers={})
+
+
 async def airport_place(*, ident: str) -> Any:
     """GET /api/airport/{ident}: Airport Place"""
     return await _send('GET', f"/api/airport/{_seg(ident)}", query={}, body=None, headers={})
@@ -580,6 +590,11 @@ async def traffic_past_flight(*, hex_id: str, flight_id: int) -> Any:
 async def traffic_status(*, hex_id: str) -> Any:
     """GET /api/traffic/flight/{hex_id}/status: Traffic Status"""
     return await _send('GET', f"/api/traffic/flight/{_seg(hex_id)}/status", query={}, body=None, headers={})
+
+
+async def traffic_registered(*, q: str) -> Any:
+    """GET /api/traffic/registered: Traffic Registered"""
+    return await _send('GET', '/api/traffic/registered', query={'q': q}, body=None, headers={})
 
 
 async def traffic_route(*, callsign: str, lat: float | None = None, lon: float | None = None) -> Any:

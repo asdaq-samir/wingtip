@@ -464,27 +464,58 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    `fuel_estimate` over its great-circle distance at the airplane's cruise
    TAS, no wind, so marked "≈" and said "about 38 minutes at 110 knots, no
    wind" (`place/flyHereTime`); "Fly Here" otherwise.
-3. Facts, a sideways strip under the actions (`place/PlaceFacts` on the
-   shared `CardFacts`), each a
-   small grey name over its value, as Maps' Hours, Yelp, Accepts and
-   Distance: Weather (the flight category chip, "≈" where it is the
-   model's or a near station's), Wind (true, "310°T 4 kt"), Longest (the
-   longest runway open; "Runway" where there is one), Elevation, Distance
-   (from the pilot, else "From C81"), Fuel (NASR's types, the engine's
-   `fuel_names`), each only where the data has it.
+3. Facts, a sideways strip at the head of the Info tab alone (the owner,
+   2026-11-14: "Info tab should start from the info strip and images and
+   the rest. Switching tabs should not show those"; `place/PlaceFacts` on
+   the shared `CardFacts`), each a small grey name over its value, as
+   Maps' Hours, Yelp, Accepts and Distance, and a grey note under it where
+   it has one. Always the same five, in this order, "—" where one is not
+   known, so the strip never changes shape (the owner, 2026-11-14: "the
+   info strip can have these fixed things: weather, airspace, elevation,
+   pattern altitude and distance"); the words are `place/factWords`:
+   - Weather: the flight category chip, "≈" where it is the model's or a
+     near station's.
+   - Airspace: "Class D", the class at the field's surface, the engine's
+     `surface_airspace` (engine/crates/airspace/src/surface_class.rs; 14
+     CFR 71.41, 71.51, 71.61, 71.71(b), AIM 3-3-1), which the planner asks
+     of the NASR Class Airspace volumes holding the field and sends as the
+     airport's `surface_airspace` (`airspace_class` too). Only a volume from
+     the surface counts: a Class B or C shelf over the field is not its
+     class. Part-time where NASR's WKHR_CODE is NOTAM or RMK, the note
+     saying its other times as the Chart Supplement does (AIM 3-2-5a1):
+     "Part-time, E other times", "Part-time, G other times", "Part-time,
+     E or G other times".
+   - Elevation: NASR's field elevation, feet MSL.
+   - Pattern: the traffic pattern altitude, feet MSL, the engine's
+     `pattern_altitude` the planner sends as `pattern`: NASR APT_BASE's TPA
+     (feet above the field) over the field's elevation, the note its
+     height ("807 ft AGL"); with none published, AIM 4-3-3a's 1,000 ft over
+     the field for a propeller-driven airplane, the note "AIM, none
+     published". APT_BASE gives one TPA; where NASR's remarks on it
+     (APT_RMK, TPA: a large airplane's, a helicopter's, or the TPA itself)
+     say more, the planner sends them in words (`pattern.remarks`), the
+     note adds "others differ" ("AIM; FAA remarks differ" with none in
+     APT_BASE), and the Runways tab's Pattern altitude row reads them.
+   - Distance: from the pilot, else "From C81".
+   The wind, the longest runway and the fuel are the Weather tab's, the
+   Runways tab's and the Info tab's services, not the strip's.
 4. The pictures (`place/PlacePictures`): large rounded tiles sliding
-   sideways, from the air, the runways, from the ground, over every tab;
+   sideways, from the air, the runways, from the ground, under the facts
+   on the Info tab;
    a tap opens one full screen to pinch in on (ChartViewer's MapLibre
    map, its pages kept across the card's redraws so a pinch holds).
-5. The tab's page (Info: elevation, the frequencies a pilot needs first,
+5. The tab's page (Info: the facts and the pictures, then its Details, the address alone since the facts have the rest (the owner, 2026-11-14: "Since the details are in the info strip, we can remove them except address"), the frequencies a pilot needs first,
    each copying on click, lights and services; Weather; Runways; Charts),
    then the tabs, Info, Weather, Runways, Charts (`place/PlaceTabBar` on
    the shared `CardTabBar`, the pages in `CardTabPages`; each tab an icon
    from lucide-react, required on `CardTab` (Info, CloudSun, PlaneLanding,
    FileText), the picked one with its word under it, the others icon alone, every tab the same 48 points tall, all named
-   by aria-label, the dot and count over the icon's corner; a tab switch
-   moves nothing above the pages, `useTabScroll` keeping their room as the
-   scroller resizes), in
+   by aria-label, the dot and count over the icon's corner; a tab picked
+   opens at its own top, just under the actions (`useTabScroll`'s
+   `scrollOnPick`: the pages' top where the card was scrolled into the last
+   page, else where it is), moving nothing above the pages and never the
+   detent, `useTabScroll` keeping their room as the scroller resizes so no
+   swap clamps the scroll), in
    a glass capsule floating at the card's foot like Maps' group of
    buttons: sticky at the foot of the card's scroller and moved up by the
    Drawer's own offset (`--sheet-offset`, `--sheet-swipe`) so it stays at
@@ -522,12 +553,13 @@ card's C1 is (the owner, 2026-11-14: "make sure the airplane card looks
 similar to airport card"), top to bottom: the `CardAction` row Fly This,
 Follow (`AircraftAlertMenu` labelled Follow), Favorite (`FavoriteTile`)
 and Share (`shareOrCopy`, `?airplane=`); the status line
-(`airplaneStatus`); the facts strip (`components/airplane/AirplaneFacts`
+(`airplaneStatus`); then, at the head of the Info tab alone (the owner,
+2026-11-14), the facts strip (`components/airplane/AirplaneFacts`
 on `CardFacts`: Type, Year, Seats, Engines, Registration, its status in
 the destructive ink where lapsed, and Owner, public as the FAA publishes
 it); its Planespotters.net photo as the airport card's picture tiles
 (`CardPictures`, the tile the link to its page, the photographer named on
-it); then the page of Flights · Info · Figures, the tabs in the same
+it); the page of Flights · Info · Figures, the tabs in the same
 floating glass bar (`CardTabBar`, icons History, Info and Gauge, Flights with its count over its icon). It reads its N-number two ways at once (`lib/airplane/lookup`,
 `useTailLookup`, in `useAirplaneCard`): the FAA's record from the
 planner's `/api/traffic/registered`, off its disk in milliseconds, for
@@ -551,13 +583,14 @@ picked" and Pick Airplane, never a default type (decision 0011).
 2026-11-14): the head (callsign, what it is and who flies it, Share, ✕);
 Follow, Alert, Debrief and Favorite; the flight in its summary
 (`FlightSummary`: its ends, the bar of the way flown, height, speed and
-track, or where its last flight landed); the facts strip
-(`AirplaneFacts`, from the FAA record, the traffic's type and year where
-it has none); the pictures (its Planespotters photo, then the sketch of
-where it has flown); then Info (`FlightInfoTab`: Details -- registration
+track, or where its last flight landed), the card's head; then Info,
+starting with the facts strip (`AirplaneFacts`, from the FAA record, the
+traffic's type and year where it has none) and the pictures (its
+Planespotters photo, then the sketch of where it has flown), then
+`FlightInfoTab` (Details -- registration
 opening its N-number's card, type, squawk, registered to, model,
 operator, ICAO address, callsign, the tower's departure event -- the
-scheduled route and the FAA registration) or Flights (its earlier
+scheduled route and the FAA registration), or Flights (its earlier
 flights, each replayed) in the floating glass bar, Info first, the tab
 kept for the airplane while the page is open (`useCardTab`).
 
@@ -1356,7 +1389,7 @@ The owner's rule: a screenshot of another app means ours should show this.
 | One round button at the bottom left (Look Around) | The 3D button, and under it the page toggle (the owner, 2026-11-13) |
 | Privacy \| Terms \| Legal \| Imagery at the map's bottom right, over the sheet | `MapCredits`: one MapLibre AttributionControl at the bottom right, riding the sheet's top, Privacy \| Terms \| Legal then each drawn source's credit (imagery, Google, the traffic, the overlay tiles' FAA cycle); gone all the way up, where the footer has them |
 | A place picked: its card is the whole sheet, no search | Any card (a field, an airplane, a point, the Brief, the Map card) hides the search; its ✕ goes back to the search with the query kept |
-| A place card scrolled: its title and ✕ stay in sight | `PinnedHead` (owner decision 2026-11-10: one pinned frosted head, no large title): the card's head is one row, its name, Share and ✕, pinned at the sheet's top under the grabber from the start, the content scrolling under it blurred through its frost (`frost-head`), solid where there is no backdrop-filter and under Reduce Transparency. It replaced a large title folding into a compact bar, which on an iPhone stuck partway down the sheet with the card scrolling above it. Every card with a head has it, one row for all (`CardHeadRow`, the card rule's 8): `SheetCard`'s own (Map card and the cards in the sheet), `CardTitle`'s (airport, airplane), `CardHead`'s (Brief, Nav Log, Profile, Nearest, airspace, past flight); the lists in full (`ListPageHead`), the Stops' row (its distance a filter at its list's top), Settings (`flush`, its scroller unpadded) and its pages (`ConsolePages`) draw the same row, its name and line centred across the card, Share at its start and ✕ alone at its end, two buttons at most (the Brief's Refresh in its ••• menu, the Profile's VFR/IFR in its content), as Apple Maps' place card (`HeadGrid`; the owner, 2026-11-11: "let's move the title in the middle"); what scrolls under the head (an airport's name and town line, `CardHead`'s `line`) stays left-aligned (owner-reported 2026-11-11: Settings' title was its own, at 17 points under its pages' 22; `scripts/ci/shared_parts_guard.py` now fails a head drawn by hand). The airport card's tabs float in a glass bar at its foot (C1, 2026-11-14), each tab keeping its own place in the scroll (`useTabScroll`) |
+| A place card scrolled: its title and ✕ stay in sight | `PinnedHead` (owner decision 2026-11-10: one pinned frosted head, no large title): the card's head is one row, its name, Share and ✕, pinned at the sheet's top under the grabber from the start, the content scrolling under it blurred through its frost (`frost-head`), solid where there is no backdrop-filter and under Reduce Transparency. It replaced a large title folding into a compact bar, which on an iPhone stuck partway down the sheet with the card scrolling above it. Every card with a head has it, one row for all (`CardHeadRow`, the card rule's 8): `SheetCard`'s own (Map card and the cards in the sheet), `CardTitle`'s (airport, airplane), `CardHead`'s (Brief, Nav Log, Profile, Nearest, airspace, past flight); the lists in full (`ListPageHead`), the Stops' row (its distance a filter at its list's top), Settings (`flush`, its scroller unpadded) and its pages (`ConsolePages`) draw the same row, its name and line centred across the card, Share at its start and ✕ alone at its end, two buttons at most (the Brief's Refresh in its ••• menu, the Profile's VFR/IFR in its content), as Apple Maps' place card (`HeadGrid`; the owner, 2026-11-11: "let's move the title in the middle"); what scrolls under the head (an airport's name and town line, `CardHead`'s `line`) stays left-aligned (owner-reported 2026-11-11: Settings' title was its own, at 17 points under its pages' 22; `scripts/ci/shared_parts_guard.py` now fails a head drawn by hand). The airport card's tabs float in a glass bar at its foot (C1, 2026-11-14), each tab opening at its own top under the actions (`useTabScroll`; the owner, 2026-11-14: the facts and pictures are Info's alone) |
 | Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · Towered", Share and ✕, Fly Here (filled, its time "≈ 38m"), Add as Stop, Call, Favorite; a sideways strip of facts, the pictures as a sliding row, the tab's page, and the tabs in a glass bar floating at the card's foot (C1, the owner, 2026-11-14) |
 | Typing: top hit with inline action pills, suggestion rows, places | `OneSearchResults`: one white group, the top hit with Fly Here and Depart From pills, Search Nearby as a suggestion, the match in bold |
 | One search field (the one card rule, 2026-11-10) | The one search finds airplanes as well as places (no traffic page or airplane field of its own since 2026-11-14: `useAirplaneHits`, `useHeardHits`), and the airplanes' Adds ask it (`askFor("mine" \| "airplane")`, kept by `pickAirplane`); Nearest's place is a field scoped to it at its card's top (`nearSearch`, as the card covers the sheet's first row); the route's points and the route box's arrow between two points (a stop there, `useStopAsked`) ask it for an airport (`askSearchPick`, AirportPicker), its placeholder what they ask for; the developer's page, with no one search, keeps the picker's own |

@@ -122,7 +122,7 @@ test("the card's runways are a page of its pictures under its title and actions,
     "src",
     "/api/planner/airport-diagram/2610/runways/KDLH.png?v=2",
   );
-  await expect(card(page).getByTestId("place-elevation")).toContainText(/^Elevation[\d,]+ ft$/);
+  await expect(card(page).getByTestId("place-fact-elevation")).toContainText(/^Elevation[\d,]+ ft$/);
   // The title, then the actions, then the pictures lower in the card.
   const [name, call, pictures] = await Promise.all(
     [card(page).getByTestId("place-name"), card(page).getByTestId("place-call"), card(page).getByTestId("place-pictures")].map(

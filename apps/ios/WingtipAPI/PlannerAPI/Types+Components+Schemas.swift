@@ -1432,11 +1432,9 @@ extension Components {
                 case photo
             }
         }
-        /// One airport the way the map's card shows it: its name and place,
-        /// the class of the airspace over it, whether it has a tower, its
-        /// runways and radio, and the weather there now. `metar` is None for a
-        /// field with no reporting station, and `weather_unavailable` says the
-        /// weather service could not be asked at all -- not the same thing.
+        /// One airport the way the map's card shows it: its name and place, the class of the airspace at
+        /// its surface, its tower, runways and radio, and the weather now. `metar` is None for a field with
+        /// no reporting station; `weather_unavailable`, the weather service could not be asked at all.
         ///
         /// - Remark: Generated from `#/components/schemas/AirportPlace`.
         public struct AirportPlace: Codable, Hashable, Sendable {
@@ -1510,6 +1508,8 @@ extension Components {
             public var standardKeying: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/status`.
             public var status: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/surface_airspace`.
+            public var surfaceAirspace: Components.Schemas.SurfaceAirspace?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/taf`.
             public var taf: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/towered`.
@@ -1554,6 +1554,7 @@ extension Components {
             ///   - runways:
             ///   - standardKeying:
             ///   - status:
+            ///   - surfaceAirspace:
             ///   - taf:
             ///   - towered:
             ///   - weatherUnavailable:
@@ -1593,6 +1594,7 @@ extension Components {
                 runways: [Components.Schemas.Runway],
                 standardKeying: Swift.Bool? = nil,
                 status: Swift.String? = nil,
+                surfaceAirspace: Components.Schemas.SurfaceAirspace? = nil,
                 taf: Swift.String? = nil,
                 towered: Swift.Bool,
                 weatherUnavailable: Swift.Bool? = nil
@@ -1632,6 +1634,7 @@ extension Components {
                 self.runways = runways
                 self.standardKeying = standardKeying
                 self.status = status
+                self.surfaceAirspace = surfaceAirspace
                 self.taf = taf
                 self.towered = towered
                 self.weatherUnavailable = weatherUnavailable
@@ -1672,6 +1675,7 @@ extension Components {
                 case runways
                 case standardKeying = "standard_keying"
                 case status
+                case surfaceAirspace = "surface_airspace"
                 case taf
                 case towered
                 case weatherUnavailable = "weather_unavailable"
@@ -20917,6 +20921,47 @@ extension Components {
                 case start
             }
         }
+        /// The class of the airspace at a field's surface (the engine's
+        /// surface_airspace: 14 CFR 71, AIM 3-2-5a1): a shelf over it is not its
+        /// class; `part_time` where NASR has it in effect by NOTAM or remark, then
+        /// `otherwise` its class at other times, `otherwise_part_time` where that
+        /// one is part-time too (G when neither is in effect).
+        ///
+        /// - Remark: Generated from `#/components/schemas/SurfaceAirspace`.
+        public struct SurfaceAirspace: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SurfaceAirspace/class`.
+            public var airspaceClass: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SurfaceAirspace/otherwise`.
+            public var otherwise: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SurfaceAirspace/otherwise_part_time`.
+            public var otherwisePartTime: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/SurfaceAirspace/part_time`.
+            public var partTime: Swift.Bool
+            /// Creates a new `SurfaceAirspace`.
+            ///
+            /// - Parameters:
+            ///   - airspaceClass:
+            ///   - otherwise:
+            ///   - otherwisePartTime:
+            ///   - partTime:
+            public init(
+                airspaceClass: Swift.String,
+                otherwise: Swift.String? = nil,
+                otherwisePartTime: Swift.Bool? = nil,
+                partTime: Swift.Bool
+            ) {
+                self.airspaceClass = airspaceClass
+                self.otherwise = otherwise
+                self.otherwisePartTime = otherwisePartTime
+                self.partTime = partTime
+            }
+            public enum CodingKeys: String, CodingKey {
+                case airspaceClass = "class"
+                case otherwise
+                case otherwisePartTime = "otherwise_part_time"
+                case partTime = "part_time"
+            }
+        }
         /// One of a field's charts in the d-TPP (wingtip.publications): `kind` the
         /// FAA's chart code -- APD the airport diagram, HOT its hot spots, LAH
         /// land and hold short, IAP an approach, DP and ODP a departure, STR an
@@ -21881,25 +21926,31 @@ extension Components {
             public var altitudeFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TrafficPattern/published`.
             public var published: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/TrafficPattern/remarks`.
+            public var remarks: [Swift.String]?
             /// Creates a new `TrafficPattern`.
             ///
             /// - Parameters:
             ///   - aglFt:
             ///   - altitudeFt:
             ///   - published:
+            ///   - remarks:
             public init(
                 aglFt: Swift.Double,
                 altitudeFt: Swift.Double? = nil,
-                published: Swift.Bool? = nil
+                published: Swift.Bool? = nil,
+                remarks: [Swift.String]? = nil
             ) {
                 self.aglFt = aglFt
                 self.altitudeFt = altitudeFt
                 self.published = published
+                self.remarks = remarks
             }
             public enum CodingKeys: String, CodingKey {
                 case aglFt = "agl_ft"
                 case altitudeFt = "altitude_ft"
                 case published
+                case remarks
             }
         }
         /// Where an airplane was: Unix seconds, its position, its height (None

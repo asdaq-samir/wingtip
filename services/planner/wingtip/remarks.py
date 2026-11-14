@@ -89,6 +89,15 @@ def airport_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> dict:
     }
 
 
+def pattern_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> list[str]:
+    """Its remarks on its traffic pattern altitude (APT_RMK's TPA column) in
+    words (`read`): most often the heights for other aircraft than
+    APT_BASE's one TPA gives -- EDN's "800 FT AGL FOR CAT A AND B ACFT,
+    1500 FT AGL FOR CAT C ACFT." -- or the TPA where APT_BASE has none."""
+    remarks = _all_remarks(cache_dir).get(faa_id.strip().upper(), [])
+    return read([text for column, text, _ in remarks if column == "TPA"])
+
+
 # Which remarks are about the fuel -- the FAA's own on a fuel type, and
 # any that names fuel or the FBO that sells it ("FOR FBO HRS OF OPN CTC
 # (785) 628-8881. FOR AFT HRS FUEL CTC FBO.") -- and which about a way

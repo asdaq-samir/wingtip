@@ -113,7 +113,7 @@ public protocol APIProtocol: Sendable {
     ///
     /// One US airport's card, by any ident it goes by (C81, KC81, KDLH).
     ///
-    /// `airspace_class` is the surface's class (wingtip.airspace.surface_class_at).
+    /// `airspace_class` is the surface's class, `surface_airspace` with its hours.
     /// `towered` is whether it lists a tower frequency. No reporting station,
     /// no `metar`; `weather_unavailable` only where the service was not asked.
     ///
@@ -1690,7 +1690,7 @@ extension APIProtocol {
     ///
     /// One US airport's card, by any ident it goes by (C81, KC81, KDLH).
     ///
-    /// `airspace_class` is the surface's class (wingtip.airspace.surface_class_at).
+    /// `airspace_class` is the surface's class, `surface_airspace` with its hours.
     /// `towered` is whether it lists a tower frequency. No reporting station,
     /// no `metar`; `weather_unavailable` only where the service was not asked.
     ///

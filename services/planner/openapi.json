@@ -1698,7 +1698,7 @@
         "type": "object"
       },
       "AirportPlace": {
-        "description": "One airport the way the map's card shows it: its name and place,\nthe class of the airspace over it, whether it has a tower, its\nrunways and radio, and the weather there now. `metar` is None for a\nfield with no reporting station, and `weather_unavailable` says the\nweather service could not be asked at all -- not the same thing.",
+        "description": "One airport the way the map's card shows it: its name and place, the class of the airspace at\nits surface, its tower, runways and radio, and the weather now. `metar` is None for a field with\nno reporting station; `weather_unavailable`, the weather service could not be asked at all.",
         "properties": {
           "address": {
             "anyOf": [
@@ -2025,6 +2025,16 @@
               }
             ],
             "title": "Status"
+          },
+          "surface_airspace": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SurfaceAirspace"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "taf": {
             "anyOf": [
@@ -23283,6 +23293,54 @@
         "title": "StudioWeatherAsk",
         "type": "object"
       },
+      "SurfaceAirspace": {
+        "description": "The class of the airspace at a field's surface (the engine's\nsurface_airspace: 14 CFR 71, AIM 3-2-5a1): a shelf over it is not its\nclass; `part_time` where NASR has it in effect by NOTAM or remark, then\n`otherwise` its class at other times, `otherwise_part_time` where that\none is part-time too (G when neither is in effect).",
+        "properties": {
+          "class": {
+            "enum": [
+              "B",
+              "C",
+              "D",
+              "E",
+              "G"
+            ],
+            "title": "Class",
+            "type": "string"
+          },
+          "otherwise": {
+            "anyOf": [
+              {
+                "enum": [
+                  "C",
+                  "D",
+                  "E",
+                  "G"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Otherwise"
+          },
+          "otherwise_part_time": {
+            "default": false,
+            "title": "Otherwise Part Time",
+            "type": "boolean"
+          },
+          "part_time": {
+            "title": "Part Time",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "class",
+          "part_time"
+        ],
+        "title": "SurfaceAirspace",
+        "type": "object"
+      },
       "TerminalChart": {
         "description": "One of a field's charts in the d-TPP (wingtip.publications): `kind` the\nFAA's chart code -- APD the airport diagram, HOT its hot spots, LAH\nland and hold short, IAP an approach, DP and ODP a departure, STR an\narrival, MIN the takeoff or alternate minimums -- `name` its title as\nthe FAA prints it, `url` its PDF.",
         "properties": {
@@ -24549,6 +24607,14 @@
             "default": false,
             "title": "Published",
             "type": "boolean"
+          },
+          "remarks": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Remarks",
+            "type": "array"
           }
         },
         "required": [
@@ -26147,7 +26213,7 @@
     },
     "/api/airport/{ident}": {
       "get": {
-        "description": "One US airport's card, by any ident it goes by (C81, KC81, KDLH).\n\n`airspace_class` is the surface's class (wingtip.airspace.surface_class_at).\n`towered` is whether it lists a tower frequency. No reporting station,\nno `metar`; `weather_unavailable` only where the service was not asked.",
+        "description": "One US airport's card, by any ident it goes by (C81, KC81, KDLH).\n\n`airspace_class` is the surface's class, `surface_airspace` with its hours.\n`towered` is whether it lists a tower frequency. No reporting station,\nno `metar`; `weather_unavailable` only where the service was not asked.",
         "operationId": "airport_place_api_airport__ident__get",
         "parameters": [
           {

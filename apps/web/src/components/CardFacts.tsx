@@ -3,23 +3,31 @@ import { cn } from "cn";
 import { TEXT } from "../lib/text";
 
 /** One fact: its name small and grey over its value, as Maps' Hours,
- *  Yelp, Accepts and Distance are. A long value (an owner's name) may be
- *  capped to a width with `className`, the whole of it in the card's Info. */
+ *  Yelp, Accepts and Distance are, and a `note` small and grey under it
+ *  where it has one. A long value (an owner's name) may be capped to a
+ *  width with `className`, the whole of it in the card's Info. */
 export function CardFact({
   label,
   testId,
   className,
+  note,
   children,
 }: {
   label: string;
   testId: string;
   className?: string;
+  note?: string | null;
   children: ReactNode;
 }) {
   return (
     <div className="flex shrink-0 flex-col gap-0.5" data-testid={testId}>
       <dt className={cn("text-muted-foreground", TEXT.note)}>{label}</dt>
       <dd className={cn("font-semibold whitespace-nowrap text-foreground tabular-nums", TEXT.row, className)}>{children}</dd>
+      {note && (
+        <dd className={cn("whitespace-nowrap text-muted-foreground", TEXT.note)} data-testid={`${testId}-note`}>
+          {note}
+        </dd>
+      )}
     </div>
   );
 }

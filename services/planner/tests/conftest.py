@@ -5,7 +5,8 @@ import json
 
 import pytest
 from fastapi.testclient import TestClient
-from wingtip import airports, airspace, diagram_crops, faa_data, field_marks, fixes, pattern, planning, publications, tfr, weather
+from wingtip import airports, airspace, airspace_at, diagram_crops, faa_data, field_marks, fixes, pattern, planning, publications, remarks
+from wingtip import tfr, weather
 from wingtip.config import get_settings
 
 from app import chart_model, chart_scorer, detection, prefetch, checkpoint_scoring
@@ -139,6 +140,7 @@ def known_patterns(monkeypatch):
     monkeypatch.setattr(field_marks, "sites", lambda cache_dir=None: {})  # no NASR runways: ranked on the tower alone
     monkeypatch.setattr(faa_data, "airport_contact", lambda ident, cache_dir: {"phone": None, "address": None})
     monkeypatch.setattr(pattern, "right_traffic_ends", lambda ident, cache_dir=None: set())
+    monkeypatch.setattr(remarks, "pattern_notes", lambda faa_id, cache_dir=None: [])
 
 
 @pytest.fixture(autouse=True)
@@ -148,6 +150,8 @@ def uncontrolled_fields(monkeypatch):
     monkeypatch.setattr(airspace, "ensure_class_airspace_shapefile", lambda cache_dir: "Class_Airspace.shp")
     monkeypatch.setattr(airspace, "surface_class_at", lambda lat, lon, shp: "G")
     monkeypatch.setattr(airspace, "surface_classes", lambda points, shp: ["G"] * len(points))
+    g = {"class": "G", "part_time": False, "otherwise": None, "otherwise_part_time": False}
+    monkeypatch.setattr(airspace_at, "surface_airspace", lambda lat, lon, elevation_ft, shp: {"airspace_class": "G", "surface_airspace": g})
 
 
 @pytest.fixture(autouse=True)

@@ -15,7 +15,7 @@ import { PINNED_BELOW } from "./PinnedHead";
  * - CardTabPanel: a tab's content, spaced as every card's is.
  * - useCardTab (lib/cardTab): the tab picked, kept for each airport or
  *   airplane while the page is open: back from a card over it, the same tab.
- * - useTabScroll (lib/tabScroll): each tab its own place in the scroll.
+ * - useTabScroll (lib/tabScroll): each tab opening at its own top, under the actions.
  */
 
 /** The stock Tabs round a card's pages and, last, its floating bar. `top`

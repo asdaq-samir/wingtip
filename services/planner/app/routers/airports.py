@@ -21,7 +21,6 @@ from wingtip import (
     airport_photos,
     approach_facts,
     airports,
-    airspace,
     airspace_primaries,
     altitude,
     diagram_crops,
@@ -59,7 +58,7 @@ from ..schemas.airports import (
     WaypointsInView,
 )
 from ..gateway import PUBLIC, SHARED
-from ..field_marks import owners_of as _owners, surface_classes_of as _surface_classes
+from ..field_marks import owners_of as _owners, surface_airspace_of, surface_classes_of as _surface_classes
 from ..schemas.nearest import NearestAirports
 
 log = logging.getLogger(__name__)
@@ -378,7 +377,7 @@ def _with_turf(runways: list[dict], ident: str) -> list[dict]:
 def airport_place(ident: str) -> AirportPlace:
     """One US airport's card, by any ident it goes by (C81, KC81, KDLH).
 
-    `airspace_class` is the surface's class (wingtip.airspace.surface_class_at).
+    `airspace_class` is the surface's class, `surface_airspace` with its hours.
     `towered` is whether it lists a tower frequency. No reporting station,
     no `metar`; `weather_unavailable` only where the service was not asked."""
     place = airports.find_place(ident)
@@ -386,7 +385,6 @@ def airport_place(ident: str) -> AirportPlace:
         raise HTTPException(404, f"No US airport goes by {ident.strip().upper()!r}.")
     source = place["source_ident"]
     frequencies = airports.get_frequencies(source)
-    shp_path = airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR)
     unavailable = False
     try:
         metar = weather.metar_for_idents([source]).get(source)
@@ -435,7 +433,7 @@ def airport_place(ident: str) -> AirportPlace:
     )
     return {
         **{key: value for key, value in place.items() if key != "source_ident"},
-        "airspace_class": airspace.surface_class_at(place["lat"], place["lon"], shp_path),
+        **surface_airspace_of(place),  # the class at its surface, part-time or not (the engine's)
         "military": military,
         "private": private,
         "towered": any(f["type"] == "TWR" for f in frequencies),
