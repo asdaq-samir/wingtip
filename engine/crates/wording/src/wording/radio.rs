@@ -112,6 +112,35 @@ pub fn ctaf_of(frequencies: &[Frequency]) -> Option<usize> {
 /// self-announce on (AC 90-66C 9.6).
 pub const MULTICOM_MHZ: f64 = 122.9;
 
+/// Where a frequency comes in the order a pilot dials them on the way out:
+/// the field's weather first (ATIS, AWOS, ASOS: AIM 4-1-13 has the pilot
+/// listen to the ATIS before calling ground or clearance), then clearance
+/// delivery, ground, the tower or the CTAF, approach and departure, and
+/// UNICOM and MULTICOM after them (at a towered field the UNICOM is the
+/// FBO's, AIM 4-1-11); anything else last.
+fn use_rank(f: &Frequency) -> u8 {
+    let code = f.code();
+    match code.as_str() {
+        "ATIS" | "AWOS" | "ASOS" => 0,
+        "CLD" | "CLNC" | "CD" => 1,
+        "GND" | "GCCD" | "GND/CD" => 2,
+        "TWR" | "CTAF" => 3,
+        // A UNICOM the file calls the CTAF too is the field's CTAF.
+        "UNIC" | "UNICOM" if f.says_ctaf() => 3,
+        "APP" | "APCH" | "DEP" | "A/D" | "APP/DEP" => 4,
+        "UNIC" | "UNICOM" | "MULT" | "MULTICOM" => 5,
+        _ => 6,
+    }
+}
+
+/// A field's frequencies in the order a pilot uses them (use_rank), as
+/// indices into `frequencies`; the file's own order kept within a kind.
+pub fn frequencies_in_order(frequencies: &[Frequency]) -> Vec<usize> {
+    let mut order: Vec<usize> = (0..frequencies.len()).collect();
+    order.sort_by_key(|&i| use_rank(&frequencies[i]));
+    order
+}
+
 /// The kneeboard's short names for a field's radio, in its order: the
 /// tower's before the CTAF's (a towered field's CTAF is for when it is
 /// closed).

@@ -97,6 +97,7 @@ export const WEB_RULES = [
   "flow_sample",
   "frd_read",
   "frd_write",
+  "frequencies_in_order",
   "frequency_line",
   "fuel_estimate",
   "fuel_in_tanks",

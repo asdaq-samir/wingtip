@@ -10626,6 +10626,40 @@
       ],
       "additionalProperties": false
     },
+    "frequencies_in_order": {
+      "description": "A field's frequencies in the order a pilot dials them -- its weather (ATIS, AWOS), clearance, ground, the tower or CTAF, approach and departure, then UNICOM and the rest (AIM 4-1-13, 4-1-11) -- as indices into frequencies, the file's order kept within a kind.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FrequenciesInOrderInput",
+          "type": "object",
+          "properties": {
+            "frequencies": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FieldFrequency"
+              }
+            }
+          },
+          "required": [
+            "frequencies"
+          ]
+        },
+        "answer": {
+          "title": "FrequenciesInOrderAnswer",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "frequency_line": {
       "description": "A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.",
       "type": "object",
@@ -29519,6 +29553,7 @@
     "frd_read",
     "frd_write",
     "freezing_level",
+    "frequencies_in_order",
     "frequency_line",
     "frequency_of",
     "fuel_estimate",

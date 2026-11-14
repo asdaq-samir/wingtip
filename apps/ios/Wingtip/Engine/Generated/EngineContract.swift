@@ -4271,6 +4271,10 @@ enum EngineContract {
         var profile: [[Double]]?
     }
 
+    struct FrequenciesInOrderInput: Codable, Equatable, Sendable {
+        var frequencies: [EngineContract.FieldFrequency]
+    }
+
     struct FrequencyLineAnswer: Codable, Equatable, Sendable {
         var name: String
         var kind: String
