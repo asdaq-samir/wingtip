@@ -1,11 +1,33 @@
 import { describe, expect, it } from "vitest";
-import { altFt, bearing, feet, gal, grouped, magneticVariation, miles, nm, reportedDirection, threeFigures, windCorrection } from "./figures";
+import {
+  altFt,
+  bearing,
+  feet,
+  gal,
+  grouped,
+  magneticVariation,
+  miles,
+  nm,
+  reportedAltitude,
+  wholeNm,
+  reportedDirection,
+  threeFigures,
+  windCorrection,
+} from "./figures";
 
 describe("figures written as the FAA writes them", () => {
   it("writes statute miles as reported, and more than that as P6SM says it", () => {
     expect(miles(2.5)).toBe("2.5 sm");
     expect(miles(6, true)).toBe("6+ sm");
     expect(miles(null)).toBe("—");
+  });
+
+  it("writes whole miles, and a target's altitude to the hundred feet", () => {
+    expect(wholeNm(12.4)).toBe("12 nm");
+    expect(wholeNm(1234)).toBe("1,234 nm");
+    expect(reportedAltitude(4525)).toBe("4,500 ft");
+    expect(reportedAltitude(4560)).toBe("4,600 ft");
+    expect(reportedAltitude(null)).toBe("—");
   });
 
   it("puts a comma between each three figures, rounded to a whole number", () => {

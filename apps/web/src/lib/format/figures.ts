@@ -78,6 +78,21 @@ export function nm(n: number | null | undefined): string {
   return n === null || n === undefined ? "—" : `${one(n)} nm`;
 }
 
+/** A distance in whole miles, "12 nm": where tenths would say more than
+ *  is known or wanted (a radius, a search's reach, a rounded estimate). */
+export function wholeNm(n: number | null | undefined): string {
+  return n === null || n === undefined ? "—" : `${grouped(n)} nm`;
+}
+
+/** Another airplane's reported altitude, to the hundred feet, "4,500 ft":
+ *  as ATC gives traffic's altitude in hundreds of feet (FAA Order JO
+ *  7110.65, 2-1-21), and one form wherever a target is shown, where the
+ *  flight card rounded to 25 ft and the traffic list to 100 (WEB-38,
+ *  CODE-34). */
+export function reportedAltitude(ft: number | null | undefined): string {
+  return ft === null || ft === undefined ? "—" : `${altFt(Math.round(ft / 100) * 100)} ft`;
+}
+
 /** Fuel with its unit, to a tenth: "12.0 gal". */
 export function gal(n: number | null | undefined): string {
   return n === null || n === undefined ? "—" : `${one(n)} gal`;

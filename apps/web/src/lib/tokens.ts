@@ -106,6 +106,7 @@ export const BADGE = {
   stopTraining: "#0369a1",
   home: "#0d9488",
   airplane: "#0284c7",
+  air: "#0f766e",
 };
 
 export const WEATHER = {

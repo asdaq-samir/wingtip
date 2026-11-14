@@ -169,6 +169,8 @@ enum WingtipColor {
         static let home = rgb(0x0D9488)
         /// An airplane's own mark on a tile or a row: its profile's, a Favorite's (Tailwind sky-600, as it was drawn).
         static let airplane = rgb(0x0284C7)
+        /// A tracked airplane's "In the air" badge on its card, white on it (Tailwind teal-700, as it was drawn).
+        static let air = rgb(0x0F766E)
     }
     enum Weather {
         static let convective = rgb(0xC2410C)

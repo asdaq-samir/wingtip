@@ -262,6 +262,9 @@ object WingtipColors {
         /** An airplane's own mark on a tile or a row: its profile's, a Favorite's (Tailwind sky-600, as it was drawn). */
         val Airplane = Color(0xFF0284C7)
         const val AIRPLANE_HEX = "#0284c7"
+        /** A tracked airplane's "In the air" badge on its card, white on it (Tailwind teal-700, as it was drawn). */
+        val Air = Color(0xFF0F766E)
+        const val AIR_HEX = "#0f766e"
     }
     object Weather {
         val Convective = Color(0xFFC2410C)

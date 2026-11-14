@@ -16,7 +16,7 @@ import { PillSection } from "../../../components/Favorites";
 import { RowBadge } from "../../../components/RowBadge";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
-import { useGeo } from "../../../lib/geo";
+import { useGeo, type LatLon } from "../../../lib/geo";
 import { useClock } from "../../../lib/useMinuteClock";
 import { useOwnFixShown, type Fix } from "../../../lib/map/position/ownShip";
 import { carriedOn, closestApproach, nearInHeight } from "../map/traffic";
@@ -27,7 +27,7 @@ import { planePhotoQuery } from "../lib/planePhoto";
 import { airportQuery, flightQuery, routeQuery } from "../../../lib/queryClient";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
-import { altFt, bearing, clockTime } from "../../../lib/format";
+import { altFt, bearing, clockTime, reportedAltitude } from "../../../lib/format";
 import { awayFrom, nmAway } from "../../../lib/useAway";
 import AircraftAlertMenu from "./AircraftAlertMenu";
 import AirplaneSketch from "./AirplaneSketch";
@@ -93,7 +93,7 @@ interface StateBadge {
 }
 
 const TONE = {
-  air: "bg-teal-700",
+  air: "bg-(--badge-air)",
   // iOS's dark grey: white on it reads at 7.7:1.
   ground: "bg-zinc-600",
   alarm: "bg-destructive",
@@ -104,6 +104,64 @@ function against(feet: number): string {
   const rounded = Math.round(feet / 100) * 100;
   if (rounded === 0) return "level";
   return `${altFt(Math.abs(rounded))} ft ${rounded > 0 ? "above" : "below"}`;
+}
+
+type Latest = { plane: TrafficAircraft; at: number } | null;
+
+/** Where it is now, carried on from its report as the map draws it
+ *  (lib/geo), on a clock of its own: the card's parts that move each
+ *  second (the summary's age and closest approach, the sketch's airplane)
+ *  each count it, and the 700-line card around them is drawn again only
+ *  when what it shows changes (the 6 Nov audit's W7, WEB-36). */
+function useHere(latest: Latest) {
+  const geo = useGeo();
+  const now = useClock(1000, !!latest);
+  return { geo, now, here: geo && latest ? carriedOn(geo, latest.plane, (now - latest.at) / 1000) : null };
+}
+
+/** The flight's summary with what moves each second worked out here:
+ *  how long it has flown, how far along it is (the miles flown from the
+ *  field it left against those still to go; a flight landed all the way),
+ *  how far it is from own ship and its closest approach. */
+function FlightNow({
+  latest,
+  fields,
+  fix,
+  ...rest
+}: Omit<Parameters<typeof FlightSummary>[0], "now" | "progress" | "fromYou" | "cpa"> & {
+  latest: Latest;
+  fields: { from: LatLon | null; to: LatLon | null; landed: boolean };
+}) {
+  const { geo, now, here } = useHere(latest);
+  const plane = rest.plane;
+  const progress = plane
+    ? geo && fields.from && fields.to && here
+      ? (() => {
+          const done = geo.distanceNm(fields.from, here),
+            left = geo.distanceNm(here, fields.to);
+          return done + left > 0 ? done / (done + left) : null;
+        })()
+      : null
+    : fields.landed
+      ? 1
+      : null;
+  const cpa = fix && plane && here ? closestApproach(fix, { ...plane, ...here }) : null;
+  return (
+    <FlightSummary
+      {...rest}
+      fix={fix}
+      now={now}
+      progress={progress}
+      fromYou={geo && fix && here ? awayFrom(geo, fix, here) : null}
+      cpa={cpa}
+    />
+  );
+}
+
+/** The sketch of where it has flown, its airplane carried on each second. */
+function LiveSketch({ latest, ...props }: Omit<Parameters<typeof AirplaneSketch>[0], "now"> & { latest: Latest }) {
+  const { here } = useHere(latest);
+  return <AirplaneSketch {...props} now={here && latest ? { ...here, altFt: latest.plane.altitude_ft ?? null } : null} />;
 }
 
 /** One end of the flight in its summary: the field's ident, a tap that
@@ -242,7 +300,7 @@ function FlightSummary({
       )}
       {plane ? (
         <span className={cn("font-semibold text-foreground tabular-nums", TEXT.detail)} data-testid="flight-altitude">
-          {plane.altitude_ft == null ? "—" : `${altFt(Math.round(plane.altitude_ft / 25) * 25)} ft`} {climb}
+          {reportedAltitude(plane.altitude_ft)} {climb}
           {" · "}
           {plane.speed_kt == null ? "—" : `${Math.round(plane.speed_kt)} kt`}
           {/* ADS-B's track is over the ground and true, not magnetic. */}
@@ -321,8 +379,6 @@ export default function FlightCard({
   const firstAt = latest ? { lat: latest.plane.lat, lon: latest.plane.lon } : null;
   const { data: route } = useQuery(routeQuery(callsign, firstAt));
   const flying = route && route.plausible !== false ? route : null;
-  // The report's age, counted on while its tab is in sight (useClock).
-  const now = useClock(1000);
   const plane = latest?.plane ?? null;
   const following = follow && !!plane;
   // What is kept of it, for the Aircraft card's Recents and Favorites,
@@ -350,10 +406,7 @@ export default function FlightCard({
   }, [kept]);
   const name =
     plane?.callsign ?? detail?.registration ?? plane?.registration ?? detail?.faa?.n_number ?? keptBefore?.name ?? hex.toUpperCase();
-  // Where it is now, carried on from its report, as the map draws it (lib/geo).
   const geo = useGeo();
-  const here = geo && latest ? carriedOn(geo, latest.plane, (now - latest.at) / 1000) : null;
-  const cpa = fix && plane && here ? closestApproach(fix, { ...plane, ...here }) : null;
   const squawk = plane?.squawk ?? null;
   const meaning = squawkMeaning(squawk);
   const rate = plane?.vertical_fpm ?? 0;
@@ -435,19 +488,6 @@ export default function FlightCard({
     ? { ident: fromIdent, place: townOf(fromField) ?? (plane ? (route?.airports[0]?.location ?? null) : null) }
     : null;
   const toEnd = toIdent ? { ident: toIdent, place: townOf(toField) ?? (plane ? (flying?.airports.at(-1)?.location ?? null) : null) } : null;
-  // How far along: the miles flown from the field it left against those
-  // still to go to the one it is bound for; a flight landed all the way.
-  const progress = plane
-    ? geo && fromField && toField && here
-      ? (() => {
-          const done = geo.distanceNm(fromField, here),
-            left = geo.distanceNm(here, toField);
-          return done + left > 0 ? done / (done + left) : null;
-        })()
-      : null
-    : last?.landed
-      ? 1
-      : null;
   const share = () => void shareFlight(name, hex);
   // The photo first, as Maps opens a place on its photos, where
   // Planespotters has one; else the airplane's shape on the tint, a
@@ -479,9 +519,9 @@ export default function FlightCard({
       key: "trail",
       label: `Where ${name} has flown`,
       picture: (
-        <AirplaneSketch
+        <LiveSketch
+          latest={latest}
           points={trail}
-          now={here && plane ? { ...here, altFt: plane.altitude_ft ?? null } : null}
           // Its track now, or, not heard, its last flight's last way.
           trackDeg={plane?.track_deg ?? (geo && trail.length > 1 ? geo.bearingDeg(trail.at(-2)!, trail.at(-1)!) : null)}
           from={fromField ?? null}
@@ -496,7 +536,7 @@ export default function FlightCard({
   // while it is heard, else its chip -- and where it is from and bound;
   // behind it the photo, or the tint the head draws where there is none.
   const pillLine = [
-    plane?.altitude_ft != null && `${altFt(Math.round(plane.altitude_ft / 25) * 25)} ft`,
+    plane?.altitude_ft != null && reportedAltitude(plane.altitude_ft),
     plane?.speed_kt != null && `${Math.round(plane.speed_kt)} kt`,
     !plane && chip,
     fromIdent && toIdent && fromIdent !== toIdent
@@ -566,19 +606,17 @@ export default function FlightCard({
         </p>
       )}
       {(plane || last || endOfToday) && (
-        <FlightSummary
+        <FlightNow
+          latest={latest}
+          fields={{ from: fromField ?? null, to: toField ?? null, landed: !!last?.landed }}
           plane={plane}
           badge={badge}
           chip={chip}
           from={fromEnd}
           to={toEnd}
-          progress={progress}
           startedAt={detail?.departed?.at ?? today?.[0]?.t ?? null}
           departedAt={plane ? (detail?.departed?.at ?? null) : null}
-          now={now}
           fix={fix}
-          fromYou={geo && fix && here ? awayFrom(geo, fix, here) : null}
-          cpa={cpa}
           onOpenAirport={onOpenAirport}
           airport={airport}
         />
