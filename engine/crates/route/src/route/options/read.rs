@@ -67,7 +67,7 @@ pub const GAIRMET_MARKS: [&str; 3] = ["Turbulence", "Icing", "Low-level wind she
 /// ceiling (none known: none but Class A's) and under 18,000 ft (Class A,
 /// 71.33) -- the lower of the two, so a way works whichever way its legs go.
 pub fn highest_cruise_ft(ceiling_ft: Option<f64>) -> f64 {
-    let top = ceiling_ft.unwrap_or(limits::VFR_HIGHEST_FT).min(limits::VFR_HIGHEST_FT);
+    let top = cruise_top_ft(ceiling_ft);
     // From the first of each direction's altitudes over 3,000 ft (3,500
     // eastbound, 4,500 westbound: flight's lowest_vfr_cruising_altitude),
     // up by its 2,000 ft steps (odd or even thousands plus 500) to the top.
@@ -82,6 +82,12 @@ pub fn highest_cruise_ft(ceiling_ft: Option<f64>) -> f64 {
         a
     };
     highest(90.0).min(highest(270.0))
+}
+
+/// The top a VFR cruise may be flown at: the airplane's ceiling (none
+/// known: none but Class A's) under 18,000 ft (71.33).
+pub fn cruise_top_ft(ceiling_ft: Option<f64>) -> f64 {
+    ceiling_ft.unwrap_or(limits::VFR_HIGHEST_FT).min(limits::VFR_HIGHEST_FT)
 }
 
 /// Every VFR cruising altitude to the airplane's top (91.159: odd
@@ -306,11 +312,14 @@ pub fn tfrs(grid: &mut Grid, tfrs: &[Airspace]) {
 
 /// Each cell's best groundspeed, kt, out each of the eight ways (STEPS),
 /// at the legal cruising altitudes over its floor -- the direction's own
-/// thousands (91.159, by the magnetic course, `variation_deg` east taken
-/// off the true) -- in the nearest FD station's winds (at `altitudes`, as
-/// the station's `winds`). TAS where there are no winds. Rows by columns
-/// by the eight ways.
-pub fn groundspeeds(grid: &Grid, stations: &[Station], altitudes: &[f64], tas_kt: f64, variation_deg: f64) -> Vec<f64> {
+/// thousands (91.159, by the magnetic course, the cell's own variation
+/// east, `variation_at(lat, lon)`, taken off the true: a long east-west
+/// way's half of 91.159 can change along it) -- in the nearest FD
+/// station's winds (at `altitudes`, as the station's `winds`; each way
+/// tries its own half's up to the top, so a westbound cell under a
+/// 13,000 ft ceiling tries 12,500 though eastbound stops at 11,500). TAS
+/// where there are no winds. Rows by columns by the eight ways.
+pub fn groundspeeds(grid: &Grid, stations: &[Station], altitudes: &[f64], tas_kt: f64, variation_at: &dyn Fn(f64, f64) -> f64) -> Vec<f64> {
     let (rows, cols) = (grid.rows, grid.cols);
     let mut out = vec![tas_kt; rows * cols * 8];
     if altitudes.is_empty() || stations.is_empty() {
@@ -319,16 +328,15 @@ pub fn groundspeeds(grid: &Grid, stations: &[Station], altitudes: &[f64], tas_kt
     let wind = |s: &Station, j: usize| s.winds.get(j).copied().flatten().unwrap_or((0.0, 0.0));
     for r in 0..rows {
         let lat = grid.lats[r];
-        // The course each way at this row, and its half of 91.159.
-        let ways: Vec<(f64, bool)> = STEPS
-            .iter()
-            .map(|&(dr, dc)| {
-                let course = geo::py_mod(flat_bearing(lat, dr as f64, dc as f64).to_degrees(), 360.0);
-                (course, flight::is_eastbound(geo::py_mod(course - variation_deg, 360.0)))
-            })
-            .collect();
+        // The course each way at this row.
+        let courses: Vec<f64> =
+            STEPS.iter().map(|&(dr, dc)| geo::py_mod(flat_bearing(lat, dr as f64, dc as f64).to_degrees(), 360.0)).collect();
         for c in 0..cols {
             let lon = grid.lons[c];
+            // Each way's half of 91.159 by its magnetic course here.
+            let variation_deg = variation_at(lat, lon);
+            let ways: Vec<(f64, bool)> =
+                courses.iter().map(|&course| (course, flight::is_eastbound(geo::py_mod(course - variation_deg, 360.0)))).collect();
             // The nearest station, the first where two are as near.
             let mut best = (f64::INFINITY, 0usize);
             for (i, s) in stations.iter().enumerate() {

@@ -399,14 +399,20 @@ fn read_grid(a: &Ask, unchecked: &mut Vec<String>) -> Result<(Grid, Vec<f64>), S
         Some(t) => read::tfrs(&mut grid, t),
         None => unchecked.push("TFRs".into()),
     }
-    // East is least: magnetic = true - variation east, the grid's middle's
-    // (the World Magnetic Model, today's).
-    let mid_lat = grid.lats.iter().sum::<f64>() / grid.rows as f64;
-    let mid_lon = grid.lons.iter().sum::<f64>() / grid.cols as f64;
-    let variation = wmm::declination(mid_lat, mid_lon, naming::decimal_year(a.now_s));
-    // With no airplane the ways are the route's own, in still air.
+    // East is least: magnetic = true - variation east, each cell's (the
+    // World Magnetic Model, today's), read every half degree: it changes
+    // along a long east-west way, and so may its half of 91.159.
+    let year = naming::decimal_year(a.now_s);
+    let read = RefCell::new(std::collections::HashMap::new());
+    let variation = |lat: f64, lon: f64| {
+        let at = ((lat * 2.0).round() as i64, (lon * 2.0).round() as i64);
+        *read.borrow_mut().entry(at).or_insert_with(|| wmm::declination(at.0 as f64 / 2.0, at.1 as f64 / 2.0, year))
+    };
+    // With no airplane the ways are the route's own, in still air. Each
+    // way tries its own half's altitudes to the airplane's top.
     let winds = if a.profile.airplane { &a.winds[..] } else { &[] };
-    let gs = read::groundspeeds(&grid, winds, &read::cruising_altitudes(top), a.profile.tas_kt.max(1.0), variation);
+    let altitudes = read::cruising_altitudes(read::cruise_top_ft(a.profile.ceiling_ft));
+    let gs = read::groundspeeds(&grid, winds, &altitudes, a.profile.tas_kt.max(1.0), &variation);
     Ok((grid, gs))
 }
 
@@ -597,7 +603,7 @@ fn frame(a: &Ask) -> String {
     out.push(',');
     json::number(&mut out, window.1);
     out.push_str("],\"altitudes_ft\":[");
-    for (i, alt) in read::cruising_altitudes(top).iter().enumerate() {
+    for (i, alt) in read::cruising_altitudes(read::cruise_top_ft(a.profile.ceiling_ft)).iter().enumerate() {
         if i > 0 {
             out.push(',');
         }
