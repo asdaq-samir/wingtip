@@ -1,0 +1,91 @@
+{
+  "x-call": "wingtip_weather::calls::call",
+  "description": "Freezing rain and freezing drizzle (FZRA, FZDZ, any intensity) in the METAR or TAF of each field the flight takes off from, lands at or passes: AIM 7-1-20, freezing precipitation falls 'through or outside of visible cloud', so it ices an airplane clear of cloud and is a Go / No-Go caution on any flight (FAA-H-8083-28B ch. 20). Every TAF group is read, TEMPO and PROB included; a METAR's remarks are not. The line is null where none was found.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FreezingPrecipInput",
+      "type": "object",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "metar": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The METAR as sent."
+              },
+              "taf": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The TAF as sent."
+              }
+            },
+            "required": [
+              "ident"
+            ]
+          }
+        }
+      },
+      "required": [
+        "fields"
+      ]
+    },
+    "answer": {
+      "title": "FreezingPrecipAnswer",
+      "type": "object",
+      "properties": {
+        "found": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "source": {
+                "enum": [
+                  "METAR",
+                  "TAF"
+                ]
+              },
+              "group": {
+                "type": "string",
+                "description": "The group as sent, \"-FZRA\"."
+              }
+            },
+            "required": [
+              "ident",
+              "source",
+              "group"
+            ]
+          }
+        },
+        "line": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "found",
+        "line"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

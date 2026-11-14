@@ -36,7 +36,11 @@
           "type": "number"
         },
         "power_pct": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Null where the profile names no cruise power: the TAS and burn as given, no power model."
         },
         "density_altitude_ft": {
           "type": "number"

@@ -1,0 +1,67 @@
+{
+  "x-call": "wingtip_brief::gonogo::icing::call",
+  "description": "Under IFR, whether icing could not be checked: icing possible (the moisture forecast) at the altitudes flown, but the freezing level not known, so no altitude can be held to it (FAA-H-8083-28B ch. 20: structural icing needs visible moisture at or below 0 °C). The line, \"Icing not checked: freezing level not known\", or null; gonogo_icing gives null in that case.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoIcingUncheckedInput",
+      "type": "object",
+      "properties": {
+        "selection": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "freezing_level_ft": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "icing_possible": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ],
+                  "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+                },
+                "freezing_level_at_or_below": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ],
+                  "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "flown_ft": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          },
+          "description": "The altitudes flown."
+        }
+      }
+    },
+    "answer": {
+      "title": "GonogoIcingUncheckedAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

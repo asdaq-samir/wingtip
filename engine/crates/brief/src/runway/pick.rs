@@ -6,7 +6,7 @@
 //! arrives (AC 90-66C 11.3 and Appendix A) and leave it (11.8); and how
 //! high it is flown.
 
-use super::performance::has;
+use super::performance::{has, SOFT};
 use super::wind::{js_normalize, js_round, RunwayWind};
 use wingtip_core::sort::StableSort;
 
@@ -16,6 +16,27 @@ use wingtip_core::sort::StableSort;
 pub struct End {
     pub ident: String,
     pub heading_true_deg: Option<f64>,
+    /// The threshold's displacement from the runway's end (NASR APT_RWY_END
+    /// DISPLACED_THR_LEN), and the landing distance available where the
+    /// airport declares one (LDA); None where not known or none.
+    pub displaced_threshold_ft: Option<f64>,
+    pub lda_ft: Option<f64>,
+}
+
+/// The runway a landing on `end` has: its declared landing distance
+/// available, else the length less a displaced threshold, else the
+/// length. The pavement behind a displaced threshold is not landed on from
+/// this end (AIM 2-3-3: it "is available for takeoffs in either direction
+/// and landings from the opposite direction"), and the LDA is the length "declared
+/// available and suitable for ... landing" (AC 150/5300-13B, declared
+/// distances). A takeoff has the whole length (`end` None).
+pub fn available_ft(runway: &Runway, end: Option<&End>) -> Option<f64> {
+    let Some(end) = end else { return runway.length_ft };
+    let said = |x: Option<f64>| x.filter(|v| v.is_finite() && *v > 0.0);
+    said(end.lda_ft).or_else(|| match (runway.length_ft, said(end.displaced_threshold_ft)) {
+        (Some(length), Some(displaced)) => Some((length - displaced).max(0.0)),
+        (length, _) => length,
+    })
 }
 
 /// A field's runway, as much as the check reads of it.
@@ -39,10 +60,11 @@ pub fn runway_number(ident: &str) -> &str {
     }
 }
 
-/// Paved, asphalt or concrete (OurAirports' surface codes), where an
-/// unpaved strip may be listed longer.
-fn paved(r: &Runway) -> bool {
-    r.surface.as_deref().is_some_and(|s| has(s, &["asp", "con", "bit", "pem", "paved"]))
+/// Paved, asphalt or concrete (OurAirports' surface codes, NASR's ASPH and
+/// CONC), where an unpaved strip may be listed longer. A combined surface
+/// with a soft part, NASR's "ASPH-TURF", is not paved: some of it is turf.
+pub(crate) fn paved(r: &Runway) -> bool {
+    r.surface.as_deref().is_some_and(|s| has(s, &["asp", "con", "bit", "pem", "paved"]) && !has(s, &SOFT))
 }
 
 /// Paved first, then the longer: the runway a field's traffic uses most,

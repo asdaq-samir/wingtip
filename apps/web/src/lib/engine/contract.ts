@@ -389,6 +389,7 @@ export type GonogoIcingAnswer = {
   line: string;
 } | null;
 export type GonogoIcingLineAnswer = string;
+export type GonogoIcingUncheckedAnswer = string | null;
 export type GonogoPassMinutesAnswer = number | null;
 /**
  * The pilot's picked runway ends, landing (pattern) and takeoff.
@@ -592,6 +593,14 @@ export type InFlightAnswer = {
   track_error_deg: number | null;
   variation_deg: number | null;
   burnt_gal: number;
+  /**
+   * The fuel the plan leaves in the tanks here, from the last fuel stop passed; null without fuel_start_gal.
+   */
+  fuel_now_gal?: number | null;
+  /**
+   * Whether the start and taxi allowance was taken off the fuel figures (taxi_fuel_gal given).
+   */
+  taxi_counted?: boolean;
   next: {
     index: number;
     name: string;
@@ -884,6 +893,10 @@ export type RunwayWindOut = {
   headwind_kt: number;
   crosswind_kt: number;
   gust_crosswind_kt: number | null;
+  /**
+   * The crosswind, the gust's where more, unrounded: what a limit (the POH's demonstrated crosswind, the pilot's own) is judged against, so 10.4 kt is past 10 (AV-10). There only where the wind blew.
+   */
+  crosswind_exact_kt?: number;
   /**
    * There only where calm picked the runway in use.
    */
@@ -2017,6 +2030,13 @@ export interface EngineContract {
     answer: FreezingLevelAnswer;
   };
   /**
+   * Freezing rain and freezing drizzle (FZRA, FZDZ, any intensity) in the METAR or TAF of each field the flight takes off from, lands at or passes: AIM 7-1-20, freezing precipitation falls 'through or outside of visible cloud', so it ices an airplane clear of cloud and is a Go / No-Go caution on any flight (FAA-H-8083-28B ch. 20). Every TAF group is read, TEMPO and PROB included; a METAR's remarks are not. The line is null where none was found.
+   */
+  freezing_precip: {
+    input: FreezingPrecipInput;
+    answer: FreezingPrecipAnswer;
+  };
+  /**
    * A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.
    */
   frequency_line: {
@@ -2176,6 +2196,13 @@ export interface EngineContract {
   gonogo_icing_line: {
     input: GonogoIcingLineInput;
     answer: GonogoIcingLineAnswer;
+  };
+  /**
+   * Under IFR, whether icing could not be checked: icing possible (the moisture forecast) at the altitudes flown, but the freezing level not known, so no altitude can be held to it (FAA-H-8083-28B ch. 20: structural icing needs visible moisture at or below 0 °C). The line, "Icing not checked: freezing level not known", or null; gonogo_icing gives null in that case.
+   */
+  gonogo_icing_unchecked: {
+    input: GonogoIcingUncheckedInput;
+    answer: GonogoIcingUncheckedAnswer;
   };
   /**
    * Minutes after departure the flight passes a point along the route, or null.
@@ -2465,7 +2492,7 @@ export interface EngineContract {
     answer: InEmergencyAnswer;
   };
   /**
-   * A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves from fuel_start_gal. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).
+   * A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves there (fuel_left): from fuel_start_gal less the start and taxi allowance (taxi_fuel_gal), and from each fuel stop passed (refuel_at) with the tanks filled again (fuel_full_gal, else fuel_start_gal) less another allowance, never from the first tank past a fuel stop; fuel_now_gal is what it leaves here. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).
    */
   in_flight: {
     input: InFlightInput;
@@ -2710,7 +2737,7 @@ export interface EngineContract {
     answer: NavLogLegsAtAnswer;
   };
   /**
-   * The four altitude plans -- lowest and highest over the legal band, fastest by the winds, economical by the fuel, each paying its climbs -- and the route flown at each legal altitude (by_altitude). Empty where a leg has no legal altitude.
+   * The four altitude plans -- lowest and highest over the legal band, fastest by the winds, economical by the fuel (left out where the profile gives no climb fuel flow, whose climbs' fuel is not known), each paying its climbs -- and the route flown at each legal altitude (by_altitude). Empty where a leg has no legal altitude.
    */
   navlog_plans: {
     input: NavLogPlansInput;
@@ -3221,7 +3248,7 @@ export interface EngineContract {
     answer: RunwayCrosswindAnswer;
   };
   /**
-   * Whether an end fits the airplane today for a takeoff or a landing: crosswind against the demonstrated, distance needed against the length with SAFO 19001's 15 per cent margin.
+   * Whether an end fits the airplane today for a takeoff or a landing: crosswind against the demonstrated, distance needed against the length with SAFO 19001's 15 per cent margin. A landing is judged against the landing distance available (the end's declared LDA, else the length past its displaced threshold, AIM 2-3-3), a takeoff against the whole length; `length_ft` is the one judged against.
    */
   runway_end_fit: {
     input: RunwayEndFitInput;
@@ -5088,6 +5115,14 @@ export interface Runway {
     | {
         ident: string;
         heading_true_deg?: number | null;
+        /**
+         * The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length.
+         */
+        displaced_threshold_ft?: number | null;
+        /**
+         * The landing distance available the airport declares for this end, feet (AC 150/5300-13B, declared distances); where given, a landing is judged against it.
+         */
+        lda_ft?: number | null;
       }[]
     | null;
   wind?: GonogoRunwayWind | null;
@@ -5103,6 +5138,10 @@ export interface GonogoRunwayWind {
   headwind_kt: number;
   crosswind_kt: number;
   gust_crosswind_kt?: number | null;
+  /**
+   * The unrounded crosswind (RunwayWindOut's), judged against the limits where sent; the rounded one where not.
+   */
+  crosswind_exact_kt?: number | null;
   /**
    * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
    */
@@ -7148,6 +7187,30 @@ export interface FreezingLevelInput {
    */
   profile?: [number, number][];
 }
+export interface FreezingPrecipInput {
+  fields: {
+    ident: string;
+    /**
+     * The METAR as sent.
+     */
+    metar?: string | null;
+    /**
+     * The TAF as sent.
+     */
+    taf?: string | null;
+  }[];
+}
+export interface FreezingPrecipAnswer {
+  found: {
+    ident: string;
+    source: "METAR" | "TAF";
+    /**
+     * The group as sent, "-FZRA".
+     */
+    group: string;
+  }[];
+  line: string | null;
+}
 export interface FrequencyLineInput {
   type?: string | null;
   description?: string | null;
@@ -7490,6 +7553,23 @@ export interface GonogoIcingLineInput {
     at_or_below?: boolean | null;
     reports?: number | null;
   };
+}
+export interface GonogoIcingUncheckedInput {
+  selection?: {
+    freezing_level_ft?: number | null;
+    /**
+     * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
+     */
+    icing_possible?: boolean | null;
+    /**
+     * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
+     */
+    freezing_level_at_or_below?: boolean | null;
+  } | null;
+  /**
+   * The altitudes flown.
+   */
+  flown_ft?: number[] | null;
 }
 export interface GonogoPassMinutesInput {
   legs?:
@@ -8368,6 +8448,18 @@ export interface InFlightInput {
       }[]
     | null;
   fuel_start_gal?: number | null;
+  /**
+   * What the tanks are filled to at a fuel stop; left out, fuel_start_gal.
+   */
+  fuel_full_gal?: number | null;
+  /**
+   * The airplane's start and taxi allowance, taken off at the start and at each fuel stop; left out where its profile gives none, and then nothing is taken off (taxi_counted false), never another airplane's figure.
+   */
+  taxi_fuel_gal?: number | null;
+  /**
+   * The points (indices into points) the plan refuels at: the stops the planner's totals' hops begin at.
+   */
+  refuel_at?: number[] | null;
   now_s?: number | null;
 }
 export interface InspectionsDueInput {
@@ -9220,10 +9312,17 @@ export interface NavLogLeg {
   fuel_gal?: number | null;
   tas_kt?: number | null;
   fuel_burn_gph?: number | null;
+  /**
+   * The power flown; null where the profile names no cruise power (no power model: its TAS and burn as given at every altitude, no other airplane's power assumed).
+   */
   power_pct?: number | null;
   oat_c?: number | null;
   density_altitude_ft?: number | null;
   climb_min?: number | null;
+  /**
+   * True on a leg with climb minutes where the profile gives no climb fuel flow: the climb's gallons are not counted in its fuel, for the app to ask for the figure (no multiple of the cruise burn is assumed).
+   */
+  climb_fuel_unknown?: boolean | null;
   /**
    * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
    */
@@ -9285,10 +9384,17 @@ export interface NavLogLeg1 {
   fuel_gal?: number | null;
   tas_kt?: number | null;
   fuel_burn_gph?: number | null;
+  /**
+   * The power flown; null where the profile names no cruise power (no power model: its TAS and burn as given at every altitude, no other airplane's power assumed).
+   */
   power_pct?: number | null;
   oat_c?: number | null;
   density_altitude_ft?: number | null;
   climb_min?: number | null;
+  /**
+   * True on a leg with climb minutes where the profile gives no climb fuel flow: the climb's gallons are not counted in its fuel, for the app to ask for the figure (no multiple of the cruise burn is assumed).
+   */
+  climb_fuel_unknown?: boolean | null;
   /**
    * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
    */
@@ -9400,10 +9506,17 @@ export interface NavLogLeg2 {
   fuel_gal?: number | null;
   tas_kt?: number | null;
   fuel_burn_gph?: number | null;
+  /**
+   * The power flown; null where the profile names no cruise power (no power model: its TAS and burn as given at every altitude, no other airplane's power assumed).
+   */
   power_pct?: number | null;
   oat_c?: number | null;
   density_altitude_ft?: number | null;
   climb_min?: number | null;
+  /**
+   * True on a leg with climb minutes where the profile gives no climb fuel flow: the climb's gallons are not counted in its fuel, for the app to ask for the figure (no multiple of the cruise burn is assumed).
+   */
+  climb_fuel_unknown?: boolean | null;
   /**
    * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
    */
@@ -9978,7 +10091,10 @@ export interface PerformanceClimbInput {
 }
 export interface PerformanceClimbAnswer {
   minutes: number;
-  gallons: number;
+  /**
+   * Null where the profile gives no climb fuel flow: not known, never a multiple of the cruise burn.
+   */
+  gallons: number | null;
 }
 export interface PerformanceCruiseInput {
   profile: NavLogProfile;
@@ -9988,7 +10104,10 @@ export interface PerformanceCruiseInput {
 export interface PerformanceCruiseAnswer {
   tas_kt: number;
   fuel_burn_gph: number;
-  power_pct: number;
+  /**
+   * Null where the profile names no cruise power: the TAS and burn as given, no power model.
+   */
+  power_pct: number | null;
   density_altitude_ft: number;
 }
 export interface PilotCurrencyInput {
@@ -11480,8 +11599,15 @@ export interface RouteOption {
   ground_min: number;
   fuel_gal: number | null;
   landings: number;
+  /**
+   * The hazards it crosses, indices into hazards, in the order flown: what closes a cell, and the restricted, MOA, warning and alert areas it is flown through.
+   */
   crosses: number[];
   marginal: number[];
+  /**
+   * The card's one warning, the worst it crosses, in the engine's words: a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where it crosses nothing.
+   */
+  warning?: string | null;
   bands: RouteOptionsBand[];
   tail_kt: number;
   floor_ft: number;
@@ -11512,6 +11638,9 @@ export interface RouteOptionsAlong {
  * via the `definition` "RouteOptionsHazard".
  */
 export interface RouteOptionsHazard {
+  /**
+   * What it is: prohibited, tfr, storm, terrain, sigmet, weather, marginal or fuel; or a special-use area a way is flown through and told of (AIM 3-4): restricted, moa, warning or alert.
+   */
   kind: string;
   name: string;
 }
@@ -11527,12 +11656,18 @@ export interface RouteOptionsFrameAnswer {
   cols: number;
   cell_deg: number;
   per_cell: number;
+  /**
+   * The highest VFR cruising altitude either way under the ceiling (the lower of the two), over which a cell's ground is closed where the ceiling is known.
+   */
   top_ft: number;
   /**
    * @minItems 2
    * @maxItems 2
    */
   window: [number, number];
+  /**
+   * Every VFR cruising altitude from 3,500 ft to the airplane's ceiling under 18,000 ft (none known: 17,500), the winds aloft wanted at each: each way tries its own half of 91.159 among them, so westbound reaches 12,500 under a 13,000 ft ceiling.
+   */
   altitudes_ft: number[];
   lowest_cruise_ft: number;
   /**
@@ -11593,7 +11728,19 @@ export interface RunwayEndFitInput {
   } | null;
   runway: Runway;
   end?: {
+    /**
+     * The end's ident: a landing reads that end's displaced threshold and LDA from the runway's ends where the end does not send its own.
+     */
+    ident?: string | null;
     heading_true_deg?: number | null;
+    /**
+     * The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length.
+     */
+    displaced_threshold_ft?: number | null;
+    /**
+     * The landing distance available the airport declares for this end, feet (AC 150/5300-13B, declared distances); where given, a landing is judged against it.
+     */
+    lda_ft?: number | null;
   } | null;
   wind?: {
     dir_true_deg?: number | null;

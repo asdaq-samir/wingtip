@@ -477,7 +477,9 @@ gone on every platform.
 3. **The Altitude Advisor chooses the cruise.** One row per altitude with
    its time, fuel and head or tail wind, Fastest and Most economical
    marked; a row outside the legal altitudes stays with its warning (warn,
-   never limit).
+   never limit). An airplane with no climb fuel flow has no Most
+   economical (the engine leaves it out) and its climbs' fuel is asked for
+   where a leg says `climb_fuel_unknown`, never assumed.
 4. **Accessibility.** The slider is adjustable a row at a time and says
    the engine's words ("3,500 ft, terrain within 500 ft near KXYZ");
    every mark is a 44 pt / 48 dp target.

@@ -17,6 +17,13 @@
         "null"
       ]
     },
+    "crosswind_exact_kt": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The unrounded crosswind (RunwayWindOut's), judged against the limits where sent; the rounded one where not."
+    },
     "in_use": {
       "type": [
         "boolean",

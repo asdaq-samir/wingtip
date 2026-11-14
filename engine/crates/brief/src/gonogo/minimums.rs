@@ -21,7 +21,7 @@ pub struct Minimums {
 // A runway's wind and the crosswind it is judged by are the runway
 // module's (crate::runway::wind, lib/wind), shared with the runway pick,
 // the runway fit and the check.
-pub use crate::runway::wind::{runway_crosswind_kt, steady_or_gust_kt, RunwayWind};
+pub use crate::runway::wind::{crosswind_shown, runway_crosswind_judged_kt, runway_crosswind_kt, steady_or_gust_kt, RunwayWind};
 
 /// The crosswind on the field's best open runway for the wind -- the
 /// least, the gusts' where they are more -- and that runway's favoured
@@ -41,8 +41,8 @@ pub fn best_crosswind(
         return (all > 0.0 && !open.is_empty()).then_some((None, all));
     };
     // A later wind only where it is less: the first of equals stays.
-    let best = winds[1..].iter().fold(*first, |a, b| if runway_crosswind_kt(b) < runway_crosswind_kt(a) { b } else { a });
-    Some((Some(best.end.clone()), runway_crosswind_kt(best)))
+    let best = winds[1..].iter().fold(*first, |a, b| if runway_crosswind_judged_kt(b) < runway_crosswind_judged_kt(a) { b } else { a });
+    Some((Some(best.end.clone()), runway_crosswind_judged_kt(best)))
 }
 
 /// A field's current report, as much as the minimums read of it.
@@ -116,6 +116,7 @@ pub fn under_minimums(m: &Minimums, w: &Weather) -> Vec<String> {
         if let (Some(most), Some((end, kt))) = (m.crosswind_kt, crosswind)
             && kt > most
         {
+            let kt = crosswind_shown(kt, kt.round_ties_even(), Some(most));
             reasons.push(match end {
                 None => format!("{ident} variable wind {} kt, which may all be crosswind, over your {} kt", js_num(kt), js_num(most)),
                 Some(end) => format!("{ident} crosswind {} kt on its best runway ({end}), over your {} kt", js_num(kt), js_num(most)),
