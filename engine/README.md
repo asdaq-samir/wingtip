@@ -329,7 +329,10 @@ Then the callers switch to the name and the old copy is deleted.
   endpoints answered (the airports' still does; the web's map draws the
   airspace and navaids from the overlay tiles) (`wt_airspace_in_view`, `wt_airports_in_view`,
   `wt_navaids_in_view`), with what a pack cannot hold -- a live METAR's
-  flight category, a navaid's remarks -- answered null or empty.
+  flight category, a navaid's remarks -- answered null or empty. Each
+  field carries the overlay tiles' mark, `mark_order` and `mark_size`
+  (`field_mark_rank`, its longest hard runway the pack's HARD_FT
+  column), so a phone ranks its marks offline as the tiles rank them.
 - The altitude a flight is planned at is the engine's too (`crates/altitude`,
   #482 phase 3): each leg's floor -- the terrain and DOF obstacles with
   14 CFR 91.119's clearances (`vfr_floors`, asked once a leg with the
@@ -538,6 +541,11 @@ warm-up once a cycle, to `data/raw/packs/wingtip-<cycle>.pack` (not
 committed); the phones' packs of it, one a 4-degree region with the rings
 simplified (`wingtip.cycle_pack.write_phone`), to `data/raw/packs/phone/<cycle>/`,
 served at `/api/cycle-packs` and `/api/cycle-pack/<cycle>/<region>.pack`.
+The airports table carries `wingtip.pack_airports`' SIZE and HARD_FT
+columns after NASR's, read by name, so an older pack still reads. A change
+to what the tables hold bumps `cycle_pack.TABLES` (2 since HARD_FT,
+2026-11-14), in the pack's meta and the phones' index: the planner builds
+both again, and a phone, seeing a region's new crc32, fetches it again.
 `services/planner/tests_wingtip/test_phone_pack.py` holds the engine's answer from them to the
 planner's own code; the iOS app's `CyclePackTests` read the Chicago ones
 in `services/planner/tests_wingtip/fixtures/native/phone`.
