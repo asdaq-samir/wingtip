@@ -101,7 +101,6 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   await expect(card(page).getByTestId("place-tab-runways")).toHaveAccessibleName("Runways");
   await expect(card(page).getByTestId("place-tab-category")).toBeVisible();
   await expect(card(page).getByTestId("place-tab-charts")).toHaveText("3");
-  // Every tab shows its word under its icon.
   await expect(card(page).getByTestId("place-tab-radio")).toHaveText("Info");
   await expect(card(page).getByTestId("place-tab-runways")).toHaveText("Runways");
 
