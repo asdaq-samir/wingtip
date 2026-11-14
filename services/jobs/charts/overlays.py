@@ -62,7 +62,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from wingtip import cycle_pack, field_status, geo, vector_tiles
+from wingtip import cycle_pack, geo, vector_tiles
 from wingtip.atomic import atomic_path
 from wingtip.units import M_PER_FT, M_PER_NM
 from wingtip.vector_tiles import INDEX, LAYERS, VERSION, archive_name
@@ -112,8 +112,8 @@ AIRSPACE_MIN_ZOOM = {"B": 4, "C": 5, "D": 6}
 CLASS_E_MIN_ZOOM = {"CLASS_E2": 7, "CLASS_E3": 7, "CLASS_E4": 7}
 CLASS_E_OTHER_MIN_ZOOM = 8
 SPECIAL_USE_MIN_ZOOM = 5
-#: Airports by `rank` (airport_rank): towered, public with a hard runway
-#: of 3,000 ft or more, other public, private, then heliports and the rest.
+#: Airports by the engine's field_mark_rank's tier: towered, public with a
+#: hard runway of 3,000 ft or more, other public, private, then heliports.
 AIRPORT_MIN_ZOOM = (5, 6, 7, 9, 10)
 #: The VORs (wingtip.fixes.VOR_KINDS) a zoom out; the rest closer in.
 VOR_MIN_ZOOM = 5
@@ -128,8 +128,6 @@ RUNWAY_MIN_ZOOM = 10
 
 ATTRIBUTION = "FAA NASR and special use airspace (ADDS), cycle {cycle}"
 
-#: NASR's SITE_TYPE_CODE (APT_BASE).
-SITE_TYPES = {"A": "airport", "H": "heliport", "C": "seaplane", "G": "gliderport", "U": "ultralight", "B": "balloonport"}
 #: The runway surfaces the sectional's airport symbol counts as hard
 #: (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports:
 #: "hard-surfaced runways"), by NASR's SURFACE_TYPE_CODE (APT_RWY):
@@ -138,8 +136,6 @@ SITE_TYPES = {"A": "airport", "H": "heliport", "C": "seaplane", "G": "gliderport
 #: ("ASPH-TURF") counts only when every part is hard ("ASPH-CONC"); TRTD
 #: (treated) goes with a hard one and is not one alone.
 HARD_SURFACES = frozenset({"ASPH", "CONC", "PEM", "PFC", "BRICK"})
-#: The rank a field must reach for its tier: what `rank` sorts symbols by.
-LONG_HARD_FT = 3000
 
 
 def _orient(geometry):
@@ -375,63 +371,6 @@ def runways_by_site(rwy_path: Path, rwy_end_path: Path | None) -> dict[str, dict
     return found
 
 
-def airport_rank(site_type: str, use: str, towered: bool, hard_ft: int) -> int:
-    """What a field's symbol is sorted and first shown by (AIRPORT_MIN_ZOOM):
-    0 towered, 1 public with a hard runway of LONG_HARD_FT or more, 2 other
-    public airports, 3 private airports, 4 heliports and the rest."""
-    if site_type not in ("A", "C", "G", "U", "B"):
-        return 4
-    if towered:
-        return 0
-    if use == "PU":
-        return 1 if hard_ft >= LONG_HARD_FT and site_type == "A" else 2
-    return 3
-
-
-def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path | None, bbox=None):
-    """The `airports` layer's lines: every operational field in APT_BASE
-    (the engine's field_status: ARPT_STATUS O; CI and CP are not drawn),
-    with its runways (runways_by_site)."""
-
-    runways = runways_by_site(rwy_path, rwy_end_path) if rwy_path is not None else {}
-    for row in _rows(apt_path):
-        if not field_status.is_open(row.get("ARPT_STATUS") or ""):
-            continue
-        lat, lon = _number(row.get("LAT_DECIMAL")), _number(row.get("LONG_DECIMAL"))
-        if lat is None or lon is None or not _meets((lon, lat, lon, lat), bbox):
-            continue
-        faa_id = (row.get("ARPT_ID") or "").strip().upper()
-        icao = (row.get("ICAO_ID") or "").strip().upper()
-        site_type = (row.get("SITE_TYPE_CODE") or "").strip()
-        use = (row.get("FACILITY_USE_CODE") or "").strip()
-        # ATCT, ATCT-A/C, ATCT-TRACON and the rest; NON-ATCT is none.
-        towered = (row.get("TWR_TYPE_CODE") or "").strip().upper().startswith("ATCT")
-        ways = runways.get((row.get("SITE_NO") or "").strip(), {})
-        # The engine's field_military: "military", "joint" (open to the public as well) or None.
-        military = field_status.military(row.get("OWNERSHIP_TYPE_CODE"), use)
-        rank = airport_rank(site_type, use, towered, ways.get("hard_ft", 0))
-        yield _feature(
-            {
-                "ident": icao or faa_id,
-                "faa_id": faa_id,
-                "name": (row.get("ARPT_NAME") or "").strip(),
-                "type": SITE_TYPES.get(site_type, site_type.lower()),
-                # As faa_data: the services' own field "military", not "private", so the Private switch leaves it to the Military one.
-                "use": "military" if military == "military" else {"PU": "public", "PR": "private"}.get(use, use.lower()),
-                "military": military,
-                "towered": towered,
-                "elevation_ft": _number(row.get("ELEV")),
-                "longest_ft": ways.get("longest_ft"),
-                "hard_ft": ways.get("hard_ft"),
-                "runway_true": ways.get("runway_true"),
-                "fuel": (row.get("FUEL_TYPES") or "").strip(),
-                "rank": rank,
-            },
-            f'{{"type":"Point","coordinates":[{lon},{lat}]}}',
-            AIRPORT_MIN_ZOOM[rank],
-        )
-
-
 def navaid_features(nav_path: Path, bbox=None, rmk_path: Path | None = None):
     """The `navaids` layer's lines: wingtip.fixes's navaids in service,
     with their own remarks from NAV_RMK.csv where rmk_path is given
@@ -553,9 +492,11 @@ def write_layers(
     fix_path: Path,
     bbox=None,
     nav_rmk_path: Path | None = None,
+    shp_path: Path | None = None,
 ) -> dict[str, int]:
     """Each layer's GeoJSON, a feature a line, into folder/<layer>.geojsonl;
     how many features each holds."""
+    from .airports import airport_features, primaries
     from .sua_labels import special_use_label_features
 
     sources = {
@@ -563,7 +504,7 @@ def write_layers(
         "airspace_labels": airspace_label_features(pack, bbox),
         "special_use": special_use_features(pack, bbox),
         "special_use_labels": special_use_label_features(pack, bbox),
-        "airports": airport_features(apt_path, rwy_path, rwy_end_path, bbox),
+        "airports": airport_features(apt_path, rwy_path, rwy_end_path, bbox, primaries(pack), shp_path),
         "navaids": navaid_features(nav_path, bbox, nav_rmk_path),
         "fixes": fix_features(fix_path, bbox),
         "runways": runway_features(rwy_path, rwy_end_path, bbox) if rwy_path and rwy_end_path else iter(()),
@@ -624,7 +565,7 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
     written whole into out_dir with its index (what /api/overlay-tiles
     gives), and any older archive removed. With bbox, (west, south, east,
     north), only the features that meet it: a sample."""
-    from wingtip import faa_data
+    from wingtip import airspace, faa_data
 
     cache_dir, out_dir = Path(cache_dir), Path(out_dir or vector_tiles.TILES_DIR)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -658,6 +599,7 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
             nav_rmk_path=nasr("NAV_RMK.csv"),
             fix_path=nasr("FIX_BASE.csv"),
             bbox=bbox,
+            shp_path=airspace.ensure_class_airspace_shapefile(cache_dir),
         )
         built = folder / "out.pmtiles"
         run = subprocess.run(tippecanoe_args(folder, built, pack.cycle, tippecanoe), capture_output=True, text=True)

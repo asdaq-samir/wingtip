@@ -26,7 +26,7 @@ import pytest
 import shapely
 from shapely.geometry import Polygon
 
-from charts import overlays
+from charts import airports, overlays
 from wingtip import cycle_pack, vector_tiles
 from wingtip import fixes as wingtip_fixes
 
@@ -261,7 +261,8 @@ def sources(tmp_path_factory):
     """The planner's pack of the Chicago cut and the restricted area, and
     a NASR folder of the rows above."""
     root = tmp_path_factory.mktemp("overlays")
-    shp = root / "chicago_airspace.shp"
+    # Where the job finds the FAA's airspace file (wingtip.airspace's ensure_class_airspace_shapefile).
+    (shp := root / "nasr" / "Shape_Files" / "Class_Airspace.shp").parent.mkdir(parents=True)
     for part in ("shp", "dbf"):
         shp.with_suffix(f".{part}").write_bytes(gzip.decompress((FIXTURES / f"chicago_airspace.{part}.gz").read_bytes()))
     shutil.copy(FIXTURES / "chicago_airspace.shx", shp.with_suffix(".shx"))
@@ -277,7 +278,6 @@ def sources(tmp_path_factory):
         tables={},
     )
     nasr = root / "nasr"
-    nasr.mkdir()
     for name, rows in (
         ("APT_BASE.csv", APT_BASE),
         ("APT_RWY.csv", APT_RWY),
@@ -397,7 +397,7 @@ def test_the_airports_as_nasr_files_them(sources):
     _, nasr = sources
     found = {
         f["properties"]["faa_id"]: f
-        for f in _lines(overlays.airport_features(nasr / "APT_BASE.csv", nasr / "APT_RWY.csv", nasr / "APT_RWY_END.csv"))
+        for f in _lines(airports.airport_features(nasr / "APT_BASE.csv", nasr / "APT_RWY.csv", nasr / "APT_RWY_END.csv"))
     }
     # The closed field is not drawn as a field.
     assert set(found) == {"ORD", "06C", "LL22", "7IL4"}
@@ -413,17 +413,13 @@ def test_the_airports_as_nasr_files_them(sources):
         "hard_ft": 13000,
         "runway_true": 90,
         "fuel": "100LL,A",
-        "rank": 0,
+        "rank": 2 * 100_000 + 99_999 - 13_000,
+        "size": "regular",
     }
     assert found["ORD"]["geometry"] == {"type": "Point", "coordinates": [-87.90814972, 41.97694027]}
-    assert found["06C"]["properties"]["rank"] == 1 and "runway_true" not in found["06C"]["properties"]
+    assert found["06C"]["properties"]["rank"] == 3 * 100_000 + 99_999 - 3_800 and "runway_true" not in found["06C"]["properties"]
     # 2,813 ft of asphalt and 1,940 ft of turf: hard, but under 3,000 ft.
-    assert {k: found["LL22"]["properties"][k] for k in ("use", "longest_ft", "hard_ft", "rank")} == {
-        "use": "private",
-        "longest_ft": 2813,
-        "hard_ft": 2813,
-        "rank": 3,
-    }
+    assert tuple(found["LL22"]["properties"][k] for k in ("use", "longest_ft", "hard_ft", "rank")) == ("private", 2813, 2813, 597_186)
     # A helipad is no runway.
     assert found["7IL4"]["properties"]["type"] == "heliport" and "longest_ft" not in found["7IL4"]["properties"]
     assert {k: f["tippecanoe"]["minzoom"] for k, f in found.items()} == {"ORD": 5, "06C": 6, "LL22": 9, "7IL4": 10}
@@ -517,7 +513,7 @@ def test_a_box_keeps_only_what_meets_it(sources):
     _, nasr = sources
     north_of_ohare = (-88.2, 42.0, -87.8, 42.3)
     assert [
-        json.loads(f)["properties"]["faa_id"] for f in overlays.airport_features(nasr / "APT_BASE.csv", None, None, north_of_ohare)
+        json.loads(f)["properties"]["faa_id"] for f in airports.airport_features(nasr / "APT_BASE.csv", None, None, north_of_ohare)
     ] == ["7IL4"]
 
 
@@ -570,7 +566,7 @@ def test_the_archive_is_pmtiles_of_vector_tiles_with_its_layers_and_fields(built
     assert {"class", "floor_ft", "ceiling_ft", "angle", "number"} <= set(layers["airspace_labels"]["fields"])
     assert {"type", "name", "floor_ft", "ceiling_ft", "times_of_use"} <= set(layers["special_use"]["fields"])
     assert {"label", "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref", "angle", "side"} <= set(layers["special_use_labels"]["fields"])
-    assert {"ident", "name", "towered", "hard_ft", "longest_ft", "use", "rank"} <= set(layers["airports"]["fields"])
+    assert {"ident", "name", "towered", "airspace", "hard_ft", "longest_ft", "use", "rank", "size"} <= set(layers["airports"]["fields"])
     assert {"ident", "kind", "freq"} <= set(layers["navaids"]["fields"])
     assert {"ident", "kind", "vfr", "enroute_low"} <= set(layers["fixes"]["fields"])
     assert "FAA" in meta["attribution"]

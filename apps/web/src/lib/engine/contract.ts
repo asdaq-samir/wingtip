@@ -1868,6 +1868,13 @@ export interface EngineContract {
     answer: FieldHoursAnswer;
   };
   /**
+   * What a field's map mark is first drawn at and kept by where marks would overlap, from the FAA's NASR APT_BASE.csv (SITE_TYPE_CODE, FACILITY_USE_CODE, TWR_TYPE_CODE), its longest hard runway (APT_RWY.csv, the FAA Aeronautical Chart User's Guide's hard-surfaced runways) and the class of airspace the FAA's Class_Airspace file names it the primary airport of (IDENT). `tier`: 0 towered, 1 public airport with a hard runway of 3,000 ft or more, 2 other public, 3 private, 4 heliports and the rest. `order`, lower first: the field a Class B is named for, then a Class C's, then each tier, and within each the longer hard runway first, so O'Hare's mark is kept before Chicago Executive's. `size`: the step the mark is drawn at. The cycle pack's overlay tiles carry `order` as each airport's `rank`, which every app's map sorts its marks by, and `size` as its `size`.
+   */
+  field_mark_rank: {
+    input: FieldMarkRankInput;
+    answer: FieldMarkRankAnswer;
+  };
+  /**
    * Whether a field is the armed services' own, from the FAA's NASR APT_BASE.csv: OWNERSHIP_TYPE_CODE MA (Air Force), MN (Navy), MR (Army) or CG (Coast Guard) is; "joint" where FACILITY_USE_CODE is PU, open to the public as well (a civil airport on a military one, where a civil pilot may land), else "military", where a civil airplane lands only with the service's permission (for the Air Force a Civil Aircraft Landing Permit, 32 CFR part 855); null for any other owner. The one statement the planner, the cycle pack's overlays and the engine's map pins read.
    */
   field_military: {
@@ -6796,6 +6803,42 @@ export interface FieldHour {
    * The worse weather at times comes only from a PROB group (FAA-H-8083-28B 27.4.2.10.3).
    */
   at_times_chance: boolean;
+}
+export interface FieldMarkRankInput {
+  /**
+   * NASR APT_BASE's SITE_TYPE_CODE (A airport, H heliport, C seaplane base, G gliderport, U ultralight, B balloonport).
+   */
+  site_type?: string | null;
+  /**
+   * NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
+   */
+  use?: string | null;
+  /**
+   * Whether NASR APT_BASE's TWR_TYPE_CODE names a tower (ATCT and its kinds; NON-ATCT is none).
+   */
+  towered?: boolean | null;
+  /**
+   * The field's longest hard-surfaced runway, ft (APT_RWY's RWY_LEN); 0 or null for none.
+   */
+  hard_ft?: number | null;
+  /**
+   * The class of airspace (B, C) the FAA's Class_Airspace file names the field the primary airport of (its IDENT), the highest where several; null for none. D and E count as none.
+   */
+  primary_of?: string | null;
+}
+export interface FieldMarkRankAnswer {
+  /**
+   * 0 towered, 1 public with a long hard runway, 2 other public, 3 private, 4 heliports and the rest: which zoom the mark is first drawn at.
+   */
+  tier: number;
+  /**
+   * The mark's place where marks overlap, lower kept first: class (0 Class B primary, 1 Class C primary, then tier + 2) times 100,000, plus 99,999 less the longest hard runway in ft.
+   */
+  order: number;
+  /**
+   * The step the mark is drawn at, the biggest fields the largest (the owner, 2026-11-14): largest for a Class B's primary field, larger for a Class C's, regular for the other towered fields and public ones with 3,000 ft of hard runway, small for the rest. How much larger each step is drawn is each app's own.
+   */
+  size: "largest" | "larger" | "regular" | "small";
 }
 export interface FieldMilitaryInput {
   /**

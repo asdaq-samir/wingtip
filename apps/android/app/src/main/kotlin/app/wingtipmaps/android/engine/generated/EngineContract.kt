@@ -3762,6 +3762,49 @@ object EngineContract {
     )
 
     @Serializable
+    data class FieldMarkRankAnswer(
+        /**
+         * 0 towered, 1 public with a long hard runway, 2 other public, 3 private, 4 heliports and the rest: which zoom the mark is first drawn at.
+         */
+        val tier: Int,
+        /**
+         * The mark's place where marks overlap, lower kept first: class (0 Class B primary, 1 Class C primary, then tier + 2) times 100,000, plus 99,999 less the longest hard runway in ft.
+         */
+        val order: Int,
+        /**
+         * The step the mark is drawn at, the biggest fields the largest (the owner, 2026-11-14): largest for a Class B's primary field, larger for a Class C's, regular for the other towered fields and public ones with 3,000 ft of hard runway, small for the rest. How much larger each step is drawn is each app's own.
+         */
+        val size: String,
+    )
+
+    @Serializable
+    data class FieldMarkRankInput(
+        /**
+         * NASR APT_BASE's SITE_TYPE_CODE (A airport, H heliport, C seaplane base, G gliderport, U ultralight, B balloonport).
+         */
+        @SerialName("site_type")
+        val siteType: String? = null,
+        /**
+         * NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
+         */
+        val use: String? = null,
+        /**
+         * Whether NASR APT_BASE's TWR_TYPE_CODE names a tower (ATCT and its kinds; NON-ATCT is none).
+         */
+        val towered: Boolean? = null,
+        /**
+         * The field's longest hard-surfaced runway, ft (APT_RWY's RWY_LEN); 0 or null for none.
+         */
+        @SerialName("hard_ft")
+        val hardFt: Double? = null,
+        /**
+         * The class of airspace (B, C) the FAA's Class_Airspace file names the field the primary airport of (its IDENT), the highest where several; null for none. D and E count as none.
+         */
+        @SerialName("primary_of")
+        val primaryOf: String? = null,
+    )
+
+    @Serializable
     data class FieldMilitaryAnswer(
         /**
          * military, joint, or null for a field the services do not own.

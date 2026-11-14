@@ -82,6 +82,76 @@ pub fn military(ownership: Option<&str>, facility_use: Option<&str>) -> Option<&
     Some(if up(facility_use) == "PU" { "joint" } else { "military" })
 }
 
+/// NASR APT_BASE's SITE_TYPE_CODE for a field an airplane lands on, whose
+/// mark comes before a heliport's: airport (A), seaplane base (C),
+/// gliderport (G), ultralight park (U) and balloonport (B).
+pub const LANDING_SITES: [&str; 5] = ["A", "C", "G", "U", "B"];
+
+/// The hard runway (asphalt, concrete and the like: the FAA Aeronautical
+/// Chart User's Guide's "hard-surfaced runways", as the overlays read
+/// APT_RWY's SURFACE_TYPE_CODE) that puts a public field in the tier
+/// drawn a zoom after the towered ones. The app's own line for how
+/// crowded the chart gets far out, not an FAA figure.
+pub const LONG_HARD_FT: u32 = 3_000;
+
+/// What a field's map mark is first drawn at (`tier`) and kept by where
+/// marks would overlap (`order`, lower first), from NASR APT_BASE's
+/// SITE_TYPE_CODE, FACILITY_USE_CODE and TWR_TYPE_CODE, its longest hard
+/// runway (APT_RWY) and the class of airspace the FAA's Class_Airspace
+/// file names it the primary airport of (IDENT, "B" or "C").
+///
+/// Tiers: 0 towered, 1 public with a hard runway of LONG_HARD_FT or more,
+/// 2 other public, 3 private, 4 heliports and the rest. Within a tier the
+/// field a Class B is named for comes first, then one a Class C is, then
+/// the longer hard runway: zoomed out over Chicago every towered field
+/// tied, and the tile's order drew Chicago Executive where O'Hare should
+/// be (the owner, 2026-11-14).
+///
+/// `size` is the step the mark is drawn at, the biggest fields the
+/// largest (the owner's pick of the field-sized mark, 2026-11-14):
+/// "largest" for a Class B's field, "larger" for a Class C's, "regular"
+/// for the other towered fields and the public ones with a long hard
+/// runway, "small" for the rest. How much larger each is drawn is each
+/// app's own.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct MarkRank {
+    pub tier: u8,
+    pub order: u32,
+    pub size: &'static str,
+}
+
+/// The order's room for a runway: every hard runway in NASR is under
+/// 100,000 ft (the longest, Denver's 16R/34L, is 16,000), so a class's
+/// orders never reach the next one's.
+const RUNWAY_ROOM: u32 = 100_000;
+
+/// A field's MarkRank; `primary_of` is the class the airspace file names
+/// it the primary of, any other than B or C counting as none.
+pub fn mark_rank(site_type: &str, facility_use: &str, towered: bool, hard_ft: u32, primary_of: Option<&str>) -> MarkRank {
+    let up = |c: &str| c.trim().to_ascii_uppercase();
+    let landing = LANDING_SITES.contains(&up(site_type).as_str());
+    let tier = if !landing {
+        4
+    } else if towered {
+        0
+    } else if up(facility_use) != "PU" {
+        3
+    } else if hard_ft >= LONG_HARD_FT && up(site_type) == "A" {
+        1
+    } else {
+        2
+    };
+    // The primaries before the other towered fields: 0 Class B, 1 Class C,
+    // then each tier a step on (2 towered ... 6 heliports).
+    let class = match (landing, primary_of.map(up).as_deref()) {
+        (true, Some("B")) => 0,
+        (true, Some("C")) => 1,
+        _ => u32::from(tier) + 2,
+    };
+    let size = ["largest", "larger", "regular", "regular"].get(class as usize).copied().unwrap_or("small");
+    MarkRank { tier, order: class * RUNWAY_ROOM + (RUNWAY_ROOM - 1 - hard_ft.min(RUNWAY_ROOM - 1)), size }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,5 +195,37 @@ mod tests {
         assert_eq!(status(None), Status::Unknown);
         assert!(is_open(None));
         assert_eq!(closed_words(None), None);
+    }
+
+    // The marks' order over Chicago at the 2026-10-29 cycle's figures:
+    // O'Hare (Class B, 13,000 ft) before Midway (Class C, 6,522 ft)
+    // before DuPage (towered, 7,571 ft) before Chicago Executive (towered,
+    // 5,001 ft) before Lansing (public, 4,002 ft); a short public field,
+    // a private strip, then a heliport, last.
+    #[test]
+    fn the_class_b_field_comes_first() {
+        let ord = mark_rank("A", "PU", true, 13_000, Some("B"));
+        let mdw = mark_rank("A", "PU", true, 6_522, Some("C"));
+        let dpa = mark_rank("A", "PU", true, 7_571, None);
+        let pwk = mark_rank("A", "PU", true, 5_001, None);
+        let igq = mark_rank("A", "PU", false, 4_002, None);
+        let short = mark_rank("A", "PU", false, 2_000, None);
+        let ll22 = mark_rank("A", "PR", false, 2_813, None);
+        let pad = mark_rank("H", "PR", false, 0, Some("B"));
+        assert_eq!([ord.tier, mdw.tier, pwk.tier, igq.tier, short.tier, ll22.tier, pad.tier], [0, 0, 0, 1, 2, 3, 4]);
+        let orders = [ord, mdw, dpa, pwk, igq, short, ll22, pad].map(|r| r.order);
+        assert!(orders.windows(2).all(|w| w[0] < w[1]), "{orders:?}");
+        assert_eq!(ord.order, 86_999);
+        let sizes = [ord, mdw, dpa, igq, short, ll22, pad].map(|r| r.size);
+        assert_eq!(sizes, ["largest", "larger", "regular", "regular", "small", "small", "small"]);
+    }
+
+    // A seaplane base with a long hard runway is public, not "long hard",
+    // which is the airport's; codes read trimmed and in capitals.
+    #[test]
+    fn the_codes_as_nasr_writes_them() {
+        assert_eq!(mark_rank(" c ", "pu", false, 5_000, None).tier, 2);
+        assert_eq!(mark_rank("A", " pu ", false, 3_000, None).tier, 1);
+        assert_eq!(mark_rank("A", "PU", true, 200_000, Some("b")).order, 0);
     }
 }
