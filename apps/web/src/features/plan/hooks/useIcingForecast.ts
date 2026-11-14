@@ -33,6 +33,10 @@ export function useIcingForecast({ ifr, briefing, legs, depart }: IcingWhere) {
     queryFn: () => api.icingRoute(q),
     enabled: ready,
     staleTime: 10 * 60_000,
+    // The legs' icing before kept while the same legs are read again for
+    // another altitude or time: its rows went to "Fetching" and back (the
+    // flicker audit's E).
+    placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === q.fixes ? previous : undefined),
     // Said in its own rows, where it was asked for.
     meta: { silent: true },
   });
