@@ -107,8 +107,8 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
   answer({ aircraft: [], checked: true, source: "ADS-B Exchange", license: "ADS-B Exchange terms" });
   await expect(row.getByTestId("search-airplane-live")).toHaveText("Not in the air now", { timeout: slow(10_000) });
 
-  // Its card, as the airport card is laid out (the owner's P1): the record's make, model and year
-  // under its name, four buttons in a row, the tabs Flights, Info and Figures, one status line.
+  // Its card, as the airport card's (P1, then C1): make, model and year under its name, four buttons,
+  // one status line, its facts, and the tabs Flights, Info and Figures in the bar at its foot.
   await row.click();
   const card = page.getByTestId("airplane-profile");
   await expect(card).toContainText("Piper PA-28-140, 1971", { timeout: slow(15_000) });
@@ -117,6 +117,8 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
   for (const tab of ["flights", "info", "figures"]) await expect(card.getByTestId(`airplane-tab-${tab}`)).toBeVisible();
   await expect(card.getByTestId("airplane-tab-flights")).toHaveAttribute("aria-selected", "true");
   await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /, { timeout: slow(15_000) });
+  await expect(card.getByTestId("airplane-facts-type")).toContainText("Piper PA-28-140");
+  await expect(card.getByTestId("airplane-facts-year")).toContainText("1971");
   // Flights: its past flights, each ▶ its replay over this card.
   const flight = card.getByTestId("past-flight").first();
   await expect(flight).toContainText("LCI", { timeout: slow(15_000) });
@@ -194,7 +196,7 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
   await page.goto("/app/plan?airplane=N654FL");
   await settle(page);
   const card = page.getByTestId("airplane-profile");
-  // Its tabs in sight at the card's half size, under the photo at its head.
+  // Its tabs in the bar at the card's foot, in sight at its half size (C1).
   await card.getByTestId("airplane-tab-info").click();
   const info = card.getByTestId("airplane-info");
   await expect(info.getByTestId("airplane-info-model")).toContainText("Piper PA-28-140", { timeout: slow(15_000) });
@@ -209,9 +211,11 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
   await expect(info.getByTestId("airplane-ntsb")).toHaveAttribute("href", /data\.ntsb\.gov/);
   await expect(info.getByTestId("airplane-based-field")).toContainText("6 of 9 takeoffs and landings");
   await expect(info.getByTestId("airplane-documents")).toContainText("Bill of sale");
-  // Its photo at the card's head, the photographer named beside it and the picture its page's link.
+  // Its photo in the card's pictures, as the airport card's (C1), the photographer named on it and the
+  // picture its page's link; the owner in the facts strip, public as the FAA publishes it.
   await expect(card.getByTestId("airplane-photo-credit")).toContainText("Jane Spotter");
-  await expect(card.getByTestId("airplane-photo-credit")).toHaveAttribute("href", "https://www.planespotters.net/photo/1/n654fl");
+  await expect(card.getByTestId("airplane-photo-open")).toHaveAttribute("href", "https://www.planespotters.net/photo/1/n654fl");
+  await expect(card.getByTestId("airplane-facts-owner")).toContainText("Jane Q Pilot");
   // Figures: the planning figures, as the card had them.
   await card.getByTestId("airplane-tab-figures").click();
   await expect(card.locator("[data-figure]").first()).toBeVisible();

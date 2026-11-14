@@ -165,7 +165,7 @@ export const CARDS: CardRow[] = [
       },
     ],
     not: {
-      sideways: "the stub gives it no photo, so no row slides",
+      sideways: "the stub gives it no photo, so no picture slides; its facts strip is the airport card's CardFacts, checked there",
       position: "checked on the airport's card, the same CardTitle and SheetCard",
       searchHidden: "opened over the traffic's own scope of the one search, which a card hides as any other (checked on the airport)",
     },
@@ -175,7 +175,10 @@ export const CARDS: CardRow[] = [
     card: "airplane-profile",
     close: "sheet-card-close",
     entries: [{ name: "link (airplane=)", open: (p) => go(p, "/app/plan?airplane=N14511"), back: "map" }],
-    not: { sideways: "no sideways row", position: "nothing opens inside it" },
+    not: {
+      sideways: "no photo stubbed; its facts strip is the airport card's CardFacts, checked there",
+      position: "nothing opens inside it",
+    },
   },
   {
     name: "Map settings",

@@ -1,26 +1,13 @@
-import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { cn } from "cn";
 import StatusBadge from "../../../../components/StatusBadge";
+import { CardFact as Fact, CardFacts } from "../../../../components/CardFacts";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { feet } from "../../../../lib/format";
 import { servicesQuery } from "../../../../lib/queryClient";
 import { fuelNames } from "../../../../lib/stopServices";
-import { TEXT } from "../../../../lib/text";
 import { useNotamMarks } from "./notamBadges";
 import { placeWind } from "./placeWind";
 import { longestOpen } from "./runwayPicks";
-
-/** One fact: its name small and grey over its value, as Maps' Hours,
- *  Yelp, Accepts and Distance are. */
-function Fact({ label, testId, children }: { label: string; testId: string; children: ReactNode }) {
-  return (
-    <div className="flex shrink-0 flex-col gap-0.5" data-testid={testId}>
-      <dt className={cn("text-muted-foreground", TEXT.note)}>{label}</dt>
-      <dd className={cn("font-semibold whitespace-nowrap text-foreground tabular-nums", TEXT.row)}>{children}</dd>
-    </div>
-  );
-}
 
 /**
  * The airport card's facts in a row under its actions, a sideways scroller
@@ -61,12 +48,7 @@ export function PlaceFacts({
   const wind = place.metar?.wind_speed_kt != null ? placeWind(place.metar) : null;
   const fuel = services?.fuel_types.length ? fuelNames(services.fuel_types) : null;
   return (
-    <dl
-      // A sideways drag the row's, an up or down one the sheet's (rules.md, Sideways rows).
-      data-base-ui-swipe-ignore="x"
-      className="-mx-4 flex gap-6 overflow-x-auto overscroll-x-contain px-4 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      data-testid="place-facts"
-    >
+    <CardFacts testId="place-facts">
       {category && (
         <Fact label="Weather" testId="place-fact-weather">
           <StatusBadge category={category} data-testid="place-fact-category">
@@ -106,6 +88,6 @@ export function PlaceFacts({
           {fuel}
         </Fact>
       )}
-    </dl>
+    </CardFacts>
   );
 }

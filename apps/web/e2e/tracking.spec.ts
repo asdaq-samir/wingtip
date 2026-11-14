@@ -399,8 +399,8 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
   const card = page.getByTestId("flight-card");
-  // At the pill's size, as every card opens; its flights all the way up.
-  await grabberTo(page, "full");
+  await grabberTo(page, "full"); // from the pill's size, as every card opens
+  await card.getByTestId("flight-tab-flights").click(); // its flights, on their tab (C1)
   const rows = card.getByTestId("past-flight");
   await expect(rows).toHaveCount(2, { timeout: slow(15_000) });
   // FlightAware's row: how it ended and how long, then each end's field,
@@ -489,8 +489,8 @@ test("an airplane's last flights found are listed, the ones before them on askin
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
   const card = page.getByTestId("flight-card");
-  // At the pill's size, as every card opens; its flights all the way up.
-  await grabberTo(page, "full");
+  await grabberTo(page, "full"); // from the pill's size, as every card opens
+  await card.getByTestId("flight-tab-flights").click(); // its flights, on their tab (C1)
   const rows = card.getByTestId("past-flight");
   await expect(rows).toHaveCount(2, { timeout: slow(15_000) });
   // The ones before, from where the list ends: before its last takeoff.
@@ -544,8 +544,8 @@ test("an airplane quiet for a fortnight is looked for further back by itself, an
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
   const card = page.getByTestId("flight-card");
-  // At the pill's size, as every card opens; its flights all the way up.
-  await grabberTo(page, "full");
+  await grabberTo(page, "full"); // from the pill's size, as every card opens
+  await card.getByTestId("flight-tab-flights").click(); // its flights, on their tab (C1)
   await expect(card.getByTestId("past-flights-none")).toHaveText("No flights heard in the last six weeks", { timeout: slow(15_000) });
   expect(asked.map((q) => q.get("until"))).toEqual([null, "2026-09-28", "2026-09-14"]);
   await expect(card.getByTestId("past-flights-more")).toHaveCount(0);
@@ -808,7 +808,7 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
   await expect(link).toHaveAttribute("href", "https://www.planespotters.net/photo/1773250/n14511");
   await expect(link).toHaveAttribute("target", "_blank");
   await expect(link).not.toHaveAttribute("rel", /nofollow/);
-  // Lower in the card, under its details; the photo the strip's first.
+  // Under its facts, as the airport card's pictures (C1); the photo the strip's first.
   // At half a card's body does not scroll (index.css, the one scrolling
   // rule): pulled up to it, as a finger would (inSheet).
   await inSheet(page, link);
