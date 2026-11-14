@@ -314,7 +314,8 @@ Then the callers switch to the name and the old copy is deleted.
   flight category, a navaid's remarks -- answered null or empty.
 - The altitude a flight is planned at is the engine's too (`crates/altitude`,
   #482 phase 3): each leg's floor -- the terrain and DOF obstacles with
-  14 CFR 91.119's clearances (`vfr_floors`), or 91.177(a)'s minimum IFR
+  14 CFR 91.119's clearances (`vfr_floors`, asked once a leg with the
+  ground and obstacles under that leg as flown, wingtip.terrain), or 91.177(a)'s minimum IFR
   altitude over Part 95's mountainous areas (`ifr_floors`, the areas drawn
   in `mountainous.rs`), or an airway's MEA -- the band under the Class B
   shelf (only Class B bounds it: Class B takes a clearance, 91.131(a)(1),

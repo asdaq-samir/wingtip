@@ -18177,18 +18177,22 @@ extension Components {
                 case wind
             }
         }
-        /// One end of a runway (wingtip.pattern): its true heading, None for a
-        /// helipad, which way its traffic pattern is flown -- left unless the FAA
-        /// flags it right (14 CFR 91.126(b)(1)) -- and where it is.
+        /// One end of a runway (wingtip.pattern): its true heading, None for a helipad, which way its traffic pattern is flown -- left
+        /// unless the FAA flags it right (14 CFR 91.126(b)(1)) -- where it is, and its displaced threshold and landing distance available
+        /// (LDA), feet: NASR APT_RWY_END's DISPLACED_THR_LEN and LNDG_DIST_AVBL, None where NASR gives none.
         ///
         /// - Remark: Generated from `#/components/schemas/RunwayEnd`.
         public struct RunwayEnd: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RunwayEnd/displaced_threshold_ft`.
+            public var displacedThresholdFt: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/RunwayEnd/heading_true_deg`.
             public var headingTrueDeg: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/RunwayEnd/ident`.
             public var ident: Swift.String
             /// - Remark: Generated from `#/components/schemas/RunwayEnd/lat`.
             public var lat: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/RunwayEnd/lda_ft`.
+            public var ldaFt: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/RunwayEnd/lon`.
             public var lon: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/RunwayEnd/traffic`.
@@ -18196,28 +18200,36 @@ extension Components {
             /// Creates a new `RunwayEnd`.
             ///
             /// - Parameters:
+            ///   - displacedThresholdFt:
             ///   - headingTrueDeg:
             ///   - ident:
             ///   - lat:
+            ///   - ldaFt:
             ///   - lon:
             ///   - traffic:
             public init(
+                displacedThresholdFt: Swift.Int? = nil,
                 headingTrueDeg: Swift.Double? = nil,
                 ident: Swift.String,
                 lat: Swift.Double? = nil,
+                ldaFt: Swift.Int? = nil,
                 lon: Swift.Double? = nil,
                 traffic: Swift.String? = nil
             ) {
+                self.displacedThresholdFt = displacedThresholdFt
                 self.headingTrueDeg = headingTrueDeg
                 self.ident = ident
                 self.lat = lat
+                self.ldaFt = ldaFt
                 self.lon = lon
                 self.traffic = traffic
             }
             public enum CodingKeys: String, CodingKey {
+                case displacedThresholdFt = "displaced_threshold_ft"
                 case headingTrueDeg = "heading_true_deg"
                 case ident
                 case lat
+                case ldaFt = "lda_ft"
                 case lon
                 case traffic
             }
