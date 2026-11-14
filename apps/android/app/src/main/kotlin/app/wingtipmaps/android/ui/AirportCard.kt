@@ -46,6 +46,7 @@ import app.wingtipmaps.android.search.Remembered
 import app.wingtipmaps.android.search.SearchMemory
 import app.wingtipmaps.android.ui.card.CardTabBar
 import app.wingtipmaps.android.ui.card.CardTabBarRoom
+import app.wingtipmaps.android.ui.card.cardFoot
 import app.wingtipmaps.android.ui.card.Status
 import app.wingtipmaps.android.ui.card.StatusBadge
 import app.wingtipmaps.android.ui.card.rememberCardFoot
@@ -136,7 +137,7 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     ) { padding ->
         // The card is fetched as it opens; no pull to refresh in a sheet,
         // whose drag down is the sheet's (the scrolling rule, 2026-11-10).
-        Box(foot.frame(Modifier.padding(padding))) {
+        Box(Modifier.padding(padding).cardFoot(foot)) {
             LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = CardTabBarRoom)) {
                 state.problem?.let { item(key = "problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg), onRetry = { model.open(ident) }) } }
                 if (place == null) {

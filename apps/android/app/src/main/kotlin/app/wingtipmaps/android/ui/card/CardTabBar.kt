@@ -55,14 +55,14 @@ data class CardTab(
  * the Drawer's own offset. Only the bar's placement reads it.
  */
 @Stable
-class CardFoot internal constructor(private val visibleBottomPx: Float) {
+class CardFoot internal constructor(internal val visibleBottomPx: Float) {
     var hiddenPx by mutableFloatStateOf(0f)
-        private set
+        internal set
+}
 
-    /** On the card's frame: where its foot is against the window's. */
-    fun frame(modifier: Modifier = Modifier): Modifier = modifier.onGloballyPositioned { c ->
-        hiddenPx = (c.positionInWindow().y + c.size.height - visibleBottomPx).coerceAtLeast(0f)
-    }
+/** On the card's frame: where its foot is against the window's. */
+fun Modifier.cardFoot(foot: CardFoot): Modifier = onGloballyPositioned { c ->
+    foot.hiddenPx = (c.positionInWindow().y + c.size.height - foot.visibleBottomPx).coerceAtLeast(0f)
 }
 
 @Composable
