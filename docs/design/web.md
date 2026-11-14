@@ -526,7 +526,7 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    then the tabs, Info, Weather, Runways, Charts (`place/PlaceTabBar` on
    the shared `CardTabBar`, the pages in `CardTabPages`; each tab an icon
    from lucide-react, required on `CardTab` (Info, CloudSun, PlaneLanding,
-   FileText), the picked one with its word under it, the others icon alone, every tab one fixed size, equal columns of the widest word's width kept by the unpicked tabs' invisible words, 48 points tall, all named
+   FileText), every tab with its word under it (12 points, `TEXT.badge`) in equal columns, 56 points tall in a 64-point bar 16 points in from each side, the picked one in the tint on a soft `foreground/10` pill, all named
    by aria-label, the dot and count over the icon's corner; a tab picked
    opens at its own top, just under the actions (`useTabScroll`'s
    `scrollOnPick`: the pages' top where the card was scrolled into the last
@@ -540,10 +540,10 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    the rest of the body; its own room in the flow is the room the last row
    scrolls clear of it. Glass (`liquid-glass`) because it floats over the
    card, the one place glass stays (rules.md; the owner, 2026-11-10), at
-   the denser bar fill and blur (`material.bar-fill` 0.92, `bar-blur` 30)
-   so its words read on the frost over a photo, 4.5:1 or more. The
-   stock Tabs' list in its `tint` variant, capsule triggers 40 points tall
-   with a 44-point `::before` hit area, the picked one filled in the tint;
+   the denser bar fill and blur (`material.bar-fill` 0.6, `bar-blur` 30: the content scrolling under it
+   shows through, blurred, as an iOS 26 tab bar's does). The
+   stock Tabs' list, its triggers 56 points tall (their `::before` the
+   hit area), the picked one's icon and word in the tint;
    Weather carries the dot of the field's own report's category (the
    FAA's colour), Charts the count of its charts, each named with its
    hint, "Weather, MVFR", "Charts, 9". A tab not yet seen opens at its

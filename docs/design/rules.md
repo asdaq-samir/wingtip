@@ -251,11 +251,10 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    Runways, Charts) float in a glass bar at the card's foot, as Maps'
    group of buttons does, in reach at every height and hidden at the
    pill, the page scrolling under it and clearing it at its end: the
-   picked tab filled in the tint, Weather with the field's category dot
+   picked tab in the tint on a soft lighter pill, Weather with the field's category dot
    and Charts with its count. Each tab is an icon (Info, CloudSun,
    PlaneLanding, FileText; the owner, 2026-11-14: "make the tabs icons
-   instead so it takes less space"), the picked one showing its word
-   under it and the others the icon alone, every tab one fixed size (the widest word's width, 48 points tall), so nothing moves on a switch, each named by its aria-label
+   instead so it takes less space"), every tab showing its word under its icon (the owner, 2026-11-14, from an iOS 26 tab bar: "similar size and see through"), in a 64-point capsule 16 points in from each side with equal columns, the glass much more see-through (`material.bar-fill` 0.6, the blur kept), so nothing moves on a switch, each named by its aria-label
    ("Weather, VFR"), the dot and count over the icon's corner. The bar is glass because it floats over the
    card (the owner's decision of 2026-11-10 keeps glass for what floats).
    This replaces T4's tabs under the actions and its one-line report.
