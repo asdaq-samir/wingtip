@@ -25,23 +25,11 @@ from . import holds as vfr_holds
 #: decimals of a degree (wingtip.procedures).
 SAME_PLACE_NM = 0.05
 
-#: Where vectors bring an airplane onto an approach's final: this far out
-#: from the final's first fix, nm -- FAA Order JO 7110.65 5-9-1a1, "at
-#: least 2 miles outside the approach gate", the gate "1 mile from the
-#: final approach fix on the side away from the airport" (Pilot/Controller
-#: Glossary, APPROACH GATE) -- on a track INTERCEPT_DEG off its course.
-INTERCEPT_NM = 1.0 + 2.0
-#: JO 7110.65 Table 5-9-1: 30 degrees the most an intercept 2 miles or
-#: more outside the gate may be.
-INTERCEPT_DEG = 30.0
-#: The least a downwind to the final is flown to its side, nm: as far as
-#: the point the final is joined at (INTERCEPT_NM back, INTERCEPT_DEG off),
-#: 1.5 nm, so the base runs from the downwind to that point. Neither JO
-#: 7110.65 5-9 nor the AIM gives a radar downwind a distance (the 1/2 to 1
-#: mile of FAA-H-8083-3C ch. 8 is a visual traffic pattern's, the
-#: engine's PATTERN_DOWNWIND_NM), so it is derived rather than set: a
-#: figure of 4.0 stood here with no source (the aviation audit's AV-17).
-#: An airplane farther to that side flies its downwind where it is.
+#: Vectors join the final this far out from its first fix, nm, INTERCEPT_DEG off its course: "at least 2 miles outside the
+#: approach gate", which is 1 mile outside the FAF (JO 7110.65 5-9-1a1; P/CG), at Table 5-9-1's most, 30 degrees.
+INTERCEPT_NM, INTERCEPT_DEG = 1.0 + 2.0, 30.0
+#: The least offset of a downwind to the final, nm: the join's own, 3 x sin 30 = 1.5. No FAA text sets a radar downwind's
+#: (FAA-H-8083-3C ch. 8's 1/2 to 1 mile is a visual pattern's); AV-17 found a bare 4.0 here.
 DOWNWIND_NM = INTERCEPT_NM * math.sin(math.radians(INTERCEPT_DEG))
 #: How far a path turns at a point to be a course reversal there, degrees.
 REVERSAL_DEG = 120.0
