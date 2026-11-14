@@ -187,16 +187,19 @@ test(
     await expect(results).not.toContainText("Searching…");
     await page.keyboard.press("Escape");
 
-    // Direct To: worked out on the device, or the route left as it was.
+    // Direct To, the dry run flying on: worked out on the device, the
+    // figure strip at the foot (the calculations, dry run too) its display,
+    // To the next landing and the distance left to it, the route's address
+    // holding the direct and the page still up.
+    const strip = sideDrawer(page).getByTestId("dry-run-figures");
+    await expect(strip.getByTestId("navlog-to")).toHaveText("KDLH");
     const direct = page.getByTestId("flying-direct");
-    if (await direct.isVisible()) {
-      await direct.click();
-      await expect(
-        sideDrawer(page)
-          .getByTestId("direct-on-device")
-          .or(page.getByTestId("problem-banner-title").getByText("Not changed: no connection")),
-      ).toBeVisible({ timeout: slow(10_000) });
-    }
+    await expect(direct).toBeVisible();
+    await direct.click();
+    await expect(page).toHaveURL(/[?&]direct=KDLH\b/, { timeout: slow(10_000) });
+    await expect(page.getByTestId("page-error")).toHaveCount(0);
+    await expect(strip.getByTestId("navlog-to")).toHaveText("KDLH");
+    await expect(strip).toContainText(/\d+(\.\d)? nm/);
     await context.setOffline(false);
   },
 );

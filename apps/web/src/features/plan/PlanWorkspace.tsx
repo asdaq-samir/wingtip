@@ -112,7 +112,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   } = vm.picks;
   const { fuelHidden, showFuelStops, tankFigures } = vm.stops;
   const { holdAsk, listEdit, routeLine } = vm.routeList;
-  const { briefShown, openNavLogCard } = vm.fpl;
+  const { briefShown, openNavLogCard, profileShown } = vm.fpl;
   const { flying } = vm.flight;
   const { routeRows } = vm.leg;
   const {
@@ -459,8 +459,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // body's room half way, and grew with the sheet under a finger.
         // At the pill on FPL they are the pill's one row (MapPanel), the
         // route's row from half up (the owner, 2026-11-11, the canvas's b).
-        // FPL's page's own (SheetParts); under the Profile, its foot (PlanPage).
-        foot: !place && !heldPoint && !flight && !briefShown && !vm.fpl.profileShown ? routed && <FlightFoot vm={vm} /> : undefined,
+        // FPL's page's own (SheetParts); under the Profile, its foot (PlanPage), but flying no page is drawn (MapPanel).
+        foot: !place && !heldPoint && !flight && !briefShown && (flying || !profileShown) ? routed && <FlightFoot vm={vm} /> : undefined,
         // The route as one box of pills, the top row to itself (MapPanel keeps
         // it under the others' heads). How it shows once whole is the pilot's
         // pick from its ••• menu's Show Route As (lib/preferences RouteEdit:
