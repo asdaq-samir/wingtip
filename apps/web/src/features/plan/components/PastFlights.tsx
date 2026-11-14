@@ -10,6 +10,7 @@ import type { PastFlightSummary } from "../../../lib/api/types";
 import { TEXT } from "../../../lib/text";
 import { dayOf, lasted, legOf, placeOf, when, whenSaid } from "./pastFlightFormat";
 import { pastFlightsQuery } from "./pastFlightsQuery";
+import StatusBadge from "../../../components/StatusBadge";
 import { useShown } from "../../../lib/shown";
 
 // The stock calendar, as the departure's picker has it (DepartPicker):
@@ -258,10 +259,10 @@ function FlightEnds({
 }
 
 /** "Landed · 52 min", "Local flight · 1 h 5 min", "Last heard · 40 min":
- *  how it ended and how long it flew. */
+ *  how a flight that ended ended and how long it flew. */
 function endedOf(flight: PastFlightSummary): string {
-  const local = !flight.in_air && !!flight.origin && flight.origin.ident === flight.destination?.ident;
-  return `${flight.in_air ? "In the air" : local ? "Local flight" : flight.landed ? "Landed" : "Last heard"} · ${lasted(flight.on - flight.off)}`;
+  const local = !!flight.origin && flight.origin.ident === flight.destination?.ident;
+  return `${local ? "Local flight" : flight.landed ? "Landed" : "Last heard"} · ${lasted(flight.on - flight.off)}`;
 }
 
 const PastFlightRow = memo(function PastFlightRow({
@@ -285,7 +286,15 @@ const PastFlightRow = memo(function PastFlightRow({
       title={
         <span className="flex w-full flex-col gap-1.5 py-1">
           <span className={cn("flex items-center gap-2 font-semibold", TEXT.detail)}>
-            <span className={flight.landed || flight.in_air ? "text-go-ink" : "text-muted-foreground"}>{endedOf(flight)}</span>
+            {/* A flight still under way leads with the In the air badge
+                (docs/design/rules.md 9); one that ended says how in words. */}
+            {flight.in_air ? (
+              <span>
+                <StatusBadge variant="inAir" /> {lasted(flight.on - flight.off)}
+              </span>
+            ) : (
+              <span className={flight.landed ? "text-go-ink" : "text-muted-foreground"}>{endedOf(flight)}</span>
+            )}
             {type && <span className="ml-auto text-muted-foreground">{type}</span>}
           </span>
           <FlightEnds

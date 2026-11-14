@@ -175,6 +175,26 @@ enum WingtipColor {
         static let airplane = rgb(0x0284C7)
         /// A tracked airplane's "In the air" badge on its card, white on it (Tailwind teal-700, as it was drawn).
         static let air = rgb(0x0F766E)
+        /// StatusBadge's fills, one per status a pilot scans for (the owner, 2026-11-14: "Use badges where we can for example tfr active etc."), each under white words at 4.5:1 or more in both schemes (WCAG 1.4.3; looksContrast.test.ts): in force now, the hazard's red (6.6:1).
+        static let statusActive = rgb(0xB42318)
+        /// In force later, not yet: amber-700 (5.0:1).
+        static let statusLater = rgb(0xB45309)
+        /// Scheduled but not in use now (a cold special-use area): grey-500 (4.8:1).
+        static let statusCold = rgb(0x6B7280)
+        /// A field or runway NASR or a NOTAM closes (decision 0043): red-800 (8.3:1), a step past Active's so the two are told apart.
+        static let statusClosed = rgb(0x991B1B)
+        /// A navaid or a service out of service: orange-800 (7.3:1).
+        static let statusOutOfService = rgb(0x9A3412)
+        /// A private-use field (NASR's use PR): slate-600 (7.6:1).
+        static let statusPrivate = rgb(0x475569)
+        /// A military field (NASR's ownership MA, MN, MR, CG): lime-700, an olive drab (5.0:1).
+        static let statusMilitary = rgb(0x4D7C0F)
+        /// A joint civil-military field: lime-800 (7.1:1).
+        static let statusJoint = rgb(0x3F6212)
+        /// An emergency's squawk on a tracked airplane (AIM 6-2-2): the light gun's red, red-600 (4.8:1).
+        static let statusEmergency = rgb(0xDC2626)
+        /// A tracked airplane on the ground: iOS's dark grey, zinc-600 (7.7:1).
+        static let statusGround = rgb(0x52525B)
     }
     enum Weather {
         static let convective = rgb(0xC2410C)
@@ -883,6 +903,8 @@ enum WingtipType {
     static let tab: Font = Font.system(.footnote, weight: .regular)
     /// The tab bar's words (iOS Caption 1, 12/16; the iOS audit's P3).
     static let tabBar: Font = Font.system(.caption, weight: .regular)
+    /// A StatusBadge's word (Active, Closed, In the air): iOS's Caption 1 in semibold, 12 on 16, the same with a mouse.
+    static let badge: Font = Font.system(.caption, weight: .semibold)
     /// A chip's category in a narrow column (iOS Caption 2).
     static let caption: Font = Font.system(.caption2, weight: .bold)
     /// A figure's name, an ident, a chip's word: the display face's capitals, spaced a tenth of an em (letterSpacing in em).

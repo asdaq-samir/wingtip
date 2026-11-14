@@ -116,7 +116,7 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
     await expect(card.getByTestId("airplane-actions").getByTestId(id)).toBeVisible();
   for (const tab of ["flights", "info", "figures"]) await expect(card.getByTestId(`airplane-tab-${tab}`)).toBeVisible();
   await expect(card.getByTestId("airplane-tab-flights")).toHaveAttribute("aria-selected", "true");
-  await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground · landed LWM /, { timeout: slow(15_000) });
+  await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /, { timeout: slow(15_000) });
   // Flights: its past flights, each ▶ its replay over this card.
   const flight = card.getByTestId("past-flight").first();
   await expect(flight).toContainText("LCI", { timeout: slow(15_000) });
@@ -237,7 +237,7 @@ test("an N-number in the air says so, with its height and speed, and Track opens
     track_deg: 90,
   };
   answer({ aircraft: [flying], checked: true, source: "ADS-B Exchange", license: "ADS-B Exchange terms" });
-  await expect(row.getByTestId("search-airplane-live")).toHaveText("In the air · 4,500 ft · 108 kt", { timeout: slow(10_000) });
+  await expect(row.getByTestId("search-airplane-live")).toHaveText("In the air 4,500 ft · 108 kt", { timeout: slow(10_000) });
   await row.getByTestId("search-airplane-track").click();
   await expect(page).toHaveURL(/[?&]flight=a89c1e/);
 });

@@ -64,7 +64,8 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   // geodesic), not the planner's rounded point (WEB-3): Libby AAF, 8.9 nm,
   // before Waukegan's 11.
   await expect(rows.nth(1)).toContainText("KFHU");
-  await expect(rows.nth(1)).toContainText("joint use");
+  // Who may use it, as a badge (docs/design/rules.md 9).
+  await expect(rows.nth(1).getByTestId("nearest-use")).toHaveText("Joint use");
   // Each row its weather, its runway and its listed frequency, and
   // how far and which way, its arrow pointing there (north up, the
   // airplane not moving).

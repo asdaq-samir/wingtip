@@ -25,6 +25,7 @@ import RiskAssessment from "./RiskAssessment";
 import FindingIcon from "../../../../components/FindingIcon";
 import { Flag, PassNote, Pending } from "./BriefingBits";
 import { SUA_FINDING, SUA_WORDS } from "./briefingWords";
+import StatusBadge from "../../../../components/StatusBadge";
 
 /** Preflight's sections its checks' tiles open (BriefChecks): the
  *  airspace's, the risk's and the loading's. */
@@ -186,7 +187,10 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
                         () => hoverTfr(t.notam_id),
                         () => hoverTfr(null),
                       )}
-                    />,
+                    >
+                      {/* In force when the flight passes: the TFR's Active badge. */}
+                      {inForce && <StatusBadge variant="active" data-testid="tfr-state" />}
+                    </ListRow>,
                     t.on_route?.legs.length ? (
                       <OnRouteRow key={`${t.notam_id}-on`} on={t.on_route} briefing={briefing} hazardKey={`tfr-${t.notam_id}`} />
                     ) : null,
@@ -218,7 +222,9 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
                       </>
                     }
                     data-testid="special-use-area"
-                  />
+                  >
+                    <SuaPassBadge when={when} />
+                  </ListRow>
                 ))}
               </ListGroup>
             </div>
@@ -227,4 +233,21 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
       )}
     </AccordionSection>
   );
+}
+
+/** A special-use area's status when the flight passes, as a badge
+ *  (docs/design/rules.md 9): Active where its times of use or SFDPS have it
+ *  in use then, Cold where SFDPS says so, "Not scheduled" out of its
+ *  hours (a NOTAM can still activate it, so never Cold); none where only a
+ *  NOTAM or the pilot's own reading can say (the line under it does). */
+function SuaPassBadge({ when }: { when: keyof typeof SUA_WORDS }) {
+  if (when === "active" || when === "active-now") return <StatusBadge variant="active" data-testid="sua-state" />;
+  if (when === "cold-now") return <StatusBadge variant="cold" data-testid="sua-state" />;
+  if (when === "not-scheduled")
+    return (
+      <StatusBadge variant="cold" data-testid="sua-state">
+        Not scheduled
+      </StatusBadge>
+    );
+  return null;
 }

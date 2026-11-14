@@ -7,7 +7,7 @@ import { PillSection } from "../../../components/Favorites";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { SkeletonLine, SkeletonRows } from "../../../components/QueryState";
 import { api } from "../../../lib/api/client";
-import type { AirspaceBand } from "../../../lib/api/types";
+import type { AirspaceBand, SaaStatus } from "../../../lib/api/types";
 import { degreesMinutes, minimumsLine, shortAirspaceName } from "../../../lib/airspace";
 import type { LatLon } from "../../../lib/geo";
 import { altFt } from "../../../lib/format";
@@ -21,6 +21,9 @@ import { BADGE } from "../../../lib/rowBadges";
 import { FINDING_TONE } from "../../../lib/findings";
 import { faaWords, suaAltitudes, tfrPage } from "../../../lib/advisories";
 import { saaQuery, saaWords } from "../../../lib/liveReports";
+import StatusBadge from "../../../components/StatusBadge";
+import { useClock } from "../../../lib/useMinuteClock";
+import { suaWhen } from "../lib/passTimes";
 
 /** One of a band's rules on a line of its own, its glyph before it: the
  *  weather minimums, what it takes to go in, what the airplane carries,
@@ -274,7 +277,8 @@ export default function AirspaceCard({
                           {/* SFDPS's word on it now, where it has one (lib/liveReports). */}
                           {saaWords(saa?.areas[area.name]) && (
                             <span
-                              className={cn("block font-semibold", saa?.areas[area.name]?.active ? "text-caution-ink" : "text-foreground")}
+                              // The badge at the row's end says the status; these words say until when and whose.
+                              className="block"
                               data-testid="airspace-sua-status"
                             >
                               {saaWords(saa?.areas[area.name])}
@@ -283,7 +287,9 @@ export default function AirspaceCard({
                         </>
                       }
                       data-testid="airspace-sua"
-                    />
+                    >
+                      <SuaState status={saa?.areas[area.name]} timesOfUse={area.times_of_use} timeZone={area.time_zone} />
+                    </ListRow>
                   ))
                 )}
               </ListGroup>
@@ -312,7 +318,9 @@ export default function AirspaceCard({
                       description={[t.active_now ? "In force now" : "To come", t.title].filter(Boolean).join(" · ")}
                       href={tfrPage(t.notam_id)}
                       data-testid="airspace-tfr"
-                    />
+                    >
+                      <StatusBadge variant={t.active_now ? "active" : "later"} data-testid="airspace-tfr-state" />
+                    </ListRow>
                   ))
                 )}
               </ListGroup>
@@ -322,4 +330,33 @@ export default function AirspaceCard({
       )}
     </SheetCard>
   );
+}
+
+/** A special-use area's status now, as a badge (docs/design/rules.md 9):
+ *  SFDPS's live word where it has one (Active, Cold), else what the
+ *  engine reads of its published times of use for this minute
+ *  (gonogo_sua_when; FAA Order JO 7400.2, 21-2-4): in use is Active, and
+ *  out of its hours "Not scheduled", never Cold, as a NOTAM can still
+ *  activate it. By NOTAM alone, or hours it cannot read, no badge: the
+ *  times of use under the name say it. */
+function SuaState({
+  status,
+  timesOfUse,
+  timeZone,
+}: {
+  status: SaaStatus | undefined;
+  timesOfUse?: string | null;
+  timeZone?: string | null;
+}) {
+  const now = useClock(60_000);
+  if (status && status.active != null) return <StatusBadge variant={status.active ? "active" : "cold"} data-testid="airspace-sua-state" />;
+  const when = suaWhen(timesOfUse, new Date(now), timeZone);
+  if (when === "active") return <StatusBadge variant="active" data-testid="airspace-sua-state" />;
+  if (when === "not-scheduled")
+    return (
+      <StatusBadge variant="cold" data-testid="airspace-sua-state">
+        Not scheduled
+      </StatusBadge>
+    );
+  return null;
 }

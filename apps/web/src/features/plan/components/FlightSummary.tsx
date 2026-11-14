@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { Badge } from "../../../components/ui/badge";
+import StatusBadge from "../../../components/StatusBadge";
 import { Button } from "../../../components/ui/button";
 import { Progress } from "../../../components/ui/progress";
 import { useGeo, type LatLon } from "../../../lib/geo";
@@ -23,12 +23,9 @@ export interface StateBadge {
   tone: "air" | "ground" | "alarm";
 }
 
-const TONE = {
-  air: "bg-(--badge-air)",
-  // iOS's dark grey: white on it reads at 7.7:1.
-  ground: "bg-zinc-600",
-  alarm: "bg-destructive",
-} as const;
+/** Each state's StatusBadge: the emergency's red, the air's teal, the
+ *  ground's dark grey, white on each (design/tokens.json). */
+const STATUS = { air: "inAir", ground: "ground", alarm: "emergency" } as const;
 
 /** Feet against own ship's: "500 ft above", "1,200 ft below", "level". */
 function against(feet: number): string {
@@ -211,14 +208,27 @@ function FlightSummary({
       data-testid={plane ? "flight-now" : "flight-last"}
     >
       <div className={cn("flex items-center gap-2 font-semibold", TEXT.note)}>
-        {badge && (
-          <Badge className={cn("h-auto rounded-md px-1 font-bold text-white", TEXT.caption, TONE[badge.tone])} data-testid="flight-state">
+        {/* Flying, the In the air badge first, then how (CLB, DES, LVL)
+            and how long; an emergency's code its own badge before it; on
+            the ground, GND. The statuses a pilot scans for are badges, the
+            words that explain them text (docs/design/rules.md 9). */}
+        {badge && badge.tone !== "air" && (
+          <StatusBadge variant={STATUS[badge.tone]} data-testid="flight-state">
             {badge.word}
-          </Badge>
+          </StatusBadge>
         )}
-        <span className={plane ? "text-go-ink" : "text-muted-foreground"}>
-          {plane ? (flown ? `In the air · ${flown}` : "In the air") : "Not heard now"}
-        </span>
+        {plane ? (
+          <>
+            <StatusBadge variant="inAir" data-testid="flight-air" />
+            <span className="text-foreground">
+              {badge?.tone === "air" && <span data-testid="flight-state">{badge.word}</span>}
+              {badge?.tone === "air" && flown && " · "}
+              {flown}
+            </span>
+          </>
+        ) : (
+          <span className="text-muted-foreground">Not heard now</span>
+        )}
       </div>
       {from && (
         <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3">

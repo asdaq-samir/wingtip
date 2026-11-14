@@ -271,6 +271,36 @@ object WingtipColors {
         /** A tracked airplane's "In the air" badge on its card, white on it (Tailwind teal-700, as it was drawn). */
         val Air = Color(0xFF0F766E)
         const val AIR_HEX = "#0f766e"
+        /** StatusBadge's fills, one per status a pilot scans for (the owner, 2026-11-14: "Use badges where we can for example tfr active etc."), each under white words at 4.5:1 or more in both schemes (WCAG 1.4.3; looksContrast.test.ts): in force now, the hazard's red (6.6:1). */
+        val StatusActive = Color(0xFFB42318)
+        const val STATUS_ACTIVE_HEX = "#b42318"
+        /** In force later, not yet: amber-700 (5.0:1). */
+        val StatusLater = Color(0xFFB45309)
+        const val STATUS_LATER_HEX = "#b45309"
+        /** Scheduled but not in use now (a cold special-use area): grey-500 (4.8:1). */
+        val StatusCold = Color(0xFF6B7280)
+        const val STATUS_COLD_HEX = "#6b7280"
+        /** A field or runway NASR or a NOTAM closes (decision 0043): red-800 (8.3:1), a step past Active's so the two are told apart. */
+        val StatusClosed = Color(0xFF991B1B)
+        const val STATUS_CLOSED_HEX = "#991b1b"
+        /** A navaid or a service out of service: orange-800 (7.3:1). */
+        val StatusOutOfService = Color(0xFF9A3412)
+        const val STATUS_OUT_OF_SERVICE_HEX = "#9a3412"
+        /** A private-use field (NASR's use PR): slate-600 (7.6:1). */
+        val StatusPrivate = Color(0xFF475569)
+        const val STATUS_PRIVATE_HEX = "#475569"
+        /** A military field (NASR's ownership MA, MN, MR, CG): lime-700, an olive drab (5.0:1). */
+        val StatusMilitary = Color(0xFF4D7C0F)
+        const val STATUS_MILITARY_HEX = "#4d7c0f"
+        /** A joint civil-military field: lime-800 (7.1:1). */
+        val StatusJoint = Color(0xFF3F6212)
+        const val STATUS_JOINT_HEX = "#3f6212"
+        /** An emergency's squawk on a tracked airplane (AIM 6-2-2): the light gun's red, red-600 (4.8:1). */
+        val StatusEmergency = Color(0xFFDC2626)
+        const val STATUS_EMERGENCY_HEX = "#dc2626"
+        /** A tracked airplane on the ground: iOS's dark grey, zinc-600 (7.7:1). */
+        val StatusGround = Color(0xFF52525B)
+        const val STATUS_GROUND_HEX = "#52525b"
     }
     object Weather {
         val Convective = Color(0xFFC2410C)
@@ -1092,7 +1122,7 @@ val WingtipTypography = Typography(
     bodyLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 24.sp),
     bodyMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp),
     bodySmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp),
-    labelMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp),
+    labelMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, lineHeight = 16.sp),
     labelSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp),
     labelLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.007.em),
     headlineMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 31.sp, fontFeatureSettings = "tnum"),
@@ -1103,7 +1133,7 @@ val WingtipTypography = Typography(
     bodyLargeEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp),
     bodyMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
     bodySmallEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
-    labelMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
+    labelMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp),
     labelSmallEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, lineHeight = 16.sp),
     labelLargeEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.007.em),
     headlineMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.ExtraBold, fontSize = 26.sp, lineHeight = 31.sp, fontFeatureSettings = "tnum"),
