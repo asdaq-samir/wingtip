@@ -511,9 +511,8 @@ placement wins, and the difference is noted.
   `selectable` tab, 48 dp a side with an 8 dp dot (nothing grows), read
   as "Page 1 of 2, Search". The strip layout, whose field and timeline
   are its search and plan, has no carousel.
-- **Deep links**: `fpl` opens the FPL page; `search` is
-  `TODO(claude/carousel-web)` until that branch's screens.json entry is
-  generated.
+- **Deep links**: `fpl` opens the FPL page; `search` (and the old
+  `airport`) the Search page (`OpenScreen`).
 - **Test**: `androidTest/.../ui/SheetCarouselTest`, and `SheetNavTest`
   for the stack over the carousel.
 

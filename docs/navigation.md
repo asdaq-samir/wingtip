@@ -91,7 +91,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 | `passengers` | Passenger Briefing | -- | yes | yes | The passenger briefing. |
 | `shared` | Shared Flight | yes | yes | yes | A flight another pilot sent: its plan shown first, with Use This Plan and Not Now, the receiver's own plan kept until they choose. Its keys are the plan's (dep, dest, stops, altitude_ft, depart, type, rules, tail) or a saved flight's share. |
 | `about` | About | yes | yes | yes | The build, the data's cycles, the credits and the legal pages. |
-| `search` | Search | yes | -- | -- | The sheet's first page: the one search and its home list (favorites, recents, nearest, saved). |
+| `search` | Search | yes | -- | yes | The sheet's first page: the one search and its home list (favorites, recents, nearest, saved). |
 
 The plan's own keys go beside it, and alone they open what they name:
 
@@ -136,7 +136,7 @@ alike (the owner, 2026-11-09). Two kinds, one address:
   (the route, altitudes, departure time, airplane type, picks and nav log;
   never the pilot's name, notes or risk, and the N-number only where they
   chose), until `DELETE /api/flights/{id}/share` (Stop Sharing) ends it for
-  everyone. Android has no Saved Flights yet, so it opens these but makes
+  everyone. Android lists Saved Flights (You → Flights) but makes
   none.
 
 Opened, the link is never planned by itself: the web takes its keys off
@@ -267,17 +267,19 @@ in the search is not counted.
 | Nav Log, Profile | the flight's card → Nav Log (or the figures); the plan's Profile row or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
 | A leg | a leg on the map, a nav log row, or a strip checkpoint: the one leg card | 1 / 2 | Direct, Remove |
 | Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head; under IFR the Alternate (14 CFR 91.169): an alternate filed from those that will do, or taken off, as the web's (2026-11-10) |
-| Airport card | search → the field; tap it on the map; a list row; the plan's field | 1 + typing (map 1) | Fly Here (with its time), Depart From, Add as Stop, Diagram, Call, Address at its foot; the star; Overview, Weather, Frequencies, Runways, Approaches, NOTAMs under pinned tabs |
+| Airport card | search → the field; tap it on the map; a list row; the plan's field | 1 + typing (map 1) | Fly Here (with its time), Add as Stop, Call and Favorite under its head, in sight at half; Overview, Weather, Frequencies, Runways, Charts, NOTAMs pinned right under them, and the field's report in a line |
 | A fix, VOR, airspace, traffic, What's Here | tap it on the map; an alert; a point's More Info | 1 | its actions |
-| Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration, passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane |
+| Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration (suggesting as typed), passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane. An N-number's: Fly This, Follow, Favorite, Share; Flights (▶ replays one), Info, Figures |
 | Checklists | Airplane → Checklists tab → a checklist (on the card's stack) | 3 → 3 | Ticks; Edit as text |
-| Settings | the account button | 1 → 1 | Layout, theme, account (Sign In, Sign Out), minimums, the copilots |
+| You | the avatar | 1 | Pilot Details, Airplanes, Flights, Logbook, Minimums, Training, Emergency; a swipe down closes it |
+| Settings | the avatar → its gear; also the Map card's gear | 2 | Look, Map, In Flight, Data, Help & About; a swipe down closes it |
+| Saved Flights | the avatar → Flights | 2 | A flight planned again with a tap |
 | Map card (no Map Settings page; the owner, 2026-11-13) | the map's Layers button; or search "map" / "layers" | 1 (+ typing 0) | The layers, traffic and the weather loop; its gear opens Settings at its Map group (Airport Weather, glide ring) |
-| Logbook, Coach | account → Logbook → Coach, each on Settings' stack | 2 / 3 | Logbook entries edited in the row; Delete with an Undo |
-| Downloads, Passenger Briefing, About | account → Settings' row, on its stack | 2 → 2 | Downloads delete with no confirm or Undo |
+| Logbook, Training (the Coach) | the avatar → its row | 2 | Logbook entries edited in the row; Delete with an Undo |
+| Downloads, Passenger Briefing, ATC, About | the avatar → its gear → Settings' row (Data, In Flight, Help & About) | 3 | Downloads delete with no confirm or Undo |
 | Clearance | search "clearance" or "radio"; the strip's chip | typing / 1 | Listen, Enter the Route |
 | Dry run | the plan's Dry Run; or search "dry run" (with a route) | 2 / typing | Play, speed, forecast; Back ends it |
-| Emergency (the one full-screen page) | Instruments bar; search "emergency"; Airplane → Emergency Assistant | 1 | Its frequencies copy; ✕ at the app bar's start |
+| Emergency (a card on the sheet's stack, opened at full height) | Instruments bar; search "emergency"; You → Emergency | 1 | Its frequencies copy; the card bar's ← and ✕; closed by ✕ alone, never a swipe |
 | Alerts ahead, a copilot message | the banner | 1 | Tapped: the Ahead sheet, More Info on a Class B, C or D; the message's Fly to and More Info |
 | Nearest, Ask | Instruments bar; the sparkle; Nearest also under the search | 1 | a field opens on Nearest's stack |
 
@@ -293,7 +295,7 @@ or overflow).
 | The destination | More Info (weather, frequencies, runways, approaches), Brief, Nearest | More Info; Brief on FPL | point menu: More Info, **Brief (new)** | Brief beside Plan; **point menu: More Info, Brief (new)** |
 | The figures | the nav log | **Dist (new)** | **strip (new)** | **strip (new)** |
 | A nav log row | its field's card | **name (new)** | leg detail | leg sheet |
-| A saved flight | Open, Edit (name, notes), Flown Track (replay, profile), Debrief, Delete, Undo | page; Debrief on its page; **Edit in the row's menu (new)** | swipe and hold: Flown Track, **Edit (new)**, Delete; Undo | -- (no saved flights on Android yet) |
+| A saved flight | Open, Edit (name, notes), Flown Track (replay, profile), Debrief, Delete, Undo | page; Debrief on its page; **Edit in the row's menu (new)** | swipe and hold: Flown Track, **Edit (new)**, Delete; Undo | Open (You → Flights); the rest not yet |
 | A logbook entry | Edit, Delete, Undo | **in the row; Undo row (new)** | **in the row; Undo row (new)** | **in the row; Undo row (new)** |
 | A frequency | Copy (Tune nowhere: no radio link) | **tap (new)** | **hold (new)** | **tap (new)** |
 | A flight just ended | Debrief the approaches · Log it | FlightLoggedSheet | FlightLoggedSheet | FlightLoggedSheet |
