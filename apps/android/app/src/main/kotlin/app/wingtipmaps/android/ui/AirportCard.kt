@@ -121,6 +121,7 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
         onNotam = { open(it.notams) },
         onDiagram = place?.airportDiagramUrl?.let { { diagram = true } },
         words = words,
+        frequencyOrder = remember(place?.frequencies) { place?.let(AirportFacts::frequencyOrder) },
     )
 
     // The field's name and ← where the search was, ✕ at the end (CardPage).
@@ -202,7 +203,8 @@ private fun FactsRow(f: AirportFacts) {
         stringResource(R.string.fact_weather) to (f.category ?: stringResource(R.string.fact_no_report)),
         wind?.let { stringResource(R.string.fact_wind) to it },
         f.longestRunwayFt?.let { stringResource(R.string.fact_longest_runway) to Format.altitude(it.toDouble()) },
-        f.distanceNm?.let { (f.fromIdent?.let { from -> stringResource(R.string.fact_from, from) } ?: stringResource(R.string.fact_distance)) to Format.distance(it) },
+        // Whole miles, as the web's card says a field's distance.
+        f.distanceNm?.let { (f.fromIdent?.let { from -> stringResource(R.string.fact_from, from) } ?: stringResource(R.string.fact_distance)) to Format.wholeMiles(it) },
     )
     LazyRow(contentPadding = PaddingValues(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         facts.forEach { (name, value) ->

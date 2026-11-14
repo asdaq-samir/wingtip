@@ -2,7 +2,9 @@ package app.wingtipmaps.android.ui
 
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.distanceNm
+import app.wingtipmaps.android.engine.generated.frequenciesInOrder
 import app.wingtipmaps.android.engine.generated.fuelEstimate
 import app.wingtipmaps.android.engine.generated.windCalm
 
@@ -36,6 +38,13 @@ data class AirportFacts(
     data class From(val lat: Double, val lon: Double, val ident: String? = null)
 
     companion object {
+        /** The field's frequencies in the order a pilot dials them, the
+         *  engine's frequencies_in_order (the field's weather first); null
+         *  where the engine could not say, and then as the planner sent them. */
+        fun frequencyOrder(place: AirportPlace): List<Int>? =
+            Engine.frequenciesInOrder(place.frequencies.map { EngineContract.FieldFrequency(type = it.type, description = it.description, frequencyMhz = it.frequencyMhz) })
+                .getOrNull()?.filter { it in place.frequencies.indices }
+
         fun of(place: AirportPlace, from: From?, cruiseTasKt: Double?): AirportFacts {
             val metar = place.metar
             val start = from?.takeUnless { it.ident != null && it.ident.equals(place.ident, ignoreCase = true) }
