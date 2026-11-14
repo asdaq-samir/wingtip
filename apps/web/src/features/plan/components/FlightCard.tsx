@@ -36,6 +36,7 @@ import { departuresQuery } from "../../../lib/liveReports";
 import { departureLine } from "../lib/departureWords";
 import { useShownStore, useShown } from "../../../lib/shown";
 import { FlightNow, LiveSketch, type StateBadge } from "./FlightSummary";
+import { SkeletonLine } from "../../../components/QueryState";
 
 /** A link to the airplane on the planner, shared where the phone can,
  *  copied where it cannot. */
@@ -53,6 +54,14 @@ async function shareFlight(name: string, hex: string) {
 // A model's designator kept as written -- "PA-28", "DA-40", "A-321" -- where
 // the word before its number read "Pa-28" in the card's subtitle.
 const nameCase = (text: string) => text.replace(/\b[A-Z]{2,}\b(?!-\d)/g, (word) => word[0] + word.slice(1).toLowerCase());
+
+/** A row's value from the airplane's record: its words as a name is
+ *  written, a line to come while the record is asked for, else a dash. */
+const recordValue = (text: string | null | undefined, loading: boolean, testId: string) => (
+  <span className="font-semibold text-foreground" data-testid={text ? testId : undefined}>
+    {text ? nameCase(text) : loading ? <SkeletonLine className="w-24" /> : "—"}
+  </span>
+);
 
 /** A field's place, for the trace's sketch, as an airport card asks for it
  *  (the same query, so a card opened on it after has it already): where it
@@ -110,12 +119,12 @@ export default function FlightCard({
   const latest = useShownStore(useTracking, (s) => (s.latest?.plane.hex === hex ? s.latest : null));
   const follow = useTracking((s) => s.follow);
   const fix = useOwnFixShown();
-  const { data: detail } = useQuery({ ...flightQuery(hex), subscribed: useShown() });
+  const { data: detail, isLoading: detailLoading } = useQuery({ ...flightQuery(hex), subscribed: useShown() });
   // Its flight number's route, asked once a callsign is heard, with where
   // it is then, to say whether it is flying that route today.
   const callsign = latest?.plane.callsign ?? null;
   const firstAt = latest ? { lat: latest.plane.lat, lon: latest.plane.lon } : null;
-  const { data: route } = useQuery(routeQuery(callsign, firstAt));
+  const { data: route, isLoading: routeLoading } = useQuery(routeQuery(callsign, firstAt));
   const flying = route && route.plausible !== false ? route : null;
   const plane = latest?.plane ?? null;
   const following = follow && !!plane;
@@ -157,7 +166,7 @@ export default function FlightCard({
   // Its flights found (Earlier flights' list, the same question): the
   // newest is the one it is on, or, not heard now, its last -- sketched,
   // and what Debrief opens.
-  const { data: past, isError: pastFailed } = useInfiniteQuery(pastFlightsQuery(hex, null));
+  const { data: past, isError: pastFailed, isLoading: pastLoading } = useInfiniteQuery(pastFlightsQuery(hex, null));
   const newest = past?.pages[0]?.flights?.[0] ?? null;
   const current = plane && newest?.in_air ? newest : null;
   const last = plane ? null : newest;
@@ -187,6 +196,10 @@ export default function FlightCard({
       ? flying.airports[flying.airports.length - 1]!.ident
       : null
     : (last?.destination?.ident ?? null);
+  // Its ends, or its last flight, still asked for: their lines held in the
+  // summary from the first frame (FlightNow), as the 48 px they took came in
+  // over its figures and the card under them (the flicker audit's FL-10).
+  const pending = !fromIdent && (detailLoading || (plane ? routeLoading : pastLoading));
   const { data: fromField } = useQuery(sketchField(fromIdent));
   const { data: toField } = useQuery(sketchField(toIdent));
   // Its state on the summary's corner, at the owner's ask: an emergency's
@@ -343,8 +356,9 @@ export default function FlightCard({
           {waiting}
         </p>
       )}
-      {(plane || last || endOfToday) && (
+      {(plane || last || endOfToday || pending) && (
         <FlightNow
+          pending={pending}
           latest={latest}
           fields={{ from: fromField ?? null, to: toField ?? null, landed: !!last?.landed }}
           plane={plane}
@@ -389,36 +403,13 @@ export default function FlightCard({
                 }
               />
             )}
-            {detail?.faa?.owner && (
-              <ListRow
-                title="Registered to"
-                value={
-                  <span className="font-semibold text-foreground" data-testid="flight-owner">
-                    {nameCase(detail.faa.owner)}
-                  </span>
-                }
-              />
-            )}
-            {detail?.description && (
-              <ListRow
-                title="Model"
-                value={
-                  <span className="font-semibold text-foreground" data-testid="flight-model">
-                    {nameCase(detail.description)}
-                  </span>
-                }
-              />
-            )}
-            {detail?.operator && (
-              <ListRow
-                title="Operator"
-                value={
-                  <span className="font-semibold text-foreground" data-testid="flight-operator">
-                    {nameCase(detail.operator)}
-                  </span>
-                }
-              />
-            )}
+            {/* Every row from the first frame, its value a line to come while
+                the record is asked for and a dash where it has none: the
+                rows came in as it answered and the card under them jumped
+                (the flicker audit's FL-10). */}
+            <ListRow title="Registered to" value={recordValue(detail?.faa?.owner, detailLoading, "flight-owner")} />
+            <ListRow title="Model" value={recordValue(detail?.description, detailLoading, "flight-model")} />
+            <ListRow title="Operator" value={recordValue(detail?.operator, detailLoading, "flight-operator")} />
             <ListRow
               title="ICAO address"
               value={<span className={cn("font-semibold text-foreground uppercase tabular-nums", TEXT.row)}>{hex}</span>}

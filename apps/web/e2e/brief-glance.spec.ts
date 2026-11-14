@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { settle, sideDrawer, slow, openBrief } from "./helpers";
 import { pickAirplane } from "./startState";
+import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -126,4 +127,33 @@ test("a private destination is a line of the Brief: land only with the owner's p
     await expect(glance.getByTestId("brief-line-fields")).toHaveAttribute("data-finding", "caution");
     await expect(glance.getByTestId("brief-line-fields").getByTestId("brief-line-words")).toContainText("IL11 is private");
   }
+});
+
+test("the Brief opens at its size, and asking its weather again moves nothing", async ({ page, context }) => {
+  await installFrameRecorder(page);
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  // Opened: the verdict's line from the first frame, the hours' tiles in
+  // their own shape, so neither the verdict's "Still checking" going from
+  // two lines to one nor the hours coming moves the cards under them (the
+  // flicker audit's FL-21).
+  await expectDrawnOnce(page, () => openBrief(page), { card: "brief-card", maxMoves: Number.POSITIVE_INFINITY, shiftBudget: 0.01 });
+  const glance = sideDrawer(page).getByTestId("brief-glance");
+  await expect(glance.getByTestId("brief-verdict")).not.toHaveAttribute("data-finding", "pending", { timeout: slow(30_000) });
+  // Every part in, the last of them Ready to Fly's checks, before the ask again.
+  await expect(glance.getByTestId("ready-to-fly")).toBeVisible({ timeout: slow(30_000) });
+  await expect(glance.getByTestId("departure-window-pending")).toHaveCount(0, { timeout: slow(30_000) });
+  await page.waitForTimeout(3000);
+  // The connection lost and back, as the phone does in a hangar: every
+  // query asked again (TanStack's reconnect), and each keeps what it shows
+  // till its answer is in -- nothing blanks, nothing moves.
+  await expectDrawnOnce(
+    page,
+    async () => {
+      await context.setOffline(true);
+      await page.waitForTimeout(500);
+      await context.setOffline(false);
+    },
+    { maxMoves: 0, shiftBudget: 0, settleMs: 4000 },
+  );
 });

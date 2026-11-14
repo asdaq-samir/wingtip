@@ -8,7 +8,7 @@ import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 import { spokenDistance, spokenHeadingMagnetic, spokenHeadingTrue, threeFigures } from "../../lib/format";
 import { announce } from "@react-aria/live-announcer";
-import type { EmergencyModel } from "./useEmergency";
+import { FIELDS, type EmergencyModel } from "./useEmergency";
 
 /**
  * The best fields from where the airplane is, the engine's order (reach,
@@ -134,7 +134,14 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
           </ListChoices>
         )}
         {!ranked && (
-          <QueryState row query={asked} fetching="Fetching the fields round you…" failed="The fields could not be had. Try again." />
+          <QueryState
+            row
+            rows={FIELDS}
+            lines={2}
+            query={asked}
+            fetching="Fetching the fields round you…"
+            failed="The fields could not be had. Try again."
+          />
         )}
       </ListGroup>
       {/* Its glide ratio asked for in place, the fields listed anyway

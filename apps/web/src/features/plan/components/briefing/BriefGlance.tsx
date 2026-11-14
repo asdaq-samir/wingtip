@@ -23,6 +23,8 @@ import type { PanelTab } from "../navlog/panelTab";
 import CategoryBadge from "./CategoryBadge";
 import { CARD, TRIGGER } from "../../../../components/glanceLook";
 import { ReadyToFly } from "../../../readyToFly";
+import { Skeleton } from "../../../../components/ui/skeleton";
+import { SkeletonLine } from "../../../../components/QueryState";
 
 /** One figure of a card: its name over it, the figure at a glance's size. */
 function Stat({ label, value, finding }: { label: string; value: ReactNode; finding?: Finding }) {
@@ -254,6 +256,7 @@ export default function BriefGlance({
   const items = useVerdict((v) => v.items);
   const verdict = items.length ? verdictLine(items) : null;
   const lines = items.length ? glanceLines(items, glance) : null;
+  const checking = verdict?.finding === "pending";
   const before = glance?.before;
   const enroute = glance?.enroute;
   // With no airplane the fuel to spare and the weight and balance are not
@@ -270,16 +273,18 @@ export default function BriefGlance({
           live region on it, as it is there when the Brief opens; its
           arrival is said once, above (useAnnounce), not again while the
           pilot reads (docs/design/web.md §5). */}
-      {verdict && (
-        <div
-          className={cn("flex items-center gap-2.5 rounded-xl px-3.5 py-2.5", MARK_TINT[verdict.finding] ?? "bg-muted")}
-          data-testid="brief-verdict"
-          data-finding={verdict.finding}
-        >
-          <FindingIcon finding={verdict.finding} className="size-6" />
-          <span className={cn("font-semibold", TEXT.row, FINDING_TONE[verdict.finding])}>{verdict.words}</span>
-        </div>
-      )}
+      {/* One line from the first frame, kept to it while checking (the rest
+          row says what is left): it went two lines to one, the Brief jumping (FL-21). */}
+      <div
+        className={cn("flex items-center gap-2.5 rounded-xl px-3.5 py-2.5", (verdict && MARK_TINT[verdict.finding]) ?? "bg-muted")}
+        data-testid={verdict ? "brief-verdict" : "brief-verdict-pending"}
+        data-finding={verdict?.finding}
+      >
+        {verdict ? <FindingIcon finding={verdict.finding} className="size-6" /> : <Skeleton className="size-6 shrink-0 rounded-full" />}
+        <span className={cn("font-semibold", TEXT.row, verdict && FINDING_TONE[verdict.finding], checking && "min-w-0 truncate")}>
+          {verdict ? verdict.words : <SkeletonLine className="w-48" />}
+        </span>
+      </div>
       {lines && lines.act.length > 0 && (
         <Accordion multiple className="gap-2.5" data-testid="brief-lines">
           {lines.act.map((line) => (
