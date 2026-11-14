@@ -285,6 +285,14 @@ weather minimums, airspace — must be right and say where it comes from
 (14 CFR part and section, the AIM paragraph, the FAA data set) in a
 comment. A wrong one is a safety problem, not a style one.
 
+- **Closed fields are never open (hard rule, decision 0043):** a field
+  NASR's APT_BASE lists with any ARPT_STATUS but O (CI closed
+  indefinitely, CP closed permanently) is never shown or offered as an
+  open field: not on the map, in any list, as a landing site, stop,
+  alternate or checkpoint. Where it appears at all (its ident searched,
+  its card) it is labelled Closed. The engine's `field_status` rules it;
+  ask it, never compare the code by hand.
+
 ## Writing
 
 - Comments say why, in plain sentences, as the code around them does.
