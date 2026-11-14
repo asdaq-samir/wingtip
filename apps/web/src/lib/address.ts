@@ -42,6 +42,25 @@ const TFR_ID = /^\d{1,2}\/\d{3,5}$/;
  *  `origin` (the site's, for a link to share). */
 export const tfrLink = (notamId: string, origin = "") => `${origin}${SCREEN_LINK.path}?tfr=${encodeURIComponent(notamId)}`;
 
+/** A VOR as its link names it: its ident and where it is, as one ident
+ *  names navaids in more than one place ("AA", wingtip.fixes). */
+export type NavaidAt = LatLon & { ident: string };
+
+/** "OBK@42.2214,-87.9517": the ident, then its place to four places. */
+const navaidAt = createParser<NavaidAt>({
+  parse: (v) => {
+    const [ident = "", at = ""] = v.split("@");
+    const p = /^[A-Z0-9]{2,4}$/.test(ident) ? pointOf(at) : null;
+    return p && { ident, ...p };
+  },
+  serialize: (n) => `${n.ident}@${n.lat.toFixed(4)},${n.lon.toFixed(4)}`,
+  eq: (a, b) => a.ident === b.ident && a.lat === b.lat && a.lon === b.lon,
+});
+
+/** A VOR's own link, its card opened from the address (`navaid`), at
+ *  `origin` (the site's, for a link to share). */
+export const navaidLink = (n: NavaidAt, origin = "") => `${origin}${SCREEN_LINK.path}?navaid=${encodeURIComponent(navaidAt.serialize(n))}`;
+
 const flag = createParser<boolean>({ parse: (v) => (v === "1" ? true : null), serialize: () => "1" }).withDefault(false);
 
 /** A point on Earth, `42.3172,-88.0905`, to four places (11 m). */
@@ -128,6 +147,8 @@ export const addressParsers = {
   // numbering: the year's last figure, a slash, its serial); anything else
   // read as none.
   tfr: createParser({ parse: (v) => (TFR_ID.test(v) ? v : null), serialize: (v: string) => v }),
+  // A VOR's card by its ident and place (navaidAt); anything else none.
+  navaid: navaidAt,
   // Read once and taken off: a screen a link opens (`open`,
   // lib/navigation's SCREEN_LINK), favorites a link brings, a sign-in the
   // gateway refused.
@@ -148,6 +169,10 @@ export const useAddress = () => useQueryStates(addressParsers);
 
 /** One key of the address, drawn again only when it changes. */
 export const useAddressKey = <K extends keyof AddressParsers>(key: K) => useQueryState(key, addressParsers[key]);
+
+/** The open VOR card's key (`navaid`), its parser's own type kept, which
+ *  useAddressKey's string overload loses for an object. */
+export const useNavaidKey = () => useQueryState("navaid", navaidAt);
 
 /** Every key of the address taken out: with a change spread over it, an
  *  address that is that change alone (a route cleared, Fly Here's). */

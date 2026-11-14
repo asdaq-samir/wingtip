@@ -14,6 +14,10 @@ import { BLUE } from "../../../lib/useAirspace";
 import { nmAway, useAwayWords } from "../../../lib/useAway";
 import { PointWhere } from "../../../lib/map/cards/PointWhere";
 import { CHART } from "../../../lib/tokens";
+import { CardShareButton } from "../../CardHead";
+import { navaidLink } from "../../../lib/address";
+import { shareOrCopy } from "../../../lib/share";
+import { mhzText } from "../../../lib/frequencies";
 
 /**
  * The cards a tap on a VOR or a low enroute chart fix opens (the map
@@ -21,13 +25,6 @@ import { CHART } from "../../../lib/tokens";
  * components/map/layers/NavaidsGl).
  */
 
-/** A VOR's mark on its card: the sectional's blue hexagon. */
-const HEXAGON = (
-  <svg className="mx-1 shrink-0" width="18" height="18" viewBox="0 0 16 16" aria-hidden="true">
-    <polygon points="15,8 11.5,14.06 4.5,14.06 1,8 4.5,1.94 11.5,1.94" fill={CHART.casing} stroke={BLUE} strokeWidth="2" />
-    <circle cx="8" cy="8" r="1.6" fill={BLUE} />
-  </svg>
-);
 /** An enroute fix's on its card: the low chart's triangle, as the map's. */
 const TRIANGLE = (
   <svg className="mx-1 shrink-0" width="16" height="16" viewBox="0 0 10 10" aria-hidden="true">
@@ -50,19 +47,35 @@ export function VorCard({ vor }: { vor: VorPin }) {
   const on = ship ? radialOf(vor, ship) : null;
   const volume = serviceVolume(vor.service_volume);
   const hours = hoursOf(vor.hours);
+  // Its frequency as a radio's dial shows it, "113.0" where NASR files
+  // "113" (NAV_BASE FREQ, MHz).
+  const freq = vor.freq && Number.isFinite(Number(vor.freq)) ? mhzText(Number(vor.freq)) : vor.freq;
+  // Its link, which opens this card (`navaid=`), shared where the device
+  // can, copied where not, as every card's Share is.
+  const share = () =>
+    void shareOrCopy({ title: `${vor.ident} ${vor.kind}`, url: navaidLink(vor, location.origin) }).catch(() => {
+      /* put away, or not allowed: nothing to say */
+    });
   return (
+    // Its head as every card's (the card rule's 8): Share at the start, its
+    // name centred with its line under it, the close at the end; no
+    // hexagon before the name, which the head has no place for (the
+    // owner's iPhone, 2026-11-14, OBK's card).
     <MapCard
-      media={HEXAGON}
+      start={<CardShareButton onShare={share} />}
       title={
         <>
           {vor.ident}
           <span className="font-normal text-muted-foreground">{vor.kind}</span>
         </>
       }
-      subtitle={[vor.name, vor.freq].filter(Boolean).join(" · ") || undefined}
-      pill={{ name: `${vor.ident} ${vor.kind}`, line: [vor.freq, away ?? vor.name].filter(Boolean).join(" · "), colour: VOR_BLUE }}
+      subtitle={[vor.name, freq].filter(Boolean).join(" · ") || undefined}
+      pill={{ name: `${vor.ident} ${vor.kind}`, line: [freq, away ?? vor.name].filter(Boolean).join(" · "), colour: VOR_BLUE }}
     >
-      <PointActions point={vor} copy={vor.freq ? { label: vor.freq, text: vor.freq } : null} />
+      {/* Direct To, Add to Route and its frequency to copy, a full row
+          (PointActions); no Favorite, as the Favorites hold airports and
+          airplanes only (lib/preferences). */}
+      <PointActions point={vor} copy={freq ? { label: freq, text: freq } : null} />
       {on && (
         <p className={cn("tabular-nums", TEXT.row)} data-testid="vor-radial">
           <span className="font-semibold">On the {threeFigures(on.radial)} radial</span> · {nmAway(on.nm)}

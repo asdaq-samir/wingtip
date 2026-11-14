@@ -14,6 +14,7 @@
     { "key": "flight", "about": "An airplane tracked, by its ICAO address (six hex digits)." },
     { "key": "airplane", "about": "An airplane's profile, by its N-number." },
     { "key": "tfr", "about": "A temporary flight restriction's card, by its FDC NOTAM number (6/4116)." },
+    { "key": "navaid", "about": "A VOR's card, by its ident and place (OBK@42.2214,-87.9517): an ident names navaids in more than one place." },
     { "key": "altitude_ft", "about": "A shared plan's cruise altitude, feet MSL." },
     { "key": "depart", "about": "A shared plan's departure time, an ISO 8601 instant in UTC; none for about now." },
     { "key": "type", "about": "A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own." },

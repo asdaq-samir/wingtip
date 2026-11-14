@@ -7,10 +7,14 @@ import { CardAction } from "../../CardAction";
 import { usePointActions, type ChartPoint } from "../../../lib/map/cards/pointActions";
 
 /**
- * A point card's actions, as an airport card's: Direct To, from where the
- * airplane is to the point and on along the route, and Add to Route, the
- * point a stop where it fits -- each while there is a route to do it to
- * (usePointActions) -- and Copy, the VOR's frequency for the radio.
+ * A point card's actions, as an airport card's: Direct To, the plan's own
+ * (usePlanSetters' directToChartPoint), from where the airplane is to the
+ * point and on along the route, and Add to Route, the point a waypoint
+ * where it bends the route least -- each live while there is a route to
+ * do it to (usePointActions), and there but greyed while not, so the row
+ * is the same full row on every point's card (the owner's iPhone,
+ * 2026-11-14: one half-width tile on OBK's) -- and Copy, the VOR's
+ * frequency for the radio, its word "Copied" in place once it is.
  */
 export function PointActions({
   point,
@@ -25,30 +29,31 @@ export function PointActions({
   const close = useContext(CardCloseContext);
   const { addToRoute, directTo } = usePointActions();
   const [copied, setCopied] = useState(false);
-  if (!addToRoute && !directTo && !copy) return null;
   const done = (act: (p: ChartPoint) => void) => () => {
     close();
     act({ ident: point.ident, lat: point.lat, lon: point.lon });
   };
   return (
     // As many columns as tiles, as the airport card's row fills its width.
-    <div
-      className={cn("grid gap-2", [directTo, addToRoute, copy].filter(Boolean).length === 3 ? "grid-cols-3" : "grid-cols-2")}
-      data-testid="point-actions"
-    >
+    <div className={cn("grid gap-2", copy ? "grid-cols-3" : "grid-cols-2")} data-testid="point-actions">
       {/* The navaid card's set in its order (lib/cardActions). */}
-      {directTo && (
-        <CardAction
-          icon={<ACTION.directTo.icon />}
-          label={ACTION.directTo.label}
-          filled
-          onClick={done(directTo)}
-          testId="point-direct-to"
-        />
-      )}
-      {addToRoute && (
-        <CardAction icon={<ACTION.addToRoute.icon />} label={ACTION.addToRoute.label} onClick={done(addToRoute)} testId={addTestId} />
-      )}
+      <CardAction
+        icon={<ACTION.directTo.icon />}
+        label={ACTION.directTo.label}
+        filled
+        disabled={!directTo}
+        spoken={directTo ? undefined : `${ACTION.directTo.label}: needs a route and your position`}
+        onClick={directTo ? done(directTo) : undefined}
+        testId="point-direct-to"
+      />
+      <CardAction
+        icon={<ACTION.addToRoute.icon />}
+        label={ACTION.addToRoute.label}
+        disabled={!addToRoute}
+        spoken={addToRoute ? undefined : `${ACTION.addToRoute.label}: needs a route`}
+        onClick={addToRoute ? done(addToRoute) : undefined}
+        testId={addTestId}
+      />
       {copy && (
         <CardAction
           icon={copied ? <Check /> : <ACTION.copy.icon />}

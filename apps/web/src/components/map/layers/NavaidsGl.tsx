@@ -1,4 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useNavaidKey, type NavaidAt } from "../../../lib/address";
+import { MapCard } from "../../../lib/map/cards/MapCard";
+import { SheetCard } from "../../SheetCard";
 import type { FixPin, VorPin } from "../../../lib/map/sources/overlayTypes";
 import { usePreferences } from "../../../lib/preferences";
 import { FixCard, VorCard } from "../cards/NavaidCards";
@@ -57,19 +60,70 @@ function TileNavaids() {
       map.off("idle", rest);
     };
   }, [map, show]);
+  // The VOR whose card is open, in the address (`navaid`): every card
+  // reached by a link (the owner's rule on easy navigation).
+  const [open, setOpen] = useNavaidKey();
+  const linked = useLinkedVor(map, open);
   useGlProbe("navaid-marks", ["navaids", "fixes"], (f) => ({ ident: f.properties.ident, kind: f.layer.id === "fixes" ? "fix" : "vor" }));
   useGlTap(["navaids", "fixes"], TAP.mark, TAP.rank.mark + 1, (feature) => {
     const at = pointOf(feature);
     if (!at) return;
     if (feature.layer.id === "navaids") {
+      // The map's own card (a checkpoint's) put away, as a tap on another
+      // thing does, and this one opened by its address, so the tap and its
+      // link open the same card and its ✕ takes the key off.
       const vor = vorOfTile(feature);
-      openCard(<VorCard key={`${vor.ident}-${vor.lat}`} vor={vor} />);
+      openCard(null);
+      void setOpen({ ident: vor.ident, lat: vor.lat, lon: vor.lon });
     } else {
       const fix: FixPin = { ident: String(feature.properties.ident), ...at };
       openCard(<FixCard key={`fix-${fix.ident}`} fix={fix} vors={tileVors(map)} />);
     }
   });
-  return null;
+  if (!open || linked === undefined) return null;
+  const close = () => void setOpen(null);
+  return (
+    <SheetCard onClose={close}>
+      {linked ? (
+        <VorCard key={`${linked.ident}-${linked.lat}`} vor={linked} />
+      ) : (
+        // A link to one the cycle's tiles do not have there (shut down, or
+        // a link from another cycle): said in its card, where it was asked.
+        <MapCard title={open.ident} subtitle="Not in this cycle's chart data" />
+      )}
+    </SheetCard>
+  );
+}
+
+/** Close enough to be the station a link names: its place to four places
+ *  (11 m), the tile's to the tile's own precision. */
+const NEAR_DEG = 0.01;
+
+/**
+ * The VOR an address names (`navaid`), from the overlay tiles: at once
+ * where they are loaded, else once the map has been taken there and they
+ * have come in. Undefined while looked for, null where it is not there.
+ */
+function useLinkedVor(map: ReturnType<typeof useGlMap>["map"], at: NavaidAt | null): VorPin | null | undefined {
+  const [found, setFound] = useState<{ key: string; vor: VorPin | null }>();
+  const key = at ? `${at.ident}@${at.lat},${at.lon}` : "";
+  useEffect(() => {
+    if (!at) return;
+    const find = () =>
+      tileVors(map).find((v) => v.ident === at.ident && Math.abs(v.lat - at.lat) < NEAR_DEG && Math.abs(v.lon - at.lon) < NEAR_DEG) ?? null;
+    // Not loaded about the view (a link's): the map taken there, near
+    // enough in that the VORs are drawn (glOverlays' zooms).
+    if (!find()) map.jumpTo({ center: [at.lon, at.lat], zoom: Math.max(map.getZoom(), 8) });
+    const rest = () => setFound({ key, vor: find() });
+    map.once("idle", rest);
+    map.triggerRepaint();
+    return () => {
+      map.off("idle", rest);
+    };
+    // `at` is read by its key: a new object for the same station is no new ask.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, key]);
+  return found?.key === key ? found.vor : undefined;
 }
 
 /** The VFR waypoints from zoom 10 (glOverlays' FIX_ZOOM): green triangles, a

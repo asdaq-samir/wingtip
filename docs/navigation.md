@@ -102,6 +102,7 @@ The plan's own keys go beside it, and alone they open what they name:
 - `flight`: An airplane tracked, by its ICAO address (six hex digits).
 - `airplane`: An airplane's profile, by its N-number.
 - `tfr`: A temporary flight restriction's card, by its FDC NOTAM number (6/4116).
+- `navaid`: A VOR's card, by its ident and place (OBK@42.2214,-87.9517): an ident names navaids in more than one place.
 - `altitude_ft`: A shared plan's cruise altitude, feet MSL.
 - `depart`: A shared plan's departure time, an ISO 8601 instant in UTC; none for about now.
 - `type`: A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own.

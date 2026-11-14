@@ -2,7 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { withNuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing";
 import { describe, expect, it } from "vitest";
-import { ADDRESS_CLEARED, addressParams, loadAddress, tfrLink, useAddress, useAddressKey } from "./address";
+import { ADDRESS_CLEARED, addressParams, loadAddress, navaidLink, tfrLink, useAddress, useAddressKey } from "./address";
 
 /** The workspace's whole address and one key read on its own, as the page
  *  has them, over an address of their own; each write to it kept. */
@@ -99,5 +99,16 @@ describe("the address's keys, typed", () => {
     // Not a NOTAM's number: no card.
     expect(loadAddress("tfr=KDLH").tfr).toBeNull();
     expect(loadAddress("tfr=6/").tfr).toBeNull();
+  });
+
+  it("opens a VOR's card by its ident and place, from the link its Share sends", () => {
+    // The Northbrook VOR/DME (the owner's iPhone, 2026-11-14).
+    const link = navaidLink({ ident: "OBK", lat: 42.22139, lon: -87.95167 }, "https://wingtipmaps.app");
+    expect(link).toBe("https://wingtipmaps.app/app/plan?navaid=OBK%4042.2214%2C-87.9517");
+    expect(loadAddress(new URL(link).search).navaid).toEqual({ ident: "OBK", lat: 42.2214, lon: -87.9517 });
+    expect(addressParams({ navaid: { ident: "OBK", lat: 42.2214, lon: -87.9517 } }).get("navaid")).toBe("OBK@42.2214,-87.9517");
+    // No place, or no ident: no card.
+    expect(loadAddress("navaid=OBK").navaid).toBeNull();
+    expect(loadAddress("navaid=@42.2,-87.9").navaid).toBeNull();
   });
 });
