@@ -277,7 +277,7 @@ in the search is not counted.
 | You | the avatar | 1 | Pilot Details, Airplanes, Flights, Logbook, Minimums, Training, Emergency; a swipe down closes it |
 | Settings | the avatar → its gear; also the Map card's gear | 2 | Map, In Flight, Data, Help & About (Sunlight is the Map card's Look since 2026-11-14); a swipe down closes it |
 | Saved Flights | the avatar → Flights | 2 | A flight planned again with a tap |
-| Map card (no Map Settings page; the owner, 2026-11-13) | the map's Layers button; or search "map" / "layers" | 1 (+ typing 0) | The layers, traffic and the weather loop; its gear opens Settings at its Map group (Airport Weather, glide ring) |
+| Map card (no Map Settings page; the owner, 2026-11-13) | the map's Layers button; or search "map" / "layers" | 1 (+ typing 0) | Four sections of four tiles each, Chart, Base map, Layers and Look (Theme, Appearance, Sunlight, Position; the owner, 2026-11-14), each a tap; the terminal charts always drawn, no switch; its gear opens Settings at its Map group (Airport Weather, glide ring) |
 | Logbook, Training (the Coach) | the avatar → its row | 2 | Logbook entries edited in the row; Delete with an Undo |
 | Downloads, Passenger Briefing, ATC, About | the avatar → its gear → Settings' row (Data, In Flight, Help & About) | 3 | Downloads delete with no confirm or Undo |
 | Clearance | search "clearance" or "radio"; the strip's chip | typing / 1 | Listen, Enter the Route |

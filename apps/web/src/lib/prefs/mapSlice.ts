@@ -44,10 +44,6 @@ export const HEIGHT_STRETCHES: readonly HeightStretch[] = [1, 3, 5];
 /** What the map draws and how: the Map card's and Settings' Map group. */
 export interface MapSlice {
   base: BaseChart;
-  /** Whether the terminal sheet that belongs over the base (the TAC
-   *  over the sectional, the IFR area chart over an IFR chart) is
-   *  pinned: drawn at every zoom it exists at. */
-  tac: boolean;
   /** The Map card's four layers (the owner, 2026-11-14: "I want to keep
    *  it simple though. can we just have four layers aeronautical,
    *  weather, traffic, private/military in the map settings?"), where
@@ -111,7 +107,6 @@ export interface MapSlice {
   /** The kind of stop last picked on the Stops sheet, or all of them. */
   stopKind: StopPick;
   setBase: (base: BaseChart) => void;
-  setTac: (tac: boolean) => void;
   setAeronautical: (aeronautical: boolean) => void;
   setWeather: (weather: boolean) => void;
   setWaypoints: (waypoints: boolean) => void;
@@ -134,7 +129,6 @@ export interface MapSlice {
 /** What of it is written to storage. */
 export const MAP_KEPT = [
   "base",
-  "tac",
   "aeronautical",
   "weather",
   "waypoints",
@@ -156,7 +150,6 @@ export const MAP_KEPT = [
 
 export const mapSlice: Slice<MapSlice> = (set) => ({
   base: "sec",
-  tac: false,
   aeronautical: true,
   weather: true,
   waypoints: false,
@@ -175,7 +168,6 @@ export const mapSlice: Slice<MapSlice> = (set) => ({
   stopsRadiusNm: 25,
   stopKind: "all",
   setBase: (base) => set({ base }),
-  setTac: (tac) => set({ tac }),
   setAeronautical: (aeronautical) => set({ aeronautical }),
   setWeather: (weather) => set({ weather }),
   setWaypoints: (waypoints) => set({ waypoints }),

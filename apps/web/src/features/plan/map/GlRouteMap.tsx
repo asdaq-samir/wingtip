@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy } from "react";
 import type { ChartInfo, Course, Leg, ProcedureDrawing } from "../../../lib/api/types";
 import type { StopKind } from "../../../lib/stopKinds";
 import type { TrafficPattern } from "../../../lib/trafficPattern";
@@ -140,7 +140,6 @@ export function GlBootMap() {
 
 function Layers(p: GlRouteMapProps) {
   const { course } = p;
-  const [previewing, setPreviewing] = useState(false);
   // The chart and the cycle's overlays from their tiles, which ask the
   // engine nothing, at once; every layer that works out a figure or a
   // colour with it (the fields' flight categories, the glide ring, the
@@ -150,10 +149,10 @@ function Layers(p: GlRouteMapProps) {
   return (
     <>
       <LandWaterGl />
-      <ChartGl course={course} previewing={previewing} />
+      <ChartGl course={course} />
       <OverlayGl />
       <EngineGate>
-        <EngineLayers {...p} onPreview={setPreviewing} />
+        <EngineLayers {...p} />
       </EngineGate>
     </>
   );
@@ -161,7 +160,7 @@ function Layers(p: GlRouteMapProps) {
 
 /** The layers the engine works out a figure or a colour for, and the
  *  map's fits to what is picked: drawn once it is there (Layers). */
-function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void }) {
+function EngineLayers(p: GlRouteMapProps) {
   const { course } = p;
   const dryRunning = usePastFlight((s) => s.hex === DRY_RUN);
   // The map fitted to what was just picked, once a pick: a lone
@@ -213,7 +212,7 @@ function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void })
       <NavaidsGl />
       <WaypointsGl exclude={p.chippedIdents} />
       <AirportsGl selected={p.place} onSelect={p.onSelectPlace} others={p.chipped} route={p.routeBox} worse={worse} />
-      {p.chart && <ClassBGl chart={p.chart} route={route} onPreview={p.onPreview} onSelectPlace={p.onSelectPlace} />}
+      {p.chart && <ClassBGl chart={p.chart} route={route} onSelectPlace={p.onSelectPlace} />}
       <StopFieldsGl fields={p.stopFields} onSelect={p.onPickStopField ?? p.onSelectPlace} />
       {course && (
         <>

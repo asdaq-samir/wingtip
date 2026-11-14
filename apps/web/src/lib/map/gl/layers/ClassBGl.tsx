@@ -5,7 +5,7 @@ import { usePreferences } from "../../../preferences";
 import { classBQuery } from "../../../queryClient";
 import { colourOf } from "../../marks/flightCategory";
 import { fieldMarkPicture } from "../../marks/markPictures";
-import { chartPair, sheetAt } from "../../sources/tiles";
+import { chartPair } from "../../sources/tiles";
 import { useGlMap } from "../glLayer";
 import { cameraOf } from "../camera";
 import { glZoom } from "../glStyle";
@@ -21,19 +21,17 @@ const CLASS_B_LAYERS = [labelledLayer(CLASS_B, CLASS_B)];
  * ••• menu's Class B Weather, on the planner's map and the training map alike: a
  * tap the field's card where the map has one (`onSelectPlace`), and on
  * the training map, which has none, the map goes to the field at the zoom
- * its terminal chart starts at; a hover shows the terminal sheet over it
- * while the pointer is there.
+ * its terminal chart starts at. The terminal sheet is always drawn over
+ * the chart where there is one (ChartGl), so a hover has nothing to show.
  */
 export function ClassBGl({
   chart,
   route,
-  onPreview,
   onSelectPlace,
 }: {
   chart: ChartInfo;
   /** The route's own fields, which wear their own marks. */
   route: string[];
-  onPreview: (on: boolean) => void;
   onSelectPlace?: (ident: string) => void;
 }) {
   const { map } = useGlMap();
@@ -48,7 +46,6 @@ export function ClassBGl({
         ? data
             .filter((a) => !route.includes(a.ident))
             .map((a) => {
-              const sheet = sheetAt(overlay, a.lat, a.lon);
               return {
                 key: a.ident,
                 lat: a.lat,
@@ -56,16 +53,14 @@ export function ClassBGl({
                 text: a.ident,
                 picture: fieldMarkPicture("B", colourOf(a.flight_category)),
                 props: { title: `${a.ident} · ${a.name} · ${a.flight_category ?? "no report"}`, weather: colourOf(a.flight_category) },
-                onHover: (on: boolean) => onPreview(on && !!sheet),
                 onTap: () => {
-                  onPreview(false);
                   if (onSelectPlace) onSelectPlace(a.ident);
                   else cameraOf(map).pick([a.lon, a.lat], { zoom: Math.max(map.getZoom(), glZoom(overlayFromZoom)), duration: 600 });
                 },
               };
             })
         : [],
-    [show, data, route, overlay, overlayFromZoom, onPreview, onSelectPlace, map],
+    [show, data, route, overlayFromZoom, onSelectPlace, map],
   );
   useGlSymbols(CLASS_B, CLASS_B_LAYERS, marks);
   // Every field given, in sight or not, for the browser tests (the probe

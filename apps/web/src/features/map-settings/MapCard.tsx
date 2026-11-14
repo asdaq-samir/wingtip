@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { FieldError } from "../../components/ui/field";
 import Segmented from "../../components/Segmented";
-import { Switch } from "../../components/ui/switch";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import MapPictureChoices from "./MapPictureChoices";
 import MapLayers from "./MapLayers";
@@ -31,7 +30,7 @@ import { useTerrainView, useTrueHeightView } from "../plan";
  * as the overlay's, the owner, 2026-11-14), the overlay
  * over them with its strength, in 3D how tall it stands its heights
  * (HeightsChoice), the four layers as tiles (MapLayers), and the app's
- * Look, Theme and Appearance, last (LookChoice; the owner, 2026-11-14). How the
+ * Look, Theme, Appearance, Sunlight and Position, last (LookChoice; the owner, 2026-11-14). How the
  * map behaves -- the airport weather, the glide ring, the alerts, keeping
  * the charts, where the data comes from -- is the app's Settings, which
  * the gear at the card's head opens at its Map group (option A of the
@@ -40,9 +39,10 @@ import { useTerrainView, useTrueHeightView } from "../plan";
  */
 export default function MapCard() {
   return (
-    // One section gap between them all, the tokens' xl (space.xl, 24),
-    // and each section's own rows a row gap (space.sm) under its pictures,
-    // as iOS Settings spaces its groups.
+    // One section gap between them all, the tokens' xl (space.xl, 24), as
+    // iOS Settings spaces its groups; every section's tiles the one 2x2
+    // grid (LayerTile), so the four line up (the owner, 2026-11-14:
+    // "every section should have 4 tiles like Layers one").
     <div className="flex flex-col gap-6" data-testid="map-settings-groups">
       <ChartChoice />
       <OverlayChoice />
@@ -54,34 +54,22 @@ export default function MapCard() {
 }
 
 /**
- * The charts first, as Apple Maps' card has its maps, and under them,
- * while there is a chart, its terminal sheet pinned or not: the TAC over
- * the sectional, the IFR area chart over the IFR charts, at every zoom it
- * exists at. A row of its own under the chart it belongs to, as the
- * overlay's Strength is, since the layers became four (the owner,
- * 2026-11-14); a Class B field's card pins its own sheet either way.
+ * The charts first, as Apple Maps' card has its maps. Each chart's
+ * terminal sheet -- the TAC over the sectional, the IFR area chart over
+ * the IFR charts -- is always drawn where it exists (ChartGl), with no
+ * switch (the owner, 2026-11-14: "TAC switch is not needed, just have it
+ * on by default").
  */
 function ChartChoice() {
   const prefs = usePreferences();
   return (
-    <div className="flex flex-col gap-2">
-      <MapPictureChoices
-        title="Chart"
-        value={prefs.base}
-        onChange={(v) => prefs.setBase(v as BaseChart)}
-        testId="base-chart-select"
-        options={BASE_CHARTS.map((b) => ({ value: b.kind, label: b.label, ...chartPicture(b.kind) }))}
-      />
-      {/* An inset grouped list's row, its edges the tiles' edges, as
-          iOS Settings sets a switch: the words a tap on the switch too. */}
-      {prefs.base !== "none" && (
-        <ListGroup>
-          <ListRow id="tac-toggle" title={prefs.base === "sec" ? "Terminal Area Charts" : "IFR Area Charts"}>
-            <Switch id="tac-toggle" checked={prefs.tac} onCheckedChange={prefs.setTac} data-testid="tac-toggle" />
-          </ListRow>
-        </ListGroup>
-      )}
-    </div>
+    <MapPictureChoices
+      title="Chart"
+      value={prefs.base}
+      onChange={(v) => prefs.setBase(v as BaseChart)}
+      testId="base-chart-select"
+      options={BASE_CHARTS.map((b) => ({ value: b.kind, label: b.label, ...chartPicture(b.kind) }))}
+    />
   );
 }
 
