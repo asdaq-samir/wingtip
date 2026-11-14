@@ -684,7 +684,7 @@ way: three homes, and every control in one of them.
    Checklists row), Flights, Logbook, Minimums, Training (the Coach and
    Practice), the Emergency Assistant -- then Subscription; Settings is
    the gear at its top left, the ✕ at its right.
-2. **Settings**, one page, You's gear: Display (Sunlight), Map (Airport Weather, Glide Ring, Clear Your Path), In
+2. **Settings**, one page, You's gear: Map (Airport Weather, Glide Ring, Clear Your Path), In
    Flight (Alerts; ATC, one page of Comms Assist, ATC Alerts and the
    Copilot), Data (Keep for the Air), and Help & About (Guide, Status,
    Log, About, Sources, and the Privacy, Terms and Legal links). The Map
@@ -709,9 +709,11 @@ way: three homes, and every control in one of them.
    Aloft, Radar and Model Weather as submenus, each off by default),
    Traffic, and Private & Military (drawn whatever it says while the
    Emergency Assistant is open), two by two, every tile one size and
-   every name on one line; then Look, Theme and Appearance as two rows of
-   one inset grouped list, each its name and its pull-down, as iOS
-   Settings sets a choice. Laid out as Apple Maps' Map card and iOS
+   every name on one line; then Look, Theme, Appearance and Sunlight as
+   three rows of one inset grouped list, each its name and its pull-down,
+   as iOS Settings sets a choice (Sunlight was Settings' Display until the
+   owner's "Sunlight should also move to map settings", 2026-11-14; Settings
+   has no Display now). Laid out as Apple Maps' Map card and iOS
    Settings are (the owner, 2026-11-14: "How can this be better?"): the
    Chart and Base map pictures one size, a quarter of the card, each word
    under its picture on one line (the row slides sideways when a word is

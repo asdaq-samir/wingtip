@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Monitor, Moon, Palette, Sun, SunMoon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { BRANDS } from "../lib/brand";
-import { usePreferences, type Brand, type ChartNight } from "../lib/preferences";
+import { usePreferences, type Brand, type ChartLight, type ChartNight } from "../lib/preferences";
 import MenuTile from "./MenuTile";
 import PullDown, { type PullDownOption } from "./PullDown";
 import { ListRow } from "./GroupedList";
@@ -10,14 +10,16 @@ import { ListRow } from "./GroupedList";
 /**
  * The app's look, two picks: Theme (Wingtip, Glass Cockpit, Chart ink,
  * Native; lib/brand) and Appearance (System, Light, Dark, Dark + Bright).
- * One source for both of their homes, Settings' Look tiles (QuickControls) and
+ * One source for both of their homes, the Map card's Look and
  * the first flight's welcome (WelcomeSheet, the owner, 2026-11-13: "give
  * theme and appearance selection on the welcome screen"): each a
- * PullDown's value, options and setter, drawn as Settings' tile (ThemeTile,
+ * PullDown's value, options and setter, drawn as tiles (ThemeTile,
  * AppearanceTile) on the welcome, and as rows of an inset grouped list on
  * the Map card (ThemeRow, AppearanceRow), its label at the left and the
  * pick's pull-down at the right, as iOS Settings sets a choice (the
- * owner's "How can this be better?", 2026-11-14).
+ * owner's "How can this be better?", 2026-11-14), with Sunlight's row
+ * after them (SunlightRow; the owner, 2026-11-14: "Sunlight should also
+ * move to map settings").
  */
 interface LookPick<V extends string> {
   value: V;
@@ -96,6 +98,27 @@ export function AppearanceRow() {
   return (
     <ListRow title="Appearance">
       <PullDown label="Appearance" value={value} onChange={onChange} options={options} align="end" testId="theme-select" />
+    </ListRow>
+  );
+}
+
+const SUNLIGHT_OPTIONS: PullDownOption<ChartLight>[] = [
+  { value: "auto", label: "Auto", testId: "sunlight-auto" },
+  { value: "on", label: "On", testId: "sunlight-on" },
+  { value: "off", label: "Off", testId: "sunlight-off" },
+];
+
+/** Sunlight's row, as Theme's: the chart in bright sunlight (lib/sunlight),
+ *  from the phone's light sensor where the browser has one (Auto), or by
+ *  hand, in the cockpit, where a pilot needs it at a tap. It was Settings'
+ *  Display tile and moved here with the rest of the look (the owner,
+ *  2026-11-14), so it has one home. */
+export function SunlightRow() {
+  const value = usePreferences((s) => s.chartLight);
+  const onChange = usePreferences((s) => s.setChartLight);
+  return (
+    <ListRow title="Sunlight">
+      <PullDown label="Sunlight" value={value} onChange={onChange} options={SUNLIGHT_OPTIONS} align="end" testId="sunlight-select" />
     </ListRow>
   );
 }

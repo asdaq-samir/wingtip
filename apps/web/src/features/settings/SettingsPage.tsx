@@ -1,9 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { ConsolePages, PageRow } from "../../components/ConsolePages";
-import { PillSection } from "../../components/Favorites";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import PullDown from "../../components/PullDown";
-import QuickControls from "../../components/QuickControls";
 import SwitchRow from "../../components/SwitchRow";
 import { ALERT_MODES, useAlertMode } from "../../components/alertMode";
 import { clearOwnTrail, useOwnTrail } from "../../lib/map/position/ownTrail";
@@ -20,7 +18,8 @@ import { AlertsPage, AtcPage, HelpPage, type HelpPages } from "./SettingsPages";
  * account canvas (2026-11-13): a row of You (the avatar's card), and what
  * the Map card's gear opens at its Map group (lib/openSettings, the one
  * way in). How the app behaves, in groups as iOS's Settings has them --
- * Display (Sunlight; Theme and Appearance are the Map card's Look), Map, In Flight, Data, and Help & About -- where it
+ * Map, In Flight, Data, and Help & About (Display, Sunlight's, went to
+ * the Map card's Look with Theme and Appearance, 2026-11-14) -- where it
  * was the avatar's card's tiles and footer links and the Map card's Map
  * Settings page: one thing called Settings, every control in one home.
  * Its pages (Alerts, ATC, Help & About) push over it, their close back
@@ -37,11 +36,6 @@ export default function SettingsPage({ help }: { help: HelpPages }) {
       }}
     >
       <div className="flex flex-col gap-5" data-testid="settings-page">
-        {/* Sunlight, the tile left of the Look group (QuickControls): Theme and
-            Appearance are the Map card's Look section now, one home each. */}
-        <PillSection title="Display" testId="settings-look">
-          <QuickControls />
-        </PillSection>
         <MapGroup />
         <InFlightGroup />
         <ListGroup title="Data">
