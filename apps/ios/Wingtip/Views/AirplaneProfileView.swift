@@ -1,22 +1,26 @@
 import SwiftUI
 
 /// An airplane's card, opened by tapping its N-number anywhere (the route
-/// line and the strip, the Airplane tab and its picker, Find an Airplane,
-/// the logbook's rows, an inline ask's Edit), in the owner's P1 layout
-/// (2026-11-14; the web's AirplaneProfileSheet): its head (AirplanePlaceHead),
-/// then the tabs Flights, Info and Figures with one status line under
-/// them, where the airport card has its weather line. Flights is its flights
-/// by the registry's address, each replayed from its row; Info its whole
-/// public record (AirplaneInfoSections); Figures every figure with its
-/// source -- Book, Handbook Photo or You -- each editable in place. The one
-/// profile card (the owner's card rule, 2026-11-10). Its state is
-/// AirplaneProfileModel's and AirplaneLookup's.
+/// line and the strip, the Airplane tab and its picker, the search, the
+/// logbook's rows, an inline ask's Edit), laid out as the airport card is
+/// (the owner's P1 and C1, 2026-11-14: "make sure the airplane card looks
+/// similar to airport card"; the web's AirplaneProfileSheet): its head
+/// (AirplanePlaceHead), its one status line, its facts in the sideways
+/// strip (AirplaneFacts), its photo as a picture tile, then the tab's page,
+/// Flights, Info and Figures in the floating glass bar at the card's foot,
+/// Flights with its count. Flights is its flights by the registry's
+/// address, each replayed from its row; Info its whole public record
+/// (AirplaneInfoSections); Figures every figure with its source -- Book,
+/// Handbook Photo or You -- each editable in place. The one profile card
+/// (the owner's card rule, 2026-11-10). Its state is AirplaneProfileModel's
+/// and AirplaneLookup's.
 struct AirplaneProfileView: View {
     @Environment(Airplanes.self) private var airplanes
     @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
     @Environment(\.lookAccent) private var accent
+    @Environment(\.cardAtPill) private var atPill
     /// Back to the plan once flown, where the profile was opened over it.
     @Environment(\.showPlan) private var showPlan
     @State private var model: AirplaneProfileModel
@@ -50,11 +54,14 @@ struct AirplaneProfileView: View {
             }
             Section {
                 VStack(alignment: .leading, spacing: WingtipSpace.md) {
-                    tabBar
                     statusLine
+                    AirplaneFacts(record: model.registration, model: lookup.details?.model)
                 }
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
+            }
+            if let photo = lookup.photo {
+                Section { PictureStrip { AirplanePhotoTile(photo: photo, name: model.tail) } }
             }
             switch tab {
             case .flights: flights
@@ -68,6 +75,7 @@ struct AirplaneProfileView: View {
         .toolbar(removing: .title)
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Done") { focused = nil } }
+            CardTabBar(tab: $tab, items: tabs, atPill: atPill, accent: accent)
         }
         // A flown flight's card, its replay, pushed in this one.
         .navigationDestination(for: PastFlightSummary.self) { flight in
@@ -98,36 +106,36 @@ struct AirplaneProfileView: View {
         }
     }
 
-    /// The tabs, the airport card's stock control in the same look: the
-    /// picked tab in the tint, Flights with its count for VoiceOver.
-    private var tabBar: some View {
-        Picker("Section", selection: $tab) {
-            ForEach(ProfileTab.allCases) { tab in
-                let count = tab == .flights ? lookup.flights.map(\.count).flatMap { $0 > 0 ? $0 : nil } : nil
-                Text(count.map { "\(tab.rawValue) \($0)" } ?? tab.rawValue)
-                    .accessibilityLabel(count.map { "\(tab.rawValue), \($0)" } ?? tab.rawValue)
-                    .tag(tab)
-            }
+    /// The tabs in the bar, Flights with its count.
+    private var tabs: [CardTabBar<ProfileTab>.Item] {
+        ProfileTab.allCases.map { tab in
+            let count = tab == .flights ? lookup.flights.map(\.count).flatMap { $0 > 0 ? String($0) : nil } : nil
+            return .init(tab: tab, title: tab.rawValue, hint: count, shown: true)
         }
-        .tabsPicker()
-        .tint(accent)
-        .padding(.horizontal, WingtipSpace.lg)
     }
 
-    /// The one status line (AirplaneLookup.status): in the air, a tap
-    /// tracking it on the map; else where its last flight ended.
+    /// The one status line (AirplaneLookup.status): "In the air" or "On the
+    /// ground" as its badge with the rest after it; in the air, a tap
+    /// tracking it on the map.
     @ViewBuilder private var statusLine: some View {
         let status = lookup.status()
+        let line = HStack(spacing: WingtipSpace.sm) {
+            if let badge = status.badge { StatusBadge(badge) }
+            Text(status.badge == nil ? status.text : status.rest ?? "")
+                .foregroundStyle(status.problem ? AnyShapeStyle(WingtipInk.problem) : AnyShapeStyle(.secondary))
+        }
         Group {
             if let plane = lookup.flying {
-                Button(status.text) { nav.push(.traffic(plane.hex)) }
+                Button { nav.push(.traffic(plane.hex)) } label: { line }
+                    .buttonStyle(.plain)
                     .accessibilityHint("Tracks it on the map")
             } else {
-                Text(status.text).foregroundStyle(status.problem ? AnyShapeStyle(WingtipInk.problem) : AnyShapeStyle(.secondary))
+                line
             }
         }
         .font(WingtipType.detail)
         .padding(.horizontal, WingtipSpace.lg)
+        .accessibilityElement(children: .combine)
         .accessibilityIdentifier("airplane-status")
     }
 
