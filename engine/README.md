@@ -256,7 +256,11 @@ Then the callers switch to the name and the old copy is deleted.
   lib/wind, lib/pattern, lib/runwayFit, lib/takeoffLanding and
   lib/trafficPattern; wingtip.runway_wind and wingtip.pattern), each a name in
   `call.rs` (`wind_pick`, `runway_end_fit`, `traffic_pattern` ...). The
-  Go / No-Go's runway check goes by the same.
+  Go / No-Go's runway check goes by the same. A crosswind is rounded to
+  the knot for the page only: a limit (the POH's demonstrated crosswind,
+  the pilot's own) is judged against the unrounded one, which a
+  runway's wind carries as `crosswind_exact_kt`, and one past its limit
+  that rounds within it is shown to the tenth.
 - The nav log is the engine's too (`crates/route`'s navlog, over
   `crates/flight`'s performance; #482 phase 4): each leg's wind triangle,
   headings, ground speed, time and fuel with the airplane flown in the

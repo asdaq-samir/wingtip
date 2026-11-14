@@ -232,7 +232,7 @@ fn the_alternate_speaks_for_the_weather_where_the_weather_says_nothing_worse() {
 // --- minimums ---------------------------------------------------------------
 
 fn wind(end: &str, headwind_kt: f64, crosswind_kt: f64, gust: Option<f64>) -> RunwayWind {
-    RunwayWind { end: s(end), headwind_kt, crosswind_kt, gust_crosswind_kt: gust, in_use: false }
+    RunwayWind { end: s(end), headwind_kt, crosswind_kt, gust_crosswind_kt: gust, in_use: false, crosswind_exact_kt: None }
 }
 
 fn c81_winds() -> Vec<(bool, Option<RunwayWind>)> {

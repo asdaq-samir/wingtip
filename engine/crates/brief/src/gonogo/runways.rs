@@ -10,7 +10,7 @@
 //! with FPL's runway chips and the traffic pattern; they are named here
 //! too, as the check has always offered them.
 
-use super::minimums::{runway_crosswind_kt, steady_or_gust_kt};
+use super::minimums::{crosswind_shown, runway_crosswind_judged_kt, steady_or_gust_kt};
 use crate::json;
 pub use crate::runway::performance::{
     density_altitude_ft, end_distance, field_air, pressure_altitude_ft, short_field, soft_surface, Distances, ShortField,
@@ -153,7 +153,7 @@ pub fn runway_checks(
             // components (wingtip.runway_wind): all of it may be across, gusts
             // included, as the minimums take it.
             let crosswind = match (w, metar) {
-                (Some(w), _) => runway_crosswind_kt(w),
+                (Some(w), _) => runway_crosswind_judged_kt(w),
                 (None, Some(m)) if m.wind_dir_true_deg.is_none() && m.wind_speed_kt.is_some_and(|s| s != 0.0 && !s.is_nan()) => {
                     steady_or_gust_kt(m.wind_speed_kt.unwrap_or(0.0), m.wind_gust_kt)
                 }
@@ -221,7 +221,7 @@ pub fn runway_checks(
             temp_c: air.map(|a| a.1).or(metar.and_then(|m| m.temp_c)),
             reported: metar.is_some(),
             headwind_kt: first.headwind,
-            crosswind_kt: first.crosswind,
+            crosswind_kt: crosswind_shown(first.crosswind, first.crosswind.round_ties_even(), airplane.demonstrated_kt),
             crosswind_over: airplane.demonstrated_kt.is_some_and(|d| first.crosswind > d),
             grass: soft_surface(first.runway.map(|r| &runways[r])),
             unchecked: air.is_none().then_some(NO_ELEVATION),

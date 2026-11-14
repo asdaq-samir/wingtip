@@ -353,6 +353,7 @@ pub(crate) fn runway_wind(i: In, v: &Value) -> R<Option<RunwayWind>> {
         crosswind_kt: i.num(w, "crosswind_kt")?,
         gust_crosswind_kt: i.opt_num(w, "gust_crosswind_kt")?,
         in_use: truth(w, "in_use"),
+        crosswind_exact_kt: i.opt_num(w, "crosswind_exact_kt")?,
     }))
 }
 

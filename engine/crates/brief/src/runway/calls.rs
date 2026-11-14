@@ -183,6 +183,7 @@ fn runway_wind_of(i: In, v: &Value) -> R<RunwayWind> {
         crosswind_kt: i.num(w, "crosswind_kt")?,
         gust_crosswind_kt: i.opt_num(w, "gust_crosswind_kt")?,
         in_use: truth(w, "in_use"),
+        crosswind_exact_kt: i.opt_num(w, "crosswind_exact_kt")?,
     })
 }
 
@@ -246,6 +247,10 @@ fn favoured_json(f: Option<&Favoured>) -> String {
     match f.gust_crosswind_kt {
         Some(g) => figure(&mut out, g),
         None => out.push_str("null"),
+    }
+    if !f.calm {
+        out.push_str(",\"crosswind_exact_kt\":");
+        json::number(&mut out, f.crosswind_exact_kt);
     }
     if f.in_use {
         out.push_str(",\"in_use\":true");

@@ -292,7 +292,10 @@ pub fn end_fit(
         (Some(d), Some(speed), Some(h)) => headwind_kt(d, speed, h),
         _ => 0.0,
     };
-    let crosswind = js_round(steady_or_gust_kt(across(wind.and_then(|w| w.speed_kt)), Some(across(wind.and_then(|w| w.gust_kt)))));
+    // Judged unrounded against the demonstrated crosswind, rounded for the
+    // page only (wind::crosswind_shown; the aviation audit's AV-10).
+    let judged = steady_or_gust_kt(across(wind.and_then(|w| w.speed_kt)), Some(across(wind.and_then(|w| w.gust_kt))));
+    let crosswind = super::wind::crosswind_shown(judged, js_round(judged), demonstrated_kt);
     let length_ft = runway.length_ft;
     // No elevation, no distance: a field taken as at sea level needs less
     // runway than it will, the higher it is (FAA-H-8083-25C, chapter 11).
@@ -305,7 +308,7 @@ pub fn end_fit(
     let close = !short && matches!((needed_ft, length_ft), (Some(n), Some(l)) if n * DISTANCE_MARGIN > l);
     EndFit {
         crosswind_kt: crosswind,
-        crosswind_over: demonstrated_kt.is_some_and(|d| crosswind > d),
+        crosswind_over: demonstrated_kt.is_some_and(|d| judged > d),
         needed_ft,
         length_ft,
         short,
