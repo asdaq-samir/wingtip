@@ -1,6 +1,7 @@
 """Airport identifier -> coordinates lookup, plus runway and frequency
-data -- all backed by OurAirports' free, no-API-key-required dataset
-(three sibling CSVs from the same host).
+data: OurAirports' free tables (three sibling CSVs from the same host) for
+the idents, sizes and fields abroad, and NASR's own figures -- position,
+elevation, runways -- for every field NASR lists (wingtip.nasr_fields).
 """
 
 import bisect
@@ -13,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import by_airport, faa_data, field_status, field_use, geo, outside
+from . import by_airport, faa_data, field_status, field_use, geo, nasr_fields, outside
 from .atomic import atomic_path
 from .config import REQUEST_HEADERS
 from .routecsv import locked
@@ -129,15 +130,25 @@ def preload_lookup(cache_path: Path = DEFAULT_CACHE_PATH) -> None:
     _place_index(str(path), path.stat().st_mtime, *_faa_key(cache_path))
 
 
+def _ours(ident: str, beside) -> tuple:
+    """OurAirports' row for `ident` in the airports table beside `beside`
+    (None where it has none, or the table is not there: never fetched from
+    here), NASR's record of its field, and whether the row is another
+    field than NASR's (nasr_fields.MATCH_NM), which lends it nothing."""
+    path = Path(beside).parent / DEFAULT_CACHE_PATH.name
+    at = _airport_rows(str(path), path.stat().st_mtime).get(ident.strip().upper()) if path.exists() else None
+    row = None if at is None else _read_table(str(path), path.stat().st_mtime).iloc[at]
+    field = nasr_fields.of_row(row, beside) if row is not None else nasr_fields.of_ident(ident, beside)
+    return row, field, row is not None and nasr_fields.far(row["latitude_deg"], row["longitude_deg"], field)
+
+
 def wikipedia_link(ident: str, cache_path: Path = DEFAULT_CACHE_PATH) -> str | None:
     """The field's Wikipedia article, as OurAirports links it, or None: its
-    ground photo's source (wingtip.airport_photos)."""
-    path = _ensure_cached(OURAIRPORTS_URL, cache_path)
-    mtime = path.stat().st_mtime
-    at = _airport_rows(str(path), mtime).get(ident.strip().upper())
-    if at is None:
-        return None
-    link = _read_table(str(path), mtime).iloc[at].get("wikipedia_link")
+    ground photo's source (wingtip.airport_photos); none where OurAirports'
+    row is another field's."""
+    _ensure_cached(OURAIRPORTS_URL, cache_path)
+    row, _, lent = _ours(ident, cache_path)
+    link = None if row is None or lent else row.get("wikipedia_link")
     return link.strip() if isinstance(link, str) and link.strip() else None
 
 
@@ -164,15 +175,20 @@ def get_airport(ident: str, cache_path: Path = DEFAULT_CACHE_PATH) -> dict:
         # pill (the FPL audit's A2): what it is, not which file it is not in.
         raise ValueError(f"No airport goes by {ident!r}.")
     row = _read_table(str(path), mtime).iloc[at]
-    elevation = row.get("elevation_ft")
+    # NASR's position, elevation and name for a field it lists; OurAirports'
+    # elevation only for its own field (wingtip.nasr_fields).
+    field = nasr_fields.of_row(row, cache_path)
+    lent = nasr_fields.far(row["latitude_deg"], row["longitude_deg"], field)
+    named = field_use._records_of(*_faa_key(cache_path)).get(field["faa_id"], {}) if field else {}
+    elevation = field["elevation_ft"] if field and field["elevation_ft"] is not None else None if lent else row.get("elevation_ft")
     return {
         "ident": row["ident"],
-        "name": row["name"],
-        "lat": float(row["latitude_deg"]),
-        "lon": float(row["longitude_deg"]),
+        "name": named.get("name") or row["name"],
+        "lat": float(field["lat"] if field and field["lat"] is not None else row["latitude_deg"]),
+        "lon": float(field["lon"] if field and field["lon"] is not None else row["longitude_deg"]),
         "elevation_ft": float(elevation) if pd.notna(elevation) else None,
-        "municipality": row.get("municipality", ""),
-        "region": row.get("iso_region", ""),
+        "municipality": "" if lent else row.get("municipality", ""),
+        "region": f"US-{field['state']}" if lent and field["state"] else row.get("iso_region", ""),
     }
 
 
@@ -225,14 +241,10 @@ def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: fl
     # NASR's status and the engine's label where closed (decision 0043).
     # With no FAA file to hand, all of them, as before.
     us = field_use.named(field_status.listed(us, faa_path, _faa_mtime), faa_path, _faa_mtime)  # NASR's name and use too
-    if faa_path:
-        # The FAA's reference point (NASR APT_BASE's ARP) over OurAirports',
-        # 190 m off at KDEN: the map's marks are NASR's (owner, 2026-11-12).
-        arp = faa_data._read_apt_base_cached(faa_path, _faa_mtime).drop_duplicates("ARPT_ID").set_index("ARPT_ID")
-        local = us["local_code"].astype(str).str.strip().str.upper()
-        for ours, faa in (("latitude_deg", "LAT_DECIMAL"), ("longitude_deg", "LONG_DECIMAL")):
-            if faa in arp.columns:
-                us[ours] = local.map(pd.to_numeric(arp[faa], errors="coerce")).fillna(us[ours])
+    # The FAA's reference point (NASR APT_BASE's ARP) over OurAirports',
+    # 190 m off at KDEN: the map's marks are NASR's (owner, 2026-11-12); and
+    # its ELEV, where OurAirports' was another field's at times (AV-1).
+    us = nasr_fields.overlay(us, faa_path, _faa_mtime)
     us["_ident_upper"] = us["ident"].astype(str).str.upper()
     us["_local_upper"] = us["local_code"].astype(str).str.upper()
     us["_name_upper"] = us["name"].astype(str).str.upper()
@@ -647,45 +659,19 @@ def nearest_abroad(lat: float, lon: float, limit: int = 3, cache_path: Path = DE
 
 
 def get_runways(ident: str, cache_path: Path = RUNWAYS_CACHE_PATH) -> list[dict]:
-    """This airport's runways, for the briefing's own airport-
-    information section. Keyed by `airport_ident` directly --
-    OurAirports' runways.csv carries the ident string alongside its own
-    numeric `airport_ref`, so no join against airports.csv is needed.
+    """This airport's runways, NASR's for a field NASR lists
+    (wingtip.nasr_fields), OurAirports' runways.csv for one it does not.
     Each runway's `ends` are its two ends' idents, and `end_headings` each
     end's ident and true heading, None where the table has none
-    (wingtip.runway_wind turns its number true then).
+    (wingtip.runway_wind turns its number true then). None of OurAirports'
+    where its row for the ident is another field's.
     """
     ident = ident.strip().upper()
-    df = _load_table(RUNWAYS_URL, cache_path)
-    rows = by_airport.rows(df, ident)
-    runways = []
-    for _, row in rows.iterrows():
-        le, he = row.get("le_ident"), row.get("he_ident")
-        ends = "/".join(str(e) for e in (le, he) if pd.notna(e)) or None
-        length, width = row.get("length_ft"), row.get("width_ft")
-        runways.append(
-            {
-                "ends": ends,
-                "end_headings": [
-                    (str(end), float(row.get(f"{side}_heading_degT")) if pd.notna(row.get(f"{side}_heading_degT")) else None)
-                    for side, end in (("le", le), ("he", he))
-                    if pd.notna(end)
-                ],
-                # Where each end is, where the table has it (four runways in ten
-                # at a small US field): wingtip.pattern's fallback to NASR's own.
-                "end_positions": {
-                    str(end): (float(row.get(f"{side}_latitude_deg")), float(row.get(f"{side}_longitude_deg")))
-                    for side, end in (("le", le), ("he", he))
-                    if pd.notna(end) and pd.notna(row.get(f"{side}_latitude_deg")) and pd.notna(row.get(f"{side}_longitude_deg"))
-                },
-                "length_ft": int(length) if pd.notna(length) else None,
-                "width_ft": int(width) if pd.notna(width) else None,
-                "surface": row.get("surface") if pd.notna(row.get("surface")) else None,
-                "lighted": bool(row.get("lighted")),
-                "closed": bool(row.get("closed")),
-            }
-        )
-    return runways
+    _, field, lent = _ours(ident, cache_path)
+    listed = nasr_fields.runways(field["faa_id"], cache_path) if field else None
+    if listed is not None or lent:
+        return listed or []
+    return by_airport.runways(by_airport.rows(_load_table(RUNWAYS_URL, cache_path), ident))
 
 
 def _sorted_frequencies(frequencies: list[dict]) -> list[dict]:
@@ -747,7 +733,7 @@ def get_frequencies(ident: str, cache_path: Path = FREQUENCIES_CACHE_PATH, faa_c
     ident = ident.strip().upper()
     df = _load_table(FREQUENCIES_URL, cache_path)
     faa = faa_data.airport_frequencies(ident, faa_cache_dir) if faa_cache_dir else None
-    return _with_faa(_frequency_list(by_airport.rows(df, ident)), faa)
+    return _with_faa([] if _ours(ident, cache_path)[2] else _frequency_list(by_airport.rows(df, ident)), faa)
 
 
 def get_frequencies_for(idents: list[str], cache_path: Path = FREQUENCIES_CACHE_PATH, faa_cache_dir=FAA_CACHE_DIR) -> dict[str, list[dict]]:
@@ -756,7 +742,8 @@ def get_frequencies_for(idents: list[str], cache_path: Path = FREQUENCIES_CACHE_
     scan the whole table once per row; the FAA's first, as get_frequencies'."""
     wanted = {i.strip().upper() for i in idents}
     df = _load_table(FREQUENCIES_URL, cache_path)
-    ours = {ident: _frequency_list(by_airport.rows(df, ident)) for ident in wanted}
+    # None of OurAirports' where its row is another field's (_ours).
+    ours = {ident: _frequency_list(by_airport.rows(df, ident)) for ident in wanted if not _ours(ident, cache_path)[2]}
     faa = faa_data.airport_frequencies_for(wanted, faa_cache_dir) if faa_cache_dir else {}
     found = {ident: _with_faa(ours.get(ident, []), faa.get(ident)) for ident in wanted}
     return {ident: freqs for ident, freqs in found.items() if freqs}

@@ -93,7 +93,10 @@ question the previous rung raises.
 
 2. **Where are the airports?** (`airports.py`, +pandas). A distance
    needs coordinates, and typing them by hand stops being funny quickly.
-   Parse OurAirports' CSV and look up by identifier.
+   Parse OurAirports' CSV and look up by identifier; then take each
+   field's position, elevation and runways from the FAA's NASR files
+   (`nasr_fields.py`), since OurAirports' local codes have been reused
+   for other fields.
 
 3. **How long will it take?** (`navlog.py`, stdlib). Distance over
    airspeed is a first answer, and it is wrong, because air moves. The
