@@ -57,12 +57,13 @@ test(
         expect((await at(page, x, y)).inBody, `the list drawn through the head band at ${x},${Math.round(y)}`).toBe(false);
     }
 
-    // The page toggle rides the sheet's top, 24 over it at the left under
-    // the 3D (the owner, 2026-11-13), and the map's buttons the same at the
+    // The account button rides the sheet's top, 24 over it at the left
+    // under the 3D, where the page toggle was until the owner swapped the
+    // two (2026-11-14), and the map's buttons the same at the
     // right with the radio's over them (the owner, 2026-11-11: "just above
     // the search bar on the right"), at half and at the pill, clear of each
     // other, each tap landing on its own.
-    const left = page.getByTestId("sheet-page-toggle").locator("..");
+    const left = page.getByTestId("account-button").locator("..");
     const controls = page.locator("[data-map-controls]");
     const over = async (part: typeof left) => {
       const b = (await part.boundingBox())!;
@@ -74,10 +75,10 @@ test(
       await expect.poll(() => over(left), { timeout: slow(5_000) }).toBe(24);
       await expect.poll(() => over(controls), { timeout: slow(5_000) }).toBe(24);
       const [m, c] = [(await left.boundingBox())!, (await controls.boundingBox())!];
-      expect(m.x + m.width, "the toggle clear of the map's buttons").toBeLessThan(c.x);
+      expect(m.x + m.width, "the account button clear of the map's buttons").toBeLessThan(c.x);
       expect(width - (c.x + c.width), "the map's buttons at the right edge").toBeLessThan(20);
-      for (const id of ["map-settings-button", "my-position-button", "radio-button", "sheet-page-toggle"]) {
-        const b = (await (id === "sheet-page-toggle" ? page : controls).getByTestId(id).boundingBox())!;
+      for (const id of ["map-settings-button", "my-position-button", "radio-button", "account-button"]) {
+        const b = (await (id === "account-button" ? page : controls).getByTestId(id).boundingBox())!;
         const hit = await page.evaluate(
           ([x, y]) => document.elementFromPoint(x, y)?.closest("[data-testid]")?.getAttribute("data-testid"),
           [b.x + b.width / 2, b.y + b.height / 2] as const,

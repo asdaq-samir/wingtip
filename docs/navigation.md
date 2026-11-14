@@ -161,13 +161,18 @@ otherwise.
 Since the one search (the owner's approved design, 2026-11-09, branch
 `claude/one-search-web`) the web's sheet has no tabs. Its first row is one
 field, "Search airports and airplanes" (the web has no Ask since decision 0041), with the microphone its
-trailing button, and over it the title row with the account button at its
-right (the owner's Apple Maps screenshot, 2026-11-10); under it the plan (with a route) or the search's
-own page (with none, or the field in use). On a desktop the same in the
+trailing button, and the page toggle at its end, where the account
+button was until the owner swapped the two (2026-11-14: "Swap the fpl
+toggle and account buttons"); the account button rides the sheet's top
+under the 3D. FPL's first row is the same size: the airplane's strip
+(N-number, altitude, Profile, Brief, •••) with the toggle at its end, and
+the route one row under it in whichever of its three layouts; Search's
+page under the search is the search's own page (with nothing typed, or
+the field in use). On a desktop the same in the
 side panel, ⌘K or Ctrl K focusing the field (the command palette it
 replaced), `/` too, and the airport card's F, D and S for Fly Here, Depart
 From and Add as Stop. Counted from the map with the sheet at rest: the
-search field or the account button tapped is 1. "Before" is the count
+search field, the page toggle or the account button tapped is 1. "Before" is the count
 from before the one search. By the one card rule (the owner, 2026-11-10) every thing and page
 is a card over the search with its ✕ (only Emergency fills the sheet's
 height), and Escape or a device's Back closes the top card or page first,

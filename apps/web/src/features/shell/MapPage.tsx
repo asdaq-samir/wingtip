@@ -116,8 +116,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
     [mode, briefingInAddress, setAddress],
   );
 
-  // The console, the account page: opened from the account button
-  // beside the search (AccountButton), on both pages, a layer of the map's
+  // The console, the account page: opened from the account button over
+  // the map (AccountButton, MapControls), on both pages, a layer of the map's
   // panel itself (below), as
   // an airport's card is: it pulls out as the route's sheet does -- the
   // pill and all the way -- dragged from anywhere on it. It was a sheet of

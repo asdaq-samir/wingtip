@@ -190,11 +190,11 @@ async function panelFull(page: Page) {
   await settled(panel);
 }
 
-/** The console out, all the way up: the account button (in the title row,
- *  gone all the way up) opens the account page (Setup) itself. At the pill,
- *  where the developer's page rests, the page is under the pill's edge. */
+/** The console out, all the way up: the account button (over the map, on
+ *  either page, gone all the way up) opens the account page (Setup) itself.
+ *  At the pill, where the developer's page rests, the page is under the
+ *  pill's edge. */
 export async function openConsole(page: Page) {
-  await showPage(page, 0); // the account button is the Search page's (PageToggle)
   await showTabs(page);
   if (!(await page.getByTestId("account-button").isVisible())) await grabberTo(page, "half");
   await page.getByTestId("account-button").click();

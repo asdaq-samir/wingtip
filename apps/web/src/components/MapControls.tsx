@@ -7,7 +7,8 @@ import MyPositionButton from "./MyPositionButton";
 import MapSettingsButton, { MapSettingsCard } from "./MapSettingsButton";
 import RadioButton from "./RadioButton";
 import ThreeDButton from "./ThreeDButton";
-import PageToggle from "./PageToggle";
+import { AccountButton } from "../features/pilot";
+import { usePageToggle } from "./sheet/pageToggle";
 import ClearanceKey from "./ClearanceKey";
 import { useAtcRadio } from "../lib/atcRadio";
 import { useCommsAssist } from "../lib/atc/commsAssist";
@@ -28,8 +29,11 @@ import { TEXT } from "../lib/text";
  * on the right"); over a top sheet at the bottom right, riding its edge;
  * beside a desktop's side panel at the bottom right. Over them, a circle
  * of its own, the radio's button, on a phone as on a desktop. On a phone
- * the toggle that turns the sheet's pages (PageToggle) is at the left
- * under the 3D; from md up, a circle of its own under the group.
+ * the account button (AccountButton) is at the left under the 3D; from md
+ * up, a circle of its own under the group: where the toggle that turns
+ * the sheet's pages was, the two swapped at the owner's ask (2026-11-14:
+ * "Swap the fpl toggle and account buttons"; the toggle is at the end of
+ * the sheet's first row, PageToggle).
  *
  * Ghost buttons on the group's glass, eight apart inside it, so
  * each one's 44-point hit area (index.css) meets the next one's rather
@@ -217,18 +221,18 @@ function MapControlsDrawn() {
               </div>
             )}
             {group}
-            {/* From md up the sheet's pages turned (PageToggle), a circle of
-                its own under the group; on a phone it is at the left. */}
-            {!onPhone && <PageToggle />}
+            {/* From md up the account button, a circle of its own under the
+                group; on a phone it is at the left. */}
+            {!onPhone && !flying && <AccountCircle />}
           </div>
         )}
       </OnSheetTop>
       {/* On a phone at the left, riding the sheet's top: the 3D button, a
         circle of its own (ThreeDButton), on the ground only, as the map's
-        settings are, and under it, nearest the sheet, the page toggle
-        (PageToggle), in the radio's button's place (the owner, 2026-11-13:
-        "replace the radio button on the left with the fpl toggle but below
-        3d"). Two circles 8 apart, each tap its own 44 points. Over a bottom
+        settings are, and under it, nearest the sheet, the account button,
+        where the page toggle was until the owner swapped the two
+        (2026-11-14: "Swap the fpl toggle and account buttons"). Two circles
+        8 apart, each tap its own 44 points. Over a bottom
         sheet drawn in the Drawer's popup (OnSheetTop), so they follow a
         finger's drag as Apple Maps' buttons do. In flight neither is drawn. */}
       {onPhone && (
@@ -251,11 +255,26 @@ function MapControlsDrawn() {
                   <ClearanceKey />
                 </div>
               )}
-              <PageToggle />
+              {!flying && <AccountCircle />}
             </div>
           )}
         </OnSheetTop>
       )}
     </>
+  );
+}
+
+/** The account button over the map, on the glass circle the 3D's is the
+ *  size of, its own 36-point disc in it (accountLook); on the ground only,
+ *  as the search's row it was in is put away in flight. Only where the
+ *  sheet has its two pages (the planner's, sheet/pageToggle): the
+ *  developer's and the studio's pages keep theirs in their own bar. */
+function AccountCircle() {
+  const paged = usePageToggle((s) => s.pages != null);
+  if (!paged) return null;
+  return (
+    <div data-map-food="" className={cn("flex rounded-full p-1 print:hidden", GLASS)}>
+      <AccountButton />
+    </div>
   );
 }

@@ -81,7 +81,7 @@ export function useRouteCaret({
   // pills are 28 tall in a row that clips them (it slides sideways), so
   // their own ::after could not reach, and a tap 8 points over or under
   // one landed on the box, which started typing a new destination (the
-  // FPL audit's A18). A tap on the box's room, or the footer's, within
+  // FPL audit's A18). A tap on the box's room within
   // 22 points of a pill's middle and across it is that pill's.
   const pillNear = (e: MouseEvent<HTMLDivElement>): HTMLElement | null => {
     for (const pill of slide.current?.querySelectorAll<HTMLElement>("[data-point]") ?? []) {
@@ -91,14 +91,12 @@ export function useRouteCaret({
     return null;
   };
   const toEnd = (e: MouseEvent<HTMLDivElement>) => {
-    const footerRoom = (e.target as HTMLElement).dataset.testid === "route-box-footer";
-    if (!isRoom(e) && !footerRoom) return;
+    if (!isRoom(e)) return;
     const near = pillNear(e);
     if (near) {
       near.querySelector<HTMLElement>("button")?.click();
       return;
     }
-    if (!isRoom(e)) return;
     if (typedAt === null || (typedAt === 0 && !hasDep)) {
       focusAt(typedAt);
       return;

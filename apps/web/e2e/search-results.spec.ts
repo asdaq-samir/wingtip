@@ -146,7 +146,7 @@ test("a search sent lists the fields round the place, its chips and Filters narr
   await sideDrawer(page).getByTestId("one-search-cancel").click();
   await expect(list).toHaveCount(0);
   await expect(page.getByTestId("search-airports")).toHaveValue("");
-  await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("sheet-page-toggle")).toBeVisible();
 });
 
 test("a search sent marks its fields on the map, and a mark opens its card", async ({ page }) => {

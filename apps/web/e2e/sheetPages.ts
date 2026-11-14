@@ -4,7 +4,7 @@ export { showPage } from "./oneSearch";
 
 /**
  * The sheet's two pages, Search and FPL, turned by the one round toggle
- * riding the sheet's top at the left, under the 3D (PageToggle; the owner, 2026-11-13),
+ * at the end of their first row (PageToggle; the owner, 2026-11-14),
  * for the specs that read which is up: sheet-page-toggle,
  * sheet-pages-cards, sheet-fly-here and first-flight.
  */
@@ -15,11 +15,13 @@ const pages = (page: Page) => sideDrawer(page).getByTestId("sheet-pages");
 export const toggle = (page: Page) => page.getByTestId("sheet-page-toggle");
 
 /** The page `at` up, and the toggle offering the other, by name: a
- *  button never pressed, its name where it goes. It stays under a card. */
+ *  button never pressed, its name where it goes. */
 export async function expectPage(page: Page, at: 0 | 1) {
   await expect(pages(page)).toHaveAttribute("data-page", String(at));
   await expect(toggle(page)).toHaveAttribute("data-shows", String(at === 0 ? 1 : 0));
-  await expect(toggle(page)).toHaveAccessibleName(at === 0 ? "Show flight plan" : "Show search");
+  // Its name where it is in sight: under a card the sheet's row, the
+  // toggle with it, is put away, and a hidden element has none.
+  if (await toggle(page).isVisible()) await expect(toggle(page)).toHaveAccessibleName(at === 0 ? "Show flight plan" : "Show search");
   await expect(toggle(page)).toHaveAttribute("aria-pressed", "false");
 }
 

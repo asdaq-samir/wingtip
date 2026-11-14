@@ -27,6 +27,7 @@ import PlanCards from "./components/workspace/PlanCards";
 import FlightFoot from "./components/workspace/FlightFoot";
 import RouteHead from "./components/workspace/RouteHead";
 import RouteControls from "./components/workspace/RouteControls";
+import FplBar from "./components/workspace/FplBar";
 import OneSearchField from "./components/search/OneSearchField";
 import { useOneSearch } from "./hooks/useOneSearch";
 
@@ -239,8 +240,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
             }
           }}
           chartsDisabled={!planned.dest || noApproaches}
-          // In Route Cards the Routes row is in the head's box with the
-          // controls (the route slot, below), not over the list.
+          // In Route Cards the Routes row is in the head's box under the
+          // bar (the route slot, below), not over the list.
           routeLine={routeEdit === "plan" ? null : routeLine}
           // The list changes the route too where the box is folded away once
           // the route is whole (RouteEdit, both of the owner's picks).
@@ -422,8 +423,13 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // an airport's, the airspace's, an airplane's -- over the tab it was
         // opened from, its close back to it.
         sidebar: <PlanSidebar vm={vm} model={search} />,
-        // The pages, turned by the round toggle on the sheet's top (PageToggle; the owner, 2026-11-13): Search over `sidebar`, FPL's `route` over the plan.
-        pages: { at: view === "plan" ? 1 : 0, go: pickPage, second: <PlanPage vm={vm} navLog={navLog} /> },
+        // The pages, turned by the toggle at the first row's end (PageToggle): Search over `sidebar`; FPL its bar (FplBar), `route` and the plan.
+        pages: {
+          at: view === "plan" ? 1 : 0,
+          go: pickPage,
+          bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
+          second: <PlanPage vm={vm} navLog={navLog} />,
+        },
         // The one search's Autocomplete round the whole panel, so its field
         // (the first row) and its list (the body) are one combobox.
         around: (panel) => (
@@ -450,18 +456,12 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // route's row from half up (the owner, 2026-11-11, the canvas's b).
         // FPL's page's own (SheetParts), and the sheet's in flight; under the Profile, the card's foot (PlanCards), in flight too.
         foot: !place && !heldPoint && !flight && !briefShown && !profileShown ? routed && <FlightFoot vm={vm} /> : undefined,
-        // The route as one box of pills, the top row to itself (MapPanel keeps
-        // it under the others' heads). How it shows once whole is the pilot's
-        // pick from its ••• menu's Show Route As (lib/preferences RouteEdit:
-        // the box, one line, or the plan's own rows; the owner, 2026-11-05 and
-        // 2026-11-13); the box again while a stop is typed in or a problem shows.
-        route: (
-          <RouteHead
-            vm={vm}
-            controls={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />}
-            menu={shareMenu("end")}
-          />
-        ),
+        // The route as one row under FPL's bar (MapPanel keeps it under the
+        // others' heads). How it shows once whole is the pilot's pick from its
+        // ••• menu's Show Route As (lib/preferences RouteEdit: the box, one
+        // line, or the plan's own rows; the owner, 2026-11-05 and 2026-11-13);
+        // the box again while a stop is typed in or a problem shows.
+        route: <RouteHead vm={vm} />,
         console: <PilotPanel />,
       })}
       {/* FPL's cards over the sheet, beside its pages, kept in flight (PlanCards). */}

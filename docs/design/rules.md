@@ -148,9 +148,10 @@ Compose. Nothing here is built by hand where a stock part does it.
     its totals ("65.3 nm · 35m · 9.0 gal"), the Profile its cruise and the
     clearance's verdict ("Cruise FL-055 · clear of terrain"), the Stops how
     many ("2 stops", "None on the route"). With no card open the pill is
-    the page's own: the search on Search, the route's figures on FPL, and
-    the one round toggle that turns the pages rides the sheet's top at the
-    left over it, under the 3D (the owner, 2026-11-13; §4a), nothing under the sheet.
+    the page's own: the search on Search, the route's figures on FPL (with
+    no route, FPL's bar); on the web the one round toggle that turns the
+    pages ends the first row and the account button rides the sheet's top
+    at the left, under the 3D (the owner, 2026-11-14; §4a), nothing under the sheet.
     **The smallest size is one fixed
     height for every page and card**, never one a page: the web's
     `"4.25rem"` on the screen's foot (sheet/insets), which the search's row, a
@@ -178,7 +179,7 @@ Compose. Nothing here is built by hand where a stock part does it.
 | Back, Escape | Escape is the top card's own nested drawer's, closing it (CardStack); with no card up the sheet's own Escape lowers it to the pill. A device's Back closes the top card the same way (`lib/backNavigation` `closeTopmost`): Android's through the browser's stock CloseWatcher, held only while something is open (`useBackCloses`), a TV remote's by its key; where there is no CloseWatcher (Safari) the browser's Back is left as it is. The browser's history is not the app's, as the planner replaces its address | The stack's Back; the card's close at the right of its bar | System Back closes the top card at once (`MapSheet`'s `lowerOnBack` only with none open); the dry run, the ATC card and the assistant's answer close on Back too |
 | Questions | `SheetDialog`: a bottom sheet on a phone with ✕ or Cancel, centred from `md` up | `.alert` and `.confirmationDialog`, hung on the top of the stack (`TopHosts`) so they always show | `AlertDialog` (`ui/SourceDialog` for a source report) |
 | Emergency | The one full-height card, ✕ at the top right, the map not dimmed | A card on the system sheet (`SheetPage.emergency`) at the large detent, the card's own close; the iPad's inspector | A card on the sheet's stack (`SheetPage.Emergency`) at full height, the card's bar; at half the glide ring shows |
-| One search | Search's page, turned to by one round toggle button riding the sheet's top at the left, under the 3D (`PageToggle`; the owner, 2026-11-13), its magnifier showing while FPL is up; it finds airplanes too -- the pilot's, the kept, those the map hears by callsign or address, the FAA registry's -- with no traffic page or airplane field of its own (the owner, 2026-11-14), and the airplanes' Favorites and Recents are its page's, after the airports'; the airplanes' Adds ask it ("Search for your airplane"), as Home's and a Favorite airport's do; Nearest's place is the one field scoped to it, at its card's top (`nearSearch`), where the card covers the sheet's first row; the route's points ask it for an airport (`askSearchPick`) | The one `.searchable` field, on the TabView's `Tab(role: .search)`; it finds the airplanes heard too, their Favorites and Recents after the airports', and the airplanes' Adds open it with "Search for your airplane" or "Search for an airplane to keep" (`OneSearchModel.Keeping`), no traffic page of its own (2026-11-14) | Search a `NavigationBar` item beside FPL's; Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`) |
+| One search | Search's page, turned to by one round toggle button at the end of the sheet's first row, where the account button was (`PageToggle`; the owner, 2026-11-14, "Swap the fpl toggle and account buttons"), its magnifier showing while FPL is up; it finds airplanes too -- the pilot's, the kept, those the map hears by callsign or address, the FAA registry's -- with no traffic page or airplane field of its own (the owner, 2026-11-14), and the airplanes' Favorites and Recents are its page's, after the airports'; the airplanes' Adds ask it ("Search for your airplane"), as Home's and a Favorite airport's do; Nearest's place is the one field scoped to it, at its card's top (`nearSearch`), where the card covers the sheet's first row; the route's points ask it for an airport (`askSearchPick`) | The one `.searchable` field, on the TabView's `Tab(role: .search)`; it finds the airplanes heard too, their Favorites and Recents after the airports', and the airplanes' Adds open it with "Search for your airplane" or "Search for an airplane to keep" (`OneSearchModel.Keeping`), no traffic page of its own (2026-11-14) | Search a `NavigationBar` item beside FPL's; Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`) |
 | At the pill | The card's pinned head (`data-sheet-head`: `PinnedHead`, Settings' title row, a console page's head) is all of the card left in sight there (CardStack's scroller), with its short line under its name (`CardHead`'s `sub`); a tap on the row raises the card to half. A swipe down parks a card there; a settings card's frame has `onSwipeClose` (`lib/sheetCards`; You's `CardLayer`, the Map card's `SheetCard swipeCloses`), and a swipe down from half closes it by the Drawer's own close, from all the way up brings it to half (the owner, 2026-11-14: "Settings cards should only close from a swipe down when in medium detents") | The system sheet's smallest detent shows the card's bar, where a swipe down parks a content card (`SheetPage.detents`) and a drag past it leaves it there (every card but the settings cards `interactiveDismissDisabled`, `Navigation/CardHost`), so Emergency too closes by its ✕ alone; You, Settings and the Map card have no pill detent, so from all the way up a swipe brings them to half, the next detent, and from half closes them (`SheetPage.swipeCloses`, the owner, 2026-11-14) | No pill with a card open: the sheet's peek is half the window while a card is up (`halfWindow`), and a drag down from half closes nothing -- but under You, its pages (Pilot Details, Minimums, Settings and Settings' pages) and the Map card (`SheetPage.swipeCloses`), where the sheet may take its Hidden value and a swipe down closes the cards and brings the search back at its peek (the owner, 2026-11-14); Emergency closes by its ✕ alone |
 | By name | `useOpenScreen` through `lib/navigation/wanted` | `RootView.openScreen`, which opens the card by `Navigator.open` | `OpenScreen` through `ScreenRequests` |
 
@@ -339,12 +340,13 @@ the suite prints that reason. What runs when is [docs/CI.md](../CI.md).
 ## 4. One search (the owner, 2026-11-09)
 
 The sheet's Search page (§4a: its pages turned by one round toggle
-button riding the sheet's top at the left, under the 3D, the owner,
-2026-11-13) has one field as its first row, "Search airports and
+button at the end of their first row, the owner, 2026-11-14) has one
+field as its first row, "Search airports and
 airplanes" on every app (the owner, 2026-11-14: "Just say Search airports
 and airplanes"; no Ask on the web since decision 0041, the phones' on-device
-answers still offered among the suggestions), with the on-device microphone and the account button
-beside it; the account button opens You, who the pilot is and what is
+answers still offered among the suggestions), with the on-device microphone and, on the web, the page
+toggle beside it (on the phones still the account button, until the owner's word); the account button,
+on the web over the map under the 3D, opens You, who the pilot is and what is
 theirs, with Settings one of its rows (§8), where Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXzCV>.
 
 - **Nothing typed:** the current flight as a card at the top (route,
@@ -442,13 +444,21 @@ instead") only where Comms Assist is on: a switch of Settings' ATC page,
 off by default (the owner, 2026-11-13).
 
 1. **Search** (the first page): the search's row (field, microphone,
-   account button) and its home list (Favorites, Recents, Nearest,
+   page toggle) and its home list (Favorites, Recents, Nearest,
    Saved, Find Nearby), the traffic and the search's lists in full.
-2. **FPL** (the second page): the route's row (its pills, Routes, Brief,
-   •••), the airplane and the altitude, the route in order, and the
-   route's figures pinned at the foot, which are FPL's alone; the Brief,
-   the Nav Log, the Profile and the Stops are cards over it. With no route, the route's row stands
-   empty, with a Close that goes back to the card or Search it came from
+2. **FPL** (the second page): its first row the search's row's twin
+   (the owner, 2026-11-14: "for all three fpl layouts, keep the n-number
+   strip with buttons in the same size as search bar"): the airplane's
+   strip -- its N-number, the altitude, the Profile, the Brief and the
+   route's ••• -- in a bar exactly the search field's size, the page
+   toggle at its end, so a turn of the page changes only what is in the
+   bar; under it the route as one row, in whichever of the three ways
+   Show Route As picks (the box of pills, the line, or the cards' ends
+   and the Routes row), never in the bar; then the route in order, and
+   the route's figures pinned at the foot, which are FPL's alone; the
+   Brief, the Nav Log, the Profile and the Stops are cards over it. With
+   no route, the route's row stands empty and the bar keeps the airplane
+   and the menu, with a Close that goes back to the card or Search it came from
    (the owner, 2026-11-11: "We don't need plan a flight either with two
    buttons"). The first time, a welcome sheet says what the app is
    (Search like Maps, FPL like an EFB, the FAA charts), offers Theme and
@@ -460,22 +470,28 @@ off by default (the owner, 2026-11-13).
    first-flight card until the owner's word).
    FPL has no field of its own: adding a stop asks the one search.
 
-- **One round toggle button turns the page** (the owner, 2026-11-13),
-  riding the sheet's top at the left, its own glass circle the size of
-  the 3D and microphone circles, directly under the 3D circle, nearest
-  the sheet, 8 points apart (two circles, never one capsule), level with
-  the map's buttons' group at the right. Beside a side panel, under the
-  map's buttons at the bottom right. It shows the page a tap goes to, as
+- **One round toggle button turns the page** (the owner, 2026-11-13), at
+  the end of the sheet's first row on both pages, after the search's
+  field on Search and FPL's bar on FPL, a 36-point disc in the field's
+  white, eight after the bar, the bar the same size on both: where the
+  account button was, the two swapped (the owner, 2026-11-14: "Swap the
+  fpl toggle and account buttons"). The account button took its place
+  over the map: riding the sheet's top at the left in a glass circle the
+  size of the 3D's, directly under it, 8 points apart, level with the
+  map's buttons' group at the right; beside a side panel, under the
+  map's buttons at the bottom right. The toggle shows the page a tap goes to, as
   Apple Maps' 2D/3D button shows the mode it switches to: on Search FPL's
   route glyph ("Show flight plan" to a screen reader), on FPL the
   magnifier ("Show search"). A real button, never pressed, its name
   saying where it goes; a 44-point tap by its hit area, never grown. It
-  turns the page and leaves the sheet's size; tapped while a card is up
-  (it rides the card's top then) it puts the card away with its page.
+  turns the page and leaves the sheet's size. A card over the sheet
+  covers the row and the toggle with it (the account button rides the
+  card's top); the card's ✕ brings them back.
 - **Nothing under the sheet**: its three sizes stand on the screen's foot
-  (the home indicator's inset), the bar's room given back. The toggle
-  gives way with the map's buttons all the way up; it goes while the airplane flies the route (the flying sheet
-  is the figures alone) and under Settings' layer.
+  (the home indicator's inset), the bar's room given back. The account
+  button gives way with the map's buttons all the way up, where the
+  toggle stays in the pinned row; both go while the airplane flies the
+  route (the flying sheet is the figures alone).
 - **No sideways swipe turns a page.** A drag sideways is the row's under
   it (Nearest, Favorites, Recents' cards), a drag up or down the sheet's
   (and each page's own scroller's all the way up). Each page keeps its
@@ -488,20 +504,21 @@ off by default (the owner, 2026-11-13).
 - **Cards** open over both pages as before; ✕ comes back to the page
   they were opened over.
 - **At the pill** the sheet shows the page's own one row, the grabber
-  over it and the toggle riding its top, and nothing else: on Search the
-  search's row, on FPL the route's figures -- To, Dist, ETE, Fuel -- (the
-  owner, 2026-11-11, the canvas's b, as ForeFlight and Garmin Pilot keep
-  them), the route's row from half up; with no route, FPL's own row. The
+  over it, and nothing else: on Search the search's row, on FPL the
+  route's figures -- To, Dist, ETE, Fuel -- (the owner, 2026-11-11, the
+  canvas's b, as ForeFlight and Garmin Pilot keep them), FPL's bar and
+  the route's row from half up; with no route, FPL's bar. The
   pill is one fixed height for both (the web's `"4.25rem"` snap point,
   on the screen's foot).
 - **Links**: `open=search` and `open=fpl` (design/screens.json).
 
 | Web | iPhone | Android |
 |---|---|---|
-| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, on a phone in the left-hand column under the 3D (`MapControls`, riding the sheet's top through `OnSheetTop`), told the pages by `MapPanel` (`sheet/pageToggle`); the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/plan/components/workspace/PlanPage`. Beside the side panel the same circle under the map's buttons at the bottom right | One round glass button in the map's left column under 3D (`Views/MapButtonsDock`), in sight over any card; a tap closes the cards and turns the sheet's page | One round button in the left column's floating toolbar under 3D (`SheetSideButtons`), in sight over any card; a tap closes the cards and turns the page (`SheetNav.togglePage`) |
+| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, at the end of each page's first row (`OneSearchField`, `features/plan/components/workspace/FplBar`), drawn on the page that is up, told the pages by `MapPanel` (`sheet/pageToggle`); the bar before it one size on both (`panelField`'s `SHEET_BAR`), each page's first row laid out by the same `barRowOf` (`SheetParts`); the account button in the left-hand column under the 3D (`MapControls`' `AccountCircle`, riding the sheet's top through `OnSheetTop`), beside the side panel under the map's buttons; the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/plan/components/workspace/PlanPage`, the route's row under the bar `RouteHead` | One round glass button in the map's left column under 3D (`Views/MapButtonsDock`), in sight over any card; a tap closes the cards and turns the sheet's page | One round button in the left column's floating toolbar under 3D (`SheetSideButtons`), in sight over any card; a tap closes the cards and turns the page (`SheetNav.togglePage`) |
 
 The iPhone's and Android's columns are still the tab bar's design; the
-toggle reaches them at the owner's word (web first).
+toggle reaches them at the owner's word (web first), and so does the
+swap of the toggle and the account button and FPL's bar (2026-11-14).
 
 **iPhone (2026-11-13):** the pager's dots and swipe are gone; the two
 pages are kept laid out one over the other (`Search/SheetPager`'s

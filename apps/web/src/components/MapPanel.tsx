@@ -55,10 +55,10 @@ interface Props {
   /** The airplane flying the route (useFlyingMode): the first row, the top
    *  row and the controls put away, the pill its foot alone. */
   flying?: boolean;
-  /** The sheet's two pages, Search and FPL, turned by the round toggle
-   *  riding the sheet's top at the right (PageToggle; the owner,
-   *  2026-11-13): the first the search and `children`, the second the top
-   *  row and its own body (SheetPages). */
+  /** The sheet's two pages, Search and FPL, turned by the round toggle at
+   *  their first row's end (PageToggle): the first the search and
+   *  `children`, the second its own bar, the top row under it and its own
+   *  body (SheetPages). */
   pages?: SheetPages;
   state: PanelState;
   onStateChange: (state: PanelState) => void;
@@ -146,10 +146,8 @@ export default function MapPanel(props: Props) {
   // card alone over them (`layer` "card") is drawn from inside one, the
   // Brief from FPL's (PlanPage), so put away with them it never opened.
   const pages = props.pages && !flying ? props.pages : undefined;
-  // Turned by their toggle (PageToggle), a card over them or not: tapped
-  // with one up it closes the cards and turns the page (the owner,
-  // 2026-11-13: "airport card hides the fpl toggle"). Told to the toggle,
-  // drawn with the map's buttons, which ride the front card's top.
+  // Turned by their toggle (PageToggle), told them here: it is drawn in
+  // each page's first row, apart from the pages' own state.
   const pageAt = pages?.at;
   const pageGo = pages?.go;
   useEffect(() => {

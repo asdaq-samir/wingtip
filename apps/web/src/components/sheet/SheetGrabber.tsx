@@ -44,7 +44,7 @@ function useSizes(size: PanelState, ask: (s: PanelState) => void) {
  * them. Its hit area 44 tall off the sheet's edge, over the map, not over
  * the first row: the bar never grows, and what is under it -- the title
  * row's ends, the field all the way up -- is clear of it. The sheet's pages
- * are turned by the round toggle on its top (PageToggle), not this bar.
+ * are turned by the round toggle in their first row (PageToggle), not this bar.
  */
 export function SheetGrabber({
   label,

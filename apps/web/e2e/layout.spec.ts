@@ -110,7 +110,8 @@ test.describe("/app/plan", () => {
     }).toPass({ timeout: 10_000 });
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
-    await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
+    await expect(sideDrawer(page).getByTestId("sheet-page-toggle")).toBeVisible();
+    await expect(page.getByTestId("account-button")).toBeVisible();
     await grabberTo(page, "full");
 
     await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -278,7 +279,7 @@ test.describe("/app/plan", () => {
 });
 
 for (const path of PAGES) {
-  test(`${path}: the map's buttons sit at the map's right edge, away from the panel, and the console's button is on the panel's capsule: the planner's search bar, the training page's route`, async ({
+  test(`${path}: the map's buttons sit at the map's right edge, away from the panel, and the console's button is over the map on the planner, on the training page's route capsule`, async ({
     page,
   }) => {
     await page.goto(`${path}?dep=C81&dest=KDLH`);
@@ -307,10 +308,10 @@ for (const path of PAGES) {
     const mic = (await page.locator("[data-map-controls]").getByTestId("mic-circle").boundingBox())!;
     expect(mic.y + mic.height).toBeLessThanOrEqual(firstBox.y);
     expect(viewport.width - (mic.x + mic.width)).toBeLessThan(20);
-    // Never among the map's buttons, on either page: their first is the
-    // map's own, its card the map's settings in the sheet (a desktop's side
-    // panel too), as Apple Maps' Choose Map card is (the owner, 2026-11-10).
-    expect(await page.locator("[data-map-controls]").getByTestId("account-button").count()).toBe(0);
+    // Their first is the map's own, its card the map's settings in the
+    // sheet (a desktop's side panel too), as Apple Maps' Choose Map card is
+    // (the owner, 2026-11-10); the planner's account button is a circle of
+    // its own under them from md up (data-map-food), not in the group.
     await expect(first).toHaveAttribute("data-testid", "map-settings-button");
     await first.click();
     await expect(sideDrawer(page).getByTestId("map-settings").getByRole("heading", { name: "Map", level: 2 })).toBeVisible();
@@ -324,15 +325,19 @@ for (const path of PAGES) {
       await showTabs(page);
       await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
     } else {
-      // At the end of the route's capsule, as at the search bar's once
-      // the route is closed, as Maps' account is.
+      // Over the map, where the page toggle was until the owner swapped the
+      // two (2026-11-14): under the 3D at the left on a phone, under the
+      // map's buttons from md up; never in the sheet, whose first row ends
+      // in the page toggle on either page.
       await showTabs(page);
-      await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
+      await expect(page.getByTestId("account-button")).toBeVisible();
+      expect(await sideDrawer(page).getByTestId("account-button").count()).toBe(0);
+      await expect(sideDrawer(page).getByTestId("sheet-page-toggle")).toBeVisible();
       await page.goto(path);
       await settle(page);
       await showTabs(page);
-      await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
-      expect(await page.locator("[data-map-controls]").getByTestId("account-button").count()).toBe(0);
+      await expect(page.getByTestId("account-button")).toBeVisible();
+      await expect(sideDrawer(page).getByTestId("sheet-page-toggle")).toBeVisible();
     }
 
     // Setup holds the cockpit's Controls, never the map's: they are the

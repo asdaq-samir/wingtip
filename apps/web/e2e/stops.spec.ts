@@ -507,9 +507,9 @@ test("the route's box is round, one line tall for a short route and the panel's 
   expect(await sideDrawer(page).getByTestId("add-stop").count()).toBe(0);
   // Round as the search bar's field is, one line tall for a route that
   // fits one (a second as one needs it, below), the panel's width to
-  // itself, at the pilot's ask; the Nav log and Share in the box under
-  // its line, at the row's end, as a message box has its buttons (the
-  // owner, 2026-10-21).
+  // itself, at the pilot's ask; the Brief and Share in FPL's bar over it,
+  // the airplane's strip, the sheet's first row (the owner, 2026-11-14:
+  // "The route box just become a single row under it").
   const shape = await box.evaluate((el) => ({ radius: parseFloat(getComputedStyle(el).borderTopLeftRadius) }));
   expect(shape.radius).toBeGreaterThanOrEqual(20);
   const lines = (await sideDrawer(page).getByTestId("route-slide").boundingBox())!;
@@ -520,8 +520,7 @@ test("the route's box is round, one line tall for a short route and the panel's 
   expect(panelAt.x + panelAt.width - (boxAt.x + boxAt.width)).toBeLessThanOrEqual(16);
   const procedures = (await sideDrawer(page).getByTestId("route-brief").boundingBox())!;
   const share = (await sideDrawer(page).getByTestId("share-route").boundingBox())!;
-  expect(procedures.y).toBeGreaterThan(lines.y + lines.height);
-  expect(procedures.y + procedures.height).toBeLessThanOrEqual(boxAt.y + boxAt.height);
+  expect(procedures.y + procedures.height).toBeLessThanOrEqual(boxAt.y);
   expect(share.x).toBeGreaterThan(procedures.x);
   // No "Add stop" after the destination, at the pilot's ask: a reader is
   // told what typing there does.

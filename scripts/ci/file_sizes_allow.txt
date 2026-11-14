@@ -23,7 +23,7 @@ apps/web/e2e/places.spec.ts 1091
 apps/web/e2e/plans.spec.ts 543
 apps/web/e2e/procedures.spec.ts 737
 apps/web/e2e/route-fit.spec.ts 441
-apps/web/e2e/stops.spec.ts 756
+apps/web/e2e/stops.spec.ts 755
 apps/web/e2e/tracking.spec.ts 806
 apps/web/src/components/ApproachDebrief.tsx 415
 apps/web/src/components/ClearanceCard.tsx 464

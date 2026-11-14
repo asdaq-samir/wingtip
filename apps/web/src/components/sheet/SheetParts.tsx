@@ -61,8 +61,8 @@ export interface PartsProps {
   toEdge: boolean;
   panelSize: { size: PanelState; to: (size: PanelState) => void; card: boolean };
   onFootTap: () => void;
-  /** The sheet's two pages, Search and FPL, turned by the toggle riding
-   *  its top (PageToggle, SheetPages). */
+  /** The sheet's two pages, Search and FPL, turned by the toggle at their
+   *  first row's end (PageToggle, SheetPages). */
   pages?: SheetPages;
 }
 
@@ -91,13 +91,14 @@ const CUT_BOTTOM = "[clip-path:inset(0_0_max(0px,calc(var(--sheet-offset,0px)+va
  * scroller filling the room under an empty head, its title row sticky at
  * its top (PinnedHead) and its tabs under that. With the sheet's pages
  * each page is such a scroller, one up at a time (SheetPage):
- * Search's head the one search, FPL's the route's row and the controls.
+ * Search's head the one search, FPL's its bar the same size (FplBar) and
+ * the route's row under it.
  */
 export function SheetParts(p: PartsProps) {
   const { atPill, fromBottom, size, footShown, cardsUp } = p;
   const paged = !!p.pages;
-  // Paged, the first page holds the search alone and the second the route's
-  // row: no route row under the search.
+  // Paged, the first page holds the search alone and the second its bar and
+  // the route's row: no route row under the search.
   const headerShown = !paged && !p.flying && !cardsUp && (atPill ? !p.barShown : p.top != null || !p.barShown);
   const headContent = atPill ? p.compact : p.top;
   // Where the panel's top-right button sits, one place in every panel.
@@ -117,30 +118,33 @@ export function SheetParts(p: PartsProps) {
   // body cut off where those parts begin: the sheet's figures.
   const follows = p.onPhone ? FOLLOW : undefined;
 
-  const barRow = p.bar && (
+  // A page's first row: the one search on Search, FPL's bar on FPL (its
+  // twin, FplBar), one size on both, so a turn of the page moves nothing
+  // and the map's room stays as it was (the owner, 2026-11-14).
+  const barRowOf = (bar: ReactNode, shown: boolean, hairline: boolean) => (
     <div
       className={cn(
         "flex shrink-0 px-4",
         barRowPad(p.fromBottom),
-        !p.barShown && "hidden",
+        !shown && "hidden",
         // All the way up on a phone the search alone is pinned at the
         // top, a hairline under it, as Apple Maps' is.
-        p.onPhone && size === "full" && "border-b border-border",
+        hairline && p.onPhone && size === "full" && "border-b border-border",
       )}
     >
-      <PanelSize.Provider value={p.panelSize}>{p.bar}</PanelSize.Provider>
+      <PanelSize.Provider value={p.panelSize}>{bar}</PanelSize.Provider>
     </div>
   );
+  const barRow = p.bar && barRowOf(p.bar, p.barShown, true);
   // The route's row (or a workspace's head) and the controls under it: under
-  // the search, or paged the second page's first row.
-  const headBlock = (shown: boolean, alone: boolean, first: boolean) => {
+  // the search, or paged under FPL's bar.
+  const headBlock = (shown: boolean, alone: boolean) => {
     const keptHere = p.kept != null && shown && headContent === p.kept;
-    const firstPad = first ? (p.fromBottom ? "pt-4" : ROW_PAD) : undefined;
     return (
       <div
         className={cn(
           "relative flex flex-col",
-          !first && p.bar && p.barShown && !atPill && SHEET_BELOW,
+          p.bar && p.barShown && !atPill && SHEET_BELOW,
           ((!shown && p.kept == null) || alone) && "hidden",
         )}
       >
@@ -151,13 +155,7 @@ export function SheetParts(p: PartsProps) {
                 ? "contents"
                 : cn(
                     "@container flex items-center gap-2 print:hidden",
-                    first
-                      ? cn(atPill ? "px-2.25 pb-1.5" : "px-3 pb-1", firstPad)
-                      : atPill
-                        ? cn("px-2.25 pb-3", ROW_PAD)
-                        : p.top == null
-                          ? undefined
-                          : cn("px-3 pb-1", p.barShown ? "pt-1" : ROW_PAD),
+                    atPill ? cn("px-2.25 pb-3", ROW_PAD) : p.top == null ? undefined : cn("px-3 pb-1", p.barShown ? "pt-1" : ROW_PAD),
                   )
             }
           >
@@ -279,13 +277,15 @@ export function SheetParts(p: PartsProps) {
 
   let content: ReactNode;
   if (p.pages) {
-    const { at, second } = p.pages;
-    // The second page's first row: the route's from half up; at the pill
-    // the route's figures in its place where there are some (the foot,
-    // MapPanel's footShown), else the pill's own row.
-    const routeShown = !p.flying && !cardsUp && (atPill ? p.compact != null && !footShown : p.top != null);
+    const { at, bar, second } = p.pages;
+    // The second page's first row, its bar (FplBar), and the route's row
+    // under it from half up; at the pill the route's figures in the bar's
+    // place where there are some (the foot, MapPanel's footShown), else the
+    // bar, as Search's pill is its bar.
+    const planShown = !p.flying && !cardsUp && (!atPill || !footShown);
+    const routeShown = !p.flying && !cardsUp && !atPill && p.top != null;
     const searchAlone = atPill && !p.flying && !p.barShown;
-    const routeAlone = atPill && !p.flying && !routeShown && !footShown;
+    const routeAlone = atPill && !p.flying && !planShown && !footShown;
     // One page up at a time (SheetPage), turned by its toggle (PageToggle);
     // the other kept, inert.
     content = (
@@ -294,7 +294,17 @@ export function SheetParts(p: PartsProps) {
           {scroller(barRow, p.children, searchAlone, at !== 0, sheetHead, false)}
         </SheetPage>
         <SheetPage at={1} up={at === 1}>
-          {scroller(headBlock(routeShown, routeAlone, true), second, routeAlone, at !== 1, "0px", footShown)}
+          {scroller(
+            <>
+              {barRowOf(bar, planShown, false)}
+              {headBlock(routeShown, false)}
+            </>,
+            second,
+            routeAlone,
+            at !== 1,
+            "0px",
+            footShown,
+          )}
           {foot}
         </SheetPage>
       </div>
@@ -304,7 +314,7 @@ export function SheetParts(p: PartsProps) {
     content = scroller(
       <>
         {barRow}
-        {headBlock(headerShown, headAlone, false)}
+        {headBlock(headerShown, headAlone)}
       </>,
       p.children,
       headAlone,

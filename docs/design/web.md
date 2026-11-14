@@ -114,8 +114,8 @@ These hold on every screen below and win over any reference app.
   ends over the home indicator (its ground carried on under it), and the
   popup, kept clear of the status bar in CSS. `snapPoint` is set from the
   same constants by size and a drag maps back by identity. The pill is one
-  row: on FPL the route's figures (and while flying), the route's row from
-  half up (SheetParts' `figuresPill`, 3.25 rem under the grabber's room);
+  row: on FPL the route's figures (and while flying), FPL's bar and the
+  route's row under it from half up (SheetParts' `figuresPill`, 3.25 rem under the grabber's room);
   on Search the search; the map's room is read from the Drawer's own
   `--drawer-snap-point-offset` (`useSheetCover`). The sheet is solid at
   every size (`GLASS_SHEET`, the look's `--sheet`), the desktop's side
@@ -671,32 +671,48 @@ photo that pushes the actions below the half detent.
 ### 2a. The sheet's two pages (the owner, 2026-11-11; one toggle button since 2026-11-13)
 
 The phone's sheet and the desktop's side panel hold two peer pages,
-Search and FPL ([rules.md](rules.md) §4a), turned by one round glass
-button riding the sheet's top (the owner, 2026-11-13: "Why
-not make the same tab on the right toggle between search and fpl"), on
-a phone at the left under the 3D, in the radio's button's place (the
-owner, 2026-11-13: "Let's replace the radio button on the left with the
-fpl toggle but below 3d"),
-where a tab bar under the sheet, and before it a sideways pager and a
-split grabber, were. It is the app's shadcn Toggle on Base UI's, never
-pressed (`aria-pressed="false"`: a tap goes somewhere, it turns nothing
-on), its name where it goes: `components/PageToggle`. It shows the page a
-tap goes to, as Apple Maps' 2D/3D button does -- lucide's Route on
-Search ("Show flight plan"), the magnifier on FPL ("Show search") -- in
-a glass circle of its own the size of the 3D and microphone circles (a
-36-point button in 4 points of glass), its 44-point area its `::after`
-out to the glass's edge, never grown. On a phone it is the last of the
-left-hand column (`MapControls`), so on a bottom sheet it rides the
-sheet's top through `OnSheetTop`, 8 under the 3D circle and level with
-the map's buttons' group at the right; the radio's button, drawn only
+Search and FPL ([rules.md](rules.md) §4a), turned by one round button
+(the owner, 2026-11-13: "Why not make the same tab on the right toggle
+between search and fpl") at the end of each page's first row, where the
+account button was (the owner, 2026-11-14: "Swap the fpl toggle and
+account buttons. Then for all three fpl layouts, keep the n-number strip
+with buttons in the same size as search bar"), where a tab bar under the
+sheet, and before it a sideways pager and a split grabber, were. It is
+the app's shadcn Toggle on Base UI's, never pressed (`aria-pressed="false"`:
+a tap goes somewhere, it turns nothing on), its name where it goes:
+`components/PageToggle`. It shows the page a tap goes to, as Apple Maps'
+2D/3D button does -- lucide's Route on Search ("Show flight plan"), the
+magnifier on FPL ("Show search") -- a 36-point disc in the field's white,
+the tint's glyph, its 44-point area its `::after`, never grown, eight
+after the bar. The bar before it is one size on both pages
+(`panelField`'s `SHEET_BAR`, 46 tall, round-ended, the row's room less
+the toggle): on Search the one search's field (`OneSearchField`), on FPL
+the airplane's strip (`features/plan/components/workspace/FplBar`, its
+`RouteControls`: the N-number, the altitude, the Profile, the Brief and
+the route's •••, on one line, the airplane and the altitude giving way
+first). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
+a turn of the page moves nothing and the head's first row, and the map's
+room, stay the same. The route is the row under FPL's bar (`RouteHead`),
+in each of the three ways Show Route As picks: Route Box, the box of
+pills on one line, no footer; Route Line, the line split in three
+(`RouteSplit`); Route Cards, its two ends' cards until the route is
+whole, then the Routes row in its white box (`route-group`), the cards
+in the plan under it. The toggle is drawn only on the page that is up,
+so there is one in the page. The account button took the toggle's
+place over the map: a glass circle the size of the 3D's in the left-hand
+column (`MapControls`' `AccountCircle`), so on a bottom sheet it rides
+the sheet's top through `OnSheetTop`, 8 under the 3D circle and level
+with the map's buttons' group at the right; only where the sheet has its
+pages (the developer's and the studio's pages keep theirs in their own
+bar). The radio's button, drawn only
 while Comms Assist is on (a switch of Settings' ATC page, `comms-assist-toggle`,
 off by default; the owner, 2026-11-13), is then a
 circle of its own over that group, as from md up, its listening pill
 widening to the left across the screen less its margins (in flight its
 circle grown to 60 over NRST, D→ and the arrow). Beside the side panel
-the toggle is the last of the right-hand column, under the map's
-buttons at the bottom right. The pages
-live in `MapPanel` and the button with the map's, apart in the tree, so
+the account button is the last of the right-hand column, under the
+map's buttons at the bottom right. The pages
+live in `MapPanel` and the toggle in each page's row, so
 `MapPanel` tells it the page up and the way to turn it
 (`sheet/pageToggle`), or nothing while they cannot be turned. The
 sheet's sizes stand on the screen's foot again (the home indicator's
@@ -706,18 +722,18 @@ inset), the bar's 48 points and its 4-point floor given back. Each page
 `tab-page[data-hidden]`), so each keeps its scroller's place. The
 grabber is the plain `SheetGrabber`, its box 16 points tall (the owner,
 2026-11-13: "minimal space"), its 44-point hit area reaching off the
-sheet's edge over the map. The toggle gives way with the map's buttons
-all the way up and while a card slides (index.css), goes while flying,
-and rides a card's top while one is up, any card (the owner,
-2026-11-13: "airport card hides the fpl toggle"). The
-first flight's tip (`FplTip`) points at it while it shows FPL. The page up is the
+sheet's edge over the map. The account button gives way with the map's
+buttons all the way up and while a card slides (index.css), where the
+toggle stays in the pinned row; both go while flying. A card over the
+sheet covers the row, the toggle with it, and the account button rides
+the card's top. The first flight's tip (`FplTip`) points at the toggle
+while it shows FPL, its right edge at the toggle's. The page up is the
 planner's place (`usePanelView`'s `view`: the plan is FPL, the search
 and the traffic are Search); the toggle picks it as a place is picked
-(`pickPage`), and tapped with cards up it closes them all first
-(`lib/openCards`' `closeEveryCard`, and You), as Android's
-`SheetNav.show` does, none of them kept to come back with its page. The pill is the page's one row (the
-route's figures on FPL); the route's figures sit at the foot on FPL
-alone. The Brief, the Nav Log, the Profile and the Stops are cards over
+(`pickPage`), closing whatever card is opening as it is tapped
+(`lib/openCards`' `closeEveryCard`, and You). The pill is the page's one
+row (the route's figures on FPL, FPL's bar with no route); the route's
+figures sit at the foot on FPL alone. The Brief, the Nav Log, the Profile and the Stops are cards over
 FPL (`PlanCards`, `CardLayer`), the last three kept between their
 openings: built at the first, their drawers closed and skipped by
 `content-visibility` after (index.css's kept cards), as a tab put away
@@ -1398,7 +1414,7 @@ The owner's rule: a screenshot of another app means ours should show this.
 
 | Apple Maps on the web | Wingtip |
 |---|---|
-| Sheet at rest: grabber, "Maps BETA" title row, full-width white search field on a light grey sheet | Grabber and the one search with the microphone as its trailing button and the account button at the row's end. No title row: the mark and "Wingtip Maps" were taken out for more map (owner decision 2026-11-10: "delete the logo from webapp to have more space"), so the pill is the search row alone; the mark stays the tab's and Home Screen's icon and About's, and "Wingtip Maps" the page's heading for a screen reader. The phone's sheet is `GLASS_SHEET` (the look's `--sheet`: `#f2f2f7` in Wingtip, the paper in Chart ink, Canvas in Native) and the field `bg-card` |
+| Sheet at rest: grabber, "Maps BETA" title row, full-width white search field on a light grey sheet | Grabber and the one search with the microphone as its trailing button and the page toggle at the row's end, the account button over the map under the 3D (the owner, 2026-11-14). No title row: the mark and "Wingtip Maps" were taken out for more map (owner decision 2026-11-10: "delete the logo from webapp to have more space"), so the pill is the search row alone; the mark stays the tab's and Home Screen's icon and About's, and "Wingtip Maps" the page's heading for a screen reader. The phone's sheet is `GLASS_SHEET` (the look's `--sheet`: `#f2f2f7` in Wingtip, the paper in Chart ink, Canvas in Native) and the field `bg-card` |
 | All the way up: the title gone, the field pinned with a hairline under it | The field pinned with a hairline under it |
 | Large bold section titles, picture cards sliding sideways, a white card with a question and art | The search's page (`SearchHome`): Favorites, Recents and Nearest titled as every section is, 20 points medium in the text's colour with the chevron in the tint (`PillSection`, decision 0021; owner decision 2026-11-10 (decisions page): one heading style, not Apple's bold); the Recents as picture cards of the sectional round each field (`RecentCards`, the chart's own tile, shadcn Carousel); Plan a Flight, "Where do you want to fly?", the mark as its art (`FlightSummary`) |
 | Sheet's foot: Privacy \| Terms \| Legal \| Imagery, the copyright | `SheetFooter`: Privacy \| Terms \| Legal (About, every data source and licence), "© year Wingtip Maps". No "manage your business" line: no page for schools or clubs exists |

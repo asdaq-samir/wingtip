@@ -8,23 +8,30 @@ import { grabberTo, openPanel, settled, sheetUpToType, showTabs, sideDrawer, slo
  */
 
 /** The sheet's first row (OneSearchField): the one search with the
- *  microphone and the account button (or Cancel) beside it, its role
+ *  microphone and the page toggle (or Cancel) beside it, its role
  *  "search", where the tab bar was. */
 export const firstRow = (page: Page) =>
   sideDrawer(page)
     .getByRole("search")
     .filter({ has: page.getByTestId("search-airports") });
 
-/** One of the sheet's two pages up, by the round toggle riding the
- *  sheet's top (PageToggle; the owner, 2026-11-13): 0 Search, 1 FPL. The
- *  toggle shows the page it goes to, so it is tapped only while it shows
- *  `at`. */
+/** One of the sheet's two pages up, by the round toggle at the end of
+ *  the sheet's first row (PageToggle; the owner, 2026-11-14): 0 Search,
+ *  1 FPL. The toggle shows the page it goes to, so it is tapped only while
+ *  it shows `at`. A card over the sheet covers the row: closed first by
+ *  Escape, as a pilot closes it; and at FPL's pill, where the figures are
+ *  in the row's place, the sheet raised to half. */
 export async function showPage(page: Page, at: 0 | 1) {
+  const pages = sideDrawer(page).getByTestId("sheet-pages");
+  if ((await pages.count()) === 0 || (await pages.getAttribute("data-page")) === String(at)) return;
+  const cards = page.locator("[data-sheet-card][data-open]");
+  for (let open = await cards.count(); open > 0; open--) {
+    await cards.last().focus();
+    await page.keyboard.press("Escape");
+    await expect(cards).toHaveCount(open - 1);
+  }
   const toggle = page.getByTestId("sheet-page-toggle");
-  if ((await toggle.count()) === 0 || (await toggle.getAttribute("data-shows")) !== String(at)) return;
-  // All the way up on a phone the map's buttons give way (index.css), the
-  // toggle with them: down to half first, as a pilot would.
-  if ((await page.locator('body[data-map-sheet][data-map-panel="full"]').count()) > 0) await grabberTo(page, "half");
+  if (!(await toggle.isVisible())) await grabberTo(page, "half");
   await toggle.click();
   await expect(toggle).toHaveAttribute("data-shows", String(at === 0 ? 1 : 0));
   await expect(sideDrawer(page).getByTestId("sheet-pages")).toHaveAttribute("data-page", String(at));

@@ -82,7 +82,6 @@ export default function RouteBox({
   fuelStops = NO_FUEL_STOPS,
   onKeepFuelStops,
   onHideFuelStop,
-  footer,
   addAt = null,
   onDone,
   unknownPoint = null,
@@ -195,15 +194,12 @@ export default function RouteBox({
               if (isRoom(e)) e.preventDefault();
             }}
             onClick={toEnd}
-            // Four over its lines, and four under a line with no buttons
-            // under it: the clear's 44-point area, round its 20 in a line
-            // now 28 tall, reached past the box's top and foot (the iOS
-            // audit's P1 on an approach's page).
-            className={cn(
-              "h-auto flex-wrap items-start rounded-(--radius-banner) border-0 pt-1 pb-0 pr-1.5 pl-1 shadow-none",
-              !footer && "pb-1",
-              PANEL_FIELD,
-            )}
+            // Four over its line and four under it: the clear's 44-point
+            // area, round its 20 in a line 28 tall, reached past the box's
+            // top and foot (the iOS audit's P1 on an approach's page). Its
+            // buttons are the sheet's first row's strip over it (FplBar;
+            // the owner, 2026-11-14), not a footer of its own.
+            className={cn("h-auto flex-wrap items-start rounded-(--radius-banner) border-0 pt-1 pr-1.5 pb-1 pl-1 shadow-none", PANEL_FIELD)}
             data-testid="route-box"
           >
             {/* The pills in one row that slides sideways under a finger when the route is longer than the box (the
@@ -290,22 +286,6 @@ export default function RouteBox({
               >
                 Done
               </Button>
-            )}
-            {/* Its own taps, not the box's room (isRoom), which types at the
-                route's end. Under the lines only what keeps the 44-point
-                areas of a pill above and below apart (the iOS audit's P1):
-                the tap target less the line's 1.75rem pills and the eighth
-                over them, ten at a 16 root and two at the owner's 19.65,
-                whose taller pills come nearer 44 themselves. A fixed ten
-                read as a band 30 tall between the route and its airplane
-                (the owner's screenshot, 2026-11-13). */}
-            {footer && (
-              <div
-                className="flex w-full basis-full items-center pt-[max(0px,calc(var(--tap-target)-2.125rem))] pr-0.5 pb-2 pl-1.5"
-                data-testid="route-box-footer"
-              >
-                {footer}
-              </div>
             )}
           </InputGroup>
           {/* The suggestions under the box: the typing stays in the box,

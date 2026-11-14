@@ -45,7 +45,10 @@ test(
     // the whole sentence its name (the sheet audit's F-S2).
     await expect(row.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search airports and airplanes");
     await expect(row.getByTestId("search-airports")).toHaveAttribute("aria-label", "Search airports and airplanes");
-    await expect(row.getByTestId("account-button")).toBeVisible();
+    // The page toggle at the row's end, where the account button was (the
+    // owner, 2026-11-14: "Swap the fpl toggle and account buttons").
+    await expect(row.getByTestId("sheet-page-toggle")).toBeVisible();
+    await expect(row.getByTestId("account-button")).toHaveCount(0);
     await expect(sideDrawer(page).getByTestId("sheet-title")).toHaveCount(0);
     await expect(sideDrawer(page).getByRole("tablist", { name: "Tabs" })).toHaveCount(0);
     await expect(sideDrawer(page).getByLabel(/^(\S+, )?Departure$/)).toContainText("C81");
@@ -61,7 +64,7 @@ test(
     await expect(home.getByTestId("flight-summary-route")).toHaveCount(0);
     await expect(home.getByTestId("pill-section-favorites")).toBeVisible();
     await expect(row.getByTestId("one-search-cancel")).toBeVisible();
-    await expect(row.getByTestId("account-button")).toHaveCount(0);
+    await expect(row.getByTestId("sheet-page-toggle")).toHaveCount(0);
 
     // Typed: one list, grouped as Apple Maps' results are (the owner's
     // screenshot, 2026-11-10): the top hit with its quick actions, then the
@@ -88,11 +91,11 @@ test(
     await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
     await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
     // The plan up (FPL, the sheet's second page), and the search, its own
-    // page now (its toggle, PageToggle), let go: back on it, the account
-    // button in Cancel's place.
+    // page now (its toggle, PageToggle), let go: back on it, the toggle
+    // in Cancel's place.
     await expect(sideDrawer(page).getByTestId("sheet-pages")).toHaveAttribute("data-page", "1");
     await showPage(page, 0);
-    await expect(row.getByTestId("account-button")).toBeVisible();
+    await expect(row.getByTestId("sheet-page-toggle")).toBeVisible();
   },
 );
 
@@ -130,7 +133,7 @@ test("the account button opens the account page itself, no menu first, and its c
   await account.getByTestId("console-page-close").click();
   await account.getByTestId("console-close").click();
   await expect(account).toHaveCount(0);
-  // Its button at the search's end, which comes back as the sheet comes down.
+  // Its button over the map, which comes back as the sheet comes down.
   await grabberTo(page, "half");
   await expect(page.getByTestId("account-button")).toBeVisible();
 });

@@ -43,7 +43,7 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   await expect(page.getByTestId("done-flying")).toBeVisible();
   // The map's buttons: NRST, D→ and the location arrow at the right, the
   // microphone's circle over them in the same column (the owner,
-  // 2026-11-13: the page toggle has its place at the left), each 60 points.
+  // 2026-11-13: the left column is the 3D's and the account button's), each 60 points.
   const buttons = [
     page.getByTestId("flying-nearest"),
     page.getByTestId("flying-direct"),
@@ -62,7 +62,7 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
 
   // The dry run closed from the Profile: on the ground at once, everything
   // back -- the small buttons, and at half FPL's page with the route's box,
-  // and the page toggle to the search, which goes in flight (docs/design/rules.md:
+  // and the page toggle at FPL's bar's end, which goes in flight (docs/design/rules.md:
   // the search is the other page since 2026-11-13, not over the route).
   await grabberTo(page, "half");
   await sideDrawer(page).getByTestId("dry-run-close").click();

@@ -27,14 +27,10 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
   const { openBrief, openProfile, profileReady } = vm.fpl;
   const { altitudeMark, briefMark } = vm.brief;
   return (
-    <div className="flex w-full min-w-0 flex-wrap items-center gap-x-1 gap-y-4">
-      {/* On the narrowest panels (iPhone SE, the iPad slide-over) the row
-          wraps, the buttons on a line of their own under the airplane and
-          the altitude: sixteen between the lines (gap-y-4), as the Profile
-          button's 44-point area reaches 11 under its 22 and the first
-          button's 6 over its 32, and the button sits 3 up in its group
-          (the iOS audit's P1, 24 Oct: twelve left them 2 points over each
-          other). */}
+    // One line, never wrapped: it is FPL's bar (FplBar), the one search's
+    // field's size (the owner, 2026-11-14), so the airplane and the
+    // altitude give way (InlineField's shrink) before the buttons do.
+    <div className="flex w-full min-w-0 flex-nowrap items-center gap-x-1">
       {/* The chips' room while their code comes (routePanel). */}
       <Suspense fallback={<span className="h-9 w-48" aria-hidden="true" />}>{flightInputs}</Suspense>
       {s.local && (
@@ -49,13 +45,13 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
           holds the rest. Round buttons at a fixed 36 with a 20-point
           glyph, as iOS's bar buttons stay their size at any text size,
           eight apart, so their 44-point hit areas (index.css) meet. */}
-      {/* Inside the route's box, a size down from the panel's 36: 32, at
-          the owner's ask ("make these buttons a bit smaller inside route
-          box"), twelve apart so their 44-point areas meet (index.css). */}
+      {/* A size down from the panel's 36: 32, at the owner's ask ("make
+          these buttons a bit smaller inside route box"), twelve apart so
+          their 44-point areas meet (index.css). */}
       {/* Eight more before them than the row's four: the Profile button's
           44 points, at the altitude's end, and the Brief's meet, not overlap
           (the iOS audit's P1, 93c88a64); the airplane and the altitude two
-          narrower in their padding for it, so the row keeps its one line. */}
+          narrower in their padding for it. */}
       {/* Round buttons of their own again, the capsule round them taken
           off at the owner's ask ("let's go back to round buttons, I don't
           like the capsule", 2026-10-24), twelve apart so their 44-point
@@ -64,9 +60,10 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
           and the first one's from overlapping where the row is one line
           with no slack: the distance between the two is then the row's
           4-point gap and this padding alone, and 22 and 32 wide they need
-          17. Where the row wraps, the lines' gap keeps them apart (above).
+          17.
           Back on this line at the owner's ask (2026-10-25), the sheet edge
-          to edge for the room (MapPanel's HALF_INSET). */}
+          to edge for the room (MapPanel's HALF_INSET); in FPL's bar since
+          2026-11-14 (FplBar). */}
       {/* In points, not rem: iOS's bar buttons keep their size at any text
           size, and at the owner's 19.65 px these grew to 39 with 15 between,
           29 more than at 16, and wrapped onto a line of their own (the FPL

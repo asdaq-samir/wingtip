@@ -23,7 +23,7 @@ export const DRAWER_MS = MOTION.drawer * 1000;
  *   "taking minimal space"); on a top sheet the band's 4.25 rem and the
  *   grabber's own 1 rem row under it, 5.25 rem. Standing on the screen's
  *   foot (the home indicator's inset), nothing under it: the pages' tab
- *   bar it stood on is one round toggle riding its top (PageToggle; the
+ *   bar it stood on is one round toggle in its first row (PageToggle; the
  *   owner, 2026-11-13). One value for every page and card, never one a
  *   page: FPL's pill is the route's figures (the owner, 2026-11-11), a
  *   name's 18-point line over a value's 25, 2.6875 rem, which under the

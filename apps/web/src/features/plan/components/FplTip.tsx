@@ -2,16 +2,14 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { cn } from "cn";
 import CloseButton from "../../../components/CloseButton";
 import { usePageToggle } from "../../../components/sheet/pageToggle";
-import { useIsMobile } from "../../../hooks/use-mobile";
 import { Popover, PopoverContent, PopoverDescription, PopoverTitle } from "../../../components/ui/popover";
 import { TEXT } from "../../../lib/text";
 
 /**
  * The one tip after the first route (FirstFlight, useFirstFlight; the
  * owner's option A, 2026-11-13): where the flight plan is, one tap away
- * on the round page toggle (PageToggle) riding the sheet's top -- on a
- * phone at the left under the 3D (the owner, 2026-11-13), from md up at
- * the right under the map's buttons -- shown while it shows FPL, on Search. The stock Popover
+ * on the round page toggle (PageToggle) at the end of the search's row
+ * (the owner, 2026-11-14) -- shown while it shows FPL, on Search. The stock Popover
  * (shadcn's on Base UI), anchored to the toggle (sheet/pageToggle) with
  * its arrow at it, from no trigger of its own. Its ✕, a tap outside it or
  * Escape put it away for good; it takes no focus, so the map and the
@@ -20,9 +18,8 @@ import { TEXT } from "../../../lib/text";
  */
 export default function FplTip({ onClose }: { onClose: () => void }) {
   const button = usePageToggle((s) => s.plan);
-  // Its edge at the toggle's own and the rest over the map: to the right of
-  // the toggle at the left on a phone, to the left of it at the right.
-  const onPhone = useIsMobile();
+  // Its right edge at the toggle's own, at the row's end, the rest over the
+  // map to the left of it.
   if (!button) return null;
   return (
     <Popover
@@ -34,7 +31,7 @@ export default function FplTip({ onClose }: { onClose: () => void }) {
       <PopoverContent
         anchor={button}
         side="top"
-        align={onPhone ? "start" : "end"}
+        align="end"
         sideOffset={12}
         collisionPadding={12}
         initialFocus={false}
