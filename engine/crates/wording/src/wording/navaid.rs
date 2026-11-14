@@ -108,19 +108,41 @@ pub fn morse(ident: &str) -> String {
     ident.to_uppercase().chars().filter_map(morse_char).collect::<Vec<_>>().join("  ")
 }
 
-/// A VOR's standard service volume, by NASR's ALT_CODE, as AIM 1-1-8's
-/// TBL 1-1-1 gives each: how far out its signal is protected, from 1,000
-/// ft above the transmitter (ATH). Below 1,000 ft ATH it reaches less far
-/// (AIM 1-1-8 FIG 1-1-2, 1-1-3). The High and VOR High volumes' 130 nm
-/// from 18,000 to 45,000 ft above it is left out, a range a VFR airplane
-/// does not fly at.
+/// A station's standard service volume, by NASR NAV_BASE's ALT_CODE (the
+/// VOR's) or DME_SSV (its DME's), as AIM 1-1-8's TBL 1-1-1 (VOR/DME/TACAN
+/// Standard Service Volumes; AIM Change 3, effective 9 July 2026) gives
+/// each class: how far out its signal is protected, from 1,000 ft above
+/// the transmitter (ATH). Below 1,000 ft ATH a VOR reaches less far (AIM
+/// 1-1-8 FIG 1-1-2 and 1-1-3), and a DME below 12,900 ft ATH as far as its
+/// line of sight reaches. The table gives H and VH two overlapping bands
+/// above 14,500 ft ATH -- 100 nm from 14,500 up to 60,000 ft, and 130 nm
+/// from 18,000 up to 45,000 ft ATH -- and DH two above 12,900 ft ATH --
+/// 100 nm up to 60,000 ft, 130 nm up to 45,000 ft ATH -- so each is said
+/// as the farther reach at each height: 100 nm, then 130 to 45,000, then
+/// 100 again to 60,000. Every band is said, the high ones too, as the
+/// table has them: an IFR pilot flies there.
 pub fn service_volume(code: &str) -> Option<&'static str> {
     Some(match code {
+        // "From 1,000 feet ATH up to and including 12,000 feet ATH at
+        // radial distances out to 25 NM."
         "T" => "Terminal · 25 nm, 1,000–12,000 ft above it",
+        // "From 1,000 feet ATH up to and including 18,000 feet ATH at
+        // radial distances out to 40 NM."
         "L" => "Low · 40 nm, 1,000–18,000 ft above it",
-        "H" => "High · 40 nm to 14,500 ft above it, 100 nm above",
+        // 40 NM from 1,000 to 14,500 ft ATH; 100 NM from 14,500 ATH to
+        // 60,000 ft; 130 NM from 18,000 to 45,000 ft ATH.
+        "H" => "High · 40 nm to 14,500 ft above it, 100 nm to 18,000, 130 nm to 45,000, 100 nm to 60,000",
+        // 40 NM from 1,000 up to but not including 5,000 ft ATH; 70 NM
+        // from 5,000 up to but not including 18,000 ft ATH.
         "VL" => "VOR Low · 40 nm under 5,000 ft above it, 70 nm to 18,000",
-        "VH" => "VOR High · 40 nm under 5,000 ft above it, 70 nm to 14,500, 100 nm above",
+        // VL's two to 14,500 ft ATH, then H's above it.
+        "VH" => "VOR High · 40 nm under 5,000 ft above it, 70 nm to 14,500, 100 nm to 18,000, 130 nm to 45,000, 100 nm to 60,000",
+        // Line of sight up to 12,900 ft ATH; 130 NM from 12,900 up to but
+        // not including 18,000 ft ATH.
+        "DL" => "DME Low · line of sight under 12,900 ft above it, 130 nm to 18,000",
+        // Line of sight up to 12,900 ft ATH; 100 NM from 12,900 ATH to
+        // 60,000 ft; 130 NM from 12,900 to 45,000 ft ATH.
+        "DH" => "DME High · line of sight under 12,900 ft above it, 130 nm to 45,000, 100 nm to 60,000",
         _ => return None,
     })
 }

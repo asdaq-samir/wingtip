@@ -3380,7 +3380,7 @@ export interface EngineContract {
     answer: ServiceCeilingOnTheDayAnswer;
   };
   /**
-   * A VOR's standard service volume by NASR's ALT_CODE (AIM 1-1-8 TBL 1-1-1), or null for a code not in the table.
+   * A station's standard service volume by its class, NASR's ALT_CODE or DME_SSV (T, L, H, VL, VH, DL, DH; AIM 1-1-8 TBL 1-1-1), every band of it, or null for a code not in the table.
    */
   service_volume: {
     input: ServiceVolumeInput;

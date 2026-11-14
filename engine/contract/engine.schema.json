@@ -26596,7 +26596,7 @@
       "additionalProperties": false
     },
     "service_volume": {
-      "description": "A VOR's standard service volume by NASR's ALT_CODE (AIM 1-1-8 TBL 1-1-1), or null for a code not in the table.",
+      "description": "A station's standard service volume by its class, NASR's ALT_CODE or DME_SSV (T, L, H, VL, VH, DL, DH; AIM 1-1-8 TBL 1-1-1), every band of it, or null for a code not in the table.",
       "type": "object",
       "properties": {
         "input": {
