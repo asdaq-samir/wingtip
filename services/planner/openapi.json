@@ -1173,6 +1173,34 @@
             "title": "Lon",
             "type": "number"
           },
+          "mark_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mark Order"
+          },
+          "mark_size": {
+            "anyOf": [
+              {
+                "enum": [
+                  "largest",
+                  "larger",
+                  "regular",
+                  "small"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mark Size"
+          },
           "military": {
             "anyOf": [
               {
@@ -1580,6 +1608,17 @@
             "default": false,
             "title": "Standard Keying",
             "type": "boolean"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
           },
           "taf": {
             "anyOf": [
@@ -16420,7 +16459,7 @@
         "type": "object"
       },
       "PinWeather": {
-        "description": "A field's METAR as the map's station model and wind arrow read it\n(wingtip.map_weather): the wind (true, knots; no direction for a\nvariable one), the visibility in statute miles and the weather with it\nas reported (\"BR\", \"-TSRA\"), the ceiling in feet AGL -- not known where\n`ceiling_unknown` (14 CFR 1.1) -- and `crosswind_kt`, the least\ncrosswind on the field's runways, steady or gust (the engine's\nleast_crosswind), there only where the wind earns an arrow (the\nengine's wind_arrow) and a runway end has a heading.",
+        "description": "A field's METAR as the map's station model and wind arrow read it\n(wingtip.map_weather): the wind (true, knots; no direction for a\nvariable one), the visibility in statute miles and the weather with it\nas reported (\"BR\", \"-TSRA\"), the ceiling in feet AGL -- not known where\n`ceiling_unknown` (14 CFR 1.1) -- and `crosswind_kt`, the least\ncrosswind on the field's runways, steady or gust, unrounded (the engine's\nleast_crosswind), there only where the wind earns an arrow (the\nengine's wind_arrow) and a runway end has a heading.",
         "properties": {
           "ceiling_cover": {
             "anyOf": [
@@ -25370,7 +25409,7 @@
     },
     "/api/airports/in-view": {
       "get": {
-        "description": "The landing fields inside the map's view, the ones that report\nfirst and then the biggest -- at most `limit` of them, since a whole\nstate holds thousands and the map only lays a tap target over each --\nwith each one's flight category from its METAR, for a weather chip on\nthe ones that report: the limit drops small fields with nothing to\nshow, never a chip a pilot saw a zoom further out -- and each one's\nclass of airspace at its surface, for its mark.\nThe METARs are the national cache already in memory; with the\nweather service out the fields come back without, as fields with no\nstation do. With `reporting`, only the fields that report, before\nthe limit: what the map asks once for a whole route's box, so its\nchips are there before the pilot zooms in on any of it.",
+        "description": "The landing fields inside the map's view, the ones that report first\nand then the biggest -- at most `limit`: a state holds thousands -- each\nwith its METAR's flight category, for a weather chip (the limit drops\nsmall fields with nothing to show, never a chip seen further out), its\nclass of airspace at its surface, and its mark's order and size as the\noverlay tiles carry them (wingtip.field_marks). The METARs are the\nnational cache in memory; with the weather service out the fields come\nback without. With `reporting`, only the fields that report, before\nthe limit: the map asks so once for a whole route's box.",
         "operationId": "airports_in_view_api_airports_in_view_get",
         "parameters": [
           {

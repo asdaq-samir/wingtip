@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { normalizeDeg } from "../../../../lib/geo";
 import { sameField } from "../../../../lib/procedures";
 import { altFt } from "../../../../lib/format";
-import { isFixIdent } from "../../../../lib/identSchema";
+import { isFixIdent, visitKey } from "../../../../lib/identSchema";
 import { PointFigures, PointMenu } from "../PointControls";
 import { legOf, type NavLogRow } from "../navlog/rows";
 import type { ProceduresRouteModel } from "../../hooks/useProceduresRoute";
@@ -28,6 +28,9 @@ export function pointEnd(
     holdable?: boolean;
     row?: NavLogRow;
     index?: number;
+    /** At a point the route is at more than once, which visit this is,
+     *  from 1: its own altitude is that visit's (visitKey; WEB-2). */
+    visit?: number;
   },
 ) {
   const {
@@ -45,10 +48,10 @@ export function pointEnd(
     edit,
     onRemove,
   } = vm;
-  const asked = at.to ? pointAltitude(ident, at.waypoint) : undefined;
+  const asked = at.to ? pointAltitude(ident, at.waypoint, at.visit) : undefined;
   // A waypoint's cruise to it is this row's own leg's: a fix flown twice
   // read the first visit's at both (the audit's WEB-2). The pilot's own
-  // is the fix's, the address keeping one per point.
+  // is the visit's where the route is at it more than once (at.visit).
   const legFt = at.waypoint && at.row ? legOf(at.row)?.altitude_ft : undefined;
   const altitude = asked && !asked.own && legFt != null ? { ...asked, feet: legFt } : asked;
   const own = altitude?.own ? altitude.feet : null;
@@ -75,7 +78,9 @@ export function pointEnd(
         direct={direct}
         onDirect={at.to && typed && !homeward ? () => onDirectTo(direct ? null : ident) : undefined}
         onAltitude={
-          at.to && altitude ? () => setEditing({ ident, waypoint: at.waypoint, altitude, elevationFt: at.elevationFt }) : undefined
+          at.to && altitude
+            ? () => setEditing({ ident, key: visitKey(ident, at.visit), waypoint: at.waypoint, altitude, elevationFt: at.elevationFt })
+            : undefined
         }
         // An airport's card; a waypoint's is the chart's popup.
         onInfo={!at.waypoint ? () => onInfo(ident) : undefined}

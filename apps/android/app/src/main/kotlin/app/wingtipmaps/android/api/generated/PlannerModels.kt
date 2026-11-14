@@ -223,6 +223,7 @@ data class AirportPlace (
     @SerialName("standard_keying")
     val standardKeying: Boolean? = null,
 
+    val status: String? = null,
     val taf: String? = null,
     val towered: Boolean,
 
@@ -662,6 +663,13 @@ data class AirportInView (
     val kind: String,
     val lat: Double,
     val lon: Double,
+
+    @SerialName("mark_order")
+    val markOrder: Int? = null,
+
+    @SerialName("mark_size")
+    val markSize: String? = null,
+
     val military: String? = null,
     val name: String,
 
@@ -681,7 +689,7 @@ data class AirportInView (
  * variable one), the visibility in statute miles and the weather with it
  * as reported ("BR", "-TSRA"), the ceiling in feet AGL -- not known where
  * `ceiling_unknown` (14 CFR 1.1) -- and `crosswind_kt`, the least
- * crosswind on the field's runways, steady or gust (the engine's
+ * crosswind on the field's runways, steady or gust, unrounded (the engine's
  * least_crosswind), there only where the wind earns an arrow (the
  * engine's wind_arrow) and a runway end has a heading.
  */

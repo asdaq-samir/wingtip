@@ -119,10 +119,12 @@ class PlanQuery:
     #: Points' own altitudes, feet above sea level: "VPBNG:4500,KMSN:1900".
     #: A waypoint's is flown to it, the hop into it at that altitude (where
     #: a pilot crosses it); an airport's is its pattern, which a flight
-    #: landing there comes down to. The rest of the route as planned.
+    #: landing there comes down to. The rest of the route as planned. A
+    #: point flown more than once has one a visit, "VPBNG@2:5500" the
+    #: second time the route is there; a bare ident is every visit.
     altitudes: str = ""
     #: The waypoints among `altitudes` whose change of altitude begins at
-    #: them (Start At), "VPBNG,DLH090030"; the rest are reached by their
+    #: them (Start At), "VPBNG,DLH090030", or at one visit, "VPBNG@2"; the rest are reached by their
     #: point (Cross At). The profile's per-leg altitude on the web and the
     #: phones (the owner's pick, 2026-11-10).
     altitude_starts: str = ""
@@ -209,20 +211,22 @@ class PlanQuery:
         top = 41_000 if self.rules == "ifr" else 17_999
         out = {}
         for part in filter(None, (p.strip() for p in self.altitudes.split(","))):
-            ident, _, feet = part.partition(":")
-            if not point_figure(part) or not 0 < float(feet) <= top:
-                raise HTTPException(422, f"{part!r} is not a point's altitude: an ident and feet, as VPBNG:4500.")
-            out[point_key(ident)] = float(feet)
+            point, _, feet = part.partition(":")
+            ident, visit = visit_of(point)
+            if visit is None or not point_figure(f"{ident}:{feet}") or not 0 < float(feet) <= top:
+                raise HTTPException(422, f"{part!r} is not a point's altitude: an ident and feet, as VPBNG:4500 or VPBNG@2:4500.")
+            out[point_key(ident) + visit] = float(feet)
         return out
 
     def own_starts(self) -> frozenset[str]:
         """`altitude_starts` as idents (point_key); a 422 for one that is
         not a point of a route."""
         out = set()
-        for ident in filter(None, (p.strip() for p in self.altitude_starts.split(","))):
-            if not point_figure(f"{ident}:0"):
-                raise HTTPException(422, f"{ident!r} is not a point of the route for Start At: an ident, as VPBNG.")
-            out.add(point_key(ident))
+        for point in filter(None, (p.strip() for p in self.altitude_starts.split(","))):
+            ident, visit = visit_of(point)
+            if visit is None or not point_figure(f"{ident}:0"):
+                raise HTTPException(422, f"{point!r} is not a point of the route for Start At: an ident, as VPBNG or VPBNG@2.")
+            out.add(point_key(ident) + visit)
         return frozenset(out)
 
     def procedure_picks(self) -> list[tuple[str, str, str | None, str | None]]:
@@ -353,6 +357,15 @@ def point_figure(part: str) -> bool:
     on such a point was a 422 for the whole log -- and up to five figures."""
     ident, _, figure = part.partition(":")
     return ident.isascii() and engine("point_kind", text=ident.upper()) is not None and re.fullmatch(r"\d{1,5}", figure) is not None
+
+
+def visit_of(point: str) -> tuple[str, str | None]:
+    """ "VPBNG@2" as ("VPBNG", "@2"); a bare ident's visit "" (every visit),
+    None for one that is not a count from 1 (wingtip.own_altitude)."""
+    ident, at, visit = point.partition("@")
+    if not at:
+        return ident, ""
+    return ident, f"@{int(visit)}" if re.fullmatch(r"[1-9]\d{0,2}", visit) else None
 
 
 def point_key(ident: str) -> str:

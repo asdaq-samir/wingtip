@@ -1040,6 +1040,10 @@ extension Components {
             public var lat: Swift.Double
             /// - Remark: Generated from `#/components/schemas/AirportInView/lon`.
             public var lon: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/AirportInView/mark_order`.
+            public var markOrder: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/AirportInView/mark_size`.
+            public var markSize: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportInView/military`.
             public var military: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportInView/name`.
@@ -1061,6 +1065,8 @@ extension Components {
             ///   - kind:
             ///   - lat:
             ///   - lon:
+            ///   - markOrder:
+            ///   - markSize:
             ///   - military:
             ///   - name:
             ///   - primaryOf:
@@ -1074,6 +1080,8 @@ extension Components {
                 kind: Swift.String,
                 lat: Swift.Double,
                 lon: Swift.Double,
+                markOrder: Swift.Int? = nil,
+                markSize: Swift.String? = nil,
                 military: Swift.String? = nil,
                 name: Swift.String,
                 primaryOf: Swift.String? = nil,
@@ -1087,6 +1095,8 @@ extension Components {
                 self.kind = kind
                 self.lat = lat
                 self.lon = lon
+                self.markOrder = markOrder
+                self.markSize = markSize
                 self.military = military
                 self.name = name
                 self.primaryOf = primaryOf
@@ -1101,6 +1111,8 @@ extension Components {
                 case kind
                 case lat
                 case lon
+                case markOrder = "mark_order"
+                case markSize = "mark_size"
                 case military
                 case name
                 case primaryOf = "primary_of"
@@ -1212,6 +1224,8 @@ extension Components {
             public var runways: [Components.Schemas.Runway]
             /// - Remark: Generated from `#/components/schemas/AirportPlace/standard_keying`.
             public var standardKeying: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/status`.
+            public var status: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/taf`.
             public var taf: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/towered`.
@@ -1255,6 +1269,7 @@ extension Components {
             ///   - region:
             ///   - runways:
             ///   - standardKeying:
+            ///   - status:
             ///   - taf:
             ///   - towered:
             ///   - weatherUnavailable:
@@ -1293,6 +1308,7 @@ extension Components {
                 region: Swift.String? = nil,
                 runways: [Components.Schemas.Runway],
                 standardKeying: Swift.Bool? = nil,
+                status: Swift.String? = nil,
                 taf: Swift.String? = nil,
                 towered: Swift.Bool,
                 weatherUnavailable: Swift.Bool? = nil
@@ -1331,6 +1347,7 @@ extension Components {
                 self.region = region
                 self.runways = runways
                 self.standardKeying = standardKeying
+                self.status = status
                 self.taf = taf
                 self.towered = towered
                 self.weatherUnavailable = weatherUnavailable
@@ -1370,6 +1387,7 @@ extension Components {
                 case region
                 case runways
                 case standardKeying = "standard_keying"
+                case status
                 case taf
                 case towered
                 case weatherUnavailable = "weather_unavailable"
@@ -14966,7 +14984,7 @@ extension Components {
         /// variable one), the visibility in statute miles and the weather with it
         /// as reported ("BR", "-TSRA"), the ceiling in feet AGL -- not known where
         /// `ceiling_unknown` (14 CFR 1.1) -- and `crosswind_kt`, the least
-        /// crosswind on the field's runways, steady or gust (the engine's
+        /// crosswind on the field's runways, steady or gust, unrounded (the engine's
         /// least_crosswind), there only where the wind earns an arrow (the
         /// engine's wind_arrow) and a runway end has a heading.
         ///

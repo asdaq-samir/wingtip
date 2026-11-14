@@ -5,7 +5,7 @@ import json
 
 import pytest
 from fastapi.testclient import TestClient
-from wingtip import airports, airspace, diagram_crops, faa_data, fixes, pattern, planning, publications, tfr, weather
+from wingtip import airports, airspace, diagram_crops, faa_data, field_marks, fixes, pattern, planning, publications, tfr, weather
 from wingtip.config import get_settings
 
 from app import chart_model, chart_scorer, detection, prefetch, checkpoint_scoring
@@ -136,6 +136,7 @@ def known_patterns(monkeypatch):
     monkeypatch.setattr(faa_data, "military_fields", lambda cache_dir: {})
     monkeypatch.setattr(faa_data, "private_fields", lambda cache_dir: frozenset())
     monkeypatch.setattr(faa_data, "towered_fields", lambda cache_dir: frozenset())
+    monkeypatch.setattr(field_marks, "sites", lambda cache_dir=None: {})  # no NASR runways: ranked on the tower alone
     monkeypatch.setattr(faa_data, "airport_contact", lambda ident, cache_dir: {"phone": None, "address": None})
     monkeypatch.setattr(pattern, "right_traffic_ends", lambda ident, cache_dir=None: set())
 
@@ -206,7 +207,17 @@ def select_cruise_altitude_stub(altitude: dict):
     recommendation, which is what makes a route unflyable."""
 
     def select(
-        start, end, profile, faa_cache_dir=None, fixes=None, fcst_hr="06", pending=None, window=None, class_b_cleared=False, rules="vfr"
+        start,
+        end,
+        profile,
+        faa_cache_dir=None,
+        fixes=None,
+        fcst_hr="06",
+        pending=None,
+        window=None,
+        class_b_cleared=False,
+        rules="vfr",
+        paths=(),
     ):
         candidates = [] if altitude["recommended_ft"] is None else [altitude["recommended_ft"]]
         segments = (

@@ -195,6 +195,8 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
     const time = etaAt(depart || new Date().toISOString(), row.minutesFlown);
     const to = row.kind !== "departure" && "airport" in row && !isPosition(row.airport.ident);
     const seen = to ? (visits.get(row.airport.ident) ?? 0) : 0;
+    // Its own altitude by visit only where the route is at it again.
+    const again = to && points.filter((r) => r.kind !== "departure" && "airport" in r && r.airport.ident === row.airport.ident).length > 1;
     if (to) visits.set(row.airport.ident, seen + 1);
     const typedAt = to ? nthTyped(routePoints, row.airport.ident, seen) : -1;
     const end = to
@@ -207,6 +209,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
           holdable: true,
           row,
           index: typedAt >= 0 ? typedAt : undefined,
+          visit: again ? seen + 1 : undefined,
         })
       : null;
     if (typedAt >= 0) newBefore(typedAt, steps);
@@ -306,7 +309,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
               point={editing}
               onClose={() => setEditing(null)}
               onSet={(ident, feet) => {
-                onPointAltitude(ident, feet);
+                onPointAltitude(editing?.key ?? ident, feet);
                 setEditing(null);
               }}
             />

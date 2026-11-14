@@ -675,7 +675,7 @@ export type LeastCrosswindAnswer = {
    */
   end: string | null;
   /**
-   * Knots, unsigned, steady or gust whichever is more.
+   * Knots, unsigned, steady or gust whichever is more, unrounded (to a millionth of a knot), so the map's arrow is judged against the demonstrated crosswind on the crosswind itself, not whole knots (AV-10).
    */
   crosswind_kt: number;
 } | null;
@@ -1985,6 +1985,13 @@ export interface EngineContract {
   flight_category: {
     input: FlightCategoryInput;
     answer: FlightCategoryAnswer;
+  };
+  /**
+   * The floor of a leg flown along a path other than its own line -- a departure (SID), an arrival (STAR) or an approach flown in its place: of the leg's own floor and the floors under each piece of the path (vfr_floors' or ifr_floors' answers, the leg's own first), the highest, the leg's own on a tie, with the lowest ground under any of them. The airplane is over all of the path at its cruising altitude until it comes down, so 14 CFR 91.119's clearances (VFR) or 91.177(a)(2)'s (IFR) hold over all of it; a procedure's published altitudes (91.177(a)(1), Part 97) may be lower, so this errs high (the aviation audit's AV-2).
+   */
+  floor_along_path: {
+    input: FloorAlongPathInput;
+    answer: FloorAlongPathAnswer;
   };
   /**
    * What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.
@@ -3322,6 +3329,13 @@ export interface EngineContract {
   runway_ends_traffic: {
     input: RunwayEndsTrafficInput;
     answer: RunwayEndsTrafficAnswer;
+  };
+  /**
+   * Whether a runway's surface is hard, as the sectional's airport symbol counts it (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: "hard-surfaced runways"), from NASR APT_RWY.csv's SURFACE_TYPE_CODE: ASPH, CONC, PEM, PFC and BRICK are; a mixed surface ("ASPH-TURF") only where every part is hard; TRTD (treated) goes with a hard one and is not one alone. The longest hard runway is what field_mark_rank's hard_ft is: the cycle pack's overlays and the planner's map list both read it here.
+   */
+  runway_hard_surface: {
+    input: RunwayHardSurfaceInput;
+    answer: RunwayHardSurfaceAnswer;
   };
   /**
    * Each runway's favoured end, the planner's RunwayWind or null.
@@ -7051,6 +7065,36 @@ export interface FlightCategoryInput {
    * The lowest broken, overcast or obscured layer was sent with no height (OVC///): the ceiling is not known, and only a visibility under a mile says the category (14 CFR 1.1).
    */
   ceiling_unknown?: boolean | null;
+}
+export interface FloorAlongPathInput {
+  /**
+   * The leg's own floor first, then the floor under each piece of the path: vfr_floors' or ifr_floors' answers, as they came.
+   *
+   * @minItems 1
+   */
+  floors: [
+    {
+      floor_ft: number;
+      /**
+       * VFR's lowest ground under the piece; none under IFR.
+       */
+      lowest_ground_ft?: number | null;
+    },
+    ...{
+      floor_ft: number;
+      /**
+       * VFR's lowest ground under the piece; none under IFR.
+       */
+      lowest_ground_ft?: number | null;
+    }[]
+  ];
+}
+/**
+ * The bounding floor as it came, its lowest_ground_ft (where it has one) the least of all of them.
+ */
+export interface FloorAlongPathAnswer {
+  floor_ft: number;
+  lowest_ground_ft?: number | null;
 }
 export interface FloorCautionInput {
   /**
@@ -11909,6 +11953,15 @@ export interface RunwayEndsTrafficInput {
    * Ends' keys flown with right traffic.
    */
   right?: string[] | null;
+}
+export interface RunwayHardSurfaceInput {
+  /**
+   * NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or "" for none.
+   */
+  surface?: string | null;
+}
+export interface RunwayHardSurfaceAnswer {
+  hard: boolean;
 }
 export interface RunwayWithWindsInput {
   runways?:

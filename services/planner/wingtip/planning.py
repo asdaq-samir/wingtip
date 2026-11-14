@@ -311,6 +311,7 @@ def _altitude_key(
     class_b_cleared: bool = False,
     rules: str = "vfr",
     airway: dict | None = None,
+    paths: tuple = (),
 ) -> tuple:
     return (
         round(start[0], 4),
@@ -324,6 +325,7 @@ def _altitude_key(
         class_b_cleared,
         rules,
         tuple(sorted(airway.items())) if airway else None,
+        paths,
     )
 
 
@@ -354,6 +356,7 @@ def cruise_altitude(
     class_b_cleared: bool = False,
     rules: str = "vfr",
     airway: dict | None = None,
+    paths: tuple = (),
 ) -> dict:
     """`fixes`, the nav log's own (lat, lon) fixes, add the leg-by-leg
     segments the stepped plans need; they are part of the key, since a
@@ -361,31 +364,24 @@ def cruise_altitude(
     forecast period, since the freezing level is read from it, and
     `class_b_cleared`, a pilot who will have a Class B clearance,
     `rules`, "ifr" for a flight under IFR, and `airway`, the airway segment
-    a hop is flown along (wingtip.altitude).
-    Raises StillComputing when the same selection has been running longer
-    than COMPUTE_LIMIT_S."""
+    a hop is flown along, and `paths`, its legs flown by a procedure
+    (wingtip.altitude). Raises StillComputing when the same selection has
+    been running longer than COMPUTE_LIMIT_S."""
     pending: set = set()
 
     def compute():
         # The keywords only when they differ from the defaults: a
         # route-wide call keeps the original one.
-        extra = {}
-        if fixes:
-            extra["fixes"] = fixes
-        if fcst_hr != "06":
-            extra["fcst_hr"] = fcst_hr
-        if window is not None:
-            extra["window"] = window
-        if class_b_cleared:
-            extra["class_b_cleared"] = True
-        if rules != "vfr":
-            extra["rules"] = rules
-        if airway:
-            extra["airway"] = airway
+        given = {"fixes": fixes, "fcst_hr": fcst_hr, "window": window, "class_b_cleared": class_b_cleared, "rules": rules}
+        given |= {"airway": airway, "paths": paths}
+        extra = {k: v for k, v in given.items() if v and v != {"fcst_hr": "06", "rules": "vfr"}.get(k)}
         return altitude_module.select_cruise_altitude(start, end, profile, pending=pending, **extra)
 
     return _ALTITUDE_CACHE.get_or_compute(
-        _altitude_key(start, end, aircraft, fixes, fcst_hr, window, class_b_cleared, rules, airway), compute, COMPUTE_LIMIT_S, pending
+        _altitude_key(start, end, aircraft, fixes, fcst_hr, window, class_b_cleared, rules, airway, paths),
+        compute,
+        COMPUTE_LIMIT_S,
+        pending,
     )
 
 
@@ -399,11 +395,12 @@ def altitude_waiting_on(
     class_b_cleared: bool = False,
     rules: str = "vfr",
     airway: dict | None = None,
+    paths: tuple = (),
 ) -> str:
     """What the selection cruise_altitude() would be joining is still
     waiting on, in words -- "" when nothing of it is running, which is
     also the case once it is done and the plans' winds are what remains."""
-    running = _ALTITUDE_CACHE.running(_altitude_key(start, end, aircraft, fixes, fcst_hr, window, class_b_cleared, rules, airway))
+    running = _ALTITUDE_CACHE.running(_altitude_key(start, end, aircraft, fixes, fcst_hr, window, class_b_cleared, rules, airway, paths))
     return "" if running is None else describe_stages(running[1])
 
 

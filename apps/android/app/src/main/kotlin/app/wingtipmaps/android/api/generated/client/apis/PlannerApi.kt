@@ -256,7 +256,7 @@ interface PlannerApi {
     /**
      * GET airports/in-view
      * Airports In View
-     * The landing fields inside the map&#39;s view, the ones that report first and then the biggest -- at most &#x60;limit&#x60; of them, since a whole state holds thousands and the map only lays a tap target over each -- with each one&#39;s flight category from its METAR, for a weather chip on the ones that report: the limit drops small fields with nothing to show, never a chip a pilot saw a zoom further out -- and each one&#39;s class of airspace at its surface, for its mark. The METARs are the national cache already in memory; with the weather service out the fields come back without, as fields with no station do. With &#x60;reporting&#x60;, only the fields that report, before the limit: what the map asks once for a whole route&#39;s box, so its chips are there before the pilot zooms in on any of it.
+     * The landing fields inside the map&#39;s view, the ones that report first and then the biggest -- at most &#x60;limit&#x60;: a state holds thousands -- each with its METAR&#39;s flight category, for a weather chip (the limit drops small fields with nothing to show, never a chip seen further out), its class of airspace at its surface, and its mark&#39;s order and size as the overlay tiles carry them (wingtip.field_marks). The METARs are the national cache in memory; with the weather service out the fields come back without. With &#x60;reporting&#x60;, only the fields that report, before the limit: the map asks so once for a whole route&#39;s box.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
