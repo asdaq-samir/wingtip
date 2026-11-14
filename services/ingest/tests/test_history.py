@@ -3,6 +3,7 @@ NTSB's database looked at once a day, a failure of either let go until
 the next; the database read again only when its size has changed."""
 
 import json
+import sqlite3
 from pathlib import Path
 
 from wingtip.history import notam_archive, ntsb as ntsb_store
@@ -38,14 +39,20 @@ def test_the_directory_gives_each_files_date_and_size():
     assert files["up15NOV.zip"]["date"] == "2025-11-15T03:00:46"
 
 
-def test_avall_is_read_again_only_when_its_date_or_size_changes(monkeypatch, tmp_path):
+def test_avall_is_read_again_only_when_its_date_size_or_the_stores_shape_changes(monkeypatch, tmp_path):
     store = tmp_path / "ntsb.sqlite"
     monkeypatch.setattr(ntsb_store, "store_path", lambda: store)
     avall = ntsb.read_directory(PAGE)["avall.zip"]
     assert ntsb.due(avall, {})
-    store.write_bytes(b"")
+    # A store of the shape the planner reads: only a new avall remakes it.
+    with sqlite3.connect(store) as db:
+        db.execute(f"PRAGMA user_version = {ntsb_store.SCHEMA}")
     assert not ntsb.due(avall, {"avall": avall})
     assert ntsb.due({**avall, "size": 97_200_000}, {"avall": avall})
+    # One of an older shape is made again from the same avall.
+    with sqlite3.connect(store) as db:
+        db.execute("PRAGMA user_version = 1")
+    assert ntsb.due(avall, {"avall": avall})
 
 
 def test_the_deltas_after_avall_not_yet_applied_oldest_first():
@@ -69,7 +76,9 @@ def test_a_refresh_builds_then_applies_each_delta_once(monkeypatch, tmp_path):
     def fake_read(name, write):
         read.append(name)
         if name == ntsb.AVALL:
-            store.write_bytes(b"")
+            # A store of the shape the planner reads, as ntsb.build leaves it.
+            with sqlite3.connect(store) as db:
+                db.execute(f"PRAGMA user_version = {ntsb_store.SCHEMA}")
         return 1
 
     monkeypatch.setattr(ntsb, "_read", fake_read)

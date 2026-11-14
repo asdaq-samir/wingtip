@@ -202,6 +202,152 @@
         "title": "AircraftBases",
         "type": "object"
       },
+      "AircraftModel": {
+        "description": "The FAA's reference record of a make, model and series (ACFTREF.txt,\nardata.pdf's Aircraft Reference File). `cruise_mph` is the FAA's\n\"average cruising speed\" in statute miles an hour, on some records\nonly: a reference figure, not one to plan with. `tc_data_sheet` and\n`tc_holder` are the type certificate data sheet's number and holder,\nwhere the FAA's file gives them (about one airplane in ten).",
+        "properties": {
+          "aircraft_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aircraft Type"
+          },
+          "builder_certification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Builder Certification"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "cruise_mph": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cruise Mph"
+          },
+          "engine_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Type"
+          },
+          "engines": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engines"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "seats": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seats"
+          },
+          "tc_data_sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tc Data Sheet"
+          },
+          "tc_holder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tc Holder"
+          },
+          "weight_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight Class"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "AircraftModel",
+        "type": "object"
+      },
       "AircraftProfile": {
         "additionalProperties": true,
         "description": "The aircraft's name plus its performance profile -- every field a\ndata/aircraft/*.json file carries, declared, so a page reads them as\nfields rather than guessing at a dict. The three figures after the\nname are required when a stock profile is loaded (REQUIRED_FIELDS in\nwingtip.aircraft); a pilot's own airplane of no stock type (\"own\",\nwingtip.aircraft.OWN_AIRPLANE) has its record's alone, and no service\nceiling where the record gives none. A figure left out is missing,\nand each rule that needs it says so. `extra=\"allow\"` keeps a field a\nnewer profile adds on its way through.",
@@ -555,6 +701,17 @@
             ],
             "title": "Certificate Issued"
           },
+          "certification_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certification Code"
+          },
           "city": {
             "anyOf": [
               {
@@ -565,6 +722,14 @@
               }
             ],
             "title": "City"
+          },
+          "co_owner_names": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Co Owner Names",
+            "type": "array"
           },
           "co_owners": {
             "default": 0,
@@ -592,6 +757,17 @@
               }
             ],
             "title": "Engine"
+          },
+          "engine_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Code"
           },
           "engine_type": {
             "anyOf": [
@@ -653,6 +829,17 @@
             ],
             "title": "Kit"
           },
+          "last_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Action"
+          },
           "manufacturer": {
             "anyOf": [
               {
@@ -675,6 +862,17 @@
             ],
             "title": "Mode S Hex"
           },
+          "mode_s_octal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode S Octal"
+          },
           "model": {
             "anyOf": [
               {
@@ -685,6 +883,17 @@
               }
             ],
             "title": "Model"
+          },
+          "model_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Code"
           },
           "n_number": {
             "title": "N Number",
@@ -711,6 +920,17 @@
               }
             ],
             "title": "Owner Type"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
           },
           "seats": {
             "anyOf": [
@@ -777,6 +997,17 @@
             ],
             "title": "Thrust Lb"
           },
+          "unique_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unique Id"
+          },
           "year": {
             "anyOf": [
               {
@@ -793,6 +1024,107 @@
           "n_number"
         ],
         "title": "AircraftRegistration",
+        "type": "object"
+      },
+      "AirplaneDetails": {
+        "description": "Everything public about a US airplane by its N-number\n(wingtip.aircraft_details): the FAA registry's records, the NTSB's\ncases and where it is usually based. A part the stores do not hold is\nnull or empty. `based_pending`: being looked up, ask again shortly.",
+        "properties": {
+          "based": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UsualBase"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "based_pending": {
+            "default": false,
+            "title": "Based Pending",
+            "type": "boolean"
+          },
+          "documents": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RegistryDocument"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "engine": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EngineModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AircraftModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "n_number": {
+            "title": "N Number",
+            "type": "string"
+          },
+          "ntsb": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/NtsbCase"
+            },
+            "title": "Ntsb",
+            "type": "array"
+          },
+          "past_registrations": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PastRegistration"
+            },
+            "title": "Past Registrations",
+            "type": "array"
+          },
+          "registration": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AircraftRegistration"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reservation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Reservation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sources": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/app__schemas__airplane__DataSource"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "n_number"
+        ],
+        "title": "AirplaneDetails",
         "type": "object"
       },
       "AirplaneInspections": {
@@ -911,6 +1243,80 @@
           "fuel_gal"
         ],
         "title": "AirplaneLoad",
+        "type": "object"
+      },
+      "AirplanePhoto": {
+        "description": "The newest photo of this very airplane on Planespotters.net. Its\nterms: show `photographer` as visible text next to the image, make the\nimage a plain link to `link`, load the image straight from\n`thumbnail`/`thumbnail_large` unchanged, and never store or pass it on.",
+        "properties": {
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "link": {
+            "title": "Link",
+            "type": "string"
+          },
+          "photographer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photographer"
+          },
+          "source": {
+            "default": "Planespotters.net",
+            "title": "Source",
+            "type": "string"
+          },
+          "thumbnail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail"
+          },
+          "thumbnail_large": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Large"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": [
+          "link"
+        ],
+        "title": "AirplanePhoto",
         "type": "object"
       },
       "AirportAtis": {
@@ -6027,52 +6433,6 @@
         "title": "DataFile",
         "type": "object"
       },
-      "DataSource": {
-        "description": "One source the planner downloads and keeps, for the pilot's Status\npage: its name in a pilot's words, when the copy it holds was fetched,\nto when that copy may still be served by the product's own validity\n(None: no limit, or none held), and whether the source is failing,\nthe held copy then served on (ISO 8601 UTC); and whether it has\nstopped updating past its usual cadence, as the minute's feed watch\nfound it (app.feeds.status_rows), for the page to say so.",
-        "properties": {
-          "failing": {
-            "default": false,
-            "title": "Failing",
-            "type": "boolean"
-          },
-          "fetched_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fetched At"
-          },
-          "kept_until": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Kept Until"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "stale": {
-            "default": false,
-            "title": "Stale",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "title": "DataSource",
-        "type": "object"
-      },
       "DayNightMinimums": {
         "properties": {
           "day": {
@@ -8742,6 +9102,75 @@
           "held"
         ],
         "title": "EndorsementsAsk",
+        "type": "object"
+      },
+      "EngineModel": {
+        "description": "The FAA's reference record of an engine (ENGINE.txt): horsepower for\npiston and turbine-shaft engines, thrust for jets.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "engine_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Type"
+          },
+          "horsepower": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horsepower"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "thrust_lb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thrust Lb"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "EngineModel",
         "type": "object"
       },
       "EstimateCheck": {
@@ -13185,7 +13614,7 @@
           "sources": {
             "default": [],
             "items": {
-              "$ref": "#/components/schemas/DataSource"
+              "$ref": "#/components/schemas/app__schemas__briefing__DataSource"
             },
             "title": "Sources",
             "type": "array"
@@ -14922,6 +15351,135 @@
         "title": "NotamsRankedAsk",
         "type": "object"
       },
+      "NtsbCase": {
+        "description": "An accident or incident of the airplane in the NTSB's database (cases\nsince 2008), in the NTSB's words, with its CAROL report and docket.",
+        "properties": {
+          "carol_url": {
+            "title": "Carol Url",
+            "type": "string"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "damage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Damage"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "docket_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Docket Url"
+          },
+          "ev_id": {
+            "title": "Ev Id",
+            "type": "string"
+          },
+          "highest_injury": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Injury"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "ntsb_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ntsb No"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          }
+        },
+        "required": [
+          "ev_id",
+          "carol_url"
+        ],
+        "title": "NtsbCase",
+        "type": "object"
+      },
       "NtsbEvent": {
         "description": "One NTSB case of the airplane (wingtip.history.ntsb), its texts\nverbatim: where and when (the local date), its phase of flight and\nhighest injury in the NTSB's words, its probable cause once the final\nreport is out, and its narrative (the final report's, else the\npreliminary's factual one).",
         "properties": {
@@ -15901,6 +16459,232 @@
           "flights"
         ],
         "title": "PastFlights",
+        "type": "object"
+      },
+      "PastRegistration": {
+        "description": "A canceled registration (DEREG.txt): this airframe's own under this\nor another N-number (`same_airframe`), or another airplane's that had\nthis N-number before. The FAA gives no reason for a cancellation beyond\nits `status` then and an `export_country`; the registrant's name and\ntown, not the street.",
+        "properties": {
+          "airworthiness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Airworthiness"
+          },
+          "airworthiness_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Airworthiness Date"
+          },
+          "cancel_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancel Date"
+          },
+          "certificate_issued": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate Issued"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "co_owners": {
+            "default": 0,
+            "title": "Co Owners",
+            "type": "integer"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "export_country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Export Country"
+          },
+          "kit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kit"
+          },
+          "last_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Action"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "mode_s_hex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode S Hex"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "n_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Number"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner"
+          },
+          "owner_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Type"
+          },
+          "same_airframe": {
+            "default": false,
+            "title": "Same Airframe",
+            "type": "boolean"
+          },
+          "serial": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serial"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "title": "PastRegistration",
         "type": "object"
       },
       "PatternEntry": {
@@ -18308,6 +19092,185 @@
           "detail"
         ],
         "title": "RecentError",
+        "type": "object"
+      },
+      "RegistryDocument": {
+        "description": "A document filed for recording against the N-number (DOCINDEX.txt,\nabout the last month's): its kind (bill of sale, lien, release...), the\nday the Registry received it, entered and corrected it.",
+        "properties": {
+          "corrected": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrected"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "entered": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entered"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "kind_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind Code"
+          },
+          "received": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received"
+          }
+        },
+        "title": "RegistryDocument",
+        "type": "object"
+      },
+      "Reservation": {
+        "description": "The N-number's reservation (RESERVED.txt): who reserved it and where\n(name and town), when, the kind, and an N-number change in process.",
+        "properties": {
+          "change_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change To"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "expiration_notice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiration Notice"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "kind_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind Code"
+          },
+          "purge": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purge"
+          },
+          "registrant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registrant"
+          },
+          "reserved": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserved"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          }
+        },
+        "title": "Reservation",
         "type": "object"
       },
       "RetrainStarted": {
@@ -23637,6 +24600,33 @@
         "title": "TrainingReadiness",
         "type": "object"
       },
+      "UsualBase": {
+        "description": "Where the airplane is usually based, by the engine's `usual_base`\nover its flights ADS-B receivers heard: `field` None where they do not\nshow one clearly; `count` of its `ends` (takeoffs and landings) at the\nfield most of them are at.",
+        "properties": {
+          "count": {
+            "default": 0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "ends": {
+            "default": 0,
+            "title": "Ends",
+            "type": "integer"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PastFlightField"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "UsualBase",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -24619,6 +25609,70 @@
         ],
         "title": "WordsSources",
         "type": "object"
+      },
+      "app__schemas__airplane__DataSource": {
+        "properties": {
+          "credit": {
+            "title": "Credit",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "credit"
+        ],
+        "title": "DataSource",
+        "type": "object"
+      },
+      "app__schemas__briefing__DataSource": {
+        "description": "One source the planner downloads and keeps, for the pilot's Status\npage: its name in a pilot's words, when the copy it holds was fetched,\nto when that copy may still be served by the product's own validity\n(None: no limit, or none held), and whether the source is failing,\nthe held copy then served on (ISO 8601 UTC); and whether it has\nstopped updating past its usual cadence, as the minute's feed watch\nfound it (app.feeds.status_rows), for the page to say so.",
+        "properties": {
+          "failing": {
+            "default": false,
+            "title": "Failing",
+            "type": "boolean"
+          },
+          "fetched_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetched At"
+          },
+          "kept_until": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kept Until"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "stale": {
+            "default": false,
+            "title": "Stale",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "DataSource",
+        "type": "object"
       }
     }
   },
@@ -24752,6 +25806,108 @@
         },
         "summary": "Check Airplane",
         "x-internal": "gateway"
+      }
+    },
+    "/api/airplanes/{n_number}": {
+      "get": {
+        "description": "Everything public about a US airplane: its FAA registration in full,\nits make and model's and its engine's reference records, its past\nregistrations, the documents filed against it, the N-number's\nreservation, its NTSB accidents and incidents, and where it is usually\nbased (`based_pending` while that is looked up: ask again). A 422 for\nwhat is not an N-number.",
+        "operationId": "airplane_api_airplanes__n_number__get",
+        "parameters": [
+          {
+            "description": "An N-number: N654FL, 654FL or N-654FL",
+            "in": "path",
+            "name": "n_number",
+            "required": true,
+            "schema": {
+              "description": "An N-number: N654FL, 654FL or N-654FL",
+              "maxLength": 7,
+              "minLength": 2,
+              "title": "N Number",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirplaneDetails"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Airplane",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
+    "/api/airplanes/{n_number}/photo": {
+      "get": {
+        "description": "The newest photo of this very airplane on Planespotters.net, with its\nphotographer and its page, to be shown on their terms (AirplanePhoto);\nnull where it has none or it cannot be asked now.",
+        "operationId": "airplane_photo_api_airplanes__n_number__photo_get",
+        "parameters": [
+          {
+            "description": "An N-number: N654FL, 654FL or N-654FL",
+            "in": "path",
+            "name": "n_number",
+            "required": true,
+            "schema": {
+              "description": "An N-number: N654FL, 654FL or N-654FL",
+              "maxLength": 7,
+              "minLength": 2,
+              "title": "N Number",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AirplanePhoto"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Airplane Photo Api Airplanes  N Number  Photo Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Airplane Photo",
+        "x-gateway": {
+          "access": "public"
+        }
       }
     },
     "/api/airport-aerial/{ident}.jpg": {

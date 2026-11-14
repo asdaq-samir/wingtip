@@ -187,6 +187,102 @@ extension Components {
                 case pending
             }
         }
+        /// The FAA's reference record of a make, model and series (ACFTREF.txt,
+        /// ardata.pdf's Aircraft Reference File). `cruise_mph` is the FAA's
+        /// "average cruising speed" in statute miles an hour, on some records
+        /// only: a reference figure, not one to plan with. `tc_data_sheet` and
+        /// `tc_holder` are the type certificate data sheet's number and holder,
+        /// where the FAA's file gives them (about one airplane in ten).
+        ///
+        /// - Remark: Generated from `#/components/schemas/AircraftModel`.
+        public struct AircraftModel: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/aircraft_type`.
+            public var aircraftType: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/builder_certification`.
+            public var builderCertification: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/category`.
+            public var category: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/code`.
+            public var code: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/cruise_mph`.
+            public var cruiseMph: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/engines`.
+            public var engines: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/engine_type`.
+            public var engineType: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/manufacturer`.
+            public var manufacturer: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/model`.
+            public var model: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/seats`.
+            public var seats: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/tc_data_sheet`.
+            public var tcDataSheet: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/tc_holder`.
+            public var tcHolder: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftModel/weight_class`.
+            public var weightClass: Swift.String?
+            /// Creates a new `AircraftModel`.
+            ///
+            /// - Parameters:
+            ///   - aircraftType:
+            ///   - builderCertification:
+            ///   - category:
+            ///   - code:
+            ///   - cruiseMph:
+            ///   - engines:
+            ///   - engineType:
+            ///   - manufacturer:
+            ///   - model:
+            ///   - seats:
+            ///   - tcDataSheet:
+            ///   - tcHolder:
+            ///   - weightClass:
+            public init(
+                aircraftType: Swift.String? = nil,
+                builderCertification: Swift.String? = nil,
+                category: Swift.String? = nil,
+                code: Swift.String,
+                cruiseMph: Swift.Int? = nil,
+                engines: Swift.Int? = nil,
+                engineType: Swift.String? = nil,
+                manufacturer: Swift.String? = nil,
+                model: Swift.String? = nil,
+                seats: Swift.Int? = nil,
+                tcDataSheet: Swift.String? = nil,
+                tcHolder: Swift.String? = nil,
+                weightClass: Swift.String? = nil
+            ) {
+                self.aircraftType = aircraftType
+                self.builderCertification = builderCertification
+                self.category = category
+                self.code = code
+                self.cruiseMph = cruiseMph
+                self.engines = engines
+                self.engineType = engineType
+                self.manufacturer = manufacturer
+                self.model = model
+                self.seats = seats
+                self.tcDataSheet = tcDataSheet
+                self.tcHolder = tcHolder
+                self.weightClass = weightClass
+            }
+            public enum CodingKeys: String, CodingKey {
+                case aircraftType = "aircraft_type"
+                case builderCertification = "builder_certification"
+                case category
+                case code
+                case cruiseMph = "cruise_mph"
+                case engines
+                case engineType = "engine_type"
+                case manufacturer
+                case model
+                case seats
+                case tcDataSheet = "tc_data_sheet"
+                case tcHolder = "tc_holder"
+                case weightClass = "weight_class"
+            }
+        }
         /// The aircraft's name plus its performance profile -- every field a
         /// data/aircraft/*.json file carries, declared, so a page reads them as
         /// fields rather than guessing at a dict. The three figures after the
@@ -614,14 +710,20 @@ extension Components {
             public var airworthinessDate: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/certificate_issued`.
             public var certificateIssued: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftRegistration/certification_code`.
+            public var certificationCode: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/city`.
             public var city: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftRegistration/co_owner_names`.
+            public var coOwnerNames: [Swift.String]?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/co_owners`.
             public var coOwners: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/country`.
             public var country: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/engine`.
             public var engine: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftRegistration/engine_code`.
+            public var engineCode: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/engines`.
             public var engines: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/engine_type`.
@@ -634,18 +736,26 @@ extension Components {
             public var horsepower: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/kit`.
             public var kit: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftRegistration/last_action`.
+            public var lastAction: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/manufacturer`.
             public var manufacturer: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/model`.
             public var model: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftRegistration/model_code`.
+            public var modelCode: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/mode_s_hex`.
             public var modeSHex: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftRegistration/mode_s_octal`.
+            public var modeSOctal: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/n_number`.
             public var nNumber: Swift.String
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/owner`.
             public var owner: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/owner_type`.
             public var ownerType: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftRegistration/region`.
+            public var region: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/seats`.
             public var seats: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/serial`.
@@ -658,6 +768,8 @@ extension Components {
             public var status: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/thrust_lb`.
             public var thrustLb: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/AircraftRegistration/unique_id`.
+            public var uniqueId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/year`.
             public var year: Swift.Int?
             /// Creates a new `AircraftRegistration`.
@@ -667,84 +779,108 @@ extension Components {
             ///   - airworthiness:
             ///   - airworthinessDate:
             ///   - certificateIssued:
+            ///   - certificationCode:
             ///   - city:
+            ///   - coOwnerNames:
             ///   - coOwners:
             ///   - country:
             ///   - engine:
+            ///   - engineCode:
             ///   - engines:
             ///   - engineType:
             ///   - expires:
             ///   - fractional:
             ///   - horsepower:
             ///   - kit:
+            ///   - lastAction:
             ///   - manufacturer:
             ///   - model:
+            ///   - modelCode:
             ///   - modeSHex:
+            ///   - modeSOctal:
             ///   - nNumber:
             ///   - owner:
             ///   - ownerType:
+            ///   - region:
             ///   - seats:
             ///   - serial:
             ///   - standing:
             ///   - state:
             ///   - status:
             ///   - thrustLb:
+            ///   - uniqueId:
             ///   - year:
             public init(
                 aircraftType: Swift.String? = nil,
                 airworthiness: Swift.String? = nil,
                 airworthinessDate: Swift.String? = nil,
                 certificateIssued: Swift.String? = nil,
+                certificationCode: Swift.String? = nil,
                 city: Swift.String? = nil,
+                coOwnerNames: [Swift.String]? = nil,
                 coOwners: Swift.Int? = nil,
                 country: Swift.String? = nil,
                 engine: Swift.String? = nil,
+                engineCode: Swift.String? = nil,
                 engines: Swift.Int? = nil,
                 engineType: Swift.String? = nil,
                 expires: Swift.String? = nil,
                 fractional: Swift.Bool? = nil,
                 horsepower: Swift.Int? = nil,
                 kit: Swift.String? = nil,
+                lastAction: Swift.String? = nil,
                 manufacturer: Swift.String? = nil,
                 model: Swift.String? = nil,
+                modelCode: Swift.String? = nil,
                 modeSHex: Swift.String? = nil,
+                modeSOctal: Swift.String? = nil,
                 nNumber: Swift.String,
                 owner: Swift.String? = nil,
                 ownerType: Swift.String? = nil,
+                region: Swift.String? = nil,
                 seats: Swift.Int? = nil,
                 serial: Swift.String? = nil,
                 standing: Swift.String? = nil,
                 state: Swift.String? = nil,
                 status: Swift.String? = nil,
                 thrustLb: Swift.Int? = nil,
+                uniqueId: Swift.String? = nil,
                 year: Swift.Int? = nil
             ) {
                 self.aircraftType = aircraftType
                 self.airworthiness = airworthiness
                 self.airworthinessDate = airworthinessDate
                 self.certificateIssued = certificateIssued
+                self.certificationCode = certificationCode
                 self.city = city
+                self.coOwnerNames = coOwnerNames
                 self.coOwners = coOwners
                 self.country = country
                 self.engine = engine
+                self.engineCode = engineCode
                 self.engines = engines
                 self.engineType = engineType
                 self.expires = expires
                 self.fractional = fractional
                 self.horsepower = horsepower
                 self.kit = kit
+                self.lastAction = lastAction
                 self.manufacturer = manufacturer
                 self.model = model
+                self.modelCode = modelCode
                 self.modeSHex = modeSHex
+                self.modeSOctal = modeSOctal
                 self.nNumber = nNumber
                 self.owner = owner
                 self.ownerType = ownerType
+                self.region = region
                 self.seats = seats
                 self.serial = serial
                 self.standing = standing
                 self.state = state
                 self.status = status
                 self.thrustLb = thrustLb
+                self.uniqueId = uniqueId
                 self.year = year
             }
             public enum CodingKeys: String, CodingKey {
@@ -752,29 +888,119 @@ extension Components {
                 case airworthiness
                 case airworthinessDate = "airworthiness_date"
                 case certificateIssued = "certificate_issued"
+                case certificationCode = "certification_code"
                 case city
+                case coOwnerNames = "co_owner_names"
                 case coOwners = "co_owners"
                 case country
                 case engine
+                case engineCode = "engine_code"
                 case engines
                 case engineType = "engine_type"
                 case expires
                 case fractional
                 case horsepower
                 case kit
+                case lastAction = "last_action"
                 case manufacturer
                 case model
+                case modelCode = "model_code"
                 case modeSHex = "mode_s_hex"
+                case modeSOctal = "mode_s_octal"
                 case nNumber = "n_number"
                 case owner
                 case ownerType = "owner_type"
+                case region
                 case seats
                 case serial
                 case standing
                 case state
                 case status
                 case thrustLb = "thrust_lb"
+                case uniqueId = "unique_id"
                 case year
+            }
+        }
+        /// Everything public about a US airplane by its N-number
+        /// (wingtip.aircraft_details): the FAA registry's records, the NTSB's
+        /// cases and where it is usually based. A part the stores do not hold is
+        /// null or empty. `based_pending`: being looked up, ask again shortly.
+        ///
+        /// - Remark: Generated from `#/components/schemas/AirplaneDetails`.
+        public struct AirplaneDetails: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AirplaneDetails/based`.
+            public var based: Components.Schemas.UsualBase?
+            /// - Remark: Generated from `#/components/schemas/AirplaneDetails/based_pending`.
+            public var basedPending: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/AirplaneDetails/documents`.
+            public var documents: [Components.Schemas.RegistryDocument]?
+            /// - Remark: Generated from `#/components/schemas/AirplaneDetails/engine`.
+            public var engine: Components.Schemas.EngineModel?
+            /// - Remark: Generated from `#/components/schemas/AirplaneDetails/model`.
+            public var model: Components.Schemas.AircraftModel?
+            /// - Remark: Generated from `#/components/schemas/AirplaneDetails/n_number`.
+            public var nNumber: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AirplaneDetails/ntsb`.
+            public var ntsb: [Components.Schemas.NtsbCase]?
+            /// - Remark: Generated from `#/components/schemas/AirplaneDetails/past_registrations`.
+            public var pastRegistrations: [Components.Schemas.PastRegistration]?
+            /// - Remark: Generated from `#/components/schemas/AirplaneDetails/registration`.
+            public var registration: Components.Schemas.AircraftRegistration?
+            /// - Remark: Generated from `#/components/schemas/AirplaneDetails/reservation`.
+            public var reservation: Components.Schemas.Reservation?
+            /// - Remark: Generated from `#/components/schemas/AirplaneDetails/sources`.
+            public var sources: [Components.Schemas.AppSchemasAirplaneDataSource]?
+            /// Creates a new `AirplaneDetails`.
+            ///
+            /// - Parameters:
+            ///   - based:
+            ///   - basedPending:
+            ///   - documents:
+            ///   - engine:
+            ///   - model:
+            ///   - nNumber:
+            ///   - ntsb:
+            ///   - pastRegistrations:
+            ///   - registration:
+            ///   - reservation:
+            ///   - sources:
+            public init(
+                based: Components.Schemas.UsualBase? = nil,
+                basedPending: Swift.Bool? = nil,
+                documents: [Components.Schemas.RegistryDocument]? = nil,
+                engine: Components.Schemas.EngineModel? = nil,
+                model: Components.Schemas.AircraftModel? = nil,
+                nNumber: Swift.String,
+                ntsb: [Components.Schemas.NtsbCase]? = nil,
+                pastRegistrations: [Components.Schemas.PastRegistration]? = nil,
+                registration: Components.Schemas.AircraftRegistration? = nil,
+                reservation: Components.Schemas.Reservation? = nil,
+                sources: [Components.Schemas.AppSchemasAirplaneDataSource]? = nil
+            ) {
+                self.based = based
+                self.basedPending = basedPending
+                self.documents = documents
+                self.engine = engine
+                self.model = model
+                self.nNumber = nNumber
+                self.ntsb = ntsb
+                self.pastRegistrations = pastRegistrations
+                self.registration = registration
+                self.reservation = reservation
+                self.sources = sources
+            }
+            public enum CodingKeys: String, CodingKey {
+                case based
+                case basedPending = "based_pending"
+                case documents
+                case engine
+                case model
+                case nNumber = "n_number"
+                case ntsb
+                case pastRegistrations = "past_registrations"
+                case registration
+                case reservation
+                case sources
             }
         }
         /// The pilot's own airplane's inspections and tests as its owner
@@ -870,6 +1096,64 @@ extension Components {
                 case emptyWeightLb = "empty_weight_lb"
                 case fuelGal = "fuel_gal"
                 case stationsLb = "stations_lb"
+            }
+        }
+        /// The newest photo of this very airplane on Planespotters.net. Its
+        /// terms: show `photographer` as visible text next to the image, make the
+        /// image a plain link to `link`, load the image straight from
+        /// `thumbnail`/`thumbnail_large` unchanged, and never store or pass it on.
+        ///
+        /// - Remark: Generated from `#/components/schemas/AirplanePhoto`.
+        public struct AirplanePhoto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AirplanePhoto/height`.
+            public var height: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/AirplanePhoto/link`.
+            public var link: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AirplanePhoto/photographer`.
+            public var photographer: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirplanePhoto/source`.
+            public var source: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirplanePhoto/thumbnail`.
+            public var thumbnail: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirplanePhoto/thumbnail_large`.
+            public var thumbnailLarge: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirplanePhoto/width`.
+            public var width: Swift.Int?
+            /// Creates a new `AirplanePhoto`.
+            ///
+            /// - Parameters:
+            ///   - height:
+            ///   - link:
+            ///   - photographer:
+            ///   - source:
+            ///   - thumbnail:
+            ///   - thumbnailLarge:
+            ///   - width:
+            public init(
+                height: Swift.Int? = nil,
+                link: Swift.String,
+                photographer: Swift.String? = nil,
+                source: Swift.String? = nil,
+                thumbnail: Swift.String? = nil,
+                thumbnailLarge: Swift.String? = nil,
+                width: Swift.Int? = nil
+            ) {
+                self.height = height
+                self.link = link
+                self.photographer = photographer
+                self.source = source
+                self.thumbnail = thumbnail
+                self.thumbnailLarge = thumbnailLarge
+                self.width = width
+            }
+            public enum CodingKeys: String, CodingKey {
+                case height
+                case link
+                case photographer
+                case source
+                case thumbnail
+                case thumbnailLarge = "thumbnail_large"
+                case width
             }
         }
         /// - Remark: Generated from `#/components/schemas/AirportAtis`.
@@ -5448,55 +5732,6 @@ extension Components {
                 case name
             }
         }
-        /// One source the planner downloads and keeps, for the pilot's Status
-        /// page: its name in a pilot's words, when the copy it holds was fetched,
-        /// to when that copy may still be served by the product's own validity
-        /// (None: no limit, or none held), and whether the source is failing,
-        /// the held copy then served on (ISO 8601 UTC); and whether it has
-        /// stopped updating past its usual cadence, as the minute's feed watch
-        /// found it (app.feeds.status_rows), for the page to say so.
-        ///
-        /// - Remark: Generated from `#/components/schemas/DataSource`.
-        public struct DataSource: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/DataSource/failing`.
-            public var failing: Swift.Bool?
-            /// - Remark: Generated from `#/components/schemas/DataSource/fetched_at`.
-            public var fetchedAt: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/DataSource/kept_until`.
-            public var keptUntil: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/DataSource/name`.
-            public var name: Swift.String
-            /// - Remark: Generated from `#/components/schemas/DataSource/stale`.
-            public var stale: Swift.Bool?
-            /// Creates a new `DataSource`.
-            ///
-            /// - Parameters:
-            ///   - failing:
-            ///   - fetchedAt:
-            ///   - keptUntil:
-            ///   - name:
-            ///   - stale:
-            public init(
-                failing: Swift.Bool? = nil,
-                fetchedAt: Swift.String? = nil,
-                keptUntil: Swift.String? = nil,
-                name: Swift.String,
-                stale: Swift.Bool? = nil
-            ) {
-                self.failing = failing
-                self.fetchedAt = fetchedAt
-                self.keptUntil = keptUntil
-                self.name = name
-                self.stale = stale
-            }
-            public enum CodingKeys: String, CodingKey {
-                case failing
-                case fetchedAt = "fetched_at"
-                case keptUntil = "kept_until"
-                case name
-                case stale
-            }
-        }
         /// - Remark: Generated from `#/components/schemas/DayNightMinimums`.
         public struct DayNightMinimums: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/DayNightMinimums/day`.
@@ -8150,6 +8385,56 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case flightOn
                 case held
+            }
+        }
+        /// The FAA's reference record of an engine (ENGINE.txt): horsepower for
+        /// piston and turbine-shaft engines, thrust for jets.
+        ///
+        /// - Remark: Generated from `#/components/schemas/EngineModel`.
+        public struct EngineModel: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/EngineModel/code`.
+            public var code: Swift.String
+            /// - Remark: Generated from `#/components/schemas/EngineModel/engine_type`.
+            public var engineType: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/EngineModel/horsepower`.
+            public var horsepower: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/EngineModel/manufacturer`.
+            public var manufacturer: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/EngineModel/model`.
+            public var model: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/EngineModel/thrust_lb`.
+            public var thrustLb: Swift.Int?
+            /// Creates a new `EngineModel`.
+            ///
+            /// - Parameters:
+            ///   - code:
+            ///   - engineType:
+            ///   - horsepower:
+            ///   - manufacturer:
+            ///   - model:
+            ///   - thrustLb:
+            public init(
+                code: Swift.String,
+                engineType: Swift.String? = nil,
+                horsepower: Swift.Int? = nil,
+                manufacturer: Swift.String? = nil,
+                model: Swift.String? = nil,
+                thrustLb: Swift.Int? = nil
+            ) {
+                self.code = code
+                self.engineType = engineType
+                self.horsepower = horsepower
+                self.manufacturer = manufacturer
+                self.model = model
+                self.thrustLb = thrustLb
+            }
+            public enum CodingKeys: String, CodingKey {
+                case code
+                case engineType = "engine_type"
+                case horsepower
+                case manufacturer
+                case model
+                case thrustLb = "thrust_lb"
             }
         }
         /// A student's estimate against the exact figure: reasonable within its
@@ -12058,7 +12343,7 @@ extension Components {
             /// - Remark: Generated from `#/components/schemas/MapLayerAges/metars_at`.
             public var metarsAt: Swift.String?
             /// - Remark: Generated from `#/components/schemas/MapLayerAges/sources`.
-            public var sources: [Components.Schemas.DataSource]?
+            public var sources: [Components.Schemas.AppSchemasBriefingDataSource]?
             /// - Remark: Generated from `#/components/schemas/MapLayerAges/tfrs_at`.
             public var tfrsAt: Swift.String?
             /// Creates a new `MapLayerAges`.
@@ -12071,7 +12356,7 @@ extension Components {
             public init(
                 dataCycles: [Components.Schemas.DataCycle]? = nil,
                 metarsAt: Swift.String? = nil,
-                sources: [Components.Schemas.DataSource]? = nil,
+                sources: [Components.Schemas.AppSchemasBriefingDataSource]? = nil,
                 tfrsAt: Swift.String? = nil
             ) {
                 self.dataCycles = dataCycles
@@ -13521,6 +13806,92 @@ extension Components {
                 case stops
             }
         }
+        /// An accident or incident of the airplane in the NTSB's database (cases
+        /// since 2008), in the NTSB's words, with its CAROL report and docket.
+        ///
+        /// - Remark: Generated from `#/components/schemas/NtsbCase`.
+        public struct NtsbCase: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/NtsbCase/carol_url`.
+            public var carolUrl: Swift.String
+            /// - Remark: Generated from `#/components/schemas/NtsbCase/city`.
+            public var city: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NtsbCase/country`.
+            public var country: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NtsbCase/damage`.
+            public var damage: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NtsbCase/date`.
+            public var date: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NtsbCase/docket_url`.
+            public var docketUrl: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NtsbCase/ev_id`.
+            public var evId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/NtsbCase/highest_injury`.
+            public var highestInjury: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NtsbCase/kind`.
+            public var kind: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NtsbCase/ntsb_no`.
+            public var ntsbNo: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NtsbCase/phase`.
+            public var phase: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NtsbCase/state`.
+            public var state: Swift.String?
+            /// Creates a new `NtsbCase`.
+            ///
+            /// - Parameters:
+            ///   - carolUrl:
+            ///   - city:
+            ///   - country:
+            ///   - damage:
+            ///   - date:
+            ///   - docketUrl:
+            ///   - evId:
+            ///   - highestInjury:
+            ///   - kind:
+            ///   - ntsbNo:
+            ///   - phase:
+            ///   - state:
+            public init(
+                carolUrl: Swift.String,
+                city: Swift.String? = nil,
+                country: Swift.String? = nil,
+                damage: Swift.String? = nil,
+                date: Swift.String? = nil,
+                docketUrl: Swift.String? = nil,
+                evId: Swift.String,
+                highestInjury: Swift.String? = nil,
+                kind: Swift.String? = nil,
+                ntsbNo: Swift.String? = nil,
+                phase: Swift.String? = nil,
+                state: Swift.String? = nil
+            ) {
+                self.carolUrl = carolUrl
+                self.city = city
+                self.country = country
+                self.damage = damage
+                self.date = date
+                self.docketUrl = docketUrl
+                self.evId = evId
+                self.highestInjury = highestInjury
+                self.kind = kind
+                self.ntsbNo = ntsbNo
+                self.phase = phase
+                self.state = state
+            }
+            public enum CodingKeys: String, CodingKey {
+                case carolUrl = "carol_url"
+                case city
+                case country
+                case damage
+                case date
+                case docketUrl = "docket_url"
+                case evId = "ev_id"
+                case highestInjury = "highest_injury"
+                case kind
+                case ntsbNo = "ntsb_no"
+                case phase
+                case state
+            }
+        }
         /// One NTSB case of the airplane (wingtip.history.ntsb), its texts
         /// verbatim: where and when (the local date), its phase of flight and
         /// highest injury in the NTSB's words, its probable cause once the final
@@ -14462,6 +14833,149 @@ extension Components {
                 case registration
                 case type
                 case unreadDays = "unread_days"
+            }
+        }
+        /// A canceled registration (DEREG.txt): this airframe's own under this
+        /// or another N-number (`same_airframe`), or another airplane's that had
+        /// this N-number before. The FAA gives no reason for a cancellation beyond
+        /// its `status` then and an `export_country`; the registrant's name and
+        /// town, not the street.
+        ///
+        /// - Remark: Generated from `#/components/schemas/PastRegistration`.
+        public struct PastRegistration: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/airworthiness`.
+            public var airworthiness: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/airworthiness_date`.
+            public var airworthinessDate: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/cancel_date`.
+            public var cancelDate: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/certificate_issued`.
+            public var certificateIssued: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/city`.
+            public var city: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/co_owners`.
+            public var coOwners: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/country`.
+            public var country: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/export_country`.
+            public var exportCountry: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/kit`.
+            public var kit: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/last_action`.
+            public var lastAction: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/manufacturer`.
+            public var manufacturer: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/model`.
+            public var model: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/mode_s_hex`.
+            public var modeSHex: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/n_number`.
+            public var nNumber: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/owner`.
+            public var owner: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/owner_type`.
+            public var ownerType: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/same_airframe`.
+            public var sameAirframe: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/serial`.
+            public var serial: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/state`.
+            public var state: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/status`.
+            public var status: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PastRegistration/year`.
+            public var year: Swift.Int?
+            /// Creates a new `PastRegistration`.
+            ///
+            /// - Parameters:
+            ///   - airworthiness:
+            ///   - airworthinessDate:
+            ///   - cancelDate:
+            ///   - certificateIssued:
+            ///   - city:
+            ///   - coOwners:
+            ///   - country:
+            ///   - exportCountry:
+            ///   - kit:
+            ///   - lastAction:
+            ///   - manufacturer:
+            ///   - model:
+            ///   - modeSHex:
+            ///   - nNumber:
+            ///   - owner:
+            ///   - ownerType:
+            ///   - sameAirframe:
+            ///   - serial:
+            ///   - state:
+            ///   - status:
+            ///   - year:
+            public init(
+                airworthiness: Swift.String? = nil,
+                airworthinessDate: Swift.String? = nil,
+                cancelDate: Swift.String? = nil,
+                certificateIssued: Swift.String? = nil,
+                city: Swift.String? = nil,
+                coOwners: Swift.Int? = nil,
+                country: Swift.String? = nil,
+                exportCountry: Swift.String? = nil,
+                kit: Swift.String? = nil,
+                lastAction: Swift.String? = nil,
+                manufacturer: Swift.String? = nil,
+                model: Swift.String? = nil,
+                modeSHex: Swift.String? = nil,
+                nNumber: Swift.String? = nil,
+                owner: Swift.String? = nil,
+                ownerType: Swift.String? = nil,
+                sameAirframe: Swift.Bool? = nil,
+                serial: Swift.String? = nil,
+                state: Swift.String? = nil,
+                status: Swift.String? = nil,
+                year: Swift.Int? = nil
+            ) {
+                self.airworthiness = airworthiness
+                self.airworthinessDate = airworthinessDate
+                self.cancelDate = cancelDate
+                self.certificateIssued = certificateIssued
+                self.city = city
+                self.coOwners = coOwners
+                self.country = country
+                self.exportCountry = exportCountry
+                self.kit = kit
+                self.lastAction = lastAction
+                self.manufacturer = manufacturer
+                self.model = model
+                self.modeSHex = modeSHex
+                self.nNumber = nNumber
+                self.owner = owner
+                self.ownerType = ownerType
+                self.sameAirframe = sameAirframe
+                self.serial = serial
+                self.state = state
+                self.status = status
+                self.year = year
+            }
+            public enum CodingKeys: String, CodingKey {
+                case airworthiness
+                case airworthinessDate = "airworthiness_date"
+                case cancelDate = "cancel_date"
+                case certificateIssued = "certificate_issued"
+                case city
+                case coOwners = "co_owners"
+                case country
+                case exportCountry = "export_country"
+                case kit
+                case lastAction = "last_action"
+                case manufacturer
+                case model
+                case modeSHex = "mode_s_hex"
+                case nNumber = "n_number"
+                case owner
+                case ownerType = "owner_type"
+                case sameAirframe = "same_airframe"
+                case serial
+                case state
+                case status
+                case year
             }
         }
         /// The altitude PATTERN_NM from a field landed at, against its pattern
@@ -16711,6 +17225,125 @@ extension Components {
                 case method
                 case path
                 case status
+            }
+        }
+        /// A document filed for recording against the N-number (DOCINDEX.txt,
+        /// about the last month's): its kind (bill of sale, lien, release...), the
+        /// day the Registry received it, entered and corrected it.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RegistryDocument`.
+        public struct RegistryDocument: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RegistryDocument/corrected`.
+            public var corrected: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RegistryDocument/document_id`.
+            public var documentId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RegistryDocument/entered`.
+            public var entered: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RegistryDocument/kind`.
+            public var kind: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RegistryDocument/kind_code`.
+            public var kindCode: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RegistryDocument/received`.
+            public var received: Swift.String?
+            /// Creates a new `RegistryDocument`.
+            ///
+            /// - Parameters:
+            ///   - corrected:
+            ///   - documentId:
+            ///   - entered:
+            ///   - kind:
+            ///   - kindCode:
+            ///   - received:
+            public init(
+                corrected: Swift.String? = nil,
+                documentId: Swift.String? = nil,
+                entered: Swift.String? = nil,
+                kind: Swift.String? = nil,
+                kindCode: Swift.String? = nil,
+                received: Swift.String? = nil
+            ) {
+                self.corrected = corrected
+                self.documentId = documentId
+                self.entered = entered
+                self.kind = kind
+                self.kindCode = kindCode
+                self.received = received
+            }
+            public enum CodingKeys: String, CodingKey {
+                case corrected
+                case documentId = "document_id"
+                case entered
+                case kind
+                case kindCode = "kind_code"
+                case received
+            }
+        }
+        /// The N-number's reservation (RESERVED.txt): who reserved it and where
+        /// (name and town), when, the kind, and an N-number change in process.
+        ///
+        /// - Remark: Generated from `#/components/schemas/Reservation`.
+        public struct Reservation: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Reservation/change_to`.
+            public var changeTo: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Reservation/city`.
+            public var city: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Reservation/expiration_notice`.
+            public var expirationNotice: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Reservation/kind`.
+            public var kind: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Reservation/kind_code`.
+            public var kindCode: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Reservation/purge`.
+            public var purge: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Reservation/registrant`.
+            public var registrant: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Reservation/reserved`.
+            public var reserved: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Reservation/state`.
+            public var state: Swift.String?
+            /// Creates a new `Reservation`.
+            ///
+            /// - Parameters:
+            ///   - changeTo:
+            ///   - city:
+            ///   - expirationNotice:
+            ///   - kind:
+            ///   - kindCode:
+            ///   - purge:
+            ///   - registrant:
+            ///   - reserved:
+            ///   - state:
+            public init(
+                changeTo: Swift.String? = nil,
+                city: Swift.String? = nil,
+                expirationNotice: Swift.String? = nil,
+                kind: Swift.String? = nil,
+                kindCode: Swift.String? = nil,
+                purge: Swift.String? = nil,
+                registrant: Swift.String? = nil,
+                reserved: Swift.String? = nil,
+                state: Swift.String? = nil
+            ) {
+                self.changeTo = changeTo
+                self.city = city
+                self.expirationNotice = expirationNotice
+                self.kind = kind
+                self.kindCode = kindCode
+                self.purge = purge
+                self.registrant = registrant
+                self.reserved = reserved
+                self.state = state
+            }
+            public enum CodingKeys: String, CodingKey {
+                case changeTo = "change_to"
+                case city
+                case expirationNotice = "expiration_notice"
+                case kind
+                case kindCode = "kind_code"
+                case purge
+                case registrant
+                case reserved
+                case state
             }
         }
         /// The training run's container as the sidecar left it: `started`
@@ -21349,6 +21982,40 @@ extension Components {
                 case usable
             }
         }
+        /// Where the airplane is usually based, by the engine's `usual_base`
+        /// over its flights ADS-B receivers heard: `field` None where they do not
+        /// show one clearly; `count` of its `ends` (takeoffs and landings) at the
+        /// field most of them are at.
+        ///
+        /// - Remark: Generated from `#/components/schemas/UsualBase`.
+        public struct UsualBase: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UsualBase/count`.
+            public var count: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/UsualBase/ends`.
+            public var ends: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/UsualBase/field`.
+            public var field: Components.Schemas.PastFlightField?
+            /// Creates a new `UsualBase`.
+            ///
+            /// - Parameters:
+            ///   - count:
+            ///   - ends:
+            ///   - field:
+            public init(
+                count: Swift.Int? = nil,
+                ends: Swift.Int? = nil,
+                field: Components.Schemas.PastFlightField? = nil
+            ) {
+                self.count = count
+                self.ends = ends
+                self.field = field
+            }
+            public enum CodingKeys: String, CodingKey {
+                case count
+                case ends
+                case field
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/ValidationError`.
         public struct ValidationError: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ValidationError/ctx`.
@@ -22330,6 +22997,78 @@ extension Components {
                 case coverageSince = "coverage_since"
                 case sources
                 case unchecked
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/app__schemas__airplane__DataSource`.
+        public struct AppSchemasAirplaneDataSource: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/app__schemas__airplane__DataSource/credit`.
+            public var credit: Swift.String
+            /// - Remark: Generated from `#/components/schemas/app__schemas__airplane__DataSource/name`.
+            public var name: Swift.String
+            /// Creates a new `AppSchemasAirplaneDataSource`.
+            ///
+            /// - Parameters:
+            ///   - credit:
+            ///   - name:
+            public init(
+                credit: Swift.String,
+                name: Swift.String
+            ) {
+                self.credit = credit
+                self.name = name
+            }
+            public enum CodingKeys: String, CodingKey {
+                case credit
+                case name
+            }
+        }
+        /// One source the planner downloads and keeps, for the pilot's Status
+        /// page: its name in a pilot's words, when the copy it holds was fetched,
+        /// to when that copy may still be served by the product's own validity
+        /// (None: no limit, or none held), and whether the source is failing,
+        /// the held copy then served on (ISO 8601 UTC); and whether it has
+        /// stopped updating past its usual cadence, as the minute's feed watch
+        /// found it (app.feeds.status_rows), for the page to say so.
+        ///
+        /// - Remark: Generated from `#/components/schemas/app__schemas__briefing__DataSource`.
+        public struct AppSchemasBriefingDataSource: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/app__schemas__briefing__DataSource/failing`.
+            public var failing: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/app__schemas__briefing__DataSource/fetched_at`.
+            public var fetchedAt: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/app__schemas__briefing__DataSource/kept_until`.
+            public var keptUntil: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/app__schemas__briefing__DataSource/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/app__schemas__briefing__DataSource/stale`.
+            public var stale: Swift.Bool?
+            /// Creates a new `AppSchemasBriefingDataSource`.
+            ///
+            /// - Parameters:
+            ///   - failing:
+            ///   - fetchedAt:
+            ///   - keptUntil:
+            ///   - name:
+            ///   - stale:
+            public init(
+                failing: Swift.Bool? = nil,
+                fetchedAt: Swift.String? = nil,
+                keptUntil: Swift.String? = nil,
+                name: Swift.String,
+                stale: Swift.Bool? = nil
+            ) {
+                self.failing = failing
+                self.fetchedAt = fetchedAt
+                self.keptUntil = keptUntil
+                self.name = name
+                self.stale = stale
+            }
+            public enum CodingKeys: String, CodingKey {
+                case failing
+                case fetchedAt = "fetched_at"
+                case keptUntil = "kept_until"
+                case name
+                case stale
             }
         }
     }

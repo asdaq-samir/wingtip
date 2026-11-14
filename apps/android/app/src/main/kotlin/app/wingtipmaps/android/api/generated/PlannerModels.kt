@@ -87,6 +87,357 @@ data class GlideFigures (
     val source: String? = null
 )
 
+/**
+ * Everything public about a US airplane by its N-number
+ * (wingtip.aircraft_details): the FAA registry's records, the NTSB's
+ * cases and where it is usually based. A part the stores do not hold is
+ * null or empty. `based_pending`: being looked up, ask again shortly.
+ */
+@Serializable
+data class AirplaneDetails (
+    val based: UsualBase? = null,
+
+    @SerialName("based_pending")
+    val basedPending: Boolean? = null,
+
+    val documents: List<RegistryDocument>? = null,
+    val engine: EngineModel? = null,
+    val model: AircraftModel? = null,
+
+    @SerialName("n_number")
+    val nNumber: String,
+
+    val ntsb: List<NtsbCase>? = null,
+
+    @SerialName("past_registrations")
+    val pastRegistrations: List<PastRegistration>? = null,
+
+    val registration: AircraftRegistration? = null,
+    val reservation: Reservation? = null,
+    val sources: List<SourceElement>? = null
+)
+
+/**
+ * Where the airplane is usually based, by the engine's `usual_base`
+ * over its flights ADS-B receivers heard: `field` None where they do not
+ * show one clearly; `count` of its `ends` (takeoffs and landings) at the
+ * field most of them are at.
+ */
+@Serializable
+data class UsualBase (
+    val count: Int? = null,
+    val ends: Int? = null,
+    val field: PastFlightField? = null
+)
+
+/**
+ * A document filed for recording against the N-number (DOCINDEX.txt,
+ * about the last month's): its kind (bill of sale, lien, release...), the
+ * day the Registry received it, entered and corrected it.
+ */
+@Serializable
+data class RegistryDocument (
+    val corrected: String? = null,
+
+    @SerialName("document_id")
+    val documentId: String? = null,
+
+    val entered: String? = null,
+    val kind: String? = null,
+
+    @SerialName("kind_code")
+    val kindCode: String? = null,
+
+    val received: String? = null
+)
+
+/**
+ * The FAA's reference record of an engine (ENGINE.txt): horsepower for
+ * piston and turbine-shaft engines, thrust for jets.
+ */
+@Serializable
+data class EngineModel (
+    val code: String,
+
+    @SerialName("engine_type")
+    val engineType: String? = null,
+
+    val horsepower: Int? = null,
+    val manufacturer: String? = null,
+    val model: String? = null,
+
+    @SerialName("thrust_lb")
+    val thrustLb: Int? = null
+)
+
+/**
+ * The FAA's reference record of a make, model and series (ACFTREF.txt,
+ * ardata.pdf's Aircraft Reference File). `cruise_mph` is the FAA's
+ * "average cruising speed" in statute miles an hour, on some records
+ * only: a reference figure, not one to plan with. `tc_data_sheet` and
+ * `tc_holder` are the type certificate data sheet's number and holder,
+ * where the FAA's file gives them (about one airplane in ten).
+ */
+@Serializable
+data class AircraftModel (
+    @SerialName("aircraft_type")
+    val aircraftType: String? = null,
+
+    @SerialName("builder_certification")
+    val builderCertification: String? = null,
+
+    val category: String? = null,
+    val code: String,
+
+    @SerialName("cruise_mph")
+    val cruiseMph: Int? = null,
+
+    @SerialName("engine_type")
+    val engineType: String? = null,
+
+    val engines: Int? = null,
+    val manufacturer: String? = null,
+    val model: String? = null,
+    val seats: Int? = null,
+
+    @SerialName("tc_data_sheet")
+    val tcDataSheet: String? = null,
+
+    @SerialName("tc_holder")
+    val tcHolder: String? = null,
+
+    @SerialName("weight_class")
+    val weightClass: String? = null
+)
+
+/**
+ * An accident or incident of the airplane in the NTSB's database (cases
+ * since 2008), in the NTSB's words, with its CAROL report and docket.
+ */
+@Serializable
+data class NtsbCase (
+    @SerialName("carol_url")
+    val carolUrl: String,
+
+    val city: String? = null,
+    val country: String? = null,
+    val damage: String? = null,
+    val date: String? = null,
+
+    @SerialName("docket_url")
+    val docketUrl: String? = null,
+
+    @SerialName("ev_id")
+    val evId: String,
+
+    @SerialName("highest_injury")
+    val highestInjury: String? = null,
+
+    val kind: String? = null,
+
+    @SerialName("ntsb_no")
+    val ntsbNo: String? = null,
+
+    val phase: String? = null,
+    val state: String? = null
+)
+
+/**
+ * A canceled registration (DEREG.txt): this airframe's own under this
+ * or another N-number (`same_airframe`), or another airplane's that had
+ * this N-number before. The FAA gives no reason for a cancellation beyond
+ * its `status` then and an `export_country`; the registrant's name and
+ * town, not the street.
+ */
+@Serializable
+data class PastRegistration (
+    val airworthiness: String? = null,
+
+    @SerialName("airworthiness_date")
+    val airworthinessDate: String? = null,
+
+    @SerialName("cancel_date")
+    val cancelDate: String? = null,
+
+    @SerialName("certificate_issued")
+    val certificateIssued: String? = null,
+
+    val city: String? = null,
+
+    @SerialName("co_owners")
+    val coOwners: Int? = null,
+
+    val country: String? = null,
+
+    @SerialName("export_country")
+    val exportCountry: String? = null,
+
+    val kit: String? = null,
+
+    @SerialName("last_action")
+    val lastAction: String? = null,
+
+    val manufacturer: String? = null,
+
+    @SerialName("mode_s_hex")
+    val modeSHex: String? = null,
+
+    val model: String? = null,
+
+    @SerialName("n_number")
+    val nNumber: String? = null,
+
+    val owner: String? = null,
+
+    @SerialName("owner_type")
+    val ownerType: String? = null,
+
+    @SerialName("same_airframe")
+    val sameAirframe: Boolean? = null,
+
+    val serial: String? = null,
+    val state: String? = null,
+    val status: String? = null,
+    val year: Int? = null
+)
+
+/**
+ * A US airplane's record in the FAA's aircraft registry (wingtip.registry,
+ * the Releasable Aircraft Database): who it is registered to and where,
+ * what it is, its engine, and its registration's and airworthiness
+ * certificates. The owner's town, never the street; an owner who asked
+ * the FAA to withhold their name (49 U.S.C. 44114(b)) is not in it.
+ */
+@Serializable
+data class AircraftRegistration (
+    @SerialName("aircraft_type")
+    val aircraftType: String? = null,
+
+    val airworthiness: String? = null,
+
+    @SerialName("airworthiness_date")
+    val airworthinessDate: String? = null,
+
+    @SerialName("certificate_issued")
+    val certificateIssued: String? = null,
+
+    @SerialName("certification_code")
+    val certificationCode: String? = null,
+
+    val city: String? = null,
+
+    @SerialName("co_owner_names")
+    val coOwnerNames: List<String>? = null,
+
+    @SerialName("co_owners")
+    val coOwners: Int? = null,
+
+    val country: String? = null,
+    val engine: String? = null,
+
+    @SerialName("engine_code")
+    val engineCode: String? = null,
+
+    @SerialName("engine_type")
+    val engineType: String? = null,
+
+    val engines: Int? = null,
+    val expires: String? = null,
+    val fractional: Boolean? = null,
+    val horsepower: Int? = null,
+    val kit: String? = null,
+
+    @SerialName("last_action")
+    val lastAction: String? = null,
+
+    val manufacturer: String? = null,
+
+    @SerialName("mode_s_hex")
+    val modeSHex: String? = null,
+
+    @SerialName("mode_s_octal")
+    val modeSOctal: String? = null,
+
+    val model: String? = null,
+
+    @SerialName("model_code")
+    val modelCode: String? = null,
+
+    @SerialName("n_number")
+    val nNumber: String,
+
+    val owner: String? = null,
+
+    @SerialName("owner_type")
+    val ownerType: String? = null,
+
+    val region: String? = null,
+    val seats: Int? = null,
+    val serial: String? = null,
+    val standing: String? = null,
+    val state: String? = null,
+    val status: String? = null,
+
+    @SerialName("thrust_lb")
+    val thrustLb: Int? = null,
+
+    @SerialName("unique_id")
+    val uniqueId: String? = null,
+
+    val year: Int? = null
+)
+
+/**
+ * The N-number's reservation (RESERVED.txt): who reserved it and where
+ * (name and town), when, the kind, and an N-number change in process.
+ */
+@Serializable
+data class Reservation (
+    @SerialName("change_to")
+    val changeTo: String? = null,
+
+    val city: String? = null,
+
+    @SerialName("expiration_notice")
+    val expirationNotice: String? = null,
+
+    val kind: String? = null,
+
+    @SerialName("kind_code")
+    val kindCode: String? = null,
+
+    val purge: String? = null,
+    val registrant: String? = null,
+    val reserved: String? = null,
+    val state: String? = null
+)
+
+@Serializable
+data class SourceElement (
+    val credit: String,
+    val name: String
+)
+
+/**
+ * The newest photo of this very airplane on Planespotters.net. Its
+ * terms: show `photographer` as visible text next to the image, make the
+ * image a plain link to `link`, load the image straight from
+ * `thumbnail`/`thumbnail_large` unchanged, and never store or pass it on.
+ */
+@Serializable
+data class AirplanePhoto (
+    val height: Int? = null,
+    val link: String,
+    val photographer: String? = null,
+    val source: String? = null,
+    val thumbnail: String? = null,
+
+    @SerialName("thumbnail_large")
+    val thumbnailLarge: String? = null,
+
+    val width: Int? = null
+)
+
 @Serializable
 data class AirportAtis (
     val airport: String,
@@ -3293,69 +3644,6 @@ data class FlightDeparted (
     val at: Double,
     val ident: String,
     val name: String? = null
-)
-
-/**
- * A US airplane's record in the FAA's aircraft registry (wingtip.registry,
- * the Releasable Aircraft Database): who it is registered to and where,
- * what it is, its engine, and its registration's and airworthiness
- * certificates. The owner's town, never the street; an owner who asked
- * the FAA to withhold their name (49 U.S.C. 44114(b)) is not in it.
- */
-@Serializable
-data class AircraftRegistration (
-    @SerialName("aircraft_type")
-    val aircraftType: String? = null,
-
-    val airworthiness: String? = null,
-
-    @SerialName("airworthiness_date")
-    val airworthinessDate: String? = null,
-
-    @SerialName("certificate_issued")
-    val certificateIssued: String? = null,
-
-    val city: String? = null,
-
-    @SerialName("co_owners")
-    val coOwners: Int? = null,
-
-    val country: String? = null,
-    val engine: String? = null,
-
-    @SerialName("engine_type")
-    val engineType: String? = null,
-
-    val engines: Int? = null,
-    val expires: String? = null,
-    val fractional: Boolean? = null,
-    val horsepower: Int? = null,
-    val kit: String? = null,
-    val manufacturer: String? = null,
-
-    @SerialName("mode_s_hex")
-    val modeSHex: String? = null,
-
-    val model: String? = null,
-
-    @SerialName("n_number")
-    val nNumber: String,
-
-    val owner: String? = null,
-
-    @SerialName("owner_type")
-    val ownerType: String? = null,
-
-    val seats: Int? = null,
-    val serial: String? = null,
-    val standing: String? = null,
-    val state: String? = null,
-    val status: String? = null,
-
-    @SerialName("thrust_lb")
-    val thrustLb: Int? = null,
-
-    val year: Int? = null
 )
 
 /**
