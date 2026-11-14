@@ -1,5 +1,5 @@
 import { Button as BaseButton } from "@base-ui/react/button";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Carousel, CarouselContent, CarouselItem } from "./ui/carousel";
 
 /** One picture of a card's strip: what it shows, and a click's lightbox
@@ -42,7 +42,14 @@ export function CardPictures({
   label: string;
   testId: string;
 }) {
-  const shown = slides.filter((s): s is CardSlide => !!s);
+  const present = slides.filter((s): s is CardSlide => !!s);
+  // A picture that arrives later goes after those already in the row, never
+  // before the one in view (FL-23); the first draw keeps the card's order.
+  const [order, setOrder] = useState<string[]>(() => present.map((s) => s.key));
+  const keys = present.map((s) => s.key);
+  const next = [...order.filter((k) => keys.includes(k)), ...keys.filter((k) => !order.includes(k))];
+  if (next.join("\n") !== order.join("\n")) setOrder(next);
+  const shown = [...present].sort((a, b) => next.indexOf(a.key) - next.indexOf(b.key));
   if (!shown.length) return null;
   return (
     // A sideways drag the row's, an up or down one the sheet's (the one scrolling rule).
