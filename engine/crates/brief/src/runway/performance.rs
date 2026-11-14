@@ -180,11 +180,15 @@ pub(crate) fn has(text: &str, words: &[&str]) -> bool {
     words.iter().any(|w| text.contains(w))
 }
 
-/// A runway with a soft surface -- turf, grass, dirt or gravel, as
-/// OurAirports and NASR code it -- for the POH's correction to the ground
-/// roll on dry grass.
+/// The words of a soft surface: turf, grass, dirt or gravel, as
+/// OurAirports writes them and as NASR APT_RWY's SURFACE_TYPE_CODE codes
+/// them (TURF, DIRT, GRVL; a combined "ASPH-TURF" is soft in part).
+pub(crate) const SOFT: [&str; 6] = ["turf", "grass", "grs", "dirt", "gravel", "grvl"];
+
+/// A runway with a soft surface (SOFT), for the POH's correction to the
+/// ground roll on dry grass.
 pub fn soft_surface(runway: Option<&Runway>) -> bool {
-    runway.and_then(|r| r.surface.as_deref()).is_some_and(|s| has(s, &["turf", "grass", "grs", "dirt", "gravel"]))
+    runway.and_then(|r| r.surface.as_deref()).is_some_and(|s| has(s, &SOFT))
 }
 
 /// The air a field's distances are worked out in: its pressure altitude

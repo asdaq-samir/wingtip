@@ -58,3 +58,37 @@ fn a_landing_short_of_the_runway_past_its_displaced_threshold_is_short_and_a_tak
     let takeoff = fit("takeoff", length, json!({"ident": "27", "heading_true_deg": 270}));
     assert_eq!(takeoff["length_ft"].as_f64(), Some(length));
 }
+
+#[test]
+fn nasrs_combined_and_gravel_surfaces_are_soft_and_not_paved() {
+    use wingtip_engine::gonogo::runways::soft_surface;
+    let r = |s: &str| Runway { surface: Some(s.into()), ..Runway::default() };
+    // NASR APT_RWY SURFACE_TYPE_CODE: GRVL (389 runways), a combined
+    // ASPH-TURF; ASPH and CONC alone are paved and not soft.
+    for soft in ["GRVL", "ASPH-TURF", "TURF", "DIRT", "Grass"] {
+        assert!(soft_surface(Some(&r(soft))), "{soft}");
+    }
+    for hard in ["ASPH", "CONC", "ASPH-G", "CONC-F"] {
+        assert!(!soft_surface(Some(&r(hard))), "{hard}");
+    }
+    // The most used runway is the paved one: ASPH-TURF counts as unpaved.
+    let runways = json!([
+        {"surface": "ASPH-TURF", "length_ft": 5000, "closed": false, "runway_ends": [{"ident": "09", "heading_true_deg": 90}]},
+        {"surface": "ASPH", "length_ft": 3000, "closed": false, "runway_ends": [{"ident": "18", "heading_true_deg": 180}]}
+    ]);
+    let flown = ask("gonogo_runway_in_use", json!({"runways": runways}));
+    assert_eq!(flown["runway"], json!(1), "{flown}");
+}
+
+#[test]
+fn chicago_executives_runway_12_30_as_nasr_gives_it() {
+    // NASR APT_RWY_END for PWK 12/30, 4,415 ft: end 12 displaced 295 ft
+    // with 3,785 ft of LDA, end 30 displaced 432 ft with 3,725 ft.
+    let runway = Runway { length_ft: Some(4415.0), ..Runway::default() };
+    let end = |d: f64, lda: Option<f64>| End { displaced_threshold_ft: Some(d), lda_ft: lda, ..End::default() };
+    assert_eq!(available_ft(&runway, Some(&end(295.0, Some(3785.0)))), Some(3785.0));
+    assert_eq!(available_ft(&runway, Some(&end(432.0, Some(3725.0)))), Some(3725.0));
+    // Without the declared LDA, the length past the threshold.
+    assert_eq!(available_ft(&runway, Some(&end(295.0, None))), Some(4120.0));
+    assert_eq!(available_ft(&runway, None), Some(4415.0));
+}

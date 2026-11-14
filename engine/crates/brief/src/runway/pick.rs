@@ -6,7 +6,7 @@
 //! arrives (AC 90-66C 11.3 and Appendix A) and leave it (11.8); and how
 //! high it is flown.
 
-use super::performance::has;
+use super::performance::{has, SOFT};
 use super::wind::{js_normalize, js_round, RunwayWind};
 use wingtip_core::sort::StableSort;
 
@@ -60,10 +60,11 @@ pub fn runway_number(ident: &str) -> &str {
     }
 }
 
-/// Paved, asphalt or concrete (OurAirports' surface codes), where an
-/// unpaved strip may be listed longer.
-fn paved(r: &Runway) -> bool {
-    r.surface.as_deref().is_some_and(|s| has(s, &["asp", "con", "bit", "pem", "paved"]))
+/// Paved, asphalt or concrete (OurAirports' surface codes, NASR's ASPH and
+/// CONC), where an unpaved strip may be listed longer. A combined surface
+/// with a soft part, NASR's "ASPH-TURF", is not paved: some of it is turf.
+pub(crate) fn paved(r: &Runway) -> bool {
+    r.surface.as_deref().is_some_and(|s| has(s, &["asp", "con", "bit", "pem", "paved"]) && !has(s, &SOFT))
 }
 
 /// Paved first, then the longer: the runway a field's traffic uses most,
