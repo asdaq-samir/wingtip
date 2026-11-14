@@ -131,7 +131,7 @@ fun ChartMap(
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow).also(WeatherLoopLayer::follow).also(ForecastAreasLayer::follow).also(StationLayer::follow).also(Map3dLayer::follow).also(app.wingtipmaps.android.map.flow.ModelWeatherLayer::follow), density) } }
+    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow).also(WeatherLoopLayer::follow).also(ForecastAreasLayer::follow).also(StationLayer::follow).also(Map3dLayer::follow).also(app.wingtipmaps.android.map.flow.ModelWeatherLayer::follow).also(TfrLayer::follow).also(NavaidFind::follow), density) } }
     holder.onDragged = onDragged
     holder.onRevealed = onRevealed
     holder.onPick = onPick
@@ -551,7 +551,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             f.getNumberProperty(RouteLegs.LEG)?.toInt()?.let { MapPick.RouteLeg(it) }
         } ?: plates.at(at.latitude, at.longitude) ?: near(TAP_LINE, *MapStyle.AIRSPACE_LINES.toTypedArray())?.let { f ->
             MapPick.airspace(properties(f), at.latitude, at.longitude)
-        }
+        } ?: TfrLayer.pick(map, p) // Inside a TFR's area, last, as the web's TAP.rank.area.
         if (picked != null) onPick(picked)
         return picked != null
     }

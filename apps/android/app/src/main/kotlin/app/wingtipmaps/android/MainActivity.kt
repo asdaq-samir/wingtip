@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
         val data = intent?.data ?: return
         when (val link = Links.parse(data.toString())) {
             is Links.SignIn -> session.open(data)
-            is Links.Route, is Links.Place, is Links.Open, is Links.Shared -> pending.value = link
+            is Links.Route, is Links.Place, is Links.Tfr, is Links.Navaid, is Links.Open, is Links.Shared -> pending.value = link
             null -> {}
         }
     }

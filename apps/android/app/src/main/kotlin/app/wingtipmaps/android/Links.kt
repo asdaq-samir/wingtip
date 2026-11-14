@@ -5,6 +5,8 @@ import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.share.SharedPlan
 import java.net.URI
 import java.net.URLDecoder
+import java.net.URLEncoder
+import java.util.Locale
 
 /**
  * The site's links the app opens in place of Chrome (App Links, the
@@ -30,6 +32,13 @@ object Links {
 
     /** A field's card to open. */
     data class Place(val ident: String) : Link
+
+    /** A TFR's card to open, by its FDC NOTAM number ("6/4116"). */
+    data class Tfr(val notamId: String) : Link
+
+    /** A VOR's card to open, by its ident and place, as one ident names
+     *  navaids in more than one place (`OBK@42.2214,-87.9517`). */
+    data class Navaid(val ident: String, val lat: Double, val lon: Double) : Link
 
     /** A flight another pilot sent (`open=shared`): its plan in the link,
      *  or a saved flight's share token to read it by. Previewed first,
@@ -79,7 +88,36 @@ object Links {
             return Route(dep, dest, stops, screen)
         }
         val place = ident(query["place"])
-        return if (place.isNotEmpty()) Place(place) else screen?.let { Open(it) }
+        if (place.isNotEmpty()) return Place(place)
+        // A thing's card by its own key, as the web's address opens it.
+        query[LinkKey.TFR.key]?.trim()?.takeIf { TFR_ID.matches(it) }?.let { return Tfr(it) }
+        query[LinkKey.NAVAID.key]?.let(::navaidAt)?.let { return it }
+        return screen?.let { Open(it) }
+    }
+
+    /** An FDC NOTAM's number as tfr.faa.gov lists a TFR: "6/4116". */
+    private val TFR_ID = Regex("""^\d{1,2}/\d{3,5}$""")
+    private val NAVAID_IDENT = Regex("""^[A-Z0-9]{2,4}$""")
+
+    /** "OBK@42.2214,-87.9517": the ident, then its place; else none. */
+    private fun navaidAt(text: String): Navaid? {
+        val ident = text.substringBefore("@").trim()
+        val at = text.substringAfter("@", "").split(",").mapNotNull { it.trim().toDoubleOrNull() }
+        if (!NAVAID_IDENT.matches(ident) || at.size != 2) return null
+        val (lat, lon) = at
+        if (lat !in -90.0..90.0 || lon !in -180.0..180.0) return null
+        return Navaid(ident, lat, lon)
+    }
+
+    /** A TFR's own link, its card opened from it, at the site's `origin`. */
+    fun tfrLink(notamId: String, origin: String = Config.gateway): String =
+        "$origin${Screen.LINK_PATH}?${LinkKey.TFR.key}=${URLEncoder.encode(notamId, "UTF-8")}"
+
+    /** A VOR's own link, its ident and its place to four places, at the
+     *  site's `origin`. */
+    fun navaidLink(ident: String, lat: Double, lon: Double, origin: String = Config.gateway): String {
+        val at = String.format(Locale.US, "%s@%.4f,%.4f", ident, lat, lon)
+        return "$origin${Screen.LINK_PATH}?${LinkKey.NAVAID.key}=${URLEncoder.encode(at, "UTF-8")}"
     }
 
     private fun ident(text: String?): String = text.orEmpty().trim().uppercase()

@@ -83,6 +83,19 @@ sealed interface MapPick {
     @Serializable
     data class Plate(val ident: String, val procedure: String) : MapPick
 
+    /** A temporary flight restriction, by its FDC NOTAM number as
+     *  tfr.faa.gov lists it ("6/4116"): its card reads it from the list
+     *  the map draws (TfrLayer), as a tap and a link `tfr=` both open it. */
+    @Serializable
+    data class Tfr(val notamId: String) : MapPick
+
+    /** A VOR asked for by a link (`navaid=OBK@42.2214,-87.9517`), its
+     *  ident and place, as one ident names navaids in more than one
+     *  place: the map is taken there and its card filled from the tiles
+     *  once they are in (NavaidFind), as the web's link does. */
+    @Serializable
+    data class NavaidAt(val ident: String, val lat: Double, val lon: Double) : MapPick
+
     companion object {
         private fun text(v: Any?): String? = v?.toString()?.takeIf { it.isNotEmpty() }
         private fun number(v: Any?): Double? = when (v) {

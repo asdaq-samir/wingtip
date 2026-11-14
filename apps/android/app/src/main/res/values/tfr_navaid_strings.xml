@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The TFR card, as the web's TfrCard says it. -->
+    <string name="tfr_card_title">TFR %1$s</string>
+    <string name="tfr_card_faa_page">The NOTAM on tfr.faa.gov</string>
+    <string name="tfr_card_gone">Not on tfr.faa.gov\'s list now: ended or cancelled.</string>
+    <string name="tfr_card_unloaded">The TFRs didn\'t load. Check tfr.faa.gov before flight.</string>
+    <string name="tfr_card_from">From %1$s until further notice</string>
+    <string name="tfr_card_until">Until %1$s</string>
+
+    <!-- The navaid card, as the web's NavaidCards say it. -->
+    <string name="navaid_card_title">%1$s %2$s</string>
+    <string name="navaid_card_looking">Finding %1$s on the chart…</string>
+    <string name="navaid_card_missing">%1$s isn\'t in this cycle\'s data at that place.</string>
+    <string name="navaid_card_copy">Copy %1$s</string>
+</resources>

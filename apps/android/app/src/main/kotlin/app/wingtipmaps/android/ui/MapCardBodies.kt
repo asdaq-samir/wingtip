@@ -103,10 +103,10 @@ private fun MapPick.Vor.station() = app.wingtipmaps.android.engine.Station(ident
  *  station tuned is the one meant, AIM 1-1-3); its DME channel, service
  *  volume, elevation, declination and hours; and its remarks, as the
  *  Chart Supplement lists them, under Restrictions where it is in service
- *  with them. */
+ *  with them. Its name, kind, place and frequency are its card's bar's
+ *  (ThingCard), no mark before them (the web's 8439547dc). */
 @Composable
 internal fun VorCard(vor: MapPick.Vor, flight: FlightModel = hiltViewModel()) {
-    Head(ink(MapStyle.BLUE), vor.kind, listOfNotNull(vor.name?.let(MapRules::placeName), vor.freq).joinToString(" · "))
     val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
     val radial = fix?.let { MapRules.radialOf(vor.station(), it.lat, it.lon) }
     radial?.exceptionOrNull()?.let { ProblemLine("The radial failed: ${it.message}") }

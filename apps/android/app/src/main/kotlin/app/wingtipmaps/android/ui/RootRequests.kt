@@ -8,6 +8,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.map.NavaidFind
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.route.RouteLegModel
@@ -62,6 +64,13 @@ internal fun RootRequests(
         when (val opened = link) {
             null -> return@LaunchedEffect
             is Links.Place -> pages.show(SheetPage.Airport(opened.ident))
+            // A TFR's or a VOR's card, the same a tap opens; the VOR found
+            // on the chart once the map is there (NavaidFind).
+            is Links.Tfr -> pages.show(SheetPage.Thing(MapPick.Tfr(opened.notamId)))
+            is Links.Navaid -> MapPick.NavaidAt(opened.ident, opened.lat, opened.lon).let { at ->
+                NavaidFind.find(at)
+                pages.show(SheetPage.Thing(at))
+            }
             is Links.Route -> {
                 plan.plan(opened.dep, opened.dest, opened.stops)
                 showPlan()

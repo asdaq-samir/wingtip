@@ -5,12 +5,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.graphics.toColorInt
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -61,7 +65,10 @@ import app.wingtipmaps.android.ui.sheet.CardPage
 fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit, onRouted: () -> Unit) {
     val title = when (pick) {
         is MapPick.Airspace -> stringResource(R.string.airspace_class, pick.airspaceClass)
-        is MapPick.Vor -> pick.ident
+        // A VOR's name with its kind, "OBK VOR/DME" (the web's 8439547dc).
+        is MapPick.Vor -> stringResource(R.string.navaid_card_title, pick.ident, pick.kind)
+        is MapPick.NavaidAt -> foundVor(pick)?.let { stringResource(R.string.navaid_card_title, it.ident, it.kind) } ?: pick.ident
+        is MapPick.Tfr -> stringResource(R.string.tfr_card_title, pick.notamId)
         is MapPick.Point -> pick.ident
         is MapPick.Plane -> pick.hex.uppercase()
         is MapPick.Here -> stringResource(R.string.whats_here)
@@ -70,6 +77,21 @@ fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit, onRouted: () -> Unit) {
         is MapPick.RouteLeg -> stringResource(R.string.route_leg)
         is MapPick.Plate -> pick.ident
     }
+    // A VOR's place and frequency under its name, "Northbrook · 113.0".
+    val subtitle = when (pick) {
+        is MapPick.Vor -> vorLine(pick)
+        is MapPick.NavaidAt -> foundVor(pick)?.let(::vorLine)
+        else -> null
+    }
+    // Share sends the card's own link, which opens this card (tfr=, navaid=),
+    // a bar action before ✕, Material's place for a card's own actions.
+    val context = LocalContext.current
+    val link = linkOf(pick)
+    val share: @Composable RowScope.() -> Unit = {
+        if (link != null) {
+            IconButton(onClick = { shareLink(context, title, link) }) { Icon(WingtipIcons.share, contentDescription = stringResource(R.string.share)) }
+        }
+    }
     val actions = rememberRouteActions(plan)
     // An action that changes the route closes the card onto the FPL page,
     // so the route is seen being planned; Call, Address and Copy leave it open.
@@ -77,7 +99,7 @@ fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit, onRouted: () -> Unit) {
         run()
         if (action != CardAction.CALL && action != CardAction.ADDRESS && action != CardAction.COPY) onRouted()
     }
-    CardPage(title = title, exit = exit) { padding ->
+    CardPage(title = title, exit = exit, subtitle = subtitle, actions = share) { padding ->
         // Traffic is heard again by itself; no pull to refresh in a sheet.
         Box(Modifier.padding(padding)) {
             Column(
@@ -90,13 +112,16 @@ fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit, onRouted: () -> Unit) {
                         PointActions(CardKind.POINT, pick, actions, act)
                         SpecialUseRows(pick.lat, pick.lon)
                     }
+                    // The actions under the name, then the content (the card rule's 13).
                     is MapPick.Vor -> {
+                        NavaidActions(pick, dialFrequency(pick.freq), actions, act)
                         VorCard(pick)
-                        PointActions(CardKind.NAVAID, pick, actions, act)
                     }
+                    is MapPick.NavaidAt -> NavaidAtBody(pick, actions, act)
+                    is MapPick.Tfr -> TfrCardBody(pick.notamId)
                     is MapPick.Point -> {
                         PointCard(pick)
-                        PointActions(CardKind.NAVAID, pick, actions, act)
+                        NavaidActions(pick, null, actions, act)
                     }
                     is MapPick.Plane -> PlaneCard(pick.hex)
                     is MapPick.Here -> {
