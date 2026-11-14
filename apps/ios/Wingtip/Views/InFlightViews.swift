@@ -358,7 +358,7 @@ struct ForgetNotesButton: View {
                 Button("Forget Them", role: .destructive) {
                     Task {
                         do {
-                            let removed = try await Planner.forgetNotes()
+                            let removed = try await Gateway.forgetNotes()
                             said = removed == 1 ? "1 note forgotten" : "\(removed) notes forgotten"
                             problem = nil
                         } catch {
