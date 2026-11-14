@@ -13380,6 +13380,11 @@
             ],
             "title": "Temp C"
           },
+          "visibility_plus": {
+            "default": false,
+            "title": "Visibility Plus",
+            "type": "boolean"
+          },
           "visibility_sm": {
             "anyOf": [
               {
@@ -27411,7 +27416,7 @@
               "anyOf": [
                 {
                   "exclusiveMinimum": 0,
-                  "maximum": 100,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -28581,6 +28586,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -28597,6 +28604,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 2000,
                   "type": "number"
                 },
                 {
@@ -28631,6 +28640,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -29219,6 +29230,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -29235,6 +29248,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 2000,
                   "type": "number"
                 },
                 {
@@ -29269,6 +29284,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -30421,6 +30438,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -30437,6 +30456,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 2000,
                   "type": "number"
                 },
                 {
@@ -30471,6 +30492,8 @@
             "schema": {
               "anyOf": [
                 {
+                  "exclusiveMinimum": 0,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {
@@ -30941,7 +30964,7 @@
               "anyOf": [
                 {
                   "exclusiveMinimum": 0,
-                  "maximum": 200,
+                  "maximum": 150,
                   "type": "number"
                 },
                 {

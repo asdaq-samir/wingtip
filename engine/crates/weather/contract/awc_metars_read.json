@@ -68,6 +68,10 @@
               "null"
             ]
           },
+          "visibility_plus": {
+            "type": "boolean",
+            "description": "The visibility is at least visibility_sm: the feed's \"10+\", the report's P6SM or 10SM and more."
+          },
           "wind_dir_true_deg": {
             "type": [
               "number",
@@ -126,6 +130,7 @@
           "ceiling_unknown",
           "ceiling_cover",
           "visibility_sm",
+          "visibility_plus",
           "wind_dir_true_deg",
           "wind_speed_kt",
           "wind_gust_kt",

@@ -12191,6 +12191,8 @@ extension Components {
             public var raw: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Metar/temp_c`.
             public var tempC: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/Metar/visibility_plus`.
+            public var visibilityPlus: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Metar/visibility_sm`.
             public var visibilitySm: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Metar/wind_dir_true_deg`.
@@ -12210,6 +12212,7 @@ extension Components {
             ///   - observedAt:
             ///   - raw:
             ///   - tempC:
+            ///   - visibilityPlus:
             ///   - visibilitySm:
             ///   - windDirTrueDeg:
             ///   - windGustKt:
@@ -12223,6 +12226,7 @@ extension Components {
                 observedAt: Swift.String? = nil,
                 raw: Swift.String? = nil,
                 tempC: Swift.Double? = nil,
+                visibilityPlus: Swift.Bool? = nil,
                 visibilitySm: Swift.Double? = nil,
                 windDirTrueDeg: Swift.Double? = nil,
                 windGustKt: Swift.Double? = nil,
@@ -12236,6 +12240,7 @@ extension Components {
                 self.observedAt = observedAt
                 self.raw = raw
                 self.tempC = tempC
+                self.visibilityPlus = visibilityPlus
                 self.visibilitySm = visibilitySm
                 self.windDirTrueDeg = windDirTrueDeg
                 self.windGustKt = windGustKt
@@ -12250,6 +12255,7 @@ extension Components {
                 case observedAt = "observed_at"
                 case raw
                 case tempC = "temp_c"
+                case visibilityPlus = "visibility_plus"
                 case visibilitySm = "visibility_sm"
                 case windDirTrueDeg = "wind_dir_true_deg"
                 case windGustKt = "wind_gust_kt"

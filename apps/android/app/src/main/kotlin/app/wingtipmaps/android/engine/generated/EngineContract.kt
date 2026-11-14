@@ -74,6 +74,10 @@ object EngineContract {
         val descentIasKt: String? = null,
         val descentFuelBurnGph: String? = null,
         val usableFuelGal: String? = null,
+        val serviceCeilingFt: String? = null,
+        val climbRateFpm: String? = null,
+        val taxiFuelGal: String? = null,
+        val glideRatio: String? = null,
         val equipment: String? = null,
         val surveillance: String? = null,
         val colour: String? = null,
@@ -91,10 +95,59 @@ object EngineContract {
         val descentIasKt: String? = null,
         val descentFuelBurnGph: String? = null,
         val usableFuelGal: String? = null,
+        val serviceCeilingFt: String? = null,
+        val climbRateFpm: String? = null,
+        val taxiFuelGal: String? = null,
+        val glideRatio: String? = null,
         val equipment: String? = null,
         val surveillance: String? = null,
         val colour: String? = null,
     )
+
+    @Serializable
+    data class AirplaneFigureRangesAnswer(
+        val ranges: List<EngineContract.AirplaneFigureRangesAnswerRangesItem>,
+    )
+
+    @Serializable
+    data class AirplaneFigureRangesAnswerRangesItem(
+        /**
+         * The form's and the gateway's name, cruiseTasKt.
+         */
+        val field: String,
+        /**
+         * The planner's query parameter, cruise_tas_kt.
+         */
+        val query: String,
+        /**
+         * The field's name in the form's words, Cruise speed.
+         */
+        val label: String,
+        /**
+         * kt, gal/h, gal, %, ft, fpm, or empty for a ratio.
+         */
+        val unit: String,
+        val min: Double,
+        /**
+         * min itself is inside; otherwise only above it.
+         */
+        @SerialName("min_inclusive")
+        val minInclusive: Boolean,
+        /**
+         * The highest inside.
+         */
+        val max: Double,
+        /**
+         * The form needs it (the cruise speed and burn).
+         */
+        val required: Boolean,
+    )
+
+    @Serializable
+    class AirplaneFigureRangesInput {
+        override fun equals(other: Any?): Boolean = other is AirplaneFigureRangesInput
+        override fun hashCode(): Int = 0
+    }
 
     @Serializable
     data class AirplaneFiguresAnswer(
@@ -1614,6 +1667,11 @@ object EngineContract {
         val ceilingCover: String? = null,
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
+        /**
+         * The visibility is at least visibility_sm: the feed's "10+", the report's P6SM or 10SM and more.
+         */
+        @SerialName("visibility_plus")
+        val visibilityPlus: Boolean,
         @SerialName("wind_dir_true_deg")
         val windDirTrueDeg: Double? = null,
         @SerialName("wind_speed_kt")
@@ -3641,6 +3699,26 @@ object EngineContract {
          * Hours after Now; 24 where not given.
          */
         val count: Double? = null,
+    )
+
+    @Serializable
+    data class FieldMilitaryAnswer(
+        /**
+         * military, joint, or null for a field the services do not own.
+         */
+        val military: String? = null,
+    )
+
+    @Serializable
+    data class FieldMilitaryInput(
+        /**
+         * NASR APT_BASE's OWNERSHIP_TYPE_CODE (PU, PR, MA, MN, MR, CG).
+         */
+        val ownership: String? = null,
+        /**
+         * NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
+         */
+        val use: String? = null,
     )
 
     @Serializable
@@ -11334,7 +11412,11 @@ object EngineContract {
     @Serializable
     data class StripFuelAnswerShortItem(
         /**
-         * "C81 → KMSN"; "" for a route with no stops.
+         * The flight's index in `hops`, whose two ends an app names with its own point names (a pilot's own point is "@lat,lon" in the idents); null for a route with no stops.
+         */
+        val hop: Int? = null,
+        /**
+         * The flight's idents as sent, "C81 → KMSN"; "" for a route with no stops. A pilot's own point shows here as its raw "@lat,lon": name the ends from `hop` instead.
          */
         val name: String,
         @SerialName("short_gal")

@@ -18,10 +18,15 @@ pub struct Hop {
     pub fuel_margin_gal: Option<f64>,
 }
 
-/// A flight the tanks do not hold the fuel and its reserve for: "C81 →
-/// KMSN", or "" for a route with no stops, and by how much.
+/// A flight the tanks do not hold the fuel and its reserve for: which hop
+/// (None for a route with no stops), its idents as sent ("C81 → KMSN", ""
+/// with no stops), and by how much. An app names the hop's two ends from
+/// `hop` with its own point names, as a pilot's own point is "@lat,lon"
+/// in the idents and named only on the device (the 2026-11-14 audit's
+/// CODE-13).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Short {
+    pub hop: Option<usize>,
     pub name: String,
     pub short_gal: f64,
 }
@@ -42,12 +47,13 @@ pub fn fuel_figure(
         Some(b) => (p - b).max(0.0),
         None => p,
     });
-    let flights: Vec<(String, Option<f64>)> = if hops.is_empty() {
-        vec![(String::new(), margin_gal)]
+    let flights: Vec<(Option<usize>, String, Option<f64>)> = if hops.is_empty() {
+        vec![(None, String::new(), margin_gal)]
     } else {
-        hops.iter().map(|h| (format!("{} → {}", h.departure, h.destination), h.fuel_margin_gal)).collect()
+        hops.iter().enumerate().map(|(i, h)| (Some(i), format!("{} → {}", h.departure, h.destination), h.fuel_margin_gal)).collect()
     };
-    let short = flights.into_iter().filter_map(|(name, m)| m.filter(|m| *m < 0.0).map(|m| Short { name, short_gal: -m })).collect();
+    let short =
+        flights.into_iter().filter_map(|(hop, name, m)| m.filter(|m| *m < 0.0).map(|m| Short { hop, name, short_gal: -m })).collect();
     (required, short)
 }
 
