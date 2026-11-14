@@ -59,31 +59,31 @@ export function CardPictures({
   if (!shown.length) return null;
   return (
     <div className="@container">
-    // A sideways drag the row's, an up or down one the sheet's (the one scrolling rule).
-    <Carousel opts={{ align: "start", dragFree: true }} aria-label={label} data-base-ui-swipe-ignore="x" data-testid={testId}>
-      {/* 12 points between the tiles, as Maps' have. */}
-      <CarouselContent className="-ml-3">
-        {shown.map((slide) => (
-          <CarouselItem key={slide.key} className={shown.length > 1 ? SLIDE : SLIDE_ALONE}>
-            <div className={`relative ${STRIP_HEIGHT} overflow-hidden rounded-(--radius-card) bg-foreground/8`}>
-              {slide.href ? (
-                <a href={slide.href} target="_blank" rel="noopener" aria-label={slide.label} className={TILE} data-testid={slide.testId}>
-                  {slide.picture}
-                </a>
-              ) : slide.open ? (
-                <BaseButton onClick={slide.open} aria-label={slide.label} className={TILE} data-testid={slide.testId}>
-                  {slide.picture}
-                </BaseButton>
-              ) : (
-                <div role="img" aria-label={slide.label} className="absolute inset-0" data-testid={slide.testId}>
-                  {slide.picture}
-                </div>
-              )}
-            </div>
-          </CarouselItem>
-        ))}
-      </CarouselContent>
-    </Carousel>
+      {/* A sideways drag the row's, an up or down one the sheet's (the one scrolling rule). */}
+      <Carousel opts={{ align: "start", dragFree: true }} aria-label={label} data-base-ui-swipe-ignore="x" data-testid={testId}>
+        {/* 12 points between the tiles, as Maps' have. */}
+        <CarouselContent className="-ml-3">
+          {shown.map((slide) => (
+            <CarouselItem key={slide.key} className={shown.length > 1 ? SLIDE : SLIDE_ALONE}>
+              <div className={`relative ${STRIP_HEIGHT} overflow-hidden rounded-(--radius-card) bg-foreground/8`}>
+                {slide.href ? (
+                  <a href={slide.href} target="_blank" rel="noopener" aria-label={slide.label} className={TILE} data-testid={slide.testId}>
+                    {slide.picture}
+                  </a>
+                ) : slide.open ? (
+                  <BaseButton onClick={slide.open} aria-label={slide.label} className={TILE} data-testid={slide.testId}>
+                    {slide.picture}
+                  </BaseButton>
+                ) : (
+                  <div role="img" aria-label={slide.label} className="absolute inset-0" data-testid={slide.testId}>
+                    {slide.picture}
+                  </div>
+                )}
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+      </Carousel>
     </div>
   );
 }

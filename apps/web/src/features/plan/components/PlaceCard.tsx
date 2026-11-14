@@ -6,13 +6,11 @@ import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { shareOrCopy } from "../../../lib/share";
 import { CardHead } from "../../../components/CardHead";
 import { SheetCard } from "../../../components/SheetCard";
-import { PINNED_BELOW } from "../../../components/PinnedHead";
 import { CardTitle } from "../../../components/CardTitle";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { CardTabPanel } from "../../../components/CardTabs";
-import { Tabs } from "../../../components/ui/tabs";
-import { useCardTab } from "../lib/cardTab";
-import { useTabScroll } from "../lib/tabScroll";
+import { CardTabPages, CardTabPanel } from "../../../components/CardTabs";
+import { useCardTab } from "../../../lib/cardTab";
+import { useTabScroll } from "../../../lib/tabScroll";
 import PlaceActions from "./place/PlaceActions";
 import { ApiError } from "../../../lib/api/client";
 import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
@@ -404,10 +402,12 @@ export default function PlaceCard({
       {/* The tab's page, then the tabs in a bar floating at the card's foot (C1, the owner, 2026-11-14), greyed
           until the answer comes: a tap would raise the sheet over empty pages. */}
       {!(error && !place) && (
-        <Tabs value={tab} onValueChange={(next) => setPicked(next as typeof tab)} className="gap-0">
-          {/* Where a page starts, sticky under the card's head (PINNED_BELOW): a tab not yet seen opens there
-              (useTabScroll), which keeps the pages tall enough for the bar to stay at the card's foot. */}
-          <div ref={setTabBar} aria-hidden className={cn("sticky h-0", PINNED_BELOW)} />
+        <CardTabPages
+          tab={tab}
+          onPick={setPicked}
+          top={setTabBar}
+          bar={<PlaceTabBar onPick={setPicked} disabled={!place} category={metar?.flight_category ?? null} charts={charts} />}
+        >
           <CardTabPanel value="radio" className="space-y-0">
             {place && <PlaceInfoTab place={place} where={where} distance={distance.words} />}
           </CardTabPanel>
@@ -431,8 +431,7 @@ export default function PlaceCard({
           <CardTabPanel value="diagrams" className="space-y-0">
             {place && <PlaceChartsTab place={place} sketched={sketched} startOn={startOn} />}
           </CardTabPanel>
-          <PlaceTabBar onPick={setPicked} disabled={!place} category={metar?.flight_category ?? null} charts={charts} />
-        </Tabs>
+        </CardTabPages>
       )}
       {isLoading && !known && <p className={cn("pt-4 text-muted-foreground", TEXT.prose)}>Fetching the airport…</p>}
       {/* Where the planner could not be reached, the way to ask again, in
