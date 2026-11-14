@@ -109,7 +109,17 @@ pub fn filed(name: &str, v: &Value) -> Result<String, String> {
         "filed_speed" => json::string(&mut out, &filing::speed(ask.num("tas_kt")?)),
         "filed_duration" => json::string(&mut out, &filing::duration(ask.num("minutes")?)),
         "filed_wake" => json::opt_string(&mut out, filing::wake(ask.opt_num("max_takeoff_lb")?)),
-        "filed_zzzz" => out.push_str(&filing::needs_zzzz(ask.str("ident")?).to_string()),
+        // NASR's ICAO_ID where the host has the field's row: present and
+        // null or "" is "NASR lists none"; absent, the identifier decides.
+        "filed_zzzz" => {
+            let icao = match v.get("icao_id") {
+                None => None,
+                Some(Value::Null) => Some(""),
+                Some(Value::String(s)) => Some(s.as_str()),
+                Some(_) => return Err("filed_zzzz: \"icao_id\" is not a string".to_owned()),
+            };
+            out.push_str(&filing::needs_zzzz(ask.str("ident")?, icao).to_string())
+        }
         // Item 19's endurance, item 18's date of flight and a T or Q route
         // (the web's lib/flightPlanForm before #482).
         "filed_endurance" => match filing::endurance_minutes(ask.num("fuel_gal")?, ask.num("burn_gph")?) {

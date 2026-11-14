@@ -67,6 +67,22 @@
     "reserve_min": {
       "type": "number"
     },
+    "private": {
+      "type": "boolean",
+      "description": "Private use: the owner's permission needed (the message says so)."
+    },
+    "military": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "military",
+        "joint",
+        null
+      ],
+      "description": "\"military\": the service's prior permission needed (the message says so); \"joint\": public use."
+    },
     "reasons": {
       "type": "array",
       "items": {
@@ -89,6 +105,8 @@
     "fuel",
     "fuel_at_landing_min",
     "reserve_min",
+    "private",
+    "military",
     "reasons"
   ]
 }

@@ -65,6 +65,25 @@
       "required": [
         "covers"
       ]
+    },
+    "private": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "ifr_alternate_check's: NASR FACILITY_USE_CODE PR, not owned by the armed services."
+    },
+    "military": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "military",
+        "joint",
+        null
+      ],
+      "description": "ifr_alternate_check's: \"military\" or \"joint\" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said."
     }
   },
   "required": [

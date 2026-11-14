@@ -58,6 +58,33 @@ fn the_fixtures_first_messages() {
     }
 }
 
+/// A diversion's pick that is private or military-only says so: with the
+/// engine running the owner's or the service's permission stands (14 CFR
+/// 91.3(b) is for an emergency). Every field but the destination made
+/// private, the pick is one, and the words carry it.
+#[test]
+fn a_private_or_military_alternative_is_said_so() {
+    let f = fixture();
+    let ifr = json!({ "KOSH": { "raw": "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992", "flight_category": "IFR" } });
+    for (usage, words) in
+        [(json!({ "private": true }), "private: permission needed"), (json!({ "military": "military" }), "military: prior permission")]
+    {
+        let mut input = common::copilot_input(&f["base"], &json!({ "metars": ifr }));
+        for field in input["fields"].as_array_mut().unwrap() {
+            if field["ident"] != "KOSH" {
+                for (k, v) in usage.as_object().unwrap() {
+                    field[k] = v.clone();
+                }
+            }
+        }
+        let said = ask("copilot_watch", &input);
+        let first = &said["messages"][0];
+        assert!(first["title"].as_str().unwrap().contains(words), "{first}");
+        assert!(first["say"].as_str().unwrap().contains(words), "{first}");
+        assert_eq!(first["alternative"]["private"], json!(usage.get("private").is_some()), "{first}");
+    }
+}
+
 /// The alternative is the emergency assistant's ranking, not a second
 /// one: with every other field good, it is best_fields' first diversion
 /// pick after the destination.

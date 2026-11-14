@@ -18,6 +18,7 @@
 //! Weather with no report is not called good: no figure, no promise.
 
 use crate::input::{self, Field, Own, R};
+use wingtip_brief::airport_use::Use;
 use wingtip_brief::fields::{best_fields, Airplane, Field as Candidate, Mode, Own as From, Ranked};
 use wingtip_brief::gonogo::minimums::{under_minimums, Landing, Minimums, Report, Weather as Briefed};
 use wingtip_core::geo;
@@ -163,6 +164,19 @@ impl Pick {
         self.ranked.distance_nm
     }
 
+    /// Who may land there, said after the field where it is not public
+    /// use: with the engine running there is no emergency (14 CFR 91.3(b)
+    /// is for one), so the owner's or the service's permission stands.
+    /// best_fields ranks such a field after a public one otherwise alike;
+    /// where it is still the pick, the pilot hears why it may not do.
+    pub fn permission(&self) -> Option<&'static str> {
+        match self.ranked.field.usage {
+            Use::Private => Some("private: permission needed"),
+            Use::Military => Some("military: prior permission"),
+            Use::Public | Use::Joint => None,
+        }
+    }
+
     /// The runway best_fields picked, "Runway 18: 5,941 ft", where it did.
     pub fn runway_words(&self) -> Option<String> {
         self.ranked.end.as_ref()?;
@@ -219,6 +233,8 @@ pub fn to_value(p: &Pick) -> Value {
         ("fuel".into(), Value::Bool(f.fuel)),
         ("fuel_at_landing_min".into(), opt(p.fuel_at_landing_min.map(f64::round))),
         ("reserve_min".into(), Value::Number(p.reserve_min)),
+        ("private".into(), Value::Bool(p.ranked.field.usage.private())),
+        ("military".into(), p.ranked.field.usage.military().map_or(Value::Null, s)),
         ("reasons".into(), Value::Array(p.ranked.reasons.iter().map(|(_, r)| s(r)).collect())),
     ])
 }

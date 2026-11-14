@@ -196,6 +196,15 @@ fn weather_cost(r: &Ranked) -> u8 {
     }
 }
 
+/// How much who may land there counts against a field for a diversion:
+/// a private or a military-only field 1, as much as an IFR report, its
+/// owner's or the service's permission standing with no emergency (14 CFR
+/// 91.3(b) is for one), so of fields otherwise alike a public or
+/// joint-use one comes first. Never in a glide.
+fn use_cost(r: &Ranked) -> u8 {
+    u8::from(!r.field.usage.public_use())
+}
+
 /// How far short of a field the glide comes, nm.
 fn short_of(r: &Ranked) -> f64 {
     r.distance_nm - r.reach_nm.unwrap_or(0.0)
@@ -209,8 +218,8 @@ fn order(mode: Mode, glides: bool, a: &Ranked, b: &Ranked) -> Ordering {
         // field can be the nearer thing to reaching.
         Mode::Glide if a.reach == Reach::Beyond && b.reach == Reach::Beyond => short_of(a).total_cmp(&short_of(b)),
         Mode::Glide => a.reach.cmp(&b.reach).then(runway_cost(a).cmp(&runway_cost(b))).then(a.distance_nm.total_cmp(&b.distance_nm)),
-        Mode::Diversion => (runway_cost(a) + weather_cost(a))
-            .cmp(&(runway_cost(b) + weather_cost(b)))
+        Mode::Diversion => (runway_cost(a) + weather_cost(a) + use_cost(a))
+            .cmp(&(runway_cost(b) + weather_cost(b) + use_cost(b)))
             .then(a.ete_min.unwrap_or(a.distance_nm).total_cmp(&b.ete_min.unwrap_or(b.distance_nm))),
     }
 }

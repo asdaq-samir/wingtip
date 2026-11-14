@@ -20,7 +20,9 @@ use wingtip_procedures::figures::words::{ceiling_and_visibility, js_num};
 /// a rule; worse by another such step, it is said again.
 pub const GROUNDSPEED_SHORTFALL: f64 = 0.15;
 
-/// "9 min left of course", "6 min ahead".
+/// "9 min left of course", "6 min ahead", and "; private: permission
+/// needed" or "; military: prior permission" where the field is not
+/// public use.
 fn where_words(p: &Pick) -> String {
     let when = p.minutes.map(minutes_words).unwrap_or_else(|| format!("{} nm", js_num(p.distance_nm().round())));
     let side = match p.side() {
@@ -29,7 +31,8 @@ fn where_words(p: &Pick) -> String {
         Some(s) => format!(" {s} of course"),
         None => String::new(),
     };
-    format!("{when}{side}")
+    let permission = p.permission().map_or(String::new(), |w| format!("; {w}"));
+    format!("{when}{side}{permission}")
 }
 
 /// "Fond du Lac is VFR, 9 min left of course".

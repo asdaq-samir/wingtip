@@ -4,6 +4,8 @@
 //! runway pick, and the runway rules by name read their input as the Go /
 //! No-Go's do.
 //!
+//! - airport_use: who may use a field (public, private, military, joint)
+//!   and how far its data is to be trusted, in the words every app shows;
 //! - alternates: the IFR alternate, 14 CFR 91.169 -- whether the
 //!   destination needs one and whether a field will do as one;
 //! - fields: the best fields to land at from where the airplane is,
@@ -19,6 +21,7 @@
 //!   flown, its pattern's side, entry, altitude and legs, a POH's
 //!   short-field distances and how an end suits the airplane.
 
+pub mod airport_use;
 pub mod alternates;
 pub mod fields;
 pub mod gonogo;

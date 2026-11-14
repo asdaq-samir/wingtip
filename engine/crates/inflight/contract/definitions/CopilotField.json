@@ -89,13 +89,20 @@
       "type": [
         "boolean",
         "null"
-      ]
+      ],
+      "description": "NASR FACILITY_USE_CODE PR and not owned by the armed services."
     },
     "military": {
       "type": [
-        "boolean",
+        "string",
         "null"
-      ]
+      ],
+      "enum": [
+        "military",
+        "joint",
+        null
+      ],
+      "description": "A field the armed services own (NASR OWNERSHIP_TYPE_CODE MA, MN, MR, CG): \"military\" where it is not open to the public, \"joint\" where it is (FACILITY_USE_CODE PU), a public-use field never marked as military."
     },
     "fuel": {
       "type": [

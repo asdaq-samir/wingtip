@@ -1,0 +1,44 @@
+{
+  "x-call": "wingtip_brief::airport_use::call",
+  "description": "How far a field's figures are to be trusted, in the card's words: \"Owner-reported, last updated Aug 2023\" where NASR's INSPECT_METHOD_CODE is 1 or 2 (the 5010-1 and 5010-2 mailouts: the owner's own figures, never inspected), null where they were inspected (F, S, C) or the source is not known.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AirportDataWordsInput",
+      "type": "object",
+      "properties": {
+        "data_source": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "inspected",
+            "owner-reported",
+            null
+          ],
+          "description": "The planner's AirportPlace data_source."
+        },
+        "info_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The planner's AirportPlace info_date, YYYY-MM-DD: NASR's LAST_INFO_RESPONSE, else LAST_INSPECTION."
+        }
+      }
+    },
+    "answer": {
+      "title": "AirportDataWordsAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

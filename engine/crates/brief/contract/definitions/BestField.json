@@ -85,7 +85,16 @@
       "type": "boolean"
     },
     "military": {
-      "type": "boolean"
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "military",
+        "joint",
+        null
+      ],
+      "description": "As the input's: \"military\", \"joint\" or null."
     },
     "flight_category": {
       "type": [

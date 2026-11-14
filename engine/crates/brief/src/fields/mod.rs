@@ -20,7 +20,13 @@
 //! - Nothing is refused (the owner's "warn, never limit"): a private or a
 //!   military field, a runway shorter than the POH's distance, a crosswind
 //!   past the demonstrated one, a field in IFR stay in the list with the
-//!   reason said, ranked lower.
+//!   reason said. The runway and, for a diversion, the weather rank a
+//!   field lower; so does being private or military-only in a diversion,
+//!   where the owner's or the service's permission stands, so a public
+//!   field wins a tie. In a glide it does not: in an emergency the pilot
+//!   in command may deviate from any rule to meet it (14 CFR 91.3(b)),
+//!   and the nearest field reached is the one to take. A joint-use field
+//!   is public use and is never marked (airport_use).
 //! - With no airplane's glide figures the glide is not guessed: the fields
 //!   are ranked by distance alone and the answer says the glide needs an
 //!   airplane (`needs_airplane`).
@@ -29,6 +35,7 @@ pub mod calls;
 mod rank;
 mod reasons;
 
+use crate::airport_use::Use;
 use crate::figures::glide::Glide;
 use crate::runway::performance::{EndFit, FieldReport, FitWind, ShortField};
 use crate::runway::pick::Runway;
@@ -92,8 +99,8 @@ pub struct Field {
     pub report: FieldReport,
     pub flight_category: Option<String>,
     pub towered: bool,
-    pub private: bool,
-    pub military: bool,
+    /// Who may land there: public, private, military or joint use.
+    pub usage: Use,
 }
 
 /// How a field is reached.

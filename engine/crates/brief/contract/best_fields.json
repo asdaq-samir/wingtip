@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_brief::fields::call",
-  "description": "The best fields to land at from where the airplane is, ranked with their reasons: in \"glide\" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in \"diversion\" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower. A glide ratio with no best-glide speed gives a reach only with no wind aloft: a headwind's loss needs the glide's airspeed, and a still-air reach into one would be too far.",
+  "description": "The best fields to land at from where the airplane is, ranked with their reasons: in \"glide\" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in \"diversion\" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower. In \"diversion\" mode a private or military-only field counts against it as an IFR report does (the owner's or the service's permission stands with no emergency), so a public or joint-use field comes first of fields otherwise alike, and its reasons give the card's line (\"Private: permission required\", \"Military: prior permission required\"); in \"glide\" mode it does not count (14 CFR 91.3(b)) and is said as a caution. A glide ratio with no best-glide speed gives a reach only with no wind aloft: a headwind's loss needs the glide's airspeed, and a still-air reach into one would be too far.",
   "type": "object",
   "properties": {
     "input": {
@@ -219,13 +219,20 @@
                 "type": [
                   "boolean",
                   "null"
-                ]
+                ],
+                "description": "NASR FACILITY_USE_CODE PR and not owned by the armed services."
               },
               "military": {
                 "type": [
-                  "boolean",
+                  "string",
                   "null"
-                ]
+                ],
+                "enum": [
+                  "military",
+                  "joint",
+                  null
+                ],
+                "description": "A field the armed services own (NASR OWNERSHIP_TYPE_CODE MA, MN, MR, CG): \"military\" where it is not open to the public, \"joint\" where it is (FACILITY_USE_CODE PU), a public-use field never marked as military."
               }
             },
             "required": [

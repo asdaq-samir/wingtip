@@ -87,11 +87,20 @@ pub fn route(stops: &[&str], is_airway: impl Fn(&str) -> bool, departure: Option
     }
 }
 
-/// An identifier with a figure in it (C81, 06A) is the FAA's own, with no
-/// ICAO four-letter location indicator: filed as ZZZZ with its name in
-/// item 18 (AIM Appendix 4), where a service takes only indicators.
-pub fn needs_zzzz(ident: &str) -> bool {
-    ident.chars().any(|c| c.is_ascii_digit())
+/// Whether a field is filed as ZZZZ with its name in item 18 (DEP/,
+/// DEST/, ALTN/): AIM Appendix 4 asks for ZZZZ where the field has no ICAO
+/// location indicator, so it is decided by NASR's own ICAO_ID
+/// (APT_BASE.csv), `icao_id`: empty where NASR lists none (IL11, and BGTL
+/// though its ident has no figure), a four-letter one where it does (Z13
+/// is PFZK, 7AK is PAUT: no ZZZZ though the ident has a figure). Only where
+/// the caller has no NASR row for the field (None) is the identifier read
+/// instead: one with a figure in it (C81, 06A) is the FAA's own and has
+/// none.
+pub fn needs_zzzz(ident: &str, icao_id: Option<&str>) -> bool {
+    match icao_id {
+        Some(icao) => icao.trim().is_empty(),
+        None => ident.chars().any(|c| c.is_ascii_digit()),
+    }
 }
 
 /// Item 19's endurance in whole minutes: the fuel aboard at the cruise
@@ -150,5 +159,19 @@ mod tests {
         assert_eq!(date_of_flight("2026-11-08T14:00:00Z", "2026-11-08T01:00:00Z"), None);
         assert!(rnav_route(&["V191", "T263"]));
         assert!(!rnav_route(&["V191", "J34"]));
+    }
+
+    #[test]
+    fn zzzz_goes_by_nasrs_icao_id() {
+        // NASR 2026-10-29's APT_BASE: IL11 and BGTL list no ICAO_ID, Z13
+        // lists PFZK and 7AK PAUT.
+        assert!(needs_zzzz("IL11", Some("")));
+        assert!(needs_zzzz("BGTL", Some("")));
+        assert!(!needs_zzzz("Z13", Some("PFZK")));
+        assert!(!needs_zzzz("7AK", Some("PAUT")));
+        assert!(!needs_zzzz("MSN", Some("KMSN")));
+        // No NASR row: the identifier, a figure in it the FAA's own.
+        assert!(needs_zzzz("C81", None));
+        assert!(!needs_zzzz("KMSN", None));
     }
 }

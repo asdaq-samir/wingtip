@@ -3,6 +3,7 @@
 //! sees why a field is where it is in the list and decides.
 
 use super::{Mode, Ranked, Reach};
+use crate::airport_use::Use;
 use crate::figures::words::grouped;
 use crate::runway::pick::runway_number;
 
@@ -24,11 +25,14 @@ pub fn of(mode: Mode, r: &Ranked) -> Vec<Reason> {
     }
     // Landed at only with leave in the ordinary way; in an emergency the
     // pilot in command may deviate from any rule to meet it (14 CFR
-    // 91.3(b)), so it is said, never left out.
-    if r.field.military {
-        out.push(("caution", "Military field: tell ATC you are landing there".to_owned()));
-    } else if r.field.private {
-        out.push(("caution", "Private field: its owner's permission, unless it's an emergency".to_owned()));
+    // 91.3(b)), so in a glide it is said, never left out, and in a
+    // diversion it is the card's line (airport_use), the permission
+    // standing. A joint-use field is public use: nothing to say.
+    match (mode, r.field.usage) {
+        (Mode::Glide, Use::Military) => out.push(("caution", "Military field: tell ATC you are landing there".to_owned())),
+        (Mode::Glide, Use::Private) => out.push(("caution", "Private field: its owner's permission, unless it's an emergency".to_owned())),
+        (Mode::Diversion, u) => out.extend(u.card_words().map(|w| ("caution", w.to_owned()))),
+        _ => {}
     }
     out
 }

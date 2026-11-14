@@ -1,0 +1,51 @@
+{
+  "x-call": "wingtip_brief::airport_use::call",
+  "description": "What a field's empty NOTAM list says where NASR gives a private field no NOTAM_ID: it is outside the NOTAM system, so \"No NOTAMs are issued for this private-use field.\" rather than none heard. Null where the ordinary empty state is right. (FAA JO 7930.2 could not be fetched to quote on 2026-11-13; the plainer wording was chosen for that reason.)",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AirportNotamsNoneInput",
+      "type": "object",
+      "properties": {
+        "private": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services."
+        },
+        "military": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "military",
+            "joint",
+            null
+          ],
+          "description": "A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): \"military\" where not open to the public, \"joint\" where it is (FACILITY_USE_CODE PU)."
+        },
+        "notam_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_BASE's NOTAM_ID: null or empty where it lists none."
+        }
+      }
+    },
+    "answer": {
+      "title": "AirportNotamsNoneAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

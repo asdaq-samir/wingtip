@@ -90,6 +90,97 @@ fn a_diversion_weighs_the_runway_and_the_weather_not_the_glide() {
     assert!(answer["fields"][0]["ete_min"].as_f64().unwrap() > 0.0);
 }
 
+/// Two fields alike in all but who may land there, ten miles each way.
+fn twins(first: Value, second: Value) -> Value {
+    let field = |ident: &str, lon: f64, usage: &Value| {
+        let mut f = json!({
+            "ident": ident, "lat": 42.59, "lon": lon, "elevation_ft": 900,
+            "runways": [{ "length_ft": 4000, "surface": "ASP", "runway_ends": [{ "ident": "09", "heading_true_deg": 90 }, { "ident": "27", "heading_true_deg": 270 }] }],
+        });
+        for (k, v) in usage.as_object().unwrap() {
+            f[k] = v.clone();
+        }
+        f
+    };
+    // The private or military one a little nearer, so only its use puts it second.
+    json!([field("NEAR", -88.30, &first), field("FAR", -88.60, &second)])
+}
+
+#[test]
+fn a_diversion_ranks_a_private_or_military_field_after_a_public_one() {
+    // With the engine running there is no emergency, so the owner's or the
+    // service's permission stands (14 CFR 91.3(b) is for an emergency):
+    // the public field comes first and the other says why.
+    let at = json!({ "lat": 42.5917, "lon": -88.4334 });
+    for (usage, words) in [
+        (json!({ "private": true }), "Private: permission required"),
+        (json!({ "military": "military" }), "Military: prior permission required"),
+    ] {
+        let fields = twins(usage.clone(), json!({}));
+        let answer = ask("best_fields", &json!({ "mode": "diversion", "at": at, "airplane": { "cruise_tas_kt": 110 }, "fields": fields }));
+        assert_eq!(idents(&answer), ["FAR", "NEAR"], "{usage}");
+        let reasons = answer["fields"][1]["reasons"].as_array().unwrap();
+        assert!(reasons.iter().any(|r| r["text"] == json!(words) && r["tone"] == json!("caution")), "{reasons:?}");
+        // In a glide it counts for nothing: the nearer field first.
+        let glide = ask("best_fields", &json!({ "mode": "glide", "at": at, "fields": twins(usage.clone(), json!({})) }));
+        assert_eq!(idents(&glide), ["NEAR", "FAR"], "{usage}");
+    }
+}
+
+#[test]
+fn a_joint_use_field_is_public_use_not_military() {
+    // KFHU, Sierra Vista Municipal-Libby AAF: OWNERSHIP_TYPE_CODE MR,
+    // FACILITY_USE_CODE PU (NASR 2026-10-29), open to civil airplanes.
+    let at = json!({ "lat": 42.5917, "lon": -88.4334 });
+    let fields = twins(json!({ "military": "joint" }), json!({}));
+    let diversion = ask("best_fields", &json!({ "mode": "diversion", "at": at, "airplane": { "cruise_tas_kt": 110 }, "fields": fields }));
+    assert_eq!(idents(&diversion), ["NEAR", "FAR"]);
+    assert_eq!(diversion["fields"][0]["military"], json!("joint"));
+    let glide = ask("best_fields", &json!({ "mode": "glide", "at": at, "fields": twins(json!({ "military": "joint" }), json!({})) }));
+    let reasons = glide["fields"][0]["reasons"].as_array().unwrap();
+    assert!(reasons.iter().all(|r| !r["text"].as_str().unwrap().contains("Military")), "{reasons:?}");
+    let military = ask("best_fields", &json!({ "mode": "glide", "at": at, "fields": twins(json!({ "military": "military" }), json!({})) }));
+    assert!(military["fields"][0]["reasons"].as_array().unwrap().iter().any(|r| r["text"].as_str().unwrap().starts_with("Military field")));
+    // A flag of the old kind is refused, not read as military.
+    assert!(call(
+        "best_fields",
+        &json!({ "at": at, "fields": [{ "ident": "X", "lat": 42.6, "lon": -88.4, "runways": [], "military": true }] }).to_string()
+    )
+    .is_err());
+}
+
+#[test]
+fn the_airport_use_words_are_one_line_for_every_app() {
+    // The owner's words, 2026-11-13.
+    let words = |v: Value| ask("airport_use_words", &v);
+    assert_eq!(
+        words(json!({ "private": true })),
+        json!({ "use": "private", "words": "Private: permission required", "public_use": false })
+    );
+    assert_eq!(
+        words(json!({ "military": "military" })),
+        json!({ "use": "military", "words": "Military: prior permission required", "public_use": false })
+    );
+    assert_eq!(words(json!({ "military": "joint" })), json!({ "use": "joint", "words": null, "public_use": true }));
+    assert_eq!(words(json!({})), json!({ "use": "public", "words": null, "public_use": true }));
+    // The search's Public filter: KMXF (military) is out, KFHU (joint) in.
+    assert_eq!(ask("public_use", &json!({ "military": "military" })), json!(false));
+    assert_eq!(ask("public_use", &json!({ "military": "joint" })), json!(true));
+    assert_eq!(ask("public_use", &json!({ "private": true })), json!(false));
+    // 3LL4: NASR INSPECT_METHOD_CODE 2, LAST_INFO_RESPONSE 2023/08/23.
+    assert_eq!(
+        ask("airport_data_words", &json!({ "data_source": "owner-reported", "info_date": "2023-08-23" })),
+        json!("Owner-reported, last updated Aug 2023")
+    );
+    assert_eq!(ask("airport_data_words", &json!({ "data_source": "inspected", "info_date": "2025-07-30" })), Value::Null);
+    // IL11: private, no NOTAM_ID; 3CK: public, NOTAM_ID IKK.
+    assert_eq!(
+        ask("airport_notams_none", &json!({ "private": true, "notam_id": null })),
+        json!("No NOTAMs are issued for this private-use field.")
+    );
+    assert_eq!(ask("airport_notams_none", &json!({ "notam_id": "IKK" })), Value::Null);
+}
+
 #[test]
 fn the_mayday_is_in_the_aims_order() {
     let case = &fixture()["mayday"];

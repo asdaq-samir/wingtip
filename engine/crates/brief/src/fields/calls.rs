@@ -82,8 +82,7 @@ fn field(i: In, f: &Value) -> R<Field> {
         report: FieldReport { elevation_ft: i.opt_num(f, "elevation_ft")?, altimeter_in_hg: m("altimeter_in_hg")?, temp_c: m("temp_c")? },
         flight_category: metar.map_or(Ok(None), |m| i.opt_str(m, "flight_category"))?,
         towered: truth(f, "towered"),
-        private: truth(f, "private"),
-        military: truth(f, "military"),
+        usage: crate::airport_use::read(i.name, f)?,
     })
 }
 
@@ -153,12 +152,13 @@ fn ranked_json(out: &mut String, r: &Ranked) {
         json::opt_number(out, n);
     }
     out.push_str(&format!(
-        ",\"reach\":\"{}\",\"towered\":{},\"private\":{},\"military\":{},\"flight_category\":",
+        ",\"reach\":\"{}\",\"towered\":{},\"private\":{},\"military\":",
         r.reach.word(),
         r.field.towered,
-        r.field.private,
-        r.field.military
+        r.field.usage.private(),
     ));
+    json::opt_string(out, r.field.usage.military());
+    out.push_str(",\"flight_category\":");
     json::opt_string(out, r.field.flight_category.as_deref());
     out.push_str(",\"runway\":");
     match &r.end {
