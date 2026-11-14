@@ -72,9 +72,9 @@ type Props = {
 };
 
 /**
- * The chart's airports in the sectional's symbology (sectionalAirportSvg:
- * blue towered, magenta not, a private field's R, a military field's M),
- * its weather a halo round it, its ident in bold beside it -- as one
+ * The chart's airports as the planner's one mark (airportMarkSvg: a ring
+ * in its airspace's chart code, a private field's R, a military field's M),
+ * its weather the disc in it, sized by the field, its ident beside it -- as one
  * symbol layer, kept apart by MapLibre's collision. A tap within a
  * finger's reach opens its card, which asks the planner for the field
  * (its frequencies, runways, elevation, weather) as it opens.
@@ -169,14 +169,21 @@ function TileAirports(props: Props) {
   const known = useRef(colours);
   useEffect(() => {
     known.current = colours;
-    // Off: no colour for any field, so each keeps the chart's plain symbol.
+    // Off: no colour for any field, so each disc is the no-report grey.
     setAirportWeather(map, off ? new Map() : colours);
   }, [map, colours, off]);
   const reporting = useMemo(() => [...(alongRoute ?? []), ...(inView ?? [])], [alongRoute, inView]);
   useAirportTaps(props, (f) => {
     const p = f.properties;
     const use = p.military === "military" ? "military" : p.use === "private" ? "private" : "";
-    return { ident: p.ident, chip: true, space: "", use, weather: known.current.get(String(p.ident)) ?? colourOf(null) };
+    return {
+      ident: p.ident,
+      chip: true,
+      space: p.airspace ?? "",
+      size: p.size ?? "",
+      use,
+      weather: known.current.get(String(p.ident)) ?? colourOf(null),
+    };
   });
   // The same fields for a screen reader and a keyboard, which cannot see
   // the canvas's symbols: the reporting ones in sight, each opening its card.

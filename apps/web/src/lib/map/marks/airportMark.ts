@@ -25,7 +25,7 @@ const UNKNOWN_GREY = CHART.fieldUnknown;
 export function airportMarkSvg(
   space: AirspaceClass | null,
   weather: string,
-  use: "military" | "private" | null,
+  use: "military" | "private" | "heliport" | null,
   className: string,
 ): string {
   const blue = space === "B" || space === "D";
@@ -33,7 +33,7 @@ export function airportMarkSvg(
   const casing = `stroke="${CHART.casing}" stroke-linecap="round"`;
   const symbol = use
     ? `<circle r="10" fill="${use === "military" ? BLUE : MAGENTA}" ${casing} stroke-width="2"/>` +
-      `<text y="4" text-anchor="middle" font-size="11" font-weight="800" fill="${CHART.casing}">${use === "military" ? "M" : "R"}</text>` +
+      `<text y="4" text-anchor="middle" font-size="11" font-weight="800" fill="${CHART.casing}">${{ military: "M", private: "R", heliport: "H" }[use]}</text>` +
       `<circle data-weather="" cx="7.5" cy="7.5" r="4.6" fill="${text(weather)}" ${casing} stroke-width="1.4"/>`
     : (() => {
         // The four ticks, and the white casing round ticks and ring, each one
@@ -80,53 +80,3 @@ export function airportMarkSvg(
  *  shown in blue, all others in magenta"). */
 export const TOWERED_BLUE = BLUE;
 export const UNTOWERED_MAGENTA = MAGENTA;
-
-/** How big a field's ring is drawn, its radius by the field's size: the
- *  big fields the biggest, so the small ones don't crowd the chart out at
- *  a distance. */
-const SECTIONAL_RADIUS: Record<"large" | "medium" | "small" | "other", number> = { large: 8.5, medium: 7.5, small: 6.5, other: 6 };
-
-/**
- * A field's mark on the WebGL map, as ForeFlight draws it over the chart
- * (the owner's screenshot over Madison, 2026-11-08): a ring in the
- * sectional's airport ink (FAA Aeronautical Chart User's Guide, VFR
- * Terms and Symbols, Airports: blue for a field with a control tower,
- * magenta for every other) round a white disc with a dot of the ink in
- * its middle, inside a white halo that keeps it off the chart's own
- * print; a private field (closed to the public, NASR FACILITY_USE_CODE
- * PR) the guide's circle with an "R", a military one an "M", a heliport
- * an "H". The field's weather (its METAR's flight category) a halo round
- * it in the category's colour, where there is a report (the owner's pick,
- * 2026-11-10, in place of the pip at its lower right): a ring some 4.5 pt
- * wide, cased in white, which holds in sunlight over the chart's print,
- * the symbol inside it keeping its towered blue or non-towered magenta.
- */
-export function sectionalAirportSvg(
-  towered: boolean,
-  size: keyof typeof SECTIONAL_RADIUS,
-  use: "military" | "private" | "heliport" | null,
-  weather: string | null,
-): string {
-  const ink = towered ? TOWERED_BLUE : UNTOWERED_MAGENTA;
-  // Room for the halo outside the symbol's own white edge.
-  const box = weather ? 36 : 26;
-  const letter = use === "private" ? "R" : use === "military" ? "M" : use === "heliport" ? "H" : null;
-  const r = letter ? 7 : SECTIONAL_RADIUS[size];
-  const halo = `<circle r="${r}" fill="${CHART.casing}" stroke="${CHART.casing}" stroke-width="5"/>`;
-  const symbol = letter
-    ? `${halo}<circle r="${r}" fill="${CHART.casing}" stroke="${ink}" stroke-width="2"/>` +
-      `<text y="3.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="9.5" font-weight="800" fill="${ink}">${letter}</text>`
-    : `${halo}<circle r="${r}" fill="${CHART.casing}" stroke="${ink}" stroke-width="2.6"/><circle r="${(r * 0.42).toFixed(2)}" fill="${ink}"/>`;
-  // Just outside the symbol's white edge (r + 2.5): a white casing under
-  // the category's colour, so it reads over a town's yellow or a lake.
-  const at = (r + 2.5 + HALO_WIDTH / 2).toFixed(2);
-  const weatherHalo = weather
-    ? `<circle r="${at}" fill="none" stroke="${CHART.casing}" stroke-width="${HALO_WIDTH + 2}"/>` +
-      `<circle data-weather="" r="${at}" fill="none" stroke="${text(weather)}" stroke-width="${HALO_WIDTH}"/>`
-    : "";
-  return `<svg width="${box}" height="${box}" viewBox="${-box / 2} ${-box / 2} ${box} ${box}">${weatherHalo}${symbol}</svg>`;
-}
-
-/** The halo's stroke, px: some 4.5 pt, to stay visible in sunlight (the
- *  owner's pick, 2026-11-10). */
-const HALO_WIDTH = 4.5;

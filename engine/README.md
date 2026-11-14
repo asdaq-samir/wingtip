@@ -397,10 +397,11 @@ Then the callers switch to the name and the old copy is deleted.
   class of airspace the FAA's Class_Airspace file names the field the
   primary of): its `tier` (towered, public with 3,000 ft of hard runway,
   other public, private, heliports), the zoom its mark is first drawn at,
-  and its `order`, a Class B's field, then a Class C's, then each tier,
-  the longer hard runway first in each. The overlays job asks it for
+  its `order`, a Class B's field, then a Class C's, then each tier,
+  the longer hard runway first in each, and its `size`, the step the mark
+  is drawn at (largest for a Class B's field, larger for a Class C's). The overlays job asks it for
   every field and the tiles carry `order` as `rank`, the key every app's
-  map sorts its marks by; the web never asks it, so its WebAssembly has
+  map sorts its marks by, and `size`; the web never asks it, so its WebAssembly has
   none of it.
 - `emergency_guidance` (`crates/radio`): with no airplane picked, an
   emergency's general good practice only, each item with its source

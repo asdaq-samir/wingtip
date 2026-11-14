@@ -3727,6 +3727,8 @@ enum EngineContract {
         var tier: Int
         /// The mark's place where marks overlap, lower kept first: class (0 Class B primary, 1 Class C primary, then tier + 2) times 100,000, plus 99,999 less the longest hard runway in ft.
         var order: Int
+        /// The step the mark is drawn at, the biggest fields the largest (the owner, 2026-11-14): largest for a Class B's primary field, larger for a Class C's, regular for the other towered fields and public ones with 3,000 ft of hard runway, small for the rest. How much larger each step is drawn is each app's own.
+        var size: String
     }
 
     struct FieldMarkRankInput: Codable, Equatable, Sendable {

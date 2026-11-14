@@ -196,7 +196,8 @@ pub fn field_military(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// `field_mark_rank`: what a field's map mark is first drawn at and kept
-/// by where marks overlap (field.rs's mark_rank): `{"tier", "order"}`.
+/// by where marks overlap and drawn at (field.rs's mark_rank):
+/// `{"tier", "order", "size"}`.
 pub fn field_mark_rank(name: &str, v: &Value) -> Result<String, String> {
     let text = |key: &str| match v.get(key) {
         None | Some(Value::Null) => Ok(""),
@@ -215,5 +216,5 @@ pub fn field_mark_rank(name: &str, v: &Value) -> Result<String, String> {
     };
     let primary = text("primary_of")?;
     let rank = field::mark_rank(text("site_type")?, text("use")?, towered, hard_ft, (!primary.is_empty()).then_some(primary));
-    Ok(format!("{{\"tier\":{},\"order\":{}}}", rank.tier, rank.order))
+    Ok(format!("{{\"tier\":{},\"order\":{},\"size\":\"{}\"}}", rank.tier, rank.order, rank.size))
 }

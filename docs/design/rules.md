@@ -409,17 +409,33 @@ At each airport the chart already shows, from the map's own
 `/api/airports/in-view` answer (`weather`). The approved canvas:
 <https://claude.ai/artifact/V9FqBkmCyB25yrQzWMto5f>.
 
-- **Halo (the default):** a ring about 4.5 points wide in the flight
-  category's colour round the chart's own symbol, which keeps its towered
-  blue or non-towered magenta. The category is the engine's
+- **The mark, sized by the field (the owner, 2026-11-14, option I of
+  <https://claude.ai/artifact/V1d9RDbmY1aczc4LfXed7a>, in place of the
+  halo):** every field on the chart wears the planner's one airport mark,
+  the one Nearest, the route and the stops draw (web
+  `lib/map/marks/airportMark`'s `airportMarkSvg`): a ring in the chart's
+  code for the class of airspace at the field's surface (B and D blue, C
+  and E magenta, G faded magenta; D and E dashed; B's ring the thickest,
+  then C's), its four ticks, and the weather as the large disc in the
+  middle, in the flight category's colour (the no-report grey with none,
+  or with the setting Off); a private, military or heliport field the R,
+  M or H disc with its weather dot. The category is the engine's
   (`flight_category`, AIM 7-1-7 and the AWC's definitions), never a
-  threshold in an app. A field hidden by the chart's give-way hides its
-  halo too.
+  threshold in an app. Its size is the engine's step
+  (`field_mark_rank`'s `size`, which the overlay tiles carry): a Class
+  B's field the largest (1.5 times an ordinary towered field), a
+  Class C's next (1.2), the other towered and long-hard-runway public
+  fields 1, the rest small (0.82). Which mark gives way where two would
+  overlap is the same rule's order: the Class B's field first, then the
+  Class C's, then each tier by its longest hard runway; a field hidden by
+  the give-way hides its weather too. Each variant (ring x weather x
+  use) is one picture drawn once a page, the steps the layer's
+  icon-size, so the chart's element count is unchanged.
 - **Station model from zoom 10 in** (the matching span on the iPhone):
   the engine's `wind_barb` (5, 10 and 50 kt barbs and flags, a ring for
   calm, 0 to 2 kt calm), and two lines beside the field, the visibility with its weather
   ("2 SM BR") and the lowest ceiling ("OVC 008"), from the METAR as the
-  planner decodes it. The halo stays.
+  planner decodes it. The mark's disc stays.
 - **Wind barb farther out** (the owner, 2026-11-12: barbs as the
   Aviation Weather Center's map draws them, in place of arrows): the same
   `wind_barb`, only where the engine's `wind_arrow` gives one (10 kt or
@@ -436,8 +452,8 @@ At each airport the chart already shows, from the map's own
   `weather_worse` says the TAF worsens by the pilot's ETA there. Off the
   route, no badge.
 - **The setting**, in Settings' Map group (§8): Airport Weather, one menu
-  of three (the owner, 2026-11-13) -- Flight Category (the halo alone),
-  With Wind (the halo, the wind barbs farther out and the station model
+  of three (the owner, 2026-11-13) -- Flight Category (the disc alone),
+  With Wind (the disc, the wind barbs farther out and the station model
   zoomed in close; the default) and Station Model (wherever it fits).
   The getting-worse badge is always drawn; Off, the Dot and the three
   switches went.

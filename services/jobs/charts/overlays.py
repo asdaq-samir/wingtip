@@ -62,7 +62,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from wingtip import cycle_pack, field_status, geo, vector_tiles
+from wingtip import cycle_pack, geo, vector_tiles
 from wingtip.atomic import atomic_path
 from wingtip.units import M_PER_FT, M_PER_NM
 from wingtip.vector_tiles import INDEX, LAYERS, VERSION, archive_name
@@ -128,8 +128,6 @@ RUNWAY_MIN_ZOOM = 10
 
 ATTRIBUTION = "FAA NASR and special use airspace (ADDS), cycle {cycle}"
 
-#: NASR's SITE_TYPE_CODE (APT_BASE).
-SITE_TYPES = {"A": "airport", "H": "heliport", "C": "seaplane", "G": "gliderport", "U": "ultralight", "B": "balloonport"}
 #: The runway surfaces the sectional's airport symbol counts as hard
 #: (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports:
 #: "hard-surfaced runways"), by NASR's SURFACE_TYPE_CODE (APT_RWY):
@@ -373,64 +371,6 @@ def runways_by_site(rwy_path: Path, rwy_end_path: Path | None) -> dict[str, dict
     return found
 
 
-def primaries(pack) -> dict[str, str]:
-    """Each Class B and C's primary field, by the FAA identifier the airspace file names it by (IDENT: every
-    one a towered field in the 2026-10-29 cycle, 30 B, 123 C), to its highest class: field_mark_rank's first."""
-    found: dict[str, str] = {}
-    for record in pack.attrs("airspace"):
-        ident, cls = (record.get("IDENT") or "").strip().upper(), (record.get("CLASS") or "").strip()
-        if ident and cls in ("B", "C") and cls < found.get(ident, "Z"):
-            found[ident] = cls
-    return found
-
-
-def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path | None, bbox=None, primary: dict | None = None):
-    """The `airports` layer's lines: every operational field in APT_BASE
-    (the engine's field_status: ARPT_STATUS O; CI and CP are not drawn),
-    with its runways (runways_by_site), ranked by the engine's
-    field_mark_rank with the classes `primary` (primaries) names."""
-    from wingtip.engine import ask
-
-    runways = runways_by_site(rwy_path, rwy_end_path) if rwy_path is not None else {}
-    for row in _rows(apt_path):
-        if not field_status.is_open(row.get("ARPT_STATUS") or ""):
-            continue
-        lat, lon = _number(row.get("LAT_DECIMAL")), _number(row.get("LONG_DECIMAL"))
-        if lat is None or lon is None or not _meets((lon, lat, lon, lat), bbox):
-            continue
-        faa_id = (row.get("ARPT_ID") or "").strip().upper()
-        icao = (row.get("ICAO_ID") or "").strip().upper()
-        site_type = (row.get("SITE_TYPE_CODE") or "").strip()
-        use = (row.get("FACILITY_USE_CODE") or "").strip()
-        # ATCT, ATCT-A/C, ATCT-TRACON and the rest; NON-ATCT is none.
-        towered = (row.get("TWR_TYPE_CODE") or "").strip().upper().startswith("ATCT")
-        ways = runways.get((row.get("SITE_NO") or "").strip(), {})
-        # The engine's field_military: "military", "joint" (open to the public as well) or None.
-        military = field_status.military(row.get("OWNERSHIP_TYPE_CODE"), use)
-        hard_ft, primary_of = ways.get("hard_ft", 0), (primary or {}).get(faa_id)
-        rank = ask("field_mark_rank", site_type=site_type, use=use, towered=towered, hard_ft=hard_ft, primary_of=primary_of)
-        yield _feature(
-            {
-                "ident": icao or faa_id,
-                "faa_id": faa_id,
-                "name": (row.get("ARPT_NAME") or "").strip(),
-                "type": SITE_TYPES.get(site_type, site_type.lower()),
-                # As faa_data: the services' own field "military", not "private", so the Private switch leaves it to the Military one.
-                "use": "military" if military == "military" else {"PU": "public", "PR": "private"}.get(use, use.lower()),
-                "military": military,
-                "towered": towered,
-                "elevation_ft": _number(row.get("ELEV")),
-                "longest_ft": ways.get("longest_ft"),
-                "hard_ft": ways.get("hard_ft"),
-                "runway_true": ways.get("runway_true"),
-                "fuel": (row.get("FUEL_TYPES") or "").strip(),
-                "rank": rank["order"],
-            },
-            f'{{"type":"Point","coordinates":[{lon},{lat}]}}',
-            AIRPORT_MIN_ZOOM[rank["tier"]],
-        )
-
-
 def navaid_features(nav_path: Path, bbox=None, rmk_path: Path | None = None):
     """The `navaids` layer's lines: wingtip.fixes's navaids in service,
     with their own remarks from NAV_RMK.csv where rmk_path is given
@@ -552,9 +492,11 @@ def write_layers(
     fix_path: Path,
     bbox=None,
     nav_rmk_path: Path | None = None,
+    shp_path: Path | None = None,
 ) -> dict[str, int]:
     """Each layer's GeoJSON, a feature a line, into folder/<layer>.geojsonl;
     how many features each holds."""
+    from .airports import airport_features, primaries
     from .sua_labels import special_use_label_features
 
     sources = {
@@ -562,7 +504,7 @@ def write_layers(
         "airspace_labels": airspace_label_features(pack, bbox),
         "special_use": special_use_features(pack, bbox),
         "special_use_labels": special_use_label_features(pack, bbox),
-        "airports": airport_features(apt_path, rwy_path, rwy_end_path, bbox, primaries(pack)),
+        "airports": airport_features(apt_path, rwy_path, rwy_end_path, bbox, primaries(pack), shp_path),
         "navaids": navaid_features(nav_path, bbox, nav_rmk_path),
         "fixes": fix_features(fix_path, bbox),
         "runways": runway_features(rwy_path, rwy_end_path, bbox) if rwy_path and rwy_end_path else iter(()),
@@ -623,7 +565,7 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
     written whole into out_dir with its index (what /api/overlay-tiles
     gives), and any older archive removed. With bbox, (west, south, east,
     north), only the features that meet it: a sample."""
-    from wingtip import faa_data
+    from wingtip import airspace, faa_data
 
     cache_dir, out_dir = Path(cache_dir), Path(out_dir or vector_tiles.TILES_DIR)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -657,6 +599,7 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
             nav_rmk_path=nasr("NAV_RMK.csv"),
             fix_path=nasr("FIX_BASE.csv"),
             bbox=bbox,
+            shp_path=airspace.ensure_class_airspace_shapefile(cache_dir),
         )
         built = folder / "out.pmtiles"
         run = subprocess.run(tippecanoe_args(folder, built, pack.cycle, tippecanoe), capture_output=True, text=True)

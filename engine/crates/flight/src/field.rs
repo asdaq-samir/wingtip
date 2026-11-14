@@ -106,10 +106,18 @@ pub const LONG_HARD_FT: u32 = 3_000;
 /// the longer hard runway: zoomed out over Chicago every towered field
 /// tied, and the tile's order drew Chicago Executive where O'Hare should
 /// be (the owner, 2026-11-14).
+///
+/// `size` is the step the mark is drawn at, the biggest fields the
+/// largest (the owner's pick of the field-sized mark, 2026-11-14):
+/// "largest" for a Class B's field, "larger" for a Class C's, "regular"
+/// for the other towered fields and the public ones with a long hard
+/// runway, "small" for the rest. How much larger each is drawn is each
+/// app's own.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct MarkRank {
     pub tier: u8,
     pub order: u32,
+    pub size: &'static str,
 }
 
 /// The order's room for a runway: every hard runway in NASR is under
@@ -140,7 +148,8 @@ pub fn mark_rank(site_type: &str, facility_use: &str, towered: bool, hard_ft: u3
         (true, Some("C")) => 1,
         _ => u32::from(tier) + 2,
     };
-    MarkRank { tier, order: class * RUNWAY_ROOM + (RUNWAY_ROOM - 1 - hard_ft.min(RUNWAY_ROOM - 1)) }
+    let size = ["largest", "larger", "regular", "regular"].get(class as usize).copied().unwrap_or("small");
+    MarkRank { tier, order: class * RUNWAY_ROOM + (RUNWAY_ROOM - 1 - hard_ft.min(RUNWAY_ROOM - 1)), size }
 }
 
 #[cfg(test)]
@@ -207,6 +216,8 @@ mod tests {
         let orders = [ord, mdw, dpa, pwk, igq, short, ll22, pad].map(|r| r.order);
         assert!(orders.windows(2).all(|w| w[0] < w[1]), "{orders:?}");
         assert_eq!(ord.order, 86_999);
+        let sizes = [ord, mdw, dpa, igq, short, ll22, pad].map(|r| r.size);
+        assert_eq!(sizes, ["largest", "larger", "regular", "regular", "small", "small", "small"]);
     }
 
     // A seaplane base with a long hard runway is public, not "long hard",

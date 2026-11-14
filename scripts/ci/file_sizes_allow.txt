@@ -95,8 +95,8 @@ services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/AircraftControllerTest.java 424
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/PlannerProxyControllerTest.java 544
 services/ingest/ingest/swim.py 411
-services/jobs/charts/overlays.py 715
-services/jobs/charts/tests/test_overlays.py 795
+services/jobs/charts/overlays.py 657
+services/jobs/charts/tests/test_overlays.py 791
 services/planner/app/landmarks.py 462
 services/planner/app/main.py 418
 services/planner/app/routers/airports.py 740

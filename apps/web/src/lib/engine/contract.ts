@@ -1843,7 +1843,7 @@ export interface EngineContract {
     answer: FieldHoursAnswer;
   };
   /**
-   * What a field's map mark is first drawn at and kept by where marks would overlap, from the FAA's NASR APT_BASE.csv (SITE_TYPE_CODE, FACILITY_USE_CODE, TWR_TYPE_CODE), its longest hard runway (APT_RWY.csv, the FAA Aeronautical Chart User's Guide's hard-surfaced runways) and the class of airspace the FAA's Class_Airspace file names it the primary airport of (IDENT). `tier`: 0 towered, 1 public airport with a hard runway of 3,000 ft or more, 2 other public, 3 private, 4 heliports and the rest. `order`, lower first: the field a Class B is named for, then a Class C's, then each tier, and within each the longer hard runway first, so O'Hare's mark is kept before Chicago Executive's. The cycle pack's overlay tiles carry `order` as each airport's `rank`, which every app's map sorts its marks by.
+   * What a field's map mark is first drawn at and kept by where marks would overlap, from the FAA's NASR APT_BASE.csv (SITE_TYPE_CODE, FACILITY_USE_CODE, TWR_TYPE_CODE), its longest hard runway (APT_RWY.csv, the FAA Aeronautical Chart User's Guide's hard-surfaced runways) and the class of airspace the FAA's Class_Airspace file names it the primary airport of (IDENT). `tier`: 0 towered, 1 public airport with a hard runway of 3,000 ft or more, 2 other public, 3 private, 4 heliports and the rest. `order`, lower first: the field a Class B is named for, then a Class C's, then each tier, and within each the longer hard runway first, so O'Hare's mark is kept before Chicago Executive's. `size`: the step the mark is drawn at. The cycle pack's overlay tiles carry `order` as each airport's `rank`, which every app's map sorts its marks by, and `size` as its `size`.
    */
   field_mark_rank: {
     input: FieldMarkRankInput;
@@ -6793,6 +6793,10 @@ export interface FieldMarkRankAnswer {
    * The mark's place where marks overlap, lower kept first: class (0 Class B primary, 1 Class C primary, then tier + 2) times 100,000, plus 99,999 less the longest hard runway in ft.
    */
   order: number;
+  /**
+   * The step the mark is drawn at, the biggest fields the largest (the owner, 2026-11-14): largest for a Class B's primary field, larger for a Class C's, regular for the other towered fields and public ones with 3,000 ft of hard runway, small for the rest. How much larger each step is drawn is each app's own.
+   */
+  size: "largest" | "larger" | "regular" | "small";
 }
 export interface FieldMilitaryInput {
   /**

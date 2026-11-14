@@ -835,9 +835,13 @@ the speed control.
 
 #### Airport weather marks on the map (2026-11-10)
 
-On the map, the owner's pick of 2026-11-10. Each reporting field wears its flight
-category as a ring about 4.5 points wide round the chart's own symbol
-(Halo, the default), or ForeFlight's filled dot in its place (Dot). From
+On the map, the owner's pick of 2026-11-10, and since 2026-11-14 (option I
+of <https://claude.ai/artifact/V1d9RDbmY1aczc4LfXed7a>) every field wears
+the planner's one airport mark (`airportMarkSvg`, rules.md §5): the ring
+in its surface airspace's chart code, its flight category the disc in the
+middle, sized by the engine's `field_mark_rank` step (O'Hare 1.5
+times an ordinary towered field), one GL picture per variant
+(`lib/map/gl/airportIcons`). From
 zoom 10 in, a station model adds the wind barb (the engine's `wind_barb`:
 flags, barbs and half-barbs to the nearest 5 kt, a circle for calm,
 FAA-H-8083-28A 25.2.3.4.5) and two lines, the visibility with its weather
