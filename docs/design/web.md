@@ -1121,7 +1121,7 @@ a centred avatar, the name, Pilot Details and the account's menu
 account), then Airplanes (the checklists inside), Flights, Logbook,
 Minimums, Training (Coach, Practice), the Emergency Assistant, Settings
 and Subscription. Settings (`features/settings`) is one page pushed over
-You (`ConsolePages`): Look (Sunlight, Theme, Appearance), Map, In Flight
+You (`ConsolePages`): Display (Sunlight), Map, In Flight
 (Alerts; ATC), Data and Help & About (Guide, Status, Log, About,
 Sources, the legal links); `openSettings` is the one way in, and the Map
 card's gear opens it at its Map group with the card raised. The map's
@@ -1159,7 +1159,7 @@ The first time the planner opens with no route on a device
 (`WelcomeSheet`: the stock Drawer on a phone, the stock Dialog from `md`
 up, solid): "Welcome to Wingtip Maps", three rows (Search, like Maps; FPL,
 like your EFB; FAA charts that move like Maps), Theme and Appearance on
-Settings' own two Look tiles (`components/lookPicks`, `MenuTile`, applied
+the Map card's two Look tiles (`components/lookPicks`, `MenuTile`, applied
 as they are picked, the sheet and the map changing behind it; the owner,
 2026-11-13), and at its foot Apple's permission priming (the owner,
 2026-11-13): with the browser's question still to come, Turn On Location
@@ -1208,7 +1208,7 @@ standalone`, `theme_color` (the launch token), the icons and maskable
 icons. The page's own `theme-color` is two metas, the launch ground by
 day and the night navy by the device's scheme (`vite-plugins/manifest`
 `themeColor`, from the tokens), then the page's ground once the look and
-Settings' Theme are on (`lib/brand` `BrandLook`), so the browser's bar is
+the Map card's Theme are on (`lib/brand` `BrandLook`), so the browser's bar is
 dark at night (2026-11-11). **Proposed,
 generated rather than hand-written:**
 1. `id` set to the app's path, so a later `start_url` change does not

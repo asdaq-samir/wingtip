@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, openPanel, openSetup, settle, sideDrawer } from "./helpers";
+import { controlsInSight, openMapSettings, openPanel, settle, sideDrawer } from "./helpers";
 import { fromRest } from "./startState";
 
 /** How FPL shows its route, picked from the route's ••• menu (moved out of
@@ -31,8 +31,8 @@ test.describe("/app/plan", () => {
     await showAs("box");
     await expect(sideDrawer(page).getByTestId("route-folded")).toHaveCount(0);
 
-    await openSetup(page);
-    await expect(page.getByTestId("quick-controls").first().getByTestId("brand-select")).toBeVisible();
+    await openMapSettings(page);
+    await expect(page.getByTestId("map-look").getByTestId("brand-select")).toBeVisible();
     await expect(page.getByTestId("route-edit-select")).toHaveCount(0);
     await page.keyboard.press("Escape");
 

@@ -5,6 +5,7 @@ import Segmented from "../../components/Segmented";
 import { Switch } from "../../components/ui/switch";
 import MapPictureChoices from "./MapPictureChoices";
 import MapLayers from "./MapLayers";
+import LookChoice from "./LookChoice";
 import {
   BASE_CHARTS,
   HEIGHT_STRETCHES,
@@ -29,7 +30,8 @@ import { useTerrainView } from "../plan/map/terrain/useTerrainView";
  * owner's screenshot, 2026-11-10): the charts as pictures (None first,
  * as the overlay's, the owner, 2026-11-14), the overlay
  * over them with its strength, in 3D how tall it stands its heights
- * (HeightsChoice), the four layers as tiles (MapLayers). How the
+ * (HeightsChoice), the four layers as tiles (MapLayers), and the app's
+ * Look, Theme and Appearance, last (LookChoice; the owner, 2026-11-14). How the
  * map behaves -- the airport weather, the glide ring, the alerts, keeping
  * the charts, where the data comes from -- is the app's Settings, which
  * the gear at the card's head opens at its Map group (option A of the
@@ -43,6 +45,7 @@ export default function MapCard() {
       <OverlayChoice />
       <HeightsChoice />
       <MapLayers />
+      <LookChoice />
     </div>
   );
 }

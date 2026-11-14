@@ -20,7 +20,7 @@ import { AlertsPage, AtcPage, HelpPage, type HelpPages } from "./SettingsPages";
  * account canvas (2026-11-13): a row of You (the avatar's card), and what
  * the Map card's gear opens at its Map group (lib/openSettings, the one
  * way in). How the app behaves, in groups as iOS's Settings has them --
- * Look (Setup's tiles once), Map, In Flight, Data, and Help & About -- where it
+ * Display (Sunlight; Theme and Appearance are the Map card's Look), Map, In Flight, Data, and Help & About -- where it
  * was the avatar's card's tiles and footer links and the Map card's Map
  * Settings page: one thing called Settings, every control in one home.
  * Its pages (Alerts, ATC, Help & About) push over it, their close back
@@ -37,9 +37,9 @@ export default function SettingsPage({ help }: { help: HelpPages }) {
       }}
     >
       <div className="flex flex-col gap-5" data-testid="settings-page">
-        {/* The app's look, the tiles that were Setup's (QuickControls), big for a hand in
-            rough air: Sunlight, Theme and Appearance. */}
-        <PillSection title="Look" testId="settings-look">
+        {/* Sunlight, the tile left of the Look group (QuickControls): Theme and
+            Appearance are the Map card's Look section now, one home each. */}
+        <PillSection title="Display" testId="settings-look">
           <QuickControls />
         </PillSection>
         <MapGroup />
@@ -73,7 +73,7 @@ function MapGroup() {
   const [wanted] = useState(() => useSettingsGroup.getState().group === "map");
   const card = useContext(CardId);
   // Opened from the Map card's gear: the card it is in all the way up, as
-  // a pilot's drag takes it, for the group is under the Look's tiles,
+  // a pilot's drag takes it, for the group is under the Display tile,
   // below a half card's edge; and scrolled to it where the page is taller
   // than the card. Once the card has come up at its opening size, not
   // before, as opening sets its size afresh (useCardFrame); let go once
