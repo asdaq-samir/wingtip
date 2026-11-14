@@ -261,6 +261,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /api/me`.
     /// - Remark: Generated from `#/paths//api/me/delete(delete_me)`.
     func deleteMe(_ input: Operations.DeleteMe.Input) async throws -> Operations.DeleteMe.Output
+    /// Forget the signed-in pilot's own checkpoint notes
+    ///
+    /// Every note they wrote for themselves, which the planner keeps; the shared notes stay. The planner's own route for it is internal (no x-gateway mark): this names the pilot from the session, as the account's deletion does.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/checkpoint-notes`.
+    /// - Remark: Generated from `#/paths//api/me/checkpoint-notes/delete(forgetNotes)`.
+    func forgetNotes(_ input: Operations.ForgetNotes.Input) async throws -> Operations.ForgetNotes.Output
     /// The signed-in pilot's telephone number and home base
     ///
     /// What a flight plan's item 19 C/ asks with the pilot in command's name (AIM Appendix 4), both at once; blank is none. Their name is set with PUT /api/training/name.
@@ -1036,6 +1043,15 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//api/me/delete(delete_me)`.
     public func deleteMe(headers: Operations.DeleteMe.Input.Headers = .init()) async throws -> Operations.DeleteMe.Output {
         try await deleteMe(Operations.DeleteMe.Input(headers: headers))
+    }
+    /// Forget the signed-in pilot's own checkpoint notes
+    ///
+    /// Every note they wrote for themselves, which the planner keeps; the shared notes stay. The planner's own route for it is internal (no x-gateway mark): this names the pilot from the session, as the account's deletion does.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/checkpoint-notes`.
+    /// - Remark: Generated from `#/paths//api/me/checkpoint-notes/delete(forgetNotes)`.
+    public func forgetNotes(headers: Operations.ForgetNotes.Input.Headers = .init()) async throws -> Operations.ForgetNotes.Output {
+        try await forgetNotes(Operations.ForgetNotes.Input(headers: headers))
     }
     /// The signed-in pilot's telephone number and home base
     ///

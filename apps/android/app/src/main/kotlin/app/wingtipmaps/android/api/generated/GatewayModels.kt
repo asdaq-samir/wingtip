@@ -1096,6 +1096,11 @@ data class MagicLinkRequest (
 )
 
 @Serializable
+data class NotesForgottenDto (
+    val removed: Int
+)
+
+@Serializable
 data class PaperworkDto (
     val items: List<DueDto>,
 

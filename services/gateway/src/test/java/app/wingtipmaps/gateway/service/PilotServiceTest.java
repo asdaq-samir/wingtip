@@ -6,12 +6,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.PilotRole;
 import app.wingtipmaps.gateway.repository.PilotRepository;
+import app.wingtipmaps.gateway.security.MagicLinkAuthenticationToken;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -279,5 +281,45 @@ class PilotServiceTest {
         Pilot cleared = pilots.findById(pilot.getId()).orElseThrow();
         assertThat(cleared.getPhone()).isNull();
         assertThat(cleared.getHomeBase()).isNull();
+    }
+
+    /** A request finds the pilot its sign-in made, and makes none: a
+     *  session whose pilot is gone (the account deleted) is signed out,
+     *  not given a new, empty pilot under the same address. */
+    @Test
+    void aRequestFindsThePilotAndMakesNone() {
+        String email = UUID.randomUUID() + "@example.com";
+        Pilot signedIn = pilotService.fromVerifiedEmail(email);
+        assertThat(pilotService.current(new MagicLinkAuthenticationToken(email)))
+                .hasValueSatisfying(p -> assertThat(p.getId()).isEqualTo(signedIn.getId()));
+
+        String stranger = UUID.randomUUID() + "@example.com";
+        assertThat(pilotService.current(new MagicLinkAuthenticationToken(stranger)))
+                .isEmpty();
+        assertThat(pilots.findByEmail(stranger)).isEmpty();
+
+        pilots.delete(pilots.findById(signedIn.getId()).orElseThrow());
+        assertThat(pilotService.current(new MagicLinkAuthenticationToken(email)))
+                .isEmpty();
+        assertThat(pilots.findByEmail(email)).isEmpty();
+    }
+
+    /** An OIDC session finds its pilot by the provider's subject, whatever
+     *  address the session's token still carries: the address was kept in
+     *  step at sign-in, not on a read. */
+    @Test
+    void anOidcRequestFindsThePilotBySubjectAndWritesNothing() {
+        String subject = UUID.randomUUID().toString();
+        String email = subject + "@example.com";
+        Pilot signedIn = pilotService.fromOidcUser(oidcUser(subject, email, "A. Pilot"), "google");
+        OAuth2User later = oidcUser(subject, "renamed-" + email, "A. Pilot");
+
+        assertThat(pilotService.current(new OAuth2AuthenticationToken(later, java.util.List.of(), "google")))
+                .hasValueSatisfying(p -> assertThat(p.getId()).isEqualTo(signedIn.getId()));
+        assertThat(pilots.findById(signedIn.getId()).orElseThrow().getEmail()).isEqualTo(email);
+
+        OAuth2User nobody = oidcUser(UUID.randomUUID().toString(), UUID.randomUUID() + "@example.com", "N");
+        assertThat(pilotService.current(new OAuth2AuthenticationToken(nobody, java.util.List.of(), "apple")))
+                .isEmpty();
     }
 }

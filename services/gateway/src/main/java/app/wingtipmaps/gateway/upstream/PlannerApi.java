@@ -12,6 +12,7 @@ import app.wingtipmaps.gateway.planner.model.PlannerExperienceItem;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerInspectionsAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
+import app.wingtipmaps.gateway.planner.model.PlannerPilotNotesForgotten;
 import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
 import java.util.List;
@@ -73,7 +74,7 @@ public interface PlannerApi {
     PlannerPilotNotes notes(@RequestHeader(PILOT_HEADER) String pilotId);
 
     @DeleteExchange("/api/checkpoint-notes/mine")
-    void forgetNotes(@RequestHeader(PILOT_HEADER) String pilotId);
+    PlannerPilotNotesForgotten forgetNotes(@RequestHeader(PILOT_HEADER) String pilotId);
 
     @GetExchange("/api/studio/drafts-to-notice")
     List<PlannerStudioDraft> draftsToNotice();

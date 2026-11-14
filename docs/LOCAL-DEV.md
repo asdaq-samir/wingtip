@@ -63,7 +63,7 @@ run on one machine at once; stop the first.
 ### In a VS Code dev container
 
 "Reopen in Container" builds `.devcontainer/devcontainer.json`: Node 26,
-Python 3.15 and Rust 1.99 (`.tool-versions`), the Docker CLI and the
+Python 3.15 and Rust 1.100 (`.tool-versions`), the Docker CLI and the
 recommended extensions.
 It shares the host's Docker (docker-outside-of-docker), so `make dev` and
 `make check` start containers beside the dev container, and it mounts the
@@ -384,7 +384,7 @@ worktrees served one worktree's older build of a crate to another,
 2026-11-08; sccache's key is the content, so it cannot), and TypeScript's
 `tsBuildInfo` and Vite's cache (seconds, not worth a shared cache that
 could go stale). Cargo's own content-based freshness
-(`-Zchecksum-freshness`) is still unstable in Rust 1.99.
+(`-Zchecksum-freshness`) is still unstable in Rust 1.100.
 
 No sccache for the phones' engine on the Mac: Rust's cache key holds the
 compile's directory and output paths, which are each worktree's own, and

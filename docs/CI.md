@@ -53,8 +53,15 @@ script can check, and the rest are for whoever writes a test or a job.
    Each cache step has an id and, on a miss, says so
    (`::notice title=Cache miss::<name>`); `budget` lists the misses, and
    on main, whose saves every pull request reads, a miss is a warning (a
-   key that rotates weekly is expected to miss once a week). *Guard:*
-   `ci_budget.py`.
+   key that rotates weekly is expected to miss once a week). The store is
+   GitHub's 10 GB a repository, past which it evicts the least recently
+   used: on 2026-11-14 it held 10.86 GB, 5 GB of it code scanning's
+   dependency caches written from PR #577's pushes, and main's iPhone
+   DerivedData went within an hour of being saved, so every iOS run that
+   day built from nothing (9-22 min). Since then code scanning runs on
+   main alone with no dependency cache (`codeql.yml`), a closed pull
+   request's caches are deleted (`pr-caches.yml`, `scripts/ci/pr_caches.sh`),
+   and `budget` warns once the store passes 9 GB. *Guard:* `ci_budget.py`.
 5. **Newest versions, warnings fatal.** docs/versions.md's rules: every
    toolchain and library on its newest stable release, majors too; a
    held one is listed there with why. Renovate (`renovate.json`) keeps
@@ -69,7 +76,12 @@ script can check, and the rest are for whoever writes a test or a job.
    and ruff. *Guard:* `warnings_fatal.py`.
 6. **Batch pushes.** Every push to a pull request runs CI again and
    cancels the run before it: commit as you go, push when the change is
-   whole.
+   whole. The integration branch above all: its pull request's run is
+   the wave's validation, and 8 of its last 20 runs (2026-11-13/14) were
+   cancelled by the next push, one 16.6 minutes in, 2 of the 20 green.
+   Merge the wave's branches into `claude/integration` locally, then push
+   it once; in the validation pass, push once per set of fixes, after all
+   of the set's own checks have passed, and not again until its run ends.
 7. **Never raise a timeout to get green.** A job that runs long is made
    faster (a cache, a smaller set, a split) or moved to the night; its
    budget moves only with the reason in the commit.
@@ -104,8 +116,10 @@ script can check, and the rest are for whoever writes a test or a job.
     a checkout, permissions, triggers), run by `workflow_rules.py` at the
     versions in `.tool-versions` (settings in `.github/actionlint.yaml`
     and `.github/zizmor.yml`, each exception with its reason); shellcheck
-    0.11.0 over every script in `scripts/` and the pre-push hook
-    (`scripts/ci/shellcheck.sh`, `.shellcheckrc`); lychee 0.24.2 over the
+    0.11.0 over every tracked shell script and the pre-push hook
+    (`scripts/ci/shellcheck.sh`, `.shellcheckrc`; `scripts/` alone until
+    2026-11-14, which left infra's deploy and backup, the engine's phone
+    builds and `.github/e2e-keys.sh` unlinted); lychee 0.24.2 over the
     Markdown's links and heading anchors, offline (`scripts/ci/check_links.sh`,
     `lychee.toml`). All are installed by mise through
     `scripts/build/tool.sh`, the Mac and CI alike, so a finding is the same
@@ -174,7 +188,7 @@ they are what the budgets allow, to be lowered once runs show them:
 | `changes` | The path filter, and whether a pull request is words only | under 30 s |
 | `engine-wheel` | The engine's Python wheel, once a run, for every job that imports it (cached: seconds; an engine change compiles only what it changed, from main's last build) | 20 s warm, 1-2 min on an engine change |
 | `guards` | Every quick check on one runner, all started at once (`scripts/ci/guards.sh`): the paths filter, the rules boundary, the legal pages, the tiers, warnings fatal, the workflows' rules, the links; file sizes, toolchain versions, the brand tokens, unused Python, the simplicity rules (Semgrep, jscpd, the ratchet); ruff and the Python's layout; where the change touched them, the website, the web app's tsc, ESLint, Prettier, knip and layers, SwiftLint and detekt, the web's engine rules, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; and flight-critical | 1-3 min (its slowest check: ESLint on a web change, clippy on an engine change) |
-| `test-web` | The generated files are the committed ones; Vitest over the tests the change reaches (`--changed`); `vite build` and the first-load budget | 1.5-2.5 min |
+| `test-web` | The generated files are the committed ones, on a pull request only those it touched (`scripts/ci/web_generated.sh`: the phones' models and engine calls, the tokens, the screens, the icons, each by its generator, source and output; they took 1.5 of the job's 3.8 minutes on every web change); Vitest over the tests the change reaches (`--changed`); `vite build` and the first-load budget | 1.5-2.5 min |
 | `test-engine` | `cargo test` over the touched crates, those that use them and the contract test (`scripts/ci/engine_affected.py`); the committed WebAssembly, where its inputs changed | 1-3 min |
 | `test-python` | One leg per suite the change touches: `test-planner`, `test-wingtip`, `test-jobs`, `test-ingest`, `test-weather`, `test-xplane` (`scripts/ci/python_suite.sh`), and `test-sim`, the replay agent's dotnet build, format check and tests (`scripts/ci/sim_suite.sh`) | 1-3 min each |
 | `test-gateway` | The Java's layout and `mvn test`, when the gateway changed | 2-3 min |
@@ -194,11 +208,11 @@ under a minute.
 | What | Expected |
 |---|---|
 | `e2e-images`: the browser suite's images and page, each built once per key | 1-3 min |
-| `e2e` (2 shards): the `@smoke` and `@flight-critical` browser tests on the phone project, against the whole stack | 5-8 min |
+| `e2e` (2 shards): the `@smoke` and `@flight-critical` browser tests on the phone project, and `sheet-webkit.spec.ts` on `webkit-phone`, against the whole stack, in a slim copy of the Playwright image (`.github/ci-images.hcl`: no full Chrome or Firefox; WebKit kept, keyed on the recipe too by `scripts/ci/playwright_slim_key.sh`) | 5-8 min |
 | `build-images`: every service image whose inputs changed, pushed as `:sha-<commit>` for Promote | 1-4 min |
 | Native iOS's own run: the unit tests and the `CardSmokeTests` UI smoke on the iPhone, then TestFlight | 6-8 min |
 | Native Android's own run: the build, unit tests, lint and a debug APK | 4-6 min |
-| CodeQL: GitHub's default setup (the repository's settings, weekly and on main), not a workflow here | |
+| CodeQL (`codeql.yml`): the six languages on main's push and on Mondays, `build-mode: none`, no dependency cache; never on a pull request. It takes over once the repository's default setup is off (Settings, Code security, CodeQL analysis, "Disable CodeQL"): GitHub runs that one on every pull request too, and refuses an advanced workflow's results while it is on | 4-6 min |
 
 About 10 minutes after a merge, in all. A red run writes its section of
 one issue, "Main CI failed (after merge)", labelled `ready`
@@ -211,7 +225,7 @@ Android at 09:47), or by hand (Run workflow), unchanged:
 | What | Expected |
 |---|---|
 | CI: every unit suite in full, every browser test on the phone, desktop, the iPhones and the iPad, the whole iOS audit (WebKit), WCAG 2.2 and Lighthouse, over ten shards; the API reference, Javadoc and wingtip's pdoc; the flake hunt | ~15 min |
-| Native iOS, `full`: the whole suite (launch, flow and accessibility tests, the store shots, `CardRuleTests`, `CardScrollTests`) on the iPhone, the iPad and iPhone Duo, and each device's first screen | ~60 min |
+| Native iOS, `full`: the whole suite (launch, flow and accessibility tests, the store shots, `CardRuleTests`, `CardScrollTests`) and the device's first screen, on the iPhone, the iPad and iPhone Duo, each its own runner (`test`, `test (iPad)`, `test (iPhone Duo)`): the three on one runner took over 80 minutes and were cancelled at the limit twice (#572) | ~30 min each |
 | Native Android: the build, a debug APK, then the instrumented tests on an API 35 emulator | ~15 min |
 
 ## What gates a merge
@@ -384,7 +398,8 @@ change needs; a job it skips counts as passing.
 | `flake-hunt-python`, `flake-hunt-web`, `flake-report` | The nightly flake hunt (below) |
 | `passed` | "CI passed", the one check a merge waits on |
 | `sources` | At night: the live sources the stack reads still answer (`scripts/ci/sources_answer.py`) |
-| `budget` | Last, never failing: this run's minutes against the budget and its cache misses, in the run's summary (`scripts/ci/ci_budget.py`) |
+| `backup-restore` | At night: a dump made by `scripts/dev/backup-db.sh` restored whole into an empty Postgres, its rows and grants counted (`scripts/ci/backup_restore.sh`) |
+| `budget` | Last, never failing: this run's minutes against the budget, its cache misses and the cache store's size (a warning past 9 of GitHub's 10 GB), in the run's summary (`scripts/ci/ci_budget.py`) |
 
 Images go to GHCR from main; `promote.yml` copies the ones that passed to
 ECR and deploys them ([README-AWS.md](README-AWS.md#deploys)).

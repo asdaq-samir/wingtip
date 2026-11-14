@@ -66,6 +66,7 @@ typealias GWLogbookEntryRequest = GatewayAPI.Components.Schemas.LogbookEntryRequ
 typealias GWLogbookImportRequest = GatewayAPI.Components.Schemas.LogbookImportRequest
 typealias GWLogbookImportResult = GatewayAPI.Components.Schemas.LogbookImportResult
 typealias GWMagicLinkRequest = GatewayAPI.Components.Schemas.MagicLinkRequest
+typealias GWNotesForgottenDto = GatewayAPI.Components.Schemas.NotesForgottenDto
 typealias GWOwnFigures = GatewayAPI.Components.Schemas.OwnFigures
 typealias GWPaperworkDto = GatewayAPI.Components.Schemas.PaperworkDto
 typealias GWPilotContactRequest = GatewayAPI.Components.Schemas.PilotContactRequest

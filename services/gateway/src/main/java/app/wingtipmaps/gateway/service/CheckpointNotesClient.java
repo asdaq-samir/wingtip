@@ -7,9 +7,9 @@ import org.springframework.stereotype.Component;
 
 /**
  * The checkpoint notes a pilot wrote for themselves, which the planner
- * keeps (services/planner app.routers.notes, GET
- * /api/checkpoint-notes/mine), read for their export: the one record of
- * theirs this app does not hold. The planner's route is internal (no
+ * keeps (services/planner app.routers.notes, /api/checkpoint-notes/mine),
+ * read for their export and forgotten at their ask (Settings' Forget My
+ * Checkpoint Notes): the one record of theirs this app does not hold. The planner's route is internal (no
  * x-gateway mark), so a browser cannot ask it; this app names the pilot
  * by the header the planner reads, as AccountService does to delete them.
  * Asked through {@link PlannerClient}, this app's one client of the planner.
@@ -31,5 +31,14 @@ public class CheckpointNotesClient {
     public List<PlannerCheckpointNote> mine(Pilot pilot) {
         List<PlannerCheckpointNote> notes = planner.notes(pilot.getId()).getNotes();
         return notes == null ? List.of() : notes;
+    }
+
+    /**
+     * The pilot's own notes forgotten, the shared notes kept: how many went.
+     *
+     * @throws PlannerUnavailableException when the planner cannot be asked or answers otherwise
+     */
+    public int forget(Pilot pilot) {
+        return planner.forgetNotes(pilot.getId());
     }
 }

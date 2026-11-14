@@ -77,9 +77,16 @@ class SubscriptionServiceTest {
         return service(SignInOptions.Access.SIGN_IN, "instructor@example.com");
     }
 
-    /** A new pilot, signed in by the emailed link. */
-    private static Authentication someone() {
-        return new MagicLinkAuthenticationToken(UUID.randomUUID() + "@example.com");
+    /** A new pilot, signed in by the emailed link (which makes them). */
+    private Authentication someone() {
+        return signedIn(UUID.randomUUID() + "@example.com");
+    }
+
+    /** The pilot of `email` signed in by the emailed link: the sign-in
+     *  makes them, as MagicLinkController does; a request only finds them. */
+    private Authentication signedIn(String email) {
+        pilots.fromVerifiedEmail(email);
+        return new MagicLinkAuthenticationToken(email);
     }
 
     private Pilot pilotOf(Authentication who) {
@@ -161,14 +168,14 @@ class SubscriptionServiceTest {
 
     @Test
     void anInstructorAndADeveloperAreGivenIt() {
-        Authentication instructor = new MagicLinkAuthenticationToken("Instructor@Example.com");
+        Authentication instructor = signedIn("Instructor@Example.com");
         SubscriptionDto given = service().status(pilotOf(instructor));
         assertThat(given.state()).isEqualTo(State.COMPED);
         assertThat(given.entitled()).isTrue();
         assertThat(given.until()).isNull();
         assertThat(service().refusal(instructor, PaidFeature.DEBRIEF)).isEmpty();
 
-        Authentication developer = new MagicLinkAuthenticationToken("dev@example.com");
+        Authentication developer = signedIn("dev@example.com");
         assertThat(service().refusal(developer, PaidFeature.DEBRIEF)).isEmpty();
         assertThat(service().status(pilotOf(developer)).state()).isEqualTo(State.COMPED);
     }
