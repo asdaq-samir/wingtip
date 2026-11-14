@@ -49,10 +49,6 @@ pub const SIGMET_BELOW_FT: f64 = limits::CLASS_A_FLOOR_FT;
 /// AWC's product, wingtip.weather's GAIRMET_SNAPSHOT_S): one valid within
 /// half that gap of some time of the flight stands for it.
 pub const GAIRMET_SNAPSHOT_S: f64 = 90.0 * 60.0;
-/// What a restricted area, MOA, warning or alert area costs more to cross,
-/// a share of a cell's minutes, for every way: their times of use are not
-/// read here, so they are gone round where it costs little, not closed.
-pub const SPECIAL_USE_COST: f64 = 0.5;
 /// The margin kept from a prohibited area or a TFR, nm: the planner's own,
 /// not the FAA's -- 14 CFR 91.133(a) and 91.137 to 91.145 bar flying
 /// "within" the area and set no distance outside it; a mile keeps off the edge.
@@ -297,25 +293,6 @@ pub fn gairmets(grid: &mut Grid, advisories: &[Advisory], window: (f64, f64), to
     }
 }
 
-/// Prohibited areas (14 CFR 91.133) closed, a mile round; restricted,
-/// MOA, warning and alert areas dearer.
-pub fn special_use(grid: &mut Grid, areas: &[Airspace]) {
-    for a in areas {
-        match a.kind.as_str() {
-            "P" => {
-                let at = grid.in_area(&a.area, AIRSPACE_MARGIN_NM);
-                grid.close(&at, "prohibited", &format!("Prohibited area {}", a.name));
-            }
-            "R" | "MOA" | "W" | "A" => {
-                for i in grid.in_area(&a.area, 0.0) {
-                    grid.dear[i] = grid.dear[i].max(SPECIAL_USE_COST);
-                }
-            }
-            _ => {}
-        }
-    }
-}
-
 /// The TFRs in force over the flight (14 CFR 91.137 to 91.145), the
 /// planner's pick of them, closed a mile round.
 pub fn tfrs(grid: &mut Grid, tfrs: &[Airspace]) {
@@ -384,28 +361,4 @@ pub fn groundspeeds(grid: &Grid, stations: &[Station], altitudes: &[f64], tas_kt
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn the_highest_cruise_either_way_under_the_ceiling() {
-        // 91.159: 13,000 ft reaches 11,500 east and 12,500 west, so 11,500.
-        assert_eq!(highest_cruise_ft(13000.0), 11500.0);
-        assert_eq!(highest_cruise_ft(30000.0), 16500.0);
-        assert_eq!(highest_cruise_ft(4000.0), 0.0);
-        assert_eq!(highest_cruise_ft(4500.0), 3500.0);
-    }
-
-    #[test]
-    fn commas_as_python_writes_them() {
-        assert_eq!(thousands(2500.0), "2,500");
-        assert_eq!(thousands(300.0), "300");
-        assert_eq!(thousands(12000.0), "12,000");
-    }
-
-    #[test]
-    fn the_cruising_altitudes_to_the_top() {
-        assert_eq!(cruising_altitudes(5500.0), vec![3500.0, 4500.0, 5500.0]);
-        assert!(cruising_altitudes(0.0).is_empty());
-    }
-}
+mod tests;

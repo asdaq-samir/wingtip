@@ -2,6 +2,7 @@
 //! the ways, their paths and what each meets. With no airplane a way's
 //! minutes in the air and its fuel are null: they need one.
 
+use super::grid::Hazard;
 use super::ways::Along;
 use super::words::r5;
 use super::Way;
@@ -60,7 +61,7 @@ pub fn along_json(out: &mut String, a: &Along) {
     out.push_str(&format!(",\"floor_ft\":{},\"water_nm\":{}", a.floor_ft, a.water_nm));
 }
 
-pub fn way_json(out: &mut String, w: &Way, airplane: bool) {
+pub fn way_json(out: &mut String, w: &Way, airplane: bool, hazards: &[Hazard]) {
     out.push_str("{\"kind\":");
     json::string(out, &w.kind);
     out.push_str(",\"kinds\":");
@@ -92,6 +93,9 @@ pub fn way_json(out: &mut String, w: &Way, airplane: bool) {
     ints(out, &w.crosses);
     out.push_str(",\"marginal\":");
     ints(out, &w.marginal);
+    // The card's one warning, in the engine's words (special_use.rs).
+    out.push_str(",\"warning\":");
+    json::opt_string(out, super::special_use::way_warning(hazards, &w.crosses));
     out.push(',');
     along_json(out, &w.along);
     out.push('}');

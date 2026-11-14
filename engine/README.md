@@ -377,7 +377,11 @@ Then the callers switch to the name and the old copy is deleted.
 - Route options (`crates/route`'s options) are a cargo feature, `options`
   (the facade's `route-options`), on for the planner and the phones and
   off in the web's WebAssembly, which never asks them: they were 150 KB of
-  the module.
+  the module. A way's `crosses` names, besides what closes a cell, each
+  restricted area, MOA, warning and alert area it is flown through (never
+  closed: warn, never limit; AIM 3-4), and each way's `warning` is its
+  card's one warning in the engine's words, the worst first ("Crosses a
+  restricted area" before "Crosses a MOA").
 - The web's WebAssembly is built with only the rules the web asks
   (`facade/build.rs`, wherever the facade is built for wasm32, which only
   `bindings/wasm` is; the planner's wheel and the phones build every rule,

@@ -58,6 +58,7 @@ pub mod fuel;
 pub mod grid;
 pub mod naming;
 pub mod read;
+pub mod special_use;
 pub mod stops;
 pub mod terrain;
 pub mod ways;
@@ -320,7 +321,10 @@ fn named(grid: &Grid, mut found: Vec<Way>) -> Vec<Way> {
         best
     };
     let fastest = least(&|w| (minutes(w), 0.0, 0.0));
-    let weather = least(&|w| (w.crosses.iter().filter(|h| !is_fuel(h)).count() as f64, w.marginal.len() as f64, minutes(w)));
+    // The best weather's: what it crosses of the weather and the closed
+    // cells, not the special-use areas it is told of (special_use.rs).
+    let not_weather = |h: &&i64| is_fuel(h) || special_use::is_special_use(&grid.hazards[**h as usize].kind);
+    let weather = least(&|w| (w.crosses.iter().filter(|h| !not_weather(h)).count() as f64, w.marginal.len() as f64, minutes(w)));
     let fewest = least(&|w| (w.landings as f64, minutes(w), 0.0));
     let best = [("fastest", fastest), ("weather", weather), ("stops", fewest)];
     for (i, w) in found.iter_mut().enumerate() {
@@ -383,7 +387,7 @@ fn read_grid(a: &Ask, unchecked: &mut Vec<String>) -> Result<(Grid, Vec<f64>), S
         None => unchecked.push("G-AIRMETs".into()),
     }
     match &a.sua {
-        Some(s) => read::special_use(&mut grid, s),
+        Some(s) => special_use::special_use(&mut grid, s),
         None => unchecked.push("special-use airspace".into()),
     }
     match &a.tfrs {
@@ -484,13 +488,13 @@ fn options(a: &Ask) -> Result<String, String> {
         if i > 0 {
             out.push(',');
         }
-        way_json(&mut out, w, a.profile.airplane);
+        way_json(&mut out, w, a.profile.airplane, &grid.hazards);
     }
     out.push_str("],\"own\":");
-    way_json(&mut out, &mine, a.profile.airplane);
+    way_json(&mut out, &mine, a.profile.airplane, &grid.hazards);
     out.push_str(",\"filed\":");
     match &filed {
-        Some(w) => way_json(&mut out, w, a.profile.airplane),
+        Some(w) => way_json(&mut out, w, a.profile.airplane, &grid.hazards),
         None => out.push_str("null"),
     }
     // The pilot's own route as it is flown, end to end, for the map to
@@ -642,42 +646,4 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn a_way(kind: &str, air_min: f64, stops: &[&str]) -> Way {
-        Way {
-            kind: kind.into(),
-            kinds: vec![kind.into()],
-            title: title(kind).into(),
-            stops: stops.iter().map(|s| s.to_string()).collect(),
-            fuel: Vec::new(),
-            food: Vec::new(),
-            path: Vec::new(),
-            distance_nm: 0.0,
-            air_min,
-            ground_min: 0.0,
-            fuel_gal: 0.0,
-            landings: 0,
-            crosses: Vec::new(),
-            marginal: Vec::new(),
-            along: Along { bands: Vec::new(), tail_kt: 0.0, floor_ft: 0, water_nm: 0 },
-        }
-    }
-
-    #[test]
-    fn the_fastest_is_the_way_that_is_fastest_whatever_search_found_it() {
-        // Two ways a search may find, the one called fastest the slower: the
-        // name goes to the quicker (KSEA to KSFO's "fastest" was 110
-        // minutes slower than the best weather's, out over the Pacific,
-        // 2026-10-25).
-        let grid = Grid::new((0.0, 0.0), (0.0, 4.0), &[]);
-        let found = named(&grid, vec![a_way("fastest", 600.0, &["A"]), a_way("weather", 490.0, &["B"])]);
-        assert_eq!(found.len(), 1);
-        assert_eq!(found[0].stops, vec!["B".to_string()]);
-        assert_eq!(found[0].kind, "weather");
-        let mut kinds = found[0].kinds.clone();
-        kinds.stable_sort();
-        assert_eq!(kinds, vec!["fastest", "stops", "weather"]);
-    }
-}
+mod tests;
