@@ -26,6 +26,23 @@ final class OneSearchModel {
     /// something is typed or the search is put away.
     static let whereTo: LocalizedStringKey = "Where are you flying to?"
 
+    /// What an airplane picked is for, where an Add asked the search for
+    /// one (the owner, 2026-11-14; the web's searchPlaceholder): flown as
+    /// the pilot's airplane, or kept in the Favorites, not opened.
+    enum Keeping: Equatable {
+        case yours, favorite
+
+        var prompt: LocalizedStringKey {
+            switch self {
+            case .yours: "Search for your airplane"
+            case .favorite: "Search for an airplane to keep"
+            }
+        }
+    }
+
+    /// The Add the search is up for; nil for the search itself.
+    var keeping: Keeping?
+
     var text = "" { didSet { if !text.isEmpty { askingDestination = false } } }
     /// The welcome put away: the field asks for the destination, not
     /// focused, so no keyboard comes up until the pilot taps it.
@@ -144,6 +161,7 @@ final class OneSearchModel {
     func close() {
         presented = false
         askingDestination = false
+        keeping = nil
         text = ""
         clearFound()
     }

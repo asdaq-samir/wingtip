@@ -50,6 +50,9 @@ struct OneSearch: ViewModifier {
     @Environment(OwnShip.self) private var ownShip
     @Environment(Session.self) private var session
     @Environment(VoiceInput.self) private var voice
+    @Environment(Airplanes.self) private var airplanes
+    @Environment(Tracking.self) private var tracking
+    @Environment(Traffic.self) private var traffic
 
     private var runner: FieldRunner {
         FieldRunner(plan: plan, ownShip: ownShip, session: session, open: host.field,
@@ -60,7 +63,8 @@ struct OneSearch: ViewModifier {
         content
             .searchable(text: $model.text, isPresented: $model.presented,
                         placement: oneRow ? .toolbarPrincipal : .navigationBarDrawer(displayMode: .always),
-                        prompt: Text(voice.listening ? OneSearchModel.speak : model.askingDestination ? OneSearchModel.whereTo : OneSearchModel.prompt))
+                        prompt: Text(voice.listening ? OneSearchModel.speak : model.askingDestination ? OneSearchModel.whereTo
+                            : model.keeping?.prompt ?? OneSearchModel.prompt))
             .searchSuggestions {
                 if let problem = model.problem {
                     Section { ProblemLine(problem) }
@@ -88,8 +92,19 @@ struct OneSearch: ViewModifier {
     }
 
     private func pick(_ picked: SearchPick) {
+        // An Add's search: the airplane picked is kept, not opened.
+        if let keeping = model.keeping, keep(picked, keeping) {
+            model.close()
+            return
+        }
         model.close()
         switch picked {
+        case .heard(let plane):
+            tracking.track(plane.hex, plane: plane)
+            nav.open(.traffic(plane.hex.lowercased()))
+        case .kept(let kept):
+            tracking.track(kept.hex)
+            nav.open(.traffic(kept.hex))
         case .airport(let route): host.card(route)
         case .plan: host.showPlan()
         case .directTo(let ident): runner.directTo(ident)
@@ -102,7 +117,49 @@ struct OneSearch: ViewModifier {
             case .directTo(let ident): runner.directTo(ident)
             case .open(let screen): host.screen(screen)
             case .ask(let words): host.ask(words)
+            // The traffic turned on, on the map (the web's Show Traffic).
+            case .showTraffic: traffic.on = true
             }
+        }
+    }
+
+    /// The airplane picked for an Add (the web's pickAirplane): flown as
+    /// the pilot's, by its N-number; or kept in the Favorites, a registry
+    /// or own N-number by the FAA record's address. False where the pick
+    /// is not an airplane that can be kept so, which then opens as usual.
+    private func keep(_ picked: SearchPick, _ keeping: OneSearchModel.Keeping) -> Bool {
+        let registered = model.registered
+        switch (picked, keeping) {
+        case (.airplane(let tail), .yours):
+            fly(tail)
+        case (.heard(let plane), .yours):
+            guard let tail = plane.registration, isNNumber(tail) else { return false }
+            fly(tail)
+        case (.kept(let kept), .yours):
+            guard isNNumber(kept.name) else { return false }
+            fly(kept.name)
+        case (.airplane(let tail), .favorite):
+            Task {
+                let record = registered?.nNumber == tail ? registered : (try? await Planner.registered(tail)) ?? nil
+                guard let hex = record?.modeSHex?.lowercased(), !tracking.isFavorite(hex) else { return }
+                tracking.toggleFavorite(KeptAirplane(hex: hex, name: tail, type: record?.model))
+            }
+        case (.heard(let plane), .favorite):
+            if !tracking.isFavorite(plane.hex) {
+                tracking.toggleFavorite(KeptAirplane(hex: plane.hex.lowercased(), name: KeptAirplane.name(plane), type: plane.type))
+            }
+        case (.kept(let kept), .favorite):
+            if !tracking.isFavorite(kept.hex) { tracking.toggleFavorite(kept) }
+        default:
+            return false
+        }
+        return true
+    }
+
+    private func fly(_ tail: String) {
+        Task {
+            await plan.fly(tail: tail, own: airplanes.records, names: Array(airplanes.books.keys))
+            host.showPlan()
         }
     }
 

@@ -14,6 +14,7 @@ struct BrowseSections: View {
     @Environment(Plan.self) private var plan
     @Environment(AirportShelf.self) private var shelf
     @Environment(Airplanes.self) private var airplanes
+    @Environment(Tracking.self) private var tracking
 
     var body: some View {
         if plan.routed {
@@ -22,15 +23,19 @@ struct BrowseSections: View {
                     .accessibilityIdentifier("search-your-flight")
             } header: { Text("Your Flight") }
         }
-        if !shelf.favorites.isEmpty || !airplanes.records.isEmpty {
+        // The airplanes' Favorites and Recents after the airports', where
+        // the retired traffic page kept them (the owner, 2026-11-14).
+        if !shelf.favorites.isEmpty || !airplanes.records.isEmpty || !tracking.favorites.isEmpty {
             Section {
                 ForEach(shelf.favorites) { field in keptRow(field) }
                 ForEach(airplanes.records, id: \.tailNumber) { airplane in OwnAirplaneRow(airplane: airplane, pick: pick) }
+                ForEach(tracking.favorites) { kept in keptRow(kept) }
             } header: { Text(Screen.favorites.title) }
         }
-        if !shelf.recents.isEmpty {
+        if !shelf.recents.isEmpty || !tracking.recents.isEmpty {
             Section {
                 ForEach(shelf.recents.prefix(5)) { field in keptRow(field) }
+                ForEach(tracking.recents.prefix(3)) { kept in keptRow(kept) }
             } header: { Text("Recents") }
         }
         // The Stops' kinds round the airplane, each its list of fields
@@ -57,6 +62,11 @@ struct BrowseSections: View {
                 Button("All Nearest") { pick(.airport(AirportRoute.list(.nearest).text)) }
             }
         } header: { Text(Screen.nearest.title) }
+    }
+
+    private func keptRow(_ kept: KeptAirplane) -> some View {
+        Button { pick(.kept(kept)) } label: { KeptRow(kept: kept) }
+            .foregroundStyle(.primary)
     }
 
     private func keptRow(_ field: KeptAirport) -> some View {

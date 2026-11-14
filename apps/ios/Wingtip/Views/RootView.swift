@@ -118,6 +118,13 @@ struct RootView: View {
             }
         }
         .onChange(of: nav.stored) { _, now in scenePages = SheetPage.store(now) }
+        // An Add's ask for an airplane: the one search up for it.
+        .onChange(of: nav.airplaneAsked) { _, asked in
+            guard let asked else { return }
+            search.keeping = asked
+            search.presented = true
+            nav.airplaneAsked = nil
+        }
         // The sheet rises with the search (SheetFollowsSearch).
         .modifier(SheetFollowsSearch(search: search, layout: layout, detent: $detent))
         // The picked look's tint, the brand's blue by default (Look).

@@ -23,9 +23,14 @@ struct AirportDestination: View {
 }
 
 /// A strip's list in full: the Favorites to change and put in order, the
-/// Recents to take off, the nearest fields.
+/// Recents to take off, the nearest fields; the airplanes' after the
+/// airports', with the one Edit and the one Clear (the owner, 2026-11-14,
+/// the retired traffic page's lists folded in), and an airplane to keep
+/// added by the one search ("Search for an airplane to keep").
 struct AirportListView: View {
     @Environment(\.undoManager) private var undoManager
+    @Environment(Tracking.self) private var tracking
+    @Environment(Navigator.self) private var nav
     let shows: AirportShelf.Shows
     let nearest: [NearestAirport]
     @Environment(AirportShelf.self) private var shelf
@@ -42,20 +47,46 @@ struct AirportListView: View {
                 ForEach(shelf.favorites) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.airportPreview(field.ident).appEntityIdentifier(SiriSaw.airport(field.ident)) }
                     .onDelete { shelf.removeFavorites(at: $0, undo: undoManager) }
                     .onMove { shelf.moveFavorites(from: $0, to: $1) }
+                Section("Airplanes") {
+                    ForEach(tracking.favorites) { kept in airplaneRow(kept) }
+                        .onDelete { at in for kept in at.map({ tracking.favorites[$0] }) { tracking.toggleFavorite(kept, undo: undoManager) } }
+                    Button { nav.searchAirplane(.favorite) } label: { Label("Add an Airplane", systemImage: "plus") }
+                        .accessibilityIdentifier("favorites-add-airplane")
+                }
             } else {
-                if shelf.recents.isEmpty { Text("No Recents").foregroundStyle(.secondary) }
+                if shelf.recents.isEmpty, tracking.recents.isEmpty { Text("No Recents").foregroundStyle(.secondary) }
                 ForEach(shelf.recents) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.airportPreview(field.ident).appEntityIdentifier(SiriSaw.airport(field.ident)) }
                     .onDelete { shelf.removeRecents(at: $0) }
+                if !tracking.recents.isEmpty {
+                    Section("Airplanes") {
+                        ForEach(tracking.recents) { kept in airplaneRow(kept) }
+                            .onDelete { at in for hex in at.map({ tracking.recents[$0].hex }) { tracking.forget(recent: hex) } }
+                    }
+                }
             }
         }
         .navigationTitle(shows.title)
         .toolbar {
             UndoToolbarItem()
             ToolbarItemGroup(placement: .topBarTrailing) {
-                if shows == .favorites, !shelf.favorites.isEmpty { EditButton() }
-                if shows == .recents, !shelf.recents.isEmpty { Button("Clear") { shelf.clearRecents() } }
+                if shows == .favorites, !shelf.favorites.isEmpty || !tracking.favorites.isEmpty { EditButton() }
+                if shows == .recents, !shelf.recents.isEmpty || !tracking.recents.isEmpty {
+                    Button("Clear") {
+                        shelf.clearRecents()
+                        for kept in tracking.recents { tracking.forget(recent: kept.hex) }
+                    }
+                }
             }
         }
+    }
+
+    /// An airplane kept: its card, tracked.
+    private func airplaneRow(_ kept: KeptAirplane) -> some View {
+        Button {
+            tracking.track(kept.hex)
+            nav.push(.traffic(kept.hex))
+        } label: { KeptRow(kept: kept) }
+            .foregroundStyle(.primary)
     }
 
     private func keptRow(_ field: KeptAirport) -> some View {
