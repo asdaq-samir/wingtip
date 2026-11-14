@@ -26,12 +26,23 @@ from . import holds as vfr_holds
 SAME_PLACE_NM = 0.05
 
 #: Where vectors bring an airplane onto an approach's final: this far out
-#: from the final's first fix, nm, on a heading 30° off its course -- the
-#: most a controller turns one onto it, outside the approach gate (FAA
-#: Order JO 7110.65, 5-9-2).
-INTERCEPT_NM = 3.0
-#: How far to the side of the final a downwind to it is flown, nm.
-DOWNWIND_NM = 4.0
+#: from the final's first fix, nm -- FAA Order JO 7110.65 5-9-1a1, "at
+#: least 2 miles outside the approach gate", the gate "1 mile from the
+#: final approach fix on the side away from the airport" (Pilot/Controller
+#: Glossary, APPROACH GATE) -- on a track INTERCEPT_DEG off its course.
+INTERCEPT_NM = 1.0 + 2.0
+#: JO 7110.65 Table 5-9-1: 30 degrees the most an intercept 2 miles or
+#: more outside the gate may be.
+INTERCEPT_DEG = 30.0
+#: The least a downwind to the final is flown to its side, nm: as far as
+#: the point the final is joined at (INTERCEPT_NM back, INTERCEPT_DEG off),
+#: 1.5 nm, so the base runs from the downwind to that point. Neither JO
+#: 7110.65 5-9 nor the AIM gives a radar downwind a distance (the 1/2 to 1
+#: mile of FAA-H-8083-3C ch. 8 is a visual traffic pattern's, the
+#: engine's PATTERN_DOWNWIND_NM), so it is derived rather than set: a
+#: figure of 4.0 stood here with no source (the aviation audit's AV-17).
+#: An airplane farther to that side flies its downwind where it is.
+DOWNWIND_NM = INTERCEPT_NM * math.sin(math.radians(INTERCEPT_DEG))
 #: How far a path turns at a point to be a course reversal there, degrees.
 REVERSAL_DEG = 120.0
 #: How far a path turns at a fix the chart puts a course reversal at -- a
@@ -180,9 +191,9 @@ def vectors_join(final: list, start: tuple) -> list:
     final's first fix, straight to a point three miles back from it on the
     side the airplane comes from, 30° off the final's course, and onto the
     final there; from inside it -- the field between the airplane and the
-    final's start -- first out to that side, then a downwind four miles
-    off the final (or as far as the airplane already is, up to eight) to
-    abeam its first fix and three miles on, and a base to that point.
+    final's start -- first out to that side, then a downwind DOWNWIND_NM
+    off the final (or as far as the airplane already is) to abeam its
+    first fix and three miles on, and a base to that point.
     Empty where the final is too short to say which way it runs."""
     if len(final) < 2:
         return []
@@ -191,13 +202,13 @@ def vectors_join(final: list, start: tuple) -> list:
     off = ((_bearing(first, start) - course + 540) % 360) - 180
     distance = geo.distance_nm(*first, *start)
     side = 1 if off >= 0 else -1
-    join = _toward(first, course + 180 - 30 * side, INTERCEPT_NM)
+    join = _toward(first, course + 180 - INTERCEPT_DEG * side, INTERCEPT_NM)
     # How far ahead of the first fix the airplane is, toward the runway or
     # past it, and how far to the side of the final.
     along = distance * math.cos(math.radians(off))
     if along <= 0:
         return [join]
-    aside = min(2 * DOWNWIND_NM, max(DOWNWIND_NM, abs(distance * math.sin(math.radians(off)))))
+    aside = max(DOWNWIND_NM, abs(distance * math.sin(math.radians(off))))
 
     def at(along_nm: float) -> tuple:
         return _toward(_toward(first, course, along_nm), course + 90 * side, aside)
