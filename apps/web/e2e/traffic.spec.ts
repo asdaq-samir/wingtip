@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { drawn, grabberTo, mapStill, settle, showTraffic as showTrafficCard, slow } from "./helpers";
+import { drawn, findAirplane, grabberTo, mapStill, settle, slow, trafficOnMap } from "./helpers";
 import { sky } from "./cardEntries";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
@@ -198,12 +198,12 @@ test("an answer missed while the map is panned is not said; traffic is said unav
 
 test("an airplane's card opens at its size: where it left and its record come into the lines held for them", async ({ page }) => {
   await sky(page);
+  await trafficOnMap(page);
   await installFrameRecorder(page);
   await page.goto("/app/plan");
   await settle(page);
-  await showTrafficCard(page);
-  await page.getByTestId("aircraft-search").fill("UAL2088");
-  const row = page.getByTestId("aircraft-card").getByTestId("aircraft-found").filter({ hasText: "UAL2088" }).first();
+  // Found by the one search among the airplanes the map hears.
+  const row = await findAirplane(page, "UAL2088");
   // Its ends' line and its record's rows from the first frame: they came in
   // as its record answered, 48 px over its figures and the card under them,
   // a layout shift of 0.114 (the flicker audit's FL-10).
@@ -217,9 +217,7 @@ test("an airplane's card opens at its size: where it left and its record come in
   );
 });
 
-test("an airplane tapped on the map is tracked with at most one move, never a move cut short or undone", async ({
-  page,
-}) => {
+test("an airplane tapped on the map is tracked with at most one move, never a move cut short or undone", async ({ page }) => {
   // The flicker audit's FL-7 (2026-11-14): the tracking's follow jumped the
   // map to the airplane at every frame, which stopped the flight to it
   // 124 ms in, seven camera calls in a second and a half. Now an airplane

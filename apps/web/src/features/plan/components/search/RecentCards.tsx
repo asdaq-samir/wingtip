@@ -26,7 +26,9 @@ const ZOOM = 10;
 export default function RecentCards({ onPick }: { onPick: (airport: RecentAirport) => void }) {
   const recents = usePreferences((s) => s.recentAirports);
   const away = useAway();
-  if (recents.length === 0) return <StripNote>None yet: the airports opened are kept here.</StripNote>;
+  // With none, the airplanes' tiles under it (SearchHome) say what is kept.
+  const planes = usePreferences((s) => s.recentAircraft.length);
+  if (recents.length === 0) return planes ? null : <StripNote>None yet: the airports and airplanes opened are kept here.</StripNote>;
   return (
     // A sideways drag the row's, an up or down one the sheet's (the one scrolling rule).
     <Carousel opts={{ align: "start", dragFree: true }} data-base-ui-swipe-ignore="x" data-testid="pill-airport-recents">

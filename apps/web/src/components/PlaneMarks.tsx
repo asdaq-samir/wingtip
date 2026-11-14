@@ -5,8 +5,8 @@ import type { AircraftKind } from "../lib/aircraftKind";
 import { Mark, SmallMark } from "./Favorites";
 
 // The airplanes' marks, apart from the airports' (Favorites): drawn only
-// in the Aircraft tab and its lists, which wait for the tab to be opened,
-// so their shapes are not in the first load (scripts/first-load.mjs).
+// in the airplanes' tiles and rows (features/plan/aircraftTilesChunk), which
+// wait a moment after the page draws, so their shapes are not in the first load (scripts/first-load.mjs).
 
 /** An airplane's mark, in a row (`small`, the Mark's 32) or a strip's tile
  *  (SmallMark's 56): the Favorites' sky disc with a white airplane, turned

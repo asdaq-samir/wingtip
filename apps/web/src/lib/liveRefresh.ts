@@ -4,13 +4,8 @@ import { useShown } from "./shown";
 
 /** What each live card asks again, by its queries' first key: the field's
  *  answer with its weather and the live ATIS and RVR; the briefing with
- *  the live reports it reads; traffic round the airplane and what is
- *  known of each flight. */
-const LIVE = {
-  airport: ["airport", "live"],
-  brief: ["briefing", "live"],
-  traffic: ["traffic", "trafficFind", "flight", "flight-status"],
-} as const;
+ *  the live reports it reads. */
+const LIVE = { airport: ["airport", "live"], brief: ["briefing", "live"] } as const;
 
 export type LiveCard = keyof typeof LIVE;
 

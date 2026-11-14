@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
 
 export { closeProfile, openProfile, pressDryRunStart } from "./dryRun";
 import { planFromSearch, showPage } from "./oneSearch";
-export { emptyPlan, firstRow, searchAirports, showPlan, showSearch, showTraffic } from "./oneSearch";
+export { emptyPlan, findAirplane, firstRow, searchAirports, showPlan, showSearch, trafficOnMap } from "./oneSearch";
 
 /**
  * What the browser suite's specs share: the two pages, the waits CI
@@ -51,9 +51,9 @@ export const frontSheet = (page: Page) => page.locator('[data-slot="map-panel"],
 
 /** The first row in sight: the sheet's, static over a card, at the pill too. */
 export async function showTabs(page: Page) {
-  // From the sheet at rest. The first row: the one search, scoped to the traffic or Nearest where one is up; or the developer's places.
+  // From the sheet at rest. The first row: the one search, or Nearest's field where its card is up; or the developer's places.
   await settled(sideDrawer(page));
-  const first = page.getByTestId("search-airports").or(page.getByTestId("aircraft-search")).or(page.getByTestId("nearest-from"));
+  const first = page.getByTestId("search-airports").or(page.getByTestId("nearest-from"));
   if (!(await first.or(page.getByTestId("dev-tabs")).first().isVisible())) await grabberTo(page, "half");
 }
 
@@ -684,9 +684,9 @@ export async function consolePage(scope: Page | Locator, name: "Account" | "Guid
   }
 }
 
-/** A strip set to show one of its lists -- the flights' Saved or Recents, the traffic's Favorites,
- *  Recents or a question -- from the filter menu at its heading's right (StripSection). */
-export async function stripShows(page: Page, menu: "fpl-strip-shows" | "aircraft-question", item: string) {
+/** A strip set to show one of its lists -- the flights' Saved or Recents -- from the filter menu
+ *  at its heading's right (StripSection). */
+export async function stripShows(page: Page, menu: "fpl-strip-shows", item: string) {
   await sideDrawer(page).getByTestId(menu).click();
   await page.getByTestId(item).click();
 }

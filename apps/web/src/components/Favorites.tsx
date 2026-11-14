@@ -70,8 +70,8 @@ export function RemoveMinus({ label, onClick, testId }: { label: string; onClick
 
 /**
  * A tile for a pill's strip (PillStrip): a round mark, a name and a line
- * under it -- the Airport and Aircraft tabs' Favorites, Airport's nearest
- * fields -- at the full card's Favorites' size (PlaceTile), at the owner's
+ * under it -- the one search's Favorites and Recents, airports' and
+ * airplanes', and the nearest fields -- at the full card's Favorites' size (PlaceTile), at the owner's
  * ask ("make the fav icons the same size as the full card").
  */
 export function SmallTile({

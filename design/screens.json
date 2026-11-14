@@ -25,7 +25,7 @@
   "screens": [
     { "id": "fpl", "title": "FPL", "about": "The plan: the route, its altitude and its figures, the sheet's second page (Search, FPL).", "platforms": ["web", "ios", "android"], "shortcut": 6 },
     { "id": "airport", "title": "Airport", "about": "The one search with nothing typed: the flight, favorites, recents, nearest.", "platforms": ["web", "ios", "android"], "shortcut": 7 },
-    { "id": "airplane", "title": "Airplane", "about": "The airplane picked's profile, or the traffic about where none is picked.", "platforms": ["web", "ios", "android"], "shortcut": 8 },
+    { "id": "airplane", "title": "Airplane", "about": "The airplane picked's profile, or the one search where none is picked.", "platforms": ["web", "ios", "android"], "shortcut": 8 },
     { "id": "setup", "title": "Setup", "about": "The account and settings page, the account button's.", "platforms": ["web", "ios", "android"], "shortcut": 15 },
     { "id": "brief", "title": "Brief", "about": "The route's Brief and its Go / No-Go (needs a route).", "platforms": ["web", "ios", "android"], "shortcut": 1 },
     { "id": "navlog", "title": "Nav Log", "about": "The nav log, leg by leg (needs a route). On Android the plan's Nav Log button opens it.", "platforms": ["web", "ios", "android"], "shortcut": 5 },

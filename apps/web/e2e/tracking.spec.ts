@@ -1,11 +1,25 @@
 import { test, expect, type Page } from "@playwright/test";
-import { closeCard, drawn, frontSheet, grabberTo, inSheet, settle, settled, showTraffic, sideDrawer, slow, stripShows } from "./helpers";
+import {
+  closeCard,
+  drawn,
+  findAirplane,
+  frontSheet,
+  grabberTo,
+  inSheet,
+  settle,
+  settled,
+  showSearch,
+  sideDrawer,
+  slow,
+  trafficOnMap,
+} from "./helpers";
 import { FAA } from "./faaRecord";
 
 /**
  * Tracking an airplane, as FlightAware and ForeFlight do, at the pilot's
- * ask: the Aircraft button under Nearest, its list and its search, a tap
- * on one on the map, its card and its path flown; and own ship's own
+ * ask: found by the one search among the airplanes the map hears (the
+ * traffic's own page and search went for it, 2026-11-14), a tap on one on
+ * the map, its card and its path flown; and own ship's own
  * path. adsb.lol is stubbed through the planner: its sky is not the
  * suite's.
  */
@@ -99,25 +113,15 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("the traffic, from the one search's Do, finds an airplane by its callsign, and a tap on one tracks it: its card, its path, the map on it", async ({
+test("the one search finds an airplane the map hears by its callsign, and a tap on one tracks it: its card, its path, the map on it", async ({
   page,
 }) => {
   await sky(page);
+  await trafficOnMap(page);
   await page.goto("/app/plan");
   await settle(page);
-  // Out of the pill a fresh load opens as.
-  await grabberTo(page, "full");
-  // The traffic about, the one search's Do (it was the Airplane tab).
-  await showTraffic(page);
-  await expect(page).toHaveURL(/[?&]aircraft=1/);
-  // Its list all the way up.
-  await grabberTo(page, "full");
-  const list = page.getByTestId("aircraft-card");
-  // No list of everything about, nor its filters, at the owner's ask
-  // ("don't need the extra filters at the bottom"): found by the search.
-  await expect(list.getByTestId("filter-row")).toHaveCount(0);
-  await page.getByTestId("aircraft-search").fill("UAL2088");
-  await list.getByTestId("aircraft-found").filter({ hasText: "UAL2088" }).first().click();
+  // Found among the airplanes heard, by the one search (it was the traffic's own).
+  await (await findAirplane(page, "UAL2088")).click();
   await expect(page).toHaveURL(/[?&]flight=a0b7d8/);
   const card = page.getByTestId("flight-card");
   // At the pill's size, as every card opens; its pages all the way up.
@@ -148,20 +152,18 @@ test("the traffic, from the one search's Do, finds an airplane by its callsign, 
   // Ringed on the map, its path behind it in its heights' colours.
   await expect.poll(async () => (await drawn(page, "traffic-marks")).filter((m) => m.tracked).length).toBe(1);
   await expect.poll(async () => (await drawn(page, "tracked-path")).length).toBeGreaterThan(0);
-  // Put away: the list again, as an airport's card over Nearest.
+  // Put away: the search it was found by again, as an airport's card's close goes back.
   await closeCard(page, "flight-close");
   await expect(page).not.toHaveURL(/[?&]flight=/);
-  await expect(list).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("one-search-results").or(sideDrawer(page).getByTestId("search-home")).first()).toBeVisible();
 });
 
-test("an airplane is found by its callsign, and a tap on one on the map tracks it too", async ({ page }) => {
+test("an airplane is found by its callsign typed with a space, and a tap on one on the map tracks it too", async ({ page }) => {
   await sky(page, { ...DETAIL, departed: null });
-  await page.goto("/app/plan?aircraft=1");
+  await trafficOnMap(page);
+  await page.goto("/app/plan");
   await settle(page);
-  await page.getByTestId("aircraft-search").fill("ual 2088");
-  const found = page.getByTestId("aircraft-card").getByTestId("aircraft-found").filter({ hasText: "UAL2088" });
-  await expect(found.first()).toBeVisible({ timeout: slow(15_000) });
-  await page.getByTestId("aircraft-search").press("Enter");
+  await (await findAirplane(page, "ual 2088", "UAL2088")).click();
   await expect(page).toHaveURL(/[?&]flight=a0b7d8/);
   // No field it took off from in its track: no Departed row.
   await expect(page.getByTestId("flight-name")).toHaveText("UAL2088");
@@ -176,44 +178,16 @@ test("an airplane is found by its callsign, and a tap on one on the map tracks i
   await expect(page.getByTestId("flight-name")).toHaveText("N174HA");
 });
 
-test("a search finds the airplanes about as it is typed, and asks the planner one name at a time, the last typed", async ({ page }) => {
+test("the one search finds the airplanes heard as it is typed, before a whole name", async ({ page }) => {
   await sky(page);
-  // The planner's search held four seconds, as adsb.lol's pace can: past
-  // the typing below however slow the runner, so the name typed last is
-  // what is there as the first answer comes. Held two, a loaded runner's
-  // fills can run past it and have "N654F" asked (this test failed twice in
-  // a row on a busy Mac, 2026-10-29, and passed 6 of 6 on a quieter one).
-  const asked: string[] = [];
-  await page.route(
-    (url) => url.pathname.endsWith("/api/planner/traffic/find"),
-    async (route) => {
-      const q = new URL(route.request().url()).searchParams.get("q")!;
-      asked.push(q);
-      await new Promise((done) => setTimeout(done, 4000));
-      await route.fulfill({
-        json: { aircraft: q === "N654FL" ? [{ ...CESSNA, hex: "a89c1e", callsign: "N654FL", registration: "N654FL" }] : [] },
-      });
-    },
-  );
-  await page.goto("/app/plan?aircraft=1");
+  await trafficOnMap(page);
+  await page.goto("/app/plan");
   await settle(page);
-  const card = page.getByTestId("aircraft-card");
-  const search = page.getByTestId("aircraft-search");
-  // On the map already: found as it is typed, before any answer.
-  await search.fill("N17");
-  await expect(card.getByTestId("aircraft-found")).toHaveText([/N174HA/]);
-  // A name typed with pauses, as on a phone's keyboard: only the first and
-  // the last are asked about, never the ones between.
-  for (const typed of ["N65", "N654", "N654F", "N654FL"]) {
-    await search.fill(typed);
-    await page.waitForTimeout(700);
-  }
-  await expect(card.getByTestId("aircraft-found")).toHaveText([/N654FL/], { timeout: slow(15_000) });
-  expect(asked.at(-1)).toBe("N654FL");
-  expect(asked.filter((q) => q === "N654" || q === "N654F")).toEqual([]);
+  // On the map already: found by the start of its name, asking nothing.
+  await findAirplane(page, "N17", "N174HA");
 });
 
-test("an airplane not in the air is found by its registration, and its card says when it was last heard", async ({ page }) => {
+test("an airplane not in the air opened by its link: its card says when it was last heard", async ({ page }) => {
   const piper = {
     ...FAA,
     n_number: "N654FL",
@@ -243,18 +217,10 @@ test("an airplane not in the air is found by its registration, and its card says
       { t: landed, lat: 43.56, lon: -116.22, alt_ft: null },
     ],
   });
-  await page.route(
-    (url) => url.pathname.endsWith("/api/planner/traffic/find"),
-    (route) => route.fulfill({ json: { aircraft: [], registered: piper } }),
-  );
-  await page.goto("/app/plan?aircraft=1");
+  // Found by its N-number in the one search, it opens its profile, its
+  // flights there (airplane-lookup.spec); its flight's card by its link.
+  await page.goto("/app/plan?flight=a89c1e");
   await settle(page);
-  await page.getByTestId("aircraft-search").fill("N654FL");
-  const row = page.getByTestId("aircraft-card").getByTestId("aircraft-registered");
-  await expect(row).toContainText("N654FL", { timeout: slow(15_000) });
-  await expect(row).toContainText("Piper PA-28-140 · not in the air now");
-  await row.click();
-  await expect(page).toHaveURL(/[?&]flight=a89c1e/);
   const card = page.getByTestId("flight-card");
   // Named by its FAA record, not its address, with no trace today to name it.
   await expect(page.getByTestId("flight-name")).toHaveText("N654FL");
@@ -265,46 +231,6 @@ test("an airplane not in the air is found by its registration, and its card says
   await expect(card.getByTestId("flight-chip")).toContainText("Last heard");
   await expect(card.getByTestId("flight-state")).toHaveText("GND");
   await expect(card.getByTestId("faa-owner")).toContainText("Roca Roja LLC · LLC · Meridian, ID");
-});
-
-test("while adsb.lol is busy a search shows what it can -- the FAA's record -- and asks again until it is answered", async ({ page }) => {
-  // What the pilot met with N654FL: adsb.lol answers one request every few
-  // seconds, and the planner answers a search it could not ask with
-  // `checked` false and the registry's record.
-  const piper = { ...FAA, n_number: "N654FL", mode_s_hex: "a89c1e", manufacturer: "Piper", model: "PA-28-140" };
-  const flying = { ...CESSNA, hex: "a89c1e", callsign: "N654FL", registration: "N654FL", type: "P28A", lat: 42.4, lon: -88.2 };
-  await sky(page);
-  let asked = 0;
-  let busy = 1;
-  await page.route(
-    (url) => url.pathname.endsWith("/api/planner/traffic/find"),
-    (route) => {
-      asked += 1;
-      return route.fulfill({
-        json: asked <= busy ? { aircraft: [], registered: piper, checked: false } : { aircraft: [flying], checked: true },
-      });
-    },
-  );
-  await page.goto("/app/plan?aircraft=1");
-  await settle(page);
-  const card = page.getByTestId("aircraft-card");
-  await page.getByTestId("aircraft-search").fill("N654FL");
-  // At once, the registration, not "Couldn't search"; then the airplane in the air.
-  await expect(card.getByTestId("aircraft-registered")).toContainText("Piper PA-28-140 · not yet known whether it is flying", {
-    timeout: slow(15_000),
-  });
-  await expect(card.getByTestId("aircraft-unchecked")).toBeVisible();
-  await expect(card.getByTestId("aircraft-found").first()).toContainText("N654FL", { timeout: slow(20_000) });
-  await expect(card.getByTestId("aircraft-unchecked")).toHaveCount(0);
-  await expect(card.getByText("Couldn't search")).toHaveCount(0);
-
-  // Busy every time: the record stays, and after three tries again it says so and stops asking.
-  busy = Infinity;
-  asked = 0;
-  await page.getByTestId("aircraft-search").fill("N12345");
-  await expect(card.getByTestId("aircraft-unchecked")).toContainText("Try again in a moment", { timeout: slow(40_000) });
-  await page.waitForTimeout(8000);
-  expect(asked).toBe(4);
 });
 
 test("in the air, own ship's path flown is drawn behind it", async ({ page }) => {
@@ -564,31 +490,31 @@ test("an airplane opened is in the Aircraft card's Recents, and one starred on i
   await star.click();
   await expect(star).toHaveAttribute("aria-pressed", "true");
   await closeCard(page, "flight-close");
-  await page.goto("/app/plan?aircraft=1");
+  await page.goto("/app/plan");
   await settle(page);
-  const list = page.getByTestId("aircraft-card");
-  await expect(list.getByTestId("pill-aircraft-favorite")).toHaveCount(1);
-  await expect(list.getByTestId("pill-aircraft-favorite")).toContainText("N14511");
-  // The Recents from the strip's filter, as every tab's lists are.
-  await stripShows(page, "aircraft-question", "question-recents");
-  await expect(list.getByTestId("aircraft-recent").first()).toContainText("N14511");
-  await stripShows(page, "aircraft-question", "question-favorites");
+  // The one search's page: the airplane in its Favorites and its Recents,
+  // after the airports' (the traffic's own page went for it, 2026-11-14).
+  await showSearch(page);
+  const home = sideDrawer(page).getByTestId("search-home");
+  await expect(home.getByTestId("pill-aircraft-favorite")).toHaveCount(1);
+  await expect(home.getByTestId("pill-aircraft-favorite")).toContainText("N14511");
+  await expect(home.getByTestId("airport-recents").getByTestId("aircraft-recent").first()).toContainText("N14511");
   // A tile opens its card again.
-  await list.getByTestId("pill-aircraft-favorite").click();
+  await home.getByTestId("pill-aircraft-favorite").click();
   await expect(page).toHaveURL(/[?&]flight=a0b7d8/);
   await expect(page.getByTestId("flight-card").getByTestId("flight-favorite")).toHaveAttribute("aria-pressed", "true");
 });
 
-test("an airplane's card over the traffic is still open after the account page and back", async ({ page }) => {
+test("an airplane's card is still open after the account page and back", async ({ page }) => {
   // The owner's notice: "When I open an aircraft card and go to setup and come back, to aircraft tab, the card is not there
   // anymore". Aircraft was taken for the tab up tapped again, which puts its card away.
   await sky(page);
-  await page.goto("/app/plan?aircraft=1&flight=a0b7d8");
+  await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
   const card = page.getByTestId("flight-card");
   await expect(card.getByTestId("flight-favorite")).toBeVisible({ timeout: slow(15_000) });
   // The card is the whole sheet, no title row over it (Apple Maps' card, 2026-11-10): the account page by its link.
-  await page.goto("/app/plan?aircraft=1&flight=a0b7d8&open=setup");
+  await page.goto("/app/plan?flight=a0b7d8&open=setup");
   await expect(sideDrawer(page).getByTestId("setup-page")).toBeVisible({ timeout: slow(15_000) });
   await sideDrawer(page).getByTestId("console-close").click();
   await expect(sideDrawer(page).getByTestId("setup-page")).toBeHidden();

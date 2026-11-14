@@ -2,66 +2,19 @@ import type { ComponentProps } from "react";
 import { MapPin } from "lucide-react";
 import { useTabSearch } from "../../lib/tabSearch";
 import type { SearchField } from "../../../../components/PanelCapsule";
-import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 
 type ListSearch = ComponentProps<typeof SearchField>;
 
 /**
- * The one search scoped to a list (the one card rule, the owner
- * 2026-11-10: one search field): with the traffic up, the field finds an
- * airplane heard; with Nearest, it takes the place to measure from. It
- * was a second field under the one search (PlanWorkspace's `head`); now
- * the one search's own field says and does this (OneSearchField's
- * `list`), what is typed kept in features/plan/lib/tabSearch. None
- * elsewhere: the field is the search's.
- *
- * Nearest's is drawn at the top of its card (NearestCard, nearSearch):
- * Nearest is a card, its own drawer over the sheet (the card rule's 3),
- * so the sheet's first row is under it while it is open and the place
- * could not be typed (nearest.spec's smoke test, 2026-11-12). The same
- * scoped field, in sight where the pilot is.
+ * Nearest's field, where the nearest fields are measured from (the one card
+ * rule, the owner 2026-11-10: one search field, scoped to the list it is
+ * over), drawn at the top of its card (NearestCard): Nearest is a card, its
+ * own drawer over the sheet (the card rule's 3), so the sheet's first row
+ * is under it while it is open and the place could not be typed there
+ * (nearest.spec's smoke test, 2026-11-12). The traffic's scoped field went
+ * for the one search, which finds airplanes too (the owner, 2026-11-14).
+ * `nearTyped` is what is typed in it (features/plan/lib/tabSearch's `near`).
  */
-export function listSearchOf(vm: PlanWorkspaceModel): ListSearch | null {
-  return vm.view.view === "traffic" ? aircraftSearch(vm) : null;
-}
-
-/** The traffic's: an airplane by its callsign, registration or address. */
-function aircraftSearch(vm: PlanWorkspaceModel): ListSearch {
-  const { pickView } = vm.view;
-  const { routed } = vm.route;
-  const { listAway } = vm.cards;
-  const { aircraftInput, aircraftTyped, pickingFavorite, pickingMine } = vm.search;
-  return {
-    value: aircraftTyped,
-    onChange: (aircraft) => useTabSearch.setState({ aircraft }),
-    inputRef: aircraftInput,
-    placeholder: pickingMine
-      ? "Search for your airplane"
-      : pickingFavorite
-        ? "Search for an airplane to keep"
-        : "Callsign, N-number or ICAO",
-    label: "Find an airplane: callsign, registration or ICAO address",
-    testId: "aircraft-search",
-    capitals: true,
-    // The list under the field in sight; the sheet stays where the pilot
-    // put it (the owner, 2026-11-11), the keyboard the Drawer's to place.
-    onFocus: () => {
-      listAway("aircraft-favorites");
-      listAway("aircraft-recents");
-    },
-    // Cancel leaves the traffic for the search's own scope again (the plan
-    // with a route), the field being the one search's; the sheet stays at
-    // the size the pilot left it (the owner, 2026-11-11).
-    onCancel: () => {
-      useTabSearch.setState({ aircraft: "", pickingMine: false, pickingFavorite: false });
-      pickView(routed ? "plan" : "search");
-    },
-    onSubmit: () => useTabSearch.getState().submitAircraft?.(),
-  };
-}
-
-/** Nearest's: where the nearest fields are measured from, `nearTyped`
- *  being what is typed in it (features/plan/lib/tabSearch's `near`). */
 export function nearSearch(nearTyped: string): ListSearch {
   return {
     value: nearTyped,
