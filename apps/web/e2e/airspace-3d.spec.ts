@@ -64,6 +64,22 @@ test("in 3D the airspace stands between its floors and ceilings, and flat again 
     .poll(async () => Number((await map(page).getAttribute("data-airspace3d")) ?? 0), { timeout: slow(60_000) })
     .toBeGreaterThan(0);
 
+  // Panned, the volumes stand on through the terrain's tiles coming in:
+  // none dropped while the ground under them loads (airspaceHeights'
+  // keptGround, the owner's flicker of 2026-11-14).
+  // TODO(claude/stack-root): count the deck.gl overlay's rebuilds and the
+  // volumes' layer changes per pan with e2e/drawnOnce.ts once it lands.
+  const standing = Number(await map(page).getAttribute("data-airspace3d"));
+  const box = (await map(page).boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 - 60, box.y + box.height / 2 + 30, { steps: 10 });
+  await page.mouse.up();
+  for (let i = 0; i < 10; i++) {
+    expect(Number(await map(page).getAttribute("data-airspace3d"))).toBe(standing);
+    await page.waitForTimeout(200);
+  }
+
   await setMap3d(page, false);
   await page.goto("/app/plan?dep=KDPA&dest=KPWK");
   await settle(page);

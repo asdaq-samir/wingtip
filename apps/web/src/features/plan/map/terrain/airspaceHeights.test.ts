@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fixture from "../../../../lib/fixtures/airspaceVolumeSpan.json";
-import { groundSpan, volumeSpan } from "./airspaceHeights";
+import { groundSpan, keptGround, volumeSpan, type GroundPoint } from "./airspaceHeights";
 
 const FT = 0.3048;
 
@@ -32,20 +32,44 @@ describe("volumeSpan", () => {
 });
 
 describe("groundSpan", () => {
-  it("is the lowest and highest the terrain reads, none where it has none in", () => {
-    const heights = [120, null, 300, 80];
+  const corners = [
+    [0, 0],
+    [1, 0],
+    [1, 1],
+    [0, 1],
+  ];
+  const reading = (heights: GroundPoint[]) => {
     let i = 0;
-    expect(
-      groundSpan(
-        [
-          [0, 0],
-          [1, 0],
-          [1, 1],
-          [0, 1],
-        ],
-        () => heights[i++] ?? null,
-      ),
-    ).toEqual({ low: 80, high: 300 });
-    expect(groundSpan([[0, 0]], () => null)).toBeNull();
+    return groundSpan(corners, () => heights[i++] ?? null);
+  };
+
+  it("is the lowest and highest the terrain reads, none where it has none", () => {
+    expect(reading([120, null, 300, 80])).toEqual({ span: { low: 80, high: 300 }, settled: true });
+    expect(groundSpan([[0, 0]], () => null)).toEqual({ span: null, settled: true });
+  });
+
+  it("is unsettled while a point's tile is still loading, never read as the sea", () => {
+    expect(reading([120, "loading", 300, 80])).toEqual({ span: { low: 80, high: 300 }, settled: false });
+  });
+});
+
+describe("keptGround", () => {
+  const hills = { low: 150, high: 300 };
+
+  it("keeps a volume's last good ground while the terrain under it is still loading", () => {
+    // After a pan: part of the outline's tiles are in, part still coming.
+    // The volume stays where it was, neither lower nor gone.
+    expect(keptGround(hills, { span: { low: 0, high: 300 }, settled: false })).toBe(hills);
+    expect(keptGround(hills, { span: null, settled: false })).toBe(hills);
+    expect(keptGround(hills, { span: null, settled: true })).toBe(hills);
+  });
+
+  it("takes the fresh ground once every point's tile is in", () => {
+    expect(keptGround(hills, { span: { low: 140, high: 310 }, settled: true })).toEqual({ low: 140, high: 310 });
+  });
+
+  it("has a volume above the ground wait for a settled reading at first", () => {
+    expect(keptGround(null, { span: { low: 0, high: 300 }, settled: false })).toBeNull();
+    expect(keptGround(null, { span: hills, settled: true })).toBe(hills);
   });
 });
