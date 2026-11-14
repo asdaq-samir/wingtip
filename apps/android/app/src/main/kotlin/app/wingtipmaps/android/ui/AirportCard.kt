@@ -14,15 +14,11 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SecondaryScrollableTabRow
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,17 +57,18 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * 25.37: the place's name with its line of facts under it, the sheet's
  * tabs -- Overview, Reviews, Photos, About -- above the picture previews,
  * the details in Material 3 Expressive containers with no rules between
- * them, and the actions as pills docked at the sheet's foot, Directions
+ * them, and the actions as pills under the place's head, Directions
  * first): the card's bar where the search was (CardPage), ← and "KOSH ·
  * Wittman Regional" large over its town, shrinking as the card scrolls,
  * and ✕; a badge where a NOTAM in force closes the field or a TFR is near
  * it; the facts row -- Weather, Wind, Longest Runway, Distance (from own
  * ship, else "From KMSN", the route's departure) -- as containers; the
- * sections in a tab row, Overview's the pictures (AirportSections), each
- * thing a NOTAM in force addresses badged by its name (NotamMarks); and
- * the actions docked at the foot, four and no more, as the web's (the
- * owner, 2026-11-11): Fly Here filled, with its time at the airplane's
- * cruise speed, then Add as Stop, Call and Favorite. A NOTAM, from its row
+ * actions, four and no more, as the web's (the owner, 2026-11-11): Fly
+ * Here filled, with its time at the airplane's cruise speed, then Add as
+ * Stop, Call and Favorite; right under them the sections in a tab row
+ * (AirportTabRow, the owner's T4 of 2026-11-14), Overview's first the
+ * pictures (AirportSections), and the field's report in one line; each
+ * thing a NOTAM in force addresses badged by its name (NotamMarks). A NOTAM, from its row
  * or a badge, opens on a page of its own in the card's stack
  * (NotamPage), ← and Back coming back to the card where it was. The
  * planner's words throughout, every figure the planner's or the
@@ -131,13 +128,6 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
         title = place?.let { "${it.ident} · ${it.name}" } ?: ident.uppercase(),
         exit = exit,
         subtitle = place?.let { p -> listOfNotNull(p.municipality, p.region).joinToString(", ").ifEmpty { null } },
-        bottomBar = {
-            if (place != null) {
-                Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
-                    ActionPills(place, facts, actions, onDone = onDone)
-                }
-            }
-        },
     ) { padding ->
         // The card is fetched as it opens; no pull to refresh in a sheet,
         // whose drag down is the sheet's (the scrolling rule, 2026-11-10).
@@ -155,15 +145,18 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
                 // the name as the iPhone's head and the web's title say them.
                 if (words.closed != null || words.use != null) item(key = "use") { FieldUseLines(words, Modifier.padding(horizontal = WingtipSpace.Lg)) }
                 facts?.let { f -> item(key = "facts") { FactsRow(f) } }
-                // The sections' tabs pin under the bar as the card scrolls (the
+                // The four actions in the card under its head, in sight at half
+                // as Maps' place sheet has them (the audit's AND-1): docked at
+                // the foot of the full-height layout they sat below the window.
+                item(key = "actions") { ActionPills(place, facts, actions, onDone = onDone) }
+                // The sections' tabs right under the actions (the owner's T4,
+                // 2026-11-14), pinned under the bar as the card scrolls (the
                 // scrolling rule, 2026-11-10), in the sheet's own colour.
                 stickyHeader(key = "tabs") {
-                    SecondaryScrollableTabRow(selectedTabIndex = section, containerColor = BottomSheetDefaults.ContainerColor, edgePadding = WingtipSpace.Lg) {
-                        AirportSection.entries.forEach { s ->
-                            Tab(selected = section == s.ordinal, onClick = { section = s.ordinal }, text = { Text(stringResource(s.title)) })
-                        }
-                    }
+                    AirportTabRow(section, onPick = { section = it }, category = place.metar?.flightCategory, charts = chartCount(place))
                 }
+                // The field's own report in one line under the tabs (T4).
+                item(key = "weather-line") { AirportWeatherLine(place.metar, Modifier.padding(horizontal = WingtipSpace.Lg)) }
                 airportSection(AirportSection.entries[section], place, state, view)
             }
         }
@@ -226,7 +219,7 @@ private fun FactsRow(f: AirportFacts) {
 }
 
 /**
- * The actions docked at the card's foot, as Maps docks its pills, in
+ * The actions under the card's head, in sight at half, in
  * Material 3 Expressive's button group, four and no more as the web's
  * (the owner, 2026-11-11: "fly here, add stop, call and address ... no
  * need for other buttons", then "replace address button with favorite"):

@@ -548,9 +548,20 @@ placement wins, and the difference is noted.
        actions hurt.
      - Overflow goes into the group's own overflow menu, never a fifth
        button.
-  5. The detail tabs as `PrimaryTabRow` (Weather, Runways, Frequencies,
-     Procedures, Services, NOTAMs): Maps-like tabs under the buttons
-     (memory, A2 picks), with the airport diagram first in the body.
+     The row is in the card under its head and facts, not docked at the
+     sheet's foot, so it is in sight at half (audit AND-1, 2026-11-14).
+  5. The detail tabs directly under the buttons (the owner's T4,
+     2026-11-14; `ui/AirportTabs`' `AirportTabRow`): a
+     `SecondaryScrollableTabRow` (Overview, Weather, Frequencies,
+     Runways, Charts, NOTAMs) pinned as a `stickyHeader`, the picked tab
+     filled in the theme's `primary` with `onPrimary` words and no
+     underline; Weather with the dot of the field's own report's flight
+     category (none without one), Charts with its count (the d-TPP's
+     plates and the diagram); each tab's content description says the
+     hint, "Weather, MVFR", "Charts, 9". Under the tabs the field's report
+     in one line (`AirportWeatherLine`): its category chip, then "Ceiling
+     1,800 ft · 310°T 4 kt · 1255Z". Overview starts with the pictures;
+     Charts with the airport diagram.
   6. The body is `ListItem` rows inside `SegmentedListItem` groups:
      - runways with their winds, which the engine works out
      - frequencies, each with a trailing copy `IconButton`
@@ -1332,8 +1343,10 @@ Kept, each still a thin wrapper over stock parts:
 
 Left hand-built, with no stock equivalent:
 
-- The chart's own drawings: `map/OverlayPictures` (the sectional's
-  symbols for MapLibre), `ui/DiagramOwnShip`'s own-ship arrow on an
+- The chart's own drawings: `map/OverlayPictures` (the planner's airport
+  mark, its ring the field's surface airspace, and the sectional's other
+  symbols for MapLibre, each sized by the engine's `field_mark_rank` step
+  through the layer's `icon-size`), `ui/DiagramOwnShip`'s own-ship arrow on an
   airport diagram, and the course's magenta ribbon of the strip layout
   (`strip/StripRibbon`'s `RibbonLine`, `strip/StripList`'s timeline).
   These are chart graphics, not controls.

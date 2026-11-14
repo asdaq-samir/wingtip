@@ -42,7 +42,7 @@ enum class AirportSection(@StringRes val title: Int) {
     WEATHER(R.string.section_weather),
     RADIO(R.string.frequencies),
     RUNWAYS(R.string.section_runways),
-    APPROACHES(R.string.approaches),
+    APPROACHES(R.string.section_charts),
     NOTAMS(R.string.notams),
 }
 
