@@ -1,6 +1,5 @@
 import { cn } from "cn";
 import StatusBadge from "../../../components/StatusBadge";
-import { Button } from "../../../components/ui/button";
 import { Progress } from "../../../components/ui/progress";
 import { useGeo, type LatLon } from "../../../lib/geo";
 import { useClock } from "../../../lib/useMinuteClock";
@@ -13,18 +12,17 @@ import { awayFrom, nmAway } from "../../../lib/useAway";
 import AirplaneSketch from "./AirplaneSketch";
 import { squawkMeaning } from "../lib/squawks";
 import { lasted } from "./pastFlightFormat";
+import { End, EndPending } from "./FlightEnds";
 import { SkeletonLine } from "../../../components/QueryState";
 
-/** The state on the summary's corner: climbing, level or descending in
- *  the air; on the ground; or an emergency's code (AIM 6-2-2, 6-3-4,
- *  6-4-2). */
+/** The summary's corner: climbing, level or descending in the air; on the
+ *  ground; or an emergency's code (AIM 6-2-2, 6-3-4, 6-4-2). */
 export interface StateBadge {
   word: string;
   tone: "air" | "ground" | "alarm";
 }
 
-/** Each state's StatusBadge: the emergency's red, the air's teal, the
- *  ground's dark grey, white on each (design/tokens.json). */
+/** Each state's StatusBadge (design/tokens.json's fills, white words). */
 const STATUS = { air: "inAir", ground: "ground", alarm: "emergency" } as const;
 
 /** Feet against own ship's: "500 ft above", "1,200 ft below", "level". */
@@ -36,11 +34,9 @@ function against(feet: number): string {
 
 type Latest = { plane: TrafficAircraft; at: number } | null;
 
-/** Where it is now, carried on from its report as the map draws it
- *  (lib/geo), on a clock of its own: the card's parts that move each
- *  second (the summary's age and closest approach, the sketch's airplane)
- *  each count it, and the 700-line card around them is drawn again only
- *  when what it shows changes (the 6 Nov audit's W7, WEB-36). */
+/** Where it is now, carried on from its report as the map draws it, on a
+ *  clock of its own: only the parts that move each second redraw, not the
+ *  card around them (the 6 Nov audit's W7, WEB-36). */
 function useHere(latest: Latest) {
   const geo = useGeo();
   const now = useClock(1000, !!latest);
@@ -92,71 +88,12 @@ export function LiveSketch({ latest, ...props }: Omit<Parameters<typeof Airplane
   return <AirplaneSketch {...props} now={here && latest ? { ...here, altFt: latest.plane.altitude_ft ?? null } : null} />;
 }
 
-/** One end of the flight in its summary: the field's ident, a tap that
- *  opens its card where there is one to open, and its town under it. */
-function End({
-  ident,
-  place,
-  at,
-  right = false,
-  onOpen,
-  testId,
-  openTestId,
-}: {
-  ident: string;
-  place?: string | null;
-  at?: string | null;
-  right?: boolean;
-  onOpen?: () => void;
-  testId?: string;
-  openTestId?: string;
-}) {
-  const name = <span className={cn("max-w-full truncate font-bold", TEXT.title)}>{ident}</span>;
-  return (
-    <span className={cn("flex min-w-0 flex-col", right && "items-end text-right")} data-testid={testId}>
-      {onOpen ? (
-        <Button
-          variant="link"
-          size="inline"
-          onClick={onOpen}
-          aria-label={`${ident}'s card`}
-          data-testid={openTestId}
-          className="relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3"
-        >
-          {name}
-        </Button>
-      ) : (
-        <span className="text-foreground">{name}</span>
-      )}
-      {place && <span className={cn("max-w-full truncate text-muted-foreground", TEXT.note)}>{place}</span>}
-      {at && <span className={cn("max-w-full truncate text-muted-foreground tabular-nums", TEXT.note)}>{at}</span>}
-    </span>
-  );
-}
-
-/** An end still asked for, at an End's height: its ident's and town's lines. */
-function EndPending({ right = false }: { right?: boolean }) {
-  return (
-    <span className={cn("flex min-w-0 flex-col", right && "items-end")}>
-      <span className={TEXT.title}>
-        <SkeletonLine className="w-14" />
-      </span>
-      <span className={TEXT.note}>
-        <SkeletonLine className="w-20" />
-      </span>
-    </span>
-  );
-}
-
 /**
- * The flight in a card under the actions, at the owner's pick of the
- * redesign (A2): where it left and where it is bound, a bar between them
- * as far along as it has flown, and how it is flying -- its height and
- * climb, its ground speed, its true track and how long it has been up --
- * or, not heard now, where its last flight landed and when. Under them an
- * emergency's code, and with own ship on, how far and which way it is and
- * when and how near it comes. Seconds-old internet data from adsb.lol's
- * receivers: for knowing what is about, not for avoiding it.
+ * The flight under the actions (the owner's A2): its ends with a bar as far
+ * along as it has flown, its height, climb, ground speed, track and time up
+ * -- or, not heard now, where its last flight landed -- then an emergency's
+ * code and, with own ship on, how far, which way and how near it comes.
+ * Seconds-old adsb.lol data: for knowing what is about, not avoiding it.
  */
 function FlightSummary({
   plane,
