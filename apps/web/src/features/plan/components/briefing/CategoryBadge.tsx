@@ -1,10 +1,9 @@
 import StatusBadge from "../../../../components/StatusBadge";
-import { colourOf } from "../../../../lib/map/marks/flightCategory";
 
-/** A flight category as the app's status badge, its dot in the
- *  category's own colour. It was a badge filled in the colour with white
- *  letters, LIFR's magenta 3.2:1 under them. */
+/** A flight category as the app's status badge, filled in the category's
+ *  chip colour under white words, as the Nearest list and a place's card
+ *  show it (AIM 7-1-7). */
 export default function CategoryBadge({ category }: { category: string | null | undefined }) {
   if (!category) return null;
-  return <StatusBadge color={colourOf(category)}>{category}</StatusBadge>;
+  return <StatusBadge category={category} />;
 }

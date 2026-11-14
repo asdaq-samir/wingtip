@@ -29,6 +29,7 @@
   --type-note: 0.8125rem;
   --type-tab: 0.8125rem;
   --type-tab-bar: 0.75rem;
+  --type-badge: 0.75rem;
   --type-caption: 0.6875rem;
   --type-chip: 0.8125rem;
   --type-label: 0.8125rem;
@@ -39,6 +40,7 @@
   --lead-note: 1.125rem;
   --lead-tab: 1.0625rem;
   --lead-tab-bar: 1rem;
+  --lead-badge: 1rem;
   --lead-caption: 0.8125rem;
   --lead-label: 1.0625rem;
   --lead-figure: 1.9375rem;
@@ -130,6 +132,16 @@
   --badge-home: #0d9488;
   --badge-airplane: #0284c7;
   --badge-air: #0f766e;
+  --badge-status-active: #b42318;
+  --badge-status-later: #b45309;
+  --badge-status-cold: #6b7280;
+  --badge-status-closed: #991b1b;
+  --badge-status-out-of-service: #9a3412;
+  --badge-status-private: #475569;
+  --badge-status-military: #4d7c0f;
+  --badge-status-joint: #3f6212;
+  --badge-status-emergency: #dc2626;
+  --badge-status-ground: #52525b;
   --weather-convective: #c2410c;
   --weather-icing: #2563eb;
   --weather-turbulence: #d97706;
@@ -414,6 +426,8 @@
   --lead-tab: 1.25rem;
   --type-tab-bar: 0.75rem;
   --lead-tab-bar: 1rem;
+  --type-badge: 0.75rem;
+  --lead-badge: 1rem;
   --type-caption: 0.75rem;
   --lead-caption: 1rem;
   --type-label: 0.75rem;
