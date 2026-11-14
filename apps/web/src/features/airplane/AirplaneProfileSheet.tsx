@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Share } from "lucide-react";
+import { Bell, Gauge, History, Info, Share } from "lucide-react";
 import { cn } from "cn";
 import { FileTrigger } from "react-aria-components";
 import { Pressable } from "react-aria/Pressable";
@@ -255,11 +255,12 @@ export default function AirplaneProfileSheet() {
               {
                 value: "flights",
                 label: "Flights",
+                icon: History,
                 hint: card.flightCount ? String(card.flightCount) : null,
-                trail: card.flightCount ? <TabCount count={card.flightCount} testId="airplane-tab-count" /> : null,
+                badge: card.flightCount ? <TabCount count={card.flightCount} testId="airplane-tab-count" /> : null,
               },
-              { value: "info", label: "Info" },
-              { value: "figures", label: "Figures" },
+              { value: "info", label: "Info", icon: Info },
+              { value: "figures", label: "Figures", icon: Gauge },
             ]}
           />
         }

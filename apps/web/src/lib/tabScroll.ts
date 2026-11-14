@@ -28,10 +28,21 @@ export function useTabScroll(tab: string) {
   const shown = useRef(tab);
   useEffect(() => {
     const scroller = bar?.closest<HTMLElement>(".overflow-y-auto");
-    if (!scroller) return;
+    if (!scroller || !bar) return;
     const keep = () => places.current.set(shown.current, scroller.scrollTop);
     scroller.addEventListener("scroll", keep, { passive: true });
-    return () => scroller.removeEventListener("scroll", keep);
+    // The room is kept as the scroller is resized, so it is in place before
+    // any tab swaps: the owner's "Switching tabs jumps the page" (iPhone,
+    // 2026-11-14) was a shorter page swapped in and measured first, whose
+    // layout clamped scrollTop before the room was set, moving the head and
+    // pictures; and a detent change left the room a tab's old figure.
+    const reserve = () => reserveRoom(bar);
+    const watch = new ResizeObserver(reserve);
+    watch.observe(scroller);
+    return () => {
+      scroller.removeEventListener("scroll", keep);
+      watch.disconnect();
+    };
   }, [bar]);
   useLayoutEffect(() => {
     const was = shown.current;
@@ -48,6 +59,8 @@ function placeTab(tabs: HTMLElement, kept: number | null | undefined) {
   const root = tabs.parentElement;
   const scroller = tabs.closest<HTMLElement>(".overflow-y-auto");
   if (!root || !scroller) return;
+  // Before any read that lays out the new, perhaps shorter, page.
+  reserveRoom(tabs);
   // Where the bar pins: its place in the content (the Tabs root's top plus
   // the bar's margin, the root itself not sticky) less its sticky top.
   const style = getComputedStyle(tabs);
@@ -55,10 +68,29 @@ function placeTab(tabs: HTMLElement, kept: number | null | undefined) {
   const margin = parseFloat(style.marginTop) || 0;
   const rootAt = root.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
   const pinAt = rootAt + margin - stickyTop;
-  // Room for the pages to stay under the head whatever the tab's length,
-  // which keeps the floating bar, at the root's end, at the card's foot.
-  root.style.minHeight = `${Math.max(0, scroller.clientHeight - stickyTop + margin)}px`;
   if (kept === undefined) return;
-  if (kept !== null) scroller.scrollTop = kept;
-  else if (scroller.scrollTop > pinAt) scroller.scrollTop = pinAt;
+  scroller.scrollTop = scrollOnPick(scroller.scrollTop, pinAt, kept);
+}
+
+/** Room for the pages to stay under the head whatever the tab's length,
+ *  which keeps the floating bar, at the root's end, at the card's foot, and
+ *  means a shorter page never lowers the scroller's end past where the
+ *  head, facts and pictures are. */
+function reserveRoom(tabs: HTMLElement) {
+  const root = tabs.parentElement;
+  const scroller = tabs.closest<HTMLElement>(".overflow-y-auto");
+  if (!root || !scroller) return;
+  const style = getComputedStyle(tabs);
+  const stickyTop = parseFloat(style.top) || 0;
+  const margin = parseFloat(style.marginTop) || 0;
+  root.style.minHeight = `${Math.max(0, scroller.clientHeight - stickyTop + margin)}px`;
+}
+
+/** Where the scroller goes on a tab picked: back to the tab's kept place; a
+ *  tab not yet seen (null) stays where the card is while the bar's pages
+ *  are in sight (nothing above them moves), and starts at the pages' top
+ *  (`pinAt`) when the card was scrolled past it (Apple Maps' place card). */
+export function scrollOnPick(scrollTop: number, pinAt: number, kept: number | null): number {
+  if (kept !== null) return kept;
+  return Math.min(scrollTop, pinAt);
 }

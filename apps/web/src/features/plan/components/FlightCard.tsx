@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { ChartLine, Crosshair } from "lucide-react";
+import { ChartLine, Crosshair, History, Info } from "lucide-react";
 import { cn } from "cn";
 import { SheetCard } from "../../../components/SheetCard";
 import { CardTitle } from "../../../components/CardTitle";
@@ -39,8 +39,8 @@ import { nameCase } from "../lib/nameCase";
 
 /** Its pages: what it is first, as the airport card's Info, then its earlier flights. */
 const TABS: CardTab<"info" | "flights">[] = [
-  { value: "info", label: "Info" },
-  { value: "flights", label: "Flights" },
+  { value: "info", label: "Info", icon: Info },
+  { value: "flights", label: "Flights", icon: History },
 ];
 
 /** A link to the airplane on the planner, shared where the phone can,

@@ -1,3 +1,4 @@
+import { CloudSun, FileText, Info, PlaneLanding } from "lucide-react";
 import { CardTabBar, TabCount } from "../../../../components/CardTabBar";
 import { colourOf } from "../../../../lib/map/marks/flightCategory";
 
@@ -11,7 +12,8 @@ export type PlaceTab = "radio" | "weather" | "runways" | "diagrams";
  * the specs and a kept tab know them by. On two tabs why to open them --
  * Weather the dot of the field's own report's flight category, Charts how
  * many charts it has -- and their names say so too, "Weather, MVFR",
- * "Charts, 9". PlaceCard pins it.
+ * "Charts, 9", their marks over the icons' corners. Each tab is an icon,
+ * the picked one with its word (the owner, 2026-11-14). PlaceCard pins it.
  */
 export function PlaceTabBar({
   onPick,
@@ -36,29 +38,31 @@ export function PlaceTabBar({
       onPick={onPick}
       disabled={disabled}
       tabs={[
-        { value: "radio", label: "Info" },
+        { value: "radio", label: "Info", icon: Info },
         {
           value: "weather",
           label: "Weather",
+          icon: CloudSun,
           hint: category,
-          lead: category && (
+          badge: category && (
             // The FAA's colour (AIM 7-1-7's categories, design/tokens.json
             // color.category), ringed in the picked tab's words so it reads
             // on the tint too.
             <span
               aria-hidden
               data-testid="place-tab-category"
-              className="size-2 shrink-0 rounded-full group-data-active/tab:ring-2 group-data-active/tab:ring-primary-foreground"
+              className="pointer-events-none absolute -top-0.5 -right-1 size-2.5 rounded-full ring-2 ring-background group-data-active/tab:ring-2 group-data-active/tab:ring-primary"
               style={{ backgroundColor: colourOf(category) }}
             />
           ),
         },
-        { value: "runways", label: "Runways" },
+        { value: "runways", label: "Runways", icon: PlaneLanding },
         {
           value: "diagrams",
           label: "Charts",
+          icon: FileText,
           hint: charts > 0 ? String(charts) : null,
-          trail: charts > 0 && <TabCount count={charts} testId="place-tab-charts" />,
+          badge: charts > 0 && <TabCount count={charts} testId="place-tab-charts" />,
         },
       ]}
     />

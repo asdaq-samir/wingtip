@@ -235,7 +235,11 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    group of buttons does, in reach at every height and hidden at the
    pill, the page scrolling under it and clearing it at its end: the
    picked tab filled in the tint, Weather with the field's category dot
-   and Charts with its count. The bar is glass because it floats over the
+   and Charts with its count. Each tab is an icon (Info, CloudSun,
+   PlaneLanding, FileText; the owner, 2026-11-14: "make the tabs icons
+   instead so it takes less space"), the picked one showing its word
+   beside it and the others the icon alone, each named by its aria-label
+   ("Weather, VFR"), the dot and count over the icon's corner. The bar is glass because it floats over the
    card (the owner's decision of 2026-11-10 keeps glass for what floats).
    This replaces T4's tabs under the actions and its one-line report.
    The airplane cards are laid out the same way, with the same parts (the
@@ -243,7 +247,7 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    airport card"): an N-number's card and a tracked flight's have their
    facts in the strip (Type, Year, Seats, Engines, Registration, Owner),
    their photos as the same picture tiles, and their tabs (Flights, Info,
-   Figures; a flight's Info and Flights) in the same floating glass bar. On
+   Figures, icons too: History, Info, Gauge; a flight's Info and Flights) in the same floating glass bar. On
    Android, at half height a
    card shows the small bar, its title and actions on one row, and at
    full the large flexible bar, folding as it scrolls (owner decision

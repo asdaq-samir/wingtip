@@ -479,7 +479,12 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
 5. The tab's page (Info: elevation, the frequencies a pilot needs first,
    each copying on click, lights and services; Weather; Runways; Charts),
    then the tabs, Info, Weather, Runways, Charts (`place/PlaceTabBar` on
-   the shared `CardTabBar`, the pages in `CardTabPages`), in
+   the shared `CardTabBar`, the pages in `CardTabPages`; each tab an icon
+   from lucide-react, required on `CardTab` (Info, CloudSun, PlaneLanding,
+   FileText), the picked one with its word, the others icon alone, all named
+   by aria-label, the dot and count over the icon's corner; a tab switch
+   moves nothing above the pages, `useTabScroll` keeping their room as the
+   scroller resizes), in
    a glass capsule floating at the card's foot like Maps' group of
    buttons: sticky at the foot of the card's scroller and moved up by the
    Drawer's own offset (`--sheet-offset`, `--sheet-swipe`) so it stays at
@@ -523,7 +528,7 @@ the destructive ink where lapsed, and Owner, public as the FAA publishes
 it); its Planespotters.net photo as the airport card's picture tiles
 (`CardPictures`, the tile the link to its page, the photographer named on
 it); then the page of Flights · Info · Figures, the tabs in the same
-floating glass bar (`CardTabBar`, Flights with its count). It reads its N-number two ways at once (`lib/airplane/lookup`,
+floating glass bar (`CardTabBar`, icons History, Info and Gauge, Flights with its count over its icon). It reads its N-number two ways at once (`lib/airplane/lookup`,
 `useTailLookup`, in `useAirplaneCard`): the FAA's record from the
 planner's `/api/traffic/registered`, off its disk in milliseconds, for
 the line, Info (`AirplaneInfo`) and the ICAO address, and the rest of
