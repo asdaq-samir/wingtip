@@ -44,6 +44,7 @@ export function SheetCard({
   closeButton,
   onClose,
   fullScreen = false,
+  swipeCloses = false,
   cardId,
   testId,
   returnFocus,
@@ -82,6 +83,9 @@ export function SheetCard({
   /** Emergency, the one card all the way up as it opens (the card rule's 4);
    *  every other card opens at half. */
   fullScreen?: boolean;
+  /** A settings card (the Map card): a swipe down closes it, as its ✕
+   *  does, where a content card parks at the pill (CardStack). */
+  swipeCloses?: boolean;
   /** Its id among the open cards where its owner sizes it (useCardSize). */
   cardId?: string;
   testId?: string;
@@ -190,7 +194,16 @@ export function SheetCard({
   };
   const target = useCardFrame(
     head
-      ? { fullScreen, title, testId, labelledBy: headingId, dismiss, initialFocus: opening, finalFocus: finalFocus ?? toOpener }
+      ? {
+          fullScreen,
+          title,
+          testId,
+          labelledBy: headingId,
+          dismiss,
+          onSwipeClose: swipeCloses ? () => onClose?.() : undefined,
+          initialFocus: opening,
+          finalFocus: finalFocus ?? toOpener,
+        }
       : // Its content's head names it; the focus left where it is unless
         // it came from the chart (fromMarker), the drawer's own Escape.
         { fullScreen, title, dismiss: ownDismiss, initialFocus, finalFocus },

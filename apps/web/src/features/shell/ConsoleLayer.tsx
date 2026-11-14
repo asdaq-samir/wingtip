@@ -54,9 +54,13 @@ export default function ConsoleLayer({
     onClose();
   };
   return (
-    // Its drawer open while it is up (CardLayer reads lib/shown).
+    // Its drawer open while it is up (CardLayer's `open`), and each time it
+    // is opened at half, as every card opens: kept by lib/shown alone, it
+    // came back at the size it was put away at, the pill, its head alone
+    // (the owner's iPhone, 2026-11-14). A swipe down closes it, as Apple
+    // Maps' account sheet (the owner, 2026-11-14).
     <Shown.Provider value={shown}>
-      <CardLayer label={label} dismiss={dismiss} finalFocus={finalFocus}>
+      <CardLayer label={label} dismiss={dismiss} onSwipeClose={onClose} finalFocus={finalFocus} open={shown}>
         <section
           aria-label={label}
           // Named for the suite only while it is up: put away it is there,

@@ -24,6 +24,7 @@ import { useCardFrame } from "./useCardFrame";
 export function CardLayer({
   label,
   dismiss,
+  onSwipeClose,
   finalFocus,
   cardId,
   open,
@@ -31,6 +32,9 @@ export function CardLayer({
 }: {
   label?: string;
   dismiss?: CardFrame["dismiss"];
+  /** A settings card's close on a swipe down (CardStack); none, and a
+   *  swipe parks it at the pill. */
+  onSwipeClose?: CardFrame["onSwipeClose"];
   /** Where the focus goes as it closes (Base UI's); left where it is by default. */
   finalFocus?: CardFrame["finalFocus"];
   cardId?: string;
@@ -40,7 +44,7 @@ export function CardLayer({
   const fallback = useId();
   const id = cardId ?? fallback;
   const shown = useShown() && open !== false;
-  const slot = useCardFrame({ label, dismiss, finalFocus, open }, id);
+  const slot = useCardFrame({ label, dismiss, onSwipeClose, finalFocus, open }, id);
   return slot
     ? createPortal(
         <Shown.Provider value={shown}>

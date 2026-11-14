@@ -51,6 +51,8 @@ export function MapSettingsCard() {
       title="Map"
       onClose={() => showMapCard(false)}
       testId="map-settings"
+      // A settings card: a swipe down closes it (the owner, 2026-11-14).
+      swipeCloses
       returnFocus={() => document.querySelector<HTMLElement>('[data-testid="map-settings-button"]')}
       leading={<SettingsButton group="map" />}
       closeButton

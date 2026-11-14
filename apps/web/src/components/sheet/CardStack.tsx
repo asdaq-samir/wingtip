@@ -3,7 +3,7 @@ import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
 import { closeTopCard } from "../../lib/openCards";
-import { cardOpening, coverCard, dropCard, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
+import { REACH, cardOpening, coverCard, dropCard, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
 import { AT_PILL, sizeAt, snapsOf } from "./insets";
 import { UNDER_INDICATOR } from "./SheetDrawer";
 import { cardSettled, frontOffset, sheetTopRef, useRidingCard } from "./sheetTopSlot";
@@ -129,7 +129,15 @@ function CardDrawer({
   ...p
 }: StackProps & { entry: CardEntry; top: boolean; cover: boolean; riding: boolean; host: HTMLElement; children?: ReactNode }) {
   const { id, frame } = entry;
-  const slot = useCallback((node: HTMLElement | null) => setCard(id, { slot: node }), [id]);
+  // The card's own content box taken into this drawer's scroller (useCardFrame).
+  const content = entry.host;
+  const slot = useCallback(
+    (node: HTMLElement | null) => {
+      if (node && content.parentElement !== node) node.append(content);
+      setCard(id, { slot: node });
+    },
+    [id, content],
+  );
   const { onPhone, fromBottom } = p;
   // The sheet's own snap points, the same constant values (sheet/insets).
   const snaps = snapsOf(fromBottom);
@@ -148,7 +156,10 @@ function CardDrawer({
   const snapped = (point: Drawer.Root.SnapPoint | null) => {
     if (point === null || !top) return;
     const target = sizeAt(fromBottom, point);
-    if (target && target !== at) ask(target);
+    if (!target || target === at) return;
+    // A settings card swiped down closes, from any size (onSwipeClose).
+    if (frame.onSwipeClose && REACH[target] < REACH[at]) frame.onSwipeClose();
+    else ask(target);
   };
   const topSlot = onPhone && fromBottom && riding;
   return (
@@ -175,7 +186,12 @@ function CardDrawer({
         // open: it is no modal.
         if (!top || details.reason === "focus-out") return details.cancel();
         // A swipe past the pill is no close: the card stays at the pill
-        // with its title row (the card rule's 10).
+        // with its title row (the card rule's 10) -- but a settings card's,
+        // which closes, the Drawer's own close carrying it down.
+        if (details.reason === "swipe" && frame.onSwipeClose) {
+          frame.onSwipeClose();
+          return;
+        }
         if (details.reason === "swipe") {
           details.cancel();
           ask("peek");
