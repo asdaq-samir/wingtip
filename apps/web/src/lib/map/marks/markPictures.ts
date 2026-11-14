@@ -56,9 +56,10 @@ export function dotPicture(fill: string): GlPicture {
   );
 }
 
-/** A point the route flies through or works out -- a VFR or GPS waypoint,
- *  a present position (POS0), a top of climb or descent -- as a pill on
- *  the course itself, centred on its point: the chart's magenta diamond
+/** A point the route works out -- a top of climb or descent -- as a pill
+ *  on the course itself, centred on its point (a waypoint or POS0 the route
+ *  turns at is turnDotPicture and its name beside it since 2026-11-14):
+ *  the chart's magenta diamond
  *  of a fix and its name, white edged in the magenta (the owner's "TOC and
  *  TOD should have the fix on the course for those labels. Just like that
  *  POS0 should have a fix symbol with a label POS0"; "still make those
@@ -76,6 +77,25 @@ export const FIX_PILL: GlPicture = framed(
 /** The words' shift right of the point, ems, so the pill (18 points of
  *  diamond to their left, 8 to their right) is centred on it. */
 export const FIX_PILL_SHIFT = 5 / 11;
+
+/** Where the route turns (the owner's option A, 2026-11-14): a small
+ *  ringed dot exactly on a route point the legs meet at -- a waypoint, a
+ *  present position (POS0) -- white with the course's magenta ring, so
+ *  the turn and own ship on it stay in sight; its name is ROUTE_POINT_PILL
+ *  beside it, outside the turn (routeTurns). */
+export function turnDotPicture(ring: string): GlPicture {
+  return framed(`turn-dot|${ring}`, () => `<circle cx="7" cy="7" r="5.5" fill="${CHART.casing}" stroke="${ring}" stroke-width="3"/>`, 14, 14);
+}
+
+/** A route point's name pill, beside its dot: white edged in the
+ *  sectional's waypoint magenta, stretched to the name. */
+export const ROUTE_POINT_PILL: GlPicture = framed(
+  "route-point-pill",
+  () => `<rect x="0.75" y="0.75" width="18.5" height="18.5" rx="9.25" fill="${CHART.casing}" stroke="${WAYPOINT_MAGENTA}" stroke-width="1.5"/>`,
+  20,
+  20,
+  { inset: 9.5, content: [8, 4, 12, 16] },
+);
 
 /**
  * An airport on the map, as ForeFlight marks them from the sectional's
