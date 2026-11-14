@@ -42,7 +42,8 @@ import { watchOverlayFilters } from "../../lib/map/gl/overlayFilters";
 import { glZoom } from "../../lib/map/gl/glStyle";
 import { probeLayers } from "../../lib/map/gl/useGlProbe";
 import { RulerGl } from "../../lib/map/gl/layers/RulerGl";
-import { cameraOf, inRoom } from "../../lib/map/gl/camera";
+import { cameraOf } from "../../lib/map/gl/camera";
+import { inRoom } from "../../lib/map/gl/cameraParts";
 import { tvPlatform, zoomInKey, zoomOutKey } from "../../lib/tv";
 
 const COUNTRY: [number, number] = [39.5, -98.35];

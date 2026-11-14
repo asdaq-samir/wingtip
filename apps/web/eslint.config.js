@@ -113,6 +113,7 @@ export default defineConfig(
     files: ["src/**/*.{ts,tsx}"],
     ignores: [
       "src/lib/map/gl/camera.ts",
+      "src/lib/map/gl/cameraParts.ts",
       "src/features/plan/map/terrain/**",
       "src/features/replay/**",
       "src/features/plan/components/AirportDiagramViewer.tsx",
