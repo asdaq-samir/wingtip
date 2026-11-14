@@ -93,7 +93,7 @@ export function CardTabBar<T extends string>({
         <TabsList
           variant="tint"
           activateOnFocus
-          className="max-w-full rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-12"
+          className="inline-grid max-w-full auto-cols-fr grid-flow-col rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-12"
         >
           {tabs.map((t) => (
             <TabsTrigger
@@ -112,8 +112,8 @@ export function CardTabBar<T extends string>({
                 <t.icon aria-hidden className="size-5" />
                 {t.badge}
               </span>
-              {/* Under the icon on the picked tab; on the others the same line, no width, so the bar's height holds and every icon stays put. */}
-              <span className={cn("h-4 max-w-0 overflow-hidden leading-4 group-data-active/tab:max-w-none", TEXT.caption)}>{t.label}</span>
+              {/* Under the icon on the picked tab; on the others the same word, invisible, so every tab, in equal columns of the widest word's width, keeps its room and the bar and each icon stay put on a switch. */}
+              <span className={cn("h-4 leading-4 whitespace-nowrap invisible group-data-active/tab:visible", TEXT.caption)}>{t.label}</span>
             </TabsTrigger>
           ))}
         </TabsList>
