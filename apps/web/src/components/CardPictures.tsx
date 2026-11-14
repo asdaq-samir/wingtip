@@ -1,5 +1,5 @@
 import { Button as BaseButton } from "@base-ui/react/button";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Carousel, CarouselContent, CarouselItem } from "./ui/carousel";
 
 /** One picture of a card's strip: what it shows, and a click's lightbox
@@ -20,6 +20,12 @@ export type CardSlide = {
 // two-thirds with nothing beside it (N654FL's sketch, 2026-11-13).
 const SLIDE = "basis-[70%] pl-3 sm:basis-[60%]";
 const SLIDE_ALONE = "basis-full pl-3";
+
+// The strip is one height whatever it holds, so a photo arriving or found
+// missing moves nothing below it: the height of a 4:3 tile at the 70% (60%
+// from sm) width, worked from the strip's own width (the wrapper is a size
+// container). The 12 point gutter is taken in: a tile is basis x (W + 12) - 12.
+const STRIP_HEIGHT = "h-[calc((70cqw-3.6px)*0.75)] sm:h-[calc((60cqw-4.8px)*0.75)]";
 
 const TILE =
   "absolute inset-0 block size-full overflow-hidden rounded-2xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset";
@@ -42,16 +48,24 @@ export function CardPictures({
   label: string;
   testId: string;
 }) {
-  const shown = slides.filter((s): s is CardSlide => !!s);
+  const present = slides.filter((s): s is CardSlide => !!s);
+  // A picture that arrives later goes after those already in the row, never
+  // before the one in view (FL-23); the first draw keeps the card's order.
+  const [order, setOrder] = useState<string[]>(() => present.map((s) => s.key));
+  const keys = present.map((s) => s.key);
+  const next = [...order.filter((k) => keys.includes(k)), ...keys.filter((k) => !order.includes(k))];
+  if (next.join("\n") !== order.join("\n")) setOrder(next);
+  const shown = [...present].sort((a, b) => next.indexOf(a.key) - next.indexOf(b.key));
   if (!shown.length) return null;
   return (
+    <div className="@container">
     // A sideways drag the row's, an up or down one the sheet's (the one scrolling rule).
     <Carousel opts={{ align: "start", dragFree: true }} aria-label={label} data-base-ui-swipe-ignore="x" data-testid={testId}>
       {/* 12 points between the tiles, as Maps' have. */}
       <CarouselContent className="-ml-3">
         {shown.map((slide) => (
           <CarouselItem key={slide.key} className={shown.length > 1 ? SLIDE : SLIDE_ALONE}>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-(--radius-card) bg-foreground/8">
+            <div className={`relative ${STRIP_HEIGHT} overflow-hidden rounded-(--radius-card) bg-foreground/8`}>
               {slide.href ? (
                 <a href={slide.href} target="_blank" rel="noopener" aria-label={slide.label} className={TILE} data-testid={slide.testId}>
                   {slide.picture}
@@ -70,5 +84,6 @@ export function CardPictures({
         ))}
       </CarouselContent>
     </Carousel>
+    </div>
   );
 }
