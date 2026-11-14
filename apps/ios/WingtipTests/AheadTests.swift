@@ -29,4 +29,14 @@ struct AheadTests {
         // What the phone cannot know offline is said, not read as clear.
         #expect(found.unavailable.contains("obstacles") && found.unavailable.contains("TFRs"))
     }
+
+    /// The regions read ahead are the engine's (regions_ahead, IOS-20): just
+    /// west of a region's edge, eastbound at 200 kt, five minutes reach over
+    /// it, so the region beyond is read too, its own first.
+    @Test func theRegionAheadAcrossAnEdgeIsRead() throws {
+        let (lat, lon) = (41.98, -88.01)
+        let names = try Engine.regionsAhead(lat: lat, lon: lon, trackDeg: 90, lookAheadNm: 200 * CyclePacks.lookAheadS / 3600)
+        #expect(names.first == Engine.region(lat: lat, lon: lon))
+        #expect(names.contains(Engine.region(lat: lat, lon: lon + 0.3)))
+    }
 }
