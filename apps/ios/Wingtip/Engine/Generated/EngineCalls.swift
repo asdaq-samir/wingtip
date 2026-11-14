@@ -565,6 +565,11 @@ extension Engine {
         try Self.rule("field_hours", EngineContract.FieldHoursInput(metar: metar, taf: taf, now: now, count: count))
     }
 
+    /// What a field's map mark is first drawn at and kept by where marks would overlap, from the FAA's NASR APT_BASE.csv (SITE_TYPE_CODE, FACILITY_USE_CODE, TWR_TYPE_CODE), its longest hard runway (APT_RWY.csv, the FAA Aeronautical Chart User's Guide's hard-surfaced runways) and the class of airspace the FAA's Class_Airspace file names it the primary airport of (IDENT). `tier`: 0 towered, 1 public airport with a hard runway of 3,000 ft or more, 2 other public, 3 private, 4 heliports and the rest. `order`, lower first: the field a Class B is named for, then a Class C's, then each tier, and within each the longer hard runway first, so O'Hare's mark is kept before Chicago Executive's. The cycle pack's overlay tiles carry `order` as each airport's `rank`, which every app's map sorts its marks by.
+    static func fieldMarkRank(siteType: String? = nil, use: String? = nil, towered: Bool? = nil, hardFt: Double? = nil, primaryOf: String? = nil) throws -> EngineContract.FieldMarkRankAnswer {
+        try Self.rule("field_mark_rank", EngineContract.FieldMarkRankInput(siteType: siteType, use: use, towered: towered, hardFt: hardFt, primaryOf: primaryOf))
+    }
+
     /// Whether a field is the armed services' own, from the FAA's NASR APT_BASE.csv: OWNERSHIP_TYPE_CODE MA (Air Force), MN (Navy), MR (Army) or CG (Coast Guard) is; "joint" where FACILITY_USE_CODE is PU, open to the public as well (a civil airport on a military one, where a civil pilot may land), else "military", where a civil airplane lands only with the service's permission (for the Air Force a Civil Aircraft Landing Permit, 32 CFR part 855); null for any other owner. The one statement the planner, the cycle pack's overlays and the engine's map pins read.
     static func fieldMilitary(ownership: String? = nil, use: String? = nil) throws -> EngineContract.FieldMilitaryAnswer {
         try Self.rule("field_military", EngineContract.FieldMilitaryInput(ownership: ownership, use: use))

@@ -413,20 +413,33 @@ def test_the_airports_as_nasr_files_them(sources):
         "hard_ft": 13000,
         "runway_true": 90,
         "fuel": "100LL,A",
-        "rank": 0,
+        # The engine's field_mark_rank: towered (class 2), 13,000 ft hard.
+        "rank": 2 * 100_000 + 99_999 - 13_000,
     }
     assert found["ORD"]["geometry"] == {"type": "Point", "coordinates": [-87.90814972, 41.97694027]}
-    assert found["06C"]["properties"]["rank"] == 1 and "runway_true" not in found["06C"]["properties"]
+    assert found["06C"]["properties"]["rank"] == 3 * 100_000 + 99_999 - 3_800 and "runway_true" not in found["06C"]["properties"]
     # 2,813 ft of asphalt and 1,940 ft of turf: hard, but under 3,000 ft.
     assert {k: found["LL22"]["properties"][k] for k in ("use", "longest_ft", "hard_ft", "rank")} == {
         "use": "private",
         "longest_ft": 2813,
         "hard_ft": 2813,
-        "rank": 3,
+        "rank": 5 * 100_000 + 99_999 - 2_813,
     }
     # A helipad is no runway.
     assert found["7IL4"]["properties"]["type"] == "heliport" and "longest_ft" not in found["7IL4"]["properties"]
     assert {k: f["tippecanoe"]["minzoom"] for k, f in found.items()} == {"ORD": 5, "06C": 6, "LL22": 9, "7IL4": 10}
+
+
+def test_the_class_b_primary_is_kept_first(sources):
+    """The airspace file names O'Hare Chicago's Class B primary: its mark
+    sorts before every other field's (the owner, 2026-11-14, where a
+    towered field's tie had drawn Chicago Executive instead)."""
+    pack, nasr = sources
+    named = overlays.primaries(pack)
+    assert named["ORD"] == "B" and set(named.values()) <= {"B", "C"}
+    lines = _lines(overlays.airport_features(nasr / "APT_BASE.csv", nasr / "APT_RWY.csv", nasr / "APT_RWY_END.csv", primary=named))
+    ranks = {f["properties"]["faa_id"]: f["properties"]["rank"] for f in lines}
+    assert ranks["ORD"] == 99_999 - 13_000 and min(ranks, key=ranks.get) == "ORD"
 
 
 def test_the_runways_from_their_surveyed_ends(sources):

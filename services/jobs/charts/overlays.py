@@ -112,8 +112,8 @@ AIRSPACE_MIN_ZOOM = {"B": 4, "C": 5, "D": 6}
 CLASS_E_MIN_ZOOM = {"CLASS_E2": 7, "CLASS_E3": 7, "CLASS_E4": 7}
 CLASS_E_OTHER_MIN_ZOOM = 8
 SPECIAL_USE_MIN_ZOOM = 5
-#: Airports by `rank` (airport_rank): towered, public with a hard runway
-#: of 3,000 ft or more, other public, private, then heliports and the rest.
+#: Airports by the engine's field_mark_rank's tier: towered, public with a
+#: hard runway of 3,000 ft or more, other public, private, then heliports.
 AIRPORT_MIN_ZOOM = (5, 6, 7, 9, 10)
 #: The VORs (wingtip.fixes.VOR_KINDS) a zoom out; the rest closer in.
 VOR_MIN_ZOOM = 5
@@ -138,8 +138,6 @@ SITE_TYPES = {"A": "airport", "H": "heliport", "C": "seaplane", "G": "gliderport
 #: ("ASPH-TURF") counts only when every part is hard ("ASPH-CONC"); TRTD
 #: (treated) goes with a hard one and is not one alone.
 HARD_SURFACES = frozenset({"ASPH", "CONC", "PEM", "PFC", "BRICK"})
-#: The rank a field must reach for its tier: what `rank` sorts symbols by.
-LONG_HARD_FT = 3000
 
 
 def _orient(geometry):
@@ -375,23 +373,23 @@ def runways_by_site(rwy_path: Path, rwy_end_path: Path | None) -> dict[str, dict
     return found
 
 
-def airport_rank(site_type: str, use: str, towered: bool, hard_ft: int) -> int:
-    """What a field's symbol is sorted and first shown by (AIRPORT_MIN_ZOOM):
-    0 towered, 1 public with a hard runway of LONG_HARD_FT or more, 2 other
-    public airports, 3 private airports, 4 heliports and the rest."""
-    if site_type not in ("A", "C", "G", "U", "B"):
-        return 4
-    if towered:
-        return 0
-    if use == "PU":
-        return 1 if hard_ft >= LONG_HARD_FT and site_type == "A" else 2
-    return 3
+def primaries(pack) -> dict[str, str]:
+    """Each Class B and C's primary field, by the FAA identifier the airspace file names it by (IDENT: every
+    one a towered field in the 2026-10-29 cycle, 30 B, 123 C), to its highest class: field_mark_rank's first."""
+    found: dict[str, str] = {}
+    for record in pack.attrs("airspace"):
+        ident, cls = (record.get("IDENT") or "").strip().upper(), (record.get("CLASS") or "").strip()
+        if ident and cls in ("B", "C") and cls < found.get(ident, "Z"):
+            found[ident] = cls
+    return found
 
 
-def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path | None, bbox=None):
+def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path | None, bbox=None, primary: dict | None = None):
     """The `airports` layer's lines: every operational field in APT_BASE
     (the engine's field_status: ARPT_STATUS O; CI and CP are not drawn),
-    with its runways (runways_by_site)."""
+    with its runways (runways_by_site), ranked by the engine's
+    field_mark_rank with the classes `primary` (primaries) names."""
+    from wingtip.engine import ask
 
     runways = runways_by_site(rwy_path, rwy_end_path) if rwy_path is not None else {}
     for row in _rows(apt_path):
@@ -409,7 +407,8 @@ def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path |
         ways = runways.get((row.get("SITE_NO") or "").strip(), {})
         # The engine's field_military: "military", "joint" (open to the public as well) or None.
         military = field_status.military(row.get("OWNERSHIP_TYPE_CODE"), use)
-        rank = airport_rank(site_type, use, towered, ways.get("hard_ft", 0))
+        hard_ft, primary_of = ways.get("hard_ft", 0), (primary or {}).get(faa_id)
+        rank = ask("field_mark_rank", site_type=site_type, use=use, towered=towered, hard_ft=hard_ft, primary_of=primary_of)
         yield _feature(
             {
                 "ident": icao or faa_id,
@@ -425,10 +424,10 @@ def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path |
                 "hard_ft": ways.get("hard_ft"),
                 "runway_true": ways.get("runway_true"),
                 "fuel": (row.get("FUEL_TYPES") or "").strip(),
-                "rank": rank,
+                "rank": rank["order"],
             },
             f'{{"type":"Point","coordinates":[{lon},{lat}]}}',
-            AIRPORT_MIN_ZOOM[rank],
+            AIRPORT_MIN_ZOOM[rank["tier"]],
         )
 
 
@@ -563,7 +562,7 @@ def write_layers(
         "airspace_labels": airspace_label_features(pack, bbox),
         "special_use": special_use_features(pack, bbox),
         "special_use_labels": special_use_label_features(pack, bbox),
-        "airports": airport_features(apt_path, rwy_path, rwy_end_path, bbox),
+        "airports": airport_features(apt_path, rwy_path, rwy_end_path, bbox, primaries(pack)),
         "navaids": navaid_features(nav_path, bbox, nav_rmk_path),
         "fixes": fix_features(fix_path, bbox),
         "runways": runway_features(rwy_path, rwy_end_path, bbox) if rwy_path and rwy_end_path else iter(()),

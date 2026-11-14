@@ -127,15 +127,15 @@ export function overlayPictures(): Promise<Map<string, DrawnImage>> {
 
 /** The airports' zooms, in the app's levels: the farthest out any
  *  is drawn. Within it each field is in the tiles from its own zoom by
- *  its rank (AIRPORT_MIN_ZOOM in services/jobs/charts/overlays.py):
+ *  its tier (AIRPORT_MIN_ZOOM in services/jobs/charts/overlays.py):
  *  towered, then the long hard runways, other public fields, private
  *  ones, heliports. */
 const AIRPORTS_FARTHEST_ZOOM = 4;
 
-/** The airports' one symbol layer, from either source: the mark, its
- *  ident beside it in bold, the field's ink (the sectional sets an
- *  airport's name in the symbol's colour, Chart User's Guide, Airports),
- *  kept apart by MapLibre's collision in `rank` order. */
+/** The airports' one symbol layer, from either source: the mark, its ident beside it in bold, the field's ink (the
+ *  sectional sets an airport's name in the symbol's colour, Chart User's Guide, Airports), kept apart by MapLibre's
+ *  collision in `rank` order, the engine's field_mark_rank: lowest placed first and winning, so a Class B's field
+ *  (O'Hare), then a Class C's, then each tier by its longest hard runway. */
 function airportMarksLayer(from: { source: string; "source-layer"?: string }): SymbolLayerSpecification {
   return {
     id: "airports",

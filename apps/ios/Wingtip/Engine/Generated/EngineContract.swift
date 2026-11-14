@@ -3722,6 +3722,34 @@ enum EngineContract {
         var count: Double?
     }
 
+    struct FieldMarkRankAnswer: Codable, Equatable, Sendable {
+        /// 0 towered, 1 public with a long hard runway, 2 other public, 3 private, 4 heliports and the rest: which zoom the mark is first drawn at.
+        var tier: Int
+        /// The mark's place where marks overlap, lower kept first: class (0 Class B primary, 1 Class C primary, then tier + 2) times 100,000, plus 99,999 less the longest hard runway in ft.
+        var order: Int
+    }
+
+    struct FieldMarkRankInput: Codable, Equatable, Sendable {
+        /// NASR APT_BASE's SITE_TYPE_CODE (A airport, H heliport, C seaplane base, G gliderport, U ultralight, B balloonport).
+        var siteType: String?
+        /// NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
+        var use: String?
+        /// Whether NASR APT_BASE's TWR_TYPE_CODE names a tower (ATCT and its kinds; NON-ATCT is none).
+        var towered: Bool?
+        /// The field's longest hard-surfaced runway, ft (APT_RWY's RWY_LEN); 0 or null for none.
+        var hardFt: Double?
+        /// The class of airspace (B, C) the FAA's Class_Airspace file names the field the primary airport of (its IDENT), the highest where several; null for none. D and E count as none.
+        var primaryOf: String?
+
+        enum CodingKeys: String, CodingKey {
+            case siteType = "site_type"
+            case use
+            case towered
+            case hardFt = "hard_ft"
+            case primaryOf = "primary_of"
+        }
+    }
+
     struct FieldMilitaryAnswer: Codable, Equatable, Sendable {
         /// military, joint, or null for a field the services do not own.
         var military: String?
