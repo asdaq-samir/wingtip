@@ -5,8 +5,10 @@ import app.wingtipmaps.android.api.Leg
 import java.util.Locale
 
 /** A point the route goes through: a field by its ident, or a place
- *  ("@41.8800,-87.6300") as the planner reads one. */
-data class RoutePoint(val ident: String, val name: String, val lat: Double, val lon: Double)
+ *  ("@41.8800,-87.6300") as the planner reads one; `fix` where it is a
+ *  named fix flown through (the planner's AirportEnd kind "fix": a VFR or
+ *  GPS waypoint), which the map marks as a turn (RouteTurns). */
+data class RoutePoint(val ident: String, val name: String, val lat: Double, val lon: Double, val fix: Boolean = false)
 
 /**
  * The route's points in the order flown -- the departure, the stops, the
@@ -19,7 +21,7 @@ data class RoutePoint(val ident: String, val name: String, val lat: Double, val 
 object RoutePoints {
     fun of(course: Course?): List<RoutePoint> {
         course ?: return emptyList()
-        return (listOf(course.departure) + course.stops.orEmpty() + course.destination).map { RoutePoint(it.ident, it.name, it.lat, it.lon) }
+        return (listOf(course.departure) + course.stops.orEmpty() + course.destination).map { RoutePoint(it.ident, it.name, it.lat, it.lon, it.kind == "fix") }
     }
 
     /** The legs' ends as the planner takes a briefing's fixes, one more

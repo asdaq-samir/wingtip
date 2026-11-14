@@ -274,7 +274,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 terminal(style, lastTerminal)
                 CloseMap.draw(style, chartTileMax)
                 route(style, line, lastPoints)
-                trail(style, trailJson)
+                TrailLayer.draw(style, trailJson, ROUTE_EDGE, ROUTE)
                 GlideLayer.draw(style, lastGlide, GLIDE, ROUTE)
                 SelectedAirportLayer.draw(style, lastSelected)
                 plates.draw(style)
@@ -453,7 +453,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         val json = withContext(Dispatchers.Default) { lineJson(points.map { it.lat to it.lon }) }
         trailJson = json
         if (destroyed) return
-        view.getMapAsync { map -> map.getStyle { style -> trail(style, json) } }
+        view.getMapAsync { map -> map.getStyle { style -> TrailLayer.draw(style, json, ROUTE_EDGE, ROUTE) } }
     }
 
     fun emergency(line: EmergencyLine?) {
@@ -511,6 +511,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         map.addOnCameraMoveStartedListener { reason ->
             if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE && puck?.tracking != true) onDragged()
         }
+        map.addOnCameraMoveListener { map.style?.let { RouteTurns.turn(it, map.cameraPosition.bearing) } }
         map.addOnCameraIdleListener {
             val box = map.projection.visibleRegion.latLngBounds
             onView(MapRest(box.latitudeSouth, box.longitudeWest, box.latitudeNorth, box.longitudeEast, map.cameraPosition.zoom))
@@ -574,31 +575,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
         if (style.getLayer(id) != null) style.addLayerBelow(layer, id) else style.addLayer(layer)
     }
 
-    /** The path flown, under the route: a thinner line in the route's
-     *  colour, so where the airplane went reads against where it meant
-     *  to go. */
-    private fun trail(style: Style, geoJson: String) {
-        val source = style.getSourceAs<GeoJsonSource>(TRAIL)
-        if (source != null) {
-            source.setGeoJson(geoJson)
-            return
-        }
-        style.addSource(GeoJsonSource(TRAIL, geoJson))
-        val layer = LineLayer(TRAIL, TRAIL).withProperties(
-            PropertyFactory.lineColor(Color.rgb(0, 122, 255)),
-            PropertyFactory.lineWidth(2.5f),
-            PropertyFactory.lineOpacity(0.6f),
-            PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
-            PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
-        )
-        when {
-            style.getLayer(ROUTE_EDGE) != null -> style.addLayerBelow(layer, ROUTE_EDGE)
-            style.getLayer(ROUTE) != null -> style.addLayerBelow(layer, ROUTE)
-            else -> below(style, layer, MapStyle.ROUTE_SLOT)
-        }
-    }
-
     private fun route(style: Style, line: List<List<Double>>, points: List<RoutePoint>) {
+        RouteTurns.draw(style, line, points, density, above = MapStyle.ROUTE_SLOT)
         // A line a leg, so a tap says which and the selected one is cased.
         val geoJson = RouteLegs.json(RouteLegs.cut(line, points))
         val source = style.getSourceAs<GeoJsonSource>(ROUTE)
@@ -643,7 +621,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
         const val ROUTE_EDGE = "route-edge"
         /** The chart's magenta, the web's COURSE_MAGENTA. */
         val COURSE_MAGENTA = Color.rgb(0xe6, 0x00, 0xe6)
-        const val TRAIL = "trail"
         /** A finger's reach round a mark, and round a line, dp (the web's
          *  TAP.mark and TAP.line). */
         const val TAP_MARK = 22f

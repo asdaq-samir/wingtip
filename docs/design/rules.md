@@ -808,7 +808,10 @@ Web: `lib/map/marks/routeMarks` (the layers `route-fix-dots` and
 `route-fixes`), `routeTurns` (the side, and the layer's anchor for the
 map's bearing), `markPictures`' `turnDotPicture` and `ROUTE_POINT_PILL`;
 tested by `routeTurns.test.ts` and `e2e/stops-waypoints.spec.ts` (the
-`route-turns` probe). The phones follow on the owner's word (web first).
+`route-turns` probe). Android (2026-11-14): `map/RouteTurns`, the dot a
+`CircleLayer` and the name a `SymbolLayer` on a stretched pill, its
+anchor and offset turned with the map's bearing; tested by
+`RouteTurnsTest`. The iPhone follows on the owner's word (web first).
 
 ## Changing a rule
 
