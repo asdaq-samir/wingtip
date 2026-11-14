@@ -154,7 +154,7 @@ struct RadioCallBanner: View {
         } catch {
             // No signal: found by the engine among the places of the
             // regions kept for the air.
-            let offline = ClearanceLookup.offline(call.text, near: points, dep: plan.dep, stops: plan.stops, dest: plan.dest)
+            let offline = await ClearanceLookup.offline(call.text, near: points, dep: plan.dep, stops: plan.stops, dest: plan.dest)
             guard let ident = offline?.directFound?.ident else {
                 problem = "No signal, and “\(said)” is not in the regions kept for the air."
                 return

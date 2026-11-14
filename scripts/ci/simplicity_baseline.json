@@ -6,7 +6,7 @@
  "android_map_pane_state_lines": 58,
  "web_plan_workspace_lines": 76,
  "android_composables_calling_engine": 0,
- "ios_views_calling_engine": 2,
+ "ios_views_calling_engine": 0,
  "ios_try_engine_default": 7,
  "planner_airplane_figure_literals": 0,
  "gateway_http_client_builders": 2,

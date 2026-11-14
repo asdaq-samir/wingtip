@@ -55,13 +55,9 @@ final class AirportAnnotation: NSObject, MKAnnotation {
     let size: String?
 
     /// A field from the phone's own packs, whose reader carries no rank
-    /// yet: the engine asked with what the pin has (a landing field, its
-    /// use, its tower, the B or C it is the primary of), without the
-    /// longest hard runway the planner ranks a public field by.
+    /// yet: the engine asked with what the pin has (AirportPin.markRank).
     private static func fallback(_ pin: AirportPin) -> EngineContract.FieldMarkRankAnswer? {
-        guard pin.markOrder == nil || pin.markSize == nil else { return nil }
-        let primary = pin.primaryOf == "B" || pin.primaryOf == "C" ? pin.primaryOf : nil
-        return try? Engine.fieldMarkRank(siteType: "A", use: pin.isPrivate == true ? "PR" : "PU", towered: pin.towered, primaryOf: primary)
+        pin.markOrder == nil || pin.markSize == nil ? pin.markRank() : nil
     }
 
     /// How much larger the mark is drawn than the regular step (FieldMark.step).

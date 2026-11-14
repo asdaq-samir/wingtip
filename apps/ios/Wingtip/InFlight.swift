@@ -160,9 +160,10 @@ final class InFlight {
         fieldAskedAt = now
         fieldAsking?.cancel()
         fieldAsking = Task { [weak self] in
-            guard let field = try? await Planner.nearest(lat: at.latitude, lon: at.longitude, limit: 1).first,
+            guard let field = try? await Planner.nearestOrPacks(lat: at.latitude, lon: at.longitude, limit: 1).fields.first,
                   !Task.isCancelled else { return }
-            self?.fieldFt = field.elevationFt
+            // A pack's field has no elevation: the last one stands then.
+            if let ft = field.elevationFt { self?.fieldFt = ft }
         }
     }
 }

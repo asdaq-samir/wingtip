@@ -148,6 +148,22 @@ enum AirportWords {
 
     // MARK: Runways
 
+    /// The runway most nearly into the reported wind (AC 90-66C 11.5), the
+    /// engine's gonogo_runway_in_use over each runway's wind on the end it
+    /// favours: only where the wind chose it, not a calm field's most used.
+    /// Nil where the engine refuses (logged by Engine.rule): no runway is
+    /// then badged Best Wind, never a guessed one.
+    static func bestWind(_ runways: [Runway]) -> Int? {
+        let asked = runways.map { r in
+            EngineContract.Runway(closed: r.closed, surface: r.surface, lengthFt: r.lengthFt.map(Double.init),
+                                  runwayEnds: r.runwayEnds?.map { .init(ident: $0.ident, headingTrueDeg: $0.headingTrueDeg) },
+                                  wind: r.wind.map { .init(end: $0.end, headwindKt: $0.headwindKt, crosswindKt: $0.crosswindKt,
+                                                           gustCrosswindKt: $0.gustCrosswindKt, inUse: $0.inUse) })
+        }
+        guard !asked.isEmpty, let flown = try? Engine.gonogoRunwayInUse(runways: asked), flown.byWind else { return nil }
+        return flown.runway
+    }
+
     /// A runway's surface in words: OurAirports' "ASPH-G" is asphalt.
     static func surfaceName(_ surface: String?) -> String? {
         guard let surface, !surface.isEmpty else { return nil }
@@ -217,8 +233,9 @@ enum AirportWords {
     /// engine refuses (logged by Engine.rule): every frequency still shown.
     static func frequencyOrder(_ frequencies: [Frequency]) -> [Int] {
         let asked = frequencies.map { EngineContract.FieldFrequency(type: $0.type, description: $0.description, frequencyMhz: $0.frequencyMhz) }
-        let order = (try? Engine.frequenciesInOrder(frequencies: asked)) ?? []
-        return order.count == frequencies.count && Set(order) == Set(frequencies.indices) ? order : Array(frequencies.indices)
+        guard let order = try? Engine.frequenciesInOrder(frequencies: asked),
+              order.count == frequencies.count, Set(order) == Set(frequencies.indices) else { return Array(frequencies.indices) }
+        return order
     }
 
     /// A frequency as pilots write it: 120.7, 122.95, 124.475.
