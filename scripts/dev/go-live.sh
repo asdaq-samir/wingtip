@@ -109,6 +109,11 @@ if [ -n "$ip" ] && ! grep -q "^PHONE_BASE_URL=https://$ip:8443" "$main/.env" 2>/
   sh "$main/infra/local-https/make-certs.sh" "$ip" >/dev/null
   sed -i '' -E "s#^PHONE_BASE_URL=.*#PHONE_BASE_URL=https://$ip:8443#" "$main/.env"
 fi
+# The build's own log from this start on: a "built in" from an earlier
+# go-live, within the window, was once taken as this build's, and the
+# build was stopped before it had written the new bundle (the owner,
+# 2026-11-14: the old airport card still served after a go-live).
+started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 docker compose -p wingtip up -d --build --remove-orphans
 for _ in $(seq 1 40); do
   # Read whole, then tested: piped into `grep -q`, a match ended grep
@@ -131,7 +136,7 @@ if [ "${GO_LIVE_KEEP_WEB_BUILD:-0}" != 1 ]; then
     # `grep -q`, the match killed `logs` with SIGPIPE and pipefail failed
     # the pipeline, so "built in" was never taken as found and the wait ran
     # its whole ten minutes (the owner, 2026-11-14).
-    built=$(docker compose -p wingtip logs --since 20m web-build 2>/dev/null || true)
+    built=$(docker compose -p wingtip logs --since "$started" web-build 2>/dev/null || true)
     case $built in *"built in"*) break ;; esac
     sleep 10
   done
