@@ -45,13 +45,13 @@ import app.wingtipmaps.android.search.AirplaneHit
 import app.wingtipmaps.android.search.SearchGroups
 import app.wingtipmaps.android.search.SearchModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /** The airplane card's picker's model: the planner's airplane types
  *  (/api/aircraft-profiles), asked once, and again by Try Again. */

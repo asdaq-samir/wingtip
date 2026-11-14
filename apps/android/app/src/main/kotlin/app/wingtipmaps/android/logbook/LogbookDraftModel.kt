@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Problems
-import app.wingtipmaps.android.api.generated.LogbookDraft
-import app.wingtipmaps.android.api.generated.LogbookDraftAsk
 import app.wingtipmaps.android.api.SavedTrack
 import app.wingtipmaps.android.api.SavedTrackPoint
+import app.wingtipmaps.android.api.generated.LogbookDraft
+import app.wingtipmaps.android.api.generated.LogbookDraftAsk
 import app.wingtipmaps.android.api.generated.gateway.FlightSummaryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import dagger.assisted.Assisted
@@ -17,8 +17,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn

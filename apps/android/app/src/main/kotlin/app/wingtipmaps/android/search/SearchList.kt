@@ -30,9 +30,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
-import app.wingtipmaps.android.airplane.inAirWords
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.airplane.OwnRecord
+import app.wingtipmaps.android.airplane.inAirWords
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.NearestAirport
 import app.wingtipmaps.android.design.Loading

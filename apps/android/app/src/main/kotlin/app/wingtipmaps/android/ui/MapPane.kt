@@ -37,9 +37,9 @@ import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.airplane.PastFlightReplay
 import app.wingtipmaps.android.airplane.PastFlightReplayBar
+import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.AirportPin
 import app.wingtipmaps.android.atc.AtcCopilotHost
 import app.wingtipmaps.android.copilot.CopilotBanner
@@ -51,10 +51,10 @@ import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.GlideRing
 import app.wingtipmaps.android.flight.StartFlightAsk
-import app.wingtipmaps.android.map.AirspaceVolumes3d
 import app.wingtipmaps.android.map.AirportWeatherMarks
 import app.wingtipmaps.android.map.AirportWeatherMode
 import app.wingtipmaps.android.map.AirportWeatherStore
+import app.wingtipmaps.android.map.AirspaceVolumes3d
 import app.wingtipmaps.android.map.ChartMap
 import app.wingtipmaps.android.map.EmergencyLine
 import app.wingtipmaps.android.map.MapLayersStore
@@ -107,7 +107,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val routePoints = remember(state.course) { RoutePoints.of(state.course) }
     val selectedLeg by hiltViewModel<RouteLegModel>().selected.collectAsStateWithLifecycle()
     // The field whose card is open, ringed on the map.
-    val openField = hiltViewModel<AirportModel>().state.collectAsStateWithLifecycle().value.place?.ident
+    val openPlace = hiltViewModel<AirportModel>().state.collectAsStateWithLifecycle().value.place
+    val openField = openPlace?.ident
     val density = LocalDensity.current
     val template = remember(info, density.density) { Charts.template(info, density.density) }
     val base = remember(info) { Charts.base(info) }
@@ -261,6 +262,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             glide = { if (ringShown) inFlight.value.glide?.ring.orEmpty() else emptyList() },
             emergency = if (emergencyFrom != null && ownShip.on) EmergencyLine.of(emergency) else null,
             selectedField = openField,
+            selectedAt = openPlace?.let { it.lat to it.lon },
             plates = plates,
             follow = ownShip.following,
             onDragged = { ownShip.following = false },

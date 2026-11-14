@@ -24,11 +24,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.PathPoint
-import app.wingtipmaps.android.design.generated.WingtipSize
-import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.route.RouteLegs
 import app.wingtipmaps.android.route.RoutePoint
 import app.wingtipmaps.android.tiles.TileTemplate
+import app.wingtipmaps.android.ui.A11y
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -122,6 +121,7 @@ fun ChartMap(
     glide: () -> List<List<Double>> = { emptyList() },
     emergency: EmergencyLine? = null,
     selectedField: String? = null,
+    selectedAt: Pair<Double, Double>? = null,
     plates: PlatesShown = PlatesShown(),
     follow: Boolean = false,
     onDragged: () -> Unit = {},
@@ -171,6 +171,7 @@ fun ChartMap(
     LaunchedEffect(holder) { snapshotFlow { ring() }.collect(holder::glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
     LaunchedEffect(holder, selectedField) { holder.selectField(selectedField).also { MapTerrain.selected(selectedField) } }
+    LaunchedEffect(holder, selectedAt) { selectedAt?.let { (lat, lon) -> holder.showField(lat, lon) } }
     LaunchedEffect(holder, plates) { holder.plates(plates) }
 
     AndroidView(factory = { holder.view }, modifier = modifier)
@@ -221,6 +222,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private var trailJson = lineJson(emptyList())
     private var lastGlide: List<List<Double>> = emptyList()
     private var lastPoints: List<RoutePoint> = emptyList()
+    private val camera = MapCamera()
     private var lastLeg: Int? = null
     val plates = PlateLayer(density)
 
@@ -406,18 +408,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
             if (puck?.inset(doubleArrayOf(0.0, 0.0, 0.0, px.toDouble()), if (reduced) 0L else INSET_MS.toLong()) != true) {
                 CameraUpdateFactory.paddingTo(0.0, 0.0, 0.0, px.toDouble()).let { if (reduced) map.moveCamera(it) else map.easeCamera(it, INSET_MS) }
             }
-            credits(map, px)
+            MapCamera.noCredits(map)
         }
-    }
-
-    /** MapLibre's logo and its attribution button above the sheet, where
-     *  they can be read and tapped, rather than at the screen's foot under
-     *  it (the UI audit, 2026-11-09). */
-    private fun credits(map: MapLibreMap, sheetPx: Int) {
-        val gap = (WingtipSpace.Sm.value * density).toInt() + leftInset
-        val logoWidth = (WingtipSize.TapTarget.value * 2 * density).toInt()
-        map.uiSettings.setLogoMargins(gap, 0, 0, sheetPx + gap)
-        map.uiSettings.setAttributionMargins(gap + logoWidth, 0, 0, sheetPx + gap)
     }
 
     /** The map shown as one thing: the first time it is at rest with its
@@ -434,6 +426,12 @@ private class MapHolder(val view: MapView, private val density: Float) {
         lastPoints = points
         if (destroyed) return
         view.getMapAsync { map -> map.getStyle { style -> route(style, line, points) } }
+        view.getMapAsync { camera.fit(it, line, bottomInset, density, puck?.tracking == true, A11y.reducedMotion(view.context)) }
+    }
+
+    /** The open card's field brought into sight (MapCamera.showField). */
+    fun showField(lat: Double, lon: Double) {
+        if (!destroyed && puck?.tracking != true) view.getMapAsync { MapCamera.showField(it, lat, lon, A11y.reducedMotion(view.context)) }
     }
 
     fun selectLeg(leg: Int?) {
@@ -503,7 +501,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         map.setMinZoomPreference(MapStyle.glZoom(LEAFLET_MIN_ZOOM))
         map.uiSettings.isRotateGesturesEnabled = false
         map.uiSettings.isTiltGesturesEnabled = false
-        credits(map, bottomInset)
+        MapCamera.noCredits(map)
         map.cameraPosition = CameraPosition.Builder()
             .target(if (at != null) LatLng(at.first, at.second) else COUNTRY)
             .zoom(MapStyle.glZoom(if (at != null) LEAFLET_OPEN_ZOOM else LEAFLET_COUNTRY_ZOOM))
@@ -640,6 +638,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private fun edgeColour(night: Boolean): Int = if (night) Color.WHITE else Color.rgb(0x0b, 0x0f, 0x0a)
 
     private companion object {
+
         const val ROUTE = "route"
         const val ROUTE_EDGE = "route-edge"
         /** The chart's magenta, the web's COURSE_MAGENTA. */

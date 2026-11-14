@@ -1,7 +1,7 @@
 package app.wingtipmaps.android.search
 
-import app.wingtipmaps.android.airplane.OwnRecord
 import app.wingtipmaps.android.airplane.InAir
+import app.wingtipmaps.android.airplane.OwnRecord
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.generated.AircraftProfileSummary
 import app.wingtipmaps.android.api.generated.AircraftRegistration

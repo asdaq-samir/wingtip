@@ -2,8 +2,6 @@ package app.wingtipmaps.android.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.wingtipmaps.android.api.generated.AircraftRegistration
-import app.wingtipmaps.android.api.registered
 import app.wingtipmaps.android.airplane.InAir
 import app.wingtipmaps.android.airplane.OwnRecord
 import app.wingtipmaps.android.api.AirportSuggestion
@@ -12,7 +10,9 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.findAirplane
 import app.wingtipmaps.android.api.generated.AircraftProfileSummary
+import app.wingtipmaps.android.api.generated.AircraftRegistration
 import app.wingtipmaps.android.api.nearest
+import app.wingtipmaps.android.api.registered
 import app.wingtipmaps.android.api.searchWithFixes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException

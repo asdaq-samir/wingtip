@@ -147,9 +147,7 @@ object MapStyle {
     /** The pictures the layers ask for, by id (OverlayPictures draws them). */
     fun airspaceTab(cls: String) = "airspace|tab|$cls"
     const val NAV_TAG = "nav|tag"
-    /** The tiles' `airspace`, the class at the field's surface
-     *  (services/jobs/charts/airports.py), and "" where an older archive
-     *  has none: the unknown grey ring. */
+    /** The tiles' `airspace`, the surface class (charts/airports.py); "" for an older archive's, the grey ring. */
     val SPACES = listOf("B", "C", "D", "E", "G", "")
     val USES = listOf("", "private", "military", "heliport")
 
@@ -533,11 +531,8 @@ object MapStyle {
         return listOf(mark, idents)
     }
 
-    /** How much larger each of the engine's size steps is drawn
-     *  (field_mark_rank's `size`, the tiles' `size`), as on the owner's
-     *  canvas (option I, 2026-11-14) and the web's MARK_SIZE: a Class B's
-     *  field 1.5 times an ordinary towered field, a Class C's 1.2, a small
-     *  field 0.82; an older archive's, with none, 1. */
+    /** Each of the engine's size steps (field_mark_rank's `size`, the tiles'), as the web's MARK_SIZE
+     *  (option I, 2026-11-14): a Class B's field 1.5, a Class C's 1.2, small 0.82, else 1. */
     private val MARK_SIZE = e("match", e("get", "size"), "largest", 1.5, "larger", 1.2, "small", 0.82, 1)
     private val AIRPORT_USE = e(
         "case",
@@ -589,9 +584,7 @@ object MapStyle {
         put("filter", airportsFilter(layers))
         putJsonObject("layout") {
             put("icon-image", airportIcon(weather))
-            // Smaller out at a state's width, a field's own size closer in,
-            // following a pinch frame by frame; at each zoom the field's own
-            // size step (MARK_SIZE), the biggest largest.
+            // Smaller out at a state's width, larger closer in, each times its field's step (MARK_SIZE).
             put("icon-size", e("interpolate", e("linear"), e("zoom"), farthest, e("*", 0.7, MARK_SIZE), glZoom(10.0), MARK_SIZE, glZoom(13.0), e("*", 1.25, MARK_SIZE)))
             put("icon-allow-overlap", false)
             // Out at a few states a mark's room is 27 px; closer in, its own.

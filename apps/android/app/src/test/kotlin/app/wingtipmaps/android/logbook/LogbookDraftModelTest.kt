@@ -1,10 +1,10 @@
 package app.wingtipmaps.android.logbook
 
 import app.wingtipmaps.android.MainRule
+import app.wingtipmaps.android.api.SavedTrack
 import app.wingtipmaps.android.api.generated.DraftTrackPoint
 import app.wingtipmaps.android.api.generated.LogbookDraft
 import app.wingtipmaps.android.api.generated.LogbookDraftAsk
-import app.wingtipmaps.android.api.SavedTrack
 import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
 import app.wingtipmaps.android.api.generated.gateway.FlightSummaryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
