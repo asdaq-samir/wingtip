@@ -84,11 +84,12 @@ class FlightsModel(private val source: SavedFlights) : ViewModel() {
     companion object {
         private val SAVED_ON = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.US)
 
-        /** "saved 14 Nov 2026", in the phone's zone: saved, not filed, as
-         *  the app can really file with Flight Service (the code audit's
+        /** "14 Nov 2026", in the phone's zone, which the screen says as
+         *  "Saved 14 Nov 2026" (R.string.saved_on): saved, not filed, as the
+         *  app can really file with Flight Service (the code audit's
          *  CODE-14, the web's and the iPhone's words). */
         fun savedOn(createdAt: String, zone: ZoneId = ZoneId.systemDefault()): String? =
-            runCatching { "saved " + SAVED_ON.format(Instant.parse(createdAt).atZone(zone)) }.getOrNull()
+            runCatching { SAVED_ON.format(Instant.parse(createdAt).atZone(zone)) }.getOrNull()
 
         /** The flight's route: its ends and its stops between. */
         fun route(f: FlightSummaryDto): String = (listOf(f.departureIdent) + f.stops + f.destinationIdent).joinToString(" → ")
@@ -123,7 +124,7 @@ fun FlightsCard(plan: Plan, exit: CardExit, onUsed: () -> Unit, model: FlightsMo
                         onUsed()
                     },
                     supportingContent = {
-                        Text(listOfNotNull(route.takeIf { f.name != null }, FlightsModel.savedOn(f.createdAt), f.totalDistanceNm?.let(Format::distance)).joinToString(" · "))
+                        Text(listOfNotNull(route.takeIf { f.name != null }, FlightsModel.savedOn(f.createdAt)?.let { stringResource(R.string.saved_on, it) }, f.totalDistanceNm?.let(Format::distance)).joinToString(" · "))
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     content = { Text(f.name ?: route, style = MaterialTheme.typography.titleMedium) },

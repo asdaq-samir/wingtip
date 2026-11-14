@@ -14,15 +14,15 @@ class AirplaneStatusTest {
 
     @Test
     fun checkingThenInTheAirToTheHundredFeet() {
-        assertEquals("Checking whether it's in the air…" to false, statusLine(InAir.Checking, null, now))
-        assertEquals("In the air · 4,500 ft · 108 kt" to false, statusLine(InAir.Flying("a1b2c3", 4_480.0, 108.4), null, now))
+        assertEquals(Status.Checking, statusLine(InAir.Checking, null, now))
+        assertEquals(Status.Flying("4,500 ft", 108), statusLine(InAir.Flying("a1b2c3", 4_480.0, 108.4), null, now))
     }
 
     @Test
     fun onTheGroundSaysWhereItLandedOrThatNoneWasHeard() {
-        assertEquals("On the ground · landed KOSH 2 h ago" to false, statusLine(InAir.Ground, listOf(flight(now / 1000.0 - 7200)), now))
-        assertEquals("Not heard in the last 6 weeks" to false, statusLine(InAir.Ground, emptyList(), now))
-        assertEquals("Not in the air now" to false, statusLine(InAir.Ground, null, now))
+        assertEquals(Status.Landed("KOSH", Ago(Ago.Unit.HOURS, 2)), statusLine(InAir.Ground, listOf(flight(now / 1000.0 - 7200)), now))
+        assertEquals(Status.NoneHeard, statusLine(InAir.Ground, emptyList(), now))
+        assertEquals(Status.Ground, statusLine(InAir.Ground, null, now))
     }
 
     @Test
