@@ -28,7 +28,10 @@ pub type Ends = Vec<(Option<String>, Option<f64>)>;
 
 /// The least crosswind a field's runways leave in a wind: the end it is
 /// on (None for a variable wind, which favours none) and the knots,
-/// steady or gust, whichever is more.
+/// steady or gust, whichever is more, unrounded: the map's arrow turns red
+/// on it against the demonstrated crosswind, and a 10.4 kt crosswind
+/// rounded to 10 would never pass a 10 kt figure (the aviation audit's
+/// AV-10, as the Go/No-Go judges it, runway_crosswind_judged_kt).
 #[derive(Clone, Debug, PartialEq)]
 pub struct LeastCrosswind {
     pub end: Option<String>,
@@ -60,7 +63,10 @@ pub fn least_crosswind(runways: &[Ends], report: &Reported, variation_deg: f64) 
     let mut best: Option<LeastCrosswind> = None;
     for ends in runways {
         let Some(f) = favoured_end(ends, Some(report), variation_deg, None) else { continue };
-        let kt = steady_or_gust_kt(f.crosswind_kt, f.gust_crosswind_kt);
+        // The unrounded crosswind, steady or gust whichever is more
+        // (favoured_end's crosswind_exact_kt), not the whole knots the
+        // runway's wind is written in.
+        let kt = f.crosswind_exact_kt;
         // The first runway listed keeps a tie: the data's order, the same
         // answer on every host.
         if best.as_ref().is_none_or(|b| kt < b.crosswind_kt) {
@@ -140,13 +146,16 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 Some(l) => {
                     let mut out = String::from("{\"end\":");
                     json::opt_string(&mut out, l.end.as_deref());
-                    // Whole knots, as the runways' winds are rounded, written
-                    // as the planner's ints are ("17", not "17.0").
+                    // Unrounded, to a millionth of a knot: far below any
+                    // figure it is held against, and the same on every host
+                    // whatever the last bit its sine came out at. Written as
+                    // the planner's ints are where whole ("15", not "15.0").
                     out.push_str(",\"crosswind_kt\":");
-                    if l.crosswind_kt.fract() == 0.0 && l.crosswind_kt.abs() < 1e15 {
-                        out.push_str(&format!("{}", l.crosswind_kt as i64));
+                    let kt = (l.crosswind_kt * 1e6).round() / 1e6;
+                    if kt.fract() == 0.0 && kt.abs() < 1e15 {
+                        out.push_str(&format!("{}", kt as i64));
                     } else {
-                        json::number(&mut out, l.crosswind_kt);
+                        json::number(&mut out, kt);
                     }
                     out.push('}');
                     out
@@ -185,11 +194,24 @@ mod tests {
     #[test]
     fn the_runway_most_nearly_along_the_wind_leaves_the_least() {
         // 220 at 18 gusting 26 at a field with 18/36 and 27/09 (true): on
-        // 18 the wind is 40 degrees off, 18 sin 40 = 11.6 -> 12, the gust's
-        // 26 sin 40 = 16.7 -> 17; on 27 it is 50 off, more.
+        // 18 the wind is 40 degrees off, 18 sin 40 = 11.6, the gust's
+        // 26 sin 40 = 16.71; on 27 it is 50 off, more.
         let runways = [rwy("18", 180.0, "36", 360.0), rwy("27", 270.0, "09", 90.0)];
         let l = least_crosswind(&runways, &wind(Some(220.0), 18.0, Some(26.0)), 0.0).unwrap();
-        assert_eq!(l, LeastCrosswind { end: Some("18".into()), crosswind_kt: 17.0 });
+        assert_eq!(l.end.as_deref(), Some("18"));
+        assert!((l.crosswind_kt - 26.0 * 40f64.to_radians().sin()).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_crosswind_just_past_the_demonstrated_turns_the_arrow_red() {
+        // 270 at 10.4 straight across 18/36: 10.4 kt, which whole knots
+        // would read 10 and never past a 10 kt demonstrated crosswind
+        // (the aviation audit's AV-10).
+        let l = least_crosswind(&[rwy("18", 180.0, "36", 360.0)], &wind(Some(270.0), 10.4, None), 0.0).unwrap();
+        assert!((l.crosswind_kt - 10.4).abs() < 1e-9);
+        assert_eq!(wind_arrow(Some(10.4), None, Some(l.crosswind_kt), Some(10.0)), (true, true));
+        let calm_side = least_crosswind(&[rwy("18", 180.0, "36", 360.0)], &wind(Some(270.0), 9.6, None), 0.0).unwrap();
+        assert_eq!(wind_arrow(Some(10.0), None, Some(calm_side.crosswind_kt), Some(10.0)), (true, false));
     }
 
     #[test]

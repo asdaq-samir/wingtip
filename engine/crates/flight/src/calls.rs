@@ -195,6 +195,17 @@ pub fn field_military(name: &str, v: &Value) -> Result<String, String> {
     Ok(out)
 }
 
+/// `runway_hard_surface`: whether NASR APT_RWY's SURFACE_TYPE_CODE is a
+/// hard surface (field.rs's hard_surface): `{"hard": bool}`.
+pub fn runway_hard_surface(name: &str, v: &Value) -> Result<String, String> {
+    let code = match v.get("surface") {
+        None | Some(Value::Null) => "",
+        Some(Value::String(s)) => s.as_str(),
+        Some(_) => return Err(format!("{name}: \"surface\" is not a string or null")),
+    };
+    Ok(format!("{{\"hard\":{}}}", field::hard_surface(code)))
+}
+
 /// `field_mark_rank`: what a field's map mark is first drawn at and kept
 /// by where marks overlap and drawn at (field.rs's mark_rank):
 /// `{"tier", "order", "size"}`.

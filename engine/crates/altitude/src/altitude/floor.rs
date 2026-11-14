@@ -194,6 +194,31 @@ pub fn published(mea_ft: Option<f64>, gnss_mea_ft: Option<f64>) -> Option<f64> {
     mea_ft.filter(|&f| f != 0.0).or(gnss_mea_ft.filter(|&f| f != 0.0))
 }
 
+/// The floor of a leg flown along a path other than its own straight
+/// line -- a departure (SID), an arrival (STAR) or an approach flown in its
+/// place (the planner's procedure paths): `floors`, the leg's own first,
+/// then the floor under each piece of the path, read the same way. The
+/// leg keeps the highest of them, the first on a tie (its own), and the
+/// lowest ground under any of them, where they carry one (VFR's: 3,000 ft
+/// above it is where 14 CFR 91.159 begins). The airplane is over every
+/// piece of the path at its cruising altitude until it comes down, so the
+/// ground under all of it must be cleared: 91.119's clearances under VFR,
+/// 91.177(a)(2)'s under IFR. A published procedure's own altitudes
+/// (91.177(a)(1), Part 97) can be lower, so this errs high, the safer side
+/// (the aviation audit's AV-2, 2026-11-14). Returns the index of the
+/// bounding floor and that lowest ground; None for no floors.
+pub fn along_path(floors: &[(f64, Option<f64>)]) -> Option<(usize, Option<f64>)> {
+    let first = floors.first()?;
+    let mut bound = 0;
+    for (i, f) in floors.iter().enumerate() {
+        if f.0 > floors[bound].0 {
+            bound = i;
+        }
+    }
+    let lowest = floors.iter().filter_map(|f| f.1).fold(first.1, |low, g| Some(low.map_or(g, |l: f64| l.min(g))));
+    Some((bound, lowest))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -237,5 +262,17 @@ mod tests {
         let rockies = ifr(&[((39.7, -105.5), (39.7, -105.0), 11040.0)], &[]);
         assert_eq!(rockies[0].floor_ft, 13100.0);
         assert!(rockies[0].mountainous);
+    }
+
+    #[test]
+    fn a_leg_flown_along_a_path_keeps_the_highest_floor_under_it() {
+        // The leg's own line over a valley (2,000), the arrival's pieces
+        // over a ridge (6,500) and a lake (1,800): the ridge bounds it,
+        // and the lowest ground is the lake's 600.
+        let floors = [(2000.0, Some(900.0)), (6500.0, Some(4200.0)), (1800.0, Some(600.0))];
+        assert_eq!(along_path(&floors), Some((1, Some(600.0))));
+        // A tie keeps the leg's own; IFR's floors carry no lowest ground.
+        assert_eq!(along_path(&[(3000.0, None), (3000.0, None)]), Some((0, None)));
+        assert_eq!(along_path(&[]), None);
     }
 }

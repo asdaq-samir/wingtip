@@ -330,7 +330,10 @@ Then the callers switch to the name and the old copy is deleted.
   14 CFR 91.119's clearances (`vfr_floors`, asked once a leg with the
   ground and obstacles under that leg as flown, wingtip.terrain), or 91.177(a)'s minimum IFR
   altitude over Part 95's mountainous areas (`ifr_floors`, the areas drawn
-  in `mountainous.rs`), or an airway's MEA -- the band under the Class B
+  in `mountainous.rs`), or an airway's MEA; a leg flown by a departure, an
+  arrival or an approach keeps the highest of its own floor and the floors
+  under the procedure's path (`floor_along_path`, the aviation audit's
+  AV-2) -- the band under the Class B
   shelf (only Class B bounds it: Class B takes a clearance, 91.131(a)(1),
   while Class C and D take two-way radio communication, 91.130(c)(1) and
   91.129(c)(1), so they are calls to make, not airspace to fly under), 91.155's distance under the forecast clouds and the service
@@ -362,7 +365,8 @@ Then the callers switch to the name and the old copy is deleted.
 - The map's airport weather marks are the engine's too (`crates/brief`'s
   runway::marks, the owner's pick of 2026-11-10): `least_crosswind` (of a
   field's runways, each on the end the wind favours, the least
-  crosswind, steady or gust; a variable wind all crosswind, AIM 7-1-28),
+  crosswind, steady or gust, unrounded so the arrow is judged on the
+  crosswind itself, AV-10; a variable wind all crosswind, AIM 7-1-28),
   `wind_arrow` (whether the wind earns its arrow, 10 kt or more or
   gusting, and whether it is red: past the picked airplane's maximum
   demonstrated crosswind, the POH's, never with no airplane or no
@@ -409,8 +413,12 @@ Then the callers switch to the name and the old copy is deleted.
   the longer hard runway first in each, and its `size`, the step the mark
   is drawn at (largest for a Class B's field, larger for a Class C's). The overlays job asks it for
   every field and the tiles carry `order` as `rank`, the key every app's
-  map sorts its marks by, and `size`; the web never asks it, so its WebAssembly has
-  none of it.
+  map sorts its marks by, and `size`; the planner's /api/airports/in-view,
+  which the iPhone draws its marks from, carries the same as `mark_order`
+  and `mark_size` (wingtip.field_marks). Which runway is hard is
+  `runway_hard_surface` (NASR APT_RWY's SURFACE_TYPE_CODE, the Chart
+  User's Guide's hard-surfaced runways), one copy for both. The web never
+  asks either, so its WebAssembly has none of it.
 - `emergency_guidance` (`crates/radio`): with no airplane picked, an
   emergency's general good practice only, each item with its source
   (FAA-H-8083-3C ch. 18; AIM 6-1-1, 6-1-2, 6-2-1, 6-2-2, 6-3-1, 6-3-2;

@@ -787,6 +787,12 @@ fun Engine.flightCategory(ceilingFt: Double? = null, visibilitySm: Double? = nul
     rule("flight_category", EngineContract.FlightCategoryInput(ceilingFt = ceilingFt, visibilitySm = visibilitySm, ceilingUnknown = ceilingUnknown))
 
 /**
+ * The floor of a leg flown along a path other than its own line -- a departure (SID), an arrival (STAR) or an approach flown in its place: of the leg's own floor and the floors under each piece of the path (vfr_floors' or ifr_floors' answers, the leg's own first), the highest, the leg's own on a tie, with the lowest ground under any of them. The airplane is over all of the path at its cruising altitude until it comes down, so 14 CFR 91.119's clearances (VFR) or 91.177(a)(2)'s (IFR) hold over all of it; a procedure's published altitudes (91.177(a)(1), Part 97) may be lower, so this errs high (the aviation audit's AV-2).
+ */
+fun Engine.floorAlongPath(floors: List<EngineContract.FloorAlongPathInputFloorsItem>): Result<EngineContract.FloorAlongPathAnswer> =
+    rule("floor_along_path", EngineContract.FloorAlongPathInput(floors = floors))
+
+/**
  * What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.
  */
 fun Engine.floorCaution(segment: Map<String, JsonElement>, altitudeFt: Double): Result<String?> =
@@ -1931,6 +1937,12 @@ fun Engine.runwayEndKey(ident: String? = null): Result<String> =
  */
 fun Engine.runwayEndsTraffic(endHeadings: List<List<JsonElement>>? = null, variationDeg: Double, right: List<String>? = null): Result<List<EngineContract.RunwayEndsTrafficAnswerItem>> =
     rule("runway_ends_traffic", EngineContract.RunwayEndsTrafficInput(endHeadings = endHeadings, variationDeg = variationDeg, right = right))
+
+/**
+ * Whether a runway's surface is hard, as the sectional's airport symbol counts it (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: "hard-surfaced runways"), from NASR APT_RWY.csv's SURFACE_TYPE_CODE: ASPH, CONC, PEM, PFC and BRICK are; a mixed surface ("ASPH-TURF") only where every part is hard; TRTD (treated) goes with a hard one and is not one alone. The longest hard runway is what field_mark_rank's hard_ft is: the cycle pack's overlays and the planner's map list both read it here.
+ */
+fun Engine.runwayHardSurface(surface: String? = null): Result<EngineContract.RunwayHardSurfaceAnswer> =
+    rule("runway_hard_surface", EngineContract.RunwayHardSurfaceInput(surface = surface))
 
 /**
  * Each runway's favoured end, the planner's RunwayWind or null.

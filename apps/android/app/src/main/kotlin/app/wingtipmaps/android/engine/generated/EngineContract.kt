@@ -4052,6 +4052,36 @@ object EngineContract {
         val ceilingUnknown: Boolean? = null,
     )
 
+    /**
+     * The bounding floor as it came, its lowest_ground_ft (where it has one) the least of all of them.
+     */
+    @Serializable
+    data class FloorAlongPathAnswer(
+        @SerialName("floor_ft")
+        val floorFt: Double,
+        @SerialName("lowest_ground_ft")
+        val lowestGroundFt: Double? = null,
+    )
+
+    @Serializable
+    data class FloorAlongPathInput(
+        /**
+         * The leg's own floor first, then the floor under each piece of the path: vfr_floors' or ifr_floors' answers, as they came.
+         */
+        val floors: List<EngineContract.FloorAlongPathInputFloorsItem>,
+    )
+
+    @Serializable
+    data class FloorAlongPathInputFloorsItem(
+        @SerialName("floor_ft")
+        val floorFt: Double,
+        /**
+         * VFR's lowest ground under the piece; none under IFR.
+         */
+        @SerialName("lowest_ground_ft")
+        val lowestGroundFt: Double? = null,
+    )
+
     @Serializable
     data class FloorCautionInput(
         /**
@@ -6781,7 +6811,7 @@ object EngineContract {
          */
         val end: String? = null,
         /**
-         * Knots, unsigned, steady or gust whichever is more.
+         * Knots, unsigned, steady or gust whichever is more, unrounded (to a millionth of a knot), so the map's arrow is judged against the demonstrated crosswind on the crosswind itself, not whole knots (AV-10).
          */
         @SerialName("crosswind_kt")
         val crosswindKt: Double,
@@ -11175,6 +11205,19 @@ object EngineContract {
          * Ends' keys flown with right traffic.
          */
         val right: List<String>? = null,
+    )
+
+    @Serializable
+    data class RunwayHardSurfaceAnswer(
+        val hard: Boolean,
+    )
+
+    @Serializable
+    data class RunwayHardSurfaceInput(
+        /**
+         * NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or "" for none.
+         */
+        val surface: String? = null,
     )
 
     @Serializable
