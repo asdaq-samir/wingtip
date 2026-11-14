@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, type RefObject } from "react";
 import type { MapInsets } from "../../lib/mapChrome";
 import { FIT_MARGIN } from "../../lib/map/clear";
 import { picked, pilotMoved } from "../../lib/map/gl/pilotCamera";
+import { useOwnShip } from "../../lib/map/position/ownShip";
 import { useSheetTop } from "../sheet/sheetTopSlot";
 import { DRAWER_MS } from "../sheet/insets";
 import { drawerEasing } from "./drawerEasing";
@@ -58,8 +59,16 @@ export function useTappedInSight(
 ) {
   const tapped = useRef<{ at: LngLatLike; when: number } | null>(null);
   const note = useCallback((at: LngLatLike) => {
-    // A tap is a pick: the map is the app's to move again (pilotCamera).
+    // A tap is a pick: the map is the app's to move again (pilotCamera),
+    // and own ship stops pulling it back, as a place flown to stops it
+    // (GlMapShell's flyTo) and as Apple Maps' tracking ends at a place
+    // picked. Left following, the GPS's next fix (one a second on a phone)
+    // eased the map back to own ship just after this brought the tap into
+    // sight (the owner's iPhone, 2026-11-14: "When I tap the EON ... It
+    // flickers").
     picked();
+    const ownShip = useOwnShip.getState();
+    if (ownShip.enabled && ownShip.follow) ownShip.setFollow(false);
     tapped.current = { at, when: performance.now() };
   }, []);
   // A mark drawn as an element over the chart (a checkpoint's numbered

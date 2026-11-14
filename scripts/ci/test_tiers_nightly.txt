@@ -102,6 +102,7 @@ subscription.spec.ts
 sunlight.spec.ts
 switch.spec.ts
 tab-consistency.spec.ts
+tap-in-sight.spec.ts
 terrain.spec.ts
 tiles.spec.ts
 tracking.spec.ts
