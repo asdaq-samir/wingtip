@@ -101,9 +101,10 @@ integration branch"):
   push: a compile or type check of what changed, the generated files it
   needs, and **the change's own tests, run narrowly** (decision 0042):
   `vitest <files>` or `--changed`, `pytest <paths>`, `cargo test -p
-  <crate>`, `playwright test <spec>` for a spec written or changed,
-  `gradlew … --tests <class>`, `xcodebuild … -only-testing:<class>`. A few
-  minutes, never a whole suite.
+  <crate>`, `gradlew … --tests <class>`, `xcodebuild … -only-testing:<class>`.
+  A few minutes, never a whole suite. No browser run while coding (the
+  owner, 2026-11-14): a spec is written with the code and runs at the
+  wave's validation on CI.
 - Work that builds on an unmerged branch merges that branch in; nothing
   waits for a merge.
 - **The order, a hard rule** (the owner, 2026-11-14: "make all the code
@@ -233,7 +234,8 @@ without it).
   gateway), then `npm run types` and `scripts/build/api-models-apps.sh`;
   commit them all.
 - **Browser tests** (Playwright, `apps/web/e2e`) need the whole stack:
-  write or update the spec for a change a pilot sees, with the code.
+  write or update the spec for a change a pilot sees, with the code, and
+  leave its run to the wave's validation on CI (the owner, 2026-11-14).
   Main's push runs only `@smoke` (and `@flight-critical`) after the merge,
   one test per journey that proves it end to end; the rest run at night. A new spec tags its one `@smoke` or is
   listed in `scripts/ci/test_tiers_nightly.txt`.
