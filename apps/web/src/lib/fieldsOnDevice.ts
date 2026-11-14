@@ -33,7 +33,8 @@ export function fieldsNear(index: AirportIndex, at: LatLon, limit: number): Devi
   const near: [number, number][] = [];
   for (let row = 0; row < index.rows.length; row++) {
     const lat = index.lat[row]!;
-    if (Number.isNaN(lat) || index.rows[row]![4] > LANDING_SIZE_MAX) continue;
+    // Never a field NASR lists as closed (decision 0043).
+    if (Number.isNaN(lat) || index.rows[row]![4] > LANDING_SIZE_MAX || index.closed[row]) continue;
     near.push([(lat - at.lat) ** 2 + ((index.lon[row]! - at.lon) * shrink) ** 2, row]);
   }
   near.sort((a, b) => a[0] - b[0]);

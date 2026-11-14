@@ -82,7 +82,7 @@ function SearchRows({
           {fields.map((r) => (
             <AirportRow
               key={r.ident}
-              airport={{ ident: r.ident, name: r.name, municipality: r.municipality }}
+              airport={{ ident: r.ident, name: r.name, municipality: r.municipality, closed: r.closed }}
               onSelect={() => onAirport({ ident: r.ident, name: r.name, municipality: r.municipality })}
             />
           ))}
@@ -115,7 +115,7 @@ export function AirportRow({
   testId,
   value,
 }: {
-  airport: RecentAirport;
+  airport: ShownAirport;
   recent?: boolean;
   waypoint?: boolean;
   onSelect: () => void;
@@ -137,6 +137,11 @@ export function AirportRow({
   );
 }
 
+/** An airport as a row shows it: with, where NASR lists it as closed, the
+ *  engine's label ("Closed indefinitely"), said before its town so a pilot
+ *  never takes it for an open field (decision 0043). */
+export type ShownAirport = RecentAirport & { closed?: string | null };
+
 /** What an airport's row shows, whatever list it is in (AirportRow here,
  *  the route box's suggestions): the icon and the two lines. Its magenta
  *  is fill and stroke, not the text colour: a row's highlight recolours
@@ -146,7 +151,7 @@ export function AirportRowFace({
   recent = false,
   waypoint = false,
 }: {
-  airport: RecentAirport;
+  airport: ShownAirport;
   recent?: boolean;
   waypoint?: boolean;
 }) {
@@ -163,8 +168,28 @@ export function AirportRowFace({
         <span className={cn("block truncate", TEXT.row)}>
           <span className="font-mono font-bold">{airport.ident}</span> · {airport.name}
         </span>
-        {airport.municipality && <span className={cn("block truncate text-muted-foreground", TEXT.detail)}>{airport.municipality}</span>}
+        {(airport.closed || airport.municipality) && (
+          <span className={cn("block truncate text-muted-foreground", TEXT.detail)}>
+            <AirportDetail closed={airport.closed} municipality={airport.municipality} />
+          </span>
+        )}
       </span>
+    </>
+  );
+}
+
+/** An airport's grey line: where NASR lists it as closed, the engine's
+ *  label first, in the warning ink, then its town. */
+export function AirportDetail({ closed, municipality }: { closed?: string | null; municipality?: string | null }) {
+  return (
+    <>
+      {closed && (
+        <span className="font-semibold text-destructive-ink" data-testid="airport-closed">
+          {closed}
+        </span>
+      )}
+      {closed && municipality && " · "}
+      {municipality}
     </>
   );
 }

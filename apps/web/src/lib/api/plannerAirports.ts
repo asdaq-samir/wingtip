@@ -18,8 +18,9 @@ import type {
 
 /** The airport index's shape (wingtip.airports.search_index), in its address
  *  so a day's copy in the browser of an older shape is not read as this
- *  one: 2, each field's place after its size (2026-10-22). */
-const INDEX_VERSION = 2;
+ *  one: 2, each field's place after its size (2026-10-22); 3, the closed
+ *  fields' labels beside the rows (2026-11-13, decision 0043). */
+const INDEX_VERSION = 3;
 
 /** The planner's calls for airports and places (./client's `api`): the search,
  *  an airport's card and its procedures, the fields near a point or in view. */
@@ -61,7 +62,7 @@ export const plannerAirports = {
     // a pilot types.
     planner
       .GET("/api/airports/index", { params: { query: { v: INDEX_VERSION } }, priority: "low" })
-      .then((r) => r.data as unknown as { airports: unknown[][] }),
+      .then((r) => r.data as unknown as { airports: unknown[][]; closed?: Record<string, string> }),
 
   /** The same answer's bytes, unread, into the browser's cache and the
    *  service worker's, where airportIndex finds them when a pilot types:

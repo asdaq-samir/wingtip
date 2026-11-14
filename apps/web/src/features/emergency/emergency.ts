@@ -50,6 +50,8 @@ export function bestFields(
     towered: f.towered,
     private: f.private,
     military: f.military,
+    // NASR's status: the engine never ranks a closed field (decision 0043).
+    status: f.status ?? null,
   }));
   return ranked(fields, data.airplane ?? null, data.wind ?? null, fix, variationDeg);
 }

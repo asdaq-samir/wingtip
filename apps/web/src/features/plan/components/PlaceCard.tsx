@@ -69,9 +69,9 @@ function distanceOf(geo: Geo | null, place: AirportPlace, from: { point: LatLon;
  *  public-use one (the owner, 2026-11-11: "For private airport, just say
  *  private in () next to airport name instead of a second line"): one the
  *  armed services own, or a civil airport sharing it (NASR APT_BASE), or
- *  a private one -- not a description, a field to keep out of. */
+ *  a private one; first, one NASR lists as closed, its label (decision 0043). */
 function kindOf(place: AirportPlace | undefined): string | null {
-  if (!place) return null;
+  if (!place || place.closed) return place?.closed ?? null;
   return place.military === "military" ? "Military" : place.military === "joint" ? "Joint use" : place.private ? "Private" : null;
 }
 

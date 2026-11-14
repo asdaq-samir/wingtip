@@ -44,6 +44,7 @@ describe("the phone's own airport search", () => {
       municipality: "Grayslake",
       region: "US-IL",
       kind: "airport",
+      closed: null,
     });
   });
 
@@ -59,6 +60,38 @@ describe("the phone's own airport search", () => {
     expect(searchIndex(placed, "campbell", 8, [{ lat: 42.3, lon: -88.0 }]).map((r) => r.ident)).toEqual(["C81", "06XS", "1A3"]);
     // Still found by its other ident, after the place.
     expect(searchIndex(placed, "KC81")[0]!.ident).toBe("C81");
+  });
+});
+
+describe("a field NASR lists as closed (decision 0043)", () => {
+  // The planner's index sends each closed field's label beside the rows
+  // (wingtip.airports.search_index's `closed`, the engine's field_status).
+  const index = indexOf(
+    [
+      ["9II2", "Campbell Nelund Field", "Grayslake", "IL", 2, 42.3, -88.06],
+      ["C81", "Campbell Airport", "Grayslake", "IL", 2, 42.32, -88.07, "KC81"],
+    ],
+    { "9II2": "Closed indefinitely" },
+  );
+
+  test("is found by its ident, labelled", () => {
+    expect(searchIndex(index, "9II2")).toEqual([
+      {
+        ident: "9II2",
+        name: "Campbell Nelund Field",
+        municipality: "Grayslake",
+        region: "US-IL",
+        kind: "airport",
+        closed: "Closed indefinitely",
+      },
+    ]);
+  });
+
+  test("comes after the open fields it is found with, never first", () => {
+    expect(searchIndex(index, "campbell").map((r) => [r.ident, r.closed])).toEqual([
+      ["C81", null],
+      ["9II2", "Closed indefinitely"],
+    ]);
   });
 });
 
