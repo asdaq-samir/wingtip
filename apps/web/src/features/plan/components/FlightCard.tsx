@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { ChartLine, Crosshair, Route } from "lucide-react";
+import { ChartLine, Crosshair } from "lucide-react";
 import { cn } from "cn";
 import { SheetCard } from "../../../components/SheetCard";
 import { CardTitle } from "../../../components/CardTitle";
@@ -8,9 +8,7 @@ import FlightWhat from "./FlightWhat";
 import { CardPictures, type CardSlide } from "../../../components/CardPictures";
 import { PhotoSlide } from "../../../components/PictureSlides";
 import { FavoriteTile } from "../../../components/FavoriteTile";
-import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { PillSection } from "../../../components/Favorites";
-import { RowBadge } from "../../../components/RowBadge";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { useGeo } from "../../../lib/geo";
@@ -19,24 +17,31 @@ import { useTracking } from "../../../lib/map/position/tracking";
 import { alertsLine } from "../../../lib/aircraftAlerts";
 import { planePhotoQuery } from "../lib/planePhoto";
 import { airportQuery, flightQuery, routeQuery } from "../../../lib/queryClient";
-import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
 import { reportedAltitude } from "../../../lib/format";
 import AircraftAlertMenu from "./AircraftAlertMenu";
-import FaaRegistration from "./FaaRegistration";
 import { squawkMeaning } from "../lib/squawks";
 import PastFlights from "./PastFlights";
 import { shortWhen, when } from "./pastFlightFormat";
 import { pastFlightQuery, pastFlightsQuery } from "./pastFlightsQuery";
 import { CardAction } from "../../../components/CardAction";
-import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
 import { shareOrCopy } from "../../../lib/share";
 import { aircraftKind } from "../../../lib/aircraftKind";
-import { departuresQuery } from "../../../lib/liveReports";
-import { departureLine } from "../lib/departureWords";
 import { useShownStore, useShown } from "../../../lib/shown";
 import { FlightNow, LiveSketch, type StateBadge } from "./FlightSummary";
-import { SkeletonLine } from "../../../components/QueryState";
+import { CardTabPages, CardTabPanel } from "../../../components/CardTabs";
+import { CardTabBar, type CardTab } from "../../../components/CardTabBar";
+import { AirplaneFacts } from "../../../components/airplane/AirplaneFacts";
+import { useCardTab } from "../../../lib/cardTab";
+import { useTabScroll } from "../../../lib/tabScroll";
+import FlightInfoTab from "./FlightInfoTab";
+import { nameCase } from "../lib/nameCase";
+
+/** Its pages: what it is first, as the airport card's Info, then its earlier flights. */
+const TABS: CardTab<"info" | "flights">[] = [
+  { value: "info", label: "Info" },
+  { value: "flights", label: "Flights" },
+];
 
 /** A link to the airplane on the planner, shared where the phone can,
  *  copied where it cannot. */
@@ -47,21 +52,6 @@ async function shareFlight(name: string, hex: string) {
     // Put away, or not allowed: nothing to say.
   }
 }
-
-/** A name in the FAA's or a registry's capitals as a name is written:
- *  "AIRBUS A-321neo" as "Airbus A-321neo", "UNITED AIRLINES INC" as
- *  "United Airlines Inc"; its codes (a single letter, a figure) kept. */
-// A model's designator kept as written -- "PA-28", "DA-40", "A-321" -- where
-// the word before its number read "Pa-28" in the card's subtitle.
-const nameCase = (text: string) => text.replace(/\b[A-Z]{2,}\b(?!-\d)/g, (word) => word[0] + word.slice(1).toLowerCase());
-
-/** A row's value from the airplane's record: its words as a name is
- *  written, a line to come while the record is asked for, else a dash. */
-const recordValue = (text: string | null | undefined, loading: boolean, testId: string) => (
-  <span className="font-semibold text-foreground" data-testid={text ? testId : undefined}>
-    {text ? nameCase(text) : loading ? <SkeletonLine className="w-24" /> : "—"}
-  </span>
-);
 
 /** A field's place, for the trace's sketch, as an airport card asks for it
  *  (the same query, so a card opened on it after has it already): where it
@@ -92,15 +82,15 @@ const townOf = (field: { city?: string | null; region?: string | null; name?: st
 
 /**
  * An airplane being tracked, as FlightAware's flight page and ForeFlight's
- * traffic card show one, laid out at the owner's pick of the cards'
- * redesign (A2, 2026-10-29), as an airport's is: its photo across the top
- * (Planespotters', its photographer named), where it has flown a swipe
- * across, its callsign large over them with what it is and who flies it;
- * Follow (the map keeps it in the middle, TrafficGl), Alert, Debrief
- * and the star under them; its flight in a card; and one scroll of what it
- * is and its earlier flights, where they were two tabs. Seconds-old
- * internet data from adsb.lol's receivers: for knowing what is about, not
- * for avoiding it.
+ * traffic card show one, laid out as the airport card is (the owner's A2,
+ * 2026-10-29, and C1, 2026-11-14: "make sure the airplane card looks
+ * similar to airport card"): its callsign with what it is and who flies it;
+ * Follow (the map keeps it in the middle, TrafficGl), Alert, Debrief and
+ * the star; its flight in a card (FlightNow); its facts in a sideways strip
+ * (AirplaneFacts); its photo and where it has flown as the pictures; then
+ * Info (FlightInfoTab) or Flights, its earlier ones, in the glass bar at
+ * the card's foot. Seconds-old internet data from adsb.lol's receivers: for
+ * knowing what is about, not for avoiding it.
  */
 export default function FlightCard({
   hex,
@@ -240,12 +230,10 @@ export default function FlightCard({
     : null;
   const toEnd = toIdent ? { ident: toIdent, place: townOf(toField) ?? (plane ? (flying?.airports.at(-1)?.location ?? null) : null) } : null;
   const share = () => void shareFlight(name, hex);
-  // The photo first, as Maps opens a place on its photos, where
-  // Planespotters has one; else the airplane's shape on the tint, a
-  // quiet stand-in, not an empty box. Where it has flown a swipe across.
   // Its photo where Planespotters has one, linked to its page as their
-  // terms ask, and where it has flown: lower in the card, under its
-  // details (the owner, 2026-11-09: no photo at the card's top).
+  // terms ask, then where it has flown, a swipe across: under its facts,
+  // as the airport card's pictures (the owner, 2026-11-09: no photo at the
+  // card's top).
   const slides: (CardSlide | null)[] = [
     photo
       ? {
@@ -300,11 +288,9 @@ export default function FlightCard({
   ]
     .filter(Boolean)
     .join(" · ");
-  const registration = detail?.registration ?? plane?.registration ?? null;
-  // Its latest tower departure event, by the ident it files under: its
-  // callsign, else its registration.
-  const { data: tower } = useQuery(departuresQuery(plane?.callsign ?? registration));
-  const towerLine = departureLine(tower?.events[0]);
+  // Its tab kept while the page is open (useCardTab), on Flights back from a past flight; each its own scroll.
+  const [tab, setTab] = useCardTab<"info" | "flights">(`flight:${hex}`, "info");
+  const [, setTop] = useTabScroll(tab);
   return (
     <SheetCard head={false} testId="flight-card">
       <CardTitle
@@ -373,96 +359,35 @@ export default function FlightCard({
           airport={airport}
         />
       )}
-      {/* What it is: its N-number (which opens its profile, features/airplane), type, year and squawk. */}
-      <div className="pt-5">
-        <PillSection title="Details" testId="flight-details">
-          <ListGroup>
-            <ListRow
-              title="Registration"
-              value={<span className="font-semibold text-tint">{registration ?? "—"}</span>}
-              onClick={registration ? () => openAirplaneProfile(registration) : undefined}
-              data-testid="flight-registration"
-            />
-            <ListRow
-              title="Type"
-              value={
-                <span className="font-semibold text-foreground" data-testid="flight-type">
-                  {[detail?.type ?? plane?.type ?? registered, detail?.year].filter(Boolean).join(" · ") || "—"}
-                </span>
-              }
-            />
-            {squawk && (
-              <ListRow
-                title="Squawk"
-                data-testid="flight-squawk"
-                value={
-                  <span className={cn("font-semibold tabular-nums", meaning ? "text-destructive-ink" : "text-foreground")}>
-                    {squawk}
-                    {meaning ? ` · ${meaning}` : ""}
-                  </span>
-                }
-              />
-            )}
-            {/* Every row from the first frame, its value a line to come while
-                the record is asked for and a dash where it has none: the
-                rows came in as it answered and the card under them jumped
-                (the flicker audit's FL-10). */}
-            <ListRow title="Registered to" value={recordValue(detail?.faa?.owner, detailLoading, "flight-owner")} />
-            <ListRow title="Model" value={recordValue(detail?.description, detailLoading, "flight-model")} />
-            <ListRow title="Operator" value={recordValue(detail?.operator, detailLoading, "flight-operator")} />
-            <ListRow
-              title="ICAO address"
-              value={<span className={cn("font-semibold text-foreground uppercase tabular-nums", TEXT.row)}>{hex}</span>}
-            />
-            <ListRow title="Callsign" value={<span className="font-semibold text-foreground">{plane?.callsign ?? "—"}</span>} />
-            {/* The tower's departure event, where TDES sent one (features/plan/lib/departureWords). */}
-            {towerLine && <ListRow title="Tower" description={towerLine} data-testid="flight-tower" />}
-          </ListGroup>
-        </PillSection>
-      </div>
-      <div className="pt-5">
+      {/* Its facts in a strip and its pictures, then its pages under the glass bar at the card's foot,
+          as the airport card has them (C1; the owner, 2026-11-14: "make sure the airplane card looks
+          similar to airport card"). */}
+      <AirplaneFacts record={detail?.faa} type={detail?.type ?? plane?.type ?? null} year={detail?.year} testId="flight-facts" />
+      <div className="pt-4">
         <CardPictures slides={slides} label={`${name}: ${photo ? "its photo, and " : ""}where it has flown`} testId="flight-pictures" />
       </div>
-      {/* The ones before the flight it is on, each replayed (PastFlights), and a day to look back from. */}
-      <div className="pt-5">
-        <PillSection title="Earlier flights" testId="flight-earlier">
-          <PastFlights
-            hex={hex}
-            onOpen={onOpenPast}
-            nowShown={!!plane}
-            untitled
-            type={detail?.type ?? plane?.type ?? past?.pages[0]?.type ?? null}
-          />
-        </PillSection>
-      </div>
-      <div className="flex flex-col gap-5 pt-5">
-        {route && (
-          // Its flight number's scheduled route (Virtual Radar Server's
-          // route database), not the flight plan filed, which the FAA does
-          // not publish openly: said in the row, not in a footnote.
-          <ListGroup title="Scheduled route">
-            <ListRow
-              media={
-                <RowBadge colour={BADGE.approach}>
-                  <Route />
-                </RowBadge>
-              }
-              data-testid="flight-route"
-              title={<span className="font-semibold">{route.airports.map((a) => a.ident).join(" → ")}</span>}
-              description={[
-                route.airports
-                  .map((a) => a.location ?? a.name)
-                  .filter(Boolean)
-                  .join(" to "),
-                route.plausible === false ? "not where it is flying now" : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
+      <CardTabPages
+        tab={tab}
+        onPick={setTab}
+        top={setTop}
+        bar={<CardTabBar testId="flight-tab-bar" tabTestId="flight-tab-" onPick={setTab} tabs={TABS} />}
+      >
+        <CardTabPanel value="info">
+          <FlightInfoTab hex={hex} plane={plane} detail={detail} detailLoading={detailLoading} registered={registered} route={route} />
+        </CardTabPanel>
+        {/* The ones before the flight it is on, each replayed (PastFlights), and a day to look back from. */}
+        <CardTabPanel value="flights">
+          <PillSection title="Earlier flights" testId="flight-earlier">
+            <PastFlights
+              hex={hex}
+              onOpen={onOpenPast}
+              nowShown={!!plane}
+              untitled
+              type={detail?.type ?? plane?.type ?? past?.pages[0]?.type ?? null}
             />
-          </ListGroup>
-        )}
-        {detail?.faa && <FaaRegistration faa={detail.faa} />}
-      </div>
+          </PillSection>
+        </CardTabPanel>
+      </CardTabPages>
     </SheetCard>
   );
 }
