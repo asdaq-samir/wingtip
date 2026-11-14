@@ -49,6 +49,8 @@ export const CHART = {
   skyHorizonNight: "#26354a",
   centreline: "#ffffff",
   glidepath: "#00b4e6",
+  airspaceFloorLow: "#0a141c",
+  airspaceFloorHigh: "#ffffff",
   obstacle: "#7a1f1f",
   mapGround: "#f1f5f9",
   mapGroundNight: "#0f172a",
@@ -256,6 +258,11 @@ export const MAP = {
   zoomBarbFull: 9,
   zoomWorldWind: 4,
   zoomStreakNear: 7,
+  airspaceShadeMix: 0.45,
+  airspaceShadeTopFt: 10000,
+  airspaceFaded: 0.35,
+  airspaceHeld: 1.8,
+  airspaceLabelFaded: 0.6,
 } as const;
 
 /** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */

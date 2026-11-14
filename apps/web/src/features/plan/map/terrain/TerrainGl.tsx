@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGlMap } from "../../../../lib/map/gl/glLayer";
 import AirspaceVolumesGl from "./AirspaceVolumesGl";
+import { planAltitudes } from "./airspaceShelves";
 import AloftGl from "./AloftGl";
 import ApproachGl from "./ApproachGl";
 import type { ProcedureDrawing } from "../../../../lib/api/types";
@@ -52,6 +53,8 @@ export default function TerrainGl({
 }) {
   const { map } = useGlMap();
   const [ready, setReady] = useState(false);
+  // The plan's altitudes, for the airspace at them to stand out.
+  const altitudes = useMemo(() => planAltitudes(aloft), [aloft]);
   // The terrain tiles are the relief's (ReliefGl, in the map's own script,
   // mounted before this one): what stands on them (the 3D ground,
   // PilotCamera's colours) once they are there.
@@ -94,7 +97,7 @@ export default function TerrainGl({
     <>
       <SkyGl />
       <ObstaclesGl />
-      <AirspaceVolumesGl />
+      <AirspaceVolumesGl altitudes={altitudes} />
       {aloft && aloft.length > 1 && <AloftGl points={aloft} />}
       {aloft && aloft.length > 1 && !pilot && <ClearanceGl points={aloft} />}
       {field && <ApproachGl key={field} ident={field} picked={procedures} />}

@@ -89,6 +89,8 @@
   --chart-sky-horizon-night: #26354a;
   --chart-centreline: #ffffff;
   --chart-glidepath: #00b4e6;
+  --chart-airspace-floor-low: #0a141c;
+  --chart-airspace-floor-high: #ffffff;
   --chart-obstacle: #7a1f1f;
   --chart-map-ground: #f1f5f9;
   --chart-map-ground-night: #0f172a;
