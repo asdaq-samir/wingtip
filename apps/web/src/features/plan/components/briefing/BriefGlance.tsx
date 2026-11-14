@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, GraduationCap } from "lucide-react";
@@ -75,8 +76,7 @@ function Card({
 }) {
   const marked = finding === "stop" || finding === "caution";
   return (
-    <button
-      type="button"
+    <BaseButton
       onClick={() => onOpen(tab)}
       data-testid={`brief-glance-${tab}`}
       data-finding={finding}
@@ -92,7 +92,7 @@ function Card({
       </span>
       <span className="flex w-full gap-2.5">{stats}</span>
       {note && <span className={cn("text-muted-foreground", TEXT.note)}>{note}</span>}
-    </button>
+    </BaseButton>
   );
 }
 
@@ -297,9 +297,8 @@ export default function BriefGlance({
             </AccordionTrigger>
             <AccordionContent className="px-3.5 pb-2">
               {lines.rest.items.map((i) => (
-                <button
+                <BaseButton
                   key={i.key}
-                  type="button"
                   onClick={() => onOpen(i.tab)}
                   data-testid={`brief-rest-${i.key}`}
                   className={cn(
@@ -311,7 +310,7 @@ export default function BriefGlance({
                   <span className="min-w-0 flex-1">
                     <span className="font-medium">{i.label}</span> · {i.detail}
                   </span>
-                </button>
+                </BaseButton>
               ))}
             </AccordionContent>
           </AccordionItem>
