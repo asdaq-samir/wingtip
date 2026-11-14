@@ -60,7 +60,8 @@ def main():
     ]
     if near:
         print(
-            f"::warning title=Engine WebAssembly near its budget::{', '.join(near)}. Find what grew with twiggy (see scripts/ci/wasm_size.py); do not raise the budget."
+            f"::warning title=Engine WebAssembly near its budget::{', '.join(near)}. "
+            "Find what grew with twiggy (this script's docstring); do not raise the budget."
         )
     if over:
         print(
