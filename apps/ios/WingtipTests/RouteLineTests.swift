@@ -98,4 +98,11 @@ struct StripFuelHopsTests {
         #expect(fuel.short.count == 1)
         #expect(fuel.short.first?.hop == 1)
     }
+
+    /// In flight past the stop: the second flight's figure, less what the
+    /// hop has burnt (in_flight's hop and hop_burnt_gal), never the first tank's.
+    @Test func pastAStopTheHopsOwnBurnIsTakenOff() throws {
+        let fuel = try StripFuel.of(totals(hops: [("KDPA", "C81", 12, 20), ("C81", "KMSN", 40, 5)]), hop: 1, burntGal: 5)
+        #expect(fuel.requiredGal == 35)
+    }
 }

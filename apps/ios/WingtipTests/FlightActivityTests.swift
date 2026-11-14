@@ -12,7 +12,7 @@ final class FlightActivityTests: XCTestCase {
         InFlight.Progress(
             onRoute: true, alongNm: 40, totalNm: 142, leftNm: 102.4, offNm: 0.2, offSide: nil,
             desiredTrackDeg: 270, desiredTrackMagDeg: nil, trackMagDeg: nil, trackErrorDeg: nil, variationDeg: nil,
-            burntGal: burnt, fuelNowGal: 31.1, taxiCounted: true,
+            burntGal: burnt, fuelNowGal: 31.1, taxiCounted: true, hop: 0, hopBurntGal: burnt,
             next: .init(index: 2, name: "PIPER", distanceNm: 21, bearingDeg: 271, bearingMagDeg: nil,
                         eteMin: nextEte, etaS: nil, fuelLeftGal: nil),
             destination: .init(index: 5, name: "KDLH", distanceNm: 102.4, bearingDeg: 300, bearingMagDeg: nil,

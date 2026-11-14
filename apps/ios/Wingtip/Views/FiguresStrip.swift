@@ -15,15 +15,14 @@ struct FiguresStrip: View {
     /// engine's `in_flight`, InFlight) -- the figures count down from where
     /// the airplane is, as the web app's do in a dry run: what is left to
     /// the destination at the groundspeed now, and the fuel still required.
-    /// The fuel is the engine's for the flight being flown: before any
-    /// stop, less the nav log's burn to here; past a fuel stop, that hop's
-    /// whole figure, the tanks filled there (in_flight gives no burn since
-    /// the stop, so none is taken off rather than the first tank's). A
-    /// refusal is carried, so it is said as on the ground (IOS-23).
+    /// The fuel is the engine's for the flight being flown: the hop the
+    /// airplane is on and what it has burnt since that hop began (in_flight's
+    /// hop and hop_burnt_gal, the tanks filled at each fuel stop), as the
+    /// web's stripFuel sends them. A refusal is carried, so it is said as on
+    /// the ground (IOS-23).
     private var flying: (leftNm: Double, minutes: Double?, fuel: Result<StripFuel, any Error>)? {
         guard let progress = inFlight.progress, progress.onRoute else { return nil }
-        let hop = InFlight.hop(progress, plan: plan)
-        let fuel = Result { try StripFuel.of(plan.totals, hop: hop, burntGal: hop == 0 ? progress.burntGal : nil) }
+        let fuel = Result { try StripFuel.of(plan.totals, hop: progress.hop, burntGal: progress.hopBurntGal) }
         return (progress.destination?.distanceNm ?? progress.leftNm, progress.destination?.eteMin, fuel)
     }
 

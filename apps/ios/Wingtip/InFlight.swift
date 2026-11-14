@@ -146,12 +146,6 @@ final class InFlight {
         return ends.count > 2 ? Array(ends.dropFirst().dropLast()) : nil
     }
 
-    /// The hop being flown: the stops already passed, by the next point.
-    static func hop(_ progress: Progress, plan: Plan) -> Int {
-        guard let next = progress.next?.index else { return 0 }
-        return (refuelAt(plan) ?? []).filter { $0 < next }.count
-    }
-
     /// The nearest field's elevation for the ring's ground, asked at most
     /// once a minute; the planner may be out of reach in the air, and the
     /// last answer stands then.
