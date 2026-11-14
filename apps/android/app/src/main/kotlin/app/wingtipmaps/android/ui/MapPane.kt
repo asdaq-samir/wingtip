@@ -37,8 +37,6 @@ import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.airplane.PastFlightReplay
-import app.wingtipmaps.android.airplane.PastFlightReplayBar
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.AirportPin
 import app.wingtipmaps.android.atc.AtcCopilotHost
@@ -54,7 +52,6 @@ import app.wingtipmaps.android.flight.StartFlightAsk
 import app.wingtipmaps.android.map.AirportWeatherMarks
 import app.wingtipmaps.android.map.AirportWeatherMode
 import app.wingtipmaps.android.map.AirportWeatherStore
-import app.wingtipmaps.android.map.AirspaceVolumes3d
 import app.wingtipmaps.android.map.ChartMap
 import app.wingtipmaps.android.map.EmergencyLine
 import app.wingtipmaps.android.map.MapLayersStore
@@ -108,7 +105,6 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val selectedLeg by hiltViewModel<RouteLegModel>().selected.collectAsStateWithLifecycle()
     // The field whose card is open, ringed on the map.
     val openPlace = hiltViewModel<AirportModel>().state.collectAsStateWithLifecycle().value.place
-    val openField = openPlace?.ident
     val density = LocalDensity.current
     val template = remember(info, density.density) { Charts.template(info, density.density) }
     val base = remember(info) { Charts.base(info) }
@@ -210,23 +206,15 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         ship.fix.collect { taken -> flight.took(if (ownShip.on) taken else null, planNow) }
     }
     LaunchedEffect(ahead) { flight.hear(ahead) }
-    // The plan's legs' altitudes, which the 3D airspace is held against.
-    LaunchedEffect(state.legs) { AirspaceVolumes3d.planAltitudes(state.legs.map { it.altitudeFt }) }
-    // The route's line, which the packs ahead follow as well as the track.
-    LaunchedEffect(ship, state.course) { ship.routeLine = state.course?.courseLine?.filter { it.size == 2 } }
-    // While the emergency assistant is open, the line from the airplane
-    // to the field it picked (the same model EmergencyCard holds).
+    LaunchedEffect(state.legs) { app.wingtipmaps.android.map.AirspaceVolumes3d.planAltitudes(state.legs.map { it.altitudeFt }) }
+    // While the emergency assistant is open, the line from the airplane to the field it picked (EmergencyCard's model).
     val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()
-    // The glide ring off unless the pilot keeps it on, on by itself while
-    // the emergency assistant is open (GlideRing); asked of the engine only then.
+    // The glide ring off unless kept on, on by itself while the emergency assistant is open (GlideRing).
     val ringShown = ownShip.on && GlideRing.shown(ringKept == true, emergencyFrom != null)
     LaunchedEffect(ringShown) { flight.ringShown(ringShown) }
     val emergency by hiltViewModel<EmergencyModel>().state.collectAsStateWithLifecycle()
     // The dry run's airplane, drawn as own ship while a run is open (DryRun).
     val dryRun by hiltViewModel<DryRun>().state.collectAsStateWithLifecycle()
-    // A past flight played from an airplane's card, drawn as own ship is
-    // with the path it has flown behind it, while it is open.
-    val replay by PastFlightReplay.state.collectAsStateWithLifecycle()
     // The approach plates on the chart and their fixes' tags.
     val plates = rememberPlatesShown()
 
@@ -257,12 +245,11 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             night = night,
             bottomInset = with(density) { covered.roundToPx() },
             opensAt = opensAt,
-            ownShip = { app.wingtipmaps.android.map.OwnShipMark.of(fix.value, ownShip.on, dryRun.fix ?: replay.fix) },
-            trail = if (replay.open) replay.flown else flown,
+            ownShip = { app.wingtipmaps.android.map.OwnShipMark.of(fix.value, ownShip.on, dryRun.fix ?: app.wingtipmaps.android.airplane.PastFlightReplay.state.fix) },
+            trail = app.wingtipmaps.android.airplane.PastFlightReplay.trailOr(flown),
             glide = { if (ringShown) inFlight.value.glide?.ring.orEmpty() else emptyList() },
             emergency = if (emergencyFrom != null && ownShip.on) EmergencyLine.of(emergency) else null,
-            selectedField = openField,
-            selectedAt = openPlace?.let { it.lat to it.lon },
+            selectedField = openPlace?.let { app.wingtipmaps.android.map.MapField(it.ident, it.lat, it.lon) },
             plates = plates,
             follow = ownShip.following,
             onDragged = { ownShip.following = false },
@@ -297,7 +284,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             WeatherLoopBar()
             app.wingtipmaps.android.map.flow.ModelWeatherBar()
             DryRunBar(rules = state.rules)
-            PastFlightReplayBar()
+            app.wingtipmaps.android.airplane.PastFlightReplayBar()
         }
         if (ownShip.on && !approximate && !denied) {
             // What is ahead and the flight's instruments, at the top left of

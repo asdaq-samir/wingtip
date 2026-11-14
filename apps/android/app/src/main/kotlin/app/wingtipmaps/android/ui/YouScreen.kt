@@ -89,7 +89,7 @@ fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Lg),
         ) {
             YouHead(pilot, loaded, onDetails = { open(SheetPage.PilotDetails) })
-            // rules.md §8.1's rows: Airplanes, Flights, Logbook, Minimums,
+            // rules.md's You (section 8.1): Airplanes, Flights, Logbook, Minimums,
             // Training and Emergency, under the pilot's own details.
             val rows = 7
             SettingsGroup {

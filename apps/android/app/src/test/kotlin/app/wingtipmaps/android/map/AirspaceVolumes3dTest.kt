@@ -90,12 +90,13 @@ class AirspaceVolumes3dTest {
 
     @Test
     fun aShelfIsShadedByItsFloorAndHeldOrFadedByThePlansAltitudes() {
-        val ink = AirspaceVolumes3d.KINDS.getValue("B").hex
+        val color = AirspaceVolumes3d.KINDS.getValue("B").color
+        val ink = MapStyle.hex(color)
         // Half way to the top: the ink itself; the surface darker, the top lighter.
-        assertEquals(ink.lowercase(), AirspaceVolumes3d.shadeOf(ink, 5000.0))
-        val surface = AirspaceVolumes3d.shadeOf(ink, 0.0)
-        val top = AirspaceVolumes3d.shadeOf(ink, 10_000.0)
-        fun sum(hex: String) = listOf(1, 3, 5).sumOf { hex.substring(it, it + 2).toInt(16) }
+        assertEquals(ink, AirspaceVolumes3d.shadeOf(color, 5000.0))
+        val surface = AirspaceVolumes3d.shadeOf(color, 0.0)
+        val top = AirspaceVolumes3d.shadeOf(color, 10_000.0)
+        fun sum(hex: String) = java.awt.Color.decode(hex).let { it.red + it.green + it.blue }
         org.junit.Assert.assertTrue(sum(surface) < sum(ink) && sum(ink) < sum(top))
         val features = Json.parseToJsonElement("[" + feature("""{"layer":"airspace","class":"B","floor_ft":3000,"floor_ref":"MSL","ceiling_ft":10000}""") + "]").jsonArray
         fun strength(holds: Boolean?, altitudes: List<Double>?) = Json.parseToJsonElement(

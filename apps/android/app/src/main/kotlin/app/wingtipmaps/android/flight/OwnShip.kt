@@ -300,11 +300,6 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
      *  at, so a taxiing airplane asks nothing it would not answer. The
      *  asking is a job of its own, so the next question cancels one still
      *  unanswered. */
-    /** The planned route's course line, [lat, lon] pairs, for the packs
-     *  ahead to follow it as well as the track (set as the plan changes). */
-    @Volatile
-    var routeLine: List<List<Double>>? = null
-
     private fun askAhead() {
         val fix = _fix.value ?: return
         val track = fix.trackDeg ?: return
@@ -333,6 +328,11 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
     }
 
     companion object {
+        /** The planned route's course line, [lat, lon] pairs, for the packs
+         *  ahead to follow as well as the track (the map's, as it draws it). */
+        @Volatile
+        var routeLine: List<List<Double>>? = null
+
         /** A fix as the flight pieces read it, its altitude above mean sea
          *  level or none (the callback's comment says why). */
         fun fixOf(location: Location): Fix =

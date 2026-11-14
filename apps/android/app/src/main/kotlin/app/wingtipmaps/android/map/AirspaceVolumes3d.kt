@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.map
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipMap
 import app.wingtipmaps.android.engine.Engine
@@ -47,19 +49,19 @@ object AirspaceVolumes3d {
     /** A kind's ink, how see-through, and the app's zoom it is drawn from
      *  (the web's KINDS): far out only Class B and the special use areas,
      *  C from 9, D and surface E from 10. */
-    data class Ink(val hex: String, val opacity: Float, val from: Double)
+    data class Ink(val color: Color, val opacity: Float, val from: Double)
 
     /** By kind, in the order drawn (the faintest first). The special use
      *  kinds by the FAA's TYPE_CODE as the chart splits them (the web's
      *  SUA_INK): prohibited, restricted, warning and danger areas orange;
      *  MOAs and alert areas the Class C magenta. */
     val KINDS: Map<String, Ink> = linkedMapOf(
-        "E" to Ink(WingtipColors.Chart.AIRSPACE_MAGENTA_HEX, 0.08f, 10.0),
-        "D" to Ink(WingtipColors.Chart.AIRSPACE_BLUE_HEX, 0.14f, 10.0),
-        "moa" to Ink(WingtipColors.Chart.AIRSPACE_MAGENTA_HEX, 0.13f, 7.0),
-        "restricted" to Ink(WingtipColors.Chart.SPECIAL_USE_HEX, 0.16f, 7.0),
-        "C" to Ink(WingtipColors.Chart.AIRSPACE_MAGENTA_HEX, 0.2f, 9.0),
-        "B" to Ink(WingtipColors.Chart.AIRSPACE_BLUE_HEX, 0.22f, 7.0),
+        "E" to Ink(WingtipColors.Chart.AirspaceMagenta, 0.08f, 10.0),
+        "D" to Ink(WingtipColors.Chart.AirspaceBlue, 0.14f, 10.0),
+        "moa" to Ink(WingtipColors.Chart.AirspaceMagenta, 0.13f, 7.0),
+        "restricted" to Ink(WingtipColors.Chart.SpecialUse, 0.16f, 7.0),
+        "C" to Ink(WingtipColors.Chart.AirspaceMagenta, 0.2f, 9.0),
+        "B" to Ink(WingtipColors.Chart.AirspaceBlue, 0.22f, 7.0),
     )
 
     private val SUA_RESTRICTED = setOf("P", "R", "W", "D")
@@ -138,17 +140,11 @@ object AirspaceVolumes3d {
      * do in altitude (the owner, 2026-11-14: "the class B airspace shelves
      * are not differentiating altitudes"; the web's shadeOf). "#rrggbb".
      */
-    fun shadeOf(ink: String, floorFt: Double): String {
+    fun shadeOf(ink: Color, floorFt: Double): String {
         val t = (floorFt / WingtipMap.AIRSPACE_SHADE_TOP_FT).coerceIn(0.0, 1.0)
-        val (toward, by) = if (t < 0.5) WingtipColors.Chart.AIRSPACE_FLOOR_LOW_HEX to (0.5 - t) * 2 else WingtipColors.Chart.AIRSPACE_FLOOR_HIGH_HEX to (t - 0.5) * 2
-        val a = rgb(ink)
-        val b = rgb(toward)
-        val k = by * WingtipMap.AIRSPACE_SHADE_MIX
-        val mixed = a.indices.map { i -> Math.round(a[i] + (b[i] - a[i]) * k).toInt() }
-        return String.format(java.util.Locale.US, "#%02x%02x%02x", mixed[0], mixed[1], mixed[2])
+        val (toward, by) = if (t < 0.5) WingtipColors.Chart.AirspaceFloorLow to (0.5 - t) * 2 else WingtipColors.Chart.AirspaceFloorHigh to (t - 0.5) * 2
+        return MapStyle.hex(lerp(ink, toward, (by * WingtipMap.AIRSPACE_SHADE_MIX).toFloat()))
     }
-
-    private fun rgb(hex: String): List<Int> = hex.removePrefix("#").let { h -> listOf(0, 2, 4).map { h.substring(it, it + 2).toInt(16) } }
 
     /** A shelf's altitudes as the sectional writes them, its ceiling over
      *  its floor in hundreds ("100\n30"), the engine's
@@ -200,7 +196,7 @@ object AirspaceVolumes3d {
                             put("base_m", v.floorFt * Units.M_PER_FT)
                             put("height_m", v.ceilingFt * Units.M_PER_FT)
                             put("floor_ft", v.floorFt)
-                            put("shade", shadeOf(ink.hex, v.floorFt))
+                            put("shade", shadeOf(ink.color, v.floorFt))
                             put("strength", strength.name)
                         }
                     },

@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.PathPoint
+import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.route.RouteLegs
 import app.wingtipmaps.android.route.RoutePoint
 import app.wingtipmaps.android.tiles.TileTemplate
@@ -120,8 +121,7 @@ fun ChartMap(
     trail: List<PathPoint> = emptyList(),
     glide: () -> List<List<Double>> = { emptyList() },
     emergency: EmergencyLine? = null,
-    selectedField: String? = null,
-    selectedAt: Pair<Double, Double>? = null,
+    selectedField: MapField? = null,
     plates: PlatesShown = PlatesShown(),
     follow: Boolean = false,
     onDragged: () -> Unit = {},
@@ -158,7 +158,7 @@ fun ChartMap(
     // left in landscape as well as the sheet below.
     val leftInset = WindowInsets.safeDrawing.getLeft(LocalDensity.current, LayoutDirection.Ltr)
     LaunchedEffect(holder, bottomInset, leftInset) { holder.inset(bottomInset, leftInset) }
-    LaunchedEffect(holder, line, routePoints) { holder.route(line, routePoints).also { MapTerrain.destination(routePoints.lastOrNull()?.ident) } }
+    LaunchedEffect(holder, line, routePoints) { holder.route(line, routePoints).also { MapTerrain.destination(routePoints.lastOrNull()?.ident).also { OwnShip.routeLine = line } } }
     LaunchedEffect(holder, selectedLeg) { holder.selectLeg(selectedLeg) }
     val mark by rememberUpdatedState(ownShip)
     val ring by rememberUpdatedState(glide)
@@ -170,8 +170,8 @@ fun ChartMap(
     LaunchedEffect(holder, traffic, tracked) { holder.traffic(traffic, tracked) }
     LaunchedEffect(holder) { snapshotFlow { ring() }.collect(holder::glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
-    LaunchedEffect(holder, selectedField) { holder.selectField(selectedField).also { MapTerrain.selected(selectedField) } }
-    LaunchedEffect(holder, selectedAt) { selectedAt?.let { (lat, lon) -> holder.showField(lat, lon) } }
+    LaunchedEffect(holder, selectedField) { holder.selectField(selectedField?.ident).also { MapTerrain.selected(selectedField?.ident) } }
+    LaunchedEffect(holder, selectedField) { selectedField?.let { holder.showField(it.lat, it.lon) } }
     LaunchedEffect(holder, plates) { holder.plates(plates) }
 
     AndroidView(factory = { holder.view }, modifier = modifier)

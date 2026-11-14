@@ -5,6 +5,9 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
 
+/** The field whose card is open, by its ident and where it is. */
+data class MapField(val ident: String, val lat: Double, val lon: Double)
+
 /**
  * Where the map goes as the sheet's content changes (the owner's
  * map-follows-sheet rule; the Android audit's AND-2): a new route fitted

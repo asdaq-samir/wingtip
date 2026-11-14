@@ -26,9 +26,6 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.Metar
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.engine.Engine
-import app.wingtipmaps.android.engine.generated.windCalm
-import app.wingtipmaps.android.format.Format
 
 /** How many charts the card's Charts section lists: the d-TPP's plates
  *  (the diagram among them, APD, counted once as the diagram) and the
@@ -122,24 +119,4 @@ fun AirportWeatherLine(metar: Metar?, modifier: Modifier = Modifier) {
             Text(line, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
-}
-
-/** The ceiling, the wind and the time of a report, joined by " · ". */
-internal fun weatherLine(metar: Metar, noCeiling: String, calm: String, ceilingOf: (String) -> String): String {
-    val ceiling = when {
-        metar.ceilingUnknown == true -> null
-        metar.ceilingFt == null -> noCeiling
-        else -> ceilingOf(Format.altitude(metar.ceilingFt))
-    }
-    val wind = metar.windSpeedKt?.let { kt ->
-        when {
-            Engine.windCalm(kt).getOrNull() == true -> calm
-            else -> listOfNotNull(
-                metar.windDirTrueDeg?.let { Format.heading(it) + "T" } ?: "VRB",
-                Format.speed(kt).removeSuffix(" kt") + (metar.windGustKt?.let { "G" + Format.speed(it).removeSuffix(" kt") } ?: "") + " kt",
-            ).joinToString(" ")
-        }
-    }
-    val time = metar.observedAt?.let { runCatching { Format.zulu(it) }.getOrNull() }
-    return listOfNotNull(ceiling, wind, time).joinToString(" · ")
 }

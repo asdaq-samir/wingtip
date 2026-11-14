@@ -9,14 +9,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
@@ -94,10 +89,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val dryRun: DryRun = hiltViewModel()
     val map: MapViewModel = hiltViewModel()
     val ownShip = rememberOwnShipControl()
-    // A swipe down puts the sheet away only under a card that closes on one
-    // (SheetPage.swipeCloses): You, Settings and the Map card.
-    var swipeCloses by remember { mutableStateOf(false) }
-    val sheet = rememberMapSheetState(canHide = { swipeCloses })
+    val sheet = rememberMapSheetState(canHide = { map.top.swipeCloses })
     // The screen's Snackbars: a route edit's Undo (RouteUndoSnackbar).
     val snackbars = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -138,17 +130,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val openField: (String) -> Unit = { ident -> pages.show(SheetPage.Airport(ident)) }
     val shared: SharedFlightModel = hiltViewModel()
     RootRequests(pending, onHandled, plan, pages, search, stripLayout, layout, showPlan, shared)
-    SideEffect { swipeCloses = pages.top.swipeCloses }
-    // Swiped away under such a card: the cards closed and the sheet back
-    // at its peek, the search there.
-    LaunchedEffect(sheet, pages) {
-        snapshotFlow { sheet.hidden }.collect { gone ->
-            if (gone) {
-                pages.closeAll()
-                sheet.lower()
-            }
-        }
-    }
 
     // A tap on the map: the thing's one card, over the search (SheetPage.of).
     val onPick: (MapPick) -> Unit = { pick -> pages.show(SheetPage.of(pick)) }

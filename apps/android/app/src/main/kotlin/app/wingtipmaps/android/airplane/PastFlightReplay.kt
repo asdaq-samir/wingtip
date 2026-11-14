@@ -16,11 +16,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.api.Planner
@@ -37,10 +38,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -85,51 +82,54 @@ object PastFlightReplay {
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state.asStateFlow()
+    /** Compose's own state, so the map and the bar read it where they
+     *  draw, with no state of their own (MapPane holds none for it). */
+    var state by mutableStateOf(State())
+        private set
     private var ticking: Job? = null
+
+    /** The path the map draws: the replay's while one is open, else `own`. */
+    fun trailOr(own: List<PathPoint>): List<PathPoint> = state.let { if (it.open) it.flown else own }
 
     /** The flight `id` of the airplane at `hex` fetched and played. */
     fun play(hex: String, id: Int, name: String) {
         ticking?.cancel()
-        _state.value = State(name = name, loading = true)
+        state = State(name = name, loading = true)
         ticking = scope.launch {
             try {
                 val points = Planner.pastFlight(hex, id).points.sortedBy { it.t }
-                _state.value = State(name = name, points = points, playing = points.size >= 2)
+                state = State(name = name, points = points, playing = points.size >= 2)
                 run()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(loading = false, problem = Problems.say("The flight couldn't be fetched", e)) }
+                state = state.copy(loading = false, problem = Problems.say("The flight couldn't be fetched", e))
             }
         }
     }
 
     private suspend fun run() {
-        while (_state.value.playing) {
+        while (state.playing) {
             delay(TICK_MS)
-            _state.update {
-                val flown = minOf(it.totalS, it.flownS + TICK_MS / 1000.0 * SPEED)
-                it.copy(flownS = flown, playing = flown < it.totalS)
-            }
+            val flown = minOf(state.totalS, state.flownS + TICK_MS / 1000.0 * SPEED)
+            state = state.copy(flownS = flown, playing = flown < state.totalS)
         }
     }
 
     fun toggle() {
-        val s = _state.value
+        val s = state
         if (s.playing) {
             ticking?.cancel()
-            _state.update { it.copy(playing = false) }
+            state = state.copy(playing = false)
         } else if (s.points.size >= 2) {
-            _state.update { it.copy(playing = true, flownS = if (it.flownS >= it.totalS) 0.0 else it.flownS) }
+            state = state.copy(playing = true, flownS = if (state.flownS >= state.totalS) 0.0 else state.flownS)
             ticking = scope.launch { run() }
         }
     }
 
     fun close() {
         ticking?.cancel()
-        _state.value = State()
+        state = State()
     }
 
     /** How many times faster than flown; a 1-hour flight in a minute. */
@@ -141,7 +141,7 @@ object PastFlightReplay {
  *  played, its altitude and groundspeed now, Play or Pause, and ✕. */
 @Composable
 fun PastFlightReplayBar(modifier: Modifier = Modifier) {
-    val run by PastFlightReplay.state.collectAsStateWithLifecycle()
+    val run = PastFlightReplay.state
     if (!run.open) return
     Surface(modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg), shape = MaterialTheme.shapes.large, tonalElevation = WingtipSpace.Xs) {
         androidx.compose.foundation.layout.Column(Modifier.padding(WingtipSpace.Sm)) {
