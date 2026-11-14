@@ -76,6 +76,7 @@ fun EmergencySheet(
                 FieldsList(state, model::pick, onShowPosition, askGlide)
                 // No airplane: general guidance and the picker, never an
                 // airplane's checklist (NoAirplaneGuidance).
+                ProblemLine(state.checklistProblem)
                 if (state.guidance.isNotEmpty()) NoAirplaneGuidance(state, airplanePicker) else EmergencyChecklist(state, model::pickSection, model::tick)
                 ActionsList(state, model::souls, model::fuel)
             }

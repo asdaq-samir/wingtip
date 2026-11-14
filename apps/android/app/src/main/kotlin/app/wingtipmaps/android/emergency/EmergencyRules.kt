@@ -48,7 +48,9 @@ interface EmergencyRules {
     fun bestFields(data: EmergencyFields, fix: OwnShip.Fix): Result<EngineContract.BestFieldsAnswer>
     fun mayday(facts: MaydayFacts, data: EmergencyFields?): Result<EngineContract.MaydayCallAnswer>
     fun checklistSection(titles: List<String>): Int?
-    fun sections(text: String): List<ChecklistSection>
+    /** The pilot's own checklist read by the engine; a failure where it
+     *  could not be, said on the card (the audit's AND-4). */
+    fun sections(text: String): Result<List<ChecklistSection>>
     fun compassWord(bearingDeg: Double): String?
 
     /** With no airplane, what to do in general (`emergency_guidance`: the
@@ -115,7 +117,7 @@ object EngineEmergency : EmergencyRules {
     override fun checklistSection(titles: List<String>): Int? =
         Engine.checklistSection(titles).getOrNull()?.toInt()
 
-    override fun sections(text: String): List<ChecklistSection> = ChecklistText.read(text).getOrDefault(emptyList())
+    override fun sections(text: String): Result<List<ChecklistSection>> = ChecklistText.read(text)
 
     override fun compassWord(bearingDeg: Double): String? = Engine.compassWord(bearingDeg).getOrNull()
 

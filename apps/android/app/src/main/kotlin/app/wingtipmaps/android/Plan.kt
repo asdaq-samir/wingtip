@@ -354,8 +354,13 @@ class Plan @Inject constructor(app: Application) : AndroidViewModel(app) {
         val packs = CyclePacks.of(getApplication<Application>())
         keepingPacks?.cancel()
         keepingPacks = viewModelScope.launch {
+            // Where the engine cannot say, nothing is kept and the app goes
+            // on (it crashed here, the audit's AND-5); Ready to Fly then
+            // says the packs are not held.
             val regions = withContext(Dispatchers.Default) { CyclePacks.regions(line) }
-            packs.keep(regions)
+            val crossed = regions.getOrNull()
+            if (crossed != null) packs.keep(crossed)
+            else java.util.logging.Logger.getLogger("Wingtip").warning("The route's chart packs could not be worked out: ${regions.exceptionOrNull()?.message}")
         }
     }
 

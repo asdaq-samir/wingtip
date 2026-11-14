@@ -237,15 +237,18 @@ class CyclePacks(private val root: File) {
         /** The regions a route's corridor crosses: the region of each point
          *  along it, two nm apart, and of points a tenth of a degree (6 nm)
          *  either side, as its chart is kept five nm either side. The line
-         *  is pairs of latitude and longitude, as /api/course gives it. */
-        fun regions(line: List<List<Double>>): Set<String> {
+         *  is pairs of latitude and longitude, as /api/course gives it. A
+         *  failure where the engine could not say (Engine.rule has logged
+         *  why), never an empty set read as "nothing to keep" (the audit's
+         *  AND-3 and AND-5). */
+        fun regions(line: List<List<Double>>): Result<Set<String>> = runCatching {
             val names = HashSet<String>()
             for ((lat, lon) in samples(line, everyNm = 2.0).getOrThrow()) {
                 for (dlat in listOf(-0.1, 0.0, 0.1)) {
                     for (dlon in listOf(-0.1, 0.0, 0.1)) names += Engine.regionOf(lat + dlat, lon + dlon).getOrThrow()
                 }
             }
-            return names
+            names
         }
 
         /** Points along a line every so many nm, with both its ends: the

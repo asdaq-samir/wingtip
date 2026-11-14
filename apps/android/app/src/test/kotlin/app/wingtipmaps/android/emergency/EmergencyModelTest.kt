@@ -46,10 +46,10 @@ class EmergencyModelTest {
             return Result.success(EngineContract.MaydayCallAnswer(lines = listOf("MAYDAY MAYDAY MAYDAY"), words = "", missing = emptyList(), squawk = "7700", squawkWords = "", channels = emptyList()))
         }
         override fun checklistSection(titles: List<String>) = titles.indexOfFirst { it.startsWith("Engine failure in flight") }.takeIf { it >= 0 }
-        override fun sections(text: String) = if (text.isEmpty()) emptyList() else listOf(
+        override fun sections(text: String) = if (text == "unreadable") Result.failure(IllegalArgumentException("no")) else Result.success(if (text.isEmpty()) emptyList() else listOf(
             ChecklistSection("Engine fire", emptyList()),
             ChecklistSection("Engine failure in flight", listOf(EngineContract.ChecklistReadSectionsItemItemsItem("Airspeed", "68 KIAS"))),
-        )
+        ))
         override fun compassWord(bearingDeg: Double) = if (bearingDeg in 180.0..270.0) "SW" else "NE"
         override fun guidance() = listOf(EngineContract.EmergencyGuidanceAnswerItemsItem(title = "Squawk 7700", detail = "Then talk to ATC", source = "AIM 6-2-2"))
     }
@@ -151,5 +151,14 @@ class EmergencyModelTest {
         assertTrue(EmergencyOpen.asked("I have an emergency"))
         assertFalse(EmergencyOpen.asked("KDPA to KMSN"))
         assertFalse(EmergencyOpen.asked("engine start"))
+    }
+
+    @Test
+    fun aChecklistTheEngineCannotReadIsSaidAndTheGuidanceShown() {
+        val model = EmergencyModel({ _, _, _, _, _ -> EmergencyFields(fields = emptyList()) }, Rules())
+        model.start(aircraft = "c172", airplaneName = "C172", callsign = null, checklist = "unreadable")
+        val s = model.state.value
+        assertEquals("Your checklist could not be read", s.checklistProblem)
+        assertEquals("Squawk 7700", s.guidance.single().title)
     }
 }

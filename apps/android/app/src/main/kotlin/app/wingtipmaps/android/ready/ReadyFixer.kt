@@ -124,8 +124,14 @@ class ReadyFixer internal constructor(
     private fun keepPacks(line: List<List<Double>>) {
         model.busy("update_packs", true)
         scope.launch {
-            val regions = withContext(Dispatchers.Default) { runCatching { CyclePacks.regions(line) }.getOrDefault(emptySet()) }
-            if (regions.isEmpty()) packs.refresh() else packs.keep(regions)
+            val regions = withContext(Dispatchers.Default) { CyclePacks.regions(line) }
+            val crossed = regions.getOrNull()
+            when {
+                // Said where Ready to Fly is, not kept in silence (AND-3).
+                crossed == null -> model.say("The route's chart packs could not be worked out, so none were kept")
+                crossed.isEmpty() -> packs.refresh()
+                else -> packs.keep(crossed)
+            }
             model.busy("update_packs", false)
             doneState.intValue++
         }

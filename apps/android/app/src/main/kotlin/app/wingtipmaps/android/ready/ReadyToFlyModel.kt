@@ -176,6 +176,9 @@ class ReadyToFlyModel(
     }
 
     /** A fix done elsewhere has started or ended (a download, the packs). */
+    /** A problem said on Ready to Fly's card (ProblemLine). */
+    fun say(problem: String) = _state.update { it.copy(problem = problem) }
+
     fun busy(fix: String, on: Boolean) = _state.update { it.copy(busy = if (on) it.busy + fix else it.busy - fix) }
 
     companion object {
