@@ -205,6 +205,8 @@
   --glass-blur: 15px;
   --glass-fill-light: 80%;
   --glass-fill-dark: 85%;
+  --glass-bar-blur: 30px;
+  --glass-bar-fill: 92%;
   --sheet-blur: 24px;
   --motion-sheet: 0.3s;
   --motion-sheet-least: 0.22s;
@@ -408,6 +410,8 @@
   --glass-blur: 0px;
   --glass-fill-light: 100%;
   --glass-fill-dark: 100%;
+  --glass-bar-blur: 0px;
+  --glass-bar-fill: 100%;
   --sheet-blur: 0px;
   --motion-sheet: 0.2s;
   --motion-sheet-least: 0.2s;

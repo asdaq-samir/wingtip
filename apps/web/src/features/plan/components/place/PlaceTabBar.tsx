@@ -45,7 +45,11 @@ const TRIGGER_AREA = "before:absolute before:inset-x-0 before:-inset-y-1 before:
  *
  * The bar is glass (liquid-glass): it floats over the card, the one place
  * glass is kept on the web (rules.md; the owner, 2026-11-10: glass only on
- * what floats over the map, its buttons). PlaceCard pins it.
+ * what floats over the map, its buttons). Denser than the map buttons'
+ * glass, as Apple's floating bars are: the material's bar fill and blur
+ * (design/tokens.json material.bar-*) in place of the glass's own, so the
+ * words read on the frost over a photo, 4.5:1 or more by day and night.
+ * PlaceCard pins it.
  */
 export function PlaceTabBar({
   onPick,
@@ -75,7 +79,7 @@ export function PlaceTabBar({
       data-testid="place-tab-bar"
     >
       {/* The capsule of glass round the stock list, the list itself clear on it. */}
-      <div className="liquid-glass pointer-events-auto mx-auto w-fit max-w-full rounded-full p-1">
+      <div className="liquid-glass pointer-events-auto [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)] mx-auto w-fit max-w-full rounded-full p-1">
         <TabsList
           variant="tint"
           activateOnFocus

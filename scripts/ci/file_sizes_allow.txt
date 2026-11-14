@@ -87,7 +87,7 @@ engine/facade/tests/gonogo.rs 1185
 engine/facade/tests/motion.rs 763
 engine/facade/tests/navlog.rs 684
 engine/facade/tests/runway.rs 598
-scripts/build/design_tokens.py 556
+scripts/build/design_tokens.py 551
 scripts/build/engine-contract-apps.mjs 435
 scripts/dev/check.sh 407
 services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.java 430

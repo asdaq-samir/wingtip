@@ -484,7 +484,9 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    the foot of the part in sight at every height, hidden at the pill with
    the rest of the body; its own room in the flow is the room the last row
    scrolls clear of it. Glass (`liquid-glass`) because it floats over the
-   card, the one place glass stays (rules.md; the owner, 2026-11-10). The
+   card, the one place glass stays (rules.md; the owner, 2026-11-10), at
+   the denser bar fill and blur (`material.bar-fill` 0.92, `bar-blur` 30)
+   so its words read on the frost over a photo, 4.5:1 or more. The
    stock Tabs' list in its `tint` variant, capsule triggers 40 points tall
    with a 44-point `::before` hit area, the picked one filled in the tint;
    Weather carries the dot of the field's own report's category (the
