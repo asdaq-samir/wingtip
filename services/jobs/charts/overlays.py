@@ -62,7 +62,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from wingtip import cycle_pack, geo, vector_tiles
+from wingtip import cycle_pack, field_status, geo, vector_tiles
 from wingtip.atomic import atomic_path
 from wingtip.units import M_PER_FT, M_PER_NM
 from wingtip.vector_tiles import INDEX, LAYERS, VERSION, archive_name
@@ -390,13 +390,13 @@ def airport_rank(site_type: str, use: str, towered: bool, hard_ft: int) -> int:
 
 def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path | None, bbox=None):
     """The `airports` layer's lines: every operational field in APT_BASE
-    (ARPT_STATUS O; the closed ones, CI and CP, are not drawn as fields),
+    (the engine's field_status: ARPT_STATUS O; CI and CP are not drawn),
     with its runways (runways_by_site)."""
     from wingtip.faa_data import MILITARY_OWNERS
 
     runways = runways_by_site(rwy_path, rwy_end_path) if rwy_path is not None else {}
     for row in _rows(apt_path):
-        if (row.get("ARPT_STATUS") or "").strip() != "O":
+        if not field_status.is_open(row.get("ARPT_STATUS") or ""):
             continue
         lat, lon = _number(row.get("LAT_DECIMAL")), _number(row.get("LONG_DECIMAL"))
         if lat is None or lon is None or not _meets((lon, lat, lon, lat), bbox):

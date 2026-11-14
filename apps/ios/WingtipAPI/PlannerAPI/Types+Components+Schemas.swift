@@ -1154,6 +1154,8 @@ extension Components {
             public var airspaceClass: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/chart_supplement_url`.
             public var chartSupplementUrl: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/closed`.
+            public var closed: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/elevation_ft`.
             public var elevationFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/frequencies`.
@@ -1214,6 +1216,7 @@ extension Components {
             ///   - airportDiagramUrl:
             ///   - airspaceClass:
             ///   - chartSupplementUrl:
+            ///   - closed:
             ///   - elevationFt:
             ///   - frequencies:
             ///   - ident:
@@ -1246,6 +1249,7 @@ extension Components {
                 airportDiagramUrl: Swift.String? = nil,
                 airspaceClass: Swift.String? = nil,
                 chartSupplementUrl: Swift.String? = nil,
+                closed: Swift.String? = nil,
                 elevationFt: Swift.Double? = nil,
                 frequencies: [Components.Schemas.Frequency],
                 ident: Swift.String,
@@ -1278,6 +1282,7 @@ extension Components {
                 self.airportDiagramUrl = airportDiagramUrl
                 self.airspaceClass = airspaceClass
                 self.chartSupplementUrl = chartSupplementUrl
+                self.closed = closed
                 self.elevationFt = elevationFt
                 self.frequencies = frequencies
                 self.ident = ident
@@ -1311,6 +1316,7 @@ extension Components {
                 case airportDiagramUrl = "airport_diagram_url"
                 case airspaceClass = "airspace_class"
                 case chartSupplementUrl = "chart_supplement_url"
+                case closed
                 case elevationFt = "elevation_ft"
                 case frequencies
                 case ident
@@ -1500,6 +1506,8 @@ extension Components {
         ///
         /// - Remark: Generated from `#/components/schemas/AirportSuggestion`.
         public struct AirportSuggestion: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AirportSuggestion/closed`.
+            public var closed: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportSuggestion/ident`.
             public var ident: Swift.String
             /// - Remark: Generated from `#/components/schemas/AirportSuggestion/kind`.
@@ -1513,18 +1521,21 @@ extension Components {
             /// Creates a new `AirportSuggestion`.
             ///
             /// - Parameters:
+            ///   - closed:
             ///   - ident:
             ///   - kind:
             ///   - municipality:
             ///   - name:
             ///   - region:
             public init(
+                closed: Swift.String? = nil,
                 ident: Swift.String,
                 kind: Swift.String? = nil,
                 municipality: Swift.String? = nil,
                 name: Swift.String,
                 region: Swift.String? = nil
             ) {
+                self.closed = closed
                 self.ident = ident
                 self.kind = kind
                 self.municipality = municipality
@@ -1532,6 +1543,7 @@ extension Components {
                 self.region = region
             }
             public enum CodingKeys: String, CodingKey {
+                case closed
                 case ident
                 case kind
                 case municipality
@@ -4772,6 +4784,8 @@ extension Components {
             public var isPrivate: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/CopilotField/runways`.
             public var runways: [Components.Schemas.EmergencyRunway]
+            /// - Remark: Generated from `#/components/schemas/CopilotField/status`.
+            public var status: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CopilotField/towered`.
             public var towered: Swift.Bool?
             /// Creates a new `CopilotField`.
@@ -4791,6 +4805,7 @@ extension Components {
             ///   - phone:
             ///   - isPrivate:
             ///   - runways:
+            ///   - status:
             ///   - towered:
             public init(
                 bearingDeg: Swift.Double,
@@ -4807,6 +4822,7 @@ extension Components {
                 phone: Swift.String? = nil,
                 isPrivate: Swift.Bool? = nil,
                 runways: [Components.Schemas.EmergencyRunway],
+                status: Swift.String? = nil,
                 towered: Swift.Bool? = nil
             ) {
                 self.bearingDeg = bearingDeg
@@ -4823,6 +4839,7 @@ extension Components {
                 self.phone = phone
                 self.isPrivate = isPrivate
                 self.runways = runways
+                self.status = status
                 self.towered = towered
             }
             public enum CodingKeys: String, CodingKey {
@@ -4840,6 +4857,7 @@ extension Components {
                 case phone
                 case isPrivate = "private"
                 case runways
+                case status
                 case towered
             }
         }
@@ -7570,6 +7588,8 @@ extension Components {
             public var isPrivate: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/EmergencyField/runways`.
             public var runways: [Components.Schemas.EmergencyRunway]
+            /// - Remark: Generated from `#/components/schemas/EmergencyField/status`.
+            public var status: Swift.String?
             /// - Remark: Generated from `#/components/schemas/EmergencyField/towered`.
             public var towered: Swift.Bool?
             /// Creates a new `EmergencyField`.
@@ -7588,6 +7608,7 @@ extension Components {
             ///   - phone:
             ///   - isPrivate:
             ///   - runways:
+            ///   - status:
             ///   - towered:
             public init(
                 bearingDeg: Swift.Double,
@@ -7603,6 +7624,7 @@ extension Components {
                 phone: Swift.String? = nil,
                 isPrivate: Swift.Bool? = nil,
                 runways: [Components.Schemas.EmergencyRunway],
+                status: Swift.String? = nil,
                 towered: Swift.Bool? = nil
             ) {
                 self.bearingDeg = bearingDeg
@@ -7618,6 +7640,7 @@ extension Components {
                 self.phone = phone
                 self.isPrivate = isPrivate
                 self.runways = runways
+                self.status = status
                 self.towered = towered
             }
             public enum CodingKeys: String, CodingKey {
@@ -7634,6 +7657,7 @@ extension Components {
                 case phone
                 case isPrivate = "private"
                 case runways
+                case status
                 case towered
             }
         }

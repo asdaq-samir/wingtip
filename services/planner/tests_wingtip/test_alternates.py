@@ -6,7 +6,7 @@ them). The TAFs and charts are made here; the figures are the rule's."""
 
 import pytest
 
-from wingtip import alternates, publications, weather
+from wingtip import alternates, field_status, publications, weather
 
 ETA = 1_800_000_000.0  # an hour boundary
 HOUR = 3600.0
@@ -42,6 +42,8 @@ def world(monkeypatch):
         ],
     )
     monkeypatch.setattr(publications, "terminal_charts", lambda ident: charts.get(ident, []))
+    # No field closed unless a test says so (NASR's file is not read here).
+    monkeypatch.setattr(field_status, "closed_fields", lambda cache_dir: {})
     return tafs, charts
 
 
@@ -125,6 +127,18 @@ def test_the_nearest_that_will_do_are_offered_nearest_first(world):
     charts["KALT"] = [RNAV, ALT_MINS]
     found = alternates.nearby((45.0, -90.0), "KDST", lambda lat, lon: ETA)
     assert [(f["ident"], f["good"]) for f in found] == [("KFAR", True), ("KALT", None)]
+
+
+def test_a_field_nasr_lists_as_closed_is_never_offered(world, monkeypatch):
+    """Decision 0043: a field NASR lists as closed (ARPT_STATUS CI or CP) is
+    never offered as an alternate, whatever its TAF and its charts say."""
+    tafs, charts = world
+    for ident in ("KALT", "KFAR"):
+        tafs[ident] = [_period(ETA - 3 * HOUR, ETA + 3 * HOUR, ceiling=3000)]
+        charts[ident] = [ILS]
+    monkeypatch.setattr(field_status, "closed_fields", lambda cache_dir: {"KALT": "Closed indefinitely"})
+    found = alternates.nearby((45.0, -90.0), "KDST", lambda lat, lon: ETA)
+    assert [f["ident"] for f in found] == ["KFAR"]
 
 
 def test_a_ceiling_of_unknown_height_is_not_taken_as_good(world):

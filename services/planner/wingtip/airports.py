@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import by_airport, faa_data, geo, outside
+from . import by_airport, faa_data, field_status, geo, outside
 from .atomic import atomic_path
 from .config import REQUEST_HEADERS
 from .routecsv import locked
@@ -207,15 +207,6 @@ def _us_airports(cache_path: Path) -> pd.DataFrame:
         return _us_airports_of(str(path), path.stat().st_mtime, *_faa_key(cache_path))
 
 
-@once(maxsize=1)
-def _faa_listed(faa_path: str, _faa_mtime: float) -> frozenset:
-    """Every field the FAA lists (NASR APT_BASE.csv: airports, heliports,
-    seaplane bases and the rest, open or private), by its FAA and its ICAO
-    identifier."""
-    df = faa_data._read_apt_base_cached(faa_path, _faa_mtime)
-    return frozenset(i.strip().upper() for i in [*df["ARPT_ID"], *df["ICAO_ID"]] if isinstance(i, str) and i.strip())
-
-
 @lru_cache(maxsize=2)
 def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: float = 0.0) -> pd.DataFrame:
     """The US-only, pre-uppercased slice `search_airports` filters, keyed
@@ -232,17 +223,10 @@ def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: fl
     # it out if it's not showing with FAA"): OurAirports keeps some 3,300
     # strips and airports the FAA no longer lists -- closed, or never
     # registered -- such as LL97 at Round Lake, drawn as a public field
-    # beside C81. A field is the FAA's by any ident it goes by. With no
-    # FAA file to hand, all of them, as before.
-    if faa_path:
-        listed = _faa_listed(faa_path, _faa_mtime)
-        if listed:
-            on = np.zeros(len(us), dtype=bool)
-            for column in ("ident", "local_code", "icao_code", "gps_code"):
-                if column in us.columns:
-                    on |= us[column].astype(str).fillna("").str.strip().str.upper().isin(listed).to_numpy()
-            us = us[on]
-    us = us.copy()
+    # beside C81. A field is the FAA's by any ident it goes by, and carries
+    # NASR's status and the engine's label where closed (decision 0043).
+    # With no FAA file to hand, all of them, as before.
+    us = field_status.listed(us, faa_path, _faa_mtime)
     if faa_path:
         # The FAA's reference point (NASR APT_BASE's ARP) over OurAirports',
         # 190 m off at KDEN: the map's marks are NASR's (owner, 2026-11-12).
@@ -306,6 +290,8 @@ def search_airports(
     each, the bigger fields first, then by ident: "oshkosh" is Wittman
     Regional (KOSH) before a private strip named for the town, which
     was the only answer while names had to start with what was typed.
+    A field NASR lists as closed comes after the open ones of its rank,
+    labelled (`closed`, decision 0043): found, never put first.
     Among fields of a size, one whose name starts with it first, then the
     nearest to `near` (the pilot, or the route): "campbell" is Campbell
     Airport (C81) at Grayslake for a pilot there, where eight strips
@@ -327,10 +313,11 @@ def search_airports(
     word_hit = ~exact & ~ident_hit & df["_words_upper"].str.contains(" " + query, regex=False)
     matches = pd.concat([df[exact].assign(_rank=0), df[ident_hit].assign(_rank=1), df[word_hit].assign(_rank=2)])
     matches = matches.assign(
+        _shut=matches["_closed"].notna(),
         _named=~matches["_name_upper"].str.startswith(query),
         _near=_nearness_nm(matches["latitude_deg"], matches["longitude_deg"], near or []),
     )
-    matches = matches.sort_values(["_rank", "_size_rank", "_named", "_near", "_display_ident"]).head(limit)
+    matches = matches.sort_values(["_rank", "_shut", "_size_rank", "_named", "_near", "_display_ident"]).head(limit)
     return _rows(df, [df.index.get_loc(i) for i in matches.index])
 
 
@@ -342,7 +329,8 @@ def search_index(cache_path: Path = DEFAULT_CACHE_PATH) -> bytes:
     which is searched, the state without "US-", the size rank the answers
     are ordered by (0 large to 3 other), where it is (to a hundredth of a
     degree), and OurAirports' ident and the local code where either is not
-    the ident shown (KC81 for C81). 32,600 rows. Made once per file."""
+    the ident shown (KC81 for C81). 32,600 rows. Made once per file. `closed`:
+    each closed field's ident and label, never offered to land (decision 0043)."""
     path = _ensure_cached(OURAIRPORTS_URL, cache_path)
     return _search_index_bytes(str(path), path.stat().st_mtime, *_faa_key(cache_path))
 
@@ -379,7 +367,8 @@ def _search_index_bytes(path: str, _mtime: float, faa_path: str = "", _faa_mtime
                 *others,
             ]
         )
-    return gzip.compress(json.dumps({"airports": rows}, separators=(",", ":")).encode(), mtime=0)
+    closed = {d: label for d, label in zip(us["_display_ident"].astype(str), us["_closed"]) if label}
+    return gzip.compress(json.dumps({"airports": rows, "closed": closed}, separators=(",", ":")).encode(), mtime=0)
 
 
 def _rows(df: pd.DataFrame, positions: list[int]) -> list[dict]:
@@ -391,6 +380,7 @@ def _rows(df: pd.DataFrame, positions: list[int]) -> list[dict]:
             "name": row["name"],
             "municipality": row["municipality"] if pd.notna(row.get("municipality")) else None,
             "region": row["iso_region"] if pd.notna(row.get("iso_region")) else None,
+            "closed": row["_closed"],
         }
         for _, row in rows.iterrows()
     ]
@@ -424,6 +414,7 @@ def _search_index_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: f
         "idents": idents,
         "words": words,
         "size": us["_size_rank"].tolist(),
+        "closed": us["_closed"].notna().tolist(),
         "display": us["_display_ident"].astype(str).tolist(),
         "names": us["_name_upper"].tolist(),
         "lat": us["latitude_deg"].astype(float).tolist(),
@@ -450,7 +441,7 @@ def _indexed_matches(index: dict, query: str, limit: int, near: list[tuple[float
     ranks = [(rank, row) for rank, rows in enumerate((exact, ident, word)) for row in rows]
     nearness = _nearness_nm([index["lat"][row] for _, row in ranks], [index["lon"][row] for _, row in ranks], near or [])
     ranked = [
-        (rank, index["size"][row], not index["names"][row].startswith(query), float(nm), index["display"][row], row)
+        (rank, index["closed"][row], index["size"][row], not index["names"][row].startswith(query), float(nm), index["display"][row], row)
         for (rank, row), nm in zip(ranks, nearness)
     ]
     return [row for *_, row in sorted(ranked)[:limit]]
@@ -459,6 +450,11 @@ def _indexed_matches(index: dict, query: str, limit: int, near: list[tuple[float
 # The airports a map draws a place for: fields a pilot can land at. No
 # heliports, balloonports or seaplane bases, and nothing closed.
 _FIELD_KINDS = {"large_airport": "large", "medium_airport": "medium", "small_airport": "small"}
+
+
+def _landing(df: pd.DataFrame) -> pd.DataFrame:
+    """The open landing fields (every list to land at, map mark, Nearest)."""
+    return df[df["type"].isin(list(_FIELD_KINDS)) & df["_closed"].isna()]
 
 
 def _place_of(row) -> dict:
@@ -480,6 +476,9 @@ def _place_of(row) -> dict:
         "lon": float(row["longitude_deg"]),
         "elevation_ft": float(elevation) if pd.notna(elevation) else None,
         "kind": _FIELD_KINDS.get(row["type"], "other"),
+        # NASR's ARPT_STATUS, and a closed field's label (wingtip.field_status).
+        "status": row.get("_status"),
+        "closed": row.get("_closed"),
     }
 
 
@@ -495,6 +494,8 @@ _PLACE_COLUMNS = (
     "elevation_ft",
     "type",
     "local_code",
+    "_status",
+    "_closed",
 )
 
 
@@ -573,7 +574,8 @@ def places_in(
     so a busy box's limit drops small fields with no weather to show,
     never a small field's weather chip."""
     df = _us_airports(cache_path)
-    inside = df[df["type"].isin(list(_FIELD_KINDS)) & df["latitude_deg"].between(south, north) & df["longitude_deg"].between(west, east)]
+    inside = _landing(df)
+    inside = inside[inside["latitude_deg"].between(south, north) & inside["longitude_deg"].between(west, east)]
     if only is not None:
         inside = inside[_among(inside["ident"], only)]
     rank = inside["type"].map({kind: i for i, kind in enumerate(_FIELD_KINDS)})
@@ -620,8 +622,7 @@ def nearest(lat: float, lon: float, limit: int = 10, cache_path: Path = DEFAULT_
     place (as find_place's) with `distance_nm` and `bearing_deg`, true,
     from the position to it -- what a pilot with an engine running rough
     looks for (wingtip.emergency.fields_near), within _NEAREST_CAP_NM."""
-    df = _us_airports(cache_path)
-    return _nearest_in(df[df["type"].isin(list(_FIELD_KINDS))], lat, lon, limit, _NEAREST_CAP_NM)
+    return _nearest_in(_landing(_us_airports(cache_path)), lat, lon, limit, _NEAREST_CAP_NM)
 
 
 @once(maxsize=2)

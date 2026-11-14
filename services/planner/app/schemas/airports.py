@@ -321,9 +321,10 @@ class AirportPlace(BaseModel):
     airspace_class: Literal["B", "C", "D", "E", "G"] | None = None
     #: A field the armed services own, as AirportPin's.
     military: Literal["military", "joint"] | None = None
-    #: Closed to the public, as AirportPin's: the card says so, since a
-    #: pilot who taps the R needs to know to ask the owner first.
+    #: Closed to the public, as AirportPin's (ask the owner first); and where
+    #: NASR lists it closed (CI, CP), the engine's label, never offered (0043).
     private: bool = False
+    closed: str | None = None
     towered: bool
     # Its remarks a pilot acts on from the cockpit (wingtip.remarks): its
     # lighting remarks as sent (`lighting`), read by the engine into each
@@ -355,8 +356,7 @@ class AirportPlace(BaseModel):
     taf: str | None = None
     weather_unavailable: bool = False
     # Its phone and one-line street address, from the FAA's airport file
-    # (wingtip.faa_data.airport_contact): the manager's, else the owner's; None
-    # where the FAA lists none.
+    # (faa_data.airport_contact): the manager's, else the owner's; None if none.
     phone: str | None = None
     address: str | None = None
     # The FAA's airport diagram and Chart Supplement page for the current

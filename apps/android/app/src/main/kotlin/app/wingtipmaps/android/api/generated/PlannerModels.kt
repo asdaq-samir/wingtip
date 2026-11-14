@@ -163,6 +163,8 @@ data class AirportPlace (
     @SerialName("chart_supplement_url")
     val chartSupplementUrl: String? = null,
 
+    val closed: String? = null,
+
     @SerialName("elevation_ft")
     val elevationFt: Double? = null,
 
@@ -521,6 +523,7 @@ data class AirportSearch (
  */
 @Serializable
 data class AirportSuggestion (
+    val closed: String? = null,
     val ident: String,
     val kind: String? = null,
     val municipality: String? = null,
@@ -1859,6 +1862,7 @@ data class CopilotField (
     @SerialName("private")
     val isPrivate: Boolean? = null,
     val runways: List<EmergencyRunway>,
+    val status: String? = null,
     val towered: Boolean? = null
 )
 
@@ -3053,6 +3057,7 @@ data class EmergencyField (
     @SerialName("private")
     val isPrivate: Boolean? = null,
     val runways: List<EmergencyRunway>,
+    val status: String? = null,
     val towered: Boolean? = null
 )
 

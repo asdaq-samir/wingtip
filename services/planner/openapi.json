@@ -1328,6 +1328,17 @@
             ],
             "title": "Chart Supplement Url"
           },
+          "closed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed"
+          },
           "elevation_ft": {
             "anyOf": [
               {
@@ -1728,6 +1739,17 @@
       "AirportSuggestion": {
         "description": "An airport the search answers -- or, asked with `fixes`, a named\nfix (`kind` \"fix\": a VFR waypoint, a GPS waypoint), its `name` the\nkind of fix and its `region` the state it is in.",
         "properties": {
+          "closed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed"
+          },
           "ident": {
             "title": "Ident",
             "type": "string"
@@ -5299,6 +5321,17 @@
             "title": "Runways",
             "type": "array"
           },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
           "towered": {
             "default": false,
             "title": "Towered",
@@ -8146,6 +8179,17 @@
             },
             "title": "Runways",
             "type": "array"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
           },
           "towered": {
             "default": false,

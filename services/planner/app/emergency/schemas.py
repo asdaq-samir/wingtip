@@ -55,6 +55,9 @@ class EmergencyField(BaseModel):
     towered: bool = False
     private: bool = False
     military: bool = False
+    #: NASR APT_BASE's ARPT_STATUS, None with no NASR record: the engine's
+    #: best_fields never ranks a field with any but O (decision 0043).
+    status: str | None = None
     frequencies: list[EmergencyFrequency] = []
     #: The FAA's listed phone for the field (NASR APT_CON); None where none.
     phone: str | None = None
