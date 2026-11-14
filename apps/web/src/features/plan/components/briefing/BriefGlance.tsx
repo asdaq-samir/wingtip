@@ -6,7 +6,7 @@ import { Button } from "../../../../components/ui/button";
 import { Alert, AlertDescription } from "../../../../components/ui/alert";
 import FindingIcon from "../../../../components/FindingIcon";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../../components/ui/accordion";
-import { clockTime, duration } from "../../../../lib/format";
+import { clockTime, duration, zoneName } from "../../../../lib/format";
 import { dataWarning } from "../../../../lib/dataCycles";
 import { useDataCycles } from "../../../../lib/map/sources/layerAges";
 import { glanceLines, useGlance, type FieldGlance, type GlanceLine } from "../../lib/glance";
@@ -39,7 +39,9 @@ const DASH = "—";
  *  field's CTAF, "Duluth ATIS" its ATIS. */
 const radioLabel = (to: string) => (/traffic$/i.test(to) ? "CTAF" : (to.split(" ").at(-1) ?? to));
 const ft = (n: number | null) => (n == null ? DASH : `${grouped(n)}`);
-const time = (iso: string | null) => (iso ? clockTime(new Date(iso)) : null);
+/** A clock time with its zone, "04:17 CST", as the nav log heads its ETAs:
+ *  a bare "04:17" on the Depart card read as Z or local (WEB-9). */
+const time = (iso: string | null) => (iso ? `${clockTime(new Date(iso))} ${zoneName(new Date(iso))}` : null);
 /** The verdict's wash: the Brief's one alarm. */
 const MARK_TINT: Partial<Record<Finding, string>> = { stop: "bg-destructive/10", caution: "bg-caution-wash" };
 

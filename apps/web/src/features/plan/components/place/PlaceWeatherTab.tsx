@@ -5,29 +5,17 @@ import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { RefreshNow } from "../../../../components/RefreshButton";
 import { RowBadge } from "../../../../components/RowBadge";
 import type { AirportPlace } from "../../../../lib/api/types";
-import { ago, zuluTime } from "../../../../lib/format";
+import { zuluTime } from "../../../../lib/format";
+import Observed from "../../../../components/Observed";
 import { compassPoint } from "../../../../lib/compass";
 import type { Hour } from "../../lib/hourly";
 import { BADGE } from "../../../../lib/rowBadges";
 import { TEXT } from "../../../../lib/text";
-import { feet, miles } from "../../../../lib/format";
-import { windLine } from "../../format";
+import { feet, miles, nm } from "../../../../lib/format";
+import { placeWind } from "./placeWind";
 import { AtisRows } from "../AtisRows";
 import { HourlyForecast } from "../HourlyForecast";
 import { DigitalAtisRows } from "../LiveAirportRows";
-
-/** A time as reports give it: "1255Z". */
-function zuluOf(at: string): string {
-  const when = new Date(at);
-  return Number.isNaN(when.getTime()) ? "" : zuluTime(when);
-}
-
-/** When the report was made: "1255Z · 14m ago". */
-function observedLine(at: string): string {
-  const when = new Date(at);
-  if (Number.isNaN(when.getTime())) return "";
-  return `${zuluOf(at)} · ${ago(Date.now() - when.getTime())}`;
-}
 
 /**
  * An airport's card's Weather tab (PlaceCard): the weather there hour by
@@ -42,7 +30,7 @@ export function PlaceWeatherTab({
   chip,
   hourly,
   weatherLine,
-  weatherAge,
+  observedAt,
   arrival,
 }: {
   /** The ident the card was opened on. */
@@ -56,8 +44,8 @@ export function PlaceWeatherTab({
   hourly: { hours: Hour[]; sentence: string | null };
   /** The weather in a line where there is no forecast to say. */
   weatherLine: string;
-  /** How old its report is. */
-  weatherAge: string | null;
+  /** When its report (or the nearest station's) was observed, for its age. */
+  observedAt: string | null;
   /** The planned flight's landing hour, where this is its destination. */
   arrival: { index: number; at: number } | null;
 }) {
@@ -86,7 +74,9 @@ export function PlaceWeatherTab({
                 {place ? (hourly.sentence ?? weatherLine) : "…"}
               </span>
             }
-            value={weatherAge ?? undefined}
+            // The report's age as every card writes it, amber once the
+            // engine's weather_in_force says it is old (Observed; CODE-3).
+            value={observedAt ? <Observed at={observedAt} /> : undefined}
             data-testid="place-weather-summary"
           >
             {/* Refresh at the row's right, after the report's age: what
@@ -110,11 +100,7 @@ export function PlaceWeatherTab({
                     pilot weighs it by (and where it came from, where it is
                     own ship's receiver). Its wind is true, as reported. */}
                 {metar.observed_at && (
-                  <ListRow
-                    title="Observed"
-                    data-testid="place-observed"
-                    value={<span className="text-foreground">{observedLine(metar.observed_at)}</span>}
-                  />
+                  <ListRow title={<Observed at={metar.observed_at} />} data-testid="place-observed" />
                 )}
                 {/* Each figure with its glyph, its value at the right in
                     the text's own colour; the report as it was sent
@@ -127,7 +113,7 @@ export function PlaceWeatherTab({
                       </RowBadge>
                     }
                     title="Wind"
-                    value={<span className="font-semibold text-foreground">{windLine(metar)}</span>}
+                    value={<span className="font-semibold text-foreground">{placeWind(metar)}</span>}
                     data-testid="place-wind"
                   />
                 )}
@@ -191,7 +177,7 @@ export function PlaceWeatherTab({
             <div className="pt-5" data-testid="place-modelled-weather">
               {/* The National Weather Service's Gridded LAMP: planning
                   guidance from a model, not an observation. */}
-              <ListGroup title={`Modelled for ${zuluOf(modelled.valid_at)}`}>
+              <ListGroup title={`Modelled for ${zuluTime(new Date(modelled.valid_at))}`}>
                 <ListRow
                   media={
                     <RowBadge colour={BADGE.weather}>
@@ -236,10 +222,10 @@ export function PlaceWeatherTab({
               card's "≈" badge where nothing is modelled. */}
           {nearby && (
             <div className="pt-5" data-testid="place-nearby-metar">
-              <ListGroup title={`Nearest report, ${nearby.distance_nm} nm ${compassPoint(nearby.bearing_deg)}`}>
+              <ListGroup title={`Nearest report, ${nm(nearby.distance_nm)} ${compassPoint(nearby.bearing_deg)}`}>
                 <ListRow
                   title={<span className="font-semibold">{nearby.ident}</span>}
-                  description={nearby.metar.observed_at ? observedLine(nearby.metar.observed_at) : undefined}
+                  description={nearby.metar.observed_at ? <Observed at={nearby.metar.observed_at} /> : undefined}
                   value={nearbyCategory ? <span className="font-semibold text-foreground">{nearbyCategory}</span> : undefined}
                 />
                 {nearby.metar.raw && <ListRow title={<span className="font-mono break-words">{nearby.metar.raw}</span>} />}

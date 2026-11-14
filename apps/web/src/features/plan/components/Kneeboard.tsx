@@ -5,6 +5,7 @@ import { pickedEnd, runwayFlown, runwayNumber } from "../lib/pattern";
 import { useRunwayPicks } from "../lib/useRunwayPicks";
 import { hm, weekdayDayMonthTime } from "../../../lib/format";
 import { routeName } from "../../../lib/identSchema";
+import { faaWords } from "../../../lib/advisories";
 import { altFt, feetRange, gal, nm } from "../../../lib/format";
 import { bearing, etaAt, one, plannedWords } from "../format";
 import { isLegPoint, legOf, navLogRows, rowPoint } from "./navlog/rows";
@@ -153,7 +154,7 @@ export default function Kneeboard({
               {info?.pattern?.altitude_ft != null && (
                 <p>
                   TPA {altFt(info.pattern.altitude_ft)}
-                  {inUse && ` · Rwy ${runwayNumber(inUse.end.ident)} ${inUse.end.traffic}${inUse.byWind ? "" : " (no wind reported)"}`}
+                  {inUse && ` · Runway ${runwayNumber(inUse.end.ident)} ${inUse.end.traffic}${inUse.byWind ? "" : " (no wind reported)"}`}
                   {info.elevation_ft != null && ` · elev ${altFt(info.elevation_ft)}`}
                 </p>
               )}
@@ -171,7 +172,7 @@ export default function Kneeboard({
       {(special.length > 0 || tfrs.length > 0) && (
         <p className="mb-1.5">
           <span className="font-bold">On the route: </span>
-          {[...special.map((a) => `${a.name} (${a.kind})`), ...tfrs.map((t) => `TFR ${t.notam_id}`)].join(" · ")}
+          {[...special.map((a) => `${faaWords(a.name)} (${a.kind})`), ...tfrs.map((t) => `TFR ${t.notam_id}`)].join(" · ")}
         </p>
       )}
       <p className="flex flex-wrap gap-x-3 gap-y-1">

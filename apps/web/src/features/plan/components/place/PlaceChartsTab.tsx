@@ -22,11 +22,12 @@ const CHART_GROUPS: { title: string; kinds: string[] }[] = [
 const AIRPORT_CHARTS = ["HOT", "LAH"];
 const GROUPED = new Set(["APD", ...AIRPORT_CHARTS, ...CHART_GROUPS.flatMap((g) => g.kinds)]);
 
-/** A chart's row: its title as the FAA prints it -- "LEGOZ FOUR (RNAV)",
- *  "ILS OR LOC RWY 24" -- not in sentence case as the FAA's other words
- *  are here (lib/advisories faaWords): a procedure is named by its fixes
- *  and its navaids, as a code is, and pilots know it by the title on the
- *  plate. Shown in the app, full screen (ChartRow), not on the FAA's site. */
+/** A chart's row: its title in sentence case with its codes kept, "ILS or
+ *  LOC rwy 24", "LEGOZ four (RNAV)" (lib/advisories faaWords) -- the plate
+ *  card's own words (features/plates plateTitle), so one approach is not
+ *  written two ways (the web audit's WEB-11; CLAUDE.md's Writing). Shown
+ *  in the app, full screen (ChartRow), the viewer titled the same, not on
+ *  the FAA's site. */
 function TerminalChartRow({ chart, airport, notam }: { chart: TerminalChart; airport: string; notam?: NotamMark }) {
   // A procedure's badge says which kind it is, as its group's title does:
   // an approach's a landing airplane, a departure's one taking off, an
@@ -53,7 +54,7 @@ function TerminalChartRow({ chart, airport, notam }: { chart: TerminalChart; air
   return (
     <ChartRow
       media={badge}
-      title={chart.name}
+      title={faaWords(chart.name)}
       url={chart.url}
       airport={airport}
       testId="terminal-chart"

@@ -212,7 +212,7 @@ test('a field with no report wears the nearest station\'s category as "≈" with
   await expect(card(page).getByTestId("place-name")).toBeVisible({ timeout: slow(15000) });
   await expect(card(page).getByTestId("place-runway-sketch")).toBeVisible();
   await card(page).getByTestId("place-tab-weather").click();
-  await expect(card(page).getByTestId("place-weather-summary")).toContainText("Nearest report KUGN, 12 nm E");
+  await expect(card(page).getByTestId("place-weather-summary")).toContainText("Nearest report KUGN, 12.0 nm E");
   await expect(card(page).getByTestId("place-category")).toHaveCount(0);
 });
 test("a field with no report wears the category modelled there, before a near station's, and its Weather tab says it is a model's", async ({
@@ -514,7 +514,7 @@ test("the route's Procedures open its destination's card on its approaches, and 
   // On its Charts tab.
   await expect(card(page).getByTestId("place-tab-diagrams")).toHaveAttribute("aria-selected", "true");
   const approaches = card(page).locator('[data-chart-group="Approaches"]');
-  await expect(approaches.getByTestId("terminal-chart")).toHaveText([/ILS OR LOC RWY 09/, /RNAV \(GPS\) RWY 27/]);
+  await expect(approaches.getByTestId("terminal-chart")).toHaveText([/ILS or LOC rwy 09/, /RNAV \(GPS\) rwy 27/]);
   await expect(approaches).toBeInViewport();
 });
 

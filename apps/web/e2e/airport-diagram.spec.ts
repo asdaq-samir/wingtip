@@ -206,7 +206,7 @@ test("the Charts tab's charts and the Chart Supplement open in the app, the fiel
   await toCharts(page);
   const panel = card(page).getByTestId("place-charts");
   // No link out of the app in the tab.
-  await expect(panel.getByTestId("terminal-chart")).toHaveText(/TAKEOFF MINIMUMS/, { timeout: slow(15000) });
+  await expect(panel.getByTestId("terminal-chart")).toHaveText(/Takeoff minimums/, { timeout: slow(15000) });
   await expect(panel.locator("a[href^='http']")).toHaveCount(0);
 
   await panel.getByTestId("terminal-chart").click();

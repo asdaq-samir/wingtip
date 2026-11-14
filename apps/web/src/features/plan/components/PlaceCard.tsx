@@ -22,14 +22,14 @@ import { useGeo, type Geo, type LatLon } from "../../../lib/geo";
 import { awayFrom } from "../../../lib/useAway";
 import { chipFillOf } from "../../../lib/map/marks/flightCategory";
 import { inkOn } from "../../../lib/scoreScale";
-import { feet, miles } from "../../../lib/format";
-import { reportedWind, windLine } from "../format";
+import { clockTime, feet, miles, nm, zoneName } from "../../../lib/format";
+import { reportedWind } from "../format";
+import { placeWind } from "./place/placeWind";
 import { FaaChart } from "./AirportDiagram";
 import { RunwaySketch } from "./RunwaySketch";
 import { runwaysLeftOut, stripsOf } from "../lib/runwaySketch";
 import { TEXT } from "../../../lib/text";
 import { diagramRunwaysPicture } from "../../../lib/diagram";
-import { ago } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
 import { prefersReducedMotion } from "../../../lib/motion";
 import { arrivalHour, hoursOf, sentenceOf } from "../lib/hourly";
@@ -75,11 +75,10 @@ function kindOf(place: AirportPlace | undefined): string | null {
   return callEngine("airport_use_words", { private: place.private, military: place.military ?? null }).words;
 }
 
-/** How old a report is, "14m ago", for the weather's line. */
-function ageOf(at: string | null | undefined): string | null {
-  const when = at ? new Date(at) : null;
-  return when && !Number.isNaN(when.getTime()) ? ago(Date.now() - when.getTime()) : null;
-}
+/** A forecast's hour in the sentence over the hours, this device's clock
+ *  with its zone, "15:00 CST": the card says "Observed 0355Z" beside it,
+ *  and a bare "15:00" read as either (the web audit's WEB-9). */
+const zonedClock = (ms: number) => `${clockTime(new Date(ms))} ${zoneName(new Date(ms))}`;
 
 /** An airport's name and weather from whatever the map has already
  *  asked for it in: the fields in view, the route's, the Class B ones. */
@@ -289,7 +288,7 @@ export default function PlaceCard({
   // nearest station's, said as such.
   const weatherLine = metar
     ? [
-        windLine(metar),
+        placeWind(metar),
         metar.visibility_sm != null ? miles(metar.visibility_sm) : null,
         metar.ceiling_ft == null ? "No ceiling" : `Ceiling ${feet(metar.ceiling_ft)}`,
       ]
@@ -298,11 +297,11 @@ export default function PlaceCard({
     : modelled
       ? `Modelled: ${modelled.visibility_sm >= 10 ? "10+ sm" : miles(modelled.visibility_sm)} · ${modelled.ceiling_ft == null ? "no ceiling" : `ceiling ${feet(modelled.ceiling_ft)}`}`
       : nearby
-        ? `Nearest report ${nearby.ident}, ${nearby.distance_nm} nm ${compassPoint(nearby.bearing_deg)}`
+        ? `Nearest report ${nearby.ident}, ${nm(nearby.distance_nm)} ${compassPoint(nearby.bearing_deg)}`
         : place?.weather_unavailable
           ? "The weather service could not be reached"
           : "No weather station reports from this field";
-  const weatherAge = metar ? ageOf(metar.observed_at) : nearby ? ageOf(nearby.metar.observed_at) : null;
+  const observedAt = (metar ? metar.observed_at : nearby?.metar.observed_at) ?? null;
   // And hour by hour, as Apple's Weather has it (the owner's pick, G1):
   // Now from the report, each hour after it from the field's own TAF,
   // and a sentence of what they say, written from them (features/plan/lib/hourly). Read
@@ -311,7 +310,7 @@ export default function PlaceCard({
   const now = useMinuteClock();
   const hourly = useMemo(() => {
     const hours = hoursOf({ metar, taf: tafText, now });
-    return { hours, sentence: sentenceOf(hours) };
+    return { hours, sentence: sentenceOf(hours, zonedClock) };
   }, [metar, tafText, now]);
   // The hour the planned flight lands in, where this is its destination.
   const landsAt = arrival ? (arrival.depart ? Date.parse(arrival.depart) : now) + arrival.minutes * 60_000 : null;
@@ -349,8 +348,9 @@ export default function PlaceCard({
         >
           {/* The FAA's own diagram, cropped to its runways, where the field
             has one, at the pilot's ask; the card's sketch of them
-            where it has none, or the crop cannot be had. */}
-          {place.airport_diagram_cycle && !noRunwaysPicture ? (
+            where it has none, or the crop cannot be had -- not asked for
+            where the planner already knows it cannot (WEB-41). */}
+          {place.airport_diagram_cycle && place.airport_diagram_runways !== false && !noRunwaysPicture ? (
             <img
               src={diagramRunwaysPicture(place.ident, place.airport_diagram_cycle)}
               alt=""
@@ -415,7 +415,7 @@ export default function PlaceCard({
     .join(" · ");
   const pillPicture =
     photos?.aerial_url ??
-    (place && sketched && place.airport_diagram_cycle && !noRunwaysPicture
+    (place && sketched && place.airport_diagram_cycle && place.airport_diagram_runways !== false && !noRunwaysPicture
       ? diagramRunwaysPicture(place.ident, place.airport_diagram_cycle)
       : undefined);
   const share = () =>
@@ -545,7 +545,7 @@ export default function PlaceCard({
               chip={chip}
               hourly={hourly}
               weatherLine={weatherLine}
-              weatherAge={weatherAge}
+              observedAt={observedAt}
               arrival={landsIn != null && landsAt != null ? { index: landsIn, at: landsAt } : null}
             />
           </CardTabPanel>
