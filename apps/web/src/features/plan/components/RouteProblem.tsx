@@ -1,4 +1,5 @@
 import { Button } from "../../../components/ui/button";
+import { wholeNm } from "../../../lib/format";
 import { cn } from "cn";
 import { TEXT } from "../../../lib/text";
 import type { Unflyable } from "../hooks/usePlan";
@@ -56,7 +57,7 @@ export default function RouteProblem({
       ) : round && onGoRound ? (
         <div className="space-y-2">
           <p className={cn("text-muted-foreground", TEXT.detail)} data-testid="unflyable-way-round">
-            By {round.via!.join(", ")} · +{Math.round(round.added_nm)} nm
+            By {round.via!.join(", ")} · +{wholeNm(round.added_nm)}
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" size="sm" onClick={() => onGoRound(round.via!, round.stop_index)} data-testid="unflyable-go-round">

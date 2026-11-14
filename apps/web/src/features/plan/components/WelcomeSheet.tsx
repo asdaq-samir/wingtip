@@ -15,8 +15,9 @@ import { TEXT } from "../../../lib/text";
  *  that can be easily accessed"). */
 const ROWS = [
   { icon: Search, title: "Search, like Maps", line: "Find any airport, town or fix the way you would in Apple or Google Maps." },
-  // FPL's own glyph on the page toggle (PageToggle).
-  { icon: Route, title: "FPL, like your EFB", line: "The route, nav log, profile and brief, one tap away on the FPL button." },
+  // FPL's own glyph on the page toggle (PageToggle), a round route glyph
+  // under the 3D with no "FPL" word on it (the web audit's WEB-42).
+  { icon: Route, title: "FPL, like your EFB", line: "The route, nav log, profile and brief, one tap away on the route button under 3D." },
   {
     icon: MapIcon,
     title: "FAA charts that move like Maps",

@@ -18,6 +18,7 @@ import { grouped } from "../../../../lib/format";
 import { mhzText } from "../../../../lib/frequencies";
 import { useAirplaneChosen } from "../../../../lib/preferences";
 import { useVerdict, verdictLine } from "../../../../lib/verdict";
+import { useAnnounce } from "../../../../lib/announce";
 import type { PanelTab } from "../navlog/panelTab";
 import CategoryBadge from "./CategoryBadge";
 import { CARD, TRIGGER } from "../../../../components/glanceLook";
@@ -260,12 +261,15 @@ export default function BriefGlance({
   // planner works out none of them (the owner, 2026-11-09: "only show the
   // distance and the things you can without airplane profile").
   const airplane = useAirplaneChosen();
+  // Its arrival said once to VoiceOver, politely (lib/announce): nothing
+  // told a screen reader the Brief had come in (the web audit's WEB-16).
+  useAnnounce(verdict ? `Brief ready: ${verdict.words}` : null);
   return (
     <div className="flex flex-col gap-2.5 pt-1 pb-4" data-testid="brief-glance">
       {/* The verdict first (decision 0012), as the engine words it: no
-          live region, as it is there when the Brief opens, not news while
-          the pilot reads (docs/design/web.md §5; the APG's alert is for
-          that alone). */}
+          live region on it, as it is there when the Brief opens; its
+          arrival is said once, above (useAnnounce), not again while the
+          pilot reads (docs/design/web.md §5). */}
       {verdict && (
         <div
           className={cn("flex items-center gap-2.5 rounded-xl px-3.5 py-2.5", MARK_TINT[verdict.finding] ?? "bg-muted")}

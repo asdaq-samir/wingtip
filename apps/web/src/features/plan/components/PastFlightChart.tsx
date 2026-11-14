@@ -3,7 +3,7 @@ import { Area, ComposedChart, Line, ReferenceArea, XAxis, YAxis, usePlotArea, us
 import { ChartContainer, type ChartConfig } from "../../../components/ui/chart";
 import { usePastFlight } from "../map/pastFlight";
 import type { PastFlightPoint, RouteProfile } from "../../../lib/api/types";
-import { clockTime } from "../../../lib/format";
+import { clockTime, wholeNm } from "../../../lib/format";
 import { altFt, grouped } from "../../../lib/format";
 import { when } from "./pastFlightFormat";
 import { distanceTicks } from "./distanceTicks";
@@ -91,7 +91,7 @@ const FlightChart = memo(function FlightChart({
             axisLine={false}
             ticks={nmTicks}
             interval={0}
-            tickFormatter={(nm: number) => `${Math.round(nm)} nm`}
+            tickFormatter={(nm: number) => `${wholeNm(nm)}`}
           />
         ) : (
           <XAxis

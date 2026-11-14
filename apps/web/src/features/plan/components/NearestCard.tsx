@@ -28,7 +28,7 @@ import { TEXT } from "../../../lib/text";
 import { useTabSearch } from "../lib/tabSearch";
 import { nearSearch } from "./workspace/listSearch";
 import { useDebounced } from "../../../lib/useDebounced";
-import { altFt } from "../../../lib/format";
+import { altFt, wholeNm } from "../../../lib/format";
 import { FINDING_TONE } from "../../../lib/findings";
 
 export interface NearFrom {
@@ -328,7 +328,7 @@ export default function NearestCard({
             // elevation (reachesField), so a field on higher ground inside
             // the ring may not be; each row its longest runway and its
             // listed tower, CTAF or UNICOM frequency.
-            title={from ? `Near ${from.label}` : glide != null ? `Within a glide: about ${Math.round(glide)} nm` : "Nearest to you"}
+            title={from ? `Near ${from.label}` : glide != null ? `Within a glide: about ${wholeNm(glide)}` : "Nearest to you"}
           >
             {(data ?? []).map((a) => (
               <NearestRow

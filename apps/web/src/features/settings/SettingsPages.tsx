@@ -5,6 +5,8 @@ import { editionOf } from "../../components/chartEdition";
 import { ConsolePages, PageLink, PageRow } from "../../components/ConsolePages";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { PAGE_LINK } from "../../components/pageLink";
+import { useCredits } from "../../lib/map/gl/creditStore";
+import { trafficCredit } from "../plan/map/trafficCredit";
 import Segmented from "../../components/Segmented";
 import SwitchRow from "../../components/SwitchRow";
 import { ALERT_MODES, useAlertMode, type AlertMode } from "../../components/alertMode";
@@ -144,6 +146,12 @@ function SourcesPage() {
   const { data: chart } = useQuery(chartQuery);
   // How old each weather layer's data is, beside where it comes from.
   const ages = useLayerAges();
+  // Whose traffic the map draws, as the map credits it (TrafficGl's
+  // trafficCredit: adsb.lol's, adsb.fi's or ADS-B Exchange's), where it
+  // always said adsb.lol (the commonality audit's MAP-6, CODE-31);
+  // adsb.lol's, the planner's first, before the map has asked.
+  // The row's own title says Traffic: the credit without it.
+  const trafficSource = (useCredits((c) => c.credits.traffic) ?? trafficCredit(undefined)).replace(/^Traffic /, "");
   // The edition drawn past its 56-day cycle, said under the Charts row
   // (the engine's data_cycle; lib/dataCycles): still drawn, never hidden.
   const chartsCycle = useDataCycles().find((c) => c.key === "charts");
@@ -176,7 +184,7 @@ function SourcesPage() {
       />
       <ListRow
         title="Traffic"
-        value={<span className="text-foreground">{traffic && ages.traffic ? `adsb.lol · ODbL · ${ages.traffic}` : "adsb.lol · ODbL"}</span>}
+        value={<span className="text-foreground">{traffic && ages.traffic ? `${trafficSource} · ${ages.traffic}` : trafficSource}</span>}
         data-testid="traffic-age"
       />
     </ListGroup>
