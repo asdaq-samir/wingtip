@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { cn } from "cn";
 import type { PanelState } from "../../lib/mapChrome";
@@ -58,8 +59,7 @@ export function SheetGrabber({
 }) {
   const { cycle, arrows } = useSizes(size, ask);
   return (
-    <button
-      type="button"
+    <BaseButton
       aria-label={label}
       aria-expanded={size !== "peek"}
       aria-keyshortcuts="ArrowUp ArrowDown"
@@ -77,6 +77,6 @@ export function SheetGrabber({
       )}
     >
       <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" aria-hidden="true" />
-    </button>
+    </BaseButton>
   );
 }

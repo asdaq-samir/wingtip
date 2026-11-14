@@ -4,7 +4,7 @@ export { showPage } from "./oneSearch";
 
 /**
  * The sheet's two pages, Search and FPL, turned by the one round toggle
- * riding the sheet's top at the right (PageToggle; the owner, 2026-11-13),
+ * riding the sheet's top at the left, under the 3D (PageToggle; the owner, 2026-11-13),
  * for the specs that read which is up: sheet-page-toggle,
  * sheet-pages-cards, sheet-fly-here and first-flight.
  */

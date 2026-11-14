@@ -47,7 +47,7 @@ export default function CoachPage() {
  *  Make It Again once there is one. */
 function Next({ next, planned, make, disabled }: { next: string | null; planned: boolean; make: () => void; disabled: boolean }) {
   return (
-    <div className="grid gap-3 rounded-lg border border-border bg-card p-4" data-testid="coach-next">
+    <div className="grid gap-3 rounded-(--radius-card) border border-border bg-card p-4" data-testid="coach-next">
       <p className={cn(TEXT.row, !next && "text-muted-foreground")}>
         {next ? (
           <>

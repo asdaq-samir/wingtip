@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { openYou } from "../../lib/openSettings";
@@ -20,8 +21,7 @@ export default function AccountButton({ className }: { className?: string }) {
   const { data: pilot } = useQuery(pilotQuery);
   const name = pilot ? pilot.fullName || pilot.displayName : null;
   return (
-    <button
-      type="button"
+    <BaseButton
       aria-label={name ? `You, ${name}` : "You"}
       data-testid="account-button"
       data-console-button=""
@@ -29,6 +29,6 @@ export default function AccountButton({ className }: { className?: string }) {
       className={cn(accountButton(!!name), className)}
     >
       <AccountFace name={name} />
-    </button>
+    </BaseButton>
   );
 }

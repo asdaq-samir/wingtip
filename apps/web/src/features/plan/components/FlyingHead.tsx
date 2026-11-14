@@ -103,7 +103,7 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
         <div className={cn(GROUP_HEADING, "truncate")}>
           Next · <span data-testid="flying-next-name">{next.name}</span>
         </div>
-        <div className="truncate text-3xl leading-[2.0625rem] font-bold tabular-nums" data-testid="flying-next-figures">
+        <div className={cn("truncate font-bold tabular-nums", TEXT.hero)} data-testid="flying-next-figures">
           {next.nm.toFixed(1)}
           <span className={cn(TEXT.title, "font-medium")}> nm</span>
           {next.min !== null && <> · {duration(next.min)}</>}

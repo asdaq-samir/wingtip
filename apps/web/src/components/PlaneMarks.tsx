@@ -29,7 +29,7 @@ export function PlaneMark({
    *  does (the owner: "Keep traffic as is", 2026-11-04). */
   kind?: AircraftKind;
 }) {
-  const fill = emergency ? "bg-destructive text-white" : "bg-sky-600 text-white";
+  const fill = emergency ? "bg-destructive text-white" : "bg-(--badge-airplane) text-white";
   if (kind) {
     // The shapes fill their square, so drawn larger than a glyph: 34 in
     // the tile's 56, 22 in the row's 32.
@@ -189,5 +189,5 @@ export function HomePlane({ kind = "high" }: { kind?: AircraftKind }) {
 }
 
 /** HomePlane's sizes: 40 in a strip tile's 56, 24 in a row's 32. */
-export const PLANE_TILE = "bg-teal-600 text-white [&_svg]:size-10";
-export const PLANE_ROW = "bg-teal-600 text-white [&_svg]:size-6";
+export const PLANE_TILE = "bg-(--badge-home) text-white [&_svg]:size-10";
+export const PLANE_ROW = "bg-(--badge-home) text-white [&_svg]:size-6";

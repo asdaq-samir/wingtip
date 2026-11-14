@@ -130,10 +130,12 @@ const WHY: Record<VerdictItem["key"], { why: string; cite: string }> = {
   },
 };
 
-/** What to do about a finding, by its key and whether it stops the flight. */
+/** What to do about a finding, by its key and whether it stops the flight.
+ *  Flight Service's number with non-breaking hyphens (U+2011): it broke
+ *  after "(1-" on a phone (the web audit's WEB-43). */
 const ACTION: Record<VerdictItem["key"], { stop: string; caution: string }> = {
   weather: { stop: "wait for it to lift, or plan another day", caution: "read it on En route and plan around it" },
-  airspace: { stop: "route around it, or go later", caution: "call Flight Service (1-800-WX-BRIEF) before you go" },
+  airspace: { stop: "route around it, or go later", caution: "ask Flight Service (1\u2011800\u2011WX\u2011BRIEF) before you go" },
   altitude: { stop: "pick another altitude or route", caution: "pick an altitude the wheel offers" },
   fuel: { stop: "add fuel, or plan a stop", caution: "add fuel, or plan a stop" },
   runways: { stop: "pick a longer runway, or a lighter load", caution: "ask for another runway, or wait for the wind" },

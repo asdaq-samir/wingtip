@@ -15,7 +15,7 @@ import { RowBadge } from "../../components/RowBadge";
 import { SETTING_BADGE } from "../../lib/rowBadges";
 import type { Pilot } from "../../lib/api/types";
 import { api } from "../../lib/api/client";
-import { feet } from "../../lib/format";
+import { feet, miles } from "../../lib/format";
 import { flightsQuery, pilotQuery } from "../../lib/queryClient";
 import { shortName } from "../../lib/aircraftChoice";
 import { usePreferences } from "../../lib/preferences";
@@ -210,7 +210,7 @@ function Personal({
 /** The personal minimums in a few words, the ceiling and visibility
  *  first; none set, nothing. */
 function minimumsWords(m: Minimums): string | null {
-  const parts = [m.visibilitySm !== null ? `${m.visibilitySm} mi` : null, m.ceilingFt !== null ? feet(m.ceilingFt) : null].filter(Boolean);
+  const parts = [m.visibilitySm !== null ? miles(m.visibilitySm) : null, m.ceilingFt !== null ? feet(m.ceilingFt) : null].filter(Boolean);
   return parts.length ? parts.join(" · ") : null;
 }
 

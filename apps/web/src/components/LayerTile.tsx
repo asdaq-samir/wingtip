@@ -26,7 +26,7 @@ type Glyph = ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
  * needed (index.css's rule). The grid's gap-2 is the rows' own gap.
  */
 const TILE = cn(
-  "relative flex h-auto min-h-16 w-full min-w-0 flex-col items-start justify-between gap-1 rounded-xl border-0 bg-card px-2.5 py-2 text-left whitespace-normal text-foreground shadow-none",
+  "relative flex h-auto min-h-16 w-full min-w-0 flex-col items-start justify-between gap-1 rounded-(--radius-card) border-0 bg-card px-2.5 py-2 text-left whitespace-normal text-foreground shadow-none",
   "ring-1 ring-border hover:bg-muted data-pressed:bg-tint data-pressed:text-white data-pressed:ring-tint hover:data-pressed:bg-tint/90",
   "[&_svg:not([class*='size-'])]:size-5",
 );

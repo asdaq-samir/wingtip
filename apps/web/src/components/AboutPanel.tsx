@@ -43,7 +43,7 @@ export default function AboutPanel() {
   return (
     <div className="space-y-5 pb-1" data-testid="about-panel">
       <header className="flex flex-col items-center gap-2 pt-2 text-center">
-        <img src="/app/icon-192.png" alt="" className="size-16 rounded-[22%] shadow-sm" />
+        <img src="/app/icon-192.png" alt="" className="size-16 rounded-[22%] shadow-card" />
         <h2 className={cn("font-bold text-foreground", TEXT.card)}>Wingtip Maps</h2>
         <p className={cn("text-foreground", TEXT.detail)}>VFR and IFR flight planning on the FAA chart</p>
       </header>

@@ -257,7 +257,9 @@ export default function AirspaceCard({
                       }
                       description={
                         <>
-                          {[suaAltitudes(area), area.times_of_use, area.controlling_agency].filter(Boolean).join(" · ")}
+                          {/* The FAA's times of use and agency in sentence case with their
+                              codes kept, as its name is (faaWords; WEB-11). */}
+                          {[suaAltitudes(area), faaWords(area.times_of_use), faaWords(area.controlling_agency)].filter(Boolean).join(" · ")}
                           {/* SFDPS's word on it now, where it has one (lib/liveReports). */}
                           {saaWords(saa?.areas[area.name]) && (
                             <span

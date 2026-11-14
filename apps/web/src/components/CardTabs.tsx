@@ -18,9 +18,14 @@ import { TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 /** A card's pages as iOS's segmented control, the stock Tabs' own look:
  *  an airport's Info, Weather, Runways and Charts, at the owner's pick of
- *  the redesign, where they were words over a hairline. 44 tall to a
- *  finger. */
-const SEGMENTED = "w-full group-data-[orientation=horizontal]/tabs:h-9 pointer-coarse:group-data-[orientation=horizontal]/tabs:h-11";
+ *  the redesign, where they were words over a hairline. 36 tall at every
+ *  pointer: controls never grow (CLAUDE.md); it grew to 44 on touch and
+ *  its 29-point triggers still missed (the web audit's WEB-7). */
+const SEGMENTED = "w-full group-data-[orientation=horizontal]/tabs:h-9";
+/** Each trigger's 44-point hit area, a pseudo-element eight over and under
+ *  it, the triggers' areas meeting side by side; `::before`, as the stock
+ *  trigger's `::after` is its underline. */
+const TRIGGER_AREA = "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']";
 
 interface CardTabSpec<T extends string> {
   value: T;
@@ -57,7 +62,7 @@ export function CardTabBar<T extends string>({
         <TabsTrigger
           key={t.value}
           value={t.value}
-          className="pointer-coarse:text-(length:--type-detail)"
+          className={cn("pointer-coarse:text-(length:--type-detail)", TRIGGER_AREA)}
           disabled={disabled}
           data-testid={`${testIdPrefix}-${t.value}`}
           // A tap picks the tab and nothing else: the sheet keeps the size it

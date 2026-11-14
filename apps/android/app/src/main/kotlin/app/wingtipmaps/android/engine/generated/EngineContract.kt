@@ -4377,6 +4377,11 @@ object EngineContract {
     )
 
     @Serializable
+    data class FrequenciesInOrderInput(
+        val frequencies: List<EngineContract.FieldFrequency>,
+    )
+
+    @Serializable
     data class FrequencyLineAnswer(
         val name: String,
         val kind: String,

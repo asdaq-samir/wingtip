@@ -118,7 +118,8 @@ These hold on every screen below and win over any reference app.
   half up (SheetParts' `figuresPill`, 3.25 rem under the grabber's room);
   on Search the search; the map's room is read from the Drawer's own
   `--drawer-snap-point-offset` (`useSheetCover`). The sheet is solid at
-  every size (`GLASS_SHEET`, the look's `--sheet`), not glass; only the
+  every size (`GLASS_SHEET`, the look's `--sheet`), the desktop's side
+  panel too (it was translucent until the 14 Nov audit's WEB-6), not glass; only the
   map's floating buttons are frosted (owner decision 2026-11-10
   (decisions page), the sheet audit's F-L1).
 - Inside the panel, lay content out by the panel's width, not the
@@ -865,7 +866,7 @@ content and on the least destructive action for an irreversible step
 ([APG dialog][apg-dialog]); an `alertdialog` is only for an interruption
 that needs an answer ([APG alertdialog][apg-alertdialog]).
 
-**Structure, top to bottom.** Title (Emergency Assistant); 7700 and 121.5
+**Structure, top to bottom.** Title (Emergency, the card's name as drawn; its screen is "Emergency Assistant" in design/screens.json, its short label "Emergency"); 7700 and 121.5
 as large copyable figures; the nearest fields with bearing, distance and
 the engine's glide reach, nearest first; the picked airplane's emergency
 checklist (or "No airplane picked", with the generic actions the engine

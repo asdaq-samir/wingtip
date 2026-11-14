@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Mic, Square, TriangleAlert } from "lucide-react";
@@ -85,7 +86,7 @@ function Verdict({ ok, said, children }: { ok: boolean; said: [ok: string, notOk
   return (
     <div className={cn("flex items-start gap-2", !ok && "text-caution-ink")}>
       {ok ? (
-        <Check className="mt-0.5 size-4 shrink-0 text-green-700 dark:text-green-400" aria-label={said[0]} />
+        <Check className="mt-0.5 size-4 shrink-0 text-go-ink" aria-label={said[0]} />
       ) : (
         <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-label={said[1]} />
       )}
@@ -346,8 +347,7 @@ export default function ClearanceCard({
             <ul className="flex flex-col" aria-label="The radio as heard">
               {log.map((t) => (
                 <li key={t.id}>
-                  <button
-                    type="button"
+                  <BaseButton
                     onClick={() => pick(t.text)}
                     data-testid="radio-log-row"
                     className={cn(
@@ -356,7 +356,7 @@ export default function ClearanceCard({
                     )}
                   >
                     <span className="text-muted-foreground tabular-nums">{time(t.at)}</span> {t.text}
-                  </button>
+                  </BaseButton>
                 </li>
               ))}
             </ul>

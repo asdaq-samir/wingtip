@@ -1,7 +1,7 @@
 import { Cloud, CloudLightning, CloudRain, CloudSnow, CloudSun, Sun } from "lucide-react";
 import { cn } from "cn";
 import { colourOf } from "../../../lib/map/marks/flightCategory";
-import { clockTime } from "../../../lib/format";
+import { clockTime, zoneName } from "../../../lib/format";
 import { altFt } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
 import type { Hour } from "../lib/hourly";
@@ -73,6 +73,11 @@ export function HourlyForecast({
     >
       {hours.map((hour, i) => {
         const label = hour.now ? "Now" : clockTime(new Date(hour.at));
+        // The clock's zone once, under the first hour after Now, as the nav
+        // log heads its ETAs (the web audit's WEB-9: "05:00" beside
+        // "Observed 0355Z" read as either); a blank line under the rest so
+        // the columns line up, as the wind's speed line does.
+        const zone = !hour.now && (i === 0 || hours[i - 1]!.now) ? zoneName(new Date(hour.at)) : null;
         const wind = reportedWind(hour.windDirTrueDeg, hour.windSpeedKt, hour.windGustKt);
         const landing = arrival?.index === i ? clockTime(new Date(arrival.at)) : null;
         return (
@@ -92,9 +97,13 @@ export function HourlyForecast({
             )}
           >
             {/* The column in words for VoiceOver, its figures hidden from it. */}
-            <span className="sr-only">{spokenOf(hour, label, wind, landing)}</span>
-            <span aria-hidden className={cn(TEXT.note, hour.now ? "font-semibold text-foreground" : "text-muted-foreground")}>
-              {label}
+            <span className="sr-only">{spokenOf(hour, hour.now ? label : `${label} ${zoneName(new Date(hour.at))}`, wind, landing)}</span>
+            <span
+              aria-hidden
+              className={cn("flex flex-col items-center", TEXT.note, hour.now ? "font-semibold text-foreground" : "text-muted-foreground")}
+            >
+              <span>{label}</span>
+              <span className={TEXT.caption}>{zone ?? "\u00a0"}</span>
             </span>
             <Glyph hour={hour} />
             {/* The category's bar, and the weather at times (a TEMPO's or

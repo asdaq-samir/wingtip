@@ -2,8 +2,8 @@
 """The engine's WebAssembly stays within its budget.
 
 apps/web/src/lib/engine/wingtip-engine.wasm is downloaded by every phone
-before the planner's first draw (index.html preloads it, main.tsx waits
-for it). It went from 143 KB on 2026-11-03 to 1.41 MB on 2026-11-10 before
+by every phone as the planner opens (index.html preloads it; the first
+render does not wait, main.tsx's EngineGate). It went from 143 KB on 2026-11-03 to 1.41 MB on 2026-11-10 before
 anyone measured it; one shared sort (wingtip_core::sort) took it back to
 1.27 MB, and building only the rules the web asks (facade/build.rs for
 wasm32, scripts/build/web_rules.py) to 1.08 MB, 470 KB gzipped. This
@@ -33,9 +33,15 @@ WASM = ROOT / "apps/web/src/lib/engine/wingtip-engine.wasm"
 # and the web's 192 rules; each budget about 10% above. 2026-11-11: raised
 # to 1.25 MB and 545 KB at the owner's word ("For now increase the limit"),
 # when notam_subject (the airport card's NOTAM badges) took the module to
-# 1,206,540 and 523,574.
+# 1,206,540 and 523,574. 2026-11-12 (d2566f607): raised to 1,320,000 and
+# 575,000 when integration's module reached 1,248,403 bytes. 2026-11-14: the
+# module is 1,284,722 bytes and 559,841 gzipped on claude/integration (1,270,327
+# and 553,988 on main at b81400c15), 97% of the gzip budget.
 RAW_BUDGET = 1_320_000
 GZIP_BUDGET = 575_000
+# A warning, not a failure, from here: the budget is not raised, so the next
+# rule that grows the module should be looked at before it is the one that fails.
+WARN_AT = 0.95
 
 
 def main():
@@ -47,6 +53,16 @@ def main():
         for what, size, budget in [("raw", raw, RAW_BUDGET), ("gzipped", packed, GZIP_BUDGET)]
         if size > budget
     ]
+    near = [
+        f"{what} {size:,} is {size / budget:.0%} of {budget:,}"
+        for what, size, budget in [("raw", raw, RAW_BUDGET), ("gzipped", packed, GZIP_BUDGET)]
+        if budget * WARN_AT < size <= budget
+    ]
+    if near:
+        print(
+            f"::warning title=Engine WebAssembly near its budget::{', '.join(near)}. "
+            "Find what grew with twiggy (this script's docstring); do not raise the budget."
+        )
     if over:
         print(
             f"::error title=Engine WebAssembly over budget::{', '.join(over)} bytes. See scripts/ci/wasm_size.py for how to find what grew."

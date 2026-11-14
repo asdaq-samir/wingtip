@@ -2,9 +2,6 @@ import { useEffect, useMemo } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { ChartLine, Crosshair, Route } from "lucide-react";
 import { cn } from "cn";
-import { Badge } from "../../../components/ui/badge";
-import { Button } from "../../../components/ui/button";
-import { Progress } from "../../../components/ui/progress";
 import { SheetCard } from "../../../components/SheetCard";
 import { CardTitle } from "../../../components/CardTitle";
 import FlightWhat from "./FlightWhat";
@@ -17,24 +14,19 @@ import { RowBadge } from "../../../components/RowBadge";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { useGeo } from "../../../lib/geo";
-import { useClock } from "../../../lib/useMinuteClock";
-import { useOwnFixShown, type Fix } from "../../../lib/map/position/ownShip";
-import { carriedOn, closestApproach, nearInHeight } from "../map/traffic";
+import { useOwnFixShown } from "../../../lib/map/position/ownShip";
 import { useTracking } from "../../../lib/map/position/tracking";
 import { alertsLine } from "../../../lib/aircraftAlerts";
-import type { TrafficAircraft } from "../../../lib/api/types";
 import { planePhotoQuery } from "../lib/planePhoto";
 import { airportQuery, flightQuery, routeQuery } from "../../../lib/queryClient";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
-import { altFt, bearing, clockTime } from "../../../lib/format";
-import { awayFrom, nmAway } from "../../../lib/useAway";
+import { reportedAltitude } from "../../../lib/format";
 import AircraftAlertMenu from "./AircraftAlertMenu";
-import AirplaneSketch from "./AirplaneSketch";
 import FaaRegistration from "./FaaRegistration";
 import { squawkMeaning } from "../lib/squawks";
 import PastFlights from "./PastFlights";
-import { lasted, shortWhen, when } from "./pastFlightFormat";
+import { shortWhen, when } from "./pastFlightFormat";
 import { pastFlightQuery, pastFlightsQuery } from "./pastFlightsQuery";
 import { CardAction } from "../../../components/CardAction";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
@@ -43,6 +35,7 @@ import { aircraftKind } from "../../../lib/aircraftKind";
 import { departuresQuery } from "../../../lib/liveReports";
 import { departureLine } from "../lib/departureWords";
 import { useShownStore, useShown } from "../../../lib/shown";
+import { FlightNow, LiveSketch, type StateBadge } from "./FlightSummary";
 
 /** A link to the airplane on the planner, shared where the phone can,
  *  copied where it cannot. */
@@ -84,203 +77,6 @@ const sketchField = (ident: string | null) => ({
   }),
 });
 
-/** The state on the summary's corner: climbing, level or descending in
- *  the air; on the ground; or an emergency's code (AIM 6-2-2, 6-3-4,
- *  6-4-2). */
-interface StateBadge {
-  word: string;
-  tone: "air" | "ground" | "alarm";
-}
-
-const TONE = {
-  air: "bg-teal-700",
-  // iOS's dark grey: white on it reads at 7.7:1.
-  ground: "bg-zinc-600",
-  alarm: "bg-destructive",
-} as const;
-
-/** Feet against own ship's: "500 ft above", "1,200 ft below", "level". */
-function against(feet: number): string {
-  const rounded = Math.round(feet / 100) * 100;
-  if (rounded === 0) return "level";
-  return `${altFt(Math.abs(rounded))} ft ${rounded > 0 ? "above" : "below"}`;
-}
-
-/** One end of the flight in its summary: the field's ident, a tap that
- *  opens its card where there is one to open, and its town under it. */
-function End({
-  ident,
-  place,
-  at,
-  right = false,
-  onOpen,
-  testId,
-  openTestId,
-}: {
-  ident: string;
-  place?: string | null;
-  at?: string | null;
-  right?: boolean;
-  onOpen?: () => void;
-  testId?: string;
-  openTestId?: string;
-}) {
-  const name = <span className={cn("max-w-full truncate font-bold", TEXT.title)}>{ident}</span>;
-  return (
-    <span className={cn("flex min-w-0 flex-col", right && "items-end text-right")} data-testid={testId}>
-      {onOpen ? (
-        <Button
-          variant="link"
-          size="inline"
-          onClick={onOpen}
-          aria-label={`${ident}'s card`}
-          data-testid={openTestId}
-          className="relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3"
-        >
-          {name}
-        </Button>
-      ) : (
-        <span className="text-foreground">{name}</span>
-      )}
-      {place && <span className={cn("max-w-full truncate text-muted-foreground", TEXT.note)}>{place}</span>}
-      {at && <span className={cn("max-w-full truncate text-muted-foreground tabular-nums", TEXT.note)}>{at}</span>}
-    </span>
-  );
-}
-
-/**
- * The flight in a card under the actions, at the owner's pick of the
- * redesign (A2): where it left and where it is bound, a bar between them
- * as far along as it has flown, and how it is flying -- its height and
- * climb, its ground speed, its true track and how long it has been up --
- * or, not heard now, where its last flight landed and when. Under them an
- * emergency's code, and with own ship on, how far and which way it is and
- * when and how near it comes. Seconds-old internet data from adsb.lol's
- * receivers: for knowing what is about, not for avoiding it.
- */
-function FlightSummary({
-  plane,
-  badge,
-  chip,
-  from,
-  to,
-  progress,
-  startedAt,
-  departedAt,
-  now,
-  fix,
-  fromYou,
-  cpa,
-  onOpenAirport,
-  airport,
-}: {
-  plane: TrafficAircraft | null;
-  badge: StateBadge | null;
-  /** Not heard now: "Landed KPSM 16:02", "Last heard 3 Oct". */
-  chip: string | null;
-  from: { ident: string; place: string | null } | null;
-  to: { ident: string; place: string | null } | null;
-  /** How far along, 0 to 1, where both ends and where it is are known. */
-  progress: number | null;
-  startedAt: number | null;
-  departedAt: number | null;
-  now: number;
-  fix: Fix | null;
-  fromYou: string | null;
-  cpa: { inMin: number; nm: number; aboveFt: number | null } | null;
-  onOpenAirport?: (ident: string) => void;
-  /** The field the airport tap was for: the card's Airport tile's. */
-  airport: string | null;
-}) {
-  const rate = plane?.vertical_fpm ?? 0;
-  const squawk = plane?.squawk ?? null;
-  const meaning = squawkMeaning(squawk);
-  const climb = Math.abs(rate) >= 100 ? `${rate > 0 ? "↑" : "↓"} ${altFt(Math.abs(Math.round(rate / 100) * 100))} fpm` : "level";
-  const flown = plane && startedAt ? lasted(now / 1000 - startedAt) : null;
-  const open = (ident: string) => (onOpenAirport ? () => onOpenAirport(ident) : undefined);
-  return (
-    <div
-      className="mt-3 flex flex-col gap-2 rounded-xl bg-card px-3.5 py-3 ring-1 ring-border/60"
-      data-testid={plane ? "flight-now" : "flight-last"}
-    >
-      <div className={cn("flex items-center gap-2 font-semibold", TEXT.note)}>
-        {badge && (
-          <Badge className={cn("h-auto rounded-md px-1 font-bold text-white", TEXT.caption, TONE[badge.tone])} data-testid="flight-state">
-            {badge.word}
-          </Badge>
-        )}
-        <span className={plane ? "text-go-ink" : "text-muted-foreground"}>
-          {plane ? (flown ? `In the air · ${flown}` : "In the air") : "Not heard now"}
-        </span>
-      </div>
-      {from && (
-        <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3">
-          <End
-            ident={from.ident}
-            place={from.place}
-            at={departedAt ? clockTime(new Date(departedAt * 1000)) : null}
-            onOpen={from.ident !== "?" ? open(from.ident) : undefined}
-            testId={departedAt ? "flight-departed" : undefined}
-            openTestId={from.ident === airport ? "flight-airport" : undefined}
-          />
-          {/* As far along as it has flown, the stock Progress; a plain line
-              where that cannot be said (no field it is bound for). */}
-          {progress != null ? (
-            <Progress value={Math.round(progress * 100)} aria-label="Of the way flown" className="h-1 bg-foreground/15" />
-          ) : (
-            <div className="h-1 rounded-full bg-foreground/15" />
-          )}
-          <End
-            right
-            ident={to?.ident ?? "Now"}
-            place={to?.place ?? null}
-            onOpen={to ? open(to.ident) : undefined}
-            testId={plane ? "flight-bound" : undefined}
-            openTestId={to && to.ident === airport && to.ident !== from.ident ? "flight-airport" : undefined}
-          />
-        </div>
-      )}
-      {plane ? (
-        <span className={cn("font-semibold text-foreground tabular-nums", TEXT.detail)} data-testid="flight-altitude">
-          {plane.altitude_ft == null ? "—" : `${altFt(Math.round(plane.altitude_ft / 25) * 25)} ft`} {climb}
-          {" · "}
-          {plane.speed_kt == null ? "—" : `${Math.round(plane.speed_kt)} kt`}
-          {/* ADS-B's track is over the ground and true, not magnetic. */}
-          {plane.track_deg != null && ` · ${bearing(plane.track_deg)} true`}
-        </span>
-      ) : (
-        chip && (
-          <span className={cn("font-semibold text-foreground", TEXT.detail)} data-testid="flight-chip">
-            {chip}
-          </span>
-        )
-      )}
-      {squawk && meaning && (
-        // An emergency's code where it is seen first (AIM 6-2-2, 6-3-4, 6-4-2).
-        <span className={cn("font-semibold text-destructive-ink tabular-nums", TEXT.detail)} data-testid="flight-squawk-alarm">
-          Squawk {squawk} · {meaning}
-        </span>
-      )}
-      {plane && fix && fromYou && (
-        <span className={cn("text-muted-foreground", TEXT.detail)} data-testid="flight-from-you">
-          {`${fromYou} of you`}
-          {fix.altitudeFt != null && plane.altitude_ft != null ? `, ${against(plane.altitude_ft - fix.altitudeFt)}` : ""}
-          {cpa && (
-            <span
-              data-testid="flight-closest"
-              className={cn(cpa.nm < 1 && (cpa.aboveFt == null || nearInHeight(cpa.aboveFt)) && "font-semibold text-destructive-ink")}
-            >
-              {" · closest "}
-              {cpa.inMin < 0.5 ? "now, drawing apart" : `in ${Math.round(cpa.inMin)} min`}
-              {`: ${nmAway(cpa.nm)}${cpa.aboveFt != null ? `, ${against(cpa.aboveFt)}` : ""}`}
-            </span>
-          )}
-        </span>
-      )}
-    </div>
-  );
-}
-
 /** A field's town, "Chicago, IL", from the sketch's field. */
 const townOf = (field: { city?: string | null; region?: string | null; name?: string | null } | null | undefined) =>
   field ? [field.city, field.region?.replace(/^US-/, "")].filter(Boolean).join(", ") || field.name || null : null;
@@ -321,8 +117,6 @@ export default function FlightCard({
   const firstAt = latest ? { lat: latest.plane.lat, lon: latest.plane.lon } : null;
   const { data: route } = useQuery(routeQuery(callsign, firstAt));
   const flying = route && route.plausible !== false ? route : null;
-  // The report's age, counted on while its tab is in sight (useClock).
-  const now = useClock(1000);
   const plane = latest?.plane ?? null;
   const following = follow && !!plane;
   // What is kept of it, for the Aircraft card's Recents and Favorites,
@@ -350,10 +144,7 @@ export default function FlightCard({
   }, [kept]);
   const name =
     plane?.callsign ?? detail?.registration ?? plane?.registration ?? detail?.faa?.n_number ?? keptBefore?.name ?? hex.toUpperCase();
-  // Where it is now, carried on from its report, as the map draws it (lib/geo).
   const geo = useGeo();
-  const here = geo && latest ? carriedOn(geo, latest.plane, (now - latest.at) / 1000) : null;
-  const cpa = fix && plane && here ? closestApproach(fix, { ...plane, ...here }) : null;
   const squawk = plane?.squawk ?? null;
   const meaning = squawkMeaning(squawk);
   const rate = plane?.vertical_fpm ?? 0;
@@ -435,19 +226,6 @@ export default function FlightCard({
     ? { ident: fromIdent, place: townOf(fromField) ?? (plane ? (route?.airports[0]?.location ?? null) : null) }
     : null;
   const toEnd = toIdent ? { ident: toIdent, place: townOf(toField) ?? (plane ? (flying?.airports.at(-1)?.location ?? null) : null) } : null;
-  // How far along: the miles flown from the field it left against those
-  // still to go to the one it is bound for; a flight landed all the way.
-  const progress = plane
-    ? geo && fromField && toField && here
-      ? (() => {
-          const done = geo.distanceNm(fromField, here),
-            left = geo.distanceNm(here, toField);
-          return done + left > 0 ? done / (done + left) : null;
-        })()
-      : null
-    : last?.landed
-      ? 1
-      : null;
   const share = () => void shareFlight(name, hex);
   // The photo first, as Maps opens a place on its photos, where
   // Planespotters has one; else the airplane's shape on the tint, a
@@ -479,9 +257,9 @@ export default function FlightCard({
       key: "trail",
       label: `Where ${name} has flown`,
       picture: (
-        <AirplaneSketch
+        <LiveSketch
+          latest={latest}
           points={trail}
-          now={here && plane ? { ...here, altFt: plane.altitude_ft ?? null } : null}
           // Its track now, or, not heard, its last flight's last way.
           trackDeg={plane?.track_deg ?? (geo && trail.length > 1 ? geo.bearingDeg(trail.at(-2)!, trail.at(-1)!) : null)}
           from={fromField ?? null}
@@ -496,7 +274,7 @@ export default function FlightCard({
   // while it is heard, else its chip -- and where it is from and bound;
   // behind it the photo, or the tint the head draws where there is none.
   const pillLine = [
-    plane?.altitude_ft != null && `${altFt(Math.round(plane.altitude_ft / 25) * 25)} ft`,
+    plane?.altitude_ft != null && reportedAltitude(plane.altitude_ft),
     plane?.speed_kt != null && `${Math.round(plane.speed_kt)} kt`,
     !plane && chip,
     fromIdent && toIdent && fromIdent !== toIdent
@@ -566,19 +344,17 @@ export default function FlightCard({
         </p>
       )}
       {(plane || last || endOfToday) && (
-        <FlightSummary
+        <FlightNow
+          latest={latest}
+          fields={{ from: fromField ?? null, to: toField ?? null, landed: !!last?.landed }}
           plane={plane}
           badge={badge}
           chip={chip}
           from={fromEnd}
           to={toEnd}
-          progress={progress}
           startedAt={detail?.departed?.at ?? today?.[0]?.t ?? null}
           departedAt={plane ? (detail?.departed?.at ?? null) : null}
-          now={now}
           fix={fix}
-          fromYou={geo && fix && here ? awayFrom(geo, fix, here) : null}
-          cpa={cpa}
           onOpenAirport={onOpenAirport}
           airport={airport}
         />

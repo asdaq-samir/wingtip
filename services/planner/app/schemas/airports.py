@@ -359,11 +359,11 @@ class AirportPlace(AirportRecord):
     # (faa_data.airport_contact): the manager's, else the owner's; None if none.
     phone: str | None = None
     address: str | None = None
-    # The FAA's airport diagram and Chart Supplement page for the current
-    # editions (wingtip.publications); None where the field has none. The
-    # diagram's picture is /api/airport-diagram/{airport_diagram_cycle}/{ident}.png.
+    # The FAA's airport diagram and Chart Supplement page for the current editions (wingtip.publications); None where the field
+    # has none. Its picture is /api/airport-diagram/{airport_diagram_cycle}/{ident}.png, the runways' .../runways/{ident}.png (WEB-41).
     airport_diagram_url: str | None = None
     airport_diagram_cycle: str | None = None
+    airport_diagram_runways: bool = True
     chart_supplement_url: str | None = None
     # And all of the field's charts in this cycle's d-TPP, the diagram among
     # them: what the card's Diagrams tab lists.

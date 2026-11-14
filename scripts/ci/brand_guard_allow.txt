@@ -11,3 +11,11 @@ apps/web/src/features/plan/map/traffic.ts 2 Traffic coloured by its altitude: a 
 apps/web/src/index.css 1 The installed app's scrim under the iPhone's status bar: a gradient of black over the chart.
 apps/ios/Wingtip/Views/Kneeboard.swift 6 The printed kneeboard page: fixed point sizes on paper, where Dynamic Type has no reader to follow.
 apps/ios/Wingtip/Strip/ChartInk.swift 1 The Native look's strip card: the 10-point corner iOS's own grouped box has (GroupBox, an inset grouped cell), the system's value stated as it is, not a look of the app's.
+# Tailwind's named text sizes left when the check came in (WEB-22, 2026-11-14), each to move onto a TEXT role and leave this list.
+apps/web/src/features/emergency/ActionsList.tsx 1 WEB-22: Emergency's figure size; to TEXT.figure or hero.
+apps/web/src/features/plan/components/RouteBox.tsx 4 WEB-22: the typed route's mouse sizes beside its touch role; to a TEXT role.
+apps/web/src/features/plan/components/navlog/DescriptionCell.tsx 1 WEB-22: the nav log's description at a desktop's width; to a TEXT role.
+apps/web/src/features/plan/components/navlog/NavLogView.tsx 1 WEB-22: the printed nav log's head; to a TEXT role.
+apps/web/src/features/plan/components/routeBox/RouteToken.tsx 2 WEB-22: the asking token's mouse sizes beside its touch role; to a TEXT role.
+apps/web/src/features/shell/MapPage.tsx 1 WEB-22: the skip link's size; to a TEXT role.
+apps/web/src/lib/text.ts 2 The Flying screen's figure's unit and name (FLYING_FIGURE): fixed sizes read at arm's length, stated with the roles themselves.

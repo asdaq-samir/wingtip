@@ -9,6 +9,7 @@ import { RunwayRow } from "../RunwayRow";
 import { runwayInUse } from "../../lib/pattern";
 import { NotamBadge, NotamSheet } from "./NotamBadge";
 import { useNotamMarks, useNotamSheet } from "./notamBadges";
+import { NO_RUNWAYS } from "../../../../lib/emptyWords";
 
 /** An airport's card's Runways tab (PlaceCard): its pattern altitude, each
  *  runway, a NOTAM's badge by its name ("Closed") and a tap on it opening
@@ -61,7 +62,7 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
             );
           })
         ) : (
-          <ListRow title="None listed" />
+          <ListRow title={NO_RUNWAYS} />
         )}
       </ListGroup>
       {/* Each runway's RVR now, where the field reports it. */}

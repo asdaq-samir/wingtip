@@ -154,6 +154,22 @@ fn the_ctaf_and_the_kneeboards_list() {
     assert_eq!(knee(&[("UNIC", 123.0, "CTAF/UNICOM")]), r#"[["CTAF",123.0]]"#);
     assert_eq!(knee(&[("ATIS", 135.4, "ATIS"), ("TWR", 118.3, "TWR"), ("UNIC", 122.95, "UNIC")]), r#"[["ATIS",135.4],["TWR",118.3]]"#);
     assert_eq!(knee(&[("TWR", 118.3, "TWR")]), r#"[["TWR",118.3]]"#);
+    // In the order they are dialled: KDLH's file lists UNICOM, the tower
+    // and ground before its ATIS (the web audit's WEB-10).
+    let order = |l: &[(&str, f64, &str)]| call("frequencies_in_order", &format!("{{\"frequencies\": {}}}", freqs(l))).unwrap();
+    assert_eq!(
+        order(&[
+            ("UNIC", 122.95, "UNIC"),
+            ("TWR", 118.3, "TWR"),
+            ("GND", 121.9, "GND"),
+            ("APP", 125.0, "APP"),
+            ("ATIS", 124.1, "ATIS"),
+            ("CLD", 133.0, "CLD"),
+        ]),
+        "[4,5,2,1,3,0]"
+    );
+    assert_eq!(order(&[("UNIC", 123.0, "CTAF/UNICOM"), ("AWOS", 118.375, "AWOS"), ("MISC", 1.0, "")]), "[1,0,2]");
+    assert_eq!(order(&[]), "[]");
     let of = |types: &str| {
         call("frequency_of", &format!("{{\"frequencies\": {}, \"types\": {types}}}", freqs(&[("gnd", 121.7, ""), ("ASOS", 119.0, "")])))
             .unwrap()

@@ -50,6 +50,8 @@ export const CHART = {
   centreline: "#ffffff",
   glidepath: "#00b4e6",
   obstacle: "#7a1f1f",
+  mapGround: "#f1f5f9",
+  mapGroundNight: "#0f172a",
 };
 
 /** The FAA's flight categories (AIM 7-1-7). */
@@ -102,6 +104,9 @@ export const BADGE = {
   stopFood: "#dc2626",
   stopRepair: "#0f766e",
   stopTraining: "#0369a1",
+  home: "#0d9488",
+  airplane: "#0284c7",
+  air: "#0f766e",
 };
 
 export const WEATHER = {
@@ -193,6 +198,7 @@ export const TYPE_CLASS = {
   tab: "text-(length:--type-tab) leading-(--lead-tab)",
   tabBar: "text-(length:--type-tab-bar) leading-(--lead-tab-bar)",
   caption: "text-(length:--type-caption) leading-(--lead-caption)",
+  chip: "text-xs pointer-coarse:text-[min(0.8125rem,14px)]",
   label: "font-display text-(length:--type-label) leading-(--lead-label) font-semibold uppercase native:normal-case tracking-[0.1em] native:tracking-normal",
   figure: "text-(length:--type-figure) leading-(--lead-figure) font-bold tabular-nums",
   word: "font-display font-semibold uppercase native:normal-case tracking-[0.08em] native:tracking-normal",
@@ -211,6 +217,7 @@ export const TYPE_POINTS = {
   tab: 13,
   tabBar: 12,
   caption: 11,
+  chip: 13,
   label: 13,
   figure: 26,
 } as const;

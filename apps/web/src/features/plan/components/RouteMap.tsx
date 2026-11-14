@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { feet, hm, threeFigures } from "../../../lib/format";
+import { feet, hm, nm, threeFigures } from "../../../lib/format";
 import { Badge } from "../../../components/ui/badge";
 import { chartQuery, classBQuery } from "../../../lib/queryClient";
 import { pointName } from "../../../lib/identSchema";
@@ -144,7 +144,7 @@ function CheckpointCard({ candidate, number, leg }: { candidate: Candidate; numb
           role={number === undefined ? undefined : "img"}
           aria-label={number === undefined ? undefined : `Checkpoint ${number}`}
           aria-hidden={number === undefined ? true : undefined}
-          className="grid size-7 shrink-0 place-items-center rounded-full border-[2.5px] border-background text-(length:--type-caption) leading-[0.8125rem] font-bold shadow-(--depth-mark) outline outline-1 outline-(color:--chart-shade)/45"
+          className="grid size-7 shrink-0 place-items-center rounded-full border-[2.5px] border-background text-(length:--type-caption) leading-[0.8125rem] font-bold shadow-mark outline outline-1 outline-(color:--chart-shade)/45"
           style={{ backgroundColor: fill, color: inkOn(fill) }}
         >
           {number ?? ""}
@@ -152,7 +152,7 @@ function CheckpointCard({ candidate, number, leg }: { candidate: Candidate; numb
       }
       // The number on its dot, not again before its name.
       title={candidate.name || "(unnamed)"}
-      subtitle={`${candidate.along_track_nm.toFixed(1)} nm along`}
+      subtitle={`${nm(candidate.along_track_nm)} along`}
     >
       {/* The score and what kind of thing it is on one line: two facts
           about the same landmark, each a few characters long, and a
@@ -183,9 +183,7 @@ function CheckpointCard({ candidate, number, leg }: { candidate: Candidate; numb
           {leg.into && (
             <>
               <dt className="text-muted-foreground">Leg to it</dt>
-              <dd>
-                {[`${leg.into.distance_nm.toFixed(1)} nm`, leg.into.ete_min != null && hm(leg.into.ete_min)].filter(Boolean).join(" · ")}
-              </dd>
+              <dd>{[nm(leg.into.distance_nm), leg.into.ete_min != null && hm(leg.into.ete_min)].filter(Boolean).join(" · ")}</dd>
             </>
           )}
           <dt className="text-muted-foreground">Reached</dt>

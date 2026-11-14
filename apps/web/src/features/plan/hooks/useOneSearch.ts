@@ -159,7 +159,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
         detail: registered
           ? [registered.manufacturer, registered.model].filter(Boolean).join(" ") + " · FAA registry"
           : registry.isFetching
-            ? "Looking it up in the FAA registry…"
+            ? "Fetching from the FAA registry…"
             : "Its profile, to fly it",
         pick: () => openAirplaneProfile(tail),
       });

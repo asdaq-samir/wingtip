@@ -19,8 +19,7 @@ export interface ListPick {
 // A row as GroupedList's ListRow draws one of a radio group's: 44 at the
 // least, the group's own padding, iOS's checkmark in the tint on the one
 // picked (React Aria's data-selected).
-const ROW =
-  "group/item group flex w-full min-h-11 flex-wrap items-center gap-2.5 rounded-none border-0 px-3 py-2 in-data-[slot=item-group]:py-3.25 text-left text-sm outline-none transition-colors duration-100 hover:bg-muted/50 data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-offset-2 data-focus-visible:ring-offset-background pointer-coarse:active:bg-muted";
+const ROW = `group/item group flex w-full min-h-11 flex-wrap items-center gap-2.5 rounded-none border-0 px-3 py-2 in-data-[slot=item-group]:py-3.25 text-left ${TEXT.detail} outline-none transition-colors duration-100 hover:bg-muted/50 data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-offset-2 data-focus-visible:ring-offset-background pointer-coarse:active:bg-muted`;
 const TITLE = cn("line-clamp-none font-normal", TEXT.row);
 
 /**

@@ -328,6 +328,9 @@ export default defineConfig({
             // TanStack's query client alone: its table (the nav log's and the
             // kneeboard's, both lazy) stays with them, out of the first load.
             { name: "react", test: /node_modules\/(react|react-dom|react-router|@tanstack\/(react-query|query-core)|scheduler)\// },
+            // The small modules of the first load (icons, Base UI contexts) in one chunk:
+            // 55 of its 97 chunks were under 2 KB, each a request and a module record on a phone.
+            { name: "shared", tags: ["$initial"], maxModuleSize: 4096 },
           ],
         },
       },

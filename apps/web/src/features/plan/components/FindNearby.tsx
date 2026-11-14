@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
 import { PillSection } from "../../../components/Favorites";
 import StopKindGlyph from "../../../components/StopKindGlyph";
@@ -19,21 +20,20 @@ export default function FindNearby({ onFind }: { onFind: (kind: StopKind) => voi
     <PillSection title="Find Nearby" testId="find-nearby">
       <div className="grid grid-cols-2 gap-2">
         {NEARBY.map((kind) => (
-          <button
+          <BaseButton
             key={kind}
-            type="button"
             onClick={() => onFind(kind)}
             data-testid={`find-nearby-${kind}`}
             className={cn(
               // White cards on the sheet's grey, as the rest of its page
               // is: the grey at 8% stood 1.19:1 against it (F-L2).
-              "flex h-14 min-w-0 items-center gap-3 rounded-2xl bg-card px-3 text-left font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "flex h-14 min-w-0 items-center gap-3 rounded-(--radius-card) bg-card px-3 text-left font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring",
               TEXT.row,
             )}
           >
             <StopKindGlyph kind={kind} className="size-9" />
             <span className="min-w-0 truncate">{STOP_KINDS[kind].tile}</span>
-          </button>
+          </BaseButton>
         ))}
       </div>
     </PillSection>

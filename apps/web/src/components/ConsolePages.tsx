@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { ListRow } from "./GroupedList";
@@ -207,9 +208,9 @@ export function PageRow({
 export function PageLink({ page, children, testId }: { page: string; children: ReactNode; testId?: string }) {
   const pages = useContext(Pages);
   return (
-    <button type="button" onClick={() => pages?.open(page)} data-testid={testId} className={PAGE_LINK}>
+    <BaseButton onClick={() => pages?.open(page)} data-testid={testId} className={PAGE_LINK}>
       {children}
-    </button>
+    </BaseButton>
   );
 }
 

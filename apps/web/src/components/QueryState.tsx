@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
 import { Skeleton } from "./ui/skeleton";
 import { ListRow } from "./GroupedList";
@@ -52,14 +53,13 @@ export default function QueryState({
     const words = (
       <>
         {offline ? `${NO_CONNECTION}.` : failed}{" "}
-        <button
-          type="button"
+        <BaseButton
           onClick={() => void query.refetch()}
           data-testid="query-retry"
           className="relative text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Try again
-        </button>
+        </BaseButton>
       </>
     );
     return row ? (

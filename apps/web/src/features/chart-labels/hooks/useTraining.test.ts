@@ -191,12 +191,11 @@ describe("useTraining", () => {
     const { result } = renderLabels();
     await loaded(result);
     act(() => result.current.select(result.current.detections[0]!));
-    await act(async () => {
-      await result.current.rate(5);
-    });
+    const kept = await act(() => result.current.rate(5));
 
-    // The write never landed, so the point is still unrated -- and
-    // there is nothing real to step back to, unlike a genuine undo.
+    // Not kept: the page stays and the card says so (WEB-37); the point is
+    // still unrated, with nothing real to step back to, unlike an undo.
+    expect([kept, result.current.rateFailed]).toEqual([false, true]);
     expect(result.current.detections[0]!.rating).toBeNull();
     expect(result.current.canUndo).toBe(false);
   });
@@ -424,7 +423,7 @@ describe("useTraining", () => {
     const { result, rerender } = renderLabels();
     await loaded(result);
     act(() => result.current.select(result.current.detections[0]!));
-    let pending!: Promise<void>;
+    let pending!: Promise<boolean>;
     act(() => {
       pending = result.current.rate(5);
     });

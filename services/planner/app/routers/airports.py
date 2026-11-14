@@ -15,7 +15,6 @@ table lookups and a point-in-polygon test.
 import logging
 from datetime import datetime, timezone
 
-import numpy as np
 from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.responses import FileResponse
 from wingtip import (
@@ -25,12 +24,11 @@ from wingtip import (
     airspace,
     airspace_primaries,
     altitude,
+    diagram_crops,
     faa_data,
     field_facts,
     field_forecast,
     field_use,
-    fuelstops,
-    geo,
     geocode,
     glmp,
     map_weather,
@@ -44,7 +42,8 @@ from wingtip import (
     weather,
 )
 
-from ..router_basics import DIAGRAM_CACHE, load_route
+from .. import stop_corridor
+from ..router_basics import DIAGRAM_CACHE
 from ..schemas.airports_in_view import AirportsInView
 from ..schemas.airports import (
     AirportPhotos,
@@ -290,42 +289,15 @@ def stops_near(
     return StopFields(fields=out, pending=pending)
 
 
-def _off_course_nm(start: tuple, end: tuple, lat: float, lon: float) -> float:
-    """How far a point is off the straight course from start to end, nm:
-    its least distance to the line, read every hundredth of the way."""
-    t = np.linspace(0.0, 1.0, 101)
-    lats = start[0] + (end[0] - start[0]) * t
-    lons = start[1] + (end[1] - start[1]) * t
-    return float(np.min(geo.distance_nm(lats, lons, lat, lon)))
-
-
-#: How far off the course a field is offered along a route, nm: a short
-#: turn off the way for lunch, the owner's pick (2026-10-26, "10-15 nm off
-#: course"), where wingtip.fuelstops' corridor reached 30.
-STOP_OFF_COURSE_NM = 15.0
-
-
 @router.get("/api/stops/along", response_model=StopFields, openapi_extra=PUBLIC)
 def stops_along(dep: str, dest: str, stops: str = "") -> StopFields:
     """The public fields along a route with fuel, food, repair or a flight
     school, in route order, for the map's Stops while a course is drawn:
-    those no more than STOP_OFF_COURSE_NM off each flight's line, each
+    those no more than stop_corridor.STOP_OFF_COURSE_NM off each flight's line, each
     with its miles from its flight's departure, those it adds and how far
     off the course it is; what they have as round the pilot."""
-    r = load_route(dep, dest, stops)
-    flights = [(f.dep_ident, f.start, f.end) for f in r.flights]
-    found = fuelstops.along(flights, skip=set(r.idents))
     out, pending = [], 0
-    for field in found:
-        # Not the airline airports, as round the pilot: Detroit's food is
-        # past security, not a fly-in lunch (its first answer along a route).
-        if (airports.find_place(field["ident"]) or {}).get("kind") == "large":
-            continue
-        _, start, end = flights[field["flight"]]
-        # Off course first: a field too far off is not read for its places.
-        off = _off_course_nm(start, end, field["lat"], field["lon"])
-        if off > STOP_OFF_COURSE_NM:
-            continue
+    for field, off in stop_corridor.corridor(dep, dest, stops, datetime.now(timezone.utc).date().isoformat()):
         places = _places_of(field)
         pending += places is None
         stop = _stop(field, places)
@@ -445,6 +417,22 @@ def airport_place(ident: str) -> AirportPlace:
             modelled = glmp.at(place["lat"], place["lon"])
         except glmp.GlmpUnavailable as err:
             log.warning("modelled weather at %s: %s", place["ident"], err)
+    # Calm now, the field's last wind for the runway in use.
+    runways = _with_turf(
+        pattern.with_traffic(
+            runway_wind.with_winds(
+                [r for r in airports.get_runways(source) if not r["closed"]],
+                metar,
+                place["lat"],
+                place["lon"],
+                weather.recent_wind(place["ident"]) if metar and metar.get("wind_speed_kt") == 0 else None,
+            ),
+            place["ident"],
+            place["lat"],
+            place["lon"],
+        ),
+        place["ident"],
+    )
     return {
         **{key: value for key, value in place.items() if key != "source_ident"},
         "airspace_class": airspace.surface_class_at(place["lat"], place["lon"], shp_path),
@@ -454,22 +442,7 @@ def airport_place(ident: str) -> AirportPlace:
         **_notes(place["ident"]),
         **{k: v for k, v in (field_use.record_of(source) or {}).items() if k not in ("name", "status")},  # NASR's record (AirportRecord)
         "pattern": pattern.pattern_at(place["ident"], place["elevation_ft"]),
-        # Calm now, the field's last wind for the runway in use.
-        "runways": _with_turf(
-            pattern.with_traffic(
-                runway_wind.with_winds(
-                    [r for r in airports.get_runways(source) if not r["closed"]],
-                    metar,
-                    place["lat"],
-                    place["lon"],
-                    weather.recent_wind(place["ident"]) if metar and metar.get("wind_speed_kt") == 0 else None,
-                ),
-                place["ident"],
-                place["lat"],
-                place["lon"],
-            ),
-            place["ident"],
-        ),
+        "runways": runways,
         "frequencies": frequencies,
         "metar": metar,
         "nearby_metar": nearby,
@@ -480,6 +453,12 @@ def airport_place(ident: str) -> AirportPlace:
         **faa_data.airport_contact(place["ident"], altitude.DEFAULT_FAA_CACHE_DIR),
         "airport_diagram_url": publications.airport_diagram_url(place["ident"]),
         "airport_diagram_cycle": publications.airport_diagram_cycle(place["ident"]),
+        # Whether its diagram's crop to the runways is worth asking for: not
+        # where it is already known not to be found this cycle (WEB-41). The
+        # ends as airport_diagram_runways reads them.
+        "airport_diagram_runways": not diagram_crops.runways_missing(
+            place["ident"], any(e.get("lat") is not None for r in runways for e in r.get("runway_ends", []))
+        ),
         "chart_supplement_url": publications.chart_supplement_url(place["ident"]),
         "procedures": publications.terminal_charts(place["ident"]),
     }

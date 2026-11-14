@@ -296,7 +296,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       m.setPadding(padOf(insetsRef.current));
     } else {
       holder = document.createElement("div");
-      holder.className = "h-full w-full bg-slate-100 dark:bg-slate-900";
+      holder.className = "h-full w-full bg-(--chart-map-ground) dark:bg-(--chart-map-ground-night)";
       holder.dataset.testid = "gl-map";
       host.appendChild(holder);
       m = makeMap(holder, onTv, insetsRef.current);
@@ -529,7 +529,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     <div className="relative h-full w-full">
       {/* The map's own element (data-testid gl-map) is made with the map and
           goes with it from tree to tree (makeMap, parked). */}
-      <div ref={box} className="h-full w-full bg-slate-100 dark:bg-slate-900" />
+      <div ref={box} className="h-full w-full bg-(--chart-map-ground) dark:bg-(--chart-map-ground-night)" />
       <MapLoading shown={!revealed} insets={insets} />
       {api && (
         <GlMapContext.Provider value={api}>

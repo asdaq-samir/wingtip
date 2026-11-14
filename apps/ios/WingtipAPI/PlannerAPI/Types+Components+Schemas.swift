@@ -1148,6 +1148,8 @@ extension Components {
             public var address: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/airport_diagram_cycle`.
             public var airportDiagramCycle: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/airport_diagram_runways`.
+            public var airportDiagramRunways: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/airport_diagram_url`.
             public var airportDiagramUrl: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/airspace_class`.
@@ -1221,6 +1223,7 @@ extension Components {
             /// - Parameters:
             ///   - address:
             ///   - airportDiagramCycle:
+            ///   - airportDiagramRunways:
             ///   - airportDiagramUrl:
             ///   - airspaceClass:
             ///   - chartSupplementUrl:
@@ -1258,6 +1261,7 @@ extension Components {
             public init(
                 address: Swift.String? = nil,
                 airportDiagramCycle: Swift.String? = nil,
+                airportDiagramRunways: Swift.Bool? = nil,
                 airportDiagramUrl: Swift.String? = nil,
                 airspaceClass: Swift.String? = nil,
                 chartSupplementUrl: Swift.String? = nil,
@@ -1295,6 +1299,7 @@ extension Components {
             ) {
                 self.address = address
                 self.airportDiagramCycle = airportDiagramCycle
+                self.airportDiagramRunways = airportDiagramRunways
                 self.airportDiagramUrl = airportDiagramUrl
                 self.airspaceClass = airspaceClass
                 self.chartSupplementUrl = chartSupplementUrl
@@ -1333,6 +1338,7 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case address
                 case airportDiagramCycle = "airport_diagram_cycle"
+                case airportDiagramRunways = "airport_diagram_runways"
                 case airportDiagramUrl = "airport_diagram_url"
                 case airspaceClass = "airspace_class"
                 case chartSupplementUrl = "chart_supplement_url"

@@ -14,7 +14,7 @@ import { awayWords, fuelNames, glanceOf, type GlanceItem, type Glanceable } from
 import { servicesQuery } from "../../../lib/queryClient";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
-import { duration } from "../../../lib/format";
+import { duration, wholeNm } from "../../../lib/format";
 
 const GLANCE_ICONS: Record<GlanceItem["key"], ReactNode> = { fuel: <Fuel />, food: <Utensils />, bed: <BedDouble />, car: <CarFront /> };
 
@@ -314,7 +314,7 @@ export type SuggestedStop = {
  *  the ground in a line (StopGlance) -- the rest at the card's foot. */
 export function StopStrip({ ident, stop }: { ident: string; stop: SuggestedStop }) {
   const tile = (label: string, value: string, testId: string) => (
-    <div className="min-w-0 rounded-xl bg-foreground/5 px-2.5 py-1.5" data-testid={testId}>
+    <div className="min-w-0 rounded-(--radius-card) bg-foreground/5 px-2.5 py-1.5" data-testid={testId}>
       <div className={cn("truncate text-muted-foreground", TEXT.note)}>{label}</div>
       <div className={cn("truncate font-semibold tabular-nums", TEXT.row)}>{value}</div>
     </div>
@@ -325,7 +325,7 @@ export function StopStrip({ ident, stop }: { ident: string; stop: SuggestedStop 
         <div className="grid grid-cols-3 gap-2">
           {tile(`From ${pointName(stop.from)}`, duration(stop.minutes), "place-stop-after")}
           {tile("Lands with", `${Math.floor(stop.landsWithGal)} gal`, "place-stop-fuel")}
-          {tile("Off the line", `+${Math.round(stop.addedNm)} nm`, "place-stop-added")}
+          {tile("Off the line", `+${wholeNm(stop.addedNm)}`, "place-stop-added")}
         </div>
         <StopGlance ident={ident} />
       </PillSection>

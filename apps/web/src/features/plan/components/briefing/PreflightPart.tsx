@@ -1,4 +1,5 @@
 import { cn } from "cn";
+import { wholeNm } from "../../../../lib/format";
 import { hoverTfr, mouseHover } from "../../../../lib/map/marks/mapHover";
 import AccordionSection from "../../../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
@@ -174,7 +175,7 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
                           {(t.purpose ?? t.rule) && <span className="block">{faaWords(t.purpose ?? t.rule)}</span>}
                         </>
                       }
-                      value={t.crosses ? "On the route" : `${Math.round(t.along_track_nm)} nm along`}
+                      value={t.crosses ? "On the route" : `${wholeNm(t.along_track_nm)} along`}
                       href={tfrPage(t.notam_id)}
                       // A mouse on it lights its area on the map (web.md §5).
                       {...mouseHover(
@@ -205,7 +206,7 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
                     // there it left the FAA's times of use three words a line.
                     description={
                       <>
-                        <span className="block">{`${suaAltitudes(area)} · ${Math.round(area.along_track_nm)} nm along`}</span>
+                        <span className="block">{`${suaAltitudes(area)} · ${wholeNm(area.along_track_nm)} along`}</span>
                         {area.times_of_use && <span className="block">In use: {faaWords(area.times_of_use)}</span>}
                         {pass && (
                           <span className="block" data-testid="sua-pass">{`You pass about ${passLine(pass)}: ${SUA_WORDS[when]}`}</span>

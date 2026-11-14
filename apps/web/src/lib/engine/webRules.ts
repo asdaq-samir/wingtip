@@ -99,6 +99,7 @@ export const WEB_RULES = [
   "frd_read",
   "frd_write",
   "freezing_precip",
+  "frequencies_in_order",
   "frequency_line",
   "fuel_estimate",
   "fuel_in_tanks",
