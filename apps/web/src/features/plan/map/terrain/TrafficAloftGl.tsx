@@ -38,7 +38,7 @@ const LAYERS = trafficLayers(IDS, { points: POINTS, trends: TRENDS });
  */
 export default function TrafficAloftGl() {
   const on = usePreferences((s) => s.traffic);
-  const tracking = useTracking((s) => !!s.hex || s.listing);
+  const tracking = useTracking((s) => !!s.hex);
   const geo = useGeo();
   return (on || tracking) && geo ? <Aloft geo={geo} /> : null;
 }
@@ -101,7 +101,6 @@ function Aloft({ geo }: { geo: Geo }) {
             icon: trafficPicture(near, plane.track_deg != null, tracked),
             track: plane.track_deg ?? 0,
             tracked,
-            dim: false,
             label: trafficLabel(plane, ownFt),
             callsign,
             ink: near ? CHART.trafficNearText : CHART.casing,

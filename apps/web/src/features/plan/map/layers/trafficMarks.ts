@@ -30,7 +30,6 @@ export interface TrafficMarkProps {
   track: number;
   tracked: boolean;
   /** Dimmed: a list's own picks shown, this one not among them. */
-  dim: boolean;
   /** Its height against own ship's (trafficLabel), "" where not shown. */
   label: string;
   /** Its call sign, "" where not shown. */
@@ -103,19 +102,18 @@ export function addTrafficPictures(map: MlMap) {
     });
 }
 
-const dimmed = (on: number): ExpressionSpecification => ["case", ["get", "dim"], 0.25, on];
 /** The tracked one over the rest. */
 const SORT: ExpressionSpecification = ["case", ["get", "tracked"], 1, 0];
 
 /** The layers, drawn from one GeoJSON source of points (TrafficMarkProps)
- *  and, on the flat map, one of trend lines (`colour`, `dim`). */
+ *  and, on the flat map, one of trend lines (`colour`). */
 export function trafficLayers(ids: { marks: string; tags: string; trends: string }, sources: { points: string; trends: string }) {
   const trends: LineLayerSpecification = {
     id: ids.trends,
     type: "line",
     source: sources.trends,
     layout: { "line-cap": "round" },
-    paint: { "line-color": ["get", "colour"], "line-width": 2, "line-opacity": dimmed(1) },
+    paint: { "line-color": ["get", "colour"], "line-width": 2 },
   };
   const marks: SymbolLayerSpecification = {
     id: ids.marks,
@@ -131,7 +129,6 @@ export function trafficLayers(ids: { marks: string; tags: string; trends: string
       "symbol-height-offset": ["get", "alt_m"],
       "symbol-height-anchor": "absolute",
     },
-    paint: { "icon-opacity": dimmed(1) },
   };
   // Its words under the chevron, the tracked one's under its ring: the
   // tag's top 22 points under the middle, 28 when ringed, where the HTML
@@ -173,7 +170,6 @@ export function trafficLayers(ids: { marks: string; tags: string; trends: string
       "symbol-height-offset": ["get", "alt_m"],
       "symbol-height-anchor": "absolute",
     },
-    paint: { "text-opacity": dimmed(1), "icon-opacity": dimmed(1) },
   };
   return [trends, marks, tags];
 }

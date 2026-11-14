@@ -26,9 +26,6 @@ export interface PathPoint {
  */
 interface Tracking {
   hex: string | null;
-  /** The Aircraft card is open (`?aircraft=1`): the traffic is drawn
-   *  while it is, whatever the map's settings. */
-  listing: boolean;
   follow: boolean;
   latest: Report | null;
   path: PathPoint[];
@@ -37,15 +34,7 @@ interface Tracking {
   pick: ((hex: string, plane?: TrafficAircraft) => void) | null;
 }
 
-export const useTracking = create<Tracking>(() => ({
-  hex: null,
-  listing: false,
-  follow: true,
-  latest: null,
-  path: [],
-  seen: [],
-  pick: null,
-}));
+export const useTracking = create<Tracking>(() => ({ hex: null, follow: true, latest: null, path: [], seen: [], pick: null }));
 
 /** A flight tracked from now, the map following it; its report where the
  *  one picking it has it (a row of the list, a search's answer), so its
@@ -73,8 +62,3 @@ export function reported(report: Report) {
     return { latest: report, path: [...s.path, point].slice(-PATH_POINTS) };
   });
 }
-
-/** The airplanes the Aircraft pill's Map switch leaves on the map, the
- *  rest faded (TrafficGl); none while it is off. At the owner's ask:
- *  "Map: show only these". */
-export const useTrafficFocus = create<{ on: boolean; only: ReadonlySet<string> | null }>(() => ({ on: false, only: null }));

@@ -12,7 +12,7 @@ import { useOwnShip } from "../../../../lib/map/position/ownShip";
 import { usePastFlight } from "../pastFlight";
 import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, trafficLabel, trendSeconds } from "../traffic";
 import { trafficCredit } from "../trafficCredit";
-import { reported, useTracking, useTrafficFocus, type Report } from "../../../../lib/map/position/tracking";
+import { reported, useTracking, type Report } from "../../../../lib/map/position/tracking";
 import { EMPTY, useGlLayer, useGlMap, useGlTap } from "../../../../lib/map/gl/glLayer";
 import { TAP } from "../../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
@@ -48,7 +48,7 @@ interface Target {
   /** Where it is drawn now, carried on (null until it is first drawn). */
   pos: { lat: number; lon: number } | null;
   /** How it looks, from its report, own ship's height and the map's zoom. */
-  look: { near: boolean; tracked: boolean; dim: boolean; label: string; callsign: string; trendS: number } | null;
+  look: { near: boolean; tracked: boolean; label: string; callsign: string; trendS: number } | null;
 }
 
 /**
@@ -61,13 +61,12 @@ interface Target {
  */
 export function TrafficGl() {
   const on = usePreferences((s) => s.traffic);
-  const tracking = useTracking((s) => !!s.hex || s.listing);
+  const tracking = useTracking((s) => !!s.hex);
   const hex = useTracking((s) => s.hex);
   const past = usePastFlight((s) => (s.hex === hex ? s.id : null));
-  const focused = useTrafficFocus((s) => s.on);
   // Carried on along their tracks by the engine (lib/geo): drawn once it is there.
   const geo = useGeo();
-  if (!on && !tracking && !focused) return null;
+  if (!on && !tracking) return null;
   return (
     <>
       {geo && <Traffic geo={geo} />}
@@ -196,7 +195,6 @@ function Traffic({ geo }: { geo: Geo }) {
     useTracking.setState({ seen: reports });
   }, [geo, merged]);
 
-  const only = useTrafficFocus((s) => (s.on ? s.only : null));
   useEffect(() => {
     const heights = view.zoom >= HEIGHT_ZOOM,
       callsigns = view.zoom >= CALLSIGN_ZOOM;
@@ -210,14 +208,13 @@ function Traffic({ geo }: { geo: Geo }) {
       target.look = {
         near: nearOwnHeight(plane, ownFt),
         tracked,
-        dim: !!only && !only.has(plane.hex) && !tracked,
         label: heights || tracked ? trafficLabel(plane, ownFt) : "",
         callsign: callsigns || tracked ? (plane.callsign ?? plane.registration ?? "") : "",
         trendS: plane.track_deg != null ? trendSeconds(plane.speed_kt, plane.lat, view.zoom) : 0,
       };
     }
     drawTargets(geo, map, targets.current);
-  }, [geo, map, merged, ownFt, view.zoom, hex, only]);
+  }, [geo, map, merged, ownFt, view.zoom, hex]);
 
   // The airplane tracked, followed: brought into sight as its first report
   // comes if it is out of sight, a pick that keeps the tracking's follow on; the follow's steps
@@ -302,7 +299,6 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
         icon: trafficPicture(look.near, plane.track_deg != null, look.tracked),
         track: plane.track_deg ?? 0,
         tracked: look.tracked,
-        dim: look.dim,
         label: look.label,
         callsign: look.callsign,
         ink: look.near ? CHART.trafficNearText : CHART.casing,
@@ -320,7 +316,7 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
             [ahead.lon + shift.lon, ahead.lat + shift.lat],
           ],
         },
-        properties: { colour, dim: look.dim },
+        properties: { colour },
       });
     }
   }
