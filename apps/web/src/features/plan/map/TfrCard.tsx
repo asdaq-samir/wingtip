@@ -10,7 +10,7 @@ import type { Tfr } from "../../../lib/api/types";
 import { MapCard } from "../../../lib/map/cards/MapCard";
 import { shareOrCopy } from "../../../lib/share";
 import { tfrLink } from "../../../lib/address";
-import { StatusBadge } from "../../../components/map/cards/StatusBadge";
+import StatusBadge from "../../../components/StatusBadge";
 
 /**
  * A temporary flight restriction's card (the map draws them, in tfrMarks'
@@ -47,7 +47,7 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
       subtitle={
         <span className="inline-flex items-center gap-2">
           {tfr.kind}
-          <StatusBadge kind={active ? "active" : "later"} />
+          <StatusBadge variant={active ? "active" : "later"} data-testid={`status-${active ? "active" : "later"}`} />
         </span>
       }
     >

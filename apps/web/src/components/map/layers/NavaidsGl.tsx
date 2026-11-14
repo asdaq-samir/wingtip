@@ -8,6 +8,7 @@ import { FixCard, VorCard } from "../cards/NavaidCards";
 import { usePointActions } from "../../../lib/map/cards/pointActions";
 import { WaypointCard, type Waypoint } from "../cards/WaypointCard";
 import { useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
+import { cameraOf } from "../../../lib/map/gl/camera";
 import { OVERLAY_SOURCE, pointOf, setOverlayExclusion, vorOfTile } from "../../../lib/map/gl/glOverlays";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { TAP } from "../../../lib/map/gl/layers/common";
@@ -113,7 +114,7 @@ function useLinkedVor(map: ReturnType<typeof useGlMap>["map"], at: NavaidAt | nu
       tileVors(map).find((v) => v.ident === at.ident && Math.abs(v.lat - at.lat) < NEAR_DEG && Math.abs(v.lon - at.lon) < NEAR_DEG) ?? null;
     // Not loaded about the view (a link's): the map taken there, near
     // enough in that the VORs are drawn (glOverlays' zooms).
-    if (!find()) map.jumpTo({ center: [at.lon, at.lat], zoom: Math.max(map.getZoom(), 8) });
+    if (!find()) cameraOf(map).pick([at.lon, at.lat], { zoom: Math.max(map.getZoom(), 8), duration: 0 });
     const rest = () => setFound({ key, vor: find() });
     map.once("idle", rest);
     map.triggerRepaint();
