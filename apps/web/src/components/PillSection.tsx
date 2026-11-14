@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "cn";
@@ -5,10 +6,12 @@ import { SECTION_TITLE } from "../lib/text";
 import SectionTitle from "./SectionTitle";
 import { Collapsible, CollapsibleTrigger } from "./ui/collapsible";
 
-// The title as a way somewhere, its 44-point area a pseudo-element eight
-// round it (the iOS audit's P1), the chevron in the tint.
+// The title as a way somewhere, its 44-point area a pseudo-element round
+// it (the iOS audit's P1), the chevron in the tint: ten over and under the
+// 25-point title, eight was 41 and missed (the web audit's WEB-45), and
+// the eight under the head keep it off the first row.
 const MORE = cn(
-  "group relative flex items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2",
+  "group relative flex items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-x-2 after:-inset-y-2.5",
   SECTION_TITLE,
 );
 const CHEVRON = "size-5 text-tint transition-transform";
@@ -61,10 +64,10 @@ export function PillSection({
           <ChevronRight className={cn(CHEVRON, "group-data-panel-open:rotate-90")} aria-hidden="true" />
         </CollapsibleTrigger>
       ) : onMore ? (
-        <button type="button" onClick={onMore} data-testid={more} className={MORE}>
+        <BaseButton onClick={onMore} data-testid={more} className={MORE}>
           {title}
           <ChevronRight className={CHEVRON} aria-hidden="true" />
-        </button>
+        </BaseButton>
       ) : (
         <SectionTitle>{title}</SectionTitle>
       )}

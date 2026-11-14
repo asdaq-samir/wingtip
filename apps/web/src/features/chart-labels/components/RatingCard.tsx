@@ -17,7 +17,8 @@ const SCALE_KEY = ["0 not a feature", "3 workable", "5 unmistakable"].map((term)
  *  fill kept inside -- its colour the scale's (inline), the one given
  *  ringed. */
 const RATING = cn(
-  "h-10 w-full cursor-pointer rounded-md border border-transparent bg-clip-padding px-0 text-base font-bold select-none pointer-coarse:text-(length:--type-row)",
+  "h-10 w-full cursor-pointer rounded-md border border-transparent bg-clip-padding px-0 font-bold select-none",
+  TEXT.row,
   "data-pressed:ring-2 data-pressed:ring-foreground data-pressed:ring-offset-2 data-pressed:ring-offset-background",
 );
 

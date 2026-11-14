@@ -6,7 +6,7 @@ import { useIsDesktop } from "../hooks/use-desktop";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useSafeArea } from "../hooks/use-viewport";
-import { GLASS_SHEET, MATERIAL, PILL_RADIUS, type MapInsets, type PanelState } from "../lib/mapChrome";
+import { GLASS_SHEET, PILL_RADIUS, type MapInsets, type PanelState } from "../lib/mapChrome";
 import { coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
 import { FLOAT_PX, insetsOf, sizeAt, snapsOf } from "./sheet/insets";
@@ -214,10 +214,13 @@ export default function MapPanel(props: Props) {
   // The sheet's grabber and each card's, the one plain bar.
   const grabberAt = bottomSheet ? "top" : "bottom";
   const sheetGrabber = <SheetGrabber label={label} size={size} ask={ask} at={grabberAt} />;
-  // On a phone the light grey of Apple Maps' web sheet (2026-11-10): the look's --sheet, Canvas in Native.
+  // Solid at every size, the look's --sheet (Canvas in Native), the light
+  // grey of Apple Maps' web sheet (2026-11-10): glass is only for what
+  // floats over the map (CLAUDE.md, owner decision 2026-11-10). The side
+  // panel was MATERIAL, the chart showing through it (the web audit's WEB-6).
   const look = onPhone
     ? GLASS_SHEET
-    : cn(MATERIAL, "w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-inset ring-black/5 shadow-float dark:ring-white/10");
+    : cn(GLASS_SHEET, "w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-inset ring-black/5 dark:ring-white/10");
   const common = {
     "data-slot": "map-panel",
     // The sheet's own size, under a card too; a card's is on its own
