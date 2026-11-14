@@ -173,7 +173,7 @@ longer than it takes to answer the request.
 | The student's instructor | Once they take the student on: the student's name and address, 61.109 experience from their logbook, knowledge test codes, endorsements, and the saved flights the student puts to them | Yes: the student asks them in, and either ends it |
 | Google, Apple | Their own sign-in, when a pilot uses it | Their own |
 | FAA, NOAA (aviationweather.gov) | Chart and data downloads, weather for airports | None: the server asks, not the device |
-| adsb.lol | For the traffic on the map, the middle of a region: a 0.5 degree cell, 2 degrees zoomed out (`traffic/adsb_lol.py`); for an airplane a pilot opens, its transponder's address (its trace); for its route, its callsign (`traffic/routes.py`, `vrs-standing-data.adsb.lol`); and a registration, callsign or address a pilot types in Find (`/api/traffic/find`), which may be their own N-number | None of the pilot's beyond what they type: the server asks, not the device; the device's position itself is not sent |
+| adsb.lol | For the traffic on the map, the middle of a region: a 0.5 degree cell, 2 degrees zoomed out (`traffic/adsb_lol.py`); for an airplane a pilot opens, its transponder's address (its trace); for its route, its callsign (`traffic/routes.py`, `vrs-standing-data.adsb.lol`); and a registration, callsign or address a pilot types in Find (`/api/traffic/find`; the FAA record's `/api/traffic/registered` asks no one, the registry being on the planner's disk), which may be their own N-number | None of the pilot's beyond what they type: the server asks, not the device; the device's position itself is not sent |
 | ADS-B Exchange (adsbexchange.com, through RapidAPI) | The same asks where adsb.lol turns one away or is down: a region's middle (`traffic/view.py`), a searched registration, callsign or address (`traffic/lookup.py`), and a followed airplane's address (`traffic/watched.py`); the request carries the operator's RapidAPI key | As adsb.lol |
 | adsb.fi (opendata.adsb.fi) | The followed airplanes' transponder addresses, asked by ingest every half minute (`traffic/adsbfi.py`) | None of the pilot's: other airplanes' public addresses |
 | Iowa State University's IEM (mesonet.agron.iastate.edu) | The radar loop's map tiles in view, asked by the device (web, iPhone, Android) from the address templates the planner gives (`wingtip/weather_loop.py`) | The device's internet address and the part of the map in view, as any map tile; no account |
@@ -263,8 +263,8 @@ Check the files against this list before each submission.
 
 The planner's live store (`wingtip.traffic.store`, a SQLite file the
 planner and ingest share) holds nothing that names a pilot or an account,
-and the planner prunes it every minute (`wingtip.traffic.prune_forever`,
-started in `app.main`), whether or not ingest runs:
+and the planner prunes it every minute (`wingtip.traffic.prune`, a job
+on `wingtip.schedule` started in `app.main`), whether or not ingest runs:
 
 - **Where the map asks for traffic** (`looked`): the region adsb.lol is
   asked about for the view, the 0.5 degree cell (2 degrees zoomed out)

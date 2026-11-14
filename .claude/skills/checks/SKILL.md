@@ -53,7 +53,7 @@ The planner's OpenAPI document comes from the same container: `python -m app.ope
 
 **Java.** Java 25 is required. The socket mount and the host override are what let Testcontainers start Postgres. The anonymous `target` volume keeps any stray host build output out of the run. `fp-m2` caches Maven's downloads, so never prune it.
 ```sh
-docker run --rm -v "$PWD/services/gateway":/build -v /build/target -v fp-m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal -w /build maven:3.10-eclipse-temurin-25 mvn -B test
+docker run --rm -v "$PWD/services/gateway":/build -v /build/target -v fp-m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal -w /build maven:4.0.0-rc-7-eclipse-temurin-25 mvn -B test
 ```
 To rewrite `services/gateway/openapi.json`, run the same command with `-e WRITE_OPENAPI=1 … mvn -B test -Dtest=OpenApiDocumentTest`.
 

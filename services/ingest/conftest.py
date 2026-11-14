@@ -18,7 +18,7 @@ def _own_store_and_settings(monkeypatch, tmp_path):
     monkeypatch.setattr(live_reports, "STORE", tmp_path / "reports.sqlite")
     # The health check reads the store's path from the settings.
     monkeypatch.setenv("LIVE_STORE", str(tmp_path / "live.sqlite"))
-    # No history thread: it would ask the NTSB over the internet.
+    # No history jobs: they would ask the NTSB over the internet.
     monkeypatch.setenv("HISTORY", "0")
     get_settings.cache_clear()
     wingtip_settings.cache_clear()

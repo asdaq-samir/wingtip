@@ -122,12 +122,28 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
           <Matched text={a.title} typed={typed} />
         </span>
       }
-      detail={a.detail}
+      detail={
+        <>
+          {a.detail}
+          {/* Whether it is in the air, in place under its type as the live find answers. */}
+          {a.live && (
+            <span
+              role="status"
+              className={cn("block truncate", a.live.problem && "text-destructive-ink")}
+              data-testid="search-airplane-live"
+            >
+              {a.live.text}
+            </span>
+          )}
+        </>
+      }
       onSelect={a.pick}
       testId="search-airplane"
       actions={
         top && a.fly ? (
           <QuickAction label="Fly This Airplane" onClick={() => model.flyAirplane(a)} testId="search-top-fly-airplane" />
+        ) : a.track ? (
+          <QuickAction label="Track" onClick={a.track} testId="search-airplane-track" wide />
         ) : undefined
       }
     />

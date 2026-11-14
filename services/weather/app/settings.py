@@ -26,8 +26,6 @@ class Settings(BaseSettings):
 
     #: The health check's port.
     port: int = 8000
-    #: How often the schedule looks at what is due.
-    tick_s: float = 15.0
     #: How long after the planner's last read a pilot counts as planning.
     in_use_s: float = 900.0
     #: How many fetches run at once.

@@ -33,9 +33,9 @@ they send is a model in app.schemas.
 import csv
 import logging
 import threading
-import time
 from contextlib import asynccontextmanager
 
+from apscheduler.schedulers.base import BaseScheduler
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from wingtip import (
@@ -54,7 +54,7 @@ from wingtip import (
     water,
     weather,
 )
-from wingtip import airspace_at, congested, cycle_pack, data_cycles, traffic as traffic_store
+from wingtip import airspace_at, congested, cycle_pack, data_cycles, schedule, traffic as traffic_store
 from wingtip import airports as airport_table
 
 from . import chart_model, chart_refresh, errors, openapi_document, tracing
@@ -88,11 +88,8 @@ logging.basicConfig(level=get_settings().log_level)
 
 log = logging.getLogger(__name__)
 
-# How often the loop below looks at what is due (the chart cycle, the
-# FAA's editions, the registry). The weather is the weather service's
-# (services/weather), which keeps it in the store the planner reads.
-LOOP_EVERY_S = 240
-# How often the FAA's files are checked for a new edition.
+# How often the FAA's files are checked for a new edition, whether those
+# on disk are still in their cycle, and whether the registry is a day old.
 EDITIONS_CHECK_EVERY_S = 6 * 3600
 #: Whether the FAA's aircraft registry is downloaded and read here
 #: (wingtip.registry): on, but on a test stack (infra/docker-compose.ci.yml).
@@ -138,34 +135,62 @@ def _prepare_corridor_charts() -> None:
             charts.prepare_for_bbox((min(lons), min(lats), max(lons), max(lats)), kinds=("sec", "tac", "ifr_low", "ifr_area"))
 
 
-def check_faa_editions(last_check: float) -> float:
+def check_faa_editions() -> None:
     """The FAA's files fetched again a new edition at a time
     (wingtip.faa_data.refresh_editions) where FAA_DATA_AUTO_REFRESH is on
-    and the last check is EDITIONS_CHECK_EVERY_S old -- a cycle starts on
-    a known day, and a check is three page reads -- and what changed read
-    again here rather than under a pilot's request (the airspace's shapes
-    alone are half a minute). When it last checked, for the next call."""
-    if not FAA_DATA_AUTO_REFRESH or time.time() - last_check < EDITIONS_CHECK_EVERY_S:
-        return last_check
-    checked = time.time()
-    try:
-        refreshed = faa_data.refresh_editions(altitude.DEFAULT_FAA_CACHE_DIR)
-        if refreshed:
-            log.info("FAA files refreshed: %s", ", ".join(refreshed))
-            airspace.preload(altitude.DEFAULT_FAA_CACHE_DIR)
-            faa_data.preload_obstacles(altitude.DEFAULT_FAA_CACHE_DIR)
-            remarks.preload()
-            fixes.preload()
-            if CYCLE_PACK:
-                cycle_pack.ensure(altitude.DEFAULT_FAA_CACHE_DIR)
-                cycle_pack.ensure_phone()
-                chart_refresh.ask_for_overlays()
-    except Exception:  # noqa: BLE001 -- the FAA's index out of reach: the next check tries again
-        log.warning("FAA editions not checked", exc_info=True)
-    return checked
+    -- every EDITIONS_CHECK_EVERY_S, as a cycle starts on a known day and a
+    check is three page reads -- and what changed read again here rather
+    than under a pilot's request (the airspace's shapes alone are half a
+    minute). A check that fails (the FAA's index out of reach) is logged by
+    the scheduler and made again at the next turn."""
+    if not FAA_DATA_AUTO_REFRESH:
+        return
+    refreshed = faa_data.refresh_editions(altitude.DEFAULT_FAA_CACHE_DIR)
+    if refreshed:
+        log.info("FAA files refreshed: %s", ", ".join(refreshed))
+        airspace.preload(altitude.DEFAULT_FAA_CACHE_DIR)
+        faa_data.preload_obstacles(altitude.DEFAULT_FAA_CACHE_DIR)
+        remarks.preload()
+        fixes.preload()
+        if CYCLE_PACK:
+            cycle_pack.ensure(altitude.DEFAULT_FAA_CACHE_DIR)
+            cycle_pack.ensure_phone()
+            chart_refresh.ask_for_overlays()
 
 
-def _warm_reference_data() -> None:
+def check_chart_cycle() -> None:
+    """The chart cycle, each chart_refresh.CHECK_EVERY_S: app.chart_refresh
+    decides what that starts, and the next cycle is staged ahead of its
+    date (CHARTS_CYCLE_AUTO)."""
+    if chart_refresh.AUTO_REFRESH:
+        chart_refresh.maybe_refresh()
+    chart_cycle.maybe_stage_next()
+
+
+def _schedule_checks(on: BaseScheduler) -> None:
+    """What the planner keeps checking once its data is warm, each a job on
+    its scheduler (wingtip.schedule). The weather is not among them: the
+    weather service (services/weather) fetches it on its own schedule into
+    the store the planner reads (wingtip.weather_store, #535)."""
+    # Whether the FAA's data on disk is still in its cycle
+    # (wingtip.data_cycles): with the refreshes off (production), nothing
+    # fetches a new edition, and an old one reads as if nothing were wrong.
+    # Checked on every switch's setting; the log is told once a day while
+    # one is out of date.
+    schedule.every(on, EDITIONS_CHECK_EVERY_S, data_cycles.warn_if_out_of_date, name="faa-data-cycles")
+    # The FAA's files a new edition at a time: now, and four times a day.
+    schedule.every(on, EDITIONS_CHECK_EVERY_S, check_faa_editions, name="faa-editions")
+    # The aircraft registry, read again once it is a day old (each check a
+    # look at the file's age): now as well, so a warm-up read that failed is
+    # tried again, and after a good one refresh() sees a fresh file and does
+    # nothing.
+    if REGISTRY_REFRESH:
+        schedule.every(on, EDITIONS_CHECK_EVERY_S, registry.refresh, name="aircraft-registry")
+    # The chart cycle, an hour from now: the warm-up has just checked it.
+    schedule.every(on, chart_refresh.CHECK_EVERY_S, check_chart_cycle, name="chart-cycle", now=False)
+
+
+def _warm_reference_data(on: BaseScheduler) -> None:
     """Every altitude selection needs the controlled-airspace polygons
     and the obstacle table, and both are slow to load cold (about thirty
     and nine seconds from the FAA files, well under a second from the
@@ -287,9 +312,7 @@ def _warm_reference_data() -> None:
         # Its overlay tiles are the charts job's to build (app.chart_refresh).
         chart_refresh.ask_for_overlays()
 
-    if chart_refresh.AUTO_REFRESH:
-        chart_refresh.maybe_refresh()
-    chart_cycle.maybe_stage_next()
+    check_chart_cycle()
 
     # And the chart's lakes and towns, read once a cycle under the
     # sectionals on disk (app.landmarks), so a new route's corridor read
@@ -309,56 +332,23 @@ def _warm_reference_data() -> None:
     if get_settings().landmarks_build:
         threading.Thread(target=_build_landmarks, name="landmark-cells", daemon=True).start()
 
-    # Then, once an hour, the chart cycle is checked (app.chart_refresh
-    # decides what that starts). The weather is not this loop's: the
-    # weather service (services/weather) fetches it on its own schedule
-    # into the store the planner reads (wingtip.weather_store, #535).
-    last_cycle_check = time.time()
-    # The FAA's files a new edition at a time (check_faa_editions): checked
-    # now, and four times a day.
-    last_editions_check = 0.0
-    # 0.0 as above: a startup read that failed is tried again on the first
-    # pass, and after a good one refresh() sees a fresh file and does nothing.
-    last_registry_check = 0.0
-    # Whether the FAA's data on disk is still in its cycle
-    # (wingtip.data_cycles): with the refreshes off (production), nothing
-    # fetches a new edition, and an old one reads as if nothing were wrong.
-    # Checked on every switch's setting, as often as the editions are; the
-    # log is told once a day while one is out of date.
-    last_cycles_check = 0.0
-    while True:
-        if time.time() - last_cycles_check >= EDITIONS_CHECK_EVERY_S:
-            last_cycles_check = time.time()
-            try:
-                data_cycles.warn_if_out_of_date()
-            except Exception:  # noqa: BLE001 -- the next check tries again
-                log.warning("FAA data cycles not checked", exc_info=True)
-        last_editions_check = check_faa_editions(last_editions_check)
-        # The aircraft registry, read again once it is a day old (each
-        # check a look at the file's age).
-        if REGISTRY_REFRESH and time.time() - last_registry_check >= EDITIONS_CHECK_EVERY_S:
-            last_registry_check = time.time()
-            try:
-                registry.refresh()
-            except Exception:  # noqa: BLE001 -- the next check tries again; the held copy is served
-                log.warning("aircraft registry not refreshed", exc_info=True)
-        time.sleep(LOOP_EVERY_S)
-        if time.time() - last_cycle_check >= chart_refresh.CHECK_EVERY_S:
-            last_cycle_check = time.time()
-            if chart_refresh.AUTO_REFRESH:
-                chart_refresh.maybe_refresh()
-            # The next cycle, staged ahead of its date (CHARTS_CYCLE_AUTO).
-            chart_cycle.maybe_stage_next()
+    _schedule_checks(on)
 
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
-    threading.Thread(target=_warm_reference_data, name="reference-data-warm-up", daemon=True).start()
-    # The live feeds are read by ingest into the stores the planner reads: none here. Watched here: whether they and the
-    # weather's still come in (app.feeds), a check a minute; the live store pruned (wingtip.traffic.prune).
-    threading.Thread(target=feeds_watch.watch_forever, name="feed-watch", daemon=True).start()
-    threading.Thread(target=traffic_store.prune_forever, name="live-store-prune", daemon=True).start()
+    # The planner's periodic work, each a job on one scheduler (wingtip.schedule):
+    # the warm-up's checks once it is done (_schedule_checks), and from now
+    # whether the live feeds and the weather still come in (app.feeds), a
+    # check a minute. The feeds themselves are read by ingest into the
+    # stores the planner reads: none here.
+    on = schedule.scheduler()
+    schedule.every(on, feeds_watch.CHECK_EVERY_S, feeds_watch.check, name="feed-watch")
+    schedule.every(on, traffic_store.PRUNE_EVERY_S, traffic_store.prune, name="live-store-prune")
+    on.start()
+    threading.Thread(target=_warm_reference_data, args=(on,), name="reference-data-warm-up", daemon=True).start()
     yield
+    on.shutdown(wait=False)
 
 
 app = FastAPI(title="Wingtip Maps planner", lifespan=_lifespan)

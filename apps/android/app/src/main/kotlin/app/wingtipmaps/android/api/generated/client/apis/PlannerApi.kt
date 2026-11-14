@@ -1987,6 +1987,20 @@ interface PlannerApi {
     suspend fun trafficPastFlight(@Path("hex_id") hexId: kotlin.String, @Path("flight_id") flightId: kotlin.Int): Response<app.wingtipmaps.android.api.generated.PastFlight>
 
     /**
+     * GET traffic/registered
+     * Traffic Registered
+     * The FAA&#39;s record of a US airplane named by its N-number or ICAO address (wingtip.traffic.registered), null for any other name: the registry is on this service&#39;s disk, so this answers in milliseconds, where /api/traffic/find waits on the live sources, seconds at a time when adsb.lol&#39;s API is busy. A page asks both at once, drawing the record as soon as it is here and whether the airplane is in the air when the find answers (the owner, 2026-11-14: \&quot;Why does looking up a plane takes a long time?\&quot;).
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param q N-number or ICAO address
+     * @return [app.wingtipmaps.android.api.generated.AircraftRegistration]
+     */
+    @GET("traffic/registered")
+    suspend fun trafficRegistered(@Query("q") q: kotlin.String): Response<app.wingtipmaps.android.api.generated.AircraftRegistration>
+
+    /**
      * GET traffic/route
      * Traffic Route
      * The route a flight number is scheduled to fly -- TJSJ to KORD for UAL2088 -- and whether the airplane at lat/lon is on or near it, from Virtual Radar Server&#39;s route database (CC0); null for a callsign that is not an airline&#39;s flight number or one it does not know. Not the flight plan filed for today&#39;s flight.

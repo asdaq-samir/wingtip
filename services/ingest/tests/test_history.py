@@ -1,32 +1,23 @@
-"""ingest.history and ingest.ntsb: the archive written each turn and the
-NTSB's database looked at once a day, a failure of either let go until
-the next; the database read again only when its size has changed."""
+"""ingest.history and ingest.ntsb: the archive written each hour and the
+NTSB's database looked at once a day, each a job on ingest's scheduler; the database read again only when its size has changed."""
 
 import json
 from pathlib import Path
 
+from wingtip import schedule
 from wingtip.history import notam_archive, ntsb as ntsb_store
 
 from ingest import history, ntsb
 
 
-def test_a_turn_archives_and_looks_at_the_ntsb_once_a_day(monkeypatch):
-    calls = []
-    monkeypatch.setattr(notam_archive, "snapshot", lambda: calls.append("snapshot"))
-    monkeypatch.setattr(ntsb, "refresh", lambda: calls.append("ntsb"))
-    last = history.turn(0.0, 100_000.0)
-    assert last == 100_000.0 and calls == ["snapshot", "ntsb"]
-    assert history.turn(last, last + 3600) == last
-    assert calls == ["snapshot", "ntsb", "snapshot"]
-
-
-def test_a_failure_waits_for_the_next_turn(monkeypatch):
-    def broken():
-        raise OSError("disk full")
-
-    monkeypatch.setattr(notam_archive, "snapshot", broken)
-    monkeypatch.setattr(ntsb, "refresh", broken)
-    assert history.turn(0.0, 100_000.0) == 100_000.0
+def test_the_archive_is_a_job_each_hour_and_the_ntsb_each_day_both_first_now():
+    on = schedule.scheduler()
+    history.jobs(on)
+    jobs = {job.id: job for job in on.get_jobs()}
+    assert jobs["notam-archive"].func is notam_archive.snapshot and jobs["ntsb"].func is ntsb.refresh
+    assert jobs["notam-archive"].trigger.interval.total_seconds() == history.SNAPSHOT_EVERY_S
+    assert jobs["ntsb"].trigger.interval.total_seconds() == history.NTSB_EVERY_S
+    assert all(job.next_run_time is not None for job in jobs.values())
 
 
 PAGE = (Path(__file__).parent / "fixtures" / "avdata_2026-11-12.html").read_text()

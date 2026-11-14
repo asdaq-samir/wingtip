@@ -217,3 +217,19 @@ def test_an_airplanes_state_for_its_alerts_and_a_503_where_it_cannot_be_read(mon
     response = client.get("/api/traffic/flight/a06d40/status")
     assert response.status_code == 503 and "adsb.lol" in response.json()["detail"]
     assert client.get("/api/traffic/flight/nothex/status").status_code == 422
+
+
+def test_the_faa_record_answers_by_itself_without_the_live_find(monkeypatch):
+    # The record the card draws at once, while /api/traffic/find is still
+    # out: the find is never asked for it.
+    faa = {"n_number": "N654FL", "mode_s_hex": "a89c1e", "manufacturer": "Piper", "model": "PA-28-140", "status": "Valid"}
+
+    def live(q):
+        raise AssertionError("the live find asked")
+
+    monkeypatch.setattr(traffic, "find_credited", live)
+    monkeypatch.setattr(traffic, "registered", lambda q: faa if q in ("N654FL", "a89c1e") else None)
+    body = client.get("/api/traffic/registered", params={"q": "N654FL"}).json()
+    assert body["mode_s_hex"] == "a89c1e" and body["model"] == "PA-28-140"
+    assert client.get("/api/traffic/registered", params={"q": "UAL2088"}).json() is None
+    assert client.get("/api/traffic/registered", params={"q": "N"}).status_code == 422

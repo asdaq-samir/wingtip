@@ -476,7 +476,30 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
 **Structure, airplane card.** Head (tail, type, operator where the
 registry gives it; a picked airplane of the pilot's own shows its
 figures), the actions `lib/cardActions` gives its kind, then the figures
-the engine has for it. No airplane picked shows "No airplane
+the engine has for it. The airplane card (`features/airplane`, `AirplaneProfileSheet`) is
+laid out as the airport card is, the owner's P1 of 2026-11-14 (canvas
+<https://claude.ai/artifact/XFZoWyJWzov7RCwRRPH253>; docs/design/rules.md,
+the airplane card): the `CardAction` row Fly This, Follow
+(`AircraftAlertMenu` labelled Follow), Favorite (`FavoriteTile`) and Share
+(`shareOrCopy`, `?airplane=`); the stock Tabs through `CardTabBar`, as
+PlaceCard's, Flights · Info · Figures; the status line (`airplaneStatus`)
+under them. It reads its N-number two ways at once (`lib/airplane/lookup`,
+`useTailLookup`, in `useAirplaneCard`): the FAA's record from the
+planner's `/api/traffic/registered`, off its disk in milliseconds, for
+the line, Info (`AirplaneInfo`) and the ICAO address, and the rest of
+its public record from `/api/airplanes/{n_number}` and its `/photo`
+(`lib/airplane/details`; History, Based at and Photos in
+`AirplaneHistory`); and
+`/api/traffic/find`, the live sources, seconds when adsb.lol's API is
+busy, for whether it is in the air. Flights is `PastFlights` by that
+address with a ▶ on each row (`play`), each opening `PastFlightCard`
+(`?flight=&past=`) over the card. The one search's N-number row
+(`useOneSearch`) reads the same two queries, its type at once and
+whether it is in the air under it, so the card opens on answers already
+in hand. The FPL's airplane field suggests from the same rows as it is typed
+(`navlog/useAirplaneSuggestions` over `hooks/useAirplaneHits`, Base UI's
+Autocomplete through `CommandRoot` and `CommandField` in `InlineField`,
+the list in a Popover under the field), the record alone, no live find. No airplane picked shows "No airplane
 picked" and Pick Airplane, never a default type (decision 0011).
 
 **Stock parts.** Desktop: the panel's own side panel (`MapPanel` wide).

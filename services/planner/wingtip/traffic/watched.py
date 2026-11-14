@@ -7,7 +7,6 @@ import logging
 import math
 
 from .. import tracing
-from ..config import get_settings
 from ..geo import distance_nm
 from .common import STALE_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _sleep, _wall
 from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced
@@ -73,22 +72,15 @@ def follow_round() -> int:
     return heard
 
 
-def follow_forever(stop=None) -> None:
-    """The followed airplanes asked for every FOLLOW_EVERY_S for as long as
-    the caller runs (ingest's adsb thread; `stop`, an Event, ends it);
-    nothing where adsb.fi is off (ADSBFI_OPEN_DATA=0)."""
-    if not get_settings().adsbfi_open_data:
-        return
-    while stop is None or not stop.is_set():
-        started = _clock()
-        try:
-            # A trace of its own where tracing is on (ingest's): the
-            # round's asks of adsb.fi under it.
-            with tracing.span("follow round", root=True):
-                follow_round()
-        except Exception:  # noqa: BLE001 -- a bad round is not the end of following
-            log.exception("Following the airplanes failed this round")
-        _sleep(max(1.0, FOLLOW_EVERY_S - (_clock() - started)))
+def follow_job() -> None:
+    """One round of asking for the followed airplanes, the job ingest runs
+    every FOLLOW_EVERY_S on wingtip.schedule (not registered where adsb.fi
+    is off, ADSBFI_OPEN_DATA=0). A round that fails is logged by the
+    scheduler and tried at the next turn."""
+    # A trace of its own where tracing is on (ingest's): the round's asks
+    # of adsb.fi under it.
+    with tracing.span("follow round", root=True):
+        follow_round()
 
 
 def _watch(hex_id: str) -> None:

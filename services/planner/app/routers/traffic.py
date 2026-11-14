@@ -6,7 +6,17 @@ import datetime as dt
 from fastapi import APIRouter, HTTPException, Path, Query
 from wingtip import traffic
 
-from ..schemas.traffic import AircraftBases, FlightDetail, FlightRoute, FlightStatus, PastFlight, PastFlights, Traffic, TrafficFound
+from ..schemas.traffic import (
+    AircraftBases,
+    AircraftRegistration,
+    FlightDetail,
+    FlightRoute,
+    FlightStatus,
+    PastFlight,
+    PastFlights,
+    Traffic,
+    TrafficFound,
+)
 from ..gateway import PUBLIC
 
 router = APIRouter()
@@ -43,6 +53,20 @@ def traffic_find(q: str = Query(min_length=2, max_length=12, description="Callsi
     except traffic.TrafficUnavailable:
         return TrafficFound(aircraft=[], registered=traffic.registered(q), checked=False)
     return TrafficFound(aircraft=found, registered=None if found else traffic.registered(q), **credit)
+
+
+@router.get("/api/traffic/registered", response_model=AircraftRegistration | None, openapi_extra=PUBLIC)
+def traffic_registered(q: str = Query(min_length=2, max_length=12, description="N-number or ICAO address")) -> AircraftRegistration | None:
+    """The FAA's record of a US airplane named by its N-number or ICAO
+    address (wingtip.traffic.registered), null for any other name: the
+    registry is on this service's disk, so this answers in milliseconds,
+    where /api/traffic/find waits on the live sources, seconds at a time
+    when adsb.lol's API is busy. A page asks both at once, drawing the
+    record as soon as it is here and whether the airplane is in the air
+    when the find answers (the owner, 2026-11-14: "Why does looking up a
+    plane takes a long time?")."""
+    record = traffic.registered(q)
+    return AircraftRegistration(**record) if record else None
 
 
 @router.get("/api/traffic/flight/{hex_id}", response_model=FlightDetail, openapi_extra=PUBLIC)

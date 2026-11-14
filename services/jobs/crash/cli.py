@@ -2,8 +2,8 @@
 image's entry point):
 
 - `every`: a run of `poll` now and each CRASH_LEADS_EVERY_MIN (30) after,
-  for as long as the container runs: the job keeps its own schedule
-  (docker-compose.yml's `crash-leads`), so no other service starts it.
+  for as long as the container runs: the job keeps its own schedule on
+  wingtip's scheduler (wingtip.schedule; docker-compose.yml's `crash-leads`), so no other service starts it.
   CRASH_LEADS_AUTO=0 runs none. On AWS a scheduled task runs `poll`
   instead, when the pipeline moves there (#115).
 
@@ -32,10 +32,9 @@ import datetime as dt
 import json
 import logging
 import sys
-import time
 
 import requests
-from wingtip import crash_drafts
+from wingtip import crash_drafts, schedule
 from wingtip.config import get_settings
 from wingtip.engine import ask
 from wingtip.traffic import TrafficUnavailable
@@ -136,20 +135,18 @@ def poll() -> int:
 
 
 def every() -> int:
-    """`poll` now and each CRASH_LEADS_EVERY_MIN after, never ending; a run
-    that fails is said in the log and the next goes on. None where
-    CRASH_LEADS_AUTO is 0, and the container ends."""
+    """`poll` now and each CRASH_LEADS_EVERY_MIN after, never ending: a job
+    on wingtip's scheduler (wingtip.schedule) in this process's own
+    thread; a run that fails is logged by the scheduler and the next goes
+    on. None where CRASH_LEADS_AUTO is 0, and the container ends."""
     settings = get_settings()
     if not settings.crash_leads_auto:
         log.info("crash leads: CRASH_LEADS_AUTO is off, no runs")
         return 0
-    every_s = max(5, settings.crash_leads_every_min) * 60
-    while True:
-        try:
-            poll()
-        except Exception:  # noqa: BLE001 -- the next run tries again
-            log.warning("crash leads: the run failed", exc_info=True)
-        time.sleep(every_s)
+    on = schedule.scheduler(workers=1, blocking=True)
+    schedule.every(on, max(5, settings.crash_leads_every_min) * 60, poll, name="crash-leads")
+    on.start()
+    return 0
 
 
 def parse_check() -> int:

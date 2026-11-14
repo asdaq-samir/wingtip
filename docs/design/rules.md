@@ -76,7 +76,17 @@ Compose. Nothing here is built by hand where a stock part does it.
    (the web's `routeBox/RouteSuggestions`) are a written
    exception (the owner, 2026-11-14): typing a route's idents in place is
    faster than leaving for the search, and the suggestions only complete
-   the ident being typed.
+   the ident being typed. Beside it, the FPL's airplane field ("N-_____")
+   suggests as it is typed (the owner's pick of S1, 2026-11-14, "I take
+   your rec"; canvas <https://claude.ai/artifact/XFZoWyJWzov7RCwRRPH253>,
+   "N-number field as a search"): a list under the field, the FPL still in
+   view, in four groups -- Your airplanes, Recent and kept, the FAA
+   registry once the N-number is whole (its type and year, or "Not
+   registered"; "Type the rest to look it up" while it is not), and Types
+   flown by the book -- built from the one search's own airplane rows
+   (the web's `hooks/useAirplaneHits`), so the two never differ. Enter or
+   leaving the field still takes a whole N-number as typed; arrows and
+   Enter pick a row, Escape closes the list.
 6. **Back and Escape close the top card first**, then go back a level.
    Neither only lowers the sheet while a card is open; with no card open
    they may lower it.
@@ -298,7 +308,11 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   distance, ETE, fuel, altitude, airplane; a tap goes to the plan), then
   Favorites (airports and airplanes), Recents and Nearest.
 - **Typing:** one list in groups: Airports; Waypoints and Navaids;
-  Airplanes (your own, an N-number from the FAA registry, a type); Do
+  Airplanes (your own, an N-number from the FAA registry, a type; an
+  N-number's registry row shows its type at once and, under it, whether
+  it is in the air -- "Checking whether it's in the air…" until the live
+  find answers, then "In the air · 4,500 ft · 108 kt" with Track, or "Not
+  in the air now", a failure said in the row: the owner, 2026-11-14); Do
   (Direct To, Brief, Nearest, Emergency and every screen by name, and on
   the phones "Ask: …", answered on the phone). Results come from the existing endpoints
   and generated models; the search holds no aviation logic.
@@ -308,6 +322,36 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   2026-11-11; the web first, the phones still
   with Depart From); an airplane its profile with Fly This Airplane; an
   action runs.
+- **The airplane card** (its profile), however it is reached (the search,
+  the plan's Airplane, a link, the pickers), the pilot's own airplanes
+  too, is laid out as the airport card is (the owner's pick of P1,
+  2026-11-14, "Ok I take your rec"; canvas
+  <https://claude.ai/artifact/XFZoWyJWzov7RCwRRPH253>): its N-number and,
+  under it, the registry's make, model and year ("Piper PA-28-140, 1971");
+  one row of four buttons, the first filled -- Fly This, Follow (the
+  flight card's alerts: takes off, lands, comes near), Favorite and Share,
+  Follow and Favorite greyed where the registry gives no ICAO address;
+  the tabs **Flights · Info · Figures** in that order, Flights first with
+  its count as the hint; and one status line under the tabs, where the
+  airport card's weather line is: "In the air · 4,500 ft · 112 kt" from
+  the live find, else "On the ground · landed KPWK 2h ago" from its last
+  flight, else "Not heard in the last 6 weeks", and "Checking whether
+  it's in the air…" while the find is out. Flights is the flight card's
+  list of past flights (the last ten, more on asking, a day picked), each
+  ▶ opening its replay over the card (the owner, 2026-11-14: "How do I
+  see the flights of airplane and play them?"); Info the airplane's
+  public record in groups -- Airplane (with the type certificate data
+  sheet), Engine, Registration, Owner, History (past registrations, then
+  its NTSB reports, each linking to the NTSB's report), Based at (where
+  its own flights keep to) and Photos (Planespotters.net's, the
+  photographer credited and the picture linked to its page, on their
+  terms) -- each group saying in place where it has nothing; Figures every
+  planning figure, edited in place, a missing one asked for there.
+- **The owner rule:** the FAA aircraft registry is public data, so Info's
+  Owner group always shows the registry's owner for every airplane --
+  name, town and state, kind of owner and co-owners -- as the FAA
+  publishes it (the owner, 2026-11-14: "For owner info though, it's
+  public info"); the town, never the street.
 - **The plan is the sheet's main content** with a route, everything the
   FPL tab had in the same order.
 - **Desktop web:** the same search and plan in the side panel; ⌘K, Ctrl K

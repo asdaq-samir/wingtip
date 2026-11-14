@@ -19,18 +19,26 @@ def editions(monkeypatch):
 def test_the_editions_are_checked_with_the_charts_off_and_the_switch_on(monkeypatch, editions):
     monkeypatch.setattr(chart_refresh, "AUTO_REFRESH", False)
     monkeypatch.setattr(main, "FAA_DATA_AUTO_REFRESH", True)
-    checked = main.check_faa_editions(0.0)
+    main.check_faa_editions()
     assert editions == [main.altitude.DEFAULT_FAA_CACHE_DIR]
-    assert checked > 0
-    # And not again until EDITIONS_CHECK_EVERY_S has passed.
-    assert main.check_faa_editions(checked) == checked
-    assert len(editions) == 1
+
+
+def test_the_checks_are_jobs_on_the_planners_scheduler(monkeypatch):
+    """Each check a job every EDITIONS_CHECK_EVERY_S (the chart cycle every
+    CHECK_EVERY_S)."""
+    monkeypatch.setattr(main, "REGISTRY_REFRESH", True)
+    on = main.schedule.scheduler()
+    main._schedule_checks(on)
+    jobs = {job.id: job for job in on.get_jobs()}
+    assert set(jobs) == {"faa-data-cycles", "faa-editions", "aircraft-registry", "chart-cycle"}
+    assert jobs["faa-editions"].trigger.interval.total_seconds() == main.EDITIONS_CHECK_EVERY_S
+    assert jobs["chart-cycle"].trigger.interval.total_seconds() == chart_refresh.CHECK_EVERY_S
 
 
 def test_the_switch_off_checks_nothing(monkeypatch, editions):
     monkeypatch.setattr(chart_refresh, "AUTO_REFRESH", True)
     monkeypatch.setattr(main, "FAA_DATA_AUTO_REFRESH", False)
-    assert main.check_faa_editions(0.0) == 0.0
+    main.check_faa_editions()
     assert editions == []
 
 

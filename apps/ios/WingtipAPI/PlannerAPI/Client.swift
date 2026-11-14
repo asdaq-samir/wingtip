@@ -12332,6 +12332,104 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Traffic Registered
+    ///
+    /// The FAA's record of a US airplane named by its N-number or ICAO
+    /// address (wingtip.traffic.registered), null for any other name: the
+    /// registry is on this service's disk, so this answers in milliseconds,
+    /// where /api/traffic/find waits on the live sources, seconds at a time
+    /// when adsb.lol's API is busy. A page asks both at once, drawing the
+    /// record as soon as it is here and whether the airplane is in the air
+    /// when the find answers (the owner, 2026-11-14: "Why does looking up a
+    /// plane takes a long time?").
+    ///
+    /// - Remark: HTTP `GET /api/traffic/registered`.
+    /// - Remark: Generated from `#/paths//api/traffic/registered/get(traffic_registered)`.
+    public func trafficRegistered(_ input: Operations.TrafficRegistered.Input) async throws -> Operations.TrafficRegistered.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.TrafficRegistered.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/traffic/registered",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "q",
+                    value: input.query.q
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.TrafficRegistered.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.AircraftRegistration.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.TrafficRegistered.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Traffic Route
     ///
     /// The route a flight number is scheduled to fly -- TJSJ to KORD for

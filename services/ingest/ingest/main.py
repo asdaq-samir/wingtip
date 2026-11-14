@@ -5,7 +5,7 @@
   store (wingtip.traffic.store), FNS's NOTAMs into wingtip.notams' store,
   TFMS's flight plans into wingtip.filed_routes'.
 - The followed airplanes asked of adsb.fi each half minute
-  (wingtip.traffic.follow_forever), their tracks recorded in the live store.
+  (wingtip.traffic.follow_job, a job every FOLLOW_EVERY_S), their tracks recorded in the live store.
 - The Studio's history (ingest.history): each hour the day's NOTAMs and
   TFRs archived, and each month the NTSB's database read.
 
@@ -24,7 +24,8 @@ import signal
 import threading
 import time
 
-from wingtip import traffic, tracing
+from wingtip import schedule, traffic, tracing
+from wingtip.config import get_settings as wingtip_settings
 from wingtip.traffic import store
 
 from . import history, swim
@@ -43,19 +44,21 @@ def beat(feeds: list[str]) -> None:
 
 
 def run(stop: threading.Event) -> None:
-    """The feeds and the following started, and the beat kept until `stop`."""
-    feeds = swim.start(stop)
+    """The feeds and the following started, and the beat kept until `stop`:
+    the beat, the following, the radar's wanted views and the history each a job on one
+    scheduler (wingtip.schedule)."""
+    on = schedule.scheduler()
+    feeds = swim.start(stop, on)
     log.info("SWIM feeds: %s", ", ".join(feeds) or "none set up")
-    threading.Thread(target=traffic.follow_forever, args=(stop,), name="adsb-follow", daemon=True).start()
+    if wingtip_settings().adsbfi_open_data:
+        schedule.every(on, traffic.FOLLOW_EVERY_S, traffic.follow_job, name="adsb-follow")
     if get_settings().history:
-        threading.Thread(target=history.run, args=(stop,), name="history", daemon=True).start()
-    every = get_settings().beat_every_s
-    while not stop.is_set():
-        try:
-            beat(feeds)
-        except Exception:  # noqa: BLE001 -- the next beat tries again; the health check sees a long gap
-            log.warning("ingest's beat not written", exc_info=True)
-        stop.wait(every)
+        history.jobs(on)
+    # A beat that fails is logged by the scheduler; the health check sees the long gap.
+    schedule.every(on, get_settings().beat_every_s, beat, name="beat", args=(feeds,))
+    on.start()
+    stop.wait()
+    on.shutdown(wait=False)
 
 
 def main() -> None:

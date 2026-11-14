@@ -1,5 +1,5 @@
 """The live feeds watched: wingtip.feed_health's lines checked each minute
-in a thread of their own, a feed stale for FEED_ALERT_AFTER_MIN turned
+on the planner's scheduler (app.main, wingtip.schedule), a feed stale for FEED_ALERT_AFTER_MIN turned
 into an alert, and the alert said -- the log (a warning, and an info line
 when it ends), FEED_ALERT_WEBHOOK where one is set (a JSON POST), and any
 hook in HOOKS.
@@ -128,14 +128,3 @@ def snapshot_or_none() -> dict | None:
     except Exception:  # noqa: BLE001 -- the rest of the status is still worth having
         log.warning("live feeds not read", exc_info=True)
         return None
-
-
-def watch_forever(stop: threading.Event | None = None) -> None:
-    """The thread app.main starts: a check each CHECK_EVERY_S until `stop`."""
-    stop = stop or threading.Event()
-    while not stop.is_set():
-        try:
-            check()
-        except Exception:  # noqa: BLE001 -- the next minute tries again
-            log.warning("feeds not checked", exc_info=True)
-        stop.wait(CHECK_EVERY_S)
