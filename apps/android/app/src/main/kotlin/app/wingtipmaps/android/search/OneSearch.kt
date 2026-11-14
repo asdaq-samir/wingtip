@@ -66,9 +66,10 @@ import kotlinx.coroutines.launch
 
 /**
  * The sheet's first row in both layouts, where the tabs were (the owner's
- * one search, 2026-11-09): Material's search bar, "Search or ask" (read
- * out as "Search airports, airplanes, or ask"), with the microphone and
- * the account's avatar (AccountButton, Settings in one tap) in the bar's
+ * one search, 2026-11-09): Material's search bar, "Search airports and
+ * airplanes", written and read out alike (the owner, 2026-11-14: "Just say
+ * Search airports and airplanes"), with the microphone and
+ * the account's avatar (AccountButton, You in one tap) in the bar's
  * own trailing slot, as Google Maps has them (the owner, 2026-11-10).
  * While a card is
  * open its bar takes this row's place (CardPage). Tapped, the bar opens

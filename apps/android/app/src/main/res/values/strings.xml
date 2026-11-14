@@ -14,8 +14,8 @@
     <string name="settings">Settings</string>
     <!-- The bar's placeholder, one line at every font scale (Material's
          search bar is 56 dp); TalkBack reads the whole sentence. -->
-    <string name="search_hint">Search or ask</string>
-    <string name="search_hint_spoken">Search airports, airplanes, or ask</string>
+    <string name="search_hint">Search airports and airplanes</string>
+    <string name="search_hint_spoken">Search airports and airplanes</string>
     <string name="search_hint_flying">Tap the mic and say it</string>
     <string name="search_add_stop">Add a stop</string>
     <string name="say_it">Ask by voice</string>
