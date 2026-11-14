@@ -230,11 +230,14 @@ function YouHead({ pilot }: { pilot: Pilot | null }) {
   // Pilot Details as its row opens it, its close back to You.
   const openPage = useOpenPage();
   return (
-    <div role="group" aria-label="Account" className="flex flex-col items-center gap-1 pt-6" data-testid="setup-pill-account">
+    // Up beside the card's gear and close, which float over it (ConsoleLayer),
+    // the avatar large: Apple Maps' account card, the owner's screenshot of
+    // 2026-11-14 ("So much space between buttons and avatar and list").
+    <div role="group" aria-label="Account" className="-mt-11 flex flex-col items-center gap-1" data-testid="setup-pill-account">
       <span
         aria-hidden="true"
         className={cn(
-          "mb-2 grid size-18 place-items-center rounded-full font-bold [&_svg]:size-8",
+          "mb-2 grid size-22 place-items-center rounded-full font-bold [&_svg]:size-10",
           name ? "bg-tint text-white" : "bg-foreground/8 text-tint",
           TEXT.hero,
         )}

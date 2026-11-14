@@ -15,6 +15,7 @@
 //! other airplane's figure fills it (the owner, 2026-11-09).
 
 use super::instruments::Leg;
+use wingtip_core::sort::StableSort;
 
 /// The fuel aboard as the plan has it.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -38,22 +39,41 @@ pub fn burnt(legs: &[Leg], along_nm: f64) -> f64 {
     super::along::burnt_gal(&legs, along_nm)
 }
 
+/// The hop the airplane is on at `along_nm` miles along the route, and
+/// where along the route it began: 0 and None before the first fuel stop,
+/// then one more for each stop the plan refuels at that lies behind
+/// (`places`, each point's miles along, None where it is not on the
+/// line), so the hops count as the planner's totals' hops do, each
+/// beginning at a stop. A stop is behind once the airplane is past it:
+/// arriving there it is still the hop that ends at it, before refuelling.
+pub fn hop_at(tanks: &Tanks, places: &[Option<f64>], along_nm: f64) -> (usize, Option<f64>) {
+    let mut passed: Vec<f64> =
+        tanks.refuel_at.iter().filter_map(|&k| places.get(k).copied().flatten()).filter(|&a| a < along_nm - 1e-9).collect();
+    passed.stable_sort_by(f64::total_cmp);
+    // One stop named twice is one stop.
+    passed.dedup_by(|a, b| (*a - *b).abs() < 1e-9);
+    (passed.len(), passed.last().copied())
+}
+
+/// The fuel the legs burn from the start of the hop the airplane is on
+/// (hop_at) to `along_nm`: what the strip takes off the hop's own fuel
+/// required (strip_fuel's `burnt_gal`), the burn before the last fuel
+/// stop being the tank the stop filled again.
+pub fn hop_burnt(tanks: &Tanks, legs: &[Leg], places: &[Option<f64>], along_nm: f64) -> f64 {
+    let (_, began) = hop_at(tanks, places, along_nm);
+    burnt(legs, along_nm) - began.map_or(0.0, |at| burnt(legs, at))
+}
+
 /// The fuel the plan leaves at `along_nm` miles along the route: from the
-/// last fuel stop passed before it (`places`, each point's miles along,
-/// None where it is not on the line), else from the start.
+/// last fuel stop passed before it (hop_at), else from the start.
 pub fn fuel_at(tanks: &Tanks, legs: &[Leg], places: &[Option<f64>], along_nm: f64) -> Option<f64> {
     let start = tanks.start_gal?;
     let taxi = tanks.taxi_gal.unwrap_or(0.0);
-    let last_stop = tanks
-        .refuel_at
-        .iter()
-        .filter_map(|&k| places.get(k).copied().flatten())
-        .filter(|&a| a < along_nm - 1e-9)
-        .fold(None, |best: Option<f64>, a| Some(best.map_or(a, |b| b.max(a))));
-    Some(match last_stop {
-        None => start - taxi - burnt(legs, along_nm),
-        Some(at) => tanks.full_gal.unwrap_or(start) - taxi - (burnt(legs, along_nm) - burnt(legs, at)),
-    })
+    let tank = match hop_at(tanks, places, along_nm).1 {
+        None => start,
+        Some(_) => tanks.full_gal.unwrap_or(start),
+    };
+    Some(tank - taxi - hop_burnt(tanks, legs, places, along_nm))
 }
 
 #[cfg(test)]
@@ -82,5 +102,30 @@ mod tests {
         let no_taxi = Tanks { taxi_gal: None, ..tanks.clone() };
         assert!((fuel_at(&no_taxi, &legs, &places, 50.0).unwrap() - 35.0).abs() < 1e-9);
         assert_eq!(fuel_at(&Tanks::default(), &legs, &places, 50.0), None);
+    }
+
+    #[test]
+    fn the_hop_and_its_burn_start_again_past_each_fuel_stop() {
+        // Three 100 nm legs of 10, 12 and 8 gal, fuel stops at the second
+        // and third points, the second named twice.
+        let legs = [
+            Leg { distance_nm: 100.0, fuel_gal: Some(10.0) },
+            Leg { distance_nm: 100.0, fuel_gal: Some(12.0) },
+            Leg { distance_nm: 100.0, fuel_gal: Some(8.0) },
+        ];
+        let places = [Some(0.0), Some(100.0), Some(200.0), Some(300.0)];
+        let tanks = Tanks { start_gal: Some(40.0), full_gal: None, taxi_gal: None, refuel_at: vec![1, 1, 2] };
+        let hop = |nm: f64| (hop_at(&tanks, &places, nm).0, hop_burnt(&tanks, &legs, &places, nm));
+        assert_eq!(hop(50.0), (0, 5.0));
+        // Arriving at the first stop: still the first hop, all of its burn.
+        assert_eq!(hop(100.0), (0, 10.0));
+        assert_eq!(hop(150.0), (1, 6.0));
+        assert_eq!(hop(250.0), (2, 4.0));
+        // Past the second stop the tanks hold the fill less the third leg's half.
+        assert!((fuel_at(&tanks, &legs, &places, 250.0).unwrap() - 36.0).abs() < 1e-9);
+        // No stops: one hop, the whole burn.
+        let one_tank = Tanks { refuel_at: vec![], ..tanks.clone() };
+        assert_eq!(hop_at(&one_tank, &places, 250.0), (0, None));
+        assert!((hop_burnt(&one_tank, &legs, &places, 250.0) - 26.0).abs() < 1e-9);
     }
 }

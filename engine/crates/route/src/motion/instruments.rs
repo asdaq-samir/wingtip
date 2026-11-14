@@ -15,7 +15,9 @@
 //! displays" (FAA AC 120-76D, Authorization for Use of Electronic Flight
 //! Bags, 11.17.1); the apps say so where they show them.
 
-use super::fuel_left::{burnt, fuel_at, Tanks};
+use super::fuel_left::{burnt, fuel_at, hop_at, hop_burnt, Tanks};
+// The glide ring moved to glide.rs; its tests here read it by this path.
+pub use super::glide::{glide_ring, GlideRing, RING_POINTS};
 use super::{glide, num, opt};
 use crate::geo::{bearing_deg, destination, distance_nm, py_mod};
 use crate::json::{self, Value};
@@ -35,9 +37,6 @@ pub const ON_ROUTE_NM: f64 = crate::figures::debrief::OFF_ROUTE_NM;
 pub const VS_WINDOW_S: f64 = 10.0;
 /// And at least this many seconds of them, three fixes at one a second.
 pub const VS_LEAST_S: f64 = 2.0;
-/// The ring's points: one every five degrees, round to a smooth circle at
-/// any zoom a pilot reads it at.
-pub const RING_POINTS: usize = 72;
 
 /// Own ship's fix as the apps send it.
 #[derive(Clone, Copy, Debug, Default)]
@@ -158,6 +157,16 @@ pub struct InFlight {
     /// What the plan leaves in the tanks here (fuel_left), None without
     /// the start's fuel.
     pub fuel_now_gal: Option<f64>,
+    /// The leg flown, an index into the nav log's legs (the one from
+    /// point `leg` to the next): the one the next waypoint ends. None
+    /// with fewer than two points.
+    pub leg: Option<usize>,
+    /// The hop flown (fuel_left's hop_at): 0 the first, one more past each
+    /// fuel stop, an index into the planner's totals' hops.
+    pub hop: usize,
+    /// The fuel the legs burn from the hop's start to here (fuel_left's
+    /// hop_burnt): what the strip's fuel takes off the hop's own figure.
+    pub hop_burnt_gal: f64,
     pub next: Option<Ahead>,
     pub destination: Option<Ahead>,
 }
@@ -244,6 +253,9 @@ pub fn in_flight(fix: Fix, line: &[(f64, f64)], points: &[Point], legs: &[Leg], 
         variation_deg,
         burnt_gal: burnt(legs, here.along_nm),
         fuel_now_gal: fuel_at(here.along_nm),
+        leg: next.as_ref().map(|n| n.index - 1),
+        hop: hop_at(tanks, &places, here.along_nm).0,
+        hop_burnt_gal: hop_burnt(tanks, legs, &places, here.along_nm),
         next,
         destination,
     })
@@ -270,28 +282,6 @@ pub fn vertical_speed(samples: &[(f64, f64)]) -> Option<f64> {
         sxx += (t - mt) * (t - mt);
     }
     (sxx > 0.0).then(|| sxy / sxx * 60.0)
-}
-
-/// A glide ring: its range, nm, the ground it is reckoned over, ft, and
-/// its outline, latitude and longitude.
-pub type GlideRing = (f64, f64, Vec<(f64, f64)>);
-
-/// The glide ring: its radius (motion::glide's still-air range at the picked airplane's own glide ratio) over the higher of
-/// the ground under the airplane (the pack's terrain grid) and the nearest field's elevation, and its outline on the sphere
-/// for a map that draws polygons. None on the ground, under flying speed, with no height or no glide ratio.
-pub fn glide_ring(
-    lat: f64, lon: f64, altitude_ft: Option<f64>, speed_kt: Option<f64>, terrain_ft: Option<f64>, field_ft: Option<f64>,
-    glide_ratio: Option<f64>,
-) -> Option<GlideRing> {
-    // The higher ground of the two: the ring is how far the airplane
-    // glides before it meets it, so the lower would draw it too wide.
-    let ground = match (terrain_ft, field_ft) {
-        (Some(t), Some(f)) => Some(t.max(f)),
-        (t, f) => t.or(f),
-    };
-    let range = glide::range_nm(altitude_ft, speed_kt, ground, glide_ratio)?;
-    let ring = (0..=RING_POINTS).map(|k| destination(lat, lon, 360.0 * (k % RING_POINTS) as f64 / RING_POINTS as f64, range)).collect();
-    Some((range, ground?, ring))
 }
 
 // --- By name ---------------------------------------------------------------
@@ -392,11 +382,13 @@ pub(super) fn in_flight_rule(v: &Value) -> Result<String, String> {
         ("variation_deg", i.variation_deg),
         ("burnt_gal", Some(i.burnt_gal)),
         ("fuel_now_gal", i.fuel_now_gal),
+        ("hop_burnt_gal", Some(i.hop_burnt_gal)),
     ] {
         out.push_str(&format!(",\"{key}\":"));
         json::opt_number(&mut out, x);
     }
-    out.push_str(&format!(",\"taxi_counted\":{}", tanks.taxi_gal.is_some()));
+    out.push_str(&format!(",\"taxi_counted\":{},\"hop\":{},\"leg\":", tanks.taxi_gal.is_some(), i.hop));
+    out.push_str(&i.leg.map_or("null".to_owned(), |k| k.to_string()));
     out.push_str(",\"next\":");
     ahead_json(&mut out, &i.next);
     out.push_str(",\"destination\":");
@@ -419,40 +411,6 @@ pub(super) fn vertical_speed_rule(v: &Value) -> Result<String, String> {
         .collect::<Result<Vec<_>, String>>()?;
     let mut out = String::new();
     json::opt_number(&mut out, vertical_speed(&samples));
-    Ok(out)
-}
-
-/// `glide_ring`: `{"range_nm", "ground_ft", "ring": [[lat, lon]]}` or null, from `{"lat", "lon", "altitude_ft"?,
-/// "speed_kt"?, "terrain_ft"?, "field_ft"?, "glide_ratio"?}`.
-pub(super) fn glide_ring_rule(v: &Value) -> Result<String, String> {
-    let n = "glide_ring";
-    let Some((range, ground, ring)) = glide_ring(
-        num(n, v, "lat")?,
-        num(n, v, "lon")?,
-        opt(n, v, "altitude_ft")?,
-        opt(n, v, "speed_kt")?,
-        opt(n, v, "terrain_ft")?,
-        opt(n, v, "field_ft")?,
-        opt(n, v, "glide_ratio")?,
-    ) else {
-        return Ok("null".to_owned());
-    };
-    let mut out = String::from("{\"range_nm\":");
-    json::number(&mut out, range);
-    out.push_str(",\"ground_ft\":");
-    json::number(&mut out, ground);
-    out.push_str(",\"ring\":[");
-    for (k, (lat, lon)) in ring.iter().enumerate() {
-        if k > 0 {
-            out.push(',');
-        }
-        out.push('[');
-        json::number(&mut out, *lat);
-        out.push(',');
-        json::number(&mut out, *lon);
-        out.push(']');
-    }
-    out.push_str("]}");
     Ok(out)
 }
 

@@ -6,8 +6,9 @@
 //! - pack: the cycle pack, one file per FAA cycle;
 //! - rules: the airspace over a point in bands, with the rules of each;
 //! - pack_query: the planner's airspace-at-a-point answer from a phone's pack;
-//! - view: the map's airspace, airports and VORs in view from the packs,
-//!   as the planner's in-view endpoints answer them;
+//! - regions_ahead: the phone packs' regions ahead of the airplane, in order;
+//! - view, view_airports: the map's airspace, airports and VORs in view
+//!   from the packs, as the planner's in-view endpoints answer them;
 //! - ahead: the alerts ahead of the airplane from the phone's packs;
 //! - spoken, spoken_ask: the places a clearance names, found among those
 //!   the planner gives or the phone's packs keep, and its SID and STAR;
@@ -25,6 +26,7 @@ pub mod drills;
 pub mod field_name;
 pub mod pack;
 pub mod pack_query;
+pub mod regions_ahead;
 pub mod rules;
 pub mod shelf_label;
 pub mod spoken;
@@ -35,6 +37,7 @@ pub mod sua_limit;
 pub mod sua_place;
 pub mod sua_tab;
 pub mod view;
+pub mod view_airports;
 pub mod view_marks;
 pub mod volume_span;
 

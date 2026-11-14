@@ -59,7 +59,7 @@ table, and its why below, in the same commit.
 | `radio` | clearance, callsign (our call sign and where it was said, AIM 4-2-3 c, 4-2-4), instruction (an instruction heard in flight read into its items), readback (AIM 4-4-7 b), atc (the ATC copilot's `atc_call` and `readback_check`), atis, datis (a digital ATIS as the tower's data link writes it), mayday (the distress call, AIM 6-3-2), guidance (an emergency's general good practice with no airplane picked) | core, flight, weather, procedures |
 | `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), autolog (a logbook entry drawn from a flown track: 1.1, 61.1(b), 61.57), aircraft (with figures: an airplane's figures and where each comes from, and what a figure lacks), documents (a photographed page's figures checked before the pilot sees them), coach (a pilot's proficiency plan: what is due under 61.56 and 61.57, the weak areas their debriefs show, the sessions) | core, flight, procedures, route (without its options) |
 | `brief` | gonogo, runway (with marks: a field's wind on the map), alternates (91.169's IFR alternate), fields (the best fields to land at: a glide or a diversion), icing_forecast (the AWC's forecast icing on an IFR route), passengers (the passengers' SAFETY briefing, 91.107(a)) | core, flight, procedures |
-| `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours), motion (with along: where the airplane is on the route; fuel_left: the fuel the plan leaves in flight, from the last fuel stop, less each start and taxi), approach, navlog | core, flight, weather, procedures |
+| `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours), motion (with along: where the airplane is on the route; fuel_left: the fuel the plan leaves in flight, from the last fuel stop, less each start and taxi, and the hop flown and its burn, which the strip's fuel takes off that hop's), approach, navlog | core, flight, weather, procedures |
 | `airspace` | airspace, pack, rules, pack_query, view, spoken (with spoken_ask: the places a clearance names and its SID and STAR, `clearance_places`), ahead, drills (91.125's light signals and 91.155's minimums as cards and by name) | core, flight, procedures, radio |
 | `wording` | wording (with script: the radio calls' words) | core, procedures, airspace, brief, route (without its options) |
 | `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words, the cautions on a pilot's own altitude, 91.119(b)'s congested areas) | core, flight, weather, procedures |
@@ -329,7 +329,13 @@ Then the callers switch to the name and the old copy is deleted.
   endpoints answered (the airports' still does; the web's map draws the
   airspace and navaids from the overlay tiles) (`wt_airspace_in_view`, `wt_airports_in_view`,
   `wt_navaids_in_view`), with what a pack cannot hold -- a live METAR's
-  flight category, a navaid's remarks -- answered null or empty.
+  flight category, a navaid's remarks -- answered null or empty. Each
+  field carries the overlay tiles' mark, `mark_order` and `mark_size`
+  (`field_mark_rank`, its longest hard runway the pack's HARD_FT
+  column), so a phone ranks its marks offline as the tiles rank them.
+  Which packs to read for what is ahead is the engine's as well
+  (`regions_ahead`): the airplane's own region, then those its track and
+  its route cross within a look-ahead distance, in the order reached.
 - The altitude a flight is planned at is the engine's too (`crates/altitude`,
   #482 phase 3): each leg's floor -- the terrain and DOF obstacles with
   14 CFR 91.119's clearances (`vfr_floors`, asked once a leg with the
@@ -538,6 +544,11 @@ warm-up once a cycle, to `data/raw/packs/wingtip-<cycle>.pack` (not
 committed); the phones' packs of it, one a 4-degree region with the rings
 simplified (`wingtip.cycle_pack.write_phone`), to `data/raw/packs/phone/<cycle>/`,
 served at `/api/cycle-packs` and `/api/cycle-pack/<cycle>/<region>.pack`.
+The airports table carries `wingtip.pack_airports`' SIZE and HARD_FT
+columns after NASR's, read by name, so an older pack still reads. A change
+to what the tables hold bumps `cycle_pack.TABLES` (2 since HARD_FT,
+2026-11-14), in the pack's meta and the phones' index: the planner builds
+both again, and a phone, seeing a region's new crc32, fetches it again.
 `services/planner/tests_wingtip/test_phone_pack.py` holds the engine's answer from them to the
 planner's own code; the iOS app's `CyclePackTests` read the Chicago ones
 in `services/planner/tests_wingtip/fixtures/native/phone`.
