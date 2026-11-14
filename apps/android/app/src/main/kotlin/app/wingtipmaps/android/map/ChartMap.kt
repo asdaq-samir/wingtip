@@ -171,7 +171,7 @@ fun ChartMap(
     LaunchedEffect(holder) { snapshotFlow { ring() }.collect(holder::glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
     LaunchedEffect(holder, selectedField) { holder.selectField(selectedField?.ident).also { MapTerrain.selected(selectedField?.ident) } }
-    LaunchedEffect(holder, selectedField) { selectedField?.let { holder.showField(it.lat, it.lon) } }
+    LaunchedEffect(holder, selectedField) { holder.showField(selectedField) }
     LaunchedEffect(holder, plates) { holder.plates(plates) }
 
     AndroidView(factory = { holder.view }, modifier = modifier)
@@ -409,7 +409,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             val reduced = app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)
             // While following, the component's tracking takes the padding.
             if (puck?.inset(doubleArrayOf(0.0, 0.0, 0.0, px.toDouble()), if (reduced) 0L else INSET_MS.toLong()) != true) {
-                CameraUpdateFactory.paddingTo(0.0, 0.0, 0.0, px.toDouble()).let { if (reduced) map.moveCamera(it) else map.easeCamera(it, INSET_MS) }
+                camera.room(map, view.width, view.height, px, density, reduced)
             }
             MapCamera.noCredits(map)
         }
@@ -432,9 +432,9 @@ private class MapHolder(val view: MapView, private val density: Float) {
         view.getMapAsync { camera.fit(it, line, bottomInset, density, puck?.tracking == true, A11y.reducedMotion(view.context)) }
     }
 
-    /** The open card's field brought into sight (MapCamera.showField). */
-    fun showField(lat: Double, lon: Double) {
-        if (!destroyed && puck?.tracking != true) view.getMapAsync { MapCamera.showField(it, lat, lon, A11y.reducedMotion(view.context)) }
+    /** The open card's field brought into sight, and kept there (MapCamera.show). */
+    fun showField(field: MapField?) {
+        if (!destroyed) view.getMapAsync { camera.show(it, field.takeIf { puck?.tracking != true }, view.width, view.height, bottomInset, density, A11y.reducedMotion(view.context)) }
     }
 
     fun selectLeg(leg: Int?) {

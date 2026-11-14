@@ -1585,7 +1585,15 @@ airplane, a TFR, Nearest, the Nav Log, Emergency) parks at its bar, the
 sheet's peek lowered to the handle and the small bar (`MapSheetState.parked`)
 until it is pulled up or another card opens, and never closes on a
 swipe however far the drag goes past it. The stock sheet has two sizes
-and Hidden, so the park is its peek moved, not a third detent. No pull to refresh in a
+and Hidden, so the park is its peek moved, not a third detent. The map
+under a card keeps the web's camera rules (2026-11-14, `map/MapCamera`):
+the sheet's room is taken as the map's padding with the chart kept still,
+so a card coming or going moves nothing on the screen and a tracked
+airplane stays where it is; a mark tapped is never flown to, the map
+eased once with its zoom kept only where the card hides it
+(`MapCamera.sight`), and a tap ends own ship's following; a field off
+the screen (from the search or a link) is eased to at a region's zoom.
+No pull to refresh in a
 sheet: the airport card, the map's cards and the Brief fetch by
 themselves. The checklists tab scrolls; each page of Settings is its own
 back stack entry, with its own scroll and title state. A form with an edit not saved asks before a

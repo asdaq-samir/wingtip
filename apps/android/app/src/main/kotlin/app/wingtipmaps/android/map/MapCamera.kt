@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.map
 
+import android.graphics.PointF
+import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
@@ -13,10 +15,54 @@ data class MapField(val ident: String, val lat: Double, val lon: Double)
  * map-follows-sheet rule; the Android audit's AND-2): a new route fitted
  * to what the sheet leaves of the map, and an open card's field brought
  * into sight, never while the map follows own ship; and the map's credits.
+ *
+ * The web's camera rules of 2026-11-14 (981c31a56, e8688073e; the flicker
+ * audit's FL-7 and FL-8): a mark tapped is never flown to; the map moves
+ * once, eased with its zoom kept, only where the card hides it, and not
+ * at all where it is in the room the sheet leaves. A field out of sight
+ * (opened from the search or a link) is eased to at a region's zoom. The
+ * sheet's room is taken as the map's padding with the chart kept still,
+ * so a card coming up, or going, moves nothing on the screen: a tracked
+ * airplane, or any mark, stays where it was rather than drawn to the
+ * middle of what the card leaves.
  */
 class MapCamera {
     /** The line last fitted, so a route is fitted once as it arrives. */
     private var fitted: List<List<Double>>? = null
+
+    /** The open card's field, kept in the room as the sheet's room changes. */
+    private var picked: LatLng? = null
+
+    /** Where a point on the screen is against the room the sheet leaves. */
+    enum class Sight { InRoom, Hidden, Away }
+
+    /** The open card's field (none once it closes), eased into the room
+     *  only where the sheet hides it, or to at a region's zoom where it is
+     *  off the screen. */
+    fun show(map: MapLibreMap, field: MapField?, widthPx: Int, heightPx: Int, roomPx: Int, density: Float, reduced: Boolean) {
+        picked = field?.let { LatLng(it.lat, it.lon) }
+        picked?.let { bring(map, it, widthPx, heightPx, roomPx, density, reduced) }
+    }
+
+    /** The sheet's room taken as the map's padding with the chart kept
+     *  still, then the open card's field brought out from under it. */
+    fun room(map: MapLibreMap, widthPx: Int, heightPx: Int, roomPx: Int, density: Float, reduced: Boolean) {
+        if (widthPx > 0 && heightPx > roomPx) {
+            val centre = map.projection.fromScreenLocation(PointF(widthPx / 2f, (heightPx - roomPx) / 2f))
+            val still = CameraPosition.Builder(map.cameraPosition).target(centre).padding(0.0, 0.0, 0.0, roomPx.toDouble()).build()
+            map.moveCamera(CameraUpdateFactory.newCameraPosition(still))
+        }
+        picked?.let { bring(map, it, widthPx, heightPx, roomPx, density, reduced) }
+    }
+
+    private fun bring(map: MapLibreMap, at: LatLng, widthPx: Int, heightPx: Int, roomPx: Int, density: Float, reduced: Boolean) {
+        val p = map.projection.toScreenLocation(at)
+        when (sight(p.x, p.y, widthPx, heightPx, roomPx, EDGE_DP * density)) {
+            Sight.InRoom -> {}
+            Sight.Hidden -> move(map, CameraUpdateFactory.newLatLng(at), reduced)
+            Sight.Away -> move(map, CameraUpdateFactory.newLatLngZoom(at, maxOf(map.cameraPosition.zoom, MapStyle.glZoom(FIELD_ZOOM))), reduced)
+        }
+    }
 
     /** A new route's course line fitted, its bounds with the sheet's
      *  height as the bottom padding; not while own ship is followed. */
@@ -47,13 +93,17 @@ class MapCamera {
             map.uiSettings.isAttributionEnabled = false
         }
 
-        /** Eased to the field where it is out of what the map shows (a card
-         *  opened from the search or a link); left as it is where it is in
-         *  sight (a tap on the map). */
-        fun showField(map: MapLibreMap, lat: Double, lon: Double, reduced: Boolean) {
-            val at = LatLng(lat, lon)
-            if (map.projection.visibleRegion.latLngBounds.contains(at)) return
-            move(map, CameraUpdateFactory.newLatLngZoom(at, maxOf(map.cameraPosition.zoom, MapStyle.glZoom(FIELD_ZOOM))), reduced)
+        /** A mark this close to an edge of the room, dp, is taken as hidden:
+         *  under the status bar, or half under the sheet's top. */
+        private const val EDGE_DP = 32f
+
+        /** Where a point on the screen is: in the room the sheet leaves
+         *  (`roomPx` from the foot covered), under the sheet or at an edge,
+         *  or off the screen. Pure, for a unit test. */
+        fun sight(x: Float, y: Float, widthPx: Int, heightPx: Int, roomPx: Int, edgePx: Float): Sight = when {
+            x < 0 || y < 0 || x > widthPx || y > heightPx -> Sight.Away
+            x < edgePx || y < edgePx || x > widthPx - edgePx || y > heightPx - roomPx - edgePx -> Sight.Hidden
+            else -> Sight.InRoom
         }
 
         private fun move(map: MapLibreMap, update: org.maplibre.android.camera.CameraUpdate, reduced: Boolean) {

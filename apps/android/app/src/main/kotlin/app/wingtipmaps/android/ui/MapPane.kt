@@ -254,7 +254,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             follow = ownShip.following,
             onDragged = { ownShip.following = false },
             onRevealed = { revealed = true },
-            onPick = onPick,
+            onPick = { pick -> onPick(pick).also { ownShip.following = false } }, // A tap ends the following, as Maps' (web e8688073e).
             onView = onView,
         )
         val problem = if (info == null) chartProblem else null
