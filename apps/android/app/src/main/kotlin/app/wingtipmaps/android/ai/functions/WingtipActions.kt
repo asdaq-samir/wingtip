@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ai.functions
 
 import android.app.Application
 import app.wingtipmaps.android.api.AirportPlace
+import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.aircraft
@@ -18,6 +19,7 @@ import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.plan.KeptPlan
+import app.wingtipmaps.android.search.FieldMarks
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -50,19 +52,13 @@ class WingtipActions(private val app: Application) {
         return AirportEntity(
             ident = p.ident, name = p.name, place = listOfNotNull(p.municipality, p.region).joinToString(", "),
             elevationFt = p.elevationFt, metar = p.metar?.raw, taf = p.taf, flightCategory = p.metar?.flightCategory,
-            runways = runways, towered = p.towered, link = AgentLinks.place(p.ident),
+            runways = runways, towered = p.towered, link = AgentLinks.place(p.ident), closed = FieldMarks.closed(p.closed),
         )
     }
 
-    /** Fields whose ident, name or town match the words. */
-    suspend fun search(query: String): List<AirportEntity> =
-        Planner.search(query.trim()).take(MAX_LIST).map { s ->
-            AirportEntity(
-                ident = s.ident, name = s.name, place = listOfNotNull(s.municipality, s.region).joinToString(", "),
-                elevationFt = null, metar = null, taf = null, flightCategory = null, runways = emptyList(), towered = false,
-                link = AgentLinks.place(s.ident),
-            )
-        }
+    /** Fields whose ident, name or town match the words, a closed one
+     *  labelled and after the open ones (decision 0043). */
+    suspend fun search(query: String): List<AirportEntity> = found(Planner.search(query.trim()))
 
     /** The fields nearest the airplane's last position, nearest first:
      *  the planner's, else the cycle packs' on the phone (PhoneFields), with
@@ -149,11 +145,25 @@ class WingtipActions(private val app: Application) {
         return Opening("Opening ${screen.title}.", AgentLinks.screen(screen))
     }
 
-    fun plan(dep: String, dest: String, stops: List<String>): Opening {
+    /** A route to plan, refused where NASR lists one of its fields as
+     *  closed (decision 0043): a closed field is never planned to land at
+     *  or leave from. A field whose card cannot be had is not judged here;
+     *  the plan's Go / No-Go says it. */
+    suspend fun plan(dep: String, dest: String, stops: List<String>): Opening {
         val from = clean(dep)
         val to = clean(dest)
         if (from.isEmpty() || to.isEmpty()) throw NoAnswer("A route needs a departure and a destination.")
         val via = stops.map(::clean).filter { it.isNotEmpty() }
+        val closed = (listOf(from) + via + to).distinct().associateWith { id ->
+            try {
+                place(id).closed
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            }
+        }
+        refusal(closed)?.let { throw NoAnswer(it) }
         return Opening("Planning ${(listOf(from) + via + to).joinToString(" ")}.", AgentLinks.route(from, to, via))
     }
 
@@ -178,5 +188,25 @@ class WingtipActions(private val app: Application) {
     companion object {
         /** The most a list answers with: what an agent can read out. */
         const val MAX_LIST = 10
+
+        /** The planner's search answer as the agent's fields: at most
+         *  MAX_LIST, a closed field labelled and listed after the open
+         *  ones, as the search rows have it. */
+        fun found(suggestions: List<AirportSuggestion>): List<AirportEntity> =
+            suggestions.sortedBy { FieldMarks.closed(it.closed) != null }.take(MAX_LIST).map { s ->
+                AirportEntity(
+                    ident = s.ident, name = s.name, place = listOfNotNull(s.municipality, s.region).joinToString(", "),
+                    elevationFt = null, metar = null, taf = null, flightCategory = null, runways = emptyList(), towered = false,
+                    link = AgentLinks.place(s.ident), closed = FieldMarks.closed(s.closed),
+                )
+            }
+
+        /** Why a route cannot be planned, by each field's closed label
+         *  (the planner's, from NASR's ARPT_STATUS); null where every field
+         *  is open or not known to be closed. */
+        fun refusal(closed: Map<String, String?>): String? =
+            closed.entries.firstOrNull { FieldMarks.closed(it.value) != null }?.let { (ident, label) ->
+                "$ident is ${label!!.trim().lowercase()} (NASR): it cannot be planned as a landing field."
+            }
     }
 }

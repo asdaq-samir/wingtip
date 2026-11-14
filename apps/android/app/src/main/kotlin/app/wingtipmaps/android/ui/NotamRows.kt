@@ -50,6 +50,9 @@ class CardNotams(
     val all: Boolean,
     val toggle: () -> Unit,
     val open: (List<RankedNotam>) -> Unit,
+    /** The engine's empty list for a private field outside the NOTAM
+     *  system (airport_notams_none); null for the ordinary one. */
+    val none: String? = null,
 )
 
 /**
@@ -72,7 +75,8 @@ fun LazyListScope.notamsSection(notams: CardNotams, pad: Modifier) {
     if (said.isEmpty()) {
         item(key = "notams-none") {
             val since = notams.ranked?.coverageSince
-            NoteRow(if (since != null) stringResource(R.string.notams_none_since, since) else stringResource(R.string.notams_none_heard), pad)
+            val heard = if (since != null) stringResource(R.string.notams_none_since, since) else stringResource(R.string.notams_none_heard)
+            NoteRow(notams.none ?: heard, pad)
         }
     } else if (long && notams.all) {
         FieldNotams.kinds(said).forEach { (kind, group) ->

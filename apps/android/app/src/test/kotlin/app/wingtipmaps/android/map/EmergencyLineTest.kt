@@ -17,7 +17,7 @@ class EmergencyLineTest {
     private val fix = OwnShip.Fix(42.5, -88.3, 4500.0, 270.0, 100.0, 5.0, atMs = 0)
     private val field = EngineContract.BestField(
         ident = "KJVL", name = "Southern Wisconsin Regional", lat = 42.62, lon = -89.04, distanceNm = 6.0, courseDeg = 280.0,
-        reach = "within", towered = true, private = false, military = false, reasons = emptyList(),
+        reach = "within", towered = true, private = false, military = null, reasons = emptyList(),
     )
 
     @Test

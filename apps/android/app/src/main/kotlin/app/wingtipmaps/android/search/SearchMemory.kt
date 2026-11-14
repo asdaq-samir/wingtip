@@ -11,9 +11,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 
 /** A field or an airplane the search remembers: by its ident (an
- *  airplane's N-number, else its type) and the name it showed. */
+ *  airplane's N-number, else its type) and the name it showed, and a
+ *  field's closed label as last seen (decision 0043: shown wherever the
+ *  field is). */
 @Serializable
-data class Remembered(val kind: Kind, val ident: String, val name: String = "", val type: String? = null) {
+data class Remembered(val kind: Kind, val ident: String, val name: String = "", val type: String? = null, val closed: String? = null) {
     enum class Kind { AIRPORT, AIRPLANE }
 }
 
@@ -40,6 +42,15 @@ class SearchMemory(private val read: (String) -> String?, private val write: (St
     fun toggleFavorite(entry: Remembered) {
         _favorites.value = toggled(_favorites.value, entry)
         save(FAVORITES, _favorites.value)
+    }
+
+    /** A field's card seen: its closed label (or none, reopened) put on
+     *  the favorite and the recent that name it, so neither shows a
+     *  closed field as open. */
+    fun status(ident: String, closed: String?) {
+        val label = FieldMarks.closed(closed)
+        statused(_recents.value, ident, label).takeIf { it != _recents.value }?.let { _recents.value = it; save(RECENTS, it) }
+        statused(_favorites.value, ident, label).takeIf { it != _favorites.value }?.let { _favorites.value = it; save(FAVORITES, it) }
     }
 
     fun isFavorite(ident: String): Boolean = _favorites.value.any { it.ident.equals(ident, ignoreCase = true) }
@@ -70,6 +81,10 @@ class SearchMemory(private val read: (String) -> String?, private val write: (St
          *  oldest let go past MAX_RECENTS. */
         fun remembered(recents: List<Remembered>, entry: Remembered): List<Remembered> =
             (listOf(entry) + recents.filterNot { it.kind == entry.kind && it.ident.equals(entry.ident, ignoreCase = true) }).take(MAX_RECENTS)
+
+        /** The list with the field `ident`'s closed label set to `closed`. */
+        fun statused(list: List<Remembered>, ident: String, closed: String?): List<Remembered> =
+            list.map { if (it.kind == Remembered.Kind.AIRPORT && it.ident.equals(ident, ignoreCase = true) && it.closed != closed) it.copy(closed = closed) else it }
 
         /** `entry` starred at the end, or taken out where it was starred. */
         fun toggled(favorites: List<Remembered>, entry: Remembered): List<Remembered> {

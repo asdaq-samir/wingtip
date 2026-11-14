@@ -34,7 +34,7 @@ class EmergencyModelTest {
                 fields = data.fields.sortedBy { it.distanceNm }.map {
                     EngineContract.BestField(
                         ident = it.ident, name = it.name, lat = it.lat, lon = it.lon, distanceNm = it.distanceNm, courseDeg = it.bearingDeg,
-                        reach = "unknown", towered = false, private = false, military = false, reasons = emptyList(),
+                        reach = "unknown", towered = false, private = false, military = null, reasons = emptyList(),
                     )
                 },
             ),

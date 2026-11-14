@@ -238,7 +238,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             routePoints = routePoints,
             selectedLeg = selectedLeg,
             overlays = overlays,
-            layers = layers,
+            layers = layers.duringEmergency(emergencyFrom != null),
             terminal = terminal,
             weather = weather,
             traffic = if (trafficOn) targets else emptyList(),

@@ -76,7 +76,10 @@ object PhoneFields {
             fields = near.map { n ->
                 EmergencyField(
                     bearingDeg = n.bearingDeg, distanceNm = n.distanceNm, elevationFt = n.groundFt, ident = n.pin.ident,
-                    lat = n.pin.lat, lon = n.pin.lon, military = n.pin.military != null, name = n.pin.name,
+                    // The packs' use as it comes ("military", "joint" or none):
+                    // best_fields words a joint-use field as the public one
+                    // it is (NASR FACILITY_USE_CODE PU), never "Military field".
+                    lat = n.pin.lat, lon = n.pin.lon, military = n.pin.military, name = n.pin.name,
                     isPrivate = n.pin.isPrivate, runways = emptyList(), towered = n.pin.towered,
                 )
             },
