@@ -257,7 +257,7 @@ owner, 2026-11-03):
   "Stratux · 12 targets · GPS"; a field's FIS-B METAR and TAF show on its
   card's Weather tab when the weather service has none
   (`receiver_reports`); FIS-B NEXRAD is drawn over the chart
-  (`receiver_nexrad`, `NexradMapLayer`). Setup's Map section has ADS-B
+  (`receiver_nexrad`, `NexradMapLayer`). Settings › Data has ADS-B
   Receiver: Auto or Off. A receiver that only broadcasts to the network
   is heard once Apple grants the multicast entitlement.
 - **The privacy manifest** (`Wingtip/PrivacyInfo.xcprivacy`): what is
@@ -524,7 +524,7 @@ own elevation tiles.
 
 ## Downloads: the chart with no signal
 
-Setup → Chart → Downloads (`Wingtip/Offline/`) keeps a region's chart on
+Settings › Data › Downloads (`Wingtip/Offline/`) keeps a region's chart on
 the phone, as ForeFlight's and Garmin Pilot's downloads do: a sectional
 sheet's coverage ("Chicago", "Twin Cities"), a state, or the map's view,
 picked on a list or on a map of the sheets. The planner cuts each one
