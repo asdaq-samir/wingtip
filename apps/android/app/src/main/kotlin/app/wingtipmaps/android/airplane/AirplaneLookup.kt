@@ -16,6 +16,8 @@ import app.wingtipmaps.android.api.generated.TrafficFound
 import app.wingtipmaps.android.api.pastFlight
 import app.wingtipmaps.android.api.pastFlights
 import app.wingtipmaps.android.api.registered
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.squawkMeaning
 import app.wingtipmaps.android.search.SearchGroups
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -155,6 +157,11 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
             }
         }
     }
+
+    /** What a code it squawks means where it is an emergency's (the
+     *  engine's squawk_meaning, AIM 6-2-2), else null: the tracked flight's
+     *  badge asks it here, as a card asks the engine through its model. */
+    fun squawkMeaning(squawk: String?): String? = Engine.squawkMeaning(squawk).getOrNull()
 
     private suspend fun <T> quietly(call: suspend () -> T): T? = try {
         call()

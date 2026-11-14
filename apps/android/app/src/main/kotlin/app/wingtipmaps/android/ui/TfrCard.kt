@@ -21,9 +21,7 @@ import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.Tfr
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.MapRules
-import app.wingtipmaps.android.engine.generated.tfrRead
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.map.TfrLayer
 import app.wingtipmaps.android.ui.card.Status
@@ -65,12 +63,7 @@ private fun TfrFacts(tfr: Tfr, active: Boolean) {
         StatusBadge(if (active) Status.Active else Status.Later)
     }
     // Its levels and the rule it is under, the engine's words for both.
-    val read = remember(tfr) {
-        Engine.tfrRead(
-            kind = tfr.kind, rule = tfr.rule, title = tfr.title,
-            floorFt = tfr.floorFt, floorRef = tfr.floorRef, ceilingFt = tfr.ceilingFt, ceilingRef = tfr.ceilingRef,
-        )
-    }
+    val read = remember(tfr) { TfrLayer.read(tfr) }
     read.exceptionOrNull()?.let { ProblemLine("The TFR's reading failed: ${it.message}") }
     read.getOrNull()?.where?.let { Text(it) }
     val times = remember(tfr) { TfrTimes.say(tfr.effective, tfr.expires) }

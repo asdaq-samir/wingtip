@@ -26,8 +26,6 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.TrafficAircraft
 import app.wingtipmaps.android.api.name
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.engine.Engine
-import app.wingtipmaps.android.engine.generated.squawkMeaning
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.format.Format
@@ -97,7 +95,7 @@ fun TrackedFlightCard(hex: String, exit: CardExit, flight: FlightModel = hiltVie
                     val trackWord = stringResource(if (isTracked) R.string.stop_tracking else R.string.track)
                     CardButtonGroup(listOf(GroupAction(trackWord, null, filled = true) { tracking.track(if (isTracked) null else hex, plane) }), pad.fillMaxWidth())
                 }
-                FlightState(plane, looked, pad)
+                FlightState(plane, looked, lookup::squawkMeaning, pad)
                 AirplaneFacts(AirplaneFactsSaid.of(record, looked.details?.model, type = plane?.type))
                 FlightPictures(name, looked)
                 if (tab == 0) {
@@ -134,12 +132,12 @@ fun TrackedFlightCard(hex: String, exit: CardExit, flight: FlightModel = hiltVie
  * card's line (on the ground where it landed, else when last heard).
  */
 @Composable
-private fun FlightState(plane: TrafficAircraft?, looked: AirplaneLookup.State, modifier: Modifier) {
+private fun FlightState(plane: TrafficAircraft?, looked: AirplaneLookup.State, meaningOf: (String?) -> String?, modifier: Modifier) {
     if (plane == null) {
         StatusLine(statusLine(InAir.Ground, looked.flights).takeIf { looked.flights != null } ?: Status.Checking, modifier)
         return
     }
-    val meaning = Engine.squawkMeaning(plane.squawk).getOrNull()
+    val meaning = meaningOf(plane.squawk)
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm), verticalAlignment = Alignment.CenterVertically) {
         if (meaning != null) {
             StatusBadge(BadgeStatus.Emergency, words = plane.squawk)

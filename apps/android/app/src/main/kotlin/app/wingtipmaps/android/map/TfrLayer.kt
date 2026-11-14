@@ -9,6 +9,9 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.Tfr
 import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.tfrRead
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -70,6 +73,13 @@ object TfrLayer {
         val to = tfr.expires?.let(::epochMs) ?: Long.MAX_VALUE
         return nowMs in from..to
     }
+
+    /** Its levels and the rule it is under in the engine's words
+     *  (`tfr_read`), for its card, asked here as the list's holder. */
+    fun read(tfr: Tfr): Result<EngineContract.TfrReadAnswer> = Engine.tfrRead(
+        kind = tfr.kind, rule = tfr.rule, title = tfr.title,
+        floorFt = tfr.floorFt, floorRef = tfr.floorRef, ceilingFt = tfr.ceilingFt, ceilingRef = tfr.ceilingRef,
+    )
 
     private fun epochMs(iso: String): Long? = runCatching { Instant.parse(iso).toEpochMilli() }.getOrNull()
 
