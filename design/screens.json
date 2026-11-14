@@ -28,7 +28,7 @@
     { "id": "brief", "title": "Brief", "about": "The route's Brief and its Go / No-Go (needs a route).", "platforms": ["web", "ios", "android"], "shortcut": 1 },
     { "id": "navlog", "title": "Nav Log", "about": "The nav log, leg by leg (needs a route). On Android the plan's Nav Log button opens it.", "platforms": ["web", "ios", "android"], "shortcut": 5 },
     { "id": "profile", "title": "Profile", "about": "The route's side view and its altitudes (needs a route).", "platforms": ["web", "ios"] },
-    { "id": "flights", "title": "Saved Flights", "about": "The pilot's saved flights.", "platforms": ["web", "ios"] },
+    { "id": "flights", "title": "Saved Flights", "about": "The pilot's saved flights.", "platforms": ["web", "ios", "android"] },
     { "id": "favorites", "title": "Favorites", "about": "The pilot's favorite airports.", "platforms": ["web", "ios"] },
     { "id": "nearest", "title": "Nearest", "about": "The fields nearest the airplane.", "platforms": ["web", "ios", "android"], "shortcut": 2 },
     { "id": "ask", "title": "Ask", "about": "Ask the assistant about the flight.", "platforms": ["ios", "android"], "shortcut": 4 },

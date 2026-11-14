@@ -76,7 +76,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 | `brief` | Brief | yes | yes | yes | The route's Brief and its Go / No-Go (needs a route). |
 | `navlog` | Nav Log | yes | yes | yes | The nav log, leg by leg (needs a route). On Android the plan's Nav Log button opens it. |
 | `profile` | Profile | yes | yes | -- | The route's side view and its altitudes (needs a route). |
-| `flights` | Saved Flights | yes | yes | -- | The pilot's saved flights. |
+| `flights` | Saved Flights | yes | yes | yes | The pilot's saved flights. |
 | `favorites` | Favorites | yes | yes | -- | The pilot's favorite airports. |
 | `nearest` | Nearest | yes | yes | yes | The fields nearest the airplane. |
 | `ask` | Ask | -- | yes | yes | Ask the assistant about the flight. |

@@ -531,4 +531,7 @@
     <string name="plate_not_placed">This plate can\'t be placed on the map.</string>
     <string name="climb_fuel_unknown">Climb fuel not counted: the airplane has no climb fuel flow</string>
     <string name="emergency_visibility">Visibility %1$s</string>
+    <string name="flights">Flights</string>
+    <string name="saved_flights">Saved Flights</string>
+    <string name="saved_flights_none">No saved flights yet. Save a plan from its share menu to see it here.</string>
 </resources>

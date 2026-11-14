@@ -15,6 +15,7 @@ enum class Screen(
     SETUP("setup", "Setup"),
     BRIEF("brief", "Brief"),
     NAVLOG("navlog", "Nav Log"),
+    FLIGHTS("flights", "Saved Flights"),
     NEAREST("nearest", "Nearest"),
     ASK("ask", "Ask"),
     EMERGENCY("emergency", "Emergency Assistant"),

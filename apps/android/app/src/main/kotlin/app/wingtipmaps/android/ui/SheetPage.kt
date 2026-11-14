@@ -87,6 +87,10 @@ sealed interface SheetPage {
     @Serializable
     data object Logbook : SheetPage
 
+    /** You's Flights: the pilot's saved flights (the audit's AND-6). */
+    @Serializable
+    data object Flights : SheetPage
+
     @Serializable
     data object Coach : SheetPage
 
