@@ -170,7 +170,7 @@ export function shelfLabelLayer(id: string, source: string): SymbolLayerSpecific
       "icon-text-fit": "both",
       "icon-text-fit-padding": [2, 6, 2, 6],
       "icon-pitch-alignment": "viewport",
-      "text-padding": 4,
+      "text-padding": 2,
       "text-allow-overlap": false,
       "icon-allow-overlap": false,
       // Every shelf's nearest place before any shelf's next (its rank),
