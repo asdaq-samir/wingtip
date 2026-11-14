@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import type { Address, SetAddress } from "../../../lib/address";
-import { api } from "../../../lib/api/client";
 import type { ProcedureDrawing } from "../../../lib/api/types";
 import { altitudesOf, altitudesParam } from "../../../lib/identSchema";
 import { feel } from "../../../lib/haptics";
@@ -16,7 +15,7 @@ import {
   type PickedProcedure,
   type TypedProcedure,
 } from "../../../lib/procedures";
-import { procedureQuery, queryClient } from "../../../lib/queryClient";
+import { procedureQuery, proceduresQuery, queryClient } from "../../../lib/queryClient";
 import type { TrafficPattern } from "../../../lib/trafficPattern";
 import type { OpenFix } from "../components/FixCard";
 import type { ProcedureAirport, ProceduresAt } from "../components/ProceduresRoute";
@@ -77,8 +76,7 @@ export function useProcedurePicks({
   // neither field publishes said in an alert, as a failed tap is.
   const typeProcedures = useCallback(
     async (typed: TypedProcedure[], route: { dep: string; dest: string }) => {
-      const list = (ident: string) =>
-        queryClient.fetchQuery({ queryKey: ["procedures", ident], queryFn: () => api.procedures(ident), staleTime: 6 * 60 * 60_000 });
+      const list = (ident: string) => queryClient.fetchQuery(proceduresQuery(ident));
       const found = await Promise.all(typed.map((t) => typedProcedure(t, route, list)));
       // Onto the picks as the address has them once the lists are in.
       const hits = found.flatMap((hit) => (hit ? [hit] : []));
@@ -207,11 +205,11 @@ export function useProcedurePicks({
     setProcedurePreview(p);
     if (p) setProcedureFocus(`${proceduresParam([p])}@${Date.now()}`);
   }, []);
+  // The one procedure query (lib/queryClient), the sheet's page's too: one
+  // request for both, where an inline copy of it could drift (WEB-28).
   const { data: previewDrawing } = useQuery({
-    queryKey: ["procedure", procedurePreview?.ident, procedurePreview?.id, procedurePreview?.transition ?? null],
-    queryFn: () => api.procedure(procedurePreview!.ident, procedurePreview!.id, procedurePreview!.transition),
+    ...procedureQuery(procedurePreview ?? { ident: "", id: "", transition: null }),
     enabled: !!procedurePreview,
-    staleTime: 6 * 60 * 60_000,
   });
   const mapProcedures = useMemo(() => {
     const preview = procedurePreview ? previewDrawing : undefined;

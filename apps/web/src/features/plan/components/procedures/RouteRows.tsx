@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
+import { Button } from "../../../../components/ui/button";
 import { cn } from "cn";
 import CardIdent from "../CardIdent";
 import { CardMark, CardThread, EmptyMark } from "../routeCard";
@@ -195,5 +196,28 @@ export function Step({
         {children}
       </section>
     </div>
+  );
+}
+
+/** A stop before the destination, as Maps' Add Stop is, at the list's end
+ *  where the list changes the route (the FPL canvas's A and B,
+ *  2026-11-05): the stock Button, a whole row's width and a 44-point row,
+ *  where it was a button drawn by hand (the audit's WEB-18). */
+export function AddStopRow({ disabled, onClick }: { disabled: boolean; onClick: () => void }) {
+  return (
+    <Button
+      variant="ghost"
+      disabled={disabled}
+      onClick={onClick}
+      data-testid="route-add-stop"
+      className={cn("h-11 w-full justify-start gap-2.5 px-0 hover:bg-transparent", TEXT.row)}
+    >
+      <span className="grid w-7 shrink-0 place-items-center">
+        <span className="grid size-6 place-items-center rounded-full bg-tint text-white">
+          <Plus className="size-4" strokeWidth={2.6} aria-hidden />
+        </span>
+      </span>
+      Add a Stop
+    </Button>
   );
 }

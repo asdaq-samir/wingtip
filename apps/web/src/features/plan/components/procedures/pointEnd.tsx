@@ -45,7 +45,12 @@ export function pointEnd(
     edit,
     onRemove,
   } = vm;
-  const altitude = at.to ? pointAltitude(ident, at.waypoint) : undefined;
+  const asked = at.to ? pointAltitude(ident, at.waypoint) : undefined;
+  // A waypoint's cruise to it is this row's own leg's: a fix flown twice
+  // read the first visit's at both (the audit's WEB-2). The pilot's own
+  // is the fix's, the address keeping one per point.
+  const legFt = at.waypoint && at.row ? legOf(at.row)?.altitude_ft : undefined;
+  const altitude = asked && !asked.own && legFt != null ? { ...asked, feet: legFt } : asked;
   const own = altitude?.own ? altitude.feet : null;
   const shown = own ?? (at.waypoint ? (altitude?.feet ?? null) : at.elevationFt);
   const direct = directTo !== null && sameField(directTo, ident);

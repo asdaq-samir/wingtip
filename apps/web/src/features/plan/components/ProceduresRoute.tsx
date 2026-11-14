@@ -1,10 +1,7 @@
 import { lazy, Suspense } from "react";
-import { Plus } from "lucide-react";
-import { cn } from "cn";
 import CloseButton from "../../../components/CloseButton";
 import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "../../../components/ResponsivePopover";
 import { sameField } from "../../../lib/procedures";
-import { TEXT } from "../../../lib/text";
 import { frdOf, isPosition, placeOfPoint, pointName } from "../../../lib/identSchema";
 import { etaAt } from "../format";
 import { PointMark } from "./navlog/PointMark";
@@ -15,10 +12,12 @@ import { useProceduresRoute, type ProcedureAirport, type ProceduresRouteProps } 
 import { RouteLine } from "./procedures/RouteLine";
 import { FieldStep } from "./procedures/FieldStep";
 import { pointEnd } from "./procedures/pointEnd";
-import { HoldRow, NewStopCard, Step } from "./procedures/RouteRows";
+import { nthTyped } from "./procedures/visits";
+import { AddStopRow, HoldRow, NewStopCard, Step } from "./procedures/RouteRows";
 import { RouteGrid, type RouteItem } from "./procedures/RouteGrid";
 import { ProcedurePage, ProcedurePicker } from "./procedures/ProcedureSheet";
 import { listTitle } from "./procedures/procedureWords";
+import { plateTitle } from "../../plates/usePlateCard";
 
 // The list's types and its Routes row, where PlanWorkspace and the
 // routePanel chunk import them from.
@@ -145,6 +144,16 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
     point: edit ? pointIndex(a.ident, a.role) : undefined,
     node: <FieldStep vm={vm} a={a} row={row} last={last} leads={leads} />,
   });
+  // A fix flown twice (out and back over VPBNG) is two rows and two typed
+  // points: each visit is matched to its own place among the typed points
+  // by how many times the fix came before it, so its menu's Move, Add a
+  // Stop After and Change work on that visit, not the first (the audit's
+  // WEB-2).
+  const visits = new Map<string, number>();
+  // A hold is flown once, on the leg the planner put it on (heldAs); until
+  // the plan says which, after the first visit. Its row is keyed by that
+  // row, as two rows keyed by the fix were the same row to React.
+  const holdShown = new Set<string>();
   points.forEach((row, i) => {
     const last = i === points.length - 1;
     // By the field, not its spelling: a stop typed UES comes back from the
@@ -158,8 +167,11 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
     const holdRow = (ident: string) => {
       const hold = holdOn(ident);
       if (!hold) return;
+      const flownOn = points.find((r) => r.kind !== "departure" && r.leg?.hold && sameField(r.leg.hold.fix, ident));
+      if (flownOn ? flownOn !== row : holdShown.has(hold.fix)) return;
+      holdShown.add(hold.fix);
       steps.push({
-        id: `hold-${ident}`,
+        id: `hold-${row.key}`,
         label: `Hold at ${pointName(ident)}`,
         node: (
           <HoldRow
@@ -182,7 +194,9 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
     // and Direct to, as a field's landing has. Not where it starts.
     const time = etaAt(depart || new Date().toISOString(), row.minutesFlown);
     const to = row.kind !== "departure" && "airport" in row && !isPosition(row.airport.ident);
-    const typedAt = to ? routePoints.findIndex((p) => sameField(p, row.airport.ident)) : -1;
+    const seen = to ? (visits.get(row.airport.ident) ?? 0) : 0;
+    if (to) visits.set(row.airport.ident, seen + 1);
+    const typedAt = to ? nthTyped(routePoints, row.airport.ident, seen) : -1;
     const end = to
       ? pointEnd(vm, row.airport.ident, {
           time,
@@ -285,25 +299,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
         {/* A stop before the destination, as Maps' Add Stop is, at the
           list's end where the list changes the route (the FPL canvas's A
           and B, 2026-11-05). */}
-        {edit && routePoints.length > 1 && (
-          <button
-            type="button"
-            disabled={stopsFull}
-            onClick={() => edit.onAddAt(routePoints.length - 1)}
-            data-testid="route-add-stop"
-            className={cn(
-              "flex h-11 w-full items-center gap-2.5 text-left text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40",
-              TEXT.row,
-            )}
-          >
-            <span className="grid w-7 shrink-0 place-items-center">
-              <span className="grid size-6 place-items-center rounded-full bg-tint text-white">
-                <Plus className="size-4" strokeWidth={2.6} aria-hidden />
-              </span>
-            </span>
-            Add a Stop
-          </button>
-        )}
+        {edit && routePoints.length > 1 && <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} />}
         {editingUsed && (
           <Suspense fallback={null}>
             <PointAltitudeDialog
@@ -333,7 +329,9 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
           picked, as ForeFlight's Procedure Advisor keeps it, at the
           owner's pick. */}
         <ResponsivePopoverContent
-          title={on ? (procedure ? `${on.ident} ${procedure.name}` : listTitle(on.ident, on.kind)) : "Procedures"}
+          // The FAA's name as the plate's card writes it, "KDLH ILS or LOC
+          // rwy 09", one way everywhere (the audit's WEB-11).
+          title={on ? (procedure ? plateTitle(on.ident, procedure.name) : listTitle(on.ident, on.kind)) : "Procedures"}
           className="max-h-[70vh] w-80 overflow-y-auto p-3"
           align="start"
           side="right"
@@ -379,7 +377,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
                 list={list}
                 chosen={chosen}
                 stale={stale}
-                failed={lists[airports.findIndex((a) => sameField(a.ident, on.ident))]?.isError ?? false}
+                query={lists[airports.findIndex((a) => sameField(a.ident, on.ident))]}
                 wind={windOf(on.ident)}
                 onOpen={(p) => setPage({ at: on, procedure: p })}
               />

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
+import { useWindPicks } from "../lib/windPicks";
 import { altitudesOf, altitudesParam, departureOf, groundOf, identOf, nameOwnPoints, routeOf, stopsOf } from "../../../lib/identSchema";
 import { useEngineWhen } from "../../../lib/engine/useEngineReady";
 import { usePreferences } from "../../../lib/preferences";
@@ -95,6 +96,11 @@ export function usePlanRoute() {
   );
   const pickQueries = useMemo(() => routePicks.map(procedureQuery), [routePicks]);
   const drawnPickList = useQueries({ queries: pickQueries, combine: drawnOnly });
+  // Each picked procedure's drawing in or given up on, and no runway into
+  // the wind still to be picked (useWindPicks): only then is the nav log
+  // asked for (usePlan's `settling`), once, not again for each as it came.
+  const picksComing = useQueries({ queries: pickQueries, combine: (rs) => rs.some((r) => r.isPending && r.fetchStatus !== "idle") });
+  const windPending = useWindPicks((w) => w.pending);
   // Those the CIFP has, once drawn, each with the fix ATC sent the airplane
   // direct to where there is one: one string, so the plan's key changes
   // only as a procedure does.
@@ -165,6 +171,7 @@ export function usePlanRoute() {
     procedures,
     runways: runwaysText,
     patterns: landingsText,
+    settling: picksComing || windPending,
     crossings: altitudesParam(crossings),
     ground: altitudesParam(ground),
     holds: holdsParam(holds),

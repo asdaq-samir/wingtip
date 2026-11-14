@@ -93,7 +93,7 @@ export function FieldStep({
       ident={a.ident}
       kind={kind}
       list={lists[i]?.data}
-      loading={!!lists[i]?.isFetching}
+      query={lists[i]}
       look={look}
       picked={pickOf(a.ident, kind)}
       label={inRoute.find((p) => sameField(p.ident, a.ident) && p.kind === kind)?.label ?? null}

@@ -2,22 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { useQueries } from "@tanstack/react-query";
 import { useWindPicks } from "../lib/windPicks";
-import { api } from "../../../lib/api/client";
-import { zuluTime } from "../../../lib/format";
-import { useMinuteClock } from "../../../lib/useMinuteClock";
 import type { AircraftProfile, Detour, ProcedureList, ProcedureSummary, Runway } from "../../../lib/api/types";
-import { normalizeDeg } from "../../../lib/geo";
-import { windPick, type WindPick } from "../lib/pattern";
-import { airportQuery, plateQuery } from "../../../lib/queryClient";
+import { plateQuery, proceduresQuery } from "../../../lib/queryClient";
 import { approachRunway, sameField, type BranchFix, type PickedProcedure } from "../../../lib/procedures";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
-import { reportedWind, type ReportedWind } from "../format";
-import type { EditedPoint, PointAltitude } from "../components/PointAltitudeDialog";
-import type { HoldAt } from "../components/HoldSheet";
+import type { PointAltitude } from "../components/PointAltitudeDialog";
 import { useFuelStops } from "./useFuelStops";
 import type { Hold } from "../lib/routeHolds";
 import { legOf, type NavLogRow } from "../components/navlog/rows";
-import { callEngine } from "../../../lib/engine/engine";
+import { cycleDate } from "../components/procedures/procedureWords";
+import { useRouteSheets } from "./useRouteSheets";
+import { useFieldWinds } from "./useFieldWinds";
+import { tanksAt } from "./routeTanks";
 import type { Landing } from "../components/procedures/PatternChips";
 import type { RouteLineChoices } from "../components/procedures/RouteLine";
 
@@ -31,18 +27,8 @@ type Kind = ProcedureKind;
  *  textual one. */
 const CHART_CODES: Record<Kind, string[]> = { approach: ["IAP"], arrival: ["STR"], departure: ["DP", "ODP"] };
 
-/** A procedure's data stays good for its cycle's 28 days. */
-const PROCEDURE_STALE_MS = 6 * 60 * 60_000;
-/** How far off a field's time must be for its runway to be picked into
- *  the forecast wind rather than the wind now, ms: an hour. */
-const FORECAST_AFTER_MS = 60 * 60_000;
-const TEN_MIN_MS = 10 * 60_000;
 /** A day, min: the longest time on the ground at a stop the planner takes. */
 export const DAY_MIN = 24 * 60;
-
-/** A field's reported wind as its info's trigger writes it: "240°T" over
- *  "12G20" (knots), calm, or none (format's reportedWind). */
-type Reported = ReportedWind;
 
 /** The route changed in FPL's list rather than its box (lib/preferences
  *  RouteEdit), by the points' places in `routePoints`. */
@@ -262,43 +248,11 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
   if (at && at !== kept) setKept(at);
   const on = at ?? kept;
   const procedure = page && page.at === on ? page.procedure : null;
-  // The point whose altitude is being set (PointAltitudeDialog).
-  const [editing, setEditing] = useState<EditedPoint | null>(null);
-  // The point a fix is being made off (FixFromDialog).
-  const [fixFrom, setFixFrom] = useState<string | null>(null);
-  // The point a hold is being set at (HoldSheet).
-  const [holdAt, setHoldAt] = useState<HoldAt | null>(null);
-  // Each drawn from its first opening on, so it closes as a sheet does.
-  const [editingUsed, setEditingUsed] = useState(false);
-  const [fixFromUsed, setFixFromUsed] = useState(false);
-  const [holdUsed, setHoldUsed] = useState(false);
-  if (editing !== null && !editingUsed) setEditingUsed(true);
-  if (fixFrom !== null && !fixFromUsed) setFixFromUsed(true);
-  if (holdAt !== null && !holdUsed) setHoldUsed(true);
-  // The approach being taught (ApproachLesson), from its menu's Learn This
-  // Approach; drawn from its first opening on, as the hold's is.
-  const [lesson, setLesson] = useState<PickedProcedure | null>(null);
-  const [lessonUsed, setLessonUsed] = useState(false);
-  if (lesson !== null && !lessonUsed) setLessonUsed(true);
-  const holdOn = (ident: string) => holds.find((h) => sameField(h.fix, ident)) ?? null;
+  // The sheets the list opens over it, one at a time (useRouteSheets).
+  const sheets = useRouteSheets({ holds, rows, askHold });
   // Where the airplane is known (own ship, or the dry run's): Direct to
   // goes from there.
   const positioned = useOwnShip((s) => s.enabled && !!s.fix);
-  const [answered, setAnswered] = useState<string | null>(null);
-  if (askHold && askHold !== answered) {
-    const fix = askHold.slice(0, askHold.lastIndexOf("@"));
-    const to = rows.find((r) => "airport" in r && sameField(r.airport.ident, fix));
-    const leg = to ? legOf(to) : undefined;
-    if (leg) {
-      setAnswered(askHold);
-      setHoldAt({
-        fix,
-        hold: holdOn(fix),
-        altitudeFt: leg.altitude_ft,
-        arrivalDeg: normalizeDeg(leg.true_course_deg - leg.magnetic_variation_deg),
-      });
-    }
-  }
   // What the planner made of each hold (plan.with_holds), on the leg it is
   // flown on: its entry, minutes and fuel.
   const heldAs = (ident: string) =>
@@ -313,70 +267,14 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
   };
   const lists = useQueries({
     queries: airports.map((a) => ({
-      queryKey: ["procedures", a.ident],
-      queryFn: () => api.procedures(a.ident),
-      staleTime: PROCEDURE_STALE_MS,
+      ...proceduresQuery(a.ident),
       enabled: (at != null && sameField(at.ident, a.ident)) || asked.has(a.ident),
     })),
   });
-  // Each field's card (its weather), for the wind a field with no report
-  // of its own goes by: the nearest report's (windPick).
-  const cards = useQueries({ queries: airports.map((a) => airportQuery(a.ident)) });
-  // When the airplane is at each field: the departure's time, a field
-  // landed at its arrival (the rows' times). More than an hour off, its
-  // runway is picked into the wind its TAF forecasts for then, not the
-  // wind now, at the owner's pick (2026-10-20); to the ten minutes, so a
-  // plan streaming in asks again only as its times move that much.
-  const now = useMinuteClock();
-  const startMs = depart ? Date.parse(depart) : now;
-  // Each stop's minutes flown to it, kept while the plan is made again:
-  // its time to leave picked (DepartPicker), the stop's time on the ground
-  // changes, the nav log is asked for again and its legs stream back in --
-  // the picker taken out meanwhile closed under the pilot's finger. The
-  // destination's too, for its forecast wind: a runway picked into the
-  // wind plans the route again with its pattern flown, and while the legs
-  // came back the field's time was gone, its wind the one reported now,
-  // and the runway into the forecast was turned to the one into that, and
-  // stayed (forecast-wind.spec, KDLH's 9 to 21, 2026-10-28).
-  const landsFresh = rows
-    .flatMap((r) =>
-      (r.kind === "stop" || r.kind === "destination") && r.minutesFlown != null ? [`${r.airport.ident}:${r.minutesFlown}`] : [],
-    )
-    .join(",");
-  const [landed, setLanded] = useState<{ fresh: string; at: Record<string, number> }>({ fresh: "", at: {} });
-  if (landsFresh && landsFresh !== landed.fresh) {
-    setLanded({
-      fresh: landsFresh,
-      at: {
-        ...landed.at,
-        ...Object.fromEntries(
-          landsFresh.split(",").map((pair) => [pair.slice(0, pair.lastIndexOf(":")), Number(pair.slice(pair.lastIndexOf(":") + 1))]),
-        ),
-      },
-    });
-  }
-  const landedAt = (ident: string): number | null => {
-    const key = Object.keys(landed.at).find((k) => sameField(k, ident));
-    return key === undefined ? null : landed.at[key]!;
-  };
-  const forecastFor = airports.map((a) => {
-    const row =
-      a.role === "Departure"
-        ? null
-        : rows.find((r) => (r.kind === "stop" || r.kind === "destination") && sameField(r.airport.ident, a.ident));
-    const flownTo = a.role === "Departure" ? null : (row?.minutesFlown ?? landedAt(a.ident));
-    const ms = a.role === "Departure" ? startMs : flownTo == null ? null : startMs + flownTo * 60_000;
-    return ms !== null && ms - now > FORECAST_AFTER_MS ? Math.round(ms / TEN_MIN_MS) * TEN_MIN_MS : null;
-  });
-  const forecasts = useQueries({
-    queries: airports.map((a, i) => ({
-      queryKey: ["forecastWind", a.ident, forecastFor[i]],
-      queryFn: () => api.forecastWind(a.ident, new Date(forecastFor[i]!).toISOString()),
-      enabled: forecastFor[i] != null,
-      staleTime: TEN_MIN_MS,
-      meta: { silent: true },
-    })),
-  });
+  // Each field's wind, reported or forecast for when the airplane is there
+  // (useFieldWinds).
+  const winds = useFieldWinds({ airports, rows, depart });
+  const { cards, forecastFor, forecasts, windOf } = winds;
   // Each field's approach in the route, and whether its plate publishes
   // circling minimums -- the one plate the map draws (PlatesGl).
   const approachesIn = inRoute.filter((p) => p.kind === "approach");
@@ -384,61 +282,6 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
   const landingOf = (ident: string): Landing | null => {
     const i = approachesIn.findIndex((p) => sameField(p.ident, ident));
     return i < 0 ? null : { runway: approachesIn[i]!.runway, circling: plates[i]?.data?.circling, name: approachesIn[i]!.label };
-  };
-  const windOf = (ident: string): WindPick | null => {
-    const i = airports.findIndex((a) => sameField(a.ident, ident));
-    const runways = airports[i]?.runways;
-    if (!runways) return null;
-    const forecast = forecastFor[i] != null ? forecasts[i]?.data : null;
-    if (forecast) {
-      return windPick(
-        runways,
-        {
-          station: forecast.ident,
-          distanceNm: forecast.distance_nm,
-          dirTrueDeg: forecast.dir_true_deg,
-          speedKt: forecast.speed_kt,
-          gustKt: forecast.gust_kt,
-        },
-        forecastFor[i]! / 1000,
-      );
-    }
-    const card = cards[i]?.data;
-    const near = card && !card.metar ? card.nearby_metar : null;
-    // The field's own report as well, for what the planner's runway winds
-    // cannot say: a variable wind (VRB) has no runway into it there, and
-    // was left with none picked (KDLH's VRB04KT, the owner's screenshot).
-    const own = card?.metar;
-    return windPick(
-      runways,
-      near
-        ? {
-            station: near.ident,
-            distanceNm: near.distance_nm,
-            dirTrueDeg: near.metar.wind_dir_true_deg,
-            speedKt: near.metar.wind_speed_kt,
-            gustKt: near.metar.wind_gust_kt,
-          }
-        : own
-          ? { station: ident, distanceNm: 0, dirTrueDeg: own.wind_dir_true_deg, speedKt: own.wind_speed_kt, gustKt: own.wind_gust_kt }
-          : null,
-    );
-  };
-  // The wind a field reports, else the nearest report's, as the METAR
-  // gives it: from true north (FAA Order JO 7900.5), marked "T" beside the
-  // runways' magnetic numbers, where a tower's and an ATIS's winds are
-  // magnetic (AIM 4-1-13) -- the audit's finding.
-  const reportedOf = (ident: string): Reported | null => {
-    const i = airports.findIndex((a) => sameField(a.ident, ident));
-    // The forecast's, where the runway is picked into it (windOf).
-    const forecast = forecastFor[i] != null ? forecasts[i]?.data : null;
-    if (forecast) {
-      const said = reportedWind(forecast.dir_true_deg, forecast.speed_kt, forecast.gust_kt);
-      return said && said !== "calm" ? { ...said, spoken: `forecast for ${zuluTime(new Date(forecastFor[i]!))}, ${said.spoken}` } : said;
-    }
-    const card = cards[i]?.data;
-    const m = card?.metar ?? card?.nearby_metar?.metar;
-    return m ? reportedWind(m.wind_dir_true_deg, m.wind_speed_kt, m.wind_gust_kt) : null;
   };
   const listOf = (ident: string): ProcedureList | undefined => lists[airports.findIndex((a) => sameField(a.ident, ident))]?.data;
   // Whether a field has procedures of a kind: by its procedures once they
@@ -514,11 +357,9 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
   // Save waits while a field's wind is still coming (features/plan/lib/windPicks): its
   // runway is picked into it as it comes, and the route planned again.
   const windComing = airports.some((_, i) => (forecastFor[i] != null ? forecasts[i]?.isPending : cards[i]?.isPending) ?? false);
-  useEffect(() => {
-    useWindPicks.setState({ pending: windComing });
-  }, [windComing]);
   useEffect(() => () => useWindPicks.setState({ pending: false }), []);
   useEffect(() => {
+    let picking = false;
     for (const pick of intoWind ? intoWind.split(",") : []) {
       const [which, ident, end] = pick.split(":") as [string, string, string];
       // Once a field, and once more each time the wind turns a runway
@@ -526,10 +367,19 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
       const once = autoPicked.has(`${which}:${ident}`) ? `${which}:${ident}:${end}` : `${which}:${ident}`;
       if (preselected.current.has(once)) continue;
       preselected.current.add(once);
+      picking = true;
       if (which === "land") onPreselect(ident, end);
       else onPreselectTakeoff(ident, end);
     }
-  }, [intoWind, autoPicked, onPreselect, onPreselectTakeoff]);
+    // Still pending while a pick just made is on its way into the address,
+    // so the nav log is not asked for in between (usePlan's `settling`, the
+    // audit's WEB-14); the render that brings it runs this again. Never
+    // held for good: a pick that does not land lets go after a second.
+    useWindPicks.setState({ pending: windComing || picking });
+    if (!picking) return;
+    const letGo = window.setTimeout(() => useWindPicks.setState({ pending: false }), 1000);
+    return () => window.clearTimeout(letGo);
+  }, [intoWind, autoPicked, onPreselect, onPreselectTakeoff, windComing, picked, takeoffs]);
   const destination = airports.find((a) => a.role === "Destination");
   // How far along the route each row is, nm: what its line under its name
   // says, as mock A of the owner's rows has it ("Stop · 241 nm").
@@ -555,29 +405,7 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
     const found = routePoints.findIndex((p, j) => j > 0 && j < routePoints.length - 1 && sameField(p, ident));
     return found >= 0 ? found : undefined;
   };
-  // The fuel in the tanks at each point, by its row, at the owner's ask
-  // ("next to airport say ... fuel", "I mean fuel in tanks"): the engine's
-  // (fuel_in_tanks) -- full at the departure, the start, taxi and takeoff
-  // allowance and the legs' own burn taken from them after, filled again
-  // at each field landed at, as the planner checks each flight
-  // (app.planning.route_totals); under the reserve, low.
-  const tanks = new Map<string, { gal: number; usable: number; low: boolean }>();
-  if (fuel) {
-    const walked = callEngine("fuel_in_tanks", {
-      points: rows.map((r) => ({
-        departure: r.kind === "departure",
-        fuel_gal: r.kind === "departure" ? null : (legOf(r)?.fuel_gal ?? null),
-        refuel: r.kind === "stop" && r.airport.kind !== "fix",
-      })),
-      usable_gal: fuel.usableGal,
-      taxi_gal: fuel.taxiGal,
-      reserve_gal: fuel.reserveGal,
-    });
-    rows.forEach((r, i) => {
-      const at = walked[i];
-      if (at) tanks.set(r.kind === "departure" ? "departure" : r.key, { gal: at.gal, usable: fuel.usableGal, low: at.low });
-    });
-  }
+  const tanks = tanksAt(rows, fuel);
   const points = rows.filter((r) => r.kind !== "checkpoint" && r.kind !== "toc" && r.kind !== "tod");
   // The stop being added, its card before the point at its place.
   const newAt = asCards && edit?.onInsert ? (edit.newAt ?? null) : null;
@@ -608,29 +436,13 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
     setPage,
     on,
     procedure,
-    editing,
-    setEditing,
-    fixFrom,
-    setFixFrom,
-    holdAt,
-    setHoldAt,
-    editingUsed,
-    fixFromUsed,
-    holdUsed,
-    lesson,
-    setLesson,
-    lessonUsed,
-    holdOn,
+    ...sheets,
     heldAs,
     positioned,
     lists,
-    cards,
+    ...winds,
     ask,
-    startMs,
-    landedAt,
     landingOf,
-    windOf,
-    reportedOf,
     listOf,
     hasKind,
     pickOf,
@@ -657,11 +469,3 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
 
 /** FPL's route list's view model, as its parts read it. */
 export type ProceduresRouteModel = ReturnType<typeof useProceduresRoute>;
-
-/** "261001" as "1 Oct 2026". */
-function cycleDate(cycle: string): string {
-  const at = new Date(Date.UTC(2000 + Number(cycle.slice(0, 2)), Number(cycle.slice(2, 4)) - 1, Number(cycle.slice(4, 6))));
-  return Number.isNaN(at.getTime())
-    ? cycle
-    : at.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-}

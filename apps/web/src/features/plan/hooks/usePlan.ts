@@ -98,6 +98,7 @@ export interface PlanParams {
   /** Checkpoints between the route's points, as the map shows them (the
    *  settings' Waypoints); without, the nav log runs point to point. */
   checkpoints?: boolean;
+  settling?: boolean; // Wind runways or procedures still coming: the nav log waits, asked once (WEB-14).
   /** A local flight's time aloft, in minutes (one airport to itself). */
   localMin?: number;
   /** The flight rules it is planned under: IFR's minimum altitudes,
@@ -288,12 +289,12 @@ export function usePlan({
   holds = "",
   altitudeNearest = false,
   patterns = "",
+  settling = false,
 }: PlanParams) {
   const routeKnown = routeOf(dep, dest, stops) !== null;
-  // An airport to itself with no stop between: a local flight -- the
-  // pattern, practice approaches. No course or legs to plan; the field's
-  // briefing, and the time aloft with its fuel check (localFlight). It
-  // was refused, the page asking for two different airports.
+  // An airport to itself with no stop between: a local flight (the pattern,
+  // practice approaches), no course or legs to plan; the field's briefing,
+  // and the time aloft with its fuel check (localFlight).
   const local = !!identOf(dep) && dep === dest && stops.length === 0;
   const briefable = routeKnown || local;
   const via = stops.join(",");
@@ -316,7 +317,6 @@ export function usePlan({
   // app.checkpoint_scoring) -- and starts on the chart's read and the ground under
   // the route as the course is asked for (app.prefetch).
   const checkpoints = useQuery({ ...checkpointsQuery(dep, dest, stops, cycle), enabled: routeKnown && withCheckpoints });
-
   const plan = {
     dep,
     dest,
@@ -340,7 +340,7 @@ export function usePlan({
     patterns,
   };
   const planKey = planKeyOf(plan);
-  const navlog = useQuery({ ...navlogQuery(plan, withCheckpoints), enabled: routeKnown });
+  const navlog = useQuery({ ...navlogQuery(plan, withCheckpoints), enabled: routeKnown && !settling });
   const fullIn = (navlog.data ?? []).some((m) => m.type === "leg" || m.type === "done") || !!navlog.error;
   // The route as entered first, point to point, at the pilot's ask for a
   // fast route to nav log: no chart read before it, so its legs are in a
