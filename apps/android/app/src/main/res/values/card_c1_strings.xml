@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The airport card after Apple Maps' place card (C1), as the web's PlaceCard and PlaceFacts say it. -->
+    <string name="section_info">Info</string>
+    <string name="place_towered">Towered</string>
+    <string name="place_non_towered">Non-towered</string>
+    <string name="place_fact_longest">Longest</string>
+    <string name="place_fact_runway">Runway</string>
+    <string name="place_category_about">About %1$s, %2$s</string>
+    <string name="place_category_modelled">modelled for this field by the National Weather Service, not a report</string>
+    <string name="place_category_near">from the report of %1$s, another station, not this field\'s own</string>
+
+    <!-- The airplane cards in the airport card's form (the web's AirplaneFacts). -->
+    <string name="airplane_fact_type">Type</string>
+    <string name="airplane_fact_year">Year</string>
+    <string name="airplane_fact_seats">Seats</string>
+    <string name="airplane_fact_engines">Engines</string>
+    <string name="airplane_fact_registration">Registration</string>
+    <string name="airplane_fact_owner">Owner</string>
+    <string name="airplane_photo_label">%1$s\'s photo on Planespotters</string>
+    <string name="status_landed_rest">landed %1$s %2$s</string>
+    <string name="flight_sketch_label">Where %1$s has flown</string>
+    <string name="flight_sketch_none">No flights heard</string>
+    <string name="flight_sketch_unread">Its flights could not be fetched</string>
+</resources>

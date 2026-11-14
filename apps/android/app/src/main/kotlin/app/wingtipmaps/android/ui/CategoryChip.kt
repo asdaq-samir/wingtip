@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import app.wingtipmaps.android.design.generated.WingtipColors
 
 /**
@@ -33,14 +34,16 @@ object FlightCategory {
 
 /** A field's flight category as Material's badge with text: its name in
  *  white on its colour, the name itself there, so the category is never
- *  told by the colour alone. */
+ *  told by the colour alone; "≈ VFR" where it is not the field's own
+ *  report (the model's, a near station's), as the web's StatusBadge
+ *  category form says it. */
 @Composable
-fun CategoryChip(category: String, modifier: Modifier = Modifier) {
+fun CategoryChip(category: String, modifier: Modifier = Modifier, approximate: Boolean = false) {
     Badge(
         containerColor = FlightCategory.chip(category),
         contentColor = Color.White,
         modifier = modifier.semantics { contentDescription = "Flight category $category" },
     ) {
-        Text(category.uppercase())
+        Text((if (approximate) "≈ " else "") + category.uppercase(), fontWeight = FontWeight.Bold)
     }
 }

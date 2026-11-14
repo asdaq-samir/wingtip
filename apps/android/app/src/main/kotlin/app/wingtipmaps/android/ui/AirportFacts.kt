@@ -1,14 +1,12 @@
 package app.wingtipmaps.android.ui
 
 import app.wingtipmaps.android.api.AirportPlace
-import app.wingtipmaps.android.api.Metar
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.distanceNm
 import app.wingtipmaps.android.engine.generated.frequenciesInOrder
 import app.wingtipmaps.android.engine.generated.fuelEstimate
 import app.wingtipmaps.android.engine.generated.windCalm
-import app.wingtipmaps.android.format.Format
 
 /**
  * A field's card's facts row and its Fly Here's time, as the engine works
@@ -35,9 +33,22 @@ data class AirportFacts(
     val minutes: Double?,
     /** The departure the distance is from; null where it is own ship's. */
     val fromIdent: String? = null,
+    /** NASR's field elevation, feet MSL. */
+    val elevationFt: Double? = null,
+    /** How many runways are open with a length, so the strip says
+     *  "Longest" over more than one and "Runway" over one. */
+    val openRunways: Int = 0,
+    /** Where the field has no report of its own, the category the strip
+     *  shows marked "≈": the model's for this field, else a near station's. */
+    val approximate: Approximate? = null,
 ) {
     /** Where the distance starts: own ship (no ident), else a departure. */
     data class From(val lat: Double, val lon: Double, val ident: String? = null)
+
+    /** A category not the field's own: the National Weather Service's
+     *  Gridded LAMP for the field (wingtip.glmp), or the nearest station's
+     *  report within ten statute miles (`near`; wingtip.weather), named. */
+    data class Approximate(val category: String, val station: String? = null)
 
     companion object {
         /** The field's frequencies in the order a pilot dials them, the
@@ -47,8 +58,21 @@ data class AirportFacts(
             Engine.frequenciesInOrder(place.frequencies.map { EngineContract.FieldFrequency(type = it.type, description = it.description, frequencyMhz = it.frequencyMhz) })
                 .getOrNull()?.filter { it in place.frequencies.indices }
 
-        fun of(place: AirportPlace, from: From?, cruiseTasKt: Double?): AirportFacts {
+        /** The category the card shows where the field has no report: the
+         *  model's for the field first, as it is of this field, then a near
+         *  station's (the web's PlaceCard). */
+        fun approximate(place: AirportPlace): Approximate? {
+            if (place.metar != null) return null
+            place.modelledWeather?.let { return Approximate(it.flightCategory) }
+            val near = place.nearbyMetar?.takeIf { it.near } ?: return null
+            return near.metar.flightCategory?.let { Approximate(it, near.ident) }
+        }
+
+        /** `unusable`: the runways a NOTAM in force closes, by index, left
+         *  out of the longest as the Runways tab leaves them. */
+        fun of(place: AirportPlace, from: From?, cruiseTasKt: Double?, unusable: Set<Int> = emptySet()): AirportFacts {
             val metar = place.metar
+            val open = place.runways.filterIndexed { i, r -> !r.closed && i !in unusable }
             val start = from?.takeUnless { it.ident != null && it.ident.equals(place.ident, ignoreCase = true) }
             val distance = start?.let { Engine.distanceNm(it.lat, it.lon, place.lat, place.lon).getOrNull() }
             val minutes = distance?.takeIf { cruiseTasKt != null }?.let { Engine.fuelEstimate(it, cruiseTasKt = cruiseTasKt).getOrNull()?.minutes }
@@ -58,31 +82,14 @@ data class AirportFacts(
                 windKt = metar?.windSpeedKt,
                 gustKt = metar?.windGustKt,
                 calm = metar?.windSpeedKt != null && Engine.windCalm(metar.windSpeedKt).getOrNull() == true,
-                longestRunwayFt = place.runways.filterNot { it.closed }.mapNotNull { it.lengthFt }.maxOrNull(),
+                longestRunwayFt = open.mapNotNull { it.lengthFt }.maxOrNull(),
                 distanceNm = distance,
                 minutes = minutes,
                 fromIdent = start?.ident,
+                elevationFt = place.elevationFt,
+                openRunways = open.count { it.lengthFt != null },
+                approximate = approximate(place),
             )
         }
     }
-}
-
-/** The ceiling, the wind and the time of a report, joined by " · ". */
-internal fun weatherLine(metar: Metar, noCeiling: String, calm: String, ceilingOf: (String) -> String): String {
-    val ceiling = when {
-        metar.ceilingUnknown == true -> null
-        metar.ceilingFt == null -> noCeiling
-        else -> ceilingOf(Format.altitude(metar.ceilingFt))
-    }
-    val wind = metar.windSpeedKt?.let { kt ->
-        when {
-            Engine.windCalm(kt).getOrNull() == true -> calm
-            else -> listOfNotNull(
-                metar.windDirTrueDeg?.let { Format.heading(it) + "T" } ?: "VRB",
-                Format.speed(kt).removeSuffix(" kt") + (metar.windGustKt?.let { "G" + Format.speed(it).removeSuffix(" kt") } ?: "") + " kt",
-            ).joinToString(" ")
-        }
-    }
-    val time = metar.observedAt?.let { runCatching { Format.zulu(it) }.getOrNull() }
-    return listOfNotNull(ceiling, wind, time).joinToString(" · ")
 }

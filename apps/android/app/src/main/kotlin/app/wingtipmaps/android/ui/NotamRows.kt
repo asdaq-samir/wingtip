@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material3.Badge
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -29,11 +28,14 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.card.Status
+import app.wingtipmaps.android.ui.card.StatusBadge
 
 /**
  * The airport card's NOTAMs, its view model's part the tab draws: the
@@ -158,18 +160,16 @@ fun NotamRow(s: FieldNotams.Said, onClick: () -> Unit, modifier: Modifier = Modi
     }
 }
 
-/** Whether it is in force now: "Active" in red, "Inactive" muted, as
- *  nothing is to be done about it yet (the owner, 2026-11-11: "Inactive
- *  notam can be disabled color"). */
+/** Whether it is in force now, the shared StatusBadge (the owner,
+ *  2026-11-11: "put a active and inactive badge on each notam"; 2026-11-14:
+ *  "Use badges where we can"; the web's PlaceNotams): Active; Later where
+ *  it starts later; and Inactive, the owner's word, in the cold fill where
+ *  it is out of force otherwise. In force unless the planner says it is
+ *  not (in_force false). */
 @Composable
 fun NotamState(n: RankedNotam, modifier: Modifier = Modifier) {
-    val active = FieldNotams.active(n)
-    val scheme = MaterialTheme.colorScheme
-    Badge(
-        containerColor = if (active) scheme.error else scheme.surfaceContainerHighest,
-        contentColor = if (active) scheme.onError else scheme.onSurfaceVariant,
-        modifier = modifier,
-    ) { Text(stringResource(if (active) R.string.notam_active else R.string.notam_inactive)) }
+    val status = FieldNotams.status(n, AppClock.nowMs())
+    StatusBadge(status, modifier, words = if (status == Status.Cold) stringResource(R.string.notam_inactive) else null)
 }
 
 /** Its first line, "closed" and "out of service" in red where they are in

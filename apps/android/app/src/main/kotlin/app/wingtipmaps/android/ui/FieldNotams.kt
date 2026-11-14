@@ -6,6 +6,7 @@ import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.notamRead
 import app.wingtipmaps.android.engine.generated.tfrRead
+import app.wingtipmaps.android.ui.card.Status
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -26,6 +27,14 @@ object FieldNotams {
 
     /** In force unless the planner says it is not yet (in_force false). */
     fun active(n: RankedNotam): Boolean = n.inForce != false
+
+    /** Its badge: Active in force, Later where it starts after `nowMs`,
+     *  else Cold (said "Inactive"), as the web's PlaceNotams. */
+    fun status(n: RankedNotam, nowMs: Long): Status {
+        if (active(n)) return Status.Active
+        val starts = instantOf(n.starts)?.toEpochMilli()
+        return if (starts != null && starts > nowMs) Status.Later else Status.Cold
+    }
 
     fun isTfr(n: RankedNotam): Boolean = n.kind == TFR
 

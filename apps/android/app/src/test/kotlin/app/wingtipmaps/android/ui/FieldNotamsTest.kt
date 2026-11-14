@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ui
 
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.ui.card.Status
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.Instant
@@ -61,5 +62,14 @@ class FieldNotamsTest {
         assertEquals("11/439", FieldNotams.number(notam("ORD 11/439"), "KORD"))
         assertEquals("FDC 6/2478", FieldNotams.number(notam("FDC 6/2478"), "KSJT"))
         assertEquals(listOf("KOSH", "OSH"), FieldNotams.identsOf("KOSH"))
+    }
+
+    @Test
+    fun aNotamsBadgeIsActiveLaterOrInactive() {
+        val at = now.toEpochMilli()
+        assertEquals(Status.Active, FieldNotams.status(notam(), at))
+        assertEquals(Status.Later, FieldNotams.status(notam(inForce = false, starts = "2026-11-12T12:00:00"), at))
+        assertEquals(Status.Cold, FieldNotams.status(notam(inForce = false, starts = "2026-11-01T12:00:00Z"), at))
+        assertEquals(Status.Cold, FieldNotams.status(notam(inForce = false), at))
     }
 }

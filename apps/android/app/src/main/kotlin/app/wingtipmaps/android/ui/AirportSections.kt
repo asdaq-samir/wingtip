@@ -36,14 +36,13 @@ import app.wingtipmaps.android.plates.ShowPlateButton
 import app.wingtipmaps.android.receiver.ReceiverReports
 import java.util.Locale
 
-/** A field's card's sections, its tab row's tabs, in order. */
+/** A field's card's pages, its floating bar's tabs, in order: the web's
+ *  four since C1 (the owner, 2026-11-14), Info first. */
 enum class AirportSection(@StringRes val title: Int) {
-    OVERVIEW(R.string.section_overview),
+    INFO(R.string.section_info),
     WEATHER(R.string.section_weather),
-    RADIO(R.string.frequencies),
     RUNWAYS(R.string.section_runways),
-    APPROACHES(R.string.section_charts),
-    NOTAMS(R.string.notams),
+    CHARTS(R.string.section_charts),
 }
 
 /**
@@ -65,29 +64,24 @@ class AirportCardView(
 )
 
 /**
- * One section of a field's card, as Material's list items with supporting
- * text: the overview -- the field's pictures in Material's carousel, its
- * aerial and its photo from the ground (the chart around the field where
- * it has none), then its elevation, the airspace over it, its address (a
- * tap shows it in the maps app) and its fuel -- the weather -- its METAR
- * as sent under its flight category, its TAF, the two in plain words, what
- * the cockpit receiver heard where the weather service has nothing, what
- * SWIM says now -- its frequencies (each copied with a tap), its runways
- * and lights, its airport diagram and approach plates (each opening the
- * FAA's PDF, and laid on the map from the row's end), and its own NOTAMs
- * and the TFRs within 5 nm, each read by the engine (NotamRows). A thing a
- * NOTAM in force addresses has its badge by its name. Every figure the
+ * One page of a field's card, as Material's list items with supporting
+ * text, under the pictures (C1; the web's PlaceInfoTab, PlaceWeatherTab,
+ * PlaceRunwaysTab and PlaceChartsTab): Info -- how far the field's figures
+ * are to be trusted, the airspace over it, its address (a tap shows it in
+ * the maps app), its frequencies (each copied with a tap), its own NOTAMs
+ * and the TFRs within 5 nm, each read by the engine (NotamRows), its
+ * lights and its fuel -- the weather -- its METAR as sent under its
+ * flight category, its TAF, the two in plain words, what the cockpit
+ * receiver heard where the weather service has nothing, what SWIM says
+ * now -- its runways, and its airport diagram and approach plates (each
+ * opening the FAA's PDF, and laid on the map from the row's end). A thing
+ * a NOTAM in force addresses has its badge by its name. Every figure the
  * planner's or the engine's, written by Format.
  */
 fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, state: AirportModel.State, view: AirportCardView) {
     val pad = Modifier.padding(horizontal = WingtipSpace.Lg)
     when (section) {
-        AirportSection.OVERVIEW -> {
-            item(key = "pictures") {
-                val pictures = cardPictures(place, state)
-                PhotoCarousel(pictures, Modifier.padding(vertical = WingtipSpace.Sm))
-            }
-            place.elevationFt?.let { ft -> item(key = "elevation") { Row(stringResource(R.string.elevation), Format.altitude(ft), pad) } }
+        AirportSection.INFO -> {
             // How far the field's figures are to be trusted: the owner's own,
             // never inspected, and how old (NASR INSPECT_METHOD_CODE 1 or 2).
             view.words.data?.let { d -> item(key = "data-source") { Row(d, null, pad) } }
@@ -101,6 +95,10 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
                     Row(a, null, pad) { CardIntents.address(context, place.lat, place.lon, a) }
                 }
             }
+            frequencyRows(place, view, pad)
+            item(key = "notams-title") { SectionTitle(stringResource(R.string.notams), pad) }
+            notamsSection(view.notams, pad)
+            lightRows(place, view.marks, view.onNotam, pad)
             fuelRows(state.services, state.fuelNames, view.marks.fuel, view.onNotam, pad)
         }
         AirportSection.WEATHER -> item(key = "weather") {
@@ -120,22 +118,8 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
                 LiveAirportRows(place.ident)
             }
         }
-        AirportSection.RADIO -> {
-            val order = view.frequencyOrder ?: place.frequencies.indices.toList()
-            items(order, key = { "frequency-$it" }) { i ->
-                val f = place.frequencies[i]
-                val mhz = f.frequencyMhz ?: return@items
-                val mark = view.marks.frequency[i]
-                Column(pad) {
-                    FrequencyRow(f.description ?: f.type.orEmpty(), Format.frequency(mhz), badge = mark?.let { { NotamBadgeButton(it, view.onNotam) } })
-                }
-            }
-        }
-        AirportSection.RUNWAYS -> {
-            runwayRows(place, view.marks, view.runways, view.onNotam, pad)
-            lightRows(place, view.marks, view.onNotam, pad)
-        }
-        AirportSection.APPROACHES -> {
+        AirportSection.RUNWAYS -> runwayRows(place, view.marks, view.runways, view.onNotam, pad)
+        AirportSection.CHARTS -> {
             // The airport diagram first, as the web's Charts tab has it, with
             // own ship on it (DiagramOwnShipDialog).
             view.onDiagram?.let { open -> item(key = "diagram") { Row(stringResource(R.string.diagram), null, pad, onClick = open) } }
@@ -155,7 +139,21 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
                 ) { context.startActivity(Intent(Intent.ACTION_VIEW, p.url.toUri())) }
             }
         }
-        AirportSection.NOTAMS -> notamsSection(view.notams, pad)
+    }
+}
+
+/** The field's frequencies under their title, in the order a pilot dials them. */
+private fun LazyListScope.frequencyRows(place: AirportPlace, view: AirportCardView, pad: Modifier) {
+    if (place.frequencies.isEmpty()) return
+    item(key = "frequencies-title") { SectionTitle(stringResource(R.string.frequencies), pad) }
+    val order = view.frequencyOrder ?: place.frequencies.indices.toList()
+    items(order, key = { "frequency-$it" }) { i ->
+        val f = place.frequencies[i]
+        val mhz = f.frequencyMhz ?: return@items
+        val mark = view.marks.frequency[i]
+        Column(pad) {
+            FrequencyRow(f.description ?: f.type.orEmpty(), Format.frequency(mhz), badge = mark?.let { { NotamBadgeButton(it, view.onNotam) } })
+        }
     }
 }
 
@@ -163,7 +161,7 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
  *  its photo from the ground with its credit; where the planner has
  *  neither, the chart around the field, the cycle's sectional tile. */
 @Composable
-private fun cardPictures(place: AirportPlace, state: AirportModel.State): List<CardPicture> {
+internal fun cardPictures(place: AirportPlace, state: AirportModel.State): List<CardPicture> {
     val aerial = stringResource(R.string.picture_aerial)
     val ground = stringResource(R.string.picture_ground)
     val chart = stringResource(R.string.picture_chart)

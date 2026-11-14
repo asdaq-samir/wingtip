@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- The airport card's NOTAMs, as the web's PlaceNotams says them. -->
-    <string name="notam_active">Active</string>
     <string name="notam_inactive">Inactive</string>
     <string name="notam_since">Since</string>
     <string name="notam_starts">Starts</string>
