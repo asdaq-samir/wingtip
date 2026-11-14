@@ -260,6 +260,7 @@ export function useFplCards({
     briefShown,
     navLogShown,
     profileShown,
+    profileOpen,
     stopsShown,
     briefHere,
     stopsRoute,
