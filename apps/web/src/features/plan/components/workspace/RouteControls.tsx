@@ -1,7 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { ICON } from "../../../../lib/icons";
 import { cn } from "cn";
-import CloseButton from "../../../../components/CloseButton";
 import RoundButton from "../../../../components/RoundButton";
 import { TEXT } from "../../../../lib/text";
 import { LocalDuration } from "../../routePanelParts";
@@ -21,9 +20,8 @@ const WORDED = "lg:pointer-fine:w-auto lg:pointer-fine:gap-1 lg:pointer-fine:px-
 const WORD = cn("hidden font-medium lg:pointer-fine:inline", TEXT.detail);
 
 export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWorkspaceModel; flightInputs: ReactNode; share: ReactNode }) {
-  const { hasPoints, localMin, routed } = vm.route;
+  const { localMin, routed } = vm.route;
   const { changeLocalMin, s } = vm.plan;
-  const { clearRoute } = vm.routeList;
   const { openBrief, openProfile, profileReady } = vm.fpl;
   const { altitudeMark, briefMark } = vm.brief;
   return (
@@ -123,12 +121,6 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             <span className={WORD}>Brief</span>
           </RoundButton>
         )}
-        {/* The box empty -- cleared, or never filled -- its close before
-            the menu, a level back (the owner's "close goes back one
-            level"): to the airport's card it was flown to from (Fly Here),
-            else the search (clearRoute's second press, which the menu's
-            Clear route, left out with nothing to clear, cannot reach). */}
-        {!hasPoints && <CloseButton onClick={clearRoute} className="size-[32px]" data-testid="route-close" />}
         {/* The route's menu, with a route or without: before one, only its
             Show Route As (the owner, 2026-11-13: the layout reachable
             before there is a route), where it was once kept back until a

@@ -12,7 +12,7 @@ import type { PlanCards } from "./usePlanCards";
 export function usePlanMap(
   route: PlanRoute,
   { course, aircraft }: PlanAnswerModel,
-  { place, heldPoint, nearFrom, nearOpen, setUnder }: PlanCards,
+  { place, heldPoint, nearFrom, nearOpen }: PlanCards,
   setPanel: (state: PanelState) => void,
 ) {
   "use no memo"; // As usePlanWorkspace, whose part this is: left to its own memos.
@@ -20,19 +20,7 @@ export function usePlanMap(
   // Where the map is brought to (useMapPins).
   const pins = useMapPins({ place, heldPoint, nearFrom, nearOpen, planned, course });
   // Fly Here (useFlyHere).
-  const { flyHere } = useFlyHere({
-    planned,
-    place,
-    depart,
-    aircraft,
-    load,
-    setLoad,
-    setUnder,
-    showWaypoints,
-    flightRules,
-    setPanel,
-    setAddress,
-  });
+  const { flyHere } = useFlyHere({ planned, place, depart, aircraft, load, setLoad, showWaypoints, flightRules, setPanel, setAddress });
   return { ...pins, flyHere };
 }
 

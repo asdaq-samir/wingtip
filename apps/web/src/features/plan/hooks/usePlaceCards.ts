@@ -40,9 +40,6 @@ export function usePlaceCards({
   const setBackToView = useCallback((go: (view: PanelView) => void) => {
     backToView.current = go;
   }, []);
-  // The airport's card under the route, the route flown to from it (Fly
-  // Here): where the route's close goes back to, as Maps' layers are.
-  const [under, setUnder] = useState<string | null>(null);
   // The route's Approaches: the destination's card, opened on them. Which
   // field's, until its card has opened on them (PlaceCard's onStarted).
   const [approachesOf, setApproachesOf] = useState<string | null>(null);
@@ -107,8 +104,6 @@ export function usePlaceCards({
     cardOpen,
     briefOpen,
     setBackToView,
-    under,
-    setUnder,
     approachesOf,
     setApproachesOf,
     selectPlace,
