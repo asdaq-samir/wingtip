@@ -269,7 +269,7 @@ export const SCREENS: Screen[] = [
     ready: async (page) => {
       await page.goto("/app/plan");
       await openSetup(page);
-      await expect(page.getByTestId("quick-controls").first()).toBeVisible();
+      await expect(page.getByTestId("settings-page").first()).toBeVisible();
     },
   },
   {

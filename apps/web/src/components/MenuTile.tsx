@@ -34,8 +34,8 @@ function Face({ icon, label, value, menu = false }: { icon: ReactNode; label: st
 }
 
 /** A tile that is a pick of a few: a tap its menu (PullDown), the one
- *  picked under its name. Settings' Look (QuickControls) and the first
- *  flight's welcome (WelcomeSheet) draw the same tiles. */
+ *  picked under its name. The first flight's welcome's Theme and
+ *  Appearance (WelcomeSheet, lookPicks). */
 export default function MenuTile<V extends string>({
   label,
   value,

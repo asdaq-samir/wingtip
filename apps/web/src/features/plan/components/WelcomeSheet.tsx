@@ -214,8 +214,8 @@ function Foot({ onGo }: { onGo: () => void }) {
   );
 }
 
-/** Theme and Appearance as Settings' Look draws them (lookPicks' tiles,
- *  QuickControls' grid): the same two tiles, side by side. */
+/** Theme and Appearance as two tiles side by side (lookPicks' tiles; the
+ *  Map card's Look draws the same picks as rows). */
 function LookRows() {
   return (
     <div className="mx-auto mt-4 grid w-full max-w-sm grid-cols-2 gap-2">

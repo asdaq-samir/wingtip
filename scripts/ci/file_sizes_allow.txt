@@ -15,7 +15,7 @@ apps/ios/Wingtip/Views/InFlightViews.swift 418
 apps/ios/Wingtip/Views/InstructorView.swift 407
 apps/ios/Wingtip/Views/PlannerFiguresViews.swift 464
 apps/web/e2e/dry-run.spec.ts 423
-apps/web/e2e/helpers.ts 772
+apps/web/e2e/helpers.ts 771
 apps/web/e2e/ifr.spec.ts 442
 apps/web/e2e/ios/metrics.ts 793
 apps/web/e2e/ios/screens.ts 600

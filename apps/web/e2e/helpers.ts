@@ -202,18 +202,17 @@ export async function openConsole(page: Page) {
   await expandConsole(page);
 }
 
-/** Settings, You's row, all the way out, its Sunlight tile on top (QuickControls). Escape closes it. */
+/** Settings, You's row, all the way out. Escape closes it. */
 export async function openSetup(page: Page) {
   await openConsole(page);
   await page.getByTestId("settings-row").click();
-  await expect(page.getByTestId("quick-controls").first()).toBeVisible();
+  await expect(page.getByTestId("settings-page").first()).toBeVisible();
   await expandConsole(page);
 }
 
-/** A look tile set from its menu: Sunlight in Settings, Theme and Appearance in the Map card's Look (LookChoice). */
+/** A look row set from its menu: Theme, Appearance and Sunlight in the Map card's Look (LookChoice). */
 export async function pickControl(page: Page, control: "theme-select" | "brand-select" | "sunlight-select", item: string) {
-  const home = control === "sunlight-select" ? "settings-page" : "map-look";
-  await page.getByTestId(home).getByTestId(control).click();
+  await page.getByTestId("map-look").getByTestId(control).click();
   await page.getByTestId(item).click();
 }
 
