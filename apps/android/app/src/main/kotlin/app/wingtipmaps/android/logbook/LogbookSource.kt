@@ -11,6 +11,10 @@ import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
 import app.wingtipmaps.android.api.logbook
 import app.wingtipmaps.android.api.logbookDraft
+import app.wingtipmaps.android.api.readOrNone
+import app.wingtipmaps.android.api.saveTrack
+import app.wingtipmaps.android.api.SavedTrack
+import app.wingtipmaps.android.api.generated.gateway.FlightSummaryDto
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +26,13 @@ interface LogbookSource {
     suspend fun add(entry: LogbookEntryRequest): LogbookEntryDto
     suspend fun entries(): List<LogbookEntryDto>?
     suspend fun currency(): CurrencyDto?
+
+    /** The pilot's saved flights, the logged flight's track's home; none
+     *  where a source keeps none, and then no track is linked. */
+    suspend fun flights(): List<FlightSummaryDto> = emptyList()
+
+    /** The flown track put with its saved flight (PUT /api/flights/{id}/track). */
+    suspend fun saveTrack(flight: Long, track: SavedTrack): Unit = throw UnsupportedOperationException("No saved flights here")
 }
 
 object ServerLogbook : LogbookSource {
@@ -29,6 +40,18 @@ object ServerLogbook : LogbookSource {
     override suspend fun add(entry: LogbookEntryRequest) = Gateway.addLogbook(entry)
     override suspend fun entries() = Gateway.logbook()
     override suspend fun currency() = Gateway.currency()
+    override suspend fun flights() = Gateway.api.flightList().readOrNone().orEmpty()
+    override suspend fun saveTrack(flight: Long, track: SavedTrack) = Gateway.saveTrack(flight, track)
+}
+
+/** The saved flight a logged route most likely is: the latest whose ends
+ *  are the route's first and last idents (the web's and the iPhone's
+ *  likelyFlight). */
+fun likelyFlight(flights: List<FlightSummaryDto>, route: String?): FlightSummaryDto? {
+    val idents = route.orEmpty().split(" ").filter { it.isNotBlank() }
+    val from = idents.firstOrNull() ?: return null
+    val to = idents.last()
+    return flights.firstOrNull { it.departureIdent.equals(from, ignoreCase = true) && it.destinationIdent.equals(to, ignoreCase = true) }
 }
 
 /** A change to the logbook, so a list shown reads it again (LogbookModel)

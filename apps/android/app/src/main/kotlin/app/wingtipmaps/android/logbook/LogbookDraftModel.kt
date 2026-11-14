@@ -6,6 +6,9 @@ import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.LogbookDraft
 import app.wingtipmaps.android.api.generated.LogbookDraftAsk
+import app.wingtipmaps.android.api.SavedTrack
+import app.wingtipmaps.android.api.SavedTrackPoint
+import app.wingtipmaps.android.api.generated.gateway.FlightSummaryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -15,7 +18,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.TimeZone
@@ -34,6 +40,7 @@ import kotlin.time.Clock
 @HiltViewModel(assistedFactory = LogbookDraftModel.Factory::class)
 class LogbookDraftModel(
     private val flight: RecordedFlight,
+    private val shelf: TrackShelf,
     private val rules: DraftRules = EngineDraft,
     private val source: LogbookSource = ServerLogbook,
     private val utcOffsetMin: () -> Double = { TimeZone.getDefault().getOffset(AppClock.nowMs()) / 60_000.0 },
@@ -41,12 +48,12 @@ class LogbookDraftModel(
     /** Hilt's, the recorded flight handed in by its host: the engine's
      *  rules, the gateway's logbook and the phone's offset from UTC now. */
     @AssistedInject
-    constructor(@Assisted flight: RecordedFlight, rules: DraftRules, source: LogbookSource, clock: Clock) :
-        this(flight, rules, source, { TimeZone.getDefault().getOffset(clock.now().toEpochMilliseconds()) / 60_000.0 })
+    constructor(@Assisted flight: RecordedFlight, @Assisted shelf: TrackShelf, rules: DraftRules, source: LogbookSource, clock: Clock) :
+        this(flight, shelf, rules, source, { TimeZone.getDefault().getOffset(clock.now().toEpochMilliseconds()) / 60_000.0 })
 
     @AssistedFactory
     interface Factory {
-        fun create(flight: RecordedFlight): LogbookDraftModel
+        fun create(flight: RecordedFlight, shelf: TrackShelf): LogbookDraftModel
     }
 
     data class Logged(val entry: LogbookEntryDto, val currency: List<String>)
@@ -64,7 +71,12 @@ class LogbookDraftModel(
         val logging: Boolean = false,
         val logProblem: String? = null,
         val logged: Logged? = null,
+        /** The pilot's saved flights, for the track's home. */
+        val flights: List<FlightSummaryDto> = emptyList(),
     ) {
+        /** The saved flight the track goes to: the one whose ends are the
+         *  route's, as the web and the iPhone link it. */
+        val linked: Long? get() = likelyFlight(flights, edits[DraftField.ROUTE] ?: draft?.entry?.route)?.id
         val open: Boolean get() = endedAt != null || logged != null
     }
 
@@ -75,6 +87,11 @@ class LogbookDraftModel(
     private var tail: String? = null
     private var type: String? = null
     private var asking: Job? = null
+
+    /** Why a logged flight's track is not yet with its saved flight,
+     *  while it is kept on the phone; null once it has gone. */
+    val trackProblem: StateFlow<String?> = combine(shelf.unsent, shelf.problem) { unsent, problem -> if (unsent.isEmpty()) null else problem ?: UnsentTracks.KEPT }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
         viewModelScope.launch { flight.recorded.collect(::look) }
@@ -114,6 +131,15 @@ class LogbookDraftModel(
             try {
                 val draft = source.draft(LogbookDraftAsk(aircraft = tail, aircraftType = type, points = points, utcOffsetMin = utcOffsetMin(), picked = null))
                 _state.update { it.copy(draft = draft, pending = false) }
+                // The saved flights, for the track's home; none is no link.
+                val flights = try {
+                    source.flights()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    emptyList()
+                }
+                _state.update { it.copy(flights = flights) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -128,8 +154,12 @@ class LogbookDraftModel(
 
     fun byInstruments(yes: Boolean) = _state.update { it.copy(byInstruments = yes) }
 
-    /** Log: the entry kept by the gateway, the track let go, and the
-     *  currency asked again from the logbook it is worked out from. */
+    /** Log: the entry kept by the gateway, linked to its saved flight; the
+     *  flown track sent to that flight, or, where that fails, kept on the
+     *  phone (TrackShelf) before the recorder lets its own copy go, and
+     *  sent again later (sendUnsent): a flown track is never let go before
+     *  it has arrived (the iPhone's IOS-1, the brief's Android half); then
+     *  the currency asked again from the logbook it is worked out from. */
     fun log() {
         val s = _state.value
         val draft = s.draft ?: return
@@ -137,7 +167,21 @@ class LogbookDraftModel(
         _state.update { it.copy(logging = true, logProblem = null) }
         viewModelScope.launch {
             try {
-                val entry = source.add(DraftEntry.request(draft, s.edits, s.byInstruments))
+                val linked = s.linked
+                val entry = source.add(DraftEntry.request(draft, s.edits, s.byInstruments, linked))
+                if (linked != null) {
+                    val track = SavedTrack(
+                        points = flight.recorded.value.points.map { SavedTrackPoint(t = it.t.toLong(), lat = it.lat, lon = it.lon, altFt = it.altFt) },
+                        source = "android",
+                    )
+                    try {
+                        source.saveTrack(linked, track)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        shelf.keep(Unsent(linked, track), Problems.say("The flown track could not be sent", e))
+                    }
+                }
                 flight.forget()
                 LogbookChanged.changed()
                 val currency = try {
@@ -163,6 +207,12 @@ class LogbookDraftModel(
 
     /** Not a flight to log: the track let go. */
     fun discard() = flight.forget()
+
+    /** The tracks kept unsent sent again, now: Try Again, and each time
+     *  the app is in front with a network (AutoLogbookHost). */
+    fun sendUnsent() {
+        viewModelScope.launch { shelf.send(source::saveTrack) }
+    }
 
     /** The logged sheet put away. */
     fun close() = _state.update { it.copy(logged = null) }

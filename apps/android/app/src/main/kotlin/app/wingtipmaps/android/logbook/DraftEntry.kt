@@ -71,7 +71,7 @@ object DraftEntry {
      * where the pilot says it was flown by instruments -- no track shows
      * that (14 CFR 61.51(g)(1)).
      */
-    fun request(draft: LogbookDraft, edits: Map<DraftField, String>, byInstruments: Boolean): LogbookEntryRequest {
+    fun request(draft: LogbookDraft, edits: Map<DraftField, String>, byInstruments: Boolean, flightId: Long? = null): LogbookEntryRequest {
         val e = draft.entry
         fun hours(f: DraftField, had: Double) = edits[f]?.trim()?.toDoubleOrNull()?.takeIf { it >= 0 } ?: had
         fun count(f: DraftField, had: Int) = edits[f]?.trim()?.toIntOrNull()?.takeIf { it >= 0 } ?: had
@@ -96,7 +96,7 @@ object DraftEntry {
             airHours = e.airHours,
             touchAndGoes = e.touchAndGoes,
             fromTrack = true,
-            flightId = null,
+            flightId = flightId,
         )
     }
 

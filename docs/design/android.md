@@ -937,7 +937,14 @@ a Material `Badge` at the top of the map, beside the receiver's, says
   4. A new entry (`LogbookForm`) opens as a full-height sheet with its
      fields.
   5. Flights recorded automatically arrive as drafts (`DraftEntry`) at
-     the top, with Keep and Discard.
+     the top, with Keep and Discard. A logged flight is linked to the
+     saved flight whose ends are its route's, and its flown track is sent
+     to it (PUT /api/flights/{id}/track). Where that fails (no signal
+     after landing), the track is kept on the phone (`UnsentTracks`,
+     written before the recorder lets its copy go), Flight Logged says so
+     with Try Again, and it is sent again each time the app comes to the
+     front and as a network comes; signing out erases it with the
+     recording (`PhoneWipe`).
   6. A delete offers Undo in Material's `Snackbar`, in the screen's
      `Scaffold`; the delete is sent once it is let go.
 - **Primary action**: an `ExtendedFloatingActionButton` "Add Flight" at
