@@ -2,6 +2,8 @@
 
 export type AcsCodesAnswer = string[];
 export type AirborneNowAnswer = boolean | null;
+export type AirportDataWordsAnswer = string | null;
+export type AirportNotamsNoneAnswer = string | null;
 export type AirspaceColumnAnswer = AirspaceBand[];
 export type AirspaceVolumeSpanAnswer = {
   /**
@@ -372,6 +374,7 @@ export type GonogoAlternateFindingAnswer = {
   detail: string;
 } | null;
 export type GonogoDensityAltitudeAnswer = number;
+export type GonogoFieldPermissionAnswer = GonogoItem | null;
 export type GonogoHazardWindowAnswer = "before" | "during" | "after" | null;
 export type GonogoIcingAnswer = {
   altitude_ft: number;
@@ -765,6 +768,7 @@ export type ProceduresReadAnswer = {
 }[];
 export type ProceduresWriteAnswer = string;
 export type ProhibitedCautionAnswer = string[];
+export type PublicUseAnswer = boolean;
 export type RadialOfAnswer = {
   /**
    * Magnetic degrees from the station.
@@ -1087,6 +1091,27 @@ export interface EngineContract {
     answer: AirplaneNeedsAnswer;
   };
   /**
+   * How far a field's figures are to be trusted, in the card's words: "Owner-reported, last updated Aug 2023" where NASR's INSPECT_METHOD_CODE is 1 or 2 (the 5010-1 and 5010-2 mailouts: the owner's own figures, never inspected), null where they were inspected (F, S, C) or the source is not known.
+   */
+  airport_data_words: {
+    input: AirportDataWordsInput;
+    answer: AirportDataWordsAnswer;
+  };
+  /**
+   * What a field's empty NOTAM list says where NASR gives a private field no NOTAM_ID: it is outside the NOTAM system, so "No NOTAMs are issued for this private-use field." rather than none heard. Null where the ordinary empty state is right. (FAA JO 7930.2 could not be fetched to quote on 2026-11-13; the plainer wording was chosen for that reason.)
+   */
+  airport_notams_none: {
+    input: AirportNotamsNoneInput;
+    answer: AirportNotamsNoneAnswer;
+  };
+  /**
+   * Who may use a field and the airport card's line for it, the owner's words (2026-11-13), one for the web, the iPhone and Android: "Private: permission required" (NASR FACILITY_USE_CODE PR: non-public use, the sectional's circled R, FAA Aeronautical Chart User's Guide) and "Military: prior permission required" (a field the armed services own, not open to the public); none for a public or a joint-use field, where a civil pilot lands as at any public field.
+   */
+  airport_use_words: {
+    input: AirportUseWordsInput;
+    answer: AirportUseWordsAnswer;
+  };
+  /**
    * The airspace over a point in bands, from the ground to FL600 (14 CFR 71.33, 71.71): a B, C or D where it is drawn, the most restrictive where they overlap, E from its floor or 14,500 ft, G under it all, A from 18,000 ft, split where 91.155's minimums, 91.117's speed or 91.215's transponder rule changes. The volumes are the caller's, read from the NASR shapefile or a cycle pack.
    */
   airspace_column: {
@@ -1381,7 +1406,7 @@ export interface EngineContract {
     answer: BelowVfrMinimumsAnswer;
   };
   /**
-   * The best fields to land at from where the airplane is, ranked with their reasons: in "glide" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in "diversion" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower. A glide ratio with no best-glide speed gives a reach only with no wind aloft: a headwind's loss needs the glide's airspeed, and a still-air reach into one would be too far.
+   * The best fields to land at from where the airplane is, ranked with their reasons: in "glide" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in "diversion" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower. In "diversion" mode a private or military-only field counts against it as an IFR report does (the owner's or the service's permission stands with no emergency), so a public or joint-use field comes first of fields otherwise alike, and its reasons give the card's line ("Private: permission required", "Military: prior permission required"); in "glide" mode it does not count (14 CFR 91.3(b)) and is said as a caution. A glide ratio with no best-glide speed gives a reach only with no wind aloft: a headwind's loss needs the glide's airspeed, and a still-air reach into one would be too far.
    */
   best_fields: {
     input: BestFieldsInput;
@@ -1857,7 +1882,7 @@ export interface EngineContract {
     answer: FiledWakeAnswer;
   };
   /**
-   * Whether a field's identifier has a figure in it (C81, 06A) and so no ICAO four-letter location indicator: filed as ZZZZ with its name in item 18 (DEP/, DEST/, ALTN/; AIM Appendix 4) where a service takes only indicators.
+   * Whether a field is filed as ZZZZ with its name in item 18 (DEP/, DEST/, ALTN/; AIM Appendix 4: ZZZZ where the field has no ICAO location indicator), where a service takes only indicators. Decided by NASR's ICAO_ID (APT_BASE.csv) where the host has the field's row: null or empty is none listed (IL11, BGTL), a four-letter one is filed as it is (Z13 is PFZK). Only where icao_id is left out is the identifier read: one with a figure in it (C81, 06A) is the FAA's own.
    */
   filed_zzzz: {
     input: FiledZzzzInput;
@@ -2086,6 +2111,13 @@ export interface EngineContract {
   gonogo_end_distance: {
     input: GonogoEndDistanceInput;
     answer: GonogoEndDistanceAnswer;
+  };
+  /**
+   * The Go / No-Go's row for a departure, destination or stop that is private (NASR FACILITY_USE_CODE PR: "IL11 is private: land only with the owner's permission (call 847-323-8911)") or military-only ("prior permission required (PPR)"), the phone NASR APT_CON's; 14 CFR 91.103 (all available information). A caution, opening the Depart tab for the departure and Arrive otherwise; null where every field is public or joint use. The hosts add it to gonogo_verdict_items' list before gonogo_verdict_line.
+   */
+  gonogo_field_permission: {
+    input: GonogoFieldPermissionInput;
+    answer: GonogoFieldPermissionAnswer;
   };
   /**
    * Whether a flight in a hazard from `enter` to `leave` is there while it is valid: "before" it starts, "after" it ends, else "during", its window widened by `margin_min` either way (30, PASS_MARGIN_MIN, where missing: an ETA is an estimate); null where it gives no window.
@@ -2340,7 +2372,7 @@ export interface EngineContract {
     answer: IcingSeverityAnswer;
   };
   /**
-   * Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility).
+   * Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility). A private or military-only field (private, military) is the pilot's to check too, with "KMXF is military: prior permission required (PPR)." or the owner's permission said.
    */
   ifr_alternate_check: {
     input: IfrAlternateCheckInput;
@@ -2968,6 +3000,13 @@ export interface EngineContract {
   prohibited_caution: {
     input: ProhibitedCautionInput;
     answer: ProhibitedCautionAnswer;
+  };
+  /**
+   * Whether a field is open to any civil pilot: neither private (NASR FACILITY_USE_CODE PR) nor military-only; a joint-use field is public use. The search's Public filter.
+   */
+  public_use: {
+    input: PublicUseInput;
+    answer: PublicUseAnswer;
   };
   /**
    * The radial from a VOR a point is on, the course to the station and the distance, or null where the station has no magnetic variation.
@@ -3747,6 +3786,51 @@ export interface AirplaneNeedsAnswer {
    * The inputs' names in order: a figure's key (taxi_fuel_gal, glide_ratio ...), a table (loading, takeoff, landing), or airplane.
    */
   missing: string[];
+}
+export interface AirportDataWordsInput {
+  /**
+   * The planner's AirportPlace data_source.
+   */
+  data_source?: "inspected" | "owner-reported" | null;
+  /**
+   * The planner's AirportPlace info_date, YYYY-MM-DD: NASR's LAST_INFO_RESPONSE, else LAST_INSPECTION.
+   */
+  info_date?: string | null;
+}
+export interface AirportNotamsNoneInput {
+  /**
+   * The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
+   */
+  private?: boolean | null;
+  /**
+   * A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where not open to the public, "joint" where it is (FACILITY_USE_CODE PU).
+   */
+  military?: "military" | "joint" | null;
+  /**
+   * NASR APT_BASE's NOTAM_ID: null or empty where it lists none.
+   */
+  notam_id?: string | null;
+}
+export interface AirportUseWordsInput {
+  /**
+   * The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
+   */
+  private?: boolean | null;
+  /**
+   * A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where not open to the public, "joint" where it is (FACILITY_USE_CODE PU).
+   */
+  military?: "military" | "joint" | null;
+}
+export interface AirportUseWordsAnswer {
+  use: "public" | "private" | "military" | "joint";
+  /**
+   * The card's line; null for a public or joint-use field.
+   */
+  words: string | null;
+  /**
+   * Open to any civil pilot: public or joint use.
+   */
+  public_use: boolean;
 }
 export interface AirspaceColumnInput {
   ground_ft?: number | null;
@@ -4844,8 +4928,14 @@ export interface BestFieldsInput {
       flight_category?: string | null;
     } | null;
     towered?: boolean | null;
+    /**
+     * NASR FACILITY_USE_CODE PR and not owned by the armed services.
+     */
     private?: boolean | null;
-    military?: boolean | null;
+    /**
+     * A field the armed services own (NASR OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where it is not open to the public, "joint" where it is (FACILITY_USE_CODE PU), a public-use field never marked as military.
+     */
+    military?: "military" | "joint" | null;
   }[];
   /**
    * At most this many; 10 where not given.
@@ -4982,7 +5072,10 @@ export interface BestField {
   arrive_agl_ft: number | null;
   towered: boolean;
   private: boolean;
-  military: boolean;
+  /**
+   * As the input's: "military", "joint" or null.
+   */
+  military: "military" | "joint" | null;
   flight_category: string | null;
   /**
    * The end to land on: the POH's distance fits, the crosswind within the demonstrated, the most headwind, the most nearly straight in, the longest.
@@ -5416,8 +5509,14 @@ export interface CopilotField {
     flight_category?: string | null;
   } | null;
   towered?: boolean | null;
+  /**
+   * NASR FACILITY_USE_CODE PR and not owned by the armed services.
+   */
   private?: boolean | null;
-  military?: boolean | null;
+  /**
+   * A field the armed services own (NASR OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where it is not open to the public, "joint" where it is (FACILITY_USE_CODE PU), a public-use field never marked as military.
+   */
+  military?: "military" | "joint" | null;
   /**
    * NASR lists fuel sold there.
    */
@@ -5505,6 +5604,14 @@ export interface CopilotAlternative {
   fuel: boolean;
   fuel_at_landing_min: number | null;
   reserve_min: number;
+  /**
+   * Private use: the owner's permission needed (the message says so).
+   */
+  private: boolean;
+  /**
+   * "military": the service's prior permission needed (the message says so); "joint": public use.
+   */
+  military: "military" | "joint" | null;
   /**
    * best_fields' reasons.
    */
@@ -6620,6 +6727,10 @@ export interface FiledWakeInput {
 }
 export interface FiledZzzzInput {
   ident: string;
+  /**
+   * NASR APT_BASE's ICAO_ID for the field: null or "" where NASR lists none. Leave it out only where the host has no NASR row for the field.
+   */
+  icao_id?: string | null;
 }
 export interface FixRadialDistanceInput {
   at: WordingLatLon;
@@ -7169,6 +7280,27 @@ export interface GonogoEndDistanceAnswer {
    */
   caveats: string[];
   over: boolean;
+}
+export interface GonogoFieldPermissionInput {
+  fields: {
+    ident: string;
+    /**
+     * Null is taken as destination.
+     */
+    role?: "departure" | "destination" | "stop" | null;
+    /**
+     * NASR FACILITY_USE_CODE PR, not owned by the armed services.
+     */
+    private?: boolean | null;
+    /**
+     * "military" or "joint" for a field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG).
+     */
+    military?: "military" | "joint" | null;
+    /**
+     * NASR APT_CON's phone, the manager's or else the owner's.
+     */
+    phone?: string | null;
+  }[];
 }
 export interface GonogoHazardWindowInput {
   enter: number;
@@ -7919,6 +8051,14 @@ export interface IfrAlternateCheckInput {
      */
     covers: boolean;
   } | null;
+  /**
+   * ifr_alternate_check's: NASR FACILITY_USE_CODE PR, not owned by the armed services.
+   */
+  private?: boolean | null;
+  /**
+   * ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
+   */
+  military?: "military" | "joint" | null;
 }
 export interface IfrAlternateCheckAnswer {
   ident: string;
@@ -7961,6 +8101,14 @@ export interface IfrAlternateDestinationInput {
      */
     covers: boolean;
   } | null;
+  /**
+   * ifr_alternate_check's: NASR FACILITY_USE_CODE PR, not owned by the armed services.
+   */
+  private?: boolean | null;
+  /**
+   * ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
+   */
+  military?: "military" | "joint" | null;
 }
 export interface IfrAlternateDestinationAnswer {
   ident: string;
@@ -10271,6 +10419,16 @@ export interface ProfileClearanceAnswer {
 export interface ProhibitedCautionInput {
   selection: {};
 }
+export interface PublicUseInput {
+  /**
+   * The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
+   */
+  private?: boolean | null;
+  /**
+   * A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where not open to the public, "joint" where it is (FACILITY_USE_CODE PU).
+   */
+  military?: "military" | "joint" | null;
+}
 export interface RadialOfInput {
   station: WordingStation;
   at: WordingLatLon;
@@ -12383,4 +12541,12 @@ export interface IfrAlternateIn {
      */
     covers: boolean;
   } | null;
+  /**
+   * ifr_alternate_check's: NASR FACILITY_USE_CODE PR, not owned by the armed services.
+   */
+  private?: boolean | null;
+  /**
+   * ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
+   */
+  military?: "military" | "joint" | null;
 }

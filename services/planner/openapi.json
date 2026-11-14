@@ -1328,6 +1328,21 @@
             ],
             "title": "Chart Supplement Url"
           },
+          "data_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "inspected",
+                  "owner-reported"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Source"
+          },
           "elevation_ft": {
             "anyOf": [
               {
@@ -1346,9 +1361,31 @@
             "title": "Frequencies",
             "type": "array"
           },
+          "icao_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icao Id"
+          },
           "ident": {
             "title": "Ident",
             "type": "string"
+          },
+          "info_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Info Date"
           },
           "kind": {
             "enum": [
@@ -1451,6 +1488,17 @@
                 "type": "null"
               }
             ]
+          },
+          "notam_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notam Id"
           },
           "pattern": {
             "anyOf": [
@@ -23477,7 +23525,8 @@
               "fuel",
               "runways",
               "balance",
-              "risk"
+              "risk",
+              "permission"
             ],
             "title": "Key",
             "type": "string"
@@ -24725,7 +24774,7 @@
     },
     "/api/airport/{ident}": {
       "get": {
-        "description": "One US airport's card, by any ident it goes by (C81, KC81, KDLH).\n\n`airspace_class` is the class of the airspace at the surface at the\nfield: B, C or D, E in a Class E surface area, G where the ground is\nuncontrolled (wingtip.airspace.surface_class_at).\n`towered` is whether it lists a tower frequency. A field with no\nreporting station has no `metar`; `weather_unavailable` is set only\nwhen the weather service could not be asked.",
+        "description": "One US airport's card, by any ident it goes by (C81, KC81, KDLH).\n\n`airspace_class` is the surface's class (wingtip.airspace.surface_class_at).\n`towered` is whether it lists a tower frequency. No reporting station,\nno `metar`; `weather_unavailable` only where the service was not asked.",
         "operationId": "airport_place_api_airport__ident__get",
         "parameters": [
           {

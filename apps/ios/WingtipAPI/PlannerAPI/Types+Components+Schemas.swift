@@ -1154,12 +1154,18 @@ extension Components {
             public var airspaceClass: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/chart_supplement_url`.
             public var chartSupplementUrl: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/data_source`.
+            public var dataSource: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/elevation_ft`.
             public var elevationFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/frequencies`.
             public var frequencies: [Components.Schemas.Frequency]
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/icao_id`.
+            public var icaoId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/ident`.
             public var ident: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/info_date`.
+            public var infoDate: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/kind`.
             public var kind: Swift.String
             /// - Remark: Generated from `#/components/schemas/AirportPlace/lat`.
@@ -1184,6 +1190,8 @@ extension Components {
             public var name: Swift.String
             /// - Remark: Generated from `#/components/schemas/AirportPlace/nearby_metar`.
             public var nearbyMetar: Components.Schemas.NearbyMetar?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/notam_id`.
+            public var notamId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/pattern`.
             public var pattern: Components.Schemas.TrafficPattern?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/phone`.
@@ -1214,9 +1222,12 @@ extension Components {
             ///   - airportDiagramUrl:
             ///   - airspaceClass:
             ///   - chartSupplementUrl:
+            ///   - dataSource:
             ///   - elevationFt:
             ///   - frequencies:
+            ///   - icaoId:
             ///   - ident:
+            ///   - infoDate:
             ///   - kind:
             ///   - lat:
             ///   - lighting:
@@ -1229,6 +1240,7 @@ extension Components {
             ///   - municipality:
             ///   - name:
             ///   - nearbyMetar:
+            ///   - notamId:
             ///   - pattern:
             ///   - phone:
             ///   - isPrivate:
@@ -1246,9 +1258,12 @@ extension Components {
                 airportDiagramUrl: Swift.String? = nil,
                 airspaceClass: Swift.String? = nil,
                 chartSupplementUrl: Swift.String? = nil,
+                dataSource: Swift.String? = nil,
                 elevationFt: Swift.Double? = nil,
                 frequencies: [Components.Schemas.Frequency],
+                icaoId: Swift.String? = nil,
                 ident: Swift.String,
+                infoDate: Swift.String? = nil,
                 kind: Swift.String,
                 lat: Swift.Double,
                 lighting: [Swift.String]? = nil,
@@ -1261,6 +1276,7 @@ extension Components {
                 municipality: Swift.String? = nil,
                 name: Swift.String,
                 nearbyMetar: Components.Schemas.NearbyMetar? = nil,
+                notamId: Swift.String? = nil,
                 pattern: Components.Schemas.TrafficPattern? = nil,
                 phone: Swift.String? = nil,
                 isPrivate: Swift.Bool? = nil,
@@ -1278,9 +1294,12 @@ extension Components {
                 self.airportDiagramUrl = airportDiagramUrl
                 self.airspaceClass = airspaceClass
                 self.chartSupplementUrl = chartSupplementUrl
+                self.dataSource = dataSource
                 self.elevationFt = elevationFt
                 self.frequencies = frequencies
+                self.icaoId = icaoId
                 self.ident = ident
+                self.infoDate = infoDate
                 self.kind = kind
                 self.lat = lat
                 self.lighting = lighting
@@ -1293,6 +1312,7 @@ extension Components {
                 self.municipality = municipality
                 self.name = name
                 self.nearbyMetar = nearbyMetar
+                self.notamId = notamId
                 self.pattern = pattern
                 self.phone = phone
                 self.isPrivate = isPrivate
@@ -1311,9 +1331,12 @@ extension Components {
                 case airportDiagramUrl = "airport_diagram_url"
                 case airspaceClass = "airspace_class"
                 case chartSupplementUrl = "chart_supplement_url"
+                case dataSource = "data_source"
                 case elevationFt = "elevation_ft"
                 case frequencies
+                case icaoId = "icao_id"
                 case ident
+                case infoDate = "info_date"
                 case kind
                 case lat
                 case lighting
@@ -1326,6 +1349,7 @@ extension Components {
                 case municipality
                 case name
                 case nearbyMetar = "nearby_metar"
+                case notamId = "notam_id"
                 case pattern
                 case phone
                 case isPrivate = "private"

@@ -732,12 +732,9 @@ public struct Client: APIProtocol {
     ///
     /// One US airport's card, by any ident it goes by (C81, KC81, KDLH).
     ///
-    /// `airspace_class` is the class of the airspace at the surface at the
-    /// field: B, C or D, E in a Class E surface area, G where the ground is
-    /// uncontrolled (wingtip.airspace.surface_class_at).
-    /// `towered` is whether it lists a tower frequency. A field with no
-    /// reporting station has no `metar`; `weather_unavailable` is set only
-    /// when the weather service could not be asked.
+    /// `airspace_class` is the surface's class (wingtip.airspace.surface_class_at).
+    /// `towered` is whether it lists a tower frequency. No reporting station,
+    /// no `metar`; `weather_unavailable` only where the service was not asked.
     ///
     /// - Remark: HTTP `GET /api/airport/{ident}`.
     /// - Remark: Generated from `#/paths//api/airport/{ident}/get(airport_place)`.

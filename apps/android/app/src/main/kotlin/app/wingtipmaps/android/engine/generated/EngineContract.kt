@@ -152,6 +152,63 @@ object EngineContract {
         val figure: String,
     )
 
+    @Serializable
+    data class AirportDataWordsInput(
+        /**
+         * The planner's AirportPlace data_source.
+         */
+        @SerialName("data_source")
+        val dataSource: String? = null,
+        /**
+         * The planner's AirportPlace info_date, YYYY-MM-DD: NASR's LAST_INFO_RESPONSE, else LAST_INSPECTION.
+         */
+        @SerialName("info_date")
+        val infoDate: String? = null,
+    )
+
+    @Serializable
+    data class AirportNotamsNoneInput(
+        /**
+         * The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
+         */
+        val private: Boolean? = null,
+        /**
+         * A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where not open to the public, "joint" where it is (FACILITY_USE_CODE PU).
+         */
+        val military: String? = null,
+        /**
+         * NASR APT_BASE's NOTAM_ID: null or empty where it lists none.
+         */
+        @SerialName("notam_id")
+        val notamId: String? = null,
+    )
+
+    @Serializable
+    data class AirportUseWordsAnswer(
+        val use: String,
+        /**
+         * The card's line; null for a public or joint-use field.
+         */
+        val words: String? = null,
+        /**
+         * Open to any civil pilot: public or joint use.
+         */
+        @SerialName("public_use")
+        val publicUse: Boolean,
+    )
+
+    @Serializable
+    data class AirportUseWordsInput(
+        /**
+         * The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
+         */
+        val private: Boolean? = null,
+        /**
+         * A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where not open to the public, "joint" where it is (FACILITY_USE_CODE PU).
+         */
+        val military: String? = null,
+    )
+
     /**
      * A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
      */
@@ -1652,7 +1709,10 @@ object EngineContract {
         val arriveAglFt: Double? = null,
         val towered: Boolean,
         val private: Boolean,
-        val military: Boolean,
+        /**
+         * As the input's: "military", "joint" or null.
+         */
+        val military: String? = null,
         @SerialName("flight_category")
         val flightCategory: String? = null,
         /**
@@ -1804,8 +1864,14 @@ object EngineContract {
         val runways: List<EngineContract.Runway>,
         val metar: EngineContract.BestFieldsInputFieldsItemMetar? = null,
         val towered: Boolean? = null,
+        /**
+         * NASR FACILITY_USE_CODE PR and not owned by the armed services.
+         */
         val private: Boolean? = null,
-        val military: Boolean? = null,
+        /**
+         * A field the armed services own (NASR OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where it is not open to the public, "joint" where it is (FACILITY_USE_CODE PU), a public-use field never marked as military.
+         */
+        val military: String? = null,
     )
 
     @Serializable
@@ -2391,6 +2457,14 @@ object EngineContract {
         @SerialName("reserve_min")
         val reserveMin: Double,
         /**
+         * Private use: the owner's permission needed (the message says so).
+         */
+        val private: Boolean,
+        /**
+         * "military": the service's prior permission needed (the message says so); "joint": public use.
+         */
+        val military: String? = null,
+        /**
          * best_fields' reasons.
          */
         val reasons: List<String>,
@@ -2410,8 +2484,14 @@ object EngineContract {
         val runways: List<EngineContract.Runway>,
         val metar: EngineContract.CopilotFieldMetar? = null,
         val towered: Boolean? = null,
+        /**
+         * NASR FACILITY_USE_CODE PR and not owned by the armed services.
+         */
         val private: Boolean? = null,
-        val military: Boolean? = null,
+        /**
+         * A field the armed services own (NASR OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where it is not open to the public, "joint" where it is (FACILITY_USE_CODE PU), a public-use field never marked as military.
+         */
+        val military: String? = null,
         /**
          * NASR lists fuel sold there.
          */
@@ -3729,6 +3809,11 @@ object EngineContract {
     @Serializable
     data class FiledZzzzInput(
         val ident: String,
+        /**
+         * NASR APT_BASE's ICAO_ID for the field: null or "" where NASR lists none. Leave it out only where the host has no NASR row for the field.
+         */
+        @SerialName("icao_id")
+        val icaoId: String? = null,
     )
 
     @Serializable
@@ -4564,6 +4649,32 @@ object EngineContract {
          * Its mark; null for a self check.
          */
         val finding: String? = null,
+    )
+
+    @Serializable
+    data class GonogoFieldPermissionInput(
+        val fields: List<EngineContract.GonogoFieldPermissionInputFieldsItem>,
+    )
+
+    @Serializable
+    data class GonogoFieldPermissionInputFieldsItem(
+        val ident: String,
+        /**
+         * Null is taken as destination.
+         */
+        val role: String? = null,
+        /**
+         * NASR FACILITY_USE_CODE PR, not owned by the armed services.
+         */
+        val private: Boolean? = null,
+        /**
+         * "military" or "joint" for a field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG).
+         */
+        val military: String? = null,
+        /**
+         * NASR APT_CON's phone, the manager's or else the owner's.
+         */
+        val phone: String? = null,
     )
 
     @Serializable
@@ -5949,6 +6060,14 @@ object EngineContract {
          * The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
          */
         val forecast: EngineContract.IfrAlternateInForecast? = null,
+        /**
+         * ifr_alternate_check's: NASR FACILITY_USE_CODE PR, not owned by the armed services.
+         */
+        val private: Boolean? = null,
+        /**
+         * ifr_alternate_check's: "military" or "joint" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said.
+         */
+        val military: String? = null,
     )
 
     /**
@@ -9194,6 +9313,18 @@ object EngineContract {
     @Serializable
     data class ProhibitedCautionInput(
         val selection: Map<String, JsonElement>,
+    )
+
+    @Serializable
+    data class PublicUseInput(
+        /**
+         * The planner's private flag: NASR APT_BASE FACILITY_USE_CODE PR, not owned by the armed services.
+         */
+        val private: Boolean? = null,
+        /**
+         * A field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where not open to the public, "joint" where it is (FACILITY_USE_CODE PU).
+         */
+        val military: String? = null,
     )
 
     @Serializable

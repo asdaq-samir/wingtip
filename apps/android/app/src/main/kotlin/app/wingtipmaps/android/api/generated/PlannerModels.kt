@@ -163,11 +163,22 @@ data class AirportPlace (
     @SerialName("chart_supplement_url")
     val chartSupplementUrl: String? = null,
 
+    @SerialName("data_source")
+    val dataSource: String? = null,
+
     @SerialName("elevation_ft")
     val elevationFt: Double? = null,
 
     val frequencies: List<Frequency>,
+
+    @SerialName("icao_id")
+    val icaoId: String? = null,
+
     val ident: String,
+
+    @SerialName("info_date")
+    val infoDate: String? = null,
+
     val kind: String,
     val lat: Double,
 
@@ -188,6 +199,9 @@ data class AirportPlace (
 
     @SerialName("nearby_metar")
     val nearbyMetar: NearbyMetar? = null,
+
+    @SerialName("notam_id")
+    val notamId: String? = null,
 
     val pattern: TrafficPattern? = null,
     val phone: String? = null,
