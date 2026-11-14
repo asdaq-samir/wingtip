@@ -3,7 +3,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 /**
  * A card's tabs and the card's scroll, as Apple Maps' place card has them
  * and the one scrolling rule asks (the owner, 2026-11-10; docs/design/rules.md
- * section 2): the tab bar pins under the card's head, and
+ * section 2): the pages start under the card's head (the airport card's
+ * tabs float at its foot since C1, 2026-11-14; the element handed in marks
+ * where the pages start, sticky under the head), and
  *  - back on a tab, the card is where it was on it;
  *  - a tab not yet seen, picked with the bar pinned, opens at its own top,
  *    just under the bar, not part way down (the scroll the last tab was at:
@@ -53,7 +55,8 @@ function placeTab(tabs: HTMLElement, kept: number | null | undefined) {
   const margin = parseFloat(style.marginTop) || 0;
   const rootAt = root.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
   const pinAt = rootAt + margin - stickyTop;
-  // Room for the bar to stay pinned whatever the tab's length.
+  // Room for the pages to stay under the head whatever the tab's length,
+  // which keeps the floating bar, at the root's end, at the card's foot.
   root.style.minHeight = `${Math.max(0, scroller.clientHeight - stickyTop + margin)}px`;
   if (kept === undefined) return;
   if (kept !== null) scroller.scrollTop = kept;

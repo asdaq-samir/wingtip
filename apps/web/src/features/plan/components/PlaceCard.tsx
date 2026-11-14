@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useId, useMemo, useState, useEffectEvent } from "react";
+import { useEffect, useId, useMemo, useState, useEffectEvent } from "react";
 import { usePrefetchQuery, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
 import { useKeptAirport } from "../../../lib/preferences";
@@ -8,7 +8,6 @@ import { CardHead } from "../../../components/CardHead";
 import { SheetCard } from "../../../components/SheetCard";
 import { PINNED_BELOW } from "../../../components/PinnedHead";
 import { CardTitle } from "../../../components/CardTitle";
-import { CardPictures, type CardSlide } from "../../../components/CardPictures";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { CardTabPanel } from "../../../components/CardTabs";
 import { Tabs } from "../../../components/ui/tabs";
@@ -20,35 +19,30 @@ import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/t
 import { compassPoint } from "../../../lib/compass";
 import { useGeo, type Geo, type LatLon } from "../../../lib/geo";
 import { awayFrom } from "../../../lib/useAway";
-import { chipFillOf } from "../../../lib/map/marks/flightCategory";
-import { inkOn } from "../../../lib/scoreScale";
 import { clockTime, feet, miles, nm, zoneName } from "../../../lib/format";
 import { reportedWind } from "../format";
 import { placeWind } from "./place/placeWind";
-import { FaaChart } from "./AirportDiagram";
-import { RunwaySketch } from "./RunwaySketch";
 import { runwaysLeftOut, stripsOf } from "../lib/runwaySketch";
 import { TEXT } from "../../../lib/text";
-import { diagramRunwaysPicture } from "../../../lib/diagram";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
 import { prefersReducedMotion } from "../../../lib/motion";
 import { arrivalHour, hoursOf, sentenceOf } from "../lib/hourly";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery, photosQuery, servicesQuery } from "../../../lib/queryClient";
 import { StopStrip, type SuggestedStop } from "./StopServices";
-import { PhotoSlide } from "../../../components/PictureSlides";
 import { PlaceChartsTab } from "./place/PlaceChartsTab";
 import { PlaceInfoTab } from "./place/PlaceInfoTab";
 import { PlaceRunwaysTab } from "./place/PlaceRunwaysTab";
 import { PlaceWeatherTab } from "./place/PlaceWeatherTab";
 import { PlaceSubtitle } from "./place/PlaceSubtitle";
-import { PlaceTabBar, PlaceWeatherLine, type PlaceTab } from "./place/PlaceTabBar";
+import { PlaceTabBar, type PlaceTab } from "./place/PlaceTabBar";
+import { PlaceFacts } from "./place/PlaceFacts";
+import { PlacePictures } from "./place/PlacePictures";
+import { runwaysPictureOf } from "./place/runwayPicks";
+import { useFlyHereMinutes } from "./place/flyHereTime";
 import { useShown } from "../../../lib/shown";
-import { Badge } from "../../../components/ui/badge";
+import StatusBadge from "../../../components/StatusBadge";
 import { callEngine } from "../../../lib/engine/engine";
-
-const SketchViewer = lazy(() => import("./SketchViewer"));
-const PictureViewer = lazy(() => import("./AirportDiagramViewer")); // the pictures behind the diagram, full screen to pinch in on
 
 /** "18 nm NE", from wherever the card is measured from. */
 function away(geo: Geo, from: LatLon, to: LatLon): string {
@@ -63,7 +57,15 @@ function away(geo: Geo, from: LatLon, to: LatLon): string {
 function distanceOf(geo: Geo | null, place: AirportPlace, from: { point: LatLon; name: string | null } | null): string | null {
   const itself = !!from?.name && (sameField(from.name, place.ident) || (geo?.distanceNm(from.point, place) ?? Infinity) < 0.5);
   if (!geo || !from || itself) return null;
-  return from.name ? `${away(geo, from.point, place)} of ${from.name}` : away(geo, from.point, place);
+  // "18 nm NE|C81", one string so the card redraws only when it changes; parted again by awayOf.
+  return `${away(geo, from.point, place)}|${from.name ?? ""}`;
+}
+
+/** The distance's words for the Info tab, "18 nm NE of C81", and its two parts for the fact strip. */
+function awayOf(distance: string | null) {
+  if (!distance) return { words: null, fact: null };
+  const [words = "", from = ""] = distance.split("|");
+  return { words: from ? `${words} of ${from}` : words, fact: { words, from: from || null } };
 }
 
 /** Who may land there, the card's one use line on every app (the owner,
@@ -98,10 +100,14 @@ function knownOf(queryClient: QueryClient, ident: string): { name: string; categ
  * the owner's pick of its redesign (A2, 2026-10-29): its ident with its
  * name and town, Share and ✕; four things to do under them -- fly there,
  * land there on the way, call it, keep it a Favorite (the owner,
- * 2026-11-11) -- and directly under them its four tabs (the owner's T4,
- * 2026-11-14), the field's report in a line under them: Info (its
- * pictures first, then its details, frequencies, lights and services), Weather (the weather there hour by hour, G1, over the
- * reports as sent), Runways and Charts. Opened
+ * 2026-11-11), Fly Here saying the time there; laid out after Apple Maps'
+ * place card at the owner's pick of C1 (2026-11-14, canvas
+ * V1d9RDbmY1aczc4LfXed7a, "Airport card after Apple Maps"): under the
+ * actions a row of facts (PlaceFacts), then its pictures, then the page of
+ * the tab picked in the floating bar at the card's foot (PlaceTabBar,
+ * which takes the place of T4's tabs under the actions): Info (its
+ * details, frequencies, lights and services), Weather (the weather there
+ * hour by hour, G1, over the reports as sent), Runways and Charts. Opened
  * by a tap on the airport on the chart (AirportsGl), and held in the
  * address (`?place=KDLH`), so a link lands on it.
  *
@@ -162,7 +168,10 @@ export default function PlaceCard({
   // How far, from own ship's fix as it is (not useOwnShipNear's, a hundredth
   // of a degree old), as words, so the card redraws only when they change.
   const geo = useGeo();
-  const distance = useOwnShip((o) => (place ? distanceOf(geo, place, o.enabled && o.fix ? { point: o.fix, name: null } : from) : null));
+  const distance = awayOf(
+    useOwnShip((o) => (place ? distanceOf(geo, place, o.enabled && o.fix ? { point: o.fix, name: null } : from) : null)),
+  );
+  const flyTime = useFlyHereMinutes(place ?? null, from);
   // Fly Here tapped: the tile says so at once, a frame before the route
   // is drawn (PlanWorkspace's flyHere), which is a moment of a phone's --
   // the tap looked lost under it, at the pilot's ask for no lag. The card
@@ -202,7 +211,6 @@ export default function PlaceCard({
     return { sketchedRunways: strips.map((r) => r.ends.join("/")), leftOut: place ? runwaysLeftOut(place.runways, strips) : 0 };
   }, [place]);
   const sketched = sketchedRunways.length > 0;
-  const [diagramOpen, setDiagramOpen] = useState<"faa" | "sketch" | null>(null);
   // The field from the air, the USGS's, and from the ground where
   // Wikipedia has a free photo (wingtip.airport_photos), the first pages of
   // the pictures, at the owner's ask ("airport photos swipe behind the
@@ -213,7 +221,6 @@ export default function PlaceCard({
   // The services asked for with it, for the Info tab's foot (StopServices:
   // the fuel first in its On the field).
   usePrefetchQuery(servicesQuery(ident));
-  const [picture, setPicture] = useState<"aerial" | "photo" | null>(null);
   const [noRunwaysPicture, setNoRunwaysPicture] = useState(false);
   // The state as the FAA writes it ("MN"), not ISO's region ("US-MN").
   const where = place ? [place.municipality, place.region?.replace(/^US-/, "")].filter(Boolean).join(", ") : null;
@@ -244,18 +251,10 @@ export default function PlaceCard({
       ? { category: nearCategory, said: `from the report of ${nearby?.ident}, another station, not this field's own` }
       : null;
   const category = weather?.category ?? approximate?.category ?? null;
-  const chipColour = category ? chipFillOf(category) : null;
-  const chip = category && chipColour && (
-    <Badge
-      // In whichever ink reads on the colour (inkOn): white on a no-report
-      // grey was 2.6:1. The FAA's colours (lib/map/marks/flightCategory).
-      className={cn("h-[1.625rem] px-2.5 font-bold", TEXT.detail)}
-      style={{ backgroundColor: chipColour, color: inkOn(chipColour) }}
-      data-testid="place-category"
-    >
-      {weather?.category ? (
-        category
-      ) : (
+  // The shared StatusBadge in the category's chip colour (AIM 7-1-7's categories, the FAA's colours).
+  const chip = category && (
+    <StatusBadge category={category} className="h-[1.625rem] px-2.5" data-testid="place-category">
+      {weather?.category ? undefined : (
         <>
           {/* Words for VoiceOver, which may read a bare "≈" as a symbol;
               an aria-label on a role-less span may be ignored. */}
@@ -265,7 +264,7 @@ export default function PlaceCard({
           </span>
         </>
       )}
-    </Badge>
+    </StatusBadge>
   );
   // The weather in a line at the top of its tab where there is no
   // forecast to say, as a pilot reads a report first: the wind, the
@@ -304,90 +303,6 @@ export default function PlaceCard({
   const ident4 = place?.ident ?? ident;
   // The Charts tab's count: the d-TPP's charts it lists, the diagram once.
   const charts = (place?.procedures ?? []).filter((c) => c.kind !== "APD").length + (place?.airport_diagram_url ? 1 : 0);
-  // The pictures, a swipe across (PictureSlides): the field from the air
-  // first, then its runways, then the field from the ground, at the
-  // owner's ask (2026-10-29: "make the aerial view as the first image and
-  // then next one can be the airport diagram"); the runways first where
-  // there is no aerial.
-  const runwaysSlide = (
-    <div className="relative size-full bg-background">
-      {/* A tap where there is nothing to draw opens the Runways tab
-          where it has rows (runways whose ends are unsurveyed, a pattern
-          altitude); otherwise it is words, not a button. */}
-      {place && !sketched && (
-        <div
-          data-testid="place-runway-sketch"
-          className={cn("absolute inset-0 flex items-center justify-center text-muted-foreground", TEXT.note)}
-        >
-          No runways to draw
-        </div>
-      )}
-      {place && sketched && (
-        <div
-          role="img"
-          data-testid="place-runway-sketch"
-          aria-label={`${place.ident} runways ${sketchedRunways.join(", ")}, north up${leftOut ? `, ${leftOut} more not drawn, their ends unsurveyed` : ""}. ${place.airport_diagram_url ? "Airport diagram" : "Runways sketch"}`}
-          // The whole head, as the photos fill it, the name on the shade over
-          // its foot: kept clear of the name, the crop sat in a box with bands
-          // either side and under it (the owner's screenshot, 2026-10-29: "Why
-          // is airport diagram not filling the rest of the space"). Full
-          // screen from the head's button once it is shown alone (PhotoHead).
-          className="absolute inset-0"
-        >
-          {/* The FAA's own diagram, cropped to its runways, where the field
-            has one, at the pilot's ask; the card's sketch of them
-            where it has none, or the crop cannot be had -- not asked for
-            where the planner already knows it cannot (WEB-41). */}
-          {place.airport_diagram_cycle && place.airport_diagram_runways !== false && !noRunwaysPicture ? (
-            <img
-              src={diagramRunwaysPicture(place.ident, place.airport_diagram_cycle)}
-              alt=""
-              onError={() => setNoRunwaysPicture(true)}
-              data-testid="place-diagram-runways"
-              // The diagram's white paper round it, black at night: the
-              // inversion turns the paper too.
-              className="absolute inset-0 size-full bg-white object-cover dark:invert"
-            />
-          ) : (
-            <RunwaySketch runways={place.runways} lat={place.lat} lon={place.lon} />
-          )}
-        </div>
-      )}
-    </div>
-  );
-  const slides: (CardSlide | null | undefined)[] = [
-    photos && {
-      key: "aerial",
-      open: () => setPicture("aerial"),
-      label: `${ident4} from the air, full screen`,
-      testId: "place-aerial-open",
-      picture: <PhotoSlide src={photos.aerial_url} alt="" label={`${ident4} from the air`} testId="place-aerial" />,
-    },
-    {
-      key: "diagram",
-      picture: runwaysSlide,
-      testId: "place-diagram-open",
-      open: place && sketched ? () => setDiagramOpen(place.airport_diagram_url ? "faa" : "sketch") : undefined,
-      label: place?.airport_diagram_url ? `${ident4} airport diagram, full screen` : `${ident4} runways sketch, full screen`,
-    },
-    photos?.photo && {
-      key: "photo",
-      open: () => setPicture("photo"),
-      label: `${ident4} from the ground, full screen`,
-      testId: "place-photo-open",
-      picture: (
-        <PhotoSlide
-          src={photos.photo.url}
-          alt=""
-          label={`${ident4} from the ground`}
-          testId="place-photo"
-          creditTestId="place-photo-credit"
-          // Its photographer and licence, as Commons' licences ask.
-          credit={`${photos.photo.credit}${photos.photo.license ? ` · ${photos.photo.license}` : ""}`}
-        />
-      ),
-    },
-  ];
   // The pill's line and picture, at the owner's pick (P5, 2026-10-29): the
   // category as the chip says it ("≈" where it is not the field's own),
   // the reported wind as FPL's list writes it, and the name; the head's
@@ -401,11 +316,7 @@ export default function PlaceCard({
   ]
     .filter(Boolean)
     .join(" · ");
-  const pillPicture =
-    photos?.aerial_url ??
-    (place && sketched && place.airport_diagram_cycle && place.airport_diagram_runways !== false && !noRunwaysPicture
-      ? diagramRunwaysPicture(place.ident, place.airport_diagram_cycle)
-      : undefined);
+  const pillPicture = photos?.aerial_url ?? (place && sketched ? (runwaysPictureOf(place, noRunwaysPicture) ?? undefined) : undefined);
   const share = () =>
     void shareOrCopy({ title: place?.name ?? ident, url: `${location.origin}/app/plan?place=${place?.ident ?? ident}` }).catch(() => {});
   return (
@@ -428,47 +339,21 @@ export default function PlaceCard({
             // Breakfast and Brunch Restaurant"), a NOTAM's badge after it
             // where one closes the field or a TFR is near, and under it its
             // use line or closed label (kindOf, PlaceSubtitle).
-            sub={<PlaceSubtitle ident={ident} place={place} name={name && name !== ident4 ? name : null} kind={kind} />}
+            sub={
+              <PlaceSubtitle
+                ident={ident}
+                place={place}
+                name={name && name !== ident4 ? name : null}
+                kind={kind}
+                tower={place ? (place.towered ? "Towered" : "Non-towered") : null}
+              />
+            }
             onClose={onClose}
             onShare={share}
             closeTestId="place-close"
             shareTestId="place-share"
             pill={{ line: pillLine || undefined, picture: pillPicture }}
           />
-          {/* The pictures' lightboxes (Base UI Dialogs), opened from the
-              pictures lower in the card (CardPictures). */}
-          {diagramOpen === "faa" && place?.airport_diagram_url && (
-            <FaaChart
-              title={`${place.ident} airport diagram`}
-              url={place.airport_diagram_url}
-              airport={place.ident}
-              onClose={() => setDiagramOpen(null)}
-            />
-          )}
-          {picture && photos && (
-            <Suspense fallback={null}>
-              <PictureViewer
-                title={`${ident4} ${picture === "aerial" ? "from the air" : "from the ground"}`}
-                pages={[
-                  picture === "aerial" || !photos.photo
-                    ? { src: photos.aerial_url, width: 900, height: 600 }
-                    : { src: photos.photo.url, width: photos.photo.width ?? 900, height: photos.photo.height ?? 600 },
-                ]}
-                onClose={() => setPicture(null)}
-              />
-            </Suspense>
-          )}
-          {diagramOpen === "sketch" && place && (
-            <Suspense fallback={null}>
-              <SketchViewer
-                ident={place.ident}
-                runways={place.runways}
-                lat={place.lat}
-                lon={place.lon}
-                onClose={() => setDiagramOpen(null)}
-              />
-            </Suspense>
-          )}
           <PlaceActions
             place={place ?? null}
             ident={kept?.ident ?? ident}
@@ -479,8 +364,27 @@ export default function PlaceCard({
             }}
             onAddStop={onAddStop}
             addStopOff={addStopOff}
+            time={flyTime}
           />
           {place && stop && <StopStrip ident={place.ident} stop={stop} />}
+          {place && (
+            <PlaceFacts
+              place={place}
+              category={category}
+              approximate={weather?.category ? null : (approximate?.said ?? null)}
+              away={distance.fact}
+            />
+          )}
+          {place && (
+            <PlacePictures
+              place={place}
+              photos={photos}
+              sketchedRunways={sketchedRunways}
+              leftOut={leftOut}
+              noRunwaysPicture={noRunwaysPicture}
+              onNoRunwaysPicture={() => setNoRunwaysPicture(true)}
+            />
+          )}
         </>
       ) : (
         <div className="flex flex-col pt-[var(--corner-inset,0.75rem)]" data-to-edge="">
@@ -497,34 +401,15 @@ export default function PlaceCard({
         </div>
       )}
 
-      {/* The card's four tabs directly under its actions (the owner,
-          2026-10-29, and T4, 2026-11-14: they sat under the pictures, at the
-          half card's foot), greyed until the answer comes: a tap would raise
-          the sheet over empty pages. */}
+      {/* The tab's page, then the tabs in a bar floating at the card's foot (C1, the owner, 2026-11-14), greyed
+          until the answer comes: a tap would raise the sheet over empty pages. */}
       {!(error && !place) && (
         <Tabs value={tab} onValueChange={(next) => setPicked(next as typeof tab)} className="gap-0">
-          {/* Pinned directly under the card's head (PINNED_BELOW, plain CSS), frosted as it is, edge to edge, the
-              control at the card's margins: on the control itself the -mx-4 kept its 100% width, so it began at
-              the sheet's edge and stopped 32 short of the other, the content showing through (the owner's KORD). */}
-          <div ref={setTabBar} className={cn("frost-head sticky z-10 -mx-4 mt-3 scroll-mt-28 px-4 py-1", PINNED_BELOW)}>
-            <PlaceTabBar onPick={setPicked} disabled={!place} category={metar?.flight_category ?? null} charts={charts} />
-          </div>
-          <PlaceWeatherLine metar={metar} />
+          {/* Where a page starts, sticky under the card's head (PINNED_BELOW): a tab not yet seen opens there
+              (useTabScroll), which keeps the pages tall enough for the bar to stay at the card's foot. */}
+          <div ref={setTabBar} aria-hidden className={cn("sticky h-0", PINNED_BELOW)} />
           <CardTabPanel value="radio" className="space-y-0">
-            {/* The field from the air, its runways and from the ground, a
-                row of large tiles first on Info, as Apple Maps' place card
-                has its photos (the owner's screenshot, 2026-11-10), a click
-                each to its lightbox. */}
-            {place && (
-              <div className="pb-5">
-                <CardPictures
-                  slides={slides}
-                  label={`${ident4}: its runways${photos ? ", from the air" : ""}${photos?.photo ? ", from the ground" : ""}`}
-                  testId="place-pictures"
-                />
-              </div>
-            )}
-            {place && <PlaceInfoTab place={place} where={where} distance={distance} />}
+            {place && <PlaceInfoTab place={place} where={where} distance={distance.words} />}
           </CardTabPanel>
           <CardTabPanel value="weather" className="space-y-0">
             <PlaceWeatherTab
@@ -546,6 +431,7 @@ export default function PlaceCard({
           <CardTabPanel value="diagrams" className="space-y-0">
             {place && <PlaceChartsTab place={place} sketched={sketched} startOn={startOn} />}
           </CardTabPanel>
+          <PlaceTabBar onPick={setPicked} disabled={!place} category={metar?.flight_category ?? null} charts={charts} />
         </Tabs>
       )}
       {isLoading && !known && <p className={cn("pt-4 text-muted-foreground", TEXT.prose)}>Fetching the airport…</p>}

@@ -16,13 +16,18 @@ import { useNotamMarks, useNotamSheet } from "./notamBadges";
  * owner, 2026-11-13: one line on every app, the engine's words, "Private:
  * permission required"), or NASR's closed label in the warning ink
  * (decision 0043): beside the name in brackets, it cut a long name to a
- * few letters at an iPhone's width.
+ * few letters at an iPhone's width. After the name, whether the field has
+ * a control tower, "Towered" or "Non-towered" (NASR's tower type, the
+ * planner's `towered`), as Maps says a place's kind beside its name (the
+ * owner, 2026-11-14, C1 on the canvas V1d9RDbmY1aczc4LfXed7a): the name
+ * fitted to the room left.
  */
 export function PlaceSubtitle({
   ident,
   place,
   name,
   kind,
+  tower,
 }: {
   ident: string;
   place: AirportPlace | undefined;
@@ -30,6 +35,8 @@ export function PlaceSubtitle({
   name: string | null;
   /** Its use line, or its closed label. */
   kind: string | null;
+  /** "Towered" or "Non-towered" once the answer is in. */
+  tower: string | null;
 }) {
   const mark = useNotamMarks(ident, place).field;
   const sheet = useNotamSheet();
@@ -38,10 +45,22 @@ export function PlaceSubtitle({
       {kind}
     </span>
   );
-  if (!name && !mark) return kindLine || null;
+  const towerWords = tower && (
+    <span className="shrink-0 whitespace-nowrap" data-testid="place-tower">
+      {name ? (
+        <span aria-hidden className="whitespace-pre">
+          {" "}
+          ·{" "}
+        </span>
+      ) : null}
+      {tower}
+    </span>
+  );
+  if (!name && !mark && !tower) return kindLine || null;
   const words = (
     <>
       {name && <FitLine className="min-w-0">{name}</FitLine>}
+      {towerWords}
       {mark && <NotamBadge mark={mark} kind="field" />}
     </>
   );
