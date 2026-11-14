@@ -125,12 +125,12 @@ struct AirportPlaceHead: View {
                 Text(closed).font(.subheadline.weight(.semibold)).foregroundStyle(WingtipInk.problem)
                     .accessibilityIdentifier("airport-card-closed")
             }
-            let use = Result { try Engine.airportUseWords(private: place.isPrivate, military: place.military) }
+            let use = FieldNotams.useWords(place)
             if let words = try? use.get().words {
                 Text(words).font(.subheadline).foregroundStyle(WingtipInk.caution).accessibilityIdentifier("airport-card-use")
             }
             ProblemLine(use, "Who may land here")
-            let data = Result { try Engine.airportDataWords(dataSource: place.dataSource, infoDate: place.infoDate) }
+            let data = FieldNotams.dataWords(place)
             if let words = try? data.get() { Text(words).font(.subheadline).foregroundStyle(.secondary) }
             ProblemLine(data, "Where its figures come from")
             // A NOTAM in force that closes the field, or a TFR near it, its

@@ -82,7 +82,18 @@ final class FieldNotams {
     /// airport_notams_none); nil where "none heard" is right.
     var outsideNotams: String? {
         guard let place else { return nil }
-        return (try? Engine.airportNotamsNone(private: place.isPrivate, military: place.military, notamId: place.notamId)) ?? nil
+        return try? Engine.airportNotamsNone(private: place.isPrivate, military: place.military, notamId: place.notamId)
+    }
+
+    /// Who may land at a field and where its figures come from, the engine's
+    /// airport_use_words and airport_data_words, each kept as a Result so a
+    /// failure is shown, not read as none.
+    static func useWords(_ place: AirportPlace) -> Result<EngineContract.AirportUseWordsAnswer, Error> {
+        Result { try Engine.airportUseWords(private: place.isPrivate, military: place.military) }
+    }
+
+    static func dataWords(_ place: AirportPlace) -> Result<String?, Error> {
+        Result { try Engine.airportDataWords(dataSource: place.dataSource, infoDate: place.infoDate) }
     }
 
     /// The card's place, which the badges go next to.

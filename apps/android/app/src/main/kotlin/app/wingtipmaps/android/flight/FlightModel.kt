@@ -9,6 +9,7 @@ import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.distanceNm
+import app.wingtipmaps.android.engine.generated.airportUseWords
 import app.wingtipmaps.android.engine.generated.glideReaches
 import app.wingtipmaps.android.engine.generated.stripFuel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -89,4 +90,8 @@ class FlightModel @Inject constructor(private val session: FlightSession) : View
      *  airplane's own glide ratio (false with none). */
     fun glideReaches(fix: OwnShip.Fix, field: NearestAirport): Result<Boolean> =
         Engine.glideReaches(fix.altitudeFt, fix.groundspeedKt, field.distanceNm, field.elevationFt, session.inFlight.glideRatio)
+
+    /** Who may land at a field, the engine's airport_use_words (14 CFR 91.103:
+     *  a private or military field is not the pilot's to use unasked). */
+    fun useWords(field: NearestAirport): String? = Engine.airportUseWords(field.isPrivate, field.military).getOrNull()?.use
 }
