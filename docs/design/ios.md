@@ -259,6 +259,30 @@ view without dismissing the sheet").
   card" ([HIG Maps][hig-maps]). This applies only where MapKit draws
   the base map.
 
+**Swipes and the camera (2026-11-14, the web's card stack and camera):**
+a content card parks at its pill on a swipe down and a drag past the
+pill leaves it there (`CardHost` makes every card but You, Settings and
+the Map card `interactiveDismissDisabled`); You, Settings and the Map
+card go from full to half on the sheet's own detents and close from
+half. A tap on a mark never flies the map: the map eases only where the
+card coming up at half would hide the mark, and a followed airplane is
+kept where it is on the screen, the map moved by what it moved
+(`Views/MapCamera`).
+
+**Statuses are badges** (rules.md §9): `Design/StatusBadge` (BadgeStatus:
+Active, Later, Cold, Closed, Out of service, Private, Military, Joint
+use, In the air, On the ground, Emergency) in the `color.badge.status-*`
+tokens under white words, and `CategoryBadge` for a flight category; on
+the search's and Nearest's field rows, the field NOTAMs, the airspace
+card's special-use areas and TFRs, the TFR card, the airport card's
+Closed and Weather, and the airplane cards.
+
+**3D:** MapKit's own 3D (`RaisedMapView`, Apple's realistic elevation)
+has no setting for how far heights are stood up and draws no extruded
+airspace, so the web's Heights ×1/×3/×5 and its Class B shelves have no
+iPhone counterpart; the iPhone's 3D is true height, as the web's pilot
+and replay views are.
+
 ### Bars and where the primary action sits
 
 - **Toolbars.**
@@ -348,6 +372,17 @@ view without dismissing the sheet").
 ---
 
 ## 1. The one search and its results
+
+**Built (2026-11-14, the web's claude/one-search-air):** the one search,
+"Search airports and airplanes", is the only airplane search; the old
+"Callsign, N-number or address" page (`TrafficFindView`) is gone. It
+finds the airplanes the map hears by callsign, registration or ICAO
+address (`AirplaneHits.heard`), and the airplanes' Favorites and Recents
+sit on its page after the airports'. The Airplane page's Search for Your
+Airplane and the Favorites' Add an Airplane open it with the placeholder
+"Search for your airplane" or "Search for an airplane to keep"
+(`OneSearchModel.Keeping`), the airplane picked flown or kept, not
+opened. Typing "traffic" offers Show Traffic in Do.
 
 **Follow:**
 
@@ -582,6 +617,29 @@ The card starts with the title, then the actions and the facts.
       ForeFlight
     - It sits in a `safeAreaBar(edge: .bottom)` as one glass capsule
 
+**Built (the owner's C1, 2026-11-14, after Maps' Teriyaki Madness card;
+rules.md §2):** this supersedes items 5 to 10 above where they differ.
+`AirportCard` is the head (`AirportPlaceHead`: the name, "Towered
+airport" or "Non-towered airport" and the town, Closed as its badge
+where NASR closes the field); the four action tiles at 56 pt -- Fly Here
+filled, saying the planner's ETE where the field is the destination,
+else "≈ 38m", the engine's `fuel_estimate` over the distance at the
+picked airplane's cruise TAS (`AirportDistance.minutes`, nothing with no
+airplane), Depart From held under it as its menu; Add Stop, Call and
+Favorite; then the facts in a sideways strip (`FactStrip`, `FactCell`:
+Weather as the category's badge, Wind, Longest or Runway with closed and
+NOTAM-unusable runways left out, Elevation, Distance, Fuel); then the
+pictures as large rounded tiles over every tab (`AirportTiles` on
+`PictureStrip` and `PictureTile`: from the air, the runways -- the FAA's
+diagram cropped, else the sketch -- and from the ground, each opening
+`PictureViewer` to pinch in on); then the tab's page. The tabs Info,
+Weather, Runways and Charts are the stock `.tabs` picker in the system's
+bottom toolbar, Liquid Glass floating at the card's foot (`CardTabBar`),
+put away at the pill (`cardAtPill`); Share is the bar's leading button
+and the close its trailing one. T4's tabs under the actions, the one-line
+report, the Approaches, Frequencies and NOTAMs tiles and the old foot
+toolbar are gone.
+
 **Detents:**
 
 - **pill:** the ident tile, small and leading; the name; the category
@@ -634,20 +692,27 @@ The card starts with the title, then the actions and the facts.
   example "Departed Gate", "Taxiing for 13m", "Landed / It's 6:32am
   (22m early)" ([flighty.com][flighty]).
 
-**Built (the owner's P1, 2026-11-14, rules.md's airplane card):**
+**Built (the owner's P1 and C1, 2026-11-14, rules.md's airplane card):**
 `AirplaneProfileView` is the airplane card by its N-number, its own and
 any other. `AirplanePlaceHead`: the N-number, the registry's make, model
 and year under it (from `/api/traffic/registered`, the registry alone,
-at once), the Planespotters.net photo beside its credit only once
-`/api/airplanes/{n}/photo` answers with one, and four tiles -- Fly This
-filled, Follow (a menu of the takes-off and lands alerts), Favorite and
-Share, Follow and Favorite greyed without the registry's ICAO address.
-Then the stock `.tabs` picker, Flights · Info · Figures, the picked one in
-the tint and Flights with its count, and one status line under it
+at once), and four tiles -- Fly This filled, Follow (a menu of the
+takes-off and lands alerts), Favorite and Share, Follow and Favorite
+greyed without the registry's ICAO address. Under them one status line
 (`AirplaneLookup.status`: "Checking whether it's in the air…" while the
-live find is out, "In the air · 4,500 ft · 108 kt" as a tap that tracks
-it, else where its last flight ended, else "Not heard in the last 6
-weeks"). Flights lists its past flights by that address, each ▶ row
+live find is out, In the air as its badge then "4,500 ft · 108 kt" as a
+tap that tracks it, On the ground as its badge then where it landed,
+else "Not heard in the last 6 weeks"); the facts strip (`AirplaneFacts`:
+Type, Year, Seats, Engines, Registration, Owner); the Planespotters.net
+photo as a picture tile (`AirplanePhotoTile`) once
+`/api/airplanes/{n}/photo` answers with one; and Flights · Info · Figures
+in the airport card's floating `CardTabBar`, Flights with its count. A
+tracked flight's card (`AirplaneCard`) is laid out the same: its callsign
+with what it is and who flies it, four tiles (Follow filled, Alert,
+Debrief, Favorite), its flight now (In the air or an emergency's code as
+badges), the same facts strip, its photo and a still map of where it has
+flown (`FlownSketchTile`) as picture tiles, and Info then Flights in the
+bar. Flights lists its past flights by that address, each ▶ row
 pushing its replay (`PastFlightCard`); Info is `AirplaneInfoSections`, the
 FAA groups in the web's order with the owner shown; Figures holds every
 figure, the endurance, the handbook photo and the checklists. The FPL's
@@ -704,6 +769,13 @@ figures anywhere depend on a default type.
 ---
 
 ## 3. The flight plan and route editing
+
+**Route points (the owner's option A, 2026-11-14; rules.md §10):** a
+waypoint or present position the course turns at is a white dot ringed
+in the course's magenta where the legs meet, its name on a white pill
+edged in the waypoint magenta outside the turn, turned with the map
+(`Views/RoutePointMarks`: `RouteTurns.outside` on MapKit's `MKMapPoint`,
+`RoutePointMarkView`, `RouteMarksLayer` with the checkpoints).
 
 **Follow:**
 
@@ -990,6 +1062,15 @@ word. A new caution plays `haptic.warning` once, never on every refresh.
 ---
 
 ## 6. NOTAMs
+
+**TFR and VOR cards (2026-11-14):** a TFR's card (`Views/TfrCard`, from
+the airspace card's rows or `?tfr=6/4116`) and a VOR's (`Views/NavaidCard`,
+from a tap on its mark or `?navaid=OBK@42.2214,-87.9517`) read as every
+card, Share at the bar's start sending the card's own link; the TFR's
+Active or Later is its badge, its words the engine's `tfr_read`; the
+VOR's Direct To, Add to Route and frequency to copy, its radial, Morse,
+service volume and hours the engine's. The phone reads VORs from the
+regions kept on it.
 
 **Follow:**
 
@@ -1428,6 +1509,15 @@ reader could not parse plays a warning notification once.
     go and no-go colours stay as they are in every look.
   - Night follows the system.
 
+**Theme and Appearance moved to the Map card** (its Look section, the
+owner, 2026-11-14); Settings keeps no Display group, as the iPhone has no
+Sunlight. The Map card (`MapSettingsView`) is the charts as pictures with
+None first and the Approach Plates switch under them while a chart is
+drawn; four layer tiles, Aeronautical, Weather, Traffic and
+Private/Military (the radar loop and model weather menus under them
+while Weather is on); then Look. The route's Checkpoints and Class B
+Weather are switches in the route's ••• menu, On the Map.
+
 **Opened from** the account button beside the one search, by its tap
 alone: its card over the plan, no menu between (the owner, 2026-11-10:
 "When tapping the avatar just open the settings"), its pages pushed in
@@ -1473,6 +1563,10 @@ people take an explicit action to save", [HIG File management][hig-files]).
 ---
 
 ## 14. The first run
+
+**Built (2026-11-14):** the welcome (`FirstFlight/WelcomeSheet`) centres
+its title, rows and Theme and Appearance across and up and down in the
+room above its buttons, scrolling at the larger text sizes.
 
 **Follow:**
 
