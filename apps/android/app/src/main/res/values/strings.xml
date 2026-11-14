@@ -56,7 +56,6 @@
     <string name="where_from">Where from?</string>
     <string name="where_to">Where to?</string>
     <!-- A field's card's chips and sections. -->
-    <string name="approaches">Approaches</string>
     <string name="notams">NOTAMs</string>
     <string name="diagram">Diagram</string>
     <string name="section_weather">Weather</string>

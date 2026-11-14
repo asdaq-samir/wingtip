@@ -169,6 +169,7 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
 @Composable
 private fun AirplaneButtons(tail: String, looked: AirplaneLookup.State, canFly: Boolean, fly: () -> Unit, modifier: Modifier) {
     val context = LocalContext.current
+    val shareTitle = stringResource(R.string.share_airplane)
     val tracking = hiltViewModel<FlightModel>().tracking
     val favorites by tracking.favorites.collectAsStateWithLifecycle()
     val watches by tracking.watches.collectAsStateWithLifecycle()
@@ -191,7 +192,7 @@ private fun AirplaneButtons(tail: String, looked: AirplaneLookup.State, canFly: 
                 type = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, "${Config.gateway}/app/plan?airplane=$tail")
             }
-            context.startActivity(Intent.createChooser(send, context.getString(R.string.share_airplane)))
+            context.startActivity(Intent.createChooser(send, shareTitle))
         })
     }
     CardButtonGroup(items, modifier)
