@@ -38,8 +38,10 @@ class RouteActions(
     private val from: String? get() = fix?.let(Plan::positionIdent) ?: plan.state.value.dep.ifEmpty { null }
 
     fun canAirport(action: CardAction, place: AirportPlace?): Boolean = when (action) {
-        CardAction.FLY_HERE, CardAction.DEPART_FROM -> place != null
-        CardAction.ADD_STOP -> place != null && routed
+        // A field NASR lists as closed is never offered to fly to, depart
+        // from or stop at (decision 0043): its card says Closed instead.
+        CardAction.FLY_HERE, CardAction.DEPART_FROM -> place != null && place.closed == null
+        CardAction.ADD_STOP -> place != null && place.closed == null && routed
         CardAction.CALL -> !place?.phone.isNullOrBlank()
         CardAction.ADDRESS -> place != null
         else -> false

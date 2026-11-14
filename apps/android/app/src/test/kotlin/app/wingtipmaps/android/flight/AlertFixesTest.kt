@@ -19,7 +19,7 @@ class AlertFixesTest {
     private fun message(id: String, kind: String, alternative: String? = null) = EngineContract.CopilotMessage(
         id = id, kind = kind, level = "caution", title = "t", say = "s", detail = emptyList(), sources = emptyList(), elsewhere = false,
         alternative = alternative?.let {
-            EngineContract.CopilotAlternative(ident = it, lat = 43.0, lon = -89.0, distanceNm = 12.0, courseDeg = 270.0, fuel = true, reserveMin = 30.0, reasons = emptyList())
+            EngineContract.CopilotAlternative(ident = it, lat = 43.0, lon = -89.0, distanceNm = 12.0, courseDeg = 270.0, fuel = true, reserveMin = 30.0, private = false, reasons = emptyList())
         },
     )
 
@@ -42,6 +42,10 @@ class AlertFixesTest {
         assertEquals(AlertFixes.CopilotFix(about = "KMSN", flyTo = null), AlertFixes.copilot(message("weather:KMSN:IFR", "weather")))
         assertEquals(AlertFixes.CopilotFix(about = "KC09", flyTo = "KC09"), AlertFixes.copilot(message("fuel:KMSN", "fuel", alternative = "KC09")))
         assertEquals(AlertFixes.CopilotFix(about = "KMSN", flyTo = null), AlertFixes.copilot(message("night:KMSN", "night")))
+        // A destination NASR lists as closed: its card, and Fly To the open
+        // field best_fields picked instead (decision 0043).
+        assertEquals(AlertFixes.CopilotFix(about = "KC09", flyTo = "KC09"), AlertFixes.copilot(message("closed:00MO", "closed", alternative = "KC09")))
+        assertEquals(AlertFixes.CopilotFix(about = "00MO", flyTo = null), AlertFixes.copilot(message("closed:00MO", "closed")))
         // An area or the ground speed names no field.
         assertEquals(AlertFixes.CopilotFix(about = null, flyTo = null), AlertFixes.copilot(message("sua:R-6901", "sua")))
         assertEquals(AlertFixes.CopilotFix(about = null, flyTo = null), AlertFixes.copilot(message("groundspeed:10", "groundspeed")))

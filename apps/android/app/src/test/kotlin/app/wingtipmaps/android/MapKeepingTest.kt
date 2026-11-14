@@ -103,6 +103,15 @@ class MapKeepingTest {
     }
 
     @Test
+    fun anEmergencyDrawsPrivateAndMilitaryFieldsAndLeavesTheSwitches() {
+        // 14 CFR 91.3(b): any field may be landed at, so the chart shows them
+        // all while the assistant is open, and the pilot's switches after.
+        val kept = MapLayers(airspace = false, tac = true)
+        assertEquals(kept.copy(privateFields = true, military = true), kept.duringEmergency(true))
+        assertEquals(kept, kept.duringEmergency(false))
+    }
+
+    @Test
     fun theOldestRangesGoPastTheLimit() {
         val store = OverlayStore(dir, limitBytes = 10)
         store.store("a", 0, 5, ByteArray(6))

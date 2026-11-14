@@ -102,7 +102,7 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     // badges on what they address (AirportModel.read); the NOTAMs opened
     // over the card.
     val read by model.read.collectAsStateWithLifecycle()
-    val (_, said, marks, badges) = read.takeIf { place != null && it.ident == place.ident } ?: AirportReads.Read()
+    val (_, said, marks, badges, words) = read.takeIf { place != null && it.ident == place.ident } ?: AirportReads.Read()
     val ranked = state.notams.takeIf { place != null }
     var allNotams by rememberSaveable(ident) { mutableStateOf(false) }
     var opened by remember(ident) { mutableStateOf<List<RankedNotam>?>(null) }
@@ -119,9 +119,10 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     val view = AirportCardView(
         marks = marks,
         runways = badges,
-        notams = CardNotams(ranked, said, state.notamsProblem, allNotams, toggle = { allNotams = !allNotams }, open = open),
+        notams = CardNotams(ranked, said, state.notamsProblem, allNotams, toggle = { allNotams = !allNotams }, open = open, none = words.notamsNone),
         onNotam = { open(it.notams) },
         onDiagram = place?.airportDiagramUrl?.let { { diagram = true } },
+        words = words,
     )
 
     // The field's name and ← where the search was, ✕ at the end (CardPage).
@@ -149,6 +150,9 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
                 // A NOTAM closing the field or a TFR near it, a badge by the
                 // field's name, its tap the NOTAM (the owner, 2026-11-11).
                 marks.field?.let { mark -> item(key = "field-notam") { NotamBadgeButton(mark, view.onNotam, Modifier.padding(horizontal = WingtipSpace.Sm)) } }
+                // Closed (NASR, decision 0043) and who may land there, under
+                // the name as the iPhone's head and the web's title say them.
+                if (words.closed != null || words.use != null) item(key = "use") { FieldUseLines(words, Modifier.padding(horizontal = WingtipSpace.Lg)) }
                 facts?.let { f -> item(key = "facts") { FactsRow(f) } }
                 // The sections' tabs pin under the bar as the card scrolls (the
                 // scrolling rule, 2026-11-10), in the sheet's own colour.
@@ -164,6 +168,17 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
         }
     }
     if (diagram) place?.airportDiagramUrl?.let { url -> DiagramOwnShipDialog(place.ident, url, onClose = { diagram = false }) }
+}
+
+/** A closed field's label in the error ink, and the field's use line
+ *  ("Private: permission required"), each the engine's or the planner's
+ *  words (AirportReads.PlaceWords). */
+@Composable
+private fun FieldUseLines(words: AirportReads.PlaceWords, modifier: Modifier) {
+    Column(modifier.padding(vertical = WingtipSpace.Xs)) {
+        words.closed?.let { Text(it, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.error) }
+        words.use?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    }
 }
 
 /** Whether the field is in the search's Favorites (SearchMemory), and the
@@ -227,7 +242,8 @@ private fun ActionPills(place: AirportPlace, facts: AirportFacts?, actions: Rout
     val favorite = stringResource(R.string.action_favorite)
     val (starred, toggle) = rememberFavorite(place)
     val items = buildList {
-        add(GroupAction(flyHere, CardAction.FLY_HERE.icon, filled = true) { actions.airport(CardAction.FLY_HERE, place); onDone() })
+        // Greyed for a field NASR lists as closed: never offered to land (decision 0043).
+        add(GroupAction(flyHere, CardAction.FLY_HERE.icon, filled = true, enabled = actions.canAirport(CardAction.FLY_HERE, place)) { actions.airport(CardAction.FLY_HERE, place); onDone() })
         if (actions.canAirport(CardAction.ADD_STOP, place)) add(GroupAction(addStop, CardAction.ADD_STOP.icon) { actions.airport(CardAction.ADD_STOP, place); onDone() })
         add(GroupAction(call, CardAction.CALL.icon, enabled = actions.canAirport(CardAction.CALL, place)) { actions.airport(CardAction.CALL, place) })
         add(GroupAction(favorite, if (starred) Icons.Filled.Star else Icons.Outlined.StarOutline, checked = starred, onClick = toggle))

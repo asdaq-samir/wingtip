@@ -261,7 +261,7 @@ fun OneSearch(
         val typed = textFieldState.text.isNotBlank()
         val asked = rememberAiOffered()
         val actions = remember(state.query, state.airports, state.waypoints, planState.routed, fix != null, asked) {
-            SearchGroups.actions(state.query, planState.routed, fix != null, (state.airports + state.waypoints).firstOrNull()?.ident, asked)
+            SearchGroups.actions(state.query, planState.routed, fix != null, FieldMarks.firstOffered(state.airports, state.waypoints), asked)
         }
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
             if (typed) {

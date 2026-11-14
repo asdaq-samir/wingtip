@@ -5,6 +5,9 @@ import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.airportDataWords
+import app.wingtipmaps.android.engine.generated.airportNotamsNone
+import app.wingtipmaps.android.engine.generated.airportUseWords
 import app.wingtipmaps.android.engine.generated.fuelNames
 import app.wingtipmaps.android.engine.generated.gonogoRunwayInUse
 import app.wingtipmaps.android.engine.generated.notamSubject
@@ -24,13 +27,34 @@ object AirportReads {
         val said: List<FieldNotams.Said>? = null,
         val marks: NotamMarks = NotamMarks.NONE,
         val badges: RunwayBadges = RunwayBadges(-1, -1),
+        val words: PlaceWords = PlaceWords(),
     )
+
+    /**
+     * The card's lines on the field itself, every one the planner's or the
+     * engine's, the same words the web and the iPhone show: `closed`, the
+     * planner's label for a field NASR lists as closed ("Closed
+     * indefinitely", decision 0043); `use`, airport_use_words' "Private:
+     * permission required" or "Military: prior permission required" (none
+     * for a public or joint-use field); `data`, airport_data_words'
+     * "Owner-reported, last updated Aug 2023" (NASR's INSPECT_METHOD_CODE
+     * 1 or 2); and `notamsNone`, airport_notams_none's empty NOTAM list for
+     * a private field NASR gives no NOTAM id. Each null where it says nothing.
+     */
+    data class PlaceWords(val closed: String? = null, val use: String? = null, val data: String? = null, val notamsNone: String? = null)
 
     fun read(place: AirportPlace, ranked: NotamsRanked?): Read {
         val said = ranked?.notams?.sortedBy { it.rank }?.map { FieldNotams.say(it, place.ident) }
         val marks = notamMarks(ranked?.notams.orEmpty(), place)
-        return Read(place.ident, said, marks, runwayBadges(place, marks))
+        return Read(place.ident, said, marks, runwayBadges(place, marks), words(place))
     }
+
+    fun words(place: AirportPlace): PlaceWords = PlaceWords(
+        closed = place.closed?.ifBlank { null },
+        use = Engine.airportUseWords(place.isPrivate, place.military).getOrNull()?.words,
+        data = Engine.airportDataWords(place.dataSource, place.infoDate).getOrNull(),
+        notamsNone = Engine.airportNotamsNone(place.isPrivate, place.military, place.notamId).getOrNull(),
+    )
 
     /** The fuel grades by their names (the engine's fuel_names); null with
      *  none listed, or where the engine could not say (the codes then). */

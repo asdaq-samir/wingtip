@@ -138,7 +138,8 @@ class StripModel @Inject constructor() : ViewModel() {
             is FieldCommand.Place -> {
                 // The biggest field by the name, as the planner's search ranks
                 // them; not a place the search knows: a question after all.
-                val found = Planner.search(command.words).firstOrNull()
+                // A field NASR lists as closed is never routed to (decision 0043).
+                val found = Planner.search(command.words).firstOrNull { it.closed.isNullOrBlank() }
                 if (found != null) return route(FieldCommand.Route(null, emptyList(), found.ident), plan, pilot, fix)
                 // AICore asked first, so ask() knows whether Nano is here.
                 AiOffered.now()

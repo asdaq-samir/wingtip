@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import app.wingtipmaps.android.R
@@ -85,7 +86,12 @@ fun LazyListScope.searchResults(
     state.problem?.let { item(key = "problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg)) } }
     if (shows(ResultKind.AIRPORTS)) {
         group("airports", R.string.group_airports, state.airports) { a ->
-            ResultRow(a.ident, a.name, where(a), Icons.Filled.LocalAirport) { onPick(SearchPick.Airport(a.ident, a.name)) }
+            // A closed field labelled first in the error ink (decision 0043),
+            // then its use, then where it is.
+            val use = FieldMarks.use(a.use)?.let { stringResource(it) }
+            ResultRow(a.ident, a.name, listOfNotNull(use, where(a).ifEmpty { null }).joinToString(" · "), Icons.Filled.LocalAirport, alert = a.closed?.ifBlank { null }) {
+                onPick(SearchPick.Airport(a.ident, a.name))
+            }
         }
     }
     if (shows(ResultKind.WAYPOINTS)) {
@@ -166,12 +172,19 @@ private fun ResultRow(
     supporting: String?,
     glyph: ImageVector?,
     tint: Boolean = false,
+    alert: String? = null,
     onClick: () -> Unit,
 ) {
+    val error = MaterialTheme.colorScheme.error
+    val under = buildAnnotatedString {
+        alert?.let { withStyle(SpanStyle(color = error)) { append(it) } }
+        if (alert != null && !supporting.isNullOrEmpty()) append(" · ")
+        supporting?.let { append(it) }
+    }
     ListItem(
         onClick = onClick,
         leadingContent = glyph?.let { { Icon(it, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) } },
-        supportingContent = supporting?.takeIf { it.isNotEmpty() }?.let { { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
+        supportingContent = under.takeIf { it.isNotEmpty() }?.let { { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth(),
         content = {

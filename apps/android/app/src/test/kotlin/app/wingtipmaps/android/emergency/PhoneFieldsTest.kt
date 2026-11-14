@@ -42,6 +42,17 @@ class PhoneFieldsTest {
     }
 
     @Test
+    fun theEmergencyFieldsCarryTheUseAsItComes() {
+        // A joint-use field (KFHU) is no "Military field" to best_fields;
+        // only the string tells it from one the services keep to themselves.
+        val fields = PhoneFields.emergency(
+            PhoneFields.nearest(listOf(pin("KFHU", military = "joint"), pin("KMXF", military = "military"), pin("C81")), 3) { PhoneFields.Near(it, 1.0, 90.0, null) },
+            airplaneName = null, glideRatio = null,
+        ).fields.associate { it.ident to it.military }
+        assertEquals(mapOf("KFHU" to "joint", "KMXF" to "military", "C81" to null), fields)
+    }
+
+    @Test
     fun nearestRowsKeepThePinsOwnFacts() {
         val rows = PhoneFields.nearestRows(PhoneFields.nearest(listOf(pin("KMKE", military = "joint")), 1) { PhoneFields.Near(it, 1.0, 90.0, null) })
         assertEquals("joint", rows.single().military)
