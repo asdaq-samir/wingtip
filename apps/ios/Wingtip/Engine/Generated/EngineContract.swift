@@ -1820,6 +1820,8 @@ enum EngineContract {
         var towered: Bool?
         var `private`: Bool?
         var military: Bool?
+        /// NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record.
+        var status: String?
 
         enum CodingKeys: String, CodingKey {
             case ident
@@ -1832,6 +1834,7 @@ enum EngineContract {
             case towered
             case `private`
             case military
+            case status
         }
     }
 
@@ -2429,6 +2432,8 @@ enum EngineContract {
         var fuel: Bool?
         /// Its flight category when the copilot first saw it, so a worse one is said as a change.
         var plannedCategory: String?
+        /// NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record.
+        var status: String?
 
         enum CodingKeys: String, CodingKey {
             case ident
@@ -2443,6 +2448,7 @@ enum EngineContract {
             case military
             case fuel
             case plannedCategory = "planned_category"
+            case status
         }
     }
 
@@ -3662,6 +3668,18 @@ enum EngineContract {
         var departure: String
         var start: [Double]
         var end: [Double]
+    }
+
+    struct FieldStatusAnswer: Codable, Equatable, Sendable {
+        /// Whether the field may be shown or offered as an open one.
+        var `open`: Bool
+        /// A closed field's label: Closed indefinitely, Closed permanently, or Closed; null for an open one.
+        var closed: String?
+    }
+
+    struct FieldStatusInput: Codable, Equatable, Sendable {
+        /// NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where NASR has no record.
+        var status: String?
     }
 
     struct FieldTafAnswer: Codable, Equatable, Sendable {

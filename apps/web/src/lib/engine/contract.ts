@@ -1787,6 +1787,13 @@ export interface EngineContract {
     answer: FieldRelationAnswer;
   };
   /**
+   * Whether a field is open, from the FAA's NASR APT_BASE.csv ARPT_STATUS: O operational is open; CI closed indefinitely, CP closed permanently and any other code are closed, and a closed field is never shown or offered as an open one (the owner's hard rule, decision 0043): hidden from the map and every list, and where it appears at all (a search for its ident, its card) labelled with `closed`. `status` null where NASR has no record of the field: not judged, open, unlabelled.
+   */
+  field_status: {
+    input: FieldStatusInput;
+    answer: FieldStatusAnswer;
+  };
+  /**
    * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (FAA-H-8083-28B 27.4.1, 24.4.3.8.2).
    */
   field_taf: {
@@ -4846,6 +4853,10 @@ export interface BestFieldsInput {
     towered?: boolean | null;
     private?: boolean | null;
     military?: boolean | null;
+    /**
+     * NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record.
+     */
+    status?: string | null;
   }[];
   /**
    * At most this many; 10 where not given.
@@ -5426,6 +5437,10 @@ export interface CopilotField {
    * Its flight category when the copilot first saw it, so a worse one is said as a change.
    */
   planned_category?: string | null;
+  /**
+   * NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record.
+   */
+  status?: string | null;
 }
 export interface CopilotArea {
   kind: "tfr" | "sua" | "sigmet";
@@ -6498,6 +6513,22 @@ export interface FieldRelationAnswer {
   around: boolean;
   inbound: boolean;
   departing: boolean;
+}
+export interface FieldStatusInput {
+  /**
+   * NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where NASR has no record.
+   */
+  status?: string | null;
+}
+export interface FieldStatusAnswer {
+  /**
+   * Whether the field may be shown or offered as an open one.
+   */
+  open: boolean;
+  /**
+   * A closed field's label: Closed indefinitely, Closed permanently, or Closed; null for an open one.
+   */
+  closed: string | null;
 }
 export interface FieldTafInput {
   ident: string;

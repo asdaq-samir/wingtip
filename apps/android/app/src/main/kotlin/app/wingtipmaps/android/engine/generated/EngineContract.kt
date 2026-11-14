@@ -1806,6 +1806,10 @@ object EngineContract {
         val towered: Boolean? = null,
         val private: Boolean? = null,
         val military: Boolean? = null,
+        /**
+         * NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record.
+         */
+        val status: String? = null,
     )
 
     @Serializable
@@ -2421,6 +2425,10 @@ object EngineContract {
          */
         @SerialName("planned_category")
         val plannedCategory: String? = null,
+        /**
+         * NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record.
+         */
+        val status: String? = null,
     )
 
     @Serializable
@@ -3613,6 +3621,26 @@ object EngineContract {
         val departure: String,
         val start: List<Double>,
         val end: List<Double>,
+    )
+
+    @Serializable
+    data class FieldStatusAnswer(
+        /**
+         * Whether the field may be shown or offered as an open one.
+         */
+        val open: Boolean,
+        /**
+         * A closed field's label: Closed indefinitely, Closed permanently, or Closed; null for an open one.
+         */
+        val closed: String? = null,
+    )
+
+    @Serializable
+    data class FieldStatusInput(
+        /**
+         * NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where NASR has no record.
+         */
+        val status: String? = null,
     )
 
     @Serializable

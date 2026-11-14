@@ -23,6 +23,8 @@ pub mod pack_query;
 pub mod rules;
 pub mod spoken;
 pub mod spoken_ask;
+#[cfg(test)]
+mod spoken_closed_tests;
 pub mod sua_tab;
 pub mod view;
 pub mod view_marks;

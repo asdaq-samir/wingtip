@@ -17,6 +17,9 @@ const RING_STEP_DEG: usize = 10;
 
 /// The fields ranked from `own`, the best first, at most `limit`.
 pub fn best_fields(mode: Mode, own: &Own, airplane: Option<&Airplane>, fields: Vec<Field>, limit: usize) -> Answer {
+    // A closed field is no landing site, a glide's or a diversion's
+    // (wingtip_flight::field, NASR ARPT_STATUS; decision 0043).
+    let fields: Vec<Field> = fields.into_iter().filter(|f| wingtip_flight::field::is_open(f.status.as_deref())).collect();
     let glide = if mode == Mode::Glide { airplane.and_then(|a| a.glide) } else { None };
     // The ground under the airplane as the map's ring takes it: the
     // nearest field's elevation, as near as the page knows the ground.

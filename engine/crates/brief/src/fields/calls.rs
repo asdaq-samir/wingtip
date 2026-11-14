@@ -84,6 +84,7 @@ fn field(i: In, f: &Value) -> R<Field> {
         towered: truth(f, "towered"),
         private: truth(f, "private"),
         military: truth(f, "military"),
+        status: i.opt_str(f, "status")?,
     })
 }
 

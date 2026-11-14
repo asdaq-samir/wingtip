@@ -304,8 +304,8 @@ pub fn title(s: &str) -> String {
 
 /// The airports, navaids and fixes of a phone pack's tables (wingtip.cycle_pack's
 /// COLUMNS: NASR's APT_BASE, NAV_BASE and FIX_BASE, a row each): the
-/// airports open to the public in service by their ICAO ident where they
-/// have one, the navaids in service of the kinds a route flies over, by
+/// open airports (wingtip_flight::field: NASR ARPT_STATUS O, decision 0043)
+/// by their ICAO ident where they have one, the navaids in service of the kinds a route flies over, by
 /// their names, and every fix.
 pub fn places_of(pack: &Pack) -> Vec<Place> {
     let mut out = Vec::new();
@@ -323,7 +323,7 @@ pub fn places_of(pack: &Pack) -> Vec<Place> {
         );
         for r in &t.rows {
             let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(String::as_str).unwrap_or("");
-            if get(site) != "A" || get(status) == "CI" {
+            if get(site) != "A" || !wingtip_flight::field::is_open(Some(get(status))) {
                 continue;
             }
             let (Some(la), Some(lo)) = (num(get(lat)), num(get(lon))) else { continue };
