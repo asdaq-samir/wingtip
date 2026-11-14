@@ -6,7 +6,7 @@ import { ConsolePages, PageLink, PageRow } from "../../components/ConsolePages";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { PAGE_LINK } from "../../components/pageLink";
 import { useCredits } from "../../lib/map/gl/creditStore";
-import { trafficCredit } from "../plan/map/trafficCredit";
+import { trafficCredit } from "../plan";
 import Segmented from "../../components/Segmented";
 import SwitchRow from "../../components/SwitchRow";
 import { ALERT_MODES, useAlertMode, type AlertMode } from "../../components/alertMode";

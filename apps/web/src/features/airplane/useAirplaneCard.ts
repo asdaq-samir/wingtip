@@ -7,7 +7,7 @@ import { aircraftKind } from "../../lib/aircraftKind";
 import { useTracking } from "../../lib/map/position/tracking";
 import { usePreferences, type KeptAircraft } from "../../lib/preferences";
 import { shareOrCopy } from "../../lib/share";
-import { pastFlightsQuery } from "../plan/components/pastFlightsQuery";
+import { pastFlightsQuery } from "../plan";
 import { statusLine } from "./airplaneStatus";
 
 /**

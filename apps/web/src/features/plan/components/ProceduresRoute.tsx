@@ -17,7 +17,7 @@ import { AddStopRow, HoldRow, NewStopCard, Step } from "./procedures/RouteRows";
 import { RouteGrid, type RouteItem } from "./procedures/RouteGrid";
 import { ProcedurePage, ProcedurePicker } from "./procedures/ProcedureSheet";
 import { listTitle } from "./procedures/procedureWords";
-import { plateTitle } from "../../plates/usePlateCard";
+import { plateTitle } from "../../plates";
 
 // The list's types and its Routes row, where PlanWorkspace and the
 // routePanel chunk import them from.

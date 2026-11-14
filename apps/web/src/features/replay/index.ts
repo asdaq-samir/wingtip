@@ -7,7 +7,7 @@ export { ReplayTimeline } from "./ReplayTimeline";
 export { DataBlock } from "./DataBlock";
 export { default as ReplayCameraGl } from "./camera/ReplayCameraGl";
 export { CameraMenu } from "./camera/CameraMenu";
-export { resetReplayCamera, setReplayCamera } from "./camera/cameraStore";
+export { resetReplayCamera, setReplayCamera, useReplayCamera } from "./camera/cameraStore";
 export { dropAudio } from "./audio/audioStore";
 export { useExporting } from "./export/exportStore";
 export { ExportMapGl } from "./export/ExportMapGl";

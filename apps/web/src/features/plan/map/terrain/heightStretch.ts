@@ -1,5 +1,5 @@
 import { usePreferences, type HeightStretch } from "../../../../lib/preferences";
-import { useReplayCamera } from "../../../replay/camera/cameraStore";
+import { useReplayCamera } from "../../../replay";
 import { useTerrainView } from "./useTerrainView";
 
 /**
