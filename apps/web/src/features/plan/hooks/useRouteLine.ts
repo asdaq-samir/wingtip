@@ -117,6 +117,7 @@ export function wayCards({
  */
 export function useRouteLine({
   routeWays,
+  waysStale = false,
   browsing,
   setBrowsing,
   chosenKey,
@@ -132,6 +133,9 @@ export function useRouteLine({
   flightRules,
 }: {
   routeWays: RouteOptions | undefined;
+  /** The ways are the last airplane's or time's, kept while the new ones
+   *  come (useRouteWays): drawn dimmed, not to be picked. */
+  waysStale?: boolean;
   browsing: Browsing | null;
   setBrowsing: Dispatch<SetStateAction<Browsing | null>>;
   /** The route's ends the browsing is kept under (useRouteWays). */
@@ -201,8 +205,8 @@ export function useRouteLine({
       typedNm: browsing ? browsing.ownNm : ownNm,
       typedGal: browsing ? browsing.ownGal : ownGal,
     });
-    return cards ? { chips: cards, picked: lineKey, onPick: applyChip, unchecked: routeWays?.unchecked ?? [] } : null;
-  }, [vfrRoute, chips, routeWays, lineKey, applyChip, browsing, ownMinutes, ownGround, ownNm, ownGal]);
+    return cards ? { chips: cards, picked: lineKey, onPick: applyChip, unchecked: routeWays?.unchecked ?? [], stale: waysStale } : null;
+  }, [vfrRoute, chips, routeWays, lineKey, applyChip, browsing, ownMinutes, ownGround, ownNm, ownGal, waysStale]);
 
   // The chips' ways on the chart beside the course while the line is open,
   // each its time on its chip, the one picked solid (the owner's "I want

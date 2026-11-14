@@ -20,6 +20,10 @@ export interface RouteLineChoices {
   /** What the planner could not check the ways for, in the engine's words
    *  ("service ceiling", "fuel", "start and taxi fuel"): said under them. */
   unchecked?: string[];
+  /** The ways are the last airplane's or time's while the new ones come
+   *  (useRouteWays): the row kept in its place, dimmed, its cards not to be
+   *  picked till they are this airplane's. */
+  stale?: boolean;
 }
 
 /**
@@ -55,8 +59,13 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
     <Collapsible
       open={open}
       onOpenChange={(next) => useRouteLineOpen.setState({ open: next })}
-      className={grouped ? undefined : "mt-2 mb-1 rounded-xl bg-card"}
+      className={cn(
+        grouped ? undefined : "mt-2 mb-1 rounded-xl bg-card",
+        line.stale && "opacity-50 transition-opacity motion-reduce:transition-none",
+      )}
       data-testid="route-line"
+      data-stale={line.stale ? "" : undefined}
+      aria-busy={line.stale || undefined}
     >
       <CollapsibleTrigger
         render={
@@ -104,6 +113,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
             if (v[0]) line.onPick(v[0]);
           }}
           aria-label="Routes"
+          disabled={line.stale}
           className="flex w-full justify-start gap-2 overflow-x-auto overscroll-x-contain px-3 pb-3 [scrollbar-width:none]"
         >
           {line.chips.map((c) => (

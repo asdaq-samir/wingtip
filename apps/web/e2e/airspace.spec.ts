@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { closeCard, grabberTo, settle, slow } from "./helpers";
 import { stopsAre } from "./stopsParam";
+import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
 // A route's handler still running as the test ends -- the Recents and
 // Saved planned ahead at idle ask the planner then -- found the page
@@ -97,4 +98,23 @@ test("a point held on the chart goes into the route as the pilot's own point off
   await expect(sheet.getByTestId("hold-course")).toHaveValue(/^\d{3}$/);
   await sheet.getByTestId("hold-set").click();
   await expect(page).toHaveURL(/[?&]holds=VPBNG(%2F|\/)280(%2F|\/)20(%3A|:)\d{3}(%3A|:)R(%3A|:)1M(%3A|:)2T(&|$)/);
+});
+
+test("a point held opens its card at its size: the bands and the point's name come into the room held for them", async ({ page }) => {
+  await installFrameRecorder(page);
+  await page.goto("/app/plan");
+  await settle(page);
+  const box = (await page.locator(".maplibregl-map").first().boundingBox())!;
+  // The lowest two bands' rows and the point's name from the first frame:
+  // "Fetching the airspace here…" gave way to the bands with the point's
+  // actions put in over them, a layout shift of 0.031 to 0.048 (the
+  // flicker audit's FL-11).
+  await expectDrawnOnce(
+    page,
+    async () => {
+      await page.mouse.click(box.x + box.width * 0.45, box.y + box.height * 0.25, { button: "right" });
+      await expect(page.getByTestId("airspace-card").getByTestId("airspace-band").first()).toBeVisible({ timeout: slow(30000) });
+    },
+    { card: "airspace-card", maxMoves: Number.POSITIVE_INFINITY, shiftBudget: 0.01 },
+  );
 });

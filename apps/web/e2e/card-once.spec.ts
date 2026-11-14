@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { showPage } from "./oneSearch";
-import { frontSheet, grabberTo, searchAirports, settle, settled, sheetUpToType, showTabs } from "./helpers";
+import { frontSheet, grabberTo, searchAirports, settle, settled, sheetUpToType, showTabs, slow } from "./helpers";
+import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
 /**
  * A card opens once and closes once, never put back for a moment: the
@@ -12,43 +13,25 @@ import { frontSheet, grabberTo, searchAirports, settle, settled, sheetUpToType, 
  * the pill ("Flashing when I tap account button"): opened again it came
  * back at the size it was put away at, not at half as every card opens.
  * Apple Maps closes its account and settings sheets on a swipe down (the
- * owner, 2026-11-14): You and the Map card close so, a content card parks
- * at the pill (the card rule's 10).
+ * owner, 2026-11-14): You and the Map card close so from half, come to
+ * half from all the way up, and a content card parks at the pill (the
+ * card rule's 10).
  */
 test.use({ hasTouch: true, geolocation: { latitude: 42.3246, longitude: -88.0741 }, permissions: ["geolocation"] });
 
+// Every frame of each card's opening and closing, read as the pilot sees it (drawnOnce).
+test.beforeEach(({ page }) => installFrameRecorder(page));
+
 const youCard = (page: Page) => page.locator("[data-sheet-card]").filter({ has: page.getByTestId("console-sheet") });
-
-/** Every frame from now: whether the card holding `inside` is up (its
- *  drawer open, not fading), as a run of changes; another drawer put in
- *  its place counts as a new opening. */
-async function watchCard(page: Page, inside: string) {
-  await page.evaluate((inside) => {
-    const seen: string[] = [];
-    (window as unknown as { cardSeen: string[] }).cardSeen = seen;
-    let last = document.querySelector(inside)?.closest("[data-sheet-card]") ?? null;
-    const look = () => {
-      const popup = document.querySelector(inside)?.closest("[data-sheet-card]") ?? null;
-      const up = !!popup && popup.hasAttribute("data-open") && !popup.hasAttribute("data-ending-style");
-      const state = !up ? "down" : popup !== last ? "anew" : "up";
-      if (popup) last = popup;
-      if (seen.at(-1) !== state) seen.push(state);
-      requestAnimationFrame(look);
-    };
-    look();
-  }, inside);
-}
-
-const seen = (page: Page) => page.evaluate(() => (window as unknown as { cardSeen: string[] }).cardSeen);
 
 /** A drag down from the front card's grabber, by the pointer, as a finger
  *  swipes it, as sheet-page-toggle.spec drags the sheet. */
-async function swipeDown(page: Page) {
+async function swipeDown(page: Page, by = 200) {
   const grabber = (await frontSheet(page).getByTestId("sidebar-trigger-button").first().boundingBox())!;
   const x = grabber.x + grabber.width / 2;
   await page.mouse.move(x, grabber.y + 6);
   await page.mouse.down();
-  await page.mouse.move(x, grabber.y + 200, { steps: 12 });
+  await page.mouse.move(x, grabber.y + by, { steps: 12 });
   await page.mouse.up();
 }
 
@@ -71,18 +54,21 @@ test("Fly Here closes the airport's card once, to the route, and it never comes 
   await page.goto("/app/plan");
   await settle(page);
   const card = await openKugn(page);
-  await watchCard(page, '[data-testid="place-card"]');
-  await card.getByTestId("fly-here").tap();
-  await expect(page).toHaveURL(/[?&]dest=KUGN/, { timeout: 15_000 });
-  await expect(page.getByTestId("route-dep")).toContainText("POS0");
-  await expect(page.getByTestId("route-dest")).toContainText("KUGN");
+  // Up as the act began, then down for good, the map fitted to the route once.
+  await expectDrawnOnce(
+    page,
+    async () => {
+      await card.getByTestId("fly-here").tap();
+      await expect(page).toHaveURL(/[?&]dest=KUGN/, { timeout: 15_000 });
+      await expect(page.getByTestId("route-dep")).toContainText("POS0");
+      await expect(page.getByTestId("route-dest")).toContainText("KUGN");
+      await expect(card).toHaveCount(0);
+    },
+    // A second and a half for anything that would bring it back: the
+    // route's nav log, its fields' answers, the address written.
+    { card: "place-card", maxMoves: 1 },
+  );
   await expect(card).toHaveCount(0);
-  // A second and a half for anything that would bring it back: the
-  // route's nav log, its fields' answers, the address written.
-  await page.waitForTimeout(1500);
-  const runs = await seen(page);
-  // Up as the watch began, then down for good.
-  expect(runs).toEqual(["up", "down"]);
 });
 
 for (const [how, start] of [
@@ -96,13 +82,16 @@ for (const [how, start] of [
     await showPage(page, 0);
     await grabberTo(page, "peek");
     await showTabs(page);
-    await watchCard(page, '[data-testid="console-sheet"]');
-    await page.getByTestId("account-button").tap();
+    await expectDrawnOnce(
+      page,
+      async () => {
+        await page.getByTestId("account-button").tap();
+        await expect(youCard(page)).toHaveAttribute("data-panel", "half");
+        await expect(page.getByTestId("console-sheet").getByTestId("you-name")).toBeVisible();
+      },
+      { card: "console-sheet", maxMoves: 1 },
+    );
     await expect(youCard(page)).toHaveAttribute("data-panel", "half");
-    await expect(page.getByTestId("console-sheet").getByTestId("you-name")).toBeVisible();
-    await page.waitForTimeout(1500);
-    await expect(youCard(page)).toHaveAttribute("data-panel", "half");
-    expect(await seen(page)).toEqual(["down", "anew", "up"]);
   });
 }
 
@@ -142,6 +131,26 @@ test.describe("by a pointer's drag", () => {
     await expect(drawer).toHaveAttribute("data-panel", "peek");
     await expect(card).toHaveCount(1);
   });
+
+  // A settings card closes on a swipe down only from half: all the way up,
+  // the swipe brings it to half and it stays open (the owner, 2026-11-14:
+  // "Settings cards should only close from a swipe down when in medium
+  // detents").
+  test("a swipe down brings You from all the way up to half, open, and from half closes it", async ({ page }) => {
+    await page.goto("/app/plan");
+    await settle(page);
+    await showPage(page, 0);
+    await grabberTo(page, "half");
+    await page.getByTestId("account-button").click();
+    await expect(youCard(page)).toHaveAttribute("data-panel", "half");
+    await grabberTo(page, "full");
+    await swipeDown(page, 300);
+    await expect(youCard(page)).toHaveAttribute("data-panel", "half");
+    await settled(youCard(page));
+    await expect(page.getByTestId("console-sheet").getByTestId("you-name")).toBeInViewport();
+    await swipeDown(page);
+    await expect(page.getByTestId("console-sheet")).toHaveCount(0);
+  });
 });
 
 test("the Map card's gear opens Settings on top of it, and its close goes back to the Map card", async ({ page }) => {
@@ -164,4 +173,78 @@ test("the Map card's gear opens Settings on top of it, and its close goes back t
   await frontSheet(page).getByTestId("console-page-close").first().click();
   await expect(page.getByTestId("console-sheet")).toHaveCount(0);
   await expect(frontSheet(page)).toHaveAttribute("data-testid", "map-settings");
+});
+
+/**
+ * A field tapped on the chart over another field's card: the new card is
+ * at half from the first frame it is drawn in, never all the way up for a
+ * frame first. The owner's iPhone, 2026-11-14, KVWU tapped over 43Y's card
+ * ("The app flashes sometimes"): one frame of KVWU's card all the way up,
+ * its photos still grey, then at half. The card under it, put away, gave
+ * the new one its place in the nested drawers (CardStack), so React drew
+ * the new one's drawer afresh, already open, where Base UI draws it all
+ * the way up until it has measured itself.
+ */
+/** Another field in sight on the chart, opened as a tap on its symbol
+ *  opens it: by the chart's list of its marks (MapMarksList), the same
+ *  select, which needs no WebGL to find where it is drawn. */
+async function otherField(page: Page, not: string) {
+  const marks = page.getByRole("navigation", { name: "Airports on the map" }).getByRole("button");
+  const field = marks.filter({ hasNotText: new RegExp(`^${not},`) }).first();
+  await expect(field).toBeAttached({ timeout: slow(30_000) });
+  const ident = (await field.textContent())!.split(",")[0]!;
+  return {
+    ident,
+    tap: async () => {
+      await field.focus();
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(new RegExp(`[?&]place=${ident}(&|$)`));
+    },
+  };
+}
+
+test("a field tapped on the chart over another's card comes up at half from its first frame", async ({ page }) => {
+  await page.goto("/app/plan?place=KUGN");
+  await settle(page);
+  const name = page.getByTestId("place-card").getByTestId("place-name");
+  await expect(name.last()).toHaveText("KUGN");
+  const first = page.locator("[data-sheet-card]").filter({ has: page.getByTestId("place-card") });
+  await expect(first).toHaveAttribute("data-panel", "half");
+  await settled(first);
+  const other = await otherField(page, "KUGN");
+  // One drawer for the new card, at half from its first frame, never all
+  // the way up for one; the map's buttons on its top, never off the screen.
+  await expectDrawnOnce(
+    page,
+    async () => {
+      await other.tap();
+      await expect(name.last()).toHaveText(other.ident);
+    },
+    { card: "place-card", maxMoves: 1 },
+  );
+});
+
+/**
+ * A field tapped on the chart with You open over the sheet: the field's
+ * card comes up over You's, drawn once, and You's drawer is not drawn
+ * anew under it (the flicker audit's you-to-airport-map, FL-2: the map's
+ * buttons thrown off the screen's top as You's drawer was drawn again).
+ */
+test("a field tapped on the chart with You open comes up once over it", async ({ page }) => {
+  await page.goto("/app/plan");
+  await settle(page);
+  await showPage(page, 0);
+  await grabberTo(page, "half");
+  await page.getByTestId("account-button").tap();
+  await expect(youCard(page)).toHaveAttribute("data-panel", "half");
+  await settled(youCard(page));
+  const other = await otherField(page, "-");
+  await expectDrawnOnce(
+    page,
+    async () => {
+      await other.tap();
+      await expect(page.getByTestId("place-card").getByTestId("place-name").last()).toHaveText(other.ident);
+    },
+    { card: "place-card", maxMoves: 1 },
+  );
 });

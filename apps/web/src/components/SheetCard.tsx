@@ -83,8 +83,9 @@ export function SheetCard({
   /** Emergency, the one card all the way up as it opens (the card rule's 4);
    *  every other card opens at half. */
   fullScreen?: boolean;
-  /** A settings card (the Map card): a swipe down closes it, as its ✕
-   *  does, where a content card parks at the pill (CardStack). */
+  /** A settings card (the Map card): a swipe down from half closes it, as
+   *  its ✕ does, and from all the way up brings it to half, where a content
+   *  card parks at the pill (CardStack). */
   swipeCloses?: boolean;
   /** Its id among the open cards where its owner sizes it (useCardSize). */
   cardId?: string;
