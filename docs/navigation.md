@@ -274,7 +274,7 @@ in the search is not counted.
 | Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration (suggesting as typed), passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane. An N-number's: Fly This, Follow, Favorite, Share; Flights (▶ replays one), Info, Figures |
 | Checklists | Airplane → Checklists tab → a checklist (on the card's stack) | 3 → 3 | Ticks; Edit as text |
 | You | the avatar | 1 | Pilot Details, Airplanes, Flights, Logbook, Minimums, Training, Emergency; a swipe down closes it |
-| Settings | the avatar → its gear; also the Map card's gear | 2 | Look, Map, In Flight, Data, Help & About; a swipe down closes it |
+| Settings | the avatar → its gear; also the Map card's gear | 2 | Display, Map, In Flight, Data, Help & About; a swipe down closes it |
 | Saved Flights | the avatar → Flights | 2 | A flight planned again with a tap |
 | Map card (no Map Settings page; the owner, 2026-11-13) | the map's Layers button; or search "map" / "layers" | 1 (+ typing 0) | The layers, traffic and the weather loop; its gear opens Settings at its Map group (Airport Weather, glide ring) |
 | Logbook, Training (the Coach) | the avatar → its row | 2 | Logbook entries edited in the row; Delete with an Undo |

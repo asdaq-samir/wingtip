@@ -420,7 +420,7 @@ off by default (the owner, 2026-11-13).
    (the owner, 2026-11-11: "We don't need plan a flight either with two
    buttons"). The first time, a welcome sheet says what the app is
    (Search like Maps, FPL like an EFB, the FAA charts), offers Theme and
-   Appearance (Settings' own Look tiles), and its one
+   Appearance (the Map card's Look tiles), and its one
    button, Let's Go Flying, goes on to the map with the one search ready
    for where to (Search up at half, its field not focused), the airport picked
    planned from where the airplane is; after that first route one tip points at the toggle while it shows FPL ("Your flight plan is one tap away ... tap here any time"), once (the
@@ -670,8 +670,7 @@ way: three homes, and every control in one of them.
    Checklists row), Flights, Logbook, Minimums, Training (the Coach and
    Practice), the Emergency Assistant -- then Subscription; Settings is
    the gear at its top left, the ✕ at its right.
-2. **Settings**, one page, You's gear: Look (Sunlight, Theme,
-   Appearance), Map (Airport Weather, Glide Ring, Clear Your Path), In
+2. **Settings**, one page, You's gear: Display (Sunlight), Map (Airport Weather, Glide Ring, Clear Your Path), In
    Flight (Alerts; ATC, one page of Comms Assist, ATC Alerts and the
    Copilot), Data (Keep for the Air), and Help & About (Guide, Status,
    Log, About, Sources, and the Privacy, Terms and Legal links). The Map
