@@ -169,7 +169,8 @@ class FlightControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                                 "{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"stops\":[\"VPBNG/090/30\",\"DLH090030\"],"
-                                        + "\"altitudes\":\"VPBNG/090/30:4500,KDLH:2400\"}"))
+                                        // A second visit's altitude names it (WEB-2): "@2".
+                                        + "\"altitudes\":\"VPBNG/090/30:4500,VPBNG/090/30@2:6500,KDLH:2400\"}"))
                 .andExpect(status().is2xxSuccessful());
     }
 
