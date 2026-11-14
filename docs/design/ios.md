@@ -566,6 +566,16 @@ The card starts with the title, then the actions and the facts.
    - The Info / Weather / Runways / Charts switch is `.pickerStyle(.tabs)`
      (iOS 27, already adopted). Apple says it looks like a segmented
      control, but VoiceOver reads it as tabs.
+   - Since the owner's T4 (2026-11-14) the switch (`AirportTabBar`) sits
+     directly under the actions and facts, in sight at half, and pins
+     under the bar as the head scrolls away. The picked tab is filled in
+     the look's tint (`.tint`). Charts carries its count ("Charts 9": the
+     d-TPP plates and the diagram), and Weather's name says the field's
+     own category to VoiceOver ("Weather, MVFR"); the stock control draws
+     a segment's words in one colour, so the category's colour is the
+     chip in the line under the tabs (`AirportWeatherLine`: "MVFR ·
+     Ceiling 1,800 ft · 310°T 4 kt · 1255Z", only for a field with a
+     report of its own). The image tiles (8) are the first thing on Info.
 10. **The floating glass toolbar** at the foot, over the content:
     - Add to Route (+), Favorite (☆), Set as Home, and More (•••)
     - More holds Hold Here…, Copy Ident, Report a Problem and Open in

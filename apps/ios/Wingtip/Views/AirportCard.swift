@@ -3,10 +3,12 @@ import SwiftUI
 /// A field's card, built as Apple's Maps builds a place card on iOS 27
 /// (the owner's screenshot, 2026-11-09): the head (AirportPlaceHead) -- at
 /// full height the field's picture fading in, then its name, what and
-/// where it is, the four actions and the four facts -- the plan through
-/// it, the picture tiles, then four tabs: Info (the radio, the lights,
-/// what is on the ground), Weather, Runways and Charts; at its foot the
-/// system's floating glass toolbar (AirportCardToolbar).
+/// where it is, the four actions and the four facts -- then four tabs,
+/// directly under them so they are in sight at half height (the owner's
+/// T4, 2026-11-14), with the field's report in a line under them: Info
+/// (the picture tiles, the plan through it, the radio, the lights, what is
+/// on the ground), Weather, Runways and Charts; at its foot the system's
+/// floating glass toolbar (AirportCardToolbar).
 struct AirportCard: View {
     let ident: String
     @Environment(Plan.self) private var plan
@@ -39,13 +41,10 @@ struct AirportCard: View {
         var id: String { rawValue }
     }
 
-    /// The card's sections, in the list under the tiles and pinned under
+    /// The card's sections, in the list under the actions and pinned under
     /// the bar once the head has scrolled away.
-    private var sectionPicker: some View {
-        Picker("Section", selection: $tab) {
-            ForEach(CardTab.allCases) { Text($0.rawValue).tag($0) }
-        }
-        .tabsPicker()
+    private func sectionPicker(_ place: AirportPlace) -> some View {
+        AirportTabBar(tab: $tab, place: place)
     }
 
     var body: some View {
@@ -57,18 +56,23 @@ struct AirportCard: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
-                AirportReadyCard(ident: place.ident)
                 Section {
-                    AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab, notams: notams.ranked)
-                }
-                Section {
-                    sectionPicker
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets())
-                        .opacity(pinned ? 0 : 1)
+                    VStack(alignment: .leading, spacing: WingtipSpace.md) {
+                        sectionPicker(place).opacity(pinned ? 0 : 1)
+                        AirportWeatherLine(metar: place.metar)
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
                 }
                 switch tab {
-                case .info: AirportInfoTab(place: place)
+                case .info:
+                    // The pictures first on Info, as Maps' place card has
+                    // its photos (T4: they sat above the tabs).
+                    Section {
+                        AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab, notams: notams.ranked)
+                    }
+                    AirportReadyCard(ident: place.ident)
+                    AirportInfoTab(place: place)
                 case .weather: AirportWeatherTab(place: place)
                 case .runways: AirportRunwaysTab(place: place)
                 case .charts: AirportChartsTab(place: place, shown: $shown)
@@ -98,8 +102,8 @@ struct AirportCard: View {
             if past != pinned { pinned = past }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if pinned, place != nil {
-                sectionPicker
+            if pinned, let place {
+                sectionPicker(place)
                     .padding(.horizontal, WingtipSpace.lg)
                     .padding(.vertical, WingtipSpace.xs)
                     .background(.bar)

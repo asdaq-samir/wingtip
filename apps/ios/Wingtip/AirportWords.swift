@@ -58,17 +58,45 @@ enum AirportWords {
 
     // MARK: Weather
 
-    /// A report's wind: "250° at 12 kt, gusts 18", "Calm" for 00000KT,
+    /// A report's wind: "250°T at 12 kt, gusts 18", "Calm" for 00000KT,
     /// "Variable at 4 kt" (FAA Order JO 7900.5's codes as the planner
-    /// reads them), "Not reported" with no speed.
+    /// reads them), "Not reported" with no speed. Marked true, as METAR
+    /// winds are (JO 7900.5), so it is never read against a runway's
+    /// magnetic number (IOS-7; the web's placeWind).
     static func windLine(dirTrueDeg: Double?, speedKt: Double?, gustKt: Double?) -> String {
         guard let speedKt else { return "Not reported" }
         // A speed of nothing is calm, as 00000KT codes it (AIM 7-1-28): the
         // engine's `wind_calm`.
         if calm(speedKt) { return "Calm" }
-        let from = dirTrueDeg.map(Format.heading) ?? "Variable"
+        let from = dirTrueDeg.map { Format.heading($0) + "T" } ?? "Variable"
         let gust = gustKt.map { $0 > 0 ? ", gusts \(Int($0.rounded()))" : "" } ?? ""
         return "\(from) at \(Format.speed(speedKt))\(gust)"
+    }
+
+    /// A report's wind short, as the web's card writes it in a line:
+    /// "310°T 4 kt", "VRB 4 kt", "240°T 12G20 kt", "Calm"; nil with no
+    /// speed. True, as METAR winds are (FAA JO 7900.5).
+    static func shortWind(dirTrueDeg: Double?, speedKt: Double?, gustKt: Double?) -> String? {
+        guard let speedKt else { return nil }
+        if calm(speedKt) { return "Calm" }
+        let from = dirTrueDeg.map { Format.heading($0) + "T" } ?? "VRB"
+        let gust = gustKt.flatMap { $0 > 0 ? "G\(Int($0.rounded()))" : nil } ?? ""
+        return "\(from) \(Int(speedKt.rounded()))\(gust) kt"
+    }
+
+    /// The field's own report in a line under the airport card's tabs
+    /// (the owner's T4, 2026-11-14), after its category chip: "Ceiling
+    /// 1,800 ft · 310°T 4 kt · 1255Z". The ceiling is the planner's reading
+    /// of the report (the lowest broken or overcast layer or the vertical
+    /// visibility, 14 CFR 1.1), "No ceiling" with none, and left out where
+    /// the report could not say (`ceiling_unknown`); the wind true, left
+    /// out when not reported; the time UTC, as the report gives it. The
+    /// web's weatherLineOf.
+    static func weatherLine(_ metar: Metar) -> String {
+        let ceiling: String? = metar.ceilingUnknown == true ? nil : metar.ceilingFt.map { "Ceiling \(Format.altitude($0))" } ?? "No ceiling"
+        let wind = shortWind(dirTrueDeg: metar.windDirTrueDeg, speedKt: metar.windSpeedKt, gustKt: metar.windGustKt)
+        let time = date(metar.observedAt).map(Format.zulu)
+        return [ceiling, wind, time].compactMap { $0 }.joined(separator: " · ")
     }
 
     // Format styles rather than ISO8601DateFormatter: they are Sendable

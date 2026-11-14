@@ -126,10 +126,22 @@ struct AirportExtrasTests {
         var runway = Runway(closed: false, ends: "06/24", lengthFt: 3700, lighted: true, surface: "TURF")
         runway.runwayEnds = [RunwayEnd(ident: "06", traffic: "left"), RunwayEnd(ident: "24", traffic: "right")]
         #expect(AirportWords.runwayDetail(runway) == "turf · lighted · right traffic 24")
-        #expect(AirportWords.windLine(dirTrueDeg: 0, speedKt: 12, gustKt: 20) == "360° at 12 kt, gusts 20")
+        #expect(AirportWords.windLine(dirTrueDeg: 0, speedKt: 12, gustKt: 20) == "360°T at 12 kt, gusts 20")
         #expect(AirportWords.windLine(dirTrueDeg: nil, speedKt: 4, gustKt: nil) == "Variable at 4 kt")
         #expect(AirportWords.windLine(dirTrueDeg: 250, speedKt: 0, gustKt: nil) == "Calm")
         #expect(AirportWords.windLine(dirTrueDeg: nil, speedKt: nil, gustKt: nil) == "Not reported")
+    }
+
+    /// The line under the airport card's tabs (T4), as the web's weatherLineOf writes it.
+    @Test func weatherLineUnderTheTabs() {
+        let mvfr = Metar(ceilingFt: 1800, flightCategory: "MVFR", observedAt: "2026-11-14T12:55:00Z", windDirTrueDeg: 310, windSpeedKt: 4)
+        #expect(AirportWords.weatherLine(mvfr) == "Ceiling 1,800 ft · 310°T 4 kt · 1255Z")
+        let gusty = Metar(observedAt: "2026-11-14T12:55:00Z", windDirTrueDeg: 240, windGustKt: 20, windSpeedKt: 12)
+        #expect(AirportWords.weatherLine(gusty) == "No ceiling · 240°T 12G20 kt · 1255Z")
+        // OVC/// says nothing of the ceiling, and no wind reported is left out.
+        #expect(AirportWords.weatherLine(Metar(ceilingUnknown: true, observedAt: "2026-11-14T12:55:00Z")) == "1255Z")
+        #expect(AirportWords.shortWind(dirTrueDeg: nil, speedKt: 4, gustKt: nil) == "VRB 4 kt")
+        #expect(AirportWords.shortWind(dirTrueDeg: 250, speedKt: 0, gustKt: nil) == "Calm")
     }
 
     @Test func figuresAndTimes() throws {
