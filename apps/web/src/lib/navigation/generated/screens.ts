@@ -30,7 +30,7 @@ export const SCREENS = {
 export type ScreenId = keyof typeof SCREENS;
 
 /** The plan's own keys a link carries beside `open` (a shared flight's among them). */
-export const LINK_KEYS = ["dep", "dest", "stops", "place", "flight", "airplane", "altitude_ft", "depart", "type", "rules", "tail", "share"] as const;
+export const LINK_KEYS = ["dep", "dest", "stops", "place", "flight", "airplane", "tfr", "altitude_ft", "depart", "type", "rules", "tail", "share"] as const;
 
 export type LinkKey = (typeof LINK_KEYS)[number];
 

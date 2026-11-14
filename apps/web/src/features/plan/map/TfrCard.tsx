@@ -9,6 +9,7 @@ import { tfrAltitudes, tfrPage, tfrPurpose, tfrTimes } from "../../../lib/adviso
 import type { Tfr } from "../../../lib/api/types";
 import { MapCard } from "../../../lib/map/cards/MapCard";
 import { shareOrCopy } from "../../../lib/share";
+import { tfrLink } from "../../../lib/address";
 
 /**
  * A temporary flight restriction's card (the map draws them, in tfrMarks'
@@ -23,11 +24,10 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
   const geo = useGeo();
   const from = ship && geo ? areaFrom(geo, rings, ship) : null;
   const title = `TFR ${tfr.notam_id}`;
-  // Its link, shared where the device can, copied where not, as every
-  // card's Share is: the FAA's own page for it, which anyone it is sent to
-  // can open (the app's links name no TFR).
+  // Its link, which opens this card (`tfr=`), shared where the device can,
+  // copied where not, as every card's Share is.
   const share = () =>
-    void shareOrCopy({ title, url: tfrPage(tfr.notam_id) }).catch(() => {
+    void shareOrCopy({ title, url: tfrLink(tfr.notam_id, location.origin) }).catch(() => {
       /* put away, or not allowed: nothing to say */
     });
   const purpose = tfrPurpose(tfr);
@@ -62,6 +62,27 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
         <a
           className="relative block w-fit text-tint after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"
           href={tfrPage(tfr.notam_id)}
+          target="_blank"
+          rel="noreferrer"
+        >
+          The NOTAM on tfr.faa.gov
+        </a>
+      </div>
+    </MapCard>
+  );
+}
+
+/** A TFR's card opened by a link to one tfr.faa.gov no longer lists (it
+ *  has ended or been cancelled), or with the list not come in: said in
+ *  the card, its NOTAM's page still there to look at. */
+export function TfrGone({ notamId, failed }: { notamId: string; failed: boolean }) {
+  return (
+    <MapCard title={`TFR ${notamId}`}>
+      <div className="space-y-1 text-left" data-testid="tfr-gone">
+        <p>{failed ? "The TFRs didn't load. Check tfr.faa.gov before flight." : "Not on tfr.faa.gov's list now: ended or cancelled."}</p>
+        <a
+          className="relative block w-fit text-tint after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"
+          href={tfrPage(notamId)}
           target="_blank"
           rel="noreferrer"
         >

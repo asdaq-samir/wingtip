@@ -2,7 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { withNuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing";
 import { describe, expect, it } from "vitest";
-import { ADDRESS_CLEARED, addressParams, loadAddress, useAddress, useAddressKey } from "./address";
+import { ADDRESS_CLEARED, addressParams, loadAddress, tfrLink, useAddress, useAddressKey } from "./address";
 
 /** The workspace's whole address and one key read on its own, as the page
  *  has them, over an address of their own; each write to it kept. */
@@ -87,5 +87,17 @@ describe("the address's keys, typed", () => {
   it("leaves out what is at its default as text", () => {
     const address = loadAddress("dep=C81&class_b=1&altitude_choice=fastest&local_min=60&near=0");
     expect(addressParams(address).toString()).toBe("dep=C81");
+  });
+
+  it("opens a TFR's card by its NOTAM number, from the link its Share sends", () => {
+    // TFR 6/4116 near Grand Forks (the owner's iPhone, 2026-11-14).
+    const link = tfrLink("6/4116", "https://wingtipmaps.app");
+    expect(link).toBe("https://wingtipmaps.app/app/plan?tfr=6%2F4116");
+    expect(loadAddress(new URL(link).search).tfr).toBe("6/4116");
+    expect(loadAddress("tfr=6/4116").tfr).toBe("6/4116");
+    expect(addressParams({ tfr: "6/4116" }).get("tfr")).toBe("6/4116");
+    // Not a NOTAM's number: no card.
+    expect(loadAddress("tfr=KDLH").tfr).toBeNull();
+    expect(loadAddress("tfr=6/").tfr).toBeNull();
   });
 });
