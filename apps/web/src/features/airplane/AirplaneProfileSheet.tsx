@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { Bell, Share } from "lucide-react";
 import { cn } from "cn";
 import { FileTrigger } from "react-aria-components";
 import { Pressable } from "react-aria/Pressable";
@@ -14,6 +16,12 @@ import { figureFormat, sourceWords } from "./profileModel";
 import { EnduranceSection } from "./EnduranceSection";
 import { useAirplaneProfile, type AirplaneProfileModel } from "./useAirplaneProfile";
 import { FieldError } from "../../components/ui/field";
+import PastFlights from "../plan/components/PastFlights";
+import AircraftAlertMenu from "../plan/components/AircraftAlertMenu";
+import { FavoriteTile } from "../../components/FavoriteTile";
+import { CardTabBar, CardTabPanel } from "../../components/CardTabs";
+import { Tabs } from "../../components/ui/tabs";
+import AirplaneInfo from "./AirplaneInfo";
 
 /** One figure: its name and where it comes from, its field (typed in place,
  *  kept as the pilot's when it changes), and Reset to book figure where
@@ -113,23 +121,37 @@ function PhotoRead({ vm }: { vm: AirplaneProfileModel }) {
   );
 }
 
+/** The card's tabs, Flights first (the owner's P1, 2026-11-14). */
+type ProfileTab = "flights" | "info" | "figures";
+
 /**
- * An airplane's profile, opened from any N-number and any airplane figure
- * the app shows (lib/airplane/profileStore): a card in the map's sheet over
- * the search, with its ✕, on a phone as in a desktop's side panel, as
- * every thing is by the one card rule (the owner, 2026-11-10), where on a
- * phone it was a dimmed sheet over the page. Closing it is back where the
- * pilot was. Its N-number and type, then every figure with its source,
- * each editable in place. Signed out, what is set stays on this device.
- * Its view model is useAirplaneProfile.
+ * An airplane's card, opened from any N-number and any airplane figure the
+ * app shows (lib/airplane/profileStore), the pilot's own airplanes too: a
+ * card in the map's sheet over the search, with its ✕, by the one card
+ * rule (the owner, 2026-11-10). Laid out as the airport card is, at the
+ * owner's pick of P1 ("Ok I take your rec", 2026-11-14; the canvas
+ * https://claude.ai/artifact/XFZoWyJWzov7RCwRRPH253): its N-number and the
+ * registry's make, model and year under it; Fly This, Follow, Favorite and
+ * Share in one row; the tabs Flights, Info and Figures, the one status line
+ * under them. Every figure stays editable in place in Figures, a missing
+ * one asking there. Signed out, what is set stays on this device. Its view
+ * model is useAirplaneProfile, the airplane's own part useAirplaneCard.
  */
 export default function AirplaneProfileSheet() {
   const vm = useAirplaneProfile();
+  const { card } = vm;
+  // Opened for a figure: on Figures; else on Flights.
+  const [tab, setTab] = useState<ProfileTab>(vm.focus ? "figures" : "flights");
+  const tabs = [
+    { value: "flights" as const, label: <TabHint label="Flights" hint={card.flightCount ? String(card.flightCount) : null} /> },
+    { value: "info" as const, label: "Info" },
+    { value: "figures" as const, label: "Figures" },
+  ];
   return (
     <SheetCard
       title={vm.tail}
-      // Its type under its name, as the airport card has its town there.
-      description={vm.type ?? "Type not known"}
+      // The registry's make, model and year under its name, as the airport card has its town there.
+      description={card.line ?? vm.type ?? "Type not known"}
       onClose={vm.close}
       testId="airplane-profile"
       // On the figure it was opened for, where it was one.
@@ -139,37 +161,92 @@ export default function AirplaneProfileSheet() {
         return field ?? true;
       }}
     >
-      <div className="flex flex-col gap-5">
-        {/* Laid out as the airport card is, Apple Maps' place card: the
-            name and the line under it, then the action row of tiles (the
-            owner, 2026-11-12: "Just do it the native way"). Its one action,
-            this airplane the plan's and the plan shown, the row's width. */}
-        <div className="grid gap-2" data-testid="airplane-actions">
+      <div className="flex flex-col gap-3">
+        {/* One row of four, the first filled, as the airport card's (CardAction). Follow is the
+            flight card's alerts -- takes off, lands, comes near -- and Favorite its star, both by
+            the ICAO address the registry gives: greyed where it gives none. */}
+        <div className="grid grid-cols-4 gap-2" data-testid="airplane-actions">
           <CardAction
             icon={<ACTION.flyHere.icon />}
-            label={vm.flying ? "Flying This Airplane" : "Fly This Airplane"}
+            label={vm.flying ? "Flying This" : "Fly This"}
+            spoken={vm.flying ? "Flying this airplane" : "Fly this airplane"}
             filled
             disabled={vm.flying}
             onClick={vm.fly}
             testId="fly-this-airplane"
           />
+          {card.hex ? (
+            <AircraftAlertMenu
+              hex={card.hex}
+              name={vm.tail}
+              airborne={card.airborne}
+              from={null}
+              to={null}
+              label="Follow"
+              testId="airplane-follow"
+            />
+          ) : (
+            <CardAction icon={<Bell />} label="Follow" disabled testId="airplane-follow" />
+          )}
+          <FavoriteTile on={card.starred} disabled={!card.kept} onToggle={card.toggleFavorite} testId="airplane-favorite" />
+          <CardAction icon={<Share />} label="Share" onClick={card.share} testId="airplane-share" spoken={`Share ${vm.tail}`} />
         </div>
-        <ListGroup>
-          <ListRow title="Registration" value={vm.tail} />
-          <ListRow title="Type" value={vm.type ?? "Not known"} data-testid="airplane-profile-type" />
-        </ListGroup>
-        <ListGroup title="Figures">
-          {vm.rows.map((row) => (
-            <FigureRow key={row.key} vm={vm} row={row} />
-          ))}
-        </ListGroup>
-        <EnduranceSection
-          tail={vm.tail}
-          usableGal={vm.rows.find((r) => r.key === "usable_fuel_gal")?.value ?? null}
-          burnGph={vm.rows.find((r) => r.key === "fuel_burn_gph")?.value ?? null}
-        />
-        <PhotoRead vm={vm} />
+        <Tabs value={tab} onValueChange={(next) => setTab(next as ProfileTab)} className="gap-0">
+          <CardTabBar tabs={tabs} value={tab} onPick={setTab} activateOnFocus testIdPrefix="airplane-tab" />
+          {/* Its one status line under the tabs, where the airport card's weather line is: in the air
+              from the live find, else where its last flight ended, else none heard (airplaneStatus). */}
+          <p
+            role="status"
+            className={cn("px-1 pt-3", card.status.problem ? "text-destructive-ink" : "text-muted-foreground", TEXT.detail)}
+            data-testid="airplane-status"
+          >
+            {card.track ? (
+              <Button type="button" variant="link" size="sm" className={LINK} onClick={card.track} data-testid="airplane-status-track">
+                {card.status.text}
+              </Button>
+            ) : (
+              card.status.text
+            )}
+          </p>
+          <CardTabPanel value="flights">
+            {/* Its flights (the owner, 2026-11-14: "How do I see the flights of airplane and play
+                them?"): the flight card's own list, each ▶ its replay over this card. */}
+            {card.hex ? (
+              <PastFlights hex={card.hex} onOpen={card.openPast} untitled play />
+            ) : (
+              <ListGroup>
+                <ListRow muted title="No flights to show: the FAA's registry gives no address for this N-number." />
+              </ListGroup>
+            )}
+          </CardTabPanel>
+          <CardTabPanel value="info">
+            <AirplaneInfo record={card.record} />
+          </CardTabPanel>
+          <CardTabPanel value="figures">
+            <ListGroup title="Figures">
+              {vm.rows.map((row) => (
+                <FigureRow key={row.key} vm={vm} row={row} />
+              ))}
+            </ListGroup>
+            <EnduranceSection
+              tail={vm.tail}
+              usableGal={vm.rows.find((r) => r.key === "usable_fuel_gal")?.value ?? null}
+              burnGph={vm.rows.find((r) => r.key === "fuel_burn_gph")?.value ?? null}
+            />
+            <PhotoRead vm={vm} />
+          </CardTabPanel>
+        </Tabs>
       </div>
     </SheetCard>
+  );
+}
+
+/** A tab's word and its hint, the count beside it, as the airport card's tabs have theirs. */
+function TabHint({ label, hint }: { label: string; hint: string | null }) {
+  return (
+    <span className="flex items-baseline gap-1">
+      {label}
+      {hint && <span className={cn("opacity-70", TEXT.note)}>{hint}</span>}
+    </span>
   );
 }

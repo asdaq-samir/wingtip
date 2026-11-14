@@ -1,7 +1,6 @@
 import { startTransition, useMemo, useOptimistic, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { choiceOf, profileOfRegistered, tailChoice, tailOf } from "../../lib/aircraftChoice";
-import { api } from "../../lib/api/client";
 import { airplaneFigures, bookOf, handbookOf, type FigureKey } from "../../lib/airplane/figures";
 import { readFigure } from "../../lib/airplane/figureWords";
 import { closeAirplaneProfile, useProfileOpen } from "../../lib/airplane/profileStore";
@@ -12,6 +11,7 @@ import { usePreferences } from "../../lib/preferences";
 import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../lib/queryClient";
 import { ownOfRecord, ownWith, resettable, typeWords } from "./profileModel";
 import { usePhotoRead } from "./usePhotoRead";
+import { useAirplaneCard } from "./useAirplaneCard";
 
 /** `map` without `key`. */
 function without<T>(map: Partial<Record<FigureKey, T>>, key: FigureKey): Partial<Record<FigureKey, T>> {
@@ -41,15 +41,10 @@ export function useAirplaneProfile() {
   const flown = usePreferences((p) => p.aircraft);
   const device = usePreferences((p) => p.tailFigures[tail]);
   const record = list?.find((a) => a.tailNumber.toUpperCase() === tail) ?? null;
-  // The FAA's registry for its type, the picker's own lookup (FlightInputs).
-  const registry = useQuery({
-    queryKey: ["registered", tail],
-    queryFn: () => api.trafficFind(tail),
-    staleTime: 24 * 60 * 60_000,
-    enabled: !!tail && !record,
-    meta: { silent: true },
-  });
-  const registered = registry.data?.registered ?? null;
+  // What the card says of the airplane itself (useAirplaneCard): the FAA's record, for its type
+  // too (the picker's own lookup, FlightInputs), its flights and whether it is in the air.
+  const card = useAirplaneCard(tail);
+  const registered = card.record;
   const profileName = record
     ? choiceOf(record, profiles ?? []).profile
     : tailOf(flown) === tail && flown.profile
@@ -136,6 +131,8 @@ export function useAirplaneProfile() {
     photo,
     problems,
     busy,
+    /** The card's own: its record, actions, flights and status line. */
+    card,
   };
 }
 
