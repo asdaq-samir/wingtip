@@ -2381,7 +2381,9 @@ extension Components {
         /// the figure the plans are compared on; `tailwind_kt` the
         /// distance-weighted wind component along the course, positive helping,
         /// over the legs that had wind data. With no airplane, the lowest and
-        /// highest alone, their times, fuel, climb and wind None.
+        /// highest alone, their times, fuel, climb and wind None; with no climb
+        /// fuel flow in the airplane's profile, no economical plan, as its
+        /// climbs' fuel is not known (the engine's navlog_plans).
         ///
         /// - Remark: Generated from `#/components/schemas/AltitudeOption`.
         public struct AltitudeOption: Codable, Hashable, Sendable {
@@ -10828,8 +10830,9 @@ extension Components {
         /// altitude on a standard day, and the forecast temperature at this
         /// altitude gives the density altitude they are flown at, at the power
         /// it allows -- the cruise power, or less where full throttle cannot
-        /// make it. `oat_c` is None where no forecast temperature was near: a
-        /// standard day is assumed there.
+        /// make it; `power_pct` None where the profile names no cruise power, its
+        /// TAS and burn then as given. `oat_c` is None where no forecast
+        /// temperature was near: a standard day is assumed there.
         ///
         /// - Remark: Generated from `#/components/schemas/Leg`.
         public struct Leg: Codable, Hashable, Sendable {
@@ -10837,6 +10840,8 @@ extension Components {
             public var airway: Components.Schemas.AirwayAltitudes?
             /// - Remark: Generated from `#/components/schemas/Leg/altitude_ft`.
             public var altitudeFt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/Leg/climb_fuel_unknown`.
+            public var climbFuelUnknown: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Leg/climb_min`.
             public var climbMin: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Leg/density_altitude_ft`.
@@ -10892,6 +10897,7 @@ extension Components {
             /// - Parameters:
             ///   - airway:
             ///   - altitudeFt:
+            ///   - climbFuelUnknown:
             ///   - climbMin:
             ///   - densityAltitudeFt:
             ///   - distanceNm:
@@ -10920,6 +10926,7 @@ extension Components {
             public init(
                 airway: Components.Schemas.AirwayAltitudes? = nil,
                 altitudeFt: Swift.Double,
+                climbFuelUnknown: Swift.Bool? = nil,
                 climbMin: Swift.Double? = nil,
                 densityAltitudeFt: Swift.Double? = nil,
                 distanceNm: Swift.Double,
@@ -10948,6 +10955,7 @@ extension Components {
             ) {
                 self.airway = airway
                 self.altitudeFt = altitudeFt
+                self.climbFuelUnknown = climbFuelUnknown
                 self.climbMin = climbMin
                 self.densityAltitudeFt = densityAltitudeFt
                 self.distanceNm = distanceNm
@@ -10977,6 +10985,7 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case airway
                 case altitudeFt = "altitude_ft"
+                case climbFuelUnknown = "climb_fuel_unknown"
                 case climbMin = "climb_min"
                 case densityAltitudeFt = "density_altitude_ft"
                 case distanceNm = "distance_nm"
@@ -12704,6 +12713,8 @@ extension Components {
             public var airway: Components.Schemas.AirwayAltitudes?
             /// - Remark: Generated from `#/components/schemas/NavLogLeg/altitude_ft`.
             public var altitudeFt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/NavLogLeg/climb_fuel_unknown`.
+            public var climbFuelUnknown: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/NavLogLeg/climb_min`.
             public var climbMin: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/NavLogLeg/density_altitude_ft`.
@@ -12761,6 +12772,7 @@ extension Components {
             /// - Parameters:
             ///   - airway:
             ///   - altitudeFt:
+            ///   - climbFuelUnknown:
             ///   - climbMin:
             ///   - densityAltitudeFt:
             ///   - distanceNm:
@@ -12790,6 +12802,7 @@ extension Components {
             public init(
                 airway: Components.Schemas.AirwayAltitudes? = nil,
                 altitudeFt: Swift.Double,
+                climbFuelUnknown: Swift.Bool? = nil,
                 climbMin: Swift.Double? = nil,
                 densityAltitudeFt: Swift.Double? = nil,
                 distanceNm: Swift.Double,
@@ -12819,6 +12832,7 @@ extension Components {
             ) {
                 self.airway = airway
                 self.altitudeFt = altitudeFt
+                self.climbFuelUnknown = climbFuelUnknown
                 self.climbMin = climbMin
                 self.densityAltitudeFt = densityAltitudeFt
                 self.distanceNm = distanceNm
@@ -12849,6 +12863,7 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case airway
                 case altitudeFt = "altitude_ft"
+                case climbFuelUnknown = "climb_fuel_unknown"
                 case climbMin = "climb_min"
                 case densityAltitudeFt = "density_altitude_ft"
                 case distanceNm = "distance_nm"
@@ -14947,6 +14962,8 @@ extension Components {
             public var ceilingUnknown: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/PinWeather/crosswind_kt`.
             public var crosswindKt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/PinWeather/visibility_plus`.
+            public var visibilityPlus: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/PinWeather/visibility_sm`.
             public var visibilitySm: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/PinWeather/wind_dir_true_deg`.
@@ -14964,6 +14981,7 @@ extension Components {
             ///   - ceilingFt:
             ///   - ceilingUnknown:
             ///   - crosswindKt:
+            ///   - visibilityPlus:
             ///   - visibilitySm:
             ///   - windDirTrueDeg:
             ///   - windGustKt:
@@ -14974,6 +14992,7 @@ extension Components {
                 ceilingFt: Swift.Double? = nil,
                 ceilingUnknown: Swift.Bool? = nil,
                 crosswindKt: Swift.Double? = nil,
+                visibilityPlus: Swift.Bool? = nil,
                 visibilitySm: Swift.Double? = nil,
                 windDirTrueDeg: Swift.Double? = nil,
                 windGustKt: Swift.Double? = nil,
@@ -14984,6 +15003,7 @@ extension Components {
                 self.ceilingFt = ceilingFt
                 self.ceilingUnknown = ceilingUnknown
                 self.crosswindKt = crosswindKt
+                self.visibilityPlus = visibilityPlus
                 self.visibilitySm = visibilitySm
                 self.windDirTrueDeg = windDirTrueDeg
                 self.windGustKt = windGustKt
@@ -14995,6 +15015,7 @@ extension Components {
                 case ceilingFt = "ceiling_ft"
                 case ceilingUnknown = "ceiling_unknown"
                 case crosswindKt = "crosswind_kt"
+                case visibilityPlus = "visibility_plus"
                 case visibilitySm = "visibility_sm"
                 case windDirTrueDeg = "wind_dir_true_deg"
                 case windGustKt = "wind_gust_kt"
@@ -17185,8 +17206,11 @@ extension Components {
                 case stops
             }
         }
-        /// What a way keeps clear of (wingtip.route_options): its kind -- storm,
-        /// weather, marginal, sigmet, tfr, prohibited, terrain -- and its words.
+        /// What a way keeps clear of or is told of (wingtip.route_options): its
+        /// kind -- storm, weather, marginal, sigmet, tfr, prohibited, terrain,
+        /// fuel, or a special-use area a way is flown through and stays open
+        /// across (restricted, moa, warning, alert; AIM 3-4-3 to 3-4-6) -- and its
+        /// words ("Restricted area R-2508").
         ///
         /// - Remark: Generated from `#/components/schemas/RouteHazard`.
         public struct RouteHazard: Codable, Hashable, Sendable {
@@ -17371,6 +17395,8 @@ extension Components {
             public var tailKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/RouteOption/title`.
             public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RouteOption/warning`.
+            public var warning: Swift.String?
             /// - Remark: Generated from `#/components/schemas/RouteOption/water_nm`.
             public var waterNm: Swift.Int?
             /// Creates a new `RouteOption`.
@@ -17393,6 +17419,7 @@ extension Components {
             ///   - stops:
             ///   - tailKt:
             ///   - title:
+            ///   - warning:
             ///   - waterNm:
             public init(
                 airMin: Swift.Double? = nil,
@@ -17412,6 +17439,7 @@ extension Components {
                 stops: [Swift.String],
                 tailKt: Swift.Double? = nil,
                 title: Swift.String,
+                warning: Swift.String? = nil,
                 waterNm: Swift.Int? = nil
             ) {
                 self.airMin = airMin
@@ -17431,6 +17459,7 @@ extension Components {
                 self.stops = stops
                 self.tailKt = tailKt
                 self.title = title
+                self.warning = warning
                 self.waterNm = waterNm
             }
             public enum CodingKeys: String, CodingKey {
@@ -17451,13 +17480,16 @@ extension Components {
                 case stops
                 case tailKt = "tail_kt"
                 case title
+                case warning
                 case waterNm = "water_nm"
             }
         }
         /// The ways to fly a route, the fastest first; what the straight line
         /// crosses (`direct`), what is at its ends (`ends`) and what the pilot's
         /// own route crosses and passes (`current`, `current_marginal`), by index
-        /// in `hazards`; and the sources that could not be read now (`unchecked`).
+        /// in `hazards`; and what could not be read or is not known now
+        /// (`unchecked`, the engine's words: "terrain", "TFRs", "service ceiling",
+        /// "start and taxi fuel" ...).
         ///
         /// - Remark: Generated from `#/components/schemas/RouteOptions`.
         public struct RouteOptions: Codable, Hashable, Sendable {
@@ -18436,6 +18468,8 @@ extension Components {
         ///
         /// - Remark: Generated from `#/components/schemas/RunwayWind`.
         public struct RunwayWind: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RunwayWind/crosswind_exact_kt`.
+            public var crosswindExactKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/RunwayWind/crosswind_kt`.
             public var crosswindKt: Swift.Double
             /// - Remark: Generated from `#/components/schemas/RunwayWind/end`.
@@ -18449,18 +18483,21 @@ extension Components {
             /// Creates a new `RunwayWind`.
             ///
             /// - Parameters:
+            ///   - crosswindExactKt:
             ///   - crosswindKt:
             ///   - end:
             ///   - gustCrosswindKt:
             ///   - headwindKt:
             ///   - inUse:
             public init(
+                crosswindExactKt: Swift.Double? = nil,
                 crosswindKt: Swift.Double,
                 end: Swift.String,
                 gustCrosswindKt: Swift.Double? = nil,
                 headwindKt: Swift.Double,
                 inUse: Swift.Bool? = nil
             ) {
+                self.crosswindExactKt = crosswindExactKt
                 self.crosswindKt = crosswindKt
                 self.end = end
                 self.gustCrosswindKt = gustCrosswindKt
@@ -18468,6 +18505,7 @@ extension Components {
                 self.inUse = inUse
             }
             public enum CodingKeys: String, CodingKey {
+                case crosswindExactKt = "crosswind_exact_kt"
                 case crosswindKt = "crosswind_kt"
                 case end
                 case gustCrosswindKt = "gust_crosswind_kt"

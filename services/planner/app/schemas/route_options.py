@@ -6,8 +6,11 @@ from pydantic import BaseModel
 
 
 class RouteHazard(BaseModel):
-    """What a way keeps clear of (wingtip.route_options): its kind -- storm,
-    weather, marginal, sigmet, tfr, prohibited, terrain -- and its words."""
+    """What a way keeps clear of or is told of (wingtip.route_options): its
+    kind -- storm, weather, marginal, sigmet, tfr, prohibited, terrain,
+    fuel, or a special-use area a way is flown through and stays open
+    across (restricted, moa, warning, alert; AIM 3-4-3 to 3-4-6) -- and its
+    words ("Restricted area R-2508")."""
 
     kind: str
     name: str
@@ -59,6 +62,10 @@ class RouteOption(BaseModel):
     landings: int
     crosses: list[int]
     marginal: list[int]
+    #: The card's one warning, the worst the way crosses, in the engine's
+    #: words ("Crosses a restricted area": 14 CFR 91.133(a), AIM 3-4-3;
+    #: "Crosses a MOA" ...); None where it crosses nothing.
+    warning: str | None = None
     bands: list[RouteBand] = []
     tail_kt: float = 0.0
     floor_ft: int = 0
@@ -84,7 +91,9 @@ class RouteOptions(BaseModel):
     """The ways to fly a route, the fastest first; what the straight line
     crosses (`direct`), what is at its ends (`ends`) and what the pilot's
     own route crosses and passes (`current`, `current_marginal`), by index
-    in `hazards`; and the sources that could not be read now (`unchecked`)."""
+    in `hazards`; and what could not be read or is not known now
+    (`unchecked`, the engine's words: "terrain", "TFRs", "service ceiling",
+    "start and taxi fuel" ...)."""
 
     options: list[RouteOption]
     #: The pilot's own route with the fuel stops it needs put in; None

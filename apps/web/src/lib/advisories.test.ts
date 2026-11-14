@@ -10,6 +10,7 @@ import {
   tfrTimes,
   titleCase,
 } from "./advisories";
+import faaWordsCases from "./fixtures/faaWords.json";
 
 const gairmet = {
   hazard: "Icing",
@@ -86,6 +87,9 @@ describe("the FAA's capitals in sentence case", () => {
     expect(faaWords("ILS OR LOC RWY 36")).toBe("ILS or LOC rwy 36");
     expect(faaWords("RNAV (GPS) Z RWY 36")).toBe("RNAV (GPS) Z rwy 36");
     expect(faaWords("VOR-A")).toBe("VOR-A");
+    // A NOTAM's codes and idents kept, a NOTAM given whole as sent: the
+    // engine's own cases (engine/facade/tests/wording.rs reads them too).
+    for (const c of faaWordsCases.cases) expect(faaWords(c.text), c.about).toBe(c.want);
     expect(sigmetHazard("CONVECTIVE")).toBe("Convective");
     expect(sigmetHazard("MTN OBSCN")).toBe("Mountain obscuration");
     expect(sigmetHazard(null, "SIGMET")).toBe("SIGMET");

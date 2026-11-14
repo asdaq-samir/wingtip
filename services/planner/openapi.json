@@ -2776,7 +2776,7 @@
         "type": "object"
       },
       "AltitudeOption": {
-        "description": "One of the four plans -- lowest, highest, fastest, economical --\nas its steps and what it costs. `ete_min` is the flying time with every climb\nflown (`climb_penalty_min` is how many of those minutes are climb),\nthe figure the plans are compared on; `tailwind_kt` the\ndistance-weighted wind component along the course, positive helping,\nover the legs that had wind data. With no airplane, the lowest and\nhighest alone, their times, fuel, climb and wind None.",
+        "description": "One of the four plans -- lowest, highest, fastest, economical --\nas its steps and what it costs. `ete_min` is the flying time with every climb\nflown (`climb_penalty_min` is how many of those minutes are climb),\nthe figure the plans are compared on; `tailwind_kt` the\ndistance-weighted wind component along the course, positive helping,\nover the legs that had wind data. With no airplane, the lowest and\nhighest alone, their times, fuel, climb and wind None; with no climb\nfuel flow in the airplane's profile, no economical plan, as its\nclimbs' fuel is not known (the engine's navlog_plans).",
         "properties": {
           "climb_penalty_min": {
             "anyOf": [
@@ -11802,7 +11802,7 @@
         "type": "object"
       },
       "Leg": {
-        "description": "One dead-reckoning leg. `wind` is None when no winds-aloft station\nis near enough, which is not the same as calm: groundspeed then falls\nback to true airspeed. groundspeed/ETE/fuel are None when the wind\nexceeds true airspeed, i.e. the leg cannot be flown.\n\nThe true airspeed and fuel flow are the aeroplane's in the leg's own\nair (wingtip.performance): its cruise figures are at a reference\naltitude on a standard day, and the forecast temperature at this\naltitude gives the density altitude they are flown at, at the power\nit allows -- the cruise power, or less where full throttle cannot\nmake it. `oat_c` is None where no forecast temperature was near: a\nstandard day is assumed there.",
+        "description": "One dead-reckoning leg. `wind` is None when no winds-aloft station\nis near enough, which is not the same as calm: groundspeed then falls\nback to true airspeed. groundspeed/ETE/fuel are None when the wind\nexceeds true airspeed, i.e. the leg cannot be flown.\n\nThe true airspeed and fuel flow are the aeroplane's in the leg's own\nair (wingtip.performance): its cruise figures are at a reference\naltitude on a standard day, and the forecast temperature at this\naltitude gives the density altitude they are flown at, at the power\nit allows -- the cruise power, or less where full throttle cannot\nmake it; `power_pct` None where the profile names no cruise power, its\nTAS and burn then as given. `oat_c` is None where no forecast\ntemperature was near: a standard day is assumed there.",
         "properties": {
           "airway": {
             "anyOf": [
@@ -11817,6 +11817,17 @@
           "altitude_ft": {
             "title": "Altitude Ft",
             "type": "number"
+          },
+          "climb_fuel_unknown": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Climb Fuel Unknown"
           },
           "climb_min": {
             "default": 0.0,
@@ -13967,6 +13978,18 @@
           "altitude_ft": {
             "title": "Altitude Ft",
             "type": "number"
+          },
+          "climb_fuel_unknown": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Climb Fuel Unknown"
           },
           "climb_min": {
             "default": 0.0,
@@ -16421,6 +16444,11 @@
             ],
             "title": "Crosswind Kt"
           },
+          "visibility_plus": {
+            "default": false,
+            "title": "Visibility Plus",
+            "type": "boolean"
+          },
           "visibility_sm": {
             "anyOf": [
               {
@@ -18759,7 +18787,7 @@
         "type": "object"
       },
       "RouteHazard": {
-        "description": "What a way keeps clear of (wingtip.route_options): its kind -- storm,\nweather, marginal, sigmet, tfr, prohibited, terrain -- and its words.",
+        "description": "What a way keeps clear of or is told of (wingtip.route_options): its\nkind -- storm, weather, marginal, sigmet, tfr, prohibited, terrain,\nfuel, or a special-use area a way is flown through and stays open\nacross (restricted, moa, warning, alert; AIM 3-4-3 to 3-4-6) -- and its\nwords (\"Restricted area R-2508\").",
         "properties": {
           "kind": {
             "title": "Kind",
@@ -19016,6 +19044,17 @@
             "title": "Title",
             "type": "string"
           },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          },
           "water_nm": {
             "default": 0,
             "title": "Water Nm",
@@ -19041,7 +19080,7 @@
         "type": "object"
       },
       "RouteOptions": {
-        "description": "The ways to fly a route, the fastest first; what the straight line\ncrosses (`direct`), what is at its ends (`ends`) and what the pilot's\nown route crosses and passes (`current`, `current_marginal`), by index\nin `hazards`; and the sources that could not be read now (`unchecked`).",
+        "description": "The ways to fly a route, the fastest first; what the straight line\ncrosses (`direct`), what is at its ends (`ends`) and what the pilot's\nown route crosses and passes (`current`, `current_marginal`), by index\nin `hazards`; and what could not be read or is not known now\n(`unchecked`, the engine's words: \"terrain\", \"TFRs\", \"service ceiling\",\n\"start and taxi fuel\" ...).",
         "properties": {
           "chips": {
             "default": [],
@@ -20220,6 +20259,17 @@
       "RunwayWind": {
         "description": "The reported wind on the end of a runway it favours, the one with\nthe most headwind (wingtip.runway_wind): the headwind negative for a\ntailwind, the crosswind positive from the right, and the crosswind\nin the gusts where the report has them.",
         "properties": {
+          "crosswind_exact_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crosswind Exact Kt"
+          },
           "crosswind_kt": {
             "title": "Crosswind Kt",
             "type": "number"

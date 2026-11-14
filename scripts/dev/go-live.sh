@@ -74,6 +74,21 @@ for name, svc in sorted(cfg.get("services", {}).items()):
 print("\n".join(lines))
 ' "$main" > docker-compose.override.yml
 echo "go-live: $(git log --oneline -1 | cut -c1-72)"
+# The phones' engines in the live tree made again where they were built
+# from an older engine (IOS-11): a phone build from here would link the
+# old one and miss every newer rule. Only where one was built here before;
+# from the shared store when another worktree built this engine (a second
+# or two), else compiled (about a minute each), in a turn of the queue.
+# shellcheck source=scripts/build/shared-cache.sh
+. scripts/build/shared-cache.sh
+for phone in "apps/ios/Frameworks/WingtipEngine build-xcframework.sh" "apps/android/app/engine build-android.sh"; do
+  read -r dir script <<< "$phone"
+  if [ -d "$dir" ] && ! engine_stamp_check "$dir" "engine/bindings/ffi/$script" 2>/dev/null; then
+    echo "go-live: $dir is from an older engine; building it again"
+    scripts/dev/one-at-a-time.sh "go-live: $script" "engine/bindings/ffi/$script" >/dev/null \
+      || echo "go-live: engine/bindings/ffi/$script failed; the phone's engine in $dir is stale" >&2
+  fi
+done
 if [ "$up" != 1 ]; then
   docker compose -p wingtip stop >/dev/null 2>&1 || true
   echo "go-live: the live tree is on the branch; the stack is down (go-live.sh --up starts it)"

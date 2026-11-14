@@ -36,8 +36,8 @@ extension CyclePacks {
     }
 
     /// One of the engine's in-view readers: the packs' paths and the box,
-    /// its answer as JSON text.
-    typealias Reader = ([String], Double, Double, Double, Double) -> String
+    /// its answer as JSON text, or the engine's refusal thrown.
+    typealias Reader = ([String], Double, Double, Double, Double) throws -> String
 
     /// One of the engine's in-view answers, decoded as the planner's:
     /// the planner's generated types with their own keys (Planner.json),
@@ -84,13 +84,13 @@ extension CyclePacks {
     /// (AirspaceInView), as JSON text for the map's own decoder; nil with no pack.
     func airspaceInView(south: Double, west: Double, north: Double, east: Double) -> Data? {
         guard let packs = packs(south: south, west: west, north: north, east: east) else { return nil }
-        return Data(WingtipEngine.airspaceInView(packs: packs, south: south, west: west, north: north, east: east).utf8)
+        return (try? WingtipEngine.airspaceInView(packs: packs, south: south, west: west, north: north, east: east)).map { Data($0.utf8) }
     }
 
     /// The VORs in the box (NavaidsInView's vors); nil with no pack.
     func navaidsInView(south: Double, west: Double, north: Double, east: Double) -> Data? {
         guard let packs = packs(south: south, west: west, north: north, east: east) else { return nil }
-        return Data(WingtipEngine.navaidsInView(packs: packs, south: south, west: west, north: north, east: east).utf8)
+        return (try? WingtipEngine.navaidsInView(packs: packs, south: south, west: west, north: north, east: east)).map { Data($0.utf8) }
     }
 
     // MARK: Off the main actor

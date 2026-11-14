@@ -4251,6 +4251,112 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Forget the signed-in pilot's own checkpoint notes
+    ///
+    /// Every note they wrote for themselves, which the planner keeps; the shared notes stay. The planner's own route for it is internal (no x-gateway mark): this names the pilot from the session, as the account's deletion does.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/checkpoint-notes`.
+    /// - Remark: Generated from `#/paths//api/me/checkpoint-notes/delete(forgetNotes)`.
+    public func forgetNotes(_ input: Operations.ForgetNotes.Input) async throws -> Operations.ForgetNotes.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ForgetNotes.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/me/checkpoint-notes",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ForgetNotes.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.NotesForgottenDto.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 401:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ForgetNotes.Output.Unauthorized.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.NotesForgottenDto.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unauthorized(.init(body: body))
+                case 502:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ForgetNotes.Output.BadGateway.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.NotesForgottenDto.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .badGateway(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// The signed-in pilot's telephone number and home base
     ///
     /// What a flight plan's item 19 C/ asks with the pilot in command's name (AIM Appendix 4), both at once; blank is none. Their name is set with PUT /api/training/name.

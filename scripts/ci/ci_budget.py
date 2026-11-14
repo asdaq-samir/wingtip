@@ -11,9 +11,12 @@ commit's fault, but a warning on every run is noticed. The cache steps say
 (`::notice title=Cache miss::<name>`); those are listed, and on main,
 which saves the caches every pull request reads, a miss is a warning.
 A key that rotates weekly misses once a week by design; its notice says
-"weekly" and stays a notice.
+"weekly" and stays a notice. And the repository's cache store: past
+STORE_WARN_GB of GitHub's 10 GB it warns, as GitHub then evicts the
+least recently used -- on 2026-11-14 the iPhone's DerivedData went within
+an hour of main saving it, under 5 GB of code scanning's caches.
 
-Seconds: two API calls, and one more per job that left annotations.
+Seconds: three API calls, and one more per job that left annotations.
 
   python3 scripts/ci/ci_budget.py                 in CI (GITHUB_* from the runner)
   GH_TOKEN=$(gh auth token) python3 scripts/ci/ci_budget.py --repo asdaq-samir/wingtip --run 42876898472
@@ -68,6 +71,7 @@ BUDGETS = [
     ("Flake hunt (*)", 45, 45),
     ("Flake report", 2, 2),
     ("Sources still answer", 2, 2),
+    ("Backup restores", 2, 2),
 ]
 # The tier-1 gate, in minutes: no tier-1 job's budget above it but these,
 # the phones' builds, which a pull request waits for only when it touches
@@ -80,6 +84,8 @@ TIER1_LONG = {"Native Android / build", "Native iOS / test"}
 # nothing can make it shorter.
 TOTAL = {"pull_request": TIER1, "push": 14, "night": 20}
 SELF = "CI budget"
+# The cache store's size that warns: GitHub evicts past 10 GB a repository.
+STORE_WARN_GB = 9
 
 
 def api(path: str, token: str) -> dict:
@@ -156,6 +162,13 @@ def report(repo: str, run_id: str, token: str) -> list[str]:
     for job, cache in missed:
         if on_main and "weekly" not in cache:
             warnings.append(f"cache miss on main, in {job}: {cache} (main saves what pull requests read)")
+    stored = api(f"repos/{repo}/actions/cache/usage", token)["active_caches_size_in_bytes"] / 1e9
+    lines += ["", f"### Cache store: {stored:.2f} of 10 GB", ""]
+    if stored > STORE_WARN_GB:
+        warnings.append(
+            f"the cache store holds {stored:.2f} GB, past {STORE_WARN_GB} of GitHub's 10: main's caches will be evicted "
+            "(gh cache list --sort size_in_bytes shows the largest)"
+        )
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
         with open(summary, "a") as out:

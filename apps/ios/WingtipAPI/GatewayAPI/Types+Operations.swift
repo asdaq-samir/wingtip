@@ -8214,6 +8214,220 @@ public enum Operations {
             }
         }
     }
+    /// Forget the signed-in pilot's own checkpoint notes
+    ///
+    /// Every note they wrote for themselves, which the planner keeps; the shared notes stay. The planner's own route for it is internal (no x-gateway mark): this names the pilot from the session, as the account's deletion does.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/checkpoint-notes`.
+    /// - Remark: Generated from `#/paths//api/me/checkpoint-notes/delete(forgetNotes)`.
+    public enum ForgetNotes {
+        public static let id: Swift.String = "forgetNotes"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/me/checkpoint-notes/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ForgetNotes.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ForgetNotes.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ForgetNotes.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ForgetNotes.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/me/checkpoint-notes/DELETE/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/me/checkpoint-notes/DELETE/responses/200/content/application\/json`.
+                    case json(Components.Schemas.NotesForgottenDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.NotesForgottenDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ForgetNotes.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ForgetNotes.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// How many went
+            ///
+            /// - Remark: Generated from `#/paths//api/me/checkpoint-notes/delete(forgetNotes)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ForgetNotes.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ForgetNotes.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct Unauthorized: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/me/checkpoint-notes/DELETE/responses/401/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/me/checkpoint-notes/DELETE/responses/401/content/application\/json`.
+                    case json(Components.Schemas.NotesForgottenDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.NotesForgottenDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ForgetNotes.Output.Unauthorized.Body
+                /// Creates a new `Unauthorized`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ForgetNotes.Output.Unauthorized.Body) {
+                    self.body = body
+                }
+            }
+            /// No session
+            ///
+            /// - Remark: Generated from `#/paths//api/me/checkpoint-notes/delete(forgetNotes)/responses/401`.
+            ///
+            /// HTTP response code: `401 unauthorized`.
+            case unauthorized(Operations.ForgetNotes.Output.Unauthorized)
+            /// The associated value of the enum case if `self` is `.unauthorized`.
+            ///
+            /// - Throws: An error if `self` is not `.unauthorized`.
+            /// - SeeAlso: `.unauthorized`.
+            public var unauthorized: Operations.ForgetNotes.Output.Unauthorized {
+                get throws {
+                    switch self {
+                    case let .unauthorized(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unauthorized",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct BadGateway: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/me/checkpoint-notes/DELETE/responses/502/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/me/checkpoint-notes/DELETE/responses/502/content/application\/json`.
+                    case json(Components.Schemas.NotesForgottenDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.NotesForgottenDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ForgetNotes.Output.BadGateway.Body
+                /// Creates a new `BadGateway`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ForgetNotes.Output.BadGateway.Body) {
+                    self.body = body
+                }
+            }
+            /// The planner could not be asked; nothing went
+            ///
+            /// - Remark: Generated from `#/paths//api/me/checkpoint-notes/delete(forgetNotes)/responses/502`.
+            ///
+            /// HTTP response code: `502 badGateway`.
+            case badGateway(Operations.ForgetNotes.Output.BadGateway)
+            /// The associated value of the enum case if `self` is `.badGateway`.
+            ///
+            /// - Throws: An error if `self` is not `.badGateway`.
+            /// - SeeAlso: `.badGateway`.
+            public var badGateway: Operations.ForgetNotes.Output.BadGateway {
+                get throws {
+                    switch self {
+                    case let .badGateway(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "badGateway",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// The signed-in pilot's telephone number and home base
     ///
     /// What a flight plan's item 19 C/ asks with the pilot in command's name (AIM Appendix 4), both at once; blank is none. Their name is set with PUT /api/training/name.

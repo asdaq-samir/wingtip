@@ -27,7 +27,12 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
   (`net.java.dev.jna:jna`'s Android archive). Nothing between the Rust
   and the Kotlin is written by hand: the Rust's `#[uniffi::export]`
   functions (`engine/bindings/ffi/src/lib.rs`) are the one source, and
-  both are generated again with every build of the engine. It uses the NDK `.tool-versions`
+  both are generated again with every build of the engine, which writes
+  the engine's hash beside them (`engine.hash`; `go-live.sh` builds
+  them again in the live tree when it is not the checkout's engine; a
+  plain `./gradlew` does not look). A panic in the engine comes back as
+  `EngineException`, the engine's refusal, never a crash (`guarded` in
+  `engine/bindings/ffi/src/lib.rs`). It uses the NDK `.tool-versions`
   names (`android-ndk`), the app's `ndkVersion` too: r30, which GitHub's
   ubuntu-26.04 image has installed, so CI downloads no NDK. On a Mac,
   install that version once (Android Studio's SDK Manager, SDK Tools, NDK

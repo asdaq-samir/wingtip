@@ -25,6 +25,7 @@ pub mod geo;
 pub mod geo_many;
 pub mod grid;
 pub mod json;
+mod notam_text;
 pub mod plate;
 pub mod sort;
 pub mod sums;

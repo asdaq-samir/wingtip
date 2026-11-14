@@ -26,14 +26,14 @@ enum Engine {
     /// ground's height, the TFRs, the fix the point is named off. Nil where
     /// the file is not a pack the engine reads.
     static func airspaceAt(pack: URL?, lat: Double, lon: Double, groundFt: Double? = nil) -> AirspaceAt? {
-        guard let json = WingtipEngine.airspaceAt(pack: pack?.path, lat: lat, lon: lon, groundFt: groundFt) else { return nil }
+        guard let json = try? WingtipEngine.airspaceAt(pack: pack?.path, lat: lat, lon: lon, groundFt: groundFt) else { return nil }
         return try? Planner.json.decode(AirspaceAt.self, from: Data(json.utf8))
     }
 
     /// Whether every byte of a pack is as the planner wrote it, the bytes
     /// borrowed for the call, not copied.
     static func verify(_ pack: Data) -> Bool {
-        packVerify(pack: pack)
+        (try? packVerify(pack: pack)) ?? false
     }
 
     /// The region whose pack holds a point ("n40w088"), the engine's
@@ -71,8 +71,8 @@ enum Engine {
 
     static func hear(_ heard: String, tail: String?, packs: [URL], near: [(Double, Double)],
                      dep: String, stops: [String], dest: String) -> Heard? {
-        let json = clearanceHear(heard: heard, tail: tail, packs: packs.map(\.path), nearLat: near.map(\.0),
-                                 nearLon: near.map(\.1), dep: dep, stops: stops, dest: dest)
+        guard let json = try? clearanceHear(heard: heard, tail: tail, packs: packs.map(\.path), nearLat: near.map(\.0),
+                                            nearLon: near.map(\.1), dep: dep, stops: stops, dest: dest) else { return nil }
         return try? decoder.decode(Heard.self, from: Data(json.utf8))
     }
 

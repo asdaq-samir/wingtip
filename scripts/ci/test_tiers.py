@@ -122,7 +122,7 @@ def ios() -> list[str]:
     skipped = set(re.findall(r"-skip-testing:WingtipUITests/(\w+)", workflow))
     # The night's run drops -only-testing (`only=()` when FULL), so it runs
     # every class the scheme's test targets hold.
-    full_runs_all = re.search(r'if \[ "\$FULL" = true \]; then\s+only=\(\)', workflow) is not None
+    full_runs_all = re.search(r'(if \[ "\$FULL" = true \]; then\s+|\[ "\$FULL" = true \] && )only=\(\)', workflow) is not None
     project = (ROOT / "apps/ios/project.yml").read_text()
     in_scheme = re.search(r"targets: \[[^\]]*WingtipUITests", project) is not None
     for path in sorted((ROOT / "apps/ios/WingtipUITests").glob("*.swift")):

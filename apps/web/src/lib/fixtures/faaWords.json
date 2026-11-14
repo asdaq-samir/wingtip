@@ -1,0 +1,55 @@
+{
+  "_note": "faa_words (engine/crates/wording/src/wording/faa.rs, notam_text.rs): the FAA's capitals in sentence case with its codes kept, and a NOTAM given whole as sent (CLAUDE.md, Writing). Held by engine/facade/tests/wording.rs and apps/web/src/lib/advisories.test.ts.",
+  "cases": [
+    {
+      "about": "An ICAO NOTAM given whole is a raw report, read as sent (notamRead.json's KOSH runway closure; the audit's KZAU/QICAS ... KMSN read 'kzau/qicas', 'kmsn').",
+      "text": "A1234/25 NOTAMN Q) KZMP/QMRLC/IV/NBO/A/000/999/4359N08833W005 A) KOSH B) 2511120900 C) 2511121700 EST E) RWY 18/36 CLSD",
+      "want": "A1234/25 NOTAMN Q) KZMP/QMRLC/IV/NBO/A/000/999/4359N08833W005 A) KOSH B) 2511120900 C) 2511121700 EST E) RWY 18/36 CLSD"
+    },
+    {
+      "about": "The same over several lines (plannerRules.json's KBJC).",
+      "text": "A1645/26 NOTAMN\nA) KBJC\nE) SVC PCL ALL U/S EXC MEDIUM INTST ON CONS",
+      "want": "A1645/26 NOTAMN\nA) KBJC\nE) SVC PCL ALL U/S EXC MEDIUM INTST ON CONS"
+    },
+    {
+      "about": "A domestic NOTAM with its head, as sent (notamRead.json).",
+      "text": "!OSH 11/052 OSH RWY 27 PAPI U/S 2511101200-2512012359EST",
+      "want": "!OSH 11/052 OSH RWY 27 PAPI U/S 2511101200-2512012359EST"
+    },
+    {
+      "about": "A domestic NOTAM's body with its head taken off, as the iPhone's NOTAM list shows it, still ending in its validity: as sent (notamRead.json's SJT tower).",
+      "text": "OBST TOWER LGT (ASR 1049326) 311207.00N1002759.60W (9.4NM S SJT) 2863.8FT (443.9FT AGL) U/S 2611080154-2703080154",
+      "want": "OBST TOWER LGT (ASR 1049326) 311207.00N1002759.60W (9.4NM S SJT) 2863.8FT (443.9FT AGL) U/S 2611080154-2703080154"
+    },
+    {
+      "about": "A body with no validity: the obstacle's file, the field it is measured from and U/S kept (the audit's MSN tower read '(asr 1047790)', '(4.6NM sse msn)', 'u/S').",
+      "text": "OBST TOWER LGT (ASR 1047790) 430403N0892135W (4.6NM SSE MSN) 1172FT (199FT AGL) U/S",
+      "want": "Obst tower lgt (ASR 1047790) 430403N0892135W (4.6NM SSE MSN) 1172FT (199FT AGL) U/S"
+    },
+    {
+      "about": "plannerRules.json's OWP tower, its head taken off.",
+      "text": "OBST TOWER LGT (ASR 1307505) U/S",
+      "want": "Obst tower lgt (ASR 1307505) U/S"
+    },
+    {
+      "about": "An ident alone in brackets (notamRead.json's OSH TFR).",
+      "text": "AN AREA DEFINED AS 3NM RADIUS OF 435904N0883327W (OSH) SFC-3000FT",
+      "want": "An area defined as 3NM radius of 435904N0883327W (OSH) SFC-3000FT"
+    },
+    {
+      "about": "A bearing in a sentence is followed by a word, not an ident.",
+      "text": "3NM S OF THE FIELD",
+      "want": "3NM S of the field"
+    },
+    {
+      "about": "A slashed pair of words, not codes.",
+      "text": "SUNRISE/SUNSET",
+      "want": "Sunrise/sunset"
+    },
+    {
+      "about": "A circling approach's name stays the designators' rule's.",
+      "text": "VOR/DME-C",
+      "want": "VOR/DME-C"
+    }
+  ]
+}

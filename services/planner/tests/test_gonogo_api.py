@@ -257,6 +257,27 @@ def test_a_ceiling_of_unknown_height_is_not_checked(stubbed):
     assert items["weather"]["detail"] == "Not checked: the ceiling at C81"
 
 
+def test_freezing_rain_on_the_route_is_a_caution_on_a_vfr_flight_too(stubbed):
+    """A METAR of -FZRA at the departure: it ices an airplane clear of cloud
+    (AIM 7-1-20), so the weather says so though the flight is VFR."""
+    metar = {**briefing()["metars"]["C81"], "raw": "KC81 061350Z 03008KT 3SM -FZRA OVC030 M01/M02 A3001"}
+    stubbed["briefing"] = briefing(metars={"C81": metar, "KDLH": None})
+    items = by_key(client.post("/api/go-no-go", json=ask()).json())
+    assert items["weather"]["finding"] == "caution"
+    assert items["weather"]["detail"] == "Freezing rain reported at C81 (METAR -FZRA); it ices an airplane out of cloud"
+
+
+def test_under_ifr_icing_with_no_freezing_level_is_said_not_checked(stubbed, monkeypatch):
+    # No alternate needed, so the weather's own finding stands.
+    monkeypatch.setattr(flight, "alternate_for", lambda dest, eta, tas, filed: {"destination": {"required": False}, "alternate": None})
+    stubbed["planned"] = flight.Planned(
+        nav=nav(selection={"special_use": [], "icing_possible": True, "freezing_level_ft": None}), legs=legs(), totals=totals()
+    )
+    items = by_key(client.post("/api/go-no-go", json=ask(rules="ifr")).json())
+    assert items["weather"]["finding"] == "caution"
+    assert items["weather"]["detail"] == "Icing not checked: freezing level not known"
+
+
 def test_what_swim_says_now_at_the_routes_airports_is_said_as_on_the_web(stubbed, tmp_path, monkeypatch):
     """An ITWS alert at KDLH is a caution with its source; a ground stop
     there is one under IFR only; an area SFDPS says is active now is said

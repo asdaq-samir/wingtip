@@ -3,6 +3,7 @@ package app.wingtipmaps.gateway.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -19,6 +20,7 @@ import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.SquawkService;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,8 +32,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /** PUT /api/aircraft/{id}/figures, what the apps' inline ask saves: one
- *  figure added to the airplane's own, each held to the planner's limits
- *  (OwnFigures). The rest of the airplane's contract is
+ *  figure added to the airplane's own, each held to the engine's ranges
+ *  (AircraftLimits, airplane_figure_ranges). The rest of the airplane's contract is
  *  AircraftControllerTest's. */
 @WebMvcTest(AircraftController.class)
 @Import(app.wingtipmaps.gateway.security.SecurityConfig.class)
@@ -88,17 +90,20 @@ class AircraftFiguresControllerTest {
                 .andExpect(jsonPath("$.figures.glideRatio").isEmpty());
     }
 
-    /** A glide ratio of 1 or less, a ceiling no airplane has, or negative
-     *  taxi fuel is refused. */
+    /** A figure the engine finds out of its range (a glide ratio of 1) is
+     *  refused, a 400 naming it, and nothing is saved. */
     @Test
-    void aFigureOutsideItsLimitsIsRefused() throws Exception {
-        for (String body : new String[] {"{\"glideRatio\":1}", "{\"serviceCeilingFt\":500}", "{\"taxiFuelGal\":-1}"}) {
-            mockMvc.perform(put("/api/aircraft/8/figures")
-                            .with(oidcLogin())
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(body))
-                    .andExpect(status().isBadRequest());
-        }
+    void aFigureOutsideItsRangeIsRefused() throws Exception {
+        doThrow(new AircraftLimits.Refused(Map.of("glideRatio", "Glide ratio must be more than 1 and at most 80")))
+                .when(limits)
+                .checkFigures(new OwnFigures(null, null, null, 1.0, null, null));
+        mockMvc.perform(put("/api/aircraft/8/figures")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"glideRatio\":1}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("glideRatio: Glide ratio must be more than 1 and at most 80"));
+        org.mockito.Mockito.verify(aircraftService, org.mockito.Mockito.never()).addFigures(any(), any(), any());
     }
 }
