@@ -36,12 +36,7 @@ export default function SheetFooter() {
       <nav aria-label="Legal" className="flex flex-wrap items-center justify-center gap-x-2 gap-y-6">
         {links.map((l) => (
           <Fragment key={l.key}>
-            <a
-              href={l.href}
-              target="_blank"
-              rel="noopener"
-              className={FOOT_LINK}
-            >
+            <a href={l.href} target="_blank" rel="noopener" className={FOOT_LINK}>
               {l.label}
             </a>
             <span aria-hidden="true">|</span>

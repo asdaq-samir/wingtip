@@ -9,11 +9,6 @@
       "count": 2
     }
   },
-  "src/components/PillSection.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "src/components/QueryState.tsx": {
     "no-restricted-syntax": {
       "count": 1
@@ -65,11 +60,6 @@
     }
   },
   "src/features/plan/components/search/SearchResultsPage.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/plan/components/search/SheetFooter.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }

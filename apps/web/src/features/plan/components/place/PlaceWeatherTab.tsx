@@ -99,9 +99,7 @@ export function PlaceWeatherTab({
                 {/* When it was observed, first: a report's age is what a
                     pilot weighs it by (and where it came from, where it is
                     own ship's receiver). Its wind is true, as reported. */}
-                {metar.observed_at && (
-                  <ListRow title={<Observed at={metar.observed_at} />} data-testid="place-observed" />
-                )}
+                {metar.observed_at && <ListRow title={<Observed at={metar.observed_at} />} data-testid="place-observed" />}
                 {/* Each figure with its glyph, its value at the right in
                     the text's own colour; the report as it was sent
                     under them. */}
@@ -124,7 +122,7 @@ export function PlaceWeatherTab({
                     </RowBadge>
                   }
                   title="Visibility"
-                  value={<span className="font-semibold text-foreground">{miles(metar.visibility_sm, metar.visibility_plus ?? false)}</span>}
+                  value={<span className="font-semibold text-foreground">{miles(metar.visibility_sm, metar.visibility_plus)}</span>}
                 />
                 <ListRow
                   media={
