@@ -172,6 +172,7 @@ def no_publications(monkeypatch):
     indexes."""
     monkeypatch.setattr(publications, "airport_diagram_url", lambda ident: None)
     monkeypatch.setattr(publications, "airport_diagram_cycle", lambda ident: None)
+    monkeypatch.setattr(publications, "airport_diagram_runways_missing", lambda ident, ends: False)
     monkeypatch.setattr(publications, "terminal_charts", lambda ident: [])
     monkeypatch.setattr(publications, "chart_supplement_url", lambda ident: None)
 

@@ -364,6 +364,10 @@ class AirportPlace(AirportRecord):
     # diagram's picture is /api/airport-diagram/{airport_diagram_cycle}/{ident}.png.
     airport_diagram_url: str | None = None
     airport_diagram_cycle: str | None = None
+    # False where the diagram's crop to its runways is already known not to
+    # be had this cycle (/api/airport-diagram/{cycle}/runways/{ident}.png
+    # would answer 404): the card draws its own sketch without asking.
+    airport_diagram_runways: bool = True
     chart_supplement_url: str | None = None
     # And all of the field's charts in this cycle's d-TPP, the diagram among
     # them: what the card's Diagrams tab lists.

@@ -445,6 +445,22 @@ def airport_place(ident: str) -> AirportPlace:
             modelled = glmp.at(place["lat"], place["lon"])
         except glmp.GlmpUnavailable as err:
             log.warning("modelled weather at %s: %s", place["ident"], err)
+    # Calm now, the field's last wind for the runway in use.
+    runways = _with_turf(
+        pattern.with_traffic(
+            runway_wind.with_winds(
+                [r for r in airports.get_runways(source) if not r["closed"]],
+                metar,
+                place["lat"],
+                place["lon"],
+                weather.recent_wind(place["ident"]) if metar and metar.get("wind_speed_kt") == 0 else None,
+            ),
+            place["ident"],
+            place["lat"],
+            place["lon"],
+        ),
+        place["ident"],
+    )
     return {
         **{key: value for key, value in place.items() if key != "source_ident"},
         "airspace_class": airspace.surface_class_at(place["lat"], place["lon"], shp_path),
@@ -454,22 +470,7 @@ def airport_place(ident: str) -> AirportPlace:
         **_notes(place["ident"]),
         **{k: v for k, v in (field_use.record_of(source) or {}).items() if k not in ("name", "status")},  # NASR's record (AirportRecord)
         "pattern": pattern.pattern_at(place["ident"], place["elevation_ft"]),
-        # Calm now, the field's last wind for the runway in use.
-        "runways": _with_turf(
-            pattern.with_traffic(
-                runway_wind.with_winds(
-                    [r for r in airports.get_runways(source) if not r["closed"]],
-                    metar,
-                    place["lat"],
-                    place["lon"],
-                    weather.recent_wind(place["ident"]) if metar and metar.get("wind_speed_kt") == 0 else None,
-                ),
-                place["ident"],
-                place["lat"],
-                place["lon"],
-            ),
-            place["ident"],
-        ),
+        "runways": runways,
         "frequencies": frequencies,
         "metar": metar,
         "nearby_metar": nearby,
@@ -480,6 +481,12 @@ def airport_place(ident: str) -> AirportPlace:
         **faa_data.airport_contact(place["ident"], altitude.DEFAULT_FAA_CACHE_DIR),
         "airport_diagram_url": publications.airport_diagram_url(place["ident"]),
         "airport_diagram_cycle": publications.airport_diagram_cycle(place["ident"]),
+        # Whether its diagram's crop to the runways is worth asking for: not
+        # where it is already known not to be found this cycle (WEB-41). The
+        # ends as airport_diagram_runways reads them.
+        "airport_diagram_runways": not publications.airport_diagram_runways_missing(
+            place["ident"], any(e.get("lat") is not None for r in runways for e in r.get("runway_ends", []))
+        ),
         "chart_supplement_url": publications.chart_supplement_url(place["ident"]),
         "procedures": publications.terminal_charts(place["ident"]),
     }

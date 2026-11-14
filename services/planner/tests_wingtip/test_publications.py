@@ -312,3 +312,19 @@ def test_a_miss_is_kept_and_a_crop_made_without_ends_is_not_the_one_with_them(mo
     assert len(drawn) == 1
     assert publications.airport_diagram_runways_png("KXXX", cycle, [(44.0, -91.0)], on).read_bytes() == b"png"
     assert len(drawn) == 2
+
+
+def test_a_kept_miss_says_the_runways_picture_is_not_to_be_asked_for(monkeypatch, tmp_path):
+    # The airport's answer says so (airport_diagram_runways), so the card
+    # asks for no picture the planner answers 404 (the web audit's WEB-41).
+    monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
+    on = date(2026, 10, 9)
+    cycle = publications.dtpp_cycle(on)
+    monkeypatch.setattr(publications, "airport_diagram_url", lambda ident, on=None: f"https://aeronav.faa.gov/d-tpp/{cycle}/00001AD.PDF")
+    monkeypatch.setattr(publications, "_pdf_of", lambda *a: b"%PDF")
+    monkeypatch.setattr(publications, "_runways_drawn", lambda pdf, ends: None)
+    assert not publications.airport_diagram_runways_missing("KXXX", True, on)
+    assert publications.airport_diagram_runways_png("KXXX", cycle, [(44.0, -91.0)], on) is None
+    assert publications.airport_diagram_runways_missing("KXXX", True, on)
+    # The crop without ends is its own, not yet tried.
+    assert not publications.airport_diagram_runways_missing("KXXX", False, on)

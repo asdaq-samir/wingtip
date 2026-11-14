@@ -503,6 +503,23 @@ def _runways_drawn(pdf: bytes, ends: list) -> bytes | None:
     return out.getvalue()
 
 
+def _runways_path(url: str, cycle: str, ends: bool) -> Path:
+    """Where the diagram's crop to its runways is kept for the cycle: with
+    the ends known, else from the sheet's strokes alone."""
+    kind = "runways-wide" if ends else "runways-wide-noends"  # wider margin, 2026-11-13
+    return CACHE_DIR / "diagrams" / cycle / f"{Path(url).stem}-{kind}.png"
+
+
+def airport_diagram_runways_missing(ident: str, ends: bool, on: date | None = None) -> bool:
+    """Whether the diagram's runways are already known not to be found on
+    it this cycle (its kept miss, `.none`), so the card asks for no picture
+    the planner will only answer 404 for: KDLH's card logged one at every
+    opening (the web audit's WEB-41). False where it has not been tried
+    yet: the first card asks, and the miss is kept from then on."""
+    url = airport_diagram_url(ident, on)
+    return bool(url) and _runways_path(url, dtpp_cycle(on), ends).with_suffix(".none").exists()
+
+
 def airport_diagram_runways_png(ident: str, cycle: str, ends: list, on: date | None = None) -> Path | None:
     """The airport diagram of this cycle cropped to its runways (`ends`,
     each (lat, lon), where they are known) as a picture on disk, drawn the
@@ -517,8 +534,7 @@ def airport_diagram_runways_png(ident: str, cycle: str, ends: list, on: date | N
     # What is drawn depends on the ends: with none the sheet's strokes
     # alone place the crop, and that must not stand in for the labels'
     # once NASR's ends are there.
-    kind = "runways-wide" if ends else "runways-wide-noends"  # wider margin, 2026-11-13
-    path = CACHE_DIR / "diagrams" / cycle / f"{Path(url).stem}-{kind}.png"
+    path = _runways_path(url, cycle, bool(ends))
     none = path.with_suffix(".none")
     if path.exists():
         return path

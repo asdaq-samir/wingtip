@@ -154,6 +154,9 @@ data class AirportPlace (
     @SerialName("airport_diagram_cycle")
     val airportDiagramCycle: String? = null,
 
+    @SerialName("airport_diagram_runways")
+    val airportDiagramRunways: Boolean? = null,
+
     @SerialName("airport_diagram_url")
     val airportDiagramUrl: String? = null,
 

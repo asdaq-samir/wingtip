@@ -1288,6 +1288,11 @@
             ],
             "title": "Airport Diagram Cycle"
           },
+          "airport_diagram_runways": {
+            "default": true,
+            "title": "Airport Diagram Runways",
+            "type": "boolean"
+          },
           "airport_diagram_url": {
             "anyOf": [
               {
