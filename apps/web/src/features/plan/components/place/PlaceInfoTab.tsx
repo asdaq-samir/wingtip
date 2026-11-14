@@ -7,7 +7,6 @@ import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { RowBadge } from "../../../../components/RowBadge";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { BADGE } from "../../../../lib/rowBadges";
-import { feet } from "../../../../lib/format";
 import { callEngine } from "../../../../lib/engine/engine";
 import { inUseOrder } from "../../../../lib/frequencies";
 import { FrequencyRow } from "../FrequencyRow";
@@ -44,8 +43,10 @@ function CardSection({
 }
 
 /**
- * An airport's card's Info tab (PlaceCard): its details first --
- * elevation, airspace, distance, the address -- then its frequencies, its
+ * An airport's card's Info tab (PlaceCard), under the facts and the
+ * pictures: its details first -- the address, the elevation, airspace and
+ * distance being the facts' (the owner, 2026-11-14: "Since the details are
+ * in the info strip, we can remove them except address") -- then its frequencies, its
  * NOTAMs, its lights, and what it offers on the ground. A frequency, a
  * light or the fuel a NOTAM addresses has its badge by its name, and a tap
  * opens that NOTAM over the card (notamBadges).
@@ -53,13 +54,10 @@ function CardSection({
 export function PlaceInfoTab({
   place,
   where,
-  distance,
 }: {
   place: AirportPlace;
   /** Its town and state, for the address where the FAA lists none. */
   where: string | null;
-  /** How far it is ("18 nm NE of C81"); null with nothing to measure from. */
-  distance: string | null;
 }) {
   const marks = useNotamMarks(place.ident, place);
   const sheet = useNotamSheet();
@@ -82,31 +80,6 @@ export function PlaceInfoTab({
           "move the details before frequency"). */}
       <CardSection title="Details" testId="place-details">
         <ListGroup>
-          <ListRow
-            title="Elevation"
-            data-testid="place-elevation"
-            value={<span className="font-semibold text-foreground">{feet(place.elevation_ft)}</span>}
-          />
-          {/* The class of the airspace it sits in (its airspace_class,
-              from the FAA's NASR), the class alone: its radio is in
-              Frequencies under it (the owner, 2026-11-11). */}
-          {place.airspace_class && (
-            <ListRow
-              title="Airspace"
-              data-testid="place-airspace"
-              value={<span className="font-semibold text-foreground">Class {place.airspace_class}</span>}
-            />
-          )}
-          {/* How far it is, from own ship's fix or else the route's
-              departure (PlaceCard's distanceOf), moved here from the head
-              (the owner, 2026-11-11: "Add distance to details"). */}
-          {distance && (
-            <ListRow
-              title="Distance"
-              data-testid="place-distance"
-              value={<span className="font-semibold text-foreground">{distance}</span>}
-            />
-          )}
           {/* Where it is on the ground, in Maps: an action of the
               card's until the star took its place (A2). */}
           {/* The address written out, the way to it in Maps, at the

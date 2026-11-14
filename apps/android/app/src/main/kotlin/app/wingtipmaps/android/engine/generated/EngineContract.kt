@@ -11899,6 +11899,45 @@ object EngineContract {
         val atS: Double,
     )
 
+    @Serializable
+    data class SurfaceAirspaceAnswer(
+        val `class`: String,
+        @SerialName("part_time")
+        val partTime: Boolean,
+        /**
+         * The class at other times where it is part-time; null where it is not.
+         */
+        val otherwise: String? = null,
+        /**
+         * That class is part-time too: G at the times neither is in effect.
+         */
+        @SerialName("otherwise_part_time")
+        val otherwisePartTime: Boolean,
+    )
+
+    @Serializable
+    data class SurfaceAirspaceInput(
+        /**
+         * The field's elevation, feet MSL (NASR APT_BASE ELEV).
+         */
+        @SerialName("elevation_ft")
+        val elevationFt: Double? = null,
+        val volumes: List<EngineContract.SurfaceAirspaceInputVolumesItem>,
+    )
+
+    @Serializable
+    data class SurfaceAirspaceInputVolumesItem(
+        val `class`: String,
+        @SerialName("floor_ft")
+        val floorFt: Double? = null,
+        @SerialName("floor_ref")
+        val floorRef: String,
+        /**
+         * NASR's WKHR_CODE: H24, NOTAM or RMK.
+         */
+        val hours: String? = null,
+    )
+
     /**
      * One period of a TAF as the weather store keeps it (awc_tafs_read): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
      */

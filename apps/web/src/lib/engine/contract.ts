@@ -3495,6 +3495,13 @@ export interface EngineContract {
     answer: SunDownAnswer;
   };
   /**
+   * The class of the airspace at a field's surface, from the NASR Class Airspace volumes whose shape holds it: B, C or D (14 CFR 71.41, 71.51, 71.61) or E (a surface area or an extension to one, 71.71(b), AIM 3-2-6e1 and e2) where a volume of that class reaches the ground (a floor at SFC, 0 ft AGL, or an MSL floor at or under the field's elevation), the most restrictive where they overlap; G where none does (AIM 3-3-1). A Class B or C shelf over the field is not its surface class. Part-time where every volume of that class is in effect by NOTAM or by remark (NASR WKHR_CODE NOTAM or RMK, not H24); then `otherwise` is the class at other times, the next class reaching the surface or G (AIM 3-2-5a1: "other times CLASS E" or "other times CLASS G"). A volume with no code is read as full-time.
+   */
+  surface_airspace: {
+    input: SurfaceAirspaceInput;
+    answer: SurfaceAirspaceAnswer;
+  };
+  /**
    * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
    */
   taf_window: {
@@ -12408,6 +12415,33 @@ export interface SunDownInput {
    * UNIX seconds.
    */
   at_s: number;
+}
+export interface SurfaceAirspaceInput {
+  /**
+   * The field's elevation, feet MSL (NASR APT_BASE ELEV).
+   */
+  elevation_ft?: number | null;
+  volumes: {
+    class: "B" | "C" | "D" | "E";
+    floor_ft?: number | null;
+    floor_ref: "SFC" | "AGL" | "MSL";
+    /**
+     * NASR's WKHR_CODE: H24, NOTAM or RMK.
+     */
+    hours?: string | null;
+  }[];
+}
+export interface SurfaceAirspaceAnswer {
+  class: "B" | "C" | "D" | "E" | "G";
+  part_time: boolean;
+  /**
+   * The class at other times where it is part-time; null where it is not.
+   */
+  otherwise: ("C" | "D" | "E" | "G") | null;
+  /**
+   * That class is part-time too: G at the times neither is in effect.
+   */
+  otherwise_part_time: boolean;
 }
 export interface TafWindowInput {
   fcsts: TafPeriod[];

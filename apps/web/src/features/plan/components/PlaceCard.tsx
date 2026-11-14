@@ -47,8 +47,7 @@ function away(geo: Geo, from: LatLon, to: LatLon): string {
   return geo.distanceNm(from, to) < 0.5 ? "here" : awayFrom(geo, from, to);
 }
 
-/** How far the field is, for the Info tab's Details (the owner,
- *  2026-11-11: "Add distance to details") -- "18 nm NE of C81". Nothing
+/** How far the field is, for the facts' Distance (2026-11-14), "18 nm NE" from C81. Nothing
  *  where there is nothing to measure from, nor where the start is the
  *  field itself: the departure's own card, with no fix, said "here of
  *  KMSN", as the phones said "From KMSN 0 nm". */
@@ -59,11 +58,11 @@ function distanceOf(geo: Geo | null, place: AirportPlace, from: { point: LatLon;
   return `${away(geo, from.point, place)}|${from.name ?? ""}`;
 }
 
-/** The distance's words for the Info tab, "18 nm NE of C81", and its two parts for the fact strip. */
+/** The distance's two parts for the fact strip: "18 nm NE", and "C81" or none for own ship. */
 function awayOf(distance: string | null) {
-  if (!distance) return { words: null, fact: null };
+  if (!distance) return null;
   const [words = "", from = ""] = distance.split("|");
-  return { words: from ? `${words} of ${from}` : words, fact: { words, from: from || null } };
+  return { words, from: from || null };
 }
 
 /** Who may land there, the card's one use line on every app (the owner,
@@ -101,10 +100,10 @@ function knownOf(queryClient: QueryClient, ident: string): { name: string; categ
  * 2026-11-11), Fly Here saying the time there; laid out after Apple Maps'
  * place card at the owner's pick of C1 (2026-11-14, canvas
  * V1d9RDbmY1aczc4LfXed7a, "Airport card after Apple Maps"): under the
- * actions a row of facts (PlaceFacts), then its pictures, then the page of
- * the tab picked in the floating bar at the card's foot (PlaceTabBar,
- * which takes the place of T4's tabs under the actions): Info (its
- * details, frequencies, lights and services), Weather (the weather there
+ * actions the page of the tab picked in the floating bar at the card's foot
+ * (PlaceTabBar, which takes the place of T4's tabs under the actions): Info
+ * (a row of facts, PlaceFacts, its pictures, then its details, frequencies,
+ * lights and services, 2026-11-14), Weather (the weather there
  * hour by hour, G1, over the reports as sent), Runways and Charts. Opened
  * by a tap on the airport on the chart (AirportsGl), and held in the
  * address (`?place=KDLH`), so a link lands on it.
@@ -176,7 +175,7 @@ export default function PlaceCard({
   // goes with the route; it is a new card (keyed by its ident) after.
   const [flying, setFlying] = useState(false);
 
-  // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the card opens on its approaches; each tab its own place in the scroll (useTabScroll).
+  // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the card opens on its approaches; each tab opening at its own top (useTabScroll).
   const [tab, setPicked] = useCardTab<PlaceTab>(`place:${ident}`, "radio", startOn ? "diagrams" : null);
   const [tabBar, setTabBar] = useTabScroll(tab);
   // Opened on its approaches (the route's Approaches): at half as every
@@ -365,24 +364,6 @@ export default function PlaceCard({
             time={flyTime}
           />
           {place && stop && <StopStrip ident={place.ident} stop={stop} />}
-          {place && (
-            <PlaceFacts
-              place={place}
-              category={category}
-              approximate={weather?.category ? null : (approximate?.said ?? null)}
-              away={distance.fact}
-            />
-          )}
-          {place && (
-            <PlacePictures
-              place={place}
-              photos={photos}
-              sketchedRunways={sketchedRunways}
-              leftOut={leftOut}
-              noRunwaysPicture={noRunwaysPicture}
-              onNoRunwaysPicture={() => setNoRunwaysPicture(true)}
-            />
-          )}
         </>
       ) : (
         <div className="flex flex-col pt-[var(--corner-inset,0.75rem)]" data-to-edge="">
@@ -408,8 +389,27 @@ export default function PlaceCard({
           top={setTabBar}
           bar={<PlaceTabBar onPick={setPicked} disabled={!place} category={metar?.flight_category ?? null} charts={charts} />}
         >
-          <CardTabPanel value="radio" className="space-y-0">
-            {place && <PlaceInfoTab place={place} where={where} distance={distance.words} />}
+          {/* Info's page alone starts with the facts and pictures (the owner, 2026-11-14: "Switching tabs should not show those"). */}
+          <CardTabPanel value="radio" className="space-y-0 pt-0">
+            {place && (
+              <>
+                <PlaceFacts
+                  place={place}
+                  category={category}
+                  approximate={weather?.category ? null : (approximate?.said ?? null)}
+                  away={distance}
+                />
+                <PlacePictures
+                  place={place}
+                  photos={photos}
+                  sketchedRunways={sketchedRunways}
+                  leftOut={leftOut}
+                  noRunwaysPicture={noRunwaysPicture}
+                  onNoRunwaysPicture={() => setNoRunwaysPicture(true)}
+                />
+                <PlaceInfoTab place={place} where={where} />
+              </>
+            )}
           </CardTabPanel>
           <CardTabPanel value="weather" className="space-y-0">
             <PlaceWeatherTab

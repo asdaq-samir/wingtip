@@ -28,7 +28,7 @@ from pathlib import Path
 
 import wingtip_native
 
-from . import faa_data
+from . import faa_data, remarks
 from .config import DATA_DIR
 from .magnetic import magnetic_variation_deg
 from .single_flight import once
@@ -153,14 +153,21 @@ def with_traffic(runways: list, ident: str, lat: float, lon: float, cache_dir=FA
 
 def pattern_at(ident: str, elevation_ft: float | None, cache_dir=FAA_CACHE_DIR) -> dict:
     """How high the pattern is flown: `agl_ft` above the field, the FAA's
-    own where `published`, else AC 90-66C's 1,000 ft; and `altitude_ft`,
-    above sea level, where the field's elevation is known."""
+    own where `published`, else AC 90-66C's and AIM 4-3-3a's 1,000 ft; and
+    `altitude_ft`, above sea level, where the field's elevation is known.
+    With `remarks`, the FAA's remarks on it in words (remarks.pattern_notes),
+    where it gives other aircraft other heights; none where the remarks
+    file cannot be had."""
     published = None
     for faa_id in faa_ids(ident):
         published = faa_data.published_pattern_agl_ft(faa_id, cache_dir)
         if published is not None:
             break
-    return _ask("pattern_altitude", elevation_ft=elevation_ft, published_agl_ft=published)
+    try:
+        notes = next((found for faa_id in faa_ids(ident) if (found := remarks.pattern_notes(faa_id, cache_dir))), [])
+    except (OSError, RuntimeError):
+        notes = []
+    return {**_ask("pattern_altitude", elevation_ft=elevation_ft, published_agl_ft=published), "remarks": notes}
 
 
 def _circuit_runway(runway: dict) -> dict:

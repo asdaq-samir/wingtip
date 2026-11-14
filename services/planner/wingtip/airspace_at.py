@@ -169,13 +169,16 @@ def _volume(record: dict) -> dict:
         "floor_ft": floor_ft,
         "floor_ref": floor_ref,
         "ceiling_ft": _ceiling(record),
+        # When it is in effect: NASR's WKHR_CODE, H24, NOTAM or RMK (the
+        # engine's surface_airspace reads NOTAM and RMK as part-time).
+        "hours": (record.get("WKHR_CODE") or "").strip(),
     }
 
 
 def volumes_at(lat: float, lon: float, shp_path) -> list[dict]:
     """Every Class B, C, D and E volume holding the point: {"class",
-    "local_type", "name", "ident", "floor_ft", "floor_ref", "ceiling_ft"}
-    with the ceiling in feet MSL."""
+    "local_type", "name", "ident", "floor_ft", "floor_ref", "ceiling_ft",
+    "hours"} with the ceiling in feet MSL."""
     path = Path(shp_path)
     packed = _packed(path)
     if packed is not None:
@@ -200,6 +203,17 @@ def column(lat: float, lon: float, ground_ft: float, volumes: list[dict], in_vei
     module's, read from the shapefile or the cycle pack (volumes_at)."""
     asked = [{k: v[k] for k in ("class", "name", "floor_ft", "floor_ref", "ceiling_ft")} for v in volumes]
     return json.loads(wingtip_native.call("airspace_column", json.dumps({"ground_ft": ground_ft, "volumes": asked, "in_veil": in_veil})))
+
+
+def surface_airspace(lat: float, lon: float, elevation_ft: float | None, shp_path) -> dict:
+    """The class of the airspace at a field's surface and, where it is
+    part-time, its class at other times: the engine's `surface_airspace`
+    (engine/crates/airspace/src/surface_class.rs: 14 CFR 71, AIM 3-2-5a1),
+    the phones' very rule, on the volumes holding the field (volumes_at). As
+    {"airspace_class", "surface_airspace"}, the card's two."""
+    asked = [{k: v[k] for k in ("class", "floor_ft", "floor_ref", "hours")} for v in volumes_at(lat, lon, shp_path)]
+    answer = json.loads(wingtip_native.call("surface_airspace", json.dumps({"elevation_ft": elevation_ft, "volumes": asked})))
+    return {"airspace_class": answer["class"], "surface_airspace": answer}
 
 
 @once(maxsize=1)

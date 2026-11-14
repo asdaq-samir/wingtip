@@ -3,7 +3,7 @@ tables, the airspace and the weather are stubbed -- these test what the
 router makes of them, not OurAirports or aviationweather.gov."""
 
 from fastapi.testclient import TestClient
-from wingtip import airport_photos, airports, airspace, faa_data, geocode, glmp, nearby, pattern, publications, remarks, weather
+from wingtip import airport_photos, airports, airspace_at, faa_data, geocode, glmp, nearby, pattern, publications, remarks, weather
 
 from app.main import app
 
@@ -45,8 +45,8 @@ def stub_place(monkeypatch, place=DULUTH, frequencies=(), runways=(), metar=None
     monkeypatch.setattr(airports, "find_place", lambda ident: place if ident.upper() in ("KDLH", "DLH") else None)
     monkeypatch.setattr(airports, "get_frequencies", lambda ident: list(frequencies))
     monkeypatch.setattr(airports, "get_runways", lambda ident: list(runways))
-    monkeypatch.setattr(airspace, "ensure_class_airspace_shapefile", lambda cache_dir: "airspace.shp")
-    monkeypatch.setattr(airspace, "surface_class_at", lambda lat, lon, shp: surface_class)
+    # Its class at the surface (the engine's, wingtip.airspace_at), the FAA's shapefile stubbed (conftest).
+    monkeypatch.setattr(airspace_at, "surface_airspace", lambda *_: {"airspace_class": surface_class, "surface_airspace": None})
     monkeypatch.setattr(
         remarks,
         "airport_notes",

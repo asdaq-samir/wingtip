@@ -54,7 +54,7 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   await page.goto("/app/plan?dep=C81&place=KDLH");
   await settle(page);
   // Measured from the departure typed alone, no route yet.
-  await expect(card(page).getByTestId("place-distance")).toHaveText(/\d+ nm [NESW]+ of C81/);
+  await expect(card(page).getByTestId("place-fact-distance")).toHaveText(/^From C81\d+ nm [NESW]+$/);
   // No card of alerts leads the card: the badge is by the runway.
   await expect(card(page).getByTestId("place-alert")).toHaveCount(0);
   await card(page).getByRole("tab", { name: "Runways" }).click();

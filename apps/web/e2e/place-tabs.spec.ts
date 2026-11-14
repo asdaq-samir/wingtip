@@ -65,12 +65,15 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   await expect(bar).toBeInViewport({ ratio: 1, timeout: slow(15000) });
   await expect(card(page).getByTestId("place-tab-radio")).toBeEnabled();
 
-  // The facts, a grey name over a value each, in the card's words.
+  // The facts, a grey name over a value each, in the card's words: always the five, in this order
+  // (the owner, 2026-11-14), at the head of the Info tab, where the card opens.
   const facts = card(page).getByTestId("place-facts");
+  const order = await facts.locator(":scope > div").evaluateAll((f) => f.map((e) => (e as HTMLElement).dataset.testid));
+  expect(order).toEqual(["weather", "airspace", "elevation", "pattern", "distance"].map((n) => `place-fact-${n}`));
   await expect(card(page).getByTestId("place-fact-category")).toHaveText("MVFR");
-  await expect(card(page).getByTestId("place-fact-wind")).toHaveText("Wind310°T 4 kt");
-  await expect(card(page).getByTestId("place-fact-longest")).toHaveText(/^Longest[\d,]+ ft$/);
+  await expect(card(page).getByTestId("place-fact-airspace")).toHaveText(/^AirspaceClass [BCDEG]/);
   await expect(card(page).getByTestId("place-fact-elevation")).toHaveText(/^Elevation[\d,]+ ft$/);
+  await expect(card(page).getByTestId("place-fact-pattern")).toHaveText(/^Pattern[\d,]+ ft/);
   await expect(card(page).getByTestId("place-fact-distance")).toHaveText(/^From C81\d+ nm [NSEW]+$/);
   // T4's one-line report is gone into them.
   await expect(card(page).getByTestId("place-weather-line")).toHaveCount(0);
@@ -80,6 +83,11 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   );
   expect(factsBox.y).toBeGreaterThanOrEqual(actions.y + actions.height);
   expect(pictures.y).toBeGreaterThanOrEqual(factsBox.y + factsBox.height);
+  // Info's alone: Weather starts under the actions with its own page, no facts, no pictures.
+  await card(page).getByTestId("place-tab-weather").click();
+  await expect(facts).toBeHidden();
+  await expect(card(page).getByTestId("place-pictures")).toBeHidden();
+  await card(page).getByTestId("place-tab-radio").click();
 
   // The bar at the foot of the half card, over the pictures.
   await atTheFoot(page, bar);
@@ -142,7 +150,7 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
     .toBe(true);
 });
 
-test("with no report of its own the Weather tab has no dot and the facts no weather", async ({ page }) => {
+test("with no report of its own the Weather tab has no dot and the facts' Weather a dash", async ({ page }) => {
   await kdlh(page, { metar: null, procedures: [], airport_diagram_url: null });
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
@@ -151,8 +159,8 @@ test("with no report of its own the Weather tab has no dot and the facts no weat
   await expect(card(page).getByTestId("place-tab-diagrams")).toHaveAccessibleName("Charts");
   await expect(card(page).getByTestId("place-tab-category")).toHaveCount(0);
   await expect(card(page).getByTestId("place-tab-charts")).toHaveCount(0);
-  await expect(card(page).getByTestId("place-fact-weather")).toHaveCount(0);
-  await expect(card(page).getByTestId("place-fact-wind")).toHaveCount(0);
+  await expect(card(page).getByTestId("place-fact-weather")).toHaveText("Weather—");
+  await expect(card(page).getByTestId("place-fact-category")).toHaveCount(0);
   await expect(card(page).getByTestId("place-fact-elevation")).toBeVisible();
 });
 

@@ -161,3 +161,29 @@ def test_the_volumes_over_a_point_are_read_from_their_boxes_and_shapes(tmp_path)
     found = airspace_at.volumes_at(42.5, -88.5, path.with_suffix(".shp"))
     assert [(v["class"], v["name"], v["floor_ft"], v["floor_ref"]) for v in found] == [("E", "ROCKFORD", 700.0, "AGL")]
     assert airspace_at.volumes_at(10.0, 10.0, path.with_suffix(".shp")) == []
+
+
+def test_a_fields_surface_class_is_the_engines_from_the_volumes_and_their_hours(tmp_path):
+    # A part-time Class D over a full-time Class E surface area, under a
+    # Class C shelf from 2,000 MSL: D, "other times CLASS E" (AIM
+    # 3-2-5a1); the shelf over the field is not its class.
+    path = tmp_path / "Class_Airspace"
+    with shapefile.Writer(str(path), shapeType=shapefile.POLYGON) as w:
+        for name in ("CLASS", "LOCAL_TYPE", "NAME", "LOWER_CODE", "LOWER_VAL", "UPPER_VAL", "WKHR_CODE"):
+            w.field(name, "C")
+        square = [[(-88.5, 42.0), (-88.5, 42.5), (-88.0, 42.5), (-88.0, 42.0), (-88.5, 42.0)]]
+        for record in (
+            ("D", "CLASS_D", "TOWER D", "SFC", "0", "3200", "NOTAM"),
+            ("E", "CLASS_E2", "TOWER E2", "SFC", "0", "-9998", "H24"),
+            ("C", "CLASS_C", "BIG C", "MSL", "2000", "4800", "H24"),
+        ):
+            w.poly(square)
+            w.record(*record)
+    shp = path.with_suffix(".shp")
+    found = airspace_at.surface_airspace(42.3, -88.1, 750.0, shp)
+    assert found == {
+        "airspace_class": "D",
+        "surface_airspace": {"class": "D", "part_time": True, "otherwise": "E", "otherwise_part_time": False},
+    }
+    # Outside every volume: G.
+    assert airspace_at.surface_airspace(10.0, 10.0, 750.0, shp)["airspace_class"] == "G"

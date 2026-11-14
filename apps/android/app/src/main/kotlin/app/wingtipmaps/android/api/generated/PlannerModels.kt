@@ -492,11 +492,12 @@ data class GroundPhoto (
 )
 
 /**
- * One airport the way the map's card shows it: its name and place,
- * the class of the airspace over it, whether it has a tower, its
- * runways and radio, and the weather there now. `metar` is None for a
- * field with no reporting station, and `weather_unavailable` says the
- * weather service could not be asked at all -- not the same thing.
+ * One airport the way the map's card shows it: its name and place, the class of the
+ * airspace at
+ * its surface, its tower, runways and radio, and the weather now. `metar` is None for a
+ * field with
+ * no reporting station; `weather_unavailable`, the weather service could not be asked at
+ * all.
  */
 @Serializable
 data class AirportPlace (
@@ -575,6 +576,10 @@ data class AirportPlace (
     val standardKeying: Boolean? = null,
 
     val status: String? = null,
+
+    @SerialName("surface_airspace")
+    val surfaceAirspace: SurfaceAirspace? = null,
+
     val taf: String? = null,
     val towered: Boolean,
 
@@ -735,7 +740,8 @@ data class TrafficPattern (
     @SerialName("altitude_ft")
     val altitudeFt: Double? = null,
 
-    val published: Boolean? = null
+    val published: Boolean? = null,
+    val remarks: List<String>? = null
 )
 
 /**
@@ -840,6 +846,27 @@ data class RunwayWind (
 
     @SerialName("in_use")
     val inUse: Boolean? = null
+)
+
+/**
+ * The class of the airspace at a field's surface (the engine's
+ * surface_airspace: 14 CFR 71, AIM 3-2-5a1): a shelf over it is not its
+ * class; `part_time` where NASR has it in effect by NOTAM or remark, then
+ * `otherwise` its class at other times, `otherwise_part_time` where that
+ * one is part-time too (G when neither is in effect).
+ */
+@Serializable
+data class SurfaceAirspace (
+    @SerialName("class")
+    val airspaceClass: String,
+
+    val otherwise: String? = null,
+
+    @SerialName("otherwise_part_time")
+    val otherwisePartTime: Boolean? = null,
+
+    @SerialName("part_time")
+    val partTime: Boolean
 )
 
 /**

@@ -108,7 +108,7 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
   await expect(row.getByTestId("search-airplane-live")).toHaveText("Not in the air now", { timeout: slow(10_000) });
 
   // Its card, as the airport card's (P1, then C1): make, model and year under its name, four buttons,
-  // one status line, its facts, and the tabs Flights, Info and Figures in the bar at its foot.
+  // one status line, and the tabs Flights, Info and Figures in the bar at its foot, its facts Info's alone.
   await row.click();
   const card = page.getByTestId("airplane-profile");
   await expect(card).toContainText("Piper PA-28-140, 1971", { timeout: slow(15_000) });
@@ -117,8 +117,7 @@ test("an N-number's FAA record shows at once, whether it is in the air when the 
   for (const tab of ["flights", "info", "figures"]) await expect(card.getByTestId(`airplane-tab-${tab}`)).toBeVisible();
   await expect(card.getByTestId("airplane-tab-flights")).toHaveAttribute("aria-selected", "true");
   await expect(card.getByTestId("airplane-status")).toHaveText(/^On the ground landed LWM /, { timeout: slow(15_000) });
-  await expect(card.getByTestId("airplane-facts-type")).toContainText("Piper PA-28-140");
-  await expect(card.getByTestId("airplane-facts-year")).toContainText("1971");
+  await expect(card.getByTestId("airplane-facts")).toBeHidden(); // on Info alone (the owner, 2026-11-14)
   // Flights: its past flights, each ▶ its replay over this card.
   const flight = card.getByTestId("past-flight").first();
   await expect(flight).toContainText("LCI", { timeout: slow(15_000) });
@@ -216,6 +215,7 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
   await expect(card.getByTestId("airplane-photo-credit")).toContainText("Jane Spotter");
   await expect(card.getByTestId("airplane-photo-open")).toHaveAttribute("href", "https://www.planespotters.net/photo/1/n654fl");
   await expect(card.getByTestId("airplane-facts-owner")).toContainText("Jane Q Pilot");
+  await expect(card.getByTestId("airplane-facts-type")).toContainText("Piper PA-28-140");
   // Figures: the planning figures, as the card had them.
   await card.getByTestId("airplane-tab-figures").click();
   await expect(card.locator("[data-figure]").first()).toBeVisible();

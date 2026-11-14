@@ -35,9 +35,9 @@ import { pickAirplane } from "./startState";
 test("the departure's own card says no distance from itself while the pilot's position is not known", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=C81");
   await settle(page);
-  // No Distance row: no "here of C81", as the phones said no "From KMSN 0 nm" (PlaceCard's distanceOf).
-  await expect(card(page).getByTestId("place-elevation")).toBeVisible({ timeout: slow(15000) });
-  await expect(card(page).getByTestId("place-distance")).toHaveCount(0);
+  // No distance in the facts: no "here of C81", as the phones said no "From KMSN 0 nm" (PlaceCard's distanceOf).
+  await expect(card(page).getByTestId("place-fact-elevation")).toBeVisible({ timeout: slow(15000) });
+  await expect(card(page).getByTestId("place-fact-distance")).toHaveText("Distance—");
 });
 
 test("an airport's card has the field's pictures across its top, its ident over them, how far it is, its actions, its tabs right under them and the weather there", async ({
@@ -58,9 +58,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
   // NASR's name for it, as the FAA files it (ARPT_NAME, wingtip.field_use.named).
   await expect(card(page).getByTestId("place-full-name")).toHaveText("Duluth Intl · Towered"); // its tower after it (C1, 2026-11-14)
   await expect(card(page).getByTestId("place-ident")).toHaveCount(0);
-  // Measured from the route's departure while the pilot's own position is not known, a row of the Details.
   await expect(card(page).getByTestId("place-line")).toHaveCount(0);
-  await expect(card(page).getByTestId("place-distance")).toHaveText(/^Distance\d+ nm NW of C81$/);
   // Its share at the head's start, the name centred, ✕ at its end (cards.spec), the star a tile (2026-11-11); the card the whole sheet.
   for (const id of ["place-share", "place-favorite", "place-close"]) await expect(card(page).getByTestId(id)).toBeInViewport();
   await expect(firstRow(page)).toBeHidden();
@@ -90,11 +88,13 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-hour")).toHaveCount(1);
   await expect(card(page).getByTestId("place-hour").first()).toContainText("Now");
 
-  // Info: the field's elevation and airspace in its details.
+  // Info: the field's elevation and airspace in its facts (the Details only its address, 2026-11-14), and
+  // the distance from the route's departure while the pilot's own position is not known.
   await card(page).getByTestId("place-tab-radio").click();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
-  await expect(card(page).getByTestId("place-elevation")).toContainText(/[\d,]+ ft$/);
-  await expect(card(page).getByTestId("place-airspace")).toHaveText(/^AirspaceClass D$/);
+  await expect(card(page).getByTestId("place-fact-elevation")).toContainText(/[\d,]+ ft$/);
+  await expect(card(page).getByTestId("place-fact-airspace")).toHaveText(/^AirspaceClass D/);
+  await expect(card(page).getByTestId("place-fact-distance")).toHaveText(/^From C81\d+ nm NW$/);
   // The tower's, named in words, its frequency as pilots write it.
   const tower = card(page).getByTestId("place-frequency").filter({ hasText: "Tower" });
   await expect(tower).toContainText("118.3");
@@ -570,9 +570,9 @@ test("a Favorite's card names it and the map goes to it before the card's answer
   // And the head and its actions where they were: nothing above the
   // frequencies grew or moved as it came.
   expect(Math.abs((await card(page).getByTestId("fly-here").boundingBox())!.y - actionsBefore.y)).toBeLessThan(2);
-  // Nothing to measure from: no line under the name, no Distance row.
+  // Nothing to measure from: no line under the name, the facts' Distance a dash.
   await expect(card(page).getByTestId("place-line")).toHaveCount(0);
-  await expect(card(page).getByTestId("place-distance")).toHaveCount(0);
+  await expect(card(page).getByTestId("place-fact-distance")).toHaveText("Distance—");
 });
 
 // A planner out of reach for a moment (restarted, say) is not an airport

@@ -16,7 +16,8 @@
 //! - sua_limit: a special-use area's floor and ceiling, read from the FAA's codes;
 //! - volume_span: how high a 3D map stands a volume, from its limits;
 //! - drills: the oral's flash cards (91.125, 91.155) and 91.155 by name;
-//! - class_b_band: which Class B band of a profile holds an altitude (91.131).
+//! - class_b_band: which Class B band of a profile holds an altitude (91.131);
+//! - surface_class: the class of the airspace at a field's surface (14 CFR 71).
 
 pub mod ahead;
 pub mod airspace;
@@ -36,6 +37,7 @@ mod spoken_closed_tests;
 pub mod sua_limit;
 pub mod sua_place;
 pub mod sua_tab;
+pub mod surface_class;
 pub mod view;
 pub mod view_airports;
 pub mod view_marks;
